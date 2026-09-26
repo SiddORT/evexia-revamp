@@ -1,4 +1,4 @@
-import { ArrowUpRight, Boxes, BriefcaseBusiness, FlaskConical, HeartPulse, Landmark, MapPinned, Stethoscope, Target, Truck, UsersRound, Warehouse } from 'lucide-react';
+import { ArrowUpRight, Boxes, BriefcaseBusiness, Building2, FlaskConical, HeartPulse, Landmark, MapPinned, Stethoscope, Target, Truck, UsersRound, Warehouse } from 'lucide-react';
 import { Link } from 'wouter';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 
@@ -40,6 +40,11 @@ export default function Masters() {
         <Link href="/admin/masters/storage-locations" className="admin-master-link" data-testid="link-master-storage-locations">
           <span className="admin-master-link__icon"><Warehouse size={20} aria-hidden="true" /></span>
           <span className="admin-master-link__text"><strong>Storage Location Master</strong><small>Manage storage locations, addresses and availability in this browser.</small></span>
+          <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
+        </Link>
+        <Link href="/admin/masters/headquarters" className="admin-master-link" data-testid="link-master-headquarters">
+          <span className="admin-master-link__icon"><Building2 size={20} aria-hidden="true" /></span>
+          <span className="admin-master-link__text"><strong>Headquarter Master</strong><small>Manage HQ names, state codes and availability in this browser.</small></span>
           <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
         </Link>
         <Link href="/admin/masters/designations" className="admin-master-link" data-testid="link-master-designations">

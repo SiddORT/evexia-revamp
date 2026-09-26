@@ -17,6 +17,8 @@ import ProductCategoryMaster from './pages/admin/ProductCategoryMaster.jsx';
 import ProductCategoryFormPage from './pages/admin/ProductCategoryFormPage.jsx';
 import StorageLocationMaster from './pages/admin/StorageLocationMaster.jsx';
 import StorageLocationFormPage from './pages/admin/StorageLocationFormPage.jsx';
+import HeadquarterMaster from './pages/admin/HeadquarterMaster.jsx';
+import HeadquarterFormPage from './pages/admin/HeadquarterFormPage.jsx';
 import DesignationMaster from './pages/admin/DesignationMaster.jsx';
 import DesignationFormPage from './pages/admin/DesignationFormPage.jsx';
 import PatientMaster from './pages/admin/PatientMaster.jsx';
@@ -53,6 +55,9 @@ function App() {
       <Route path="/admin/masters/storage-locations" component={StorageLocationMaster} />
       <Route path="/admin/masters/storage-locations/new">{() => <StorageLocationFormPage />}</Route>
       <Route path="/admin/masters/storage-locations/:id">{(params) => <StorageLocationFormPage id={params.id} />}</Route>
+      <Route path="/admin/masters/headquarters" component={HeadquarterMaster} />
+      <Route path="/admin/masters/headquarters/new">{() => <HeadquarterFormPage />}</Route>
+      <Route path="/admin/masters/headquarters/:id">{(params) => <HeadquarterFormPage id={params.id} />}</Route>
       <Route path="/admin/masters/designations" component={DesignationMaster} />
       <Route path="/admin/masters/designations/new">{() => <DesignationFormPage />}</Route>
       <Route path="/admin/masters/designations/:id">{(params) => <DesignationFormPage id={params.id} />}</Route>

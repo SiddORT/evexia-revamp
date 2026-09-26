@@ -1,0 +1,12 @@
+/* Headquarter Master follows the existing Admin semantic palette and table rhythm. */
+.admin-hq-desktop .admin-table { min-width: 860px; }
+.admin-hq-desktop .admin-table td { vertical-align: top; line-height: 1.5; }
+.admin-hq-code { display: inline-block; min-width: 2.5em; color: var(--admin-text-soft); font-weight: 700; letter-spacing: .035em; }
+.admin-hq-mobile { display: none; }
+.admin-hq-form .mr-form__grid { align-items: start; }
+.admin-hq-form .mr-form__control { text-transform: none; }
+.admin-hq-form .admin-hq-code-input { text-transform: uppercase; }
+@media (max-width: 900px) {
+  .admin-hq-desktop { display: none; }
+  .admin-hq-mobile { display: grid; gap: 10px; padding: 12px; }
+}
