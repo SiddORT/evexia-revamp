@@ -153,7 +153,7 @@
 .admin-nav__sub .admin-nav__item { min-height: 36px; font-size: 12px; }
 .admin-nav__group { min-width: 0; padding-top: 9px; }
 .admin-nav__group + .admin-nav__group { border-top: 1px solid var(--admin-border); margin-top: 7px; }
-.admin-nav__group-heading { margin: 0 0 5px; padding: 0 10px; color: var(--admin-sidebar-muted); font-size: 10px; font-weight: 800; letter-spacing: .055em; line-height: 1.4; text-transform: uppercase; }
+.admin-nav__group-heading { margin: 0 0 5px; padding: 0 10px; color: var(--admin-accent); font-size: 10px; font-weight: 800; letter-spacing: .055em; line-height: 1.4; text-transform: uppercase; }
 .admin-nav__empty { margin: 8px; color: var(--admin-sidebar-text); font-size: 12px; line-height: 1.5; }
 .admin-sidebar__foot { margin-top: auto; padding: 14px 18px; border-top: 1px solid var(--line); color: var(--admin-sidebar-muted); font-size: 11px; line-height: 1.6; }
 .admin-sidebar__close { display: none; }
