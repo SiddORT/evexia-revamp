@@ -12,6 +12,8 @@ import DoctorMaster from './pages/admin/DoctorMaster.jsx';
 import DoctorFormPage from './pages/admin/DoctorFormPage.jsx';
 import DoctorPaymentHistory from './pages/admin/DoctorPaymentHistory.jsx';
 import MasterExcelImportPage from './pages/admin/MasterExcelImportPage.jsx';
+import ProductCategoryMaster from './pages/admin/ProductCategoryMaster.jsx';
+import ProductCategoryFormPage from './pages/admin/ProductCategoryFormPage.jsx';
 
 function App() {
   return (
@@ -28,6 +30,9 @@ function App() {
       <Route path="/admin/masters/doctors/new">{() => <DoctorFormPage />}</Route>
       <Route path="/admin/masters/doctors/:id/payments">{(params) => <DoctorPaymentHistory id={params.id} />}</Route>
       <Route path="/admin/masters/doctors/:id">{(params) => <DoctorFormPage id={params.id} />}</Route>
+      <Route path="/admin/masters/product-categories" component={ProductCategoryMaster} />
+      <Route path="/admin/masters/product-categories/new">{() => <ProductCategoryFormPage />}</Route>
+      <Route path="/admin/masters/product-categories/:id">{(params) => <ProductCategoryFormPage id={params.id} />}</Route>
       <Route path="/admin/login">{() => <AuthPage role={roleConfig.admin} />}</Route>
       <Route path="/mr">{() => <AuthPage role={roleConfig.mr} />}</Route>
       <Route path="/doctor">{() => <AuthPage role={roleConfig.doctor} />}</Route>

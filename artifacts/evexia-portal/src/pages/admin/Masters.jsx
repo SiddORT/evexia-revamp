@@ -1,4 +1,4 @@
-import { ArrowUpRight, MapPinned, Stethoscope, UsersRound } from 'lucide-react';
+import { ArrowUpRight, Boxes, MapPinned, Stethoscope, UsersRound } from 'lucide-react';
 import { Link } from 'wouter';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 
@@ -20,6 +20,11 @@ export default function Masters() {
         <Link href="/admin/masters/doctors" className="admin-master-link" data-testid="link-master-doctors">
           <span className="admin-master-link__icon"><Stethoscope size={20} aria-hidden="true" /></span>
           <span className="admin-master-link__text"><strong>Doctor Master</strong><small>Manage doctor profiles and MR assignments in this browser.</small></span>
+          <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
+        </Link>
+        <Link href="/admin/masters/product-categories" className="admin-master-link" data-testid="link-master-product-categories">
+          <span className="admin-master-link__icon"><Boxes size={20} aria-hidden="true" /></span>
+          <span className="admin-master-link__text"><strong>Product Category Master</strong><small>Manage category names, descriptions, prices and status in this browser.</small></span>
           <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
         </Link>
       </div>

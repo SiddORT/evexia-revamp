@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Activity, Check, ChevronDown, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, Moon, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Stethoscope, Sun, UsersRound, X } from 'lucide-react';
+import { Activity, Boxes, Check, ChevronDown, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, Moon, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Stethoscope, Sun, UsersRound, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
 import { ADMIN_APPEARANCES, ADMIN_THEMES, readAdminAppearance, readAdminTheme, saveAdminAppearance, saveAdminTheme } from './adminTheme.js';
 import '../../admin.css';
@@ -130,6 +130,7 @@ export default function AdminLayout({ title, children }) {
               <Link href="/admin/masters/zones" className={`admin-nav__item${location === '/admin/masters/zones' ? ' admin-nav__item--active' : ''}`} aria-label="Zone Master" title={isCollapsed ? 'Zone Master' : undefined} aria-current={location === '/admin/masters/zones' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-zones"><MapPinned size={16} aria-hidden="true" /><span className="admin-nav__label">Zone Master</span></Link>
                <Link href="/admin/masters/mrs" className={`admin-nav__item${location === '/admin/masters/mrs' ? ' admin-nav__item--active' : ''}`} aria-label="MR Master" title={isCollapsed ? 'MR Master' : undefined} aria-current={location === '/admin/masters/mrs' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-mrs"><UsersRound size={16} aria-hidden="true" /><span className="admin-nav__label">MR Master</span></Link>
                <Link href="/admin/masters/doctors" className={`admin-nav__item${location.startsWith('/admin/masters/doctors') ? ' admin-nav__item--active' : ''}`} aria-label="Doctor Master" title={isCollapsed ? 'Doctor Master' : undefined} aria-current={location === '/admin/masters/doctors' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-doctors"><Stethoscope size={16} aria-hidden="true" /><span className="admin-nav__label">Doctor Master</span></Link>
+                <Link href="/admin/masters/product-categories" className={`admin-nav__item${location.startsWith('/admin/masters/product-categories') ? ' admin-nav__item--active' : ''}`} aria-label="Product Category Master" title={isCollapsed ? 'Product Category Master' : undefined} aria-current={location === '/admin/masters/product-categories' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-product-categories"><Boxes size={16} aria-hidden="true" /><span className="admin-nav__label">Product Category Master</span></Link>
             </div>
           )}
         </nav>
