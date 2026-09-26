@@ -35,9 +35,10 @@
 }
 .mr-form__section-note { margin: 0; color: var(--admin-muted); font-size: 11px; }
 .mr-form__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 24px; }
-.mr-form__field { display: flex; flex-direction: column; gap: 6px; min-width: 0; --admin-info-button-inset: -6px; }
+.mr-form__field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .mr-form__field > .mr-form__label,
-.mr-form__field > .admin-info > .admin-info__row { display: flex; align-items: center; min-height: 28px; }
+.mr-form__field > .admin-info > .admin-info__row { min-height: 28px; }
+.mr-form__field > .mr-form__label { display: flex; align-items: center; }
 .mr-form__field--wide { grid-column: span 2; }
 .mr-form__label { color: var(--admin-text-soft); font-size: 11px; font-weight: 700; line-height: 1.4; }
 .mr-form__required { color: var(--admin-accent); }
