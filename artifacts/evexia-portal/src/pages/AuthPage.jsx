@@ -23,6 +23,11 @@ export default function AuthPage({ role }) {
           <h1 data-testid="text-login-title">{role.title}</h1>
           <p className="auth-form-wrap__intro">{role.intro}</p>
           <LoginForm role={role} />
+          {role.short === 'ADMIN' && (
+            <Link href="/admin" className="auth-preview-link" data-testid="link-preview-admin">
+              Preview Admin workspace <span aria-hidden="true">→</span>
+            </Link>
+          )}
           <Link href="/" className="auth-back" data-testid="link-back-portals">
             <ArrowLeft size={15} aria-hidden="true" /> Choose a different portal
           </Link>

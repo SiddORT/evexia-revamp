@@ -346,6 +346,9 @@ a { color: inherit; }
 .auth-back { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-soft); font-size: 0.77rem; text-decoration: none; margin-top: 29px; }
 .auth-back:hover, .auth-back:focus-visible { color: var(--accent); }
 .auth-back:focus-visible { outline: 2px solid rgba(201, 74, 54, 0.3); outline-offset: 4px; border-radius: 2px; }
+.auth-preview-link { margin-top: 17px; padding: 13px 15px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #efd3c9; border-radius: 9px; background: var(--red-soft); text-decoration: none; color: var(--accent-deep); font-size: 0.79rem; font-weight: 700; }
+.auth-preview-link:hover, .auth-preview-link:focus-visible { border-color: var(--accent); background: var(--orange-soft); }
+.auth-preview-link:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
 .auth-legal { color: var(--muted); font-size: 0.68rem; line-height: 1.5; margin-top: 44px; }
 
 @keyframes spin { to { transform: rotate(360deg); } }

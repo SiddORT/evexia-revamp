@@ -1,6 +1,6 @@
 # EVEXIA Portal
 
-A frontend-only mock portal-selection and login experience for EVEXIA Life Sciences.
+A frontend-only EVEXIA Life Sciences portal with mock login screens and an Admin workspace preview.
 
 ## Run & operate
 
@@ -11,9 +11,10 @@ A frontend-only mock portal-selection and login experience for EVEXIA Life Scien
 ## Stack and scope
 
 - React with JavaScript/JSX, Vite, Wouter, and CSS. Keep the web artifact free of TypeScript files.
-- Routes: `/` (portal selection), `/admin`, `/mr`, and `/doctor` (shared login UI configured by role).
-- Phase one is a mock UI only. Do not add API calls, a backend, real authentication, dashboards, or internal modules unless the user requests them later.
-- Forms validate locally and simulate loading, then clearly state that authentication is not connected. No credentials are sent or stored.
+- Routes: `/` (portal selection); `/admin/login`, `/mr`, `/doctor` (mock login); `/admin` (empty Admin dashboard), `/admin/masters` (Masters index), `/admin/masters/zones` (Zone Master).
+- The Admin workspace is a preview. Sign Out only returns to the mock login. Do not add API calls or real authentication unless requested.
+- Login forms validate locally and simulate loading, then clearly state that authentication is not connected. No credentials are sent or stored.
+- Zone Master records are stored only in the browser's localStorage, not shared across browsers or users. Clearing browser data removes them.
 
 ## Where things live
 
@@ -22,6 +23,8 @@ A frontend-only mock portal-selection and login experience for EVEXIA Life Scien
 - `artifacts/evexia-portal/src/components/` — shared portal and auth UI
 - `artifacts/evexia-portal/src/pages/` — landing, login, and not-found pages
 - `artifacts/evexia-portal/src/index.css` — styling and responsive rules
+- `artifacts/evexia-portal/src/components/admin/`, `src/pages/admin/`, and `src/admin.css` — Admin shell and Zone Master UI
+- `artifacts/evexia-portal/src/services/zones.js`, `src/hooks/useZones.js` — local Zone Master data and state
 - `artifacts/evexia-portal/public/images/` — coordinated role photography
 
 ## Assets

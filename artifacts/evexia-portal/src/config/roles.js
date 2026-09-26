@@ -1,6 +1,6 @@
 export const roleConfig = {
   admin: {
-    path: '/admin',
+    path: '/admin/login',
     short: 'ADMIN',
     title: 'Admin Portal',
     cardTitle: 'Admin Portal',

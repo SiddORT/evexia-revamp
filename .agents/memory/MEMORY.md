@@ -1,0 +1,1 @@
+- [Browser-local zone conflicts](browser-local-zone-conflicts.md) — reject stale or unreadable zone writes rather than risk overwriting newer browser data.

@@ -1,0 +1,609 @@
+EVEXIA ADMIN PORTAL — STRUCTURE & ZONE MASTER
+
+We are now moving to the Admin Portal of the EVEXIA Life Sciences application.
+
+IMPORTANT:
+This is an existing React JS project that you have already started.
+
+DO NOT rebuild the application from scratch.
+
+Before making changes:
+1. Inspect the existing project structure.
+2. Inspect all existing components.
+3. Identify reusable components already created.
+4. Reuse existing components wherever possible.
+5. Extend existing components when appropriate.
+6. Do NOT create duplicate components with different names for the same purpose.
+7. Maintain the existing EVEXIA design system, colors, typography and styling.
+
+==================================================
+TECHNOLOGY
+==================================================
+
+Use:
+
+- React JS
+- JavaScript ONLY
+- .js / .jsx files
+
+DO NOT use TypeScript.
+
+Follow strict, production-quality React coding standards.
+
+Use:
+- Functional components
+- React Hooks where appropriate
+- Proper component composition
+- Proper separation of concerns
+- Reusable components
+- Clean naming conventions
+- Small, focused components
+- No unnecessary duplication
+- No unnecessary inline logic
+- No huge monolithic components
+
+Do not introduce unnecessary libraries or dependencies.
+
+==================================================
+ADMIN PORTAL STRUCTURE
+==================================================
+
+Create the Admin Portal layout.
+
+The Admin portal should have:
+
+- Left sidebar
+- Top header
+- Main content area
+
+Overall structure:
+
+--------------------------------------------------
+| Sidebar | Top Header                           |
+|         |--------------------------------------|
+|         |                                      |
+|         | Main Content                         |
+|         |                                      |
+|         |                                      |
+--------------------------------------------------
+
+==================================================
+LEFT SIDEBAR
+==================================================
+
+Keep a persistent left sidebar for Admin.
+
+The sidebar should contain the Admin navigation.
+
+For now include:
+
+- Dashboard
+- Masters
+
+Masters should be expandable/collapsible.
+
+Under Masters:
+
+- Zone Master
+
+The sidebar should clearly indicate the currently active page.
+
+Use the existing navigation/sidebar components if they already exist.
+
+DO NOT create another sidebar component if one already exists.
+
+The sidebar should follow the existing EVEXIA red/orange/grey/white theme.
+
+==================================================
+TOP HEADER
+==================================================
+
+Keep the top header consistent across Admin pages.
+
+The top area should contain the logged-in user's profile information.
+
+Example:
+
+[ Profile Avatar ] [ Admin User ▼ ]
+
+When the profile area is clicked, open a dropdown.
+
+The dropdown should contain:
+
+- User information
+- Sign Out
+
+Example:
+
+-----------------------
+Admin User
+admin@evexia.com
+-----------------------
+Sign Out
+-----------------------
+
+Use the existing Dropdown / Menu component if one already exists.
+
+Do NOT create a new dropdown component if an existing reusable component can be used.
+
+Sign Out should be implemented as a UI action for now.
+
+Do not implement backend authentication/logout unless already available.
+
+==================================================
+DASHBOARD
+==================================================
+
+Keep:
+
+/admin
+
+as the Admin Dashboard.
+
+For now, the dashboard should be EMPTY.
+
+Do NOT add:
+
+- KPI cards
+- Charts
+- Statistics
+- Tables
+- Activity
+- Widgets
+
+Only show the appropriate page structure/title if needed.
+
+We will design the dashboard later.
+
+==================================================
+MASTERS
+==================================================
+
+Under:
+
+/admin/masters
+
+we will start with ONE master only:
+
+Zone Master
+
+Route:
+
+/admin/masters/zones
+
+Do not create other master screens yet.
+
+==================================================
+ZONE MASTER
+==================================================
+
+Create the Zone Master screen.
+
+Purpose:
+
+Manage zones used within EVEXIA.
+
+The Zone Master should allow Admin users to:
+
+- View zones
+- Search zones
+- Filter zones
+- Create a zone
+- Edit a zone
+- Delete a zone
+- Inactivate a zone
+
+==================================================
+ZONE DATA
+==================================================
+
+For now, the Zone Master has one main field:
+
+Zone Name
+
+Example:
+
+North Zone
+South Zone
+East Zone
+West Zone
+
+The table should display:
+
+1. Zone Name
+2. Status
+3. Created Details
+4. Updated Details
+5. Actions
+
+==================================================
+TABLE
+==================================================
+
+Create a professional reusable data table.
+
+Columns:
+
+| Zone Name | Status | Created Details | Updated Details | Actions |
+
+Created Details should show useful information such as:
+
+Created By
+Created Date/Time
+
+Updated Details should show:
+
+Updated By
+Updated Date/Time
+
+Use a clean compact presentation rather than making these columns unnecessarily wide.
+
+==================================================
+STATUS
+==================================================
+
+Zone status should support:
+
+Active
+Inactive
+
+Use the existing reusable Status Badge component if one exists.
+
+Do NOT create another status badge component.
+
+Active and Inactive should be visually distinguishable while remaining consistent with the EVEXIA color system.
+
+==================================================
+ACTIONS
+==================================================
+
+The Actions column should provide:
+
+- Edit
+- Delete
+- Inactivate
+
+For an inactive zone:
+
+- Show appropriate action such as Activate instead of Inactivate if appropriate.
+
+Use existing:
+
+- Buttons
+- Icon buttons
+- Dropdown/action menu
+- Confirmation modal
+
+wherever possible.
+
+Do not create duplicate components.
+
+==================================================
+SEARCH
+==================================================
+
+The Zone Master table must have search functionality.
+
+Provide a search input above the table.
+
+Search should allow searching by:
+
+Zone Name
+
+Use the existing Search component if available.
+
+==================================================
+FILTER
+==================================================
+
+Add filtering functionality.
+
+At minimum provide:
+
+Status
+
+Options:
+
+- All
+- Active
+- Inactive
+
+Use the existing reusable Select / Filter component if available.
+
+The search and filter controls should be placed in a clean toolbar above the table.
+
+Example:
+
+---------------------------------------------------------
+Zone Master
+
+[ Search Zone... ]     [ Status ▼ ]       [ + Add Zone ]
+---------------------------------------------------------
+
+[ Table ]
+---------------------------------------------------------
+
+==================================================
+ADD / EDIT ZONE
+==================================================
+
+Use a reusable form pattern.
+
+The form should contain:
+
+Zone Name
+Status (where appropriate)
+
+Use the existing Modal / Drawer / Form components if already available.
+
+Do not create a completely separate form system just for Zone Master.
+
+Validation:
+
+- Zone Name is required
+- Do not allow an empty zone name
+- Show a clear validation message
+
+For now, the implementation can use frontend/mock data if backend APIs are not connected.
+
+Structure the code so API integration can be added later without rewriting the UI.
+
+==================================================
+DELETE
+==================================================
+
+Delete should require confirmation.
+
+Example:
+
+"Are you sure you want to delete this zone?"
+
+Use the existing reusable confirmation dialog/modal.
+
+Do not immediately delete without confirmation.
+
+==================================================
+INACTIVATE
+==================================================
+
+Inactivate should also require confirmation.
+
+Example:
+
+"Are you sure you want to inactivate this zone?"
+
+After inactivation:
+
+Status → Inactive
+
+If appropriate, provide an Activate action for inactive records.
+
+==================================================
+REUSABLE COMPONENT REQUIREMENT
+==================================================
+
+THIS IS VERY IMPORTANT.
+
+Before creating ANY component:
+
+SEARCH THE EXISTING PROJECT.
+
+Reuse existing components wherever possible.
+
+For example, if the project already contains:
+
+- Sidebar
+- Header
+- Dropdown
+- Button
+- Input
+- Search
+- Select
+- Table
+- Modal
+- ConfirmationDialog
+- StatusBadge
+- PageHeader
+- FormField
+- Pagination
+
+USE THEM.
+
+Do NOT create:
+
+ZoneTable
+ZoneButton
+ZoneModal
+ZoneSearch
+ZoneStatusBadge
+
+if existing reusable components can handle these requirements.
+
+Instead compose the Zone Master page from the existing components.
+
+==================================================
+COMPONENT SEGREGATION
+==================================================
+
+Keep the code properly separated.
+
+Prefer a structure such as:
+
+src/
+  components/
+    ui/
+    navigation/
+    forms/
+    tables/
+
+  layouts/
+    AdminLayout/
+
+  pages/
+    admin/
+      Dashboard/
+      masters/
+        ZoneMaster/
+
+  features/
+    zones/
+
+  hooks/
+
+  services/
+
+  utils/
+
+  routes/
+
+Adapt this to the project's existing architecture rather than blindly
+creating a new folder structure.
+
+The important requirement is clean separation of responsibilities.
+
+==================================================
+SEPARATION OF CONCERNS
+==================================================
+
+Do not put everything inside ZoneMaster.jsx.
+
+For example:
+
+Page
+  ↓
+Zone Master UI
+  ↓
+Reusable Table / Form / Modal
+  ↓
+Hook for zone-related state
+  ↓
+Service/API layer
+
+Keep API communication separate from presentation.
+
+If APIs are not available yet, use mock/local data in a way that can easily be replaced by an API service later.
+
+==================================================
+STRICT REACT CODING STANDARDS
+==================================================
+
+Follow these rules:
+
+- JavaScript only
+- Functional components
+- Hooks instead of class components
+- Meaningful component names
+- Meaningful variable names
+- Avoid duplicated JSX
+- Avoid unnecessary state
+- Avoid unnecessary re-renders
+- Keep components focused
+- Keep business logic out of presentational components
+- Keep API calls out of UI components
+- Reuse shared components
+- Avoid deeply nested components where unnecessary
+- Avoid giant files
+- Avoid hardcoded repeated values
+- Use constants where appropriate
+- Keep styling consistent with the existing design system
+- Keep accessibility in mind
+- Use semantic HTML where appropriate
+
+Do not rewrite working existing components just for the sake of changing them.
+
+==================================================
+DESIGN
+==================================================
+
+Continue using the established EVEXIA visual language:
+
+- Red
+- Orange
+- White
+- Light Grey
+- Dark Grey
+
+Keep the Admin UI:
+
+- Professional
+- Clean
+- Modern
+- Enterprise-oriented
+- Healthcare / Life Sciences appropriate
+
+Do not introduce a completely different visual style.
+
+==================================================
+RESPONSIVE BEHAVIOR
+==================================================
+
+The Admin portal should work on:
+
+- Desktop
+- Tablet
+
+The sidebar should behave appropriately on smaller screens.
+
+The Zone Master table should remain usable on smaller screens.
+
+Use responsive table behavior rather than allowing the entire page to break horizontally.
+
+==================================================
+SCOPE
+==================================================
+
+FOR THIS TASK, ONLY IMPLEMENT:
+
+1. Admin layout
+2. Left sidebar
+3. Top header
+4. Profile dropdown
+5. Sign Out UI action
+6. Empty Admin Dashboard
+7. Masters navigation
+8. Zone Master
+9. Zone table
+10. Search
+11. Status filter
+12. Add Zone
+13. Edit Zone
+14. Delete Zone
+15. Inactivate / Activate Zone
+
+DO NOT IMPLEMENT OTHER MASTERS.
+
+DO NOT IMPLEMENT:
+
+- Orders
+- Inventory
+- Shipments
+- Accounts
+- Consumption
+- Purchases
+- Doctor management
+- MR management
+- Any other Admin modules
+
+Those will be implemented later.
+
+==================================================
+FINAL CHECK BEFORE COMPLETING
+==================================================
+
+Before considering this task complete:
+
+1. Verify that existing components have been reused.
+2. Check for duplicate components.
+3. Check that no TypeScript has been introduced.
+4. Check that JavaScript/React coding standards are followed.
+5. Check that the sidebar and header are reusable.
+6. Check that the Zone Master is not unnecessarily coupled to the layout.
+7. Check that search and filtering work.
+8. Check that Add/Edit/Delete/Inactivate interactions work.
+9. Check responsive behavior.
+10. Run the project's existing lint/build/test commands if available.
+
+Do not replace existing working components unless there is a clear reason.
+
+The goal is to establish a clean, reusable Admin portal foundation that we
+can extend module-by-module later.
