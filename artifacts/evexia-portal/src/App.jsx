@@ -14,6 +14,8 @@ import DoctorPaymentHistory from './pages/admin/DoctorPaymentHistory.jsx';
 import MasterExcelImportPage from './pages/admin/MasterExcelImportPage.jsx';
 import ProductCategoryMaster from './pages/admin/ProductCategoryMaster.jsx';
 import ProductCategoryFormPage from './pages/admin/ProductCategoryFormPage.jsx';
+import StorageLocationMaster from './pages/admin/StorageLocationMaster.jsx';
+import StorageLocationFormPage from './pages/admin/StorageLocationFormPage.jsx';
 import PatientMaster from './pages/admin/PatientMaster.jsx';
 import PatientFormPage from './pages/admin/PatientFormPage.jsx';
 import PatientImportPage from './pages/admin/PatientImportPage.jsx';
@@ -36,6 +38,9 @@ function App() {
       <Route path="/admin/masters/product-categories" component={ProductCategoryMaster} />
       <Route path="/admin/masters/product-categories/new">{() => <ProductCategoryFormPage />}</Route>
       <Route path="/admin/masters/product-categories/:id">{(params) => <ProductCategoryFormPage id={params.id} />}</Route>
+      <Route path="/admin/masters/storage-locations" component={StorageLocationMaster} />
+      <Route path="/admin/masters/storage-locations/new">{() => <StorageLocationFormPage />}</Route>
+      <Route path="/admin/masters/storage-locations/:id">{(params) => <StorageLocationFormPage id={params.id} />}</Route>
       <Route path="/admin/masters/patients" component={PatientMaster} />
       <Route path="/admin/masters/patients/import" component={PatientImportPage} />
       <Route path="/admin/masters/patients/new">{() => <PatientFormPage />}</Route>

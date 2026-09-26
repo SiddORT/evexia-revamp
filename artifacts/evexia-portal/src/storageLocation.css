@@ -1,0 +1,12 @@
+/* Storage Location Master extends the shared admin/category semantic styles. */
+.admin-storage-desktop .admin-table { min-width: 860px; }
+.admin-storage-desktop .admin-table td { vertical-align: top; line-height: 1.5; }
+.admin-storage-desktop .admin-table th:nth-child(3),
+.admin-storage-desktop .admin-table td:nth-child(3) { width: 30%; }
+.admin-storage-address { display: block; max-width: 440px; color: var(--admin-text-soft); white-space: pre-wrap; overflow-wrap: anywhere; }
+.admin-storage-mobile { display: none; }
+.admin-storage-form textarea.mr-form__control { min-height: 128px; }
+@media (max-width: 900px) {
+  .admin-storage-desktop { display: none; }
+  .admin-storage-mobile { display: grid; gap: 10px; padding: 12px; }
+}
