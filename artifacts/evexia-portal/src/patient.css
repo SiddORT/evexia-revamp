@@ -1,0 +1,46 @@
+/* Patient Master follows MR Master's spacing and Admin semantic theme tokens. */
+.patient-form .mr-form__body { min-height: 310px; }
+.patient-form__privacy {
+  margin: 0 0 18px;
+  padding: 11px 13px;
+  border-left: 3px solid var(--admin-warning);
+  background: var(--admin-state-warm);
+  color: var(--admin-text);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.patient-form__privacy strong { font-weight: 700; }
+.patient-form__age[readonly] {
+  background: var(--admin-table-head);
+  color: var(--admin-text-soft);
+  cursor: default;
+}
+.patient-form__block {
+  margin: 0 0 17px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--admin-danger);
+  background: var(--admin-state-soft);
+  color: var(--admin-text);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.patient-form__block p { margin: 0 0 9px; }
+.patient-form .mr-form__notice p { margin: 0 0 9px; }
+.patient-form .mr-form__notice p:last-child { margin-bottom: 0; }
+.patient-form .mr-form__notice .admin-button { margin-top: 4px; }
+.patient-reference { display: grid; gap: 4px; min-width: 140px; overflow-wrap: anywhere; }
+.patient-reference small { font-size: 11px; color: var(--admin-text-soft); }
+.patient-reference small.admin-mr-missing { color: var(--admin-danger); }
+.patient-import { padding: 24px; color: var(--admin-text); }
+.patient-import__intro { max-width: 760px; }
+.patient-import h2 { margin: 0 0 8px; font-size: 17px; }
+.patient-import p { color: var(--admin-text-soft); font-size: 13px; line-height: 1.6; }
+.patient-import__picker { display: grid; gap: 8px; margin: 24px 0; font-size: 13px; font-weight: 700; }
+.patient-import__picker input { max-width: 100%; }
+.patient-import__review { margin-top: 22px; }
+.patient-import__review .admin-table { min-width: 650px; }
+.patient-import__actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+@media (max-width: 600px) {
+  .patient-form .mr-form__body { min-height: 0; }
+  .patient-form__privacy { margin-bottom: 16px; }
+}
