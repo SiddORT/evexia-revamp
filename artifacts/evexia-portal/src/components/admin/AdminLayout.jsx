@@ -27,7 +27,7 @@ const MASTER_GROUPS = [
   ] },
   { label: 'Finance & Performance', links: [
     { label: 'Sales Target Master', href: '/admin/masters/sales-targets', testId: 'link-admin-sales-targets', Icon: Target },
-    { label: 'Opening Balance Master', href: '/admin/masters/opening-balances', testId: 'link-admin-opening-balances', Icon: Landmark, nested: true },
+    { label: 'Opening Balance', href: '/admin/masters/opening-balances', testId: 'link-admin-opening-balances', Icon: Landmark, nested: true },
   ] },
 ];
 
