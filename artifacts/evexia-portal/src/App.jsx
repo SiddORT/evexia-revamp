@@ -10,6 +10,7 @@ import MRMaster from './pages/admin/MRMaster.jsx';
 import MRFormPage from './pages/admin/MRFormPage.jsx';
 import DoctorMaster from './pages/admin/DoctorMaster.jsx';
 import DoctorFormPage from './pages/admin/DoctorFormPage.jsx';
+import DoctorPaymentHistory from './pages/admin/DoctorPaymentHistory.jsx';
 import MasterExcelImportPage from './pages/admin/MasterExcelImportPage.jsx';
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
       <Route path="/admin/masters/mrs/:id">{(params) => <MRFormPage id={params.id} />}</Route>
       <Route path="/admin/masters/doctors" component={DoctorMaster} />
       <Route path="/admin/masters/doctors/new">{() => <DoctorFormPage />}</Route>
+      <Route path="/admin/masters/doctors/:id/payments">{(params) => <DoctorPaymentHistory id={params.id} />}</Route>
       <Route path="/admin/masters/doctors/:id">{(params) => <DoctorFormPage id={params.id} />}</Route>
       <Route path="/admin/login">{() => <AuthPage role={roleConfig.admin} />}</Route>
       <Route path="/mr">{() => <AuthPage role={roleConfig.mr} />}</Route>

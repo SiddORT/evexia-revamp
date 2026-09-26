@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
-import { ChevronDown, CirclePower, Download, Filter, Mail, Pencil, Phone, Plus, Search, ShieldCheck, ShieldX, Upload, UsersRound } from 'lucide-react';
+import { ChevronDown, CirclePower, Download, Filter, Mail, Pencil, Phone, Plus, ReceiptText, Search, ShieldCheck, ShieldX, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -15,6 +15,11 @@ import '../../doctor-list.css';
 const cleanPhone = (value) => String(value || '').replace(/[^\d+]/g, '');
 const dialCodes = { IN: '+91', US: '+1', GB: '+44', AE: '+971' };
 const text = (value) => String(value ?? '').trim() || '—';
+const auditFormatter = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+function auditDetails(actor, at) {
+  const date = new Date(at);
+  return <span className="doctor-master__audit"><strong>{text(actor)}</strong><time dateTime={at}>{Number.isNaN(date.getTime()) ? '—' : auditFormatter.format(date)}</time></span>;
+}
 
 export default function DoctorMaster() {
   const [, navigate] = useLocation();
@@ -104,6 +109,7 @@ export default function DoctorMaster() {
   function actions(record, compact = false) {
     const suffix = `${compact ? 'mobile-' : ''}${record.id}`;
     return <div className="doctor-master__actions">
+      <button type="button" className="doctor-master__payment-action" aria-label={`Payment history for ${record.name}`} onClick={() => navigate(`/admin/masters/doctors/${encodeURIComponent(record.id)}/payments`)} data-testid={`button-payments-doctor-${suffix}`}><ReceiptText size={15} aria-hidden="true" /> Payment history</button>
       <button type="button" className="admin-icon-button" title="Edit doctor" aria-label={`Edit ${record.name}`} onClick={() => { clearFeedback(); navigate(`/admin/masters/doctors/${encodeURIComponent(record.id)}`); }} data-testid={`button-edit-doctor-${suffix}`}><Pencil size={16} aria-hidden="true" /></button>
       <button type="button" className="admin-icon-button" title={record.verification === 'verified' ? 'Unverify' : 'Verify'} aria-label={`${record.verification === 'verified' ? 'Unverify' : 'Verify'} ${record.name}`} onClick={() => openConfirmation({ type: 'verification', ids: [record.id], value: record.verification === 'verified' ? 'unverified' : 'verified' })} data-testid={`button-verification-doctor-${suffix}`}>{record.verification === 'verified' ? <ShieldX size={16} aria-hidden="true" /> : <ShieldCheck size={16} aria-hidden="true" />}</button>
       <button type="button" className="admin-icon-button" title={record.status === 'active' ? 'Inactivate' : 'Activate'} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} onClick={() => openConfirmation({ type: 'status', id: record.id, name: record.name, value: record.status === 'active' ? 'inactive' : 'active' })} data-testid={`button-toggle-doctor-${suffix}`}><CirclePower size={16} aria-hidden="true" /></button>
@@ -133,12 +139,14 @@ export default function DoctorMaster() {
     { key: 'select', label: <input type="checkbox" className="doctor-master__check" checked={allVisibleSelected} onChange={(event) => selectAll(event.target.checked)} aria-label="Select all visible doctors" data-testid="checkbox-select-all-doctors" />, render: (record) => <input type="checkbox" className="doctor-master__check" checked={selected.includes(record.id)} onChange={(event) => selectOne(record.id, event.target.checked)} aria-label={`Select ${record.name}`} data-testid={`checkbox-doctor-${record.id}`} /> },
     { key: 'serial', label: 'No.', render: (_, index) => index + 1 },
     { key: 'identity', label: 'Doctor / Contact', render: (record) => identity(record) },
+    { key: 'actions', label: 'Actions', render: (record) => actions(record) },
     { key: 'professional', label: 'Professional', render: professional },
     { key: 'assignment', label: 'MR / Zone', render: assignment },
     { key: 'address', label: 'Address', render: address },
     { key: 'verification', label: 'Verification', render: (record) => <span className={`doctor-master__verification${record.verification === 'verified' ? '' : ' doctor-master__verification--pending'}`} data-testid={`status-doctor-verification-${record.id}`}>{record.verification === 'verified' ? 'Verified' : 'Unverified'}</span> },
     { key: 'status', label: 'Status', render: (record) => <StatusBadge status={record.status} id={record.id} kind="doctor" /> },
-    { key: 'actions', label: 'Actions', render: (record) => actions(record) },
+    { key: 'created', label: 'Created details', render: (record) => auditDetails(record.createdBy, record.createdAt) },
+    { key: 'updated', label: 'Updated details', render: (record) => auditDetails(record.updatedBy, record.updatedAt) },
   ];
   const count = confirming?.ids?.length || 1;
   return <AdminLayout title="Doctor Master">
@@ -182,7 +190,7 @@ export default function DoctorMaster() {
             <div className="doctor-master__table"><DataTable columns={columns} rows={visible} rowKey={(record) => record.id} label="Doctor records" testIdPrefix="doctor" /></div>
             <div className="doctor-master__card-list" role="list" aria-label="Doctor records">{visible.map((record) => <article role="listitem" className="doctor-master__card" key={record.id} data-testid={`card-doctor-${record.id}`}>
               <div className="doctor-master__card-head"><div><h2>{record.name}</h2><p>{text(record.qualification)} · {text(record.registrationNumber)}</p></div><input type="checkbox" className="doctor-master__check" checked={selected.includes(record.id)} onChange={(event) => selectOne(record.id, event.target.checked)} aria-label={`Select ${record.name}`} data-testid={`checkbox-mobile-doctor-${record.id}`} /></div>
-              <div className="doctor-master__card-body"><div><small>Contact</small>{identity(record, true)}</div><div><small>Practice</small>{professional(record)}</div><div><small>MR / Zone</small>{assignment(record)}</div><div><small>Address</small>{address(record)}</div></div>
+               <div className="doctor-master__card-body"><div><small>Contact</small>{identity(record, true)}</div><div><small>Practice</small>{professional(record)}</div><div><small>MR / Zone</small>{assignment(record)}</div><div><small>Address</small>{address(record)}</div><div><small>Created details</small>{auditDetails(record.createdBy, record.createdAt)}</div><div><small>Updated details</small>{auditDetails(record.updatedBy, record.updatedAt)}</div></div>
               <div className="doctor-master__card-foot"><StatusBadge status={record.status} id={record.id} kind="doctor-mobile" /><span className={`doctor-master__verification${record.verification === 'verified' ? '' : ' doctor-master__verification--pending'}`}>{record.verification === 'verified' ? 'Verified' : 'Unverified'}</span>{actions(record, true)}</div>
             </article>)}</div>
           </> : <div className="admin-empty" data-testid="status-doctors-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{records.length ? 'No matching doctors' : 'No doctor records yet'}</strong><p>{records.length ? 'Try a different search or reset the filters.' : 'Add a doctor to start your browser-local directory.'}</p>{records.length > 0 && hasFilters && <button className="doctor-master__text-button" type="button" onClick={resetFilters} data-testid="button-reset-empty-doctor-filters">Reset filters</button>}</div>}

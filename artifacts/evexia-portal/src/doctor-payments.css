@@ -1,0 +1,65 @@
+/* Doctor payment history follows the Admin surfaces and table conventions. */
+.doctor-payments { min-width: 0; }
+.doctor-payments__head-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.doctor-payments__context { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 19px 20px; margin-bottom: 14px; }
+.doctor-payments__context-label { margin: 0 0 5px; color: var(--admin-muted); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.doctor-payments__context h2 { margin: 0; color: var(--admin-text); font-size: 18px; line-height: 1.3; overflow-wrap: anywhere; }
+.doctor-payments__context p:last-child { margin: 5px 0 0; color: var(--admin-text-soft); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.doctor-payments__context-note { align-self: center; max-width: 320px; color: var(--admin-text-soft); font-size: 11px; line-height: 1.55; }
+.doctor-payments__notice { margin-bottom: 14px; }
+.doctor-payments__totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.doctor-payments__total { min-width: 0; padding: 17px 19px; }
+.doctor-payments__total span { display: block; color: var(--admin-text-soft); font-size: 11px; font-weight: 700; }
+.doctor-payments__total strong { display: block; margin-top: 8px; color: var(--admin-text); font-family: var(--font-display); font-size: clamp(20px, 2.4vw, 28px); font-weight: 600; letter-spacing: -.025em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.doctor-payments__total--outstanding { border-left: 3px solid var(--admin-primary); }
+.doctor-payments__filters { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 11px; padding: 16px; border-bottom: 1px solid var(--admin-border); }
+.doctor-payments__filters .admin-filter { min-width: 155px; }
+.doctor-payments__filters input { width: 100%; min-width: 0; padding: 0 10px; color-scheme: inherit; }
+.doctor-payments__filters .admin-button { margin-bottom: 0; }
+.doctor-payments__filter-meta { margin: 0 0 0 auto; color: var(--admin-text-soft); font-size: 11px; line-height: 40px; }
+.doctor-payments__validation { margin: 12px 16px; }
+.doctor-payments__table .admin-table { min-width: 850px; }
+.doctor-payments__table .admin-table th:first-child,
+.doctor-payments__table .admin-table td:first-child { width: auto; text-align: left; }
+.doctor-payments__table .admin-table th:nth-child(4),
+.doctor-payments__table .admin-table th:nth-child(5),
+.doctor-payments__table .admin-table th:nth-child(6),
+.doctor-payments__table .admin-table td:nth-child(4),
+.doctor-payments__table .admin-table td:nth-child(5),
+.doctor-payments__table .admin-table td:nth-child(6) { text-align: right; }
+.doctor-payments__table .admin-table td { line-height: 1.45; }
+.doctor-payments__date, .doctor-payments__amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.doctor-payments__reference { display: grid; gap: 3px; min-width: 110px; overflow-wrap: anywhere; }
+.doctor-payments__reference strong { font-weight: 700; }
+.doctor-payments__reference small { color: var(--admin-muted); font-size: 11px; }
+.doctor-payments__mr { display: grid; gap: 3px; min-width: 120px; overflow-wrap: anywhere; }
+.doctor-payments__mr small { color: var(--admin-muted); font-size: 11px; }
+.doctor-payments__status { display: inline-flex; padding: 5px 9px; border-radius: 20px; background: var(--admin-badge-inactive-bg); color: var(--admin-badge-inactive-text); font-size: 10px; font-weight: 700; text-transform: capitalize; }
+.doctor-payments__card-list { display: none; }
+.doctor-payments__card { border: 1px solid var(--admin-border); border-radius: 9px; background: var(--admin-chrome); overflow: hidden; }
+.doctor-payments__card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 13px; }
+.doctor-payments__card-head strong { display: block; color: var(--admin-text); font-size: 13px; overflow-wrap: anywhere; }
+.doctor-payments__card-head small { display: block; margin-top: 4px; color: var(--admin-text-soft); font-size: 11px; }
+.doctor-payments__card dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 13px; margin: 0; border-top: 1px solid var(--admin-border); }
+.doctor-payments__card dt { margin-bottom: 4px; color: var(--admin-muted); font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.doctor-payments__card dd { margin: 0; color: var(--admin-text); font-size: 12px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.doctor-payments__recovery { padding: 32px 22px; }
+.doctor-payments__recovery h2 { margin: 0 0 7px; font-size: 18px; }
+.doctor-payments__recovery p { max-width: 560px; margin: 0; color: var(--admin-text-soft); font-size: 13px; line-height: 1.6; }
+.doctor-payments__recovery-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.doctor-payments button:focus-visible, .doctor-payments a:focus-visible, .doctor-payments input:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+@media (max-width: 960px) {
+  .doctor-payments__table { display: none; }
+  .doctor-payments__card-list { display: grid; gap: 9px; padding: 12px; }
+}
+@media (max-width: 600px) {
+  .doctor-payments__head-actions, .doctor-payments__head-actions .admin-button { width: 100%; }
+  .doctor-payments__context { padding: 16px; }
+  .doctor-payments__totals { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .doctor-payments__total { padding: 12px 15px; }
+  .doctor-payments__total strong { margin-top: 4px; }
+  .doctor-payments__filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .doctor-payments__filters .admin-filter { min-width: 0; }
+  .doctor-payments__filters .admin-button, .doctor-payments__filter-meta { grid-column: 1 / -1; width: 100%; }
+  .doctor-payments__filter-meta { line-height: 1.4; }
+}

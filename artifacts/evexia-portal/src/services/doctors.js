@@ -14,7 +14,9 @@ const OPTIONAL = ['alternatePhone', 'email', 'dateOfJoining', 'clinicName', 'gst
 const STRING_FIELDS = [...REQUIRED.filter((key) => !['orderDiscount', 'daysLimit', 'paymentLimit'].includes(key)), ...OPTIONAL];
 const NUMBER_FIELDS = ['orderDiscount', 'daysLimit', 'paymentLimit'];
 const FIELDS = [...REQUIRED, ...OPTIONAL];
-const STORED = [...FIELDS, 'verification', 'id', 'createdAt', 'updatedAt'];
+const LEGACY_STORED = [...FIELDS, 'verification', 'id', 'createdAt', 'updatedAt'];
+const STORED = [...LEGACY_STORED, 'createdBy', 'updatedBy'];
+const ADMIN_NAME = 'Admin User';
 const own = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 const normalized = (value) => value.trim().toLocaleLowerCase();
 const validDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value)
@@ -108,7 +110,9 @@ function sampleDoctors(mrs) {
       drugLicenceNumber: '',
       addressLine2: '',
       verification: example.verification,
+       createdBy: ADMIN_NAME,
       createdAt: at,
+       updatedBy: ADMIN_NAME,
       updatedAt: at,
     };
   });
@@ -147,7 +151,9 @@ function read() {
   if (!Array.isArray(parsed) || parsed.some((record) =>
     !record || typeof record !== 'object' || Array.isArray(record)
     || Object.keys(record).some((key) => !STORED.includes(key))
-    || !STORED.every((key) => own(record, key))
+     || !LEGACY_STORED.every((key) => own(record, key))
+     || own(record, 'createdBy') !== own(record, 'updatedBy')
+     || (own(record, 'createdBy') && ![record.createdBy, record.updatedBy].every((name) => typeof name === 'string' && name.trim()))
     || typeof record.id !== 'string' || !record.id
     || !['verified', 'unverified'].includes(record.verification)
     || ![record.createdAt, record.updatedAt].every((date) => typeof date === 'string' && !Number.isNaN(Date.parse(date)))
@@ -158,7 +164,9 @@ function read() {
     || new Set(parsed.map((record) => normalized(record.registrationNumber))).size !== parsed.length) {
     invalidSavedData();
   }
-  return parsed;
+   // Legacy records had timestamps but no actor names. Normalize in memory;
+   // only a guarded user edit persists the labels, never an automatic migration.
+   return parsed.map((record) => own(record, 'createdBy') ? record : { ...record, createdBy: ADMIN_NAME, updatedBy: ADMIN_NAME });
 }
 
 export function loadDoctors() {
@@ -217,19 +225,19 @@ export function createDoctor(records, mrs, values) {
   const fields = checkedFields(records, mrs, values);
   const now = new Date().toISOString();
   const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `doctor-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  return save([{ ...fields, verification: 'unverified', id, createdAt: now, updatedAt: now }, ...records], records, mrs);
+   return save([{ ...fields, verification: 'unverified', id, createdBy: ADMIN_NAME, createdAt: now, updatedBy: ADMIN_NAME, updatedAt: now }, ...records], records, mrs);
 }
 
 export function updateDoctor(records, mrs, id, values) {
   if (!records.some((record) => record.id === id)) fail('This doctor is no longer available.');
   const fields = checkedFields(records, mrs, values, id);
-  return save(records.map((record) => record.id === id ? { ...record, ...fields, updatedAt: new Date().toISOString() } : record), records, mrs);
+   return save(records.map((record) => record.id === id ? { ...record, ...fields, updatedBy: ADMIN_NAME, updatedAt: new Date().toISOString() } : record), records, mrs);
 }
 
 export function setDoctorStatus(records, mrs, id, status) {
   if (!['active', 'inactive'].includes(status)) fail('Choose a valid doctor status.');
   if (!records.some((record) => record.id === id)) fail('This doctor is no longer available.');
-  return save(records.map((record) => record.id === id ? { ...record, status, updatedAt: new Date().toISOString() } : record), records, mrs);
+   return save(records.map((record) => record.id === id ? { ...record, status, updatedBy: ADMIN_NAME, updatedAt: new Date().toISOString() } : record), records, mrs);
 }
 
 export function setDoctorVerification(records, mrs, ids, verification) {
@@ -238,7 +246,7 @@ export function setDoctorVerification(records, mrs, ids, verification) {
     fail('One or more selected doctors are no longer available.');
   }
   const selected = new Set(ids);
-  return save(records.map((record) => selected.has(record.id) ? { ...record, verification, updatedAt: new Date().toISOString() } : record), records, mrs);
+   return save(records.map((record) => selected.has(record.id) ? { ...record, verification, updatedBy: ADMIN_NAME, updatedAt: new Date().toISOString() } : record), records, mrs);
 }
 
 export function shiftDoctorsMR(records, mrs, ids, mrId) {
@@ -248,7 +256,7 @@ export function shiftDoctorsMR(records, mrs, ids, mrId) {
   const mr = mrs.find((item) => item.id === mrId);
   if (!mr || mr.status !== 'active') fail('Choose an active saved MR.');
   const selected = new Set(ids);
-  return save(records.map((record) => selected.has(record.id) ? { ...record, mrId, updatedAt: new Date().toISOString() } : record), records, mrs);
+   return save(records.map((record) => selected.has(record.id) ? { ...record, mrId, updatedBy: ADMIN_NAME, updatedAt: new Date().toISOString() } : record), records, mrs);
 }
 
 export const DOCTOR_CSV_COLUMNS = [
