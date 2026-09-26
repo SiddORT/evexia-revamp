@@ -1,0 +1,64 @@
+/* Vendor Master follows the Admin ledger language in every appearance. */
+.admin-vendor-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.admin-vendor-desktop .admin-table { min-width: 1470px; }
+.admin-vendor-desktop .admin-table td { vertical-align: top; line-height: 1.45; }
+.admin-vendor-desktop .admin-table th,
+.admin-vendor-desktop .admin-table td { white-space: nowrap; }
+.admin-vendor-desktop .admin-table th:nth-child(2),
+.admin-vendor-desktop .admin-table td:nth-child(2) { min-width: 175px; white-space: normal; }
+.admin-vendor-desktop .admin-table th:nth-child(4),
+.admin-vendor-desktop .admin-table td:nth-child(4) { min-width: 230px; max-width: 320px; white-space: normal; }
+.admin-vendor-name { display: block; color: var(--admin-text); font-weight: 700; overflow-wrap: anywhere; }
+.admin-vendor-sample { display: inline-block; margin-top: 4px; padding: 2px 6px; border-radius: 4px; background: var(--admin-table-head); color: var(--admin-text-soft); font-size: 10px; font-weight: 700; }
+.admin-vendor-address { white-space: pre-line; overflow-wrap: anywhere; }
+.admin-vendor-link { color: var(--admin-accent); text-decoration: none; overflow-wrap: anywhere; }
+.admin-vendor-link:hover { text-decoration: underline; }
+.admin-vendor-audit { display: grid; gap: 3px; min-width: 118px; font-size: 11px; }
+.admin-vendor-audit strong { color: var(--admin-text); font-weight: 600; }
+.admin-vendor-audit time, .admin-vendor-audit span { color: var(--admin-text-soft); }
+.admin-vendor-mobile { display: none; }
+.admin-vendor-card { min-width: 0; border: 1px solid var(--admin-border); border-radius: 9px; background: var(--admin-chrome); overflow: hidden; }
+.admin-vendor-card__head { display: flex; justify-content: space-between; align-items: start; gap: 12px; padding: 14px; }
+.admin-vendor-card__head small { display: block; margin-bottom: 4px; color: var(--admin-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.admin-vendor-card__head h2 { margin: 0; color: var(--admin-text); font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
+.admin-vendor-card__meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 13px 14px; border-top: 1px solid var(--admin-border); }
+.admin-vendor-card__meta div { min-width: 0; }
+.admin-vendor-card__meta dt { margin-bottom: 3px; color: var(--admin-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.admin-vendor-card__meta dd { margin: 0; color: var(--admin-text); font-size: 12px; overflow-wrap: anywhere; }
+.admin-vendor-card__meta .admin-vendor-audit { min-width: 0; }
+.admin-vendor-card__action { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; min-height: 42px; border: 0; border-top: 1px solid var(--admin-border); background: transparent; color: var(--admin-accent); font-size: 12px; font-weight: 700; cursor: pointer; }
+.admin-vendor-card__action:hover, .admin-vendor-card__action:focus-visible { background: var(--admin-state-soft); }
+.admin-vendor-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.admin-vendor-field { min-width: 0; display: grid; align-content: start; gap: 6px; color: var(--admin-text); font-size: 12px; font-weight: 700; }
+.admin-vendor-field--wide { grid-column: 1 / -1; }
+.admin-vendor-field input, .admin-vendor-field textarea { box-sizing: border-box; width: 100%; min-height: 40px; padding: 10px 12px; border: 1px solid var(--admin-border); border-radius: 7px; outline: none; background: var(--admin-surface); color: var(--admin-text); font: inherit; font-weight: 400; }
+.admin-vendor-field textarea { min-height: 76px; resize: vertical; }
+.admin-vendor-field input:focus, .admin-vendor-field textarea:focus, .admin-vendor-import input:focus-visible { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
+.admin-vendor-field [aria-invalid="true"] { border-color: var(--admin-danger); }
+.admin-vendor-field__error { color: var(--admin-danger); font-size: 11px; font-weight: 500; }
+.admin-vendor-form__feedback { grid-column: 1 / -1; margin: 0; }
+.admin-vendor-import { display: grid; gap: 14px; color: var(--admin-text); font-size: 12px; }
+.admin-vendor-import p { margin: 0; line-height: 1.5; }
+.admin-vendor-import__guide { padding: 12px 14px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-table-head); line-height: 1.5; }
+.admin-vendor-import__guide strong { display: block; margin-bottom: 4px; }
+.admin-vendor-import__file { display: grid; gap: 7px; font-weight: 700; }
+.admin-vendor-import__file input { box-sizing: border-box; width: 100%; padding: 10px; border: 1px dashed var(--admin-border); border-radius: 7px; background: var(--admin-surface); color: var(--admin-text); font: inherit; }
+.admin-vendor-import__file input::file-selector-button { margin-right: 10px; padding: 7px 10px; border: 1px solid var(--admin-border); border-radius: 6px; background: var(--admin-table-head); color: var(--admin-text); font: inherit; font-weight: 700; cursor: pointer; }
+.admin-vendor-import__rows { display: grid; gap: 7px; max-height: 310px; overflow: auto; }
+.admin-vendor-import__row { padding: 10px 12px; border: 1px solid var(--admin-border); border-radius: 7px; overflow-wrap: anywhere; }
+.admin-vendor-import__row--error { border-color: var(--admin-danger); }
+.admin-vendor-import__row summary { cursor: pointer; font-weight: 700; }
+.admin-vendor-import__row dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 10px 0 0; }
+.admin-vendor-import__row dt { color: var(--admin-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.admin-vendor-import__row dd { margin: 2px 0 0; font-size: 11px; white-space: pre-wrap; }
+.admin-vendor-import__row ul { margin: 8px 0 0; padding-left: 18px; color: var(--admin-danger); }
+@media (max-width: 1050px) {
+  .admin-vendor-desktop { display: none; }
+  .admin-vendor-mobile { display: grid; gap: 10px; padding: 12px; }
+}
+@media (max-width: 600px) {
+  .admin-vendor-actions { width: 100%; }
+  .admin-vendor-actions .admin-button { flex: 1 1 auto; }
+  .admin-vendor-form, .admin-vendor-import__row dl { grid-template-columns: minmax(0, 1fr); }
+  .admin-vendor-card__meta { grid-template-columns: minmax(0, 1fr); }
+}

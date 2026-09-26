@@ -24,6 +24,7 @@ import PatientImportPage from './pages/admin/PatientImportPage.jsx';
 import AllergenMaster from './pages/admin/AllergenMaster.jsx';
 import AllergenFormPage from './pages/admin/AllergenFormPage.jsx';
 import PatientDosageHistory from './pages/admin/PatientDosageHistory.jsx';
+import VendorMaster from './pages/admin/VendorMaster.jsx';
 
 function App() {
   return (
@@ -52,6 +53,7 @@ function App() {
       <Route path="/admin/masters/allergens" component={AllergenMaster} />
       <Route path="/admin/masters/allergens/new">{() => <AllergenFormPage />}</Route>
       <Route path="/admin/masters/allergens/:id">{(params) => <AllergenFormPage id={params.id} />}</Route>
+      <Route path="/admin/masters/vendors" component={VendorMaster} />
       <Route path="/admin/masters/patients" component={PatientMaster} />
       <Route path="/admin/masters/patients/import" component={PatientImportPage} />
       <Route path="/admin/masters/patients/new">{() => <PatientFormPage />}</Route>
