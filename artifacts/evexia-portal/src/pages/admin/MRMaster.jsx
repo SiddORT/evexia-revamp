@@ -171,9 +171,23 @@ export default function MRMaster() {
       </>}
     </section>
     {confirming && <ConfirmationDialog title={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} MR?`} description={`Change “${confirming.name}” to ${confirming.status === 'active' ? 'inactive' : 'active'}? This only changes this browser-local preview record; it does not control login access.`} actionLabel={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} MR`} onConfirm={toggle} onClose={() => setConfirming(null)} error={actionError} />}
-    {doctorView && <Dialog title={`Doctors for ${doctorView.record.name}`} eyebrow="MR Master" onClose={() => setDoctorView(null)}>
+    {doctorView && <Dialog title={`Doctors for ${doctorView.record.name}`} eyebrow="MR Master" className="admin-mr-doctors-dialog" onClose={() => setDoctorView(null)}>
       {doctorView.error ? <div className="admin-feedback admin-feedback--error" role="alert">{doctorView.error}</div> : doctorView.doctors.length
-        ? <ul className="admin-mr-doctors">{doctorView.doctors.map((doctor) => <li key={doctor.id}><strong>{doctor.name}</strong><span>Clinic: {doctor.clinicName || 'Not provided'}</span><StatusBadge status={doctor.status} /></li>)}</ul>
+        ? <div className="admin-mr-doctors-table">
+          <p className="admin-mr-doctors-table__count" data-testid="text-mr-doctor-count">{doctorView.doctors.length} {doctorView.doctors.length === 1 ? 'doctor' : 'doctors'} assigned</p>
+          <DataTable
+            columns={[
+              { key: 'doctor', label: 'Doctor / registration', render: (doctor) => <span className="admin-mr-doctors-table__doctor"><strong>{doctor.name}</strong><small>{doctor.registrationNumber}</small></span> },
+              { key: 'clinic', label: 'Clinic', render: (doctor) => doctor.clinicName || 'Not provided' },
+              { key: 'phone', label: 'Phone', render: (doctor) => <a href={`tel:${cleanPhone(doctor.phone)}`} data-testid={`link-phone-doctor-${doctor.id}`}>{doctor.phone}</a> },
+              { key: 'status', label: 'Status', render: (doctor) => <StatusBadge status={doctor.status} /> },
+            ]}
+            rows={doctorView.doctors}
+            rowKey={(doctor) => doctor.id}
+            label={`Doctors assigned to ${doctorView.record.name}`}
+            testIdPrefix="assigned-doctor"
+          />
+        </div>
         : <p>No doctors are currently assigned to this MR.</p>}
     </Dialog>}
   </AdminLayout>;

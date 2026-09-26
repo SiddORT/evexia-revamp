@@ -186,10 +186,17 @@
 .admin-mr-card__body dd { margin: 3px 0 0; overflow-wrap: anywhere; }
 .admin-mr-card__action { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .admin-mr-card__action { text-decoration: none; }
-.admin-mr-doctors { list-style: none; display: grid; gap: 10px; margin: 18px 0 0; padding: 0; }
-.admin-mr-doctors li { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; padding: 12px; border: 1px solid var(--admin-border); border-radius: 8px; }
-.admin-mr-doctors li strong { min-width: 100%; }
-.admin-mr-doctors li span:not(.admin-badge) { color: var(--admin-text-soft); font-size: 12px; overflow-wrap: anywhere; }
+.admin-mr-doctors-dialog { width: min(100%, 760px); }
+.admin-mr-doctors-table { margin-top: 20px; }
+.admin-mr-doctors-table__count { margin: 0 0 10px; color: var(--admin-text-soft); font-size: 12px; }
+.admin-mr-doctors-table .admin-table-scroll { border: 1px solid var(--admin-border); border-radius: 8px; }
+.admin-mr-doctors-table .admin-table { min-width: 610px; }
+.admin-mr-doctors-table .admin-table th:first-child,
+.admin-mr-doctors-table .admin-table td:first-child { width: auto; text-align: left; }
+.admin-mr-doctors-table .admin-table td { vertical-align: middle; overflow-wrap: anywhere; }
+.admin-mr-doctors-table .admin-table a { color: var(--admin-accent); }
+.admin-mr-doctors-table__doctor { display: grid; gap: 4px; }
+.admin-mr-doctors-table__doctor small { color: var(--admin-text-soft); }
 
 @media (max-width: 900px) {
   .admin-mr-desktop { display: none; }
