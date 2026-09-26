@@ -47,7 +47,7 @@
 }
 
 /* Read-only dosage reference. Admin semantic tokens keep all appearances aligned. */
-.patient-dosage { max-width: 1180px; margin: 0 auto; color: var(--admin-text); }
+.patient-dosage { width: 100%; color: var(--admin-text); }
 .patient-dosage__head { margin-bottom: 24px; }
 .patient-dosage__head .admin-button { flex: none; }
 .patient-dosage__notice { display: flex; align-items: flex-start; gap: 13px; padding: 15px 18px; margin-bottom: 20px; border: 1px solid var(--admin-border); border-left: 3px solid var(--admin-primary); border-radius: 9px; background: var(--admin-info-soft); font-size: 12px; line-height: 1.55; }
