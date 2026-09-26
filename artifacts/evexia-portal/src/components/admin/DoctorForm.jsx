@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Info } from 'lucide-react';
 import '../../doctor-form.css';
 
 const FIELDS = [
@@ -88,6 +89,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('identity');
+  const [daysLimitHelpOpen, setDaysLimitHelpOpen] = useState(false);
   const [pinState, setPinState] = useState({ status: 'idle', localities: [], error: '' });
   const [selectedLocality, setSelectedLocality] = useState('');
   const formRef = useRef(null);
@@ -174,7 +176,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
     const errorId = `doctor-${key}-error`;
     const hintId = `doctor-${key}-hint`;
     const id = `doctor-${key}`;
-    const describedBy = [errors[key] && errorId, hint && hintId].filter(Boolean).join(' ') || undefined;
+    const describedBy = [errors[key] && errorId, hint && hintId, key === 'daysLimit' && daysLimitHelpOpen && 'doctor-daysLimit-help'].filter(Boolean).join(' ') || undefined;
     const common = {
       id, name: key, className: 'doctor-form__control', value: values[key],
       onChange: (event) => change(key, event.target.value), autoComplete: autoComplete || 'off',
@@ -197,7 +199,17 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
       </div>;
     }
     return <div className={`doctor-form__field${span ? ' doctor-form__field--wide' : ''}`} key={key}>
-      <label className="doctor-form__label" htmlFor={id}>{label} {REQUIRED.has(key) && <span className="doctor-form__required" aria-hidden="true">*</span>}</label>
+      {key === 'daysLimit' ? <div className="doctor-form__label-row">
+        <label className="doctor-form__label" htmlFor={id}>{label}</label>
+        <button type="button" className="doctor-form__info-button" aria-label="About Days Limit" aria-expanded={daysLimitHelpOpen}
+          aria-controls="doctor-daysLimit-help" aria-describedby={daysLimitHelpOpen ? 'doctor-daysLimit-help' : undefined}
+          onClick={() => setDaysLimitHelpOpen((open) => !open)}
+          onKeyDown={(event) => { if (event.key === 'Escape' && daysLimitHelpOpen) { event.preventDefault(); setDaysLimitHelpOpen(false); } }}
+          data-testid="button-doctor-daysLimit-info"><Info size={16} aria-hidden="true" /></button>
+      </div> : <label className="doctor-form__label" htmlFor={id}>{label} {REQUIRED.has(key) && <span className="doctor-form__required" aria-hidden="true">*</span>}</label>}
+      {key === 'daysLimit' && <p id="doctor-daysLimit-help" className="doctor-form__info-text" role="status" hidden={!daysLimitHelpOpen}>
+        New orders from this doctor will not be accepted if payment remains overdue beyond this days limit.
+      </p>}
       {input}
       {hint && <p id={hintId} className="doctor-form__hint">{hint}</p>}
       {key === 'phone' && errors.dialCountry && <p className="doctor-form__error" role="alert">{errors.dialCountry}</p>}
