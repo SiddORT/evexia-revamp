@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
-import { CirclePower, Pencil, Plus, Search, Trash2, MapPinned, Upload } from 'lucide-react';
+import { CirclePower, Download, Pencil, Plus, Search, Trash2, MapPinned, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import ZoneForm from '../../components/admin/ZoneForm.jsx';
-import MasterImportDialog from '../../components/admin/MasterImportDialog.jsx';
 import useTablePagination from '../../hooks/useTablePagination.js';
 import useZones from '../../hooks/useZones.js';
+import { exportZoneCSV, loadZones } from '../../services/zones.js';
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 function details(by, at) {
@@ -19,13 +19,12 @@ function details(by, at) {
 
 export default function ZoneMaster() {
   const [, navigate] = useLocation();
-  const { zones, error, feedback, clearFeedback, retry, add, edit, remove, changeStatus, importRows } = useZones();
+  const { zones, error, feedback, clearFeedback, retry, add, edit, remove, changeStatus } = useZones();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [editing, setEditing] = useState(null);
   const [confirming, setConfirming] = useState(null);
   const [actionError, setActionError] = useState('');
-  const [importing, setImporting] = useState(false);
   const [cardView, setCardView] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches);
   useEffect(() => {
     const media = window.matchMedia('(max-width: 900px)');
@@ -58,6 +57,27 @@ export default function ZoneMaster() {
     setConfirming({ zone, type });
   }
 
+  function exportVisible() {
+    if (error || !visibleZones.length) return;
+    setActionError('');
+    try {
+      if (JSON.stringify(loadZones()) !== JSON.stringify(zones)) {
+        setActionError('Zones changed in another tab. Refresh records before exporting.');
+        return;
+      }
+      const url = URL.createObjectURL(new Blob([exportZoneCSV(visibleZones)], { type: 'text/csv;charset=utf-8' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'evexia-zone-master.csv';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (cause) {
+      setActionError(cause.message || 'CSV export failed. Refresh records and try again.');
+    }
+  }
+
   function renderActions(zone, mobile = false) {
     const toggleLabel = zone.status === 'active' ? 'Inactivate' : 'Activate';
     return <div className={mobile ? 'admin-zone-card__actions' : 'admin-table__actions'}>
@@ -88,11 +108,12 @@ export default function ZoneMaster() {
     <AdminLayout title="Zone Master">
       <div className="admin-page-head">
         <div><p className="admin-page-head__eyebrow">Masters / Geography</p><h1>Zone Master</h1><p className="admin-page-head__description">Manage the zones used across your EVEXIA workspace.</p></div>
-         <div className="admin-mr-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/zone')} data-testid="button-import-zone-excel"><Upload size={16} aria-hidden="true" /> Import Excel</button>
-         <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error)} onClick={() => { clearFeedback(); setImporting(true); }} data-testid="button-import-zones">Import CSV</button>
+          <div className="admin-mr-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/zone')} data-testid="button-import-zones"><Upload size={16} aria-hidden="true" /> Import data</button>
+          <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || !visibleZones.length} onClick={exportVisible} data-testid="button-export-zones"><Download size={16} aria-hidden="true" /> Export data</button>
          <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); setEditing('new'); }} data-testid="button-add-zone"><Plus size={16} aria-hidden="true" /> Add zone</button></div>
       </div>
       {feedback && <div className="admin-feedback" role="status" data-testid="status-zone-feedback">{feedback}</div>}
+      {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-zone-action-error">{actionError}</div>}
       <section className="admin-panel" aria-label="Zone list">
         <div className="admin-toolbar">
           <div className="admin-toolbar__fields">
@@ -140,7 +161,6 @@ export default function ZoneMaster() {
       </section>
       {editing && <ZoneForm zone={editing === 'new' ? null : editing} onSave={save} onClose={() => setEditing(null)} />}
       {confirming && <ConfirmationDialog title={`${actionName} zone?`} description={`Are you sure you want to ${actionName.toLowerCase()} “${confirming.zone.name}”?${confirming.type === 'delete' ? ' This cannot be undone.' : ''}`} actionLabel={`${actionName} zone`} destructive={confirming.type === 'delete'} onConfirm={confirmAction} onClose={() => setConfirming(null)} error={actionError} />}
-      {importing && <MasterImportDialog kind="zone" onImport={importRows} onClose={() => setImporting(false)} />}
     </AdminLayout>
   );
 }

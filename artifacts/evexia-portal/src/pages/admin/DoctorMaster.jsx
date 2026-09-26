@@ -147,8 +147,8 @@ export default function DoctorMaster() {
         <div><p className="admin-page-head__eyebrow">Masters / Care network</p><h1>Doctor Master</h1><p className="admin-page-head__description">Profiles, territories and verification in one working list. Changes are saved in this browser.</p></div>
         <div className="doctor-master__head-actions">
           <button type="button" className="admin-button admin-button--secondary" onClick={() => { retry(); setSelected([]); closeConfirmation(); }} data-testid="button-refresh-doctors">Refresh records</button>
-          <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || !visible.length} onClick={exportVisible} data-testid="button-export-doctors"><Download size={16} aria-hidden="true" /> Export CSV</button>
-          <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/doctor')} data-testid="button-import-doctor-excel"><Upload size={16} aria-hidden="true" /> Import Excel</button>
+          <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/doctor')} data-testid="button-import-doctors"><Upload size={16} aria-hidden="true" /> Import data</button>
+          <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || !visible.length} onClick={exportVisible} data-testid="button-export-doctors"><Download size={16} aria-hidden="true" /> Export data</button>
           <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate('/admin/masters/doctors/new'); }} data-testid="button-add-doctor"><Plus size={16} aria-hidden="true" /> Add doctor</button>
         </div>
       </div>

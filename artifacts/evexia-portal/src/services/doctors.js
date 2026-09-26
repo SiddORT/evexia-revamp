@@ -70,6 +70,50 @@ function invalidSavedData() {
   fail('Saved doctor data is invalid. No records were changed. Repair or back up browser storage before retrying.', 'RECOVERY_REQUIRED');
 }
 
+function sampleDoctors(mrs) {
+  const activeMRs = mrs.filter((mr) => mr.status === 'active');
+  if (!activeMRs.length) return [];
+  const examples = [
+    { name: 'Sample Dr. Ananya Shah', clinicName: 'Northside Family Clinic', qualification: 'MBBS, MD', city: 'New Delhi', state: 'Delhi', pincode: '110001', verification: 'verified', status: 'active' },
+    { name: 'Sample Dr. Rohan Iyer', clinicName: 'Harbour Health Centre', qualification: 'MBBS, DNB', city: 'Mumbai', state: 'Maharashtra', pincode: '400001', verification: 'unverified', status: 'active' },
+    { name: 'Sample Dr. Meera Sen', clinicName: 'Lakeview Medical Practice', qualification: 'MBBS', city: 'Kolkata', state: 'West Bengal', pincode: '700001', verification: 'verified', status: 'inactive' },
+    { name: 'Sample Dr. Kabir Nair', clinicName: 'Garden City Clinic', qualification: 'MBBS, MS', city: 'Bengaluru', state: 'Karnataka', pincode: '560001', verification: 'unverified', status: 'active' },
+  ];
+  return examples.map((example, index) => {
+    const at = new Date(Date.UTC(2025, 2, index + 1, 9, 30)).toISOString();
+    return {
+      id: `sample-doctor-${index + 1}`,
+      name: example.name,
+      phone: `900000000${index + 1}`,
+      dialCountry: 'IN',
+      registrationNumber: `SAMPLE-REG-${String(index + 1).padStart(3, '0')}`,
+      qualification: example.qualification,
+      mrId: activeMRs[index % activeMRs.length].id,
+      invoiceType: 'normal',
+      orderDiscount: 0,
+      daysLimit: 30,
+      paymentLimit: 5000,
+      status: example.status,
+      addressLine1: `${index + 1} Sample Clinic Road`,
+      landmark: 'City Centre',
+      pincode: example.pincode,
+      country: 'India',
+      state: example.state,
+      city: example.city,
+      alternatePhone: '',
+      email: `sample.doctor${index + 1}@example.com`,
+      dateOfJoining: `2024-0${index + 3}-15`,
+      clinicName: example.clinicName,
+      gstNumber: '',
+      drugLicenceNumber: '',
+      addressLine2: '',
+      verification: example.verification,
+      createdAt: at,
+      updatedAt: at,
+    };
+  });
+}
+
 function read() {
   let raw;
   try {
@@ -77,8 +121,23 @@ function read() {
   } catch {
     fail('Doctor records could not be loaded because browser storage is unavailable.', 'RECOVERY_REQUIRED');
   }
-  // An absent doctor master is an empty master, never a seed or sample list.
-  if (raw === null) return [];
+  if (raw === null) {
+    const mrs = loadMRs();
+    const samples = sampleDoctors(mrs);
+    if (!samples.length) return [];
+    try {
+      // Only seed a genuinely absent list; never replace saved records or an intentional [].
+      if (window.localStorage.getItem(STORAGE_KEY) !== null) return read();
+      if (JSON.stringify(loadMRs()) !== JSON.stringify(mrs)) {
+        fail('MR records changed while preparing sample doctors. Refresh records before retrying.', 'SNAPSHOT_CONFLICT');
+      }
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(samples));
+    } catch (error) {
+      if (error.code) throw error;
+      fail('Sample doctors could not be saved in this browser. Check browser storage settings and try again.', 'RECOVERY_REQUIRED');
+    }
+    return samples;
+  }
   let parsed;
   try {
     parsed = JSON.parse(raw);

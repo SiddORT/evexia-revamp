@@ -118,3 +118,17 @@ export function deleteZone(zones, id) {
 export function importZones(zones, next) {
   return saveZones(next, zones);
 }
+
+export function exportZoneCSV(zones) {
+  const columns = [
+    ['name', 'Zone Name'], ['status', 'Status'], ['createdBy', 'Created By'],
+    ['createdAt', 'Created At'], ['updatedBy', 'Updated By'], ['updatedAt', 'Updated At'],
+  ];
+  const cell = (value) => {
+    const text = String(value ?? '');
+    const safe = /^[\s\u0000-\u001f]*[=+\-@]/.test(text) ? `'${text}` : text;
+    return `"${safe.replaceAll('"', '""')}"`;
+  };
+  return `\uFEFF${[columns.map(([, label]) => cell(label)).join(','), ...zones.map((zone) =>
+    columns.map(([key]) => cell(zone[key])).join(','))].join('\r\n')}\r\n`;
+}
