@@ -142,7 +142,6 @@ export default function DoctorMaster() {
     { key: 'select', label: <input type="checkbox" className="doctor-master__check" checked={allVisibleSelected} onChange={(event) => selectAll(event.target.checked)} aria-label="Select all visible doctors" data-testid="checkbox-select-all-doctors" />, render: (record) => <input type="checkbox" className="doctor-master__check" checked={selected.includes(record.id)} onChange={(event) => selectOne(record.id, event.target.checked)} aria-label={`Select ${record.name}`} data-testid={`checkbox-doctor-${record.id}`} /> },
     { key: 'serial', label: 'No.', render: (_, index) => index + 1 },
     { key: 'identity', label: 'Doctor / Contact', render: (record) => identity(record) },
-    { key: 'actions', label: 'Actions', render: (record) => actions(record) },
     { key: 'professional', label: 'Professional', render: professional },
     { key: 'assignment', label: 'MR / Zone', render: assignment },
     { key: 'address', label: 'Address', render: address },
@@ -150,6 +149,7 @@ export default function DoctorMaster() {
     { key: 'status', label: 'Status', render: (record) => <StatusBadge status={record.status} id={record.id} kind="doctor" /> },
     { key: 'created', label: 'Created details', render: (record) => auditDetails(record.createdBy, record.createdAt) },
     { key: 'updated', label: 'Updated details', render: (record) => auditDetails(record.updatedBy, record.updatedAt) },
+    { key: 'actions', label: 'Actions', render: (record) => actions(record) },
   ];
   const count = confirming?.ids?.length || 1;
   return <AdminLayout title="Doctor Master">
