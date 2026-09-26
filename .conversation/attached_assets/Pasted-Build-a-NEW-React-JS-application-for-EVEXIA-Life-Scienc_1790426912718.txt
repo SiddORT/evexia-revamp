@@ -1,0 +1,442 @@
+Build a NEW React JS application for EVEXIA Life Sciences.
+
+IMPORTANT:
+- Use React JS.
+- Use JavaScript only.
+- DO NOT use TypeScript.
+- Use .js and .jsx files.
+- Build clean, production-quality React code.
+- Create reusable components.
+- Keep components properly segregated.
+- Do not over-engineer the application.
+
+==================================================
+PROJECT SCOPE
+==================================================
+
+For this first phase, ONLY build the authentication / portal-selection
+experience.
+
+Do NOT build dashboards or internal modules yet.
+
+Required routes:
+
+/
+ /admin
+ /mr
+ /doctor
+
+
+==================================================
+EVEXIA BRAND
+==================================================
+
+EVEXIA is a Life Sciences / Healthcare organization.
+
+The UI should feel:
+
+- Professional
+- Modern
+- Premium
+- Trustworthy
+- Clean
+- Enterprise-grade
+- Healthcare / Life-Sciences oriented
+
+Use the attached EVEXIA logo as the primary branding reference.
+
+Do not redesign the logo.
+
+Use the logo appropriately throughout the application.
+
+
+==================================================
+COLOR THEME
+==================================================
+
+Use a visual theme inspired by the provided EVEXIA logo and visual reference.
+
+Primary visual colors:
+
+- EVEXIA Red
+- Orange
+- White
+- Light Grey
+- Medium Grey
+- Dark Grey / Charcoal
+
+Red and orange should be accent colors.
+
+Use white and light grey for the majority of the interface.
+
+Avoid making the entire UI red or orange.
+
+The overall visual direction should resemble a modernized version of the
+provided reference:
+
+- Clean cards
+- White/light-grey surfaces
+- Red/orange accents
+- Subtle shadows
+- Strong typography
+- Clean spacing
+- Professional navigation/interaction patterns
+
+
+==================================================
+ROOT /
+==================================================
+
+Create a polished EVEXIA portal-selection page.
+
+Display:
+
+EVEXIA logo
+
+A professional welcome message such as:
+
+"Welcome to EVEXIA"
+
+Supporting text explaining that the user can select their portal.
+
+Then display three portal cards:
+
+1. ADMIN
+2. MR
+3. DOCTOR
+
+
+ADMIN CARD
+
+Title:
+Admin Portal
+
+Description:
+For administration, operations and management.
+
+CTA:
+Login as Admin
+
+Navigate to:
+/admin
+
+
+MR CARD
+
+Title:
+Medical Representative Portal
+
+Description:
+For medical representatives to access their EVEXIA portal.
+
+CTA:
+Login as MR
+
+Navigate to:
+/mr
+
+
+DOCTOR CARD
+
+Title:
+Doctor Portal
+
+Description:
+For doctors to access their EVEXIA portal.
+
+CTA:
+Login as Doctor
+
+Navigate to:
+/doctor
+
+
+The cards should have:
+
+- Role-specific icon/image
+- Title
+- Short description
+- CTA
+- Hover state
+- Subtle elevation
+- Clean borders
+- Consistent styling
+
+
+==================================================
+ROLE-BASED IMAGES
+==================================================
+
+Use professional role-based visuals.
+
+ADMIN:
+A professional administrative/business operations person in formal
+corporate attire.
+
+MR:
+A professional Medical Representative in formal professional attire,
+with subtle pharmaceutical/life-sciences context such as a tablet,
+professional bag, or medical information material.
+
+DOCTOR:
+A professional doctor wearing a white medical coat in a clean,
+modern healthcare environment.
+
+IMPORTANT:
+
+All three images must have a consistent visual style.
+
+Do not mix unrelated illustration styles and photographs.
+
+Prefer clean, professional imagery that integrates with the UI.
+
+The images should support the UI, not overpower it.
+
+
+==================================================
+/admin
+==================================================
+
+Create the Admin login screen.
+
+Include:
+
+- EVEXIA logo
+- "Admin Portal"
+- Role-specific visual
+- Email / Username
+- Password
+- Show / hide password
+- Remember me
+- Forgot password
+- Login button
+
+Include appropriate:
+
+- Input focus states
+- Validation states
+- Error state
+- Loading state
+- Disabled button state
+
+The page should feel like the same EVEXIA product as the landing page.
+
+
+==================================================
+/mr
+==================================================
+
+Create the MR login screen.
+
+Include:
+
+- EVEXIA logo
+- "Medical Representative Portal"
+- MR role visual
+- Email / Username
+- Password
+- Show / hide password
+- Remember me
+- Forgot password
+- Login button
+
+Use the same shared authentication design as Admin.
+
+Only change the role-specific content and imagery.
+
+
+==================================================
+/doctor
+==================================================
+
+Create the Doctor login screen.
+
+Include:
+
+- EVEXIA logo
+- "Doctor Portal"
+- Doctor role visual
+- Email / Username
+- Password
+- Show / hide password
+- Remember me
+- Forgot password
+- Login button
+
+Use the same shared authentication design as Admin and MR.
+
+
+==================================================
+REUSABLE COMPONENT ARCHITECTURE
+==================================================
+
+Create reusable components.
+
+For example:
+
+components/
+  ui/
+    Button
+    Input
+    Checkbox
+    Card
+
+  auth/
+    LoginForm
+    PasswordInput
+    AuthLayout
+
+  portal/
+    PortalCard
+    PortalSelector
+    RoleVisual
+
+Do NOT create:
+
+AdminLoginForm
+MRLoginForm
+DoctorLoginForm
+
+unless there is a genuine functional reason.
+
+Create one reusable LoginForm and configure it for each portal.
+
+
+==================================================
+PAGE STRUCTURE
+==================================================
+
+Use a structure similar to:
+
+src/
+  components/
+    ui/
+    auth/
+    portal/
+
+  pages/
+    Landing/
+    AdminLogin/
+    MRLogin/
+    DoctorLogin/
+
+  layouts/
+    AuthLayout/
+
+  routes/
+
+  assets/
+    images/
+    logo/
+
+  styles/
+
+
+You may improve this structure if you have a better clean React architecture.
+
+
+==================================================
+JAVASCRIPT ONLY
+==================================================
+
+This project MUST use JavaScript.
+
+Use:
+
+.js
+.jsx
+
+DO NOT create:
+
+.ts
+.tsx
+
+Do not introduce TypeScript.
+
+
+==================================================
+RESPONSIVE DESIGN
+==================================================
+
+The design must work properly on:
+
+- Desktop
+- Tablet
+- Mobile
+
+Desktop can use a split login layout:
+
+-----------------------------------------
+| Role Visual | EVEXIA Login Form       |
+-----------------------------------------
+
+On mobile, stack the visual and login form
+appropriately.
+
+The login form should remain the primary focus.
+
+
+==================================================
+DESIGN QUALITY
+==================================================
+
+Do not make this look like a generic React starter project.
+
+Do not use a generic Bootstrap-looking layout.
+
+Do not overuse gradients.
+
+Do not use excessive animations.
+
+Do not use excessive rounded cards.
+
+Use subtle, professional animations only where they improve UX.
+
+Focus on:
+
+- Typography
+- Spacing
+- Alignment
+- Visual hierarchy
+- Consistency
+- Accessibility
+- Responsive behavior
+- Professional healthcare branding
+
+
+==================================================
+IMPORTANT SCOPE LIMIT
+==================================================
+
+ONLY build:
+
+1. /
+   Portal Selection
+
+2. /admin
+   Admin Login
+
+3. /mr
+   MR Login
+
+4. /doctor
+   Doctor Login
+
+DO NOT build:
+
+- Admin Dashboard
+- MR Dashboard
+- Doctor Dashboard
+- Orders
+- Inventory
+- Patients
+- Shipments
+- Accounts
+- Targets
+- Any other internal modules
+
+Those will be developed later.
+
+The objective right now is to create a polished EVEXIA authentication
+experience and establish the reusable React design foundation for the
+rest of the application.

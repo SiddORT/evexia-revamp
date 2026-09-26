@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "EVEXIA Portal"
+description = "A frontend-only portal-selection and login experience for EVEXIA Life Sciences, with mock interactions for Admin, Medical Representative, and Doctor users."
+version = "1.0.0"
+id = "artifacts/evexia-portal"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25965
+
+[services.development]
+run = "pnpm --filter @workspace/evexia-portal run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/evexia-portal", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/evexia-portal/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25965"
+BASE_PATH = "/"
