@@ -1,5 +1,5 @@
 /* MR Master uses the Admin semantic tokens so both Admin themes remain in sync. */
-.mr-form-page { max-width: 1120px; }
+.mr-form-page { width: 100%; }
 .mr-form-page__recovery { max-width: 700px; padding: 28px; color: var(--admin-text); }
 .mr-form-page__recovery h2 { margin: 0 0 8px; font-size: 20px; }
 .mr-form-page__recovery p { margin: 0 0 20px; color: var(--admin-text-soft); line-height: 1.5; }
