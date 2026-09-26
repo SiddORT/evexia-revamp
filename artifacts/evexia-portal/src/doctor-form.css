@@ -4,7 +4,6 @@
 .doctor-form-page__recovery p { margin: 0 0 20px; color: var(--admin-text-soft); line-height: 1.5; }
 .doctor-form { color: var(--admin-text); }
 .doctor-form__about { padding: 7px 24px; border-bottom: 1px solid var(--admin-border); color: var(--admin-text-soft); font-size: 12px; }
-.doctor-form__about .admin-info__text { max-width: 680px; }
 .doctor-form__tabs { display: flex; gap: 4px; padding: 14px 24px 0; border-bottom: 1px solid var(--admin-border); background: var(--admin-table-head); }
 .doctor-form__tab { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 10px 15px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: var(--admin-text-soft); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; text-align: center; }
 .doctor-form__tab:hover { color: var(--admin-text); background: var(--admin-state-hover); }

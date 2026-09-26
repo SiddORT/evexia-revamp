@@ -55,23 +55,29 @@ export function readImportSnapshots() {
   return { zones, mrs, doctors };
 }
 
-function columns(rows, expected) {
+function columns(rows, expected, legacy = null) {
   const headers = rows[0].cells.map((cell) => cell.trim());
   const allowed = expected.map(([, label]) => label);
-  if (headers.length !== allowed.length || new Set(headers).size !== headers.length
-    || headers.some((header, index) => header !== allowed[index])) {
+  const old = legacy?.map(([, label]) => label);
+  const matches = (labels) => labels && headers.length === labels.length
+    && headers.every((header, index) => header === labels[index]);
+  const isLegacy = matches(old);
+  if (new Set(headers).size !== headers.length || (!matches(allowed) && !isLegacy)) {
     throw new Error(`CSV headers must match this exact order: ${allowed.join(', ')}. Unsupported or credential columns are not accepted.`);
   }
+  const selected = isLegacy ? legacy : expected;
   return rows.slice(1).map(({ line, cells }) => {
-    if (cells.length !== allowed.length) return { line, error: `Expected ${allowed.length} columns; found ${cells.length}.` };
-    const values = Object.fromEntries(expected.map(([key], index) => [key, cells[index].trim()]));
+    if (cells.length !== selected.length) return { line, error: `Expected ${selected.length} columns; found ${cells.length}.` };
+    const values = Object.fromEntries(selected.map(([key], index) => [key, cells[index].trim()]));
+    if (isLegacy) values.contactRequirement = 'required';
     return { line, values };
   });
 }
 
 export function reviewImport(kind, text, snapshots) {
   const source = parseCSV(text);
-  const entries = columns(source, kind === 'mr' ? CSV_COLUMNS : ZONE_COLUMNS.map((label, index) => [index ? 'status' : 'name', label]));
+  const entries = columns(source, kind === 'mr' ? CSV_COLUMNS : ZONE_COLUMNS.map((label, index) => [index ? 'status' : 'name', label]),
+    kind === 'mr' ? CSV_COLUMNS.filter(([key]) => key !== 'contactRequirement') : null);
   const prepared = entries.map((entry) => ({ ...entry, id: id(), errors: entry.error ? [entry.error] : [] }));
   if (kind === 'zone') {
     const names = new Set(snapshots.zones.map((zone) => norm(zone.name)));

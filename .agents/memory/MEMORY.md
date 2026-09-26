@@ -1,3 +1,4 @@
 - [Browser-local record conflicts](browser-local-zone-conflicts.md) — reject stale or unreadable zone and MR writes rather than overwrite newer browser data.
 - [Filtered pnpm installs](filtered-pnpm-installs.md) — language-package installer targets workspace root and rejects filter flags; do not rely on it for leaf packages.
 - [Headless Chromium targets](headless-chromium-targets.md) — remote debugging can list extension backgrounds before app pages; select the page target, not the first target.
+- [CSV backup compatibility](csv-backup-compatibility.md) — when export schemas gain fields, preserve imports of previously exported backups with explicit defaults.

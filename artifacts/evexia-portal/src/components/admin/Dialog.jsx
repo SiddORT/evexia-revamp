@@ -13,7 +13,7 @@ export default function Dialog({ title, eyebrow, description, titleInfo, onClose
     document.body.style.overflow = 'hidden';
     closeRef.current?.focus();
     function handleKey(event) {
-       if (event.key === 'Escape' && !event.target.closest('[data-admin-info-open="true"]')) { event.stopPropagation(); onCloseRef.current(); }
+       if (event.key === 'Escape' && !dialogRef.current?.parentElement?.querySelector('[data-admin-info-open="true"]')) { event.stopPropagation(); onCloseRef.current(); }
       if (event.key === 'Tab') {
         const focusable = dialogRef.current?.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), summary, a[href]');
         if (!focusable?.length) return;

@@ -5,7 +5,6 @@
 .mr-form-page__recovery p { margin: 0 0 20px; color: var(--admin-text-soft); line-height: 1.5; }
 .mr-form { color: var(--admin-text); }
 .mr-form__about { padding: 7px 24px; border-bottom: 1px solid var(--admin-border); color: var(--admin-text-soft); font-size: 12px; }
-.mr-form__about .admin-info__text { max-width: 680px; }
 .mr-form__tabs { display: flex; gap: 4px; padding: 14px 24px 0; border-bottom: 1px solid var(--admin-border); background: var(--admin-table-head); }
 .mr-form__tab {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
