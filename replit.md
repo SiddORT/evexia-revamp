@@ -1,45 +1,29 @@
-# [Project name]
+# EVEXIA Portal
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A frontend-only mock portal-selection and login experience for EVEXIA Life Sciences.
 
-## Run & Operate
+## Run & operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- The managed `artifacts/evexia-portal: web` workflow serves the preview.
+- `pnpm --filter @workspace/evexia-portal run build` builds the web app.
+- The workspace includes a scaffold API server, but this product does not use it.
 
-## Stack
+## Stack and scope
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- React with JavaScript/JSX, Vite, Wouter, and CSS. Keep the web artifact free of TypeScript files.
+- Routes: `/` (portal selection), `/admin`, `/mr`, and `/doctor` (shared login UI configured by role).
+- Phase one is a mock UI only. Do not add API calls, a backend, real authentication, dashboards, or internal modules unless the user requests them later.
+- Forms validate locally and simulate loading, then clearly state that authentication is not connected. No credentials are sent or stored.
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/evexia-portal/src/App.jsx` — routing
+- `artifacts/evexia-portal/src/config/roles.js` — role content
+- `artifacts/evexia-portal/src/components/` — shared portal and auth UI
+- `artifacts/evexia-portal/src/pages/` — landing, login, and not-found pages
+- `artifacts/evexia-portal/src/index.css` — styling and responsive rules
+- `artifacts/evexia-portal/public/images/` — coordinated role photography
 
-## Architecture decisions
+## Assets
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
-
-## Product
-
-_Describe the high-level user-facing capabilities of this app once they exist._
-
-## User preferences
-
-_Populate as you build — explicit user instructions worth remembering across sessions._
-
-## Gotchas
-
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+The provided attachment contained the written brief only, not the EVEXIA logo. The app uses a plain EVEXIA text wordmark for now; replace it with the supplied official logo when available rather than inventing a new mark.

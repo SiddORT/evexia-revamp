@@ -355,6 +355,9 @@ a { color: inherit; }
 }
 
 @media (max-width: 460px) {
+  .auth-visual { min-height: 220px; height: 220px; max-height: none; }
+  .auth-visual__content p,
+  .auth-visual__note { display: none; }
   .portal-hero h1 { font-size: 3.15rem; }
   .portal-hero p { font-size: 0.92rem; }
   .portal-card { display: block; }
