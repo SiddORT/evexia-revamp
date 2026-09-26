@@ -288,6 +288,17 @@
 .admin-dialog__eyebrow { margin: 0 0 8px; font-size: 10px; color: var(--accent); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
 .admin-dialog h2 { font-family: var(--font-display); letter-spacing: -.035em; font-weight: 500; font-size: 27px; line-height: 1.15; margin: 0; }
 .admin-dialog__description { color: var(--ink-soft); font-size: 13px; line-height: 1.6; margin: 12px 0 24px; }
+.admin-dialog__top > div { min-width: 0; }
+.admin-info { min-width: 0; }
+.admin-info__row { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.admin-info__row > :first-child { min-width: 0; }
+.admin-info__button { display: inline-grid; place-items: center; flex: none; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--admin-accent); cursor: pointer; }
+.admin-info__button:hover, .admin-info__button[aria-expanded="true"] { background: var(--admin-state-hover); }
+.admin-info__button:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.admin-info__text { margin: 0 0 7px; padding: 10px 12px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-canvas); color: var(--admin-text); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.admin-info__text[hidden] { display: none; }
+.admin-dialog__top .admin-info__text { margin: 4px 0 16px; }
+.admin-dialog__top + .admin-dialog__form { margin-top: 20px; }
 .admin-dialog__form { display: grid; gap: 20px; }
 .admin-dialog .field input { height: 44px; }
 .admin-dialog__field { display: grid; gap: 8px; font-size: 12px; font-weight: 700; }

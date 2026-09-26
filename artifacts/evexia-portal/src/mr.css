@@ -4,6 +4,8 @@
 .mr-form-page__recovery h2 { margin: 0 0 8px; font-size: 20px; }
 .mr-form-page__recovery p { margin: 0 0 20px; color: var(--admin-text-soft); line-height: 1.5; }
 .mr-form { color: var(--admin-text); }
+.mr-form__about { padding: 7px 24px; border-bottom: 1px solid var(--admin-border); color: var(--admin-text-soft); font-size: 12px; }
+.mr-form__about .admin-info__text { max-width: 680px; }
 .mr-form__tabs { display: flex; gap: 4px; padding: 14px 24px 0; border-bottom: 1px solid var(--admin-border); background: var(--admin-table-head); }
 .mr-form__tab {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -101,13 +103,12 @@
 .mr-form__footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+   justify-content: flex-end;
   gap: 12px;
   padding: 18px 32px;
   border-top: 1px solid var(--admin-border);
   background: var(--admin-surface);
 }
-.mr-form__footer-note { color: var(--admin-muted); font-size: 11px; }
 .mr-form__actions { display: flex; justify-content: flex-end; gap: 9px; }
 
 /* Reusable presentation primitives for the responsive MR Master list. */
@@ -203,6 +204,7 @@
   .admin-mr-mobile { display: grid; gap: 10px; padding: 12px; }
 }
 @media (max-width: 600px) {
+   .mr-form__about { padding-inline: 18px; }
   .admin-mr-head-actions { width: 100%; }
   .admin-mr-head-actions .admin-button { flex: 1 1 auto; }
    .mr-form__tabs { overflow-x: auto; padding: 8px 10px 0; }

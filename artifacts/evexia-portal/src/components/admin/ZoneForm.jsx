@@ -15,7 +15,8 @@ export default function ZoneForm({ zone, onSave, onClose }) {
   }
 
   return (
-    <Dialog title={zone ? 'Edit zone' : 'Add zone'} description={zone ? 'Update the name or current availability of this zone.' : 'Create a zone for your EVEXIA workspace.'} onClose={onClose}>
+    <Dialog title={zone ? 'Edit zone' : 'Add zone'} onClose={onClose}
+      titleInfo={zone ? 'Update the name or current availability of this zone. Changes are stored in this browser only; no login is created.' : 'Create a zone for your EVEXIA workspace. This preview stores zones in this browser only; no login is created.'}>
       <form id="zone-form" className="admin-dialog__form" onSubmit={handleSubmit} noValidate>
         <Field id="zone-name" label="Zone name *" value={name} onChange={(event) => { setName(event.target.value); setError(''); }} error={error} placeholder="e.g. Central Zone" autoComplete="off" />
         <label className="admin-dialog__field" htmlFor="zone-status">

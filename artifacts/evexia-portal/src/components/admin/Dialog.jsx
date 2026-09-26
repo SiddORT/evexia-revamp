@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
+import InfoDisclosure from './InfoDisclosure.jsx';
 
-export default function Dialog({ title, eyebrow, description, onClose, children, footer, className = '' }) {
+export default function Dialog({ title, eyebrow, description, titleInfo, onClose, children, footer, className = '' }) {
   const closeRef = useRef(null);
   const dialogRef = useRef(null);
   const onCloseRef = useRef(onClose);
@@ -12,7 +13,7 @@ export default function Dialog({ title, eyebrow, description, onClose, children,
     document.body.style.overflow = 'hidden';
     closeRef.current?.focus();
     function handleKey(event) {
-      if (event.key === 'Escape') { event.stopPropagation(); onCloseRef.current(); }
+       if (event.key === 'Escape' && !event.target.closest('[data-admin-info-open="true"]')) { event.stopPropagation(); onCloseRef.current(); }
       if (event.key === 'Tab') {
         const focusable = dialogRef.current?.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), summary, a[href]');
         if (!focusable?.length) return;
@@ -33,7 +34,9 @@ export default function Dialog({ title, eyebrow, description, onClose, children,
     <div className="admin-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className={`admin-dialog ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby="admin-dialog-title" aria-describedby={description ? 'admin-dialog-description' : undefined} ref={dialogRef}>
         <div className="admin-dialog__top">
-          <div><p className="admin-dialog__eyebrow">{eyebrow || 'Zone Master'}</p><h2 id="admin-dialog-title">{title}</h2></div>
+           <div><p className="admin-dialog__eyebrow">{eyebrow || 'Zone Master'}</p>
+             {titleInfo ? <InfoDisclosure id="admin-dialog-title-help" title={title} text={titleInfo} testId="button-zone-info"><h2 id="admin-dialog-title">{title}</h2></InfoDisclosure> : <h2 id="admin-dialog-title">{title}</h2>}
+           </div>
           <button type="button" ref={closeRef} className="admin-icon-button" aria-label="Close dialog" onClick={onClose} data-testid="button-close-dialog"><X size={18} /></button>
         </div>
         {description && <p className="admin-dialog__description" id="admin-dialog-description">{description}</p>}

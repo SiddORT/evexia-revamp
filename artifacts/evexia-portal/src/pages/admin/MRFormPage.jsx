@@ -32,7 +32,6 @@ export default function MRFormPage({ id }) {
       <div>
         <p className="admin-page-head__eyebrow">Masters / Team / MR Master</p>
         <h1>{title}</h1>
-        <p className="admin-page-head__description">{id ? 'Update the staff profile and assignment details.' : 'Create a browser-local preview record for a medical representative. This does not create a login account.'}</p>
       </div>
       <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(LIST_PATH)} data-testid="button-back-mrs"><ArrowLeft size={16} aria-hidden="true" /> Back to MR Master</button>
     </div>

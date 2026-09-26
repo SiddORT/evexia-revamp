@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Info } from 'lucide-react';
+import InfoDisclosure from './InfoDisclosure.jsx';
 import '../../doctor-form.css';
 
 const FIELDS = [
@@ -27,6 +27,8 @@ const DIAL_COUNTRIES = [
 const FIELD_INFO = {
   phone: 'Country selection determines the expected number of digits and is saved with this record.',
   daysLimit: 'New orders from this doctor will not be accepted if payment remains overdue beyond this days limit.',
+  gstNumber: 'GST Number is required for GST invoices. For Indian addresses, enter a 15-character GSTIN.',
+  pincode: 'Six-digit Indian PINs offer optional address suggestions; other postal codes use manual entry.',
 };
 const PASSWORD_INFO = 'Passwords cannot be entered, generated, saved or exported. No doctor login is created.';
 
@@ -94,7 +96,6 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('identity');
-  const [openInfo, setOpenInfo] = useState(null);
   const [pinState, setPinState] = useState({ status: 'idle', localities: [], error: '' });
   const [selectedLocality, setSelectedLocality] = useState('');
   const formRef = useRef(null);
@@ -177,17 +178,15 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
   }
 
   function renderField(key, label, options = {}) {
-    const { type = 'text', placeholder, autoComplete, span, hint, inputMode, min, step, selectOptions } = options;
+    const { type = 'text', placeholder, autoComplete, span, inputMode, min, step, selectOptions } = options;
     const errorId = `doctor-${key}-error`;
-    const hintId = `doctor-${key}-hint`;
-    const infoId = `doctor-${key}-help`;
-    const infoOpen = openInfo === key;
     const id = `doctor-${key}`;
-    const describedBy = [errors[key] && errorId, hint && hintId, infoOpen && infoId].filter(Boolean).join(' ') || undefined;
+    const required = REQUIRED.has(key) || (key === 'gstNumber' && values.invoiceType === 'gst');
+    const describedBy = errors[key] ? errorId : undefined;
     const common = {
       id, name: key, className: 'doctor-form__control', value: values[key],
       onChange: (event) => change(key, event.target.value), autoComplete: autoComplete || 'off',
-      'aria-required': REQUIRED.has(key), 'aria-invalid': Boolean(errors[key]),
+      'aria-required': required, 'aria-invalid': Boolean(errors[key]),
       'aria-describedby': describedBy, 'data-testid': `input-doctor-${key}`,
     };
     let input = <input {...common} type={type} placeholder={placeholder} inputMode={inputMode} min={min} step={step} />;
@@ -206,17 +205,10 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
       </div>;
     }
     return <div className={`doctor-form__field${span ? ' doctor-form__field--wide' : ''}${key === 'pincode' ? ' doctor-form__field--pincode' : ''}`} key={key}>
-      {FIELD_INFO[key] ? <div className="doctor-form__label-row">
-        <label className="doctor-form__label" htmlFor={id}>{label} {REQUIRED.has(key) && <span className="doctor-form__required" aria-hidden="true">*</span>}</label>
-        <button type="button" className="doctor-form__info-button" aria-label={`About ${label}`} aria-expanded={infoOpen}
-          aria-controls={infoId} aria-describedby={infoOpen ? infoId : undefined}
-          onClick={() => setOpenInfo((current) => current === key ? null : key)}
-          onKeyDown={(event) => { if (event.key === 'Escape' && infoOpen) { event.preventDefault(); setOpenInfo(null); } }}
-          data-testid={`button-doctor-${key}-info`}><Info size={16} aria-hidden="true" /></button>
-      </div> : <label className="doctor-form__label" htmlFor={id}>{label} {REQUIRED.has(key) && <span className="doctor-form__required" aria-hidden="true">*</span>}</label>}
-      {FIELD_INFO[key] && <p id={infoId} className="doctor-form__info-text" role="status" hidden={!infoOpen}>{FIELD_INFO[key]}</p>}
+       {FIELD_INFO[key] ? <InfoDisclosure id={`doctor-${key}-help`} title={label} text={FIELD_INFO[key]} testId={`button-doctor-${key}-info`}>
+         <label className="doctor-form__label" htmlFor={id}>{label} {required && <span className="doctor-form__required" aria-hidden="true">*</span>}</label>
+       </InfoDisclosure> : <label className="doctor-form__label" htmlFor={id}>{label} {required && <span className="doctor-form__required" aria-hidden="true">*</span>}</label>}
       {input}
-      {hint && <p id={hintId} className="doctor-form__hint">{hint}</p>}
       {key === 'phone' && errors.dialCountry && <p className="doctor-form__error" role="alert">{errors.dialCountry}</p>}
       {errors[key] && <p id={errorId} className="doctor-form__error" role="alert" data-testid={`error-doctor-${key}`}>{errors[key]}</p>}
     </div>;
@@ -259,6 +251,9 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
   }
 
   return <form className="doctor-form" ref={formRef} onSubmit={handleSubmit} noValidate data-testid="form-doctor">
+    <div className="doctor-form__about"><InfoDisclosure id="doctor-form-about" title="this Doctor form"
+      text="Doctor records are stored only in this browser’s local preview. Adding or editing a doctor does not create a login account."
+      testId="button-doctor-form-info"><strong>About this form</strong></InfoDisclosure></div>
     <div className="doctor-form__tabs" role="tablist" aria-label="Doctor profile sections">
       {TABS.map((tab, index) => <button key={tab.id} ref={(node) => { tabRefs.current[index] = node; }} type="button"
         id={`doctor-tab-${tab.id}`} role="tab" aria-controls={`doctor-panel-${tab.id}`} aria-selected={activeTab === tab.id}
@@ -286,24 +281,17 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
           {renderField('qualification', 'Qualification', { placeholder: 'Qualification' })}
           <div className="doctor-form__password-row">
             <div className="doctor-form__field">
-              <div className="doctor-form__label-row">
-                <label className="doctor-form__label" htmlFor="doctor-password">Password</label>
-                <button type="button" className="doctor-form__info-button" aria-label="About Password"
-                  aria-expanded={openInfo === 'password'} aria-controls="doctor-password-help"
-                  aria-describedby={openInfo === 'password' ? 'doctor-password-help' : undefined}
-                  onClick={() => setOpenInfo((current) => current === 'password' ? null : 'password')}
-                  onKeyDown={(event) => { if (event.key === 'Escape' && openInfo === 'password') { event.preventDefault(); setOpenInfo(null); } }}
-                  data-testid="button-doctor-password-info"><Info size={16} aria-hidden="true" /></button>
-              </div>
-              <p id="doctor-password-help" className="doctor-form__info-text" role="status" hidden={openInfo !== 'password'}>{PASSWORD_INFO}</p>
+               <InfoDisclosure id="doctor-password-help" title="Password" text={PASSWORD_INFO} testId="button-doctor-password-info">
+                 <label className="doctor-form__label" htmlFor="doctor-password">Password</label>
+               </InfoDisclosure>
               <div className="doctor-form__input-row">
-                <input id="doctor-password" className="doctor-form__control" type="password" placeholder="Unavailable" disabled autoComplete="off" aria-describedby="doctor-password-help" data-testid="input-doctor-password" />
-                <button type="button" className="doctor-form__preview-action" disabled aria-describedby="doctor-password-help" data-testid="button-generate-doctor-password">Generate password</button>
+                 <input id="doctor-password" className="doctor-form__control" type="password" placeholder="Unavailable" disabled autoComplete="off" data-testid="input-doctor-password" />
+                 <button type="button" className="doctor-form__preview-action" disabled data-testid="button-generate-doctor-password">Generate password</button>
               </div>
             </div>
             <div className="doctor-form__field">
               <label className="doctor-form__label" htmlFor="doctor-confirm-password">Confirm password</label>
-              <input id="doctor-confirm-password" className="doctor-form__control" type="password" placeholder="Unavailable" disabled autoComplete="off" aria-describedby="doctor-password-help" data-testid="input-doctor-confirm-password" />
+               <input id="doctor-confirm-password" className="doctor-form__control" type="password" placeholder="Unavailable" disabled autoComplete="off" data-testid="input-doctor-confirm-password" />
             </div>
           </div>
         </div>
@@ -320,7 +308,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
         <div className="doctor-form__section-head"><h3 className="doctor-form__section-title">Commercial details</h3></div>
         <div className="doctor-form__grid">
           {renderField('invoiceType', 'Invoice Type', { selectOptions: [{ value: 'normal', label: 'Normal' }, { value: 'gst', label: 'GST' }] })}
-          {renderField('gstNumber', 'GST Number', { placeholder: values.invoiceType === 'gst' ? 'GSTIN' : 'Optional', hint: values.invoiceType === 'gst' ? 'Required for GST invoices.' : undefined })}
+           {renderField('gstNumber', 'GST Number', { placeholder: values.invoiceType === 'gst' ? 'GSTIN' : 'Optional' })}
           {renderField('drugLicenceNumber', 'Drug Licence No.', { placeholder: 'Drug licence number' })}
           {renderField('orderDiscount', 'Order Discount (in %)', { type: 'number', min: '0', max: '100', step: '0.01', placeholder: '0', inputMode: 'decimal' })}
           {renderField('daysLimit', 'Days Limit', { type: 'number', min: '0', step: '1', placeholder: '0', inputMode: 'numeric' })}
@@ -330,12 +318,14 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
       <section className="doctor-form__section" id="doctor-panel-address" role="tabpanel" aria-labelledby="doctor-tab-address" tabIndex={0} hidden={activeTab !== 'address'}>
         <div className="doctor-form__section-head"><h3 className="doctor-form__section-title">Address</h3></div>
         <div className="doctor-form__grid doctor-form__grid--address">
-          {renderField('pincode', 'Pincode', { placeholder: 'Pincode', inputMode: 'numeric', autoComplete: 'postal-code', hint: 'Six-digit Indian PINs offer optional address suggestions; other postal codes use manual entry.' })}
+           {renderField('pincode', 'Pincode', { placeholder: 'Pincode', inputMode: 'numeric', autoComplete: 'postal-code' })}
           {pinState.status !== 'idle' && <div className="doctor-form__lookup" role="status" aria-live="polite">
             {pinState.status === 'loading' && <p className="doctor-form__hint">Looking up pincode…</p>}
             {pinState.error && <p className="doctor-form__hint">{pinState.error}</p>}
             {pinState.localities.length > 0 && <>
-              <label className="doctor-form__label" htmlFor="doctor-locality">Pincode localities (suggestions only)</label>
+               <InfoDisclosure id="doctor-locality-help" title="Pincode localities"
+                 text="Suggestions do not change the address until you apply one; you can edit every address field afterwards."
+                 testId="button-doctor-locality-info"><label className="doctor-form__label" htmlFor="doctor-locality">Pincode localities (suggestions only)</label></InfoDisclosure>
               <div className="doctor-form__input-row">
                 <select id="doctor-locality" className="doctor-form__control" value={selectedLocality} onChange={(event) => setSelectedLocality(event.target.value)} data-testid="select-doctor-locality">
                   <option value="">Choose a locality suggestion</option>
@@ -343,7 +333,6 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
                 </select>
                 <button type="button" className="admin-button admin-button--secondary" disabled={!selectedLocality} onClick={applyLocality} data-testid="button-apply-doctor-locality">Apply suggestion</button>
               </div>
-              <p className="doctor-form__hint">Nothing is changed until you apply a suggestion; you can edit every address field afterwards.</p>
             </>}
           </div>}
           {renderField('addressLine1', 'Address Line 1', { placeholder: 'Address line 1', span: true, autoComplete: 'address-line1' })}
@@ -356,7 +345,6 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
       </section>
     </div>
     <div className="doctor-form__footer">
-      <span className="doctor-form__footer-note">Stored in this browser’s local preview.</span>
       <div className="doctor-form__actions">
         <button type="button" className="admin-button admin-button--secondary" onClick={onClose} disabled={saving} data-testid="button-cancel-doctor">Cancel</button>
         <button type="submit" className="admin-button" disabled={saving || blocked} data-testid="button-save-doctor">{saving ? 'Saving…' : doctor ? 'Save changes' : 'Add Doctor'}</button>

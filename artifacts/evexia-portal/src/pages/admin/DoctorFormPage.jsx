@@ -35,7 +35,6 @@ export default function DoctorFormPage({ id }) {
       <div>
         <p className="admin-page-head__eyebrow">Masters / Team / Doctor Master</p>
         <h1>{title}</h1>
-        <p className="admin-page-head__description">{id ? 'Update the doctor profile, clinic and commercial details.' : 'Create a browser-local preview record for a doctor. This does not create a login account.'}</p>
       </div>
       <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(LIST_PATH)} data-testid="button-back-doctors"><ArrowLeft size={16} aria-hidden="true" /> Back to Doctor Master</button>
     </div>
