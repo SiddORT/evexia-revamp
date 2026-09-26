@@ -1,1 +1,2 @@
 - [Browser-local record conflicts](browser-local-zone-conflicts.md) — reject stale or unreadable zone and MR writes rather than overwrite newer browser data.
+- [Filtered pnpm installs](filtered-pnpm-installs.md) — language-package installer targets workspace root and rejects filter flags; do not rely on it for leaf packages.

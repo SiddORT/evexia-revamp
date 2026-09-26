@@ -10,6 +10,7 @@ import MRMaster from './pages/admin/MRMaster.jsx';
 import MRFormPage from './pages/admin/MRFormPage.jsx';
 import DoctorMaster from './pages/admin/DoctorMaster.jsx';
 import DoctorFormPage from './pages/admin/DoctorFormPage.jsx';
+import MasterExcelImportPage from './pages/admin/MasterExcelImportPage.jsx';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
       <Route path="/" component={PortalSelection} />
       <Route path="/admin" component={Dashboard} />
       <Route path="/admin/masters" component={Masters} />
+      <Route path="/admin/masters/import/:kind">{(params) => <MasterExcelImportPage key={params.kind} kind={params.kind} />}</Route>
       <Route path="/admin/masters/zones" component={ZoneMaster} />
       <Route path="/admin/masters/mrs" component={MRMaster} />
       <Route path="/admin/masters/mrs/new">{() => <MRFormPage />}</Route>

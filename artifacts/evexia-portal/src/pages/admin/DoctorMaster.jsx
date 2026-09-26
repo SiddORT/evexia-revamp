@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
-import { ChevronDown, CirclePower, Download, Filter, Mail, Pencil, Phone, Plus, Search, ShieldCheck, ShieldX, UsersRound } from 'lucide-react';
+import { ChevronDown, CirclePower, Download, Filter, Mail, Pencil, Phone, Plus, Search, ShieldCheck, ShieldX, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -148,6 +148,7 @@ export default function DoctorMaster() {
         <div className="doctor-master__head-actions">
           <button type="button" className="admin-button admin-button--secondary" onClick={() => { retry(); setSelected([]); closeConfirmation(); }} data-testid="button-refresh-doctors">Refresh records</button>
           <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || !visible.length} onClick={exportVisible} data-testid="button-export-doctors"><Download size={16} aria-hidden="true" /> Export CSV</button>
+          <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/doctor')} data-testid="button-import-doctor-excel"><Upload size={16} aria-hidden="true" /> Import Excel</button>
           <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate('/admin/masters/doctors/new'); }} data-testid="button-add-doctor"><Plus size={16} aria-hidden="true" /> Add doctor</button>
         </div>
       </div>

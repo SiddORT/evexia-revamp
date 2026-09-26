@@ -144,7 +144,8 @@ export default function MRMaster() {
       <div><p className="admin-page-head__eyebrow">Masters / Team</p><h1>MR Master</h1><p className="admin-page-head__description">Manage MR profiles in this browser. This preview does not create login accounts.</p></div>
       <div className="admin-mr-head-actions">
          <button type="button" className="admin-button admin-button--secondary" onClick={() => { retry(); setActionError(''); setConfirming(null); }} data-testid="button-refresh-mrs">Refresh records</button>
-         <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error)} onClick={() => { clearFeedback(); setImporting(true); }} data-testid="button-import-mrs"><Upload size={16} aria-hidden="true" /> Import CSV</button>
+         <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/mr')} data-testid="button-import-mr-excel"><Upload size={16} aria-hidden="true" /> Import Excel</button>
+         <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error)} onClick={() => { clearFeedback(); setImporting(true); }} data-testid="button-import-mrs">Import CSV</button>
         <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || !visible.length} onClick={exportVisible} data-testid="button-export-mrs"><Download size={16} aria-hidden="true" /> Export CSV</button>
          <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate('/admin/masters/mrs/new'); }} data-testid="button-add-mr"><Plus size={16} aria-hidden="true" /> Add MR</button>
       </div>

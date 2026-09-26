@@ -1,0 +1,47 @@
+.excel-import { display: grid; gap: 22px; padding-bottom: 48px; }
+.excel-import__back { display: inline-flex; align-items: center; gap: 7px; justify-self: start; padding: 0; border: 0; background: none; color: var(--accent); cursor: pointer; font: inherit; font-size: 12px; font-weight: 700; }
+.excel-import__back:hover { text-decoration: underline; }
+.excel-import__mock { align-self: center; border: 1px solid var(--admin-border); border-radius: 40px; padding: 8px 13px; color: var(--admin-text-soft); background: var(--surface); font-size: 11px; font-weight: 700; }
+.excel-import__tabs { display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--admin-border); padding-bottom: 12px; }
+.excel-import__tab { border: 1px solid var(--admin-border); border-radius: 8px; background: var(--surface); color: var(--admin-text-soft); padding: 10px 15px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.excel-import__tab--active { border-color: var(--accent); background: var(--accent); color: white; }
+.excel-import__steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.excel-import__card, .excel-import__report { position: relative; border: 1px solid var(--admin-border); border-radius: 12px; background: var(--surface); padding: 24px; }
+.excel-import__card { display: flex; flex-direction: column; align-items: flex-start; gap: 13px; min-height: 340px; }
+.excel-import__number { position: absolute; top: 25px; right: 25px; color: var(--admin-muted); font-size: 12px; font-weight: 700; }
+.excel-import__icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px; background: var(--admin-focus-shadow); color: var(--accent); }
+.excel-import h2 { margin: 0; font-family: var(--font-display); font-size: 23px; font-weight: 500; }
+.excel-import__card p, .excel-import__report p { margin: 0; color: var(--admin-text-soft); font-size: 12px; line-height: 1.6; }
+.excel-import__columns { display: grid; gap: 5px; color: var(--admin-text-soft); font-size: 11px; line-height: 1.5; }
+.excel-import__columns strong { color: var(--admin-text); }
+.excel-import__card > .admin-button { margin-top: auto; }
+.excel-import__picker { display: flex; align-items: center; gap: 10px; max-width: 100%; width: 100%; border: 1px dashed var(--admin-border); border-radius: 8px; padding: 15px; color: var(--admin-text); font-size: 12px; cursor: pointer; }
+.excel-import__picker:hover, .excel-import__picker:focus-within { border-color: var(--accent); }
+.excel-import__picker span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.excel-import__picker input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.excel-import__report { display: grid; gap: 20px; }
+.excel-import__report-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.excel-import__report h2 { overflow-wrap: anywhere; }
+.excel-import__totals { display: flex; flex-wrap: wrap; gap: 8px; }
+.excel-import__totals span { display: inline-flex; align-items: center; gap: 5px; border-radius: 30px; padding: 9px 12px; white-space: nowrap; font-size: 12px; font-weight: 700; }
+.excel-import__valid { color: #276c43; background: #eaf5ed; }
+.excel-import__invalid { color: #a63830; background: #fff0ed; }
+.excel-import__results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.excel-import__results > div { min-width: 0; }
+.excel-import__results h3 { display: flex; justify-content: space-between; margin: 0 0 10px; font-size: 13px; }
+.excel-import__results h3 span { color: var(--admin-text-soft); }
+.excel-import__row { border: 1px solid var(--admin-border); border-radius: 8px; margin: 8px 0; padding: 11px; font-size: 12px; overflow-wrap: anywhere; }
+.excel-import__row--invalid { border-color: #d9a09a; }
+.excel-import__row summary { cursor: pointer; font-weight: 700; }
+.excel-import__row summary span { float: right; color: var(--admin-text-soft); }
+.excel-import__row dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 12px 0 0; }
+.excel-import__row dt { color: var(--admin-text-soft); font-size: 10px; }
+.excel-import__row dd { margin: 0; }
+.excel-import__row ul { margin: 10px 0 0; padding-left: 18px; color: var(--admin-danger); }
+@media (max-width: 760px) {
+  .excel-import__steps, .excel-import__results { grid-template-columns: 1fr; }
+  .excel-import__card { min-height: 0; }
+  .excel-import__card > .admin-button { margin-top: 12px; }
+  .excel-import__report-head { align-items: flex-start; flex-direction: column; }
+  .excel-import__card, .excel-import__report { padding: 18px; }
+}

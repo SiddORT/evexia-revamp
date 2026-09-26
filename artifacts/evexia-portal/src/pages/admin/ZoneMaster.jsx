@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'wouter';
 import { CirclePower, Pencil, Plus, Search, Trash2, MapPinned, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
@@ -17,6 +18,7 @@ function details(by, at) {
 }
 
 export default function ZoneMaster() {
+  const [, navigate] = useLocation();
   const { zones, error, feedback, clearFeedback, retry, add, edit, remove, changeStatus, importRows } = useZones();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
@@ -86,7 +88,8 @@ export default function ZoneMaster() {
     <AdminLayout title="Zone Master">
       <div className="admin-page-head">
         <div><p className="admin-page-head__eyebrow">Masters / Geography</p><h1>Zone Master</h1><p className="admin-page-head__description">Manage the zones used across your EVEXIA workspace.</p></div>
-         <div className="admin-mr-head-actions"><button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error)} onClick={() => { clearFeedback(); setImporting(true); }} data-testid="button-import-zones"><Upload size={16} aria-hidden="true" /> Import CSV</button>
+         <div className="admin-mr-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/zone')} data-testid="button-import-zone-excel"><Upload size={16} aria-hidden="true" /> Import Excel</button>
+         <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error)} onClick={() => { clearFeedback(); setImporting(true); }} data-testid="button-import-zones">Import CSV</button>
          <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); setEditing('new'); }} data-testid="button-add-zone"><Plus size={16} aria-hidden="true" /> Add zone</button></div>
       </div>
       {feedback && <div className="admin-feedback" role="status" data-testid="status-zone-feedback">{feedback}</div>}
