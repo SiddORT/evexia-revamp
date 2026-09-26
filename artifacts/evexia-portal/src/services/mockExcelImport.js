@@ -121,6 +121,7 @@ async function zipEntries(file) {
   }
   if (end < 0) throw new Error('This is not a readable .xlsx workbook.');
   const count = view.getUint16(end + 10, true);
+  if (count > 256) throw new Error('The workbook contains too many files.');
   let position = view.getUint32(end + 16, true);
   const entries = new Map();
   for (let i = 0; i < count; i++) {

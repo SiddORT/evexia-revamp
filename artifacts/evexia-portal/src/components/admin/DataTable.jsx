@@ -5,11 +5,12 @@ export default function DataTable({ columns, rows, rowKey, empty, label = 'Zone 
       <table className="admin-table">
         <thead><tr>{columns.map((column) => <th scope="col" key={column.key}>{column.label}</th>)}</tr></thead>
         <tbody>
-          {rows.map((row, index) => (
-            <tr key={rowKey(row)} data-testid={`row-${testIdPrefix}-${rowKey(row)}`}>
+          {rows.map((row, index) => {
+            const key = rowKey(row);
+            return <tr key={key} data-testid={`row-${testIdPrefix}-${key}`}>
               {columns.map((column) => <td key={column.key}>{column.render(row, index + rowOffset)}</td>)}
-            </tr>
-          ))}
+            </tr>;
+          })}
         </tbody>
       </table>
     </div>

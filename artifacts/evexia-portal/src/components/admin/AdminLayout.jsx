@@ -281,16 +281,16 @@ export default function AdminLayout({ title, children }) {
           <DropdownMenu.Root>
             <div className="admin-profile">
               <DropdownMenu.Trigger asChild>
-                <button type="button" className="admin-profile__trigger" aria-label="Admin User profile menu" data-testid="button-admin-profile">
-                  <span className="admin-profile__avatar" aria-hidden="true">AU</span>
-                  <span className="admin-profile__name">Admin User</span>
+                <button type="button" className="admin-profile__trigger" aria-label="Demo Admin profile menu" data-testid="button-admin-profile">
+                  <span className="admin-profile__avatar" aria-hidden="true">DA</span>
+                  <span className="admin-profile__name">Demo Admin</span>
                   <ChevronDown size={14} aria-hidden="true" />
                 </button>
               </DropdownMenu.Trigger>
               <DropdownMenu.Portal>
                 <DropdownMenu.Content className="admin-profile__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={10}>
                   <DropdownMenu.Label className="admin-profile__identity">
-                    <strong>Admin User</strong><span>admin@evexia.com</span>
+                    <strong>Demo Admin</strong><span>Not signed in</span>
                   </DropdownMenu.Label>
                   <DropdownMenu.Separator className="admin-profile__separator" />
                   <DropdownMenu.Item className="admin-profile__signout" onSelect={() => navigate('/admin/login')} data-testid="link-admin-sign-out">
@@ -302,7 +302,10 @@ export default function AdminLayout({ title, children }) {
           </DropdownMenu.Root>
           </div>
         </header>
-        <main className="admin-content">{children}</main>
+        <main className="admin-content">
+          <p className="admin-preview-notice" role="note">Preview only — Admin access is not protected. Records stay in this browser and can be viewed or changed by anyone using it. Do not enter real patient, staff, or vendor data.</p>
+          {children}
+        </main>
       </div>
     </div>
   );

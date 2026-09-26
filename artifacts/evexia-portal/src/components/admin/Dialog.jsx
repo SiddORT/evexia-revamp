@@ -13,14 +13,15 @@ export default function Dialog({ title, eyebrow, description, titleInfo, onClose
     document.body.style.overflow = 'hidden';
     closeRef.current?.focus();
     function handleKey(event) {
-       if (event.key === 'Escape' && !dialogRef.current?.parentElement?.querySelector('[data-admin-info-open="true"]')) { event.stopPropagation(); onCloseRef.current(); }
+      if (event.key === 'Escape' && !dialogRef.current?.parentElement?.querySelector('[data-admin-info-open="true"]')) { event.preventDefault(); event.stopPropagation(); onCloseRef.current(); }
       if (event.key === 'Tab') {
-        const focusable = dialogRef.current?.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), summary, a[href]');
-        if (!focusable?.length) return;
+        const focusable = [...(dialogRef.current?.querySelectorAll('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), summary, a[href], [tabindex]:not([tabindex="-1"])') || [])]
+          .filter((element) => element.getClientRects().length > 0);
+        if (!focusable.length) return;
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
-        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        if (event.shiftKey && (document.activeElement === first || !dialogRef.current?.contains(document.activeElement))) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && (document.activeElement === last || !dialogRef.current?.contains(document.activeElement))) { event.preventDefault(); first.focus(); }
       }
     }
     document.addEventListener('keydown', handleKey, true);

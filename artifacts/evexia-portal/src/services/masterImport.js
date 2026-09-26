@@ -10,6 +10,7 @@ const id = () => crypto.randomUUID();
 // RFC 4180-style quoted fields, including embedded commas, quotes and line breaks.
 export function parseCSV(text) {
   if (typeof text !== 'string' || !text.trim()) throw new Error('Choose a nonempty CSV file.');
+  if (new TextEncoder().encode(text).length > 2_000_000) throw new Error('CSV is too large (2 MB maximum).');
   if (text.includes('\0')) throw new Error('CSV contains invalid binary data.');
   const input = text.replace(/^\uFEFF/, '');
   const rows = [];

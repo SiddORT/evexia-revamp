@@ -31,7 +31,7 @@ export default function AuthPage({ role }) {
           <Link href="/" className="auth-back" data-testid="link-back-portals">
             <ArrowLeft size={15} aria-hidden="true" /> Choose a different portal
           </Link>
-          <p className="auth-legal">By continuing, you acknowledge that this preview contains no connected authentication or account storage.</p>
+          <p className="auth-legal">Demo only: no account is checked and Admin pages are public. Do not enter a real password or any patient, staff, or vendor data. Records in this preview stay in this browser, without access control, and may be lost when browser data is cleared.</p>
         </div>
       </section>
     </main>

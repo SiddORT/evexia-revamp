@@ -209,6 +209,7 @@
 .admin-profile__signout { margin-top: 5px; width: 100%; padding: 10px 11px; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 7px; background: transparent; color: var(--admin-danger); font-size: 12px; font-weight: 700; cursor: pointer; outline: none; }
 .admin-profile__signout[data-highlighted] { background: var(--red-soft); }
 .admin-content { min-width: 0; padding: clamp(18px, 2.6vw, 32px); }
+.admin-preview-notice { margin: 0 0 18px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink-soft); background: var(--admin-chrome); font-size: 12px; line-height: 1.5; }
 .admin-page-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 18px; }
 .admin-page-head__eyebrow { color: var(--accent); text-transform: uppercase; letter-spacing: .16em; font-size: 10px; font-weight: 700; margin: 0 0 7px; }
 .admin-page-head h1 { margin: 0; color: var(--ink); font-family: var(--font-display); font-weight: 500; font-size: clamp(32px, 4vw, 44px); letter-spacing: -.045em; line-height: 1.1; }

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CSV_COLUMNS, exportMRCSV } from './mrs.js';
-import { reviewImport } from './masterImport.js';
+import { parseCSV, reviewImport } from './masterImport.js';
 
 const zone = { id: 'zone-1', name: 'Central Zone', status: 'active' };
 const snapshots = { zones: [zone], mrs: [], doctors: [] };
@@ -13,6 +13,10 @@ const record = {
   addressLine1: '1 Main Road', addressLine2: '', landmark: 'Market',
   pincode: '110001', city: 'Delhi', state: 'Delhi', country: 'India',
 };
+
+test('CSV parser rejects oversized content even without a file picker', () => {
+  assert.throws(() => parseCSV('a,b\n' + 'x'.repeat(2_000_000)), /2 MB maximum/);
+});
 
 test('MR CSVs exported before contact rules still import as required contacts', () => {
   const oldColumns = CSV_COLUMNS.filter(([key]) => key !== 'contactRequirement');
