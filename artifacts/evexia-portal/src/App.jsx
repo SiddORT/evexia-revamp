@@ -27,6 +27,8 @@ import AllergenFormPage from './pages/admin/AllergenFormPage.jsx';
 import PatientDosageHistory from './pages/admin/PatientDosageHistory.jsx';
 import VendorMaster from './pages/admin/VendorMaster.jsx';
 import SalesTargetMaster from './pages/admin/SalesTargetMaster.jsx';
+import OpeningBalanceMaster from './pages/admin/OpeningBalanceMaster.jsx';
+import OpeningBalanceFormPage from './pages/admin/OpeningBalanceFormPage.jsx';
 
 function App() {
   return (
@@ -58,6 +60,9 @@ function App() {
       <Route path="/admin/masters/allergens/new">{() => <AllergenFormPage />}</Route>
       <Route path="/admin/masters/allergens/:id">{(params) => <AllergenFormPage id={params.id} />}</Route>
       <Route path="/admin/masters/vendors" component={VendorMaster} />
+      <Route path="/admin/masters/opening-balances" component={OpeningBalanceMaster} />
+      <Route path="/admin/masters/opening-balances/new">{() => <OpeningBalanceFormPage />}</Route>
+      <Route path="/admin/masters/opening-balances/:id">{(params) => <OpeningBalanceFormPage id={params.id} />}</Route>
       <Route path="/admin/masters/patients" component={PatientMaster} />
       <Route path="/admin/masters/patients/import" component={PatientImportPage} />
       <Route path="/admin/masters/patients/new">{() => <PatientFormPage />}</Route>

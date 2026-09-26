@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Boxes, BriefcaseBusiness, Check, ChevronDown, FlaskConical, HeartPulse, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, Moon, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Stethoscope, Sun, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
+import { Boxes, BriefcaseBusiness, Check, ChevronDown, FlaskConical, HeartPulse, Landmark, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, Moon, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Stethoscope, Sun, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
 import { ADMIN_APPEARANCES, ADMIN_THEMES, readAdminAppearance, readAdminTheme, saveAdminAppearance, saveAdminTheme } from './adminTheme.js';
 import '../../admin.css';
@@ -138,6 +138,7 @@ export default function AdminLayout({ title, children }) {
                  <Link href="/admin/masters/allergens" className={`admin-nav__item${location.startsWith('/admin/masters/allergens') ? ' admin-nav__item--active' : ''}`} aria-label="Allergen Master" title={isCollapsed ? 'Allergen Master' : undefined} aria-current={location === '/admin/masters/allergens' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-allergens"><FlaskConical size={16} aria-hidden="true" /><span className="admin-nav__label">Allergen Master</span></Link>
                   <Link href="/admin/masters/vendors" className={`admin-nav__item${location === '/admin/masters/vendors' ? ' admin-nav__item--active' : ''}`} aria-label="Vendor Master" title={isCollapsed ? 'Vendor Master' : undefined} aria-current={location === '/admin/masters/vendors' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-vendors"><BriefcaseBusiness size={16} aria-hidden="true" /><span className="admin-nav__label">Vendor Master</span></Link>
                 <Link href="/admin/masters/patients" className={`admin-nav__item${location.startsWith('/admin/masters/patients') ? ' admin-nav__item--active' : ''}`} aria-label="Patient Master" title={isCollapsed ? 'Patient Master' : undefined} aria-current={location === '/admin/masters/patients' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-patients"><HeartPulse size={16} aria-hidden="true" /><span className="admin-nav__label">Patient Master</span></Link>
+                 <Link href="/admin/masters/opening-balances" className={`admin-nav__item${location.startsWith('/admin/masters/opening-balances') ? ' admin-nav__item--active' : ''}`} aria-label="Opening Balance Master" title={isCollapsed ? 'Opening Balance Master' : undefined} aria-current={location === '/admin/masters/opening-balances' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-opening-balances"><Landmark size={16} aria-hidden="true" /><span className="admin-nav__label">Opening Balance Master</span></Link>
             </div>
           )}
         </nav>
