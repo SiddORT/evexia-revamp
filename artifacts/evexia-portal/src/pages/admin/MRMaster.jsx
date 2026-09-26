@@ -1,16 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
-import { CirclePower, Download, Mail, Pencil, Phone, Plus, Search, UsersRound } from 'lucide-react';
+import { CalendarDays, CirclePower, Download, Hash, Mail, Pencil, Phone, Plus, Search, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
+import TablePagination from '../../components/admin/TablePagination.jsx';
 import useMRs from '../../hooks/useMRs.js';
+import useTablePagination from '../../hooks/useTablePagination.js';
 import { exportMRCSV, loadMRs } from '../../services/mrs.js';
 import { loadZones } from '../../services/zones.js';
 import '../../mr.css';
 
 const cleanPhone = (phone) => phone.replace(/[^+\d]/g, '');
+const dateFormat = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+const dateTimeFormat = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+function formattedDate(value, formatter) {
+  if (!value) return '—';
+  const date = new Date(value.length === 10 ? `${value}T00:00:00` : value);
+  return Number.isNaN(date.getTime()) ? '—' : formatter.format(date);
+}
+
+function auditDetails(value) {
+  return <time className="admin-mr-audit" dateTime={value}>{formattedDate(value, dateTimeFormat)}</time>;
+}
 
 export default function MRMaster() {
   const [, navigate] = useLocation();
@@ -31,10 +45,11 @@ export default function MRMaster() {
   const managerName = (record) => records.find((candidate) => candidate.id === record.reportingManagerId)?.name || (record.reportingManagerId ? 'Missing MR' : '—');
   const visible = useMemo(() => records.filter((record) => {
     const query = search.trim().toLocaleLowerCase();
-    return (!query || [record.name, record.designation, record.phone, record.employeeCode].some((value) => value.toLocaleLowerCase().includes(query)))
+    return (!query || [record.name, record.designation, record.phone, record.email, record.employeeCode, record.dateOfJoining, record.hq].some((value) => value.toLocaleLowerCase().includes(query)))
       && (zoneFilter === 'all' || (zoneFilter === 'missing' ? !zones.some((zone) => zone.id === record.zoneId) : record.zoneId === zoneFilter))
       && (statusFilter === 'all' || record.status === statusFilter);
   }), [records, zones, search, zoneFilter, statusFilter]);
+  const pagination = useTablePagination(visible);
   const hasMissingZones = records.some((record) => !zones.some((zone) => zone.id === record.zoneId));
 
   function toggle() {
@@ -69,13 +84,13 @@ export default function MRMaster() {
       <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} title={record.status === 'active' ? 'Inactivate' : 'Activate'} onClick={() => { clearFeedback(); setActionError(''); setConfirming(record); }} data-testid={`button-toggle-mr-${record.id}`}><CirclePower size={16} aria-hidden="true" />{compact && (record.status === 'active' ? 'Inactivate' : 'Activate')}</button>
     </div>;
   }
-  function details(record) {
+  function details(record, showName = true) {
     return <div className="admin-mr-details" data-testid={`text-mr-details-${record.id}`}>
-      <strong>{record.name}</strong>
-      <span>Code: {record.employeeCode} · ID: {record.userId}</span>
-      <span>Phone: {record.phone ? <a href={`tel:${cleanPhone(record.phone)}`} aria-label={`Call ${record.name} at ${record.phone}`} data-testid={`link-phone-mr-${record.id}`}>{record.phone} <Phone size={12} aria-hidden="true" /></a> : '—'}</span>
-      <span>Email: {record.email ? <a href={`mailto:${record.email}`} aria-label={`Email ${record.name} at ${record.email}`} data-testid={`link-email-mr-${record.id}`}>{record.email} <Mail size={12} aria-hidden="true" /></a> : '—'}</span>
-      <span>HQ: {record.hq}</span>
+      {showName && <strong>{record.name}</strong>}
+      <span className="admin-mr-details__line"><Hash size={14} aria-hidden="true" /><span><span className="sr-only">Employee code: </span>{record.employeeCode}</span></span>
+      <span className="admin-mr-details__line"><Phone size={14} aria-hidden="true" /><a href={`tel:${cleanPhone(record.phone)}`} aria-label={`Call ${record.name} at ${record.phone}`} data-testid={`link-phone-mr-${record.id}`}>{record.phone}</a></span>
+      <span className="admin-mr-details__line"><Mail size={14} aria-hidden="true" /><a href={`mailto:${record.email}`} aria-label={`Email ${record.name} at ${record.email}`} data-testid={`link-email-mr-${record.id}`}>{record.email}</a></span>
+      <span className="admin-mr-details__line"><CalendarDays size={14} aria-hidden="true" /><span><span className="sr-only">Date of joining: </span>{formattedDate(record.dateOfJoining, dateFormat)}</span></span>
     </div>;
   }
   function address(record) {
@@ -83,12 +98,14 @@ export default function MRMaster() {
   }
   const columns = [
     { key: 'serial', label: 'Sr No.', render: (_, index) => index + 1 },
-    { key: 'details', label: 'Employee details', render: details },
+    { key: 'details', label: 'Employee details', render: (record) => details(record) },
     { key: 'address', label: 'Address', render: address },
     { key: 'designation', label: 'Designation', render: (record) => record.designation },
     { key: 'manager', label: 'Reporting manager', render: managerName },
     { key: 'zone', label: 'Assigned zone', render: (record) => <span className={!zones.some((zone) => zone.id === record.zoneId) ? 'admin-mr-missing' : ''}>{zoneName(record)}</span> },
     { key: 'status', label: 'Status', render: (record) => <StatusBadge status={record.status} id={record.id} kind="mr" /> },
+    { key: 'created', label: 'Created details', render: (record) => auditDetails(record.createdAt) },
+    { key: 'updated', label: 'Updated details', render: (record) => auditDetails(record.updatedAt) },
     { key: 'actions', label: 'Actions', render: (record) => actions(record) },
   ];
   return <AdminLayout title="MR Master">
@@ -105,22 +122,22 @@ export default function MRMaster() {
     <section className="admin-panel" aria-label="MR list">
       <div className="admin-toolbar">
         <div className="admin-toolbar__fields">
-          <label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search by name, designation, phone or employee code</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Name, designation, phone or code" data-testid="input-search-mrs" /></label>
-          <div className="admin-filter"><label htmlFor="mr-zone-filter">Assigned zone</label><select id="mr-zone-filter" className="admin-select" value={zoneFilter} onChange={(event) => setZoneFilter(event.target.value)} data-testid="select-filter-mr-zone"><option value="all">All zones</option>{zones.map((zone) => <option key={zone.id} value={zone.id}>{zone.name}{zone.status === 'inactive' ? ' (inactive)' : ''}</option>)}{hasMissingZones && <option value="missing">Deleted zone</option>}</select></div>
-          <div className="admin-filter"><label htmlFor="mr-status-filter">Status</label><select id="mr-status-filter" className="admin-select" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} data-testid="select-filter-mr-status"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+           <label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search MR details</span><input value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Search MR details" data-testid="input-search-mrs" /></label>
+           <div className="admin-filter"><label htmlFor="mr-zone-filter">Assigned zone</label><select id="mr-zone-filter" className="admin-select" value={zoneFilter} onChange={(event) => { setZoneFilter(event.target.value); pagination.resetPage(); }} data-testid="select-filter-mr-zone"><option value="all">All zones</option>{zones.map((zone) => <option key={zone.id} value={zone.id}>{zone.name}{zone.status === 'inactive' ? ' (inactive)' : ''}</option>)}{hasMissingZones && <option value="missing">Deleted zone</option>}</select></div>
+           <div className="admin-filter"><label htmlFor="mr-status-filter">Status</label><select id="mr-status-filter" className="admin-select" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); pagination.resetPage(); }} data-testid="select-filter-mr-status"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
         </div>
       </div>
       {error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><UsersRound size={21} /></span><strong>MR records could not be loaded</strong><p>{error}</p><button className="admin-button" type="button" onClick={() => { retry(); setActionError(''); }} style={{ marginTop: 16 }} data-testid="button-retry-mrs">Refresh records</button></div> : <>
         {hasMissingZones && <div className="admin-feedback admin-feedback--error" role="status">Some MRs refer to deleted zones. Edit their assignments to an active zone in Zone Master.</div>}
         {visible.length ? <>
-          <div className="admin-mr-desktop"><DataTable columns={columns} rows={visible} rowKey={(record) => record.id} label="MR records" testIdPrefix="mr" /></div>
-          <div className="admin-mr-mobile" role="list" aria-label="MR records">{visible.map((record) => <article className="admin-mr-card" role="listitem" key={record.id} data-testid={`card-mr-${record.id}`}>
+           <div className="admin-mr-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} label="MR records" testIdPrefix="mr" /></div>
+           <div className="admin-mr-mobile" role="list" aria-label="MR records">{pagination.pageRows.map((record) => <article className="admin-mr-card" role="listitem" key={record.id} data-testid={`card-mr-${record.id}`}>
             <div className="admin-mr-card__head"><div><h2>{record.name}</h2><small>{record.designation}</small></div><StatusBadge status={record.status} id={record.id} kind="mr" /></div>
-            <div className="admin-mr-card__body">{details(record)}<dl><div><dt>Address</dt><dd>{address(record)}</dd></div><div><dt>Manager</dt><dd>{managerName(record)}</dd></div><div><dt>Zone</dt><dd>{zoneName(record)}</dd></div></dl></div>
+             <div className="admin-mr-card__body">{details(record, false)}<dl><div><dt>Address</dt><dd>{address(record)}</dd></div><div><dt>Manager</dt><dd>{managerName(record)}</dd></div><div><dt>Zone</dt><dd>{zoneName(record)}</dd></div><div><dt>Created</dt><dd>{auditDetails(record.createdAt)}</dd></div><div><dt>Updated</dt><dd>{auditDetails(record.updatedAt)}</dd></div></dl></div>
             {actions(record, true)}
           </article>)}</div>
         </> : <div className="admin-empty" data-testid="status-mrs-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{records.length ? 'No matching MRs' : 'No MR records yet'}</strong><p>{records.length ? 'Try different search or filters.' : 'Add an MR to create a browser-local preview record.'}</p></div>}
-        <div className="admin-panel__foot" data-testid="text-mr-count">Showing {visible.length} of {records.length} {records.length === 1 ? 'MR' : 'MRs'}</div>
+        <TablePagination {...pagination} filtered={visible.length} total={records.length} label={records.length === 1 ? 'MR' : 'MRs'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-mr-count" />
       </>}
     </section>
     {confirming && <ConfirmationDialog title={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} MR?`} description={`Change “${confirming.name}” to ${confirming.status === 'active' ? 'inactive' : 'active'}? This only changes this browser-local preview record; it does not control login access.`} actionLabel={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} MR`} onConfirm={toggle} onClose={() => setConfirming(null)} error={actionError} />}

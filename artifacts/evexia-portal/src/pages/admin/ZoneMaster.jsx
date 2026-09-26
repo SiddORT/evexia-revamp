@@ -4,7 +4,9 @@ import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
+import TablePagination from '../../components/admin/TablePagination.jsx';
 import ZoneForm from '../../components/admin/ZoneForm.jsx';
+import useTablePagination from '../../hooks/useTablePagination.js';
 import useZones from '../../hooks/useZones.js';
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -31,6 +33,7 @@ export default function ZoneMaster() {
   const visibleZones = useMemo(() => zones.filter((zone) =>
     zone.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()) &&
     (filter === 'all' || zone.status === filter)), [zones, search, filter]);
+  const pagination = useTablePagination(visibleZones);
 
   function save(values) {
     const result = editing === 'new' ? add(values) : edit(editing.id, values);
@@ -90,11 +93,11 @@ export default function ZoneMaster() {
             <label className="admin-search">
               <Search size={16} aria-hidden="true" />
               <span className="sr-only">Search zones by name</span>
-              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by zone name" data-testid="input-search-zones" />
+              <input value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Search by zone name" data-testid="input-search-zones" />
             </label>
             <div className="admin-filter">
               <label htmlFor="zone-filter">Status</label>
-              <select id="zone-filter" className="admin-select" value={filter} onChange={(event) => setFilter(event.target.value)} data-testid="select-filter-zones">
+              <select id="zone-filter" className="admin-select" value={filter} onChange={(event) => { setFilter(event.target.value); pagination.resetPage(); }} data-testid="select-filter-zones">
                 <option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option>
               </select>
             </div>
@@ -104,10 +107,10 @@ export default function ZoneMaster() {
           <>
             {visibleZones.length ? (cardView ? (
               <div className="admin-zone-cards" role="list" aria-label="Zone records">
-                {visibleZones.map((zone, index) => (
+                {pagination.pageRows.map((zone, index) => (
                   <article className="admin-zone-card" role="listitem" key={zone.id} data-testid={`card-zone-${zone.id}`}>
                     <div className="admin-zone-card__heading">
-                      <div className="admin-zone-card__title"><span className="admin-zone-card__serial">#{index + 1}</span><h2 data-testid={`text-zone-name-${zone.id}`}>{zone.name}</h2></div>
+                      <div className="admin-zone-card__title"><span className="admin-zone-card__serial">#{pagination.startIndex + index + 1}</span><h2 data-testid={`text-zone-name-${zone.id}`}>{zone.name}</h2></div>
                       <StatusBadge status={zone.status} id={zone.id} />
                     </div>
                     <dl className="admin-zone-card__meta">
@@ -118,14 +121,14 @@ export default function ZoneMaster() {
                   </article>
                 ))}
               </div>
-            ) : <DataTable columns={columns} rows={visibleZones} rowKey={(zone) => zone.id} />) : (
+            ) : <DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(zone) => zone.id} />) : (
               <div className="admin-empty" data-testid="status-zones-empty">
                 <span className="admin-empty__icon"><MapPinned size={21} aria-hidden="true" /></span>
                 <strong>{zones.length ? 'No matching zones' : 'No zones yet'}</strong>
                 <p>{zones.length ? 'Try a different name or status filter.' : 'Add your first zone to get started.'}</p>
               </div>
             )}
-            <div className="admin-panel__foot" data-testid="text-zone-count">Showing {visibleZones.length} of {zones.length} {zones.length === 1 ? 'zone' : 'zones'}</div>
+            <TablePagination {...pagination} filtered={visibleZones.length} total={zones.length} label={zones.length === 1 ? 'zone' : 'zones'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-zone-count" />
           </>
         )}
       </section>
