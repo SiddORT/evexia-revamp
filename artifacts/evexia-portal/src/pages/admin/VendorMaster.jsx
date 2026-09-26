@@ -232,10 +232,6 @@ export default function VendorMaster() {
     try { downloadCSV(exportVendorCSV(visible), 'evexia-vendors.csv'); setActionError(''); }
     catch (cause) { setActionError(cause.message || 'CSV export failed. Please try again.'); }
   }
-  function template() {
-    try { downloadCSV(vendorCSVTemplate(), 'evexia-vendor-template.csv'); setActionError(''); }
-    catch (cause) { setActionError(cause.message || 'The CSV template could not be downloaded.'); }
-  }
   function edit(record) { setEditing(record); setActionError(''); setFeedback(''); }
   const columns = [
     { key: 'serial', label: 'Sr No.', render: (_, index) => <span className="admin-table__serial">{index + 1}</span> },
@@ -254,7 +250,6 @@ export default function VendorMaster() {
       <div><p className="admin-page-head__eyebrow">Masters / Contacts</p><h1>Vendor Master</h1><p className="admin-page-head__description">Keep vendor identities and contact details together in this browser.</p></div>
       <div className="admin-vendor-actions">
         <button type="button" className="admin-button admin-button--secondary" onClick={refresh} data-testid="button-refresh-vendors"><RefreshCw size={16} aria-hidden="true" /> Refresh records</button>
-        <button type="button" className="admin-button admin-button--secondary" onClick={template} data-testid="button-download-vendor-template"><Download size={16} aria-hidden="true" /> CSV template</button>
         <button type="button" className="admin-button admin-button--secondary" onClick={() => { setImporting(true); setActionError(''); }} disabled={Boolean(error) || stale} data-testid="button-import-vendors"><Upload size={16} aria-hidden="true" /> Import data</button>
         <button type="button" className="admin-button admin-button--secondary" onClick={exportRows} disabled={Boolean(error) || stale || !visible.length} data-testid="button-export-vendors"><Download size={16} aria-hidden="true" /> Export data</button>
         <button type="button" className="admin-button" onClick={() => edit(null)} disabled={Boolean(error) || stale} data-testid="button-add-vendor"><Plus size={16} aria-hidden="true" /> Add vendor</button>

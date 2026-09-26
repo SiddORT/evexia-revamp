@@ -8,6 +8,7 @@ import { EXCEL_TEMPLATES, reviewExcel, sampleExcel } from './mockExcelImport.js'
 
 function storage() {
   const values = new Map();
+  values.set(COURIER_PARTNER_STORAGE_KEY, '[]');
   globalThis.window = {
     localStorage: {
       getItem: (key) => values.get(key) ?? null,
@@ -16,6 +17,45 @@ function storage() {
   };
   return values;
 }
+
+test('missing courier collection gets persistent editable samples without supplementing saved data', () => {
+  const values = storage();
+  values.delete(COURIER_PARTNER_STORAGE_KEY);
+  const first = loadCourierPartners();
+  assert.equal(first.length, 3);
+  assert.ok(first.every((record, index) => record.id === `sample-courier-partner-${index + 1}` &&
+    record.name.startsWith('Sample ') && record.createdBy === 'Admin User' &&
+    record.createdAt === record.updatedAt && ['active', 'inactive'].includes(record.status)));
+  assert.deepEqual(loadCourierPartners(), first);
+  assert.equal(values.get(COURIER_PARTNER_STORAGE_KEY), JSON.stringify(first));
+  const edited = updateCourierPartner(first, first[0].id, { name: 'Edited Example', status: 'inactive' });
+  assert.equal(loadCourierPartners()[0].name, 'Edited Example');
+  assert.equal(setCourierPartnerStatus(edited, first[0].id, 'active')[0].status, 'active');
+  assert.equal(deleteCourierPartner(loadCourierPartners(), first[0].id).length, 2);
+
+  storage();
+  const saved = createCourierPartner([], { name: 'Own Delivery' });
+  assert.deepEqual(loadCourierPartners(), saved);
+  assert.deepEqual(loadCourierPartners().map((item) => item.name), ['Own Delivery']);
+  window.localStorage.setItem(COURIER_PARTNER_STORAGE_KEY, '[]');
+  assert.deepEqual(loadCourierPartners(), []);
+});
+
+test('courier initialization preserves concurrent and corrupt collections, and reports failed writes', () => {
+  const values = storage();
+  const saved = createCourierPartner([], { name: 'Concurrent' });
+  values.delete(COURIER_PARTNER_STORAGE_KEY);
+  let reads = 0;
+  window.localStorage.getItem = () => ++reads === 1 ? null : JSON.stringify(saved);
+  window.localStorage.setItem = () => assert.fail('Must not replace concurrently initialized data');
+  assert.deepEqual(loadCourierPartners(), saved);
+  for (const raw of ['{', '{}', '[null]']) {
+    window.localStorage = { getItem: () => raw, setItem: () => assert.fail('Must not replace invalid data') };
+    assert.throws(loadCourierPartners, /invalid/);
+  }
+  window.localStorage = { getItem: () => null, setItem: () => { throw new Error('quota'); } };
+  assert.throws(loadCourierPartners, /could not be saved/);
+});
 
 test('courier partners persist independently, preserving an intentionally empty collection', () => {
   const values = storage();

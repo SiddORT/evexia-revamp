@@ -18,6 +18,17 @@ const validDate = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d
   !Number.isNaN(Date.parse(value)) && new Date(value).toISOString() === value;
 const nextTime = (previous) => new Date(Math.max(Date.now(), Date.parse(previous) + 1)).toISOString();
 
+function samples() {
+  return [
+    { name: 'Sample Field Representative', shortName: 'SFR', level: 3, status: 'active', basicDa: 40, hra: 20, medicalAllowance: 5, travellingAllowance: 10, specialAllowance: 5, professionalTax: 200 },
+    { name: 'Sample Area Manager', shortName: 'SAM', level: 2, status: 'active', basicDa: 45, hra: 20, medicalAllowance: 5, travellingAllowance: 12, specialAllowance: 8, professionalTax: 200 },
+    { name: 'Sample Regional Lead', shortName: 'SRL', level: 1, status: 'inactive', basicDa: 50, hra: 25, medicalAllowance: 5, travellingAllowance: 15, specialAllowance: 10, professionalTax: 200 },
+  ].map((fields, index) => {
+    const now = new Date(Date.UTC(2025, 1, 12 + index, 9, 15)).toISOString();
+    return { ...fields, id: `sample-designation-${index + 1}`, createdBy: ACTOR, createdAt: now, updatedBy: ACTOR, updatedAt: now };
+  });
+}
+
 export function validateDesignation(values, records = [], exceptId = null) {
   if (!values || typeof values !== 'object' || Array.isArray(values) ||
     Object.keys(values).some((key) => !FIELDS.includes(key))) {
@@ -49,11 +60,12 @@ export function loadDesignations() {
   try { raw = window.localStorage.getItem(DESIGNATION_KEY); }
   catch { throw new Error('Designations could not be loaded because browser storage is unavailable.'); }
   if (raw === null) {
+    const initial = samples();
     try {
       if (window.localStorage.getItem(DESIGNATION_KEY) !== null) return loadDesignations();
-      window.localStorage.setItem(DESIGNATION_KEY, '[]');
+      window.localStorage.setItem(DESIGNATION_KEY, JSON.stringify(initial));
     } catch { throw new Error('Designations could not be initialized in this browser. Check browser storage settings and try again.'); }
-    return [];
+    return initial;
   }
   let parsed;
   try { parsed = JSON.parse(raw); }

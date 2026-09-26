@@ -18,16 +18,44 @@ test.beforeEach(() => {
   window.localStorage.setItem(DESIGNATION_KEY, '[]');
 });
 
+test('missing designation collection gets persistent valid samples with editable status', () => {
+  window.localStorage = storage();
+  const initial = loadDesignations();
+  assert.equal(initial.length, 3);
+  assert.ok(initial.every((record, index) => record.id === `sample-designation-${index + 1}` &&
+    record.name.startsWith('Sample ') && record.createdBy === 'Admin User' &&
+    record.createdAt === record.updatedAt && Object.keys(validateDesignation({
+      name: record.name, shortName: record.shortName, level: record.level, status: record.status,
+      basicDa: record.basicDa, hra: record.hra, medicalAllowance: record.medicalAllowance,
+      travellingAllowance: record.travellingAllowance, specialAllowance: record.specialAllowance,
+      professionalTax: record.professionalTax,
+    }, initial, record.id).errors).length === 0));
+  assert.equal(window.localStorage.getItem(DESIGNATION_KEY), JSON.stringify(initial));
+  assert.deepEqual(loadDesignations(), initial);
+  const changed = setDesignationStatus(initial, initial[0].id, 'inactive');
+  assert.equal(loadDesignations()[0].status, 'inactive');
+  assert.equal(updateDesignation(changed, initial[0].id, designation('Edited Sample')).length, 3);
+  assert.equal(loadDesignations()[0].name, 'Edited Sample');
+
+  window.localStorage = storage();
+  window.localStorage.setItem(DESIGNATION_KEY, '[]');
+  const own = createDesignation([], designation('Own Role'));
+  assert.deepEqual(loadDesignations(), own);
+  window.localStorage.setItem(DESIGNATION_KEY, '[]');
+  assert.deepEqual(loadDesignations(), []);
+});
+
 test('initializes only missing collections without replacing an intentionally empty or concurrently initialized one', () => {
   assert.deepEqual(loadDesignations(), []);
   window.localStorage = storage();
-  assert.deepEqual(loadDesignations(), []);
-  assert.equal(window.localStorage.getItem(DESIGNATION_KEY), '[]');
+  const samples = loadDesignations();
+  assert.equal(samples.length, 3);
+  assert.equal(window.localStorage.getItem(DESIGNATION_KEY), JSON.stringify(samples));
   window.localStorage = {
-    getItem: (() => { let calls = 0; return () => ++calls === 1 ? null : '[]'; })(),
+    getItem: (() => { let calls = 0; return () => ++calls === 1 ? null : JSON.stringify(samples); })(),
     setItem() { assert.fail('Must not replace concurrently initialized data'); },
   };
-  assert.deepEqual(loadDesignations(), []);
+  assert.deepEqual(loadDesignations(), samples);
 });
 test('validates required fields, unique names, whole-number levels, and nonnegative numeric amounts', () => {
   const saved = createDesignation([], designation());
@@ -114,4 +142,12 @@ test('corrupt or unavailable storage and failed writes are visible; stale edits 
   assert.throws(() => updateDesignation(first, first[0].id, designation('Third')), /changed in another tab/);
   assert.throws(() => setDesignationStatus(first, first[0].id, 'inactive'), /changed in another tab/);
   assert.equal(loadDesignations().length, 2);
+});
+test('first-use initialization does not overwrite corrupt data or hide write errors', () => {
+  for (const raw of ['{', '{}', '[null]']) {
+    window.localStorage = { getItem: () => raw, setItem: () => assert.fail('Must not replace invalid data') };
+    assert.throws(loadDesignations, /invalid/);
+  }
+  window.localStorage = { getItem: () => null, setItem: () => { throw new Error('quota'); } };
+  assert.throws(loadDesignations, /could not be initialized/);
 });

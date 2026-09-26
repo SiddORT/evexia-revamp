@@ -3,6 +3,18 @@ const STATUSES = ['active', 'inactive'];
 const nameKey = (name) => name.trim().replace(/\s+/gu, ' ').toLocaleLowerCase();
 const modifiedAt = (previous) => new Date(Math.max(Date.now(), Date.parse(previous) + 1)).toISOString();
 
+function samples() {
+  return [
+    ['Sample City Dispatch', 'active'],
+    ['Sample Valley Parcel', 'active'],
+    ['Sample Coastal Delivery', 'inactive'],
+  ].map(([name, status], index) => {
+    const now = new Date(Date.UTC(2025, 1, 12 + index, 9, 15)).toISOString();
+    return { id: `sample-courier-partner-${index + 1}`, name, status,
+      createdBy: 'Admin User', createdAt: now, updatedBy: 'Admin User', updatedAt: now };
+  });
+}
+
 function valid(record) {
   return record !== null && typeof record === 'object' && !Array.isArray(record)
     && typeof record.id === 'string' && Boolean(record.id)
@@ -17,7 +29,14 @@ export function loadCourierPartners() {
   let raw;
   try { raw = window.localStorage.getItem(COURIER_PARTNER_STORAGE_KEY); }
   catch { throw new Error('Courier partners could not be loaded because browser storage is unavailable.'); }
-  if (raw === null) return [];
+  if (raw === null) {
+    const initial = samples();
+    try {
+      if (window.localStorage.getItem(COURIER_PARTNER_STORAGE_KEY) !== null) return loadCourierPartners();
+      window.localStorage.setItem(COURIER_PARTNER_STORAGE_KEY, JSON.stringify(initial));
+    } catch { throw new Error('Sample courier partners could not be saved in this browser. Check browser storage settings and try again.'); }
+    return initial;
+  }
   try {
     const records = JSON.parse(raw);
     if (!Array.isArray(records) || !records.every(valid)
