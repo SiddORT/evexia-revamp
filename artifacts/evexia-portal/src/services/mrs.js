@@ -12,6 +12,47 @@ const own = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 const normalized = (value) => value.trim().toLocaleLowerCase();
 const validDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`)) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
 
+function sampleMRs(zones) {
+  const availableZones = zones.filter((zone) => zone.status === 'active');
+  const assignedZones = availableZones.length ? availableZones : zones;
+  if (!assignedZones.length) return [];
+
+  const examples = [
+    { name: 'Sample Asha Mehta', hq: 'New Delhi', designation: 'Regional Manager', status: 'active', city: 'New Delhi', state: 'Delhi', pincode: '110001', landmark: 'Central Market' },
+    { name: 'Sample Ravi Kapoor', hq: 'Mumbai', designation: 'Senior Medical Representative', status: 'active', city: 'Mumbai', state: 'Maharashtra', pincode: '400001', landmark: 'Station Road', reportingManagerId: 'sample-mr-1' },
+    { name: 'Sample Nisha Shah', hq: 'Kolkata', designation: 'Medical Representative', status: 'inactive', city: 'Kolkata', state: 'West Bengal', pincode: '700001', landmark: 'City Square', reportingManagerId: 'sample-mr-1' },
+    { name: 'Sample Kabir Sen', hq: 'Bengaluru', designation: 'Medical Representative', status: 'active', city: 'Bengaluru', state: 'Karnataka', pincode: '560001', landmark: 'Main Junction', reportingManagerId: 'sample-mr-2' },
+  ];
+  return examples.map((example, index) => {
+    const date = new Date(Date.UTC(2025, 1, 12 + index, 9, 15)).toISOString();
+    return {
+      id: `sample-mr-${index + 1}`,
+      name: example.name,
+      phone: `000000000${index + 1}`,
+      userId: `sample.mr${index + 1}`,
+      email: `sample.mr${index + 1}@example.com`,
+      hq: example.hq,
+      zoneId: assignedZones[index % assignedZones.length].id,
+      employeeCode: `SAMPLE-${String(index + 1).padStart(3, '0')}`,
+      dateOfJoining: `2024-0${index + 3}-15`,
+      designation: example.designation,
+      reportingManagerId: example.reportingManagerId || '',
+      paymentLimit: 0,
+      doctorDaysLimit: 0,
+      status: example.status,
+      addressLine1: `${index + 1} Sample Road`,
+      addressLine2: '',
+      landmark: example.landmark,
+      pincode: example.pincode,
+      city: example.city,
+      state: example.state,
+      country: 'India',
+      createdAt: date,
+      updatedAt: date,
+    };
+  });
+}
+
 export function validateMR(values, records = [], exceptId = null) {
   const errors = {};
   if (!values || typeof values !== 'object' || Array.isArray(values) || Object.keys(values).some((key) => !FIELDS.includes(key))) {
@@ -43,7 +84,16 @@ function read() {
   let raw;
   try { raw = window.localStorage.getItem(STORAGE_KEY); }
   catch { throw new Error('MR records could not be loaded because browser storage is unavailable.'); }
-  if (raw === null) return [];
+  if (raw === null) {
+    const samples = sampleMRs(loadZones());
+    if (!samples.length) return [];
+    try {
+      // Never replace a list that another tab saved while sample records were prepared.
+      if (window.localStorage.getItem(STORAGE_KEY) !== null) return read();
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(samples));
+    } catch { throw new Error('Sample MR records could not be saved in this browser. Check browser storage settings and try again.'); }
+    return samples;
+  }
   let parsed;
   try { parsed = JSON.parse(raw); }
   catch { throw new Error('Saved MR data is invalid. No records were changed. Repair or back up browser storage before retrying.'); }
@@ -54,7 +104,7 @@ function read() {
     typeof record.id !== 'string' || !record.id ||
     ![record.createdAt, record.updatedAt].every((date) => typeof date === 'string' && !Number.isNaN(Date.parse(date))) ||
     NUMERIC.some((key) => typeof record[key] !== 'number') ||
-    Object.keys(validateMR(Object.fromEntries(FIELDS.map((key) => [key, record[key]]))).errors).length
+    Object.keys(validateMR(Object.fromEntries(FIELDS.map((key) => [key, record[key]])), parsed, record.id).errors).length
   ) || new Set(parsed.map((record) => record.id)).size !== parsed.length ||
     ['employeeCode', 'userId', 'email'].some((field) => new Set(parsed.map((record) => normalized(record[field]))).size !== parsed.length) ||
     parsed.some((record) => record.reportingManagerId && (record.reportingManagerId === record.id || !parsed.some((candidate) => candidate.id === record.reportingManagerId)))) {
