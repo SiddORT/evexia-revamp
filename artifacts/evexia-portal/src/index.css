@@ -77,21 +77,31 @@ a { color: inherit; }
 .brand-mark {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: 132px;
+  height: 79px;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid rgba(37, 40, 43, 0.07);
+  border-radius: 6px;
   text-decoration: none;
-  letter-spacing: -0.04em;
+  vertical-align: middle;
 }
 
-.brand-mark__word {
-  font-size: 1.07rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: var(--ink);
+.brand-mark__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
-.brand-mark--light .brand-mark__word { color: var(--surface); }
+.brand-mark--light {
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 3px 16px rgba(0, 0, 0, 0.13);
+}
 
 .topbar {
-  padding: 28px 0;
+  padding: 16px 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -113,7 +123,7 @@ a { color: inherit; }
 }
 
 .portal-hero {
-  padding: clamp(52px, 8vw, 108px) 0 54px;
+  padding: clamp(40px, 6vw, 76px) 0 54px;
   max-width: 740px;
   position: relative;
 }
@@ -291,7 +301,7 @@ a { color: inherit; }
 }
 
 .auth-form-wrap { width: min(100%, 430px); margin: 0 auto; }
-.auth-form-wrap .brand-mark { margin-bottom: 64px; }
+.auth-form-wrap .brand-mark { margin-bottom: 30px; }
 .auth-form-wrap h1 { margin: 0 0 10px; font-size: clamp(1.8rem, 3vw, 2.28rem); letter-spacing: -0.045em; line-height: 1.1; }
 .auth-form-wrap__intro { color: var(--ink-soft); font-size: 0.9rem; margin: 0 0 35px; line-height: 1.6; }
 .auth-form { display: grid; gap: 20px; }
@@ -333,9 +343,9 @@ a { color: inherit; }
 
 @media (max-width: 800px) {
   .container { width: min(100% - 34px, 600px); }
-  .topbar { padding: 22px 0; }
+  .topbar { padding: 13px 0; }
   .topbar__meta { display: none; }
-  .portal-hero { padding: 67px 0 42px; }
+  .portal-hero { padding: 48px 0 42px; }
   .portal-grid { grid-template-columns: 1fr; gap: 13px; }
   .portal-card { min-height: 0; display: grid; grid-template-columns: 42% 58%; }
   .portal-card__visual { height: 100%; min-height: 188px; }
@@ -350,7 +360,7 @@ a { color: inherit; }
   .auth-visual__content p { font-size: 0.82rem; max-width: 280px; }
   .auth-visual__note { font-size: 0.65rem; }
   .auth-panel { min-height: auto; padding: 43px 25px 48px; }
-  .auth-form-wrap .brand-mark { margin-bottom: 38px; }
+  .auth-form-wrap .brand-mark { margin-bottom: 20px; }
   .auth-legal { margin-top: 34px; }
 }
 

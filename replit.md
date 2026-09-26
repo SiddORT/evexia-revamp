@@ -26,4 +26,4 @@ A frontend-only mock portal-selection and login experience for EVEXIA Life Scien
 
 ## Assets
 
-The provided attachment contained the written brief only, not the EVEXIA logo. The app uses a plain EVEXIA text wordmark for now; replace it with the supplied official logo when available rather than inventing a new mark.
+The supplied EVEXIA logo is displayed by the shared brand component on the landing and login screens. Keep the original artwork intact; the local PNG is only cropped to remove excess white space. The logo is a small raster source, so do not stretch it unnecessarily or redraw it.
