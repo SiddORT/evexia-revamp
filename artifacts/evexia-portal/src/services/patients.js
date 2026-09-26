@@ -37,11 +37,58 @@ export function validatePatient(values) {
   return { fields, errors };
 }
 
-export function loadPatients() {
+function samplePatients({ doctors, mrs, zones }) {
+  const available = doctors.filter((doctor) => doctor.status === 'active'
+    && mrs.some((mr) => mr.id === doctor.mrId && zones.some((zone) => zone.id === mr.zoneId)));
+  if (!available.length) return [];
+  const examples = [
+    { name: 'Sample Patient Ada', gender: 'female', dateOfBirth: '1992-04-15', instructionsLanguage: 'English', status: 'active', city: 'New Delhi', state: 'Delhi', pincode: '110001' },
+    { name: 'Sample Patient Bina', gender: 'female', dateOfBirth: '1978-08-22', instructionsLanguage: 'Hindi', status: 'inactive', city: 'Mumbai', state: 'Maharashtra', pincode: '400001' },
+    { name: 'Sample Patient Cyrus', gender: 'male', dateOfBirth: '2002-11-03', instructionsLanguage: 'Bengali', status: 'active', city: 'Kolkata', state: 'West Bengal', pincode: '700001' },
+    { name: 'Sample Patient Dev', gender: 'prefer not to say', dateOfBirth: '1965-02-19', instructionsLanguage: 'Kannada', status: 'inactive', city: 'Bengaluru', state: 'Karnataka', pincode: '560001' },
+  ];
+  return examples.map((example, index) => {
+    const at = new Date(Date.UTC(2025, 3, index + 1, 10)).toISOString();
+    return {
+      ...example,
+      id: `PAT-SAMPLE-${String(index + 1).padStart(3, '0')}`,
+      phone: `00000000${String(index + 1).padStart(2, '0')}`,
+      email: `sample.patient${index + 1}@example.com`,
+      doctorId: available[index % available.length].id,
+      addressLine1: `${index + 1} Sample Street`,
+      addressLine2: '',
+      landmark: 'Sample Square',
+      country: 'India',
+      createdAt: at,
+      updatedAt: at,
+    };
+  });
+}
+
+export function loadPatients(snapshots) {
   let raw;
   try { raw = window.localStorage.getItem(PATIENT_STORAGE_KEY); }
   catch { throw error('Patient records could not be loaded because browser storage is unavailable.', 'RECOVERY_REQUIRED'); }
-  if (raw === null) return [];
+  if (raw === null) {
+    const references = snapshots || { zones: loadZones(), mrs: loadMRs(), doctors: loadDoctors() };
+    const samples = samplePatients(references);
+    if (!samples.length) return [];
+    // Validate the complete saved shape and assignments before any first-use write.
+    for (const sample of samples) {
+      const fields = Object.fromEntries(PATIENT_FIELDS.map((key) => [key, sample[key]]));
+      checkedFields(fields, { ...references, records: [] });
+    }
+    let currentRaw;
+    try { currentRaw = window.localStorage.getItem(PATIENT_STORAGE_KEY); }
+    catch { throw error('Patient records could not be loaded because browser storage is unavailable.', 'RECOVERY_REQUIRED'); }
+    if (currentRaw !== null) return loadPatients();
+    if (!same(loadZones(), references.zones) || !same(loadMRs(), references.mrs) || !same(loadDoctors(), references.doctors)) {
+      throw error('Doctor, MR, or zone records changed while preparing sample patients. Refresh records before retrying.', 'SNAPSHOT_CONFLICT');
+    }
+    try { window.localStorage.setItem(PATIENT_STORAGE_KEY, JSON.stringify(samples)); }
+    catch { throw error('Sample patients could not be saved in this browser. Check browser storage settings and try again.', 'RECOVERY_REQUIRED'); }
+    return samples;
+  }
   let records;
   try { records = JSON.parse(raw); } catch { throw recovery(); }
   if (!Array.isArray(records) || records.some((record) =>
@@ -59,7 +106,7 @@ export function readPatientSnapshots() {
   const zones = loadZones();
   const mrs = loadMRs();
   const doctors = loadDoctors();
-  const records = loadPatients();
+  const records = loadPatients({ zones, mrs, doctors });
   return { zones, mrs, doctors, records };
 }
 
