@@ -4,14 +4,14 @@ import '../../mr.css';
 const FIELDS = [
   'name', 'phone', 'userId', 'email', 'hq', 'zoneId', 'employeeCode',
   'dateOfJoining', 'designation', 'reportingManagerId', 'paymentLimit',
-  'doctorDaysLimit', 'status', 'addressLine1', 'addressLine2', 'landmark',
-  'pincode', 'city', 'state', 'country',
+  'doctorDaysLimit', 'status', 'pincode', 'addressLine1', 'addressLine2',
+  'landmark', 'city', 'state', 'country',
 ];
 const OPTIONAL = new Set(['reportingManagerId', 'addressLine2', 'paymentLimit', 'doctorDaysLimit']);
 const TABS = [
   { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'userId', 'email'] },
   { id: 'assignment', label: 'Assignment & work', fields: ['hq', 'zoneId', 'employeeCode', 'dateOfJoining', 'designation', 'reportingManagerId', 'paymentLimit', 'doctorDaysLimit', 'status'] },
-  { id: 'address', label: 'Address', fields: ['addressLine1', 'addressLine2', 'landmark', 'pincode', 'city', 'state', 'country'] },
+  { id: 'address', label: 'Address', fields: ['pincode', 'addressLine1', 'addressLine2', 'landmark', 'city', 'state', 'country'] },
 ];
 
 function initialValues(mr) {
@@ -63,6 +63,7 @@ export default function MRForm({ mr, records = [], zones = [], onSave, onClose, 
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('identity');
+  const [dialCode, setDialCode] = useState('IN');
   const formRef = useRef(null);
   const tabRefs = useRef([]);
   const pendingFocus = useRef(null);
@@ -107,6 +108,25 @@ export default function MRForm({ mr, records = [], zones = [], onSave, onClose, 
     const errorId = `mr-${key}-error`;
     const hintId = `mr-${key}-hint`;
     const id = `mr-${key}`;
+    const input = (
+      <input
+        id={id}
+        name={key}
+        className="mr-form__control"
+        type={type}
+        value={values[key]}
+        onChange={(event) => change(key, event.target.value)}
+        placeholder={placeholder}
+        autoComplete={autoComplete || 'off'}
+        inputMode={inputMode}
+        min={min}
+        step={step}
+        aria-required={!OPTIONAL.has(key)}
+        aria-invalid={Boolean(errors[key])}
+        aria-describedby={[errors[key] && errorId, hint && hintId].filter(Boolean).join(' ') || undefined}
+        data-testid={`input-mr-${key}`}
+      />
+    );
     return (
       <div className={`mr-form__field${span ? ' mr-form__field--wide' : ''}`} key={key}>
         <label className="mr-form__label" htmlFor={id}>
@@ -127,25 +147,26 @@ export default function MRForm({ mr, records = [], zones = [], onSave, onClose, 
             <option value="">{placeholder || 'Select an option'}</option>
             {selectOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
-        ) : (
-          <input
-            id={id}
-            name={key}
-            className="mr-form__control"
-            type={type}
-            value={values[key]}
-            onChange={(event) => change(key, event.target.value)}
-            placeholder={placeholder}
-            autoComplete={autoComplete || 'off'}
-            inputMode={inputMode}
-            min={min}
-            step={step}
-            aria-required={!OPTIONAL.has(key)}
-            aria-invalid={Boolean(errors[key])}
-            aria-describedby={[errors[key] && errorId, hint && hintId].filter(Boolean).join(' ') || undefined}
-            data-testid={`input-mr-${key}`}
-          />
-        )}
+        ) : key === 'phone' ? (
+          <div className="mr-form__input-row">
+            <select id="mr-dial-code" className="mr-form__control mr-form__dial-code"
+              aria-label="Dial code (preview only)" aria-describedby={hintId}
+              value={dialCode} onChange={(event) => setDialCode(event.target.value)}
+              data-testid="select-mr-dial-code">
+              <option value="IN">🇮🇳 +91</option>
+              <option value="US">🇺🇸 +1</option>
+              <option value="GB">🇬🇧 +44</option>
+              <option value="AE">🇦🇪 +971</option>
+            </select>
+            {input}
+          </div>
+        ) : key === 'userId' ? (
+          <div className="mr-form__input-row">
+            {input}
+            <button type="button" className="mr-form__preview-action" disabled
+              aria-describedby={hintId} data-testid="button-generate-mr-user-id">Auto-generate</button>
+          </div>
+        ) : input}
         {hint && <p id={hintId} className="mr-form__hint">{hint}</p>}
         {errors[key] && <p id={errorId} className="mr-form__error" role="alert" data-testid={`error-mr-${key}`}>{errors[key]}</p>}
       </div>
@@ -209,14 +230,22 @@ export default function MRForm({ mr, records = [], zones = [], onSave, onClose, 
             <div className="mr-form__section-head"><h3 id="mr-identity-title" className="mr-form__section-title">Identity & contact</h3><p className="mr-form__section-note">Fields marked * are required</p></div>
             <div className="mr-form__grid">
                {renderField('name', 'MR Name', { placeholder: 'MR Name', autoComplete: 'name' })}
-               {renderField('phone', 'Phone No.', { placeholder: '10-digit number', autoComplete: 'tel', inputMode: 'tel' })}
-              {renderField('userId', 'User ID', { placeholder: 'Login user ID' })}
+               {renderField('phone', 'Phone No.', { placeholder: '10-digit number', autoComplete: 'tel', inputMode: 'tel', hint: 'Preview-only dial code; it does not change phone validation or the saved number.' })}
+              {renderField('userId', 'User ID', { placeholder: 'User ID', hint: 'Enter a User ID manually. Auto-generate is preview-only; saving does not create a login.' })}
                {renderField('email', 'Email ID', { type: 'email', placeholder: 'name@company.com', autoComplete: 'email' })}
               <div className="mr-form__field">
                 <label className="mr-form__label" htmlFor="mr-password">Password</label>
-                 <input id="mr-password" className="mr-form__control" type="text" value="Unavailable in preview" disabled aria-describedby="mr-password-hint" data-testid="input-mr-password" />
-                 <p id="mr-password-hint" className="mr-form__hint">This preview does not create accounts. Passwords cannot be entered, stored or changed here.</p>
+                  <div className="mr-form__input-row">
+                    <input id="mr-password" className="mr-form__control" type="password" placeholder="Unavailable" disabled autoComplete="off" aria-describedby="mr-password-hint" data-testid="input-mr-password" />
+                    <button type="button" className="mr-form__preview-action" disabled
+                      aria-describedby="mr-password-hint" data-testid="button-generate-mr-password">Generate password</button>
+                  </div>
+                  <p id="mr-password-hint" className="mr-form__hint">Preview only: passwords cannot be entered, generated, saved or exported. No account is created.</p>
               </div>
+               <div className="mr-form__field">
+                 <label className="mr-form__label" htmlFor="mr-confirm-password">Confirm password</label>
+                 <input id="mr-confirm-password" className="mr-form__control" type="password" placeholder="Unavailable" disabled autoComplete="off" aria-describedby="mr-password-hint" data-testid="input-mr-confirm-password" />
+               </div>
             </div>
           </section>
 
@@ -245,10 +274,10 @@ export default function MRForm({ mr, records = [], zones = [], onSave, onClose, 
           <section className="mr-form__section" id="mr-panel-address" role="tabpanel" aria-labelledby="mr-tab-address" tabIndex={0} hidden={activeTab !== 'address'}>
             <div className="mr-form__section-head"><h3 id="mr-address-title" className="mr-form__section-title">Address</h3></div>
             <div className="mr-form__grid">
+               {renderField('pincode', 'Pincode', { placeholder: '6-digit pincode', inputMode: 'numeric', autoComplete: 'postal-code', hint: 'Preview only: pincode will not auto-fill City, State or Country. Enter those fields manually.' })}
               {renderField('addressLine1', 'Address line 1', { placeholder: 'Street address', span: true, autoComplete: 'address-line1' })}
               {renderField('addressLine2', 'Address line 2', { placeholder: 'Apartment, suite or area', span: true, autoComplete: 'address-line2' })}
               {renderField('landmark', 'Landmark', { placeholder: 'Nearby landmark' })}
-              {renderField('pincode', 'Pincode', { placeholder: '6-digit pincode', inputMode: 'numeric', autoComplete: 'postal-code' })}
               {renderField('city', 'City', { placeholder: 'City', autoComplete: 'address-level2' })}
               {renderField('state', 'State', { placeholder: 'State', autoComplete: 'address-level1' })}
               {renderField('country', 'Country', { placeholder: 'Country', autoComplete: 'country-name' })}

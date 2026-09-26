@@ -64,6 +64,22 @@
   cursor: not-allowed;
 }
 .mr-form__control[aria-invalid="true"] { border-color: var(--admin-danger); }
+.mr-form__input-row { display: flex; align-items: stretch; gap: 8px; min-width: 0; }
+.mr-form__input-row > .mr-form__control:not(.mr-form__dial-code) { flex: 1 1 0; min-width: 0; }
+.mr-form__dial-code { flex: 0 0 108px; padding-inline: 7px; }
+.mr-form__preview-action {
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 0 9px;
+  border: 1px dashed var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-canvas);
+  color: var(--admin-text-soft);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: not-allowed;
+}
 .mr-form__hint, .mr-form__error { margin: 0; font-size: 11px; line-height: 1.4; }
 .mr-form__hint { color: var(--admin-muted); }
 .mr-form__error { color: var(--admin-danger); }
