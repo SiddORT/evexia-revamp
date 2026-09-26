@@ -1,4 +1,4 @@
-import { ArrowUpRight, Boxes, BriefcaseBusiness, FlaskConical, HeartPulse, MapPinned, Stethoscope, UsersRound, Warehouse } from 'lucide-react';
+import { ArrowUpRight, Boxes, BriefcaseBusiness, FlaskConical, HeartPulse, MapPinned, Stethoscope, Truck, UsersRound, Warehouse } from 'lucide-react';
 import { Link } from 'wouter';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 
@@ -10,6 +10,11 @@ export default function Masters() {
         <Link href="/admin/masters/zones" className="admin-master-link" data-testid="link-master-zones">
           <span className="admin-master-link__icon"><MapPinned size={20} aria-hidden="true" /></span>
           <span className="admin-master-link__text"><strong>Zone Master</strong><small>Manage the zones used within EVEXIA.</small></span>
+          <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
+        </Link>
+        <Link href="/admin/masters/courier-partners" className="admin-master-link" data-testid="link-master-courier-partners">
+          <span className="admin-master-link__icon"><Truck size={20} aria-hidden="true" /></span>
+          <span className="admin-master-link__text"><strong>Courier Partner Master</strong><small>Manage courier partner names and availability in this browser.</small></span>
           <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
         </Link>
         <Link href="/admin/masters/mrs" className="admin-master-link" data-testid="link-master-mrs">

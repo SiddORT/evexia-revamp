@@ -1,4 +1,5 @@
 import { loadZones } from './zones.js';
+import { loadCourierPartners } from './courierPartners.js';
 import { loadMRs, MR_STORAGE_KEY } from './mrs.js';
 import { loadDoctors } from './doctors.js';
 
@@ -7,6 +8,11 @@ export const EXCEL_TEMPLATES = {
     title: 'Zone',
     columns: ['Zone Name', 'Status'],
     sample: [['Example Central Zone', 'active'], ['Example Coastal Zone', 'inactive']],
+  },
+  'courier-partner': {
+    title: 'Courier Partner',
+    columns: ['Courier Partner Name', 'Status'],
+    sample: [['Example Express Delivery', 'active'], ['Example City Courier', 'inactive']],
   },
   mr: {
     title: 'MR',
@@ -216,18 +222,19 @@ export function reviewExcel(kind, rows) {
   const mrs = kind === 'mr' || kind === 'doctor' ? existingMRs() : [];
   const doctors = kind === 'doctor' ? loadDoctors() : [];
   const savedZones = kind === 'zone' ? loadZones() : zones;
-  const seen = new Set((kind === 'zone' ? savedZones : kind === 'mr' ? mrs : doctors)
-    .map((entry) => norm(kind === 'zone' ? entry.name : kind === 'mr' ? entry.employeeCode : entry.registrationNumber)));
+  const savedCouriers = kind === 'courier-partner' ? loadCourierPartners() : [];
+  const seen = new Set((kind === 'zone' ? savedZones : kind === 'courier-partner' ? savedCouriers : kind === 'mr' ? mrs : doctors)
+    .map((entry) => kind === 'courier-partner' ? norm(entry.name).replace(/\s+/gu, ' ') : norm(kind === 'zone' ? entry.name : kind === 'mr' ? entry.employeeCode : entry.registrationNumber)));
   return rows.slice(1).map((row) => {
     const values = template.columns.map((_, index) => String(row.cells[index] ?? '').trim());
     const errors = [];
     if (row.cells.length > template.columns.length) errors.push(`Expected ${template.columns.length} columns; found ${row.cells.length}.`);
     if (!values[0]) errors.push(`${template.columns[0]} is required.`);
-    const uniqueIndex = kind === 'zone' ? 0 : 1;
+    const uniqueIndex = kind === 'zone' || kind === 'courier-partner' ? 0 : 1;
     if (!values[uniqueIndex]) errors.push(`${template.columns[uniqueIndex]} is required.`);
-    else if (seen.has(norm(values[uniqueIndex]))) errors.push(`${template.columns[uniqueIndex]} already exists in saved records or this file.`);
-    if (values[uniqueIndex]) seen.add(norm(values[uniqueIndex]));
-    if (kind !== 'zone') {
+    else if (seen.has(kind === 'courier-partner' ? norm(values[uniqueIndex]).replace(/\s+/gu, ' ') : norm(values[uniqueIndex]))) errors.push(`${template.columns[uniqueIndex]} already exists in saved records or this file.`);
+    if (values[uniqueIndex]) seen.add(kind === 'courier-partner' ? norm(values[uniqueIndex]).replace(/\s+/gu, ' ') : norm(values[uniqueIndex]));
+    if (kind !== 'zone' && kind !== 'courier-partner') {
       if (!/^\+?[\d ()-]{10,20}$/.test(values[2]) || !/^\d{10,15}$/.test(values[2].replace(/\D/g, ''))) errors.push('Phone must contain 10–15 digits.');
       if (values[3] && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values[3])) errors.push('Email must be a valid email address.');
       if (!values[4]) errors.push(`${template.columns[4]} is required.`);

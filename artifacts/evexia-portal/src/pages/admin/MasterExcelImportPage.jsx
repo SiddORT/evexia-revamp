@@ -5,7 +5,7 @@ import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { EXCEL_TEMPLATES, readExcelRows, reviewExcel, sampleExcel } from '../../services/mockExcelImport.js';
 import '../../excel-import.css';
 
-const routes = { zone: '/admin/masters/zones', mr: '/admin/masters/mrs', doctor: '/admin/masters/doctors' };
+const routes = { zone: '/admin/masters/zones', 'courier-partner': '/admin/masters/courier-partners', mr: '/admin/masters/mrs', doctor: '/admin/masters/doctors' };
 
 export default function MasterExcelImportPage({ kind }) {
   const [, navigate] = useLocation();
@@ -15,7 +15,7 @@ export default function MasterExcelImportPage({ kind }) {
   const [reading, setReading] = useState(false);
   const sequence = useRef(0);
   const template = EXCEL_TEMPLATES[kind];
-  if (!template) return <AdminLayout title="Import Excel"><div className="admin-empty" role="alert">Unknown master. Choose Zone, MR or Doctor Master.</div></AdminLayout>;
+  if (!template) return <AdminLayout title="Import Excel"><div className="admin-empty" role="alert">Unknown master. Choose a master from the directory.</div></AdminLayout>;
 
   function downloadSample() {
     setMessage('');
@@ -59,7 +59,7 @@ export default function MasterExcelImportPage({ kind }) {
         <div>
           <p className="admin-page-head__eyebrow">Masters / Excel import preview</p>
           <h1>Import {template.title} data</h1>
-          <p className="admin-page-head__description">Download a sample, choose an Excel workbook and review each row before importing.</p>
+          <p className="admin-page-head__description">Download a sample, choose an Excel workbook and review each row. This preview does not save records.</p>
         </div>
         <span className="excel-import__mock">UI preview · Nothing will be saved</span>
       </div>

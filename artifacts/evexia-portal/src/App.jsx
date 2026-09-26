@@ -6,6 +6,7 @@ import NotFound from './pages/NotFound.jsx';
 import Dashboard from './pages/admin/Dashboard.jsx';
 import Masters from './pages/admin/Masters.jsx';
 import ZoneMaster from './pages/admin/ZoneMaster.jsx';
+import CourierPartnerMaster from './pages/admin/CourierPartnerMaster.jsx';
 import MRMaster from './pages/admin/MRMaster.jsx';
 import MRFormPage from './pages/admin/MRFormPage.jsx';
 import DoctorMaster from './pages/admin/DoctorMaster.jsx';
@@ -34,6 +35,7 @@ function App() {
       <Route path="/admin/masters" component={Masters} />
       <Route path="/admin/masters/import/:kind">{(params) => <MasterExcelImportPage key={params.kind} kind={params.kind} />}</Route>
       <Route path="/admin/masters/zones" component={ZoneMaster} />
+      <Route path="/admin/masters/courier-partners" component={CourierPartnerMaster} />
       <Route path="/admin/masters/mrs" component={MRMaster} />
       <Route path="/admin/masters/mrs/new">{() => <MRFormPage />}</Route>
       <Route path="/admin/masters/mrs/:id">{(params) => <MRFormPage id={params.id} />}</Route>
