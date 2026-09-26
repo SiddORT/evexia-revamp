@@ -1,0 +1,64 @@
+/* Allergen Master: a compact laboratory ledger on the shared Admin palette. */
+.admin-allergen-head-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.admin-allergen-desktop .admin-table { min-width: 1390px; }
+.admin-allergen-desktop .admin-table td { vertical-align: top; line-height: 1.5; }
+.admin-allergen-desktop .admin-table th,
+.admin-allergen-desktop .admin-table td { white-space: nowrap; }
+.admin-allergen-desktop .admin-table th:nth-child(2),
+.admin-allergen-desktop .admin-table td:nth-child(2) { min-width: 175px; white-space: normal; }
+.admin-allergen-name { display: block; min-width: 145px; color: var(--admin-text); font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
+.admin-allergen-secondary { color: var(--admin-text-soft); font-size: 11px; }
+.admin-allergen-reference { color: var(--admin-text); overflow-wrap: anywhere; }
+.admin-allergen-number { font-variant-numeric: tabular-nums; color: var(--admin-text); font-weight: 600; }
+.admin-allergen-audit { display: grid; gap: 3px; min-width: 115px; font-size: 11px; }
+.admin-allergen-audit strong { color: var(--admin-text); font-weight: 600; }
+.admin-allergen-audit time { color: var(--admin-text-soft); white-space: nowrap; }
+.admin-allergen-mobile { display: none; }
+.admin-allergen-form { color: var(--admin-text); }
+.admin-allergen-form__intro { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 24px 32px 0; }
+.admin-allergen-form__intro h2 { margin: 0 0 5px; font-size: 16px; font-weight: 700; }
+.admin-allergen-form__intro p { margin: 0; color: var(--admin-text-soft); font-size: 12px; line-height: 1.5; }
+.admin-allergen-form__intro svg { flex: none; color: var(--admin-accent); }
+.admin-allergen-form .mr-form__body { min-height: 0; }
+.admin-allergen-form .mr-form__grid { max-width: 1050px; }
+.admin-allergen-form .mr-form__footer { justify-content: flex-end; }
+.admin-allergen-form__section { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 12px; padding: 12px 0 3px; border-bottom: 1px solid var(--admin-border); color: var(--admin-text); font-size: 12px; font-weight: 700; }
+.admin-allergen-form__section small { color: var(--admin-text-soft); font-weight: 400; }
+.admin-allergen-form__choice { display: flex; flex-wrap: wrap; gap: 9px; }
+.admin-allergen-form fieldset.mr-form__field { min-width: 0; margin: 0; padding: 0; border: 0; }
+.admin-allergen-form fieldset .mr-form__label { padding: 0; }
+.admin-allergen-form__choice label { display: inline-flex; align-items: center; gap: 9px; min-height: 38px; padding: 0 12px; border: 1px solid var(--admin-border); border-radius: 7px; background: var(--admin-surface); color: var(--admin-text); cursor: pointer; font-size: 12px; }
+.admin-allergen-form__choice label:has(input:checked) { border-color: var(--admin-accent); background: var(--admin-table-head); font-weight: 700; }
+.admin-allergen-form__choice input { accent-color: var(--admin-accent); }
+.admin-allergen-form__recovery { max-width: 700px; padding: 28px; color: var(--admin-text); }
+.admin-allergen-form__recovery h2 { margin: 0 0 8px; font-size: 20px; }
+.admin-allergen-form__recovery p { margin: 0 0 20px; color: var(--admin-text-soft); line-height: 1.5; }
+.admin-allergen-import { display: grid; gap: 16px; color: var(--admin-text); font-size: 12px; }
+.admin-allergen-import p { margin: 0; line-height: 1.55; }
+.admin-allergen-import__guide { padding: 12px 14px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-table-head); }
+.admin-allergen-import__guide strong { display: block; margin-bottom: 4px; }
+.admin-allergen-import__file { display: grid; gap: 7px; font-weight: 700; color: var(--admin-text-soft); }
+.admin-allergen-import__file input { box-sizing: border-box; width: 100%; padding: 11px; border: 1px dashed var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-text); font: inherit; }
+.admin-allergen-import__file input::file-selector-button { margin-right: 12px; padding: 8px 12px; border: 1px solid var(--admin-border); border-radius: 6px; background: var(--admin-table-head); color: var(--admin-text); font: inherit; font-weight: 700; cursor: pointer; }
+.admin-allergen-import__review { display: grid; gap: 10px; }
+.admin-allergen-import__rows { display: grid; gap: 7px; max-height: 340px; overflow: auto; }
+.admin-allergen-import__row { padding: 10px 12px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); }
+.admin-allergen-import__row--error { border-color: var(--admin-danger); }
+.admin-allergen-import__row summary { cursor: pointer; font-weight: 700; }
+.admin-allergen-import__row dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 12px 0 0; }
+.admin-allergen-import__row dt { margin-bottom: 2px; color: var(--admin-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.admin-allergen-import__row dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.admin-allergen-import__row ul { margin: 9px 0 0; padding-left: 18px; color: var(--admin-danger); }
+.admin-allergen-import__row li + li { margin-top: 3px; }
+@media (max-width: 1050px) {
+  .admin-allergen-desktop { display: none; }
+  .admin-allergen-mobile { display: grid; gap: 10px; padding: 12px; }
+}
+@media (max-width: 600px) {
+  .admin-allergen-head-actions { width: 100%; }
+  .admin-allergen-head-actions .admin-button { flex: 1 1 auto; }
+  .admin-allergen-form__intro { padding: 20px 18px 0; }
+  .admin-allergen-form__section { display: block; }
+  .admin-allergen-form__section small { display: block; margin-top: 3px; }
+  .admin-allergen-import__row dl { grid-template-columns: minmax(0, 1fr); }
+}
