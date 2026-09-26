@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import { DOCTOR_STORAGE_KEY } from './doctors.js';
 import { MR_STORAGE_KEY } from './mrs.js';
 import {
-  PATIENT_FIELDS, PATIENT_STORAGE_KEY, exportPatientCSV, loadPatients,
+  PATIENT_FIELDS, PATIENT_STORAGE_KEY, createPatient, exportPatientCSV, loadPatients,
   readPatientSnapshots, reviewPatientCSV, setPatientStatus, updatePatient, validatePatient,
 } from './patients.js';
+import { getSampleDosageHistory, samplePatientIndex } from './patientDosageHistory.js';
 
 const ZONE_STORAGE_KEY = 'evexia.admin.zones.v1';
 function storage() {
@@ -45,6 +46,57 @@ test('first visit seeds valid, distinct preview patients and refresh does not re
   assert.ok(csv.includes(filtered[0].id));
   assert.ok(!csv.includes(initial.records.find((record) => record.status === 'active').id));
   assert.ok(!csv.includes('Last Dose'));
+});
+
+test('only original built-in sample identities receive illustrative dose examples', () => {
+  const snapshot = readPatientSnapshots();
+  const raw = window.localStorage.getItem(PATIENT_STORAGE_KEY);
+  for (const [index, patient] of snapshot.records.entries()) {
+    assert.equal(samplePatientIndex(patient), index);
+    const history = getSampleDosageHistory(patient, new Date(2026, 8, 26));
+    assert.equal(history.previous.length, 2);
+    assert.equal(history.upcoming.length, 2);
+    assert.equal(history.last.date, '2026-09-15');
+    assert.equal(history.next.date, '2026-10-15');
+    assert.ok(history.previous.every((dose) => dose.date < '2026-09-26' && dose.name.includes('Example dose')));
+    assert.ok(history.upcoming.every((dose) => dose.date >= '2026-09-26' && dose.name.includes('Example dose')));
+    for (const mismatch of [
+      { ...patient, createdAt: new Date().toISOString() },
+      { ...patient, name: 'Ordinary Patient' },
+      { ...patient, phone: '9999999999' },
+      { ...patient, email: 'other@example.com' },
+      { ...patient, dateOfBirth: '1999-01-01' },
+      { ...patient, addressLine1: 'Elsewhere' },
+      { ...patient, id: 'PAT-OTHER-001' },
+    ]) assert.equal(getSampleDosageHistory(mismatch), null);
+  }
+  assert.equal(getSampleDosageHistory({ ...snapshot.records[0], id: 'PAT-USER-001' }), null);
+  assert.equal(window.localStorage.getItem(PATIENT_STORAGE_KEY), raw);
+  assert.ok(!exportPatientCSV(snapshot.records, snapshot.doctors).includes('Example dose'));
+});
+
+test('example dates roll across calendar years and classify today as upcoming', () => {
+  const patient = readPatientSnapshots().records[0];
+  const onFifteenth = getSampleDosageHistory(patient, new Date(2026, 11, 15));
+  assert.equal(onFifteenth.next.date, '2026-12-15');
+  assert.equal(onFifteenth.last.date, '2026-11-15');
+  const afterFifteenth = getSampleDosageHistory(patient, new Date(2026, 11, 16));
+  assert.equal(afterFifteenth.last.date, '2026-12-15');
+  assert.equal(afterFifteenth.next.date, '2027-01-15');
+  assert.equal(afterFifteenth.upcoming[1].date, '2027-02-15');
+});
+
+test('new patients and imported lookalikes do not inherit sample history', () => {
+  const snapshot = readPatientSnapshots();
+  const seed = snapshot.records[0];
+  const fields = Object.fromEntries(PATIENT_FIELDS.map((key) => [key, seed[key]]));
+  const created = createPatient(snapshot, { ...fields, name: 'New Patient', phone: '1234567890' })[0];
+  assert.equal(getSampleDosageHistory(created), null);
+  // Even a CSV row that copies a sample ID and all visible identity fields
+  // cannot masquerade as the original seed without its internal timestamp.
+  const imported = { ...seed, createdAt: created.createdAt, updatedAt: created.updatedAt };
+  assert.equal(samplePatientIndex(imported), -1);
+  assert.equal(getSampleDosageHistory(imported), null);
 });
 
 test('saved populated and deliberately empty lists remain untouched', () => {

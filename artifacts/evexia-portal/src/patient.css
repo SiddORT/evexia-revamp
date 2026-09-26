@@ -31,6 +31,7 @@
 .patient-reference { display: grid; gap: 4px; min-width: 140px; overflow-wrap: anywhere; }
 .patient-reference small { font-size: 11px; color: var(--admin-text-soft); }
 .patient-reference small.admin-mr-missing { color: var(--admin-danger); }
+.patient-history-action { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .patient-import { padding: 24px; color: var(--admin-text); }
 .patient-import__intro { max-width: 760px; }
 .patient-import h2 { margin: 0 0 8px; font-size: 17px; }
@@ -43,4 +44,82 @@
 @media (max-width: 600px) {
   .patient-form .mr-form__body { min-height: 0; }
   .patient-form__privacy { margin-bottom: 16px; }
+}
+
+/* Read-only dosage reference. Admin semantic tokens keep all appearances aligned. */
+.patient-dosage { max-width: 1180px; margin: 0 auto; color: var(--admin-text); }
+.patient-dosage__head { margin-bottom: 24px; }
+.patient-dosage__head .admin-button { flex: none; }
+.patient-dosage__notice { display: flex; align-items: flex-start; gap: 13px; padding: 15px 18px; margin-bottom: 20px; border: 1px solid var(--admin-border); border-left: 3px solid var(--admin-primary); border-radius: 9px; background: var(--admin-info-soft); font-size: 12px; line-height: 1.55; }
+.patient-dosage__notice-mark { flex: none; display: grid; place-items: center; width: 21px; height: 21px; margin-top: 1px; border-radius: 50%; background: var(--admin-primary); color: var(--admin-primary-ink); font-family: Georgia, serif; font-size: 14px; font-weight: 700; }
+.patient-dosage__notice strong { display: block; margin-bottom: 2px; font-size: 13px; }
+.patient-dosage__notice p { margin: 0; color: var(--admin-text-soft); }
+.patient-dosage__context { margin-bottom: 30px; }
+.patient-dosage__context-title { display: flex; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--admin-border); font-size: 11px; font-weight: 700; letter-spacing: .04em; }
+.patient-dosage__context-title span:last-child { color: var(--admin-muted); font-weight: 500; letter-spacing: 0; }
+.patient-dosage__reference-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.patient-dosage__reference { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 21px 24px 24px; overflow-wrap: anywhere; }
+.patient-dosage__reference + .patient-dosage__reference { border-left: 1px solid var(--admin-border); }
+.patient-dosage__reference-label, .patient-dosage__eyebrow { color: var(--admin-accent); font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.patient-dosage__reference strong { font-size: 15px; line-height: 1.35; }
+.patient-dosage__reference-detail { color: var(--admin-text-soft); font-size: 12px; line-height: 1.45; }
+.patient-dosage__reference-detail--missing { color: var(--admin-danger); }
+.patient-dosage__section-heading { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 17px; }
+.patient-dosage__eyebrow { margin: 0 0 7px; }
+.patient-dosage__section-heading h2 { margin: 0; font-family: var(--font-display); font-size: clamp(23px, 3vw, 30px); font-weight: 500; letter-spacing: -.035em; line-height: 1.2; }
+.patient-dosage__section-aside { padding-bottom: 3px; color: var(--admin-muted); font-size: 11px; }
+.patient-dosage__spotlights { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 23px; }
+.patient-dosage__spotlight { min-height: 152px; padding: 20px 22px; display: flex; flex-direction: column; align-items: flex-start; }
+.patient-dosage__spotlight--next { border-color: var(--admin-primary); background: var(--admin-state-link); }
+.patient-dosage__spotlight-top { display: flex; align-items: center; gap: 9px; margin-bottom: 17px; color: var(--admin-text-soft); font-size: 11px; font-weight: 700; letter-spacing: .035em; text-transform: uppercase; }
+.patient-dosage__spotlight-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 7px; background: var(--admin-info-soft); color: var(--admin-primary); }
+.patient-dosage__spotlight strong { margin-bottom: 4px; font-family: var(--font-display); font-size: 21px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.patient-dosage__spotlight time { color: var(--admin-text-soft); font-size: 13px; }
+.patient-dosage__spotlight p { margin: 0; color: var(--admin-text-soft); font-size: 13px; }
+.patient-dosage__lists { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.patient-dosage__list-head { display: flex; align-items: flex-start; gap: 12px; padding: 19px 20px; border-bottom: 1px solid var(--admin-border); }
+.patient-dosage__list-icon { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; background: var(--admin-state-soft); color: var(--admin-accent); }
+.patient-dosage__list-head div { min-width: 0; flex: 1; }
+.patient-dosage__list-head h2 { margin: 0 0 4px; font-size: 14px; }
+.patient-dosage__list-head p { margin: 0; color: var(--admin-text-soft); font-size: 11px; line-height: 1.45; }
+.patient-dosage__count { flex: none; color: var(--admin-muted); font-size: 10px; white-space: nowrap; }
+.patient-dosage__entries { margin: 0; padding: 0; list-style: none; }
+.patient-dosage__entry { display: flex; align-items: center; gap: 12px; min-height: 66px; padding: 12px 20px; }
+.patient-dosage__entry + .patient-dosage__entry { border-top: 1px solid var(--admin-border); }
+.patient-dosage__entry-marker { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--admin-primary); }
+.patient-dosage__entry-copy { display: grid; gap: 3px; min-width: 0; flex: 1; overflow-wrap: anywhere; }
+.patient-dosage__entry-copy strong { font-size: 12px; }
+.patient-dosage__entry-copy span { color: var(--admin-muted); font-size: 11px; }
+.patient-dosage__entry time { flex: none; color: var(--admin-text-soft); font-size: 11px; font-weight: 600; }
+.patient-dosage__list-empty { margin: 0; padding: 25px 20px; color: var(--admin-text-soft); font-size: 12px; }
+.patient-dosage__no-history { display: flex; align-items: flex-start; gap: 16px; padding: 32px; }
+.patient-dosage__no-history-icon, .patient-dosage__recovery-icon { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px; background: var(--admin-state-soft); color: var(--admin-accent); }
+.patient-dosage__no-history h3 { margin: 2px 0 7px; font-size: 16px; }
+.patient-dosage__no-history p { margin: 0; color: var(--admin-text-soft); font-size: 12px; line-height: 1.55; }
+.patient-dosage__footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 25px; padding-top: 16px; border-top: 1px solid var(--admin-border); color: var(--admin-muted); font-size: 11px; }
+.patient-dosage__recovery { padding: 32px; }
+.patient-dosage__recovery h2 { margin: 17px 0 7px; font-family: var(--font-display); font-size: 24px; font-weight: 500; }
+.patient-dosage__recovery p { max-width: 600px; margin: 0; color: var(--admin-text-soft); font-size: 13px; line-height: 1.6; }
+.patient-dosage__recovery-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 22px; }
+@media (max-width: 760px) {
+  .patient-dosage__reference-grid { grid-template-columns: 1fr; }
+  .patient-dosage__reference { padding: 17px 20px; }
+  .patient-dosage__reference + .patient-dosage__reference { border-left: 0; border-top: 1px solid var(--admin-border); }
+  .patient-dosage__spotlights, .patient-dosage__lists { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .patient-dosage__head .admin-button { width: 100%; }
+  .patient-dosage__context { margin-bottom: 24px; }
+  .patient-dosage__section-aside { display: none; }
+  .patient-dosage__spotlights { gap: 10px; margin-bottom: 16px; }
+  .patient-dosage__spotlight { min-height: 130px; }
+  .patient-dosage__list-head { flex-wrap: wrap; }
+  .patient-dosage__count { width: 100%; padding-left: 44px; }
+  .patient-dosage__recovery, .patient-dosage__no-history { padding: 22px; }
+  .patient-dosage__footer { align-items: flex-start; flex-direction: column-reverse; }
+  .patient-dosage__footer .admin-button { width: 100%; }
+}
+@media (max-width: 360px) {
+  .patient-dosage__entry { align-items: flex-start; flex-wrap: wrap; }
+  .patient-dosage__entry time { padding-left: 19px; }
 }

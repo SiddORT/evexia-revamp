@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
-import { CirclePower, Download, Pencil, Plus, Search, Upload, UsersRound } from 'lucide-react';
+import { CirclePower, Download, History, Pencil, Plus, Search, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -9,6 +9,7 @@ import TablePagination from '../../components/admin/TablePagination.jsx';
 import usePatients from '../../hooks/usePatients.js';
 import useTablePagination from '../../hooks/useTablePagination.js';
 import { exportPatientCSV, patientAge, readPatientSnapshots } from '../../services/patients.js';
+import { getSampleDosageHistory } from '../../services/patientDosageHistory.js';
 import '../../mr.css';
 import '../../patient.css';
 
@@ -59,6 +60,7 @@ export default function PatientMaster() {
   }
   function actions(record, compact = false) {
     return <div className={compact ? 'admin-mr-card__actions' : 'admin-table__actions'}>
+      <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button patient-history-action'} aria-label={`Dosage History for ${record.name}`} title="Dosage History" onClick={() => navigate(`${base}/${encodeURIComponent(record.id)}/dosage-history`)} data-testid={`button-dosage-history-patient-${record.id}`}><History size={16} aria-hidden="true" />Dosage History</button>
       <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} title="Edit" onClick={() => { clearFeedback(); navigate(`${base}/${encodeURIComponent(record.id)}`); }} data-testid={`button-edit-patient-${record.id}`}><Pencil size={16} />{compact && 'Edit'}</button>
       <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} title={record.status === 'active' ? 'Inactivate' : 'Activate'} onClick={() => { setActionError(''); setConfirming(record); }} data-testid={`button-toggle-patient-${record.id}`}><CirclePower size={16} />{compact && (record.status === 'active' ? 'Inactivate' : 'Activate')}</button>
     </div>;
@@ -66,6 +68,10 @@ export default function PatientMaster() {
   const reference = (record) => <span className="patient-reference"><strong className={!doctorFor(record) ? 'admin-mr-missing' : ''}>{doctorFor(record)?.name || 'Missing doctor'}</strong><small className={!mrFor(record) ? 'admin-mr-missing' : ''}>MR: {mrFor(record)?.name || 'Missing MR'}</small><small className={!zoneFor(record) ? 'admin-mr-missing' : ''}>Zone: {zoneFor(record)?.name || 'Missing zone'}</small></span>;
   const details = (record) => <span className="admin-mr-details"><strong>{record.name}</strong><span>{record.gender} · {patientAge(record.dateOfBirth)} years</span><span>{record.phone}</span>{record.email && <span>{record.email}</span>}<span>DOB: {record.dateOfBirth}</span></span>;
   const address = (record) => <span className="admin-mr-address">{[record.addressLine1, record.addressLine2, record.landmark, `${record.city}, ${record.state} ${record.pincode}`, record.country].filter(Boolean).join(' · ')}</span>;
+  const lastDose = (record) => {
+    const last = getSampleDosageHistory(record)?.last;
+    return last ? `Sample: ${last.date} (illustrative, not recorded)` : 'Not recorded';
+  };
   const columns = [
     { key: 'serial', label: 'Sr No.', render: (_, index) => index + 1 },
     { key: 'id', label: 'Patient ID', render: (r) => r.id },
@@ -73,12 +79,12 @@ export default function PatientMaster() {
     { key: 'address', label: 'Address', render: address },
     { key: 'reference', label: 'Doctor / MR / Zone', render: reference },
     { key: 'language', label: 'Instructions language', render: (r) => r.instructionsLanguage },
-    { key: 'dose', label: 'Last dose', render: () => 'Not recorded' },
+    { key: 'dose', label: 'Last dose', render: lastDose },
     { key: 'status', label: 'Status', render: (r) => <StatusBadge status={r.status} /> },
     { key: 'actions', label: 'Actions', render: (r) => actions(r) },
   ];
   return <AdminLayout title="Patient Master">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Patients</p><h1>Patient Master</h1><p className="admin-page-head__description">Browser-local preview only. Do not enter real patient or health information. Dose history is unavailable.</p></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Patients</p><h1>Patient Master</h1><p className="admin-page-head__description">Browser-local preview only. Do not enter real patient or health information. Sample dosage examples are illustrative, not recorded treatment.</p></div>
       <div className="admin-mr-head-actions">
         <button className="admin-button admin-button--secondary" type="button" onClick={refresh}>Refresh records</button>
         <button className="admin-button admin-button--secondary" type="button" disabled={Boolean(error)} onClick={() => navigate(`${base}/import`)} data-testid="button-import-patients"><Upload size={16} /> Import CSV</button>
@@ -101,7 +107,7 @@ export default function PatientMaster() {
           <div className="admin-mr-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(r) => r.id} label="Patient records" testIdPrefix="patient" /></div>
           <div className="admin-mr-mobile" role="list" aria-label="Patient records">{pagination.pageRows.map((r) => <article className="admin-mr-card" role="listitem" key={r.id} data-testid={`card-patient-${r.id}`}>
             <div className="admin-mr-card__head"><div><h2>{r.name}</h2><small>{r.id}</small></div><StatusBadge status={r.status} /></div>
-            <div className="admin-mr-card__body">{details(r)}<dl><div><dt>Address</dt><dd>{address(r)}</dd></div><div><dt>Doctor / MR / Zone</dt><dd>{reference(r)}</dd></div><div><dt>Instructions language</dt><dd>{r.instructionsLanguage}</dd></div><div><dt>Last dose</dt><dd>Not recorded</dd></div></dl></div>{actions(r, true)}
+            <div className="admin-mr-card__body">{details(r)}<dl><div><dt>Address</dt><dd>{address(r)}</dd></div><div><dt>Doctor / MR / Zone</dt><dd>{reference(r)}</dd></div><div><dt>Instructions language</dt><dd>{r.instructionsLanguage}</dd></div><div><dt>Last dose</dt><dd>{lastDose(r)}</dd></div></dl></div>{actions(r, true)}
           </article>)}</div>
         </> : <div className="admin-empty"><span className="admin-empty__icon"><UsersRound size={21} /></span><strong>{records.length ? 'No matching patients' : 'No patients yet'}</strong><p>{records.length ? 'Try different search or filters.' : 'Add a browser-local preview patient or import a CSV.'}</p></div>}
         <TablePagination {...pagination} filtered={visible.length} total={records.length} label={records.length === 1 ? 'patient' : 'patients'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} />
