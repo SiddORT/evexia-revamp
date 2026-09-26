@@ -350,6 +350,20 @@ a { color: inherit; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+@media (max-width: 1150px) {
+  .auth-page { display: block; }
+  .auth-visual { min-height: 0; height: clamp(390px, 40dvh, 440px); max-height: none; }
+  .auth-visual img { object-position: center 15%; }
+  .auth-visual__overlay { padding: 23px 25px 26px; }
+  .auth-visual__content { padding-bottom: 0; }
+  .auth-visual__content h2 { font-size: clamp(2.3rem, 11vw, 4rem); margin: 13px 0 8px; }
+  .auth-visual__content p { font-size: 0.82rem; max-width: 280px; }
+  .auth-visual__note { font-size: 0.65rem; }
+  .auth-panel { min-height: auto; padding: 43px 25px 48px; }
+  .auth-form-wrap .brand-mark { margin-bottom: 20px; }
+  .auth-legal { margin-top: 34px; }
+}
+
 @media (max-width: 800px) {
   .container { width: min(100% - 34px, 600px); }
   .topbar { padding: 13px 0; }
@@ -361,16 +375,6 @@ a { color: inherit; }
   .portal-card__body { padding: 22px 20px; }
   .portal-card__body p { margin-bottom: 18px; }
   .portal-footer { margin-top: 37px; }
-  .auth-page { display: block; }
-  .auth-visual { min-height: 315px; height: 40dvh; max-height: 420px; }
-  .auth-visual__overlay { padding: 23px 25px 26px; }
-  .auth-visual__content { padding-bottom: 0; }
-  .auth-visual__content h2 { font-size: clamp(2.3rem, 11vw, 4rem); margin: 13px 0 8px; }
-  .auth-visual__content p { font-size: 0.82rem; max-width: 280px; }
-  .auth-visual__note { font-size: 0.65rem; }
-  .auth-panel { min-height: auto; padding: 43px 25px 48px; }
-  .auth-form-wrap .brand-mark { margin-bottom: 20px; }
-  .auth-legal { margin-top: 34px; }
 }
 
 @media (max-width: 460px) {
