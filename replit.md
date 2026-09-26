@@ -26,4 +26,4 @@ A frontend-only mock portal-selection and login experience for EVEXIA Life Scien
 
 ## Assets
 
-The supplied EVEXIA logo is displayed by the shared brand component on the landing and login screens. Keep the original artwork intact; the local PNG is only cropped to remove excess white space. The logo is a small raster source, so do not stretch it unnecessarily or redraw it.
+The supplied transparent EVEXIA logo is displayed by the shared brand component on the landing and login screens. Keep the original artwork intact; the local PNG is only cropped to remove transparent margins. The dark photographic login panel uses a white backplate for contrast. The logo is a small raster source, so do not stretch it unnecessarily or redraw it.
