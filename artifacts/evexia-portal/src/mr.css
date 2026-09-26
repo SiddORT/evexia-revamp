@@ -1,22 +1,23 @@
 /* MR Master uses the Admin semantic tokens so both Admin themes remain in sync. */
-.admin-dialog.mr-dialog {
-  width: min(100%, 1020px);
-  padding: 0;
-}
-.mr-dialog .admin-dialog__top {
-  padding: 25px 28px 19px;
-  border-bottom: 1px solid var(--admin-border);
-}
-.mr-dialog .admin-dialog__description {
-  margin: 0;
-  padding: 13px 28px;
-  background: var(--admin-table-head);
-  border-bottom: 1px solid var(--admin-border);
-  font-size: 12px;
-}
+.mr-form-page { max-width: 1120px; }
+.mr-form-page__recovery { max-width: 700px; padding: 28px; color: var(--admin-text); }
+.mr-form-page__recovery h2 { margin: 0 0 8px; font-size: 20px; }
+.mr-form-page__recovery p { margin: 0 0 20px; color: var(--admin-text-soft); line-height: 1.5; }
 .mr-form { color: var(--admin-text); }
-.mr-form__body { padding: 24px 28px 10px; }
-.mr-form__section { margin: 0 0 24px; }
+.mr-form__tabs { display: flex; gap: 4px; padding: 14px 24px 0; border-bottom: 1px solid var(--admin-border); background: var(--admin-table-head); }
+.mr-form__tab {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 46px; padding: 10px 18px; border: 0; border-bottom: 3px solid transparent;
+  background: transparent; color: var(--admin-text-soft); font: inherit; font-size: 13px;
+  font-weight: 700; cursor: pointer; text-align: center;
+}
+.mr-form__tab:hover { color: var(--admin-text); background: var(--admin-state-hover); }
+.mr-form__tab--active { border-bottom-color: var(--admin-accent); color: var(--admin-accent); }
+.mr-form__tab--error { color: var(--admin-danger); }
+.mr-form__tab-error { display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--admin-danger); color: var(--admin-surface); font-size: 11px; }
+.mr-form__tab:focus-visible, .mr-form__section:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: -3px; }
+.mr-form__body { padding: 28px 32px 34px; min-height: 290px; }
+.mr-form__section { margin: 0; }
 .mr-form__section-head {
   display: flex;
   align-items: baseline;
@@ -32,7 +33,7 @@
   letter-spacing: .035em;
 }
 .mr-form__section-note { margin: 0; color: var(--admin-muted); font-size: 11px; }
-.mr-form__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 14px; }
+.mr-form__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 24px; }
 .mr-form__field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .mr-form__field--wide { grid-column: span 2; }
 .mr-form__label { color: var(--admin-text-soft); font-size: 11px; font-weight: 700; line-height: 1.4; }
@@ -79,15 +80,14 @@
   border-color: var(--admin-danger);
   background: var(--admin-state-soft);
 }
+.mr-form__notice--error p { margin: 0 0 9px; }
+.mr-form__notice--error .admin-button { margin-top: 4px; }
 .mr-form__footer {
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px 28px;
+  padding: 18px 32px;
   border-top: 1px solid var(--admin-border);
   background: var(--admin-surface);
 }
@@ -165,9 +165,6 @@
 .admin-mr-card__body dd { margin: 3px 0 0; overflow-wrap: anywhere; }
 .admin-mr-card__action { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 
-@media (max-width: 850px) {
-  .mr-form__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
 @media (max-width: 900px) {
   .admin-mr-desktop { display: none; }
   .admin-mr-mobile { display: grid; gap: 10px; padding: 12px; }
@@ -175,13 +172,12 @@
 @media (max-width: 600px) {
   .admin-mr-head-actions { width: 100%; }
   .admin-mr-head-actions .admin-button { flex: 1 1 auto; }
-  .admin-dialog.mr-dialog { max-height: calc(100dvh - 16px); }
-  .mr-dialog .admin-dialog__top { padding: 20px 18px 16px; }
-  .mr-dialog .admin-dialog__description { padding: 12px 18px; }
-  .mr-form__body { padding: 20px 18px 0; }
+   .mr-form__tabs { overflow-x: auto; padding: 8px 10px 0; }
+   .mr-form__tab { flex: 0 0 auto; min-height: 48px; padding: 10px 12px; font-size: 12px; }
+   .mr-form__body { padding: 22px 18px 28px; }
   .mr-form__grid { grid-template-columns: minmax(0, 1fr); gap: 15px; }
   .mr-form__field--wide { grid-column: auto; }
-  .mr-form__footer { align-items: stretch; flex-direction: column; padding: 14px 18px; }
+   .mr-form__footer { align-items: stretch; flex-direction: column; padding: 14px 18px; }
   .mr-form__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mr-form__actions .admin-button { min-width: 0; }
   .admin-mr-card__meta { grid-template-columns: minmax(0, 1fr); }

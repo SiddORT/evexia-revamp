@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'wouter';
 import { CirclePower, Download, Mail, Pencil, Phone, Plus, Search, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
-import MRForm from '../../components/admin/MRForm.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import useMRs from '../../hooks/useMRs.js';
 import { exportMRCSV, loadMRs } from '../../services/mrs.js';
@@ -13,11 +13,18 @@ import '../../mr.css';
 const cleanPhone = (phone) => phone.replace(/[^+\d]/g, '');
 
 export default function MRMaster() {
-  const { records, zones, error, feedback, retry, clearFeedback, add, edit, changeStatus } = useMRs();
+  const [, navigate] = useLocation();
+  const { records, zones, error, feedback, retry, clearFeedback, changeStatus } = useMRs();
+  const [saveFeedback] = useState(() => {
+    const saved = new URLSearchParams(window.location.search).get('saved');
+    return saved === 'added' ? 'MR added successfully.' : saved === 'updated' ? 'MR updated successfully.' : '';
+  });
+  useEffect(() => {
+    if (saveFeedback) window.history.replaceState(window.history.state, '', '/admin/masters/mrs');
+  }, [saveFeedback]);
   const [search, setSearch] = useState('');
   const [zoneFilter, setZoneFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [editing, setEditing] = useState(null);
   const [confirming, setConfirming] = useState(null);
   const [actionError, setActionError] = useState('');
   const zoneName = (record) => zones.find((zone) => zone.id === record.zoneId)?.name || 'Deleted zone';
@@ -30,11 +37,6 @@ export default function MRMaster() {
   }), [records, zones, search, zoneFilter, statusFilter]);
   const hasMissingZones = records.some((record) => !zones.some((zone) => zone.id === record.zoneId));
 
-  function save(values) {
-    const result = editing === 'new' ? add(values) : edit(editing.id, values);
-    if (result.success) setEditing(null);
-    return result;
-  }
   function toggle() {
     const status = confirming.status === 'active' ? 'inactive' : 'active';
     const result = changeStatus(confirming.id, status);
@@ -63,7 +65,7 @@ export default function MRMaster() {
   }
   function actions(record, compact = false) {
     return <div className={compact ? 'admin-mr-card__actions' : 'admin-table__actions'}>
-      <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} title="Edit" onClick={() => { clearFeedback(); setEditing(record); }} data-testid={`button-edit-mr-${record.id}`}><Pencil size={16} aria-hidden="true" />{compact && 'Edit'}</button>
+      <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} title="Edit" onClick={() => { clearFeedback(); navigate(`/admin/masters/mrs/${encodeURIComponent(record.id)}`); }} data-testid={`button-edit-mr-${record.id}`}><Pencil size={16} aria-hidden="true" />{compact && 'Edit'}</button>
       <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} title={record.status === 'active' ? 'Inactivate' : 'Activate'} onClick={() => { clearFeedback(); setActionError(''); setConfirming(record); }} data-testid={`button-toggle-mr-${record.id}`}><CirclePower size={16} aria-hidden="true" />{compact && (record.status === 'active' ? 'Inactivate' : 'Activate')}</button>
     </div>;
   }
@@ -93,12 +95,12 @@ export default function MRMaster() {
     <div className="admin-page-head">
       <div><p className="admin-page-head__eyebrow">Masters / Team</p><h1>MR Master</h1><p className="admin-page-head__description">Manage MR profiles in this browser. This preview does not create login accounts.</p></div>
       <div className="admin-mr-head-actions">
-        <button type="button" className="admin-button admin-button--secondary" onClick={() => { retry(); setActionError(''); setEditing(null); setConfirming(null); }} data-testid="button-refresh-mrs">Refresh records</button>
+         <button type="button" className="admin-button admin-button--secondary" onClick={() => { retry(); setActionError(''); setConfirming(null); }} data-testid="button-refresh-mrs">Refresh records</button>
         <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || !visible.length} onClick={exportVisible} data-testid="button-export-mrs"><Download size={16} aria-hidden="true" /> Export CSV</button>
-        <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); setEditing('new'); }} data-testid="button-add-mr"><Plus size={16} aria-hidden="true" /> Add MR</button>
+         <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate('/admin/masters/mrs/new'); }} data-testid="button-add-mr"><Plus size={16} aria-hidden="true" /> Add MR</button>
       </div>
     </div>
-    {feedback && <div className="admin-feedback" role="status" data-testid="status-mr-feedback">{feedback}</div>}
+     {(feedback || saveFeedback) && <div className="admin-feedback" role="status" data-testid="status-mr-feedback">{feedback || saveFeedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     <section className="admin-panel" aria-label="MR list">
       <div className="admin-toolbar">
@@ -121,7 +123,6 @@ export default function MRMaster() {
         <div className="admin-panel__foot" data-testid="text-mr-count">Showing {visible.length} of {records.length} {records.length === 1 ? 'MR' : 'MRs'}</div>
       </>}
     </section>
-    {editing && <MRForm key={editing === 'new' ? 'new' : editing.id} mr={editing === 'new' ? null : editing} records={records} zones={zones} onSave={save} onClose={() => setEditing(null)} />}
     {confirming && <ConfirmationDialog title={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} MR?`} description={`Change “${confirming.name}” to ${confirming.status === 'active' ? 'inactive' : 'active'}? This only changes this browser-local preview record; it does not control login access.`} actionLabel={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} MR`} onConfirm={toggle} onClose={() => setConfirming(null)} error={actionError} />}
   </AdminLayout>;
 }

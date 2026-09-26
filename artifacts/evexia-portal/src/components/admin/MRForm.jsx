@@ -1,5 +1,4 @@
-import { useRef, useState } from 'react';
-import Dialog from './Dialog.jsx';
+import { useEffect, useRef, useState } from 'react';
 import '../../mr.css';
 
 const FIELDS = [
@@ -9,6 +8,11 @@ const FIELDS = [
   'pincode', 'city', 'state', 'country',
 ];
 const OPTIONAL = new Set(['reportingManagerId', 'addressLine2', 'paymentLimit', 'doctorDaysLimit']);
+const TABS = [
+  { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'userId', 'email'] },
+  { id: 'assignment', label: 'Assignment & work', fields: ['hq', 'zoneId', 'employeeCode', 'dateOfJoining', 'designation', 'reportingManagerId', 'paymentLimit', 'doctorDaysLimit', 'status'] },
+  { id: 'address', label: 'Address', fields: ['addressLine1', 'addressLine2', 'landmark', 'pincode', 'city', 'state', 'country'] },
+];
 
 function initialValues(mr) {
   return Object.fromEntries(FIELDS.map((key) => [
@@ -53,12 +57,15 @@ function validate(values) {
   return errors;
 }
 
-export default function MRForm({ mr, records = [], zones = [], onSave, onClose }) {
+export default function MRForm({ mr, records = [], zones = [], onSave, onClose, onRefresh }) {
   const [values, setValues] = useState(() => initialValues(mr));
   const [errors, setErrors] = useState({});
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('identity');
   const formRef = useRef(null);
+  const tabRefs = useRef([]);
+  const pendingFocus = useRef(null);
   const assignedZone = zones.find((zone) => String(zone.id) === values.zoneId);
   const activeZones = zones.filter((zone) => zone.status === 'active');
   const zoneOptions = assignedZone?.status === 'inactive'
@@ -66,6 +73,23 @@ export default function MRForm({ mr, records = [], zones = [], onSave, onClose }
     : activeZones;
   const missingZone = Boolean(values.zoneId) && !assignedZone;
   const otherMRs = records.filter((record) => String(record.id) !== String(mr?.id));
+
+  useEffect(() => {
+    if (pendingFocus.current) {
+      formRef.current?.elements.namedItem(pendingFocus.current)?.focus();
+      pendingFocus.current = null;
+    }
+  }, [activeTab, errors]);
+
+  function handleTabKey(event, index) {
+    const next = event.key === 'ArrowRight' ? (index + 1) % TABS.length
+      : event.key === 'ArrowLeft' ? (index + TABS.length - 1) % TABS.length
+        : event.key === 'Home' ? 0 : event.key === 'End' ? TABS.length - 1 : -1;
+    if (next < 0) return;
+    event.preventDefault();
+    setActiveTab(TABS[next].id);
+    tabRefs.current[next]?.focus();
+  }
 
   function change(key, value) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -139,12 +163,16 @@ export default function MRForm({ mr, records = [], zones = [], onSave, onClose }
     if (cleaned.reportingManagerId && !otherMRs.some((record) => String(record.id) === cleaned.reportingManagerId)) {
       nextErrors.reportingManagerId = 'Select an available reporting manager.';
     }
+    for (const [key, label] of [['employeeCode', 'Employee code'], ['userId', 'User ID'], ['email', 'Email ID']]) {
+      if (cleaned[key] && otherMRs.some((record) => record[key].toLocaleLowerCase() === cleaned[key].toLocaleLowerCase())) {
+        nextErrors[key] = `${label} already belongs to another MR.`;
+      }
+    }
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
-      requestAnimationFrame(() => {
-        const firstInvalid = formRef.current?.querySelector('[aria-invalid="true"]');
-        firstInvalid?.focus();
-      });
+      const first = FIELDS.find((key) => nextErrors[key]);
+      pendingFocus.current = first;
+      setActiveTab(TABS.find((tab) => tab.fields.includes(first)).id);
       return;
     }
     setSaveError('');
@@ -156,7 +184,7 @@ export default function MRForm({ mr, records = [], zones = [], onSave, onClose }
         paymentLimit: cleaned.paymentLimit === '' ? null : Number(cleaned.paymentLimit),
         doctorDaysLimit: cleaned.doctorDaysLimit === '' ? null : Number(cleaned.doctorDaysLimit),
       });
-      if (!result?.success) setSaveError(result?.error || 'This MR could not be saved. Please try again.');
+       if (!result?.success) setSaveError(result?.error || 'This MR could not be saved. Please try again.');
     } catch (error) {
       setSaveError(error?.message || 'This MR could not be saved. Please try again.');
     } finally {
@@ -165,19 +193,19 @@ export default function MRForm({ mr, records = [], zones = [], onSave, onClose }
   }
 
   return (
-    <Dialog
-      className="mr-dialog"
-      eyebrow="MR Master"
-      title={mr ? 'Edit MR record' : 'Add MR record'}
-      description={mr ? 'Update the staff profile and assignment details below.' : 'Create a local preview record for a medical representative.'}
-      onClose={onClose}
-    >
       <form className="mr-form" ref={formRef} onSubmit={handleSubmit} noValidate data-testid="form-mr">
+        <div className="mr-form__tabs" role="tablist" aria-label="MR profile sections">
+          {TABS.map((tab, index) => <button key={tab.id} ref={(node) => { tabRefs.current[index] = node; }} type="button"
+            id={`mr-tab-${tab.id}`} role="tab" aria-controls={`mr-panel-${tab.id}`} aria-selected={activeTab === tab.id}
+            tabIndex={activeTab === tab.id ? 0 : -1} className={`mr-form__tab${activeTab === tab.id ? ' mr-form__tab--active' : ''}${tab.fields.some((key) => errors[key]) ? ' mr-form__tab--error' : ''}`}
+            onClick={() => setActiveTab(tab.id)} onKeyDown={(event) => handleTabKey(event, index)}
+            data-testid={`tab-mr-${tab.id}`}>{tab.label}{tab.fields.some((key) => errors[key]) && <span className="mr-form__tab-error" aria-label="Contains errors">!</span>}</button>)}
+        </div>
         <div className="mr-form__body">
           {missingZone && <p className="mr-form__notice" role="status" data-testid="warning-mr-zone">The previously assigned zone is no longer available. Select an active zone before saving.</p>}
-          {saveError && <p className="mr-form__notice mr-form__notice--error" role="alert" data-testid="error-mr-save">{saveError}</p>}
+          {saveError && <div className="mr-form__notice mr-form__notice--error" role="alert" data-testid="error-mr-save"><p>{saveError}</p><p>To review the latest records before trying again, refresh below. Refreshing discards changes on this page.</p><button type="button" className="admin-button admin-button--secondary" onClick={onRefresh} data-testid="button-refresh-mr-save">Refresh records</button></div>}
 
-          <section className="mr-form__section" aria-labelledby="mr-identity-title">
+          <section className="mr-form__section" id="mr-panel-identity" role="tabpanel" aria-labelledby="mr-tab-identity" tabIndex={0} hidden={activeTab !== 'identity'}>
             <div className="mr-form__section-head"><h3 id="mr-identity-title" className="mr-form__section-title">Identity & contact</h3><p className="mr-form__section-note">Fields marked * are required</p></div>
             <div className="mr-form__grid">
                {renderField('name', 'MR Name', { placeholder: 'MR Name', autoComplete: 'name' })}
@@ -192,7 +220,7 @@ export default function MRForm({ mr, records = [], zones = [], onSave, onClose }
             </div>
           </section>
 
-          <section className="mr-form__section" aria-labelledby="mr-assignment-title">
+          <section className="mr-form__section" id="mr-panel-assignment" role="tabpanel" aria-labelledby="mr-tab-assignment" tabIndex={0} hidden={activeTab !== 'assignment'}>
             <div className="mr-form__section-head"><h3 id="mr-assignment-title" className="mr-form__section-title">Assignment & work</h3></div>
             <div className="mr-form__grid">
                {renderField('hq', 'HQ', { placeholder: 'Base location' })}
@@ -214,7 +242,7 @@ export default function MRForm({ mr, records = [], zones = [], onSave, onClose }
             </div>
           </section>
 
-          <section className="mr-form__section" aria-labelledby="mr-address-title">
+          <section className="mr-form__section" id="mr-panel-address" role="tabpanel" aria-labelledby="mr-tab-address" tabIndex={0} hidden={activeTab !== 'address'}>
             <div className="mr-form__section-head"><h3 id="mr-address-title" className="mr-form__section-title">Address</h3></div>
             <div className="mr-form__grid">
               {renderField('addressLine1', 'Address line 1', { placeholder: 'Street address', span: true, autoComplete: 'address-line1' })}
@@ -235,6 +263,5 @@ export default function MRForm({ mr, records = [], zones = [], onSave, onClose }
           </div>
         </div>
       </form>
-    </Dialog>
   );
 }
