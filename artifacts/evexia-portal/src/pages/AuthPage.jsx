@@ -9,9 +9,6 @@ export default function AuthPage({ role }) {
       <section className="auth-visual" aria-label={`${role.title} introduction`}>
         <img src={role.image} alt="" />
         <div className="auth-visual__overlay">
-          <Link href="/" aria-label="Return to EVEXIA portal selection" data-testid="link-auth-home">
-            <BrandMark light />
-          </Link>
           <div className="auth-visual__content">
             <div className="eyebrow">EVEXIA / {role.short}</div>
             <h2>{role.visualTitle}</h2>
