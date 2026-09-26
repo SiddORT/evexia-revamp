@@ -28,6 +28,7 @@ const FIELD_INFO = {
   phone: 'Country selection determines the expected number of digits and is saved with this record.',
   daysLimit: 'New orders from this doctor will not be accepted if payment remains overdue beyond this days limit.',
 };
+const PASSWORD_INFO = 'Passwords cannot be entered, generated, saved or exported. No doctor login is created.';
 
 function initialValues(doctor) {
   return Object.fromEntries(FIELDS.map((key) => [
@@ -283,17 +284,27 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
           {renderField('dateOfJoining', 'Date of joining', { type: 'date' })}
           {renderField('registrationNumber', 'Registration Number', { placeholder: 'Registration number' })}
           {renderField('qualification', 'Qualification', { placeholder: 'Qualification' })}
-          <div className="doctor-form__field">
-            <label className="doctor-form__label" htmlFor="doctor-password">Password</label>
-            <div className="doctor-form__input-row">
-              <input id="doctor-password" className="doctor-form__control" type="password" placeholder="Unavailable" disabled autoComplete="off" aria-describedby="doctor-password-hint" data-testid="input-doctor-password" />
-              <button type="button" className="doctor-form__preview-action" disabled aria-describedby="doctor-password-hint" data-testid="button-generate-doctor-password">Generate password</button>
+          <div className="doctor-form__password-row">
+            <div className="doctor-form__field">
+              <div className="doctor-form__label-row">
+                <label className="doctor-form__label" htmlFor="doctor-password">Password</label>
+                <button type="button" className="doctor-form__info-button" aria-label="About Password"
+                  aria-expanded={openInfo === 'password'} aria-controls="doctor-password-help"
+                  aria-describedby={openInfo === 'password' ? 'doctor-password-help' : undefined}
+                  onClick={() => setOpenInfo((current) => current === 'password' ? null : 'password')}
+                  onKeyDown={(event) => { if (event.key === 'Escape' && openInfo === 'password') { event.preventDefault(); setOpenInfo(null); } }}
+                  data-testid="button-doctor-password-info"><Info size={16} aria-hidden="true" /></button>
+              </div>
+              <p id="doctor-password-help" className="doctor-form__info-text" role="status" hidden={openInfo !== 'password'}>{PASSWORD_INFO}</p>
+              <div className="doctor-form__input-row">
+                <input id="doctor-password" className="doctor-form__control" type="password" placeholder="Unavailable" disabled autoComplete="off" aria-describedby="doctor-password-help" data-testid="input-doctor-password" />
+                <button type="button" className="doctor-form__preview-action" disabled aria-describedby="doctor-password-help" data-testid="button-generate-doctor-password">Generate password</button>
+              </div>
             </div>
-            <p id="doctor-password-hint" className="doctor-form__hint">Passwords cannot be entered, generated, saved or exported. No doctor login is created.</p>
-          </div>
-          <div className="doctor-form__field">
-            <label className="doctor-form__label" htmlFor="doctor-confirm-password">Confirm password</label>
-            <input id="doctor-confirm-password" className="doctor-form__control" type="password" placeholder="Unavailable" disabled autoComplete="off" aria-describedby="doctor-password-hint" data-testid="input-doctor-confirm-password" />
+            <div className="doctor-form__field">
+              <label className="doctor-form__label" htmlFor="doctor-confirm-password">Confirm password</label>
+              <input id="doctor-confirm-password" className="doctor-form__control" type="password" placeholder="Unavailable" disabled autoComplete="off" aria-describedby="doctor-password-help" data-testid="input-doctor-confirm-password" />
+            </div>
           </div>
         </div>
       </section>
