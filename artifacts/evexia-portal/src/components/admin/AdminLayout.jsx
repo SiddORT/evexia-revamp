@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Activity, Check, ChevronDown, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, X } from 'lucide-react';
+import { Activity, Check, ChevronDown, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, UsersRound, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
 import { ADMIN_THEMES, readAdminTheme, saveAdminTheme } from './adminTheme.js';
 import '../../admin.css';
@@ -121,6 +121,7 @@ export default function AdminLayout({ title, children }) {
             <div id="admin-masters-subnav" className="admin-nav__sub">
               <Link href="/admin/masters" className={`admin-nav__item${location === '/admin/masters' ? ' admin-nav__item--active' : ''}`} aria-label="All masters" title={isCollapsed ? 'All masters' : undefined} aria-current={location === '/admin/masters' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-masters"><LayoutGrid size={16} aria-hidden="true" /><span className="admin-nav__label">All masters</span></Link>
               <Link href="/admin/masters/zones" className={`admin-nav__item${location === '/admin/masters/zones' ? ' admin-nav__item--active' : ''}`} aria-label="Zone Master" title={isCollapsed ? 'Zone Master' : undefined} aria-current={location === '/admin/masters/zones' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-zones"><MapPinned size={16} aria-hidden="true" /><span className="admin-nav__label">Zone Master</span></Link>
+               <Link href="/admin/masters/mrs" className={`admin-nav__item${location === '/admin/masters/mrs' ? ' admin-nav__item--active' : ''}`} aria-label="MR Master" title={isCollapsed ? 'MR Master' : undefined} aria-current={location === '/admin/masters/mrs' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-mrs"><UsersRound size={16} aria-hidden="true" /><span className="admin-nav__label">MR Master</span></Link>
             </div>
           )}
         </nav>

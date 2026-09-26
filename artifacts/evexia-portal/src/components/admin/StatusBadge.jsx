@@ -1,3 +1,3 @@
-export default function StatusBadge({ status, id }) {
-  return <span className={`admin-badge${status === 'inactive' ? ' admin-badge--inactive' : ''}`} data-testid={`status-zone-${id}`}>{status === 'inactive' ? 'Inactive' : 'Active'}</span>;
+export default function StatusBadge({ status, id, kind = 'zone' }) {
+  return <span className={`admin-badge${status === 'inactive' ? ' admin-badge--inactive' : ''}`} data-testid={`status-${kind}-${id}`}>{status === 'inactive' ? 'Inactive' : 'Active'}</span>;
 }

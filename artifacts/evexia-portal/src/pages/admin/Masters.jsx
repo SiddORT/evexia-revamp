@@ -1,4 +1,4 @@
-import { ArrowUpRight, MapPinned } from 'lucide-react';
+import { ArrowUpRight, MapPinned, UsersRound } from 'lucide-react';
 import { Link } from 'wouter';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 
@@ -10,6 +10,11 @@ export default function Masters() {
         <Link href="/admin/masters/zones" className="admin-master-link" data-testid="link-master-zones">
           <span className="admin-master-link__icon"><MapPinned size={20} aria-hidden="true" /></span>
           <span className="admin-master-link__text"><strong>Zone Master</strong><small>Manage the zones used within EVEXIA.</small></span>
+          <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
+        </Link>
+        <Link href="/admin/masters/mrs" className="admin-master-link" data-testid="link-master-mrs">
+          <span className="admin-master-link__icon"><UsersRound size={20} aria-hidden="true" /></span>
+          <span className="admin-master-link__text"><strong>MR Master</strong><small>Manage MR profiles and zone assignments in this browser.</small></span>
           <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
         </Link>
       </div>

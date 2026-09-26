@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 
-export default function Dialog({ title, eyebrow, description, onClose, children, footer }) {
+export default function Dialog({ title, eyebrow, description, onClose, children, footer, className = '' }) {
   const closeRef = useRef(null);
   const dialogRef = useRef(null);
   const onCloseRef = useRef(onClose);
@@ -31,7 +31,7 @@ export default function Dialog({ title, eyebrow, description, onClose, children,
   }, []);
   return (
     <div className="admin-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-dialog-title" aria-describedby={description ? 'admin-dialog-description' : undefined} ref={dialogRef}>
+      <section className={`admin-dialog ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby="admin-dialog-title" aria-describedby={description ? 'admin-dialog-description' : undefined} ref={dialogRef}>
         <div className="admin-dialog__top">
           <div><p className="admin-dialog__eyebrow">{eyebrow || 'Zone Master'}</p><h2 id="admin-dialog-title">{title}</h2></div>
           <button type="button" ref={closeRef} className="admin-icon-button" aria-label="Close dialog" onClick={onClose} data-testid="button-close-dialog"><X size={18} /></button>
