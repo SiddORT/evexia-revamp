@@ -1,12 +1,35 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Boxes, BriefcaseBusiness, Building2, Check, ChevronDown, FlaskConical, HeartPulse, Landmark, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, Moon, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Stethoscope, Sun, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
+import { Boxes, BriefcaseBusiness, Building2, Check, ChevronDown, FlaskConical, HeartPulse, Landmark, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, Moon, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Stethoscope, Sun, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
 import { ADMIN_APPEARANCES, ADMIN_THEMES, readAdminAppearance, readAdminTheme, saveAdminAppearance, saveAdminTheme } from './adminTheme.js';
 import '../../admin.css';
 
 const SIDEBAR_PREFERENCE_KEY = 'evexia.admin.sidebar.collapsed';
+const MASTER_GROUPS = [
+  { label: 'Geography & Logistics', links: [
+    { label: 'Zone Master', href: '/admin/masters/zones', testId: 'link-admin-zones', Icon: MapPinned },
+    { label: 'Courier Partner', href: '/admin/masters/courier-partners', testId: 'link-admin-courier-partners', Icon: Truck },
+    { label: 'Storage Location', href: '/admin/masters/storage-locations', testId: 'link-admin-storage-locations', Icon: Warehouse, nested: true },
+    { label: 'Headquarter Master', href: '/admin/masters/headquarters', testId: 'link-admin-headquarters', Icon: Building2, nested: true },
+  ] },
+  { label: 'People & Organization', links: [
+    { label: 'MR Master', href: '/admin/masters/mrs', testId: 'link-admin-mrs', Icon: UsersRound },
+    { label: 'Doctor Master', href: '/admin/masters/doctors', testId: 'link-admin-doctors', Icon: Stethoscope, nested: true },
+    { label: 'Patient Master', href: '/admin/masters/patients', testId: 'link-admin-patients', Icon: HeartPulse, nested: true },
+    { label: 'Designation Master', href: '/admin/masters/designations', testId: 'link-admin-designations', Icon: BriefcaseBusiness, nested: true },
+  ] },
+  { label: 'Products & Supply', links: [
+    { label: 'Product Category', href: '/admin/masters/product-categories', testId: 'link-admin-product-categories', Icon: Boxes, nested: true },
+    { label: 'Allergen Master', href: '/admin/masters/allergens', testId: 'link-admin-allergens', Icon: FlaskConical, nested: true },
+    { label: 'Vendor Master', href: '/admin/masters/vendors', testId: 'link-admin-vendors', Icon: BriefcaseBusiness },
+  ] },
+  { label: 'Finance & Performance', links: [
+    { label: 'Sales Target Master', href: '/admin/masters/sales-targets', testId: 'link-admin-sales-targets', Icon: Target },
+    { label: 'Opening Balance Master', href: '/admin/masters/opening-balances', testId: 'link-admin-opening-balances', Icon: Landmark, nested: true },
+  ] },
+];
 
 export default function AdminLayout({ title, children }) {
   const [location, navigate] = useLocation();
@@ -17,15 +40,49 @@ export default function AdminLayout({ title, children }) {
     try { return window.localStorage.getItem(SIDEBAR_PREFERENCE_KEY) === 'true'; }
     catch { return false; }
   });
+  const [search, setSearch] = useState('');
+  const [searchExpanded, setSearchExpanded] = useState(false);
   const [theme, setTheme] = useState(readAdminTheme);
   const [appearance, setAppearance] = useState(readAdminAppearance);
   const menuRef = useRef(null);
   const sidebarRef = useRef(null);
+  const searchRef = useRef(null);
+  const searchButtonRef = useRef(null);
   const restoreMenuFocusRef = useRef(false);
-  const isCollapsed = sidebarCollapsed && !compact;
+  const isCollapsed = sidebarCollapsed && !compact && !searchExpanded;
+  const query = search.trim().toLocaleLowerCase();
+  const searching = query.length > 0;
+  const showDashboard = !searching || 'dashboard'.includes(query);
+  const showAllMasters = !searching || 'all masters'.includes(query);
+  const visibleGroups = MASTER_GROUPS.map((group) => ({
+    ...group,
+    links: searching ? group.links.filter((link) => link.label.toLocaleLowerCase().includes(query)) : group.links,
+  })).filter((group) => group.links.length > 0);
+  const showMasters = !searching || showAllMasters || visibleGroups.length > 0;
+  const showSubnav = showMasters && (searching || mastersOpen || isCollapsed);
+
+  function clearSearch() {
+    setSearch('');
+    if (searchExpanded) {
+      setSearchExpanded(false);
+      requestAnimationFrame(() => searchButtonRef.current?.focus());
+    } else {
+      searchRef.current?.focus();
+    }
+  }
+
+  function changeSearch(value) {
+    setSearch(value);
+    if (searchExpanded && search && !value.trim()) {
+      setSearchExpanded(false);
+      requestAnimationFrame(() => searchButtonRef.current?.focus());
+    }
+  }
 
   function toggleSidebar() {
-    const next = !sidebarCollapsed;
+    const next = !isCollapsed;
+    setSearch('');
+    setSearchExpanded(false);
     setSidebarCollapsed(next);
     try { window.localStorage.setItem(SIDEBAR_PREFERENCE_KEY, String(next)); }
     catch { /* The toggle still works if browser storage is unavailable. */ }
@@ -65,12 +122,18 @@ export default function AdminLayout({ title, children }) {
   useEffect(() => {
     restoreMenuFocusRef.current = false;
     setDrawerOpen(false);
+    setSearch('');
+    setSearchExpanded(false);
     if (location.startsWith('/admin/masters')) setMastersOpen(true);
   }, [location]);
 
   useEffect(() => {
+    if (searchExpanded) searchRef.current?.focus();
+  }, [searchExpanded]);
+
+  useEffect(() => {
     if (compact && drawerOpen) {
-      sidebarRef.current?.querySelector('[data-testid="link-admin-dashboard"]')?.focus();
+      searchRef.current?.focus();
     } else if (restoreMenuFocusRef.current) {
       restoreMenuFocusRef.current = false;
       if (compact) menuRef.current?.focus();
@@ -86,7 +149,7 @@ export default function AdminLayout({ title, children }) {
         event.preventDefault();
         closeDrawer();
       } else if (event.key === 'Tab') {
-        const controls = [...sidebarRef.current.querySelectorAll('a[href], button:not(:disabled), [tabindex]:not([tabindex="-1"])')]
+        const controls = [...sidebarRef.current.querySelectorAll('a[href], button:not(:disabled), input:not(:disabled), [tabindex]:not([tabindex="-1"])')]
           .filter((element) => element.getClientRects().length > 0);
         if (!controls.length) return;
         const first = controls[0];
@@ -117,31 +180,39 @@ export default function AdminLayout({ title, children }) {
           <button type="button" className="admin-sidebar__close" aria-label="Close menu" onClick={() => closeDrawer()} data-testid="button-close-navigation"><X size={19} /></button>
         </div>
         <div className="admin-sidebar__caption">Workspace</div>
-        <nav className="admin-nav" aria-label="Primary">
-          <Link href="/admin" className={`admin-nav__item${location === '/admin' ? ' admin-nav__item--active' : ''}`} aria-label="Dashboard" title={isCollapsed ? 'Dashboard' : undefined} aria-current={location === '/admin' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-dashboard">
-            <LayoutDashboard size={17} aria-hidden="true" /><span className="admin-nav__label">Dashboard</span>
-          </Link>
-          <button type="button" className={`admin-nav__item${location.startsWith('/admin/masters') ? ' admin-nav__item--active' : ''}`} aria-label="Masters" title={isCollapsed ? 'Expand Masters' : undefined} aria-expanded={mastersOpen || isCollapsed} aria-controls="admin-masters-subnav" onClick={() => { if (isCollapsed) { toggleSidebar(); setMastersOpen(true); } else setMastersOpen((open) => !open); }} data-testid="button-toggle-masters">
-            <PanelsTopLeft size={17} aria-hidden="true" /><span className="admin-nav__label">Masters</span><ChevronDown size={15} className={`admin-nav__chevron${mastersOpen ? ' admin-nav__chevron--open' : ''}`} aria-hidden="true" />
-          </button>
-          {(mastersOpen || isCollapsed) && (
-            <div id="admin-masters-subnav" className="admin-nav__sub">
-              <Link href="/admin/masters" className={`admin-nav__item${location === '/admin/masters' ? ' admin-nav__item--active' : ''}`} aria-label="All masters" title={isCollapsed ? 'All masters' : undefined} aria-current={location === '/admin/masters' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-masters"><LayoutGrid size={16} aria-hidden="true" /><span className="admin-nav__label">All masters</span></Link>
-              <Link href="/admin/masters/zones" className={`admin-nav__item${location === '/admin/masters/zones' ? ' admin-nav__item--active' : ''}`} aria-label="Zone Master" title={isCollapsed ? 'Zone Master' : undefined} aria-current={location === '/admin/masters/zones' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-zones"><MapPinned size={16} aria-hidden="true" /><span className="admin-nav__label">Zone Master</span></Link>
-              <Link href="/admin/masters/courier-partners" className={`admin-nav__item${location === '/admin/masters/courier-partners' ? ' admin-nav__item--active' : ''}`} aria-label="Courier Partner" title={isCollapsed ? 'Courier Partner' : undefined} aria-current={location === '/admin/masters/courier-partners' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-courier-partners"><Truck size={16} aria-hidden="true" /><span className="admin-nav__label">Courier Partner</span></Link>
-               <Link href="/admin/masters/sales-targets" className={`admin-nav__item${location === '/admin/masters/sales-targets' ? ' admin-nav__item--active' : ''}`} aria-label="Sales Target Master" title={isCollapsed ? 'Sales Target Master' : undefined} aria-current={location === '/admin/masters/sales-targets' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-sales-targets"><Target size={16} aria-hidden="true" /><span className="admin-nav__label">Sales Target Master</span></Link>
-               <Link href="/admin/masters/mrs" className={`admin-nav__item${location === '/admin/masters/mrs' ? ' admin-nav__item--active' : ''}`} aria-label="MR Master" title={isCollapsed ? 'MR Master' : undefined} aria-current={location === '/admin/masters/mrs' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-mrs"><UsersRound size={16} aria-hidden="true" /><span className="admin-nav__label">MR Master</span></Link>
-               <Link href="/admin/masters/doctors" className={`admin-nav__item${location.startsWith('/admin/masters/doctors') ? ' admin-nav__item--active' : ''}`} aria-label="Doctor Master" title={isCollapsed ? 'Doctor Master' : undefined} aria-current={location === '/admin/masters/doctors' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-doctors"><Stethoscope size={16} aria-hidden="true" /><span className="admin-nav__label">Doctor Master</span></Link>
-                <Link href="/admin/masters/product-categories" className={`admin-nav__item${location.startsWith('/admin/masters/product-categories') ? ' admin-nav__item--active' : ''}`} aria-label="Product Category" title={isCollapsed ? 'Product Category' : undefined} aria-current={location === '/admin/masters/product-categories' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-product-categories"><Boxes size={16} aria-hidden="true" /><span className="admin-nav__label">Product Category</span></Link>
-                 <Link href="/admin/masters/storage-locations" className={`admin-nav__item${location.startsWith('/admin/masters/storage-locations') ? ' admin-nav__item--active' : ''}`} aria-label="Storage Location" title={isCollapsed ? 'Storage Location' : undefined} aria-current={location === '/admin/masters/storage-locations' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-storage-locations"><Warehouse size={16} aria-hidden="true" /><span className="admin-nav__label">Storage Location</span></Link>
-                  <Link href="/admin/masters/headquarters" className={`admin-nav__item${location.startsWith('/admin/masters/headquarters') ? ' admin-nav__item--active' : ''}`} aria-label="Headquarter Master" title={isCollapsed ? 'Headquarter Master' : undefined} aria-current={location === '/admin/masters/headquarters' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-headquarters"><Building2 size={16} aria-hidden="true" /><span className="admin-nav__label">Headquarter Master</span></Link>
-                  <Link href="/admin/masters/designations" className={`admin-nav__item${location.startsWith('/admin/masters/designations') ? ' admin-nav__item--active' : ''}`} aria-label="Designation Master" title={isCollapsed ? 'Designation Master' : undefined} aria-current={location === '/admin/masters/designations' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-designations"><BriefcaseBusiness size={16} aria-hidden="true" /><span className="admin-nav__label">Designation Master</span></Link>
-                 <Link href="/admin/masters/allergens" className={`admin-nav__item${location.startsWith('/admin/masters/allergens') ? ' admin-nav__item--active' : ''}`} aria-label="Allergen Master" title={isCollapsed ? 'Allergen Master' : undefined} aria-current={location === '/admin/masters/allergens' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-allergens"><FlaskConical size={16} aria-hidden="true" /><span className="admin-nav__label">Allergen Master</span></Link>
-                  <Link href="/admin/masters/vendors" className={`admin-nav__item${location === '/admin/masters/vendors' ? ' admin-nav__item--active' : ''}`} aria-label="Vendor Master" title={isCollapsed ? 'Vendor Master' : undefined} aria-current={location === '/admin/masters/vendors' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-vendors"><BriefcaseBusiness size={16} aria-hidden="true" /><span className="admin-nav__label">Vendor Master</span></Link>
-                <Link href="/admin/masters/patients" className={`admin-nav__item${location.startsWith('/admin/masters/patients') ? ' admin-nav__item--active' : ''}`} aria-label="Patient Master" title={isCollapsed ? 'Patient Master' : undefined} aria-current={location === '/admin/masters/patients' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-patients"><HeartPulse size={16} aria-hidden="true" /><span className="admin-nav__label">Patient Master</span></Link>
-                 <Link href="/admin/masters/opening-balances" className={`admin-nav__item${location.startsWith('/admin/masters/opening-balances') ? ' admin-nav__item--active' : ''}`} aria-label="Opening Balance Master" title={isCollapsed ? 'Opening Balance Master' : undefined} aria-current={location === '/admin/masters/opening-balances' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-opening-balances"><Landmark size={16} aria-hidden="true" /><span className="admin-nav__label">Opening Balance Master</span></Link>
+        <div className="admin-sidebar__search">
+          {isCollapsed ? (
+            <button ref={searchButtonRef} type="button" className="admin-sidebar__search-trigger" aria-label="Search navigation" title="Search navigation" onClick={() => setSearchExpanded(true)} data-testid="button-search-navigation"><Search size={18} aria-hidden="true" /></button>
+          ) : (
+            <div className="admin-sidebar__search-field">
+              <Search size={16} aria-hidden="true" />
+              <input ref={searchRef} type="search" aria-label="Search navigation" placeholder="Search navigation" value={search} onChange={(event) => changeSearch(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape' && (search || searchExpanded)) { event.stopPropagation(); clearSearch(); } }} data-testid="input-search-navigation" />
+              {(search || searchExpanded) && <button type="button" aria-label={search ? 'Clear navigation search' : 'Close navigation search'} title={search ? 'Clear navigation search' : 'Close navigation search'} onClick={clearSearch} data-testid="button-clear-navigation-search"><X size={15} aria-hidden="true" /></button>}
             </div>
           )}
+        </div>
+        <nav className="admin-nav" aria-label="Primary">
+          {showDashboard && <Link href="/admin" className={`admin-nav__item${location === '/admin' ? ' admin-nav__item--active' : ''}`} aria-label="Dashboard" title={isCollapsed ? 'Dashboard' : undefined} aria-current={location === '/admin' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-dashboard">
+            <LayoutDashboard size={17} aria-hidden="true" /><span className="admin-nav__label">Dashboard</span>
+          </Link>}
+          {showMasters && <button type="button" disabled={searching} className={`admin-nav__item${location.startsWith('/admin/masters') ? ' admin-nav__item--active' : ''}`} aria-label="Masters" title={isCollapsed ? 'Expand Masters' : undefined} aria-expanded={showSubnav} aria-controls="admin-masters-subnav" onClick={() => { if (isCollapsed) { toggleSidebar(); setMastersOpen(true); } else setMastersOpen((open) => !open); }} data-testid="button-toggle-masters">
+            <PanelsTopLeft size={17} aria-hidden="true" /><span className="admin-nav__label">Masters</span><ChevronDown size={15} className={`admin-nav__chevron${showSubnav ? ' admin-nav__chevron--open' : ''}`} aria-hidden="true" />
+          </button>}
+          {showSubnav && (
+            <div id="admin-masters-subnav" className="admin-nav__sub">
+              {showAllMasters && <Link href="/admin/masters" className={`admin-nav__item${location === '/admin/masters' ? ' admin-nav__item--active' : ''}`} aria-label="All masters" title={isCollapsed ? 'All masters' : undefined} aria-current={location === '/admin/masters' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-masters"><LayoutGrid size={16} aria-hidden="true" /><span className="admin-nav__label">All masters</span></Link>}
+              {visibleGroups.map((group) => (
+                <section className="admin-nav__group" aria-label={group.label} key={group.label}>
+                  <h2 className="admin-nav__group-heading">{group.label}</h2>
+                  {group.links.map(({ label, href, testId, Icon, nested }) => {
+                    const active = nested ? location.startsWith(href) : location === href;
+                    return <Link key={href} href={href} className={`admin-nav__item${active ? ' admin-nav__item--active' : ''}`} aria-label={label} title={isCollapsed ? label : undefined} aria-current={location === href ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid={testId}><Icon size={16} aria-hidden="true" /><span className="admin-nav__label">{label}</span></Link>;
+                  })}
+                </section>
+              ))}
+            </div>
+          )}
+          {searching && !showDashboard && !showMasters && <p className="admin-nav__empty" role="status" data-testid="status-navigation-empty">No navigation results. Try another search.</p>}
         </nav>
         <div className="admin-sidebar__foot">EVEXIA Life Sciences<br />Admin workspace · Preview</div>
       </aside>
