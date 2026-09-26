@@ -1,0 +1,26 @@
+/* Shared list and card language for MR, Doctor, and Patient Master. */
+.admin-record-details { display: grid; gap: 5px; min-width: 0; color: var(--admin-text-soft); font-size: 11px; line-height: 1.45; overflow-wrap: anywhere; }
+.admin-record-details__name { color: var(--admin-text); font-size: 13px; line-height: 1.35; overflow-wrap: anywhere; }
+.admin-record-details__subtitle { color: var(--admin-text-soft); }
+.admin-record-line { display: flex; align-items: flex-start; gap: 7px; min-width: 0; }
+.admin-record-line > svg { flex: none; margin-top: 1px; color: var(--admin-muted); }
+.admin-record-line__content { min-width: 0; overflow-wrap: anywhere; }
+.admin-record-line a { color: var(--admin-accent); text-decoration: none; overflow-wrap: anywhere; }
+.admin-record-line a:hover { text-decoration: underline; }
+.admin-record-line a:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; border-radius: 2px; }
+.admin-record-line__empty { color: var(--admin-text-soft); }
+.admin-record-missing { color: var(--admin-danger); font-weight: 700; }
+.admin-record-fields { display: grid; gap: 5px; min-width: 0; color: var(--admin-text-soft); font-size: 11px; line-height: 1.45; overflow-wrap: anywhere; }
+.admin-record-fields strong { color: var(--admin-text); font-weight: 600; }
+.admin-record-fields__label { color: var(--admin-muted); }
+.admin-record-card { min-width: 0; overflow: hidden; border: 1px solid var(--admin-border); border-radius: 10px; background: var(--admin-chrome); color: var(--admin-text); }
+.admin-record-card__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 14px; }
+.admin-record-card__identity { min-width: 0; overflow-wrap: anywhere; }
+.admin-record-card__head h2 { margin: 0 0 4px; color: var(--admin-text); font-size: 15px; line-height: 1.35; }
+.admin-record-card__head small { color: var(--admin-text-soft); font-size: 11px; }
+.admin-record-card__body { display: grid; gap: 12px; padding: 0 14px 14px; min-width: 0; font-size: 12px; }
+.admin-record-card__body dl { display: grid; gap: 10px; margin: 0; padding-top: 12px; border-top: 1px solid var(--admin-border); }
+.admin-record-card__body dl > div { min-width: 0; }
+.admin-record-card__body dt { margin-bottom: 4px; color: var(--admin-muted); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.admin-record-card__body dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.admin-record-card__foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 14px; border-top: 1px solid var(--admin-border); }

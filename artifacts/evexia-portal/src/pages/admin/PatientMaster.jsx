@@ -4,6 +4,7 @@ import { CirclePower, Download, History, Pencil, Plus, Search, Upload, UsersRoun
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
+import RecordDetails from '../../components/admin/RecordDetails.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import usePatients from '../../hooks/usePatients.js';
@@ -65,8 +66,13 @@ export default function PatientMaster() {
       <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} title={record.status === 'active' ? 'Inactivate' : 'Activate'} onClick={() => { setActionError(''); setConfirming(record); }} data-testid={`button-toggle-patient-${record.id}`}><CirclePower size={16} />{compact && (record.status === 'active' ? 'Inactivate' : 'Activate')}</button>
     </div>;
   }
-  const reference = (record) => <span className="patient-reference"><strong className={!doctorFor(record) ? 'admin-mr-missing' : ''}>{doctorFor(record)?.name || 'Missing doctor'}</strong><small className={!mrFor(record) ? 'admin-mr-missing' : ''}>MR: {mrFor(record)?.name || 'Missing MR'}</small><small className={!zoneFor(record) ? 'admin-mr-missing' : ''}>Zone: {zoneFor(record)?.name || 'Missing zone'}</small></span>;
-  const details = (record) => <span className="admin-mr-details"><strong>{record.name}</strong><span>{record.gender} · {patientAge(record.dateOfBirth)} years</span><span>{record.phone}</span>{record.email && <span>{record.email}</span>}<span>DOB: {record.dateOfBirth}</span></span>;
+  const reference = (record) => <span className="admin-record-fields"><span className={!doctorFor(record) ? 'admin-record-missing' : ''}><span className="admin-record-fields__label">Doctor: </span>{doctorFor(record)?.name || 'Missing doctor'}</span><span className={!mrFor(record) ? 'admin-record-missing' : ''}><span className="admin-record-fields__label">MR: </span>{mrFor(record)?.name || 'Missing MR'}</span><span className={!zoneFor(record) ? 'admin-record-missing' : ''}><span className="admin-record-fields__label">Zone: </span>{zoneFor(record)?.name || 'Missing zone'}</span></span>;
+  const details = (record, showName = true) => <RecordDetails name={record.name} showName={showName} testId={`text-patient-details-${record.id}`} rows={[
+    { label: 'Gender and age', value: `${record.gender || 'Not specified'} · ${record.dateOfBirth ? `${patientAge(record.dateOfBirth)} years` : 'Age unavailable'}` },
+    { label: 'Phone', icon: 'phone', value: record.phone, href: record.phone ? `tel:${record.phone.replace(/[^+\d]/g, '')}` : undefined, testId: `link-phone-patient-${record.id}` },
+    { label: 'Email', icon: 'email', value: record.email, href: record.email ? `mailto:${record.email}` : undefined, testId: `link-email-patient-${record.id}` },
+    { label: 'Date of birth', icon: 'date', value: record.dateOfBirth },
+  ]} />;
   const address = (record) => <span className="admin-mr-address">{[record.addressLine1, record.addressLine2, record.landmark, `${record.city}, ${record.state} ${record.pincode}`, record.country].filter(Boolean).join(' · ')}</span>;
   const lastDose = (record) => {
     const last = getSampleDosageHistory(record)?.last;
@@ -105,9 +111,9 @@ export default function PatientMaster() {
         {hasMissing && <div className="admin-feedback admin-feedback--error" role="status">Some patients have missing doctor, MR, or zone assignments. Repair the reference in Doctor or MR Master, or edit the patient assignment.</div>}
         {visible.length ? <>
           <div className="admin-mr-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(r) => r.id} label="Patient records" testIdPrefix="patient" /></div>
-          <div className="admin-mr-mobile" role="list" aria-label="Patient records">{pagination.pageRows.map((r) => <article className="admin-mr-card" role="listitem" key={r.id} data-testid={`card-patient-${r.id}`}>
-            <div className="admin-mr-card__head"><div><h2>{r.name}</h2><small>{r.id}</small></div><StatusBadge status={r.status} /></div>
-            <div className="admin-mr-card__body">{details(r)}<dl><div><dt>Address</dt><dd>{address(r)}</dd></div><div><dt>Doctor / MR / Zone</dt><dd>{reference(r)}</dd></div><div><dt>Instructions language</dt><dd>{r.instructionsLanguage}</dd></div><div><dt>Last dose</dt><dd>{lastDose(r)}</dd></div></dl></div>{actions(r, true)}
+           <div className="admin-mr-mobile" role="list" aria-label="Patient records">{pagination.pageRows.map((r) => <article className="admin-record-card" role="listitem" key={r.id} data-testid={`card-patient-${r.id}`}>
+             <div className="admin-record-card__head"><div className="admin-record-card__identity"><h2>{r.name}</h2><small>{r.id}</small></div><StatusBadge status={r.status} /></div>
+             <div className="admin-record-card__body">{details(r, false)}<dl><div><dt>Address</dt><dd>{address(r)}</dd></div><div><dt>Doctor / MR / Zone</dt><dd>{reference(r)}</dd></div><div><dt>Instructions language</dt><dd>{r.instructionsLanguage}</dd></div><div><dt>Last dose</dt><dd>{lastDose(r)}</dd></div></dl></div>{actions(r, true)}
           </article>)}</div>
         </> : <div className="admin-empty"><span className="admin-empty__icon"><UsersRound size={21} /></span><strong>{records.length ? 'No matching patients' : 'No patients yet'}</strong><p>{records.length ? 'Try different search or filters.' : 'Add a browser-local preview patient or import a CSV.'}</p></div>}
         <TablePagination {...pagination} filtered={visible.length} total={records.length} label={records.length === 1 ? 'patient' : 'patients'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} />

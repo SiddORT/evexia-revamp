@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
-import { CalendarDays, CirclePower, Download, Hash, Mail, Pencil, Phone, Plus, Search, Upload, UsersRound } from 'lucide-react';
+import { CirclePower, Download, Pencil, Plus, Search, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import ContactRequirementButton from '../../components/admin/ContactRequirementButton.jsx';
 import MasterImportDialog from '../../components/admin/MasterImportDialog.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
+import RecordDetails from '../../components/admin/RecordDetails.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import useMRs from '../../hooks/useMRs.js';
@@ -124,13 +125,12 @@ export default function MRMaster() {
     </div>;
   }
   function details(record, showName = true) {
-    return <div className="admin-mr-details" data-testid={`text-mr-details-${record.id}`}>
-      {showName && <strong>{record.name}</strong>}
-      <span className="admin-mr-details__line"><Hash size={14} aria-hidden="true" /><span><span className="sr-only">Employee code: </span>{record.employeeCode}</span></span>
-      <span className="admin-mr-details__line"><Phone size={14} aria-hidden="true" />{record.phone ? <a href={`tel:${cleanPhone(record.phone)}`} aria-label={`Call ${record.name} at ${record.phone}`} data-testid={`link-phone-mr-${record.id}`}>{record.phone}</a> : <span>No phone</span>}</span>
-      <span className="admin-mr-details__line"><Mail size={14} aria-hidden="true" />{record.email ? <a href={`mailto:${record.email}`} aria-label={`Email ${record.name} at ${record.email}`} data-testid={`link-email-mr-${record.id}`}>{record.email}</a> : <span>No email</span>}</span>
-      <span className="admin-mr-details__line"><CalendarDays size={14} aria-hidden="true" /><span><span className="sr-only">Date of joining: </span>{formattedDate(record.dateOfJoining, dateFormat)}</span></span>
-    </div>;
+    return <RecordDetails name={record.name} showName={showName} testId={`text-mr-details-${record.id}`} rows={[
+      { label: 'Employee code', icon: 'id', value: record.employeeCode },
+      { label: 'Phone', icon: 'phone', value: record.phone, href: record.phone ? `tel:${cleanPhone(record.phone)}` : undefined, testId: `link-phone-mr-${record.id}` },
+      { label: 'Email', icon: 'email', value: record.email, href: record.email ? `mailto:${record.email}` : undefined, testId: `link-email-mr-${record.id}` },
+      { label: 'Date of joining', icon: 'date', value: formattedDate(record.dateOfJoining, dateFormat) },
+    ]} />;
   }
   function address(record) {
     return <span className="admin-mr-address">{[record.addressLine1, record.addressLine2, record.landmark, `${record.city}, ${record.state} ${record.pincode}`, record.country].filter(Boolean).join(' · ')}</span>;
@@ -140,8 +140,8 @@ export default function MRMaster() {
     { key: 'details', label: 'Employee details', render: (record) => details(record) },
     { key: 'address', label: 'Address', render: address },
     { key: 'designation', label: 'Designation', render: (record) => record.designation },
-    { key: 'manager', label: 'Reporting manager', render: managerName },
-    { key: 'zone', label: 'Assigned zone', render: (record) => <span className={!zones.some((zone) => zone.id === record.zoneId) ? 'admin-mr-missing' : ''}>{zoneName(record)}</span> },
+    { key: 'manager', label: 'Reporting manager', render: (record) => <span className={record.reportingManagerId && !records.some((candidate) => candidate.id === record.reportingManagerId) ? 'admin-record-missing' : ''}>{managerName(record)}</span> },
+    { key: 'zone', label: 'Assigned zone', render: (record) => <span className={!zones.some((zone) => zone.id === record.zoneId) ? 'admin-record-missing' : ''}>{zoneName(record)}</span> },
     { key: 'status', label: 'Status', render: (record) => <StatusBadge status={record.status} id={record.id} kind="mr" /> },
     { key: 'created', label: 'Created details', render: (record) => auditDetails(record.createdBy, record.createdAt) },
     { key: 'updated', label: 'Updated details', render: (record) => auditDetails(record.updatedBy, record.updatedAt) },
@@ -171,9 +171,9 @@ export default function MRMaster() {
         {hasMissingZones && <div className="admin-feedback admin-feedback--error" role="status">Some MRs refer to deleted zones. Edit their assignments to an active zone in Zone Master.</div>}
         {visible.length ? <>
            <div className="admin-mr-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} label="MR records" testIdPrefix="mr" /></div>
-           <div className="admin-mr-mobile" role="list" aria-label="MR records">{pagination.pageRows.map((record) => <article className="admin-mr-card" role="listitem" key={record.id} data-testid={`card-mr-${record.id}`}>
-            <div className="admin-mr-card__head"><div><h2>{record.name}</h2><small>{record.designation}</small></div><StatusBadge status={record.status} id={record.id} kind="mr" /></div>
-             <div className="admin-mr-card__body">{details(record, false)}<dl><div><dt>Address</dt><dd>{address(record)}</dd></div><div><dt>Manager</dt><dd>{managerName(record)}</dd></div><div><dt>Zone</dt><dd>{zoneName(record)}</dd></div><div><dt>Created by</dt><dd>{auditDetails(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated by</dt><dd>{auditDetails(record.updatedBy, record.updatedAt)}</dd></div></dl></div>
+            <div className="admin-mr-mobile" role="list" aria-label="MR records">{pagination.pageRows.map((record) => <article className="admin-record-card" role="listitem" key={record.id} data-testid={`card-mr-${record.id}`}>
+             <div className="admin-record-card__head"><div className="admin-record-card__identity"><h2>{record.name}</h2><small>{record.designation}</small></div><StatusBadge status={record.status} id={record.id} kind="mr" /></div>
+              <div className="admin-record-card__body">{details(record, false)}<dl><div><dt>Address</dt><dd>{address(record)}</dd></div><div><dt>Reporting manager</dt><dd className={record.reportingManagerId && !records.some((candidate) => candidate.id === record.reportingManagerId) ? 'admin-record-missing' : ''}>{managerName(record)}</dd></div><div><dt>Assigned zone</dt><dd className={!zones.some((zone) => zone.id === record.zoneId) ? 'admin-record-missing' : ''}>{zoneName(record)}</dd></div><div><dt>Created by</dt><dd>{auditDetails(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated by</dt><dd>{auditDetails(record.updatedBy, record.updatedAt)}</dd></div></dl></div>
             {actions(record, true)}
           </article>)}</div>
         </> : <div className="admin-empty" data-testid="status-mrs-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{records.length ? 'No matching MRs' : 'No MR records yet'}</strong><p>{records.length ? 'Try different search or filters.' : 'Add an MR to create a browser-local preview record.'}</p></div>}

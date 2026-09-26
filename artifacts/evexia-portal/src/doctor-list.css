@@ -22,14 +22,9 @@
 .doctor-master__table .admin-table th:first-child, .doctor-master__table .admin-table td:first-child { width: 48px; text-align: center; }
 .doctor-master__table .admin-table th:nth-child(2), .doctor-master__table .admin-table td:nth-child(2) { width: 46px; text-align: center; }
 .doctor-master__check { width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--admin-primary); cursor: pointer; }
-.doctor-master__identity { display: grid; gap: 3px; min-width: 180px; overflow-wrap: anywhere; color: var(--admin-text-soft); font-size: 11px; }
-.doctor-master__identity strong { color: var(--admin-text); font-size: 13px; }
-.doctor-master__identity a, .doctor-master__contact a { color: var(--admin-accent); text-decoration: none; }
-.doctor-master__identity a:hover, .doctor-master__contact a:hover { text-decoration: underline; }
 .doctor-master__field { display: grid; gap: 3px; min-width: 135px; color: var(--admin-text-soft); font-size: 11px; overflow-wrap: anywhere; }
 .doctor-master__field b { color: var(--admin-text); font-weight: 600; }
 .doctor-master__address { max-width: 225px; }
-.doctor-master__missing { color: var(--admin-danger); font-weight: 700; }
 .doctor-master__verification { display: inline-flex; align-items: center; padding: 5px 8px; border-radius: 20px; background: var(--admin-badge-success-bg); color: var(--admin-badge-success-text); font-size: 10px; font-weight: 700; white-space: nowrap; }
 .doctor-master__verification--pending { background: var(--admin-badge-inactive-bg); color: var(--admin-badge-inactive-text); }
 .doctor-master__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; min-width: 180px; }
@@ -38,18 +33,13 @@
 .doctor-master__payment-action { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 5px 7px; border: 1px solid var(--admin-border); border-radius: 7px; background: var(--admin-surface); color: var(--admin-accent); font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
 .doctor-master__payment-action:hover { background: var(--admin-state-soft); }
 .doctor-master__card-list { display: none; }
-.doctor-master__card { border: 1px solid var(--admin-border); border-radius: 10px; background: var(--admin-chrome); overflow: hidden; }
-.doctor-master__card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: 13px; }
-.doctor-master__card-head h2 { margin: 0 0 3px; color: var(--admin-text); font-size: 14px; overflow-wrap: anywhere; }
-.doctor-master__card-head p { margin: 0; color: var(--admin-muted); font-size: 11px; }
-.doctor-master__card-head .doctor-master__check { flex: none; }
-.doctor-master__card-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; padding: 12px 13px; border-top: 1px solid var(--admin-border); }
-.doctor-master__card-body > div { min-width: 0; }
-.doctor-master__card-body small { display: block; margin-bottom: 4px; color: var(--admin-muted); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
-.doctor-master__card-body span, .doctor-master__card-body a { font-size: 12px; overflow-wrap: anywhere; }
+.doctor-master__card-list .admin-record-card__body dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.doctor-master__card-list .admin-record-card__body dl .admin-record-fields { font-size: 12px; }
+.doctor-master__card-list .admin-record-card__head .doctor-master__check { flex: none; }
 .doctor-master__card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 10px 13px; border-top: 1px solid var(--admin-border); }
 .doctor-master__card-foot .doctor-master__actions { margin-left: auto; }
 .doctor-master__card-foot .doctor-master__actions { width: 100%; justify-content: flex-end; }
+.doctor-master__card-foot .admin-icon-button { min-width: 42px; min-height: 42px; }
 .doctor-master__dialog-field { display: grid; gap: 7px; color: var(--admin-text-soft); font-size: 12px; font-weight: 700; }
 .doctor-master__dialog-field .admin-select { width: 100%; }
 .doctor-master__dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; }
@@ -63,12 +53,12 @@
 @media (max-width: 600px) {
   .doctor-master__head-actions { width: 100%; }
   .doctor-master__head-actions .admin-button { flex: 1 1 auto; }
-  .doctor-master__toolbar-top { display: grid; }
-  .doctor-master__search { display: block; max-width: none; width: 100%; }
+  .doctor-master__toolbar-top { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .doctor-master__search { display: block; max-width: none; min-width: 0; width: 100%; }
   .doctor-master__filter-grid { grid-template-columns: minmax(0, 1fr); }
   .doctor-master__bulk { align-items: stretch; }
   .doctor-master__bulk-label { flex: 1 0 100%; }
-  .doctor-master__card-body { grid-template-columns: minmax(0, 1fr); }
+  .doctor-master__card-list .admin-record-card__body dl { grid-template-columns: minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) {
   .doctor-master__filters summary svg:last-child { transition: none; }

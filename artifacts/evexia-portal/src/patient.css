@@ -28,9 +28,6 @@
 .patient-form .mr-form__notice p { margin: 0 0 9px; }
 .patient-form .mr-form__notice p:last-child { margin-bottom: 0; }
 .patient-form .mr-form__notice .admin-button { margin-top: 4px; }
-.patient-reference { display: grid; gap: 4px; min-width: 140px; overflow-wrap: anywhere; }
-.patient-reference small { font-size: 11px; color: var(--admin-text-soft); }
-.patient-reference small.admin-mr-missing { color: var(--admin-danger); }
 .patient-history-action { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .patient-import { padding: 24px; color: var(--admin-text); }
 .patient-import__intro { max-width: 760px; }

@@ -243,6 +243,7 @@
 .admin-filter { display: grid; gap: 5px; }
 .admin-filter label { color: var(--ink-soft); font-size: 10px; font-weight: 700; }
 .admin-table-scroll { width: 100%; overflow-x: auto; }
+.admin-table-scroll:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: -2px; }
 .admin-table { width: 100%; min-width: 810px; border-collapse: collapse; text-align: left; }
 .admin-table th { padding: 10px 12px; background: var(--admin-table-head); color: var(--muted); font-size: 10px; letter-spacing: .07em; text-transform: uppercase; font-weight: 700; white-space: nowrap; }
 .admin-table td { padding: 11px 12px; border-top: 1px solid var(--line); color: var(--ink); font-size: 12px; vertical-align: middle; }

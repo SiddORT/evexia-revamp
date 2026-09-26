@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
-import { ChevronDown, CirclePower, Download, Filter, Mail, Pencil, Phone, Plus, ReceiptText, Search, ShieldCheck, ShieldX, Upload, UsersRound } from 'lucide-react';
+import { ChevronDown, CirclePower, Download, Filter, Pencil, Plus, ReceiptText, Search, ShieldCheck, ShieldX, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import ContactRequirementButton from '../../components/admin/ContactRequirementButton.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
+import RecordDetails from '../../components/admin/RecordDetails.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import useDoctors from '../../hooks/useDoctors.js';
@@ -120,20 +121,20 @@ export default function DoctorMaster() {
   }
   function identity(record, mobile = false) {
     const suffix = `${mobile ? 'mobile-' : ''}${record.id}`;
-    return <div className="doctor-master__identity" data-testid={`text-doctor-details-${suffix}`}>
-      <strong>{record.name}</strong>
-      <span>Joined {text(record.dateOfJoining)}</span>
-      <span className="doctor-master__contact">{record.phone ? <a href={`tel:${dialCodes[record.dialCountry]}${cleanPhone(record.phone)}`} data-testid={`link-phone-doctor-${suffix}`}><Phone size={11} aria-hidden="true" /> {dialCodes[record.dialCountry]} {record.phone}</a> : 'No phone'}</span>
-      {record.email ? <a href={`mailto:${record.email}`} data-testid={`link-email-doctor-${suffix}`}><Mail size={11} aria-hidden="true" /> {record.email}</a> : <span>No email</span>}
-    </div>;
+    return <RecordDetails name={record.name} showName={!mobile} testId={`text-doctor-details-${suffix}`} rows={[
+      { label: 'Registration number', icon: 'id', value: record.registrationNumber },
+      { label: 'Phone', icon: 'phone', value: record.phone ? `${dialCodes[record.dialCountry] || ''} ${record.phone}`.trim() : '', href: record.phone ? `tel:${dialCodes[record.dialCountry] || ''}${cleanPhone(record.phone)}` : undefined, testId: `link-phone-doctor-${suffix}` },
+      { label: 'Email', icon: 'email', value: record.email, href: record.email ? `mailto:${record.email}` : undefined, testId: `link-email-doctor-${suffix}` },
+      { label: 'Date of joining', icon: 'date', value: record.dateOfJoining },
+    ]} />;
   }
   function professional(record) {
-    return <div className="doctor-master__field"><span>Reg. <b>{text(record.registrationNumber)}</b></span><span>{text(record.qualification)}</span><span>{text(record.clinicName)}</span></div>;
+    return <div className="admin-record-fields"><span><span className="admin-record-fields__label">Qualification: </span>{text(record.qualification)}</span><span><span className="admin-record-fields__label">Clinic: </span>{text(record.clinicName)}</span></div>;
   }
   function assignment(record) {
     const mr = mrFor(record);
     const zone = zoneFor(record);
-    return <div className="doctor-master__field"><span className={!mr ? 'doctor-master__missing' : ''}>{mr ? mr.name : 'Missing MR'}</span><span className={mr && !zone ? 'doctor-master__missing' : ''}>{mr ? (zone?.name || 'Missing zone') : 'Zone unavailable'}</span></div>;
+    return <div className="admin-record-fields"><span className={!mr ? 'admin-record-missing' : ''}><span className="admin-record-fields__label">MR: </span>{mr ? mr.name : 'Missing MR'}</span><span className={!zone ? 'admin-record-missing' : ''}><span className="admin-record-fields__label">Zone: </span>{mr ? (zone?.name || 'Missing zone') : 'Zone unavailable'}</span></div>;
   }
   function address(record) {
     return <div className="doctor-master__field doctor-master__address"><span>{[record.addressLine1, record.addressLine2, record.landmark].filter(Boolean).join(', ') || '—'}</span><span>{[record.city, record.state, record.pincode].filter(Boolean).join(', ')}</span><span>{text(record.country)}</span></div>;
@@ -191,10 +192,10 @@ export default function DoctorMaster() {
           </div>}
           {visible.length ? <>
             <div className="doctor-master__table"><DataTable columns={columns} rows={visible} rowKey={(record) => record.id} label="Doctor records" testIdPrefix="doctor" /></div>
-            <div className="doctor-master__card-list" role="list" aria-label="Doctor records">{visible.map((record) => <article role="listitem" className="doctor-master__card" key={record.id} data-testid={`card-doctor-${record.id}`}>
-              <div className="doctor-master__card-head"><div><h2>{record.name}</h2><p>{text(record.qualification)} · {text(record.registrationNumber)}</p></div><input type="checkbox" className="doctor-master__check" checked={selected.includes(record.id)} onChange={(event) => selectOne(record.id, event.target.checked)} aria-label={`Select ${record.name}`} data-testid={`checkbox-mobile-doctor-${record.id}`} /></div>
-               <div className="doctor-master__card-body"><div><small>Contact</small>{identity(record, true)}</div><div><small>Practice</small>{professional(record)}</div><div><small>MR / Zone</small>{assignment(record)}</div><div><small>Address</small>{address(record)}</div><div><small>Created details</small>{auditDetails(record.createdBy, record.createdAt)}</div><div><small>Updated details</small>{auditDetails(record.updatedBy, record.updatedAt)}</div></div>
-              <div className="doctor-master__card-foot"><StatusBadge status={record.status} id={record.id} kind="doctor-mobile" /><span className={`doctor-master__verification${record.verification === 'verified' ? '' : ' doctor-master__verification--pending'}`}>{record.verification === 'verified' ? 'Verified' : 'Unverified'}</span>{actions(record, true)}</div>
+             <div className="doctor-master__card-list" role="list" aria-label="Doctor records">{visible.map((record) => <article role="listitem" className="admin-record-card" key={record.id} data-testid={`card-doctor-${record.id}`}>
+               <div className="admin-record-card__head"><div className="admin-record-card__identity"><h2>{record.name}</h2><small>Doctor profile</small></div><input type="checkbox" className="doctor-master__check" checked={selected.includes(record.id)} onChange={(event) => selectOne(record.id, event.target.checked)} aria-label={`Select ${record.name}`} data-testid={`checkbox-mobile-doctor-${record.id}`} /></div>
+                <div className="admin-record-card__body">{identity(record, true)}<dl><div><dt>Practice</dt><dd>{professional(record)}</dd></div><div><dt>MR / Zone</dt><dd>{assignment(record)}</dd></div><div><dt>Address</dt><dd>{address(record)}</dd></div><div><dt>Created details</dt><dd>{auditDetails(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated details</dt><dd>{auditDetails(record.updatedBy, record.updatedAt)}</dd></div></dl></div>
+               <div className="admin-record-card__foot doctor-master__card-foot"><StatusBadge status={record.status} id={record.id} kind="doctor-mobile" /><span className={`doctor-master__verification${record.verification === 'verified' ? '' : ' doctor-master__verification--pending'}`}>{record.verification === 'verified' ? 'Verified' : 'Unverified'}</span>{actions(record, true)}</div>
             </article>)}</div>
           </> : <div className="admin-empty" data-testid="status-doctors-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{records.length ? 'No matching doctors' : 'No doctor records yet'}</strong><p>{records.length ? 'Try a different search or reset the filters.' : 'Add a doctor to start your browser-local directory.'}</p>{records.length > 0 && hasFilters && <button className="doctor-master__text-button" type="button" onClick={resetFilters} data-testid="button-reset-empty-doctor-filters">Reset filters</button>}</div>}
           <div className="admin-panel__foot" data-testid="text-doctor-count">Showing {visible.length} of {records.length} {records.length === 1 ? 'doctor' : 'doctors'} · Export includes only the visible records</div>

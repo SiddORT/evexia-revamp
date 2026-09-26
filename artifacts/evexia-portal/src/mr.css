@@ -171,11 +171,6 @@
 .admin-mr-mobile { display: none; }
 .admin-mr-desktop .admin-table { min-width: 1350px; }
 .admin-mr-desktop .admin-table td { vertical-align: top; line-height: 1.5; }
-.admin-mr-details { display: grid; gap: 5px; min-width: 190px; overflow-wrap: anywhere; font-size: 11px; }
-.admin-mr-details strong { margin-bottom: 3px; font-size: 13px; }
-.admin-mr-details__line { display: flex; align-items: flex-start; gap: 7px; min-width: 0; }
-.admin-mr-details__line svg { flex: none; margin-top: 1px; color: var(--admin-muted); }
-.admin-mr-details a { color: var(--admin-accent); overflow-wrap: anywhere; }
 .admin-mr-audit { display: grid; gap: 4px; min-width: 110px; font-size: 11px; }
 .admin-mr-audit strong { color: var(--admin-text); font-weight: 600; }
 .admin-mr-audit time { white-space: nowrap; color: var(--admin-text-soft); }
@@ -202,7 +197,7 @@
 .admin-mr-doctors-table__doctor { display: grid; gap: 4px; }
 .admin-mr-doctors-table__doctor small { color: var(--admin-text-soft); }
 
-@media (max-width: 900px) {
+@media (max-width: 1050px) {
   .admin-mr-desktop { display: none; }
   .admin-mr-mobile { display: grid; gap: 10px; padding: 12px; }
 }
@@ -219,4 +214,8 @@
   .mr-form__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mr-form__actions .admin-button { min-width: 0; }
   .admin-mr-card__meta { grid-template-columns: minmax(0, 1fr); }
+   .admin-mr-card__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+   .admin-mr-card__actions > * { min-width: 0; border-bottom: 1px solid var(--admin-border); }
+   .admin-mr-card__actions > :nth-child(2n) { border-right: 0; }
+   .admin-mr-card__actions > :nth-last-child(-n+2) { border-bottom: 0; }
 }
