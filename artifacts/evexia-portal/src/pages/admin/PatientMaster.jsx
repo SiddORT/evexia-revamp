@@ -67,6 +67,7 @@ export default function PatientMaster() {
   const details = (record) => <span className="admin-mr-details"><strong>{record.name}</strong><span>{record.gender} · {patientAge(record.dateOfBirth)} years</span><span>{record.phone}</span>{record.email && <span>{record.email}</span>}<span>DOB: {record.dateOfBirth}</span></span>;
   const address = (record) => <span className="admin-mr-address">{[record.addressLine1, record.addressLine2, record.landmark, `${record.city}, ${record.state} ${record.pincode}`, record.country].filter(Boolean).join(' · ')}</span>;
   const columns = [
+    { key: 'serial', label: 'Sr No.', render: (_, index) => index + 1 },
     { key: 'id', label: 'Patient ID', render: (r) => r.id },
     { key: 'details', label: 'Patient details', render: details },
     { key: 'address', label: 'Address', render: address },
@@ -97,7 +98,7 @@ export default function PatientMaster() {
       {error ? <div className="admin-empty" role="alert"><strong>Patient records could not be loaded</strong><p>{error}</p><button className="admin-button" type="button" onClick={refresh}>Refresh records</button></div> : <>
         {hasMissing && <div className="admin-feedback admin-feedback--error" role="status">Some patients have missing doctor, MR, or zone assignments. Repair the reference in Doctor or MR Master, or edit the patient assignment.</div>}
         {visible.length ? <>
-          <div className="admin-mr-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowKey={(r) => r.id} label="Patient records" testIdPrefix="patient" /></div>
+          <div className="admin-mr-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(r) => r.id} label="Patient records" testIdPrefix="patient" /></div>
           <div className="admin-mr-mobile" role="list" aria-label="Patient records">{pagination.pageRows.map((r) => <article className="admin-mr-card" role="listitem" key={r.id} data-testid={`card-patient-${r.id}`}>
             <div className="admin-mr-card__head"><div><h2>{r.name}</h2><small>{r.id}</small></div><StatusBadge status={r.status} /></div>
             <div className="admin-mr-card__body">{details(r)}<dl><div><dt>Address</dt><dd>{address(r)}</dd></div><div><dt>Doctor / MR / Zone</dt><dd>{reference(r)}</dd></div><div><dt>Instructions language</dt><dd>{r.instructionsLanguage}</dd></div><div><dt>Last dose</dt><dd>Not recorded</dd></div></dl></div>{actions(r, true)}
