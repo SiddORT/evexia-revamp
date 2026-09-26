@@ -204,7 +204,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
         <input {...common} type="tel" placeholder={placeholder} inputMode="tel" autoComplete="tel" />
       </div>;
     }
-    return <div className={`doctor-form__field${span ? ' doctor-form__field--wide' : ''}`} key={key}>
+    return <div className={`doctor-form__field${span ? ' doctor-form__field--wide' : ''}${key === 'pincode' ? ' doctor-form__field--pincode' : ''}`} key={key}>
       {FIELD_INFO[key] ? <div className="doctor-form__label-row">
         <label className="doctor-form__label" htmlFor={id}>{label} {REQUIRED.has(key) && <span className="doctor-form__required" aria-hidden="true">*</span>}</label>
         <button type="button" className="doctor-form__info-button" aria-label={`About ${label}`} aria-expanded={infoOpen}
@@ -318,7 +318,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
       </section>
       <section className="doctor-form__section" id="doctor-panel-address" role="tabpanel" aria-labelledby="doctor-tab-address" tabIndex={0} hidden={activeTab !== 'address'}>
         <div className="doctor-form__section-head"><h3 className="doctor-form__section-title">Address</h3></div>
-        <div className="doctor-form__grid">
+        <div className="doctor-form__grid doctor-form__grid--address">
           {renderField('pincode', 'Pincode', { placeholder: 'Pincode', inputMode: 'numeric', autoComplete: 'postal-code', hint: 'Six-digit Indian PINs offer optional address suggestions; other postal codes use manual entry.' })}
           {pinState.status !== 'idle' && <div className="doctor-form__lookup" role="status" aria-live="polite">
             {pinState.status === 'loading' && <p className="doctor-form__hint">Looking up pincode…</p>}
