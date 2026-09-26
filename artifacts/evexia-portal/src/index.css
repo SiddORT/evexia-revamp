@@ -218,11 +218,19 @@ a { color: inherit; }
   position: absolute;
   top: 17px;
   left: 17px;
-  color: var(--surface);
-  font-size: 0.7rem;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: rgba(28, 32, 34, 0.9);
+  color: #fff;
+  font-size: 0.76rem;
   font-weight: 700;
-  letter-spacing: 0.13em;
-  text-shadow: 0 1px 6px rgba(0,0,0,0.2);
+  letter-spacing: 0.11em;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
 }
 
 .portal-card__body { padding: 25px 25px 23px; display: flex; flex-direction: column; flex: 1; }
