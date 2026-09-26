@@ -1,0 +1,70 @@
+/* Doctor Master: compact, legible records with Admin theme semantics. */
+.doctor-master { min-width: 0; }
+.doctor-master__head-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.doctor-master__toolbar { display: grid; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--admin-border); }
+.doctor-master__toolbar-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.doctor-master__search { max-width: 460px; min-width: min(100%, 270px); }
+.doctor-master__filters { border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-state-link); }
+.doctor-master__filters summary { display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; color: var(--admin-text); font-size: 12px; font-weight: 700; list-style: none; }
+.doctor-master__filters summary::-webkit-details-marker { display: none; }
+.doctor-master__filters summary svg:last-child { margin-left: auto; transition: transform .16s ease; }
+.doctor-master__filters[open] summary svg:last-child { transform: rotate(180deg); }
+.doctor-master__filters summary:focus-visible, .doctor-master button:focus-visible, .doctor-master input:focus-visible, .doctor-master select:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.doctor-master__filter-grid { display: grid; grid-template-columns: repeat(4, minmax(130px, 1fr)); gap: 12px; padding: 0 12px 12px; }
+.doctor-master__filter-grid .admin-select { width: 100%; min-width: 0; }
+.doctor-master__filter-feedback { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; color: var(--admin-text-soft); font-size: 11px; }
+.doctor-master__text-button { border: 0; padding: 3px 4px; background: none; color: var(--admin-accent); font: inherit; font-size: 11px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.doctor-master__bulk { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--admin-border); background: var(--admin-table-head); }
+.doctor-master__bulk-label { margin-right: 6px; color: var(--admin-text-soft); font-size: 11px; font-weight: 700; }
+.doctor-master__bulk .admin-button { min-height: 34px; }
+.doctor-master__table .admin-table { min-width: 1130px; }
+.doctor-master__table .admin-table td { vertical-align: top; line-height: 1.45; }
+.doctor-master__table .admin-table th:first-child, .doctor-master__table .admin-table td:first-child { width: 48px; text-align: center; }
+.doctor-master__table .admin-table th:nth-child(2), .doctor-master__table .admin-table td:nth-child(2) { width: 46px; text-align: center; }
+.doctor-master__check { width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--admin-primary); cursor: pointer; }
+.doctor-master__identity { display: grid; gap: 3px; min-width: 180px; overflow-wrap: anywhere; color: var(--admin-text-soft); font-size: 11px; }
+.doctor-master__identity strong { color: var(--admin-text); font-size: 13px; }
+.doctor-master__identity a, .doctor-master__contact a { color: var(--admin-accent); text-decoration: none; }
+.doctor-master__identity a:hover, .doctor-master__contact a:hover { text-decoration: underline; }
+.doctor-master__field { display: grid; gap: 3px; min-width: 135px; color: var(--admin-text-soft); font-size: 11px; overflow-wrap: anywhere; }
+.doctor-master__field b { color: var(--admin-text); font-weight: 600; }
+.doctor-master__address { max-width: 225px; }
+.doctor-master__missing { color: var(--admin-danger); font-weight: 700; }
+.doctor-master__verification { display: inline-flex; align-items: center; padding: 5px 8px; border-radius: 20px; background: var(--admin-badge-success-bg); color: var(--admin-badge-success-text); font-size: 10px; font-weight: 700; white-space: nowrap; }
+.doctor-master__verification--pending { background: var(--admin-badge-inactive-bg); color: var(--admin-badge-inactive-text); }
+.doctor-master__actions { display: flex; flex-wrap: wrap; gap: 3px; min-width: 88px; }
+.doctor-master__card-list { display: none; }
+.doctor-master__card { border: 1px solid var(--admin-border); border-radius: 10px; background: var(--admin-chrome); overflow: hidden; }
+.doctor-master__card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: 13px; }
+.doctor-master__card-head h2 { margin: 0 0 3px; color: var(--admin-text); font-size: 14px; overflow-wrap: anywhere; }
+.doctor-master__card-head p { margin: 0; color: var(--admin-muted); font-size: 11px; }
+.doctor-master__card-head .doctor-master__check { flex: none; }
+.doctor-master__card-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; padding: 12px 13px; border-top: 1px solid var(--admin-border); }
+.doctor-master__card-body > div { min-width: 0; }
+.doctor-master__card-body small { display: block; margin-bottom: 4px; color: var(--admin-muted); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.doctor-master__card-body span, .doctor-master__card-body a { font-size: 12px; overflow-wrap: anywhere; }
+.doctor-master__card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 10px 13px; border-top: 1px solid var(--admin-border); }
+.doctor-master__card-foot .doctor-master__actions { margin-left: auto; }
+.doctor-master__dialog-field { display: grid; gap: 7px; color: var(--admin-text-soft); font-size: 12px; font-weight: 700; }
+.doctor-master__dialog-field .admin-select { width: 100%; }
+.doctor-master__dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; }
+@media (max-width: 1050px) {
+  .doctor-master__table { display: none; }
+  .doctor-master__card-list { display: grid; gap: 9px; padding: 12px; }
+}
+@media (max-width: 760px) {
+  .doctor-master__filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .doctor-master__head-actions { width: 100%; }
+  .doctor-master__head-actions .admin-button { flex: 1 1 auto; }
+  .doctor-master__toolbar-top { display: grid; }
+  .doctor-master__search { max-width: none; width: 100%; }
+  .doctor-master__filter-grid { grid-template-columns: minmax(0, 1fr); }
+  .doctor-master__bulk { align-items: stretch; }
+  .doctor-master__bulk-label { flex: 1 0 100%; }
+  .doctor-master__card-body { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .doctor-master__filters summary svg:last-child { transition: none; }
+}

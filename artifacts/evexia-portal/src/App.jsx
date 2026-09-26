@@ -8,6 +8,8 @@ import Masters from './pages/admin/Masters.jsx';
 import ZoneMaster from './pages/admin/ZoneMaster.jsx';
 import MRMaster from './pages/admin/MRMaster.jsx';
 import MRFormPage from './pages/admin/MRFormPage.jsx';
+import DoctorMaster from './pages/admin/DoctorMaster.jsx';
+import DoctorFormPage from './pages/admin/DoctorFormPage.jsx';
 
 function App() {
   return (
@@ -19,6 +21,9 @@ function App() {
       <Route path="/admin/masters/mrs" component={MRMaster} />
       <Route path="/admin/masters/mrs/new">{() => <MRFormPage />}</Route>
       <Route path="/admin/masters/mrs/:id">{(params) => <MRFormPage id={params.id} />}</Route>
+      <Route path="/admin/masters/doctors" component={DoctorMaster} />
+      <Route path="/admin/masters/doctors/new">{() => <DoctorFormPage />}</Route>
+      <Route path="/admin/masters/doctors/:id">{(params) => <DoctorFormPage id={params.id} />}</Route>
       <Route path="/admin/login">{() => <AuthPage role={roleConfig.admin} />}</Route>
       <Route path="/mr">{() => <AuthPage role={roleConfig.mr} />}</Route>
       <Route path="/doctor">{() => <AuthPage role={roleConfig.doctor} />}</Route>
