@@ -5,17 +5,17 @@ const STORAGE_KEY = 'evexia.admin.doctors.v1';
 export const DOCTOR_STORAGE_KEY = STORAGE_KEY;
 
 const REQUIRED = [
-  'name', 'phone', 'dialCountry', 'registrationNumber',
+  'name', 'dialCountry', 'registrationNumber',
   'qualification', 'mrId', 'invoiceType', 'orderDiscount',
   'daysLimit', 'paymentLimit', 'status', 'addressLine1', 'landmark', 'pincode',
   'country', 'state', 'city',
 ];
-const OPTIONAL = ['alternatePhone', 'email', 'dateOfJoining', 'clinicName', 'gstNumber', 'drugLicenceNumber', 'addressLine2'];
+const OPTIONAL = ['phone', 'alternatePhone', 'email', 'dateOfJoining', 'clinicName', 'gstNumber', 'drugLicenceNumber', 'addressLine2'];
 const STRING_FIELDS = [...REQUIRED.filter((key) => !['orderDiscount', 'daysLimit', 'paymentLimit'].includes(key)), ...OPTIONAL];
 const NUMBER_FIELDS = ['orderDiscount', 'daysLimit', 'paymentLimit'];
-const FIELDS = [...REQUIRED, ...OPTIONAL];
-const LEGACY_STORED = [...FIELDS, 'verification', 'id', 'createdAt', 'updatedAt'];
-const STORED = [...LEGACY_STORED, 'createdBy', 'updatedBy'];
+const FIELDS = [...REQUIRED, ...OPTIONAL, 'contactRequirement'];
+const LEGACY_STORED = [...REQUIRED, ...OPTIONAL, 'verification', 'id', 'createdAt', 'updatedAt'];
+const STORED = [...LEGACY_STORED, 'createdBy', 'updatedBy', 'contactRequirement'];
 const ADMIN_NAME = 'Admin User';
 const own = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 const normalized = (value) => value.trim().toLocaleLowerCase();
@@ -38,6 +38,11 @@ function validateDoctor(values, records = [], exceptId = null) {
   for (const key of STRING_FIELDS) {
     fields[key] = typeof values[key] === 'string' ? values[key].trim() : '';
     if (REQUIRED.includes(key) && !fields[key]) errors[key] = `${key === 'name' ? 'Doctor name' : key} is required.`;
+  }
+  fields.contactRequirement = values.contactRequirement;
+  if (!['required', 'optional'].includes(fields.contactRequirement)) errors.contactRequirement = 'Choose whether phone and email are required or optional.';
+  if (fields.contactRequirement === 'required') {
+    for (const key of ['phone', 'email']) if (!fields[key]) errors[key] = `${key === 'phone' ? 'Phone' : 'Email'} is required.`;
   }
   for (const key of NUMBER_FIELDS) {
     const value = values[key] === '' || values[key] == null ? 0 : Number(values[key]);
@@ -104,6 +109,7 @@ function sampleDoctors(mrs) {
       city: example.city,
       alternatePhone: '',
       email: `sample.doctor${index + 1}@example.com`,
+      contactRequirement: 'optional',
       dateOfJoining: `2024-0${index + 3}-15`,
       clinicName: example.clinicName,
       gstNumber: '',
@@ -151,22 +157,25 @@ function read() {
   if (!Array.isArray(parsed) || parsed.some((record) =>
     !record || typeof record !== 'object' || Array.isArray(record)
     || Object.keys(record).some((key) => !STORED.includes(key))
-     || !LEGACY_STORED.every((key) => own(record, key))
-     || own(record, 'createdBy') !== own(record, 'updatedBy')
-     || (own(record, 'createdBy') && ![record.createdBy, record.updatedBy].every((name) => typeof name === 'string' && name.trim()))
+    || !LEGACY_STORED.every((key) => own(record, key))
+    || own(record, 'createdBy') !== own(record, 'updatedBy')
+    || (own(record, 'createdBy') && ![record.createdBy, record.updatedBy].every((name) => typeof name === 'string' && name.trim()))
     || typeof record.id !== 'string' || !record.id
     || !['verified', 'unverified'].includes(record.verification)
     || ![record.createdAt, record.updatedAt].every((date) => typeof date === 'string' && !Number.isNaN(Date.parse(date)))
     || NUMBER_FIELDS.some((key) => typeof record[key] !== 'number')
     || STRING_FIELDS.some((key) => typeof record[key] !== 'string')
-    || Object.keys(validateDoctor(Object.fromEntries(FIELDS.map((key) => [key, record[key]])), parsed, record.id).errors).length
+    || Object.keys(validateDoctor(Object.fromEntries(FIELDS.map((key) => [key, key === 'contactRequirement' && !own(record, key) ? 'optional' : record[key]])), parsed, record.id).errors).length
   ) || new Set(parsed.map((record) => record.id)).size !== parsed.length
     || new Set(parsed.map((record) => normalized(record.registrationNumber))).size !== parsed.length) {
     invalidSavedData();
   }
-   // Legacy records had timestamps but no actor names. Normalize in memory;
-   // only a guarded user edit persists the labels, never an automatic migration.
-   return parsed.map((record) => own(record, 'createdBy') ? record : { ...record, createdBy: ADMIN_NAME, updatedBy: ADMIN_NAME });
+  // Normalize legacy fields in memory; only a guarded edit persists them.
+  return parsed.map((record) => ({
+    ...record,
+    ...(!own(record, 'createdBy') ? { createdBy: ADMIN_NAME, updatedBy: ADMIN_NAME } : {}),
+    ...(!own(record, 'contactRequirement') ? { contactRequirement: 'optional' } : {}),
+  }));
 }
 
 export function loadDoctors() {
@@ -240,6 +249,16 @@ export function setDoctorStatus(records, mrs, id, status) {
    return save(records.map((record) => record.id === id ? { ...record, status, updatedBy: ADMIN_NAME, updatedAt: new Date().toISOString() } : record), records, mrs);
 }
 
+export function setDoctorContactRequirement(records, mrs, id, contactRequirement) {
+  if (!['required', 'optional'].includes(contactRequirement)) fail('Choose a valid contact requirement.');
+  const record = records.find((item) => item.id === id);
+  if (!record) fail('This doctor is no longer available.');
+  if (contactRequirement === 'required' && (!record.phone || !record.email)) {
+    fail('Edit this doctor to add a phone number and email address before making both required.');
+  }
+  return save(records.map((item) => item.id === id
+    ? { ...item, contactRequirement, updatedBy: ADMIN_NAME, updatedAt: new Date().toISOString() } : item), records, mrs);
+}
 export function setDoctorVerification(records, mrs, ids, verification) {
   if (!['verified', 'unverified'].includes(verification)) fail('Choose a valid verification status.');
   if (!Array.isArray(ids) || ids.some((id) => typeof id !== 'string') || ids.some((id) => !records.some((record) => record.id === id))) {
@@ -261,7 +280,7 @@ export function shiftDoctorsMR(records, mrs, ids, mrId) {
 
 export const DOCTOR_CSV_COLUMNS = [
    ['name', 'Doctor Name'], ['phone', 'Phone'], ['dialCode', 'Dial Code'], ['dialCountry', 'Dial Country'], ['alternatePhone', 'Alternate Phone'],
-  ['email', 'Email'], ['dateOfJoining', 'Date of Joining'], ['registrationNumber', 'Registration Number'],
+  ['email', 'Email'], ['contactRequirement', 'Contact Requirement'], ['dateOfJoining', 'Date of Joining'], ['registrationNumber', 'Registration Number'],
   ['qualification', 'Qualification'], ['clinicName', 'Clinic Name'], ['mrName', 'Assigned MR'], ['zoneName', 'Zone'],
   ['invoiceType', 'Invoice Type'], ['gstNumber', 'GST Number'], ['drugLicenceNumber', 'Drug Licence Number'],
   ['orderDiscount', 'Order Discount'], ['daysLimit', 'Days Limit'], ['paymentLimit', 'Payment Limit'],

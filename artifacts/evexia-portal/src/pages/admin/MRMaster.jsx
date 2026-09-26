@@ -3,6 +3,8 @@ import { useLocation } from 'wouter';
 import { CalendarDays, CirclePower, Download, Hash, Mail, Pencil, Phone, Plus, Search, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
+import ContactRequirementButton from '../../components/admin/ContactRequirementButton.jsx';
+import MasterImportDialog from '../../components/admin/MasterImportDialog.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
@@ -30,7 +32,7 @@ function auditDetails(name, value) {
 
 export default function MRMaster() {
   const [, navigate] = useLocation();
-  const { records, zones, error, feedback, retry, clearFeedback, changeStatus } = useMRs();
+  const { records, zones, error, feedback, retry, clearFeedback, changeStatus, changeContactRequirement, importRows } = useMRs();
   const [saveFeedback] = useState(() => {
     const saved = new URLSearchParams(window.location.search).get('saved');
     return saved === 'added' ? 'MR added successfully.' : saved === 'updated' ? 'MR updated successfully.' : '';
@@ -42,8 +44,10 @@ export default function MRMaster() {
   const [zoneFilter, setZoneFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [confirming, setConfirming] = useState(null);
+  const [contactConfirm, setContactConfirm] = useState(null);
   const [actionError, setActionError] = useState('');
   const [doctorView, setDoctorView] = useState(null);
+  const [importOpen, setImportOpen] = useState(false);
   useEffect(() => {
     if (!doctorView) return undefined;
     const onStorage = (event) => {
@@ -58,7 +62,7 @@ export default function MRMaster() {
   const managerName = (record) => records.find((candidate) => candidate.id === record.reportingManagerId)?.name || (record.reportingManagerId ? 'Missing MR' : '—');
   const visible = useMemo(() => records.filter((record) => {
     const query = search.trim().toLocaleLowerCase();
-    return (!query || [record.name, record.designation, record.phone, record.email, record.employeeCode, record.dateOfJoining, record.hq].some((value) => value.toLocaleLowerCase().includes(query)))
+    return (!query || [record.name, record.designation, record.phone, record.email, record.employeeCode, record.dateOfJoining, record.hq].some((value) => String(value ?? '').toLocaleLowerCase().includes(query)))
       && (zoneFilter === 'all' || (zoneFilter === 'missing' ? !zones.some((zone) => zone.id === record.zoneId) : record.zoneId === zoneFilter))
       && (statusFilter === 'all' || record.status === statusFilter);
   }), [records, zones, search, zoneFilter, statusFilter]);
@@ -69,6 +73,12 @@ export default function MRMaster() {
     const status = confirming.status === 'active' ? 'inactive' : 'active';
     const result = changeStatus(confirming.id, status);
     if (result.success) { setConfirming(null); setActionError(''); }
+    else setActionError(result.error);
+  }
+  function toggleContact() {
+    const requirement = contactConfirm.contactRequirement === 'required' ? 'optional' : 'required';
+    const result = changeContactRequirement(contactConfirm.id, requirement);
+    if (result.success) { setContactConfirm(null); setActionError(''); }
     else setActionError(result.error);
   }
   function exportVisible() {
@@ -107,7 +117,7 @@ export default function MRMaster() {
   }
   function actions(record, compact = false) {
     return <div className={compact ? 'admin-mr-card__actions' : 'admin-table__actions'}>
-      <a className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} href={`tel:${cleanPhone(record.phone)}`} aria-label={`Call ${record.name} at ${record.phone}`} title="Call" data-testid={`action-call-mr-${record.id}`}><Phone size={16} aria-hidden="true" />{compact && 'Call'}</a>
+      <ContactRequirementButton record={record} kind="mr" compact={compact} onClick={() => { clearFeedback(); setActionError(''); setContactConfirm(record); }} />
       <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`View doctors for ${record.name}`} title="View doctors" onClick={() => showDoctors(record)} data-testid={`button-doctors-mr-${record.id}`}><UsersRound size={16} aria-hidden="true" />{compact && 'Doctors'}</button>
       <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} title="Edit" onClick={() => { clearFeedback(); navigate(`/admin/masters/mrs/${encodeURIComponent(record.id)}`); }} data-testid={`button-edit-mr-${record.id}`}><Pencil size={16} aria-hidden="true" />{compact && 'Edit'}</button>
       <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} title={record.status === 'active' ? 'Inactivate' : 'Activate'} onClick={() => { clearFeedback(); setActionError(''); setConfirming(record); }} data-testid={`button-toggle-mr-${record.id}`}><CirclePower size={16} aria-hidden="true" />{compact && (record.status === 'active' ? 'Inactivate' : 'Activate')}</button>
@@ -117,8 +127,8 @@ export default function MRMaster() {
     return <div className="admin-mr-details" data-testid={`text-mr-details-${record.id}`}>
       {showName && <strong>{record.name}</strong>}
       <span className="admin-mr-details__line"><Hash size={14} aria-hidden="true" /><span><span className="sr-only">Employee code: </span>{record.employeeCode}</span></span>
-      <span className="admin-mr-details__line"><Phone size={14} aria-hidden="true" /><a href={`tel:${cleanPhone(record.phone)}`} aria-label={`Call ${record.name} at ${record.phone}`} data-testid={`link-phone-mr-${record.id}`}>{record.phone}</a></span>
-      <span className="admin-mr-details__line"><Mail size={14} aria-hidden="true" /><a href={`mailto:${record.email}`} aria-label={`Email ${record.name} at ${record.email}`} data-testid={`link-email-mr-${record.id}`}>{record.email}</a></span>
+      <span className="admin-mr-details__line"><Phone size={14} aria-hidden="true" />{record.phone ? <a href={`tel:${cleanPhone(record.phone)}`} aria-label={`Call ${record.name} at ${record.phone}`} data-testid={`link-phone-mr-${record.id}`}>{record.phone}</a> : <span>No phone</span>}</span>
+      <span className="admin-mr-details__line"><Mail size={14} aria-hidden="true" />{record.email ? <a href={`mailto:${record.email}`} aria-label={`Email ${record.name} at ${record.email}`} data-testid={`link-email-mr-${record.id}`}>{record.email}</a> : <span>No email</span>}</span>
       <span className="admin-mr-details__line"><CalendarDays size={14} aria-hidden="true" /><span><span className="sr-only">Date of joining: </span>{formattedDate(record.dateOfJoining, dateFormat)}</span></span>
     </div>;
   }
@@ -141,14 +151,14 @@ export default function MRMaster() {
     <div className="admin-page-head">
       <div><p className="admin-page-head__eyebrow">Masters / Team</p><h1>MR Master</h1><p className="admin-page-head__description">Manage MR profiles in this browser. This preview does not create login accounts.</p></div>
       <div className="admin-mr-head-actions">
-         <button type="button" className="admin-button admin-button--secondary" onClick={() => { retry(); setActionError(''); setConfirming(null); }} data-testid="button-refresh-mrs">Refresh records</button>
-          <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/mr')} data-testid="button-import-mrs"><Upload size={16} aria-hidden="true" /> Import data</button>
+          <button type="button" className="admin-button admin-button--secondary" onClick={() => { retry(); setActionError(''); setConfirming(null); setContactConfirm(null); }} data-testid="button-refresh-mrs">Refresh records</button>
+          <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error)} onClick={() => { clearFeedback(); setActionError(''); setImportOpen(true); }} data-testid="button-import-mrs"><Upload size={16} aria-hidden="true" /> Import CSV</button>
          <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || !visible.length} onClick={exportVisible} data-testid="button-export-mrs"><Download size={16} aria-hidden="true" /> Export data</button>
          <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate('/admin/masters/mrs/new'); }} data-testid="button-add-mr"><Plus size={16} aria-hidden="true" /> Add MR</button>
       </div>
     </div>
      {(feedback || saveFeedback) && <div className="admin-feedback" role="status" data-testid="status-mr-feedback">{feedback || saveFeedback}</div>}
-    {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
+    {actionError && !confirming && !contactConfirm && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     <section className="admin-panel" aria-label="MR list">
       <div className="admin-toolbar">
         <div className="admin-toolbar__fields">
@@ -171,6 +181,8 @@ export default function MRMaster() {
       </>}
     </section>
     {confirming && <ConfirmationDialog title={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} MR?`} description={`Change “${confirming.name}” to ${confirming.status === 'active' ? 'inactive' : 'active'}? This only changes this browser-local preview record; it does not control login access.`} actionLabel={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} MR`} onConfirm={toggle} onClose={() => setConfirming(null)} error={actionError} />}
+    {contactConfirm && <ConfirmationDialog title={`Make phone and email ${contactConfirm.contactRequirement === 'required' ? 'optional' : 'required'}?`} description={`Change the contact rule for “${contactConfirm.name}”? ${contactConfirm.contactRequirement === 'optional' ? 'Both fields must be filled before they can be required.' : 'Supplied phone and email must still have valid formats.'}`} actionLabel={`Make both ${contactConfirm.contactRequirement === 'required' ? 'optional' : 'required'}`} onConfirm={toggleContact} onClose={() => { setContactConfirm(null); setActionError(''); }} error={actionError} />}
+    {importOpen && <MasterImportDialog kind="mr" onImport={importRows} onClose={() => setImportOpen(false)} />}
     {doctorView && <Dialog title={`Doctors for ${doctorView.record.name}`} eyebrow="MR Master" className="admin-mr-doctors-dialog" onClose={() => setDoctorView(null)}>
       {doctorView.error ? <div className="admin-feedback admin-feedback--error" role="alert">{doctorView.error}</div> : doctorView.doctors.length
         ? <div className="admin-mr-doctors-table">
@@ -179,7 +191,7 @@ export default function MRMaster() {
             columns={[
               { key: 'doctor', label: 'Doctor / registration', render: (doctor) => <span className="admin-mr-doctors-table__doctor"><strong>{doctor.name}</strong><small>{doctor.registrationNumber}</small></span> },
               { key: 'clinic', label: 'Clinic', render: (doctor) => doctor.clinicName || 'Not provided' },
-              { key: 'phone', label: 'Phone', render: (doctor) => <a href={`tel:${cleanPhone(doctor.phone)}`} data-testid={`link-phone-doctor-${doctor.id}`}>{doctor.phone}</a> },
+               { key: 'phone', label: 'Phone', render: (doctor) => doctor.phone ? <a href={`tel:${cleanPhone(doctor.phone)}`} data-testid={`link-phone-doctor-${doctor.id}`}>{doctor.phone}</a> : 'No phone' },
               { key: 'status', label: 'Status', render: (doctor) => <StatusBadge status={doctor.status} /> },
             ]}
             rows={doctorView.doctors}

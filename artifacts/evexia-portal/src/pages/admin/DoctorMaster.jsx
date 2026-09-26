@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { ChevronDown, CirclePower, Download, Filter, Mail, Pencil, Phone, Plus, ReceiptText, Search, ShieldCheck, ShieldX, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
+import ContactRequirementButton from '../../components/admin/ContactRequirementButton.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
@@ -23,7 +24,7 @@ function auditDetails(actor, at) {
 
 export default function DoctorMaster() {
   const [, navigate] = useLocation();
-  const { records, mrs, zones, error, feedback, retry, clearFeedback, changeStatus, changeVerification, shiftMR } = useDoctors();
+  const { records, mrs, zones, error, feedback, retry, clearFeedback, changeStatus, changeVerification, shiftMR, changeContactRequirement } = useDoctors();
   const [saveFeedback] = useState(() => {
     const saved = new URLSearchParams(window.location.search).get('saved');
     return saved === 'added' ? 'Doctor added successfully.' : saved === 'updated' ? 'Doctor updated successfully.' : '';
@@ -75,6 +76,7 @@ export default function DoctorMaster() {
     if (!confirming) return;
     let result;
     if (confirming.type === 'status') result = changeStatus(confirming.id, confirming.value);
+    if (confirming.type === 'contact') result = changeContactRequirement(confirming.id, confirming.value);
     if (confirming.type === 'verification') result = changeVerification(confirming.ids, confirming.value);
     if (confirming.type === 'shift') {
       if (!targetMR || !mrById.has(targetMR)) { setActionError('Choose an available MR.'); return; }
@@ -110,6 +112,7 @@ export default function DoctorMaster() {
     const suffix = `${compact ? 'mobile-' : ''}${record.id}`;
     return <div className="doctor-master__actions">
       <button type="button" className="doctor-master__payment-action" aria-label={`Payment history for ${record.name}`} onClick={() => navigate(`/admin/masters/doctors/${encodeURIComponent(record.id)}/payments`)} data-testid={`button-payments-doctor-${suffix}`}><ReceiptText size={15} aria-hidden="true" /> Payment history</button>
+      <ContactRequirementButton record={record} kind="doctor" compact={compact} onClick={() => openConfirmation({ type: 'contact', id: record.id, name: record.name, value: record.contactRequirement === 'required' ? 'optional' : 'required' })} />
       <button type="button" className="admin-icon-button" title="Edit doctor" aria-label={`Edit ${record.name}`} onClick={() => { clearFeedback(); navigate(`/admin/masters/doctors/${encodeURIComponent(record.id)}`); }} data-testid={`button-edit-doctor-${suffix}`}><Pencil size={16} aria-hidden="true" /></button>
       <button type="button" className="admin-icon-button" title={record.verification === 'verified' ? 'Unverify' : 'Verify'} aria-label={`${record.verification === 'verified' ? 'Unverify' : 'Verify'} ${record.name}`} onClick={() => openConfirmation({ type: 'verification', ids: [record.id], value: record.verification === 'verified' ? 'unverified' : 'verified' })} data-testid={`button-verification-doctor-${suffix}`}>{record.verification === 'verified' ? <ShieldX size={16} aria-hidden="true" /> : <ShieldCheck size={16} aria-hidden="true" />}</button>
       <button type="button" className="admin-icon-button" title={record.status === 'active' ? 'Inactivate' : 'Activate'} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} onClick={() => openConfirmation({ type: 'status', id: record.id, name: record.name, value: record.status === 'active' ? 'inactive' : 'active' })} data-testid={`button-toggle-doctor-${suffix}`}><CirclePower size={16} aria-hidden="true" /></button>
@@ -121,7 +124,7 @@ export default function DoctorMaster() {
       <strong>{record.name}</strong>
       <span>Joined {text(record.dateOfJoining)}</span>
       <span className="doctor-master__contact">{record.phone ? <a href={`tel:${dialCodes[record.dialCountry]}${cleanPhone(record.phone)}`} data-testid={`link-phone-doctor-${suffix}`}><Phone size={11} aria-hidden="true" /> {dialCodes[record.dialCountry]} {record.phone}</a> : 'No phone'}</span>
-      {record.email && <a href={`mailto:${record.email}`} data-testid={`link-email-doctor-${suffix}`}><Mail size={11} aria-hidden="true" /> {record.email}</a>}
+      {record.email ? <a href={`mailto:${record.email}`} data-testid={`link-email-doctor-${suffix}`}><Mail size={11} aria-hidden="true" /> {record.email}</a> : <span>No email</span>}
     </div>;
   }
   function professional(record) {
@@ -198,6 +201,7 @@ export default function DoctorMaster() {
         </>}
       </section>
       {confirming?.type === 'status' && <ConfirmationDialog title={`${confirming.value === 'active' ? 'Activate' : 'Inactivate'} doctor?`} description={`Change “${confirming.name}” to ${confirming.value}? Verification is separate and this browser-local change does not control login access.`} actionLabel={confirming.value === 'active' ? 'Activate doctor' : 'Inactivate doctor'} onConfirm={handleConfirm} onClose={closeConfirmation} error={actionError} />}
+      {confirming?.type === 'contact' && <ConfirmationDialog title={`Make phone and email ${confirming.value}?`} description={`Change the contact rule for “${confirming.name}”? ${confirming.value === 'required' ? 'Both fields must be filled before they can be required.' : 'Supplied phone and email must still have valid formats.'}`} actionLabel={`Make both ${confirming.value}`} onConfirm={handleConfirm} onClose={closeConfirmation} error={actionError} />}
       {confirming?.type === 'verification' && <ConfirmationDialog title={`${confirming.value === 'verified' ? 'Verify' : 'Unverify'} ${count === 1 ? 'doctor' : `${count} doctors`}?`} description={`Set verification to ${confirming.value} for ${count} selected ${count === 1 ? 'doctor' : 'doctors'}? This does not change active status or create login access.`} actionLabel={confirming.value === 'verified' ? 'Confirm verification' : 'Confirm unverification'} onConfirm={handleConfirm} onClose={closeConfirmation} error={actionError} />}
       {confirming?.type === 'shift' && <Dialog title={`Shift ${count === 1 ? 'doctor' : `${count} doctors`} to another MR?`} eyebrow="Confirm assignment" description="The selected doctors will be assigned to the chosen MR and inherit that MR’s zone." onClose={closeConfirmation} footer={<><button type="button" className="admin-button admin-button--secondary" onClick={closeConfirmation} data-testid="button-cancel-shift-doctors">Cancel</button><button type="button" className="admin-button" onClick={handleConfirm} disabled={!targetMR} data-testid="button-confirm-shift-doctors">Shift MR</button></>}>
         <label className="doctor-master__dialog-field" htmlFor="doctor-target-mr">New MR<select id="doctor-target-mr" className="admin-select" value={targetMR} onChange={(event) => { setTargetMR(event.target.value); setActionError(''); }} data-testid="select-shift-doctor-mr"><option value="">Choose an MR</option>{mrs.filter((mr) => mr.status === 'active' && zoneById.has(mr.zoneId)).map((mr) => <option key={mr.id} value={mr.id}>{mr.name} · {zoneById.get(mr.zoneId)?.name}</option>)}</select></label>

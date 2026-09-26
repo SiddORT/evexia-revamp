@@ -6,14 +6,14 @@ const FIELDS = [
   'name', 'phone', 'dialCountry', 'alternatePhone', 'email', 'dateOfJoining',
   'registrationNumber', 'qualification', 'clinicName', 'mrId', 'invoiceType',
   'gstNumber', 'drugLicenceNumber', 'orderDiscount', 'daysLimit', 'paymentLimit',
-  'status', 'addressLine1', 'addressLine2', 'landmark', 'pincode', 'country', 'state', 'city',
+  'status', 'addressLine1', 'addressLine2', 'landmark', 'pincode', 'country', 'state', 'city', 'contactRequirement',
 ];
 const REQUIRED = new Set([
-  'name', 'phone', 'registrationNumber', 'qualification', 'mrId', 'invoiceType',
+  'name', 'registrationNumber', 'qualification', 'mrId', 'invoiceType',
   'status', 'addressLine1', 'landmark', 'pincode', 'city', 'state', 'country',
 ]);
 const TABS = [
-  { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'dialCountry', 'alternatePhone', 'email', 'dateOfJoining', 'registrationNumber', 'qualification'] },
+  { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'dialCountry', 'alternatePhone', 'email', 'contactRequirement', 'dateOfJoining', 'registrationNumber', 'qualification'] },
   { id: 'clinic', label: 'Clinic & assignment', fields: ['clinicName', 'mrId', 'status'] },
   { id: 'commercial', label: 'Commercial details', fields: ['invoiceType', 'gstNumber', 'drugLicenceNumber', 'orderDiscount', 'daysLimit', 'paymentLimit'] },
   { id: 'address', label: 'Address', fields: ['pincode', 'addressLine1', 'addressLine2', 'landmark', 'country', 'state', 'city'] },
@@ -35,7 +35,8 @@ const PASSWORD_INFO = 'Passwords cannot be entered, generated, saved or exported
 function initialValues(doctor) {
   return Object.fromEntries(FIELDS.map((key) => [
     key,
-    key === 'country' ? (doctor?.country ?? 'India')
+    key === 'contactRequirement' ? (doctor?.contactRequirement || 'optional')
+      : key === 'country' ? (doctor?.country ?? 'India')
       : key === 'status' ? (doctor?.status || 'active')
       : key === 'invoiceType' ? (doctor?.invoiceType || 'normal')
         : key === 'dialCountry' ? (doctor?.dialCountry || 'IN')
@@ -54,6 +55,10 @@ function validDate(value) {
 function validate(values) {
   const errors = {};
   for (const key of REQUIRED) if (!values[key]?.trim()) errors[key] = 'This field is required.';
+  if (!['required', 'optional'].includes(values.contactRequirement)) errors.contactRequirement = 'Choose a contact requirement.';
+  if (values.contactRequirement === 'required') {
+    for (const key of ['phone', 'email']) if (!values[key].trim()) errors[key] = 'This field is required.';
+  }
   const dial = DIAL_COUNTRIES.find((country) => country.value === values.dialCountry);
   const digits = values.phone.replace(/\D/g, '');
   if (!dial) errors.dialCountry = 'Choose a supported country code.';
@@ -181,7 +186,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
     const { type = 'text', placeholder, autoComplete, span, inputMode, min, step, selectOptions } = options;
     const errorId = `doctor-${key}-error`;
     const id = `doctor-${key}`;
-    const required = REQUIRED.has(key) || (key === 'gstNumber' && values.invoiceType === 'gst');
+    const required = REQUIRED.has(key) || (['phone', 'email'].includes(key) && values.contactRequirement === 'required') || (key === 'gstNumber' && values.invoiceType === 'gst');
     const describedBy = errors[key] ? errorId : undefined;
     const common = {
       id, name: key, className: 'doctor-form__control', value: values[key],
@@ -272,6 +277,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
       <section className="doctor-form__section" id="doctor-panel-identity" role="tabpanel" aria-labelledby="doctor-tab-identity" tabIndex={0} hidden={activeTab !== 'identity'}>
         <div className="doctor-form__section-head"><h3 className="doctor-form__section-title">Identity & contact</h3><p className="doctor-form__section-note">Fields marked * are required</p></div>
         <div className="doctor-form__grid">
+          {renderField('contactRequirement', 'Phone and email', { selectOptions: [{ value: 'required', label: 'Both required' }, { value: 'optional', label: 'Both optional' }] })}
           {renderField('name', 'Doctor Name', { placeholder: 'Doctor name', autoComplete: 'name' })}
           {renderField('phone', 'Phone No.', { placeholder: 'Phone number' })}
           {renderField('alternatePhone', 'Alternate Phone No.', { placeholder: 'Alternate phone number' })}

@@ -87,7 +87,7 @@ export function reviewImport(kind, text, snapshots) {
     const names = new Set(snapshots.mrs.map((mr) => norm(mr.name)));
     const codes = new Set(snapshots.mrs.map((mr) => norm(mr.employeeCode)));
     const users = new Set(snapshots.mrs.map((mr) => norm(mr.userId)));
-    const emails = new Set(snapshots.mrs.map((mr) => norm(mr.email)));
+    const emails = new Set(snapshots.mrs.map((mr) => norm(mr.email)).filter(Boolean));
     for (const entry of prepared) {
       if (entry.error) continue;
       const name = norm(entry.values.name);

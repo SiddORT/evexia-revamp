@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  createDoctor, DOCTOR_STORAGE_KEY, loadDoctors, setDoctorStatus, setDoctorVerification,
+  createDoctor, DOCTOR_STORAGE_KEY, loadDoctors, setDoctorStatus, setDoctorVerification, setDoctorContactRequirement,
   shiftDoctorsMR, updateDoctor,
 } from '../services/doctors.js';
 import { loadMRs, MR_STORAGE_KEY } from '../services/mrs.js';
@@ -75,6 +75,7 @@ export default function useDoctors() {
     add: (values) => apply((records, mrs) => createDoctor(records, mrs, values), 'Doctor added successfully.'),
     edit: (id, values) => apply((records, mrs) => updateDoctor(records, mrs, id, values), 'Doctor updated successfully.'),
     changeStatus: (id, status) => apply((records, mrs) => setDoctorStatus(records, mrs, id, status), `Doctor ${status === 'active' ? 'activated' : 'inactivated'} successfully.`),
+    changeContactRequirement: (id, requirement) => apply((records, mrs) => setDoctorContactRequirement(records, mrs, id, requirement), `Doctor phone and email are now ${requirement}.`),
     changeVerification: (ids, verification) => apply(
       (records, mrs) => setDoctorVerification(records, mrs, ids, verification),
       'Doctor verification updated successfully.',

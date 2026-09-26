@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { createMR, loadMRs, MR_STORAGE_KEY, setMRStatus, updateMR } from '../services/mrs.js';
+import { createMR, loadMRs, MR_STORAGE_KEY, setMRStatus, setMRContactRequirement, updateMR } from '../services/mrs.js';
 import { DOCTOR_STORAGE_KEY } from '../services/doctors.js';
 import { commitImport } from '../services/masterImport.js';
 import { loadZones } from '../services/zones.js';
@@ -48,6 +48,7 @@ export default function useMRs() {
     add: (values) => apply((records, zones) => createMR(records, zones, values), 'MR added successfully.'),
     edit: (id, values) => apply((records, zones) => updateMR(records, zones, id, values), 'MR updated successfully.'),
     changeStatus: (id, status) => apply((records, zones) => setMRStatus(records, zones, id, status), `MR ${status === 'active' ? 'activated' : 'inactivated'} successfully.`),
+    changeContactRequirement: (id, requirement) => apply((records, zones) => setMRContactRequirement(records, zones, id, requirement), `MR phone and email are now ${requirement}.`),
     importRows: (entries, snapshots) => {
       if (state.error) return { success: false, error: 'Refresh records before importing.' };
       if (JSON.stringify(state.records) !== JSON.stringify(snapshots.mrs) || JSON.stringify(state.zones) !== JSON.stringify(snapshots.zones)) {

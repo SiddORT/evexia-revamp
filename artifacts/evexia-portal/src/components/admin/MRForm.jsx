@@ -6,11 +6,11 @@ const FIELDS = [
   'name', 'phone', 'userId', 'email', 'hq', 'zoneId', 'employeeCode',
   'dateOfJoining', 'designation', 'reportingManagerId', 'paymentLimit',
   'doctorDaysLimit', 'status', 'pincode', 'addressLine1', 'addressLine2',
-  'landmark', 'city', 'state', 'country',
+  'landmark', 'city', 'state', 'country', 'contactRequirement',
 ];
 const OPTIONAL = new Set(['reportingManagerId', 'addressLine2', 'paymentLimit', 'doctorDaysLimit']);
 const TABS = [
-  { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'userId', 'email'] },
+  { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'userId', 'email', 'contactRequirement'] },
   { id: 'assignment', label: 'Assignment & work', fields: ['hq', 'zoneId', 'employeeCode', 'dateOfJoining', 'designation', 'reportingManagerId', 'paymentLimit', 'doctorDaysLimit', 'status'] },
   { id: 'address', label: 'Address', fields: ['pincode', 'addressLine1', 'addressLine2', 'landmark', 'city', 'state', 'country'] },
 ];
@@ -18,7 +18,8 @@ const TABS = [
 function initialValues(mr) {
   return Object.fromEntries(FIELDS.map((key) => [
     key,
-    key === 'status' ? (mr?.status || 'active')
+    key === 'contactRequirement' ? (mr?.contactRequirement || 'required')
+      : key === 'status' ? (mr?.status || 'active')
       : key === 'country' ? (mr?.country ?? 'India')
       : key === 'dateOfJoining' ? String(mr?.[key] ?? '').slice(0, 10)
         : String(mr?.[key] ?? ''),
@@ -28,8 +29,10 @@ function initialValues(mr) {
 function validate(values) {
   const errors = {};
   FIELDS.forEach((key) => {
+    if (['phone', 'email'].includes(key) && values.contactRequirement === 'optional') return;
     if (!OPTIONAL.has(key) && !values[key].trim()) errors[key] = 'This field is required.';
   });
+  if (!['required', 'optional'].includes(values.contactRequirement)) errors.contactRequirement = 'Choose a contact requirement.';
   if (values.phone && !/^[0-9]{10}$/.test(values.phone.replace(/[\s()-]/g, ''))) {
     errors.phone = 'Enter a 10-digit phone number.';
   }
@@ -109,6 +112,7 @@ export default function MRForm({ mr, records = [], zones = [], onSave, onClose, 
     const errorId = `mr-${key}-error`;
     const hintId = `mr-${key}-help`;
     const id = `mr-${key}`;
+    const required = !OPTIONAL.has(key) && (!['phone', 'email'].includes(key) || values.contactRequirement === 'required');
     const input = (
       <input
         id={id}
@@ -122,7 +126,7 @@ export default function MRForm({ mr, records = [], zones = [], onSave, onClose, 
         inputMode={inputMode}
         min={min}
         step={step}
-        aria-required={!OPTIONAL.has(key)}
+        aria-required={required}
         aria-invalid={Boolean(errors[key])}
          aria-describedby={errors[key] ? errorId : undefined}
         data-testid={`input-mr-${key}`}
@@ -131,8 +135,8 @@ export default function MRForm({ mr, records = [], zones = [], onSave, onClose, 
     return (
       <div className={`mr-form__field${span ? ' mr-form__field--wide' : ''}`} key={key}>
          {info ? <InfoDisclosure id={hintId} title={label} text={info} testId={`button-mr-${key}-info`}>
-           <label className="mr-form__label" htmlFor={id}>{label} {!OPTIONAL.has(key) && <span className="mr-form__required" aria-hidden="true">*</span>}</label>
-         </InfoDisclosure> : <label className="mr-form__label" htmlFor={id}>{label} {!OPTIONAL.has(key) && <span className="mr-form__required" aria-hidden="true">*</span>}</label>}
+            <label className="mr-form__label" htmlFor={id}>{label} {required && <span className="mr-form__required" aria-hidden="true">*</span>}</label>
+          </InfoDisclosure> : <label className="mr-form__label" htmlFor={id}>{label} {required && <span className="mr-form__required" aria-hidden="true">*</span>}</label>}
         {selectOptions ? (
           <select
             id={id}
@@ -140,7 +144,7 @@ export default function MRForm({ mr, records = [], zones = [], onSave, onClose, 
             className="mr-form__control"
             value={values[key]}
             onChange={(event) => change(key, event.target.value)}
-            aria-required={!OPTIONAL.has(key)}
+             aria-required={required}
             aria-invalid={Boolean(errors[key])}
              aria-describedby={errors[key] ? errorId : undefined}
             data-testid={`select-mr-${key}`}
@@ -232,6 +236,7 @@ export default function MRForm({ mr, records = [], zones = [], onSave, onClose, 
           <section className="mr-form__section" id="mr-panel-identity" role="tabpanel" aria-labelledby="mr-tab-identity" tabIndex={0} hidden={activeTab !== 'identity'}>
             <div className="mr-form__section-head"><h3 id="mr-identity-title" className="mr-form__section-title">Identity & contact</h3><p className="mr-form__section-note">Fields marked * are required</p></div>
             <div className="mr-form__grid">
+               {renderField('contactRequirement', 'Phone and email', { selectOptions: [{ value: 'required', label: 'Both required' }, { value: 'optional', label: 'Both optional' }] })}
                {renderField('name', 'MR Name', { placeholder: 'MR Name', autoComplete: 'name' })}
                 {renderField('phone', 'Phone No.', { placeholder: '10-digit number', autoComplete: 'tel', inputMode: 'tel', info: 'Preview-only dial code; it does not change phone validation or the saved number.' })}
                {renderField('userId', 'User ID', { placeholder: 'User ID', info: 'Enter a User ID manually. Auto-generate is preview-only; saving does not create a login.' })}

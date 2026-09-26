@@ -2,12 +2,12 @@ import { loadZones } from './zones.js';
 
 const STORAGE_KEY = 'evexia.admin.mrs.v1';
 export const MR_STORAGE_KEY = STORAGE_KEY;
-const REQUIRED = ['name', 'phone', 'userId', 'email', 'hq', 'zoneId', 'employeeCode', 'dateOfJoining', 'designation', 'status', 'addressLine1', 'landmark', 'pincode', 'city', 'state', 'country'];
+const REQUIRED = ['name', 'userId', 'hq', 'zoneId', 'employeeCode', 'dateOfJoining', 'designation', 'status', 'addressLine1', 'landmark', 'pincode', 'city', 'state', 'country'];
 const OPTIONAL = ['reportingManagerId', 'addressLine2'];
 const NUMERIC = ['paymentLimit', 'doctorDaysLimit'];
-const FIELDS = [...REQUIRED, ...OPTIONAL, ...NUMERIC];
-const LEGACY_STORED = [...FIELDS, 'id', 'createdAt', 'updatedAt'];
-const STORED = [...LEGACY_STORED, 'createdBy', 'updatedBy'];
+const FIELDS = [...REQUIRED, ...OPTIONAL, ...NUMERIC, 'phone', 'email', 'contactRequirement'];
+const LEGACY_STORED = [...FIELDS.filter((key) => key !== 'contactRequirement'), 'id', 'createdAt', 'updatedAt'];
+const STORED = [...LEGACY_STORED, 'createdBy', 'updatedBy', 'contactRequirement'];
 const ADMIN_NAME = 'Admin User';
 const labels = { name: 'MR Name', phone: 'Phone No.', userId: 'User ID', email: 'Email ID', hq: 'HQ', zoneId: 'Assigned Zone', employeeCode: 'Employee Code', dateOfJoining: 'Date of Joining', designation: 'Designation', status: 'Status', addressLine1: 'Address Line 1', landmark: 'Landmark', pincode: 'Pincode', city: 'City', state: 'State', country: 'Country' };
 const own = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
@@ -33,6 +33,7 @@ function sampleMRs(zones) {
       phone: `000000000${index + 1}`,
       userId: `sample.mr${index + 1}`,
       email: `sample.mr${index + 1}@example.com`,
+      contactRequirement: 'required',
       hq: example.hq,
       zoneId: assignedZones[index % assignedZones.length].id,
       employeeCode: `SAMPLE-${String(index + 1).padStart(3, '0')}`,
@@ -63,9 +64,14 @@ export function validateMR(values, records = [], exceptId = null) {
     return { fields: null, errors: { form: 'MR data contains unsupported fields. Nothing was saved.' } };
   }
   const fields = {};
-  for (const key of [...REQUIRED, ...OPTIONAL]) {
+  for (const key of [...REQUIRED, ...OPTIONAL, 'phone', 'email']) {
     fields[key] = typeof values[key] === 'string' ? values[key].trim() : '';
     if (REQUIRED.includes(key) && !fields[key]) errors[key] = `${labels[key]} is required.`;
+  }
+  fields.contactRequirement = values.contactRequirement;
+  if (!['required', 'optional'].includes(fields.contactRequirement)) errors.contactRequirement = 'Choose whether phone and email are required or optional.';
+  if (fields.contactRequirement === 'required') {
+    for (const key of ['phone', 'email']) if (!fields[key]) errors[key] = `${labels[key]} is required.`;
   }
   for (const key of NUMERIC) {
     const value = values[key] === '' || values[key] == null ? 0 : Number(values[key]);
@@ -110,15 +116,23 @@ function read() {
     typeof record.id !== 'string' || !record.id ||
     ![record.createdAt, record.updatedAt].every((date) => typeof date === 'string' && !Number.isNaN(Date.parse(date))) ||
     NUMERIC.some((key) => typeof record[key] !== 'number') ||
-    Object.keys(validateMR(Object.fromEntries(FIELDS.map((key) => [key, record[key]])), parsed, record.id).errors).length
+    FIELDS.filter((key) => !NUMERIC.includes(key) && key !== 'contactRequirement').some((key) => typeof record[key] !== 'string') ||
+    Object.keys(validateMR(Object.fromEntries(FIELDS.map((key) => [key, key === 'contactRequirement' && !own(record, key) ? 'required' : record[key]])), parsed, record.id).errors).length
   ) || new Set(parsed.map((record) => record.id)).size !== parsed.length ||
-    ['employeeCode', 'userId', 'email'].some((field) => new Set(parsed.map((record) => normalized(record[field]))).size !== parsed.length) ||
+    ['employeeCode', 'userId', 'email'].some((field) => {
+      const values = parsed.map((record) => normalized(record[field])).filter(Boolean);
+      return new Set(values).size !== values.length;
+    }) ||
     parsed.some((record) => record.reportingManagerId && (record.reportingManagerId === record.id || !parsed.some((candidate) => candidate.id === record.reportingManagerId)))) {
     throw new Error('Saved MR data is invalid. No records were changed. Repair or back up browser storage before retrying.');
   }
   // Older browser-local records did not track names; keep their data intact and
   // attribute them to the only Admin identity shown in this preview.
-  return parsed.map((record) => own(record, 'createdBy') ? record : { ...record, createdBy: ADMIN_NAME, updatedBy: ADMIN_NAME });
+  return parsed.map((record) => ({
+    ...record,
+    ...(!own(record, 'createdBy') ? { createdBy: ADMIN_NAME, updatedBy: ADMIN_NAME } : {}),
+    ...(!own(record, 'contactRequirement') ? { contactRequirement: 'required' } : {}),
+  }));
 }
 
 export function loadMRs() { return read(); }
@@ -158,12 +172,23 @@ export function setMRStatus(records, zones, id, status) {
   return save(records.map((record) => record.id === id ? { ...record, status, updatedBy: ADMIN_NAME, updatedAt: new Date().toISOString() } : record), records, zones);
 }
 
+export function setMRContactRequirement(records, zones, id, contactRequirement) {
+  if (!['required', 'optional'].includes(contactRequirement)) throw new Error('Choose a valid contact requirement.');
+  const record = records.find((item) => item.id === id);
+  if (!record) throw new Error('This MR is no longer available.');
+  if (contactRequirement === 'required' && (!record.phone || !record.email)) {
+    throw new Error('Edit this MR to add a phone number and email address before making both required.');
+  }
+  return save(records.map((item) => item.id === id
+    ? { ...item, contactRequirement, updatedBy: ADMIN_NAME, updatedAt: new Date().toISOString() } : item), records, zones);
+}
+
 export function importMRs(records, zones, next) {
   return save(next, records, zones);
 }
 
 export const CSV_COLUMNS = [
-  ['employeeCode', 'Employee Code'], ['name', 'MR Name'], ['phone', 'Phone No.'], ['userId', 'User ID'], ['email', 'Email ID'],
+  ['employeeCode', 'Employee Code'], ['name', 'MR Name'], ['phone', 'Phone No.'], ['userId', 'User ID'], ['email', 'Email ID'], ['contactRequirement', 'Contact Requirement'],
   ['hq', 'HQ'], ['zoneName', 'Assigned Zone'], ['dateOfJoining', 'Date of Joining'], ['designation', 'Designation'],
   ['managerName', 'Reporting Manager'], ['paymentLimit', 'Payment Limit'], ['doctorDaysLimit', 'Doctor Days Limit'],
   ['status', 'Status'], ['addressLine1', 'Address Line 1'], ['addressLine2', 'Address Line 2'], ['landmark', 'Landmark'],

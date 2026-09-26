@@ -149,6 +149,7 @@
 }
 .admin-mr-card__meta dd { margin: 0; color: var(--admin-text); font-size: 12px; overflow-wrap: anywhere; }
 .admin-mr-card__actions { display: flex; border-top: 1px solid var(--admin-border); }
+.admin-mr-card__actions .contact-requirement-button { flex: 1; border: 0; border-right: 1px solid var(--admin-border); border-radius: 0; }
 .admin-mr-card__action {
   flex: 1;
   min-height: 42px;
