@@ -1,4 +1,4 @@
-import { ArrowUpRight, Boxes, FlaskConical, HeartPulse, MapPinned, Stethoscope, UsersRound, Warehouse } from 'lucide-react';
+import { ArrowUpRight, Boxes, BriefcaseBusiness, FlaskConical, HeartPulse, MapPinned, Stethoscope, UsersRound, Warehouse } from 'lucide-react';
 import { Link } from 'wouter';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 
@@ -30,6 +30,11 @@ export default function Masters() {
         <Link href="/admin/masters/storage-locations" className="admin-master-link" data-testid="link-master-storage-locations">
           <span className="admin-master-link__icon"><Warehouse size={20} aria-hidden="true" /></span>
           <span className="admin-master-link__text"><strong>Storage Location Master</strong><small>Manage storage locations, addresses and availability in this browser.</small></span>
+          <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
+        </Link>
+        <Link href="/admin/masters/designations" className="admin-master-link" data-testid="link-master-designations">
+          <span className="admin-master-link__icon"><BriefcaseBusiness size={20} aria-hidden="true" /></span>
+          <span className="admin-master-link__text"><strong>Designation Master</strong><small>Manage designation levels, allowances, professional tax and status in this browser.</small></span>
           <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
         </Link>
         <Link href="/admin/masters/allergens" className="admin-master-link" data-testid="link-master-allergens">
