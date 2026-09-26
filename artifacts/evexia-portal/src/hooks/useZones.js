@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createZone, deleteZone, loadZones, setZoneStatus, updateZone } from '../services/zones.js';
+import { commitImport } from '../services/masterImport.js';
 
 export default function useZones() {
   const [state, setState] = useState(() => {
@@ -7,6 +8,15 @@ export default function useZones() {
     catch (error) { return { zones: [], error: error.message || 'Zones could not be loaded.' }; }
   });
   const [feedback, setFeedback] = useState('');
+  useEffect(() => {
+    const onStorage = (event) => {
+      if (event.key === 'evexia.admin.zones.v1' || event.key === null) {
+        setState((previous) => ({ ...previous, error: 'Zones changed in another tab. Refresh records before saving.' }));
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   function retry() {
     try {
@@ -41,5 +51,11 @@ export default function useZones() {
     edit: (id, values) => apply((zones) => updateZone(zones, id, values), 'Zone updated successfully.'),
     remove: (id) => apply((zones) => deleteZone(zones, id), 'Zone deleted successfully.'),
     changeStatus: (id, status) => apply((zones) => setZoneStatus(zones, id, status), `Zone ${status === 'active' ? 'activated' : 'inactivated'} successfully.`),
+    importRows: (entries, snapshots) => {
+      if (JSON.stringify(state.zones) !== JSON.stringify(snapshots.zones)) {
+        return { success: false, error: 'Zones changed since review. Refresh and review the file again.' };
+      }
+      return apply(() => commitImport('zone', entries, snapshots), `${entries.length} zone${entries.length === 1 ? '' : 's'} imported successfully.`);
+    },
   };
 }

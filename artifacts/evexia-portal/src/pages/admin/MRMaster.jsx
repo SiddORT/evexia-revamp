@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
-import { CalendarDays, CirclePower, Download, Hash, Mail, Pencil, Phone, Plus, Search, UsersRound } from 'lucide-react';
+import { CalendarDays, CirclePower, Download, Hash, Mail, Pencil, Phone, Plus, Search, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
+import Dialog from '../../components/admin/Dialog.jsx';
+import MasterImportDialog from '../../components/admin/MasterImportDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
@@ -10,6 +12,7 @@ import useMRs from '../../hooks/useMRs.js';
 import useTablePagination from '../../hooks/useTablePagination.js';
 import { exportMRCSV, loadMRs } from '../../services/mrs.js';
 import { loadZones } from '../../services/zones.js';
+import { DOCTOR_STORAGE_KEY, loadDoctors } from '../../services/doctors.js';
 import '../../mr.css';
 
 const cleanPhone = (phone) => phone.replace(/[^+\d]/g, '');
@@ -28,7 +31,7 @@ function auditDetails(name, value) {
 
 export default function MRMaster() {
   const [, navigate] = useLocation();
-  const { records, zones, error, feedback, retry, clearFeedback, changeStatus } = useMRs();
+  const { records, zones, error, feedback, retry, clearFeedback, changeStatus, importRows } = useMRs();
   const [saveFeedback] = useState(() => {
     const saved = new URLSearchParams(window.location.search).get('saved');
     return saved === 'added' ? 'MR added successfully.' : saved === 'updated' ? 'MR updated successfully.' : '';
@@ -41,6 +44,18 @@ export default function MRMaster() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [confirming, setConfirming] = useState(null);
   const [actionError, setActionError] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [doctorView, setDoctorView] = useState(null);
+  useEffect(() => {
+    if (!doctorView) return undefined;
+    const onStorage = (event) => {
+      if ([DOCTOR_STORAGE_KEY, 'evexia.admin.mrs.v1', null].includes(event.key)) {
+        setDoctorView((previous) => previous && ({ ...previous, error: 'Doctor assignments or MR records changed in another tab. Close this window, refresh records and reopen it.' }));
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [Boolean(doctorView)]);
   const zoneName = (record) => zones.find((zone) => zone.id === record.zoneId)?.name || 'Deleted zone';
   const managerName = (record) => records.find((candidate) => candidate.id === record.reportingManagerId)?.name || (record.reportingManagerId ? 'Missing MR' : '—');
   const visible = useMemo(() => records.filter((record) => {
@@ -78,8 +93,24 @@ export default function MRMaster() {
       setActionError('CSV export failed. Please try again.');
     }
   }
+  function showDoctors(record) {
+    try {
+      const savedDoctors = loadDoctors();
+      const doctors = savedDoctors.filter((doctor) => doctor.mrId === record.id);
+      const currentMRs = loadMRs();
+      if (JSON.stringify(currentMRs) !== JSON.stringify(records) || JSON.stringify(loadDoctors()) !== JSON.stringify(savedDoctors)) {
+        setDoctorView({ record, error: 'MR or doctor assignments changed while loading. Refresh records before viewing doctors.' });
+      } else {
+        setDoctorView({ record, doctors });
+      }
+    } catch (cause) {
+      setDoctorView({ record, error: cause.message || 'Doctor records could not be loaded. Refresh and try again.' });
+    }
+  }
   function actions(record, compact = false) {
     return <div className={compact ? 'admin-mr-card__actions' : 'admin-table__actions'}>
+      <a className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} href={`tel:${cleanPhone(record.phone)}`} aria-label={`Call ${record.name} at ${record.phone}`} title="Call" data-testid={`action-call-mr-${record.id}`}><Phone size={16} aria-hidden="true" />{compact && 'Call'}</a>
+      <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`View doctors for ${record.name}`} title="View doctors" onClick={() => showDoctors(record)} data-testid={`button-doctors-mr-${record.id}`}><UsersRound size={16} aria-hidden="true" />{compact && 'Doctors'}</button>
       <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} title="Edit" onClick={() => { clearFeedback(); navigate(`/admin/masters/mrs/${encodeURIComponent(record.id)}`); }} data-testid={`button-edit-mr-${record.id}`}><Pencil size={16} aria-hidden="true" />{compact && 'Edit'}</button>
       <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} title={record.status === 'active' ? 'Inactivate' : 'Activate'} onClick={() => { clearFeedback(); setActionError(''); setConfirming(record); }} data-testid={`button-toggle-mr-${record.id}`}><CirclePower size={16} aria-hidden="true" />{compact && (record.status === 'active' ? 'Inactivate' : 'Activate')}</button>
     </div>;
@@ -113,6 +144,7 @@ export default function MRMaster() {
       <div><p className="admin-page-head__eyebrow">Masters / Team</p><h1>MR Master</h1><p className="admin-page-head__description">Manage MR profiles in this browser. This preview does not create login accounts.</p></div>
       <div className="admin-mr-head-actions">
          <button type="button" className="admin-button admin-button--secondary" onClick={() => { retry(); setActionError(''); setConfirming(null); }} data-testid="button-refresh-mrs">Refresh records</button>
+         <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error)} onClick={() => { clearFeedback(); setImporting(true); }} data-testid="button-import-mrs"><Upload size={16} aria-hidden="true" /> Import CSV</button>
         <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || !visible.length} onClick={exportVisible} data-testid="button-export-mrs"><Download size={16} aria-hidden="true" /> Export CSV</button>
          <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate('/admin/masters/mrs/new'); }} data-testid="button-add-mr"><Plus size={16} aria-hidden="true" /> Add MR</button>
       </div>
@@ -141,5 +173,11 @@ export default function MRMaster() {
       </>}
     </section>
     {confirming && <ConfirmationDialog title={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} MR?`} description={`Change “${confirming.name}” to ${confirming.status === 'active' ? 'inactive' : 'active'}? This only changes this browser-local preview record; it does not control login access.`} actionLabel={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} MR`} onConfirm={toggle} onClose={() => setConfirming(null)} error={actionError} />}
+    {doctorView && <Dialog title={`Doctors for ${doctorView.record.name}`} eyebrow="MR Master" onClose={() => setDoctorView(null)}>
+      {doctorView.error ? <div className="admin-feedback admin-feedback--error" role="alert">{doctorView.error}</div> : doctorView.doctors.length
+        ? <ul className="admin-mr-doctors">{doctorView.doctors.map((doctor) => <li key={doctor.id}><strong>{doctor.name}</strong><span>Clinic: {doctor.clinicName || 'Not provided'}</span><StatusBadge status={doctor.status} /></li>)}</ul>
+        : <p>No doctors are currently assigned to this MR.</p>}
+    </Dialog>}
+    {importing && <MasterImportDialog kind="mr" onImport={importRows} onClose={() => setImporting(false)} />}
   </AdminLayout>;
 }

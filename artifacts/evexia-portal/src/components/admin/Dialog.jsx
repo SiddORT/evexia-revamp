@@ -14,7 +14,7 @@ export default function Dialog({ title, eyebrow, description, onClose, children,
     function handleKey(event) {
       if (event.key === 'Escape') { event.stopPropagation(); onCloseRef.current(); }
       if (event.key === 'Tab') {
-        const focusable = dialogRef.current?.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href]');
+        const focusable = dialogRef.current?.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), summary, a[href]');
         if (!focusable?.length) return;
         const first = focusable[0];
         const last = focusable[focusable.length - 1];

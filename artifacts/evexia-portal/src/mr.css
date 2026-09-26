@@ -185,6 +185,11 @@
 .admin-mr-card__body dt { color: var(--admin-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; }
 .admin-mr-card__body dd { margin: 3px 0 0; overflow-wrap: anywhere; }
 .admin-mr-card__action { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.admin-mr-card__action { text-decoration: none; }
+.admin-mr-doctors { list-style: none; display: grid; gap: 10px; margin: 18px 0 0; padding: 0; }
+.admin-mr-doctors li { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; padding: 12px; border: 1px solid var(--admin-border); border-radius: 8px; }
+.admin-mr-doctors li strong { min-width: 100%; }
+.admin-mr-doctors li span:not(.admin-badge) { color: var(--admin-text-soft); font-size: 12px; overflow-wrap: anywhere; }
 
 @media (max-width: 900px) {
   .admin-mr-desktop { display: none; }

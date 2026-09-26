@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createMR, loadMRs, MR_STORAGE_KEY, setMRStatus, updateMR } from '../services/mrs.js';
+import { DOCTOR_STORAGE_KEY } from '../services/doctors.js';
+import { commitImport } from '../services/masterImport.js';
 import { loadZones } from '../services/zones.js';
 
 function readState() {
@@ -17,7 +19,7 @@ export default function useMRs() {
   const [feedback, setFeedback] = useState('');
   useEffect(() => {
     const onStorage = (event) => {
-      if (event.key === MR_STORAGE_KEY || event.key === 'evexia.admin.zones.v1' || event.key === null) {
+      if (event.key === MR_STORAGE_KEY || event.key === 'evexia.admin.zones.v1' || event.key === DOCTOR_STORAGE_KEY || event.key === null) {
         setState((previous) => ({ ...previous, error: 'MR records or zones changed in another tab. Refresh records to review them before saving.' }));
       }
     };
@@ -46,5 +48,12 @@ export default function useMRs() {
     add: (values) => apply((records, zones) => createMR(records, zones, values), 'MR added successfully.'),
     edit: (id, values) => apply((records, zones) => updateMR(records, zones, id, values), 'MR updated successfully.'),
     changeStatus: (id, status) => apply((records, zones) => setMRStatus(records, zones, id, status), `MR ${status === 'active' ? 'activated' : 'inactivated'} successfully.`),
+    importRows: (entries, snapshots) => {
+      if (state.error) return { success: false, error: 'Refresh records before importing.' };
+      if (JSON.stringify(state.records) !== JSON.stringify(snapshots.mrs) || JSON.stringify(state.zones) !== JSON.stringify(snapshots.zones)) {
+        return { success: false, error: 'Records changed since review. Refresh and review the file again.' };
+      }
+      return apply(() => commitImport('mr', entries, snapshots), `${entries.length} MR${entries.length === 1 ? '' : 's'} imported successfully.`);
+    },
   };
 }

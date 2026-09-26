@@ -114,3 +114,7 @@ export function deleteZone(zones, id) {
   if (!zones.some((zone) => zone.id === id)) throw new Error('This zone is no longer available.');
   return saveZones(zones.filter((zone) => zone.id !== id), zones);
 }
+
+export function importZones(zones, next) {
+  return saveZones(next, zones);
+}

@@ -158,6 +158,10 @@ export function setMRStatus(records, zones, id, status) {
   return save(records.map((record) => record.id === id ? { ...record, status, updatedBy: ADMIN_NAME, updatedAt: new Date().toISOString() } : record), records, zones);
 }
 
+export function importMRs(records, zones, next) {
+  return save(next, records, zones);
+}
+
 export const CSV_COLUMNS = [
   ['employeeCode', 'Employee Code'], ['name', 'MR Name'], ['phone', 'Phone No.'], ['userId', 'User ID'], ['email', 'Email ID'],
   ['hq', 'HQ'], ['zoneName', 'Assigned Zone'], ['dateOfJoining', 'Date of Joining'], ['designation', 'Designation'],
