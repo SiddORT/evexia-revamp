@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Activity, Check, ChevronDown, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, UsersRound, X } from 'lucide-react';
+import { Activity, Check, ChevronDown, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, Moon, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Sun, UsersRound, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
-import { ADMIN_THEMES, readAdminTheme, saveAdminTheme } from './adminTheme.js';
+import { ADMIN_APPEARANCES, ADMIN_THEMES, readAdminAppearance, readAdminTheme, saveAdminAppearance, saveAdminTheme } from './adminTheme.js';
 import '../../admin.css';
 
 const SIDEBAR_PREFERENCE_KEY = 'evexia.admin.sidebar.collapsed';
@@ -18,6 +18,7 @@ export default function AdminLayout({ title, children }) {
     catch { return false; }
   });
   const [theme, setTheme] = useState(readAdminTheme);
+  const [appearance, setAppearance] = useState(readAdminAppearance);
   const menuRef = useRef(null);
   const sidebarRef = useRef(null);
   const restoreMenuFocusRef = useRef(false);
@@ -34,6 +35,12 @@ export default function AdminLayout({ title, children }) {
     if (!Object.hasOwn(ADMIN_THEMES, next)) return;
     setTheme(next);
     saveAdminTheme(next);
+  }
+
+  function changeAppearance(next) {
+    if (!Object.hasOwn(ADMIN_APPEARANCES, next)) return;
+    setAppearance(next);
+    saveAdminAppearance(next);
   }
 
   function closeDrawer(restoreFocus = true) {
@@ -101,7 +108,7 @@ export default function AdminLayout({ title, children }) {
   }, [compact, drawerOpen]);
 
   return (
-    <div className={`admin-shell${isCollapsed ? ' admin-shell--collapsed' : ''}`} data-admin-theme={theme}>
+    <div className={`admin-shell${isCollapsed ? ' admin-shell--collapsed' : ''}`} data-admin-theme={theme} data-admin-appearance={appearance}>
       {drawerOpen && compact && <button type="button" className="admin-backdrop" aria-label="Close navigation" tabIndex={-1} onClick={() => closeDrawer()} data-testid="button-close-navigation-backdrop" />}
       <aside ref={sidebarRef} id="admin-navigation" className={`admin-sidebar${drawerOpen ? ' admin-sidebar--open' : ''}`} aria-label="Admin navigation" aria-hidden={compact && !drawerOpen} inert={compact && !drawerOpen ? true : undefined} role={compact && drawerOpen ? 'dialog' : undefined} aria-modal={compact && drawerOpen ? true : undefined}>
         <div className="admin-sidebar__brand">
@@ -138,6 +145,31 @@ export default function AdminLayout({ title, children }) {
           <div className="admin-header__actions">
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
+              <button type="button" className="admin-theme__trigger admin-appearance__trigger" aria-label={`Appearance: ${ADMIN_APPEARANCES[appearance]}`} data-testid="button-admin-appearance">
+                {appearance === 'light' ? <Sun size={15} aria-hidden="true" /> : <Moon size={15} aria-hidden="true" />}
+                <span className="admin-theme__label">Appearance</span>
+                <span className="admin-theme__current" data-testid="text-admin-appearance">{ADMIN_APPEARANCES[appearance]}</span>
+                <span className="admin-theme__short" aria-hidden="true">{ADMIN_APPEARANCES[appearance]}</span>
+                <ChevronDown size={14} aria-hidden="true" />
+              </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content className="admin-theme__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={10} aria-label="Appearance">
+                <DropdownMenu.Label className="admin-theme__menu-label">Appearance</DropdownMenu.Label>
+                <DropdownMenu.RadioGroup value={appearance} onValueChange={changeAppearance}>
+                  {Object.entries(ADMIN_APPEARANCES).map(([value, label]) => (
+                    <DropdownMenu.RadioItem key={value} value={value} className="admin-theme__option" data-testid={`option-admin-appearance-${value}`}>
+                      {value === 'light' ? <Sun size={15} aria-hidden="true" /> : <Moon size={15} aria-hidden="true" />}
+                      {label}
+                      <DropdownMenu.ItemIndicator className="admin-theme__check"><Check size={15} aria-hidden="true" /></DropdownMenu.ItemIndicator>
+                    </DropdownMenu.RadioItem>
+                  ))}
+                </DropdownMenu.RadioGroup>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
               <button type="button" className="admin-theme__trigger" aria-label={`Theme: ${ADMIN_THEMES[theme]}`} data-testid="button-admin-theme">
                 <span className="admin-theme__label">Theme</span>
                 <span className="admin-theme__current" data-testid="text-admin-theme">{ADMIN_THEMES[theme]}</span>
@@ -146,7 +178,7 @@ export default function AdminLayout({ title, children }) {
               </button>
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
-              <DropdownMenu.Content className="admin-theme__menu" data-admin-theme={theme} align="end" sideOffset={10} aria-label="Theme">
+              <DropdownMenu.Content className="admin-theme__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={10} aria-label="Theme">
                 <DropdownMenu.Label className="admin-theme__menu-label">Theme</DropdownMenu.Label>
                 <DropdownMenu.RadioGroup value={theme} onValueChange={changeTheme}>
                   {Object.entries(ADMIN_THEMES).map(([value, label]) => (
@@ -170,7 +202,7 @@ export default function AdminLayout({ title, children }) {
                 </button>
               </DropdownMenu.Trigger>
               <DropdownMenu.Portal>
-                <DropdownMenu.Content className="admin-profile__menu" data-admin-theme={theme} align="end" sideOffset={10}>
+                <DropdownMenu.Content className="admin-profile__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={10}>
                   <DropdownMenu.Label className="admin-profile__identity">
                     <strong>Admin User</strong><span>admin@evexia.com</span>
                   </DropdownMenu.Label>
