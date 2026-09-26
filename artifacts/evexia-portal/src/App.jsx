@@ -26,6 +26,7 @@ import AllergenMaster from './pages/admin/AllergenMaster.jsx';
 import AllergenFormPage from './pages/admin/AllergenFormPage.jsx';
 import PatientDosageHistory from './pages/admin/PatientDosageHistory.jsx';
 import VendorMaster from './pages/admin/VendorMaster.jsx';
+import SalesTargetMaster from './pages/admin/SalesTargetMaster.jsx';
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
       <Route path="/admin/masters/import/:kind">{(params) => <MasterExcelImportPage key={params.kind} kind={params.kind} />}</Route>
       <Route path="/admin/masters/zones" component={ZoneMaster} />
       <Route path="/admin/masters/courier-partners" component={CourierPartnerMaster} />
+      <Route path="/admin/masters/sales-targets" component={SalesTargetMaster} />
       <Route path="/admin/masters/mrs" component={MRMaster} />
       <Route path="/admin/masters/mrs/new">{() => <MRFormPage />}</Route>
       <Route path="/admin/masters/mrs/:id">{(params) => <MRFormPage id={params.id} />}</Route>

@@ -1,4 +1,4 @@
-import { ArrowUpRight, Boxes, BriefcaseBusiness, FlaskConical, HeartPulse, MapPinned, Stethoscope, Truck, UsersRound, Warehouse } from 'lucide-react';
+import { ArrowUpRight, Boxes, BriefcaseBusiness, FlaskConical, HeartPulse, MapPinned, Stethoscope, Target, Truck, UsersRound, Warehouse } from 'lucide-react';
 import { Link } from 'wouter';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 
@@ -20,6 +20,11 @@ export default function Masters() {
         <Link href="/admin/masters/mrs" className="admin-master-link" data-testid="link-master-mrs">
           <span className="admin-master-link__icon"><UsersRound size={20} aria-hidden="true" /></span>
           <span className="admin-master-link__text"><strong>MR Master</strong><small>Manage MR profiles and zone assignments in this browser.</small></span>
+          <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
+        </Link>
+        <Link href="/admin/masters/sales-targets" className="admin-master-link" data-testid="link-master-sales-targets">
+          <span className="admin-master-link__icon"><Target size={20} aria-hidden="true" /></span>
+          <span className="admin-master-link__text"><strong>Sales Target Master</strong><small>Set quarterly financial-year targets for each MR in this browser.</small></span>
           <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
         </Link>
         <Link href="/admin/masters/doctors" className="admin-master-link" data-testid="link-master-doctors">
