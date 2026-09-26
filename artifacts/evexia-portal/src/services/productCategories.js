@@ -13,6 +13,26 @@ const normalized = (name) => name.trim().toLocaleLowerCase();
 const invalidSaved = 'Saved product category data is invalid. Nothing was changed. Repair or back up browser storage before retrying.';
 const nextTimestamp = (previous) => new Date(Math.max(Date.now(), Date.parse(previous) + 1)).toISOString();
 
+function sampleCategories() {
+  const examples = [
+    { name: 'Sample Diagnostic Kits', description: 'Example point-of-care testing kits.', unitPrice: 450, status: 'active' },
+    { name: 'Sample Lab Supplies', description: 'Example consumables for laboratory work.', unitPrice: 125.5, status: 'active' },
+    { name: 'Sample Wellness Materials', description: 'Example health education materials.', unitPrice: 0, status: 'inactive' },
+    { name: 'Sample Clinic Equipment', description: 'Example reusable clinic equipment.', unitPrice: 1800, status: 'inactive' },
+  ];
+  return examples.map((example, index) => {
+    const date = new Date(Date.UTC(2025, 1, 12 + index, 9, 15)).toISOString();
+    return {
+      ...example,
+      id: `sample-category-${index + 1}`,
+      createdBy: ACTOR,
+      createdAt: date,
+      updatedBy: ACTOR,
+      updatedAt: date,
+    };
+  });
+}
+
 export function validateCategory(values, records = [], exceptId = null) {
   const errors = {};
   if (!values || typeof values !== 'object' || Array.isArray(values) ||
@@ -40,7 +60,15 @@ export function loadCategories() {
   let raw;
   try { raw = window.localStorage.getItem(CATEGORY_STORAGE_KEY); }
   catch { throw new Error('Product categories could not be loaded because browser storage is unavailable.'); }
-  if (raw === null) return [];
+  if (raw === null) {
+    const samples = sampleCategories();
+    try {
+      // A saved list (including []) wins if another tab initialized storage meanwhile.
+      if (window.localStorage.getItem(CATEGORY_STORAGE_KEY) !== null) return loadCategories();
+      window.localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(samples));
+    } catch { throw new Error('Sample product categories could not be saved in this browser. Check browser storage settings and try again.'); }
+    return samples;
+  }
   let parsed;
   try { parsed = JSON.parse(raw); }
   catch { throw new Error(invalidSaved); }
