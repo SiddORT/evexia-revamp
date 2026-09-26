@@ -292,7 +292,7 @@
 .admin-info { min-width: 0; }
 .admin-info__row { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .admin-info__row > :first-child { min-width: 0; }
-.admin-info__button { display: inline-grid; place-items: center; flex: none; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--admin-accent); cursor: pointer; }
+.admin-info__button { display: inline-grid; place-items: center; flex: none; width: 40px; height: 40px; margin-block: var(--admin-info-button-inset, 0px); padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--admin-accent); cursor: pointer; }
 .admin-info__button:hover, .admin-info__button[aria-expanded="true"] { background: var(--admin-state-hover); }
 .admin-info__button:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
 .admin-info__text { box-sizing: border-box; position: fixed; z-index: 100; width: min(320px, calc(100vw - 16px)); margin: 0; padding: 10px 12px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-text); box-shadow: var(--shadow-soft); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; pointer-events: none; }
