@@ -22,8 +22,8 @@ function formattedDate(value, formatter) {
   return Number.isNaN(date.getTime()) ? '—' : formatter.format(date);
 }
 
-function auditDetails(value) {
-  return <time className="admin-mr-audit" dateTime={value}>{formattedDate(value, dateTimeFormat)}</time>;
+function auditDetails(name, value) {
+  return <span className="admin-mr-audit"><strong>{name}</strong><time dateTime={value}>{formattedDate(value, dateTimeFormat)}</time></span>;
 }
 
 export default function MRMaster() {
@@ -104,8 +104,8 @@ export default function MRMaster() {
     { key: 'manager', label: 'Reporting manager', render: managerName },
     { key: 'zone', label: 'Assigned zone', render: (record) => <span className={!zones.some((zone) => zone.id === record.zoneId) ? 'admin-mr-missing' : ''}>{zoneName(record)}</span> },
     { key: 'status', label: 'Status', render: (record) => <StatusBadge status={record.status} id={record.id} kind="mr" /> },
-    { key: 'created', label: 'Created details', render: (record) => auditDetails(record.createdAt) },
-    { key: 'updated', label: 'Updated details', render: (record) => auditDetails(record.updatedAt) },
+    { key: 'created', label: 'Created details', render: (record) => auditDetails(record.createdBy, record.createdAt) },
+    { key: 'updated', label: 'Updated details', render: (record) => auditDetails(record.updatedBy, record.updatedAt) },
     { key: 'actions', label: 'Actions', render: (record) => actions(record) },
   ];
   return <AdminLayout title="MR Master">
@@ -133,7 +133,7 @@ export default function MRMaster() {
            <div className="admin-mr-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} label="MR records" testIdPrefix="mr" /></div>
            <div className="admin-mr-mobile" role="list" aria-label="MR records">{pagination.pageRows.map((record) => <article className="admin-mr-card" role="listitem" key={record.id} data-testid={`card-mr-${record.id}`}>
             <div className="admin-mr-card__head"><div><h2>{record.name}</h2><small>{record.designation}</small></div><StatusBadge status={record.status} id={record.id} kind="mr" /></div>
-             <div className="admin-mr-card__body">{details(record, false)}<dl><div><dt>Address</dt><dd>{address(record)}</dd></div><div><dt>Manager</dt><dd>{managerName(record)}</dd></div><div><dt>Zone</dt><dd>{zoneName(record)}</dd></div><div><dt>Created</dt><dd>{auditDetails(record.createdAt)}</dd></div><div><dt>Updated</dt><dd>{auditDetails(record.updatedAt)}</dd></div></dl></div>
+             <div className="admin-mr-card__body">{details(record, false)}<dl><div><dt>Address</dt><dd>{address(record)}</dd></div><div><dt>Manager</dt><dd>{managerName(record)}</dd></div><div><dt>Zone</dt><dd>{zoneName(record)}</dd></div><div><dt>Created by</dt><dd>{auditDetails(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated by</dt><dd>{auditDetails(record.updatedBy, record.updatedAt)}</dd></div></dl></div>
             {actions(record, true)}
           </article>)}</div>
         </> : <div className="admin-empty" data-testid="status-mrs-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{records.length ? 'No matching MRs' : 'No MR records yet'}</strong><p>{records.length ? 'Try different search or filters.' : 'Add an MR to create a browser-local preview record.'}</p></div>}

@@ -6,7 +6,9 @@ const REQUIRED = ['name', 'phone', 'userId', 'email', 'hq', 'zoneId', 'employeeC
 const OPTIONAL = ['reportingManagerId', 'addressLine2'];
 const NUMERIC = ['paymentLimit', 'doctorDaysLimit'];
 const FIELDS = [...REQUIRED, ...OPTIONAL, ...NUMERIC];
-const STORED = [...FIELDS, 'id', 'createdAt', 'updatedAt'];
+const LEGACY_STORED = [...FIELDS, 'id', 'createdAt', 'updatedAt'];
+const STORED = [...LEGACY_STORED, 'createdBy', 'updatedBy'];
+const ADMIN_NAME = 'Admin User';
 const labels = { name: 'MR Name', phone: 'Phone No.', userId: 'User ID', email: 'Email ID', hq: 'HQ', zoneId: 'Assigned Zone', employeeCode: 'Employee Code', dateOfJoining: 'Date of Joining', designation: 'Designation', status: 'Status', addressLine1: 'Address Line 1', landmark: 'Landmark', pincode: 'Pincode', city: 'City', state: 'State', country: 'Country' };
 const own = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 const normalized = (value) => value.trim().toLocaleLowerCase();
@@ -47,7 +49,9 @@ function sampleMRs(zones) {
       city: example.city,
       state: example.state,
       country: 'India',
+      createdBy: ADMIN_NAME,
       createdAt: date,
+      updatedBy: ADMIN_NAME,
       updatedAt: date,
     };
   });
@@ -100,7 +104,9 @@ function read() {
   if (!Array.isArray(parsed) || parsed.some((record) =>
     !record || typeof record !== 'object' || Array.isArray(record) ||
     Object.keys(record).some((key) => !STORED.includes(key)) ||
-    !STORED.every((key) => own(record, key)) ||
+    !LEGACY_STORED.every((key) => own(record, key)) ||
+    own(record, 'createdBy') !== own(record, 'updatedBy') ||
+    (own(record, 'createdBy') && ![record.createdBy, record.updatedBy].every((name) => typeof name === 'string' && name.trim())) ||
     typeof record.id !== 'string' || !record.id ||
     ![record.createdAt, record.updatedAt].every((date) => typeof date === 'string' && !Number.isNaN(Date.parse(date))) ||
     NUMERIC.some((key) => typeof record[key] !== 'number') ||
@@ -110,7 +116,9 @@ function read() {
     parsed.some((record) => record.reportingManagerId && (record.reportingManagerId === record.id || !parsed.some((candidate) => candidate.id === record.reportingManagerId)))) {
     throw new Error('Saved MR data is invalid. No records were changed. Repair or back up browser storage before retrying.');
   }
-  return parsed;
+  // Older browser-local records did not track names; keep their data intact and
+  // attribute them to the only Admin identity shown in this preview.
+  return parsed.map((record) => own(record, 'createdBy') ? record : { ...record, createdBy: ADMIN_NAME, updatedBy: ADMIN_NAME });
 }
 
 export function loadMRs() { return read(); }
@@ -135,19 +143,19 @@ function checkedFields(records, zones, values, id) {
 export function createMR(records, zones, values) {
   const fields = checkedFields(records, zones, values);
   const now = new Date().toISOString();
-  return save([{ ...fields, id: crypto.randomUUID(), createdAt: now, updatedAt: now }, ...records], records, zones);
+  return save([{ ...fields, id: crypto.randomUUID(), createdBy: ADMIN_NAME, createdAt: now, updatedBy: ADMIN_NAME, updatedAt: now }, ...records], records, zones);
 }
 
 export function updateMR(records, zones, id, values) {
   if (!records.some((record) => record.id === id)) throw new Error('This MR is no longer available.');
   const fields = checkedFields(records, zones, values, id);
-  return save(records.map((record) => record.id === id ? { ...record, ...fields, updatedAt: new Date().toISOString() } : record), records, zones);
+  return save(records.map((record) => record.id === id ? { ...record, ...fields, updatedBy: ADMIN_NAME, updatedAt: new Date().toISOString() } : record), records, zones);
 }
 
 export function setMRStatus(records, zones, id, status) {
   if (!['active', 'inactive'].includes(status)) throw new Error('Choose a valid MR status.');
   if (!records.some((record) => record.id === id)) throw new Error('This MR is no longer available.');
-  return save(records.map((record) => record.id === id ? { ...record, status, updatedAt: new Date().toISOString() } : record), records, zones);
+  return save(records.map((record) => record.id === id ? { ...record, status, updatedBy: ADMIN_NAME, updatedAt: new Date().toISOString() } : record), records, zones);
 }
 
 export const CSV_COLUMNS = [
