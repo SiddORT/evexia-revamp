@@ -151,7 +151,7 @@ export default function AdminLayout({ title, children }) {
                 <DropdownMenu.RadioGroup value={theme} onValueChange={changeTheme}>
                   {Object.entries(ADMIN_THEMES).map(([value, label]) => (
                     <DropdownMenu.RadioItem key={value} value={value} className="admin-theme__option" data-testid={`option-admin-theme-${value}`}>
-                      <span className={`admin-theme__swatches admin-theme__swatches--${value}`} aria-hidden="true"><i /><i /></span>
+                      <span className={`admin-theme__swatches admin-theme__swatches--${value}`} aria-hidden="true"><i /><i />{value === 'modern' && <i />}</span>
                       {label}
                       <DropdownMenu.ItemIndicator className="admin-theme__check"><Check size={15} aria-hidden="true" /></DropdownMenu.ItemIndicator>
                     </DropdownMenu.RadioItem>
