@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Activity, Boxes, Check, ChevronDown, FlaskConical, HeartPulse, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, Moon, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Stethoscope, Sun, UsersRound, Warehouse, X } from 'lucide-react';
+import { Boxes, Check, ChevronDown, FlaskConical, HeartPulse, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, Moon, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Stethoscope, Sun, UsersRound, Warehouse, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
 import { ADMIN_APPEARANCES, ADMIN_THEMES, readAdminAppearance, readAdminTheme, saveAdminAppearance, saveAdminTheme } from './adminTheme.js';
 import '../../admin.css';
@@ -112,7 +112,7 @@ export default function AdminLayout({ title, children }) {
       {drawerOpen && compact && <button type="button" className="admin-backdrop" aria-label="Close navigation" tabIndex={-1} onClick={() => closeDrawer()} data-testid="button-close-navigation-backdrop" />}
       <aside ref={sidebarRef} id="admin-navigation" className={`admin-sidebar${drawerOpen ? ' admin-sidebar--open' : ''}`} aria-label="Admin navigation" aria-hidden={compact && !drawerOpen} inert={compact && !drawerOpen ? true : undefined} role={compact && drawerOpen ? 'dialog' : undefined} aria-modal={compact && drawerOpen ? true : undefined}>
         <div className="admin-sidebar__brand">
-          <Link href="/admin" aria-label="EVEXIA Admin Dashboard" title={isCollapsed ? 'EVEXIA Dashboard' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-brand"><BrandMark /><span className="admin-sidebar__mark" aria-hidden="true"><Activity size={20} /></span></Link>
+          <Link href="/admin" aria-label="EVEXIA Admin Dashboard" title={isCollapsed ? 'EVEXIA Dashboard' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-brand"><BrandMark /><span className="admin-sidebar__mark" aria-hidden="true"><img src={`${import.meta.env.BASE_URL}favicon.png`} alt="" width="32" height="32" /></span></Link>
           <button type="button" className="admin-sidebar__collapse" aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!isCollapsed} aria-controls="admin-navigation" title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} onClick={toggleSidebar} data-testid="button-toggle-sidebar">{isCollapsed ? <PanelLeftOpen size={18} aria-hidden="true" /> : <PanelLeftClose size={18} aria-hidden="true" />}</button>
           <button type="button" className="admin-sidebar__close" aria-label="Close menu" onClick={() => closeDrawer()} data-testid="button-close-navigation"><X size={19} /></button>
         </div>

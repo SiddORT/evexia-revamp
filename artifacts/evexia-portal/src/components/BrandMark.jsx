@@ -7,8 +7,8 @@ export default function BrandMark() {
         className="brand-mark__image"
         src={logoSrc}
         alt="EVEXIA Life Sciences logo"
-        width="100"
-        height="60"
+        width="631"
+        height="328"
         data-testid="img-evexia-logo"
       />
     </span>
