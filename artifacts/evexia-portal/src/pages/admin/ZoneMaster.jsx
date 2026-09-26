@@ -60,7 +60,7 @@ export default function ZoneMaster() {
       <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`${toggleLabel} ${zone.name}`} title={toggleLabel} onClick={() => requestAction(zone, toggleLabel.toLowerCase())} data-testid={`button-toggle-zone-${zone.id}`}>
         <CirclePower size={mobile ? 14 : 17} aria-hidden="true" />{mobile && <span>{toggleLabel}</span>}
       </button>
-      <button type="button" className={mobile ? 'admin-zone-card__action admin-zone-card__action--danger' : 'admin-icon-button'} aria-label={`Delete ${zone.name}`} title="Delete" onClick={() => requestAction(zone, 'delete')} data-testid={`button-delete-zone-${zone.id}`}>
+      <button type="button" className={mobile ? 'admin-zone-card__action admin-zone-card__action--danger' : 'admin-icon-button admin-icon-button--danger'} aria-label={`Delete ${zone.name}`} title="Delete" onClick={() => requestAction(zone, 'delete')} data-testid={`button-delete-zone-${zone.id}`}>
         <Trash2 size={mobile ? 14 : 16} aria-hidden="true" />{mobile && <span>Delete</span>}
       </button>
     </div>;
