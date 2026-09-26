@@ -53,6 +53,7 @@ export default function AdminLayout({ title, children }) {
   const query = search.trim().toLocaleLowerCase();
   const searching = query.length > 0;
   const showDashboard = !searching || 'dashboard'.includes(query);
+  const showStaff = !searching || 'staff management'.includes(query);
   const showAllMasters = !searching || 'all masters'.includes(query);
   const visibleGroups = MASTER_GROUPS.map((group) => ({
     ...group,
@@ -195,6 +196,9 @@ export default function AdminLayout({ title, children }) {
           {showDashboard && <Link href="/admin" className={`admin-nav__item${location === '/admin' ? ' admin-nav__item--active' : ''}`} aria-label="Dashboard" title={isCollapsed ? 'Dashboard' : undefined} aria-current={location === '/admin' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-dashboard">
             <LayoutDashboard size={17} aria-hidden="true" /><span className="admin-nav__label">Dashboard</span>
           </Link>}
+          {showStaff && <Link href="/admin/staff" className={`admin-nav__item${location.startsWith('/admin/staff') ? ' admin-nav__item--active' : ''}`} aria-label="Staff Management" title={isCollapsed ? 'Staff Management' : undefined} aria-current={location === '/admin/staff' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-staff">
+            <UsersRound size={17} aria-hidden="true" /><span className="admin-nav__label">Staff Management</span>
+          </Link>}
           {showMasters && <button type="button" disabled={searching} className={`admin-nav__item${location.startsWith('/admin/masters') ? ' admin-nav__item--active' : ''}`} aria-label="Masters" title={isCollapsed ? 'Expand Masters' : undefined} aria-expanded={showSubnav} aria-controls="admin-masters-subnav" onClick={() => { if (isCollapsed) { toggleSidebar(); setMastersOpen(true); } else setMastersOpen((open) => !open); }} data-testid="button-toggle-masters">
             <PanelsTopLeft size={17} aria-hidden="true" /><span className="admin-nav__label">Masters</span><ChevronDown size={15} className={`admin-nav__chevron${showSubnav ? ' admin-nav__chevron--open' : ''}`} aria-hidden="true" />
           </button>}
@@ -212,7 +216,7 @@ export default function AdminLayout({ title, children }) {
               ))}
             </div>
           )}
-          {searching && !showDashboard && !showMasters && <p className="admin-nav__empty" role="status" data-testid="status-navigation-empty">No navigation results. Try another search.</p>}
+          {searching && !showDashboard && !showStaff && !showMasters && <p className="admin-nav__empty" role="status" data-testid="status-navigation-empty">No navigation results. Try another search.</p>}
         </nav>
         <div className="admin-sidebar__foot">EVEXIA Life Sciences<br />Admin workspace · Preview</div>
       </aside>

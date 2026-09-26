@@ -31,12 +31,14 @@ import VendorMaster from './pages/admin/VendorMaster.jsx';
 import SalesTargetMaster from './pages/admin/SalesTargetMaster.jsx';
 import OpeningBalanceMaster from './pages/admin/OpeningBalanceMaster.jsx';
 import OpeningBalanceFormPage from './pages/admin/OpeningBalanceFormPage.jsx';
+import StaffManagement from './pages/admin/StaffManagement.jsx';
 
 function App() {
   return (
     <Switch>
       <Route path="/" component={PortalSelection} />
       <Route path="/admin" component={Dashboard} />
+      <Route path="/admin/staff" component={StaffManagement} />
       <Route path="/admin/masters" component={Masters} />
       <Route path="/admin/masters/import/:kind">{(params) => <MasterExcelImportPage key={params.kind} kind={params.kind} />}</Route>
       <Route path="/admin/masters/zones" component={ZoneMaster} />
