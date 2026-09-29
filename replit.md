@@ -1,18 +1,19 @@
 # EVEXIA Portal
 
-A frontend-only EVEXIA Life Sciences portal with mock login screens and an Admin workspace preview.
+EVEXIA Life Sciences portal with mock login screens and an Admin workspace preview, plus an independent FastAPI backend foundation. The portal is **not yet connected** to backend authentication or persistence.
 
 ## Run & operate
 
 - The managed `artifacts/evexia-portal: web` workflow serves the preview.
 - `pnpm --filter @workspace/evexia-portal run build` builds the web app.
-- The workspace includes a scaffold API server, but this product does not use it.
+- The managed `artifacts/api-server: API Server` workflow runs FastAPI on `/api`. Its code and operational notes are in `artifacts/api-server/backend/README.md`. Database changes use Alembic migrations; do not create tables at startup.
 
 ## Stack and scope
 
 - React with JavaScript/JSX, Vite, Wouter, and CSS. Keep the web artifact free of TypeScript files.
 - Routes: `/` (portal selection); `/admin/login`, `/mr`, `/doctor` (mock login); `/admin` (empty Admin dashboard), `/admin/masters` (Masters index), `/admin/masters/zones` (Zone Master).
 - The Admin workspace is a preview. Sign Out only returns to the mock login. Do not add API calls or real authentication unless requested.
+- The new backend is a separate foundation, not a replacement for existing browser-local master records. Do not silently migrate or overwrite those records.
 - Login forms validate locally and simulate loading, then clearly state that authentication is not connected. No credentials are sent or stored.
 - Zone Master records are stored only in the browser's localStorage, not shared across browsers or users. Clearing browser data removes them.
 
