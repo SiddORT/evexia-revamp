@@ -6,7 +6,7 @@ EVEXIA Life Sciences portal with mock login screens and an Admin workspace previ
 
 - The managed `artifacts/evexia-portal: web` workflow serves the preview.
 - `pnpm --filter @workspace/evexia-portal run build` builds the web app.
-- The managed `artifacts/api-server: API Server` workflow runs FastAPI on `/api`. Its code and operational notes are in `artifacts/api-server/backend/README.md`. Database changes use Alembic migrations; do not create tables at startup.
+- The managed `artifacts/api-server: API Server` workflow runs FastAPI directly with Python on `/api` (no Node.js or pnpm in the API artifact). Its code and operational notes are in `artifacts/api-server/backend/README.md`. Database changes use Alembic migrations; do not create tables at startup.
 
 ## Stack and scope
 

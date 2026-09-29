@@ -166,8 +166,6 @@ importers:
         specifier: ~5.9.3
         version: 5.9.3
 
-  artifacts/api-server: {}
-
   artifacts/evexia-portal:
     devDependencies:
       '@radix-ui/react-dropdown-menu':

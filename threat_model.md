@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-EVEXIA is a React/Vite browser-local demonstration of role login screens and an Admin workspace. The Admin screens are directly accessible without login. Master records, including patient, staff and vendor fields, live in browser localStorage. The separately running Express scaffold API is not used by the portal. This is **not** a clinical or production data system.
+EVEXIA is a React/Vite browser-local demonstration of role login screens and an Admin workspace. The Admin screens are directly accessible without login. Master records, including patient, staff and vendor fields, live in browser localStorage. A separate FastAPI backend foundation is not yet used by the portal. This is **not** a clinical or production data system.
 
 ## Assets
 
@@ -16,15 +16,15 @@ EVEXIA is a React/Vite browser-local demonstration of role login screens and an 
 - **Visitor to Admin route:** there is no authenticated boundary. Anyone with access to this origin/browser can open the Admin routes directly, and other scripts on the same origin can read localStorage.
 - **File picker to browser parser to localStorage:** imported files are untrusted. Client-side validation limits accidents, not a malicious user with dev tools.
 - **Browser to downloaded file/spreadsheet application:** CSV escaping is required to mitigate formula execution; downloads are not protected by access controls.
-- **Portal to scaffold API:** the portal does not call the API. The scaffold is a separately reachable service and must not be mistaken for an authenticated data backend.
+- **Portal to backend API:** the portal does not call the API. Its independently reachable authentication foundation must not be mistaken for persistence or access control on the prototype screens.
 - **Preview to a future deployment:** HTTPS, response headers, origin isolation, logging, secret handling and server authorization have not been assessed for a production deployment.
 
 ## Scan Anchors
 
 - Portal routes: `artifacts/evexia-portal/src/App.jsx`; common Admin shell: `src/components/admin/AdminLayout.jsx`.
 - Browser-local data/import/export: `artifacts/evexia-portal/src/services/`, especially `masterImport.js`, `mockExcelImport.js`, `patients.js`, `staff.js`, `vendors.js`.
-- Mock login: `artifacts/evexia-portal/src/components/auth/LoginForm.jsx`; separate API: `artifacts/api-server/src/app.ts`.
-- No protected Admin route or authenticated API exists; the mockup sandbox and API scaffold are separate from the portal's data flow.
+- Mock login: `artifacts/evexia-portal/src/components/auth/LoginForm.jsx`; separate API: `artifacts/api-server/backend/app/main.py`.
+- No protected Admin route exists; the mockup sandbox and FastAPI service are separate from the portal's data flow.
 
 ## Threat Categories
 
