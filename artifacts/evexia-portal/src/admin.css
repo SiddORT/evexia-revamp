@@ -164,9 +164,6 @@
 .admin-shell--collapsed .admin-sidebar__search { padding: 10px 8px 0; }
 .admin-shell--collapsed .admin-nav { padding: 15px 8px; }
 .admin-shell--collapsed .admin-nav__item { justify-content: center; min-height: 46px; padding: 0; }
-.admin-shell--collapsed .admin-nav__sub { margin: 0; padding: 0; border: 0; }
-.admin-shell--collapsed .admin-nav__sub .admin-nav__item { min-height: 42px; }
-.admin-shell--collapsed .admin-nav__group { padding-top: 4px; }
 .admin-workspace { min-width: 0; }
 .admin-header { position: relative; z-index: 20; height: 68px; padding: 0 clamp(16px, 2.4vw, 32px); background: var(--admin-chrome); border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 20px; }
 .admin-header__left { display: flex; align-items: center; gap: 15px; min-width: 0; }

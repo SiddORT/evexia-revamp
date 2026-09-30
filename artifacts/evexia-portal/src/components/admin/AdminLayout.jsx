@@ -59,7 +59,7 @@ export default function AdminLayout({ title, children }) {
     links: searching ? group.links.filter((link) => link.label.toLocaleLowerCase().includes(query)) : group.links,
   })).filter((group) => group.links.length > 0);
   const showMasters = !searching || showAllMasters || visibleGroups.length > 0;
-  const showSubnav = showMasters && (searching || mastersOpen || isCollapsed);
+  const showSubnav = showMasters && !isCollapsed && (searching || mastersOpen);
 
   function clearSearch() {
     setSearch('');
