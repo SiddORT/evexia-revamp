@@ -65,7 +65,23 @@
 .po-field { display: grid; align-content: start; gap: 6px; min-width: 0; }
 .po-field label { color: var(--admin-text-soft); font-size: 11px; font-weight: 700; }
 .po-field .mr-form__control { height: 40px; }
-.po-field .po-reference-search { height: 34px; }
+.searchable-select { position: relative; min-width: 0; }
+.searchable-select--open { z-index: 5; }
+.searchable-select__control { display: flex; align-items: center; height: 40px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); }
+.searchable-select__control:focus-within { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
+.searchable-select__control:has(input[aria-invalid="true"]) { border-color: var(--admin-danger); }
+.searchable-select__control input { width: 100%; min-width: 0; height: 100%; padding: 0 4px 0 11px; border: 0; outline: 0; background: transparent; color: var(--admin-text); font: inherit; font-size: 12px; text-overflow: ellipsis; }
+.searchable-select__control input::placeholder { color: var(--admin-muted); opacity: 1; }
+.searchable-select__clear { flex: none; display: grid; place-items: center; padding: 5px; border: 0; background: transparent; color: var(--admin-muted); cursor: pointer; }
+.searchable-select__clear:hover { color: var(--admin-text); }
+.searchable-select__clear:focus-visible { outline: 2px solid var(--admin-focus); }
+.searchable-select__chevron { flex: none; margin: 0 10px 0 4px; color: var(--admin-muted); cursor: pointer; }
+.searchable-select__menu { position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 230px; overflow-y: auto; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); box-shadow: 0 8px 24px rgba(0,0,0,.13); padding: 4px; }
+.searchable-select__option, .searchable-select__empty { padding: 9px 8px; color: var(--admin-text); font-size: 12px; overflow-wrap: anywhere; }
+.searchable-select__option { display: flex; justify-content: space-between; gap: 8px; border-radius: 5px; cursor: pointer; }
+.searchable-select__option:hover, .searchable-select__option--active { background: var(--admin-state-hover); }
+.searchable-select__option[aria-selected="true"] { color: var(--admin-accent); }
+.searchable-select__empty { color: var(--admin-muted); }
 .po-field .mr-form__error { min-height: 14px; }
 .po-divider { border: 0; border-top: 1px solid var(--admin-border); margin: 27px 0 24px; }
 .po-lines { display: grid; gap: 11px; }

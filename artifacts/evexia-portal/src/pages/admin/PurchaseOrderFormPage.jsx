@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { ArrowLeft, ClipboardList, Pencil, Plus, RefreshCw, Trash2, X } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
+import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import { calculateLine, createPO, deletePO, loadPOSnapshot, money, totals, updatePO, validatePO } from '../../services/purchaseOrders.js';
 import '../../mr.css';
 import '../../purchaseOrders.css';
@@ -19,20 +20,14 @@ const displayDate = (date) => date ? new Date(`${date}T00:00:00Z`).toLocaleDateS
 const displayTime = (date) => date ? new Date(date).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 
 function ReferenceField({ id, label, value, items, nameKey, existingName, activeOnly, error, onChange }) {
-  const [query, setQuery] = useState('');
   const found = items.find((item) => item.id === value);
   const retained = Boolean(value && existingName && (!found || (activeOnly && found.status !== 'active')));
-  const choices = items.filter((item) => (!activeOnly || item.status === 'active') &&
-    (!query.trim() || `${item[nameKey]} ${item.id}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())));
+  const choices = items.filter((item) => !activeOnly || item.status === 'active')
+    .map((item) => ({ value: item.id, label: `${item[nameKey]} · ${item.id}` }));
+  if (retained) choices.unshift({ value, label: `${existingName} · ${value} (existing selection)` });
   return <div className="po-field">
     <label htmlFor={id}>{label} <span className="mr-form__required">*</span></label>
-    <input type="search" className="mr-form__control po-reference-search" aria-label={`Search ${label.toLowerCase()}`} placeholder={`Search saved ${label.toLowerCase()}s`} value={query} onChange={(event) => setQuery(event.target.value)} />
-    <select id={id} className="mr-form__control" value={value} onChange={(event) => onChange(event.target.value)} aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-error` : retained ? `${id}-hint` : undefined} data-testid={`select-${id}`}>
-      <option value="">Select {label.toLowerCase()}</option>
-      {retained && <option value={value}>{existingName} · {value} (existing selection)</option>}
-      {value && found && !choices.some((item) => item.id === value) && !retained && <option value={value}>{found[nameKey]} · {value} (selected)</option>}
-      {choices.map((item) => <option key={item.id} value={item.id}>{item[nameKey]} · {item.id}</option>)}
-    </select>
+    <SearchableSelect id={id} label={label} value={value} options={choices} onChange={onChange} placeholder={`Select ${label.toLowerCase()}`} invalid={Boolean(error)} describedBy={error ? `${id}-error` : retained ? `${id}-hint` : undefined} />
     {error ? <p id={`${id}-error`} className="mr-form__error" role="alert">{error}</p> : retained ? <p id={`${id}-hint`} className="mr-form__hint">This saved selection is no longer available for new orders. It can be retained here.</p> : null}
   </div>;
 }
