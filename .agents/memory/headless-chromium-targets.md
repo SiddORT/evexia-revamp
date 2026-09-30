@@ -14,3 +14,9 @@ Headless DevTools key-down/key-up events alone may reach a focused native button
 **Why:** In a focused page, the button received Enter keydown but did not activate under an incomplete DevTools event sequence; Space with the character event did activate and Escape dismissed the control.
 
 **How to apply:** When ad hoc browser checks disagree with native button behavior, verify the input event sequence before treating it as an accessibility regression.
+
+Headless Chromium's default viewport can match an app's mobile breakpoint, even when checking desktop-only controls. Explicitly set a desktop viewport before navigating for collapse checks, and wait for React state to settle after clicks.
+
+**Why:** A desktop collapse assertion timed out in the default narrow viewport because the app correctly remained in mobile layout.
+
+**How to apply:** Set viewport dimensions before loading the page, then switch dimensions intentionally for responsive checks.

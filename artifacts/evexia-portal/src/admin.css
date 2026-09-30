@@ -149,6 +149,7 @@
 .admin-nav__chevron { margin-left: auto; transition: transform 160ms ease; }
 .admin-nav__chevron--open { transform: rotate(180deg); }
 .admin-nav__sub { display: grid; gap: 2px; margin: 2px 0 5px 19px; padding-left: 10px; border-left: 1px solid var(--line); }
+.admin-nav__sub[hidden] { display: none; }
 .admin-nav__sub .admin-nav__item { min-height: 36px; font-size: 12px; }
 .admin-nav__group { min-width: 0; padding-top: 9px; }
 .admin-nav__group + .admin-nav__group { border-top: 1px solid var(--admin-border); margin-top: 7px; }
