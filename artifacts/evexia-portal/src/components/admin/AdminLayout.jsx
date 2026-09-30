@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Boxes, BriefcaseBusiness, Building2, ChevronDown, FlaskConical, HeartPulse, Landmark, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, Stethoscope, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
+import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Landmark, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, Stethoscope, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
 import { useAdminPreferences } from './adminPreferences.js';
 import '../../admin.css';
@@ -34,6 +34,7 @@ const MASTER_GROUPS = [
 export default function AdminLayout({ title, children }) {
   const [location, navigate] = useLocation();
   const [mastersOpen, setMastersOpen] = useState(location.startsWith('/admin/masters'));
+  const [inventoryOpen, setInventoryOpen] = useState(location.startsWith('/admin/inventory'));
   const [userManagementOpen, setUserManagementOpen] = useState(location.startsWith('/admin/staff'));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [compact, setCompact] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches);
@@ -55,6 +56,7 @@ export default function AdminLayout({ title, children }) {
   const showDashboard = !searching || 'dashboard'.includes(query);
   const showUserManagement = !searching || 'user management'.includes(query) || 'staff management'.includes(query);
   const showAllMasters = !searching || 'all masters'.includes(query);
+  const showInventory = !searching || 'inventory'.includes(query) || 'purchase orders'.includes(query);
   const visibleGroups = MASTER_GROUPS.map((group) => ({
     ...group,
     links: searching ? group.links.filter((link) => link.label.toLocaleLowerCase().includes(query)) : group.links,
@@ -62,6 +64,7 @@ export default function AdminLayout({ title, children }) {
   const showMasters = !searching || showAllMasters || visibleGroups.length > 0;
   const showSubnav = showMasters && !isCollapsed && (searching || mastersOpen);
   const showUserSubnav = showUserManagement && !isCollapsed && (searching || userManagementOpen);
+  const showInventorySubnav = showInventory && !isCollapsed && (searching || inventoryOpen);
 
   function clearSearch() {
     setSearch('');
@@ -115,6 +118,7 @@ export default function AdminLayout({ title, children }) {
     setSearch('');
     setSearchExpanded(false);
     if (location.startsWith('/admin/masters')) setMastersOpen(true);
+    if (location.startsWith('/admin/inventory')) setInventoryOpen(true);
     if (location.startsWith('/admin/staff')) setUserManagementOpen(true);
   }, [location]);
 
@@ -203,6 +207,12 @@ export default function AdminLayout({ title, children }) {
               ))}
             </div>
           )}
+          {showInventory && <button type="button" disabled={searching} className={`admin-nav__item${location.startsWith('/admin/inventory') ? ' admin-nav__item--active' : ''}`} aria-label="Inventory" title={isCollapsed ? 'Expand Inventory' : undefined} aria-expanded={showInventorySubnav} aria-controls="admin-inventory-subnav" onClick={() => { if (isCollapsed) { toggleSidebar(); setInventoryOpen(true); } else setInventoryOpen((open) => !open); }} data-testid="button-toggle-inventory">
+            <Boxes size={17} aria-hidden="true" /><span className="admin-nav__label">Inventory</span><ChevronDown size={15} className={`admin-nav__chevron${showInventorySubnav ? ' admin-nav__chevron--open' : ''}`} aria-hidden="true" />
+          </button>}
+          <div id="admin-inventory-subnav" className="admin-nav__sub" hidden={!showInventorySubnav}>
+            <Link href="/admin/inventory/purchase-orders" className={`admin-nav__item${location.startsWith('/admin/inventory/purchase-orders') ? ' admin-nav__item--active' : ''}`} aria-label="Purchase Orders" aria-current={location === '/admin/inventory/purchase-orders' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-purchase-orders"><ClipboardList size={16} aria-hidden="true" /><span className="admin-nav__label">Purchase Orders</span></Link>
+          </div>
           {showUserManagement && <button type="button" disabled={searching} className={`admin-nav__item${location.startsWith('/admin/staff') ? ' admin-nav__item--active' : ''}`} aria-label="User Management" title={isCollapsed ? 'Expand User Management' : undefined} aria-expanded={showUserSubnav} aria-controls="admin-user-management-subnav" onClick={() => { if (isCollapsed) { toggleSidebar(); setUserManagementOpen(true); } else setUserManagementOpen((open) => !open); }} data-testid="button-toggle-user-management">
             <UsersRound size={17} aria-hidden="true" /><span className="admin-nav__label">User Management</span><ChevronDown size={15} className={`admin-nav__chevron${showUserSubnav ? ' admin-nav__chevron--open' : ''}`} aria-hidden="true" />
           </button>}
@@ -211,7 +221,7 @@ export default function AdminLayout({ title, children }) {
               <UsersRound size={16} aria-hidden="true" /><span className="admin-nav__label">Staff Management</span>
             </Link>
           </div>
-          {searching && !showDashboard && !showUserManagement && !showMasters && <p className="admin-nav__empty" role="status" data-testid="status-navigation-empty">No navigation results. Try another search.</p>}
+          {searching && !showDashboard && !showUserManagement && !showMasters && !showInventory && <p className="admin-nav__empty" role="status" data-testid="status-navigation-empty">No navigation results. Try another search.</p>}
         </nav>
         <div className="admin-sidebar__foot">EVEXIA Life Sciences<br />Admin workspace · Preview</div>
       </aside>
