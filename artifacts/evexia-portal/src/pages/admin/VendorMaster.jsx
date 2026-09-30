@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Download, Pencil, Plus, RefreshCw, Search, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
@@ -11,7 +12,6 @@ import '../../vendor.css';
 const FIELD_KEYS = VENDOR_COLUMNS.map(([key]) => key);
 const EMPTY = Object.fromEntries(FIELD_KEYS.map((key) => [key, '']));
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-const formatDate = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 function downloadCSV(text, name) {
   const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
@@ -25,8 +25,7 @@ function downloadCSV(text, name) {
 }
 
 function audit(by, at) {
-  const date = at ? new Date(at) : null;
-  return <span className="admin-vendor-audit"><strong>{by || '—'}</strong>{date && !Number.isNaN(date.getTime()) ? <time dateTime={at}>{formatDate.format(date)}</time> : <span>—</span>}</span>;
+  return <span className="admin-vendor-audit"><strong>{by || '—'}</strong><time dateTime={at}>{formatAdminTimestamp(at)}</time></span>;
 }
 
 function isSample(record) { return /^sample[-_]/i.test(String(record.id)); }
@@ -144,6 +143,7 @@ export function VendorImport({ records, stale, onImport, onClose }) {
 }
 
 export default function VendorMaster() {
+  useAdminPreferences();
   const [records, setRecords] = useState([]);
   const [error, setError] = useState('');
   const [stale, setStale] = useState(false);

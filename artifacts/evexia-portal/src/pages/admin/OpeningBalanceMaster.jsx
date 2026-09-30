@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, Landmark, Pencil, Plus, RefreshCw, Search, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
@@ -17,7 +18,6 @@ import '../../openingBalance.css';
 const PATH = '/admin/masters/opening-balances';
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const money = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const date = new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
 function download(text, name) {
   const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
   const anchor = document.createElement('a');
@@ -29,8 +29,7 @@ function download(text, name) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 function audit(name, value) {
-  const parsed = value && new Date(value);
-  return <span className="ob-audit"><strong>{name || '—'}</strong><span>{parsed && !Number.isNaN(parsed.getTime()) ? date.format(parsed) : '—'}</span></span>;
+  return <span className="ob-audit"><strong>{name || '—'}</strong><span>{formatAdminTimestamp(value)}</span></span>;
 }
 function ImportDialog({ snapshot, verify, onDone, onClose }) {
   const [review, setReview] = useState(null);
@@ -92,6 +91,7 @@ function ImportDialog({ snapshot, verify, onDone, onClose }) {
 }
 
 export default function OpeningBalanceMaster() {
+  useAdminPreferences();
   const [, navigate] = useLocation();
   const [snapshot, setSnapshot] = useState(null);
   const [error, setError] = useState('');

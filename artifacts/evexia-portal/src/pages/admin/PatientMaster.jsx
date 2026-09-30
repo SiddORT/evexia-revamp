@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, History, Pencil, Plus, Search, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { formatAdminDate, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import RecordDetails from '../../components/admin/RecordDetails.jsx';
@@ -23,6 +24,7 @@ function download(text, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 export default function PatientMaster() {
+  useAdminPreferences();
   const [, navigate] = useLocation();
   const { records, doctors, mrs, zones, error, feedback, retry, clearFeedback, changeStatus } = usePatients();
   const [saved] = useState(() => new URLSearchParams(window.location.search).get('saved'));
@@ -71,12 +73,12 @@ export default function PatientMaster() {
     { label: 'Gender and age', value: `${record.gender || 'Not specified'} · ${record.dateOfBirth ? `${patientAge(record.dateOfBirth)} years` : 'Age unavailable'}` },
     { label: 'Phone', icon: 'phone', value: record.phone, href: record.phone ? `tel:${record.phone.replace(/[^+\d]/g, '')}` : undefined, testId: `link-phone-patient-${record.id}` },
     { label: 'Email', icon: 'email', value: record.email, href: record.email ? `mailto:${record.email}` : undefined, testId: `link-email-patient-${record.id}` },
-    { label: 'Date of birth', icon: 'date', value: record.dateOfBirth },
+    { label: 'Date of birth', icon: 'date', value: formatAdminDate(record.dateOfBirth) },
   ]} />;
   const address = (record) => <span className="admin-mr-address">{[record.addressLine1, record.addressLine2, record.landmark, `${record.city}, ${record.state} ${record.pincode}`, record.country].filter(Boolean).join(' · ')}</span>;
   const lastDose = (record) => {
     const last = getSampleDosageHistory(record)?.last;
-    return last ? `Sample: ${last.date} (illustrative, not recorded)` : 'Not recorded';
+    return last ? `Sample: ${formatAdminDate(last.date)} (illustrative, not recorded)` : 'Not recorded';
   };
   const columns = [
     { key: 'serial', label: 'Sr No.', render: (_, index) => index + 1 },

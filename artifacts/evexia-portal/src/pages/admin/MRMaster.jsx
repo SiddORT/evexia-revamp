@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, Pencil, Plus, Search, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { formatAdminDate, formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import ContactRequirementButton from '../../components/admin/ContactRequirementButton.jsx';
 import MasterImportDialog from '../../components/admin/MasterImportDialog.jsx';
@@ -18,20 +19,12 @@ import { DOCTOR_STORAGE_KEY, loadDoctors } from '../../services/doctors.js';
 import '../../mr.css';
 
 const cleanPhone = (phone) => phone.replace(/[^+\d]/g, '');
-const dateFormat = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
-const dateTimeFormat = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-function formattedDate(value, formatter) {
-  if (!value) return '—';
-  const date = new Date(value.length === 10 ? `${value}T00:00:00` : value);
-  return Number.isNaN(date.getTime()) ? '—' : formatter.format(date);
-}
-
 function auditDetails(name, value) {
-  return <span className="admin-mr-audit"><strong>{name}</strong><time dateTime={value}>{formattedDate(value, dateTimeFormat)}</time></span>;
+  return <span className="admin-mr-audit"><strong>{name}</strong><time dateTime={value}>{formatAdminTimestamp(value)}</time></span>;
 }
 
 export default function MRMaster() {
+  useAdminPreferences();
   const [, navigate] = useLocation();
   const { records, zones, error, feedback, retry, clearFeedback, changeStatus, changeContactRequirement, importRows } = useMRs();
   const [saveFeedback] = useState(() => {
@@ -129,7 +122,7 @@ export default function MRMaster() {
       { label: 'Employee code', icon: 'id', value: record.employeeCode },
       { label: 'Phone', icon: 'phone', value: record.phone, href: record.phone ? `tel:${cleanPhone(record.phone)}` : undefined, testId: `link-phone-mr-${record.id}` },
       { label: 'Email', icon: 'email', value: record.email, href: record.email ? `mailto:${record.email}` : undefined, testId: `link-email-mr-${record.id}` },
-      { label: 'Date of joining', icon: 'date', value: formattedDate(record.dateOfJoining, dateFormat) },
+      { label: 'Date of joining', icon: 'date', value: formatAdminDate(record.dateOfJoining) },
     ]} />;
   }
   function address(record) {

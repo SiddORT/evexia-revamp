@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ChevronDown, CirclePower, Download, Filter, Pencil, Plus, ReceiptText, Search, ShieldCheck, ShieldX, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { formatAdminDate, formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import ContactRequirementButton from '../../components/admin/ContactRequirementButton.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -17,13 +18,12 @@ import '../../doctor-list.css';
 const cleanPhone = (value) => String(value || '').replace(/[^\d+]/g, '');
 const dialCodes = { IN: '+91', US: '+1', GB: '+44', AE: '+971' };
 const text = (value) => String(value ?? '').trim() || '—';
-const auditFormatter = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 function auditDetails(actor, at) {
-  const date = new Date(at);
-  return <span className="doctor-master__audit"><strong>{text(actor)}</strong><time dateTime={at}>{Number.isNaN(date.getTime()) ? '—' : auditFormatter.format(date)}</time></span>;
+  return <span className="doctor-master__audit"><strong>{text(actor)}</strong><time dateTime={at}>{formatAdminTimestamp(at)}</time></span>;
 }
 
 export default function DoctorMaster() {
+  useAdminPreferences();
   const [, navigate] = useLocation();
   const { records, mrs, zones, error, feedback, retry, clearFeedback, changeStatus, changeVerification, shiftMR, changeContactRequirement } = useDoctors();
   const [saveFeedback] = useState(() => {
@@ -125,7 +125,7 @@ export default function DoctorMaster() {
       { label: 'Registration number', icon: 'id', value: record.registrationNumber },
       { label: 'Phone', icon: 'phone', value: record.phone ? `${dialCodes[record.dialCountry] || ''} ${record.phone}`.trim() : '', href: record.phone ? `tel:${dialCodes[record.dialCountry] || ''}${cleanPhone(record.phone)}` : undefined, testId: `link-phone-doctor-${suffix}` },
       { label: 'Email', icon: 'email', value: record.email, href: record.email ? `mailto:${record.email}` : undefined, testId: `link-email-doctor-${suffix}` },
-      { label: 'Date of joining', icon: 'date', value: record.dateOfJoining },
+      { label: 'Date of joining', icon: 'date', value: formatAdminDate(record.dateOfJoining) },
     ]} />;
   }
   function professional(record) {

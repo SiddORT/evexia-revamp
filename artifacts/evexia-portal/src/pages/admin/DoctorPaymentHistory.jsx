@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { ArrowLeft, CreditCard, RefreshCw } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { formatAdminDate, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import { loadDoctors } from '../../services/doctors.js';
 import { loadDemoPayments, DOCTOR_PAYMENT_STORAGE_KEY, filterDemoPayments, demoPaymentTotals, validPaymentDate } from '../../services/doctorPayments.js';
@@ -10,8 +11,6 @@ import '../../doctor-payments.css';
 const LIST_PATH = '/admin/masters/doctors';
 const money = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' });
 const formatMoney = (paise) => money.format(paise / 100);
-const dateFormatter = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
-const formatDate = (date) => dateFormatter.format(new Date(`${date}T00:00:00Z`));
 const display = (value) => String(value ?? '').trim() || '—';
 
 function readRecords() {
@@ -23,6 +22,7 @@ function readRecords() {
 }
 
 export default function DoctorPaymentHistory({ id }) {
+  useAdminPreferences();
   const [snapshot, setSnapshot] = useState(readRecords);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -71,7 +71,7 @@ export default function DoctorPaymentHistory({ id }) {
   const error = snapshot.error || result.error;
   const doctorPayments = doctor && !error ? snapshot.payments.filter((payment) => String(payment.doctorId) === String(doctor.id)).length : 0;
   const columns = [
-    { key: 'date', label: 'Date', render: (payment) => <time dateTime={payment.date} className="doctor-payments__date">{formatDate(payment.date)}</time> },
+    { key: 'date', label: 'Date', render: (payment) => <time dateTime={payment.date} className="doctor-payments__date">{formatAdminDate(payment.date)}</time> },
     { key: 'reference', label: 'Reference', render: (payment) => <span className="doctor-payments__reference"><strong>{display(payment.reference)}</strong><small>ID {payment.id}</small></span> },
     { key: 'mr', label: 'MR at recording', render: (payment) => <span className="doctor-payments__mr"><span>{payment.mrName ? payment.mrName : 'MR name not recorded'}</span><small>{payment.mrId ? `ID ${payment.mrId}` : 'No MR ID recorded'}</small></span> },
     { key: 'billed', label: 'Billed', render: (payment) => <span className="doctor-payments__amount">{formatMoney(payment.billedPaise)}</span> },
@@ -136,7 +136,7 @@ export default function DoctorPaymentHistory({ id }) {
               <div className="doctor-payments__table"><DataTable columns={columns} rows={result.rows} rowKey={(payment) => payment.id} label="Doctor payment records" testIdPrefix="doctor-payment" /></div>
               <div className="doctor-payments__card-list" role="list" aria-label="Doctor payment records">
                 {result.rows.map((payment) => <article className="doctor-payments__card" role="listitem" key={payment.id} data-testid={`card-doctor-payment-${payment.id}`}>
-                   <div className="doctor-payments__card-head"><div><strong>{display(payment.reference)}</strong><small><time dateTime={payment.date}>{formatDate(payment.date)}</time> · ID {payment.id}</small></div><span className="doctor-payments__status">{display(payment.status)}</span></div>
+                   <div className="doctor-payments__card-head"><div><strong>{display(payment.reference)}</strong><small><time dateTime={payment.date}>{formatAdminDate(payment.date)}</time> · ID {payment.id}</small></div><span className="doctor-payments__status">{display(payment.status)}</span></div>
                   <dl>
                     <div><dt>Billed</dt><dd>{formatMoney(payment.billedPaise)}</dd></div>
                     <div><dt>Received</dt><dd>{formatMoney(payment.receivedPaise)}</dd></div>

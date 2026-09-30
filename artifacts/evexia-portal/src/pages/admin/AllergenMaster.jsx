@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, FlaskConical, Pencil, Plus, Search, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
@@ -15,7 +16,6 @@ import '../../mr.css';
 import '../../allergen.css';
 
 const LIST_PATH = '/admin/masters/allergens';
-const dateFormat = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 function downloadCSV(text, filename) {
@@ -30,8 +30,7 @@ function downloadCSV(text, filename) {
 }
 
 function audit(name, value) {
-  const date = value ? new Date(value) : null;
-  return <span className="admin-allergen-audit"><strong>{name || '—'}</strong>{date && !Number.isNaN(date.getTime()) ? <time dateTime={value}>{dateFormat.format(date)}</time> : <span>—</span>}</span>;
+  return <span className="admin-allergen-audit"><strong>{name || '—'}</strong><time dateTime={value}>{formatAdminTimestamp(value, undefined, true)}</time></span>;
 }
 
 function AllergenImportDialog({ records, refs, onImport, onClose }) {
@@ -108,6 +107,7 @@ function AllergenImportDialog({ records, refs, onImport, onClose }) {
 }
 
 export default function AllergenMaster() {
+  useAdminPreferences();
   const [, navigate] = useLocation();
   const { records, refs, error, feedback, retry, clearFeedback, changeStatus, importRows } = useAllergens();
   const [saveFeedback] = useState(() => {

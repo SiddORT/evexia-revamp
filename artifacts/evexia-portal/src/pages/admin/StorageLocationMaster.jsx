@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, FolderOpen, Pencil, Plus, Search, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
@@ -16,7 +17,6 @@ import '../../category.css';
 import '../../storageLocation.css';
 
 const LIST_PATH = '/admin/masters/storage-locations';
-const dateFormat = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
 
 function downloadCSV(text, filename) {
@@ -31,8 +31,7 @@ function downloadCSV(text, filename) {
 }
 
 function audit(name, value) {
-  const date = value ? new Date(value) : null;
-  return <span className="admin-category-audit"><strong>{name || '—'}</strong>{date && !Number.isNaN(date.getTime()) ? <time dateTime={value}>{dateFormat.format(date)}</time> : <span>—</span>}</span>;
+  return <span className="admin-category-audit"><strong>{name || '—'}</strong><time dateTime={value}>{formatAdminTimestamp(value, undefined, true)}</time></span>;
 }
 
 function StorageLocationImportDialog({ records, onImport, onClose }) {
@@ -108,6 +107,7 @@ function StorageLocationImportDialog({ records, onImport, onClose }) {
 }
 
 export default function StorageLocationMaster() {
+  useAdminPreferences();
   const [, navigate] = useLocation();
   const { records, error, feedback, retry, clearFeedback, changeStatus, importRows } = useStorageLocations();
   const [saveFeedback] = useState(() => {

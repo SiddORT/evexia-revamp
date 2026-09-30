@@ -1,19 +1,14 @@
 import { Link } from 'wouter';
 import { ArrowLeft, CalendarDays, Clock3, History, RefreshCw, UserRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { formatAdminDate, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import usePatients from '../../hooks/usePatients.js';
 import { getSampleDosageHistory } from '../../services/patientDosageHistory.js';
 import '../../patient.css';
 
 const LIST_PATH = '/admin/masters/patients';
-const dateFormatter = new Intl.DateTimeFormat('en-IN', {
-  day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC',
-});
-
 function formatDate(value) {
-  if (!value) return 'Date not available';
-  const date = value instanceof Date ? value : new Date(/^\d{4}-\d{2}-\d{2}$/.test(String(value)) ? `${value}T00:00:00Z` : value);
-  return Number.isNaN(date.getTime()) ? String(value) : dateFormatter.format(date);
+  return formatAdminDate(value) === '—' ? 'Date not available' : formatAdminDate(value);
 }
 
 function Reference({ label, name, detail, missing, testId }) {
@@ -48,6 +43,7 @@ function DoseList({ title, items, kind }) {
 }
 
 export default function PatientDosageHistory({ id }) {
+  useAdminPreferences();
   const { records, doctors, mrs, error, retry } = usePatients();
   const patient = !error ? records.find((item) => String(item.id) === String(id)) : null;
   const doctor = patient ? doctors.find((item) => String(item.id) === String(patient.doctorId)) : null;

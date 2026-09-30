@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { BriefcaseBusiness, CirclePower, Download, Pencil, Plus, Search, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
@@ -15,7 +16,6 @@ import '../../category.css';
 import '../../designation.css';
 
 const LIST_PATH = '/admin/masters/designations';
-const dateFormat = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 function downloadCSV(text, filename) {
   const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
@@ -28,8 +28,7 @@ function downloadCSV(text, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 function audit(name, value) {
-  const date = value ? new Date(value) : null;
-  return <span className="admin-category-audit"><strong>{name || '—'}</strong>{date && !Number.isNaN(date.getTime()) ? <time dateTime={value}>{dateFormat.format(date)}</time> : <span>—</span>}</span>;
+  return <span className="admin-category-audit"><strong>{name || '—'}</strong><time dateTime={value}>{formatAdminTimestamp(value, undefined, true)}</time></span>;
 }
 function DesignationImportDialog({ records, onImport, onClose }) {
   const [review, setReview] = useState(null);
@@ -96,6 +95,7 @@ function DesignationImportDialog({ records, onImport, onClose }) {
 }
 
 export default function DesignationMaster() {
+  useAdminPreferences();
   const [, navigate] = useLocation();
   const { records, error, feedback, retry, clearFeedback, changeStatus, importRows } = useDesignations();
   const [saveFeedback] = useState(() => {

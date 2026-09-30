@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, Pencil, Plus, Search, Trash2, Truck, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import CourierPartnerForm from '../../components/admin/CourierPartnerForm.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -11,13 +12,12 @@ import useCourierPartners from '../../hooks/useCourierPartners.js';
 import useTablePagination from '../../hooks/useTablePagination.js';
 import { exportCourierPartnerCSV, loadCourierPartners } from '../../services/courierPartners.js';
 
-const formatter = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 function details(by, at) {
-  const date = new Date(at);
-  return <span className="admin-table__details"><strong>{by}</strong><small>{Number.isNaN(date.getTime()) ? '—' : formatter.format(date)}</small></span>;
+  return <span className="admin-table__details"><strong>{by}</strong><small>{formatAdminTimestamp(at)}</small></span>;
 }
 
 export default function CourierPartnerMaster() {
+  useAdminPreferences();
   const [, navigate] = useLocation();
   const { records, error, feedback, clearFeedback, retry, add, edit, remove, changeStatus } = useCourierPartners();
   const [search, setSearch] = useState('');

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Download, FolderOpen, Pencil, Plus, RefreshCw, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
@@ -13,7 +14,6 @@ import '../../category.css';
 import '../../salesTarget.css';
 
 const money = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 0 });
-const timestamp = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 const quarterKeys = ['q1', 'q2', 'q3', 'q4'];
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const amount = (value) => `₹${money.format(Number(value) || 0)}`;
@@ -43,8 +43,8 @@ function saveCSV(text, filename) {
 }
 
 function Audit({ by, at }) {
-  const date = at ? new Date(at) : null;
-  return <span className="admin-target-audit"><strong>{by || '—'}</strong><time dateTime={at || undefined}>{date && !Number.isNaN(date.getTime()) ? timestamp.format(date) : '—'}</time></span>;
+  useAdminPreferences();
+  return <span className="admin-target-audit"><strong>{by || '—'}</strong><time dateTime={at || undefined}>{formatAdminTimestamp(at)}</time></span>;
 }
 
 function TargetForm({ record, records, mrs, zones, years, onSave, onClose }) {

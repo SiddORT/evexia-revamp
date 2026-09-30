@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, Landmark, RefreshCw } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import { DOCTOR_STORAGE_KEY } from '../../services/doctors.js';
 import { OPENING_BALANCE_KEY, createOpeningBalance, loadOpeningBalanceSnapshots, updateOpeningBalance, validateOpeningBalance } from '../../services/openingBalances.js';
 import '../../mr.css';
@@ -45,12 +46,13 @@ function BalanceForm({ record, snapshot, onSave, onCancel, onRefresh, stale }) {
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="ob-doctor">Doctor <span className="mr-form__required">*</span></label><select id="ob-doctor" className="mr-form__control" value={values.doctorId} onChange={(event) => update('doctorId', event.target.value)} aria-invalid={Boolean(errors.doctorId)} aria-describedby={errors.doctorId ? 'ob-doctor-error' : undefined} data-testid="select-opening-balance-doctor"><option value="">Select doctor</option>{values.doctorId && !doctorExists && <option value={values.doctorId}>Missing doctor · {values.doctorId}</option>}{snapshot.doctors.map((doctor) => <option key={doctor.id} value={doctor.id}>{doctor.name}{doctor.registrationNumber ? ` · ${doctor.registrationNumber}` : ''}</option>)}</select>{!snapshot.doctors.length && <p className="ob-form__hint">No doctors are available. Add a doctor in Doctor Master first.</p>}{values.doctorId && !doctorExists && <p className="mr-form__error" role="alert">This doctor no longer exists in Doctor Master. Select an available doctor.</p>}{errors.doctorId && <p className="mr-form__error" id="ob-doctor-error" role="alert">{errors.doctorId}</p>}</div>
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="ob-amount">Opening balance <span className="mr-form__required">*</span></label><input id="ob-amount" className="mr-form__control" type="number" inputMode="decimal" step="any" value={values.amount} onChange={(event) => update('amount', event.target.value)} placeholder="e.g. -8800.00 or 34881.00" aria-invalid={Boolean(errors.amount)} aria-describedby={errors.amount ? 'ob-amount-error' : undefined} data-testid="input-opening-balance-amount" /><p className="ob-form__hint">Enter a signed amount; no currency symbol or separators.</p>{errors.amount && <p className="mr-form__error" id="ob-amount-error" role="alert">{errors.amount}</p>}</div>
       </div>
-      {record && <div className="ob-form__audit"><span>Created by <strong>{record.createdBy || '—'}</strong> · {record.createdAt ? new Date(record.createdAt).toLocaleString('en-IN') : '—'}</span><span>Last updated by <strong>{record.updatedBy || '—'}</strong> · {record.updatedAt ? new Date(record.updatedAt).toLocaleString('en-IN') : '—'}</span><span>Status <strong>{record.status}</strong></span></div>}
+      {record && <div className="ob-form__audit"><span>Created by <strong>{record.createdBy || '—'}</strong> · {formatAdminTimestamp(record.createdAt)}</span><span>Last updated by <strong>{record.updatedBy || '—'}</strong> · {formatAdminTimestamp(record.updatedAt)}</span><span>Status <strong>{record.status}</strong></span></div>}
     </div>
     <div className="mr-form__footer"><span className="mr-form__footer-note">Preview only · saving does not post to a ledger.</span><div className="mr-form__actions"><button type="button" className="admin-button admin-button--secondary" onClick={onCancel} data-testid="button-cancel-opening-balance">Cancel</button><button type="submit" className="admin-button" disabled={stale} data-testid="button-save-opening-balance">{record ? 'Save changes' : 'Save opening balance'}</button></div></div>
   </form>;
 }
 export default function OpeningBalanceFormPage({ id }) {
+  useAdminPreferences();
   const [, navigate] = useLocation();
   const [snapshot, setSnapshot] = useState(null);
   const [error, setError] = useState('');

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, Pencil, Plus, Search, Trash2, MapPinned, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
@@ -11,13 +12,12 @@ import useTablePagination from '../../hooks/useTablePagination.js';
 import useZones from '../../hooks/useZones.js';
 import { exportZoneCSV, loadZones } from '../../services/zones.js';
 
-const dateFormatter = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 function details(by, at) {
-  const parsed = new Date(at);
-  return <span className="admin-table__details"><strong>{by}</strong><small>{Number.isNaN(parsed.getTime()) ? '—' : dateFormatter.format(parsed)}</small></span>;
+  return <span className="admin-table__details"><strong>{by}</strong><small>{formatAdminTimestamp(at)}</small></span>;
 }
 
 export default function ZoneMaster() {
+  useAdminPreferences();
   const [, navigate] = useLocation();
   const { zones, error, feedback, clearFeedback, retry, add, edit, remove, changeStatus } = useZones();
   const [search, setSearch] = useState('');

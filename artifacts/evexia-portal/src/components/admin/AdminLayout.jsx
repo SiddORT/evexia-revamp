@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Boxes, BriefcaseBusiness, Building2, Check, ChevronDown, FlaskConical, HeartPulse, Landmark, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, Moon, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Stethoscope, Sun, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
+import { Boxes, BriefcaseBusiness, Building2, ChevronDown, FlaskConical, HeartPulse, Landmark, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, Stethoscope, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
-import { ADMIN_APPEARANCES, ADMIN_THEMES, readAdminAppearance, readAdminTheme, saveAdminAppearance, saveAdminTheme } from './adminTheme.js';
+import { useAdminPreferences } from './adminPreferences.js';
 import '../../admin.css';
 
 const SIDEBAR_PREFERENCE_KEY = 'evexia.admin.sidebar.collapsed';
@@ -42,8 +42,7 @@ export default function AdminLayout({ title, children }) {
   });
   const [search, setSearch] = useState('');
   const [searchExpanded, setSearchExpanded] = useState(false);
-  const [theme, setTheme] = useState(readAdminTheme);
-  const [appearance, setAppearance] = useState(readAdminAppearance);
+  const { theme, appearance } = useAdminPreferences();
   const menuRef = useRef(null);
   const sidebarRef = useRef(null);
   const searchRef = useRef(null);
@@ -87,18 +86,6 @@ export default function AdminLayout({ title, children }) {
     setSidebarCollapsed(next);
     try { window.localStorage.setItem(SIDEBAR_PREFERENCE_KEY, String(next)); }
     catch { /* The toggle still works if browser storage is unavailable. */ }
-  }
-
-  function changeTheme(next) {
-    if (!Object.hasOwn(ADMIN_THEMES, next)) return;
-    setTheme(next);
-    saveAdminTheme(next);
-  }
-
-  function changeAppearance(next) {
-    if (!Object.hasOwn(ADMIN_APPEARANCES, next)) return;
-    setAppearance(next);
-    saveAdminAppearance(next);
   }
 
   function closeDrawer(restoreFocus = true) {
@@ -230,55 +217,6 @@ export default function AdminLayout({ title, children }) {
           </div>
           <div className="admin-header__actions">
           <DropdownMenu.Root>
-            <DropdownMenu.Trigger asChild>
-              <button type="button" className="admin-theme__trigger admin-appearance__trigger" aria-label={`Appearance: ${ADMIN_APPEARANCES[appearance]}`} data-testid="button-admin-appearance">
-                {appearance === 'light' ? <Sun size={15} aria-hidden="true" /> : <Moon size={15} aria-hidden="true" />}
-                <span className="admin-theme__label">Appearance</span>
-                <span className="admin-theme__current" data-testid="text-admin-appearance">{ADMIN_APPEARANCES[appearance]}</span>
-                <span className="admin-theme__short" aria-hidden="true">{ADMIN_APPEARANCES[appearance]}</span>
-                <ChevronDown size={14} aria-hidden="true" />
-              </button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content className="admin-theme__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={10} aria-label="Appearance">
-                <DropdownMenu.Label className="admin-theme__menu-label">Appearance</DropdownMenu.Label>
-                <DropdownMenu.RadioGroup value={appearance} onValueChange={changeAppearance}>
-                  {Object.entries(ADMIN_APPEARANCES).map(([value, label]) => (
-                    <DropdownMenu.RadioItem key={value} value={value} className="admin-theme__option" data-testid={`option-admin-appearance-${value}`}>
-                      {value === 'light' ? <Sun size={15} aria-hidden="true" /> : <Moon size={15} aria-hidden="true" />}
-                      {label}
-                      <DropdownMenu.ItemIndicator className="admin-theme__check"><Check size={15} aria-hidden="true" /></DropdownMenu.ItemIndicator>
-                    </DropdownMenu.RadioItem>
-                  ))}
-                </DropdownMenu.RadioGroup>
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger asChild>
-              <button type="button" className="admin-theme__trigger" aria-label={`Theme: ${ADMIN_THEMES[theme]}`} data-testid="button-admin-theme">
-                <span className="admin-theme__label">Theme</span>
-                <span className="admin-theme__current" data-testid="text-admin-theme">{ADMIN_THEMES[theme]}</span>
-                <span className="admin-theme__short" aria-hidden="true">{theme === 'classic' ? 'Classic' : 'Modern'}</span>
-                <ChevronDown size={14} aria-hidden="true" />
-              </button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content className="admin-theme__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={10} aria-label="Theme">
-                <DropdownMenu.Label className="admin-theme__menu-label">Theme</DropdownMenu.Label>
-                <DropdownMenu.RadioGroup value={theme} onValueChange={changeTheme}>
-                  {Object.entries(ADMIN_THEMES).map(([value, label]) => (
-                    <DropdownMenu.RadioItem key={value} value={value} className="admin-theme__option" data-testid={`option-admin-theme-${value}`}>
-                      <span className={`admin-theme__swatches admin-theme__swatches--${value}`} aria-hidden="true"><i /><i />{value === 'modern' && <i />}</span>
-                      {label}
-                      <DropdownMenu.ItemIndicator className="admin-theme__check"><Check size={15} aria-hidden="true" /></DropdownMenu.ItemIndicator>
-                    </DropdownMenu.RadioItem>
-                  ))}
-                </DropdownMenu.RadioGroup>
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
-          <DropdownMenu.Root>
             <div className="admin-profile">
               <DropdownMenu.Trigger asChild>
                 <button type="button" className="admin-profile__trigger" aria-label="Demo Admin profile menu" data-testid="button-admin-profile">
@@ -293,6 +231,9 @@ export default function AdminLayout({ title, children }) {
                     <strong>Demo Admin</strong><span>Not signed in</span>
                   </DropdownMenu.Label>
                   <DropdownMenu.Separator className="admin-profile__separator" />
+                  <DropdownMenu.Item className="admin-profile__settings" onSelect={() => navigate('/admin/settings')} data-testid="link-admin-settings">
+                    <Settings size={15} aria-hidden="true" /> Settings
+                  </DropdownMenu.Item>
                   <DropdownMenu.Item className="admin-profile__signout" onSelect={() => navigate('/admin/login')} data-testid="link-admin-sign-out">
                     <LogOut size={15} aria-hidden="true" /> Sign Out
                   </DropdownMenu.Item>

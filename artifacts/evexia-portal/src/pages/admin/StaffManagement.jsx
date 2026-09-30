@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'wouter';
 import { Download, Eye, EyeOff, Mail, Pencil, Plus, RefreshCw, Search, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { formatAdminDate, formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
@@ -14,12 +15,6 @@ const FIELDS = ['name', 'phone', 'userId', 'email', 'status', 'role', 'designati
 const LABELS = { ...Object.fromEntries(STAFF_COLUMNS.map(([key, label]) => [key, label])), name: 'Name', phone: 'Phone No.', userId: 'User ID', email: 'Email ID', status: 'Status', role: 'Role', designation: 'Designation', dateOfJoining: 'Date of joining' };
 const INITIAL = { name: '', phone: '', userId: '', email: '', status: 'active', role: 'Staff', designation: '', dateOfJoining: '' };
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-const formatDate = new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-const formatJoining = (value) => {
-  if (!value) return '—';
-  const date = new Date(`${String(value).slice(0, 10)}T12:00:00`);
-  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
-};
 const isSample = (record) => /^sample[-_]/i.test(String(record.id));
 const safeFields = (values) => Object.fromEntries(FIELDS.map((key) => [key, values[key] ?? '']));
 
@@ -35,8 +30,7 @@ function downloadCSV(text, filename) {
 }
 
 function audit(by, at) {
-  const date = at ? new Date(at) : null;
-  return <span className="admin-staff-audit"><strong>{by || '—'}</strong>{date && !Number.isNaN(date.getTime()) ? <time dateTime={at}>{formatDate.format(date)}</time> : <span>—</span>}</span>;
+  return <span className="admin-staff-audit"><strong>{by || '—'}</strong><time dateTime={at}>{formatAdminTimestamp(at)}</time></span>;
 }
 
 function securePassword() {
@@ -173,6 +167,7 @@ function InvitationPreview({ record, onClose }) {
 }
 
 export default function StaffManagement() {
+  useAdminPreferences();
   const [records, setRecords] = useState([]);
   const [designations, setDesignations] = useState([]);
   const [error, setError] = useState('');
@@ -291,7 +286,7 @@ export default function StaffManagement() {
     { key: 'userId', label: 'User ID', render: (record) => record.userId },
     { key: 'email', label: 'Email ID', render: (record) => <a href={`mailto:${record.email}`} className="admin-staff-link" data-testid={`link-staff-email-${record.id}`}>{record.email}</a> },
     { key: 'role', label: 'Role', render: (record) => record.role },
-    { key: 'dateOfJoining', label: 'Date of joining', render: (record) => formatJoining(record.dateOfJoining) },
+    { key: 'dateOfJoining', label: 'Date of joining', render: (record) => formatAdminDate(record.dateOfJoining) },
     { key: 'designation', label: 'Designation', render: (record) => record.designation || 'Not assigned' },
     { key: 'status', label: 'Status', render: (record) => <button type="button" role="switch" aria-checked={record.status === 'active'} aria-label={`${record.name}: ${record.status}. Change to ${record.status === 'active' ? 'inactive' : 'active'}`} className="admin-staff-status" disabled={blocked} onClick={() => toggle(record)} data-testid={`switch-staff-status-${record.id}`}><span className="admin-staff-status__track" aria-hidden="true" />{record.status === 'active' ? 'Active' : 'Inactive'}</button> },
     { key: 'created', label: 'Created details', render: (record) => audit(record.createdBy, record.createdAt) },
@@ -313,7 +308,7 @@ export default function StaffManagement() {
     {actionError && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-staff-action-error">{actionError}</div>}
     <section className="admin-panel" aria-label="Staff directory"><div className="admin-toolbar"><div className="admin-toolbar__fields"><label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search staff</span><input value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Search name, phone, user ID, email, role or designation" data-testid="input-search-staff" /></label></div></div>
       {error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>Staff records could not be loaded</strong><p>{error}</p><button type="button" className="admin-button" onClick={refresh} data-testid="button-retry-staff">Retry loading</button></div> : <>
-        {visible.length ? <><div className="admin-staff-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} label="Staff records" testIdPrefix="staff" /></div><div className="admin-staff-mobile" role="list" aria-label="Staff records">{pagination.pageRows.map((record, index) => <article className="admin-staff-card" role="listitem" key={record.id} data-testid={`card-staff-${record.id}`}><div className="admin-staff-card__head"><div><small>#{pagination.startIndex + index + 1} · {record.userId}</small><h2>{record.name}</h2>{isSample(record) && <span className="admin-staff-sample">Sample record</span>}</div><button type="button" role="switch" aria-checked={record.status === 'active'} aria-label={`${record.name}: ${record.status}. Change status`} className="admin-staff-status" disabled={blocked} onClick={() => toggle(record)} data-testid={`switch-staff-mobile-status-${record.id}`}><span className="admin-staff-status__track" aria-hidden="true" />{record.status === 'active' ? 'Active' : 'Inactive'}</button></div><dl className="admin-staff-card__meta">{['phone', 'userId', 'email', 'role', 'dateOfJoining', 'designation', 'status'].map((key) => <div key={key}><dt>{LABELS[key]}</dt><dd>{key === 'phone' ? <a className="admin-staff-link" href={`tel:${record.phone}`} data-testid={`link-staff-mobile-phone-${record.id}`}>{record.phone}</a> : key === 'email' ? <a className="admin-staff-link" href={`mailto:${record.email}`} data-testid={`link-staff-mobile-email-${record.id}`}>{record.email}</a> : key === 'dateOfJoining' ? formatJoining(record.dateOfJoining) : record[key] || 'Not assigned'}</dd></div>)}<div><dt>Created details</dt><dd>{audit(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated details</dt><dd>{audit(record.updatedBy, record.updatedAt)}</dd></div></dl><div className="admin-staff-card__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => edit(record)} disabled={blocked} data-testid={`button-edit-staff-mobile-${record.id}`}><Pencil size={15} aria-hidden="true" /> Edit</button><button type="button" className="admin-button admin-button--secondary" onClick={() => setInviting(record)} data-testid={`button-invite-staff-mobile-${record.id}`}><Mail size={15} aria-hidden="true" /> Invitation preview</button></div></article>)}</div></> : <div className="admin-empty" data-testid="status-staff-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{records.length ? 'No matching staff members' : 'No staff members yet'}</strong><p>{records.length ? 'Try a different search term.' : 'Add a staff member or import a CSV to begin this browser-local directory.'}</p></div>}
+        {visible.length ? <><div className="admin-staff-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} label="Staff records" testIdPrefix="staff" /></div><div className="admin-staff-mobile" role="list" aria-label="Staff records">{pagination.pageRows.map((record, index) => <article className="admin-staff-card" role="listitem" key={record.id} data-testid={`card-staff-${record.id}`}><div className="admin-staff-card__head"><div><small>#{pagination.startIndex + index + 1} · {record.userId}</small><h2>{record.name}</h2>{isSample(record) && <span className="admin-staff-sample">Sample record</span>}</div><button type="button" role="switch" aria-checked={record.status === 'active'} aria-label={`${record.name}: ${record.status}. Change status`} className="admin-staff-status" disabled={blocked} onClick={() => toggle(record)} data-testid={`switch-staff-mobile-status-${record.id}`}><span className="admin-staff-status__track" aria-hidden="true" />{record.status === 'active' ? 'Active' : 'Inactive'}</button></div><dl className="admin-staff-card__meta">{['phone', 'userId', 'email', 'role', 'dateOfJoining', 'designation', 'status'].map((key) => <div key={key}><dt>{LABELS[key]}</dt><dd>{key === 'phone' ? <a className="admin-staff-link" href={`tel:${record.phone}`} data-testid={`link-staff-mobile-phone-${record.id}`}>{record.phone}</a> : key === 'email' ? <a className="admin-staff-link" href={`mailto:${record.email}`} data-testid={`link-staff-mobile-email-${record.id}`}>{record.email}</a> : key === 'dateOfJoining' ? formatAdminDate(record.dateOfJoining) : record[key] || 'Not assigned'}</dd></div>)}<div><dt>Created details</dt><dd>{audit(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated details</dt><dd>{audit(record.updatedBy, record.updatedAt)}</dd></div></dl><div className="admin-staff-card__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => edit(record)} disabled={blocked} data-testid={`button-edit-staff-mobile-${record.id}`}><Pencil size={15} aria-hidden="true" /> Edit</button><button type="button" className="admin-button admin-button--secondary" onClick={() => setInviting(record)} data-testid={`button-invite-staff-mobile-${record.id}`}><Mail size={15} aria-hidden="true" /> Invitation preview</button></div></article>)}</div></> : <div className="admin-empty" data-testid="status-staff-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{records.length ? 'No matching staff members' : 'No staff members yet'}</strong><p>{records.length ? 'Try a different search term.' : 'Add a staff member or import a CSV to begin this browser-local directory.'}</p></div>}
         <TablePagination {...pagination} filtered={visible.length} total={records.length} label={visible.length === 1 ? 'staff member' : 'staff members'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-staff-count" />
       </>}
     </section>

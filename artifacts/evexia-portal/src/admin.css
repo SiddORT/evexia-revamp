@@ -205,8 +205,21 @@
 .admin-profile__identity strong { font-size: 13px; }
 .admin-profile__identity span { color: var(--ink-soft); font-size: 11px; }
 .admin-profile__separator { height: 1px; background: var(--line); }
+.admin-profile__settings { margin-top: 5px; width: 100%; padding: 10px 11px; display: flex; align-items: center; gap: 10px; border-radius: 7px; color: var(--ink); font-size: 12px; font-weight: 700; cursor: pointer; outline: none; }
+.admin-profile__settings[data-highlighted] { background: var(--admin-state-hover); }
 .admin-profile__signout { margin-top: 5px; width: 100%; padding: 10px 11px; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 7px; background: transparent; color: var(--admin-danger); font-size: 12px; font-weight: 700; cursor: pointer; outline: none; }
 .admin-profile__signout[data-highlighted] { background: var(--red-soft); }
+.admin-settings { display: grid; gap: 18px; max-width: 1000px; }
+.admin-settings__section { padding: clamp(18px, 2.4vw, 28px); }
+.admin-settings__section h2 { margin: 0; font-size: 20px; color: var(--admin-text); }
+.admin-settings__section > p { margin: 8px 0 22px; color: var(--admin-text-soft); font-size: 13px; line-height: 1.5; }
+.admin-settings__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 20px; }
+.admin-settings__field { display: flex; flex-direction: column; align-items: start; }
+.admin-settings__field label { color: var(--admin-text); font-size: 13px; font-weight: 700; }
+.admin-settings__field p { margin: 6px 0 12px; color: var(--admin-text-soft); font-size: 12px; line-height: 1.45; }
+.admin-settings__field select { width: 100%; margin-top: auto; font: inherit; font-size: 13px; }
+.admin-settings__preview { margin-top: 24px; display: grid; gap: 7px; padding: 16px; border: 1px solid var(--admin-border); border-radius: 9px; background: var(--admin-state-link); color: var(--admin-text); font-size: 13px; }
+.admin-settings__preview strong { font-size: 12px; color: var(--admin-accent); }
 .admin-content { min-width: 0; padding: clamp(18px, 2.6vw, 32px); }
 .admin-preview-notice { margin: 0 0 18px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink-soft); background: var(--admin-chrome); font-size: 12px; line-height: 1.5; }
 .admin-page-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 18px; }
