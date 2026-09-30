@@ -36,12 +36,28 @@ function InputField({ id, label, value, onChange, error, type = 'text', min, max
   return <div className="po-field"><label htmlFor={id}>{label} <span className="mr-form__required">*</span></label><input id={id} className="mr-form__control" type={type} min={min} max={max} step={step} placeholder={placeholder} value={value} onChange={(event) => onChange(event.target.value)} aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-error` : undefined} data-testid={`input-${id}`} />{error && <p id={`${id}-error`} className="mr-form__error" role="alert">{error}</p>}</div>;
 }
 
-function Breakdown({ figures }) {
-  return <div className="po-totals" aria-label="Order totals"><div><span>Subtotal</span><strong>{money(figures?.subtotal)}</strong></div><div><span>GST</span><strong>{money(figures?.gstAmount)}</strong></div><div className="po-totals__grand"><span>Order total</span><strong data-testid="text-po-form-total">{money(figures?.total)}</strong></div></div>;
-}
-
-function LineTable({ lines }) {
-  return <div className="po-review"><table><thead><tr><th>Product</th><th>Qty</th><th>Unit price</th><th>Subtotal</th><th>GST %</th><th>GST amount</th><th>Total</th></tr></thead><tbody>{lines.map((line, index) => <tr key={`${line.productId}-${index}`}><td><strong>{line.productName}</strong></td><td>{line.quantity}</td><td>{money(Math.round(line.unitPrice * 100))}</td><td>{money(line.subtotal)}</td><td>{line.gst}%</td><td>{money(line.gstAmount)}</td><td className="po-amount">{money(line.total)}</td></tr>)}</tbody></table></div>;
+function LineTable({ lines, figures }) {
+  return <div className="po-items-table" role="region" aria-label="Purchase order item summary" tabIndex={0}>
+    <p className="po-items-table__scroll-hint">Swipe across to see prices and totals →</p>
+    <table>
+      <thead><tr><th scope="col">Sr. no.</th><th scope="col">Product name</th><th scope="col">Quantity</th><th scope="col">Unit price</th><th scope="col">Gross total</th><th scope="col">GST %</th><th scope="col">GST amount</th><th scope="col">Final total</th></tr></thead>
+      <tbody>{lines.map((line, index) => <tr key={`${line.productId}-${index}`}>
+        <td>{index + 1}</td>
+        <td><strong>{line.productName || 'Select a product'}</strong></td>
+        <td>{line.quantity || '—'}</td>
+        <td>{String(line.unitPrice ?? '').trim() !== '' && /^\d+(?:\.\d{1,2})?$/.test(String(line.unitPrice)) ? money(Math.round(Number(line.unitPrice) * 100)) : '—'}</td>
+        <td>{line.subtotal == null ? '—' : money(line.subtotal)}</td>
+        <td>{line.gst === '' || line.gst == null ? '—' : `${line.gst}%`}</td>
+        <td>{line.gstAmount == null ? '—' : money(line.gstAmount)}</td>
+        <td className="po-amount">{line.total == null ? '—' : money(line.total)}</td>
+      </tr>)}</tbody>
+      <tfoot>
+        <tr><th colSpan="7" scope="row">Gross total</th><td>{figures ? money(figures.subtotal) : '—'}</td></tr>
+        <tr><th colSpan="7" scope="row">GST amount</th><td>{figures ? money(figures.gstAmount) : '—'}</td></tr>
+        <tr className="po-items-table__final"><th colSpan="7" scope="row">Final total</th><td data-testid="text-po-form-total">{figures ? money(figures.total) : '—'}</td></tr>
+      </tfoot>
+    </table>
+  </div>;
 }
 
 function POEditor({ snapshot, record, isNew, onSaved, onCancel, onRefresh }) {
@@ -51,6 +67,12 @@ function POEditor({ snapshot, record, isNew, onSaved, onCancel, onRefresh }) {
   const [review, setReview] = useState(null);
   const refs = snapshot.refs;
   const figures = totals(values.lines);
+  const draftLines = values.lines.map((line, index) => ({
+    ...line,
+    productName: refs.products.find((item) => item.id === line.productId)?.name ||
+      (record?.lines[index]?.productId === line.productId ? record.lines[index].productName : ''),
+    ...(calculateLine(line) || {}),
+  }));
   function change(field, value) {
     setValues((current) => ({ ...current, [field]: value }));
     setErrors((current) => ({ ...current, [field]: undefined, form: undefined }));
@@ -91,7 +113,7 @@ function POEditor({ snapshot, record, isNew, onSaved, onCancel, onRefresh }) {
     {saveError && <div className="admin-feedback admin-feedback--error" role="alert" style={{ margin: 18 }}>{saveError} <button type="button" className="po-link" onClick={onRefresh} data-testid="button-refresh-po-draft">Refresh and discard draft</button></div>}
     {review ? <>
       <div className="po-review"><p className="po-review__note">This is a browser-local preview. Confirming saves the order in this browser; it does not send an order to a supplier.</p><dl className="po-detail-grid"><div><dt>Vendor</dt><dd>{review.vendorName}</dd></div><div><dt>Storage location</dt><dd>{review.locationName}</dd></div><div><dt>PO date</dt><dd>{displayDate(review.poDate)}</dd></div><div><dt>Expected delivery</dt><dd>{displayDate(review.expectedDate)}</dd></div></dl><h3 className="po-section-title">Items <span>{review.lines.length} product {review.lines.length === 1 ? 'line' : 'lines'}</span></h3></div>
-      <LineTable lines={review.lines} /><div className="po-review" style={{ paddingTop: 0 }}><Breakdown figures={review} /></div>
+       <LineTable lines={review.lines} figures={review} />
       <div className="po-form-footer"><span>Changes are saved locally on confirmation.</span><div className="po-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => { setReview(null); setSaveError(''); }} data-testid="button-back-po-draft">Back to draft</button><button type="button" className="admin-button" onClick={save} data-testid="button-confirm-po">{isNew ? 'Create purchase order' : 'Save changes'}</button></div></div>
     </> : <form onSubmit={prepare} noValidate>
       <div className="po-form-body">
@@ -106,7 +128,6 @@ function POEditor({ snapshot, record, isNew, onSaved, onCancel, onRefresh }) {
         <hr className="po-divider" />
         <h3 className="po-section-title">02 / Product lines <span>Quantity, unit price and GST per item</span></h3>
         <div className="po-lines">{values.lines.map((line, index) => {
-          const calculated = calculateLine(line);
           return <div className="po-line" key={index}><div className="po-line__top"><strong>Item {String(index + 1).padStart(2, '0')}</strong><button type="button" className="po-action po-action--danger" disabled={values.lines.length === 1} onClick={() => { setValues((current) => ({ ...current, lines: current.lines.filter((_, i) => i !== index) })); setErrors({}); }} data-testid={`button-remove-po-line-${index}`}><X size={14} aria-hidden="true" /> Remove</button></div>
             <div className="po-line__fields">
               <ReferenceField id={`po-product-${index}`} label="Product" items={refs.products} nameKey="name" activeOnly value={line.productId} existingName={record?.lines[index]?.productId === line.productId ? record.lines[index].productName : ''} error={errors[`lines.${index}.productId`]} onChange={(value) => changeLine(index, 'productId', value)} />
@@ -115,11 +136,11 @@ function POEditor({ snapshot, record, isNew, onSaved, onCancel, onRefresh }) {
               <InputField id={`po-gst-${index}`} label="GST (%)" type="number" min="0" max="100" step="0.01" placeholder="0" value={line.gst} onChange={(value) => changeLine(index, 'gst', value)} error={errors[`lines.${index}.gst`]} />
             </div>
             {errors[`lines.${index}.total`] && <p className="mr-form__error" role="alert">{errors[`lines.${index}.total`]}</p>}
-            <div className="po-line__foot"><span>Subtotal <strong>{calculated ? money(calculated.subtotal) : '—'}</strong></span><span>GST <strong>{calculated ? money(calculated.gstAmount) : '—'}</strong></span><span>Line total <strong>{calculated ? money(calculated.total) : '—'}</strong></span></div>
           </div>;
         })}</div>
         <button type="button" className="admin-button admin-button--secondary po-add-line" disabled={values.lines.length >= 100} onClick={() => { setValues((current) => ({ ...current, lines: [...current.lines, blankLine()] })); setErrors((current) => ({ ...current, lines: undefined, form: undefined })); }} data-testid="button-add-po-line"><Plus size={15} aria-hidden="true" /> Add product line</button>
-        <Breakdown figures={figures} />
+         <h3 className="po-section-title po-summary-title">03 / Item summary <span>Updates as you enter products and amounts</span></h3>
+         <LineTable lines={draftLines} figures={figures} />
       </div>
       <div className="po-form-footer"><span>Review the order before it is saved.</span><div className="po-actions"><button type="button" className="admin-button admin-button--secondary" onClick={onCancel} data-testid="button-cancel-po">Cancel</button><button type="submit" className="admin-button" data-testid="button-review-po">Review order</button></div></div>
     </form>}
