@@ -44,6 +44,8 @@
 .po-event strong { font-size: 12px; }
 .po-event p { margin: 4px 0; font-size: 12px; color: var(--admin-text-soft); }
 .po-event time { font-size: 11px; color: var(--admin-muted); }
+.po-event .po-event__attribution { margin-top: 6px; font-size: 11px; color: var(--admin-muted); }
+.po-event__attribution strong { color: var(--admin-text-soft); }
 .po-analytics { padding: 22px; }
 .po-analytics h2 { margin: 0 0 5px; font-size: 16px; }
 .po-analytics > p { margin: 0 0 20px; color: var(--admin-text-soft); font-size: 12px; }

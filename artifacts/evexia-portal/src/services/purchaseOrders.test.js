@@ -5,7 +5,7 @@ import { VENDOR_KEY } from './vendors.js';
 import { STORAGE_LOCATION_KEY } from './storageLocations.js';
 import {
   PO_KEY, calculateLine, totals, money, loadPOSnapshot, loadPOs, validatePO,
-  createPO, updatePO, deletePO, filterPOs,
+  createPO, updatePO, deletePO, filterPOs, poEventActor, seedSamplePOs,
 } from './purchaseOrders.js';
 
 function storage() {
@@ -13,12 +13,43 @@ function storage() {
   return { getItem: (key) => map.has(key) ? map.get(key) : null,
     setItem: (key, value) => map.set(key, value), removeItem: (key) => map.delete(key) };
 }
-test.beforeEach(() => { globalThis.window = { localStorage: storage() }; });
+test.beforeEach(() => {
+  globalThis.window = { localStorage: storage() };
+  window.localStorage.setItem(PO_KEY, JSON.stringify({ version: 1, revision: 0, orders: [], events: [] }));
+});
 const draft = (refs, changes = {}) => ({
   poDate: '2026-09-30', expectedDate: '2026-10-01', vendorId: refs.vendors[0].id,
   locationId: refs.locations[0].id,
   lines: [{ productId: refs.products[0].id, quantity: '1', unitPrice: '100.01', gst: '12' }],
   ...changes,
+});
+test('seeds sample orders, changes and analytics events only when PO storage is absent', () => {
+  window.localStorage.removeItem(PO_KEY);
+  const snapshot = loadPOSnapshot();
+  assert.equal(snapshot.record.orders.length, 5);
+  assert.equal(snapshot.record.orders.filter((order) => order.status === 'open').length, 4);
+  assert.deepEqual(snapshot.record.events.map((event) => event.action),
+    ['created', 'created', 'created', 'created', 'created', 'updated', 'deleted']);
+  assert.ok(snapshot.record.events.every((event) => poEventActor(event) === 'Sample Admin (demo data)'));
+  assert.ok(snapshot.record.orders.some((order) => order.lines.length === 2));
+  assert.deepEqual(loadPOs(), snapshot.record);
+  const totalsByVendor = new Map();
+  snapshot.record.orders.filter((order) => order.status === 'open').forEach((order) =>
+    totalsByVendor.set(order.vendorId, (totalsByVendor.get(order.vendorId) || 0) + order.total));
+  assert.equal(totalsByVendor.size, 2);
+  assert.ok([...totalsByVendor.values()].every((value) => value > 0));
+  const created = createPO(snapshot, snapshot.refs, draft(snapshot.refs));
+  assert.equal(created.orders.length, 6);
+  assert.equal(created.events.length, 8);
+});
+test('preserves an existing empty PO record instead of repopulating samples', () => {
+  const snapshot = loadPOSnapshot();
+  assert.deepEqual(snapshot.record, { version: 1, revision: 0, orders: [], events: [] });
+  const seeded = seedSamplePOs(snapshot);
+  assert.equal(seeded.orders.length, 5);
+  assert.deepEqual(loadPOs(), seeded);
+  assert.throws(() => seedSamplePOs(snapshot), /another tab/);
+  assert.throws(() => seedSamplePOs({ ...snapshot, record: seeded }), /empty purchase order list/);
 });
 test('calculates at line paise precision then adds rounded line totals', () => {
   assert.deepEqual(calculateLine({ quantity: '0.333', unitPrice: '1.01', gst: '12.5' }),
@@ -61,10 +92,25 @@ test('persists creation, change summaries and soft deletion atomically across re
   assert.equal(deleted.orders[0].status, 'deleted');
   assert.deepEqual(loadPOs(), deleted);
   assert.deepEqual(deleted.events.map((e) => e.action), ['created', 'updated', 'deleted']);
+  assert.deepEqual(deleted.events.map((e) => e.actor), Array(3).fill('Demo Admin (local, not signed in)'));
   assert.ok(deleted.events[0].at < deleted.events[1].at && deleted.events[1].at < deleted.events[2].at);
   assert.throws(() => updatePO({ record: deleted }, snapshot.refs, first.id, draft(snapshot.refs)), /deleted/);
   assert.throws(() => deletePO({ record: deleted }, first.id), /deleted/);
   assert.deepEqual(loadPOs(), deleted);
+});
+test('keeps existing events without actor attribution and does not invent a real actor', () => {
+  const snapshot = loadPOSnapshot();
+  const created = createPO(snapshot, snapshot.refs, draft(snapshot.refs));
+  const old = { ...created, events: created.events.map(({ actor, ...event }) => event) };
+  window.localStorage.setItem(PO_KEY, JSON.stringify(old));
+  assert.equal(poEventActor(loadPOs().events[0]), 'Not recorded (earlier activity)');
+  const edited = updatePO({ ...snapshot, record: old }, snapshot.refs, old.orders[0].id,
+    draft(snapshot.refs, { expectedDate: '2026-10-03' }));
+  assert.equal(poEventActor(edited.events[0]), 'Not recorded (earlier activity)');
+  assert.equal(poEventActor(edited.events[1]), 'Demo Admin (local, not signed in)');
+  window.localStorage.setItem(PO_KEY, JSON.stringify({ ...edited,
+    events: edited.events.map((event, index) => index === 1 ? { ...event, actor: '' } : event) }));
+  assert.throws(() => loadPOs(), /unreadable/);
 });
 test('saved names and figures remain historical when masters change; new inactive references are blocked', () => {
   const snapshot = loadPOSnapshot();

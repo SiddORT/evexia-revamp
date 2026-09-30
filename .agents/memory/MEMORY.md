@@ -5,3 +5,4 @@
 - [CSV backup compatibility](csv-backup-compatibility.md) — when export schemas gain fields, preserve imports of previously exported backups with explicit defaults.
 - [Staff sample designations](staff-sample-designations.md) — keep fictional staff unassigned rather than silently creating unrelated Designation Master entries.
 - [Purchase order tax display](purchase-order-tax-display.md) — show total GST only until place-of-supply data supports a defensible IGST versus SGST/CGST split.
+- [Local PO actor attribution](local-po-actor-attribution.md) — label unauthenticated activity as local demo actions, not verified staff identity.

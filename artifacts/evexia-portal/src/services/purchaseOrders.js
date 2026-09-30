@@ -3,6 +3,11 @@ import { loadStorageLocations } from './storageLocations.js';
 import { loadAllergenReferences, loadAllergens } from './allergens.js';
 
 export const PO_KEY = 'evexia.admin.purchase-orders.v1';
+const LOCAL_ACTOR = 'Demo Admin (local, not signed in)';
+const SAMPLE_ACTOR = 'Sample Admin (demo data)';
+export function poEventActor(event) {
+  return event.actor || (/^sample-po-event-\d+$/.test(event.id) ? SAMPLE_ACTOR : 'Not recorded (earlier activity)');
+}
 const invalid = 'Saved purchase order data is unreadable or invalid. Nothing was changed. Back up or repair browser storage, then refresh.';
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const keys = (value, expected) => value && typeof value === 'object' && !Array.isArray(value) &&
@@ -122,7 +127,8 @@ function validRecord(record) {
       !same(calculateLine(l), { subtotal: l.subtotal, gstAmount: l.gstAmount, total: l.total }))) return true;
     return !same(totals(o.lines), { subtotal: o.subtotal, gstAmount: o.gstAmount, total: o.total });
   })) return false;
-  if (record.events.some((e) => !keys(e, eventKeys) || !nonempty(e.id) || !nonempty(e.summary) || !iso(e.at) ||
+  if (record.events.some((e) => !(keys(e, eventKeys) || keys(e, [...eventKeys, 'actor'])) ||
+    !nonempty(e.id) || !nonempty(e.summary) || (Object.hasOwn(e, 'actor') && !nonempty(e.actor)) || !iso(e.at) ||
     !['created', 'updated', 'deleted'].includes(e.action) || orderMap.get(e.orderId)?.number !== e.number)) return false;
   for (const o of record.orders) {
     const events = record.events.filter((e) => e.orderId === o.id).sort((a, b) => a.at.localeCompare(b.at));
@@ -133,11 +139,72 @@ function validRecord(record) {
   return record.events.length === record.revision;
 }
 
+function samplePOs() {
+  const refs = loadPOReferences();
+  const vendors = [1, 2, 3].map((n) => refs.vendors.find((item) => item.id === `sample-vendor-${n}`));
+  const locations = [1, 2].map((n) => refs.locations.find((item) => item.id === `sample-storage-location-${n}` && item.status === 'active'));
+  const products = [1, 2].map((n) => refs.products.find((item) => item.id === `sample-allergen-${n}` && item.status === 'active'));
+  // Do not attach invented purchases to a user's own masters if the sample masters were removed.
+  if ([...vendors, ...locations, ...products].some((item) => !item)) return null;
+  const daysAgo = (days) => new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+  const at = (days) => `${daysAgo(days)}T09:15:00.000Z`;
+  const specs = [
+    { days: 8, vendor: 0, location: 0, lines: [[0, '24', '425', '12'], [1, '12', '115.5', '18']] },
+    { days: 7, vendor: 1, location: 1, lines: [[1, '60', '120', '18']] },
+    { days: 6, vendor: 2, location: 0, lines: [[0, '15', '440', '12']] },
+    { days: 5, vendor: 0, location: 1, lines: [[1, '32', '118', '18'], [0, '8', '450', '12']] },
+    { days: 4, vendor: 1, location: 0, lines: [[0, '20', '430', '12']] },
+  ];
+  const orders = [];
+  const events = [];
+  for (const [index, spec] of specs.entries()) {
+    const values = {
+      poDate: daysAgo(spec.days), expectedDate: daysAgo(spec.days - 4),
+      vendorId: vendors[spec.vendor].id, locationId: locations[spec.location].id,
+      lines: spec.lines.map(([product, quantity, unitPrice, gst]) =>
+        ({ productId: products[product].id, quantity, unitPrice, gst })),
+    };
+    const { errors, order: fields } = validatePO(values, refs);
+    if (Object.keys(errors).length) throw new Error('Sample purchase orders could not be validated. Nothing was saved.');
+    const id = `sample-po-${index + 1}`;
+    const number = `PO-SAMPLE-${String(index + 1).padStart(3, '0')}`;
+    const createdAt = at(spec.days);
+    orders.unshift({ ...fields, id, number, status: 'open', createdAt, updatedAt: createdAt, deletedAt: null });
+    events.push({ id: `sample-po-event-${events.length + 1}`, orderId: id, number,
+      action: 'created', actor: SAMPLE_ACTOR, at: createdAt, summary: `Sample order created with ${fields.lines.length} item${fields.lines.length === 1 ? '' : 's'} · ${money(fields.total)}` });
+  }
+  const changed = orders.find((order) => order.id === 'sample-po-2');
+  const revised = validatePO({ poDate: changed.poDate, expectedDate: changed.expectedDate,
+    vendorId: changed.vendorId, locationId: changed.locationId,
+    lines: changed.lines.map((line) => ({
+      productId: line.productId, quantity: '72', unitPrice: String(line.unitPrice), gst: String(line.gst),
+    })) }, refs, changed).order;
+  if (!revised) throw new Error('Sample purchase orders could not be validated. Nothing was saved.');
+  const updatedAt = at(3);
+  orders[orders.indexOf(changed)] = { ...changed, ...revised, updatedAt };
+  events.push({ id: 'sample-po-event-6', orderId: changed.id, number: changed.number,
+    action: 'updated', actor: SAMPLE_ACTOR, at: updatedAt, summary: `Sample quantity changed (60 → 72); total ${money(changed.total)} → ${money(revised.total)}` });
+  const removed = orders.find((order) => order.id === 'sample-po-3');
+  const deletedAt = at(2);
+  orders[orders.indexOf(removed)] = { ...removed, status: 'deleted', deletedAt, updatedAt: deletedAt };
+  events.push({ id: 'sample-po-event-7', orderId: removed.id, number: removed.number,
+    action: 'deleted', actor: SAMPLE_ACTOR, at: deletedAt, summary: `Sample order deleted · ${money(removed.total)}` });
+  return { version: 1, revision: events.length, orders, events };
+}
+
 export function loadPOs() {
   let raw;
   try { raw = window.localStorage.getItem(PO_KEY); }
   catch { throw new Error('Purchase orders could not be loaded because browser storage is unavailable.'); }
-  if (raw === null) return { version: 1, revision: 0, orders: [], events: [] };
+  if (raw === null) {
+    const initial = samplePOs() || { version: 1, revision: 0, orders: [], events: [] };
+    if (!validRecord(initial)) throw new Error('Sample purchase orders could not be validated. Nothing was saved.');
+    try {
+      if (window.localStorage.getItem(PO_KEY) !== null) return loadPOs();
+      window.localStorage.setItem(PO_KEY, JSON.stringify(initial));
+    } catch { throw new Error('Sample purchase orders could not be saved in this browser. Check storage settings and try again.'); }
+    return initial;
+  }
   let record;
   try { record = JSON.parse(raw); } catch { throw new Error(invalid); }
   if (!validRecord(record)) throw new Error(invalid);
@@ -154,6 +221,14 @@ function save(snapshot, next, refs = null) {
   catch { throw new Error('Purchase orders could not be saved in this browser. Check storage settings and try again.'); }
   return next;
 }
+export function seedSamplePOs(snapshot) {
+  if (snapshot.record.orders.length || snapshot.record.events.length) {
+    throw new Error('Sample orders can only be loaded into an empty purchase order list.');
+  }
+  const initial = samplePOs();
+  if (!initial) throw new Error('The sample vendors, active locations and products are needed to load demo purchase orders.');
+  return save(snapshot, initial, snapshot.refs);
+}
 function validated(values, refs, existing) {
   const result = validatePO(values, refs, existing);
   if (Object.keys(result.errors).length) throw new Error(Object.values(result.errors)[0]);
@@ -161,7 +236,7 @@ function validated(values, refs, existing) {
 }
 function timestamp(previous) { return new Date(Math.max(Date.now(), Date.parse(previous || 0) + 1)).toISOString(); }
 function append(snapshot, orders, order, action, summary, refs) {
-  const event = { id: crypto.randomUUID(), orderId: order.id, number: order.number, action, at: order.updatedAt, summary };
+  const event = { id: crypto.randomUUID(), orderId: order.id, number: order.number, action, actor: LOCAL_ACTOR, at: order.updatedAt, summary };
   return save(snapshot, { version: 1, revision: snapshot.record.revision + 1, orders,
     events: [...snapshot.record.events, event] }, refs);
 }
