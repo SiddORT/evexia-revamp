@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
-import { Activity, ArrowUpRight, BarChart3, ClipboardCheck, Download, Eye, FileDown, Plus, RefreshCw, Search } from 'lucide-react';
+import { Activity, ArrowUpRight, BarChart3, ChevronDown, ClipboardCheck, Download, Eye, FileDown, Plus, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
@@ -25,6 +25,8 @@ export default function PurchaseReceived() {
   const [notice, setNotice] = useState('');
   const [tab, setTab] = useState('receipts');
   const [filters, setFilters] = useState(initial);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFilterCount = [filters.status !== 'all', filters.from, filters.to, filters.vendorId, filters.receivedBy, filters.fulfillment].filter(Boolean).length;
   const [doc, setDoc] = useState(null);
   const [busy, setBusy] = useState('');
   const [search2, setSearch2] = useState('');
@@ -140,6 +142,16 @@ export default function PurchaseReceived() {
         {tab === 'receipts' && <div role="tabpanel">
           <div className="po-toolbar">
             <label className="admin-search"><Search size={16} /><span className="sr-only">Search receipts</span><input type="search" value={filters.search} onChange={(e) => change('search', e.target.value)} placeholder="Search PR, PO, vendor, receiver or product" data-testid="input-search-pr" /></label>
+            <button type="button" className="admin-button admin-button--secondary po-filter-toggle" onClick={() => setFiltersOpen((open) => !open)}
+              aria-expanded={filtersOpen} aria-controls="pr-filter-panel" data-testid="button-toggle-pr-filters">
+              <SlidersHorizontal size={15} aria-hidden="true" /> Filters
+              {activeFilterCount > 0 && <span className="po-filter-toggle__count" aria-label={`${activeFilterCount} active ${activeFilterCount === 1 ? 'filter' : 'filters'}`}>{activeFilterCount}</span>}
+              <ChevronDown size={15} className="po-filter-toggle__chevron" aria-hidden="true" />
+            </button>
+            <div className="pr-toolbar-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => { setFilters(initial); pagination.resetPage(); }} data-testid="button-clear-pr-filters">Clear filters</button>
+              <button type="button" className="admin-button admin-button--secondary" disabled={!visible.length} onClick={exportCsv} data-testid="button-export-pr"><FileDown size={15} /> CSV ({visible.length})</button></div>
+          </div>
+          <div id="pr-filter-panel" className="po-toolbar po-filter-panel" hidden={!filtersOpen} role="region" aria-label="Purchase received filters">
             <div className="admin-filter"><label htmlFor="pr-from">From date</label><input id="pr-from" type="date" className="admin-select" value={filters.from} onChange={(e) => change('from', e.target.value)} data-testid="input-pr-from" /></div>
             <div className="admin-filter"><label htmlFor="pr-to">To date</label><input id="pr-to" type="date" className="admin-select" value={filters.to} onChange={(e) => change('to', e.target.value)} data-testid="input-pr-to" /></div>
             <div className="admin-filter"><label htmlFor="pr-vendor">Vendor</label><select id="pr-vendor" className="admin-select" value={filters.vendorId} onChange={(e) => change('vendorId', e.target.value)} data-testid="select-pr-vendor"><option value="">All vendors</option>{vendors.map(([id, n]) => <option key={id} value={id}>{n}</option>)}</select></div>
@@ -147,8 +159,6 @@ export default function PurchaseReceived() {
             <div className="admin-filter"><label htmlFor="pr-ful">PO status</label><select id="pr-ful" className="admin-select" value={filters.fulfillment} onChange={(e) => change('fulfillment', e.target.value)} data-testid="select-pr-fulfillment"><option value="">All</option><option>Open</option><option>Partially Received</option><option>Closed</option></select></div>
             <div className="admin-filter"><label htmlFor="pr-st">Record</label><select id="pr-st" className="admin-select" value={filters.status} onChange={(e) => change('status', e.target.value)} data-testid="select-pr-status"><option value="active">Active</option><option value="deleted">Deleted</option><option value="all">All</option></select></div>
             <div className="admin-filter"><label htmlFor="pr-sort">Sort</label><select id="pr-sort" className="admin-select" value={filters.sort} onChange={(e) => change('sort', e.target.value)} data-testid="select-pr-sort"><option value="recent">Newest first</option><option value="oldest">Oldest first</option><option value="number">PR number</option></select></div>
-            <div className="pr-toolbar-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => { setFilters(initial); pagination.resetPage(); }} data-testid="button-clear-pr-filters">Clear filters</button>
-              <button type="button" className="admin-button admin-button--secondary" disabled={!visible.length} onClick={exportCsv} data-testid="button-export-pr"><FileDown size={15} /> CSV ({visible.length})</button></div>
           </div>
           {visible.length ? <><div className="po-table"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(r) => r.id} label="Purchase received" testIdPrefix="pr" /></div>
             <div className="po-mobile" role="list">{pagination.pageRows.map((r, i) => <article className="po-card" key={r.id} role="listitem"><div className="po-card__top"><div><span className="po-secondary">Sr. No. {pagination.startIndex + i + 1}</span><button type="button" className="po-link po-number" onClick={() => open(r)}>{r.number}</button> {isSamplePR(r) && <span className="pr-sample-badge">Sample</span>}<h2>{r.vendorName}</h2><p>{r.vendorPhone || 'No mobile on record'}</p></div><span className={fulfilClass(fulfil(r))}>{fulfil(r)}</span></div>
