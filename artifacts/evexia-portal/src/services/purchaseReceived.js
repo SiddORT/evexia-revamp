@@ -9,6 +9,9 @@ const canonical = (value) => Array.isArray(value) ? value.map(canonical)
 const same = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 const keys = (value, expected) => value && typeof value === 'object' && !Array.isArray(value) &&
   Object.keys(value).length === expected.length && expected.every((key) => Object.hasOwn(value, key));
+const keysWithOptional = (value, required, optional) => value && typeof value === 'object' &&
+  !Array.isArray(value) && required.every((key) => Object.hasOwn(value, key)) &&
+  Object.keys(value).every((key) => required.includes(key) || optional.includes(key));
 const nonempty = (value) => typeof value === 'string' && value.length > 0 && value === value.trim();
 const iso = (value) => typeof value === 'string' && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value) &&
   !Number.isNaN(Date.parse(value)) && new Date(value).toISOString() === value;
@@ -26,19 +29,26 @@ const fromMilli = (value) => value / 1000;
 const receiptKeys = ['id', 'number', 'poId', 'poNumber', 'poDate', 'receivedDate', 'receivedBy',
   'vendorId', 'vendorName', 'vendorPhone', 'locationId', 'locationName', 'status',
   'createdAt', 'updatedAt', 'deletedAt', 'lines'];
+const optionalReceiptKeys = ['vendorAddress', 'vendorGstNo'];
 const receiptLineKeys = ['lineId', 'productId', 'productName', 'orderedQty', 'receivedQty', 'acceptedQty',
   'rejectedQty', 'batchNo', 'expiryDate'];
+const optionalReceiptLineKeys = ['balanceAfterQty'];
 const eventKeys = ['id', 'receiptId', 'number', 'action', 'at', 'actor', 'summary'];
 
 function validReceiptLine(line, receivedDate) {
-  if (!keys(line, receiptLineKeys) || !['lineId', 'productId', 'productName', 'batchNo'].every((key) => nonempty(line[key])) ||
+  if (!keysWithOptional(line, receiptLineKeys, optionalReceiptLineKeys) ||
+    !['lineId', 'productId', 'productName', 'batchNo'].every((key) => nonempty(line[key])) ||
     !validPODate(line.expiryDate) || line.expiryDate < receivedDate) return false;
   const ordered = quantityMilli(line.orderedQty);
   const received = quantityMilli(line.receivedQty);
   const accepted = quantityMilli(line.acceptedQty);
   const rejected = quantityMilli(line.rejectedQty);
+  const balance = Object.hasOwn(line, 'balanceAfterQty') && line.balanceAfterQty !== null
+    ? quantityMilli(line.balanceAfterQty) : null;
   return ordered !== null && received !== null && accepted !== null && rejected !== null &&
-    ordered > 0 && received > 0 && accepted <= received && rejected === received - accepted;
+    ordered > 0 && received > 0 && accepted <= received && rejected === received - accepted &&
+    (!Object.hasOwn(line, 'balanceAfterQty') || line.balanceAfterQty === null ||
+      (balance !== null && balance <= ordered));
 }
 
 function validPRRecord(record) {
@@ -52,10 +62,12 @@ function validPRRecord(record) {
     new Set(record.events.map((event) => event?.id)).size !== record.events.length) return false;
   const receiptMap = new Map(record.receipts.map((receipt) => [receipt.id, receipt]));
   if (record.receipts.some((receipt) => {
-    if (!keys(receipt, receiptKeys) || !['active', 'deleted'].includes(receipt.status) ||
+    if (!keysWithOptional(receipt, receiptKeys, optionalReceiptKeys) || !['active', 'deleted'].includes(receipt.status) ||
       !['id', 'number', 'poId', 'poNumber', 'receivedBy', 'vendorId', 'vendorName', 'locationId', 'locationName']
         .every((key) => nonempty(receipt[key])) ||
       typeof receipt.vendorPhone !== 'string' || receipt.vendorPhone !== receipt.vendorPhone.trim() ||
+      optionalReceiptKeys.some((key) => Object.hasOwn(receipt, key) &&
+        (typeof receipt[key] !== 'string' || receipt[key] !== receipt[key].trim())) ||
       !validPODate(receipt.poDate) || !validPODate(receipt.receivedDate) || receipt.receivedDate < receipt.poDate ||
       !iso(receipt.createdAt) || !iso(receipt.updatedAt) || receipt.updatedAt < receipt.createdAt ||
       (receipt.status === 'deleted' ? !iso(receipt.deletedAt) || receipt.deletedAt !== receipt.updatedAt : receipt.deletedAt !== null) ||
@@ -142,6 +154,47 @@ function activeAcceptedForLine(receipts, lineId, excludeId = null) {
   return receipts.reduce((total, receipt) => receipt.id !== excludeId && receipt.status === 'active'
     ? total + receipt.lines.reduce((sum, line) => line.lineId === lineId ? sum + quantityMilli(line.acceptedQty) : sum, 0)
     : total, 0);
+}
+
+function balanceAfterForReceipt(po, receipts, lines, existing = null) {
+  const byLine = new Map();
+  for (const line of lines) {
+    byLine.set(line.lineId, (byLine.get(line.lineId) || 0) + quantityMilli(line.acceptedQty));
+  }
+  if (existing) {
+    const oldAccepted = new Map();
+    for (const line of existing.lines) {
+      oldAccepted.set(line.lineId, (oldAccepted.get(line.lineId) || 0) + quantityMilli(line.acceptedQty));
+    }
+    const historicalBefore = new Map();
+    for (const line of existing.lines) {
+      if (!Object.hasOwn(line, 'balanceAfterQty') || line.balanceAfterQty === null ||
+        historicalBefore.has(line.lineId)) continue;
+      historicalBefore.set(line.lineId,
+        quantityMilli(line.balanceAfterQty) + (oldAccepted.get(line.lineId) || 0));
+    }
+    return lines.map((line) => {
+      const before = historicalBefore.get(line.lineId);
+      const after = before === undefined ? null : before - (byLine.get(line.lineId) || 0);
+      return {
+        ...line,
+        balanceAfterQty: after === null || after < 0 ? null : fromMilli(after),
+      };
+    });
+  }
+  const before = new Map();
+  for (const sourceLine of po.lines) {
+    const acceptedBefore = receipts.reduce((total, receipt) => {
+      if (receipt.poId !== po.id || receipt.status !== 'active') return total;
+      return total + receipt.lines.reduce((sum, line) =>
+        line.lineId === sourceLine.id ? sum + quantityMilli(line.acceptedQty) : sum, 0);
+    }, 0);
+    before.set(sourceLine.id, Math.max(0, quantityMilli(sourceLine.quantity) - acceptedBefore));
+  }
+  return lines.map((line) => {
+    const balanceBefore = before.get(line.lineId) ?? 0;
+    return { ...line, balanceAfterQty: fromMilli(Math.max(0, balanceBefore - (byLine.get(line.lineId) || 0))) };
+  });
 }
 
 export function getPOBalances(po, receipts, excludeId = null) {
@@ -252,13 +305,16 @@ export function validatePR(values, snapshot, existing = null) {
   });
   const positiveLines = lines.filter(Boolean);
   if (!positiveLines.length && !errors.lines) errors.lines = 'Enter at least one positive received quantity.';
+  const vendor = po && snapshot.refs.vendors.find((item) => item.id === po.vendorId);
+  const savedLines = po ? balanceAfterForReceipt(po, snapshot.record.receipts, positiveLines, existing) : positiveLines;
   return {
     errors,
     receipt: Object.keys(errors).length ? null : {
       poId: po.id, poNumber: po.number, poDate: po.poDate, receivedDate: values.receivedDate,
       receivedBy, vendorId: po.vendorId, vendorName: po.vendorName,
       vendorPhone: snapshot.refs.vendors.find((vendor) => vendor.id === po.vendorId)?.phoneNo || '',
-      locationId: po.locationId, locationName: po.locationName, lines: positiveLines,
+      vendorAddress: vendor?.registeredAddress || '', vendorGstNo: vendor?.gstNo || '',
+      locationId: po.locationId, locationName: po.locationName, lines: savedLines,
     },
   };
 }
@@ -383,11 +439,20 @@ export async function updatePR(snapshot, id, values) {
     const old = snapshot.record.receipts.find((receipt) => receipt.id === id);
     if (!old || old.status !== 'active') throw new Error('This Purchase Received record is unavailable or deleted.');
     const fields = validated(values, snapshot, old);
-    const oldValues = { poId: old.poId, receivedDate: old.receivedDate, receivedBy: old.receivedBy, lines: old.lines };
-    const nextValues = { poId: fields.poId, receivedDate: fields.receivedDate, receivedBy: fields.receivedBy, lines: fields.lines };
+    const comparableLines = (lines) => lines.map((line) => {
+      const copy = { ...line };
+      delete copy.balanceAfterQty;
+      return copy;
+    });
+    const oldValues = { poId: old.poId, receivedDate: old.receivedDate, receivedBy: old.receivedBy, lines: comparableLines(old.lines) };
+    const nextValues = { poId: fields.poId, receivedDate: fields.receivedDate, receivedBy: fields.receivedBy, lines: comparableLines(fields.lines) };
     if (same(oldValues, nextValues)) throw new Error('No changes to save.');
     const receipt = { ...old, ...fields, vendorPhone: old.vendorPhone,
+      ...(Object.hasOwn(old, 'vendorAddress') ? { vendorAddress: old.vendorAddress } : { vendorAddress: undefined }),
+      ...(Object.hasOwn(old, 'vendorGstNo') ? { vendorGstNo: old.vendorGstNo } : { vendorGstNo: undefined }),
       updatedAt: timestamp(snapshot.record.events.at(-1)?.at || old.updatedAt) };
+    if (receipt.vendorAddress === undefined) delete receipt.vendorAddress;
+    if (receipt.vendorGstNo === undefined) delete receipt.vendorGstNo;
     const receipts = snapshot.record.receipts.map((item) => item.id === id ? receipt : item);
     appendEvent(snapshot, receipts, receipt, 'updated', receiptUpdateSummary(old, receipt));
     return loadPRSnapshot();

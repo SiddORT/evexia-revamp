@@ -99,19 +99,23 @@ export default function PRDocumentPreview({ document, onClose }) {
         <p>Received date: {model.receivedDate || 'Not recorded'}. Received by: {model.receivedBy || 'Not recorded'}.</p>
         <p>Purchase order: {model.poNumber || 'Not recorded'}, dated {model.poDate || 'Not recorded'}. Vendor: {model.vendorName || 'Not recorded'}, phone: {model.vendorPhone || 'Not recorded'}. Destination: {model.locationName || 'Not recorded'}.</p>
         {model.status === 'deleted' && <p>Deleted receipt, for reference only.</p>}
-        {model.isDemo && <p>Sample document, preview only.</p>}
+        {model.isSample && <p>Sample document, preview only.</p>}
+        <p>Recorded receiver is local demo data, not verified identity. Vendor address: {model.vendorAddress || 'Not recorded'}. GST number: {model.vendorGstNo || 'Not recorded'}.</p>
+        {lines.some((line) => line.balanceAfterQty == null) && <p>Historical post-receipt balance was not recorded for this older receipt. It is not inferred from current receipts.</p>}
         <table>
           <caption>Received product and batch details</caption>
-          <thead><tr>{['Sr. no.', 'Product', 'Ordered quantity', 'Received quantity', 'Accepted quantity', 'Rejected quantity', 'Batch number', 'Expiry date'].map((label) => <th scope="col" key={label}>{label}</th>)}</tr></thead>
-          <tbody>{lines.map((line, index) => <tr key={line.lineId || `${line.productId}-${index}`}>
+          <thead><tr>{['Sr. no.', 'Product', 'Ordered quantity', 'Received quantity', 'Accepted quantity', 'Balance quantity after this receipt', 'Rejected quantity', 'Batch number', 'Expiry date', 'Source line'].map((label) => <th scope="col" key={label}>{label}</th>)}</tr></thead>
+          <tbody>{lines.map((line, index) => <tr key={`${line.lineId}-${index}`}>
             <td>{index + 1}</td>
             <th scope="row">{line.productName}</th>
             <td>{line.orderedQty}</td>
             <td>{line.receivedQty}</td>
             <td>{line.acceptedQty}</td>
+            <td>{line.balanceAfterQty ?? 'Not recorded'}</td>
             <td>{line.rejectedQty}</td>
             <td>{line.batchNo}</td>
             <td>{line.expiryDate}</td>
+            <td>{line.lineId}</td>
           </tr>)}</tbody>
         </table>
       </section>

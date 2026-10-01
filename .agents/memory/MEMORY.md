@@ -9,3 +9,4 @@
 - [Browser-local invoice exports](browser-local-invoice-exports.md) — keep PO exports on-device; previews and PDFs must show identical saved amounts and template layouts.
 - [Communication preview boundary](communication-preview-boundary.md) — demo endpoints exclude all query/fragment data because provider credential names vary.
 - [Linked local procurement mutations](linked-local-procurement-mutations.md) — PO and receipt writes must share a browser lock; deterministic legacy normalization must not write during reads.
+- [Receipt historical balances](receipt-historical-balances.md) — preserve post-receipt snapshots; legacy or unrepresentable history must be unavailable, never inferred from current balances.

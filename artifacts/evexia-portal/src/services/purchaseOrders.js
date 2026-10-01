@@ -285,14 +285,18 @@ function linkedReceiptsForPO(poId) {
     'vendorId', 'vendorName', 'vendorPhone', 'locationId', 'locationName', 'status',
     'createdAt', 'updatedAt', 'deletedAt', 'lines'];
   const eventFields = ['id', 'receiptId', 'number', 'action', 'at', 'actor', 'summary'];
-  const exact = (value, fields) => value && typeof value === 'object' && !Array.isArray(value) &&
-    Object.keys(value).length === fields.length && fields.every((field) => Object.hasOwn(value, field));
+  const exact = (value, fields, optional = []) => value && typeof value === 'object' && !Array.isArray(value) &&
+    fields.every((field) => Object.hasOwn(value, field)) &&
+    Object.keys(value).every((field) => fields.includes(field) || optional.includes(field));
   const text = (value) => typeof value === 'string' && value.trim() === value && value.length > 0;
   if (!exact(record, ['version', 'revision', 'receipts', 'events']) || record.version !== 1 ||
     !Number.isSafeInteger(record.revision) || record.revision < 0 ||
     !Array.isArray(record.receipts) || !Array.isArray(record.events) ||
     record.revision !== record.events.length ||
-    record.receipts.some((receipt) => !exact(receipt, receiptFields) || !text(receipt.id) || !text(receipt.poId) ||
+    record.receipts.some((receipt) => !exact(receipt, receiptFields, ['vendorAddress', 'vendorGstNo']) ||
+      ['vendorAddress', 'vendorGstNo'].some((field) => Object.hasOwn(receipt, field) &&
+        (typeof receipt[field] !== 'string' || receipt[field] !== receipt[field].trim())) ||
+      !text(receipt.id) || !text(receipt.poId) ||
       !text(receipt.number) || !['active', 'deleted'].includes(receipt.status) || !Array.isArray(receipt.lines)) ||
     record.events.some((event) => !exact(event, eventFields) || !text(event.id) || !text(event.receiptId) ||
       !text(event.number) || !text(event.actor) || !text(event.summary) ||

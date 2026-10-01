@@ -12,5 +12,6 @@
 .po-tpl__head strong { font-size: 14px; color: var(--admin-text); }
 .po-tpl__card p { margin: 0; font-size: 12px; line-height: 1.45; color: var(--admin-text-soft); flex: 1; }
 .po-tpl__use { min-height: 40px; }
+.po-tpl__sample { font-size: 11px; font-weight: 700; color: var(--admin-text-soft); }
 .po-tpl__error { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; }
 .po-tpl__error .admin-button { min-height: 32px; }

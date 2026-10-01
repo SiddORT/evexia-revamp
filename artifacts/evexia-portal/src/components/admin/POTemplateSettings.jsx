@@ -3,75 +3,91 @@ import '../../poTemplateSettings.css';
 import { PO_TEMPLATES, loadPOTemplatePreference, setDefaultPOTemplate, resetPOTemplatePreference, makeSampleInvoiceDocument } from '../../services/poInvoiceTemplates.js';
 import POInvoiceDocument from './POInvoiceDocument.jsx';
 import ConfirmationDialog from './ConfirmationDialog.jsx';
+import { PR_TEMPLATES, loadPRTemplatePreference, setDefaultPRTemplate, resetPRTemplatePreference } from '../../services/prReceiptTemplates.js';
+import { makeSamplePRDocument } from '../../services/prDocuments.js';
+import PRReceiptDocument from './PRReceiptDocument.jsx';
 
-function readDefault() {
-  try { return { id: loadPOTemplatePreference(), error: '' }; }
+function readDefault(type) {
+  try { return { id: (type === 'pr' ? loadPRTemplatePreference : loadPOTemplatePreference)(), error: '' }; }
   catch (e) { return { id: null, error: e?.message || 'Saved template preference could not be loaded.' }; }
 }
 
-function Preview({ id }) {
+function Preview({ id, type }) {
   const doc = useMemo(() => {
-    try { const d = makeSampleInvoiceDocument(id); return { ...d, pages: d.pages.slice(0, 1) }; } catch { return null; }
-  }, [id]);
+    try { const d = type === 'pr' ? makeSamplePRDocument(id) : makeSampleInvoiceDocument(id); return { ...d, pages: d.pages.slice(0, 1) }; } catch { return null; }
+  }, [id, type]);
   if (!doc) return <p role="alert">Preview unavailable.</p>;
-  return <POInvoiceDocument document={doc} compact />;
+  return type === 'pr' ? <PRReceiptDocument document={doc} compact /> : <POInvoiceDocument document={doc} compact />;
 }
 
 export default function POTemplateSettings() {
-  const [state, setState] = useState(readDefault);
+  const [docType, setDocType] = useState('po');
+  return <section className="admin-panel admin-settings__section" aria-labelledby="templates-heading">
+    <h2 id="templates-heading">Templates</h2>
+    <p>Choose document layouts for previews and on-device PDFs. PO and PR choices are saved independently in this browser.</p>
+    <div className="admin-settings__field">
+      <label htmlFor="document-type">Document type</label>
+      <select id="document-type" className="admin-select" value={docType} onChange={(event) => setDocType(event.target.value)}>
+        <option value="po">PO invoice templates</option>
+        <option value="pr">PR receipt templates</option>
+      </select>
+    </div>
+    <TemplateGallery key={docType} docType={docType} />
+  </section>;
+}
+
+function TemplateGallery({ docType }) {
+  const [state, setState] = useState(() => readDefault(docType));
   const [status, setStatus] = useState('');
   const [saveError, setSaveError] = useState('');
-  const [docType] = useState('po');
   const [pending, setPending] = useState(null);
   const [resetting, setResetting] = useState(false);
   const [resetError, setResetError] = useState('');
   const defaultId = state.id;
+  const isPR = docType === 'pr';
+  const label = isPR ? 'PR receipt' : 'PO invoice';
+  const templates = isPR ? PR_TEMPLATES : PO_TEMPLATES;
   useEffect(() => { if (status) { const t = setTimeout(() => setStatus(''), 4000); return () => clearTimeout(t); } }, [status]);
 
   function choose(t) {
     setPending(t.id); setSaveError('');
-    try { setDefaultPOTemplate(t.id); setState({ id: t.id, error: '' }); setStatus(`${t.name} is now the default PO invoice template.`); }
+    try { (isPR ? setDefaultPRTemplate : setDefaultPOTemplate)(t.id); setState({ id: t.id, error: '' }); setStatus(`${t.name} is now the default ${label} template.`); }
     catch (e) { setSaveError(`Could not save ${t.name} as default: ${e?.message || 'storage unavailable'}. Your previous default is unchanged.`); }
     setPending(null);
   }
   function resetDefault() {
     try {
-      const id = resetPOTemplatePreference();
+      const id = (isPR ? resetPRTemplatePreference : resetPOTemplatePreference)();
       setState({ id, error: '' });
       setSaveError('');
       setResetting(false);
-      setStatus('Template preference reset to EVEXIA Classic. Purchase orders are unchanged.');
+      setStatus(`${label} template preference reset to EVEXIA Classic. Other template choices and transaction records are unchanged.`);
     } catch (e) { setResetError(e.message || 'Could not reset the template preference.'); }
   }
 
-  return <section className="admin-panel admin-settings__section" aria-labelledby="templates-heading">
-    <h2 id="templates-heading">Templates</h2>
-    <p>Choose the layout used for supplier PO invoices and PDFs. Saved in this browser.</p>
-    <div className="admin-settings__field">
-      <label htmlFor="document-type">Document type</label>
-      <select id="document-type" className="admin-select" value={docType} onChange={() => {}}>
-        <option value="po">PO invoice templates</option>
-      </select>
-    </div>
+  return <div>
+    <p>{isPR ? 'Purchase Received receipts show saved quantities, not financial invoice amounts. Preview below uses fictional sample details.' : 'Supplier PO invoices show saved order amounts. Previews below use fictional sample details.'}</p>
     {state.error && <div className="admin-feedback admin-feedback--error po-tpl__error" role="alert">{state.error}
-      <button type="button" className="admin-button admin-button--secondary" onClick={() => setState(readDefault())}>Retry loading</button>
-      <button type="button" className="admin-button admin-button--secondary" onClick={() => { setResetError(''); setResetting(true); }}>Reset template preference</button></div>}
+      <button type="button" className="admin-button admin-button--secondary" onClick={() => setState(readDefault(docType))}>Retry loading {label} preference</button>
+      <button type="button" className="admin-button admin-button--secondary" onClick={() => { setResetError(''); setResetting(true); }}>Reset {label} preference</button></div>}
     {saveError && <div className="admin-feedback admin-feedback--error po-tpl__error" role="alert">{saveError}</div>}
     <div className="sr-only" aria-live="polite" style={{ position: 'absolute', left: -9999 }}>{status}</div>
     {status && <div className="admin-feedback" style={{ marginTop: 16 }}>{status}</div>}
-    <ul className="po-tpl__gallery" aria-label="PO invoice template previews">
-      {PO_TEMPLATES.map((t) => {
+    <ul className="po-tpl__gallery" aria-label={`${label} template previews`}>
+      {templates.map((t) => {
         const isDefault = t.id === defaultId;
         return <li key={t.id} className={`po-tpl__card${isDefault ? ' po-tpl__card--default' : ''}`}>
-          <div className="po-tpl__preview"><Preview id={t.id} /></div>
+          <div className="po-tpl__preview"><Preview id={t.id} type={docType} /></div>
+          <span className="po-tpl__sample">Sample · Preview only</span>
           <div className="po-tpl__head"><strong>{t.name}</strong>{isDefault && <span className="admin-badge">Default</span>}</div>
           <p>{t.description}</p>
-          <button type="button" className="admin-button po-tpl__use" disabled={!!state.error || isDefault || pending === t.id} aria-label={isDefault ? `${t.name} is the default template` : `Use ${t.name} as default`} onClick={() => choose(t)}>
+          <button type="button" className="admin-button po-tpl__use" disabled={!!state.error || isDefault || pending === t.id} aria-label={isDefault ? `${t.name} is the default ${label} template` : `Use ${t.name} as default ${label} template`} onClick={() => choose(t)}>
             {isDefault ? 'Current default' : 'Use as default'}
           </button>
         </li>;
       })}
     </ul>
-    {resetting && <ConfirmationDialog title="Reset the PO invoice template preference?" description="Only this browser’s saved template choice will be reset to EVEXIA Classic. Purchase orders and other settings will not be changed." actionLabel="Reset template preference" onConfirm={resetDefault} onClose={() => setResetting(false)} error={resetError} />}
-  </section>;
+    {!state.error && <button type="button" className="admin-button admin-button--secondary" style={{ marginTop: 18 }} onClick={() => { setResetError(''); setResetting(true); }}>Reset {label} preference</button>}
+    {resetting && <ConfirmationDialog title={`Reset the ${label} template preference?`} description={`Only this browser’s ${label} template choice will be reset to EVEXIA Classic. Other template choices, purchase orders and receipts will not be changed.`} actionLabel={`Reset ${label} preference`} onConfirm={resetDefault} onClose={() => setResetting(false)} error={resetError} />}
+  </div>;
 }

@@ -6,6 +6,7 @@ import {
 } from './purchaseReceived.js';
 import { PO_KEY, createPO, updatePO, deletePO, guardedCreatePO } from './purchaseOrders.js';
 import { VENDOR_KEY } from './vendors.js';
+import { normalizePRReceipt } from './prReceiptModel.js';
 
 test('null saved receipt entries are rejected with recovery guidance, without changing storage', () => {
   const raw = JSON.stringify({ version: 1, revision: 0, receipts: [null], events: [] });
@@ -132,6 +133,7 @@ test('uses stable PO line IDs to distinguish duplicate product rows', async () =
   const created = await createPR(loadPRSnapshot(), values);
   assert.deepEqual(created.record.receipts[0].lines.map((line) => line.orderedQty), [2, 3]);
   assert.deepEqual(created.record.receipts[0].lines.map((line) => line.lineId), po.lines.map((line) => line.id));
+  assert.deepEqual(created.record.receipts[0].lines.map((line) => line.balanceAfterQty), [1, 1]);
 });
 
 test('supports partial receipts, accepted-only balances, rejection, close/reopen and edit recalculation', async () => {
@@ -144,11 +146,13 @@ test('supports partial receipts, accepted-only balances, rejection, close/reopen
   }]));
   const pr1 = first.record.receipts[0];
   assert.equal(pr1.lines[0].rejectedQty, 1);
+  assert.equal(pr1.lines[0].balanceAfterQty, 7.875);
   assert.equal(getPOBalances(po, first.record.receipts)[lineId], 7.875);
   assert.equal(getPOBalances(po, [{ ...pr1, poId: 'different-po' }])[lineId], 10);
   assert.equal(getPOFulfillment(po, first.record.receipts), 'Partially Received');
 
   const second = await createPR(first, receiptValues(po, [{ receivedQty: '7.875', acceptedQty: '7.875' }]));
+  assert.equal(second.record.receipts.find((receipt) => receipt.id !== pr1.id).lines[0].balanceAfterQty, 0);
   assert.equal(getPOBalances(po, second.record.receipts)[lineId], 0);
   assert.equal(getPOFulfillment(po, second.record.receipts), 'Closed');
   assert.ok(validatePR(receiptValues(po, [{ receivedQty: '0.001' }]), second).errors['lines.0.receivedQty']);
@@ -191,11 +195,15 @@ test('earlier rejected receipt remains correctable after a later receipt closes 
   assert.equal(corrected.lines[0].expiryDate, '2027-12-31');
   assert.equal(corrected.receivedDate, '2026-10-01');
   assert.equal(corrected.receivedBy, 'Corrected local receiver');
+  assert.equal(corrected.lines[0].balanceAfterQty, 5);
+  assert.equal(snapshot.record.receipts.find((receipt) => receipt.id !== firstId).lines[0].balanceAfterQty, 0,
+    'a later receipt keeps its saved historical balance');
   assert.equal(getPOFulfillment(po, snapshot.record.receipts), 'Closed');
 
   const reduceAcceptance = { ...correction, lines: [{ ...correction.lines[0], acceptedQty: '4' }] };
   snapshot = await updatePR(snapshot, firstId, reduceAcceptance);
   assert.equal(getPOBalances(po, snapshot.record.receipts)[po.lines[0].id], 1);
+  assert.equal(snapshot.record.receipts.find((r) => r.id === firstId).lines[0].balanceAfterQty, 6);
   assert.equal(getPOFulfillment(po, snapshot.record.receipts), 'Partially Received');
   const acceptedTooMuch = { ...correction, lines: [{ ...correction.lines[0], acceptedQty: '6' }] };
   const receivedTooMuch = { ...reduceAcceptance, lines: [{ ...reduceAcceptance.lines[0], receivedQty: '11' }] };
@@ -211,27 +219,90 @@ test('earlier rejected receipt remains correctable after a later receipt closes 
   assert.equal(getPOBalances(po, snapshot.record.receipts)[po.lines[0].id], 1);
 });
 
-test('preserves saved vendor phone on edit and records detailed old-to-new activity', async () => {
+test('does not clamp an edited historical balance below zero after an earlier receipt is deleted', async () => {
+  installLocks();
+  const initial = loadPRSnapshot();
+  const po = createOrder(initial);
+  let snapshot = await createPR(loadPRSnapshot(), receiptValues(po, [{
+    receivedQty: '5', acceptedQty: '5', batchNo: 'EARLIER',
+  }]));
+  const earlierId = snapshot.record.receipts[0].id;
+  snapshot = await createPR(snapshot, receiptValues(po, [{
+    receivedQty: '4', acceptedQty: '4', batchNo: 'LATER',
+  }]));
+  const later = snapshot.record.receipts.find((receipt) => receipt.id !== earlierId);
+  assert.equal(later.lines[0].balanceAfterQty, 1);
+
+  snapshot = await deletePR(snapshot, earlierId);
+  snapshot = await updatePR(snapshot, later.id, receiptValues(po, [{
+    receivedQty: '10', acceptedQty: '10', batchNo: 'LATER-UPDATED',
+  }]));
+  const edited = snapshot.record.receipts.find((receipt) => receipt.id === later.id);
+  assert.equal(edited.lines[0].balanceAfterQty, null,
+    'negative historical remaining balance is unknown, not a fabricated zero');
+});
+
+test('snapshots vendor details and preserves them on edit while recording detailed old-to-new activity', async () => {
   installLocks();
   const snapshot = loadPRSnapshot();
   const po = createOrder(snapshot);
   const created = await createPR(loadPRSnapshot(), receiptValues(po));
   const original = created.record.receipts[0];
+  assert.equal(original.vendorAddress, snapshot.refs.vendors.find((vendor) => vendor.id === original.vendorId).registeredAddress);
+  assert.equal(original.vendorGstNo, snapshot.refs.vendors.find((vendor) => vendor.id === original.vendorId).gstNo);
   const vendorRecords = JSON.parse(window.localStorage.getItem(VENDOR_KEY));
   window.localStorage.setItem(VENDOR_KEY, JSON.stringify(vendorRecords.map((vendor) =>
-    vendor.id === original.vendorId ? { ...vendor, phoneNo: '9999999999' } : vendor)));
+    vendor.id === original.vendorId ? {
+      ...vendor, phoneNo: '9999999999', registeredAddress: 'Changed master address', gstNo: '27ZZZZZ0000Z1Z5',
+    } : vendor)));
   const refreshed = loadPRSnapshot();
   const updated = await updatePR(refreshed, original.id, receiptValues(po, [{
     receivedQty: '3', acceptedQty: '2.5', batchNo: 'BATCH-UPDATED', expiryDate: '2028-01-01',
   }], { receivedDate: '2026-10-01', receivedBy: 'Updated Receiver' }));
   const receipt = updated.record.receipts.find((item) => item.id === original.id);
   assert.equal(receipt.vendorPhone, original.vendorPhone);
+  assert.equal(receipt.vendorAddress, original.vendorAddress);
+  assert.equal(receipt.vendorGstNo, original.vendorGstNo);
   const summary = updated.record.events.at(-1).summary;
   for (const phrase of ['Received date: 2026-09-30 → 2026-10-01',
     'Received by: Local Receiver → Updated Receiver', 'received: 2 → 3', 'accepted: 2 → 2.5',
     'rejected: 0 → 0.5', 'batch: BATCH-1 → BATCH-UPDATED', 'expiry: 2027-09-30 → 2028-01-01']) {
     assert.ok(summary.includes(phrase), phrase);
   }
+});
+
+test('legacy receipt schema remains readable and absent balances are not reconstructed on load', async () => {
+  installLocks();
+  const snapshot = loadPRSnapshot();
+  const po = createOrder(snapshot);
+  const created = await createPR(loadPRSnapshot(), receiptValues(po, [{
+    receivedQty: '3', acceptedQty: '2',
+  }]));
+  const legacy = JSON.parse(window.localStorage.getItem(PR_KEY));
+  const savedReceipt = legacy.receipts[0];
+  delete savedReceipt.vendorAddress;
+  delete savedReceipt.vendorGstNo;
+  delete savedReceipt.lines[0].balanceAfterQty;
+  const raw = JSON.stringify(legacy);
+  window.localStorage.setItem(PR_KEY, raw);
+
+  const refreshed = loadPRSnapshot();
+  assert.equal(refreshed.record.receipts[0].lines[0].balanceAfterQty, undefined);
+  const model = normalizePRReceipt(refreshed.record.receipts[0]);
+  assert.equal(model.lines[0].balanceAfterQty, null);
+  assert.match(model.balanceHistoryExplanation, /cannot be reconstructed from current receipts or activity/);
+  assert.equal(window.localStorage.getItem(PR_KEY), raw);
+  assert.equal(created.record.revision, refreshed.record.revision);
+
+  const receipt = refreshed.record.receipts[0];
+  const edited = await updatePR(refreshed, receipt.id,
+    receiptValues(po, [{ receivedQty: '3', acceptedQty: '2', batchNo: 'BATCH-EDITED' }],
+      { receivedBy: 'Updated legacy receiver' }));
+  const editedReceipt = edited.record.receipts[0];
+  assert.equal(editedReceipt.lines[0].balanceAfterQty, null,
+    'an edit cannot manufacture missing historical balance data');
+  assert.equal(Object.hasOwn(editedReceipt, 'vendorAddress'), false,
+    'an edit cannot manufacture a historical vendor address from current masters');
 });
 
 test('accepts semantically identical PR storage formatting changes while preserving freshness checks', async () => {

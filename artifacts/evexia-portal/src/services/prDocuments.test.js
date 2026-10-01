@@ -1,6 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { downloadPRDocument, makePRDocument } from './prDocuments.js';
+import { downloadPRDocument, makePRDocument, makeSamplePRDocument, prReceiptFilename } from './prDocuments.js';
+import { PR_TEMPLATE_KEY } from './prReceiptTemplates.js';
+
+test.beforeEach(() => {
+  const data = new Map();
+  globalThis.window = { localStorage: {
+    getItem: (key) => data.get(key) ?? null,
+    setItem: (key, value) => data.set(key, value),
+    removeItem: (key) => data.delete(key),
+  } };
+});
 
 function receipt(overrides = {}) {
   return {
@@ -76,7 +86,7 @@ test('keeps the receipt table and every header column inside the printable A4 ri
   const page = makePRDocument(receipt()).pages[0];
   const pageWidth = 794;
   const margin = 44;
-  const header = page.match(/<rect x="44" y="([\d.]+)" width="([\d.]+)" height="36" fill="#135a58"\/>/);
+  const header = page.match(/<rect x="44" y="([\d.]+)" width="([\d.]+)" height="38" fill="#[a-f\d]+"\/>/);
 
   assert.ok(header, 'receipt table header should be present');
   const tableTop = Number(header[1]);
@@ -84,7 +94,7 @@ test('keeps the receipt table and every header column inside the printable A4 ri
   assert.ok(tableRight <= pageWidth - margin, 'table must not extend beyond the printable A4 right edge');
 
   const headerColumnLines = [...page.matchAll(/<line x1="([\d.]+)" y1="([\d.]+)" x2="([\d.]+)" y2="([\d.]+)"/g)]
-    .filter((match) => Number(match[2]) === tableTop && Number(match[4]) === tableTop + 36);
+    .filter((match) => Number(match[2]) === tableTop && Number(match[4]) === tableTop + 38);
   assert.ok(headerColumnLines.length > 0, 'table column dividers should be rendered');
   for (const line of headerColumnLines) {
     assert.ok(Number(line[1]) <= pageWidth - margin);
@@ -120,7 +130,9 @@ test('escapes untrusted receipt text in the SVG while keeping wrapped text visib
   assert.ok(renderedText.includes('<script>alert("x")</script>'));
   assert.ok(renderedText.includes('verylong'.repeat(20)));
   assert.ok(renderedText.includes('Receiver'));
-  assert.ok(renderedText.includes('name-with-a-very-long-segment-'.repeat(14)));
+  // Paginated metadata inserts explicit continuation labels between fragments.
+  assert.ok(renderedText.includes('name-with-a-very-long-segment-'));
+  assert.ok(document.pages.length > 1);
   assert.ok(renderedText.includes('BATCH&<'));
   assert.ok(renderedText.includes('X'.repeat(90)));
 });
@@ -146,12 +158,34 @@ test('wraps long batch, receiver, and product text and paginates a receipt of 10
   assert.ok(document.pages.length > 1);
   assert.ok(document.pages.every((page) => page.includes('__EVEXIA_LOGO__')));
   assert.match(allSvg, /Page 1 of \d+/);
-  assert.match(allSvg, /Continued · PR PR-2026-001 · PO PO-2026-014/);
-  assert.match(allSvg, /Product 1 long-name-segment/);
-  assert.match(allSvg, /Product 100 long-name-segment/);
-  assert.match(allSvg, /BATCH-100-LOTLOT/);
+  assert.ok(document.pages.every((page) => page.includes('PR-2026-001') && page.includes('PO-2026-014')));
+  assert.match(textContent(document), /Product 1 long-name-segment/);
+  assert.match(textContent(document), /Product 100 long-name-segment/);
+  assert.match(textContent(document), /BATCH-100-LOTLOT/);
   assert.match(allSvg, /1\.125/);
   assert.match(allSvg, /0\.125/);
+});
+
+test('selected preference is required for saved receipts, samples use an explicit template', () => {
+  window.localStorage.setItem(PR_TEMPLATE_KEY, '{broken');
+  assert.throws(() => makePRDocument(receipt()), /unreadable/);
+  assert.match(makeSamplePRDocument().pages.join(''), /SAMPLE · PREVIEW ONLY/);
+  assert.throws(() => makePRDocument(receipt(), 'unknown'), /supported PR receipt/);
+  assert.equal(prReceiptFilename('../PR:001/<unsafe>'), 'purchase-received-PR-001-unsafe.pdf');
+  assert.equal(prReceiptFilename(null), 'purchase-received-receipt.pdf');
+});
+
+test('legacy balances remain unknown and saved balances survive later-receipt context', () => {
+  const legacy = makePRDocument(receipt());
+  assert.equal(legacy.model.lines[0].balanceAfterQty, null);
+  assert.match(legacy.pages.join(''), /unavailable/);
+  const saved = receipt();
+  saved.lines[0].balanceAfterQty = 9;
+  const current = makePRDocument(saved);
+  assert.equal(current.model.lines[0].balanceAfterQty, 9);
+  assert.deepEqual(makePRDocument({ ...saved, laterReceipts: [{ acceptedQty: 9 }] }).pages, current.pages);
+  assert.match(current.pages.at(-1), /Authorised Signatory/);
+  assert.doesNotMatch(current.pages.join(''), /Taxable|Unit Price|GST Amount|₹/);
 });
 
 test('marks deleted and explicitly sample receipts without changing their saved details', () => {

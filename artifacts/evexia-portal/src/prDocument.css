@@ -129,3 +129,9 @@
     gap: 10px;
   }
 }
+
+@media print {
+  .pr-document-pages, .pr-document-pages__page { background: #fff !important; color: #202426 !important; box-shadow: none; }
+  .pr-document-pages__page { break-after: page; }
+  .pr-document-pages__page:last-child { break-after: auto; }
+}
