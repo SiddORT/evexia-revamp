@@ -18,6 +18,14 @@ EVEXIA Life Sciences portal with mock login screens and an Admin workspace previ
 - Zone Master records are stored only in the browser's localStorage, not shared across browsers or users. Clearing browser data removes them.
 - Settings > Communication is a demo-only Email (SMTP/API/unconnected platform), SMS and WABA metadata preview. Use dummy values only. No provider is connected, verified or contacted. Password/key/token preview inputs are transient and never saved; endpoint metadata uses HTTPS without embedded credentials, query strings or fragments. Communication resets affect only its dedicated browser-local metadata, not other settings or master records.
 
+
+## Settings extensions
+
+- Settings categories are additive entries in `src/components/admin/settingsSections.jsx`, with stable URL IDs, labels, icons, descriptions, keywords and components. Register only implemented sections; do not expose placeholders.
+- General and Appearance retain the `basic` and `ui` URL IDs. Category navigation preserves unrelated query parameters and supports browser back/forward.
+- Keep Settings styling scoped in `src/adminSettings.css`. Existing local preference keys and document/template behavior must remain unchanged.
+- Focused checks: `node --test artifacts/evexia-portal/settings-navigation.test.mjs artifacts/evexia-portal/admin-preferences.test.mjs artifacts/evexia-portal/src/services/poInvoice*.test.js`.
+
 ## Browser regression test
 
 - Run the communication preview regression against the running EVEXIA Portal preview with `EVEXIA_PREVIEW_BASE_URL=https://<development-preview-host> pnpm run test:communication-browser`. `EVEXIA_PREVIEW_BASE_URL` is required; use the assigned development preview host and port rather than assuming the default Vite port is correct.
