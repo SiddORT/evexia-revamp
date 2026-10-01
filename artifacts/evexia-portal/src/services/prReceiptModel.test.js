@@ -82,10 +82,38 @@ test('preserves separate repeated-product source lines and their individual save
 
 test('sample factory marks its preview and includes an internally consistent historical balance', () => {
   const sample = makeSamplePRReceipt();
+  assert.deepEqual(sample, makeSamplePRReceipt('classic'));
   assert.equal(sample.isSample, true);
+  assert.equal(sample.id, 'sample-pr-template');
   assert.equal(sample.number, 'PR-SAMPLE-001');
+  assert.equal(sample.vendorName, 'Sample Supplier · Preview Only');
+  assert.equal(sample.lines[0].productName, 'Sample Diagnostic Reagent');
   assert.equal(sample.lines[0].orderedQty - sample.lines[0].acceptedQty, sample.lines[0].balanceAfterQty);
   assert.equal(sample.hasHistoricalBalance, true);
+});
+
+test('Modern and Compact previews use distinct fictional receipt, supplier, and product data', () => {
+  const classic = makeSamplePRReceipt();
+  const modern = makeSamplePRReceipt('modern');
+  const compact = makeSamplePRReceipt('compact');
+  for (const sample of [modern, compact]) {
+    assert.equal(sample.isSample, true);
+    assert.equal(sample.hasHistoricalBalance, true);
+    assert.equal(sample.lines[0].orderedQty - sample.lines[0].acceptedQty,
+      sample.lines[0].balanceAfterQty);
+    assert.match(sample.vendorName, /Sample .*Preview Only/);
+    assert.notEqual(sample.id, classic.id);
+    assert.notEqual(sample.number, classic.number);
+    assert.notEqual(sample.vendorName, classic.vendorName);
+    assert.notEqual(sample.lines[0].productName, classic.lines[0].productName);
+  }
+  assert.notEqual(modern.id, compact.id);
+  assert.notEqual(modern.number, compact.number);
+  assert.notEqual(modern.vendorId, compact.vendorId);
+  assert.notEqual(modern.vendorName, compact.vendorName);
+  assert.notEqual(modern.lines[0].productId, compact.lines[0].productId);
+  assert.notEqual(modern.lines[0].productName, compact.lines[0].productName);
+  assert.throws(() => makeSamplePRReceipt('unsupported'), /supported Purchase Received/);
 });
 
 test('rejects absent records, malformed line collections, and invalid saved historical balances', () => {

@@ -17,7 +17,7 @@ export function makePRDocument(receipt, templateId = loadPRTemplatePreference())
 }
 
 export function makeSamplePRDocument(templateId = 'classic') {
-  return makePRDocument(makeSamplePRReceipt(), templateId);
+  return makePRDocument(makeSamplePRReceipt(templateId), templateId);
 }
 
 export function prReceiptFilename(number) {

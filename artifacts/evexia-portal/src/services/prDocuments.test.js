@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { downloadPRDocument, makePRDocument, makeSamplePRDocument, prReceiptFilename } from './prDocuments.js';
-import { PR_TEMPLATE_KEY } from './prReceiptTemplates.js';
+import { PR_TEMPLATE_KEY, PR_TEMPLATES, setDefaultPRTemplate } from './prReceiptTemplates.js';
+import { PO_TEMPLATE_KEY, loadPOTemplatePreference } from './poInvoiceTemplates.js';
 
 test.beforeEach(() => {
   const data = new Map();
@@ -220,4 +221,55 @@ test('rejects malformed source records and requires browser SVG measurement for 
     downloadPRDocument({ pages: [] }, 'PR.pdf', '/images/evexia-logo.png'),
     /document pages are missing/,
   );
+});
+
+for (const templateId of ['classic', 'modern', 'compact']) {
+  test(`${templateId}: saved preview follows the independent default without changing receipt values`, () => {
+    window.localStorage.setItem(PO_TEMPLATE_KEY, JSON.stringify({
+      version: 1, defaultPOInvoiceTemplate: 'modern',
+    }));
+    const saved = receipt();
+    saved.lines[0].balanceAfterQty = 9;
+    saved.lines.push({
+      ...saved.lines[0], lineId: 'duplicate-source-2', balanceAfterQty: null,
+      batchNo: 'SECOND-BATCH',
+    });
+    const before = JSON.stringify(saved);
+    setDefaultPRTemplate(templateId);
+    const document = makePRDocument(saved);
+    assert.equal(document.templateId, templateId);
+    assert.equal(loadPOTemplatePreference(), 'modern');
+    assert.deepEqual(document.pages, makePRDocument(saved, templateId).pages);
+    assert.equal(JSON.stringify(saved), before);
+    assert.deepEqual(document.model.lines.map((line) => line.balanceAfterQty), [9, null]);
+    assert.deepEqual(document.model.lines.map((line) => line.lineId), ['line-1', 'duplicate-source-2']);
+    const text = textContent(document);
+    for (const value of ['4.125', '0.625', 'SECOND-BATCH', 'duplicate-source-2', 'unavailable']) {
+      assert.ok(text.includes(value), value);
+    }
+    assert.doesNotMatch(text, /Unit Price|Taxable Amount|GST Amount|₹/);
+    assert.ok(document.pages.at(-1).includes('Authorised Signatory'));
+  });
+
+  test(`${templateId}: both export options retain explicit errors and supported-template validation`, async () => {
+    const document = makePRDocument(receipt(), templateId);
+    await assert.rejects(downloadPRDocument(document, '', '/images/evexia-logo.png'),
+      /browser with SVG text measurement/);
+    await assert.rejects(downloadPRDocument(document, '', '/images/evexia-logo.png', { format: 'image' }),
+      /browser page with a same-origin logo URL/);
+    await assert.rejects(downloadPRDocument({ ...document, templateId: 'unknown' }, '', '/images/evexia-logo.png'),
+      /unsupported template/);
+  });
+}
+
+test('each receipt gallery theme has distinct fictional sample content without reading preferences', () => {
+  window.localStorage.setItem(PR_TEMPLATE_KEY, '{broken');
+  const documents = PR_TEMPLATES.map(({ id }) => makeSamplePRDocument(id));
+  assert.equal(new Set(documents.map((doc) => doc.number)).size, 3);
+  assert.equal(new Set(documents.map((doc) => doc.model.vendorName)).size, 3);
+  for (const document of documents) {
+    assert.equal(document.model.isSample, true);
+    assert.ok(document.pages[0].includes('SAMPLE · PREVIEW ONLY'));
+    assert.equal(document.model.hasHistoricalBalance, true);
+  }
 });

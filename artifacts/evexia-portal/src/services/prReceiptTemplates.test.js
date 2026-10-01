@@ -26,26 +26,31 @@ test('PR has its own default and preference key, independent from PO templates a
   }));
   const poPreference = window.localStorage.getItem(PO_TEMPLATE_KEY);
   assert.equal(loadPRTemplatePreference(), 'classic');
-  assert.equal(PR_TEMPLATES.length, 1);
-  assert.equal(PR_TEMPLATES[0].id, 'classic');
-  assert.equal(setDefaultPRTemplate('classic'), 'classic');
-  assert.equal(loadPRTemplatePreference(), 'classic');
+  assert.deepEqual(PR_TEMPLATES.map((template) => template.id), ['classic', 'modern', 'compact']);
+  for (const template of PR_TEMPLATES) {
+    assert.match(template.description, /Purchase Received receipt/i);
+    assert.doesNotMatch(template.description, /invoice/i);
+    assert.equal(setDefaultPRTemplate(template.id), template.id);
+    assert.deepEqual(JSON.parse(window.localStorage.getItem(PR_TEMPLATE_KEY)), {
+      version: 1, defaultPRReceiptTemplate: template.id,
+    });
+    assert.equal(loadPRTemplatePreference(), template.id, 'saved preferences survive a reload');
+    assert.equal(resetPRTemplatePreference(), 'classic');
+    assert.equal(window.localStorage.getItem(PR_TEMPLATE_KEY), null);
+    assert.equal(loadPRTemplatePreference(), 'classic', 'reset returns to Classic');
+  }
   assert.equal(window.localStorage.getItem(PO_TEMPLATE_KEY), poPreference);
-  assert.equal(loadPOTemplatePreference(), 'modern');
-  assert.equal(window.localStorage.getItem(PR_TEMPLATE_KEY),
-    JSON.stringify({ version: 1, defaultPRReceiptTemplate: 'classic' }));
-
-  assert.equal(resetPRTemplatePreference(), 'classic');
-  assert.equal(window.localStorage.getItem(PR_TEMPLATE_KEY), null);
   assert.equal(loadPOTemplatePreference(), 'modern');
   assert.equal(window.localStorage.getItem(PO_TEMPLATE_KEY), poPreference);
 });
 
 test('PR preference rejects unsupported or corrupt values and can be explicitly reset', () => {
-  assert.throws(() => setDefaultPRTemplate('modern'), /supported Purchase Received/);
+  assert.throws(() => setDefaultPRTemplate('unsupported'), /supported Purchase Received/);
   window.localStorage.setItem(PR_TEMPLATE_KEY, '{broken');
   assert.throws(() => loadPRTemplatePreference(), /unreadable.*Reset the PR template preference/);
-  assert.throws(() => setDefaultPRTemplate('classic'), /unreadable/);
+  for (const template of PR_TEMPLATES) {
+    assert.throws(() => setDefaultPRTemplate(template.id), /unreadable/);
+  }
   assert.equal(window.localStorage.getItem(PR_TEMPLATE_KEY), '{broken');
   assert.equal(resetPRTemplatePreference(), 'classic');
   assert.equal(loadPRTemplatePreference(), 'classic');
@@ -61,7 +66,9 @@ test('PR preference reports browser storage read, write, and reset failures', ()
   assert.throws(() => loadPRTemplatePreference(), /could not be read.*browser storage/);
   window.localStorage.getItem = () => null;
   window.localStorage.setItem = () => { throw new Error('quota'); };
-  assert.throws(() => setDefaultPRTemplate('classic'), /could not be saved.*browser storage/);
+  for (const template of PR_TEMPLATES) {
+    assert.throws(() => setDefaultPRTemplate(template.id), /could not be saved.*browser storage/);
+  }
   window.localStorage.removeItem = () => { throw new Error('denied'); };
   assert.throws(() => resetPRTemplatePreference(), /could not be reset.*browser storage/);
 });

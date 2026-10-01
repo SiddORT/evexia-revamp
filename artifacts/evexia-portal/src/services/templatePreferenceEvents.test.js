@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PO_TEMPLATE_KEY, subscribePOTemplatePreference } from './poInvoiceTemplates.js';
-import { PR_TEMPLATE_KEY, subscribePRTemplatePreference } from './prReceiptTemplates.js';
+import { PO_TEMPLATE_KEY, PO_TEMPLATES, subscribePOTemplatePreference } from './poInvoiceTemplates.js';
+import { PR_TEMPLATE_KEY, PR_TEMPLATES, subscribePRTemplatePreference } from './prReceiptTemplates.js';
 
-for (const [type, key, otherKey, subscribe, field] of [
-  ['PO', PO_TEMPLATE_KEY, PR_TEMPLATE_KEY, subscribePOTemplatePreference, 'defaultPOInvoiceTemplate'],
-  ['PR', PR_TEMPLATE_KEY, PO_TEMPLATE_KEY, subscribePRTemplatePreference, 'defaultPRReceiptTemplate'],
+for (const [type, key, otherKey, subscribe, field, templates] of [
+  ['PO', PO_TEMPLATE_KEY, PR_TEMPLATE_KEY, subscribePOTemplatePreference, 'defaultPOInvoiceTemplate', PO_TEMPLATES],
+  ['PR', PR_TEMPLATE_KEY, PO_TEMPLATE_KEY, subscribePRTemplatePreference, 'defaultPRReceiptTemplate', PR_TEMPLATES],
 ]) {
   test(`${type} observes only its local preference and clear events, without writes, and unsubscribes`, () => {
     const listeners = new Set();
@@ -27,9 +27,11 @@ for (const [type, key, otherKey, subscribe, field] of [
     dispatch({ key: 'transaction-records', storageArea: localStorage });
     dispatch({ key, storageArea: {} }); // sessionStorage is not a local preference.
     assert.deepEqual(states, []);
-    raw = JSON.stringify({ version: 1, [field]: 'classic' });
-    dispatch({ key, storageArea: localStorage, newValue: '{stale event value' });
-    assert.deepEqual(states.pop(), { id: 'classic', error: '' });
+    for (const template of templates) {
+      raw = JSON.stringify({ version: 1, [field]: template.id });
+      dispatch({ key, storageArea: localStorage, newValue: '{stale event value' });
+      assert.deepEqual(states.pop(), { id: template.id, error: '' });
+    }
     raw = '{broken';
     dispatch({ key, storageArea: localStorage });
     assert.match(states.pop().error, /unreadable.*Reset/);

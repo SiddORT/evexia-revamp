@@ -3,7 +3,17 @@ export const PR_TEMPLATES = [
   {
     id: 'classic',
     name: 'EVEXIA Classic',
-    description: 'A formal Purchase Received record with source quantities, acceptance outcomes and an unsigned acknowledgement box.',
+    description: 'A formal Purchase Received receipt with source quantities, acceptance outcomes and an unsigned acknowledgement box.',
+  },
+  {
+    id: 'modern',
+    name: 'EVEXIA Modern',
+    description: 'A polished Purchase Received receipt that highlights supplier details, acceptance outcomes and the remaining order balance.',
+  },
+  {
+    id: 'compact',
+    name: 'EVEXIA Compact',
+    description: 'A space-efficient Purchase Received receipt that keeps supplier and per-line receipt quantities easy to scan.',
   },
 ];
 

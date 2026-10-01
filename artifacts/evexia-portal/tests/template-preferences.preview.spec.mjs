@@ -81,10 +81,16 @@ test('PR save/reset events preserve PO choice; errors stay visible until retry o
   try {
     await writer.getByRole('button', { name: 'Use EVEXIA Compact as default PO invoice template' }).click();
     await reader.getByLabel('Document type').selectOption('pr');
+    await writer.getByLabel('Document type').selectOption('pr');
     const before = await storage(writer);
+    for (const name of ['EVEXIA Modern', 'EVEXIA Compact', 'EVEXIA Classic']) {
+      await writer.getByRole('button', { name: `Use ${name} as default PR receipt template`, exact: true }).click();
+      await expect(current(reader, name, 'PR receipt')).toBeVisible();
+      expect((await storage(writer))[PO_KEY]).toBe(before[PO_KEY]);
+    }
     await writer.evaluate((key) => localStorage.setItem(key, '{broken'), PR_KEY);
     await expect(reader.getByRole('alert')).toContainText('unreadable');
-    // PR currently has one layout; use its real preference service to exercise save.
+    // A valid later write must not silently clear the observing gallery's error.
     await writer.evaluate(async () => {
       const service = await import('/src/services/prReceiptTemplates.js');
       service.resetPRTemplatePreference();
@@ -98,6 +104,7 @@ test('PR save/reset events preserve PO choice; errors stay visible until retry o
     await writer.evaluate((key) => localStorage.setItem(key, '{"version":9,"defaultPRReceiptTemplate":"classic"}'), PR_KEY);
     await expect(reader.getByRole('alert')).toContainText('invalid');
     // Changing PO cannot dismiss PR's error.
+    await writer.getByLabel('Document type').selectOption('po');
     await writer.getByRole('button', { name: 'Use EVEXIA Modern as default PO invoice template' }).click();
     await expect(reader.getByRole('alert')).toContainText('invalid');
     const po = (await storage(writer))[PO_KEY];
@@ -111,6 +118,49 @@ test('PR save/reset events preserve PO choice; errors stay visible until retry o
     // Switch back: the independent PO gallery reads the latest PO preference.
     await reader.getByLabel('Document type').selectOption('po');
     await expect(current(reader, 'EVEXIA Modern', 'PO invoice')).toBeVisible();
+  } finally { await context.close(); }
+});
+
+test('all PR cards work on narrow light/dark galleries with keyboard selection, reload and failed saves', async ({ browser }) => {
+  const { context, writer: page, reader } = await openTabs(browser);
+  try {
+    await reader.close();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByLabel('Document type').selectOption('pr');
+    const cards = page.getByRole('list', { name: 'PR receipt template previews' }).locator('li');
+    await expect(cards).toHaveCount(3);
+    for (const theme of ['light', 'dark']) {
+      await page.evaluate((theme) => {
+        document.querySelector('[data-admin-appearance]')?.setAttribute('data-admin-appearance', theme);
+      }, theme);
+      for (const card of await cards.all()) {
+        await expect(card.locator('svg')).toBeVisible();
+        await expect(card.getByText('Sample · Preview only', { exact: true })).toBeVisible();
+        const bounds = await card.boundingBox();
+        expect(bounds.x).toBeGreaterThanOrEqual(0);
+        expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+      }
+    }
+    for (const name of ['EVEXIA Modern', 'EVEXIA Compact']) {
+      const button = page.getByRole('button', { name: `Use ${name} as default PR receipt template`, exact: true });
+      await button.focus();
+      await page.keyboard.press('Enter');
+      await expect(current(page, name, 'PR receipt')).toBeVisible();
+      await page.reload();
+      await page.getByLabel('Document type').selectOption('pr');
+      await expect(current(page, name, 'PR receipt')).toBeVisible();
+    }
+    await page.evaluate(() => {
+      window.originalPRSetItem = Storage.prototype.setItem;
+      Storage.prototype.setItem = () => { throw Error('quota'); };
+    });
+    await page.getByRole('button', { name: 'Use EVEXIA Modern as default PR receipt template', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('could not be saved');
+    await expect(current(page, 'EVEXIA Compact', 'PR receipt')).toBeVisible();
+    await page.evaluate(() => { Storage.prototype.setItem = window.originalPRSetItem; });
+    await reset(page, 'PR receipt');
+    await expect(current(page, 'EVEXIA Classic', 'PR receipt')).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
   } finally { await context.close(); }
 });
 
