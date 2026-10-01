@@ -31,6 +31,16 @@ EVEXIA Life Sciences portal with mock login screens and an Admin workspace previ
 - Run the communication preview regression against the running EVEXIA Portal preview with `EVEXIA_PREVIEW_BASE_URL=https://<development-preview-host> pnpm run test:communication-browser`. `EVEXIA_PREVIEW_BASE_URL` is required; use the assigned development preview host and port rather than assuming the default Vite port is correct.
 - Install the Playwright browser binaries in the environment before running the browser test.
 
+## Release validation
+
+- `pnpm run build` runs `pnpm run validate:release` automatically before typechecking or producing build output. A failed service or browser test blocks the build. The direct artifact `build` command is for compilation only, not release approval.
+- The gate runs `templatePreferenceEvents.test.js` and all three two-tab cases in `tests/template-preferences.preview.spec.mjs`. It is also registered as the project's `release` validation command.
+- Keep the EVEXIA Portal dev workflow running. Set `EVEXIA_PREVIEW_BASE_URL` to its reachable URL; in Replit the gate defaults to `https://$REPLIT_DEV_DOMAIN`. The spec imports a Vite source module, so a static production preview is not sufficient. An unavailable preview fails the gate.
+- Set `EVEXIA_CHROMIUM_PATH` when a specific supported Chromium executable is needed. Otherwise the gate selects `chromium` / `chromium-browser` from PATH, falling back to Playwright's installed Chromium. Missing or invalid browser executables fail the gate.
+- Outside Replit, run `EVEXIA_PREVIEW_BASE_URL=https://<running-dev-preview-host> EVEXIA_CHROMIUM_PATH=/path/to/chromium pnpm run build` (omit the executable override when using installed Playwright Chromium).
+- The existing Canvas build also requires `PORT` and `BASE_PATH`; for a full workspace build from a plain shell, supply them (for example `PORT=5173 BASE_PATH=/ pnpm run build`).
+- Tests create a fresh, non-persistent browser context for each case; only the two test tabs share storage. Do not replace this with a real browser profile or saved user storage.
+
 ## Where things live
 
 - `artifacts/evexia-portal/src/App.jsx` — routing
