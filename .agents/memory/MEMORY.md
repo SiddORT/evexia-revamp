@@ -12,3 +12,4 @@
 - [Receipt historical balances](receipt-historical-balances.md) — preserve post-receipt snapshots; legacy or unrepresentable history must be unavailable, never inferred from current balances.
 - [Template preference recovery](template-preference-recovery.md) — cross-tab refresh is read-only; storage errors require explicit retry or confirmed document-specific reset.
 - [Receipt PDF text geometry](receipt-pdf-text-geometry.md) — SVG collapses whitespace before character indexing; measure displayed characters, not raw textContent.
+- [Message preview boundary](message-preview-boundary.md) — preserve authored source, but keep previews offline and inert after literal substitution; never relax isolation for inbox fidelity.

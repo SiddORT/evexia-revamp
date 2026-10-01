@@ -24,12 +24,14 @@ EVEXIA Life Sciences portal with mock login screens and an Admin workspace previ
 - Settings categories are additive entries in `src/components/admin/settingsSections.jsx`, with stable URL IDs, labels, icons, descriptions, keywords and components. Register only implemented sections; do not expose placeholders.
 - General and Appearance retain the `basic` and `ui` URL IDs. Category navigation preserves unrelated query parameters and supports browser back/forward.
 - Keep Settings styling scoped in `src/adminSettings.css`. Existing local preference keys and document/template behavior must remain unchanged.
+- Settings > Email & SMS Templates (`message-templates`) manages content only, separately from document layouts and Communication provider metadata. System examples are immutable and not wired to events. User templates use a dedicated versioned browser-local store; clearing browser data removes them. Mutations require Web Locks and reject stale drafts. HTML preview uses a formatting allowlist and a scriptless, opaque-origin sandbox with restrictive CSP; no authored HTML enters the Admin DOM and no external assets load. Provider/DLT IDs are string references, not proof of registration or approval.
 - Focused checks: `node --test artifacts/evexia-portal/settings-navigation.test.mjs artifacts/evexia-portal/admin-preferences.test.mjs artifacts/evexia-portal/src/services/poInvoice*.test.js`.
 
 ## Browser regression test
 
 - Run the communication preview regression against the running EVEXIA Portal preview with `EVEXIA_PREVIEW_BASE_URL=https://<development-preview-host> pnpm run test:communication-browser`. `EVEXIA_PREVIEW_BASE_URL` is required; use the assigned development preview host and port rather than assuming the default Vite port is correct.
 - Install the Playwright browser binaries in the environment before running the browser test.
+- Message-template checks: `node --test artifacts/evexia-portal/src/services/messageTemplates.test.js artifacts/evexia-portal/src/services/messageTemplatePreview.test.js`; browser regression: `EVEXIA_PREVIEW_BASE_URL=https://<development-preview-host> pnpm exec playwright test artifacts/evexia-portal/tests/message-templates.preview.spec.mjs`.
 
 ## Release validation
 

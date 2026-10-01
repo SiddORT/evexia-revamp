@@ -26,3 +26,9 @@ DevTools navigation/reload acknowledgments do not mean the new document is ready
 **Why:** A post-reload drawer check clicked a matching button in the outgoing document and reported that the new page failed to open its drawer.
 
 **How to apply:** Wait for the navigation's load event or a confirmed new document before waiting for React selectors and dispatching input. Do not use a selector present on both old and new pages as the navigation-completion signal.
+
+In this Nix environment, downloaded Playwright Chromium binaries may fail to launch because they expect system libraries outside Nix. Prefer the environment's installed Chromium for local browser checks rather than attempting Debian-style dependency installation.
+
+**Why:** Downloading Playwright's binary did not fix missing shared libraries, and its install-deps route is not supported here; the already-installed Chromium has compatible runtime libraries.
+
+**How to apply:** Locate Chromium with `which chromium` and use Playwright's executable-path override for local checks. Keep this override optional so other environments can use their standard browser installation.

@@ -66,6 +66,22 @@ test('category navigation preserves unrelated query values, hash, path and origi
   assert.equal(settingsSectionUrl(href, 'missing', sections).searchParams.get('tab'), 'basic');
 });
 
+test('message templates are additive, searchable and deep-linkable alongside existing settings', () => {
+  const available = [...sections,
+    { id: 'communication', label: 'Communication', keywords: ['provider'] },
+    { id: 'message-templates', label: 'Email & SMS Templates', description: 'Browser-local message content', keywords: ['html', 'tokens', 'dlt'] },
+  ];
+  for (const query of ['email', 'sms', 'html', 'tokens', 'dlt', 'message content']) {
+    assert.deepEqual(searchSettingsSections(available, query).map((s) => s.id), ['message-templates']);
+  }
+  for (const { id } of available) {
+    const url = settingsSectionUrl('https://example.test/admin/settings?source=profile#details', id, available);
+    assert.equal(resolveSettingsSection(url.search, available), id);
+    assert.equal(url.searchParams.get('source'), 'profile');
+    assert.equal(url.hash, '#details');
+  }
+});
+
 test('navigation replaces duplicate section parameters and direct reload resolves the destination', () => {
   const url = settingsSectionUrl('https://example.test/admin/settings?tab=ui&tab=templates&keep=1', 'templates', sections);
   assert.deepEqual(url.searchParams.getAll('tab'), ['templates']);

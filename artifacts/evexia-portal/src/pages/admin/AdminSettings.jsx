@@ -5,12 +5,14 @@ import '../../adminSettings.css';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { SETTINGS_SECTIONS } from '../../components/admin/settingsSections.jsx';
 import { resolveSettingsSection, searchSettingsSections, settingsSectionUrl } from '../../components/admin/settingsNavigation.js';
+import useSettingsDraftGuard from '../../hooks/useSettingsDraftGuard.js';
 
 export default function AdminSettings() {
   const search = useSearch();
   const [query, setQuery] = useState('');
   const searchRef = useRef(null);
   const panelRef = useRef(null);
+  const onGuardChange = useSettingsDraftGuard();
   const activeId = resolveSettingsSection(search, SETTINGS_SECTIONS);
   const active = SETTINGS_SECTIONS.find((s) => s.id === activeId);
   const matches = searchSettingsSections(SETTINGS_SECTIONS, query);
@@ -55,7 +57,7 @@ export default function AdminSettings() {
         {query && matches.length === 0 && <p className="admin-settings-nav__empty">No categories match. Try date, theme or templates.<button type="button" onClick={clearSearch}>Clear search</button></p>}
         <a className="admin-settings-nav__skip" href="#settings-panel" onClick={(e) => { e.preventDefault(); panelRef.current?.focus(); }}>Go to current settings</a>
       </nav>
-      <div ref={panelRef} tabIndex={-1} className="admin-settings-body" id="settings-panel" role="region" aria-label={`${active.label} settings`}><Active /></div>
+      <div ref={panelRef} tabIndex={-1} className="admin-settings-body" id="settings-panel" role="region" aria-label={`${active.label} settings`}><Active onGuardChange={onGuardChange} /></div>
     </div>
   </AdminLayout>;
 }

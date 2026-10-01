@@ -1,0 +1,51 @@
+.mt { display: grid; gap: 14px; }
+.mt-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
+.mt-head h2, .mt-head h3 { margin: 0; color: var(--admin-text); }
+.mt-head h2 { font-size: 20px; } .mt-head h3 { font-size: 16px; }
+.mt-note { margin: 4px 0 0; font-size: 11px; line-height: 1.5; color: var(--admin-text-soft); }
+.mt .admin-tabs button, .mt-prev .admin-tabs button { white-space: normal; }
+.mt-prev .admin-tabs button.is-on { background: var(--admin-sidebar-active-bg); color: var(--admin-sidebar-active); }
+.mt-list { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); margin: 0; padding: 0; list-style: none; }
+.mt-card { display: grid; gap: 8px; padding: 14px; min-width: 0; border: 1px solid var(--admin-border); border-radius: 10px; background: var(--admin-chrome); align-content: start; }
+.mt-card:has(.mt-prev) { grid-column: 1 / -1; }
+.mt-card h3 { margin: 0; font-size: 14px; color: var(--admin-text); }
+.mt-card p { margin: 0; font-size: 12px; color: var(--admin-text-soft); line-height: 1.5; }
+.mt-card .mt-row > button { min-height: 36px; padding: 0 12px; border: 1px solid var(--admin-border); border-radius: 8px; background: transparent; color: var(--admin-text-soft); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.mt-card .mt-row > button:hover { background: var(--admin-state-soft); color: var(--admin-accent); }
+.mt-tags, .mt-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.mt-tag { padding: 3px 8px; border-radius: 50px; font-size: 11px; font-weight: 700; background: var(--admin-badge-inactive-bg); color: var(--admin-badge-inactive-text); }
+.mt-editor { display: grid; gap: 12px; }
+.mt-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 1100px) { .mt-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.mt-form { display: grid; gap: 12px; min-width: 0; }
+.mt-field { display: grid; gap: 5px; min-width: 0; font-size: 12px; font-weight: 700; color: var(--admin-text); }
+.mt-field input, .mt-field textarea { padding: 9px 12px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-text); font: inherit; font-size: 13px; font-weight: 400; min-width: 0; width: 100%; box-sizing: border-box; resize: vertical; }
+.mt-field input { height: 40px; padding-block: 0; }
+.mt-field input:focus, .mt-field textarea:focus { outline: none; border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
+.mt-field--error input, .mt-field--error textarea { border-color: var(--admin-danger); }
+.mt-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important; font-size: 12px !important; white-space: pre; overflow: auto; }
+.mt-field small { font-weight: 400; color: var(--admin-text-soft); font-size: 11px; }
+.mt-req { font-weight: 400; color: var(--admin-text-soft); }
+.mt-err { color: var(--admin-danger); font-size: 11px; font-weight: 600; }
+.mt-tokens { border: 1px dashed var(--admin-border); border-radius: 8px; padding: 10px; margin: 0; min-width: 0; }
+.mt-tokens legend { font-size: 12px; font-weight: 700; padding: 0 4px; color: var(--admin-text); }
+.mt-chip { min-height: 32px; padding: 0 10px; border: 1px solid var(--admin-border); border-radius: 50px; background: var(--admin-surface); color: var(--admin-text); font: 12px ui-monospace, Menlo, monospace; cursor: pointer; }
+.mt-chip:hover { border-color: var(--admin-primary); }
+.mt :is(button, input, textarea):focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.mt-prev { display: grid; gap: 10px; min-width: 0; padding: 12px; border: 1px solid var(--admin-border); border-radius: 10px; background: var(--admin-state-link); }
+.mt-prev__vals { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); border: 1px solid var(--admin-border); border-radius: 8px; padding: 10px; margin: 0; min-width: 0; }
+.mt-prev__vals legend { font-size: 12px; font-weight: 700; color: var(--admin-text); }
+.mt-prev__box { display: grid; gap: 4px; min-width: 0; }
+.mt-prev__box h4 { margin: 0; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--admin-muted); }
+.mt-prev__box p, .mt-prev__box pre { margin: 0; font-size: 13px; color: var(--admin-text); white-space: pre-wrap; overflow-wrap: anywhere; font-family: inherit; }
+.mt-prev__sms { padding: 10px 12px; border-radius: 12px; background: var(--admin-surface); border: 1px solid var(--admin-border); }
+.mt-prev__frame { width: 100%; height: 340px; border: 1px solid var(--admin-border); border-radius: 8px; background: #fff; }
+.mt-warn { margin: 0; padding: 8px 10px; border-left: 3px solid var(--admin-warning); border-radius: 6px; background: var(--admin-state-soft); color: var(--admin-text); font-size: 12px; }
+.mt-prev__warns { display: grid; gap: 6px; }
+.mt-del { display: grid; gap: 8px; }
+@media (max-width: 560px) { .mt-row > .admin-button { flex: 1 1 100%; } }
+.mt-filters { display: grid; gap: 10px; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+@media (max-width: 560px) { .mt-filters { grid-template-columns: 1fr; } }
+.mt-field select { height: 40px; padding: 0 10px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-text); font: inherit; font-size: 13px; font-weight: 400; }
+.mt-notes { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid var(--admin-border); border-left: 3px solid var(--admin-warning); border-radius: 8px; background: var(--admin-state-link); }
+.mt-notes p { margin: 0; font-size: 12px; line-height: 1.5; color: var(--admin-text); }
