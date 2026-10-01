@@ -8,7 +8,8 @@ import PurchaseOrderEventMeta from '../../components/admin/PurchaseOrderEventMet
 import POInvoicePreview from '../../components/admin/POInvoicePreview.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import useTablePagination from '../../hooks/useTablePagination.js';
-import { deletePO, filterPOs, loadPOSnapshot, money, poEventActor, seedSamplePOs } from '../../services/purchaseOrders.js';
+import { guardedDeletePO, filterPOs, money, poEventActor, guardedSeedSamplePOs } from '../../services/purchaseOrders.js';
+import { loadPRSnapshot, getPOFulfillment } from '../../services/purchaseReceived.js';
 import { makePOInvoiceDocument } from '../../services/poInvoiceTemplates.js';
 import { downloadInvoiceDocument } from '../../services/poInvoicePdf.js';
 import '../../purchaseOrders.css';
@@ -30,9 +31,11 @@ export default function PurchaseOrders() {
   const [filters, setFilters] = useState({ status: 'open', vendorId: '', productId: '', from: '', to: '', sort: 'recent' });
   const [filtersOpen, setFiltersOpen] = useState(false);
   const activeFilterCount = [filters.status !== 'all', filters.vendorId, filters.productId, filters.from, filters.to].filter(Boolean).length;
+  const [receipts, setReceipts] = useState([]);
+  const [busy, setBusy] = useState(false);
 
   function refresh() {
-    try { setSnapshot(loadPOSnapshot()); setLoadError(''); setActionError(''); setConfirming(null); }
+    try { const linked = loadPRSnapshot(); setSnapshot({ record: linked.poRecord, refs: linked.refs }); setReceipts(linked.record.receipts); setLoadError(''); setActionError(''); setConfirming(null); }
     catch (cause) { setSnapshot(null); setLoadError(cause.message || 'Purchase orders could not be loaded.'); }
   }
   useEffect(() => { refresh(); }, []);
@@ -54,23 +57,28 @@ export default function PurchaseOrders() {
   }, [orders]);
   function changeFilter(key, value) { setFilters((current) => ({ ...current, [key]: value })); pagination.resetPage(); }
   function clearFilters() { setSearch(''); setFilters({ status: 'open', vendorId: '', productId: '', from: '', to: '', sort: 'recent' }); pagination.resetPage(); }
-  function remove() {
-    if (!confirming || !snapshot) return;
+  async function remove() {
+    if (!confirming || !snapshot || busy) return;
     try {
-      const next = deletePO(snapshot, confirming.id);
+      setBusy(true);
+      const next = await guardedDeletePO(snapshot, confirming.id);
       setSnapshot({ ...snapshot, record: next });
       setConfirming(null);
       setActionError('');
       setNotice(`${confirming.number} deleted. Its activity remains available in this browser.`);
     } catch (cause) { setActionError(cause.message || 'Could not delete this purchase order. Refresh and try again.'); }
+    finally { setBusy(false); }
   }
-  function loadSamples() {
+  async function loadSamples() {
+    if (busy) return;
     try {
-      const next = seedSamplePOs(snapshot);
+      setBusy(true);
+      const next = await guardedSeedSamplePOs(snapshot);
       setSnapshot({ ...snapshot, record: next });
       setNotice('Five sample purchase orders added in this browser.');
       setActionError('');
     } catch (cause) { setActionError(cause.message || 'Could not load sample purchase orders. Refresh and try again.'); }
+    finally { setBusy(false); }
   }
   function previewInvoice(order) {
     setActionError('');
@@ -87,10 +95,11 @@ export default function PurchaseOrders() {
     finally { setDownloading(''); }
   }
   const actionButtons = (order) => <div className="po-actions">
+    <span className="po-secondary" aria-label={`Current fulfillment: ${getPOFulfillment(order, receipts)}`}>{getPOFulfillment(order, receipts)}</span>
     <button type="button" className="po-action po-action--icon" onClick={() => navigate(`${BASE}/${encodeURIComponent(order.id)}`)} title="View purchase order" aria-label={`View ${order.number}`} data-testid={`button-view-po-${order.id}`}><ArrowUpRight size={15} aria-hidden="true" /></button>
     <button type="button" className="po-action po-action--icon" onClick={() => previewInvoice(order)} title="Preview PO invoice" aria-label={`Preview invoice for ${order.number}`} data-testid={`button-preview-invoice-${order.id}`}><Eye size={15} aria-hidden="true" /></button>
     <button type="button" className="po-action po-action--icon" onClick={() => downloadInvoice(order)} disabled={!!downloading} title={downloading === order.id ? 'Preparing PDF…' : 'Download PO invoice PDF'} aria-label={`Download invoice for ${order.number}`} data-testid={`button-download-invoice-${order.id}`}><Download size={15} aria-hidden="true" /></button>
-    {order.status === 'open' && <button type="button" className="po-action po-action--icon po-action--danger" onClick={() => { setActionError(''); setConfirming(order); }} title="Delete purchase order" aria-label={`Delete ${order.number}`} data-testid={`button-delete-po-${order.id}`}><Trash2 size={15} aria-hidden="true" /></button>}
+    {order.status === 'open' && <button type="button" disabled={busy || receipts.some((receipt) => receipt.poId === order.id && receipt.status === 'active')} className="po-action po-action--icon po-action--danger" onClick={() => { setActionError(''); setConfirming(order); }} title={receipts.some((receipt) => receipt.poId === order.id && receipt.status === 'active') ? 'Active receipts prevent deletion. Open the PO to review its receipts.' : 'Delete purchase order'} aria-label={`Delete ${order.number}`} data-testid={`button-delete-po-${order.id}`}><Trash2 size={15} aria-hidden="true" /></button>}
   </div>;
   const columns = [
     { key: 'serial', label: 'Sr. no.', render: (_order, index) => index + 1 },
@@ -101,6 +110,7 @@ export default function PurchaseOrders() {
     { key: 'expected', label: 'Expected', render: (order) => displayDate(order.expectedDate) },
     { key: 'amount', label: 'Total incl. GST', render: (order) => <span className="po-amount" data-testid={`text-po-total-${order.id}`}>{money(order.total)}</span> },
     { key: 'status', label: 'Status', render: (order) => <span className={`po-status${order.status === 'deleted' ? ' po-status--draft' : ''}`}>{order.status}</span> },
+    { key: 'fulfillment', label: 'Fulfillment', render: (order) => <span className="po-status">{getPOFulfillment(order, receipts)}</span> },
     { key: 'actions', label: 'Actions', render: actionButtons },
   ];
 

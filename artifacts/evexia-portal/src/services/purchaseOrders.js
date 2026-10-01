@@ -1,6 +1,7 @@
 import { loadVendors } from './vendors.js';
 import { loadStorageLocations } from './storageLocations.js';
 import { loadAllergenReferences, loadAllergens } from './allergens.js';
+import { PR_KEY, withPurchaseMutationLock } from './purchaseMutationLock.js';
 
 export const PO_KEY = 'evexia.admin.purchase-orders.v1';
 const LOCAL_ACTOR = 'Demo Admin (local, not signed in)';
@@ -9,7 +10,10 @@ export function poEventActor(event) {
   return event.actor || (/^sample-po-event-\d+$/.test(event.id) ? SAMPLE_ACTOR : 'Not recorded (earlier activity)');
 }
 const invalid = 'Saved purchase order data is unreadable or invalid. Nothing was changed. Back up or repair browser storage, then refresh.';
-const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const canonical = (value) => Array.isArray(value) ? value.map(canonical)
+  : value && typeof value === 'object'
+    ? Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonical(value[key])])) : value;
+const same = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 const keys = (value, expected) => value && typeof value === 'object' && !Array.isArray(value) &&
   Object.keys(value).length === expected.length && expected.every((key) => Object.hasOwn(value, key));
 const iso = (value) => typeof value === 'string' && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value) &&
@@ -76,13 +80,38 @@ export function validatePO(values, refs, existing = null) {
     selected[field] = retained || found?.[nameField];
   }
   if (!values.lines.length || values.lines.length > 100) errors.lines = 'Add between 1 and 100 product rows.';
+  const normalizeLineId = (id) => typeof id === 'string' ? id.trim().normalize('NFC') : '';
+  const suppliedIds = values.lines
+    .filter((line) => line && typeof line === 'object' && Object.hasOwn(line, 'id') && typeof line.id === 'string')
+    .map((line) => normalizeLineId(line.id));
+  const suppliedCounts = new Map();
+  suppliedIds.forEach((id) => suppliedCounts.set(id, (suppliedCounts.get(id) || 0) + 1));
+  const reservedLineIds = new Set(suppliedIds);
+  const usedLineIds = new Set();
   const lines = values.lines.map((line, i) => {
-    if (!keys(line, ['productId', 'quantity', 'unitPrice', 'gst'])) {
+    if (!(keys(line, ['productId', 'quantity', 'unitPrice', 'gst']) ||
+      keys(line, ['id', 'productId', 'quantity', 'unitPrice', 'gst']))) {
       errors[`lines.${i}.productId`] = 'Product row contains unsupported fields.';
       return null;
     }
+    const explicitId = Object.hasOwn(line, 'id');
+    const normalizedId = normalizeLineId(line.id);
+    if (explicitId && (typeof line.id !== 'string' || !nonempty(line.id))) {
+      errors[`lines.${i}.id`] = 'Product row identity is invalid.';
+    } else if (explicitId && (!existing || !existing.lines.some((oldLine) => normalizeLineId(oldLine.id) === normalizedId))) {
+      errors[`lines.${i}.id`] = 'Product row identity does not belong to this purchase order.';
+    } else if (explicitId && suppliedCounts.get(normalizedId) > 1) {
+      errors[`lines.${i}.id`] = 'A product row identity may only be used once.';
+    }
+    if (explicitId && typeof line.id === 'string') usedLineIds.add(normalizedId);
     const found = refs.products.find((item) => item.id === line.productId);
-    const retained = existing?.lines[i]?.productId === line.productId && existing.lines[i].productName;
+    const matched = explicitId ? existing?.lines.find((oldLine) => normalizeLineId(oldLine.id) === normalizedId)
+      : existing?.lines.find((oldLine) => !reservedLineIds.has(normalizeLineId(oldLine.id)) &&
+        !usedLineIds.has(normalizeLineId(oldLine.id)) && oldLine.productId === line.productId);
+    if (explicitId && matched && matched.productId !== line.productId) {
+      errors[`lines.${i}.id`] = 'A retained product row identity cannot be reassigned to a different product.';
+    }
+    const retained = matched?.productId === line.productId && matched.productName;
     if (typeof line.productId !== 'string' || !line.productId || (!found && !retained) ||
       (found?.status !== 'active' && !retained)) errors[`lines.${i}.productId`] = 'Choose an active saved product.';
     const quantity = amount(line.quantity, 1000000, 3, 0.001);
@@ -93,7 +122,12 @@ export function validatePO(values, refs, existing = null) {
     if (gst === null) errors[`lines.${i}.gst`] = 'Enter GST from 0 to 100% (up to 2 decimals).';
     const figures = calculateLine(line);
     if (!figures) errors[`lines.${i}.total`] = 'Line amount exceeds the safe limit or contains invalid numbers.';
-    return figures ? { productId: line.productId, productName: retained || found?.name, quantity, unitPrice, gst, ...figures } : null;
+    let id = explicitId ? matched?.id || line.id : matched?.id;
+    if (!id) {
+      do { id = crypto.randomUUID(); } while (reservedLineIds.has(normalizeLineId(id)) || usedLineIds.has(normalizeLineId(id)));
+    }
+    usedLineIds.add(normalizeLineId(id));
+    return figures ? { id, productId: line.productId, productName: retained || found?.name, quantity, unitPrice, gst, ...figures } : null;
   });
   const figures = totals(values.lines);
   if (!figures) errors.form = 'PO total exceeds ₹10 crore or contains invalid amounts.';
@@ -105,13 +139,16 @@ export function validatePO(values, refs, existing = null) {
 
 const orderKeys = ['id', 'number', 'poDate', 'expectedDate', 'vendorId', 'vendorName', 'locationId', 'locationName', 'lines',
   'subtotal', 'gstAmount', 'total', 'status', 'createdAt', 'updatedAt', 'deletedAt'];
-const lineKeys = ['productId', 'productName', 'quantity', 'unitPrice', 'gst', 'subtotal', 'gstAmount', 'total'];
+const lineKeys = ['id', 'productId', 'productName', 'quantity', 'unitPrice', 'gst', 'subtotal', 'gstAmount', 'total'];
+const legacyLineKeys = lineKeys.filter((key) => key !== 'id');
 const eventKeys = ['id', 'orderId', 'number', 'action', 'at', 'summary'];
 const nonempty = (v) => typeof v === 'string' && v.length > 0 && v === v.trim();
 function validRecord(record) {
   if (!keys(record, ['version', 'revision', 'orders', 'events']) || record.version !== 1 ||
     !Number.isSafeInteger(record.revision) || record.revision < 0 ||
     !Array.isArray(record.orders) || !Array.isArray(record.events) ||
+    record.orders.some((order) => !order || typeof order !== 'object' || Array.isArray(order)) ||
+    record.events.some((event) => !event || typeof event !== 'object' || Array.isArray(event)) ||
     new Set(record.orders.map((o) => o?.id)).size !== record.orders.length ||
     new Set(record.orders.map((o) => o?.number)).size !== record.orders.length ||
     new Set(record.events.map((e) => e?.id)).size !== record.events.length) return false;
@@ -123,8 +160,11 @@ function validRecord(record) {
       !iso(o.createdAt) || !iso(o.updatedAt) || o.updatedAt < o.createdAt ||
       (o.status === 'deleted' ? !iso(o.deletedAt) || o.deletedAt !== o.updatedAt : o.deletedAt !== null) ||
       !Array.isArray(o.lines) || !o.lines.length || o.lines.length > 100) return true;
-    if (o.lines.some((l) => !keys(l, lineKeys) || !nonempty(l.productId) || !nonempty(l.productName) ||
+    if (o.lines.some((l) => !(keys(l, lineKeys) || keys(l, legacyLineKeys)) ||
+      (Object.hasOwn(l, 'id') && !nonempty(l.id)) || !nonempty(l.productId) || !nonempty(l.productName) ||
       !same(calculateLine(l), { subtotal: l.subtotal, gstAmount: l.gstAmount, total: l.total }))) return true;
+    const lineIds = o.lines.filter((line) => Object.hasOwn(line, 'id')).map((line) => line.id.normalize('NFC'));
+    if (new Set(lineIds).size !== lineIds.length) return true;
     return !same(totals(o.lines), { subtotal: o.subtotal, gstAmount: o.gstAmount, total: o.total });
   })) return false;
   if (record.events.some((e) => !(keys(e, eventKeys) || keys(e, [...eventKeys, 'actor'])) ||
@@ -137,6 +177,24 @@ function validRecord(record) {
       events.slice(1, -1).some((e) => e.action !== 'updated')) return false;
   }
   return record.events.length === record.revision;
+}
+
+function migrateLineIds(record) {
+  let changed = false;
+  const orders = record.orders.map((order) => {
+    const ids = new Set(order.lines.filter((line) => Object.hasOwn(line, 'id')).map((line) => line.id));
+    const lines = order.lines.map((line, index) => {
+      if (Object.hasOwn(line, 'id')) return line;
+      changed = true;
+      let id = `legacy-po-line:${order.id}:${index + 1}`;
+      let suffix = 1;
+      while (ids.has(id)) id = `legacy-po-line:${order.id}:${index + 1}:${suffix++}`;
+      ids.add(id);
+      return { id, ...line };
+    });
+    return lines.some((line, index) => line !== order.lines[index]) ? { ...order, lines } : order;
+  });
+  return changed ? { ...record, orders } : record;
 }
 
 function samplePOs() {
@@ -208,11 +266,50 @@ export function loadPOs() {
   let record;
   try { record = JSON.parse(raw); } catch { throw new Error(invalid); }
   if (!validRecord(record)) throw new Error(invalid);
-  return record;
+  return migrateLineIds(record);
 }
 export function loadPOSnapshot() {
   return { record: loadPOs(), refs: loadPOReferences() };
 }
+
+function linkedReceiptsForPO(poId) {
+  let raw;
+  try { raw = window.localStorage.getItem(PR_KEY); }
+  catch { throw new Error('Purchase Received data could not be checked because browser storage is unavailable. No PO change was made.'); }
+  if (raw === null) return [];
+  let record;
+  try { record = JSON.parse(raw); } catch {
+    throw new Error('Saved Purchase Received data is unreadable. Repair or back up browser storage before changing this PO.');
+  }
+  const receiptFields = ['id', 'number', 'poId', 'poNumber', 'poDate', 'receivedDate', 'receivedBy',
+    'vendorId', 'vendorName', 'vendorPhone', 'locationId', 'locationName', 'status',
+    'createdAt', 'updatedAt', 'deletedAt', 'lines'];
+  const eventFields = ['id', 'receiptId', 'number', 'action', 'at', 'actor', 'summary'];
+  const exact = (value, fields) => value && typeof value === 'object' && !Array.isArray(value) &&
+    Object.keys(value).length === fields.length && fields.every((field) => Object.hasOwn(value, field));
+  const text = (value) => typeof value === 'string' && value.trim() === value && value.length > 0;
+  if (!exact(record, ['version', 'revision', 'receipts', 'events']) || record.version !== 1 ||
+    !Number.isSafeInteger(record.revision) || record.revision < 0 ||
+    !Array.isArray(record.receipts) || !Array.isArray(record.events) ||
+    record.revision !== record.events.length ||
+    record.receipts.some((receipt) => !exact(receipt, receiptFields) || !text(receipt.id) || !text(receipt.poId) ||
+      !text(receipt.number) || !['active', 'deleted'].includes(receipt.status) || !Array.isArray(receipt.lines)) ||
+    record.events.some((event) => !exact(event, eventFields) || !text(event.id) || !text(event.receiptId) ||
+      !text(event.number) || !text(event.actor) || !text(event.summary) ||
+      !['created', 'updated', 'deleted'].includes(event.action))) {
+    throw new Error('Saved Purchase Received data is invalid. Repair or back up browser storage before changing this PO.');
+  }
+  return record.receipts.filter((receipt) => receipt.poId === poId && receipt.status === 'active');
+}
+
+function assertNoActiveReceipts(poId) {
+  const receipts = linkedReceiptsForPO(poId);
+  if (receipts.length) {
+    const numbers = receipts.map((receipt) => receipt.number).join(', ');
+    throw new Error(`This PO cannot be edited or deleted while active Purchase Received records are linked (${numbers}). Review or delete those receipts first.`);
+  }
+}
+
 function save(snapshot, next, refs = null) {
   if (!same(loadPOs(), snapshot.record)) throw new Error('Purchase orders changed in another tab. Refresh records before saving; your draft was not saved.');
   if (refs && !same(loadPOReferences(), refs)) throw new Error('Vendor, storage location or product masters changed. Refresh records and review your draft before saving.');
@@ -256,6 +353,7 @@ function inputs(order) {
 export function updatePO(snapshot, refs, id, values) {
   const old = snapshot.record.orders.find((o) => o.id === id);
   if (!old || old.status === 'deleted') throw new Error('This purchase order is unavailable or deleted.');
+  assertNoActiveReceipts(id);
   const fields = validated(values, refs, old);
   const changes = [];
   for (const [key, label] of [['poDate', 'PO date'], ['expectedDate', 'expected delivery'], ['vendorId', 'vendor'],
@@ -270,11 +368,59 @@ export function updatePO(snapshot, refs, id, values) {
 export function deletePO(snapshot, id) {
   const old = snapshot.record.orders.find((o) => o.id === id);
   if (!old || old.status === 'deleted') throw new Error('This purchase order is unavailable or already deleted.');
+  assertNoActiveReceipts(id);
   const at = timestamp(snapshot.record.events.at(-1)?.at || old.updatedAt);
   const order = { ...old, status: 'deleted', deletedAt: at, updatedAt: at };
   return append(snapshot, snapshot.record.orders.map((o) => o.id === id ? order : o), order, 'deleted',
     `Deleted PO with ${order.lines.length} item${order.lines.length === 1 ? '' : 's'} · ${money(order.total)}`);
 }
+
+function assertFreshPOInputs(snapshot, refs) {
+  const current = loadPOSnapshot();
+  if (!snapshot || !same(current.record, snapshot.record)) {
+    throw new Error('Purchase orders changed in another tab. Refresh records before saving; your draft was not saved.');
+  }
+  if (refs && (!same(current.refs, refs) || (snapshot.refs && !same(snapshot.refs, refs)))) {
+    throw new Error('Vendor, storage location or product masters changed. Refresh records and review your draft before saving.');
+  }
+}
+
+export async function guardedCreatePO(snapshot, refs, values) {
+  return withPurchaseMutationLock(async () => {
+    const { loadPRSnapshot } = await import('./purchaseReceived.js');
+    loadPRSnapshot();
+    assertFreshPOInputs(snapshot, refs);
+    return createPO(snapshot, refs, values);
+  });
+}
+
+export async function guardedUpdatePO(snapshot, refs, id, values) {
+  return withPurchaseMutationLock(async () => {
+    const { loadPRSnapshot } = await import('./purchaseReceived.js');
+    loadPRSnapshot();
+    assertFreshPOInputs(snapshot, refs);
+    return updatePO(snapshot, refs, id, values);
+  });
+}
+
+export async function guardedDeletePO(snapshot, id) {
+  return withPurchaseMutationLock(async () => {
+    const { loadPRSnapshot } = await import('./purchaseReceived.js');
+    loadPRSnapshot();
+    assertFreshPOInputs(snapshot);
+    return deletePO(snapshot, id);
+  });
+}
+
+export async function guardedSeedSamplePOs(snapshot) {
+  return withPurchaseMutationLock(async () => {
+    const { loadPRSnapshot } = await import('./purchaseReceived.js');
+    loadPRSnapshot();
+    assertFreshPOInputs(snapshot, snapshot?.refs);
+    return seedSamplePOs(snapshot);
+  });
+}
+
 export function filterPOs(orders, { from = '', to = '', vendorId = '', productId = '', status = 'open', sort = 'recent' } = {}) {
   return orders.filter((o) => (!from || o.poDate >= from) && (!to || o.poDate <= to) &&
     (!vendorId || o.vendorId === vendorId) && (!productId || o.lines.some((l) => l.productId === productId)) &&

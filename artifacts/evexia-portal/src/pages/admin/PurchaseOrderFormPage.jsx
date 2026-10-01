@@ -4,7 +4,8 @@ import { ArrowLeft, ClipboardList, History, Pencil, Plus, RefreshCw, Trash2, X }
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
-import { calculateLine, createPO, deletePO, loadPOSnapshot, money, totals, updatePO, validatePO } from '../../services/purchaseOrders.js';
+import { calculateLine, guardedCreatePO, guardedDeletePO, money, totals, guardedUpdatePO, validatePO } from '../../services/purchaseOrders.js';
+import { loadPRSnapshot, getPOFulfillment } from '../../services/purchaseReceived.js';
 import PurchaseOrderActivityDrawer from '../../components/admin/PurchaseOrderActivityDrawer.jsx';
 import '../../mr.css';
 import '../../purchaseOrders.css';
@@ -15,10 +16,11 @@ const blankLine = () => ({ productId: '', quantity: '1', unitPrice: '', gst: '' 
 const emptyValues = () => ({ poDate: today(), expectedDate: '', vendorId: '', locationId: '', lines: [blankLine()] });
 const fromRecord = (record) => ({
   poDate: record.poDate, expectedDate: record.expectedDate, vendorId: record.vendorId, locationId: record.locationId,
-  lines: record.lines.map((line) => ({ productId: line.productId, quantity: String(line.quantity), unitPrice: String(line.unitPrice), gst: String(line.gst) })),
+  lines: record.lines.map((line) => ({ id: line.id, productId: line.productId, quantity: String(line.quantity), unitPrice: String(line.unitPrice), gst: String(line.gst) })),
 });
 const displayDate = (date) => date ? new Date(`${date}T00:00:00Z`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '—';
 const displayTime = (date) => date ? new Date(date).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+const sourceLineFor = (record, line, index) => line.id ? record?.lines.find((source) => source.id === line.id) : record?.lines[index];
 
 function ReferenceField({ id, label, value, items, nameKey, existingName, activeOnly, error, onChange }) {
   const found = items.find((item) => item.id === value);
@@ -66,12 +68,13 @@ function POEditor({ snapshot, record, isNew, onSaved, onCancel, onRefresh }) {
   const [errors, setErrors] = useState({});
   const [saveError, setSaveError] = useState('');
   const [review, setReview] = useState(null);
+  const [busy, setBusy] = useState(false);
   const refs = snapshot.refs;
   const figures = totals(values.lines);
   const draftLines = values.lines.map((line, index) => ({
     ...line,
     productName: refs.products.find((item) => item.id === line.productId)?.name ||
-      (record?.lines[index]?.productId === line.productId ? record.lines[index].productName : ''),
+      (sourceLineFor(record, line, index)?.productId === line.productId ? sourceLineFor(record, line, index).productName : ''),
     ...(calculateLine(line) || {}),
   }));
   function change(field, value) {
@@ -80,13 +83,18 @@ function POEditor({ snapshot, record, isNew, onSaved, onCancel, onRefresh }) {
     setSaveError('');
   }
   function changeLine(index, field, value) {
-    setValues((current) => ({ ...current, lines: current.lines.map((line, i) => i === index ? {
-      ...line, [field]: value,
-      ...(field === 'productId' && value ? {
-        gst: String(refs.products.find((item) => item.id === value)?.gst ?? line.gst),
-      } : {}),
-    } : line) }));
-    setErrors((current) => ({ ...current, [`lines.${index}.${field}`]: undefined, [`lines.${index}.gst`]: undefined, [`lines.${index}.total`]: undefined, lines: undefined, form: undefined }));
+    setValues((current) => ({ ...current, lines: current.lines.map((line, i) => {
+      if (i !== index) return line;
+      const { id, ...fields } = line;
+      const retained = field === 'productId' && value !== line.productId ? fields : line;
+      return {
+        ...retained, [field]: value,
+        ...(field === 'productId' && value ? {
+          gst: String(refs.products.find((item) => item.id === value)?.gst ?? line.gst),
+        } : {}),
+      };
+    }) }));
+    setErrors((current) => ({ ...current, [`lines.${index}.${field}`]: undefined, [`lines.${index}.id`]: undefined, [`lines.${index}.gst`]: undefined, [`lines.${index}.total`]: undefined, lines: undefined, form: undefined }));
     setSaveError('');
   }
   function prepare(event) {
@@ -101,13 +109,16 @@ function POEditor({ snapshot, record, isNew, onSaved, onCancel, onRefresh }) {
     setReview(result.order);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
-  function save() {
+  async function save() {
+    if (busy) return;
     const result = validatePO(values, refs, record);
     if (Object.keys(result.errors).length) { setErrors(result.errors); setReview(null); return; }
     try {
-      const next = isNew ? createPO(snapshot, refs, values) : updatePO(snapshot, refs, record.id, values);
+      setBusy(true);
+      const next = isNew ? await guardedCreatePO(snapshot, refs, values) : await guardedUpdatePO(snapshot, refs, record.id, values);
       onSaved(next, isNew ? next.orders.find((order) => !snapshot.record.orders.some((old) => old.id === order.id))?.id : record.id);
     } catch (cause) { setSaveError(cause.message || 'Could not save this order. Refresh records and review again.'); }
+    finally { setBusy(false); }
   }
   return <section className="admin-panel" aria-label={isNew ? 'New purchase order' : 'Edit purchase order'}>
     <div className="po-form-intro"><div><h2>{review ? 'Review before saving' : 'Order details'}</h2><p>{review ? 'Nothing has been saved yet. Check quantities, prices and delivery details.' : 'Required fields are marked *. Amounts are calculated in INR as you work.'}</p></div><ClipboardList size={21} color="var(--admin-accent)" aria-hidden="true" /></div>
@@ -115,7 +126,7 @@ function POEditor({ snapshot, record, isNew, onSaved, onCancel, onRefresh }) {
     {review ? <>
       <div className="po-review"><p className="po-review__note">This is a browser-local preview. Confirming saves the order in this browser; it does not send an order to a supplier.</p><dl className="po-detail-grid"><div><dt>Vendor</dt><dd>{review.vendorName}</dd></div><div><dt>Storage location</dt><dd>{review.locationName}</dd></div><div><dt>PO date</dt><dd>{displayDate(review.poDate)}</dd></div><div><dt>Expected delivery</dt><dd>{displayDate(review.expectedDate)}</dd></div></dl><h3 className="po-section-title">Items <span>{review.lines.length} product {review.lines.length === 1 ? 'line' : 'lines'}</span></h3></div>
        <LineTable lines={review.lines} figures={review} />
-      <div className="po-form-footer"><span>Changes are saved locally on confirmation.</span><div className="po-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => { setReview(null); setSaveError(''); }} data-testid="button-back-po-draft">Back to draft</button><button type="button" className="admin-button" onClick={save} data-testid="button-confirm-po">{isNew ? 'Create purchase order' : 'Save changes'}</button></div></div>
+       <div className="po-form-footer"><span>Changes are saved locally on confirmation.</span><div className="po-actions"><button type="button" disabled={busy} className="admin-button admin-button--secondary" onClick={() => { setReview(null); setSaveError(''); }} data-testid="button-back-po-draft">Back to draft</button><button type="button" disabled={busy} className="admin-button" onClick={save} data-testid="button-confirm-po">{busy ? 'Saving…' : isNew ? 'Create purchase order' : 'Save changes'}</button></div></div>
     </> : <form onSubmit={prepare} noValidate>
       <div className="po-form-body">
         {(errors.form || errors.lines || Object.entries(errors).some(([key, value]) => value && key.startsWith('lines.'))) && <div id="po-form-errors" className="admin-feedback admin-feedback--error" role="alert">{errors.form || errors.lines || 'Check the highlighted product rows before continuing.'}</div>}
@@ -131,12 +142,13 @@ function POEditor({ snapshot, record, isNew, onSaved, onCancel, onRefresh }) {
         <div className="po-lines">{values.lines.map((line, index) => {
           return <div className="po-line" key={index}><div className="po-line__top"><strong>Item {String(index + 1).padStart(2, '0')}</strong><button type="button" className="po-action po-action--danger" disabled={values.lines.length === 1} onClick={() => { setValues((current) => ({ ...current, lines: current.lines.filter((_, i) => i !== index) })); setErrors({}); }} data-testid={`button-remove-po-line-${index}`}><X size={14} aria-hidden="true" /> Remove</button></div>
             <div className="po-line__fields">
-              <ReferenceField id={`po-product-${index}`} label="Product" items={refs.products} nameKey="name" activeOnly value={line.productId} existingName={record?.lines[index]?.productId === line.productId ? record.lines[index].productName : ''} error={errors[`lines.${index}.productId`]} onChange={(value) => changeLine(index, 'productId', value)} />
+              <ReferenceField id={`po-product-${index}`} label="Product" items={refs.products} nameKey="name" activeOnly value={line.productId} existingName={sourceLineFor(record, line, index)?.productId === line.productId ? sourceLineFor(record, line, index).productName : ''} error={errors[`lines.${index}.productId`]} onChange={(value) => changeLine(index, 'productId', value)} />
               <InputField id={`po-quantity-${index}`} label="Quantity" type="number" min="0.001" step="0.001" placeholder="1" value={line.quantity} onChange={(value) => changeLine(index, 'quantity', value)} error={errors[`lines.${index}.quantity`]} />
               <InputField id={`po-price-${index}`} label="Unit price (₹)" type="number" min="0" step="0.01" placeholder="0.00" value={line.unitPrice} onChange={(value) => changeLine(index, 'unitPrice', value)} error={errors[`lines.${index}.unitPrice`]} />
               <InputField id={`po-gst-${index}`} label="GST (%)" type="number" min="0" max="100" step="0.01" placeholder="0" value={line.gst} onChange={(value) => changeLine(index, 'gst', value)} error={errors[`lines.${index}.gst`]} />
             </div>
             {errors[`lines.${index}.total`] && <p className="mr-form__error" role="alert">{errors[`lines.${index}.total`]}</p>}
+            {errors[`lines.${index}.id`] && <p className="mr-form__error" role="alert">{errors[`lines.${index}.id`]}</p>}
           </div>;
         })}</div>
         <button type="button" className="admin-button admin-button--secondary po-add-line" disabled={values.lines.length >= 100} onClick={() => { setValues((current) => ({ ...current, lines: [...current.lines, blankLine()] })); setErrors((current) => ({ ...current, lines: undefined, form: undefined })); }} data-testid="button-add-po-line"><Plus size={15} aria-hidden="true" /> Add product line</button>
@@ -159,27 +171,35 @@ export default function PurchaseOrderFormPage({ id }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
   const [version, setVersion] = useState(0);
+  const [receipts, setReceipts] = useState([]);
+  const [busy, setBusy] = useState(false);
   function refresh() {
-    try { setSnapshot(loadPOSnapshot()); setLoadError(''); setActionError(''); setEditing(false); setConfirmDelete(false); setVersion((value) => value + 1); }
+    try { const linked = loadPRSnapshot(); setSnapshot({ record: linked.poRecord, refs: linked.refs }); setReceipts(linked.record.receipts); setLoadError(''); setActionError(''); setEditing(false); setConfirmDelete(false); setVersion((value) => value + 1); }
     catch (cause) { setSnapshot(null); setLoadError(cause.message || 'Purchase order could not be loaded.'); }
   }
   useEffect(() => { setActivityOpen(false); refresh(); }, [id]);
   const record = isNew ? null : snapshot?.record.orders.find((order) => order.id === id);
   const orderEvents = [...(snapshot?.record.events || [])].reverse().filter((event) => event.orderId === id);
+  const linkedReceipts = receipts.filter((receipt) => receipt.poId === id);
+  const hasReceipts = linkedReceipts.some((receipt) => receipt.status === 'active');
+  const fulfillment = record ? getPOFulfillment(record, receipts) : 'Open';
   function saved(next, savedId) {
     setSnapshot((current) => ({ ...current, record: next }));
     setEditing(false);
     setNotice(isNew ? 'Purchase order created in this browser.' : 'Purchase order updated in this browser.');
     if (isNew && savedId) navigate(`${BASE}/${encodeURIComponent(savedId)}`);
   }
-  function remove() {
+  async function remove() {
+    if (busy) return;
     try {
-      const next = deletePO(snapshot, id);
+      setBusy(true);
+      const next = await guardedDeletePO(snapshot, id);
       setSnapshot((current) => ({ ...current, record: next }));
       setConfirmDelete(false);
       setActionError('');
       setNotice('Purchase order deleted. Its details remain available for reference.');
     } catch (cause) { setActionError(cause.message || 'Could not delete this order. Refresh and try again.'); }
+    finally { setBusy(false); }
   }
   const title = isNew ? 'New purchase order' : editing ? 'Edit purchase order' : record?.number || 'Purchase order';
   return <AdminLayout title={title}><div className="po-page">
@@ -197,10 +217,16 @@ export default function PurchaseOrderFormPage({ id }) {
               <History size={15} aria-hidden="true" /> Order activity <span aria-label={`${orderEvents.length} events`}>({orderEvents.length})</span>
             </button>
             {record.status === 'open' && <>
-              <button type="button" className="admin-button admin-button--secondary" onClick={() => setEditing(true)} data-testid="button-edit-po"><Pencil size={15} aria-hidden="true" /> Edit</button>
-              <button type="button" className="admin-button admin-button--danger" onClick={() => { setActionError(''); setConfirmDelete(true); }} data-testid="button-delete-po"><Trash2 size={15} aria-hidden="true" /> Delete</button>
+              {fulfillment !== 'Closed' && <button type="button" className="admin-button" onClick={() => navigate(`/admin/inventory/purchase-received/new?poId=${encodeURIComponent(record.id)}`)} data-testid="button-receive-po">Receive</button>}
+              <button type="button" disabled={hasReceipts || busy} title={hasReceipts ? 'Active receipts protect this PO from changes' : undefined} className="admin-button admin-button--secondary" onClick={() => setEditing(true)} data-testid="button-edit-po"><Pencil size={15} aria-hidden="true" /> Edit</button>
+              <button type="button" disabled={hasReceipts || busy} title={hasReceipts ? 'Delete active receipts first' : undefined} className="admin-button admin-button--danger" onClick={() => { setActionError(''); setConfirmDelete(true); }} data-testid="button-delete-po"><Trash2 size={15} aria-hidden="true" /> Delete</button>
             </>}
           </div>
+        </div>
+        <div className="po-review">
+          <h3 className="po-section-title">Fulfillment: {fulfillment}</h3>
+          {hasReceipts && <p role="note">This PO cannot be edited or deleted while it has active Purchase Received records. Review the linked receipts below; deleting a receipt restores its accepted quantities to the outstanding balance.</p>}
+          {linkedReceipts.length ? <ul>{linkedReceipts.map((receipt) => <li key={receipt.id}><button type="button" className="po-link" onClick={() => navigate(`/admin/inventory/purchase-received/${encodeURIComponent(receipt.id)}`)}>{receipt.number}</button> · {receipt.receivedDate} · {receipt.status}</li>)}</ul> : <p>No receipts recorded. Fulfillment is independent of the PO open/deleted lifecycle.</p>}
         </div>
         <div className="po-review"><dl className="po-detail-grid"><div><dt>PO number</dt><dd className="po-number">{record.number}</dd></div><div><dt>PO date</dt><dd>{displayDate(record.poDate)}</dd></div><div><dt>Expected delivery</dt><dd>{displayDate(record.expectedDate)}</dd></div><div><dt>Vendor</dt><dd>{record.vendorName}<span className="po-secondary">ID: {record.vendorId}</span></dd></div><div><dt>Storage location</dt><dd>{record.locationName}<span className="po-secondary">ID: {record.locationId}</span></dd></div></dl><h3 className="po-section-title">Product lines</h3></div><LineTable lines={record.lines} figures={record} />
       </section>

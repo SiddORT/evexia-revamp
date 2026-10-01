@@ -6,7 +6,9 @@ import { STORAGE_LOCATION_KEY } from './storageLocations.js';
 import {
   PO_KEY, calculateLine, totals, money, loadPOSnapshot, loadPOs, validatePO,
   createPO, updatePO, deletePO, filterPOs, poEventActor, seedSamplePOs,
+  guardedCreatePO, guardedUpdatePO, guardedDeletePO, guardedSeedSamplePOs,
 } from './purchaseOrders.js';
+import { createPR, loadPRSnapshot } from './purchaseReceived.js';
 
 function storage() {
   const map = new Map();
@@ -15,6 +17,9 @@ function storage() {
 }
 test.beforeEach(() => {
   globalThis.window = { localStorage: storage() };
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { locks: {
+    request: (_name, _options, callback) => callback(),
+  } } });
   window.localStorage.setItem(PO_KEY, JSON.stringify({ version: 1, revision: 0, orders: [], events: [] }));
 });
 const draft = (refs, changes = {}) => ({
@@ -167,4 +172,90 @@ test('inclusive date, vendor, product, state and deterministic sorting support p
   const deleted = deletePO(snapshot, snapshot.record.orders[0].id);
   assert.equal(filterPOs(deleted.orders).length, 11);
   assert.equal(filterPOs(deleted.orders, { status: 'deleted' }).length, 1);
+});
+
+test('migrates legacy PO lines to stable IDs without changing amounts or activity', () => {
+  const { record, refs } = loadPOSnapshot();
+  const created = createPO({ record }, refs, draft(refs));
+  const oldRecord = {
+    ...created,
+    orders: created.orders.map((order) => ({ ...order, lines: order.lines.map(({ id, ...line }) => line) })),
+  };
+  window.localStorage.setItem(PO_KEY, JSON.stringify(oldRecord));
+  const migrated = loadPOs();
+  assert.ok(migrated.orders[0].lines[0].id);
+  assert.equal(migrated.orders[0].lines[0].quantity, oldRecord.orders[0].lines[0].quantity);
+  assert.equal(migrated.orders[0].lines[0].total, oldRecord.orders[0].lines[0].total);
+  assert.deepEqual(migrated.events, oldRecord.events);
+  assert.equal(migrated.revision, oldRecord.revision);
+  assert.deepEqual(loadPOs(), migrated);
+  assert.deepEqual(JSON.parse(window.localStorage.getItem(PO_KEY)), oldRecord,
+    'reading legacy data normalizes IDs in memory without an unlocked storage write');
+  const saved = createPO({ record: migrated }, refs, draft(refs));
+  const retained = saved.orders.find((order) => order.id === migrated.orders[0].id);
+  assert.equal(retained.lines[0].id, migrated.orders[0].lines[0].id);
+  assert.equal(retained.total, oldRecord.orders[0].total);
+  assert.deepEqual(saved.events[0], oldRecord.events[0]);
+  assert.equal(JSON.parse(window.localStorage.getItem(PO_KEY)).orders.find((order) => order.id === retained.id).lines[0].id,
+    retained.lines[0].id);
+});
+
+test('retains line IDs for fallback updates and rejects foreign, duplicate, or product-reassigned IDs', () => {
+  const snapshot = loadPOSnapshot();
+  const created = createPO({ record: snapshot.record }, snapshot.refs, draft(snapshot.refs));
+  const order = created.orders[0];
+  const changed = updatePO({ record: created }, snapshot.refs, order.id,
+    draft(snapshot.refs, { expectedDate: '2026-10-05' }));
+  assert.equal(changed.orders[0].lines[0].id, order.lines[0].id);
+
+  const values = { ...draft(snapshot.refs), lines: [
+    { id: order.lines[0].id, ...draft(snapshot.refs).lines[0] },
+    { id: order.lines[0].id, ...draft(snapshot.refs).lines[0] },
+  ] };
+  assert.ok(validatePO(values, snapshot.refs, order).errors['lines.1.id']);
+  assert.ok(validatePO({ ...values, lines: [{ ...values.lines[0], id: 'foreign-line' }] },
+    snapshot.refs, order).errors['lines.0.id']);
+  assert.ok(validatePO({ ...values, lines: [{ id: order.lines[0].id,
+    ...values.lines[0], productId: snapshot.refs.products[1].id }] }, snapshot.refs, order).errors['lines.0.id']);
+
+  const withDuplicateProducts = createPO({ record: changed }, snapshot.refs, draft(snapshot.refs, { lines: [
+    { productId: snapshot.refs.products[0].id, quantity: '2', unitPrice: '100', gst: '12' },
+    { productId: snapshot.refs.products[0].id, quantity: '3', unitPrice: '100', gst: '12' },
+  ] }));
+  const duplicateOrder = withDuplicateProducts.orders[0];
+  const reserved = validatePO({ ...draft(snapshot.refs), lines: [
+    { productId: snapshot.refs.products[0].id, quantity: '4', unitPrice: '100', gst: '12' },
+    { id: duplicateOrder.lines[0].id, productId: snapshot.refs.products[0].id,
+      quantity: '1', unitPrice: '100', gst: '12' },
+  ] }, snapshot.refs, duplicateOrder);
+  assert.deepEqual(reserved.errors, {});
+  assert.equal(reserved.order.lines[0].id, duplicateOrder.lines[1].id);
+  assert.equal(reserved.order.lines[1].id, duplicateOrder.lines[0].id);
+});
+
+test('PO edits and deletes guard active PR links, and guarded wrappers use Web Locks', async () => {
+  const before = loadPRSnapshot();
+  const created = createPO({ record: before.poRecord }, before.refs, draft(before.refs));
+  const order = created.orders[0];
+  const active = await createPR(loadPRSnapshot(), {
+    poId: order.id, receivedDate: order.poDate, receivedBy: 'Receiver',
+    lines: [{ lineId: order.lines[0].id, receivedQty: '1', acceptedQty: '1',
+      batchNo: 'B-1', expiryDate: '2027-09-30' }],
+  });
+  assert.throws(() => updatePO({ record: loadPOs() }, before.refs, order.id,
+    draft(before.refs, { expectedDate: '2026-10-06' })), /active Purchase Received/);
+  assert.throws(() => deletePO({ record: loadPOs() }, order.id), /active Purchase Received/);
+
+  const fresh = { record: active.poRecord, refs: active.refs };
+  await assert.rejects(guardedUpdatePO(fresh, fresh.refs, order.id,
+    draft(fresh.refs, { expectedDate: '2026-10-06' })), /active Purchase Received/);
+  assert.equal(typeof guardedCreatePO, 'function');
+  assert.equal(typeof guardedDeletePO, 'function');
+  assert.equal(typeof guardedSeedSamplePOs, 'function');
+});
+
+test('guarded PO mutations fail explicitly if Web Locks are unavailable', async () => {
+  const snapshot = loadPOSnapshot();
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: {} });
+  await assert.rejects(guardedCreatePO(snapshot, snapshot.refs, draft(snapshot.refs)), /Web Locks/);
 });
