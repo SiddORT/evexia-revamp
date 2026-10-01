@@ -10,6 +10,7 @@ EVEXIA is a React/Vite browser-local demonstration of role login screens and an 
 - CSV exports and selected CSV/Excel files: downloaded copies leave the browser and can disclose data or execute spreadsheet formulas if opened in spreadsheet software.
 - Record integrity: local edits and imports must not silently overwrite another tab's changes or corrupt records.
 - Typed login passwords: held transiently in React state for a mock form, not authenticated, sent or saved; users must not type actual credentials.
+- Communication preview credentials: masked dummy-only app-password/API-key/access-token inputs are held only in the open form and cleared on save attempts, cancellation, type/channel changes, navigation/unmount and when the window loses focus or becomes hidden. No credentials are retained, logged, exported or sent. Saved provider/sender metadata is still browser-local and must be fictional.
 
 ## Trust Boundaries
 
@@ -18,6 +19,7 @@ EVEXIA is a React/Vite browser-local demonstration of role login screens and an 
 - **Browser to downloaded file/spreadsheet application:** CSV escaping is required to mitigate formula execution; downloads are not protected by access controls.
 - **Portal to backend API:** the portal does not call the API. Its independently reachable authentication foundation must not be mistaken for persistence or access control on the prototype screens.
 - **Preview to a future deployment:** HTTPS, response headers, origin isolation, logging, secret handling and server authorization have not been assessed for a production deployment.
+- **Communication form to localStorage:** an allowlisted, versioned metadata schema excludes all credential fields and rejects unknown saved keys. Endpoint URLs reject embedded credentials and all query/fragment data because secret parameter names vary by provider. No arbitrary headers or credential JSON fields are accepted, and no provider calls or messaging exist. This preview is not secure credential storage or WhatsApp onboarding.
 
 ## Scan Anchors
 

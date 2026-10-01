@@ -1,0 +1,40 @@
+.comm { display: grid; gap: 16px; }
+.comm__notice { padding: 12px 14px; border: 1px solid var(--admin-border); border-left: 3px solid var(--admin-warning); border-radius: 8px; background: var(--admin-state-link); color: var(--admin-text); font-size: 12px; line-height: 1.55; }
+.comm__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
+.comm__head h2 { margin: 0; font-size: 20px; color: var(--admin-text); }
+.comm__head p { margin: 4px 0 0; font-size: 12px; color: var(--admin-text-soft); }
+.comm__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.comm .admin-tabs button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.comm__list { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); padding: 0; margin: 0; list-style: none; }
+.comm__card { border: 1px solid var(--admin-border); border-radius: 10px; background: var(--admin-chrome); display: grid; min-width: 0; }
+.comm__card--default { border-color: var(--admin-primary); }
+.comm__card-body { padding: 14px; display: grid; gap: 8px; min-width: 0; }
+.comm__card h3 { margin: 0; font-size: 14px; color: var(--admin-text); overflow-wrap: anywhere; }
+.comm__card dl { margin: 0; display: grid; gap: 6px; font-size: 12px; }
+.comm__card dt { color: var(--admin-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.comm__card dd { margin: 0; overflow-wrap: anywhere; color: var(--admin-text); }
+.comm__tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.comm__tag { padding: 3px 8px; border-radius: 50px; font-size: 11px; font-weight: 700; background: var(--admin-badge-inactive-bg); color: var(--admin-badge-inactive-text); }
+.comm__tag--default { background: var(--admin-badge-success-bg); color: var(--admin-badge-success-text); }
+.comm__card-foot { display: flex; flex-wrap: wrap; border-top: 1px solid var(--admin-border); }
+.comm__card-foot button { flex: 1 1 auto; min-height: 42px; border: 0; border-right: 1px solid var(--admin-border); background: transparent; color: var(--admin-text-soft); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.comm__card-foot button:last-child { border-right: 0; }
+.comm__card-foot button:hover:not(:disabled), .comm__card-foot button:focus-visible { background: var(--admin-state-soft); color: var(--admin-accent); }
+.comm__card-foot button:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: -3px; }
+.comm__card-foot button:disabled { opacity: .5; cursor: not-allowed; }
+.comm__dialog { width: min(100%, 640px); }
+.comm__form { display: grid; gap: 14px; }
+.comm__fields { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.comm__field { display: grid; gap: 6px; font-size: 12px; font-weight: 700; color: var(--admin-text); align-content: start; }
+.comm__field input, .comm__field select { height: 42px; padding: 0 12px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-text); font: inherit; font-size: 13px; font-weight: 400; min-width: 0; }
+.comm__field input:focus, .comm__field select:focus { outline: none; border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
+.comm__field--error input, .comm__field--error select { border-color: var(--admin-danger); }
+.comm__hint { font-weight: 400; color: var(--admin-text-soft); font-size: 11px; line-height: 1.4; }
+.comm__err { font-weight: 600; color: var(--admin-danger); font-size: 11px; }
+.comm__secret { border: 1px dashed var(--admin-border); border-radius: 8px; padding: 12px; display: grid; gap: 6px; background: var(--admin-state-link); }
+.comm__form-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; }
+.comm__warn { padding: 12px 14px; border-radius: 8px; background: var(--admin-state-soft); border-left: 3px solid var(--admin-danger); color: var(--admin-text); font-size: 13px; font-weight: 600; line-height: 1.5; }
+.comm__radios { display: grid; gap: 8px; border: 0; padding: 0; margin: 0; }
+.comm__radios label { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+.comm__radios legend { font-size: 12px; font-weight: 700; margin-bottom: 6px; padding: 0; }
+@media (max-width: 560px) { .comm__dialog { padding: 18px; } .comm__form-actions .admin-button { flex: 1 1 100%; } }

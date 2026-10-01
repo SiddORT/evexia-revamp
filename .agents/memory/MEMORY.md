@@ -7,3 +7,4 @@
 - [Purchase order tax display](purchase-order-tax-display.md) — show total GST only until place-of-supply data supports a defensible IGST versus SGST/CGST split.
 - [Local PO actor attribution](local-po-actor-attribution.md) — label unauthenticated activity as local demo actions, not verified staff identity.
 - [Browser-local invoice exports](browser-local-invoice-exports.md) — keep PO exports on-device; previews and PDFs must show identical saved amounts and template layouts.
+- [Communication preview boundary](communication-preview-boundary.md) — demo endpoints exclude all query/fragment data because provider credential names vary.

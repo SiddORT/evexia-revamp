@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import POTemplateSettings from '../../components/admin/POTemplateSettings.jsx';
+import CommunicationSettings from '../../components/admin/CommunicationSettings.jsx';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { ADMIN_APPEARANCES, ADMIN_THEMES } from '../../components/admin/adminTheme.js';
 import { CLOCK_FORMATS, DATE_FORMATS, TIME_ZONES, formatAdminDate, formatAdminTimestamp, setAdminPreference, useAdminPreferences } from '../../components/admin/adminPreferences.js';
@@ -14,7 +15,7 @@ function Setting({ label, id, value, choices, onChange, description }) {
   </div>;
 }
 
-const TABS = [['basic', 'Basic'], ['ui', 'UI'], ['templates', 'Templates']];
+const TABS = [['basic', 'Basic'], ['ui', 'UI'], ['templates', 'Templates'], ['communication', 'Communication']];
 function initialTab() {
   const t = new URLSearchParams(window.location.search).get('tab');
   return TABS.some(([k]) => k === t) ? t : 'basic';
@@ -44,6 +45,7 @@ export default function AdminSettings() {
         {TABS.map(([key, text], i) => <button key={key} type="button" role="tab" id={`tab-${key}`} aria-selected={tab === key} aria-controls={`panel-${key}`} tabIndex={tab === key ? 0 : -1} onClick={() => selectTab(key)} onKeyDown={(e) => onTabKey(e, i)}>{text}</button>)}
       </div>
       {tab === 'templates' && <div role="tabpanel" id="panel-templates" aria-labelledby="tab-templates"><POTemplateSettings /></div>}
+      {tab === 'communication' && <div role="tabpanel" id="panel-communication" aria-labelledby="tab-communication"><CommunicationSettings /></div>}
       {tab === 'basic' && <section role="tabpanel" id="panel-basic" aria-labelledby="basic-heading" className="admin-panel admin-settings__section">
         <h2 id="basic-heading">Basic settings</h2>
         <p>How dates and times appear in Admin. Stored records and CSV files are unchanged.</p>
