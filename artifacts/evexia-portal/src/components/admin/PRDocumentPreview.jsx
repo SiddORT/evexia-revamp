@@ -10,6 +10,7 @@ export default function PRDocumentPreview({ document, onClose }) {
   const openerRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [pdfFormat, setPdfFormat] = useState('searchable');
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -45,7 +46,7 @@ export default function PRDocumentPreview({ document, onClose }) {
     setBusy(true);
     setError('');
     try {
-      await downloadPRDocument(document, `${document.number}.pdf`, logoUrl);
+      await downloadPRDocument(document, `${document.number}.pdf`, logoUrl, { format: pdfFormat });
     } catch (cause) {
       setError(cause?.message || 'Could not download this Purchase Received document. Please try again.');
     } finally {
@@ -67,6 +68,13 @@ export default function PRDocumentPreview({ document, onClose }) {
         <p>{document.pages.length} {document.pages.length === 1 ? 'page' : 'pages'} · Browser-local document</p>
       </div>
       <div className="pr-document-dialog__actions">
+        <label>
+          PDF format{' '}
+          <select value={pdfFormat} onChange={(event) => setPdfFormat(event.target.value)} disabled={busy}>
+            <option value="searchable">Searchable PDF</option>
+            <option value="image">Image-only PDF</option>
+          </select>
+        </label>
         <button
           type="button"
           className="admin-button"
@@ -92,6 +100,7 @@ export default function PRDocumentPreview({ document, onClose }) {
     <div className="pr-document-dialog__body">
       <p className="pr-document-dialog__note">
         Purchase Received record from saved receipt details only. This is not a financial invoice and does not post inventory quantities or create a stock-ledger entry.
+        {' '}Searchable PDFs let you search and copy receipt text. Image-only PDFs preserve other scripts but do not support text search or copying.
       </p>
       {error && <div className="admin-feedback admin-feedback--error" role="alert">{error}</div>}
       <section className="pr-document-dialog__accessible" aria-label="Purchase Received details">

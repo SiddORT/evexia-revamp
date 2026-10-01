@@ -2,6 +2,7 @@ import { downloadInvoiceDocument } from './poInvoicePdf.js';
 import { loadPRTemplatePreference, PR_TEMPLATES } from './prReceiptTemplates.js';
 import { normalizePRReceipt, makeSamplePRReceipt } from './prReceiptModel.js';
 import { renderPRReceiptPages } from './prReceiptRender.js';
+import { downloadSearchableReceipt } from './prReceiptPdf.js';
 
 /**
  * Preview and PDF share this normalized saved receipt and its exact SVG pages.
@@ -24,8 +25,8 @@ export function prReceiptFilename(number) {
   return `purchase-received-${safeNumber || 'receipt'}.pdf`;
 }
 
-/** Rasterize the preview pages locally using the existing A4 PDF serializer. */
-export async function downloadPRDocument(document, _filename, logoUrl) {
+/** Searchable by default; image-only is an explicit, on-device alternative. */
+export async function downloadPRDocument(document, _filename, logoUrl, { format = 'searchable' } = {}) {
   if (!document || !Array.isArray(document.pages) || !document.pages.length ||
     document.pages.some((page) => typeof page !== 'string')) {
     throw new Error('Purchase Received document pages are missing; no PDF was downloaded.');
@@ -33,8 +34,12 @@ export async function downloadPRDocument(document, _filename, logoUrl) {
   if (!PR_TEMPLATES.some((template) => template.id === document.templateId)) {
     throw new Error('The PR receipt document has an unsupported template.');
   }
+  if (!['searchable', 'image'].includes(format)) {
+    throw new Error('Choose Searchable PDF or Image-only PDF for this receipt.');
+  }
   try {
-    return await downloadInvoiceDocument(document, prReceiptFilename(document.number), logoUrl);
+    const download = format === 'image' ? downloadInvoiceDocument : downloadSearchableReceipt;
+    return await download(document, prReceiptFilename(document.number), logoUrl);
   } catch (error) {
     throw new Error((error?.message || 'The receipt PDF could not be downloaded.').replace(/invoice/gi, 'receipt'));
   }

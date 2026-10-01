@@ -199,14 +199,22 @@ test('marks deleted and explicitly sample receipts without changing their saved 
   assert.equal(sample.number, 'PR-2026-001');
 });
 
-test('rejects malformed source records and delegates PDF creation through the classic SVG pipeline', async () => {
+test('rejects malformed source records and requires browser SVG measurement for searchable PDFs', async () => {
   assert.throws(() => makePRDocument(null), /saved Purchase Received record/);
   assert.throws(() => makePRDocument({ ...receipt(), lines: null }), /lines must be an array/);
 
   const document = makePRDocument(receipt());
   await assert.rejects(
     downloadPRDocument(document, 'PR-2026-001.pdf', '/images/evexia-logo.png'),
+    /browser with SVG text measurement/,
+  );
+  await assert.rejects(
+    downloadPRDocument(document, '', '/images/evexia-logo.png', { format: 'image' }),
     /browser page with a same-origin logo URL/,
+  );
+  await assert.rejects(
+    downloadPRDocument(document, '', '/images/evexia-logo.png', { format: 'unknown' }),
+    /Choose Searchable PDF/,
   );
   await assert.rejects(
     downloadPRDocument({ pages: [] }, 'PR.pdf', '/images/evexia-logo.png'),

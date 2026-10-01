@@ -31,12 +31,12 @@ function ascii(value) {
  * Serialize JPEG page images into a dependency-free, multipage PDF.
  * Pages use standard A4 portrait dimensions in PDF points.
  */
-export function buildInvoicePdf(jpegPages) {
+export function validateInvoicePdfPages(jpegPages) {
   if (!Array.isArray(jpegPages) || jpegPages.length === 0) {
     throw new Error('At least one rasterized invoice page is required to build a PDF.');
   }
 
-  const pageData = jpegPages.map((page, index) => {
+  return jpegPages.map((page, index) => {
     if (!page || typeof page !== 'object') {
       throw new Error(`Invoice PDF page ${index + 1} is invalid.`);
     }
@@ -51,7 +51,10 @@ export function buildInvoicePdf(jpegPages) {
     }
     return { bytes, width: page.width, height: page.height };
   });
+}
 
+export function buildInvoicePdf(jpegPages) {
+  const pageData = validateInvoicePdfPages(jpegPages);
   const objectCount = 2 + pageData.length * 3;
   const parts = [
     ascii('%PDF-1.4\n'),
@@ -130,7 +133,7 @@ function currentLocation() {
   return window.location;
 }
 
-async function logoAsDataUri(logoUrl) {
+export async function logoAsDataUri(logoUrl) {
   const location = currentLocation();
   if (typeof logoUrl !== 'string' || !logoUrl.trim()) {
     throw new Error('The Evexia logo URL is missing; the invoice PDF cannot be created.');
@@ -221,7 +224,7 @@ function canvasJpeg(canvas, pageNumber) {
   });
 }
 
-async function rasterizePage(svg, logoDataUri, pageNumber) {
+export async function rasterizePage(svg, logoDataUri, pageNumber) {
   if (typeof document === 'undefined' || typeof Image === 'undefined' ||
     typeof URL?.createObjectURL !== 'function') {
     throw new Error('This browser does not support invoice page rasterization.');
@@ -299,6 +302,11 @@ export async function downloadInvoiceDocument(invoiceDocument, filename, logoUrl
     jpegPages.push(await rasterizePage(invoiceDocument.pages[index], logoDataUri, index + 1));
   }
   const pdfBytes = buildInvoicePdf(jpegPages);
+  return downloadPdfBytes(pdfBytes, filename);
+}
+
+/** Shared browser download only; PDF serialization stays specific to each document type. */
+export function downloadPdfBytes(pdfBytes, filename) {
   if (typeof document === 'undefined' || typeof Blob === 'undefined' ||
     typeof URL?.createObjectURL !== 'function') {
     throw new Error('This browser cannot download the generated invoice PDF.');
