@@ -17,6 +17,12 @@
 .po-toolbar .admin-search { max-width: none; flex: 2 1 240px; }
 .po-toolbar .admin-filter { flex: 1 1 125px; }
 .po-toolbar .admin-select { width: 100%; }
+.po-filter-panel[hidden] { display: none; }
+.po-filter-panel { background: var(--admin-state-row); }
+.po-filter-toggle__count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 20px; background: var(--admin-state-soft); color: var(--admin-accent); font-size: 10px; }
+.po-filter-toggle__chevron { transition: transform .15s ease; }
+.po-filter-toggle[aria-expanded="true"] .po-filter-toggle__chevron { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .po-filter-toggle__chevron { transition: none; } }
 .po-table .admin-table { min-width: 950px; }
 .po-table .admin-table th:first-child, .po-table .admin-table td:first-child { width: 54px; text-align: center; white-space: nowrap; }
 .po-table .admin-table td { font-variant-numeric: tabular-nums; }

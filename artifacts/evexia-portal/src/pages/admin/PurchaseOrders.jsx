@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
-import { Activity, ArrowUpRight, BarChart3, ClipboardList, Download, Eye, Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
+import { Activity, ArrowUpRight, BarChart3, ChevronDown, ClipboardList, Download, Eye, Plus, RefreshCw, Search, SlidersHorizontal, Trash2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -28,6 +28,8 @@ export default function PurchaseOrders() {
   const [downloading, setDownloading] = useState('');
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({ status: 'open', vendorId: '', productId: '', from: '', to: '', sort: 'recent' });
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFilterCount = [filters.status !== 'all', filters.vendorId, filters.productId, filters.from, filters.to].filter(Boolean).length;
 
   function refresh() {
     try { setSnapshot(loadPOSnapshot()); setLoadError(''); setActionError(''); setConfirming(null); }
@@ -125,13 +127,21 @@ export default function PurchaseOrders() {
         {tab === 'orders' && <div role="tabpanel">
           <div className="po-toolbar">
             <label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search purchase orders</span><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Search PO, vendor, location or product" data-testid="input-search-purchase-orders" /></label>
+            <button type="button" className="admin-button admin-button--secondary po-filter-toggle" onClick={() => setFiltersOpen((open) => !open)}
+              aria-expanded={filtersOpen} aria-controls="po-filter-panel" data-testid="button-toggle-po-filters">
+              <SlidersHorizontal size={15} aria-hidden="true" /> Filters
+              {activeFilterCount > 0 && <span className="po-filter-toggle__count" aria-label={`${activeFilterCount} active ${activeFilterCount === 1 ? 'filter' : 'filters'}`}>{activeFilterCount}</span>}
+              <ChevronDown size={15} className="po-filter-toggle__chevron" aria-hidden="true" />
+            </button>
+            <button type="button" className="admin-button admin-button--secondary" onClick={clearFilters} data-testid="button-clear-po-filters">Clear filters</button>
+          </div>
+          <div id="po-filter-panel" className="po-toolbar po-filter-panel" hidden={!filtersOpen} role="region" aria-label="Purchase order filters">
             <div className="admin-filter"><label htmlFor="po-status">Status</label><select id="po-status" className="admin-select" value={filters.status} onChange={(event) => changeFilter('status', event.target.value)} data-testid="select-po-status"><option value="open">Open</option><option value="deleted">Deleted</option><option value="all">All statuses</option></select></div>
             <div className="admin-filter"><label htmlFor="po-vendor">Vendor</label><select id="po-vendor" className="admin-select" value={filters.vendorId} onChange={(event) => changeFilter('vendorId', event.target.value)} data-testid="select-po-vendor"><option value="">All vendors</option>{[...new Map(orders.map((order) => [order.vendorId, order.vendorName])).entries()].map(([id, name]) => <option key={id} value={id}>{name} · {id}</option>)}</select></div>
             <div className="admin-filter"><label htmlFor="po-product">Product</label><select id="po-product" className="admin-select" value={filters.productId} onChange={(event) => changeFilter('productId', event.target.value)} data-testid="select-po-product"><option value="">All products</option>{[...new Map(orders.flatMap((order) => order.lines.map((line) => [line.productId, line.productName]))).entries()].map(([id, name]) => <option key={id} value={id}>{name} · {id}</option>)}</select></div>
             <div className="admin-filter"><label htmlFor="po-from">From PO date</label><input id="po-from" className="admin-select" type="date" value={filters.from} onChange={(event) => changeFilter('from', event.target.value)} data-testid="input-po-from" /></div>
             <div className="admin-filter"><label htmlFor="po-to">To PO date</label><input id="po-to" className="admin-select" type="date" value={filters.to} onChange={(event) => changeFilter('to', event.target.value)} data-testid="input-po-to" /></div>
             <div className="admin-filter"><label htmlFor="po-sort">Sort</label><select id="po-sort" className="admin-select" value={filters.sort} onChange={(event) => changeFilter('sort', event.target.value)} data-testid="select-po-sort"><option value="recent">Newest PO date</option><option value="oldest">Oldest PO date</option></select></div>
-            <button type="button" className="admin-button admin-button--secondary" onClick={clearFilters} data-testid="button-clear-po-filters">Clear filters</button>
           </div>
           {visible.length ? <><div className="po-table"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(order) => order.id} label="Purchase orders" testIdPrefix="po" /></div><div className="po-mobile" role="list" aria-label="Purchase orders">{pagination.pageRows.map((order, index) => <article className="po-card" key={order.id} role="listitem"><div className="po-card__top"><div><span className="po-secondary">Sr. no. {pagination.startIndex + index + 1}</span><button type="button" className="po-link po-number" onClick={() => navigate(`${BASE}/${encodeURIComponent(order.id)}`)}>{order.number}</button><h2>{order.vendorName}</h2><p>{order.locationName}</p></div><span className={`po-status${order.status === 'deleted' ? ' po-status--draft' : ''}`}>{order.status}</span></div><dl><div><dt>PO date</dt><dd>{displayDate(order.poDate)}</dd></div><div><dt>Expected</dt><dd>{displayDate(order.expectedDate)}</dd></div><div><dt>Items</dt><dd>{order.lines.length}</dd></div><div><dt>Total incl. GST</dt><dd className="po-amount">{money(order.total)}</dd></div></dl>{actionButtons(order)}</article>)}</div></> : <div className="admin-empty"><span className="admin-empty__icon"><ClipboardList size={21} aria-hidden="true" /></span><strong>{orders.length ? 'No orders match these filters' : 'No purchase orders yet'}</strong><p>{orders.length ? 'Change the filters or search to see more orders.' : 'Create your first order to start a browser-local procurement record.'}</p>{!orders.length && <div className="po-actions" style={{ marginTop: 17 }}><button type="button" className="admin-button" onClick={() => navigate(`${BASE}/new`)}>Create purchase order</button><button type="button" className="admin-button admin-button--secondary" onClick={loadSamples} data-testid="button-sample-purchase-orders">Load sample orders</button></div>}</div>}
           <TablePagination {...pagination} filtered={visible.length} total={orders.length} label={visible.length === 1 ? 'order' : 'orders'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-po-count" />

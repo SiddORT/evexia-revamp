@@ -1,0 +1,38 @@
+.po-activity-drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  margin: 0;
+  padding: 0;
+  width: min(460px, 100vw);
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  border: 0;
+  border-left: 1px solid var(--admin-border);
+  border-radius: 0;
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  box-shadow: -12px 0 40px #00000020;
+  overflow: hidden;
+}
+.po-activity-drawer[open] { display: flex; flex-direction: column; animation: po-activity-enter .18s ease-out; }
+.po-activity-drawer::backdrop { background: #12151b66; }
+.po-activity-drawer__header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px; border-bottom: 1px solid var(--admin-border); flex-shrink: 0; }
+.po-activity-drawer__header h2 { margin: 5px 0 0; font-size: 21px; }
+.po-activity-drawer__number { margin: 0; color: var(--admin-accent); font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
+.po-activity-drawer__close { width: 36px; height: 36px; padding: 0; display: grid; place-items: center; flex-shrink: 0; }
+.po-activity-drawer__body { padding: 22px; overflow-y: auto; min-height: 0; overscroll-behavior: contain; }
+.po-activity-drawer__description { margin: 0; font-size: 12px; line-height: 1.6; color: var(--admin-text-soft); }
+.po-activity-drawer__count { margin: 18px 0 0; font-size: 11px; color: var(--admin-muted); }
+.po-activity-drawer .po-activity { padding: 18px 0 0; }
+.po-activity-drawer .po-event { min-width: 0; }
+.po-activity-drawer .po-event > div:last-child { min-width: 0; overflow-wrap: anywhere; }
+.po-activity-drawer__action { text-transform: capitalize; }
+.po-activity-trigger { white-space: nowrap; }
+@keyframes po-activity-enter { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@media (max-width: 600px) {
+  .po-page .po-form-intro { flex-wrap: wrap; }
+  .po-page .po-form-intro > .po-actions { flex-wrap: wrap; }
+  .po-activity-drawer__header, .po-activity-drawer__body { padding: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { .po-activity-drawer[open] { animation: none; } }

@@ -20,3 +20,9 @@ Headless Chromium's default viewport can match an app's mobile breakpoint, even 
 **Why:** A desktop collapse assertion timed out in the default narrow viewport because the app correctly remained in mobile layout.
 
 **How to apply:** Set viewport dimensions before loading the page, then switch dimensions intentionally for responsive checks.
+
+DevTools navigation/reload acknowledgments do not mean the new document is ready. An immediate selector check can still match the previous document.
+
+**Why:** A post-reload drawer check clicked a matching button in the outgoing document and reported that the new page failed to open its drawer.
+
+**How to apply:** Wait for the navigation's load event or a confirmed new document before waiting for React selectors and dispatching input. Do not use a selector present on both old and new pages as the navigation-completion signal.
