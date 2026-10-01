@@ -1,0 +1,14 @@
+.po-invoice-document { display: grid; gap: 18px; width: 100%; max-width: 794px; margin: 0 auto; }
+.po-invoice-document__page { background: white; color: #17212b; box-shadow: 0 3px 14px #00000014; }
+.po-invoice-document__page svg { display: block; width: 100%; height: auto; }
+.po-invoice-document--compact { gap: 0; pointer-events: none; }
+.po-invoice-document--compact .po-invoice-document__page { box-shadow: none; }
+.po-invoice-dialog { width: min(940px, calc(100vw - 32px)); max-width: 940px; max-height: calc(100dvh - 32px); padding: 0; border: 1px solid var(--admin-border); border-radius: 12px; background: var(--admin-surface); color: var(--admin-text); }
+.po-invoice-dialog::backdrop { background: #12151b99; }
+.po-invoice-dialog__header { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 17px 22px; border-bottom: 1px solid var(--admin-border); }
+.po-invoice-dialog__header h2 { margin: 0; font-size: 17px; }
+.po-invoice-dialog__header p { margin: 6px 0 0; font-size: 12px; color: var(--admin-text-soft); }
+.po-invoice-dialog__body { padding: 20px; background: var(--admin-state-row); }
+.po-invoice-dialog__note { margin: 0 0 16px; color: var(--admin-text-soft); font-size: 12px; line-height: 1.5; }
+.po-actions .po-action--icon { width: 31px; height: 31px; padding: 0; display: inline-grid; place-items: center; flex: none; }
+@media (max-width: 600px) { .po-invoice-dialog__header { padding: 14px; flex-wrap: wrap; } .po-invoice-dialog__body { padding: 10px; } .po-invoice-dialog__header .admin-button { font-size: 11px; } }

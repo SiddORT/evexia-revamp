@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
-import { Activity, ArrowUpRight, BarChart3, ClipboardList, Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
+import { Activity, ArrowUpRight, BarChart3, ClipboardList, Download, Eye, Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import PurchaseOrderEventMeta from '../../components/admin/PurchaseOrderEventMeta.jsx';
+import POInvoicePreview from '../../components/admin/POInvoicePreview.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import useTablePagination from '../../hooks/useTablePagination.js';
 import { deletePO, filterPOs, loadPOSnapshot, money, poEventActor, seedSamplePOs } from '../../services/purchaseOrders.js';
+import { makePOInvoiceDocument } from '../../services/poInvoiceTemplates.js';
+import { downloadInvoiceDocument } from '../../services/poInvoicePdf.js';
 import '../../purchaseOrders.css';
 
 const BASE = '/admin/inventory/purchase-orders';
@@ -21,6 +24,8 @@ export default function PurchaseOrders() {
   const [notice, setNotice] = useState('');
   const [confirming, setConfirming] = useState(null);
   const [tab, setTab] = useState('orders');
+  const [invoiceDocument, setInvoiceDocument] = useState(null);
+  const [downloading, setDownloading] = useState('');
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({ status: 'open', vendorId: '', productId: '', from: '', to: '', sort: 'recent' });
 
@@ -65,9 +70,25 @@ export default function PurchaseOrders() {
       setActionError('');
     } catch (cause) { setActionError(cause.message || 'Could not load sample purchase orders. Refresh and try again.'); }
   }
+  function previewInvoice(order) {
+    setActionError('');
+    try { setInvoiceDocument(makePOInvoiceDocument(order, snapshot.refs)); }
+    catch (cause) { setActionError(cause.message || 'Could not preview this PO invoice. Refresh and try again.'); }
+  }
+  async function downloadInvoice(order) {
+    setActionError('');
+    setDownloading(order.id);
+    try {
+      const document = makePOInvoiceDocument(order, snapshot.refs);
+      await downloadInvoiceDocument(document, `${order.number}.pdf`, `${import.meta.env.BASE_URL}images/evexia-logo.png`);
+    } catch (cause) { setActionError(cause.message || 'Could not download this PO invoice. Please try again.'); }
+    finally { setDownloading(''); }
+  }
   const actionButtons = (order) => <div className="po-actions">
-    <button type="button" className="po-action" onClick={() => navigate(`${BASE}/${encodeURIComponent(order.id)}`)} data-testid={`button-view-po-${order.id}`}><ArrowUpRight size={14} aria-hidden="true" /> View</button>
-    {order.status === 'open' && <button type="button" className="po-action po-action--danger" onClick={() => { setActionError(''); setConfirming(order); }} data-testid={`button-delete-po-${order.id}`}><Trash2 size={14} aria-hidden="true" /> Delete</button>}
+    <button type="button" className="po-action po-action--icon" onClick={() => navigate(`${BASE}/${encodeURIComponent(order.id)}`)} title="View purchase order" aria-label={`View ${order.number}`} data-testid={`button-view-po-${order.id}`}><ArrowUpRight size={15} aria-hidden="true" /></button>
+    <button type="button" className="po-action po-action--icon" onClick={() => previewInvoice(order)} title="Preview PO invoice" aria-label={`Preview invoice for ${order.number}`} data-testid={`button-preview-invoice-${order.id}`}><Eye size={15} aria-hidden="true" /></button>
+    <button type="button" className="po-action po-action--icon" onClick={() => downloadInvoice(order)} disabled={!!downloading} title={downloading === order.id ? 'Preparing PDF…' : 'Download PO invoice PDF'} aria-label={`Download invoice for ${order.number}`} data-testid={`button-download-invoice-${order.id}`}><Download size={15} aria-hidden="true" /></button>
+    {order.status === 'open' && <button type="button" className="po-action po-action--icon po-action--danger" onClick={() => { setActionError(''); setConfirming(order); }} title="Delete purchase order" aria-label={`Delete ${order.number}`} data-testid={`button-delete-po-${order.id}`}><Trash2 size={15} aria-hidden="true" /></button>}
   </div>;
   const columns = [
     { key: 'serial', label: 'Sr. no.', render: (_order, index) => index + 1 },
@@ -120,5 +141,6 @@ export default function PurchaseOrders() {
       </section>
     </>}
     {confirming && <ConfirmationDialog title={`Delete ${confirming.number}?`} description="This will remove the order from open totals. Its details and change history remain available in this browser." actionLabel="Delete purchase order" destructive onConfirm={remove} onClose={() => { setConfirming(null); setActionError(''); }} error={actionError} />}
+    {invoiceDocument && <POInvoicePreview document={invoiceDocument} onClose={() => setInvoiceDocument(null)} />}
   </div></AdminLayout>;
 }

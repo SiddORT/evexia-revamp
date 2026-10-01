@@ -1,0 +1,16 @@
+.admin-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 18px; border-bottom: 1px solid var(--admin-border); }
+.admin-tabs button { min-height: 42px; padding: 0 18px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: var(--admin-text-soft); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.admin-tabs button[aria-selected="true"] { color: var(--admin-accent); border-bottom-color: var(--admin-accent); }
+.admin-tabs button:focus-visible, .po-tpl__use:focus-visible, .po-tpl__card:focus-within { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.po-tpl__gallery { list-style: none; margin: 22px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 18px; }
+.po-tpl__card { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--admin-border); border-radius: 10px; background: var(--admin-surface); }
+.po-tpl__card--default { border-color: var(--admin-accent); box-shadow: 0 0 0 1px var(--admin-accent); }
+.po-tpl__preview { height: 300px; overflow: hidden; border: 1px solid var(--admin-border); border-radius: 6px; background: #fff; }
+.po-tpl__preview > * { max-width: 100%; }
+.po-tpl__preview svg { width: 100%; height: auto; display: block; }
+.po-tpl__head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.po-tpl__head strong { font-size: 14px; color: var(--admin-text); }
+.po-tpl__card p { margin: 0; font-size: 12px; line-height: 1.45; color: var(--admin-text-soft); flex: 1; }
+.po-tpl__use { min-height: 40px; }
+.po-tpl__error { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; }
+.po-tpl__error .admin-button { min-height: 32px; }
