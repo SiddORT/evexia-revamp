@@ -1,0 +1,11 @@
+.porx { padding:0 18px 18px; }
+.porx-head { display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center; margin:6px 0 10px; }
+.porx-head .po-actions a { text-decoration:none; }
+.porx-reason { font-size:12px; color:var(--admin-muted); margin:0 0 10px; }
+.porx-card { border:1px solid var(--admin-border); border-radius:9px; margin-bottom:10px; background:var(--admin-surface); }
+.porx-card--deleted { opacity:.85; border-style:dashed; }
+.porx-card summary { cursor:pointer; padding:10px 12px; display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center; font-size:12px; }
+.porx-card__body { padding:0 12px 12px; }
+.porx-card .pr-ctx { grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); }
+.porx-card .pr-ctx dd { overflow-wrap:anywhere; }
+.porx .pr-grid table { min-width:760px; }

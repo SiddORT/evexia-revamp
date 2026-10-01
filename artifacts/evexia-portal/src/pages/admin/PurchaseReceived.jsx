@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation, useSearch } from 'wouter';
 import { Activity, ArrowUpRight, BarChart3, ChevronDown, ClipboardCheck, Download, Eye, FileDown, Plus, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -19,14 +19,17 @@ export const fulfilClass = (f) => f === 'Closed' ? 'pr-tag pr-tag--closed' : f =
 
 export default function PurchaseReceived() {
   const [, navigate] = useLocation();
+  const scopedPoId = new URLSearchParams(useSearch()).get('poId') || '';
+  const newPRPath = `${BASE}/new${scopedPoId ? `?poId=${encodeURIComponent(scopedPoId)}` : ''}`;
+  const defaultFilters = () => ({ ...initial, status: scopedPoId ? 'all' : 'active' });
   const [snapshot, setSnapshot] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [actionError, setActionError] = useState('');
   const [notice, setNotice] = useState('');
   const [tab, setTab] = useState('receipts');
-  const [filters, setFilters] = useState(initial);
+  const [filters, setFilters] = useState(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const activeFilterCount = [filters.status !== 'all', filters.from, filters.to, filters.vendorId, filters.receivedBy, filters.fulfillment].filter(Boolean).length;
+  const activeFilterCount = [scopedPoId, filters.status !== 'all', filters.from, filters.to, filters.vendorId, filters.receivedBy, filters.fulfillment].filter(Boolean).length;
   const [doc, setDoc] = useState(null);
   const [busy, setBusy] = useState('');
   const [search2, setSearch2] = useState('');
@@ -37,12 +40,14 @@ export default function PurchaseReceived() {
     catch (cause) { setSnapshot(null); setLoadError(cause.message || 'Purchase received records could not be loaded.'); }
   }
   useEffect(() => { refresh(); }, []);
-  const receipts = snapshot?.record.receipts || [];
-  const events = snapshot?.record.events || [];
-  const emptyWorkspace = receipts.length === 0 && events.length === 0;
+  const receipts = useMemo(() => (snapshot?.record.receipts || []).filter((receipt) => !scopedPoId || receipt.poId === scopedPoId), [snapshot, scopedPoId]);
+  const events = useMemo(() => (snapshot?.record.events || []).filter((event) => !scopedPoId || receipts.some((receipt) => receipt.id === event.receiptId)), [snapshot, receipts, scopedPoId]);
+  const emptyWorkspace = !scopedPoId && receipts.length === 0 && events.length === 0;
   const sampleReceipts = receipts.filter(isSamplePR);
   const poRecord = snapshot?.poRecord;
   const orderById = useMemo(() => new Map((poRecord?.orders || []).map((o) => [o.id, o])), [poRecord]);
+  const scopedPO = scopedPoId ? orderById.get(scopedPoId) : null;
+  const canCreate = !scopedPoId || (scopedPO?.status === 'open' && getPOFulfillment(scopedPO, receipts) !== 'Closed');
   const receiptById = useMemo(() => new Map(receipts.map((r) => [r.id, r])), [receipts]);
   const activeReceipts = receipts.filter((r) => r.status === 'active');
   const fulfil = (r) => { const po = orderById.get(r.poId); return po ? getPOFulfillment(po, activeReceipts) : '—'; };
@@ -52,6 +57,13 @@ export default function PurchaseReceived() {
   const inScope = (status) => scope === 'all' || status === scope;
   const filteredEvents = useMemo(() => [...events].reverse().filter((e) => inScope(statusOf.get(e.receiptId) || 'deleted')).filter((e) => !search2.trim() || [e.number, e.action, e.summary, e.actor].some((v) => String(v || '').toLocaleLowerCase().includes(search2.trim().toLocaleLowerCase()))), [events, search2, scope, statusOf]);
   const eventPages = useTablePagination(filteredEvents);
+  useEffect(() => {
+    setFilters({ ...initial, status: scopedPoId ? 'all' : 'active' });
+    setSearch2('');
+    setScope(scopedPoId ? 'all' : 'active');
+    pagination.resetPage();
+    eventPages.resetPage();
+  }, [scopedPoId]);
   const vendors = [...new Map(receipts.map((r) => [r.vendorId, r.vendorName])).entries()];
   const receivers = [...new Set(receipts.map((r) => r.receivedBy))];
   const scoped = receipts.filter((r) => inScope(r.status));
@@ -123,9 +135,14 @@ export default function PurchaseReceived() {
   return <AdminLayout title="Purchase Received"><div className="po-page">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Receiving</p><h1>Purchase received</h1><p className="admin-page-head__description">Record goods received against saved purchase orders in this browser.</p></div><div className="po-head-actions">
       <button type="button" className="admin-button admin-button--secondary" onClick={refresh} data-testid="button-refresh-pr"><RefreshCw size={15} /> Refresh</button>
-      <button type="button" className="admin-button" disabled={!snapshot} onClick={() => navigate(`${BASE}/new`)} data-testid="button-new-pr"><Plus size={16} /> New PR</button></div></div>
+      <button type="button" className="admin-button" disabled={!snapshot || !canCreate} title={!canCreate ? 'This PO is deleted, unavailable or fully received.' : 'Create a receipt'} onClick={() => navigate(newPRPath)} data-testid="button-new-pr"><Plus size={16} /> New PR</button></div></div>
     {notice && <div className="admin-feedback" role="status" data-testid="status-pr-feedback">{notice}</div>}
     {actionError && <div className="admin-feedback admin-feedback--error" role="alert">{actionError} <button type="button" className="po-link" onClick={refresh} data-testid="button-refresh-pr-error">Refresh records</button></div>}
+    {snapshot && scopedPoId && <div className="admin-feedback" role={scopedPO ? 'status' : 'alert'}>
+      {scopedPO ? <>Showing receipts linked to <strong>{scopedPO.number}</strong> only.</> : 'The purchase order in this link was not found in this browser.'}
+      {' '}<button type="button" className="po-link" onClick={() => navigate(BASE)} data-testid="button-clear-pr-po-scope">Show all receipts</button>
+      {scopedPO && <> · <button type="button" className="po-link" onClick={() => navigate(`/admin/inventory/purchase-orders/${encodeURIComponent(scopedPoId)}`)}>View PO</button></>}
+    </div>}
     {loadError ? <section className="admin-panel po-recovery" role="alert"><h2>Purchase received is unavailable</h2><p>{loadError} Existing records have not been changed.</p><button type="button" className="admin-button" onClick={refresh} data-testid="button-retry-pr">Try again</button></section>
     : !snapshot ? <section className="admin-panel" aria-label="Loading"><div className="po-skeleton" /><div className="po-skeleton" /><div className="po-skeleton" /></section> : <>
        {sampleReceipts.length > 0 && <div className="admin-feedback pr-sample-note" role="note">
@@ -148,7 +165,7 @@ export default function PurchaseReceived() {
               {activeFilterCount > 0 && <span className="po-filter-toggle__count" aria-label={`${activeFilterCount} active ${activeFilterCount === 1 ? 'filter' : 'filters'}`}>{activeFilterCount}</span>}
               <ChevronDown size={15} className="po-filter-toggle__chevron" aria-hidden="true" />
             </button>
-            <div className="pr-toolbar-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => { setFilters(initial); pagination.resetPage(); }} data-testid="button-clear-pr-filters">Clear filters</button>
+            <div className="pr-toolbar-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => { setFilters(defaultFilters()); pagination.resetPage(); }} data-testid="button-clear-pr-filters">Clear filters</button>
               <button type="button" className="admin-button admin-button--secondary" disabled={!visible.length} onClick={exportCsv} data-testid="button-export-pr"><FileDown size={15} /> CSV ({visible.length})</button></div>
           </div>
           <div id="pr-filter-panel" className="po-toolbar po-filter-panel" hidden={!filtersOpen} role="region" aria-label="Purchase received filters">
@@ -168,7 +185,7 @@ export default function PurchaseReceived() {
                <div className="po-actions pr-sample-empty__actions"><button type="button" className="admin-button" disabled={busy === 'samples'} onClick={loadSamples} data-testid="button-sample-purchase-received">{busy === 'samples' ? 'Loading samples…' : 'Load sample receipts'}</button><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(`${BASE}/new`)}>Create PR</button></div>
                <p className="pr-sample-empty__requirements">Loading requires the four original open sample purchase orders to be present and unmodified. If they are unavailable, go to <button type="button" className="po-link" onClick={() => navigate('/admin/inventory/purchase-orders')}>Purchase Orders</button> and choose <strong>Load sample orders</strong> first. Existing records are never reset.</p>
              </div>
-             : <div className="admin-empty"><span className="admin-empty__icon"><ClipboardCheck size={21} /></span><strong>{receipts.length ? 'No receipts match these filters' : 'No purchase receipts yet'}</strong><p>{receipts.length ? 'Change the filters or search to see more.' : 'Create a receipt against a saved purchase order.'}</p>{!receipts.length && <button type="button" className="admin-button" style={{ marginTop: 14 }} onClick={() => navigate(`${BASE}/new`)}>Create PR</button>}</div>}
+              : <div className="admin-empty"><span className="admin-empty__icon"><ClipboardCheck size={21} /></span><strong>{receipts.length ? 'No receipts match these filters' : scopedPoId ? 'No receipts for this PO yet' : 'No purchase receipts yet'}</strong><p>{receipts.length ? 'Change the filters or search to see more.' : scopedPoId ? 'Receipts linked to this purchase order will appear here.' : 'Create a receipt against a saved purchase order.'}</p>{!receipts.length && canCreate && <button type="button" className="admin-button" style={{ marginTop: 14 }} onClick={() => navigate(newPRPath)}>Create PR</button>}</div>}
           <TablePagination {...pagination} filtered={visible.length} total={receipts.length} label={visible.length === 1 ? 'receipt' : 'receipts'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-pr-count" />
         </div>}
          {tab === 'activity' && <div role="tabpanel"><div className="po-toolbar"><label className="admin-search"><Search size={16} /><span className="sr-only">Search activity</span><input type="search" value={search2} onChange={(e) => { setSearch2(e.target.value); eventPages.resetPage(); }} placeholder="Search PR, change or actor" data-testid="input-search-pr-activity" /></label>{scopeSelect}</div>

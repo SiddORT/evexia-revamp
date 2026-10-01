@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation, useSearch } from 'wouter';
 import { ArrowLeft, ClipboardCheck, Download, Eye, History, Pencil, RefreshCw, Trash2, X } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
@@ -27,7 +27,7 @@ function rowsFor(po, receipt) {
   });
 }
 
-function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh }) {
+function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, onDraftDirty, onSaveStateChange, saveBlocked }) {
   const isNew = !receipt;
   const sample = isSamplePR(receipt);
   const orders = snapshot.poRecord.orders;
@@ -53,6 +53,7 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh }
     .map((o) => ({ value: o.id, label: `${o.number} · ${o.vendorName} · ${getPOFulfillment(o, activeReceipts)}` }));
   const dirty = JSON.stringify(values) !== baseline.current;
 
+  useEffect(() => { onDraftDirty(dirty || Boolean(review)); }, [dirty, review, onDraftDirty]);
   function clear(...keys) { setErrors((c) => { const n = { ...c, form: undefined }; keys.forEach((k) => { n[k] = undefined; }); return n; }); setSaveError(''); }
   function choosePo(id) {
     const next = orders.find((o) => o.id === id);
@@ -71,21 +72,23 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh }
   const payload = () => ({ poId: values.poId, receivedDate: values.receivedDate, receivedBy: values.receivedBy, lines: values.rows });
   function prepare(e) {
     e.preventDefault();
+    if (saveBlocked) return;
     const result = validatePR(payload(), snapshot, receipt);
     setErrors(result.errors);
     if (Object.keys(result.errors).length) { document.getElementById('pr-form-errors')?.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
     setReview(result.receipt); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   async function save() {
-    if (busy) return;
+    if (busy || saveBlocked) return;
     const result = validatePR(payload(), snapshot, receipt);
     if (Object.keys(result.errors).length) { setErrors(result.errors); setReview(null); return; }
-    setBusy(true); setSaveError('');
+    setBusy(true); onSaveStateChange(true); setSaveError('');
     try {
       const next = isNew ? await createPR(snapshot, payload()) : await updatePR(snapshot, receipt.id, payload());
       const id = isNew ? next.record.receipts.find((r) => !snapshot.record.receipts.some((o) => o.id === r.id))?.id : receipt.id;
       onSaved(next, id);
-    } catch (cause) { setSaveError(cause.message || 'Could not save this receipt. Refresh records and review again.'); setBusy(false); }
+    } catch (cause) { setSaveError(cause.message || 'Could not save this receipt. Refresh records and review again.'); }
+    finally { setBusy(false); onSaveStateChange(false); }
   }
   function requestRefresh() { if (dirty || review) setConfirmRefresh(true); else onRefresh(); }
   const err = (i, f) => errors[`lines.${i}.${f}`];
@@ -101,7 +104,7 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh }
         <h3 className="po-section-title">Lines <span>{summary.lines.length} to save</span></h3></div>
       <div className="pr-grid" tabIndex={0} role="region" aria-label="Receipt lines"><table><thead><tr><th>Sr. No.</th><th>Product</th><th>Ordered</th><th>Received</th><th>Accepted</th><th>Rejected</th><th>Batch No.</th><th>Expiry</th><th>Balance after</th></tr></thead>
         <tbody>{summary.lines.map((l, i) => <tr key={l.lineId}><td>{i + 1}</td><td><strong>{l.productName}</strong></td><td>{l.orderedQty}</td><td>{l.receivedQty}</td><td>{l.acceptedQty}</td><td>{l.rejectedQty}</td><td>{l.batchNo}</td><td>{displayDate(l.expiryDate)}</td><td>{q3((balances[l.lineId] ?? 0) - Number(l.acceptedQty))}</td></tr>)}</tbody></table></div>
-      <div className="po-form-footer"><span>Saved locally on confirmation.</span><div className="po-actions"><button type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={() => { setReview(null); setSaveError(''); }} data-testid="button-back-pr-draft">Back to draft</button><button type="button" className="admin-button" disabled={busy} onClick={save} data-testid="button-confirm-pr">{busy ? 'Saving…' : isNew ? 'Create receipt' : 'Save changes'}</button></div></div>
+       <div className="po-form-footer"><span>Saved locally on confirmation.</span><div className="po-actions"><button type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={() => { setReview(null); setSaveError(''); }} data-testid="button-back-pr-draft">Back to draft</button><button type="button" className="admin-button" disabled={busy || saveBlocked} onClick={save} data-testid="button-confirm-pr">{busy ? 'Saving…' : isNew ? 'Create receipt' : 'Save changes'}</button></div></div>
     </> : <form onSubmit={prepare} noValidate>
       <div className="po-form-body">
         {(errors.form || errors.lines || Object.keys(errors).some((k) => errors[k] && k.startsWith('lines.'))) && <div id="pr-form-errors" className="admin-feedback admin-feedback--error" role="alert">{errors.form || errors.lines || 'Check the highlighted receipt rows before continuing.'}</div>}
@@ -134,7 +137,7 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh }
                 <td><button type="button" className="po-action po-action--danger" onClick={() => { setValues((c) => ({ ...c, rows: c.rows.filter((_, k) => k !== i) })); setErrors({}); }} aria-label={`Remove row ${i + 1}`} data-testid={`button-remove-pr-line-${i}`}><X size={14} /></button></td></tr>;
             })}</tbody></table></div>}
       </div>
-      <div className="po-form-footer"><span>Review the receipt before it is saved.</span><div className="po-actions"><button type="button" className="admin-button admin-button--secondary" onClick={requestRefresh} data-testid="button-refresh-pr-form"><RefreshCw size={14} /> Refresh</button><button type="button" className="admin-button admin-button--secondary" onClick={onCancel} data-testid="button-cancel-pr">Cancel</button><button type="submit" className="admin-button" data-testid="button-review-pr">Review receipt</button></div></div>
+       <div className="po-form-footer"><span>Review the receipt before it is saved.</span><div className="po-actions"><button type="button" className="admin-button admin-button--secondary" onClick={requestRefresh} data-testid="button-refresh-pr-form"><RefreshCw size={14} /> Refresh</button><button type="button" className="admin-button admin-button--secondary" onClick={onCancel} data-testid="button-cancel-pr">Cancel</button><button type="submit" className="admin-button" disabled={saveBlocked} data-testid="button-review-pr">Review receipt</button></div></div>
     </form>}
     {confirmRefresh && <ConfirmationDialog title="Discard this draft?" description="Refreshing reloads saved purchase orders and receipts and discards everything you have entered here. Use it only if the data is stale." actionLabel="Refresh and discard" destructive onConfirm={onRefresh} onClose={() => setConfirmRefresh(false)} />}
   </section>;
@@ -142,7 +145,9 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh }
 
 export default function PurchaseReceivedFormPage({ id }) {
   const [, navigate] = useLocation();
+  const search = useSearch();
   const isNew = !id || id === 'new';
+  const requestedPoId = new URLSearchParams(search).get('poId') || '';
   const [snapshot, setSnapshot] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [notice, setNotice] = useState('');
@@ -154,10 +159,35 @@ export default function PurchaseReceivedFormPage({ id }) {
   const [doc, setDoc] = useState(null);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [version, setVersion] = useState(0);
-  const poId = new URLSearchParams(window.location.search).get('poId') || '';
+  const [draftPoId, setDraftPoId] = useState(requestedPoId);
+  const [draftDirty, setDraftDirty] = useState(false);
+  const [pendingPoId, setPendingPoId] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [savingNotice, setSavingNotice] = useState(false);
+  const savingRef = useRef(false);
+  const sourceRestorePendingRef = useRef(false);
+
+  useEffect(() => {
+    if (!isNew) return;
+    if (requestedPoId === draftPoId) {
+      sourceRestorePendingRef.current = false;
+      setPendingPoId(null);
+    } else if (sourceRestorePendingRef.current) {
+      setPendingPoId(null);
+      navigate(`${BASE}/new${draftPoId ? `?poId=${encodeURIComponent(draftPoId)}` : ''}`, { replace: true });
+    } else if (savingRef.current) {
+      setSavingNotice(true);
+      restoreDraftSource();
+    } else if (draftDirty) {
+      setPendingPoId(requestedPoId);
+    } else {
+      setDraftPoId(requestedPoId);
+      setPendingPoId(null);
+    }
+  }, [isNew, requestedPoId, draftPoId, draftDirty, navigate]);
 
   function refresh() {
-    try { setSnapshot(loadPRSnapshot()); setLoadError(''); setActionError(''); setEditing(false); setConfirmDelete(false); setVersion((v) => v + 1); }
+    try { setSnapshot(loadPRSnapshot()); setLoadError(''); setActionError(''); setEditing(false); setConfirmDelete(false); setDraftDirty(false); setVersion((v) => v + 1); }
     catch (cause) { setSnapshot(null); setLoadError(cause.message || 'Purchase received could not be loaded.'); }
   }
   useEffect(() => { refresh(); }, [id]);
@@ -168,8 +198,33 @@ export default function PurchaseReceivedFormPage({ id }) {
   const fulfil = po ? getPOFulfillment(po, snapshot.record.receipts.filter((r) => r.status === 'active')) : '';
 
   function saved(next, savedId) {
-    setSnapshot(next); setEditing(false); setNotice(isNew ? 'Receipt created in this browser.' : 'Receipt updated in this browser.');
+    sourceRestorePendingRef.current = false;
+    setSnapshot(next); setEditing(false); setDraftDirty(false); setPendingPoId(null); setNotice(isNew ? 'Receipt created in this browser.' : 'Receipt updated in this browser.');
     if (isNew && savedId) navigate(`${BASE}/${encodeURIComponent(savedId)}`);
+  }
+  function saveStateChanged(nextSaving) {
+    savingRef.current = nextSaving;
+    setSaving(nextSaving);
+    if (!nextSaving) setSavingNotice(false);
+  }
+  function restoreDraftSource() {
+    sourceRestorePendingRef.current = true;
+    setPendingPoId(null);
+    navigate(`${BASE}/new${draftPoId ? `?poId=${encodeURIComponent(draftPoId)}` : ''}`, { replace: true });
+  }
+  function keepDraft() {
+    restoreDraftSource();
+  }
+  function switchPo() {
+    if (savingRef.current) {
+      setSavingNotice(true);
+      restoreDraftSource();
+      return;
+    }
+    if (pendingPoId === null) return;
+    setDraftPoId(pendingPoId);
+    setDraftDirty(false);
+    setPendingPoId(null);
   }
   async function remove() {
     if (deleting) return; setDeleting(true);
@@ -189,11 +244,12 @@ export default function PurchaseReceivedFormPage({ id }) {
   return <AdminLayout title={title}><div className="po-page">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Purchase received / {isNew ? 'New' : record?.number || 'Detail'}</p><h1>{title} {sampleReceipt && <span className="pr-sample-badge">Sample receipt</span>}</h1><p className="admin-page-head__description">{isNew ? 'Record goods received against a saved purchase order.' : 'Review received batches, balances and recorded changes.'}</p></div><div className="po-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(BASE)} data-testid="button-back-pr"><ArrowLeft size={16} /> All receipts</button>{!isNew && !editing && <button type="button" className="admin-button admin-button--secondary" onClick={refresh} data-testid="button-refresh-pr-detail"><RefreshCw size={15} /> Refresh</button>}</div></div>
     {notice && <div className="admin-feedback" role="status" data-testid="status-pr-feedback">{notice}</div>}
+     {savingNotice && saving && <div className="admin-feedback" role="status">Saving receipt… Wait for the current save to finish before switching purchase orders.</div>}
     {actionError && !confirmDelete && <div className="admin-feedback admin-feedback--error" role="alert">{actionError} <button type="button" className="po-link" onClick={refresh}>Refresh records</button></div>}
     {sampleReceipt && !editing && <div className="admin-feedback pr-sample-note" role="note">Fictional browser-local sample receipt. It counts in activity and analytics and affects sample PO fulfillment while active. While active, it prevents editing or deleting its source PO. No inventory or vendor records are updated.</div>}
     {loadError || (snapshot && !isNew && !record) ? <section className="admin-panel po-recovery" role="alert"><h2>{loadError ? 'Purchase received is unavailable' : 'Receipt not found'}</h2><p>{loadError || 'This receipt may not exist in this browser, or its link is incorrect.'}</p><div className="po-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(BASE)}>Back to receipts</button><button type="button" className="admin-button" onClick={refresh}>Try again</button></div></section>
     : !snapshot ? <section className="admin-panel" aria-label="Loading"><div className="po-skeleton" /><div className="po-skeleton" /><div className="po-skeleton" /></section>
-    : isNew || editing ? <Editor key={`${id || 'new'}-${version}-${editing}`} snapshot={snapshot} receipt={record} initialPoId={poId} onSaved={saved} onCancel={() => isNew ? navigate(BASE) : setEditing(false)} onRefresh={refresh} />
+     : isNew || editing ? <Editor key={`${id || 'new'}-${version}-${editing}-${isNew ? draftPoId : ''}`} snapshot={snapshot} receipt={record} initialPoId={isNew ? draftPoId : requestedPoId} onSaved={saved} onCancel={() => isNew ? navigate(BASE) : setEditing(false)} onRefresh={refresh} onDraftDirty={setDraftDirty} onSaveStateChange={saveStateChanged} saveBlocked={pendingPoId !== null} />
     : <>
        <div className="po-summary"><div className="po-summary__item po-summary__item--accent"><span>PR number</span><strong>{record.number}</strong>{sampleReceipt && <span className="pr-sample-badge">Sample</span>}<small>{record.status === 'deleted' ? 'Deleted, retained for reference' : 'Active receipt'}</small></div><div className="po-summary__item"><span>PO status</span><strong style={{ fontSize: 17 }}><span className={fclass(fulfil)}>{fulfil || '—'}</span></strong><small>Derived from active receipts</small></div><div className="po-summary__item"><span>Lines received</span><strong>{record.lines.length}</strong><small>{record.lines.filter((l) => Number(l.rejectedQty) > 0).length} with rejections</small></div><div className="po-summary__item"><span>Received</span><strong style={{ fontSize: 20 }}>{displayDate(record.receivedDate)}</strong><small>By {record.receivedBy} (recorded name)</small></div></div>
       <section className="admin-panel">
@@ -214,7 +270,8 @@ export default function PurchaseReceivedFormPage({ id }) {
         {showActivity && <div className="po-activity">{events.length ? events.map((e) => <article className="po-event" key={e.id}><div className="po-event__mark"><History size={14} /></div><div><strong>{e.action}</strong><p>{e.summary}</p><p className="po-event__attribution"><strong>{e.actor || 'Demo Admin'}</strong> (local demo) · <time dateTime={e.at}>{stamp(e.at)}</time></p></div></article>) : <div className="admin-empty"><strong>No activity recorded</strong></div>}</div>}
       </section>
     </>}
-    {confirmDelete && record && <ConfirmationDialog title={`Delete ${record.number}?`} description="Its accepted quantities return to the PO balance. Details and activity stay available in this browser." actionLabel={deleting ? 'Deleting…' : 'Delete receipt'} destructive onConfirm={remove} onClose={() => { if (!deleting) { setConfirmDelete(false); setActionError(''); } }} error={actionError} />}
+     {pendingPoId !== null && isNew && <ConfirmationDialog title="Switch purchase order?" description="The link changed to another purchase order while this receipt has unsaved changes. Switching discards this draft. Choose Cancel to keep the draft and return the URL to the purchase order it was started with." actionLabel="Switch PO and discard" destructive onConfirm={switchPo} onClose={keepDraft} />}
+     {confirmDelete && record && <ConfirmationDialog title={`Delete ${record.number}?`} description="Its accepted quantities return to the PO balance. Details and activity stay available in this browser." actionLabel={deleting ? 'Deleting…' : 'Delete receipt'} destructive onConfirm={remove} onClose={() => { if (!deleting) { setConfirmDelete(false); setActionError(''); } }} error={actionError} />}
     {doc && <PRDocumentPreview document={doc} onClose={() => setDoc(null)} />}
   </div></AdminLayout>;
 }

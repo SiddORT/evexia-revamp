@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
-import { Activity, ArrowUpRight, BarChart3, ChevronDown, ClipboardList, Download, Eye, Plus, RefreshCw, Search, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { Activity, ArrowUpRight, BarChart3, ChevronDown, ClipboardCheck, ClipboardList, Download, Eye, PackagePlus, Plus, RefreshCw, Search, SlidersHorizontal, Trash2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -9,7 +9,7 @@ import POInvoicePreview from '../../components/admin/POInvoicePreview.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import useTablePagination from '../../hooks/useTablePagination.js';
 import { guardedDeletePO, filterPOs, money, poEventActor, guardedSeedSamplePOs } from '../../services/purchaseOrders.js';
-import { loadPRSnapshot, getPOFulfillment } from '../../services/purchaseReceived.js';
+import { loadPRSnapshot, getPOBalances, getPOFulfillment } from '../../services/purchaseReceived.js';
 import { makePOInvoiceDocument } from '../../services/poInvoiceTemplates.js';
 import { downloadInvoiceDocument } from '../../services/poInvoicePdf.js';
 import '../../purchaseOrders.css';
@@ -94,9 +94,13 @@ export default function PurchaseOrders() {
     } catch (cause) { setActionError(cause.message || 'Could not download this PO invoice. Please try again.'); }
     finally { setDownloading(''); }
   }
+  const canReceive = (order) => order.status === 'open' && Object.values(getPOBalances(order, receipts)).some((quantity) => Number(quantity) > 0);
   const actionButtons = (order) => <div className="po-actions">
-    <span className="po-secondary" aria-label={`Current fulfillment: ${getPOFulfillment(order, receipts)}`}>{getPOFulfillment(order, receipts)}</span>
     <button type="button" className="po-action po-action--icon" onClick={() => navigate(`${BASE}/${encodeURIComponent(order.id)}`)} title="View purchase order" aria-label={`View ${order.number}`} data-testid={`button-view-po-${order.id}`}><ArrowUpRight size={15} aria-hidden="true" /></button>
+    <button type="button" className="po-action po-action--icon" onClick={() => navigate(`/admin/inventory/purchase-received?poId=${encodeURIComponent(order.id)}`)} title="View PRs for this PO" aria-label={`View receipts for ${order.number}`} data-testid={`button-view-prs-po-${order.id}`}><ClipboardCheck size={15} aria-hidden="true" /></button>
+    <button type="button" className="po-action po-action--icon" disabled={!canReceive(order)} onClick={() => navigate(`/admin/inventory/purchase-received/new?poId=${encodeURIComponent(order.id)}`)}
+      title={order.status === 'deleted' ? 'Deleted POs cannot receive goods' : !canReceive(order) ? 'This PO is fully received; no quantity remains' : 'Create PR for this PO'}
+      aria-label={`Create receipt for ${order.number}`} data-testid={`button-create-pr-po-${order.id}`}><PackagePlus size={15} aria-hidden="true" /></button>
     <button type="button" className="po-action po-action--icon" onClick={() => previewInvoice(order)} title="Preview PO invoice" aria-label={`Preview invoice for ${order.number}`} data-testid={`button-preview-invoice-${order.id}`}><Eye size={15} aria-hidden="true" /></button>
     <button type="button" className="po-action po-action--icon" onClick={() => downloadInvoice(order)} disabled={!!downloading} title={downloading === order.id ? 'Preparing PDF…' : 'Download PO invoice PDF'} aria-label={`Download invoice for ${order.number}`} data-testid={`button-download-invoice-${order.id}`}><Download size={15} aria-hidden="true" /></button>
     {order.status === 'open' && <button type="button" disabled={busy || receipts.some((receipt) => receipt.poId === order.id && receipt.status === 'active')} className="po-action po-action--icon po-action--danger" onClick={() => { setActionError(''); setConfirming(order); }} title={receipts.some((receipt) => receipt.poId === order.id && receipt.status === 'active') ? 'Active receipts prevent deletion. Open the PO to review its receipts.' : 'Delete purchase order'} aria-label={`Delete ${order.number}`} data-testid={`button-delete-po-${order.id}`}><Trash2 size={15} aria-hidden="true" /></button>}

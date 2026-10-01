@@ -26,3 +26,9 @@ Keep sample marking compatible with the existing strict persisted receipt schema
 **Why:** PO mutation guards also read and validate saved PR records. Adding an otherwise harmless sample flag to PR alone can make an older PO reader reject the entire receiving history and block unrelated PO changes.
 
 **How to apply:** Carry sample identity through existing saved identity fields and derive display/document marking from them. Any future receipt schema expansion must update all cross-reading validators together and deliberately preserve older records.
+
+Do not offer to discard or switch a receipt's source PO while its save is in flight, including while it waits for the shared browser lock.
+
+**Why:** Unmounting the receipt editor does not cancel a queued browser-lock mutation. An old save can still persist and redirect after the UI claims that draft was discarded.
+
+**How to apply:** Coordinate navigation with mutation state at the page level. Preserve the current source link until saving settles, and block save initiation while a source-change decision is unresolved.

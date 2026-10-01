@@ -7,6 +7,7 @@ import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import { calculateLine, guardedCreatePO, guardedDeletePO, money, totals, guardedUpdatePO, validatePO } from '../../services/purchaseOrders.js';
 import { loadPRSnapshot, getPOFulfillment } from '../../services/purchaseReceived.js';
 import PurchaseOrderActivityDrawer from '../../components/admin/PurchaseOrderActivityDrawer.jsx';
+import POReceivingSection from '../../components/admin/POReceivingSection.jsx';
 import '../../mr.css';
 import '../../purchaseOrders.css';
 
@@ -226,9 +227,9 @@ export default function PurchaseOrderFormPage({ id }) {
         <div className="po-review">
           <h3 className="po-section-title">Fulfillment: {fulfillment}</h3>
           {hasReceipts && <p role="note">This PO cannot be edited or deleted while it has active Purchase Received records. Review the linked receipts below; deleting a receipt restores its accepted quantities to the outstanding balance.</p>}
-          {linkedReceipts.length ? <ul>{linkedReceipts.map((receipt) => <li key={receipt.id}><button type="button" className="po-link" onClick={() => navigate(`/admin/inventory/purchase-received/${encodeURIComponent(receipt.id)}`)}>{receipt.number}</button> · {receipt.receivedDate} · {receipt.status}</li>)}</ul> : <p>No receipts recorded. Fulfillment is independent of the PO open/deleted lifecycle.</p>}
         </div>
         <div className="po-review"><dl className="po-detail-grid"><div><dt>PO number</dt><dd className="po-number">{record.number}</dd></div><div><dt>PO date</dt><dd>{displayDate(record.poDate)}</dd></div><div><dt>Expected delivery</dt><dd>{displayDate(record.expectedDate)}</dd></div><div><dt>Vendor</dt><dd>{record.vendorName}<span className="po-secondary">ID: {record.vendorId}</span></dd></div><div><dt>Storage location</dt><dd>{record.locationName}<span className="po-secondary">ID: {record.locationId}</span></dd></div></dl><h3 className="po-section-title">Product lines</h3></div><LineTable lines={record.lines} figures={record} />
+        <POReceivingSection order={record} receipts={receipts} />
       </section>
       {activityOpen && <PurchaseOrderActivityDrawer number={record.number} events={orderEvents} onClose={() => setActivityOpen(false)} />}
     </>}
