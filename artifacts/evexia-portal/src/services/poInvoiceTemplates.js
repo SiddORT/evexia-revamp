@@ -44,6 +44,23 @@ export function resetPOTemplatePreference() {
   catch { throw new Error('The template preference could not be reset. Check browser storage settings and try again.'); }
   return 'classic';
 }
+// Read the current value, not event.newValue: another tab may have written again.
+export function subscribePOTemplatePreference(onChange) {
+  function refresh(event) {
+    if (event.key !== PO_TEMPLATE_KEY && event.key !== null) return;
+    try {
+      if (event.storageArea !== window.localStorage) return;
+    } catch {
+      // Let the loader report storage access failures to the gallery.
+    }
+    let state;
+    try { state = { id: loadPOTemplatePreference(), error: '' }; }
+    catch (error) { state = { id: null, error: error.message }; }
+    onChange(state);
+  }
+  window.addEventListener('storage', refresh);
+  return () => window.removeEventListener('storage', refresh);
+}
 function documentFromModel(model, templateId) {
   checkTemplate(templateId);
   const figures = totals(model.lines);

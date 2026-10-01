@@ -51,6 +51,24 @@ export function setDefaultPRTemplate(id) {
   return id;
 }
 
+// Read the current value, not event.newValue: another tab may have written again.
+export function subscribePRTemplatePreference(onChange) {
+  function refresh(event) {
+    if (event.key !== PR_TEMPLATE_KEY && event.key !== null) return;
+    try {
+      if (event.storageArea !== window.localStorage) return;
+    } catch {
+      // Let the loader report storage access failures to the gallery.
+    }
+    let state;
+    try { state = { id: loadPRTemplatePreference(), error: '' }; }
+    catch (error) { state = { id: null, error: error.message }; }
+    onChange(state);
+  }
+  window.addEventListener('storage', refresh);
+  return () => window.removeEventListener('storage', refresh);
+}
+
 export function resetPRTemplatePreference() {
   try {
     window.localStorage.removeItem(PR_TEMPLATE_KEY);

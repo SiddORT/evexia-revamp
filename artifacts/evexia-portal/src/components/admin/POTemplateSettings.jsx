@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import '../../poTemplateSettings.css';
-import { PO_TEMPLATES, loadPOTemplatePreference, setDefaultPOTemplate, resetPOTemplatePreference, makeSampleInvoiceDocument } from '../../services/poInvoiceTemplates.js';
+import { PO_TEMPLATES, loadPOTemplatePreference, setDefaultPOTemplate, resetPOTemplatePreference, subscribePOTemplatePreference, makeSampleInvoiceDocument } from '../../services/poInvoiceTemplates.js';
 import POInvoiceDocument from './POInvoiceDocument.jsx';
 import ConfirmationDialog from './ConfirmationDialog.jsx';
-import { PR_TEMPLATES, loadPRTemplatePreference, setDefaultPRTemplate, resetPRTemplatePreference } from '../../services/prReceiptTemplates.js';
+import { PR_TEMPLATES, loadPRTemplatePreference, setDefaultPRTemplate, resetPRTemplatePreference, subscribePRTemplatePreference } from '../../services/prReceiptTemplates.js';
 import { makeSamplePRDocument } from '../../services/prDocuments.js';
 import PRReceiptDocument from './PRReceiptDocument.jsx';
 
@@ -43,11 +43,21 @@ function TemplateGallery({ docType }) {
   const [pending, setPending] = useState(null);
   const [resetting, setResetting] = useState(false);
   const [resetError, setResetError] = useState('');
-  const defaultId = state.id;
+  const defaultId = state.error ? null : state.id;
   const isPR = docType === 'pr';
   const label = isPR ? 'PR receipt' : 'PO invoice';
   const templates = isPR ? PR_TEMPLATES : PO_TEMPLATES;
   useEffect(() => { if (status) { const t = setTimeout(() => setStatus(''), 4000); return () => clearTimeout(t); } }, [status]);
+  useEffect(() => {
+    const refresh = (next) => {
+      // Recovery is explicit: a later valid value must not silently dismiss an error.
+      setState((previous) => ({ ...next, error: next.error || previous.error }));
+      setStatus('');
+    };
+    const unsubscribe = (docType === 'pr' ? subscribePRTemplatePreference : subscribePOTemplatePreference)(refresh);
+    refresh(readDefault(docType)); // Close the gap between rendering and subscribing.
+    return unsubscribe;
+  }, [docType]);
 
   function choose(t) {
     setPending(t.id); setSaveError('');
@@ -68,6 +78,7 @@ function TemplateGallery({ docType }) {
   return <div>
     <p>{isPR ? 'Purchase Received receipts show saved quantities, not financial invoice amounts. Preview below uses fictional sample details.' : 'Supplier PO invoices show saved order amounts. Previews below use fictional sample details.'}</p>
     {state.error && <div className="admin-feedback admin-feedback--error po-tpl__error" role="alert">{state.error}
+      <p>After fixing storage access or changing this preference in another tab, retry loading to confirm recovery. Reset affects only this document type.</p>
       <button type="button" className="admin-button admin-button--secondary" onClick={() => setState(readDefault(docType))}>Retry loading {label} preference</button>
       <button type="button" className="admin-button admin-button--secondary" onClick={() => { setResetError(''); setResetting(true); }}>Reset {label} preference</button></div>}
     {saveError && <div className="admin-feedback admin-feedback--error po-tpl__error" role="alert">{saveError}</div>}
