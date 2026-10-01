@@ -37,8 +37,8 @@ __pycache__/
 /.sass-cache
 /connect.lock
 /coverage
-/test-results/
-/playwright-report/
+test-results/
+playwright-report/
 /libpeerconnection.log
 npm-debug.log
 yarn-error.log
