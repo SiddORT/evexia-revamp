@@ -1,3 +1,5 @@
+import { isSamplePR } from './prSampleIdentity.js';
+
 const quantityMilli = (value) => {
   const text = String(value ?? '').trim();
   if (!/^\d+(?:\.\d{1,3})?$/.test(text)) return null;
@@ -48,7 +50,7 @@ export function normalizePRReceipt(receipt) {
   return {
     ...receipt,
     lines,
-    isSample: receipt.isSample === true || receipt.isDemo === true || receipt.demo === true,
+    isSample: isSamplePR(receipt) || receipt.isSample === true || receipt.isDemo === true || receipt.demo === true,
     hasHistoricalBalance,
     balanceHistoryExplanation: hasHistoricalBalance ? '' : HISTORY_EXPLANATION,
   };

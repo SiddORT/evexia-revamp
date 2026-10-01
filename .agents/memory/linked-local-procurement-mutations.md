@@ -20,3 +20,9 @@ Receipt corrections may retain or reduce saved historical received quantities ev
 **Why:** Receiving ten units and accepting five leaves five outstanding. A later receipt can accept those five and close the PO. Applying today's five-unit balance to the earlier ten-unit historical receiving would prevent correcting its batch, receiver, date, or expiry.
 
 **How to apply:** Separate historical receiving from additional receiving when validating edits. Never use the historical allowance to increase aggregate accepted quantities above the order.
+
+Keep sample marking compatible with the existing strict persisted receipt schema until a coordinated schema migration is intended.
+
+**Why:** PO mutation guards also read and validate saved PR records. Adding an otherwise harmless sample flag to PR alone can make an older PO reader reject the entire receiving history and block unrelated PO changes.
+
+**How to apply:** Carry sample identity through existing saved identity fields and derive display/document marking from them. Any future receipt schema expansion must update all cross-reading validators together and deliberately preserve older records.

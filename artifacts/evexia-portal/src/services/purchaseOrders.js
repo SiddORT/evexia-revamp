@@ -197,6 +197,51 @@ function migrateLineIds(record) {
   return changed ? { ...record, orders } : record;
 }
 
+const sampleSpecs = [
+  { days: 8, vendor: 0, location: 0, lines: [[0, '24', '425', '12'], [1, '12', '115.5', '18']] },
+  { days: 7, vendor: 1, location: 1, lines: [[1, '60', '120', '18']] },
+  { days: 6, vendor: 2, location: 0, lines: [[0, '15', '440', '12']] },
+  { days: 5, vendor: 0, location: 1, lines: [[1, '32', '118', '18'], [0, '8', '450', '12']] },
+  { days: 4, vendor: 1, location: 0, lines: [[0, '20', '430', '12']] },
+];
+const addDays = (date, days) => new Date(Date.parse(`${date}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
+
+// Check the saved seed's known content and history, independent of today's date
+// and its random stable line IDs. The seed's built-in PO-2 revision is eligible.
+export function eligibleSamplePOs(record, refs) {
+  const orders = [];
+  for (const index of [0, 1, 3, 4]) {
+    const spec = sampleSpecs[index];
+    const id = `sample-po-${index + 1}`;
+    const po = record.orders.find((order) => order.id === id);
+    const vendor = refs.vendors.find((item) => item.id === `sample-vendor-${spec.vendor + 1}`);
+    const location = refs.locations.find((item) => item.id === `sample-storage-location-${spec.location + 1}` && item.status === 'active');
+    if (!po || !vendor || !location || po.status !== 'open' ||
+      po.number !== `PO-SAMPLE-${String(index + 1).padStart(3, '0')}` ||
+      po.vendorId !== vendor.id || po.vendorName !== vendor.vendorName ||
+      po.locationId !== location.id || po.locationName !== location.name ||
+      po.expectedDate !== addDays(po.poDate, 4) || po.deletedAt !== null ||
+      po.createdAt !== `${po.poDate}T09:15:00.000Z` ||
+      po.updatedAt !== `${addDays(po.poDate, index === 1 ? 4 : 0)}T09:15:00.000Z` ||
+      po.lines.length !== spec.lines.length) return null;
+    for (const [lineIndex, [productIndex, quantity, price, gst]] of spec.lines.entries()) {
+      const product = refs.products.find((item) => item.id === `sample-allergen-${productIndex + 1}` && item.status === 'active');
+      const line = po.lines[lineIndex];
+      if (!product || !nonempty(line.id) || line.productId !== product.id || line.productName !== product.name ||
+        line.quantity !== Number(index === 1 ? '72' : quantity) ||
+        line.unitPrice !== Number(price) || line.gst !== Number(gst)) return null;
+    }
+    const history = record.events.filter((event) => event.orderId === id);
+    if (history.length !== (index === 1 ? 2 : 1) ||
+      history.some((event, i) => event.id !== `sample-po-event-${i === 0 ? index + 1 : 6}` ||
+        event.action !== (i === 0 ? 'created' : 'updated') ||
+        (event.actor && event.actor !== SAMPLE_ACTOR) ||
+        event.at !== (i === 0 ? po.createdAt : po.updatedAt))) return null;
+    orders.push(po);
+  }
+  return orders;
+}
+
 function samplePOs() {
   const refs = loadPOReferences();
   const vendors = [1, 2, 3].map((n) => refs.vendors.find((item) => item.id === `sample-vendor-${n}`));
@@ -206,16 +251,9 @@ function samplePOs() {
   if ([...vendors, ...locations, ...products].some((item) => !item)) return null;
   const daysAgo = (days) => new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
   const at = (days) => `${daysAgo(days)}T09:15:00.000Z`;
-  const specs = [
-    { days: 8, vendor: 0, location: 0, lines: [[0, '24', '425', '12'], [1, '12', '115.5', '18']] },
-    { days: 7, vendor: 1, location: 1, lines: [[1, '60', '120', '18']] },
-    { days: 6, vendor: 2, location: 0, lines: [[0, '15', '440', '12']] },
-    { days: 5, vendor: 0, location: 1, lines: [[1, '32', '118', '18'], [0, '8', '450', '12']] },
-    { days: 4, vendor: 1, location: 0, lines: [[0, '20', '430', '12']] },
-  ];
   const orders = [];
   const events = [];
-  for (const [index, spec] of specs.entries()) {
+  for (const [index, spec] of sampleSpecs.entries()) {
     const values = {
       poDate: daysAgo(spec.days), expectedDate: daysAgo(spec.days - 4),
       vendorId: vendors[spec.vendor].id, locationId: locations[spec.location].id,

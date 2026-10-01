@@ -6,7 +6,7 @@ import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import PRDocumentPreview from '../../components/admin/PRDocumentPreview.jsx';
 import useTablePagination from '../../hooks/useTablePagination.js';
-import { exportPRCSV, filterPRs, getPOFulfillment, loadPRSnapshot } from '../../services/purchaseReceived.js';
+import { exportPRCSV, filterPRs, getPOFulfillment, guardedSeedSamplePRs, isSamplePR, loadPRSnapshot } from '../../services/purchaseReceived.js';
 import { downloadPRDocument, makePRDocument } from '../../services/prDocuments.js';
 import '../../purchaseOrders.css';
 import '../../purchaseReceived.css';
@@ -22,6 +22,7 @@ export default function PurchaseReceived() {
   const [snapshot, setSnapshot] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [actionError, setActionError] = useState('');
+  const [notice, setNotice] = useState('');
   const [tab, setTab] = useState('receipts');
   const [filters, setFilters] = useState(initial);
   const [doc, setDoc] = useState(null);
@@ -30,14 +31,17 @@ export default function PurchaseReceived() {
   const [scope, setScope] = useState('active');
 
   function refresh() {
-    try { setSnapshot(loadPRSnapshot()); setLoadError(''); setActionError(''); }
+    try { setSnapshot(loadPRSnapshot()); setLoadError(''); setActionError(''); setNotice(''); }
     catch (cause) { setSnapshot(null); setLoadError(cause.message || 'Purchase received records could not be loaded.'); }
   }
   useEffect(() => { refresh(); }, []);
   const receipts = snapshot?.record.receipts || [];
   const events = snapshot?.record.events || [];
+  const emptyWorkspace = receipts.length === 0 && events.length === 0;
+  const sampleReceipts = receipts.filter(isSamplePR);
   const poRecord = snapshot?.poRecord;
   const orderById = useMemo(() => new Map((poRecord?.orders || []).map((o) => [o.id, o])), [poRecord]);
+  const receiptById = useMemo(() => new Map(receipts.map((r) => [r.id, r])), [receipts]);
   const activeReceipts = receipts.filter((r) => r.status === 'active');
   const fulfil = (r) => { const po = orderById.get(r.poId); return po ? getPOFulfillment(po, activeReceipts) : '—'; };
   const visible = useMemo(() => snapshot ? filterPRs(receipts, poRecord, filters) : [], [snapshot, receipts, poRecord, filters]);
@@ -71,6 +75,23 @@ export default function PurchaseReceived() {
       a.href = url; a.download = 'purchase-received.csv'; a.click(); URL.revokeObjectURL(url);
     } catch (cause) { setActionError(cause.message || 'Could not export CSV.'); }
   }
+  async function loadSamples() {
+    if (busy) return;
+    setBusy('samples');
+    setActionError('');
+    setNotice('');
+    try {
+      const next = await guardedSeedSamplePRs(snapshot);
+      setSnapshot(next);
+      setFilters(initial);
+      pagination.resetPage();
+      setNotice('Five sample receipts added in this browser.');
+    } catch (cause) {
+      setActionError(cause.message || 'Could not load sample receipts. Refresh records and try again.');
+    } finally {
+      setBusy('');
+    }
+  }
   function preview(r) { setActionError(''); try { setDoc(makePRDocument(r)); } catch (cause) { setActionError(cause.message || 'Could not preview this receipt.'); } }
   async function pdf(r) {
     if (busy) return; setBusy(r.id); setActionError('');
@@ -84,7 +105,7 @@ export default function PurchaseReceived() {
     <button type="button" className="po-action po-action--icon" title="Preview receipt" aria-label={`Preview ${r.number}`} onClick={() => preview(r)} data-testid={`button-preview-pr-${r.id}`}><Eye size={15} /></button>
     <button type="button" className="po-action po-action--icon" title="Download PDF" aria-label={`Download PDF for ${r.number}`} disabled={!!busy} onClick={() => pdf(r)} data-testid={`button-pdf-pr-${r.id}`}><Download size={15} /></button>
   </div>;
-  const statusTag = (r) => r.status === 'deleted' ? <span className="po-status po-status--draft">deleted</span> : null;
+  const statusTag = (r) => <>{isSamplePR(r) && <span className="pr-sample-badge">Sample</span>} {r.status === 'deleted' && <span className="po-status po-status--draft">deleted</span>}</>;
   const columns = [
     { key: 's', label: 'Sr. No.', render: (_r, i) => i + 1 },
     { key: 'n', label: 'PR Number', render: (r) => <><button type="button" className="po-link po-number" onClick={() => open(r)} data-testid={`link-pr-${r.id}`}>{r.number}</button> {statusTag(r)}</> },
@@ -101,9 +122,13 @@ export default function PurchaseReceived() {
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Receiving</p><h1>Purchase received</h1><p className="admin-page-head__description">Record goods received against saved purchase orders in this browser.</p></div><div className="po-head-actions">
       <button type="button" className="admin-button admin-button--secondary" onClick={refresh} data-testid="button-refresh-pr"><RefreshCw size={15} /> Refresh</button>
       <button type="button" className="admin-button" disabled={!snapshot} onClick={() => navigate(`${BASE}/new`)} data-testid="button-new-pr"><Plus size={16} /> New PR</button></div></div>
-    {actionError && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
+    {notice && <div className="admin-feedback" role="status" data-testid="status-pr-feedback">{notice}</div>}
+    {actionError && <div className="admin-feedback admin-feedback--error" role="alert">{actionError} <button type="button" className="po-link" onClick={refresh} data-testid="button-refresh-pr-error">Refresh records</button></div>}
     {loadError ? <section className="admin-panel po-recovery" role="alert"><h2>Purchase received is unavailable</h2><p>{loadError} Existing records have not been changed.</p><button type="button" className="admin-button" onClick={refresh} data-testid="button-retry-pr">Try again</button></section>
     : !snapshot ? <section className="admin-panel" aria-label="Loading"><div className="po-skeleton" /><div className="po-skeleton" /><div className="po-skeleton" /></section> : <>
+       {sampleReceipts.length > 0 && <div className="admin-feedback pr-sample-note" role="note">
+         Sample receipts are fictional browser-local records. They count in activity and analytics and affect fulfillment on their sample purchase orders. An active sample receipt prevents editing or deleting its source PO. No inventory or vendor records are updated.
+       </div>}
       <div className="po-summary">
         <div className="po-summary__item po-summary__item--accent"><span>Active receipts</span><strong data-testid="text-pr-active">{activeReceipts.length}</strong><small>{receipts.length - activeReceipts.length} deleted retained</small></div>
         <div className="po-summary__item"><span>POs partially received</span><strong>{counts['Partially Received']}</strong><small>Outstanding accepted quantity</small></div>
@@ -126,13 +151,18 @@ export default function PurchaseReceived() {
               <button type="button" className="admin-button admin-button--secondary" disabled={!visible.length} onClick={exportCsv} data-testid="button-export-pr"><FileDown size={15} /> CSV ({visible.length})</button></div>
           </div>
           {visible.length ? <><div className="po-table"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(r) => r.id} label="Purchase received" testIdPrefix="pr" /></div>
-            <div className="po-mobile" role="list">{pagination.pageRows.map((r, i) => <article className="po-card" key={r.id} role="listitem"><div className="po-card__top"><div><span className="po-secondary">Sr. No. {pagination.startIndex + i + 1}</span><button type="button" className="po-link po-number" onClick={() => open(r)}>{r.number}</button><h2>{r.vendorName}</h2><p>{r.vendorPhone || 'No mobile on record'}</p></div><span className={fulfilClass(fulfil(r))}>{fulfil(r)}</span></div>
+            <div className="po-mobile" role="list">{pagination.pageRows.map((r, i) => <article className="po-card" key={r.id} role="listitem"><div className="po-card__top"><div><span className="po-secondary">Sr. No. {pagination.startIndex + i + 1}</span><button type="button" className="po-link po-number" onClick={() => open(r)}>{r.number}</button> {isSamplePR(r) && <span className="pr-sample-badge">Sample</span>}<h2>{r.vendorName}</h2><p>{r.vendorPhone || 'No mobile on record'}</p></div><span className={fulfilClass(fulfil(r))}>{fulfil(r)}</span></div>
               <dl><div><dt>PR date</dt><dd>{displayDate(r.receivedDate)}</dd></div><div><dt>PO</dt><dd><button type="button" className="po-link" onClick={() => navigate(`/admin/inventory/purchase-orders/${encodeURIComponent(r.poId)}`)} data-testid={`link-po-mobile-${r.id}`}>{r.poNumber}</button></dd></div><div><dt>Received by</dt><dd>{r.receivedBy}</dd></div><div><dt>Record</dt><dd>{r.status}</dd></div></dl>{actions(r)}</article>)}</div></>
-          : <div className="admin-empty"><span className="admin-empty__icon"><ClipboardCheck size={21} /></span><strong>{receipts.length ? 'No receipts match these filters' : 'No purchase receipts yet'}</strong><p>{receipts.length ? 'Change the filters or search to see more.' : 'Create a receipt against a saved purchase order.'}</p>{!receipts.length && <button type="button" className="admin-button" style={{ marginTop: 14 }} onClick={() => navigate(`${BASE}/new`)}>Create PR</button>}</div>}
+           : emptyWorkspace
+             ? <div className="admin-empty pr-sample-empty"><span className="admin-empty__icon"><ClipboardCheck size={21} /></span><strong>No purchase receipts yet</strong><p>Load fictional sample receipts to explore the receiving workspace, or create a receipt against a saved purchase order.</p>
+               <div className="po-actions pr-sample-empty__actions"><button type="button" className="admin-button" disabled={busy === 'samples'} onClick={loadSamples} data-testid="button-sample-purchase-received">{busy === 'samples' ? 'Loading samples…' : 'Load sample receipts'}</button><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(`${BASE}/new`)}>Create PR</button></div>
+               <p className="pr-sample-empty__requirements">Loading requires the four original open sample purchase orders to be present and unmodified. If they are unavailable, go to <button type="button" className="po-link" onClick={() => navigate('/admin/inventory/purchase-orders')}>Purchase Orders</button> and choose <strong>Load sample orders</strong> first. Existing records are never reset.</p>
+             </div>
+             : <div className="admin-empty"><span className="admin-empty__icon"><ClipboardCheck size={21} /></span><strong>{receipts.length ? 'No receipts match these filters' : 'No purchase receipts yet'}</strong><p>{receipts.length ? 'Change the filters or search to see more.' : 'Create a receipt against a saved purchase order.'}</p>{!receipts.length && <button type="button" className="admin-button" style={{ marginTop: 14 }} onClick={() => navigate(`${BASE}/new`)}>Create PR</button>}</div>}
           <TablePagination {...pagination} filtered={visible.length} total={receipts.length} label={visible.length === 1 ? 'receipt' : 'receipts'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-pr-count" />
         </div>}
-        {tab === 'activity' && <div role="tabpanel"><div className="po-toolbar"><label className="admin-search"><Search size={16} /><span className="sr-only">Search activity</span><input type="search" value={search2} onChange={(e) => { setSearch2(e.target.value); eventPages.resetPage(); }} placeholder="Search PR, change or actor" data-testid="input-search-pr-activity" /></label>{scopeSelect}</div>
-          {filteredEvents.length ? <div className="po-activity">{eventPages.pageRows.map((e) => <article className="po-event" key={e.id}><div className="po-event__mark"><Activity size={14} /></div><div><button type="button" className="po-link" onClick={() => navigate(`${BASE}/${encodeURIComponent(e.receiptId)}`)}>{e.number}</button> <strong>· {e.action}</strong><p>{e.summary}</p><p className="po-event__attribution"><strong>{e.actor || 'Demo Admin'}</strong> (local demo) · <time dateTime={e.at}>{stamp(e.at)}</time></p></div></article>)}</div>
+         {tab === 'activity' && <div role="tabpanel"><div className="po-toolbar"><label className="admin-search"><Search size={16} /><span className="sr-only">Search activity</span><input type="search" value={search2} onChange={(e) => { setSearch2(e.target.value); eventPages.resetPage(); }} placeholder="Search PR, change or actor" data-testid="input-search-pr-activity" /></label>{scopeSelect}</div>
+           {filteredEvents.length ? <div className="po-activity">{eventPages.pageRows.map((e) => <article className="po-event" key={e.id}><div className="po-event__mark"><Activity size={14} /></div><div><button type="button" className="po-link" onClick={() => navigate(`${BASE}/${encodeURIComponent(e.receiptId)}`)}>{e.number}</button> {isSamplePR(receiptById.get(e.receiptId)) && <span className="pr-sample-badge">Sample</span>} <strong>· {e.action}</strong><p>{e.summary}</p><p className="po-event__attribution"><strong>{e.actor || 'Demo Admin'}</strong> (local demo) · <time dateTime={e.at}>{stamp(e.at)}</time></p></div></article>)}</div>
             : <div className="admin-empty"><span className="admin-empty__icon"><Activity size={21} /></span><strong>No activity to show</strong><p>{scopedEvents.length ? 'Try a different search.' : 'Receipt changes appear here once saved.'}</p></div>}
           <TablePagination {...eventPages} filtered={filteredEvents.length} total={scopedEvents.length} label="events" onPageChange={eventPages.setPage} onPageSizeChange={eventPages.setPageSize} testId="text-pr-activity-count" /></div>}
         {tab === 'analytics' && <div className="po-analytics" role="tabpanel"><div className="po-toolbar" style={{ padding: '0 0 16px' }}>{scopeSelect}</div><h2>Receipt activity</h2><p>Scope: {scopeLabel}. Counts of changes saved in this browser by a local demo actor. Quantities are not summed across products or units.</p>

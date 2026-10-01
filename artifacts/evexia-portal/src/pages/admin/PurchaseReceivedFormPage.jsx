@@ -5,7 +5,7 @@ import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import PRDocumentPreview from '../../components/admin/PRDocumentPreview.jsx';
-import { createPR, deletePR, getPOBalances, getPOFulfillment, loadPRSnapshot, updatePR, validatePR } from '../../services/purchaseReceived.js';
+import { createPR, deletePR, getPOBalances, getPOFulfillment, isSamplePR, loadPRSnapshot, updatePR, validatePR } from '../../services/purchaseReceived.js';
 import { downloadPRDocument, makePRDocument } from '../../services/prDocuments.js';
 import '../../mr.css';
 import '../../purchaseOrders.css';
@@ -29,6 +29,7 @@ function rowsFor(po, receipt) {
 
 function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh }) {
   const isNew = !receipt;
+  const sample = isSamplePR(receipt);
   const orders = snapshot.poRecord.orders;
   const receipts = snapshot.record.receipts;
   const activeReceipts = receipts.filter((r) => r.status === 'active');
@@ -91,7 +92,8 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh }
   const summary = review || null;
 
   return <section className="admin-panel" aria-label={isNew ? 'New purchase received' : 'Edit purchase received'}>
-    <div className="po-form-intro"><div><h2>{review ? 'Review before saving' : 'Receipt details'}</h2><p>{review ? 'Nothing has been saved yet. Check batches, quantities and balances.' : 'Required fields are marked *. Receipts are recorded in this browser only.'}</p></div><ClipboardCheck size={21} color="var(--admin-accent)" aria-hidden="true" /></div>
+    <div className="po-form-intro"><div><h2>{sample && <span className="pr-sample-badge">Sample receipt</span>} {review ? 'Review before saving' : 'Receipt details'}</h2><p>{review ? 'Nothing has been saved yet. Check batches, quantities and balances.' : 'Required fields are marked *. Receipts are recorded in this browser only.'}</p></div><ClipboardCheck size={21} color="var(--admin-accent)" aria-hidden="true" /></div>
+    {sample && <p className="pr-note pr-sample-note" role="note">Fictional browser-local sample receipt. It counts in activity and analytics, affects sample PO fulfillment while active, and prevents editing or deleting its source PO while active. No inventory or vendor records are updated.</p>}
     {saveError && <div className="admin-feedback admin-feedback--error" role="alert" style={{ margin: 18 }}>{saveError} <button type="button" className="po-link" onClick={requestRefresh} data-testid="button-refresh-pr-draft">Refresh records</button></div>}
     {review ? <>
       <div className="po-review"><p className="po-review__note">Browser-local preview. Confirming saves this receipt here; it does not update a stock ledger or notify a supplier.</p>
@@ -160,6 +162,7 @@ export default function PurchaseReceivedFormPage({ id }) {
   }
   useEffect(() => { refresh(); }, [id]);
   const record = isNew ? null : snapshot?.record.receipts.find((r) => r.id === id);
+  const sampleReceipt = isSamplePR(record);
   const events = [...(snapshot?.record.events || [])].reverse().filter((e) => e.receiptId === id);
   const po = record && snapshot?.poRecord.orders.find((o) => o.id === record.poId);
   const fulfil = po ? getPOFulfillment(po, snapshot.record.receipts.filter((r) => r.status === 'active')) : '';
@@ -184,14 +187,15 @@ export default function PurchaseReceivedFormPage({ id }) {
   const title = isNew ? 'New purchase received' : editing ? 'Edit purchase received' : record?.number || 'Purchase received';
 
   return <AdminLayout title={title}><div className="po-page">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Purchase received / {isNew ? 'New' : record?.number || 'Detail'}</p><h1>{title}</h1><p className="admin-page-head__description">{isNew ? 'Record goods received against a saved purchase order.' : 'Review received batches, balances and recorded changes.'}</p></div><div className="po-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(BASE)} data-testid="button-back-pr"><ArrowLeft size={16} /> All receipts</button>{!isNew && !editing && <button type="button" className="admin-button admin-button--secondary" onClick={refresh} data-testid="button-refresh-pr-detail"><RefreshCw size={15} /> Refresh</button>}</div></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Purchase received / {isNew ? 'New' : record?.number || 'Detail'}</p><h1>{title} {sampleReceipt && <span className="pr-sample-badge">Sample receipt</span>}</h1><p className="admin-page-head__description">{isNew ? 'Record goods received against a saved purchase order.' : 'Review received batches, balances and recorded changes.'}</p></div><div className="po-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(BASE)} data-testid="button-back-pr"><ArrowLeft size={16} /> All receipts</button>{!isNew && !editing && <button type="button" className="admin-button admin-button--secondary" onClick={refresh} data-testid="button-refresh-pr-detail"><RefreshCw size={15} /> Refresh</button>}</div></div>
     {notice && <div className="admin-feedback" role="status" data-testid="status-pr-feedback">{notice}</div>}
     {actionError && !confirmDelete && <div className="admin-feedback admin-feedback--error" role="alert">{actionError} <button type="button" className="po-link" onClick={refresh}>Refresh records</button></div>}
+    {sampleReceipt && !editing && <div className="admin-feedback pr-sample-note" role="note">Fictional browser-local sample receipt. It counts in activity and analytics and affects sample PO fulfillment while active. While active, it prevents editing or deleting its source PO. No inventory or vendor records are updated.</div>}
     {loadError || (snapshot && !isNew && !record) ? <section className="admin-panel po-recovery" role="alert"><h2>{loadError ? 'Purchase received is unavailable' : 'Receipt not found'}</h2><p>{loadError || 'This receipt may not exist in this browser, or its link is incorrect.'}</p><div className="po-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(BASE)}>Back to receipts</button><button type="button" className="admin-button" onClick={refresh}>Try again</button></div></section>
     : !snapshot ? <section className="admin-panel" aria-label="Loading"><div className="po-skeleton" /><div className="po-skeleton" /><div className="po-skeleton" /></section>
     : isNew || editing ? <Editor key={`${id || 'new'}-${version}-${editing}`} snapshot={snapshot} receipt={record} initialPoId={poId} onSaved={saved} onCancel={() => isNew ? navigate(BASE) : setEditing(false)} onRefresh={refresh} />
     : <>
-      <div className="po-summary"><div className="po-summary__item po-summary__item--accent"><span>PR number</span><strong>{record.number}</strong><small>{record.status === 'deleted' ? 'Deleted, retained for reference' : 'Active receipt'}</small></div><div className="po-summary__item"><span>PO status</span><strong style={{ fontSize: 17 }}><span className={fclass(fulfil)}>{fulfil || '—'}</span></strong><small>Derived from active receipts</small></div><div className="po-summary__item"><span>Lines received</span><strong>{record.lines.length}</strong><small>{record.lines.filter((l) => Number(l.rejectedQty) > 0).length} with rejections</small></div><div className="po-summary__item"><span>Received</span><strong style={{ fontSize: 20 }}>{displayDate(record.receivedDate)}</strong><small>By {record.receivedBy} (recorded name)</small></div></div>
+       <div className="po-summary"><div className="po-summary__item po-summary__item--accent"><span>PR number</span><strong>{record.number}</strong>{sampleReceipt && <span className="pr-sample-badge">Sample</span>}<small>{record.status === 'deleted' ? 'Deleted, retained for reference' : 'Active receipt'}</small></div><div className="po-summary__item"><span>PO status</span><strong style={{ fontSize: 17 }}><span className={fclass(fulfil)}>{fulfil || '—'}</span></strong><small>Derived from active receipts</small></div><div className="po-summary__item"><span>Lines received</span><strong>{record.lines.length}</strong><small>{record.lines.filter((l) => Number(l.rejectedQty) > 0).length} with rejections</small></div><div className="po-summary__item"><span>Received</span><strong style={{ fontSize: 20 }}>{displayDate(record.receivedDate)}</strong><small>By {record.receivedBy} (recorded name)</small></div></div>
       <section className="admin-panel">
         <div className="po-form-intro"><div><h2>Receipt overview</h2><p>Created {stamp(record.createdAt)} · Last changed {stamp(record.updatedAt)}{record.deletedAt ? ` · Deleted ${stamp(record.deletedAt)}` : ''}</p></div>
           <div className="po-actions">

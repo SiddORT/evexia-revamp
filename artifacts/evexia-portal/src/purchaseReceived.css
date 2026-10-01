@@ -14,5 +14,10 @@
 .pr-grid td .mr-form__error { margin:3px 0 0; }
 .pr-note { margin:0 0 14px; padding:10px 12px; border-left:3px solid var(--admin-primary); background:var(--admin-state-soft); color:var(--admin-text-soft); font-size:12px; }
 .pr-warn { border-left-color:var(--admin-danger); }
+.pr-sample-badge { display:inline-flex; align-items:center; padding:3px 8px; border:1px solid var(--admin-border); border-radius:999px; background:var(--admin-state-soft); color:var(--admin-accent); font-size:10px; font-weight:800; line-height:1.2; white-space:nowrap; vertical-align:middle; }
+.pr-sample-note { margin-bottom:16px; }
+.pr-sample-empty { max-width:760px; margin:24px auto; }
+.pr-sample-empty__actions { justify-content:center; margin-top:16px; }
+.pr-sample-empty__requirements { max-width:620px; margin:16px auto 0; font-size:12px; }
 .pr-toolbar-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:end; }
 @media (max-width:760px){ .pr-ctx{grid-template-columns:1fr;} }

@@ -1,5 +1,12 @@
-import { loadPOs, loadPOReferences, validPODate } from './purchaseOrders.js';
+import { PO_KEY, eligibleSamplePOs, loadPOs, loadPOReferences, validPODate } from './purchaseOrders.js';
 import { PR_KEY, withPurchaseMutationLock } from './purchaseMutationLock.js';
+import { VENDOR_KEY } from './vendors.js';
+import { STORAGE_LOCATION_KEY } from './storageLocations.js';
+import { ALLERGEN_KEY } from './allergens.js';
+import { CATEGORY_STORAGE_KEY } from './productCategories.js';
+import { isSamplePR } from './prSampleIdentity.js';
+
+export { isSamplePR };
 
 const LOCAL_ACTOR = 'Demo Admin (local, not signed in)';
 const invalidPR = 'Saved Purchase Received data is unreadable or invalid. Nothing was changed. Back up or repair browser storage, then refresh.';
@@ -433,6 +440,57 @@ export async function createPR(snapshot, values) {
   });
 }
 
+export async function guardedSeedSamplePRs(snapshot) {
+  return withPurchaseMutationLock(() => {
+    // Never let the seed operation invoke absent-key sample initializers.
+    for (const key of [PR_KEY, PO_KEY, VENDOR_KEY, STORAGE_LOCATION_KEY, ALLERGEN_KEY, CATEGORY_STORAGE_KEY]) {
+      let raw;
+      try { raw = window.localStorage.getItem(key); }
+      catch { throw new Error('Browser storage is unavailable. No sample receipts were saved.'); }
+      if (raw === null) throw new Error('Saved sample orders and masters are unavailable. Open Purchase Orders and load sample orders first where the workspace is empty; removed data will not be recreated by receiving.');
+    }
+    assertFreshSnapshot(snapshot);
+    if (snapshot.record.receipts.length || snapshot.record.events.length || snapshot.record.revision) {
+      throw new Error('Sample receipts can only be loaded into an empty receipt workspace with no retained history. Existing records were not changed.');
+    }
+    const orders = eligibleSamplePOs(snapshot.poRecord, snapshot.refs);
+    if (!orders) throw new Error('The four original open sample orders and their active sample masters are required. Open Purchase Orders and load sample orders first where the workspace is empty. Missing, deleted or customized sources will not be replaced; no receipts were saved.');
+    let next = snapshot.record;
+    const addDays = (date, days) => new Date(Date.parse(`${date}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
+    // Two deliveries against PO-1 preserve history. PO-2 closes, PO-4 has
+    // mixed acceptance, and PO-5 is all rejected with its balance outstanding.
+    const specs = [
+      { po: orders[0], days: 1, received: 0.5, accepted: 0.375, by: 'Asha Example' },
+      { po: orders[0], days: 3, received: 0.25, accepted: 0.25, by: 'Rohan Example' },
+      { po: orders[1], days: 5, received: 1, accepted: 1, by: 'Meera Example' },
+      { po: orders[2], days: 2, received: 0.5, accepted: 0.375, by: 'Asha Example' },
+      { po: orders[3], days: 3, received: 0.25, accepted: 0, by: 'Dev Example' },
+    ];
+    for (const [index, spec] of specs.entries()) {
+      const receivedDate = addDays(spec.po.poDate, spec.days);
+      const fields = validated({
+        poId: spec.po.id, receivedDate, receivedBy: `${spec.by} (fictional sample)`,
+        lines: spec.po.lines.map((line, lineIndex) => ({
+          lineId: line.id, receivedQty: fromMilli(Math.floor(quantityMilli(line.quantity) * spec.received)),
+          acceptedQty: fromMilli(Math.floor(quantityMilli(line.quantity) * spec.accepted)),
+          batchNo: `SAMPLE-BATCH-${index + 1}-${lineIndex + 1}`,
+          expiryDate: addDays(receivedDate, 730 + lineIndex * 30),
+        })),
+      }, { ...snapshot, record: next });
+      const at = timestamp(next.events.at(-1)?.at);
+      const receipt = { ...fields, id: `sample-pr-${index + 1}`,
+        number: `PR-SAMPLE-${String(index + 1).padStart(3, '0')}`,
+        status: 'active', createdAt: at, updatedAt: at, deletedAt: null };
+      next = { version: 1, revision: next.revision + 1, receipts: [receipt, ...next.receipts],
+        events: [...next.events, { id: `sample-pr-event-${index + 1}`, receiptId: receipt.id,
+          number: receipt.number, action: 'created', at, actor: 'Sample Receiver (fictional, not signed in)',
+          summary: receiptSummary(receipt, 'Sample receipt created') }] };
+    }
+    persistPR(snapshot, next);
+    return loadPRSnapshot();
+  });
+}
+
 export async function updatePR(snapshot, id, values) {
   return withPurchaseMutationLock(() => {
     assertFreshSnapshot(snapshot);
@@ -506,7 +564,7 @@ const csvHeaders = ['Document Type', 'Record Context', 'PR Number', 'PR Status',
 
 export function exportPRCSV(receipts, poRecord) {
   const rows = (receipts || []).flatMap((receipt) => receipt.lines.map((line) => {
-    return ['Purchase Received', 'Local demo — not a financial invoice or stock-ledger entry', receipt.number, receipt.status === 'deleted' ? 'Deleted' : 'Active',
+    return ['Purchase Received', `${isSamplePR(receipt) ? 'Sample · fictional · ' : ''}Local demo — not a financial invoice or stock-ledger entry`, receipt.number, receipt.status === 'deleted' ? 'Deleted' : 'Active',
       receipt.receivedDate, receipt.receivedBy, receipt.poNumber, receipt.poDate, receipt.vendorName,
       receipt.vendorPhone, receipt.locationName, line.productName, line.batchNo, line.orderedQty,
       line.receivedQty, line.acceptedQty, line.rejectedQty, line.expiryDate];

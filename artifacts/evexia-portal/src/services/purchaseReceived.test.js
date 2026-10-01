@@ -2,11 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   PR_KEY, loadPRSnapshot, validatePR, getPOBalances, getPOFulfillment,
-  createPR, updatePR, deletePR, filterPRs, exportPRCSV,
+  createPR, updatePR, deletePR, filterPRs, exportPRCSV, guardedSeedSamplePRs, isSamplePR,
 } from './purchaseReceived.js';
-import { PO_KEY, createPO, updatePO, deletePO, guardedCreatePO } from './purchaseOrders.js';
+import { PO_KEY, createPO, updatePO, deletePO, guardedCreatePO, seedSamplePOs } from './purchaseOrders.js';
 import { VENDOR_KEY } from './vendors.js';
+import { STORAGE_LOCATION_KEY } from './storageLocations.js';
+import { ALLERGEN_KEY } from './allergens.js';
+import { CATEGORY_STORAGE_KEY } from './productCategories.js';
+import { PURCHASE_MUTATION_LOCK } from './purchaseMutationLock.js';
 import { normalizePRReceipt } from './prReceiptModel.js';
+import { makePRDocument } from './prDocuments.js';
 
 test('null saved receipt entries are rejected with recovery guidance, without changing storage', () => {
   const raw = JSON.stringify({ version: 1, revision: 0, receipts: [null], events: [] });
@@ -457,4 +462,393 @@ test('requires Web Locks for PR writes', async () => {
   const po = createOrder(snapshot);
   Object.defineProperty(globalThis, 'navigator', { configurable: true, value: {} });
   await assert.rejects(createPR(loadPRSnapshot(), receiptValues(po)), /Web Locks/);
+});
+
+function sampleSnapshot() {
+  const empty = loadPRSnapshot();
+  seedSamplePOs({ record: empty.poRecord, refs: empty.refs });
+  return loadPRSnapshot();
+}
+
+function rawStorageSnapshot() {
+  return new Map(window.localStorage.values);
+}
+
+function assertStorageMatches(expected) {
+  assert.deepEqual(new Map(window.localStorage.values), expected);
+}
+
+function installQueuedLock() {
+  let start;
+  const requests = [];
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { locks: {
+    request: (name, options, callback) => {
+      requests.push({ name, options });
+      return new Promise((resolve, reject) => {
+        start = () => Promise.resolve().then(callback).then(resolve, reject);
+      });
+    },
+  } } });
+  return {
+    requests,
+    run: () => {
+      assert.ok(start, 'the lock callback should be queued');
+      return start();
+    },
+  };
+}
+
+const sampleRawKeys = [PR_KEY, PO_KEY, VENDOR_KEY, STORAGE_LOCATION_KEY, ALLERGEN_KEY, CATEGORY_STORAGE_KEY];
+
+test('guarded sample receipts seed five strict linked records without writing sample POs', async () => {
+  const requests = installLocks();
+  const snapshot = sampleSnapshot();
+  const poRaw = window.localStorage.getItem(PO_KEY);
+  const sampleOrders = snapshot.poRecord.orders.filter((po) => ['sample-po-1', 'sample-po-2', 'sample-po-4', 'sample-po-5'].includes(po.id));
+  assert.deepEqual(sampleOrders.map((po) => po.id).sort(), ['sample-po-1', 'sample-po-2', 'sample-po-4', 'sample-po-5']);
+  assert.deepEqual(sampleOrders.map((po) => po.status), ['open', 'open', 'open', 'open']);
+  assert.deepEqual(sampleOrders.find((po) => po.id === 'sample-po-1').lines.map((line) => line.quantity), [24, 12]);
+  assert.deepEqual(sampleOrders.find((po) => po.id === 'sample-po-2').lines.map((line) => line.quantity), [72]);
+  assert.deepEqual(sampleOrders.find((po) => po.id === 'sample-po-4').lines.map((line) => line.quantity), [32, 8]);
+  assert.deepEqual(sampleOrders.find((po) => po.id === 'sample-po-5').lines.map((line) => line.quantity), [20]);
+  const samplePO2 = sampleOrders.find((po) => po.id === 'sample-po-2');
+  const samplePO2History = snapshot.poRecord.events.filter((event) => event.orderId === samplePO2.id);
+  assert.deepEqual(samplePO2History.map((event) => event.id), ['sample-po-event-2', 'sample-po-event-6']);
+  assert.deepEqual(samplePO2History.map((event) => event.action), ['created', 'updated']);
+  assert.equal(samplePO2History[0].at, samplePO2.createdAt);
+  assert.equal(samplePO2History[1].at, samplePO2.updatedAt);
+  assert.match(samplePO2History[1].summary, /60 → 72/);
+
+  let writes = [];
+  const originalSetItem = window.localStorage.setItem;
+  window.localStorage.setItem = (key, value) => {
+    writes.push(key);
+    originalSetItem(key, value);
+  };
+  const seeded = await guardedSeedSamplePRs(snapshot);
+
+  assert.deepEqual(writes, [PR_KEY], 'a successful seed makes exactly one write, to Purchase Received');
+  assert.equal(window.localStorage.getItem(PO_KEY), poRaw, 'sample PO content and history remain unchanged');
+  assert.equal(seeded.record.revision, 5);
+  assert.equal(seeded.record.receipts.length, 5);
+  assert.equal(seeded.record.events.length, 5);
+  assert.deepEqual(seeded.record.receipts.map((receipt) => receipt.id),
+    ['sample-pr-5', 'sample-pr-4', 'sample-pr-3', 'sample-pr-2', 'sample-pr-1']);
+  assert.deepEqual(seeded.record.receipts.map((receipt) => receipt.number),
+    ['PR-SAMPLE-005', 'PR-SAMPLE-004', 'PR-SAMPLE-003', 'PR-SAMPLE-002', 'PR-SAMPLE-001']);
+
+  const poById = new Map(seeded.poRecord.orders.map((po) => [po.id, po]));
+  const expected = [
+    { id: 'sample-pr-1', poId: 'sample-po-1', day: 1, received: [12, 6], accepted: [9, 4.5] },
+    { id: 'sample-pr-2', poId: 'sample-po-1', day: 3, received: [6, 3], accepted: [6, 3] },
+    { id: 'sample-pr-3', poId: 'sample-po-2', day: 5, received: [72], accepted: [72] },
+    { id: 'sample-pr-4', poId: 'sample-po-4', day: 2, received: [16, 4], accepted: [12, 3] },
+    { id: 'sample-pr-5', poId: 'sample-po-5', day: 3, received: [5], accepted: [0] },
+  ];
+  for (const item of expected) {
+    const receipt = seeded.record.receipts.find((record) => record.id === item.id);
+    const po = poById.get(item.poId);
+    const date = (days) => new Date(Date.parse(`${po.poDate}T00:00:00Z`) + days * 86400000)
+      .toISOString().slice(0, 10);
+    assert.equal(receipt.poNumber, po.number);
+    assert.equal(receipt.poDate, po.poDate);
+    assert.equal(receipt.receivedDate, date(item.day));
+    assert.equal(receipt.vendorId, po.vendorId);
+    assert.equal(receipt.vendorName, po.vendorName);
+    assert.equal(receipt.locationId, po.locationId);
+    assert.equal(receipt.locationName, po.locationName);
+    assert.equal(receipt.status, 'active');
+    assert.equal(receipt.deletedAt, null);
+    assert.match(receipt.createdAt, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/);
+    assert.equal(receipt.updatedAt, receipt.createdAt);
+    assert.deepEqual(receipt.lines.map((line) => line.lineId), po.lines.map((line) => line.id));
+    assert.deepEqual(receipt.lines.map((line) => line.productId), po.lines.map((line) => line.productId));
+    assert.deepEqual(receipt.lines.map((line) => line.productName), po.lines.map((line) => line.productName));
+    assert.deepEqual(receipt.lines.map((line) => line.orderedQty), po.lines.map((line) => line.quantity));
+    assert.deepEqual(receipt.lines.map((line) => line.receivedQty), item.received);
+    assert.deepEqual(receipt.lines.map((line) => line.acceptedQty), item.accepted);
+    assert.deepEqual(receipt.lines.map((line) => line.rejectedQty),
+      item.received.map((quantity, index) => quantity - item.accepted[index]));
+    assert.ok(receipt.lines.every((line) => line.batchNo.startsWith('SAMPLE-BATCH-')));
+    assert.ok(receipt.lines.every((line) => line.expiryDate >= receipt.receivedDate));
+    assert.match(receipt.receivedBy, /fictional sample/);
+    assert.equal(isSamplePR(receipt), true);
+  }
+  assert.equal(getPOFulfillment(poById.get('sample-po-2'), seeded.record.receipts), 'Closed');
+  assert.equal(getPOFulfillment(poById.get('sample-po-4'), seeded.record.receipts), 'Partially Received');
+  assert.equal(getPOFulfillment(poById.get('sample-po-5'), seeded.record.receipts), 'Partially Received',
+    'physical receipt remains partially received even though all units were rejected');
+
+  assert.deepEqual(seeded.record.events.map((event) => event.id),
+    ['sample-pr-event-1', 'sample-pr-event-2', 'sample-pr-event-3', 'sample-pr-event-4', 'sample-pr-event-5']);
+  for (const event of seeded.record.events) {
+    const receipt = seeded.record.receipts.find((item) => item.id === event.receiptId);
+    assert.ok(receipt);
+    assert.equal(event.number, receipt.number);
+    assert.equal(event.action, 'created');
+    assert.equal(event.at, receipt.createdAt);
+    assert.equal(event.actor, 'Sample Receiver (fictional, not signed in)');
+    assert.match(event.summary, /Sample receipt created/);
+  }
+  assert.ok(requests.length);
+  assert.ok(requests.every(({ name, options }) => name === PURCHASE_MUTATION_LOCK && options.mode === 'exclusive'));
+  assert.deepEqual(seeded.record, JSON.parse(window.localStorage.getItem(PR_KEY)));
+});
+
+test('sample identity is strict and seeded receipts flow through document models and CSV as fictional', async () => {
+  installLocks();
+  const seeded = await guardedSeedSamplePRs(sampleSnapshot());
+  const receipt = seeded.record.receipts.find((item) => item.id === 'sample-pr-1');
+  assert.equal(isSamplePR(receipt), true);
+  assert.equal(isSamplePR({ ...receipt, number: 'PR-SAMPLE-002' }), false);
+  assert.equal(isSamplePR({ ...receipt, id: 'sample-pr-6', number: 'PR-SAMPLE-006' }), false);
+  assert.equal(isSamplePR({ ...receipt, id: 'custom-pr', number: receipt.number }), false);
+  assert.equal(isSamplePR({ id: 'sample-pr-1', number: 'PR-SAMPLE-001' }), true,
+    'the helper relies on the strict persisted id/number identity convention');
+
+  const normalized = normalizePRReceipt(receipt);
+  assert.equal(normalized.isSample, true);
+  assert.equal(normalized.hasHistoricalBalance, true);
+  const document = makePRDocument(receipt, 'classic');
+  assert.equal(document.number, receipt.number);
+  assert.equal(document.model.isSample, true);
+  assert.ok(document.pages.length);
+  assert.ok(document.pages.every((page) => page.includes('Sample') || page.includes(receipt.number)));
+
+  const csv = exportPRCSV(seeded.record.receipts, seeded.poRecord);
+  assert.match(csv, /Sample · fictional · Local demo — not a financial invoice or stock-ledger entry/);
+  assert.match(csv, /Example \(fictional sample\)/);
+});
+
+test('repeat seed clicks never overwrite seeded, deleted, or user-created receipt history', async () => {
+  installLocks();
+  const seeded = await guardedSeedSamplePRs(sampleSnapshot());
+  const saved = window.localStorage.getItem(PR_KEY);
+  await assert.rejects(guardedSeedSamplePRs(loadPRSnapshot()), /empty receipt workspace with no retained history/);
+  assert.equal(window.localStorage.getItem(PR_KEY), saved);
+
+  const deleted = await deletePR(seeded, seeded.record.receipts[0].id);
+  const withDeletedHistory = window.localStorage.getItem(PR_KEY);
+  await assert.rejects(guardedSeedSamplePRs(loadPRSnapshot()), /no retained history/);
+  assert.equal(window.localStorage.getItem(PR_KEY), withDeletedHistory);
+  assert.equal(deleted.record.receipts[0].status, 'deleted');
+});
+
+test('retained user-created receipt history blocks sample seeding without replacement', async () => {
+  installLocks();
+  const snapshot = sampleSnapshot();
+  const po = snapshot.poRecord.orders.find((order) => order.id === 'sample-po-1');
+  const custom = await createPR(snapshot, receiptValues(po));
+  const raw = window.localStorage.getItem(PR_KEY);
+  assert.equal(isSamplePR(custom.record.receipts[0]), false);
+  await assert.rejects(guardedSeedSamplePRs(loadPRSnapshot()), /no retained history/);
+  assert.equal(window.localStorage.getItem(PR_KEY), raw);
+});
+
+test('all-deleted sample history still blocks replacement when no active receipts remain', async () => {
+  let snapshot = await guardedSeedSamplePRs(sampleSnapshot());
+  for (const receipt of [...snapshot.record.receipts]) {
+    snapshot = await deletePR(snapshot, receipt.id);
+  }
+  assert.equal(snapshot.record.receipts.filter((receipt) => receipt.status === 'active').length, 0);
+  const before = rawStorageSnapshot();
+  await assert.rejects(guardedSeedSamplePRs(snapshot), /no retained history/);
+  assertStorageMatches(before);
+});
+
+test('user-created open POs are never used for sample receipts', async () => {
+  installLocks();
+  const snapshot = sampleSnapshot();
+  const userPO = createOrder(snapshot, { poDate: '2026-10-01', expectedDate: '2026-10-02' });
+  const afterCreate = loadPRSnapshot();
+  const poRaw = window.localStorage.getItem(PO_KEY);
+  const seeded = await guardedSeedSamplePRs(afterCreate);
+  assert.ok(seeded.record.receipts.every((receipt) => receipt.poId !== userPO.id));
+  assert.deepEqual(new Set(seeded.record.receipts.map((receipt) => receipt.poId)),
+    new Set(['sample-po-1', 'sample-po-2', 'sample-po-4', 'sample-po-5']));
+  assert.equal(window.localStorage.getItem(PO_KEY), poRaw);
+});
+
+test('required raw PR, PO, vendor, location, allergen and category keys must already exist', async () => {
+  for (const missingKey of sampleRawKeys) {
+    window.localStorage = storage();
+    window.localStorage.setItem(PO_KEY, JSON.stringify({ version: 1, revision: 0, orders: [], events: [] }));
+    installLocks();
+    const snapshot = sampleSnapshot();
+    const before = rawStorageSnapshot();
+    window.localStorage.removeItem(missingKey);
+    const withoutKey = rawStorageSnapshot();
+    await assert.rejects(guardedSeedSamplePRs(snapshot), /unavailable|browser storage|removed data/i, missingKey);
+    assert.equal(window.localStorage.getItem(missingKey), null, `${missingKey} must not be reinitialized`);
+    for (const [key, value] of withoutKey) assert.equal(window.localStorage.getItem(key), value);
+    assert.equal(before.has(missingKey), true);
+  }
+});
+
+test('missing, deleted, or customized original sample orders fail closed without a PR write', async (t) => {
+  const cases = [
+    ['missing', (snapshot) => {
+      const next = { ...snapshot.poRecord,
+        orders: snapshot.poRecord.orders.filter((order) => order.id !== 'sample-po-4'),
+        events: snapshot.poRecord.events.filter((event) => event.orderId !== 'sample-po-4') };
+      next.revision = next.events.length;
+      window.localStorage.setItem(PO_KEY, JSON.stringify(next));
+    }],
+    ['deleted', (snapshot) => {
+      deletePO({ record: snapshot.poRecord }, 'sample-po-1');
+    }],
+    ['customized', (snapshot) => {
+      const po = snapshot.poRecord.orders.find((order) => order.id === 'sample-po-1');
+      updatePO({ record: snapshot.poRecord }, snapshot.refs, po.id, {
+        poDate: po.poDate, expectedDate: new Date(Date.parse(`${po.poDate}T00:00:00Z`) + 5 * 86400000).toISOString().slice(0, 10),
+        vendorId: po.vendorId, locationId: po.locationId,
+        lines: po.lines.map((line) => ({ productId: line.productId, quantity: String(line.quantity),
+          unitPrice: String(line.unitPrice), gst: String(line.gst) })),
+      });
+    }],
+  ];
+  for (const [label, change] of cases) {
+    await t.test(label, async () => {
+      installLocks();
+      const snapshot = sampleSnapshot();
+      change(snapshot);
+      const beforePR = window.localStorage.getItem(PR_KEY);
+      await assert.rejects(guardedSeedSamplePRs(loadPRSnapshot()), /four original open sample orders/);
+      assert.equal(window.localStorage.getItem(PR_KEY), beforePR);
+    });
+  }
+});
+
+test('removed sample vendor, active location, or active product prevents sample seeding', async (t) => {
+  const cases = [
+    ['vendor', VENDOR_KEY, 'sample-vendor-1'],
+    ['location', STORAGE_LOCATION_KEY, 'sample-storage-location-1'],
+    ['product', ALLERGEN_KEY, 'sample-allergen-1'],
+  ];
+  for (const [label, key, id] of cases) {
+    await t.test(label, async () => {
+      installLocks();
+      const snapshot = sampleSnapshot();
+      const records = JSON.parse(window.localStorage.getItem(key));
+      window.localStorage.setItem(key, JSON.stringify(records.filter((record) => record.id !== id)));
+      const beforePR = window.localStorage.getItem(PR_KEY);
+      await assert.rejects(guardedSeedSamplePRs(loadPRSnapshot()), /active sample masters are required/);
+      assert.equal(window.localStorage.getItem(PR_KEY), beforePR);
+    });
+  }
+});
+
+test('guarded sample seeding rejects incomplete or malformed snapshots and malformed saved data', async () => {
+  installLocks();
+  const snapshot = sampleSnapshot();
+  const before = rawStorageSnapshot();
+  await assert.rejects(guardedSeedSamplePRs(null), /incomplete/);
+  await assert.rejects(guardedSeedSamplePRs({ ...snapshot, record: { ...snapshot.record, revision: -1 } }), /incomplete/);
+  await assert.rejects(guardedSeedSamplePRs({ ...snapshot, poRecord: null }), /incomplete/);
+  await assert.rejects(guardedSeedSamplePRs({ ...snapshot, refs: { vendors: [], locations: [] } }), /incomplete/);
+  assertStorageMatches(before);
+
+  window.localStorage.setItem(PR_KEY, '{broken');
+  const malformedPR = window.localStorage.getItem(PR_KEY);
+  await assert.rejects(guardedSeedSamplePRs(snapshot), /unreadable or invalid/);
+  assert.equal(window.localStorage.getItem(PR_KEY), malformedPR);
+
+  window.localStorage.setItem(PR_KEY, JSON.stringify({ version: 1, revision: 0, receipts: [], events: [] }));
+  window.localStorage.setItem(PO_KEY, '{broken');
+  const malformedPO = window.localStorage.getItem(PO_KEY);
+  await assert.rejects(guardedSeedSamplePRs(snapshot), /purchase order data is unreadable or invalid/);
+  assert.equal(window.localStorage.getItem(PO_KEY), malformedPO);
+});
+
+test('stale PR, PO, or master snapshots changed while the shared lock is queued are rejected', async (t) => {
+  const changes = [
+    ['PR', async (snapshot) => {
+      const po = snapshot.poRecord.orders.find((order) => order.id === 'sample-po-1');
+      const validRecord = (await createPR(snapshot, receiptValues(po))).record;
+      window.localStorage.setItem(PR_KEY, JSON.stringify(snapshot.record));
+      return () => window.localStorage.setItem(PR_KEY, JSON.stringify(validRecord));
+    }, /Purchase Received records changed/],
+    ['PO', async (snapshot) => {
+      const originalPO = window.localStorage.getItem(PO_KEY);
+      const extra = createPO({ record: snapshot.poRecord }, snapshot.refs,
+        draftPO(snapshot, { poDate: '2026-10-01', expectedDate: '2026-10-02' }));
+      const changedPO = JSON.stringify(extra);
+      window.localStorage.setItem(PO_KEY, originalPO);
+      return () => window.localStorage.setItem(PO_KEY, changedPO);
+    }, /Purchase Orders changed/],
+    ['master', async () => {
+      const vendors = JSON.parse(window.localStorage.getItem(VENDOR_KEY));
+      vendors[0] = { ...vendors[0], contactPersonName: 'Updated sample contact' };
+      return () => window.localStorage.setItem(VENDOR_KEY, JSON.stringify(vendors));
+    }, /Vendor, storage location or product masters changed/],
+  ];
+  for (const [label, prepareChange, expectedError] of changes) {
+    await t.test(label, async () => {
+      installLocks();
+      const initial = sampleSnapshot();
+      const applyChange = await prepareChange(initial);
+      const snapshot = loadPRSnapshot();
+      const lock = installQueuedLock();
+      const pending = guardedSeedSamplePRs(snapshot);
+      const rejected = assert.rejects(pending, expectedError);
+      assert.deepEqual(lock.requests, [{ name: PURCHASE_MUTATION_LOCK, options: { mode: 'exclusive' } }]);
+      applyChange();
+      const competingPR = window.localStorage.getItem(PR_KEY);
+      await lock.run();
+      await rejected;
+      assert.equal(window.localStorage.getItem(PR_KEY), competingPR,
+        'a queued stale seed never overwrites the competing PR state');
+    });
+  }
+});
+
+test('storage read, write, and post-write verification failures preserve source data', async (t) => {
+  const cases = [
+    ['read failure', (snapshot) => {
+      const getItem = window.localStorage.getItem;
+      window.localStorage.getItem = (key) => {
+        if (key === PO_KEY) throw new Error('blocked');
+        return getItem(key);
+      };
+      return /Browser storage is unavailable/;
+    }],
+    ['write failure', () => {
+      const setItem = window.localStorage.setItem;
+      window.localStorage.setItem = (key, value) => {
+        if (key === PR_KEY && JSON.parse(value).revision > 0) throw new Error('quota');
+        return setItem(key, value);
+      };
+      return /could not be saved/;
+    }],
+    ['verification failure', () => {
+      const setItem = window.localStorage.setItem;
+      window.localStorage.setItem = (key, value) => {
+        if (key === PR_KEY && JSON.parse(value).revision > 0) return;
+        return setItem(key, value);
+      };
+      return /could not be verified after saving/;
+    }],
+  ];
+  for (const [label, configure] of cases) {
+    await t.test(label, async () => {
+      installLocks();
+      const snapshot = sampleSnapshot();
+      const before = rawStorageSnapshot();
+      const expected = configure(snapshot);
+      await assert.rejects(guardedSeedSamplePRs(snapshot), expected);
+      if (label === 'verification failure') {
+        assert.equal(window.localStorage.getItem(PR_KEY), before.get(PR_KEY));
+      } else {
+        assertStorageMatches(before);
+      }
+    });
+  }
+});
+
+test('unsupported Web Locks fail before touching the saved sample workspace', async () => {
+  const snapshot = sampleSnapshot();
+  const before = rawStorageSnapshot();
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: {} });
+  await assert.rejects(guardedSeedSamplePRs(snapshot), /require browser Web Locks/);
+  assertStorageMatches(before);
 });
