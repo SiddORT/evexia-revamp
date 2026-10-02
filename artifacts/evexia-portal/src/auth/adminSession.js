@@ -1,0 +1,184 @@
+// Tokens live only in this module's memory. No credential or identity storage.
+const AUTH_URL = '/api/v1/auth';
+const LOCK_NAME = 'evexia-auth-cookie';
+let state = Object.freeze({ status: 'idle', user: null, message: '' });
+let token = null;
+let expiresAt = 0;
+let generation = 0;
+let pending = null;
+let expiryTimer = null;
+let restorationAllowed = true;
+const listeners = new Set();
+const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('evexia-auth-events') : null;
+
+export class SessionError extends Error {
+  constructor(message, status = 0) { super(message); this.status = status; }
+}
+
+function publish(next) {
+  state = Object.freeze(next);
+  listeners.forEach((listener) => listener());
+}
+
+export const getSession = () => state;
+export const subscribeSession = (listener) => { listeners.add(listener); return () => listeners.delete(listener); };
+
+function clear(message = '') {
+  generation += 1;
+  token = null;
+  expiresAt = 0;
+  clearTimeout(expiryTimer);
+  publish({ status: 'anonymous', user: null, message });
+}
+
+if (channel) channel.onmessage = ({ data }) => {
+  if (data?.type === 'signed-out' || data?.type === 'identity-changed') {
+    restorationAllowed = false;
+    clear('Your session changed in another tab. Please log in again.');
+  }
+};
+if (typeof window !== 'undefined') {
+  const recheck = () => {
+    // Fresh-token focus changes must not unmount forms or discard local drafts.
+    // Route changes verify /me; only an expired token needs a blocking restore.
+    if (state.status === 'authenticated' && Date.now() >= expiresAt) void verifySession(true);
+  };
+  window.addEventListener('focus', recheck);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) recheck(); });
+}
+
+async function cookieLock(work) {
+  // Rotating cookies are shared across tabs. An in-tab mutex alone is unsafe.
+  if (!globalThis.navigator?.locks) {
+    throw new SessionError('Secure sign-in requires a browser with Web Locks support. Use a current browser over HTTPS.');
+  }
+  return navigator.locks.request(LOCK_NAME, work);
+}
+
+async function request(path, body, bearer) {
+  let response;
+  try {
+    response = await fetch(`${AUTH_URL}${path}`, {
+      method: body === undefined ? 'GET' : 'POST',
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}) },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch {
+    throw new SessionError('Unable to reach the sign-in service. Check your connection and try again.');
+  }
+  if (!response.ok) {
+    const message = response.status === 429 ? 'Too many attempts. Try again later.'
+      : response.status === 401 ? 'Invalid credentials or expired session.'
+      : response.status === 403 ? 'This account does not have Admin access.'
+      : 'The sign-in service is unavailable. Try again later.';
+    throw new SessionError(message, response.status);
+  }
+  if (response.status === 204) return null;
+  try { return await response.json(); }
+  catch { throw new SessionError('The sign-in service returned an invalid response.'); }
+}
+
+function safeAdmin(user) {
+  if (!user || typeof user.id !== 'string' || typeof user.email !== 'string' || user.system_role !== 'super_admin' || !Array.isArray(user.permissions) || !user.permissions.includes('admin.access')) {
+    throw new SessionError('This account does not have Admin access.', 403);
+  }
+  return Object.freeze({ id: user.id, email: user.email, username: user.username, system_role: user.system_role, permissions: ['admin.access'] });
+}
+
+async function accept(payload, epoch) {
+  if (epoch !== generation) return;
+  if (typeof payload?.access_token !== 'string' || !Number.isFinite(payload.expires_in) || payload.expires_in <= 0) {
+    throw new SessionError('The sign-in service returned an invalid session.');
+  }
+  // Do not authorize using login/refresh role selection alone: verify DB identity.
+  const user = safeAdmin(await request('/me', undefined, payload.access_token));
+  if (epoch !== generation) return;
+  token = payload.access_token;
+  expiresAt = Date.now() + payload.expires_in * 1000;
+  publish({ status: 'authenticated', user, message: '' });
+  clearTimeout(expiryTimer);
+  expiryTimer = setTimeout(() => { void verifySession(true); }, Math.max(0, expiresAt - Date.now()));
+}
+
+export async function loginAdmin(identifier, password, remember) {
+  restorationAllowed = true;
+  clear();
+  const epoch = generation;
+  publish({ status: 'checking', user: null, message: '' });
+  try {
+    await cookieLock(async () => {
+      if (epoch !== generation) return;
+      const payload = await request('/login', { identifier, password, remember_me: remember });
+      try {
+        await accept(payload, epoch);
+      } catch (error) {
+        // A valid non-Admin login must not leave its cookie signed in.
+        if (error.status === 403) await request('/logout', {});
+        throw error;
+      }
+    });
+    if (epoch === generation && state.status === 'authenticated') channel?.postMessage({ type: 'identity-changed' });
+  } catch (error) {
+    if (epoch === generation) clear(error.message);
+    throw error;
+  }
+}
+
+export function verifySession(forceRefresh = false) {
+  if (pending) return pending;
+  if (!restorationAllowed) return Promise.resolve();
+  const epoch = generation;
+  const oldToken = token;
+  // A previously verified identity is retained solely to preserve mounted local
+  // drafts. Renewing/error states never authorize interaction or API access.
+  const previousUser = state.user;
+  publish({ status: previousUser ? 'renewing' : 'checking', user: previousUser, message: '' });
+  pending = (async () => {
+    try {
+      if (!forceRefresh && oldToken && Date.now() < expiresAt) {
+        try {
+          const user = safeAdmin(await request('/me', undefined, oldToken));
+          if (epoch === generation) publish({ status: 'authenticated', user, message: '' });
+          return;
+        } catch (error) {
+          if (error.status !== 401) throw error;
+        }
+      }
+      await cookieLock(async () => {
+        if (epoch !== generation || !restorationAllowed) return;
+        await accept(await request('/refresh', {}), epoch);
+      });
+    } catch (error) {
+      if (epoch !== generation) return;
+      token = null;
+      clearTimeout(expiryTimer);
+      if (error.status === 401 || error.status === 403) clear();
+      else publish({ status: previousUser ? 'renewal-error' : 'error', user: previousUser, message: error.message });
+    } finally { pending = null; }
+  })();
+  return pending;
+}
+
+export async function logoutAdmin() {
+  restorationAllowed = false;
+  clear();
+  const epoch = generation;
+  channel?.postMessage({ type: 'signed-out' });
+  try {
+    await cookieLock(() => request('/logout', {}));
+  } catch {
+    if (epoch === generation) publish({ status: 'anonymous', user: null, message: 'Signed out of this tab, but server revocation could not be confirmed. Close this browser or retry Sign Out before leaving a shared device.' });
+    return false;
+  }
+  if (epoch === generation) publish({ status: 'anonymous', user: null, message: '' });
+  return true;
+}
+
+export function safeAdminReturn(value) {
+  if (typeof value !== 'string' || !/^\/admin(?:\/|$)/.test(value) || value.startsWith('/admin/login') || /[\\?#%\u0000-\u0020]/.test(value)) return '/admin';
+  if (value.split('/').some((part) => part === '.' || part === '..')) return '/admin';
+  return value;
+}

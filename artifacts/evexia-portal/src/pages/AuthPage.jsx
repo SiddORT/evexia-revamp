@@ -25,13 +25,13 @@ export default function AuthPage({ role }) {
           <LoginForm role={role} />
           {role.short === 'ADMIN' && (
             <Link href="/admin" className="auth-preview-link" data-testid="link-preview-admin">
-              Preview Admin workspace <span aria-hidden="true">→</span>
+              Open Admin workspace <span aria-hidden="true">→</span>
             </Link>
           )}
           <Link href="/" className="auth-back" data-testid="link-back-portals">
             <ArrowLeft size={15} aria-hidden="true" /> Choose a different portal
           </Link>
-          <p className="auth-legal">Demo only: no account is checked and Admin pages are public. Do not enter a real password or any patient, staff, or vendor data. Records in this preview stay in this browser, without access control, and may be lost when browser data is cleared.</p>
+          <p className="auth-legal">{role.short === 'ADMIN' ? 'Admin access requires a verified system account. Remember me keeps a bounded session cookie; otherwise the cookie lasts for this browser session. ' : 'This portal is a mock preview: no account is checked or credentials sent. Do not enter a real password. '}Master records remain fictional and browser-local, not secured backend records. Do not enter real patient, staff, or vendor data. Browser data may be lost when cleared.</p>
         </div>
       </section>
     </main>

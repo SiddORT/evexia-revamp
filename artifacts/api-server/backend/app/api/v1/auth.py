@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -12,13 +14,15 @@ from app.services.auth import Identity
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
 
-def set_refresh_cookie(response: Response, token: str, settings: Settings) -> None:
+def set_refresh_cookie(response: Response, token: str, settings: Settings,
+                       persistent: bool, expires_at: datetime | None = None) -> None:
     production = settings.app_env == "production"
     response.set_cookie(
         "__Host-evexia_refresh" if production else "evexia_refresh",
         token, httponly=True, secure=production, samesite="strict",
         path="/" if production else "/api/v1/auth",
-        max_age=settings.refresh_token_days * 86400,
+        **({"max_age": max(1, int((expires_at - service.utcnow()).total_seconds()))}
+           if persistent and expires_at else {}),
     )
     response.headers["Cache-Control"] = "no-store"
 
@@ -47,13 +51,15 @@ def login(body: LoginRequest, request: Request, response: Response,
     try:
         identity, refresh = service.login(
             db, body.identifier, body.password, settings,
+            body.remember_me,
             request.state.request_id, request.client.host if request.client else "unknown",
         )
     except service.TooManyAttempts:
         raise HTTPException(status_code=429, detail="Too many attempts. Try again later.") from None
     except service.AuthError:
         raise HTTPException(status_code=401, detail="Invalid credentials") from None
-    set_refresh_cookie(response, refresh, settings)
+    session = service.refresh_session(db, refresh)
+    set_refresh_cookie(response, refresh, settings, body.remember_me, session.family_expires_at)
     return service.token_response(identity, settings)
 
 
@@ -72,7 +78,8 @@ def refresh(request: Request, response: Response,
         }}, status_code=401)
         clear_refresh_cookie(expired, settings)
         return expired
-    set_refresh_cookie(response, new_value, settings)
+    session = service.refresh_session(db, new_value)
+    set_refresh_cookie(response, new_value, settings, session.persistent, session.family_expires_at)
     return service.token_response(identity, settings)
 
 

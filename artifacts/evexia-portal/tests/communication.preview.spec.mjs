@@ -1,8 +1,12 @@
 import { test, expect } from '@playwright/test';
+import { authenticateAdmin } from './helpers/authenticateAdmin.mjs';
 
 // Browser-only preview regression. Requires @playwright/test in the caller's
-// environment and the running EVEXIA preview at EVEXIA_PREVIEW_BASE_URL.
-// Uses a fresh context and dummy .invalid endpoints.
+// environment and the isolated authenticated preview harness.
+if (process.env.EVEXIA_CHROMIUM_PATH) {
+  test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
+}
+
 test('Communication metadata CRUD, default replacement, and credential boundary', async ({ browser }) => {
   test.setTimeout(120000);
   const context = await browser.newContext();
@@ -16,6 +20,7 @@ test('Communication metadata CRUD, default replacement, and credential boundary'
 
   const base = process.env.EVEXIA_PREVIEW_BASE_URL;
   if (!base) throw new Error('Set EVEXIA_PREVIEW_BASE_URL to the running portal preview URL.');
+  await authenticateAdmin(page);
   await page.goto(`${base}/admin/settings?tab=communication`);
   await expect(page.getByTestId('tab-communication-email')).toHaveAttribute('aria-selected', 'true');
 

@@ -5,6 +5,7 @@ from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.bootstrap import SUPER_ADMIN_EMAIL
 from app.core.security import hash_password, utcnow
 from app.db.models import AuditEvent, MRProfile, Patient, RefreshSession, User
 from app.schemas.domain import DomainError
@@ -16,7 +17,7 @@ def _require_super_admin(db: Session, actor: Identity) -> Identity:
         current = revalidate_identity(db, actor, lock=True)
     except AuthError:
         raise DomainError("Access denied", 403) from None
-    if current.role != "super_admin":
+    if "admin.access" not in current.permissions:
         raise DomainError("Access denied", 403)
     return current
 
@@ -34,6 +35,8 @@ def provision_mr(
 ) -> MRProfile:
     actor = _require_super_admin(db, actor)
     email = email.strip().lower()
+    if email == SUPER_ADMIN_EMAIL:
+        raise DomainError("Reserved system identity cannot be provisioned through MR operations", 409)
     username = username.strip().lower() if username else None
     if username and not re.fullmatch(r"[a-z][a-z0-9._-]{2,31}", username):
         raise DomainError("Invalid username")
@@ -63,6 +66,8 @@ def map_existing_user_to_mr(db: Session, actor: Identity, user_id: uuid.UUID) ->
     user = db.scalar(select(User).where(User.id == user_id).with_for_update())
     if not user or not user.is_active:
         raise DomainError("User not found or inactive", 404)
+    if user.email == SUPER_ADMIN_EMAIL or user.is_protected_system_admin:
+        raise DomainError("Protected system identity cannot be converted", 409)
     if user.system_role not in (None, "mr"):
         raise DomainError("User already has a different system role", 409)
     profile = db.scalar(select(MRProfile).where(MRProfile.user_id == user.id).with_for_update())

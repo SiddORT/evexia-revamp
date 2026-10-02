@@ -1,4 +1,5 @@
 import { Route, Switch } from 'wouter';
+import AdminBoundary from './auth/AdminBoundary.jsx';
 import { roleConfig } from './config/roles.js';
 import PortalSelection from './pages/PortalSelection.jsx';
 import AuthPage from './pages/AuthPage.jsx';
@@ -40,7 +41,7 @@ import PurchaseReceivedFormPage from './pages/admin/PurchaseReceivedFormPage.jsx
 
 function App() {
   return (
-    <Switch>
+    <AdminBoundary><Switch>
       <Route path="/" component={PortalSelection} />
       <Route path="/admin" component={Dashboard} />
       <Route path="/admin/settings" component={AdminSettings} />
@@ -91,7 +92,7 @@ function App() {
       <Route path="/mr">{() => <AuthPage role={roleConfig.mr} />}</Route>
       <Route path="/doctor">{() => <AuthPage role={roleConfig.doctor} />}</Route>
       <Route component={NotFound} />
-    </Switch>
+    </Switch></AdminBoundary>
   );
 }
 

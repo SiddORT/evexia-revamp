@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { authenticateAdmin } from './helpers/authenticateAdmin.mjs';
 
 // Nix environments can use their installed, library-compatible Chromium.
 if (process.env.EVEXIA_CHROMIUM_PATH) {
@@ -13,6 +14,7 @@ async function openTemplates(browser) {
   if (!base) throw new Error('Set EVEXIA_PREVIEW_BASE_URL to the running portal preview URL.');
   const context = await browser.newContext({ ignoreHTTPSErrors: true });
   const page = await context.newPage();
+  await authenticateAdmin(page);
   await page.goto(templatesUrl(base));
   await expect(page.getByTestId('button-template-new')).toBeVisible();
   return { context, page, base };
@@ -131,6 +133,7 @@ test('rejects bad HTML imports without replacing drafts and safely previews impo
     await expect(htmlField).toHaveValue(attackHtml);
     await page.getByTestId('input-template-name').fill('Imported safe preview');
     await page.getByTestId('button-template-save').click();
+    await expect(page.getByTestId('text-template-status')).toContainText('Template saved');
     const storedRaw = await page.evaluate((key) => localStorage.getItem(key), libraryKey);
 
     await page.reload();
@@ -262,6 +265,7 @@ test('guards dirty category navigation and supports browser history, keyboard ta
   const context = await browser.newContext({ viewport: { width: 360, height: 800 }, colorScheme: 'light', ignoreHTTPSErrors: true });
   const page = await context.newPage();
   try {
+    await authenticateAdmin(page);
     await page.goto(`${base}/admin/settings?tab=basic`);
     await expect(page.getByTestId('link-settings-basic')).toHaveAttribute('aria-current', 'page');
     await page.getByTestId('link-settings-message-templates').click();

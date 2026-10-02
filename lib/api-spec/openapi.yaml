@@ -89,6 +89,13 @@
             ],
             "title": "Mr Id"
           },
+          "permissions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Permissions",
+            "type": "array"
+          },
           "system_role": {
             "anyOf": [
               {
@@ -120,7 +127,8 @@
           "id",
           "email",
           "username",
-          "system_role"
+          "system_role",
+          "permissions"
         ],
         "title": "CurrentUser",
         "type": "object"
@@ -367,6 +375,11 @@
             "minLength": 1,
             "title": "Password",
             "type": "string"
+          },
+          "remember_me": {
+            "default": false,
+            "title": "Remember Me",
+            "type": "boolean"
           }
         },
         "required": [

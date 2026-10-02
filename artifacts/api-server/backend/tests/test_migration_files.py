@@ -33,8 +33,9 @@ def test_private_file_migration_constraints_and_domain_rollback_retention(monkey
         user_id, patient_id, file_id = (uuid.uuid4() for _ in range(3))
         with engine.begin() as conn:
             conn.execute(text(
-                "INSERT INTO users(id,email,password_hash,is_active,token_version,identity_version,system_role)"
-                " VALUES (:id,'synthetic@example.test','unused',true,0,1,'super_admin')"
+                "INSERT INTO users(id,email,password_hash,is_active,token_version,identity_version,system_role,"
+                "is_protected_system_admin)"
+                " VALUES (:id,'synthetic@example.test','unused',true,0,1,'mr',false)"
             ), {"id": user_id})
             conn.execute(text(
                 "INSERT INTO patients(id,is_active,version) VALUES(:id,true,1)"
@@ -56,7 +57,7 @@ def test_private_file_migration_constraints_and_domain_rollback_retention(monkey
         command.downgrade(config, "0003_system_domain")
         with engine.connect() as conn:
             assert conn.scalar(text("SELECT count(*) FROM patients WHERE id=:id"), {"id": patient_id}) == 1
-            assert conn.scalar(text("SELECT system_role FROM users WHERE id=:id"), {"id": user_id}) == "super_admin"
+            assert conn.scalar(text("SELECT system_role FROM users WHERE id=:id"), {"id": user_id}) == "mr"
             assert conn.scalar(text("SELECT to_regclass('files')")) is None
         # Mapping/domain data makes earlier rollback deliberately unsafe.
         with pytest.raises(RuntimeError, match="Cannot downgrade"):

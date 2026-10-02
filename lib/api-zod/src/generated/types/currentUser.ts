@@ -11,6 +11,7 @@ export interface CurrentUser {
   email: string;
   id: string;
   mr_id?: string | null;
+  permissions: string[];
   system_role: CurrentUserSystemRole;
   username: string | null;
 }

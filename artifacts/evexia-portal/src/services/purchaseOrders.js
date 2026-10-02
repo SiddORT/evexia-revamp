@@ -4,7 +4,7 @@ import { loadAllergenReferences, loadAllergens } from './allergens.js';
 import { PR_KEY, withPurchaseMutationLock } from './purchaseMutationLock.js';
 
 export const PO_KEY = 'evexia.admin.purchase-orders.v1';
-const LOCAL_ACTOR = 'Demo Admin (local, not signed in)';
+const LOCAL_ACTOR = 'Local demo operator (unverified record)';
 const SAMPLE_ACTOR = 'Sample Admin (demo data)';
 export function poEventActor(event) {
   return event.actor || (/^sample-po-event-\d+$/.test(event.id) ? SAMPLE_ACTOR : 'Not recorded (earlier activity)');

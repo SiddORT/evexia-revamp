@@ -5,6 +5,7 @@ import re
 
 from sqlalchemy import select, update
 
+from app.bootstrap import SUPER_ADMIN_EMAIL
 from app.core.security import hash_password, utcnow
 from app.db.models import AuditEvent, MRProfile, RefreshSession, User
 from app.db.session import session_factory
@@ -13,8 +14,8 @@ from app.db.session import session_factory
 def main() -> None:
     parser = argparse.ArgumentParser(description="Explicitly map EVEXIA system identities")
     parser.add_argument("--email", required=True, help="Account email to map")
-    parser.add_argument("--role", choices=("super_admin", "mr", "none"), required=True,
-                        help="Explicit target role; 'none' leaves the account unmapped")
+    parser.add_argument("--role", choices=("mr", "none"), required=True,
+                        help="Explicit target role; protected Super Admin is bootstrap-only")
     parser.add_argument("--username", help="Optional login username when creating an account")
     parser.add_argument("--create", action="store_true", help="Create the account (password is prompted securely)")
     args = parser.parse_args()
@@ -23,14 +24,12 @@ def main() -> None:
         parser.error("A valid email address is required")
     if args.username and not re.fullmatch(r"[a-z][a-z0-9._-]{2,31}", args.username.strip().lower()):
         parser.error("Invalid username")
-    if args.role == "super_admin":
-        confirmation = input(f"Type {email} to confirm explicit Super Admin mapping: ").strip().lower()
-        if confirmation != email:
-            parser.error("Confirmation did not match")
+    if email == SUPER_ADMIN_EMAIL:
+        parser.error("The reserved Super Admin can only be initialized by app.bootstrap")
     new_password = None
     if args.create:
         if args.role == "none":
-            parser.error("--create requires an explicit system role")
+            parser.error("--create requires the MR system role")
         new_password = getpass.getpass("New account password: ")
         confirm = getpass.getpass("Confirm password: ")
         if new_password != confirm or len(new_password) < 12 or len(new_password) > 128:
@@ -52,6 +51,9 @@ def main() -> None:
             db.flush()
         elif args.create:
             parser.error("Account already exists")
+
+        if user.is_protected_system_admin or user.system_role == "super_admin":
+            parser.error("Protected Super Admin identity can only be managed by the bootstrap service")
 
         profile = db.scalar(select(MRProfile).where(MRProfile.user_id == user.id).with_for_update())
         identity_changed = user.system_role != (None if args.role == "none" else args.role)

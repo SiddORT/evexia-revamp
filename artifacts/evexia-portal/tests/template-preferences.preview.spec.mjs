@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { authenticateAdmin } from './helpers/authenticateAdmin.mjs';
 
 if (process.env.EVEXIA_CHROMIUM_PATH) {
   test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
@@ -15,6 +16,7 @@ async function openTabs(browser) {
   if (!base) throw Error('Set EVEXIA_PREVIEW_BASE_URL to the running portal preview URL.');
   const context = await browser.newContext();
   const writer = await context.newPage();
+  await authenticateAdmin(writer);
   await writer.goto(`${base.replace(/\/$/, '')}/admin/settings?tab=templates`);
   await writer.evaluate((keys) => {
     for (const key of keys) localStorage.setItem(key, `unchanged fixture: ${key}`);

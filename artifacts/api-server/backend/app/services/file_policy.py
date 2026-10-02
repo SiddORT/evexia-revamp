@@ -5,10 +5,8 @@ from sqlalchemy.orm import Session
 from app.db.models import MRProfile, Patient
 from app.services.auth import Identity, revalidate_identity
 
-PERMISSIONS = {
-    "super_admin": frozenset({"upload", "read", "download", "delete", "replace", "recover"}),
-    "mr": frozenset({"upload", "read", "download"}),
-}
+ADMIN_FILE_ACTIONS = frozenset({"upload", "read", "download", "delete", "replace", "recover"})
+MR_FILE_ACTIONS = frozenset({"upload", "read", "download"})
 
 
 class FileError(Exception):
@@ -19,14 +17,21 @@ class FileError(Exception):
 
 def authorize(db: Session, identity: Identity, action: str, patient_id, mr_id, *, lock=False):
     current = revalidate_identity(db, identity, lock=lock)
-    if action not in PERMISSIONS.get(current.user.system_role, ()):
+    admin_access = "admin.access" in current.permissions
+    if admin_access:
+        allowed_actions = ADMIN_FILE_ACTIONS
+    elif current.user.system_role == "mr":
+        allowed_actions = MR_FILE_ACTIONS
+    else:
+        allowed_actions = ()
+    if action not in allowed_actions:
         raise FileError(403, "access_denied", "Access denied")
     model, owner_id = (Patient, patient_id) if patient_id else (MRProfile, mr_id)
     query = select(model).where(model.id == owner_id).execution_options(populate_existing=True)
     if lock:
         query = query.with_for_update()
     owner = db.scalar(query)
-    if not owner or (not owner.is_active and current.user.system_role != "super_admin"):
+    if not owner or (not owner.is_active and not admin_access):
         raise FileError(404, "not_found", "Object unavailable")
     if current.user.system_role == "mr":
         profile = current.mr

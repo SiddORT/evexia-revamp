@@ -39,7 +39,7 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
   const poProblem = receipt || !initialPoId ? '' : !requested ? 'The purchase order in this link was not found in this browser. Choose another purchase order below.'
     : requested.status !== 'open' ? `${requested.number} is deleted and cannot receive goods. Choose another purchase order below.`
     : !eligible(requested) ? `${requested.number} is already fully received (Closed), so there is nothing left to receive. Choose another purchase order below.` : '';
-  const makeInitial = () => ({ poId: initialPo?.id || '', receivedDate: receipt?.receivedDate || today(), receivedBy: receipt?.receivedBy || 'Demo Admin (local, not signed in)', rows: initialPo ? rowsFor(initialPo, receipt) : [] });
+  const makeInitial = () => ({ poId: initialPo?.id || '', receivedDate: receipt?.receivedDate || today(), receivedBy: receipt?.receivedBy || 'Local demo operator (unverified record)', rows: initialPo ? rowsFor(initialPo, receipt) : [] });
   const baseline = useRef(JSON.stringify(makeInitial()));
   const [values, setValues] = useState(makeInitial);
   const [errors, setErrors] = useState({});

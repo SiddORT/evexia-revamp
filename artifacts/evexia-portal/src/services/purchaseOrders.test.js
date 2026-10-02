@@ -97,7 +97,7 @@ test('persists creation, change summaries and soft deletion atomically across re
   assert.equal(deleted.orders[0].status, 'deleted');
   assert.deepEqual(loadPOs(), deleted);
   assert.deepEqual(deleted.events.map((e) => e.action), ['created', 'updated', 'deleted']);
-  assert.deepEqual(deleted.events.map((e) => e.actor), Array(3).fill('Demo Admin (local, not signed in)'));
+  assert.deepEqual(deleted.events.map((e) => e.actor), Array(3).fill('Local demo operator (unverified record)'));
   assert.ok(deleted.events[0].at < deleted.events[1].at && deleted.events[1].at < deleted.events[2].at);
   assert.throws(() => updatePO({ record: deleted }, snapshot.refs, first.id, draft(snapshot.refs)), /deleted/);
   assert.throws(() => deletePO({ record: deleted }, first.id), /deleted/);
@@ -112,7 +112,7 @@ test('keeps existing events without actor attribution and does not invent a real
   const edited = updatePO({ ...snapshot, record: old }, snapshot.refs, old.orders[0].id,
     draft(snapshot.refs, { expectedDate: '2026-10-03' }));
   assert.equal(poEventActor(edited.events[0]), 'Not recorded (earlier activity)');
-  assert.equal(poEventActor(edited.events[1]), 'Demo Admin (local, not signed in)');
+  assert.equal(poEventActor(edited.events[1]), 'Local demo operator (unverified record)');
   window.localStorage.setItem(PO_KEY, JSON.stringify({ ...edited,
     events: edited.events.map((event, index) => index === 1 ? { ...event, actor: '' } : event) }));
   assert.throws(() => loadPOs(), /unreadable/);

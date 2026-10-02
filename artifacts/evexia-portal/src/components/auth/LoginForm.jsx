@@ -1,8 +1,13 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import Field from './Field.jsx';
+import { useLocation } from 'wouter';
+import { getSession, loginAdmin, logoutAdmin, safeAdminReturn } from '../../auth/adminSession.js';
+import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 
 export default function LoginForm({ role }) {
+  const [, navigate] = useLocation();
+  const session = useAdminSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
@@ -19,11 +24,21 @@ export default function LoginForm({ role }) {
     return Object.keys(nextErrors).length === 0;
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     setMessage('');
     if (!validate()) return;
     setIsLoading(true);
+    if (role.short === 'ADMIN') {
+      try {
+        await loginAdmin(email.trim(), password, remember);
+        if (getSession().status === 'authenticated') {
+          navigate(safeAdminReturn(new URLSearchParams(window.location.search).get('returnTo')));
+        }
+      } catch (error) { setMessage(error.message); }
+      finally { setPassword(''); setIsLoading(false); }
+      return;
+    }
     window.setTimeout(() => {
       setIsLoading(false);
       setMessage('Authentication is not connected in this preview. No credentials were sent.');
@@ -79,7 +94,9 @@ export default function LoginForm({ role }) {
           Forgot password?
         </button>
       </div>
-      {message && <div className="form-message" role="status" data-testid="status-auth-message">{message}</div>}
+      {(message || (role.short === 'ADMIN' && session.message)) && <div className="form-message" role="status" data-testid="status-auth-message">{message || session.message}
+        {role.short === 'ADMIN' && session.message.includes('revocation') && <button type="button" onClick={() => void logoutAdmin()}>Retry Sign Out</button>}
+      </div>}
       <button className="submit-button" type="submit" disabled={isLoading} data-testid="button-submit-login">
         {isLoading ? <span className="submit-button__loading">Checking access</span> : 'Log in'}
       </button>

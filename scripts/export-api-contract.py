@@ -24,6 +24,8 @@ os.environ.update(
         "SESSION_SECRET": "",
         "JWT_ISSUER": "evexia-contract-export",
         "JWT_AUDIENCE": "evexia-contract-export",
+        "SESSION_REFRESH_HOURS": "12",
+        "SUPER_ADMIN_INITIAL_PASSWORD": "",
         "CORS_ORIGINS": "",
         "ALLOW_PUBLIC_REGISTRATION": "false",
         "STORAGE_BACKEND": "local",

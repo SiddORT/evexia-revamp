@@ -43,12 +43,15 @@ export const loginBodyIdentifierMax = 320;
 
 export const loginBodyPasswordMax = 128;
 
+export const loginBodyRememberMeDefault = false;
+
 export const LoginBody = zod.object({
   identifier: zod
     .string()
     .min(loginBodyIdentifierMin)
     .max(loginBodyIdentifierMax),
   password: zod.string().min(1).max(loginBodyPasswordMax),
+  remember_me: zod.boolean().default(loginBodyRememberMeDefault),
 });
 
 export const loginResponseTokenTypeDefault = `bearer`;
@@ -61,6 +64,7 @@ export const LoginResponse = zod.object({
     email: zod.string().email(),
     id: zod.string().uuid(),
     mr_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    permissions: zod.array(zod.string()),
     system_role: zod.union([zod.enum(["super_admin", "mr"]), zod.null()]),
     username: zod.union([zod.string(), zod.null()]),
   }),
@@ -78,6 +82,7 @@ export const GetCurrentUserResponse = zod.object({
   email: zod.string().email(),
   id: zod.string().uuid(),
   mr_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  permissions: zod.array(zod.string()),
   system_role: zod.union([zod.enum(["super_admin", "mr"]), zod.null()]),
   username: zod.union([zod.string(), zod.null()]),
 });
@@ -95,6 +100,7 @@ export const RefreshResponse = zod.object({
     email: zod.string().email(),
     id: zod.string().uuid(),
     mr_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    permissions: zod.array(zod.string()),
     system_role: zod.union([zod.enum(["super_admin", "mr"]), zod.null()]),
     username: zod.union([zod.string(), zod.null()]),
   }),

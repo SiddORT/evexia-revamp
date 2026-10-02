@@ -168,7 +168,7 @@ test('supports partial receipts, accepted-only balances, rejection, close/reopen
   assert.equal(edited.record.receipts.find((receipt) => receipt.id === pr1.id).number, pr1.number);
   assert.equal(getPOFulfillment(po, edited.record.receipts), 'Closed');
   assert.equal(edited.record.events.at(-1).action, 'updated');
-  assert.equal(edited.record.events.at(-1).actor, 'Demo Admin (local, not signed in)');
+  assert.equal(edited.record.events.at(-1).actor, 'Local demo operator (unverified record)');
   assert.equal(requests.every((request) => request.options.mode === 'exclusive'), true);
   assert.ok(requests.every((request) => request.name === requests[0].name));
 });

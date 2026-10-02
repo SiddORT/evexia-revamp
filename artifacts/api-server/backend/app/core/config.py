@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     jwt_audience: str = "evexia-api"
     access_token_minutes: int = 15
     refresh_token_days: int = 7
+    session_refresh_hours: int = 12
+    super_admin_initial_password: SecretStr | None = None
     cors_origins: str = ""
     allow_public_registration: bool = False
     s3_bucket: str | None = None
@@ -92,6 +94,13 @@ class Settings(BaseSettings):
     def bounded_refresh_days(cls, value: int) -> int:
         if not 1 <= value <= 30:
             raise ValueError("REFRESH_TOKEN_DAYS must be between 1 and 30 days")
+        return value
+
+    @field_validator("session_refresh_hours")
+    @classmethod
+    def bounded_session_hours(cls, value: int) -> int:
+        if not 1 <= value <= 24:
+            raise ValueError("SESSION_REFRESH_HOURS must be between 1 and 24 hours")
         return value
 
     @field_validator("max_upload_bytes")

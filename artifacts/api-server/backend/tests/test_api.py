@@ -2,15 +2,16 @@ import uuid
 
 import jwt
 import pytest
+from pydantic import SecretStr
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.deps import require_roles
+from app.api.deps import require_permissions, require_roles
 from app.core.config import get_settings
 from app.core.security import hash_password
-from app.db.models import AuditEvent, MRProfile, RefreshSession, User
+from app.db.models import AuditEvent, LoginAttempt, MRProfile, RefreshSession, User
 from app.db.session import get_db, session_factory
 from app.main import app
 from app.services.auth import AuthError, identity_from_token, revalidate_identity
@@ -44,6 +45,11 @@ def client():
 
 
 def create_user(db, email, role="mr", password=PASSWORD):
+    if role == "super_admin":
+        from app.bootstrap import bootstrap_super_admin
+
+        result = bootstrap_super_admin(db, SecretStr(password))
+        return db.get(User, result.user_id), None
     user = User(
         email=email, username=email.split("@")[0], password_hash=hash_password(password),
         system_role=role, identity_version=1 if role else 0,
@@ -110,6 +116,80 @@ def test_auth_lifecycle_refresh_reuse_and_password_revocation(client):
     assert db.scalar(select(RefreshSession).where(RefreshSession.organization_id.is_not(None))) is None
 
 
+def test_remember_me_expiry_rotation_logout_family_and_access_boundary(client):
+    api, db, settings = client
+    user, _ = create_user(db, "remember@example.com")
+
+    session_login = api.post(
+        "/api/v1/auth/login", headers={"Origin": "http://testserver"},
+        json={"identifier": user.email, "password": PASSWORD},
+    )
+    assert session_login.status_code == 200
+    assert "max-age=" not in session_login.headers["set-cookie"].lower()
+    assert session_login.json()["user"]["permissions"] == []
+    session_access = session_login.json()["access_token"]
+    session_cookie = api.cookies.get("evexia_refresh")
+    session_row = db.scalar(select(RefreshSession).where(RefreshSession.token_hash.is_not(None)))
+    assert session_row is not None and not session_row.persistent
+    original_session_expiry = session_row.family_expires_at
+    rotated = api.post("/api/v1/auth/refresh", headers={"Origin": "http://testserver"})
+    assert rotated.status_code == 200
+    new_session_row = db.scalar(
+        select(RefreshSession).where(RefreshSession.family_id == session_row.family_id,
+                                     RefreshSession.revoked_at.is_(None))
+    )
+    assert new_session_row.family_expires_at == original_session_expiry
+    assert not new_session_row.persistent
+    assert api.post("/api/v1/auth/logout", headers={"Origin": "http://testserver"}).status_code == 204
+    assert db.scalar(select(RefreshSession).where(
+        RefreshSession.family_id == session_row.family_id,
+        RefreshSession.revoked_at.is_(None),
+    )) is None
+    # Logout revokes refresh family; a stateless access JWT remains valid only
+    # until its short absolute expiry and is not represented as immediate revocation.
+    assert api.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {session_access}"},
+    ).status_code == 200
+    api.cookies.set("evexia_refresh", session_cookie, path="/api/v1/auth")
+    assert api.post("/api/v1/auth/refresh", headers={"Origin": "http://testserver"}).status_code == 401
+    # Remove the manually injected domainless replay cookie before a fresh login.
+    api.cookies.clear()
+
+    persistent_login = api.post(
+        "/api/v1/auth/login", headers={"Origin": "http://testserver"},
+        json={"identifier": user.email, "password": PASSWORD, "remember_me": True},
+    )
+    assert persistent_login.status_code == 200
+    assert "max-age=" in persistent_login.headers["set-cookie"].lower()
+    persistent_refresh = api.cookies.get("evexia_refresh")
+    persistent_row = db.scalar(select(RefreshSession).where(
+        RefreshSession.token_hash.is_not(None), RefreshSession.persistent.is_(True),
+    ))
+    assert persistent_row is not None
+    absolute_expiry = persistent_row.family_expires_at
+    rotated = api.post("/api/v1/auth/refresh", headers={"Origin": "http://testserver"})
+    assert rotated.status_code == 200
+    current = db.scalar(select(RefreshSession).where(
+        RefreshSession.family_id == persistent_row.family_id,
+        RefreshSession.revoked_at.is_(None),
+    ))
+    assert current.persistent
+    assert current.family_expires_at == absolute_expiry
+    assert current.expires_at == absolute_expiry
+    assert settings.refresh_token_days >= 1
+    assert persistent_refresh != api.cookies.get("evexia_refresh")
+
+
+def test_admin_access_permission_is_not_granted_to_mr(client):
+    api, db, _ = client
+    user, _ = create_user(db, "ordinary-mr@example.com")
+    token = login(api, user.email).json()["access_token"]
+    identity = identity_from_token(db, token, get_settings())
+    with pytest.raises(HTTPException) as denied:
+        require_permissions("admin.access")(identity)
+    assert denied.value.status_code == 403
+
+
 def test_unmapped_legacy_user_and_legacy_org_token_are_rejected(client):
     api, db, settings = client
     user, _ = create_user(db, "legacy@example.com", role=None)
@@ -155,13 +235,18 @@ def test_identity_version_and_mr_activation_checked_on_each_token_use(client):
 
 def test_superadmin_identity_and_revalidation_interface(client):
     api, db, settings = client
-    user, _ = create_user(db, "root-identity@example.com", role="super_admin")
+    user, _ = create_user(db, "crm-admin@allergyevexia.in", role="super_admin")
     response = login(api, user.email)
     assert response.status_code == 200
     assert response.json()["user"]["system_role"] == "super_admin"
+    assert response.json()["user"]["permissions"] == [
+        "admin.access", "domain.assign_patient", "domain.provision",
+    ]
     identity = identity_from_token(db, response.json()["access_token"], settings)
     assert revalidate_identity(db, identity, lock=False).role == "super_admin"
-    user.identity_version += 1
+    # Protected identity mapping is immutable, but legitimate revocation changes
+    # token_version and must invalidate an already authenticated snapshot.
+    user.token_version += 1
     db.flush()
     with pytest.raises(AuthError):
         revalidate_identity(db, identity, lock=False)
@@ -186,6 +271,9 @@ def test_rate_limit_and_safe_errors(client):
 def test_valid_password_can_sign_in_after_failed_attempts(client):
     api, db, _ = client
     create_user(db, "real@example.com")
-    for _ in range(6):
+    for _ in range(5):
         login(api, "real", "wrong")
+    assert login(api, "real", PASSWORD).status_code == 429
+    db.query(LoginAttempt).delete()
+    db.commit()
     assert login(api, "real", PASSWORD).status_code == 200

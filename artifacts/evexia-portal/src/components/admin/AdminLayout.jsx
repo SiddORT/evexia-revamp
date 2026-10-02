@@ -3,6 +3,8 @@ import { Link, useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Landmark, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, Stethoscope, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
+import { useAdminSession } from '../../auth/AdminBoundary.jsx';
+import { logoutAdmin } from '../../auth/adminSession.js';
 import { useAdminPreferences } from './adminPreferences.js';
 import '../../admin.css';
 
@@ -33,6 +35,13 @@ const MASTER_GROUPS = [
 
 export default function AdminLayout({ title, children }) {
   const [location, navigate] = useLocation();
+  const { user } = useAdminSession();
+  const profileName = user?.username || user?.email || 'Super Admin';
+  async function signOut() {
+    const result = logoutAdmin();
+    navigate('/admin/login', { replace: true });
+    await result;
+  }
   const [mastersOpen, setMastersOpen] = useState(location.startsWith('/admin/masters'));
   const [inventoryOpen, setInventoryOpen] = useState(location.startsWith('/admin/inventory'));
   const [userManagementOpen, setUserManagementOpen] = useState(location.startsWith('/admin/staff'));
@@ -240,22 +249,22 @@ export default function AdminLayout({ title, children }) {
           <DropdownMenu.Root>
             <div className="admin-profile">
               <DropdownMenu.Trigger asChild>
-                <button type="button" className="admin-profile__trigger" aria-label="Demo Admin profile menu" data-testid="button-admin-profile">
-                  <span className="admin-profile__avatar" aria-hidden="true">DA</span>
-                  <span className="admin-profile__name">Demo Admin</span>
+                <button type="button" className="admin-profile__trigger" aria-label="Super Admin profile menu" data-testid="button-admin-profile">
+                  <span className="admin-profile__avatar" aria-hidden="true">SA</span>
+                  <span className="admin-profile__name">{profileName}</span>
                   <ChevronDown size={14} aria-hidden="true" />
                 </button>
               </DropdownMenu.Trigger>
               <DropdownMenu.Portal>
                 <DropdownMenu.Content className="admin-profile__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={10}>
                   <DropdownMenu.Label className="admin-profile__identity">
-                    <strong>Demo Admin</strong><span>Not signed in</span>
+                    <strong>{profileName}</strong><span>Authenticated Super Admin</span>
                   </DropdownMenu.Label>
                   <DropdownMenu.Separator className="admin-profile__separator" />
                   <DropdownMenu.Item className="admin-profile__settings" onSelect={() => navigate('/admin/settings')} data-testid="link-admin-settings">
                     <Settings size={15} aria-hidden="true" /> Settings
                   </DropdownMenu.Item>
-                  <DropdownMenu.Item className="admin-profile__signout" onSelect={() => navigate('/admin/login')} data-testid="link-admin-sign-out">
+                  <DropdownMenu.Item className="admin-profile__signout" onSelect={() => void signOut()} data-testid="link-admin-sign-out">
                     <LogOut size={15} aria-hidden="true" /> Sign Out
                   </DropdownMenu.Item>
                 </DropdownMenu.Content>
@@ -265,7 +274,7 @@ export default function AdminLayout({ title, children }) {
           </div>
         </header>
         <main className="admin-content">
-          <p className="admin-preview-notice" role="note">Preview only — Admin access is not protected. Records stay in this browser and can be viewed or changed by anyone using it. Do not enter real patient, staff, or vendor data.</p>
+          <p className="admin-preview-notice" role="note">Admin access is authenticated. Master records remain fictional and browser-local, not secured backend records; anyone with access to this browser’s data can view or change them. Do not enter real patient, staff, or vendor data.</p>
           {children}
         </main>
       </div>

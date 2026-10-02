@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import uuid
 from dataclasses import dataclass, field
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import jwt
 from sqlalchemy import delete, func, or_, select, text, update
@@ -34,6 +34,7 @@ class Identity:
     user: User
     mr: MRProfile | None = None
     _role_snapshot: str | None = field(init=False, repr=False)
+    _protected_snapshot: bool = field(init=False, repr=False)
     _token_version_snapshot: int = field(init=False, repr=False)
     _identity_version_snapshot: int = field(init=False, repr=False)
 
@@ -41,6 +42,7 @@ class Identity:
         # ORM entities are mutable; preserve the authenticated snapshot independently
         # so revalidation can notice changes even in the same SQLAlchemy identity map.
         object.__setattr__(self, "_role_snapshot", self.user.system_role)
+        object.__setattr__(self, "_protected_snapshot", self.user.is_protected_system_admin)
         object.__setattr__(self, "_token_version_snapshot", self.user.token_version)
         object.__setattr__(self, "_identity_version_snapshot", self.user.identity_version)
 
@@ -48,10 +50,18 @@ class Identity:
     def role(self) -> str | None:
         return self.user.system_role
 
+    @property
+    def permissions(self) -> frozenset[str]:
+        if (self.user.is_protected_system_admin and self.user.is_active
+                and self.user.system_role == "super_admin"):
+            return frozenset({"admin.access", "domain.provision", "domain.assign_patient"})
+        return frozenset()
+
     def public(self) -> CurrentUser:
         return CurrentUser(
             id=self.user.id, email=self.user.email, username=self.user.username,
             system_role=self.user.system_role, mr_id=self.mr.id if self.mr else None,
+            permissions=sorted(self.permissions),
         )
 
 
@@ -93,6 +103,8 @@ def register(*_args, **_kwargs):
 def _load_identity(db: Session, user: User, lock: bool = False) -> Identity:
     if user.system_role not in ("super_admin", "mr") or not user.is_active:
         raise AuthError()
+    if (user.system_role == "super_admin") != user.is_protected_system_admin:
+        raise AuthError()
     profile_query = select(MRProfile).where(
         MRProfile.user_id == user.id,
     ).execution_options(populate_existing=True)
@@ -105,7 +117,7 @@ def _load_identity(db: Session, user: User, lock: bool = False) -> Identity:
 
 
 def login(db: Session, identifier: str, password: str, settings: Settings,
-          request_id: str, ip: str) -> tuple[Identity, str]:
+          remember_me: bool, request_id: str, ip: str) -> tuple[Identity, str]:
     identifier = identifier.lower()
     identifier_key, identifier_blocked = limit_state(db, settings, "login-identifier", identifier, 5)
     ip_key, ip_blocked = limit_state(db, settings, "login-ip", ip, 30)
@@ -119,14 +131,14 @@ def login(db: Session, identifier: str, password: str, settings: Settings,
             identity = _load_identity(db, user)
         except AuthError:
             pass
-    if not identity:
+    if not identity or identifier_blocked or ip_blocked:
         record_attempt(db, identifier_key, ip_key)
-        audit(db, "login", request_id, "failure")
+        audit(db, "login", request_id, "rate_limited" if identifier_blocked or ip_blocked else "failure")
         db.commit()
         if identifier_blocked or ip_blocked:
             raise TooManyAttempts()
         raise AuthError()
-    token = create_refresh(db, identity, settings)
+    token = create_refresh(db, identity, settings, persistent=remember_me)
     audit(db, "login", request_id, "success", identity)
     db.execute(delete(LoginAttempt).where(LoginAttempt.identifier_hash == identifier_key))
     db.commit()
@@ -138,13 +150,20 @@ _DUMMY_HASH = hash_password("not-a-real-account-password")
 
 
 def create_refresh(db: Session, identity: Identity, settings: Settings,
-                   family_id: uuid.UUID | None = None) -> str:
+                   family_id: uuid.UUID | None = None, persistent: bool = False,
+                   family_expires_at: datetime | None = None) -> str:
     value = new_refresh_token()
+    now = utcnow()
+    absolute_expiry = family_expires_at or now + (
+        timedelta(days=settings.refresh_token_days) if persistent
+        else timedelta(hours=settings.session_refresh_hours)
+    )
     db.add(RefreshSession(
         token_hash=token_digest(value), user_id=identity.user.id,
         organization_id=None, identity_version=identity.user.identity_version,
         family_id=family_id or uuid.uuid4(),
-        expires_at=utcnow() + timedelta(days=settings.refresh_token_days),
+        expires_at=absolute_expiry, family_expires_at=absolute_expiry,
+        persistent=persistent,
     ))
     return value
 
@@ -177,6 +196,7 @@ def revalidate_identity(db: Session, identity: Identity, lock: bool = False) -> 
         query = query.with_for_update()
     user = db.scalar(query)
     if (not user or not user.is_active or user.system_role != identity._role_snapshot
+            or user.is_protected_system_admin != identity._protected_snapshot
             or user.identity_version != identity._identity_version_snapshot
             or user.token_version != identity._token_version_snapshot):
         raise AuthError()
@@ -199,7 +219,8 @@ def rotate_refresh(db: Session, value: str, settings: Settings, request_id: str)
         audit(db, "refresh_reuse", request_id, "failure")
         db.commit()
         raise AuthError()
-    if row.expires_at <= utcnow() or row.organization_id is not None:
+    if (row.expires_at <= utcnow() or row.family_expires_at <= utcnow()
+            or row.organization_id is not None):
         raise AuthError()
     user = db.get(User, row.user_id)
     if (not user or not user.is_active or row.identity_version != user.identity_version):
@@ -209,7 +230,9 @@ def rotate_refresh(db: Session, value: str, settings: Settings, request_id: str)
     except AuthError:
         raise AuthError() from None
     row.revoked_at = utcnow()
-    new_value = create_refresh(db, identity, settings, row.family_id)
+    new_value = create_refresh(
+        db, identity, settings, row.family_id, row.persistent, row.family_expires_at,
+    )
     audit(db, "refresh", request_id, "success", identity)
     db.commit()
     return identity, new_value
@@ -221,7 +244,10 @@ def logout(db: Session, value: str | None, request_id: str) -> None:
             RefreshSession.token_hash == token_digest(value),
         ).with_for_update())
         if row and not row.revoked_at:
-            row.revoked_at = utcnow()
+            db.execute(update(RefreshSession).where(
+                RefreshSession.family_id == row.family_id,
+                RefreshSession.revoked_at.is_(None),
+            ).values(revoked_at=utcnow()))
             db.add(AuditEvent(
                 action="logout", outcome="success", request_id=request_id,
                 actor_id=row.user_id, organization_id=None,
@@ -253,3 +279,12 @@ def token_response(identity: Identity, settings: Settings) -> TokenResponse:
         expires_in=settings.access_token_minutes * 60,
         user=identity.public(),
     )
+
+
+def refresh_session(db: Session, value: str) -> RefreshSession:
+    row = db.scalar(select(RefreshSession).where(
+        RefreshSession.token_hash == token_digest(value),
+    ))
+    if row is None:
+        raise AuthError()
+    return row

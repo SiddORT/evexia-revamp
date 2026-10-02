@@ -8,7 +8,7 @@ import { isSamplePR } from './prSampleIdentity.js';
 
 export { isSamplePR };
 
-const LOCAL_ACTOR = 'Demo Admin (local, not signed in)';
+const LOCAL_ACTOR = 'Local demo operator (unverified record)';
 const invalidPR = 'Saved Purchase Received data is unreadable or invalid. Nothing was changed. Back up or repair browser storage, then refresh.';
 const canonical = (value) => Array.isArray(value) ? value.map(canonical)
   : value && typeof value === 'object'

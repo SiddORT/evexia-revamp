@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -24,6 +24,18 @@ class User(Timestamps, Base):
     __table_args__ = (
         CheckConstraint("system_role IS NULL OR system_role IN ('super_admin', 'mr')", name="ck_users_system_role"),
         CheckConstraint("identity_version >= 0", name="ck_users_identity_version"),
+        CheckConstraint(
+            "coalesce(system_role = 'super_admin', false) = is_protected_system_admin",
+            name="ck_users_protected_super_admin",
+        ),
+        CheckConstraint(
+            "NOT is_protected_system_admin OR (email = 'crm-admin@allergyevexia.in' AND is_active)",
+            name="ck_users_protected_super_admin_identity",
+        ),
+        Index(
+            "uq_users_protected_system_admin", "is_protected_system_admin",
+            unique=True, postgresql_where=text("is_protected_system_admin"),
+        ),
     )
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True, nullable=False)
@@ -35,6 +47,7 @@ class User(Timestamps, Base):
     # assigns one of the system roles.
     system_role: Mapped[str | None] = mapped_column(String(20))
     identity_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    is_protected_system_admin: Mapped[bool] = mapped_column(default=False, nullable=False)
 
 
 class Membership(Timestamps, Base):
@@ -52,6 +65,7 @@ class RefreshSession(Base):
     __table_args__ = (
         Index("ix_refresh_sessions_user", "user_id", "revoked_at"),
         CheckConstraint("identity_version >= 0", name="ck_refresh_sessions_identity_version"),
+        CheckConstraint("family_expires_at >= expires_at", name="ck_refresh_family_expiry"),
     )
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
@@ -62,6 +76,8 @@ class RefreshSession(Base):
     family_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    family_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    persistent: Mapped[bool] = mapped_column(default=False, nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 

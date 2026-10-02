@@ -11,6 +11,7 @@ class StrictModel(BaseModel):
 class LoginRequest(StrictModel):
     identifier: str = Field(min_length=3, max_length=320)
     password: str = Field(min_length=1, max_length=128)
+    remember_me: bool = False
 
     @field_validator("identifier")
     @classmethod
@@ -32,6 +33,7 @@ class CurrentUser(BaseModel):
     username: str | None
     system_role: Literal["super_admin", "mr"] | None
     mr_id: uuid.UUID | None = None
+    permissions: list[str]
 
 
 class TokenResponse(BaseModel):

@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from pydantic import SecretStr
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -32,6 +33,11 @@ def domain_db():
 
 
 def seed_identity(db, email, role):
+    if role == "super_admin":
+        from app.bootstrap import bootstrap_super_admin
+
+        result = bootstrap_super_admin(db, SecretStr("correct horse battery staple"))
+        return Identity(db.get(User, result.user_id))
     user = User(
         email=email, password_hash=hash_password("correct horse battery staple"),
         system_role=role, identity_version=1,
@@ -74,6 +80,15 @@ def test_non_superadmin_cannot_provision_or_assign(domain_db):
     assert error.value.status_code == 403
 
 
+def test_mr_provisioning_cannot_claim_reserved_system_identifier(domain_db):
+    from app.bootstrap import SUPER_ADMIN_EMAIL
+
+    actor = seed_identity(domain_db, "reserved-guard@example.test", "super_admin")
+    with pytest.raises(DomainError) as error:
+        provision_mr(domain_db, actor, SUPER_ADMIN_EMAIL, None, "correct horse battery staple")
+    assert error.value.status_code == 409
+
+
 def test_mapping_legacy_user_is_explicit_and_revokes_old_credentials(domain_db):
     db = domain_db
     admin = seed_identity(db, "admin-map@example.com", "super_admin")
@@ -83,10 +98,12 @@ def test_mapping_legacy_user_is_explicit_and_revokes_old_credentials(domain_db):
     )
     db.add(legacy_user)
     db.flush()
+    expiry = datetime.now(timezone.utc) + timedelta(days=1)
     db.add(RefreshSession(
         token_hash="a" * 64, user_id=legacy_user.id, organization_id=None,
         identity_version=0, family_id=uuid.uuid4(),
-        expires_at=datetime.now(timezone.utc) + timedelta(days=1),
+        family_expires_at=expiry,
+        expires_at=expiry,
     ))
     db.commit()
     old_version = legacy_user.identity_version

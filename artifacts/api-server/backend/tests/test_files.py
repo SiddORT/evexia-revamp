@@ -16,6 +16,7 @@ from sqlalchemy import create_engine, select, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from pydantic import SecretStr
 
 from app.core.config import get_settings
 from app.core.security import access_token, token_digest, utcnow
@@ -112,6 +113,11 @@ def files_env(tmp_path):
     db = Session(engine, expire_on_commit=False)
 
     def seed_user(email, role):
+        if role == "super_admin":
+            from app.bootstrap import bootstrap_super_admin
+
+            result = bootstrap_super_admin(db, SecretStr("synthetic-test-bootstrap-password"))
+            return db.get(User, result.user_id), None
         user = User(
             email=f"{uuid.uuid4().hex}-{email}@example.test",
             password_hash="test-only-not-a-login-hash",

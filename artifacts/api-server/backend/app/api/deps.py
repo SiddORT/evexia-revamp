@@ -13,6 +13,7 @@ bearer = HTTPBearer(auto_error=False)
 # Permission names are the policy surface; role names are only principals mapped
 # into permissions. File-specific object checks belong to the file service.
 PERMISSION_ROLES = {
+    "admin.access": frozenset({"super_admin"}),
     "domain.provision": frozenset({"super_admin"}),
     "domain.assign_patient": frozenset({"super_admin"}),
 }
@@ -47,7 +48,9 @@ def require_permissions(*permissions: str) -> Callable:
     def check(identity: Identity = Depends(current_identity)) -> Identity:
         if not permissions or any(permission not in PERMISSION_ROLES for permission in permissions):
             raise HTTPException(status_code=403, detail="Access denied")
-        if identity.role not in allowed_roles:
+        if identity.role not in allowed_roles or any(
+            permission not in identity.permissions for permission in permissions
+        ):
             raise HTTPException(status_code=403, detail="Access denied")
         return identity
 

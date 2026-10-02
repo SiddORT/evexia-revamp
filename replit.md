@@ -1,22 +1,22 @@
 # EVEXIA Portal
 
-EVEXIA Life Sciences portal with mock login screens and an Admin workspace preview, plus an independent FastAPI backend foundation. The portal is **not yet connected** to backend authentication or persistence.
+EVEXIA Life Sciences portal with a protected Admin workspace, mock MR/Doctor login screens, browser-local demonstration records, and a FastAPI authentication/API service. Admin authentication uses the backend; Admin master data remains browser-local and is not persisted by the API.
 
 ## Run & operate
 
-- The managed `artifacts/evexia-portal: web` workflow serves the preview.
+- The managed `artifacts/evexia-portal: web` workflow serves the portal preview.
 - `pnpm --filter @workspace/evexia-portal run build` builds the web app.
-- The managed `artifacts/api-server: API Server` workflow runs FastAPI directly with Python on `/api` (no Node.js or pnpm in the API artifact). Its code and operational notes are in `artifacts/api-server/backend/README.md`. Database changes use Alembic migrations; do not create tables at startup.
+- The managed `artifacts/api-server: API Server` workflow runs FastAPI directly with Python on `/api` (no Node.js or pnpm in the API artifact). The portal calls same-origin `/api/v1/auth` routes through its API proxy. API code and operational notes are in `artifacts/api-server/backend/README.md`. Database changes use Alembic migrations; do not create tables at startup.
 
 ## Stack and scope
 
 - React with JavaScript/JSX, Vite, Wouter, and CSS. Keep the web artifact free of TypeScript files.
-- Routes: `/` (portal selection); `/admin/login`, `/mr`, `/doctor` (mock login); `/admin` (empty Admin dashboard), `/admin/masters` (Masters index), `/admin/masters/zones` (Zone Master).
-- The Admin workspace is a preview. Sign Out only returns to the mock login. Do not add API calls or real authentication unless requested.
+- Routes: `/` (portal selection); `/admin/login` (backend-authenticated Super Admin); `/mr` and `/doctor` (mock login); `/admin` and `/admin/*` (protected Admin workspace).
+- Admin routes require a verified backend session for the protected system Super Admin with the explicit `admin.access` permission. The browser guard is not a substitute for server-side authorization of future data operations. Sign Out revokes the server refresh session when available and clears the in-memory access token.
 - The new backend is a separate foundation, not a replacement for existing browser-local master records. Do not silently migrate or overwrite those records.
 - All future backend work must follow the supplied EVEXIA Engineering and Security Standards. EVEXIA is non-tenant: use explicit system Super Admin/MR identities and database ownership/assignment policies, never tenant abstractions or implicit elevation from legacy memberships or portal role labels. See `artifacts/api-server/backend/STORAGE_CONTRACT.md`.
 - Backend API and persistence contract: see `artifacts/api-server/backend/README.md`; FastAPI OpenAPI is authoritative and shared TypeScript clients are generated offline from it. Production uploads cannot rely on the app filesystem: Replit published app files reset on restart/publish, so use explicitly configured durable object storage and operator-managed data backups. See the backend README's official Replit documentation references and recovery procedure.
-- Login forms validate locally and simulate loading, then clearly state that authentication is not connected. No credentials are sent or stored.
+- The Admin form authenticates against the FastAPI API. Access tokens are memory-only; rotating refresh credentials use an HttpOnly cookie. Login credentials are never stored in browser storage. MR/Doctor login screens remain mock-only.
 - Zone Master records are stored only in the browser's localStorage, not shared across browsers or users. Clearing browser data removes them.
 - Settings > Communication is a demo-only Email (SMTP/API/unconnected platform), SMS and WABA metadata preview. Use dummy values only. No provider is connected, verified or contacted. Password/key/token preview inputs are transient and never saved; endpoint metadata uses HTTPS without embedded credentials, query strings or fragments. Communication resets affect only its dedicated browser-local metadata, not other settings or master records.
 
@@ -31,17 +31,20 @@ EVEXIA Life Sciences portal with mock login screens and an Admin workspace previ
 
 ## Browser regression test
 
-- Run the communication preview regression against the running EVEXIA Portal preview with `EVEXIA_PREVIEW_BASE_URL=https://<development-preview-host> pnpm run test:communication-browser`. `EVEXIA_PREVIEW_BASE_URL` is required; use the assigned development preview host and port rather than assuming the default Vite port is correct.
-- Install the Playwright browser binaries in the environment before running the browser test.
-- Message-template checks: `node --test artifacts/evexia-portal/src/services/messageTemplates.test.js artifacts/evexia-portal/src/services/messageTemplatePreview.test.js`; browser regression: `EVEXIA_PREVIEW_BASE_URL=https://<development-preview-host> pnpm exec playwright test artifacts/evexia-portal/tests/message-templates.preview.spec.mjs`.
+- Run `pnpm run test:authenticated-previews` for the Admin-auth, template-preference, and Communication browser regressions in one isolated harness run. `pnpm run test:communication-browser` runs only Communication; `pnpm --filter @workspace/evexia-portal run test:template-preferences` runs its service and browser checks.
+- The authenticated-preview harness starts a temporary local-only PostgreSQL database, applies migrations, creates a synthetic protected Super Admin through the backend bootstrap command, starts FastAPI and a Vite dev server, and removes the database/processes on exit. It overwrites database/auth fixture settings with synthetic test-only values and never connects to a configured or managed database.
+- Preview requests stay same-origin: the harness's opt-in Vite `/api` proxy targets its isolated FastAPI process. Happy-path and existing preference/communication tests use real login and `/me`; protected pages restore with the real refresh-cookie flow. The Admin-auth negative cases intercept outage, rate-limit, expiry, and missing-permission responses to confirm fail-closed UI handling; they never bypass a guard.
+- The harness requires `initdb`, `pg_ctl`, `createdb`, Python backend dependencies, `pnpm`, `curl`, and installed Playwright Chromium. Set `EVEXIA_CHROMIUM_PATH` to a supported executable if needed. Optional `EVEXIA_TEST_PORT` and `EVEXIA_TEST_API_PORT` change its local Vite/API ports.
+- The isolated harness passing is evidence for those synthetic code regressions only; it is not a live managed-preview or deployment check. For a live authenticated preview, the API database must already be migrated and contain the protected singleton. On a fresh database, bootstrap requires the operator-managed `SUPER_ADMIN_INITIAL_PASSWORD`; missing/invalid initial configuration or a conflicting reserved identifier blocks bootstrap. Record that live check as **BLOCKED**, not passed, when its bootstrap prerequisite is unavailable. Do not seed a managed/shared database with the synthetic fixture. Existing protected accounts can be bootstrapped idempotently without the initial secret and are never reset by it. See the backend README for the explicit migration/bootstrap sequence.
+- Message-template service checks: `node --test artifacts/evexia-portal/src/services/messageTemplates.test.js artifacts/evexia-portal/src/services/messageTemplatePreview.test.js`. Its existing browser suite also uses the real synthetic-account fixture and runs in the authenticated harness.
 
 ## Release validation
 
 - `pnpm run build` runs `pnpm run validate:release` automatically before typechecking or producing build output. A failed service or browser test blocks the build. The direct artifact `build` command is for compilation only, not release approval.
-- The gate runs `templatePreferenceEvents.test.js` and all three two-tab cases in `tests/template-preferences.preview.spec.mjs`. It is also registered as the project's `release` validation command.
-- Keep the EVEXIA Portal dev workflow running. Set `EVEXIA_PREVIEW_BASE_URL` to its reachable URL; in Replit the gate defaults to `https://$REPLIT_DEV_DOMAIN`. The spec imports a Vite source module, so a static production preview is not sufficient. An unavailable preview fails the gate.
+- The gate runs `adminSession.test.js` and `templatePreferenceEvents.test.js`, then all three authenticated browser suites (Admin auth, template preferences, Communication) in one isolated harness/Playwright invocation. It is registered as the project's `release` validation command.
+- The harness starts Vite in dev mode because the template-preferences spec imports a Vite source module. It does not depend on or alter a managed workflow or its database.
 - Set `EVEXIA_CHROMIUM_PATH` when a specific supported Chromium executable is needed. Otherwise the gate selects `chromium` / `chromium-browser` from PATH, falling back to Playwright's installed Chromium. Missing or invalid browser executables fail the gate.
-- Outside Replit, run `EVEXIA_PREVIEW_BASE_URL=https://<running-dev-preview-host> EVEXIA_CHROMIUM_PATH=/path/to/chromium pnpm run build` (omit the executable override when using installed Playwright Chromium).
+- Outside Replit, run `EVEXIA_CHROMIUM_PATH=/path/to/chromium pnpm run build` (omit the executable override when using installed Playwright Chromium).
 - The existing Canvas build also requires `PORT` and `BASE_PATH`; for a full workspace build from a plain shell, supply them (for example `PORT=5173 BASE_PATH=/ pnpm run build`).
 - Tests create a fresh, non-persistent browser context for each case; only the two test tabs share storage. Do not replace this with a real browser profile or saved user storage.
 

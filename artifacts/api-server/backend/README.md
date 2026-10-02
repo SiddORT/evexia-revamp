@@ -1,9 +1,10 @@
 # EVEXIA backend foundation
 
-This is a separate FastAPI modular monolith, not a portal integration. The EVEXIA
-portal still uses mock login screens and browser-local records; its login buttons
-do not send credentials and its master data is not in PostgreSQL. Do not enter
-real patient, health, staff, or vendor data into the preview.
+This FastAPI modular monolith supplies authoritative authentication for the
+existing EVEXIA Admin login and protected workspace. MR and Doctor login screens
+remain mock previews. Portal master records remain fictional and browser-local,
+not backend-persisted or secured records. Do not enter real patient, health,
+staff, or vendor data into the preview.
 
 ## Local development and operations
 
@@ -22,15 +23,54 @@ real patient, health, staff, or vendor data into the preview.
   disposable PostgreSQL test database first; never point tests at development or
   production data.
 - Migrations are explicit: `cd artifacts/api-server/backend && alembic upgrade
-  head`. Never create tables at startup. Do not run production migration or
+  head`. Never create tables at startup. After migrations, explicitly run
+  `PYTHONPATH=. python -m app.bootstrap` from the backend directory. Bootstrap
+  reads `SUPER_ADMIN_INITIAL_PASSWORD` only when no protected account exists,
+  creates the reserved singleton once, and is safe to repeat; later runs need no
+  initial secret and never reset credentials or security settings. Missing or
+  invalid secret on first creation fails without a fallback. Conflicting reserved
+  identities and pre-existing Super Admin mappings require operator review;
+  migrations never silently elevate an account. The initial password belongs
+  only in the managed backend secret store, never source, SQL, command arguments,
+  logs, seeds, or generated documentation. Do not run production migration or
   downgrade commands manually; review the managed publish schema operation and
   take a backup first. The current ordered migrations are `0001_identity_foundation`,
-  `0002_optional_username`, `0003_system_identity_domain`, and `0004_private_files`.
+  `0002_optional_username`, `0003_system_identity_domain`, `0004_private_files`,
+  and `0005_protected_super_admin_sessions`.
   A downgrade is not a general rollback plan: it can remove data/schema state and
   cannot reverse issued credentials, uploaded objects, or external side effects.
+  Migration `0005` refuses to proceed over existing Super Admin mappings for
+  explicit operator review and its downgrade refuses while the protected account
+  exists. The PostgreSQL trigger/checks are practical integrity guards against
+  accidental normal-service mutations. The bootstrap trigger's transaction-local
+  setting is a coordination guard, not an independent authorization boundary: a
+  caller with arbitrary SQL authority can set custom PostgreSQL settings. The
+  trigger does reject promotion/update of an existing ordinary row, but operators
+  must still prevent arbitrary SQL from inserting protected identities. These
+  controls are not a defense against a database owner or arbitrary SQL/DDL
+  authority: the runtime database role must not own tables or have privileges to
+  disable triggers, truncate protected tables, or alter schema.
+  Privileged SQL maintenance/trigger changes require a separately reviewed,
+  audited procedure and backup; never bypass the application bootstrap/service.
   For a failed release, stop writes, preserve the database and object store,
   assess the migration and data state, then use a reviewed forward fix or a
   verified restore. No migration or deployment is performed by this README.
+- Explicit first-time/deployment initialization order (supply the initial secret
+  through the managed backend secret store before this command; the secret is not
+  an argument):
+
+  ```sh
+  cd artifacts/api-server/backend
+  alembic upgrade head
+  PYTHONPATH=. python -m app.bootstrap
+  ```
+
+  Equivalently, from the workspace root run `sh scripts/initialize-api.sh`.
+  This explicit operator command runs the same ordered migration/bootstrap steps
+  and is exercised by the isolated authenticated-preview harness. The API process
+  itself runs neither migrations nor bootstrap. Do not run this command against
+  production without separate deployment approval, backups, and reviewed DB roles.
+
 - Migration `0004_private_files` encodes owner/category/state/media/checksum,
   size/version and verified-clean constraints, plus generated-key-to-owner/record
   consistency, in PostgreSQL. Its downgrade drops file metadata but deliberately
@@ -44,39 +84,46 @@ real patient, health, staff, or vendor data into the preview.
 
 Registration (`POST /api/v1/auth/register`) is always unavailable in the current
 implementation and returns 403; `ALLOW_PUBLIC_REGISTRATION` is retained as a
-configuration field but does not enable account creation. There is no default
-elevated account. A trusted operator must explicitly create or map an identity
-after an intentional database setup:
+configuration field but does not enable account creation. Bootstrap initializes
+only the protected system Super Admin. Trusted operators can create or map MR
+identities, but cannot create or alter a Super Admin:
 
 ```sh
 cd artifacts/api-server/backend
-PYTHONPATH=. python -m app.operator --email operator@example.invalid --create --role super_admin
 PYTHONPATH=. python -m app.operator --email mr@example.invalid --create --role mr --username field.mr
 ```
 
-The command prompts for new passwords without echoing them. Super-admin mapping
-requires typing the exact email as a separate confirmation. For an existing
-account, omit `--create`; mapping an account to `none` disables its system role.
-This is a privileged, audited operator action—not a public API or bootstrap
-secret. Provision only authorized people, use a password manager, and review
-the audit event. Role/activation changes increment identity/token versions and
-revoke refresh sessions. Legacy organization memberships are retained; they are
-not automatically converted into system roles, domain ownership, or access.
+The command prompts for new passwords without echoing them. For an existing
+non-protected account, omit `--create`; mapping it to `none` disables its system
+role. This is a privileged, audited operator action—not a public API or bootstrap
+secret. Role/activation changes increment identity/token versions and revoke
+refresh sessions. Legacy organization memberships are retained; they are not
+automatically converted into system roles, domain ownership, or access.
 Unmapped legacy accounts cannot authenticate to the new system operations.
 
 `POST /api/v1/auth/login` accepts `{ "identifier": "email-or-username",
-"password": "..." }`. It normalizes the identifier and rate-limits failed login
-attempts. Login and refresh/logout require JSON and a same-origin `Origin`
-header. A successful login returns a 15-minute bearer access token and sets a
-rotating opaque refresh token in an HttpOnly, SameSite=Strict cookie. Production
-uses Secure and a `__Host-` cookie. Keep access tokens in memory in any future
-  browser integration, never localStorage. `POST /api/v1/auth/refresh` rotates the
-cookie; `POST /api/v1/auth/logout` revokes its session; `GET /api/v1/auth/me`
+"password": "...", "remember_me": false }`. It normalizes the identifier and
+rate-limits failed attempts, including otherwise-valid credentials while blocked.
+Login and refresh/logout require JSON and a same-origin `Origin` header. A
+successful login returns a 15-minute bearer access token and sets a rotating
+opaque refresh token in an HttpOnly, SameSite=Strict cookie. Production uses
+Secure and a `__Host-` cookie. Keep access tokens in memory, never localStorage.
+With Remember me off (default), the cookie is browser-session scoped and server
+refresh expires after `SESSION_REFRESH_HOURS` (default 12, bounded 1–24). With it
+on, the cookie is persistent only until the configured absolute
+`REFRESH_TOKEN_DAYS` family expiry (1–30 days). Rotation preserves the original
+absolute expiry and persistence mode; it does not extend a family. Logout revokes
+all refresh rows in that family. Already issued access JWTs remain usable until
+their short absolute expiry (at most `ACCESS_TOKEN_MINUTES`); password or identity
+changes invalidate them immediately through database version checks.
+`GET /api/v1/auth/me`
 requires bearer auth. `POST /api/v1/auth/change-password` requires a current
-password of 1–128 characters, accepts a new password of 12–128 characters, and invalidates the
-user's sessions/tokens. Password recovery is not implemented. Never trust a UI
-role selector or request-supplied organization ID for authorization: protected
-calls check the mapped identity and ownership/permissions in the database.
+password of 1–128 characters, accepts a new password of 12–128 characters, and
+invalidates the user's sessions/tokens. Safe authenticated identity responses
+include explicit permissions, with `admin.access` only for the protected system
+identity. Password recovery is not implemented. Never trust a UI role selector
+or request-supplied organization ID for authorization: protected calls check
+current database identity and permissions.
 
 ## Current API surface
 
@@ -148,6 +195,8 @@ These defaults are service behavior, not automatic infrastructure provisioning:
 | `JWT_SECRET`, fallback `SESSION_SECRET` | none | Selected signing secret must contain at least 32 characters; operator supplies it through Secrets. |
 | `JWT_ISSUER`, `JWT_AUDIENCE` | `evexia`, `evexia-api` | Token validation contract; operator keeps issuance and verification settings aligned. |
 | `ACCESS_TOKEN_MINUTES`, `REFRESH_TOKEN_DAYS` | 15 minutes, 7 days | 1–60 minutes and 1–30 days respectively; token/session policy is owned by backend security configuration. |
+| `SESSION_REFRESH_HOURS` | 12 hours | 1–24 hours; server expiry for non-persistent browser-session refresh cookies. |
+| `SUPER_ADMIN_INITIAL_PASSWORD` | unset | Backend-managed SecretStr; required only on first protected account creation, never returned or logged. |
 | `ALLOW_PUBLIC_REGISTRATION` | `false` | Configured field only; registration is currently disabled regardless of value. |
 | `CORS_ORIGINS` | empty | Explicit comma-separated HTTP(S) origins only; wildcards are rejected and production requires HTTPS. Configure only the intended browser origin. |
 | `MAX_UPLOAD_BYTES` | 20 MiB (`20971520`) | 1 byte–100 MiB; backend parser/storage bound. |

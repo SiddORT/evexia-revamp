@@ -36,7 +36,7 @@ export default function AdminSettings() {
   };
   const Active = active.Component;
   return <AdminLayout title="Settings">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Demo Admin / Preferences</p><h1>Settings</h1><p className="admin-page-head__description">Personalize this browser’s Admin preview. These choices are not synced to an account or other devices.</p></div></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Admin / Browser Preferences</p><h1>Settings</h1><p className="admin-page-head__description">Personalize this browser’s Admin preview. These choices are not synced to an account or other devices.</p></div></div>
     <div className="admin-settings-layout">
       <nav className="admin-settings-nav" aria-label="Settings categories">
         <div className="admin-settings-nav__search">

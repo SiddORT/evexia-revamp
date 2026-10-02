@@ -2,22 +2,22 @@
 
 ## Project Overview
 
-EVEXIA is a React/Vite browser-local demonstration of role login screens and an Admin workspace. The Admin screens are directly accessible without login. Master records, including patient, staff and vendor fields, live in browser localStorage. A separate FastAPI backend foundation is not yet used by the portal. This is **not** a clinical or production data system.
+EVEXIA is a React/Vite portal with a backend-authenticated Admin workspace and browser-local demonstration records. The Admin UI checks the protected Super Admin identity and `admin.access` permission using the FastAPI authentication service; master records, including patient, staff and vendor fields, still live in browser localStorage. This is **not** a clinical or production data system.
 
 ## Assets
 
 - Browser-local patient and contact records: names, addresses, phone numbers, email addresses and patient-related details would be sensitive if real data were entered.
 - CSV exports and selected CSV/Excel files: downloaded copies leave the browser and can disclose data or execute spreadsheet formulas if opened in spreadsheet software.
 - Record integrity: local edits and imports must not silently overwrite another tab's changes or corrupt records.
-- Typed login passwords: held transiently in React state for a mock form, not authenticated, sent or saved; users must not type actual credentials.
+- Admin login password: held transiently in React state and sent to the same-origin FastAPI login route; it is not written to browser storage. MR/Doctor login forms remain mock-only. The Admin access token remains in memory; the rotating refresh token is carried in an HttpOnly cookie.
 - Communication preview credentials: masked dummy-only app-password/API-key/access-token inputs are held only in the open form and cleared on save attempts, cancellation, type/channel changes, navigation/unmount and when the window loses focus or becomes hidden. No credentials are retained, logged, exported or sent. Saved provider/sender metadata is still browser-local and must be fictional.
 
 ## Trust Boundaries
 
-- **Visitor to Admin route:** there is no authenticated boundary. Anyone with access to this origin/browser can open the Admin routes directly, and other scripts on the same origin can read localStorage.
+- **Visitor to Admin route:** Admin UI routes verify the current backend identity and explicit Super Admin permission before rendering protected workspace content. This browser guard does not make browser-local records confidential or tamper-resistant: users with access to the browser or same-origin scripts can inspect or change its localStorage.
 - **File picker to browser parser to localStorage:** imported files are untrusted. Client-side validation limits accidents, not a malicious user with dev tools.
 - **Browser to downloaded file/spreadsheet application:** CSV escaping is required to mitigate formula execution; downloads are not protected by access controls.
-- **Portal to backend API:** the portal does not call the API. Its independently reachable authentication foundation must not be mistaken for persistence or access control on the prototype screens.
+- **Portal to backend API:** the portal calls same-origin `/api/v1/auth` through the API proxy for Admin login, current-identity verification, refresh, and logout. The API authenticates against PostgreSQL. This does not move browser-local master records to the API or provide server-side authorization for those local-only records.
 - **Preview to a future deployment:** HTTPS, response headers, origin isolation, logging, secret handling and server authorization have not been assessed for a production deployment.
 - **Communication form to localStorage:** an allowlisted, versioned metadata schema excludes all credential fields and rejects unknown saved keys. Endpoint URLs reject embedded credentials and all query/fragment data because secret parameter names vary by provider. No arbitrary headers or credential JSON fields are accepted, and no provider calls or messaging exist. This preview is not secure credential storage or WhatsApp onboarding.
 
@@ -25,14 +25,14 @@ EVEXIA is a React/Vite browser-local demonstration of role login screens and an 
 
 - Portal routes: `artifacts/evexia-portal/src/App.jsx`; common Admin shell: `src/components/admin/AdminLayout.jsx`.
 - Browser-local data/import/export: `artifacts/evexia-portal/src/services/`, especially `masterImport.js`, `mockExcelImport.js`, `patients.js`, `staff.js`, `vendors.js`.
-- Mock login: `artifacts/evexia-portal/src/components/auth/LoginForm.jsx`; separate API: `artifacts/api-server/backend/app/main.py`.
-- No protected Admin route exists; the mockup sandbox and FastAPI service are separate from the portal's data flow.
+- Admin login/session: `artifacts/evexia-portal/src/components/auth/LoginForm.jsx`, `src/auth/AdminBoundary.jsx`, and `src/auth/adminSession.js`; API: `artifacts/api-server/backend/app/main.py`.
+- MR/Doctor mock login remains separate from the protected Admin route and backend identity.
 
 ## Threat Categories
 
 ### Spoofing and elevation of privilege
 
-The mock login grants no identity. Admin, staff, MR and doctor labels are visual only. A future real system MUST enforce authentication and per-record role authorization on a server for every sensitive operation; a client-side route guard or localStorage flag is insufficient.
+MR/Doctor mock logins and browser-local staff labels grant no backend identity. The Admin route guard is based on backend-verified current identity and explicit `admin.access`; it is not sufficient authorization for future sensitive data operations. Every server-side operation must independently enforce identity, permission, and ownership. Local records remain controlled by the browser user.
 
 ### Tampering
 
@@ -54,18 +54,20 @@ CSV files have a 2 MB parser boundary and 1,000-row limit; the Excel preview lim
 
 React escapes displayed fields and CSV exporters quote cells and prefix formula-like values; untrusted XLSX content is parsed as data, not evaluated by the portal. Test these properties across every export format before a real deployment, and enforce response security headers at the serving layer. No scan or static inspection can prove all browser and spreadsheet behaviors safe.
 
-## Backend Foundation (separate, not connected to portal)
+## Backend authentication and separate data foundation
 
 ### Assets and trust boundaries
 
-- The API backend stores authentication/session state, mapped user and MR identities, minimal patient assignment records, file metadata, audit events, download grants, and private uploaded bytes. Files and their metadata can contain sensitive personal/health information. The portal does not call these endpoints; local prototype data and mock logins are not API identities.
+- The API backend stores authentication/session state, protected system and MR identities, minimal patient assignment records, file metadata, audit events, download grants, and private uploaded bytes. Files and their metadata can contain sensitive personal/health information. The portal currently uses the API for Admin authentication only; local prototype data and mock logins are not API identities.
 - An authenticated request crosses the network/API boundary, then a database authorization boundary, then (for files) a separate private object-storage and scanner boundary. Database/object writes do not share a transaction. A stale database row, untrusted object, compromised operator, missing scanner, or lost object can all affect integrity/availability.
-- Only explicit operator-mapped `super_admin` and active `mr` identities may authenticate. No default elevated account exists. Existing organization memberships are not automatically migrated to this identity model; legacy/unmapped users remain denied. Privileged bootstrap/mapping requires operator access, confirmation for super-admin assignment, secure password prompting, and an audit event.
+- Only the protected singleton `super_admin` and active `mr` identities may authenticate. The protected singleton is created by an explicit idempotent bootstrap after migrations using the operator-managed `SUPER_ADMIN_INITIAL_PASSWORD` only when creation is needed. Missing/invalid initial configuration or a reserved-identifier conflict blocks first creation for operator review; rerunning after successful creation does not rotate credentials or settings. Existing organization memberships are not automatically migrated; legacy/unmapped users remain denied. Privileged provisioning is audited and cannot create another protected Super Admin through normal user-management paths.
 - `POST /api/v1/auth/register` is disabled in the current implementation even if its legacy configuration field is enabled. Same-origin Origin checks protect cookie flows; HTTPS, explicit CORS allowlists, signing-secret custody, deployment access policy, and account provisioning remain operator responsibilities.
 
 ### Authentication, authorization, and audit risks
 
 Access tokens are short-lived signed bearer credentials; refresh credentials are opaque, rotating HttpOnly/SameSite cookies and session hashes are stored in PostgreSQL. Compromise of a bearer token permits actions allowed to its mapped identity until expiry/revocation checks apply. Store any future browser token only in memory; never localStorage. Password changes and identity changes revoke/version sessions. Password reset/delivery is not implemented.
+
+Preview regressions authenticate with a synthetic protected Super Admin in a private ephemeral PostgreSQL/API fixture and verify `/me` through the actual same-origin API proxy. This fixture is not a live-deployment credential or a test against a managed database. If the live API has no protected account and its initial bootstrap secret is unavailable, live authenticated preview validation is blocked; do not claim it passed or seed the managed database with synthetic test credentials.
 
 Every protected domain/file operation must validate the current identity, role/permission and ownership in the database; do not trust UI role, organization/owner IDs, guessed UUIDs, old mappings, request metadata, or stale grants. MR authorization is limited to their own MR profile and currently assigned active patients. A patient can have at most one active MR assignment. Permission is repeated after slow I/O and for local grant redemption. Audit rows provide operational history but are not a tamper-proof external audit service; protect, retain and monitor them according to a defined policy.
 
