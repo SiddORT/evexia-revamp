@@ -1,0 +1,305 @@
+I am building this project using **FastAPI (backend) and React.js/TypeScript (frontend)**.
+
+Before making ANY code changes, I want you to establish and explain the engineering, coding, security, and VAPT standards that should be followed throughout this project.
+
+### IMPORTANT — DO NOT IMPLEMENT ANYTHING YET
+
+For this task:
+- Do NOT modify any files.
+- Do NOT create, delete, or rename files.
+- Do NOT install packages.
+- Do NOT run migrations.
+- Do NOT refactor existing code.
+- Do NOT fix issues yet.
+- Do NOT generate implementation code.
+- Do NOT make architectural changes.
+
+This is an **analysis and standards-definition phase only**.
+
+## 1. Inspect the existing project
+
+First, inspect the repository structure and existing code enough to understand:
+- Backend architecture
+- Frontend architecture
+- Authentication/authorization approach
+- API structure
+- Database/data-access approach
+- Configuration/environment-variable handling
+- Dependency management
+- Existing validation and error handling
+- Logging
+- File uploads/downloads, if any
+- External integrations, if any
+- Existing security controls
+- Existing tests
+- Existing hardcoded constants/magic values
+- Any obvious architectural or security concerns
+
+Do not change anything while inspecting.
+
+## 2. Define the coding standards
+
+Explain the coding standards you recommend for this specific project.
+
+Cover at minimum:
+
+### FastAPI / Python
+- Project/module structure
+- Router vs service vs repository responsibilities
+- Pydantic schemas
+- Type hints
+- Dependency injection
+- Async/sync usage
+- Database access patterns
+- Transactions
+- Exception handling
+- HTTP status codes
+- API response conventions
+- Authentication and authorization
+- Input validation
+- Output validation
+- Configuration management
+- Environment variables/secrets
+- Logging
+- Constants and enums
+- Avoiding magic strings/numbers
+- Naming conventions
+- Testing standards
+
+### React / TypeScript
+- Component architecture
+- Page/component separation
+- Hooks
+- API/data-fetching layer
+- State management
+- TypeScript typing
+- Constants/enums
+- Configuration
+- Form validation
+- Error handling
+- Authentication state
+- Authorization/UI permissions
+- Avoiding duplicated business logic
+- Reusable components
+- Testing standards
+
+## 3. Constants and configuration policy
+
+I specifically want to avoid the common problem of having values hardcoded throughout the application.
+
+Explain:
+- What should be a constant
+- What should be an environment variable
+- What should be an enum
+- Where constants should live
+- When constants should be shared between frontend/backend
+- How to avoid duplicated constants
+- How to avoid creating one giant global constants file
+- How URLs, API paths, limits, timeouts, status values, roles, permissions, feature flags, etc. should be handled
+
+Give examples of good vs bad patterns, but do not modify my code.
+
+## 4. Security / VAPT-by-design standards
+
+I want security to be considered throughout development, not added at the end.
+
+Define a practical VAPT-oriented development standard covering at least:
+
+- OWASP Top 10
+- OWASP API Security Top 10
+- Authentication security
+- Authorization / RBAC / privilege escalation
+- IDOR/BOLA
+- SQL injection
+- NoSQL injection where applicable
+- Command injection
+- XSS
+- CSRF
+- SSRF
+- CORS
+- Security headers
+- Session/token security
+- JWT security if applicable
+- Password storage
+- Secrets management
+- Sensitive-data exposure
+- Input validation
+- Output encoding
+- File-upload security
+- Path traversal
+- Rate limiting
+- Brute-force protection
+- Account enumeration
+- Error-message leakage
+- Logging and audit trails
+- Dependency vulnerabilities
+- Supply-chain risks
+- Secure HTTP/TLS configuration
+- Database security
+- API abuse
+- Business-logic vulnerabilities
+- Race conditions where relevant
+- Secure handling of third-party APIs
+- Production configuration
+
+For each area, explain:
+1. What the risk is
+2. What coding practice prevents it
+3. What should be tested during VAPT
+4. What automated tests/checks can catch it
+
+## 5. Secure development lifecycle
+
+Propose a development workflow where security is checked continuously.
+
+Include recommendations for:
+- Linting
+- Formatting
+- Type checking
+- Unit tests
+- Integration tests
+- API tests
+- Security tests
+- Dependency scanning
+- Secret scanning
+- SAST
+- DAST
+- Container scanning if containers are used
+- CI/CD security gates
+- Pre-commit checks
+- Production security checks
+
+Clearly distinguish what should happen during development versus before production.
+
+## 6. API standards
+
+Define standards for:
+- Endpoint naming
+- HTTP methods
+- Status codes
+- Request/response schemas
+- Pagination
+- Filtering/sorting
+- Error responses
+- Validation errors
+- Authentication
+- Authorization
+- Rate limiting
+- Versioning
+- Idempotency
+- File endpoints
+- Sensitive endpoints
+- Audit logging
+
+## 7. Frontend security standards
+
+Explain how React should be developed to minimize:
+- XSS
+- Token leakage
+- Sensitive data exposure
+- Unsafe HTML rendering
+- Insecure localStorage usage
+- Broken authorization assumptions
+- Client-side-only security controls
+- Dependency vulnerabilities
+- API misuse
+
+Make it clear which security controls MUST be enforced on the backend even if the frontend also performs checks.
+
+## 8. Database/security standards
+
+Explain recommended practices for:
+- Queries
+- ORM usage
+- Parameterization
+- Transactions
+- Least privilege
+- Sensitive fields
+- Migrations
+- Indexes
+- Data validation
+- Data retention
+- Backups
+- Auditability
+
+## 9. Code review checklist
+
+Create a practical checklist that can be used before merging every feature.
+
+It should cover:
+- Correctness
+- Maintainability
+- Architecture
+- Constants/configuration
+- Error handling
+- Validation
+- Authentication
+- Authorization
+- Security
+- Performance
+- Testing
+- Logging
+- Secrets
+- Dependencies
+
+## 10. VAPT checklist
+
+Create a separate checklist for a future VAPT/security assessment.
+
+Map the checks to relevant OWASP categories where possible.
+
+Clearly distinguish:
+- Things developers should prevent in code
+- Things automated tools can detect
+- Things that require manual penetration testing
+- Things that require business-logic testing
+
+Do NOT claim that following coding standards alone means the application is VAPT-certified or secure. Explain the limitations.
+
+## 11. Project-specific recommendations
+
+Based on what you find in my current repository, identify:
+- Existing patterns that are already good
+- Standards that appear to be missing
+- Potential security risks
+- Architectural inconsistencies
+- Hardcoded/magic values that may need attention
+- Areas that should receive special VAPT attention
+
+Do not fix any of these yet.
+
+## 12. Final deliverable
+
+At the end, provide:
+
+### A. Recommended Engineering Standard
+A concise set of rules that you will follow for future implementation.
+
+### B. Security/VAPT Standard
+A concise set of security rules that you will follow for future implementation.
+
+### C. Project-Specific Findings
+Issues or risks you observed in the existing project.
+
+### D. Priority Matrix
+Categorize findings as:
+- Critical
+- High
+- Medium
+- Low
+- Informational
+
+Do NOT assign severity merely because something is stylistically imperfect. Use security impact/relevance when assigning security severity.
+
+### E. Proposed Development Workflow
+Describe the process you recommend we follow for future changes.
+
+### F. Questions / Decisions Needed
+List anything you need me to decide before implementation begins.
+
+### G. Explicit confirmation
+End by confirming:
+
+"Analysis only completed. No project files were modified."
+
+Again: **DO NOT IMPLEMENT OR MODIFY ANYTHING IN THIS TASK.**

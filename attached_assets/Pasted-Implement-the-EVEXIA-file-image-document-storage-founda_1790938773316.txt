@@ -1,0 +1,624 @@
+Implement the **EVEXIA file/image/document storage foundation**.
+
+The project already has its established **EVEXIA Engineering and Security Standards**. Those standards are mandatory for this implementation and for all future backend work.
+
+Before coding, inspect the existing backend, database models, existing storage-related code, configuration, and migrations. Then implement the smallest clean solution that fits the existing architecture.
+
+## IMPORTANT DOMAIN MODEL
+
+This project does **NOT** use tenants.
+
+Do NOT introduce:
+- `tenant_id`
+- tenant folders
+- tenant middleware
+- tenant abstractions
+- multi-tenant authorization
+
+The relevant domain entities are:
+
+- **Super Admin** — system-level administrator
+- **MR** — Medical Representative/user
+- **Patient** — patient record
+- Patient/MR relationships
+- Documents/images/files belonging to those entities
+
+Use the actual existing project models and naming where they already exist.
+
+---
+
+# 1. STORAGE REQUIREMENT
+
+Do NOT store images/files/documents as PostgreSQL BLOBs.
+
+Files must be stored as filesystem objects during the current development phase.
+
+The storage design must be **S3-compatible from day one** so that later we can move the same objects to Amazon S3 without rewriting business logic.
+
+The application must never depend directly on whether storage is:
+
+- Local filesystem
+- Amazon S3
+- S3-compatible object storage
+
+Use a storage abstraction.
+
+---
+
+# 2. STORAGE ABSTRACTION
+
+Create a clear storage interface/service.
+
+Business/application code should interact with something conceptually like:
+
+```text
+StorageService
+    put(...)
+    get(...)
+    delete(...)
+    exists(...)
+    head(...)
+    generate_download_url(...)
+```
+
+The exact interface should follow the existing codebase conventions.
+
+Implement adapters such as:
+
+```text
+LocalStorageAdapter
+S3StorageAdapter
+```
+
+The business/domain layer MUST NOT directly call:
+
+```text
+open()
+os.path...
+pathlib...
+boto3...
+S3 SDK...
+```
+
+for file persistence.
+
+Those implementation details belong inside the storage adapter.
+
+---
+
+# 3. LOCAL STORAGE
+
+For now, use local filesystem storage.
+
+The storage root must be configurable.
+
+Example:
+
+```text
+LOCAL_STORAGE_ROOT=/data/evexia-storage
+```
+
+Do not hardcode an absolute filesystem path.
+
+Do not store files inside arbitrary application source directories unless explicitly configured.
+
+---
+
+# 4. OBJECT KEY DESIGN
+
+Use **logical S3-compatible object keys**.
+
+The logical object key must be independent of the physical storage backend.
+
+For example:
+
+```text
+patients/{patient_id}/profile/{uuid}.jpg
+
+patients/{patient_id}/documents/{uuid}.pdf
+
+patients/{patient_id}/prescriptions/{uuid}.pdf
+
+patients/{patient_id}/reports/{uuid}.pdf
+
+mrs/{mr_id}/profile/{uuid}.jpg
+
+mrs/{mr_id}/documents/{uuid}.pdf
+```
+
+Use the existing domain categories where appropriate.
+
+The exact categories should be based on the current EVEXIA data model rather than inventing unnecessary categories.
+
+## IMPORTANT
+
+Do NOT use:
+
+```text
+mrs/{mr_id}/patients/{patient_id}/...
+```
+
+as the default patient storage identity unless the existing domain model specifically requires it.
+
+Prefer:
+
+```text
+patients/{patient_id}/...
+```
+
+because the database should determine which MR can access a patient.
+
+This means that if a patient is reassigned to another MR later, the physical storage object does not need to move.
+
+---
+
+# 5. LOGICAL KEY VS PHYSICAL PATH
+
+The database should store the logical object key.
+
+Example:
+
+```text
+patients/p123/documents/550e8400-e29b-41d4-a716-446655440000.pdf
+```
+
+Do NOT store:
+
+```text
+/var/data/evexia/patients/p123/documents/file.pdf
+```
+
+The physical local path is an implementation detail.
+
+For example:
+
+```text
+Logical key:
+patients/p123/documents/abc123.pdf
+
+Local:
+<data-root>/patients/p123/documents/abc123.pdf
+
+Future S3:
+s3://<bucket>/patients/p123/documents/abc123.pdf
+```
+
+The logical key must remain unchanged during migration to S3.
+
+---
+
+# 6. DATABASE METADATA
+
+Do NOT store the actual file contents in PostgreSQL.
+
+Store file metadata in a database table/model.
+
+Use the existing project naming conventions.
+
+The metadata should contain only what is actually required, potentially including:
+
+- Internal file/document ID
+- Patient ID or MR ID where applicable
+- Object key
+- Original filename
+- Content type
+- File size
+- Checksum/hash where useful
+- Upload/verification state
+- Storage backend if required by the existing design
+- Created timestamp
+- Created-by identity
+
+Do not blindly add every possible field.
+
+Inspect the existing models first and reuse existing concepts where appropriate.
+
+---
+
+# 7. FILE OWNERSHIP AND AUTHORIZATION
+
+The storage object key is NOT an authorization mechanism.
+
+A user must never be allowed to access a file merely because they know its object key.
+
+For patient files:
+
+1. Authenticate the MR.
+2. Identify the authenticated MR.
+3. Determine from the database whether that MR has access to the patient.
+4. Determine whether the requested action is allowed.
+5. Only then access the storage object.
+
+Conceptually:
+
+```text
+MR
+ ↓
+Authenticate
+ ↓
+Patient ID
+ ↓
+Check MR ↔ Patient relationship
+ ↓
+Check requested action
+ ↓
+StorageService
+```
+
+If authorization fails, do not access the underlying object.
+
+Apply the same principle to MR-owned files.
+
+The Super Admin has system-level access according to its explicit authorization policy.
+
+Do NOT implement authorization using:
+
+```text
+if email == "..."
+```
+
+or by parsing folder names.
+
+---
+
+# 8. OBJECT-LEVEL SECURITY
+
+Backend authorization must protect:
+
+- Upload
+- Download
+- Read metadata
+- Delete
+- Replace/update
+- Generate signed download URLs
+- Bulk operations
+- Exports
+
+Do not assume that knowing:
+
+```text
+patient_id
+```
+
+or:
+
+```text
+object_key
+```
+
+is sufficient authorization.
+
+Explicitly test for IDOR/BOLA-style access.
+
+---
+
+# 9. FILE NAMES
+
+Never use user-provided filenames as the actual storage object identifier.
+
+Bad:
+
+```text
+patients/p123/documents/John_Report.pdf
+```
+
+Preferred:
+
+```text
+patients/p123/documents/550e8400-e29b-41d4-a716-446655440000.pdf
+```
+
+The original filename can be retained as metadata if needed for display/download.
+
+Prevent:
+
+- Path traversal
+- `../`
+- Absolute paths
+- Backslash traversal
+- Encoded traversal
+- Unexpected object-key manipulation
+
+Object keys must be generated and validated by the backend.
+
+---
+
+# 10. FILE UPLOAD SECURITY
+
+Design the storage foundation so secure uploads can be enforced.
+
+At minimum account for:
+
+- Maximum file size
+- Content-type validation
+- Magic-byte/file-signature validation
+- Extension validation
+- Generated object keys
+- Malicious filenames
+- Parser risks
+- Archive bombs
+- Malware scanning/quarantine
+- Post-upload verification
+
+Do not consider:
+
+```text
+Content-Type: image/jpeg
+```
+
+sufficient proof that a file is actually a JPEG.
+
+Do not expose newly uploaded objects as trusted/public content automatically.
+
+---
+
+# 11. UPLOAD STATE
+
+If the current architecture supports it, model a verification/scanning state rather than treating every uploaded file as immediately trusted.
+
+For example conceptually:
+
+```text
+UPLOADING
+PENDING_SCAN
+VERIFIED
+REJECTED
+```
+
+Use the existing project's conventions if equivalent concepts already exist.
+
+Do not introduce unnecessary workflow complexity if the current project does not need it yet, but make the design extensible for future malware scanning.
+
+---
+
+# 12. PRIVATE STORAGE
+
+Objects must be private by default.
+
+Do NOT make the storage bucket/filesystem publicly accessible.
+
+Downloads should occur only after backend authorization.
+
+If S3 signed URLs are later used:
+
+1. Authenticate user.
+2. Authorize object access.
+3. Generate a short-lived signed URL.
+4. Return only the URL and necessary metadata.
+
+Never allow arbitrary user-controlled S3 keys to be signed.
+
+---
+
+# 13. S3 ADAPTER
+
+Implement the S3 adapter behind the same storage abstraction.
+
+It must not be required for normal local development.
+
+Configuration should support something conceptually like:
+
+```text
+STORAGE_BACKEND=local
+```
+
+and later:
+
+```text
+STORAGE_BACKEND=s3
+```
+
+Potential S3 configuration:
+
+```text
+S3_BUCKET
+S3_REGION
+S3_ENDPOINT
+S3_ACCESS_KEY_ID
+S3_SECRET_ACCESS_KEY
+```
+
+Use the exact configuration style already used by the project.
+
+Credentials MUST come from managed secrets/environment configuration.
+
+Never hardcode them.
+
+Never put them in frontend configuration.
+
+---
+
+# 14. S3 MIGRATION
+
+The architecture must support this future migration:
+
+```text
+Current:
+
+LocalStorageAdapter
+       ↓
+<data-root>/patients/...
+```
+
+to:
+
+```text
+Future:
+
+S3StorageAdapter
+       ↓
+s3://bucket/patients/...
+```
+
+The logical object keys remain identical.
+
+The application/business services should not need to change.
+
+Document the future migration process conceptually:
+
+1. Freeze writes or establish migration consistency.
+2. Copy objects while preserving object keys.
+3. Verify counts/checksums.
+4. Configure S3 adapter.
+5. Validate access.
+6. Switch storage backend.
+7. Retain rollback capability.
+
+Do not perform an actual S3 migration now.
+
+---
+
+# 15. CONFIGURATION AND CONSTANTS
+
+Follow the project's established constants/configuration policy.
+
+Do NOT create one giant global constants file.
+
+Storage-related configuration belongs in validated configuration.
+
+Examples:
+
+- Storage backend
+- Local storage root
+- Maximum upload size
+- Allowed content types
+- Signed URL expiry
+- S3 bucket
+- S3 region
+- S3 endpoint
+
+Every security-sensitive limit must have:
+
+- Clear name
+- Explicit unit
+- Validation
+- Safe bounds
+- Appropriate ownership
+
+For example, avoid unexplained:
+
+```text
+MAX_SIZE = 10485760
+```
+
+Prefer configuration whose meaning and unit are obvious.
+
+---
+
+# 16. SECURITY / VAPT
+
+The implementation must specifically consider:
+
+### OWASP/API risks
+
+- Broken object-level authorization / IDOR / BOLA
+- Broken function-level authorization
+- Path traversal
+- Malicious file uploads
+- Resource exhaustion
+- Sensitive data exposure
+- SSRF if remote URLs/imports are ever supported
+- Injection through filenames/metadata
+- Unauthorized signed URLs
+- Cross-user access
+
+### Manual VAPT scenarios
+
+Future testing must include:
+
+- MR A attempting to access MR B's file
+- MR A attempting to access Patient B
+- Changing patient IDs
+- Changing file IDs
+- Manipulating object keys
+- Attempting path traversal
+- Downloading deleted/unauthorized objects
+- Reusing expired signed URLs
+- Requesting signed URLs for unauthorized objects
+- Uploading malformed files
+- Uploading oversized files
+- Uploading MIME/content mismatches
+- Concurrent upload/delete operations
+
+Do not claim that implementing this foundation means VAPT has passed.
+
+---
+
+# 17. LOGGING
+
+Do not log:
+
+- File contents
+- Passwords
+- Access tokens
+- S3 credentials
+- Signed URLs
+- Encryption keys
+- Unnecessary patient information
+
+Use structured logging and request/correlation IDs according to the established EVEXIA standard.
+
+---
+
+# 18. TESTING
+
+Create appropriate tests.
+
+### LocalStorageAdapter
+
+Test:
+
+- Put
+- Get
+- Delete
+- Exists
+- Metadata/head
+- Invalid keys
+- Traversal attempts
+- Missing objects
+- Large-object boundaries where appropriate
+
+### Authorization
+
+Test:
+
+- Authorized MR can access authorized patient file.
+- Unauthorized MR cannot access patient file.
+- MR cannot access another MR's private file.
+- Unauthorized delete fails.
+- Unauthorized signed URL generation fails.
+- Super Admin follows its explicit system-level authorization policy.
+
+### Object keys
+
+Test:
+
+- Generated keys are safe.
+- User filenames cannot control the final object path.
+- Traversal is rejected.
+- Absolute paths are rejected.
+- Keys cannot escape the configured local root.
+
+### Database
+
+Test:
+
+- Metadata persistence.
+- Relationships.
+- Deletion behavior.
+- Transaction rollback.
+
+### S3
+
+Unit/integration tests should mock or use a test S3-compatible service where appropriate.
+
+Normal tests must NOT require production AWS credentials.
+
+---
+
+# 19. DO NOT IMPLEMENT THESE YET
+
+For this task, do NOT:
+
+- Build the complete patient document management UI.
+- Build a complete upload UI

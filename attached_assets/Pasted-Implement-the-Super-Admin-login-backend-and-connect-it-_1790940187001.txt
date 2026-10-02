@@ -1,0 +1,178 @@
+Implement the Super Admin login backend and connect it to the existing Admin login UI.
+Do NOT redesign, rebuild, or replace the existing Admin login UI. Reuse the current UI and integrate it with the backend authentication system.
+Follow the established EVEXIA Engineering and Security Standards for this and all future backend work.
+Super Admin account
+Create the system-level Super Admin with:
+Login email: crm-admin@allergyevexia.in
+The Super Admin must be a protected, system-level identity.
+It must:
+* Never be deletable through normal application APIs.
+* Never be disabled through normal user-management APIs.
+* Never have its Super Admin privilege removed.
+* Never be converted into an ordinary admin/member.
+* Not depend on an ordinary tenant membership for its system-level identity.
+* Be explicitly represented as a Super Admin/system identity rather than relying on the email address as a security check.
+Password
+The initial Super Admin password will be provided through a Replit Secret/environment variable.
+Use a clearly named secret such as:
+SUPER_ADMIN_INITIAL_PASSWORD
+IMPORTANT:
+* Do NOT hardcode the password in source code.
+* Do NOT put the password in migrations.
+* Do NOT put it in seed files.
+* Do NOT put it in frontend code.
+* Do NOT commit it to Git.
+* Do NOT print it in logs.
+* Do NOT return it through an API.
+* Do NOT include the actual password in generated documentation.
+If the secret is missing during first-time bootstrap, fail safely with a clear configuration error rather than generating a predictable password.
+Password storage
+The password MUST NOT be encrypted.
+Hash it using the project's existing Argon2id password hashing implementation.
+Never store plaintext passwords.
+Do not introduce another password hashing algorithm if the existing authentication implementation already provides Argon2id.
+Seed behavior
+Create an idempotent Super Admin bootstrap/seed.
+On first initialization:
+* Read SUPER_ADMIN_INITIAL_PASSWORD from the managed secret.
+* Create crm-admin@allergyevexia.in as the protected Super Admin.
+* Hash the password with Argon2id.
+* Store only the hash.
+* Set the explicit system/Super Admin identity.
+* Apply the appropriate security defaults.
+On every subsequent deployment:
+* Run the same existence check safely.
+* If the Super Admin already exists, DO NOT recreate it.
+* DO NOT overwrite the password.
+* DO NOT reset the password.
+* DO NOT overwrite security settings unexpectedly.
+* DO NOT create another Super Admin.
+The seed must therefore be safe to execute repeatedly.
+Existing authentication
+Reuse the existing authentication foundation.
+Do not create a second authentication system.
+Preserve the existing security properties including:
+* Argon2id password hashing
+* JWT validation
+* issuer validation
+* audience validation
+* expiry validation
+* token/session version checks where applicable
+* refresh-token rotation
+* hashed refresh-token storage
+* refresh-token reuse handling
+* password-change revocation
+Existing UI
+The Admin login UI already exists.
+Connect that UI to the backend authentication endpoints.
+Do NOT:
+* redesign the page
+* create a new login page
+* duplicate the login UI
+* remove existing UI behavior unnecessarily
+* put authentication secrets into React/frontend code
+The frontend should submit credentials to the backend over the existing API mechanism.
+The backend remains the authoritative security boundary.
+Authentication API
+Reuse the existing authentication routes if they already support login.
+If they do not, extend them consistently rather than creating a parallel authentication API.
+Implement the minimum required flow:
+1. Login
+2. Refresh
+3. Logout/revocation
+4. Current authenticated identity
+Return safe response schemas.
+Never return:
+* password hashes
+* passwords
+* refresh tokens in unsafe response bodies
+* encryption keys
+* internal security fields
+Super Admin authorization
+Implement explicit Super Admin authorization.
+Do NOT use:
+email == "crm-admin@allergyevexia.in"
+as the authorization mechanism.
+The email is the login identifier.
+Authorization must use an explicit system identity/role/permission representation.
+Ordinary admin users must NOT automatically receive Super Admin access.
+Security controls
+Apply the existing security standard, including:
+* Brute-force/rate-limit protection
+* Generic login failure responses
+* Input bounds
+* Safe error handling
+* Secure session/token handling
+* Refresh-token rotation
+* Token revocation
+* No sensitive information in logs
+* Audit logging for security-sensitive Super Admin actions
+Super Admin protection
+Ensure normal user-management functionality cannot:
+* Delete the Super Admin
+* Disable the Super Admin
+* Remove Super Admin privilege
+* Change it into an ordinary user
+* Create another protected Super Admin accidentally
+Enforce these rules in the backend service layer, not merely in the UI.
+Where practical, reinforce the invariant at the database layer.
+Encryption
+Do not encrypt the password.
+For any other recoverable sensitive Super Admin field that genuinely requires encryption, use authenticated encryption such as AES-256-GCM.
+Encryption keys MUST remain outside PostgreSQL and must be provided through an appropriate managed secret/KMS mechanism.
+Do not store encryption keys next to ciphertext.
+Do not encrypt ordinary fields unnecessarily.
+Tests
+Add/update tests for:
+Login
+* Correct Super Admin credentials
+* Incorrect password
+* Unknown email
+* Safe/generic failure behavior
+* Rate limiting
+* Token generation
+* Token validation
+Seed
+* First deployment creates Super Admin
+* Second deployment does not create a duplicate
+* Existing password is never overwritten
+* Missing initial-password secret fails safely
+* Seed is idempotent
+Protection
+* Super Admin cannot be deleted
+* Super Admin cannot be disabled
+* Super Admin cannot lose Super Admin privilege
+* Ordinary admin cannot become Super Admin
+* Another Super Admin cannot be created accidentally
+Authorization
+* Super Admin can access authorized system-level functionality
+* Ordinary admin cannot access Super Admin-only functionality
+* Other roles cannot access it
+Security
+* No password appears in logs
+* No password is returned by APIs
+* Password database value is an Argon2id hash
+* Refresh-token security remains intact
+Important implementation rule
+Before modifying files, briefly inspect the existing:
+* Admin login UI
+* Authentication routes
+* Authentication service
+* User/membership models
+* Database migrations
+* Configuration/settings
+* Existing authentication tests
+Then implement the smallest clean change necessary.
+Do NOT perform unrelated refactoring.
+Do NOT modify unrelated frontend functionality.
+After implementation, report:
+1. Files changed
+2. Database/migration changes
+3. Authentication flow
+4. Super Admin protection mechanism
+5. Seed behavior
+6. Tests added/run
+7. Any remaining security prerequisites
+The actual initial password MUST be supplied through the Replit Secret:
+SUPER_ADMIN_INITIAL_PASSWORD
+Do not ask me to place the password in source code or in this prompt.

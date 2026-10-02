@@ -1,0 +1,679 @@
+We are now beginning BACKEND DEVELOPMENT for this project.
+
+Use the previously completed Engineering and Security Standards assessment as the governing standard for all backend implementation.
+
+The backend is:
+- FastAPI
+- Python
+- Pydantic
+- Synchronous SQLAlchemy
+- PostgreSQL
+- Alembic
+
+The goal is to build the backend in a way that is maintainable, testable, secure-by-design, and ready for future VAPT.
+
+## 1. IMPORTANT DEVELOPMENT RULE
+
+Before implementing each feature:
+
+1. Understand the business requirement.
+2. Identify the domain/business rules.
+3. Identify authentication and authorization requirements.
+4. Identify tenant/object/action/field-level access requirements.
+5. Identify security threats and abuse cases.
+6. Identify constants/configuration involved.
+7. Define request/response schemas.
+8. Define transaction and concurrency requirements.
+9. Define tests.
+10. Then implement.
+
+Do not blindly implement the shortest working solution.
+
+Prefer explicit, maintainable code over clever abstractions.
+
+---
+
+# 2. BACKEND ARCHITECTURE
+
+Follow this responsibility model:
+
+### Routers
+Routers should:
+- Receive HTTP requests.
+- Validate/parse inputs through Pydantic.
+- Obtain dependencies.
+- Call application/domain services.
+- Select response schemas.
+- Translate known domain exceptions into HTTP responses.
+
+Routers MUST NOT contain:
+- Significant business logic.
+- Complex database queries.
+- Authorization logic duplicated across endpoints.
+- Transaction orchestration.
+- Provider implementation details.
+
+### Services
+
+Services own:
+- Business use cases.
+- Business rules.
+- Authorization decisions.
+- Transaction boundaries.
+- State transitions.
+- Idempotency.
+- Concurrency rules.
+- Coordination between repositories/providers.
+
+### Repositories
+
+Repositories own database persistence/query concerns where abstraction is useful.
+
+Do not create meaningless repository wrappers around every single ORM operation.
+
+Repositories MUST NOT independently commit transactions when called inside a larger service operation.
+
+### Infrastructure
+
+Keep external integrations behind explicit adapters/services:
+- Email
+- Storage
+- External APIs
+- Webhooks
+- Other providers
+
+Do not scatter provider SDK calls throughout business logic.
+
+---
+
+# 3. PYTHON STANDARDS
+
+Use:
+
+- Type hints.
+- Explicit return types for public functions.
+- snake_case for variables/functions.
+- PascalCase for classes.
+- UPPER_SNAKE_CASE for named constants.
+- Small, focused functions.
+- Explicit domain models instead of arbitrary dictionaries where practical.
+
+Avoid:
+- `Any` unless genuinely necessary.
+- Unstructured dictionaries for domain data.
+- Hidden global state.
+- Circular dependencies.
+- Huge modules.
+- God classes.
+- Premature abstraction.
+- Duplicate business rules.
+
+Use dependency injection for:
+- Settings.
+- Database sessions.
+- Current authenticated user.
+- Providers/adapters.
+- Other request-scoped dependencies.
+
+---
+
+# 4. PYDANTIC / API SCHEMAS
+
+Use separate schemas for:
+
+- Create
+- Update
+- Response
+- Internal/domain representations where appropriate
+
+Never expose ORM models directly as API contracts.
+
+For writable requests:
+- Explicitly allow only intended fields.
+- Reject unexpected fields where appropriate.
+- Apply meaningful size/range constraints.
+- Validate relationships between fields.
+- Validate business rules in the service layer.
+
+Do not assume frontend validation is sufficient.
+
+---
+
+# 5. DATABASE RULES
+
+Use PostgreSQL and SQLAlchemy consistently.
+
+Rules:
+
+- Parameterized queries only.
+- No string-built SQL using user input.
+- Review every raw SQL statement separately.
+- Use foreign keys.
+- Use unique constraints where required.
+- Use database CHECK constraints where appropriate.
+- Add indexes based on actual access patterns.
+- Include tenant predicates wherever tenant isolation is required.
+- Keep transactions explicit.
+- Keep transactions short.
+- Never perform slow external calls while holding database locks.
+- Test rollback behavior.
+- Test concurrent operations where business state can race.
+
+Do not use startup table creation.
+
+Use Alembic migrations.
+
+Migration changes must consider:
+- Existing data.
+- Lock duration.
+- Backward compatibility.
+- Rollback strategy.
+- Production deployment order.
+
+---
+
+# 6. TRANSACTION STANDARD
+
+Every atomic business operation should have a clearly defined transaction boundary.
+
+For each operation ask:
+
+- What must succeed together?
+- What can safely happen afterward?
+- What happens if the operation fails halfway?
+- Can the request be retried?
+- Can two requests execute simultaneously?
+- Do we need optimistic locking, row locking, or an idempotency key?
+
+Never assume that a successful HTTP response automatically means the business operation was safely completed.
+
+---
+
+# 7. AUTHENTICATION
+
+Use the existing authentication foundation rather than creating a second authentication system.
+
+The existing assessment indicates that the project already has:
+
+- Argon2id password hashing.
+- JWT algorithm/issuer/audience/expiry validation.
+- Membership and token-version checks.
+- Refresh-token rotation.
+- Hashed refresh-token storage.
+- Refresh reuse handling.
+- Password-change revocation.
+
+Preserve these security properties.
+
+For every protected endpoint explicitly determine:
+
+- Who is authenticated?
+- Which tenant/organization do they belong to?
+- What role do they have?
+- What permission do they require?
+- Which object are they allowed to access?
+- Which fields may they modify?
+
+Never rely on frontend authorization.
+
+---
+
+# 8. AUTHORIZATION
+
+Authorization must be backend-enforced.
+
+Use deny-by-default behavior.
+
+Do not implement authorization as:
+
+    if user.role == "admin":
+
+unless role alone genuinely represents the required permission.
+
+Separate:
+
+- Identity
+- Role
+- Permission
+- Tenant
+- Object ownership/access
+- Action
+- Writable fields
+
+Remember:
+
+Role != permission.
+
+Every protected operation must consider:
+- Tenant access.
+- Object access.
+- Action permission.
+- Field-level write permissions where applicable.
+
+Test cross-tenant and cross-user access explicitly.
+
+---
+
+# 9. SECURITY / VAPT REQUIREMENTS
+
+Implement security controls as part of the feature rather than adding them later.
+
+For every endpoint consider:
+
+### Authentication
+- Missing token
+- Expired token
+- Invalid token
+- Wrong issuer
+- Wrong audience
+- Wrong algorithm
+- Revoked session/token
+
+### Authorization
+- Horizontal privilege escalation
+- Vertical privilege escalation
+- IDOR/BOLA
+- Cross-tenant access
+- Unauthorized fields
+- Bulk-operation abuse
+
+### Input
+- SQL injection
+- Command injection
+- Path traversal
+- Oversized values
+- Unexpected fields
+- Malformed data
+- Resource exhaustion
+
+### API abuse
+- Rate limiting
+- Pagination limits
+- Request-size limits
+- Expensive query protection
+- Concurrency limits where required
+
+### Data exposure
+- Response-field allowlisting
+- Safe errors
+- No credentials in logs
+- No tokens in logs
+- No sensitive data in URLs
+- No unnecessary sensitive fields
+
+### Files
+If a feature handles files:
+- Authenticate before upload/download.
+- Authorize object ownership/access.
+- Validate size.
+- Validate type/signature.
+- Prevent traversal.
+- Use generated object keys.
+- Keep objects private.
+- Plan quarantine/scanning.
+- Verify objects after upload before exposure.
+
+The project's existing storage foundations are not yet considered production-ready until ownership, scanning, and post-upload verification are implemented.
+
+---
+
+# 10. API DESIGN
+
+Continue `/api/v1`.
+
+Use:
+
+GET    = read
+POST   = create/explicit command
+PATCH  = partial update
+PUT    = replacement where appropriate
+DELETE = delete/remove
+
+Use appropriate status codes:
+
+200
+201
+202 only for genuinely asynchronous operations
+204
+400 where appropriate
+401
+403
+404
+409
+413
+415
+422
+429
+5xx
+
+Use one consistent error structure.
+
+Errors should contain, where appropriate:
+
+- machine-readable error code
+- safe human-readable message
+- request/correlation ID
+- safe field-level errors
+
+Never return:
+- passwords
+- tokens
+- secrets
+- SQL errors
+- stack traces
+- provider credentials
+- sensitive submitted request bodies
+
+The existing assessment specifically identified that the current `detail`-style errors need a consistent machine-readable code and field-error convention.
+
+---
+
+# 11. CONSTANTS AND CONFIGURATION
+
+This is VERY IMPORTANT for this project.
+
+Do not scatter magic values throughout the backend.
+
+But also do NOT create one enormous `constants.py`.
+
+Use domain ownership.
+
+### Domain constants
+
+Examples:
+- Document types
+- Workflow limits
+- Supported currencies
+
+Keep them with the owning domain.
+
+### Enums
+
+Use enums for stable domain states such as:
+- Receipt status
+- Membership role
+- Audit outcome
+
+### Configuration
+
+Use validated settings for:
+- API configuration
+- CORS
+- Database pool
+- Token lifetimes
+- Upload limits
+- Rate limits
+- Provider endpoints
+
+### Secrets
+
+Secrets MUST:
+- Come from managed secrets/environment configuration.
+- Never be committed.
+- Never appear in frontend configuration.
+- Never appear in logs.
+
+The assessment specifically requires secrets to remain backend-only and says public frontend configuration must never contain secrets.
+
+Every operational value should have:
+- Owner
+- Unit
+- Safe default where appropriate
+- Validated bounds
+- Clear reason for existence
+
+For example, do not write:
+
+    timeout = 900
+
+Prefer a clearly named configuration value whose unit and purpose are obvious.
+
+---
+
+# 12. MONEY / FINANCIAL DATA
+
+Never use binary floating-point arithmetic for money.
+
+Use:
+- Decimal
+OR
+- Explicit integer minor units
+
+Centralize:
+- Currency
+- Precision
+- Rounding
+- Tax treatment
+- Quantity precision
+
+Do not reconstruct historical financial documents from current balances.
+
+Preserve historical amounts and snapshots.
+
+---
+
+# 13. DATE / TIME
+
+Use timezone-aware UTC timestamps for events.
+
+Use plain business dates when a time is not semantically required.
+
+Do not mix naive and timezone-aware datetimes.
+
+Document timezone assumptions for business-specific calculations.
+
+---
+
+# 14. LOGGING
+
+Use structured logging.
+
+Useful fields may include:
+- Request ID
+- Correlation ID
+- Action
+- Outcome
+- Duration
+- Actor ID
+- Tenant ID
+
+NEVER log:
+- Passwords
+- Access tokens
+- Refresh tokens
+- Secrets
+- Full sensitive request bodies
+- Signed URLs
+- Unnecessary patient/staff information
+
+---
+
+# 15. EXCEPTION HANDLING
+
+Use domain-specific exceptions.
+
+Centralize conversion from domain exceptions to HTTP responses.
+
+Do not:
+
+- `except Exception: pass`
+- swallow failures
+- return success after failed writes
+- expose stack traces to clients
+
+Unexpected exceptions should produce safe 5xx responses and be logged appropriately.
+
+---
+
+# 16. TESTING REQUIREMENTS
+
+Every new backend feature should include appropriate tests.
+
+At minimum, consider:
+
+### Unit tests
+Business rules and pure logic.
+
+### API tests
+- Request validation
+- Response contracts
+- Authentication
+- Authorization
+- Error behavior
+
+### PostgreSQL integration tests
+- Queries
+- Constraints
+- Transactions
+- Rollbacks
+
+### Security tests
+- Unauthorized access
+- Cross-tenant access
+- IDOR/BOLA
+- Privilege escalation
+- Invalid tokens
+- Boundary inputs
+
+### Concurrency tests
+Where applicable:
+- Duplicate requests
+- Concurrent updates
+- Race conditions
+- Idempotency
+
+Do not consider "happy path works" sufficient.
+
+---
+
+# 17. API CONTRACT
+
+Use one authoritative OpenAPI contract.
+
+Do not manually maintain duplicated API definitions when they can be generated safely.
+
+If generated clients/schemas are used:
+- Generate reproducibly.
+- Detect unexplained contract drift.
+- Keep backend behavior and contract synchronized.
+
+The existing shared OpenAPI specification currently does not represent the backend authentication API, so do not assume the current generated contract is complete.
+
+---
+
+# 18. SECURE DEVELOPMENT GATES
+
+For backend changes, eventually establish:
+
+- Formatting
+- Ruff/linting
+- mypy or Pyright
+- Unit tests
+- API tests
+- PostgreSQL integration tests
+- Contract tests
+- Dependency scanning
+- Secret scanning
+- SAST
+- DAST before production
+- Security regression tests
+
+Do not claim that these tools prove the application is secure.
+
+Manual VAPT is still required before production.
+
+---
+
+# 19. IMPLEMENTATION DISCIPLINE
+
+For every feature:
+
+### Step 1
+Explain the intended architecture briefly.
+
+### Step 2
+Identify:
+- Files/modules involved
+- Database changes
+- API contract changes
+- Security implications
+- Constants/configuration
+- Tests required
+
+### Step 3
+Implement the smallest clean change.
+
+### Step 4
+Run relevant tests/checks.
+
+### Step 5
+Review the implementation specifically for:
+- Authentication
+- Authorization
+- Tenant isolation
+- Injection
+- Data exposure
+- Resource exhaustion
+- Error handling
+- Logging
+- Race conditions
+- Constants/configuration
+
+### Step 6
+Report:
+- What changed
+- Why
+- Tests performed
+- Security considerations
+- Any remaining risks
+
+Do not make unrelated refactors while implementing a feature.
+
+---
+
+# 20. IMPORTANT CURRENT PROJECT CONSTRAINTS
+
+Respect the existing project decisions unless I explicitly change them.
+
+In particular:
+- Backend is FastAPI/PostgreSQL/SQLAlchemy/Alembic.
+- Current portal is JavaScript/JSX.
+- Do not migrate the frontend to TypeScript without my approval.
+- Current portal data is fictional/demo data.
+- Do not silently migrate browser-local data into production storage.
+- Do not expose real patient/staff data until authentication, authorization, persistence, and production controls are implemented and verified.
+- Do not assume portal roles automatically equal backend authorization roles.
+
+These constraints are explicitly identified in the current assessment.
+
+---
+
+# 21. HOW TO WORK WITH ME
+
+When I give you a backend feature request:
+
+1. First understand the requirement.
+2. Identify security and architectural implications.
+3. State any assumptions.
+4. Implement only what is required.
+5. Add/update appropriate tests.
+6. Run relevant checks.
+7. Report any remaining risks.
+
+If a requirement conflicts with the engineering/security standard, STOP and explain the conflict before implementing.
+
+Do not silently weaken a security control for convenience.
+
+Do not introduce a new library when the existing stack can reasonably solve the problem.
+
+Do not add abstractions merely to make the architecture look sophisticated.
+
+Prefer simple, explicit, testable, secure code.
+
+## Final principle
+
+**Backend security is authoritative.**
+
+Frontend validation, hidden buttons, route guards, and UI permissions are usability features—not security boundaries.
+
+Every security-sensitive rule must be enforceable and tested on the backend.
