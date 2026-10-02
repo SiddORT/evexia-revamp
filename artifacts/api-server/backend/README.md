@@ -116,6 +116,23 @@ absolute expiry and persistence mode; it does not extend a family. Logout revoke
 the owning session and all its refresh credentials; already issued access JWTs
 become unusable immediately. Password or identity changes likewise invalidate
 sessions and tokens immediately through session state and database version checks.
+`POST /api/v1/auth/logout` is the single self-logout operation for both Super Admin
+and MR. It uses only the validated opaque refresh cookie to identify the cookie's
+persisted session; request bodies, query IDs, bearer claims, and caller-supplied
+identity/session identifiers are not authority. This narrow cookie-authenticated
+operation does not require a still-valid access bearer: expired or malformed
+bearers are ignored, rather than weakening bearer authentication on other routes.
+The same-origin `Origin` check remains mandatory. Logout is safe `204` whether the
+cookie is absent, unknown, malformed, expired, or already revoked, and never
+reveals whether a submitted credential belongs to a session. It clears the cookie
+with the matching name/path and HttpOnly, SameSite=Strict attributes; production
+uses Secure, `Path=/`, and `__Host-evexia_refresh`. Session revocation and refresh
+chain invalidation are committed together. Every protected request checks live
+session state and user/session versions, so existing access JWTs fail immediately
+after logout; replaying an old or rotated refresh credential cannot resurrect the
+session. A logout audit event is recorded only for a meaningful session
+termination, with safe outcome, request ID, actor and session ID; harmless absent,
+unknown, malformed, and repeated logout requests do not create audit noise.
 `GET /api/v1/auth/me`
 requires bearer auth. `POST /api/v1/auth/change-password` requires a current
 password of 1–128 characters, accepts a new password of 12–128 characters, and

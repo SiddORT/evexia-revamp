@@ -312,23 +312,45 @@ def rotate_refresh(db: Session, value: str, settings: Settings, request_id: str)
 
 def logout(db: Session, value: str | None, request_id: str) -> None:
     if value:
-        snapshot = repository.get_credential(db, token_digest(value))
-        if snapshot:
-            repository.lock_user(db, snapshot.user_id)
+        digest = token_digest(value)
+        snapshot = repository.get_credential(db, digest)
+        if snapshot and snapshot.session_id is None and snapshot.revoked_at is not None:
+            # Historical refresh rows revoked during the session migration are
+            # intentionally unbound. They cannot identify a session to revoke;
+            # treating their replay as an invalid-session failure would create
+            # noisy audit events for harmless legacy sign-out retries.
+            pass
+        elif snapshot:
+            # Use the persisted credential only to discover the lock order and
+            # candidate owner. Re-read it after User -> Session locks before
+            # making any state change, just as refresh rotation does.
+            user = repository.lock_user(db, snapshot.user_id)
             session = repository.get_session(db, snapshot.session_id, lock=True)
-            row = repository.get_credential(db, token_digest(value), lock=True)
-        else:
-            row = session = None
-        if row and session and session.status != "REVOKED":
-            # The browser may have sent the cookie just before a concurrent
-            # rotation committed. A consumed credential still identifies its
-            # owning session; sign-out must not leave the successor usable.
-            repository.revoke_session(db, session, "logout", request_id)
-            db.add(AuditEvent(
-                action="logout", outcome="success", request_id=request_id,
-                actor_id=row.user_id, organization_id=None,
-                resource_type="user", resource_id=row.user_id,
-            ))
+            row = repository.get_credential(db, digest, lock=True)
+            if (not user or not session or not row
+                    or row.user_id != snapshot.user_id
+                    or row.session_id != snapshot.session_id
+                    or session.user_id != snapshot.user_id
+                    or session.id != snapshot.session_id):
+                # A valid stored credential that no longer resolves to its
+                # persisted owner is meaningful unexpected state. Never use a
+                # request-supplied identifier to recover or broaden authority.
+                repository.event(
+                    db, "logout", "failure", request_id,
+                    user_id=snapshot.user_id, session_id=snapshot.session_id,
+                    reason="invalid_session",
+                )
+            elif session.status != "REVOKED":
+                # Even an expired or previously-consumed refresh credential
+                # identifies only its own session. Revoking the session also
+                # invalidates every credential in that session's chain.
+                transitioned = repository.revoke_session(db, session, "logout", request_id)
+                if transitioned:
+                    repository.event(
+                        db, "logout", "success", request_id,
+                        user_id=user.id, session_id=session.id,
+                        reason="expired" if session.expires_at <= utcnow() else None,
+                    )
     db.commit()
 
 

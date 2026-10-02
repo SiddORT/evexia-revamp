@@ -315,6 +315,10 @@ def test_refresh_racing_sign_out_cannot_leave_a_successor_usable():
             logout_future.result(timeout=20)
         with Session(engine) as db:
             assert db.get(AuthSession, sid).status == "REVOKED"
+            history = list(db.scalars(select(RefreshSession).where(
+                RefreshSession.session_id == sid,
+            )))
+            assert history and all(row.revoked_at is not None for row in history)
             if successor:
                 with pytest.raises(auth_service.AuthError):
                     auth_service.rotate_refresh(db, successor, settings, "logout-race-check")
@@ -323,6 +327,68 @@ def test_refresh_racing_sign_out_cannot_leave_a_successor_usable():
             db.execute(delete(AuditEvent).where(AuditEvent.session_id == sid))
             db.execute(delete(AuditEvent).where(AuditEvent.actor_id == user_id))
             db.execute(update(RefreshSession).where(RefreshSession.session_id == sid).values(replaced_by_id=None))
+            db.execute(delete(RefreshSession).where(RefreshSession.session_id == sid))
+            db.execute(delete(AuthSession).where(AuthSession.id == sid))
+            db.execute(delete(MRProfile).where(MRProfile.user_id == user_id))
+            db.execute(delete(User).where(User.id == user_id))
+            db.commit()
+
+
+def test_two_concurrent_logout_transactions_terminate_once_without_log_flood():
+    """Competing sign-outs use independent PostgreSQL connections and row locks."""
+    if get_settings().app_env == "production":
+        pytest.fail("Session concurrency tests refuse to connect with APP_ENV=production")
+    settings = get_settings()
+    engine = session_factory().kw["bind"]
+    user_id = uuid.uuid4()
+    with Session(engine, expire_on_commit=False) as db:
+        user = User(
+            id=user_id, email=f"concurrent-logout-{user_id.hex}@example.com",
+            username=f"cl{user_id.hex[:20]}", password_hash=hash_password(PASSWORD),
+            system_role="mr", identity_version=1,
+        )
+        db.add(user)
+        db.flush()
+        db.add(MRProfile(user_id=user.id, is_active=True))
+        db.flush()
+        _, raw = auth_service.login(
+            db, user.email, PASSWORD, settings, False, "concurrent-logout-setup", "127.0.0.1",
+        )
+        sid = db.scalar(select(RefreshSession.session_id).where(
+            RefreshSession.token_hash == token_digest(raw),
+        ))
+
+    gate = Barrier(2)
+
+    def sign_out(request_id):
+        with Session(engine, expire_on_commit=False) as db:
+            gate.wait(timeout=10)
+            auth_service.logout(db, raw, request_id)
+            return request_id
+
+    try:
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(sign_out, ("concurrent-logout-one", "concurrent-logout-two")))
+        assert len(results) == 2
+        with Session(engine) as db:
+            session = db.get(AuthSession, sid)
+            history = list(db.scalars(select(RefreshSession).where(
+                RefreshSession.session_id == sid,
+            )))
+            logout_events = list(db.scalars(select(AuditEvent).where(
+                AuditEvent.action == "logout", AuditEvent.session_id == sid,
+            )))
+            assert session.status == "REVOKED"
+            assert history and all(row.revoked_at is not None for row in history)
+            assert len(logout_events) == 1
+            assert logout_events[0].actor_id == user_id
+            assert logout_events[0].request_id in results
+    finally:
+        with Session(engine) as db:
+            db.execute(delete(AuditEvent).where(AuditEvent.session_id == sid))
+            db.execute(update(RefreshSession).where(
+                RefreshSession.session_id == sid,
+            ).values(replaced_by_id=None))
             db.execute(delete(RefreshSession).where(RefreshSession.session_id == sid))
             db.execute(delete(AuthSession).where(AuthSession.id == sid))
             db.execute(delete(MRProfile).where(MRProfile.user_id == user_id))
@@ -471,6 +537,359 @@ def test_independent_sessions_revoke_independently(client):
     )
     assert still_valid.status_code == 200, still_valid.text
     assert db.get(AuthSession, second_sid).status == "ACTIVE"
+
+
+@pytest.mark.parametrize("role", ["mr", "super_admin"])
+def test_logout_uses_the_common_cookie_session_termination_for_each_role(client, role, caplog):
+    api, db, settings = client
+    if role == "super_admin":
+        from pydantic import SecretStr
+        from app.bootstrap import bootstrap_super_admin
+
+        user_id = bootstrap_super_admin(db, SecretStr(PASSWORD)).user_id
+        user = db.get(User, user_id)
+    else:
+        user = create_user(db, "logout-current-mr@example.com")
+
+    signed_in = login(api, user.email)
+    assert signed_in.status_code == 200, signed_in.text
+    access = signed_in.json()["access_token"]
+    sid = session_id_from_response(signed_in, access)
+    raw_refresh = api.cookies.get("evexia_refresh")
+    assert raw_refresh
+
+    response = api.post(
+        "/api/v1/auth/logout", headers={"Origin": "http://testserver"},
+    )
+    assert response.status_code == 204
+    assert response.content == b""
+    assert db.get(AuthSession, sid).status == "REVOKED"
+    assert api.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {access}"},
+    ).status_code == 401
+
+    credentials = list(db.scalars(select(RefreshSession).where(
+        RefreshSession.session_id == sid,
+    )))
+    assert credentials and all(row.revoked_at is not None for row in credentials)
+    # A captured pre-logout credential cannot rotate or mint a new access token.
+    api.cookies.clear()
+    api.cookies.set("evexia_refresh", raw_refresh, path="/api/v1/auth")
+    rejected = api.post("/api/v1/auth/refresh", headers={"Origin": "http://testserver"})
+    assert rejected.status_code == 401
+    assert db.get(AuthSession, sid).status == "REVOKED"
+    assert all(row.revoked_at is not None for row in db.scalars(
+        select(RefreshSession).where(RefreshSession.session_id == sid),
+    ))
+
+    event = db.scalar(select(AuditEvent).where(
+        AuditEvent.action == "logout", AuditEvent.session_id == sid,
+    ))
+    assert event is not None
+    assert event.outcome == "success"
+    assert event.actor_id == user.id
+    assert event.request_id
+    assert raw_refresh not in str(event)
+    assert raw_refresh not in caplog.text
+    assert access not in caplog.text
+    assert "authorization" not in caplog.text.lower()
+
+
+def test_logout_ignores_client_identity_and_session_substitution_and_revokes_only_cookie_session(client):
+    api, db, _ = client
+    caller = create_user(db, "logout-owner@example.com")
+    other_mr = create_user(db, "logout-other-mr@example.com")
+    caller_first = login(api, caller.email)
+    caller_first_sid = session_id_from_response(caller_first, caller_first.json()["access_token"])
+    caller_cookie = api.cookies.get("evexia_refresh")
+
+    api.cookies.clear()
+    caller_second = login(api, caller.email)
+    caller_second_sid = session_id_from_response(caller_second, caller_second.json()["access_token"])
+    api.cookies.clear()
+    foreign = login(api, other_mr.email)
+    foreign_sid = session_id_from_response(foreign, foreign.json()["access_token"])
+    foreign_cookie = api.cookies.get("evexia_refresh")
+
+    # The same endpoint is used for Super Admin and MR self-logout; elevated
+    # callers still cannot designate a different session.
+    api.cookies.clear()
+    api.cookies.set("evexia_refresh", caller_cookie, path="/api/v1/auth")
+    response = api.post(
+        "/api/v1/auth/logout?session_id=" + foreign_sid,
+        headers={"Origin": "http://testserver"},
+        json={
+            "session_id": foreign_sid,
+            "user_id": str(other_mr.id),
+            "mr_id": str(other_mr.id),
+            "email": other_mr.email,
+        },
+    )
+    assert response.status_code == 204
+    assert db.get(AuthSession, caller_first_sid).status == "REVOKED"
+    assert db.get(AuthSession, caller_second_sid).status == "ACTIVE"
+    assert db.get(AuthSession, foreign_sid).status == "ACTIVE"
+    foreign_rows = list(db.scalars(select(RefreshSession).where(
+        RefreshSession.session_id == foreign_sid,
+    )))
+    assert foreign_rows and all(row.revoked_at is None for row in foreign_rows)
+
+    # An MR-provided Super Admin session identifier is equally non-authoritative.
+    from pydantic import SecretStr
+    from app.bootstrap import bootstrap_super_admin
+
+    admin_id = bootstrap_super_admin(db, SecretStr(PASSWORD)).user_id
+    api.cookies.clear()
+    mr_again = login(api, caller.email)
+    mr_sid = session_id_from_response(mr_again, mr_again.json()["access_token"])
+    mr_cookie = api.cookies.get("evexia_refresh")
+    api.cookies.clear()
+    admin = login(api, db.get(User, admin_id).email)
+    admin_sid = session_id_from_response(admin, admin.json()["access_token"])
+    api.cookies.clear()
+    api.cookies.set("evexia_refresh", mr_cookie, path="/api/v1/auth")
+    assert api.post(
+        "/api/v1/auth/logout", headers={"Origin": "http://testserver"},
+        json={"session_id": admin_sid, "user_id": str(admin_id)},
+    ).status_code == 204
+    assert db.get(AuthSession, mr_sid).status == "REVOKED"
+    assert db.get(AuthSession, admin_sid).status == "ACTIVE"
+    assert all(row.revoked_at is None for row in db.scalars(select(RefreshSession).where(
+        RefreshSession.session_id == admin_sid,
+    )))
+
+    # Super Admin also has only self-logout authority at this route.
+    api.cookies.clear()
+    admin_again = login(api, db.get(User, admin_id).email)
+    admin_again_sid = session_id_from_response(
+        admin_again, admin_again.json()["access_token"],
+    )
+    admin_again_cookie = api.cookies.get("evexia_refresh")
+    api.cookies.clear()
+    api.cookies.set("evexia_refresh", admin_again_cookie, path="/api/v1/auth")
+    assert api.post(
+        "/api/v1/auth/logout?user_id=" + str(other_mr.id),
+        headers={"Origin": "http://testserver"},
+        json={"session_id": foreign_sid, "user_id": str(other_mr.id), "mr_id": str(other_mr.id)},
+    ).status_code == 204
+    assert db.get(AuthSession, admin_again_sid).status == "REVOKED"
+    assert db.get(AuthSession, foreign_sid).status == "ACTIVE"
+    assert all(row.revoked_at is None for row in db.scalars(select(RefreshSession).where(
+        RefreshSession.session_id == foreign_sid,
+    )))
+    assert foreign_cookie
+
+
+@pytest.mark.parametrize("cookie", [None, "unknown-opaque-cookie", "not a valid cookie value"])
+def test_logout_without_known_refresh_credential_is_safe204_and_does_not_log(cookie, client):
+    api, db, _ = client
+    api.cookies.clear()
+    headers = {"Origin": "http://testserver"}
+    if cookie is not None:
+        headers["Cookie"] = f"evexia_refresh={cookie}"
+    response = api.post("/api/v1/auth/logout", headers=headers)
+    assert response.status_code == 204
+    assert response.content == b""
+    assert db.scalar(select(AuditEvent).where(AuditEvent.action == "logout")) is None
+
+
+def test_logout_repeat_revoked_and_expired_cookie_outcomes_are_idempotent(client):
+    api, db, _ = client
+    user = create_user(db, "logout-idempotent@example.com")
+    signed_in = login(api, user.email)
+    sid = session_id_from_response(signed_in, signed_in.json()["access_token"])
+    raw = api.cookies.get("evexia_refresh")
+    api.cookies.clear()
+
+    for _ in range(2):
+        api.cookies.set("evexia_refresh", raw, path="/api/v1/auth")
+        assert api.post(
+            "/api/v1/auth/logout", headers={"Origin": "http://testserver"},
+        ).status_code == 204
+        api.cookies.clear()
+    assert db.get(AuthSession, sid).status == "REVOKED"
+    events = list(db.scalars(select(AuditEvent).where(
+        AuditEvent.action == "logout", AuditEvent.session_id == sid,
+    )))
+    assert len(events) == 1
+    assert events[0].outcome == "success"
+
+    expired_login = login(api, user.email)
+    expired_sid = session_id_from_response(expired_login, expired_login.json()["access_token"])
+    expired_raw = api.cookies.get("evexia_refresh")
+    expired_session = db.get(AuthSession, expired_sid)
+    expired_session.created_at = utcnow() - timedelta(hours=2)
+    expired_session.expires_at = utcnow() - timedelta(seconds=1)
+    db.flush()
+    api.cookies.clear()
+    api.cookies.set("evexia_refresh", expired_raw, path="/api/v1/auth")
+    assert api.post(
+        "/api/v1/auth/logout", headers={"Origin": "http://testserver"},
+    ).status_code == 204
+    assert db.get(AuthSession, expired_sid).status == "REVOKED"
+    expired_event = db.scalar(select(AuditEvent).where(
+        AuditEvent.action == "logout", AuditEvent.session_id == expired_sid,
+    ))
+    assert expired_event is not None
+    assert expired_event.outcome == "success"
+    assert expired_event.reason == "expired"
+    api.cookies.clear()
+    api.cookies.set("evexia_refresh", expired_raw, path="/api/v1/auth")
+    assert api.post(
+        "/api/v1/auth/logout", headers={"Origin": "http://testserver"},
+    ).status_code == 204
+    assert len(list(db.scalars(select(AuditEvent).where(
+        AuditEvent.action == "logout", AuditEvent.session_id == expired_sid,
+    )))) == 1
+
+
+def test_logout_records_meaningful_persisted_credential_session_mismatch_safely(client, monkeypatch):
+    from types import SimpleNamespace
+
+    api, db, _ = client
+    user = create_user(db, "logout-invalid-state@example.com")
+    signed_in = login(api, user.email)
+    sid = session_id_from_response(signed_in, signed_in.json()["access_token"])
+    raw = api.cookies.get("evexia_refresh")
+    actual_get = auth_service.repository.get_credential
+
+    def mismatched_reread(db_session, digest, lock=False):
+        row = actual_get(db_session, digest, lock=lock)
+        if lock and row is not None:
+            return SimpleNamespace(user_id=row.user_id, session_id="different-session-id")
+        return row
+
+    monkeypatch.setattr(auth_service.repository, "get_credential", mismatched_reread)
+    auth_service.logout(db, raw, "logout-invalid-state-test")
+    assert db.get(AuthSession, sid).status == "ACTIVE"
+    event = db.scalar(select(AuditEvent).where(
+        AuditEvent.action == "logout", AuditEvent.session_id == sid,
+    ))
+    assert event is not None
+    assert event.outcome == "failure"
+    assert event.reason == "invalid_session"
+    assert event.actor_id == user.id
+    assert event.request_id == "logout-invalid-state-test"
+
+
+def test_logout_ignores_pre_session_migration_revoked_unbound_refresh_history(client, monkeypatch):
+    from types import SimpleNamespace
+
+    _, db, _ = client
+    # The migration intentionally preserves some historical, already-revoked
+    # credentials without a session binding. Replaying one is an idempotent
+    # no-op, not a new security failure on every request.
+    legacy = SimpleNamespace(
+        user_id=uuid.uuid4(), session_id=None, revoked_at=utcnow(),
+    )
+    monkeypatch.setattr(
+        auth_service.repository, "get_credential", lambda *_args, **_kwargs: legacy,
+    )
+    monkeypatch.setattr(
+        auth_service.repository, "lock_user",
+        lambda *_args, **_kwargs: pytest.fail("unbound legacy row must not be locked"),
+    )
+
+    auth_service.logout(db, "legacy-revoked-credential", "legacy-logout-first")
+    auth_service.logout(db, "legacy-revoked-credential", "legacy-logout-repeat")
+    assert db.scalar(select(AuditEvent).where(AuditEvent.action == "logout")) is None
+
+
+def test_logout_requires_origin_but_ignores_bearer_authentication_state(client):
+    api, db, settings = client
+    user = create_user(db, "logout-bearer@example.com")
+    signed_in = login(api, user.email)
+    sid = session_id_from_response(signed_in, signed_in.json()["access_token"])
+    expired_bearer = _signed_claim_variant(
+        signed_in.json()["access_token"], settings, exp=1,
+    )
+    raw = api.cookies.get("evexia_refresh")
+    api.cookies.clear()
+
+    denied = api.post(
+        "/api/v1/auth/logout",
+        headers={"Origin": "https://attacker.example", "Cookie": f"evexia_refresh={raw}"},
+    )
+    assert denied.status_code == 403
+    assert db.get(AuthSession, sid).status == "ACTIVE"
+
+    for bearer in ("malformed-access-token", expired_bearer):
+        api.cookies.set("evexia_refresh", raw, path="/api/v1/auth")
+        result = api.post(
+            "/api/v1/auth/logout",
+            headers={
+                "Origin": "http://testserver",
+                "Authorization": f"Bearer {bearer}",
+            },
+        )
+        assert result.status_code == 204
+        api.cookies.clear()
+    assert db.get(AuthSession, sid).status == "REVOKED"
+
+
+def test_logout_cookie_clear_preserves_development_and_host_cookie_security_attributes(client):
+    api, db, settings = client
+    user = create_user(db, "logout-cookie-flags@example.com")
+    signed_in = login(api, user.email)
+    sid = session_id_from_response(signed_in, signed_in.json()["access_token"])
+    raw = api.cookies.get("evexia_refresh")
+    api.cookies.clear()
+    api.cookies.set("evexia_refresh", raw, path="/api/v1/auth")
+    cleared = api.post("/api/v1/auth/logout", headers={"Origin": "http://testserver"})
+    assert cleared.status_code == 204
+    cookie_header = cleared.headers["set-cookie"].lower()
+    assert "evexia_refresh=" in cookie_header
+    assert "path=/api/v1/auth" in cookie_header
+    assert "httponly" in cookie_header
+    assert "samesite=strict" in cookie_header
+    assert "secure" not in cookie_header
+    assert "max-age=0" in cookie_header or "expires=" in cookie_header
+
+    # Production's __Host- cookie requires Secure and Path=/ with no Domain.
+    production = settings.model_copy(update={"app_env": "production"})
+    from app.api.v1.auth import clear_refresh_cookie
+    from fastapi import Response
+
+    host_response = Response()
+    clear_refresh_cookie(host_response, production)
+    host_header = host_response.headers["set-cookie"].lower()
+    assert "__host-evexia_refresh=" in host_header
+    assert "path=/" in host_header
+    assert "secure" in host_header
+    assert "httponly" in host_header
+    assert "samesite=strict" in host_header
+    assert "domain=" not in host_header
+    assert db.get(AuthSession, sid).status == "REVOKED"
+
+    # Exercise the endpoint's production cookie-name/path selection as well as
+    # the shared helper, using an explicit Host cookie on the test transport.
+    production_login = login(api, user.email)
+    production_sid = session_id_from_response(
+        production_login, production_login.json()["access_token"],
+    )
+    from http.cookies import SimpleCookie
+
+    cookie_jar = SimpleCookie()
+    cookie_jar.load(production_login.headers["set-cookie"])
+    production_raw = cookie_jar["evexia_refresh"].value
+    api.cookies.clear()
+    app.dependency_overrides[get_settings] = lambda: production
+    production_logout = api.post(
+        "/api/v1/auth/logout",
+        headers={
+            "Origin": "http://testserver",
+            "Cookie": f"__Host-evexia_refresh={production_raw}",
+        },
+    )
+    production_header = production_logout.headers["set-cookie"].lower()
+    assert production_logout.status_code == 204
+    assert "__host-evexia_refresh=" in production_header
+    assert "path=/" in production_header
+    assert "secure" in production_header
+    assert "httponly" in production_header
+    assert "samesite=strict" in production_header
+    assert "domain=" not in production_header
+    assert db.get(AuthSession, production_sid).status == "REVOKED"
 
 
 def test_replaying_rotated_successor_revokes_complete_refresh_chain(client):

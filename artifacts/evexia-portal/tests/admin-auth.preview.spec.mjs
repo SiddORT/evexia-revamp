@@ -85,6 +85,41 @@ test('real UI login, reload, session cookie and logout retain local records with
   await expect(page).toHaveURL(/\/admin\/login/);
 });
 
+test('UI logout revokes its actual session, rejects replay and remains safe on repeated requests', async ({ page, context }) => {
+  const loginResponse = page.waitForResponse((response) => response.url().endsWith('/api/v1/auth/login') && response.request().method() === 'POST');
+  await login(page);
+  const access = (await (await loginResponse).json()).access_token;
+  const refresh = (await context.cookies()).find((cookie) => cookie.name.includes('evexia_refresh'));
+  expect(Boolean(refresh)).toBe(true);
+  await page.getByTestId('button-admin-profile').click();
+  const logoutResponse = page.waitForResponse((response) => response.url().endsWith('/api/v1/auth/logout'));
+  await page.getByTestId('link-admin-sign-out').click();
+  expect((await logoutResponse).status()).toBe(204);
+  await expect(page).toHaveURL(/\/admin\/login/);
+  expect((await context.cookies()).some((cookie) => cookie.name.includes('evexia_refresh'))).toBe(false);
+
+  // Synthetic fixture credentials are kept in this test's memory only, never
+  // emitted in assertions, attachments, storage or logs.
+  const replay = await context.request.post(`${base()}/api/v1/auth/refresh`, {
+    headers: { Origin: base(), Cookie: `${refresh.name}=${refresh.value}` },
+    data: {},
+  });
+  expect(replay.status()).toBe(401);
+  expect(Object.hasOwn(await replay.json(), 'access_token')).toBe(false);
+  const denied = await context.request.get(`${base()}/api/v1/auth/me`, {
+    headers: { Authorization: `Bearer ${access}` },
+  });
+  expect(denied.status()).toBe(401);
+  const repeated = await context.request.post(`${base()}/api/v1/auth/logout`, {
+    headers: { Origin: base() }, data: {},
+  });
+  expect(repeated.status()).toBe(204);
+  expect(await repeated.text()).toBe('');
+  await page.goto(`${base()}/admin/masters/zones`);
+  await expect(page).toHaveURL(/\/admin\/login/);
+  await expect(page.getByTestId('button-admin-profile')).toHaveCount(0);
+});
+
 test('Remember me persistence and two-tab refresh are serialized without token sharing; logout clears both tabs', async ({ page, context }) => {
   await login(page, true);
   expect((await context.cookies()).find((value) => value.name.includes('evexia_refresh')).expires).toBeGreaterThan(Date.now() / 1000);

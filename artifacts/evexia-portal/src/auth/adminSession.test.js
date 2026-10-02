@@ -140,3 +140,73 @@ test('network restoration errors require explicit retry and missing browser lock
   Object.defineProperty(globalThis, 'navigator', { configurable: true, value: {} });
   await assert.rejects(api.loginAdmin(user.email, 'synthetic-password', false), /Web Locks/);
 });
+
+test('logout clears local authorization immediately and sends only an empty same-origin cookie request', async () => {
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  const calls = [];
+  const api = await setup(async (url, options) => {
+    calls.push([url, options]);
+    if (url.endsWith('/logout')) { await gate; return reply(null, 204); }
+    return reply(url.endsWith('/me') ? user : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  const closing = api.logoutAdmin();
+  assert.equal(api.getSession().status, 'anonymous');
+  assert.equal(api.getSession().user, null);
+  await new Promise((resolve) => setImmediate(resolve));
+  const [url, options] = calls.at(-1);
+  assert.equal(url, '/api/v1/auth/logout');
+  assert.equal(options.method, 'POST');
+  assert.equal(options.credentials, 'same-origin');
+  assert.equal(options.cache, 'no-store');
+  assert.deepEqual(JSON.parse(options.body), {});
+  assert.equal(options.headers.Authorization, undefined);
+  const beforeRestore = calls.length;
+  await api.verifySession(true);
+  assert.equal(calls.length, beforeRestore);
+  release();
+  assert.equal(await closing, true);
+  assert.equal(api.getSession().message, '');
+});
+
+test('repeated and simultaneous logout requests stay anonymous and succeed without session identifiers', async () => {
+  const calls = [];
+  const api = await setup(async (url, options) => {
+    calls.push([url, options]);
+    return reply(null, 204);
+  });
+  assert.deepEqual(await Promise.all([api.logoutAdmin(), api.logoutAdmin()]), [true, true]);
+  assert.equal(await api.logoutAdmin(), true);
+  assert.equal(api.getSession().status, 'anonymous');
+  assert.equal(api.getSession().user, null);
+  assert.equal(calls.length, 3);
+  assert.ok(calls.every(([url, options]) => url.endsWith('/logout') && options.body === '{}'));
+});
+
+test('a completed older logout cannot erase a subsequent explicit login', async () => {
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  const paths = [];
+  let held = true;
+  const api = await setup(async (url) => {
+    paths.push(url);
+    if (url.endsWith('/logout')) {
+      if (held) await gate;
+      return reply(null, 204);
+    }
+    return reply(url.endsWith('/me') ? user : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  const closing = api.logoutAdmin();
+  const signingIn = api.loginAdmin(user.email, 'synthetic-password', false);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(paths.filter((url) => url.endsWith('/login')).length, 1);
+  held = false;
+  release();
+  assert.equal(await closing, true);
+  await signingIn;
+  assert.equal(api.getSession().status, 'authenticated');
+  assert.equal(api.getSession().user.id, user.id);
+  await api.logoutAdmin();
+});
