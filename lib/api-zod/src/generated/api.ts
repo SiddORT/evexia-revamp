@@ -112,6 +112,58 @@ export const RefreshResponse = zod.object({
 export const RegisterResponse = zod.void();
 
 /**
+ * @summary Current Session
+ */
+export const GetCurrentSessionResponse = zod.object({
+  created_at: zod.coerce.date(),
+  expires_at: zod.coerce.date(),
+  id: zod.string(),
+  last_refreshed_at: zod.union([zod.coerce.date(), zod.null()]),
+  persistent: zod.boolean(),
+  status: zod.enum(["ACTIVE", "EXPIRED", "REVOKED"]),
+});
+
+/**
+ * @summary Own Sessions
+ */
+export const listOwnSessionsQueryLimitDefault = 20;
+export const listOwnSessionsQueryLimitMax = 100;
+
+export const listOwnSessionsQueryOffsetDefault = 0;
+export const listOwnSessionsQueryOffsetMin = 0;
+export const listOwnSessionsQueryOffsetMax = 10000;
+
+export const ListOwnSessionsQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listOwnSessionsQueryLimitMax)
+    .default(listOwnSessionsQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listOwnSessionsQueryOffsetMin)
+    .max(listOwnSessionsQueryOffsetMax)
+    .default(listOwnSessionsQueryOffsetDefault),
+});
+
+export const ListOwnSessionsResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      created_at: zod.coerce.date(),
+      expires_at: zod.coerce.date(),
+      id: zod.string(),
+      last_refreshed_at: zod.union([zod.coerce.date(), zod.null()]),
+      persistent: zod.boolean(),
+      status: zod.enum(["ACTIVE", "EXPIRED", "REVOKED"]),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+});
+
+/**
  * @summary Provision Mr
  */
 export const provisionMRBodyPasswordMin = 12;

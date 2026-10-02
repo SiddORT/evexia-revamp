@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.security import hash_password
-from app.db.models import AuditEvent, MRProfile, Patient, RefreshSession, User
+from app.db.models import AuditEvent, AuthSession, MRProfile, Patient, RefreshSession, User
 from app.db.session import session_factory
 from app.schemas.domain import DomainError
 from app.services.auth import Identity
@@ -37,7 +37,13 @@ def seed_identity(db, email, role):
         from app.bootstrap import bootstrap_super_admin
 
         result = bootstrap_super_admin(db, SecretStr("correct horse battery staple"))
-        return Identity(db.get(User, result.user_id))
+        user = db.get(User, result.user_id)
+        session = AuthSession(user_id=user.id, token_version=user.token_version,
+                              identity_version=user.identity_version,
+                              expires_at=datetime.now(timezone.utc) + timedelta(hours=1))
+        db.add(session)
+        db.commit()
+        return Identity(user, session_id=session.id)
     user = User(
         email=email, password_hash=hash_password("correct horse battery staple"),
         system_role=role, identity_version=1,
@@ -49,8 +55,12 @@ def seed_identity(db, email, role):
         mr = MRProfile(user_id=user.id, is_active=True)
         db.add(mr)
         db.flush()
+    session = AuthSession(user_id=user.id, token_version=user.token_version,
+                          identity_version=user.identity_version,
+                          expires_at=datetime.now(timezone.utc) + timedelta(hours=1))
+    db.add(session)
     db.commit()
-    return Identity(user, mr)
+    return Identity(user, mr, session.id)
 
 
 def test_superadmin_only_provisions_mrs_and_patient_assignment(domain_db):
@@ -99,9 +109,14 @@ def test_mapping_legacy_user_is_explicit_and_revokes_old_credentials(domain_db):
     db.add(legacy_user)
     db.flush()
     expiry = datetime.now(timezone.utc) + timedelta(days=1)
+    auth_session = AuthSession(
+        user_id=legacy_user.id, identity_version=0, expires_at=expiry,
+    )
+    db.add(auth_session)
+    db.flush()
     db.add(RefreshSession(
         token_hash="a" * 64, user_id=legacy_user.id, organization_id=None,
-        identity_version=0, family_id=uuid.uuid4(),
+        identity_version=0, family_id=uuid.uuid4(), session_id=auth_session.id,
         family_expires_at=expiry,
         expires_at=expiry,
     ))

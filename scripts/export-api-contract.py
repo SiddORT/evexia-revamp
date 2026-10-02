@@ -53,6 +53,8 @@ OPERATION_IDS = {
     ("post", "/v1/auth/refresh"): "refresh",
     ("post", "/v1/auth/logout"): "logout",
     ("get", "/v1/auth/me"): "getCurrentUser",
+    ("get", "/v1/auth/session"): "getCurrentSession",
+    ("get", "/v1/auth/sessions"): "listOwnSessions",
     ("post", "/v1/auth/change-password"): "changePassword",
     ("post", "/v1/domain/mrs"): "provisionMR",
     ("post", "/v1/domain/mrs/{user_id}/mapping"): "mapUserToMR",

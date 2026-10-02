@@ -22,7 +22,7 @@ from app.core.config import get_settings
 from app.core.security import access_token, token_digest, utcnow
 from app.db.base import Base
 from app.db.file_models import DownloadGrant, FileRecord
-from app.db.models import AuditEvent, MRProfile, Patient, User
+from app.db.models import AuditEvent, AuthSession, MRProfile, Patient, User
 from app.main import app
 from app.services import files as file_service
 from app.services.storage import LocalStorage
@@ -142,8 +142,33 @@ def files_env(tmp_path):
     db.add(patient)
     db.commit()
 
+    def create_auth_session(user):
+        now = utcnow()
+        session = AuthSession(
+            user_id=user.id,
+            family_id=uuid.uuid4(),
+            status="ACTIVE",
+            token_version=user.token_version,
+            identity_version=user.identity_version,
+            persistent=False,
+            created_at=now,
+            expires_at=now + timedelta(hours=settings.session_refresh_hours),
+        )
+        db.add(session)
+        db.flush()
+        return session
+
+    auth_sessions = {
+        user.id: create_auth_session(user)
+        for user in (admin, owner, outsider, replacement_owner)
+    }
+    db.commit()
+
     def make_token(user):
-        return access_token(user.id, user.token_version, user.identity_version, settings)
+        session = auth_sessions[user.id]
+        return access_token(
+            user.id, user.token_version, user.identity_version, settings, session_id=session.id,
+        )
 
     def db_override():
         with Session(engine, expire_on_commit=False) as request_db:

@@ -1,13 +1,14 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import current_identity, require_cookie_origin
 from app.core.config import Settings, get_settings
 from app.db.session import get_db
-from app.schemas.auth import ChangePasswordRequest, CurrentUser, LoginRequest, TokenResponse
+from app.schemas.auth import ChangePasswordRequest, CurrentUser, LoginRequest, TokenResponse, SessionResponse, SessionListResponse
+from app.repositories import sessions as repository
 from app.services import auth as service
 from app.services.auth import Identity
 
@@ -68,6 +69,8 @@ def refresh(request: Request, response: Response,
             db: Session = Depends(get_db), settings: Settings = Depends(get_settings)):
     value = refresh_cookie(request, settings)
     if not value:
+        repository.event(db, "refresh_rejected", "failure", request.state.request_id, reason="missing_cookie")
+        db.commit()
         raise HTTPException(status_code=401, detail="Authentication required")
     try:
         identity, new_value = service.rotate_refresh(db, value, settings, request.state.request_id)
@@ -94,6 +97,30 @@ def logout(request: Request, response: Response,
 @router.get("/me", response_model=CurrentUser)
 def me(identity: Identity = Depends(current_identity)):
     return identity.public()
+
+
+def session_public(row) -> SessionResponse:
+    return SessionResponse(
+        id=row.id, status=("EXPIRED" if row.status == "ACTIVE" and row.expires_at <= service.utcnow()
+                           else row.status),
+        created_at=row.created_at, last_refreshed_at=row.last_refreshed_at,
+        expires_at=row.expires_at, persistent=row.persistent,
+    )
+
+
+@router.get("/session", response_model=SessionResponse)
+def current_session(identity: Identity = Depends(current_identity), db: Session = Depends(get_db)):
+    row = repository.get_session(db, identity.session_id)
+    if row is None or row.user_id != identity.user.id:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    return session_public(row)
+
+
+@router.get("/sessions", response_model=SessionListResponse)
+def own_sessions(limit: int = Query(20, ge=1, le=100), offset: int = Query(0, ge=0, le=10000),
+                 identity: Identity = Depends(current_identity), db: Session = Depends(get_db)):
+    rows = repository.sessions_for_user(db, identity.user.id, limit, offset)
+    return SessionListResponse(items=[session_public(row) for row in rows], limit=limit, offset=offset)
 
 
 @router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)

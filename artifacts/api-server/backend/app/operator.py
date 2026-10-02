@@ -74,10 +74,9 @@ def main() -> None:
             user.system_role = None if args.role == "none" else args.role
             user.identity_version += 1
             user.token_version += 1
-            db.execute(update(RefreshSession).where(
-                RefreshSession.user_id == user.id,
-                RefreshSession.revoked_at.is_(None),
-            ).values(revoked_at=utcnow()))
+            from app.repositories import sessions as session_repository
+            session_repository.revoke_user_sessions(db, user.id, "identity_change", None)
+            session_repository.event(db, "session_security_changed", "success", None, user.id)
         db.add(AuditEvent(
             actor_id=None, action="operator_identity_mapping", outcome="success",
             resource_type="user", resource_id=user.id,

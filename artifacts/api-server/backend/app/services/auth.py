@@ -1,11 +1,12 @@
 import hashlib
 import hmac
+import secrets
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
 import jwt
-from sqlalchemy import delete, func, or_, select, text, update
+from sqlalchemy import delete, func, or_, select, text
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings
@@ -13,7 +14,8 @@ from app.core.security import (
     access_token, decode_access, hash_password, new_refresh_token, token_digest, utcnow,
     verify_password,
 )
-from app.db.models import AuditEvent, LoginAttempt, MRProfile, RefreshSession, User
+from app.db.models import AuditEvent, AuthSession, LoginAttempt, MRProfile, RefreshSession, User
+from app.repositories import sessions as repository
 from app.schemas.auth import CurrentUser, TokenResponse
 
 
@@ -33,6 +35,7 @@ class RegistrationUnavailable(Exception):
 class Identity:
     user: User
     mr: MRProfile | None = None
+    session_id: str | None = None
     _role_snapshot: str | None = field(init=False, repr=False)
     _protected_snapshot: bool = field(init=False, repr=False)
     _token_version_snapshot: int = field(init=False, repr=False)
@@ -116,6 +119,29 @@ def _load_identity(db: Session, user: User, lock: bool = False) -> Identity:
     return Identity(user, mr)
 
 
+def _reject(db: Session, action: str, reason: str, request_id: str | None,
+            user_id: uuid.UUID | None = None, session_id: str | None = None) -> None:
+    # Rejection is itself a security outcome; commit it before raising. These
+    # entry points run before application mutations and own this transaction.
+    repository.event(db, action, "failure", request_id, user_id, session_id, reason)
+    db.commit()
+    raise AuthError()
+
+
+def _effective_session(db: Session, session: AuthSession | None, user: User,
+                       request_id: str | None, *, commit_expiry: bool = False) -> bool:
+    if not session or session.user_id != user.id or session.status != "ACTIVE":
+        return False
+    if session.expires_at <= utcnow():
+        session.status = "EXPIRED"
+        repository.event(db, "session_expired", "success", request_id, user.id, session.id)
+        if commit_expiry:
+            db.commit()
+        return False
+    return (session.token_version == user.token_version
+            and session.identity_version == user.identity_version)
+
+
 def login(db: Session, identifier: str, password: str, settings: Settings,
           remember_me: bool, request_id: str, ip: str) -> tuple[Identity, str]:
     identifier = identifier.lower()
@@ -138,11 +164,32 @@ def login(db: Session, identifier: str, password: str, settings: Settings,
         if identifier_blocked or ip_blocked:
             raise TooManyAttempts()
         raise AuthError()
-    token = create_refresh(db, identity, settings, persistent=remember_me)
+    # Password verification happened without a lock; serialize creation against
+    # password/identity changes and reject a stale password snapshot.
+    password_snapshot = user.password_hash
+    locked = repository.lock_user(db, user.id)
+    if (not locked or locked.password_hash != password_snapshot
+            or locked.token_version != identity._token_version_snapshot
+            or locked.identity_version != identity._identity_version_snapshot):
+        _reject(db, "login", "identity_changed", request_id)
+    identity = _load_identity(db, locked)
+    now = utcnow()
+    session = AuthSession(
+        id=secrets.token_urlsafe(32), user_id=locked.id, family_id=uuid.uuid4(),
+        status="ACTIVE", token_version=locked.token_version,
+        identity_version=locked.identity_version, persistent=remember_me, created_at=now,
+        expires_at=now + (timedelta(days=settings.refresh_token_days)
+                               if remember_me else timedelta(hours=settings.session_refresh_hours)),
+    )
+    db.add(session)
+    db.flush()
+    token = create_refresh(db, identity, settings, session=session)
+    repository.event(db, "session_created", "success", request_id, locked.id, session.id)
+    repository.event(db, "login_success", "success", request_id, locked.id, session.id)
     audit(db, "login", request_id, "success", identity)
     db.execute(delete(LoginAttempt).where(LoginAttempt.identifier_hash == identifier_key))
     db.commit()
-    return identity, token
+    return Identity(identity.user, identity.mr, session.id), token
 
 
 # A valid Argon2id hash prevents a non-existent account from skipping expensive verification.
@@ -151,37 +198,46 @@ _DUMMY_HASH = hash_password("not-a-real-account-password")
 
 def create_refresh(db: Session, identity: Identity, settings: Settings,
                    family_id: uuid.UUID | None = None, persistent: bool = False,
-                   family_expires_at: datetime | None = None) -> str:
+                   family_expires_at: datetime | None = None,
+                   session: AuthSession | None = None) -> str:
+    if session is None:
+        raise ValueError("A refresh credential must be bound to a persistent session")
     value = new_refresh_token()
-    now = utcnow()
-    absolute_expiry = family_expires_at or now + (
-        timedelta(days=settings.refresh_token_days) if persistent
-        else timedelta(hours=settings.session_refresh_hours)
-    )
+    absolute_expiry = session.expires_at
     db.add(RefreshSession(
         token_hash=token_digest(value), user_id=identity.user.id,
         organization_id=None, identity_version=identity.user.identity_version,
-        family_id=family_id or uuid.uuid4(),
+        family_id=session.family_id, session_id=session.id,
         expires_at=absolute_expiry, family_expires_at=absolute_expiry,
-        persistent=persistent,
+        persistent=session.persistent,
     ))
     return value
 
 
 def identity_from_token(db: Session, token: str, settings: Settings) -> Identity:
+    request_id = db.info.get("request_id")
     try:
         claims = decode_access(token, settings)
         if (claims["typ"] != "access" or type(claims["ver"]) is not int
-                or type(claims["identity_version"]) is not int or "org" in claims):
+                or type(claims["identity_version"]) is not int or "org" in claims
+                or not isinstance(claims["sid"], str) or not 32 <= len(claims["sid"]) <= 64
+                or not isinstance(claims["jti"], str)):
             raise AuthError()
         user_id = uuid.UUID(claims["sub"])
-    except (jwt.PyJWTError, ValueError, KeyError, TypeError):
-        raise AuthError() from None
+    except (jwt.PyJWTError, ValueError, KeyError, TypeError, AuthError):
+        _reject(db, "token_validation_failure", "invalid_token", request_id)
     user = db.get(User, user_id)
     if (not user or not user.is_active or user.token_version != claims["ver"]
             or user.identity_version != claims["identity_version"]):
-        raise AuthError()
-    return _load_identity(db, user)
+        _reject(db, "token_version_rejection", "identity_version", request_id)
+    session = repository.get_session(db, claims["sid"])
+    if not _effective_session(db, session, user, request_id, commit_expiry=True):
+        _reject(db, "authentication_rejection", "session_invalid", request_id)
+    try:
+        identity = _load_identity(db, user)
+    except AuthError:
+        _reject(db, "authentication_rejection", "identity_invalid", request_id)
+    return Identity(identity.user, identity.mr, session.id)
 
 
 def revalidate_identity(db: Session, identity: Identity, lock: bool = False) -> Identity:
@@ -191,6 +247,8 @@ def revalidate_identity(db: Session, identity: Identity, lock: bool = False) -> 
     owner User rows in stable ID order, then MRProfile/Patient, then file rows.
     Release all row locks before slow storage, parser, or scanner I/O.
     """
+    if identity.session_id is None:
+        raise AuthError()
     query = select(User).where(User.id == identity.user.id).execution_options(populate_existing=True)
     if lock:
         query = query.with_for_update()
@@ -200,54 +258,72 @@ def revalidate_identity(db: Session, identity: Identity, lock: bool = False) -> 
             or user.identity_version != identity._identity_version_snapshot
             or user.token_version != identity._token_version_snapshot):
         raise AuthError()
+    session = repository.get_session(db, identity.session_id, lock=lock)
+    if not _effective_session(db, session, user, db.info.get("request_id")):
+        raise AuthError()
     refreshed = _load_identity(db, user, lock=lock)
     if (refreshed.mr.id if refreshed.mr else None) != (identity.mr.id if identity.mr else None):
         raise AuthError()
-    return refreshed
+    return Identity(refreshed.user, refreshed.mr, identity.session_id)
 
 
 def rotate_refresh(db: Session, value: str, settings: Settings, request_id: str) -> tuple[Identity, str]:
-    row = db.scalar(select(RefreshSession).where(
-        RefreshSession.token_hash == token_digest(value),
-    ).with_for_update())
-    if not row:
-        raise AuthError()
-    if row.revoked_at:
-        db.execute(update(RefreshSession).where(
-            RefreshSession.family_id == row.family_id,
-        ).values(revoked_at=utcnow()))
-        audit(db, "refresh_reuse", request_id, "failure")
+    digest = token_digest(value)
+    # Unlocked lookup only obtains the trustworthy persisted owner. After
+    # locking User -> Session -> credential, re-read all state under the locks.
+    snapshot = repository.get_credential(db, digest)
+    if snapshot is None:
+        _reject(db, "refresh_rejected", "unknown", request_id)
+    user = repository.lock_user(db, snapshot.user_id)
+    session = repository.get_session(db, snapshot.session_id, lock=True)
+    row = repository.get_credential(db, digest, lock=True)
+    if row is None or row.session_id != snapshot.session_id or not user or not session:
+        _reject(db, "refresh_rejected", "invalid", request_id)
+    if row.consumed_at or row.revoked_at:
+        repository.event(db, "refresh_reuse", "failure", request_id, user.id, session.id, "replayed")
+        repository.revoke_session(db, session, "replay", request_id)
         db.commit()
         raise AuthError()
-    if (row.expires_at <= utcnow() or row.family_expires_at <= utcnow()
-            or row.organization_id is not None):
-        raise AuthError()
-    user = db.get(User, row.user_id)
-    if (not user or not user.is_active or row.identity_version != user.identity_version):
-        raise AuthError()
+    if (not user.is_active or row.identity_version != user.identity_version
+            or not _effective_session(db, session, user, request_id)):
+        _reject(db, "refresh_rejected", "session_invalid", request_id, user.id, session.id)
+    if (row.organization_id is not None or row.user_id != user.id
+            or row.family_id != session.family_id or row.expires_at <= utcnow()
+            or row.family_expires_at <= utcnow()):
+        _reject(db, "refresh_rejected", "expired_or_invalid", request_id, user.id, session.id)
     try:
         identity = _load_identity(db, user)
     except AuthError:
-        raise AuthError() from None
-    row.revoked_at = utcnow()
-    new_value = create_refresh(
-        db, identity, settings, row.family_id, row.persistent, row.family_expires_at,
-    )
+        _reject(db, "refresh_rejected", "identity_invalid", request_id, user.id, session.id)
+    now = utcnow()
+    row.consumed_at = now
+    new_value = create_refresh(db, identity, settings, session=session)
+    db.flush()
+    successor = repository.get_credential(db, token_digest(new_value))
+    row.replaced_by_id = successor.id
+    session.last_refreshed_at = now
+    repository.event(db, "refresh_rotated", "success", request_id, user.id, session.id)
+    repository.event(db, "session_refreshed", "success", request_id, user.id, session.id)
+    repository.event(db, "refresh_success", "success", request_id, user.id, session.id)
     audit(db, "refresh", request_id, "success", identity)
     db.commit()
-    return identity, new_value
+    return Identity(identity.user, identity.mr, session.id), new_value
 
 
 def logout(db: Session, value: str | None, request_id: str) -> None:
     if value:
-        row = db.scalar(select(RefreshSession).where(
-            RefreshSession.token_hash == token_digest(value),
-        ).with_for_update())
-        if row and not row.revoked_at:
-            db.execute(update(RefreshSession).where(
-                RefreshSession.family_id == row.family_id,
-                RefreshSession.revoked_at.is_(None),
-            ).values(revoked_at=utcnow()))
+        snapshot = repository.get_credential(db, token_digest(value))
+        if snapshot:
+            repository.lock_user(db, snapshot.user_id)
+            session = repository.get_session(db, snapshot.session_id, lock=True)
+            row = repository.get_credential(db, token_digest(value), lock=True)
+        else:
+            row = session = None
+        if row and session and session.status != "REVOKED":
+            # The browser may have sent the cookie just before a concurrent
+            # rotation committed. A consumed credential still identifies its
+            # owning session; sign-out must not leave the successor usable.
+            repository.revoke_session(db, session, "logout", request_id)
             db.add(AuditEvent(
                 action="logout", outcome="success", request_id=request_id,
                 actor_id=row.user_id, organization_id=None,
@@ -264,17 +340,19 @@ def change_password(db: Session, identity: Identity, current: str, new: str,
         raise AuthError()
     user.password_hash = hash_password(new)
     user.token_version += 1
-    db.execute(update(RefreshSession).where(
-        RefreshSession.user_id == identity.user.id, RefreshSession.revoked_at.is_(None),
-    ).values(revoked_at=utcnow()))
+    repository.revoke_user_sessions(db, user.id, "password_change", request_id)
+    repository.event(db, "session_security_changed", "success", request_id, user.id, identity.session_id)
     audit(db, "password_change", request_id, "success", identity)
     db.commit()
 
 
 def token_response(identity: Identity, settings: Settings) -> TokenResponse:
+    if identity.session_id is None:
+        raise AuthError()
     return TokenResponse(
         access_token=access_token(
             identity.user.id, identity.user.token_version, identity.user.identity_version, settings,
+            identity.session_id,
         ),
         expires_in=settings.access_token_minutes * 60,
         user=identity.public(),

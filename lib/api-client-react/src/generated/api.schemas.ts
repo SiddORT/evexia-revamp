@@ -154,12 +154,49 @@ export interface ProvisionMRRequest {
   username?: string | null;
 }
 
+export type SessionResponseStatus =
+  (typeof SessionResponseStatus)[keyof typeof SessionResponseStatus];
+
+export const SessionResponseStatus = {
+  ACTIVE: "ACTIVE",
+  EXPIRED: "EXPIRED",
+  REVOKED: "REVOKED",
+} as const;
+
+export interface SessionResponse {
+  created_at: string;
+  expires_at: string;
+  id: string;
+  last_refreshed_at: string | null;
+  persistent: boolean;
+  status: SessionResponseStatus;
+}
+
+export interface SessionListResponse {
+  items: SessionResponse[];
+  limit: number;
+  offset: number;
+}
+
 export interface TokenResponse {
   access_token: string;
   expires_in: number;
   token_type?: "bearer";
   user: CurrentUser;
 }
+
+export type ListOwnSessionsParams = {
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 10000
+   */
+  offset?: number;
+};
 
 export type UploadFileParams = {
   patient_id?: string | null;

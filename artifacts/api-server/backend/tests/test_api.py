@@ -145,11 +145,10 @@ def test_remember_me_expiry_rotation_logout_family_and_access_boundary(client):
         RefreshSession.family_id == session_row.family_id,
         RefreshSession.revoked_at.is_(None),
     )) is None
-    # Logout revokes refresh family; a stateless access JWT remains valid only
-    # until its short absolute expiry and is not represented as immediate revocation.
+    # Access tokens are bound to the live authentication session and fail immediately.
     assert api.get(
         "/api/v1/auth/me", headers={"Authorization": f"Bearer {session_access}"},
-    ).status_code == 200
+    ).status_code == 401
     api.cookies.set("evexia_refresh", session_cookie, path="/api/v1/auth")
     assert api.post("/api/v1/auth/refresh", headers={"Origin": "http://testserver"}).status_code == 401
     # Remove the manually injected domainless replay cookie before a fresh login.

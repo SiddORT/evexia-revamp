@@ -26,11 +26,14 @@ import type {
   ErrorEnvelope,
   FileResponse,
   HealthStatus,
+  ListOwnSessionsParams,
   LoginRequest,
   MRResponse,
   PatientResponse,
   ProvisionMRRequest,
   ReplaceFileParams,
+  SessionListResponse,
+  SessionResponse,
   TokenResponse,
   UploadFileParams,
 } from "./api.schemas";
@@ -688,6 +691,175 @@ export const useRegister = <
 > => {
   return useMutation(getRegisterMutationOptions(options));
 };
+
+export const getGetCurrentSessionUrl = () => {
+  return `/api/v1/auth/session`;
+};
+
+/**
+ * @summary Current Session
+ */
+export const getCurrentSession = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SessionResponse> => {
+  return customFetch<SessionResponse>(getGetCurrentSessionUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCurrentSessionQueryKey = () => {
+  return [`/api/v1/auth/session`] as const;
+};
+
+export const getGetCurrentSessionQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCurrentSession>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getCurrentSession>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCurrentSessionQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCurrentSession>>
+  > = ({ signal }) => getCurrentSession({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCurrentSession>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCurrentSessionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCurrentSession>>
+>;
+export type GetCurrentSessionQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Current Session
+ */
+
+export function useGetCurrentSession<
+  TData = Awaited<ReturnType<typeof getCurrentSession>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getCurrentSession>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCurrentSessionQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListOwnSessionsUrl = (params?: ListOwnSessionsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/auth/sessions?${stringifiedParams}`
+    : `/api/v1/auth/sessions`;
+};
+
+/**
+ * @summary Own Sessions
+ */
+export const listOwnSessions = async (
+  params?: ListOwnSessionsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SessionListResponse> => {
+  return customFetch<SessionListResponse>(getListOwnSessionsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListOwnSessionsQueryKey = (params?: ListOwnSessionsParams) => {
+  return [`/api/v1/auth/sessions`, ...(params ? [params] : [])] as const;
+};
+
+export const getListOwnSessionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listOwnSessions>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListOwnSessionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOwnSessions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListOwnSessionsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listOwnSessions>>> = ({
+    signal,
+  }) => listOwnSessions(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listOwnSessions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListOwnSessionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listOwnSessions>>
+>;
+export type ListOwnSessionsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Own Sessions
+ */
+
+export function useListOwnSessions<
+  TData = Awaited<ReturnType<typeof listOwnSessions>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListOwnSessionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOwnSessions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListOwnSessionsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export const getProvisionMRUrl = () => {
   return `/api/v1/domain/mrs`;

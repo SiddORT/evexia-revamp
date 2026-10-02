@@ -1,7 +1,11 @@
+import secrets
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint, func, text
+from sqlalchemy import (
+    CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Index, Integer, String,
+    UniqueConstraint, func, text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -60,16 +64,58 @@ class Membership(Timestamps, Base):
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
 
 
+class AuthSession(Base):
+    __tablename__ = "auth_sessions"
+    __table_args__ = (
+        UniqueConstraint("family_id", name="uq_auth_sessions_family"),
+        UniqueConstraint("id", "user_id", name="uq_auth_sessions_id_user"),
+        CheckConstraint("status IN ('ACTIVE', 'EXPIRED', 'REVOKED')", name="ck_auth_sessions_status"),
+        CheckConstraint("token_version >= 0", name="ck_auth_sessions_token_version"),
+        CheckConstraint("identity_version >= 0", name="ck_auth_sessions_identity_version"),
+        CheckConstraint("expires_at > created_at", name="ck_auth_sessions_expiry"),
+        CheckConstraint(
+            "(status = 'REVOKED' AND revoked_at IS NOT NULL) OR "
+            "(status <> 'REVOKED' AND revoked_at IS NULL)",
+            name="ck_auth_sessions_revoked_timestamp",
+        ),
+        CheckConstraint(
+            "last_refreshed_at IS NULL OR last_refreshed_at >= created_at",
+            name="ck_auth_sessions_refresh_timestamp",
+        ),
+        Index("ix_auth_sessions_user_created", "user_id", "created_at"),
+        Index("ix_auth_sessions_user_status", "user_id", "status"),
+    )
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: secrets.token_urlsafe(32))
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    family_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), default=uuid.uuid4, nullable=False)
+    status: Mapped[str] = mapped_column(String(8), default="ACTIVE", nullable=False)
+    token_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    identity_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_refreshed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    persistent: Mapped[bool] = mapped_column(default=False, nullable=False)
+
+
 class RefreshSession(Base):
     __tablename__ = "refresh_sessions"
     __table_args__ = (
         Index("ix_refresh_sessions_user", "user_id", "revoked_at"),
+        Index("ix_refresh_sessions_session", "session_id"),
+        Index("ix_refresh_sessions_replaced_by", "replaced_by_id"),
+        ForeignKeyConstraint(
+            ["session_id", "user_id"], ["auth_sessions.id", "auth_sessions.user_id"],
+            name="fk_refresh_sessions_session_owner",
+        ),
         CheckConstraint("identity_version >= 0", name="ck_refresh_sessions_identity_version"),
         CheckConstraint("family_expires_at >= expires_at", name="ck_refresh_family_expiry"),
     )
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    session_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    replaced_by_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("refresh_sessions.id"))
     # Kept only as legacy history. New identity sessions are not organization-scoped.
     organization_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("organizations.id"))
     identity_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -79,6 +125,7 @@ class RefreshSession(Base):
     family_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     persistent: Mapped[bool] = mapped_column(default=False, nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class LoginAttempt(Base):
@@ -97,9 +144,14 @@ class AuditEvent(Base):
     resource_type: Mapped[str | None] = mapped_column(String(60))
     resource_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     request_id: Mapped[str | None] = mapped_column(String(64))
+    session_id: Mapped[str | None] = mapped_column(ForeignKey("auth_sessions.id"))
+    reason: Mapped[str | None] = mapped_column(String(40))
     outcome: Mapped[str] = mapped_column(String(16), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    __table_args__ = (Index("ix_audit_events_organization_created", "organization_id", "created_at"),)
+    __table_args__ = (
+        Index("ix_audit_events_organization_created", "organization_id", "created_at"),
+        Index("ix_audit_events_session_created", "session_id", "created_at"),
+    )
 
 
 class MRProfile(Timestamps, Base):

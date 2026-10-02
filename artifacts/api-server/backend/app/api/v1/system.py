@@ -28,8 +28,14 @@ def readiness(db: Session = Depends(get_db)):
                       "login_attempts", "audit_events"):
             db.execute(text(f"SELECT 1 FROM {table} LIMIT 0"))
         db.execute(text(
-            "SELECT family_expires_at, persistent FROM refresh_sessions LIMIT 0"
+            "SELECT family_expires_at, persistent, session_id, consumed_at, replaced_by_id "
+            "FROM refresh_sessions LIMIT 0"
         ))
+        db.execute(text(
+            "SELECT id, status, token_version, identity_version, expires_at "
+            "FROM auth_sessions LIMIT 0"
+        ))
+        db.execute(text("SELECT session_id, reason FROM audit_events LIMIT 0"))
     except Exception:
         raise HTTPException(status_code=503, detail="Service unavailable") from None
     return {"status": "ready"}

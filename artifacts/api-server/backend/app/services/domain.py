@@ -1,13 +1,14 @@
 import re
 import uuid
 
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.bootstrap import SUPER_ADMIN_EMAIL
-from app.core.security import hash_password, utcnow
-from app.db.models import AuditEvent, MRProfile, Patient, RefreshSession, User
+from app.core.security import hash_password
+from app.db.models import AuditEvent, MRProfile, Patient, User
+from app.repositories import sessions as session_repository
 from app.schemas.domain import DomainError
 from app.services.auth import AuthError, Identity, revalidate_identity
 
@@ -82,9 +83,8 @@ def map_existing_user_to_mr(db: Session, actor: Identity, user_id: uuid.UUID) ->
     user.system_role = "mr"
     user.identity_version += 1
     user.token_version += 1
-    db.execute(update(RefreshSession).where(
-        RefreshSession.user_id == user.id, RefreshSession.revoked_at.is_(None),
-    ).values(revoked_at=utcnow()))
+    session_repository.revoke_user_sessions(db, user.id, "identity_change", db.info.get("request_id"))
+    session_repository.event(db, "session_security_changed", "success", db.info.get("request_id"), user.id)
     _audit(db, actor, "mr_mapping", "mr", profile.id)
     db.commit()
     return profile

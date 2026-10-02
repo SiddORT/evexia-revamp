@@ -36,7 +36,7 @@ staff, or vendor data into the preview.
   downgrade commands manually; review the managed publish schema operation and
   take a backup first. The current ordered migrations are `0001_identity_foundation`,
   `0002_optional_username`, `0003_system_identity_domain`, `0004_private_files`,
-  and `0005_protected_super_admin_sessions`.
+  `0005_protected_super_admin_sessions`, and `0006_auth_sessions`.
   A downgrade is not a general rollback plan: it can remove data/schema state and
   cannot reverse issued credentials, uploaded objects, or external side effects.
   Migration `0005` refuses to proceed over existing Super Admin mappings for
@@ -113,9 +113,9 @@ refresh expires after `SESSION_REFRESH_HOURS` (default 12, bounded 1–24). With
 on, the cookie is persistent only until the configured absolute
 `REFRESH_TOKEN_DAYS` family expiry (1–30 days). Rotation preserves the original
 absolute expiry and persistence mode; it does not extend a family. Logout revokes
-all refresh rows in that family. Already issued access JWTs remain usable until
-their short absolute expiry (at most `ACCESS_TOKEN_MINUTES`); password or identity
-changes invalidate them immediately through database version checks.
+the owning session and all its refresh credentials; already issued access JWTs
+become unusable immediately. Password or identity changes likewise invalidate
+sessions and tokens immediately through session state and database version checks.
 `GET /api/v1/auth/me`
 requires bearer auth. `POST /api/v1/auth/change-password` requires a current
 password of 1–128 characters, accepts a new password of 12–128 characters, and
@@ -124,6 +124,67 @@ include explicit permissions, with `admin.access` only for the protected system
 identity. Password recovery is not implemented. Never trust a UI role selector
 or request-supplied organization ID for authorization: protected calls check
 current database identity and permissions.
+
+### Session lifecycle, rollout, and evidence
+
+Migration `0006` adds `auth_sessions` as the current lifecycle authority and
+links each historical refresh credential to exactly one session. It preserves
+credential hashes and audit history, creates a **revoked** opaque session for
+each pre-migration family, and revokes any still-active legacy credentials.
+Old access JWTs have no `sid` and are rejected; users must sign in again.
+Review the backup, migration preflight, and schema compatibility before rollout.
+Deploy the migrated database and session-aware API together, and avoid serving
+the old API against the new schema: old nodes cannot create session-bound
+refresh rows. A rollback of application code alone is unsafe; migration `0006`
+refuses downgrade while session history exists. Restore a verified coordinated
+backup or use a reviewed forward correction instead. This project does not
+execute production migrations or deployments automatically.
+
+A login creates a cryptographically random, non-sequential session ID. JWTs
+carry it as `sid` (an identifier, not a bearer secret). Every protected request
+checks JWT signature, algorithm, issuer, audience, expiration, required claim
+types, current user/role/profile and version snapshots, and session ownership,
+status, expiry and versions. Sensitive services recheck under database locks.
+The same session ID survives refresh; another login creates another session.
+`ACTIVE` is valid only before its absolute expiry and while its identity remains
+valid. An expired session transitions to `EXPIRED` on an authenticated access or
+refresh observation, once. Revocation is immediate, including existing access
+JWTs. Neither refresh nor activity extends the absolute lifetime. The browser
+session cookie (Remember me off) may disappear sooner when the browser closes;
+its server-side maximum remains `SESSION_REFRESH_HOURS`. Persistent Remember me
+expires at `REFRESH_TOKEN_DAYS`. Access lifetime remains configured by
+`ACCESS_TOKEN_MINUTES`.
+
+Refresh resolves credential ownership from its digest, then locks User,
+AuthSession, and credential in that order. Password/identity mutation and
+sensitive file revalidation lock User first. A credential is consumed once and
+linked to its replacement; presenting a consumed or revoked credential records
+reuse and revokes its entire session and remaining family before returning 401.
+This strict policy intentionally does not grant a retry grace period. Concurrent
+requests can yield a success followed by replay revocation; the successor then
+cannot authenticate. Expired/unknown credentials reject without issuing a
+successor. Clients must serialize refreshes, as the existing portal does.
+
+`GET /auth/session` and `/auth/sessions` use server-validated bearer context,
+return only ID, effective status, creation/last-refresh/expiry times and the
+persistence flag, and are no-store. The listing is bounded and filtered by
+authenticated user ownership. No raw IP, user agent, token, digest, password,
+Authorization header or cookie is persisted in session/event metadata.
+Existing `audit_events` is append-oriented evidence, not session state:
+login and refresh success/failure, session created/refreshed/expired/revoked,
+credential rotated/reused/revoked, security change, and token/version rejection
+events use bounded safe reason codes and request IDs. Unverified token claims
+are not trusted actor IDs. External rejection remains a generic
+`authentication_required` 401 with request ID; a blocked login remains 429.
+Expiry observations are idempotent. A failed issuance rolls back rather than
+returning a token.
+
+Retention ownership remains an **unresolved operator/security policy
+decision**: keep consumed credentials at least throughout their session's
+replay-detection window, and preserve expired/revoked sessions and event
+evidence until an approved retention, legal-hold and backup policy exists.
+There is no destructive cleanup job or invented compliance period. Any future
+purge must account for linked audit/credential rows and be separately reviewed.
 
 ## Current API surface
 
@@ -139,6 +200,7 @@ artifact-mounted URLs. The development OpenAPI contract includes:
 | Auth | `POST /api/v1/auth/register` | Disabled; always returns unavailable registration (403). |
 | Auth | `POST /api/v1/auth/login`, `/refresh`, `/logout` | Same-origin session operations. |
 | Auth | `GET /api/v1/auth/me` | Bearer-authenticated identity. |
+| Auth | `GET /api/v1/auth/session`, `GET /api/v1/auth/sessions?limit=20&offset=0` | Validated current session and paginated own-session metadata (limit 1–100, offset 0–10000); no other user's sessions. |
 | Auth | `POST /api/v1/auth/change-password` | Bearer-authenticated password change. |
 | Domain | `POST /api/v1/domain/mrs` | Super-admin provisions a mapped MR identity. |
 | Domain | `POST /api/v1/domain/mrs/{user_id}/mapping` | Super-admin maps an existing user to an MR profile. |

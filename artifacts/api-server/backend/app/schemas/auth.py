@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
@@ -41,3 +42,18 @@ class TokenResponse(BaseModel):
     token_type: Literal["bearer"] = "bearer"
     expires_in: int
     user: CurrentUser
+
+
+class SessionResponse(BaseModel):
+    id: str
+    status: Literal["ACTIVE", "EXPIRED", "REVOKED"]
+    created_at: datetime
+    last_refreshed_at: datetime | None
+    expires_at: datetime
+    persistent: bool
+
+
+class SessionListResponse(BaseModel):
+    items: list[SessionResponse]
+    limit: int
+    offset: int
