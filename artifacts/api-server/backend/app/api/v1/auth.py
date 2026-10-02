@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import current_identity, require_cookie_origin
 from app.core.config import Settings, get_settings
 from app.db.session import get_db
-from app.schemas.auth import ChangePasswordRequest, CurrentUser, LoginRequest, RegisterRequest, TokenResponse
+from app.schemas.auth import ChangePasswordRequest, CurrentUser, LoginRequest, TokenResponse
 from app.services import auth as service
 from app.services.auth import Identity
 
@@ -35,20 +35,10 @@ def refresh_cookie(request: Request, settings: Settings) -> str | None:
     return request.cookies.get("__Host-evexia_refresh" if settings.app_env == "production" else "evexia_refresh")
 
 
-@router.post("/register", response_model=TokenResponse, status_code=201, dependencies=[Depends(require_cookie_origin)])
-def register(body: RegisterRequest, request: Request, response: Response,
-             db: Session = Depends(get_db), settings: Settings = Depends(get_settings)):
-    try:
-        identity, refresh = service.register(
-            db, str(body.email), body.username, body.password, body.organization_name, settings,
-            request.state.request_id, request.client.host if request.client else "unknown",
-        )
-    except service.TooManyAttempts:
-        raise HTTPException(status_code=429, detail="Too many attempts. Try again later.") from None
-    except service.RegistrationUnavailable:
-        raise HTTPException(status_code=403, detail="Registration is unavailable") from None
-    set_refresh_cookie(response, refresh, settings)
-    return service.token_response(identity, settings)
+@router.post("/register", status_code=403, dependencies=[Depends(require_cookie_origin)])
+def register():
+    # Privileged system identities are provisioned only through protected operator flows.
+    raise HTTPException(status_code=403, detail="Registration is unavailable")
 
 
 @router.post("/login", response_model=TokenResponse, dependencies=[Depends(require_cookie_origin)])
@@ -76,7 +66,10 @@ def refresh(request: Request, response: Response,
     try:
         identity, new_value = service.rotate_refresh(db, value, settings, request.state.request_id)
     except service.AuthError:
-        expired = JSONResponse({"detail": "Authentication required"}, status_code=401)
+        expired = JSONResponse({"error": {
+            "code": "authentication_required", "message": "Authentication required",
+            "request_id": request.state.request_id, "fields": [],
+        }}, status_code=401)
         clear_refresh_cookie(expired, settings)
         return expired
     set_refresh_cookie(response, new_value, settings)

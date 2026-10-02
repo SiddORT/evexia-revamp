@@ -54,6 +54,9 @@ export default defineConfig({
       schemas: { path: "generated/types", type: "typescript" },
       mode: "split",
       clean: true,
+      // Keep the package barrel hand-curated: Orval also emits operation
+      // parameter types whose names can collide with Zod path-parameter schemas.
+      indexFiles: false,
       prettier: true,
       override: {
         zod: {

@@ -1,12 +1,11 @@
 import hashlib
 import hmac
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
 
 import jwt
 from sqlalchemy import delete, func, or_, select, text, update
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings
@@ -14,7 +13,7 @@ from app.core.security import (
     access_token, decode_access, hash_password, new_refresh_token, token_digest, utcnow,
     verify_password,
 )
-from app.db.models import AuditEvent, LoginAttempt, Membership, Organization, RefreshSession, User
+from app.db.models import AuditEvent, LoginAttempt, MRProfile, RefreshSession, User
 from app.schemas.auth import CurrentUser, TokenResponse
 
 
@@ -33,20 +32,34 @@ class RegistrationUnavailable(Exception):
 @dataclass(frozen=True)
 class Identity:
     user: User
-    membership: Membership
+    mr: MRProfile | None = None
+    _role_snapshot: str | None = field(init=False, repr=False)
+    _token_version_snapshot: int = field(init=False, repr=False)
+    _identity_version_snapshot: int = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        # ORM entities are mutable; preserve the authenticated snapshot independently
+        # so revalidation can notice changes even in the same SQLAlchemy identity map.
+        object.__setattr__(self, "_role_snapshot", self.user.system_role)
+        object.__setattr__(self, "_token_version_snapshot", self.user.token_version)
+        object.__setattr__(self, "_identity_version_snapshot", self.user.identity_version)
+
+    @property
+    def role(self) -> str | None:
+        return self.user.system_role
 
     def public(self) -> CurrentUser:
         return CurrentUser(
             id=self.user.id, email=self.user.email, username=self.user.username,
-            organization_id=self.membership.organization_id, role=self.membership.role,
+            system_role=self.user.system_role, mr_id=self.mr.id if self.mr else None,
         )
 
 
 def audit(db: Session, action: str, request_id: str, outcome: str, identity: Identity | None = None) -> None:
+    # organization_id is intentionally unset for all new system-identity events.
     db.add(AuditEvent(
         action=action, outcome=outcome, request_id=request_id,
         actor_id=identity.user.id if identity else None,
-        organization_id=identity.membership.organization_id if identity else None,
         resource_type="user" if identity else None,
         resource_id=identity.user.id if identity else None,
     ))
@@ -72,34 +85,23 @@ def record_attempt(db: Session, *keys: str) -> None:
         db.add(LoginAttempt(identifier_hash=key))
 
 
-def register(db: Session, email: str, username: str | None, password: str, organization_name: str, settings: Settings,
-             request_id: str, ip: str) -> tuple[Identity, str]:
-    if not settings.allow_public_registration:
-        raise RegistrationUnavailable()
-    key, blocked = limit_state(db, settings, "register-ip", ip, 5)
-    if blocked:
-        raise TooManyAttempts()
-    if db.scalar(select(User.id).where(User.email == email.lower())):
-        record_attempt(db, key)
-        db.commit()
-        raise RegistrationUnavailable()
-    try:
-        org = Organization(name=organization_name)
-        user = User(email=email.lower(), username=username, password_hash=hash_password(password))
-        db.add_all([org, user])
-        db.flush()
-        membership = Membership(user_id=user.id, organization_id=org.id, role="owner")
-        db.add(membership)
-        db.flush()
-        identity = Identity(user, membership)
-        token = create_refresh(db, identity, settings)
-        record_attempt(db, key)
-        audit(db, "register", request_id, "success", identity)
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        raise RegistrationUnavailable() from None
-    return identity, token
+def register(*_args, **_kwargs):
+    """Public registration must never grant system access."""
+    raise RegistrationUnavailable()
+
+
+def _load_identity(db: Session, user: User, lock: bool = False) -> Identity:
+    if user.system_role not in ("super_admin", "mr") or not user.is_active:
+        raise AuthError()
+    profile_query = select(MRProfile).where(
+        MRProfile.user_id == user.id,
+    ).execution_options(populate_existing=True)
+    if lock:
+        profile_query = profile_query.with_for_update()
+    mr = db.scalar(profile_query) if user.system_role == "mr" else None
+    if user.system_role == "mr" and (mr is None or not mr.is_active):
+        raise AuthError()
+    return Identity(user, mr)
 
 
 def login(db: Session, identifier: str, password: str, settings: Settings,
@@ -111,17 +113,19 @@ def login(db: Session, identifier: str, password: str, settings: Settings,
     valid = verify_password(password, user.password_hash) if user else verify_password(
         password, _DUMMY_HASH,
     )
-    membership = db.scalar(select(Membership).where(
-        Membership.user_id == user.id, Membership.is_active.is_(True),
-    ).order_by(Membership.created_at)) if user and valid and user.is_active else None
-    if not membership:
+    identity = None
+    if user and valid and user.is_active:
+        try:
+            identity = _load_identity(db, user)
+        except AuthError:
+            pass
+    if not identity:
         record_attempt(db, identifier_key, ip_key)
         audit(db, "login", request_id, "failure")
         db.commit()
         if identifier_blocked or ip_blocked:
             raise TooManyAttempts()
         raise AuthError()
-    identity = Identity(user, membership)
     token = create_refresh(db, identity, settings)
     audit(db, "login", request_id, "success", identity)
     db.execute(delete(LoginAttempt).where(LoginAttempt.identifier_hash == identifier_key))
@@ -138,7 +142,7 @@ def create_refresh(db: Session, identity: Identity, settings: Settings,
     value = new_refresh_token()
     db.add(RefreshSession(
         token_hash=token_digest(value), user_id=identity.user.id,
-        organization_id=identity.membership.organization_id,
+        organization_id=None, identity_version=identity.user.identity_version,
         family_id=family_id or uuid.uuid4(),
         expires_at=utcnow() + timedelta(days=settings.refresh_token_days),
     ))
@@ -148,19 +152,38 @@ def create_refresh(db: Session, identity: Identity, settings: Settings,
 def identity_from_token(db: Session, token: str, settings: Settings) -> Identity:
     try:
         claims = decode_access(token, settings)
-        if claims["typ"] != "access" or not isinstance(claims["ver"], int):
+        if (claims["typ"] != "access" or type(claims["ver"]) is not int
+                or type(claims["identity_version"]) is not int or "org" in claims):
             raise AuthError()
-        user_id, org_id = uuid.UUID(claims["sub"]), uuid.UUID(claims["org"])
+        user_id = uuid.UUID(claims["sub"])
     except (jwt.PyJWTError, ValueError, KeyError, TypeError):
         raise AuthError() from None
     user = db.get(User, user_id)
-    membership = db.scalar(select(Membership).where(
-        Membership.user_id == user_id, Membership.organization_id == org_id,
-        Membership.is_active.is_(True),
-    ))
-    if not user or not user.is_active or user.token_version != claims["ver"] or not membership:
+    if (not user or not user.is_active or user.token_version != claims["ver"]
+            or user.identity_version != claims["identity_version"]):
         raise AuthError()
-    return Identity(user, membership)
+    return _load_identity(db, user)
+
+
+def revalidate_identity(db: Session, identity: Identity, lock: bool = False) -> Identity:
+    """Reload and validate an identity for sensitive services; lock User before MR/Patient.
+
+    File operations call this first with lock=True (actor User), then lock the
+    owner User rows in stable ID order, then MRProfile/Patient, then file rows.
+    Release all row locks before slow storage, parser, or scanner I/O.
+    """
+    query = select(User).where(User.id == identity.user.id).execution_options(populate_existing=True)
+    if lock:
+        query = query.with_for_update()
+    user = db.scalar(query)
+    if (not user or not user.is_active or user.system_role != identity._role_snapshot
+            or user.identity_version != identity._identity_version_snapshot
+            or user.token_version != identity._token_version_snapshot):
+        raise AuthError()
+    refreshed = _load_identity(db, user, lock=lock)
+    if (refreshed.mr.id if refreshed.mr else None) != (identity.mr.id if identity.mr else None):
+        raise AuthError()
+    return refreshed
 
 
 def rotate_refresh(db: Session, value: str, settings: Settings, request_id: str) -> tuple[Identity, str]:
@@ -176,18 +199,16 @@ def rotate_refresh(db: Session, value: str, settings: Settings, request_id: str)
         audit(db, "refresh_reuse", request_id, "failure")
         db.commit()
         raise AuthError()
-    if row.expires_at <= utcnow():
+    if row.expires_at <= utcnow() or row.organization_id is not None:
         raise AuthError()
     user = db.get(User, row.user_id)
-    membership = db.scalar(select(Membership).where(
-        Membership.user_id == row.user_id,
-        Membership.organization_id == row.organization_id,
-        Membership.is_active.is_(True),
-    ))
-    if not user or not user.is_active or not membership:
+    if (not user or not user.is_active or row.identity_version != user.identity_version):
         raise AuthError()
+    try:
+        identity = _load_identity(db, user)
+    except AuthError:
+        raise AuthError() from None
     row.revoked_at = utcnow()
-    identity = Identity(user, membership)
     new_value = create_refresh(db, identity, settings, row.family_id)
     audit(db, "refresh", request_id, "success", identity)
     db.commit()
@@ -203,7 +224,7 @@ def logout(db: Session, value: str | None, request_id: str) -> None:
             row.revoked_at = utcnow()
             db.add(AuditEvent(
                 action="logout", outcome="success", request_id=request_id,
-                actor_id=row.user_id, organization_id=row.organization_id,
+                actor_id=row.user_id, organization_id=None,
                 resource_type="user", resource_id=row.user_id,
             ))
     db.commit()
@@ -211,8 +232,9 @@ def logout(db: Session, value: str | None, request_id: str) -> None:
 
 def change_password(db: Session, identity: Identity, current: str, new: str,
                     request_id: str) -> None:
-    user = db.scalar(select(User).where(User.id == identity.user.id).with_for_update())
-    if not user or current == new or not verify_password(current, user.password_hash):
+    identity = revalidate_identity(db, identity, lock=True)
+    user = identity.user
+    if current == new or not verify_password(current, user.password_hash):
         raise AuthError()
     user.password_hash = hash_password(new)
     user.token_version += 1
@@ -226,8 +248,7 @@ def change_password(db: Session, identity: Identity, current: str, new: str,
 def token_response(identity: Identity, settings: Settings) -> TokenResponse:
     return TokenResponse(
         access_token=access_token(
-            identity.user.id, identity.membership.organization_id,
-            identity.user.token_version, settings,
+            identity.user.id, identity.user.token_version, identity.user.identity_version, settings,
         ),
         expires_in=settings.access_token_minutes * 60,
         user=identity.public(),

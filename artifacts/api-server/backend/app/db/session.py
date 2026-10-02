@@ -2,6 +2,7 @@ from functools import lru_cache
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+from fastapi import Request
 
 from app.core.config import get_settings
 
@@ -17,6 +18,7 @@ def session_factory() -> sessionmaker[Session]:
     return sessionmaker(engine, expire_on_commit=False)
 
 
-def get_db():
+def get_db(request: Request):
     with session_factory()() as db:
+        db.info["request_id"] = getattr(request.state, "request_id", None)
         yield db

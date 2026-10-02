@@ -21,8 +21,9 @@ def version():
 def readiness(db: Session = Depends(get_db)):
     try:
         # Deployment health must verify the identity schema, not just a live socket.
-        db.execute(text("SELECT username FROM users LIMIT 0"))
-        for table in ("organizations", "memberships", "refresh_sessions", "login_attempts", "audit_events"):
+        db.execute(text("SELECT username, system_role, identity_version FROM users LIMIT 0"))
+        for table in ("mr_profiles", "patients", "files", "download_grants",
+                      "refresh_sessions", "login_attempts", "audit_events"):
             db.execute(text(f"SELECT 1 FROM {table} LIMIT 0"))
     except Exception:
         raise HTTPException(status_code=503, detail="Service unavailable") from None

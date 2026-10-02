@@ -26,10 +26,10 @@ def verify_password(password: str, encoded: str) -> bool:
         return False
 
 
-def access_token(user_id: uuid.UUID, org_id: uuid.UUID, version: int, settings: Settings) -> str:
+def access_token(user_id: uuid.UUID, version: int, identity_version: int, settings: Settings) -> str:
     now = utcnow()
     claims = {
-        "sub": str(user_id), "org": str(org_id), "ver": version, "typ": "access",
+        "sub": str(user_id), "ver": version, "identity_version": identity_version, "typ": "access",
         "jti": str(uuid.uuid4()), "iat": now,
         "exp": now + timedelta(minutes=settings.access_token_minutes),
         "iss": settings.jwt_issuer, "aud": settings.jwt_audience,
@@ -41,7 +41,7 @@ def decode_access(token: str, settings: Settings) -> dict:
     return jwt.decode(
         token, settings.signing_key, algorithms=["HS256"],
         issuer=settings.jwt_issuer, audience=settings.jwt_audience,
-        options={"require": ["sub", "org", "ver", "typ", "jti", "iat", "exp", "iss", "aud"]},
+        options={"require": ["sub", "ver", "identity_version", "typ", "jti", "iat", "exp", "iss", "aud"]},
         leeway=5,
     )
 
