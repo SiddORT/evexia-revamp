@@ -16,3 +16,4 @@
 - [Isolated Python parsers](isolated-python-parsers.md) — test child imports explicitly; isolated Python does not inherit Replit's package search path.
 - [Auth renewal and drafts](auth-renewal-drafts.md) — fail-closed session checks must not discard already-mounted browser-local editor drafts.
 - [Session rollout compatibility](session-rollout.md) — preserve revoked legacy credential history; require fresh login at a new session-binding boundary.
+- [Existing secret confirmations](existing-secret-confirmations.md) — a secret confirmation does not prove its value was replaced; use explicit editing when validation still fails.
