@@ -2,7 +2,7 @@
 /* The portal's global 320px minimum exceeds the available width when a
    non-overlay vertical scrollbar occupies part of a 320px viewport. */
 html:has(.admin-settings-layout), body:has(.admin-settings-layout) { min-width: 0; }
-.admin-settings-layout { display: grid; grid-template-columns: 1fr; gap: 16px; max-width: 1100px; align-items: start; }
+.admin-settings-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
 .admin-settings-nav { display: grid; gap: 10px; min-width: 0; }
 .admin-settings-nav__search { display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 8px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-muted); }
 .admin-settings-nav__search:focus-within { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
