@@ -5,6 +5,7 @@ from sqlalchemy import String, and_, case, cast, exists, func, or_, select
 
 from app.db.models import AuditEvent, AuthSession, MRProfile, User
 from app.repositories.report_labels import BROWSER_ACTIONS, RESOURCE_NAMES
+from app.repositories.sessions import revocation_reason_projection
 
 
 def eligible():
@@ -52,6 +53,10 @@ def session_query(now):
     return select(
         AuthSession.id, AuthSession.created_at, AuthSession.last_refreshed_at,
         AuthSession.expires_at, AuthSession.revoked_at, AuthSession.persistent,
+        case(
+            (AuthSession.status == "REVOKED", revocation_reason_projection()),
+            else_=None,
+        ).label("revocation_reason"),
         state.label("state"), *user_columns(),
     ).select_from(AuthSession).outerjoin(User, User.id == AuthSession.user_id)
 
@@ -66,7 +71,7 @@ def effective_state(now):
 
 def public_session(row, current_id):
     fields = ("id", "state", "created_at", "last_refreshed_at", "expires_at",
-              "revoked_at", "persistent")
+              "revoked_at", "persistent", "revocation_reason")
     return {**{field: row[field] for field in fields}, "user": public_user(row),
             "is_current": row["id"] == current_id}
 

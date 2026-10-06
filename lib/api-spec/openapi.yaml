@@ -787,6 +787,25 @@
             "title": "Persistent",
             "type": "boolean"
           },
+          "revocation_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "new_login",
+                  "logout",
+                  "password_change",
+                  "identity_change",
+                  "identity_invalid",
+                  "replay"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revocation Reason"
+          },
           "revoked_at": {
             "anyOf": [
               {
@@ -828,6 +847,7 @@
           "last_refreshed_at",
           "expires_at",
           "revoked_at",
+          "revocation_reason",
           "persistent",
           "is_current"
         ],

@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { ReportSessionRevocationReason } from "./reportSessionRevocationReason";
 import type { ReportSessionState } from "./reportSessionState";
 import type { ReportUser } from "./reportUser";
 
@@ -15,6 +16,7 @@ export interface ReportSession {
   is_current: boolean;
   last_refreshed_at: Date | null;
   persistent: boolean;
+  revocation_reason: ReportSessionRevocationReason;
   revoked_at: Date | null;
   state: ReportSessionState;
   user: ReportUser | null;

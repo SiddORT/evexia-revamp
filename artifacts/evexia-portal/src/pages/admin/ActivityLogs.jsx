@@ -12,6 +12,20 @@ const browserActions = {
   browser_imported: 'Records imported', browser_exported: 'Export generated',
   browser_settings_changed: 'Settings changed',
 };
+const revocationReasons = {
+  new_login: 'Replaced by a new login',
+  logout: 'Logged out',
+  password_change: 'Password changed',
+  identity_change: 'Account access changed',
+  identity_invalid: 'Account security changed',
+  replay: 'Revoked for security',
+};
+const endingReason = (s) => {
+  if (s.state === 'REVOKED') return revocationReasons[s.revocation_reason] || 'Reason unavailable';
+  if (s.state === 'EXPIRED') return 'Session time limit passed';
+  if (s.state === 'INVALIDATED') return 'Account access or security changed';
+  return '—';
+};
 const resourceNames = {
   dashboard: 'Dashboard', zone: 'Zone Master', courier_partner: 'Courier Partner',
   storage_location: 'Storage Location', headquarter: 'Headquarter Master',
@@ -343,11 +357,12 @@ export default function ActivityLogs() {
         {view === 'sessions' ? (
            <>
           <State r={sessions} empty="No sessions found" cols="sessions">
-             <thead><tr><th scope="col">Sr No</th><th>User</th><th>Session reference</th><th>State</th><th>Session created / login</th><th>Last refreshed</th><th>Expires</th><th>Revoked</th><th>Remember me / persistent</th></tr></thead>
+             <thead><tr><th scope="col">Sr No</th><th>User</th><th>Session reference</th><th>State</th><th>Why session ended</th><th>Session created / login</th><th>Last refreshed</th><th>Expires</th><th>Revoked</th><th>Remember me / persistent</th></tr></thead>
              <tbody>{sessions.data?.items?.map((s, index) => (
                <tr key={s.id}><td>{sessions.offset + index + 1}</td><td><span className="admin-table__name">{who(s.user)}</span><br /><small>{dash(s.user?.role)} · {dash(s.user?.account_state)}</small></td>
                 <td className="alog-mono">{s.id}</td>
                 <td><span className={`admin-badge${s.state === 'ACTIVE' ? '' : ' admin-badge--inactive'}`}>{s.state}</span>{s.is_current && <small className="alog-current"> Current</small>}</td>
+                <td data-testid="text-session-ending-reason">{endingReason(s)}</td>
                 <td>{fmt(s.created_at)}</td><td>{fmt(s.last_refreshed_at)}</td><td>{fmt(s.expires_at)}</td><td>{fmt(s.revoked_at)}</td><td>{s.persistent ? 'Yes' : 'No'}</td></tr>
             ))}</tbody>
           </State>

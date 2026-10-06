@@ -21,6 +21,9 @@ class ReportSession(BaseModel):
     last_refreshed_at: datetime | None
     expires_at: datetime
     revoked_at: datetime | None
+    revocation_reason: Literal[
+        "new_login", "logout", "password_change", "identity_change", "identity_invalid", "replay",
+    ] | None
     persistent: bool
     is_current: bool
 

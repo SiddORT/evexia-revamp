@@ -215,6 +215,17 @@ export const ListReportingSessionsResponse = zod.object({
       is_current: zod.boolean(),
       last_refreshed_at: zod.union([zod.coerce.date(), zod.null()]),
       persistent: zod.boolean(),
+      revocation_reason: zod.union([
+        zod.enum([
+          "new_login",
+          "logout",
+          "password_change",
+          "identity_change",
+          "identity_invalid",
+          "replay",
+        ]),
+        zod.null(),
+      ]),
       revoked_at: zod.union([zod.coerce.date(), zod.null()]),
       state: zod.enum(["ACTIVE", "EXPIRED", "REVOKED", "INVALIDATED"]),
       user: zod.union([
@@ -280,6 +291,17 @@ export const GetReportingSummaryResponse = zod.object({
     is_current: zod.boolean(),
     last_refreshed_at: zod.union([zod.coerce.date(), zod.null()]),
     persistent: zod.boolean(),
+    revocation_reason: zod.union([
+      zod.enum([
+        "new_login",
+        "logout",
+        "password_change",
+        "identity_change",
+        "identity_invalid",
+        "replay",
+      ]),
+      zod.null(),
+    ]),
     revoked_at: zod.union([zod.coerce.date(), zod.null()]),
     state: zod.enum(["ACTIVE", "EXPIRED", "REVOKED", "INVALIDATED"]),
     user: zod.union([

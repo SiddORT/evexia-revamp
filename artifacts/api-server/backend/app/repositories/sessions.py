@@ -2,7 +2,7 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import select, update
+from sqlalchemy import case, select, update
 from sqlalchemy.orm import Session
 
 from app.db.models import AuditEvent, AuthSession, RefreshSession, User
@@ -11,6 +11,30 @@ from app.db.models import AuditEvent, AuthSession, RefreshSession, User
 _SAFE_LITERAL = re.compile(r"^[a-z][a-z0-9_]*$")
 _SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9._:-]*$")
 _SAFE_SESSION_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+
+REPORTABLE_REVOCATION_REASONS = (
+    "new_login", "logout", "password_change", "identity_change", "identity_invalid", "replay",
+)
+
+
+def revocation_reason_projection():
+    """First successful lifecycle transition only; never expose raw legacy text."""
+    return (
+        select(case(
+            (AuditEvent.reason.in_(REPORTABLE_REVOCATION_REASONS), AuditEvent.reason),
+            else_=None,
+        ))
+        .where(
+            AuditEvent.session_id == AuthSession.id,
+            AuditEvent.actor_id == AuthSession.user_id,
+            AuditEvent.action == "session_revoked",
+            AuditEvent.outcome == "success",
+        )
+        .order_by(AuditEvent.created_at.asc(), AuditEvent.id.asc())
+        .limit(1)
+        .correlate(AuthSession)
+        .scalar_subquery()
+    )
 
 
 def get_session(db: Session, session_id: str, lock: bool = False) -> AuthSession | None:

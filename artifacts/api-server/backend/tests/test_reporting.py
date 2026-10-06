@@ -401,6 +401,29 @@ def test_api_preserves_real_urlsafe_login_session_references(client):
     sessions = api.get(f"{BASE}/sessions?user_id={user.id}", headers=headers)
     assert any(row["id"] == sid for row in sessions.json()["items"])
 
+@pytest.mark.parametrize("reason", [
+    "new_login", "logout", "password_change", "identity_change", "identity_invalid", "replay",
+])
+def test_session_reason_uses_real_revocation_writer_without_changing_history(client, reason):
+    from app.repositories.sessions import revoke_session
+    api, db, _ = client
+    headers, _ = admin_headers(api, db)
+    user = create_user(db, f"reason-{reason}@example.com")
+    session = add_session(db, user, utcnow())
+    assert revoke_session(db, session, reason, "safe-test-request")
+    # Repeated revocation must not replace the original cause.
+    assert not revoke_session(db, session, "logout", "safe-repeat-request")
+    db.commit()
+    before = db.scalar(select(func.count(AuditEvent.id)))
+    response = api.get(f"{BASE}/sessions?user_id={user.id}&state=REVOKED&limit=1", headers=headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["items"][0]["revocation_reason"] == reason
+    assert body["items"][0]["state"] == "REVOKED"
+    assert not body["has_more"] and body["limit"] == 1
+    assert db.scalar(select(func.count(AuditEvent.id))) == before
+    summary = api.get(f"{BASE}/summary", headers=headers).json()
+    assert summary["current_session"]["revocation_reason"] is None
 @pytest.mark.parametrize("resource", ["sessions", "events"])
 def test_export_overflow_and_storage_failure_never_return_partial_data(client, monkeypatch, resource):
     from app.repositories import reporting, report_exports
@@ -460,3 +483,61 @@ def test_session_export_search_and_state_match_the_filtered_table(client):
         assert "export-search" not in response.text
     for query in ["state=bad", f"q={'x' * 101}"]:
         assert api.get(f"{BASE}/sessions/export?{query}", headers=headers).status_code == 422
+
+def test_session_reasons_ignore_untrusted_events_and_fail_closed_for_legacy_text(client):
+    api, db, _ = client
+    headers, admin = admin_headers(api, db)
+    user = create_user(db, "safe-reason-projection@example.com")
+    now = utcnow()
+    cases = ["missing", "unsafe", "unknown", "null", "first", "active", "expired", "invalidated"]
+    rows = {}
+    for name in cases:
+        overrides = {"id": f"Reason-{name}", "created_at": now}
+        if name not in {"active", "expired", "invalidated"}:
+            overrides.update(status="REVOKED", revoked_at=now)
+        elif name == "expired":
+            overrides["created_at"] = now - timedelta(days=1)
+            overrides["expires_at"] = now - timedelta(seconds=1)
+        elif name == "invalidated":
+            overrides["token_version"] = user.token_version + 1
+        rows[name] = add_session(db, user, now, **overrides)
+    def add_event(name, reason, sequence, **overrides):
+        values = dict(
+            id=uuid.UUID(int=sequence), actor_id=user.id, session_id=rows[name].id,
+            action="session_revoked", outcome="success", reason=reason, created_at=now,
+        )
+        values.update(overrides)
+        db.add(AuditEvent(**values))
+    # These must not explain a missing transition.
+    add_event("missing", "logout", 1, action="refresh_revoked")
+    add_event("missing", "logout", 2, outcome="failure")
+    add_event("missing", "logout", 3, actor_id=admin.id)
+    add_event("missing", "browser_reported", 4, action="browser_updated", outcome="reported")
+    add_event("unsafe", "password=NEVER_ECHO_CREDENTIAL", 5)
+    add_event("unknown", "secret_looks_like_a_safe_literal", 6)
+    add_event("null", None, 7)
+    add_event("first", "new_login", 8)
+    add_event("first", "logout", 9)  # same timestamp; ID breaks ties deterministically
+    add_event("first", "replay", 10, created_at=now + timedelta(seconds=1))
+    for i, name in enumerate(["active", "expired", "invalidated"], 11):
+        add_event(name, "logout", i)
+    # Do not skip an unsafe first event to invent a later recognized cause.
+    add_event("unsafe", "logout", 14, created_at=now + timedelta(seconds=1))
+    db.commit()
+    before = db.scalar(select(func.count(AuditEvent.id)))
+    pages = [
+        api.get(f"{BASE}/sessions?user_id={user.id}&limit=3&offset={offset}", headers=headers)
+        for offset in [0, 3, 6]
+    ]
+    assert all(response.status_code == 200 for response in pages)
+    assert [response.json()["has_more"] for response in pages] == [True, True, False]
+    items = [row for response in pages for row in response.json()["items"]]
+    assert len(items) == len(cases) and len({row["id"] for row in items}) == len(cases)
+    assert {row["id"]: row["revocation_reason"] for row in items} == {
+        rows[name].id: "new_login" if name == "first" else None for name in cases
+    }
+    assert db.scalar(select(func.count(AuditEvent.id))) == before
+    for response in pages:
+        for forbidden in ["NEVER_ECHO_CREDENTIAL", "secret_looks", "password_hash",
+                          "token_hash", "family_id", "token_version", "identity_version"]:
+            assert forbidden not in response.text

@@ -250,6 +250,9 @@ export interface ProvisionMRRequest {
   username?: string | null;
 }
 
+export type ReportSessionRevocationReason =
+  | (typeof ReportSessionRevocationReason)[keyof typeof ReportSessionRevocationReason]
+  | null;
 export interface ReportExport {
   columns: string[];
   limit: number;
@@ -274,6 +277,7 @@ export interface ReportSession {
   is_current: boolean;
   last_refreshed_at: string | null;
   persistent: boolean;
+  revocation_reason: ReportSessionRevocationReason;
   revoked_at: string | null;
   state: ReportSessionState;
   user: ReportUser | null;
@@ -479,3 +483,12 @@ export type ReplaceFileParams = {
    */
   expected_version: number;
 };
+
+export const ReportSessionRevocationReason = {
+  new_login: "new_login",
+  logout: "logout",
+  password_change: "password_change",
+  identity_change: "identity_change",
+  identity_invalid: "identity_invalid",
+  replay: "replay",
+} as const;
