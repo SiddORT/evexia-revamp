@@ -15,7 +15,9 @@
 .alog-head-actions { display: flex; align-items: center; gap: 8px; }
 .alog-filter-button { position: relative; min-width: 38px; justify-content: center; }
 .alog-filter-dot { position: absolute; right: 3px; top: 3px; width: 7px; height: 7px; border-radius: 50%; background: var(--admin-accent); }
-.alog-search { margin: 14px 16px; max-width: 440px; }
+.alog-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.alog-toolbar__controls { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; flex: 1 1 460px; min-width: 0; }
+.alog-search { margin: 0; flex: 1 1 240px; max-width: 440px; min-width: 0; }
 .alog-search input { width: 100%; min-width: 0; }
 .alog-filter-toggle { padding: 14px 16px; color: var(--ink); font-weight: 700; cursor: pointer; }
 .alog-filter-toggle span { float: right; color: var(--muted); font-size: 11px; font-weight: 400; }
@@ -30,14 +32,14 @@
 .alog-picker__list button:hover, .alog-picker__list button:focus-visible { background: var(--admin-state-soft); outline: none; }
 .alog-picker__list li.alog-muted { padding: 6px 9px; }
 .alog-picker__nav { display: flex; justify-content: space-between; }
-.alog-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+.alog-tabs { display: flex; flex-wrap: wrap; gap: 4px; }
 .alog-tab { min-height: 38px; padding: 0 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink-soft); font-size: 12px; font-weight: 700; cursor: pointer; }
 .alog-tab--on { background: var(--admin-sidebar-active-bg); border-color: var(--admin-accent); color: var(--admin-sidebar-active); }
 .alog-tab:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
 .alog-table th:first-child, .alog-table td:first-child { width: auto; text-align: left; }
 .alog-table[data-cols="events"] { min-width: 1000px; }
 .alog-table[data-cols="sessions"] { min-width: 860px; }
-.alog-table[data-cols="sessions"] th:first-child, .alog-table[data-cols="sessions"] td:first-child { width: 55px; }
+.alog-table th:first-child, .alog-table td:first-child { width: 55px; }
 .alog-table td { white-space: nowrap; }
 .alog-mono { font-family: ui-monospace, monospace; font-size: 11px !important; }
 .alog-current { color: var(--admin-accent); font-weight: 700; }

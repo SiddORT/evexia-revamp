@@ -71,9 +71,10 @@ def sessions(identity: Admin, db: Database, pagination=Depends(page), selection=
 
 
 @router.get("/events", response_model=EventPage, operation_id="listReportingEvents")
-def events(identity: Admin, db: Database, pagination=Depends(page), selection=Depends(filters)):
+def events(identity: Admin, db: Database, pagination=Depends(page), selection=Depends(filters),
+           q: str = Query("", max_length=100)):
     """Occurrence-time range [start,end). All recorded categories; missing actors are retained."""
-    return reporting.events(db, *pagination, *selection)
+    return reporting.events(db, *pagination, *selection, q)
 
 @router.get("/sessions/export", response_model=ReportExport, operation_id="exportReportingSessions")
 def export_sessions(identity: Admin, db: Database, selection=Depends(filters),
@@ -83,6 +84,7 @@ def export_sessions(identity: Admin, db: Database, selection=Depends(filters),
     return report_exports.export_report(db, "sessions", utcnow(), identity.session_id, selection, q, state)
 
 @router.get("/events/export", response_model=ReportExport, operation_id="exportReportingEvents")
-def export_events(identity: Admin, db: Database, selection=Depends(filters)):
+def export_events(identity: Admin, db: Database, selection=Depends(filters),
+                  q: str = Query("", max_length=100)):
     """Fresh bounded snapshot of safe metadata, preserving observation provenance."""
-    return report_exports.export_report(db, "events", utcnow(), identity.session_id, selection)
+    return report_exports.export_report(db, "events", utcnow(), identity.session_id, selection, q)

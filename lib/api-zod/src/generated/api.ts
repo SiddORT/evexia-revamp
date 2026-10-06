@@ -73,6 +73,9 @@ export const RecordBrowserActivityResponse = zod.void();
  * Occurrence-time range [start,end). All recorded categories; missing actors are retained.
  * @summary Events
  */
+export const listReportingEventsQueryQDefault = ``;
+export const listReportingEventsQueryQMax = 100;
+
 export const listReportingEventsQueryLimitDefault = 20;
 export const listReportingEventsQueryLimitMax = 100;
 
@@ -81,6 +84,10 @@ export const listReportingEventsQueryOffsetMin = 0;
 export const listReportingEventsQueryOffsetMax = 10000;
 
 export const ListReportingEventsQueryParams = zod.object({
+  q: zod.coerce
+    .string()
+    .max(listReportingEventsQueryQMax)
+    .default(listReportingEventsQueryQDefault),
   limit: zod.coerce
     .number()
     .int()
@@ -136,7 +143,14 @@ export const ListReportingEventsResponse = zod.object({
  * Fresh bounded snapshot of safe metadata, preserving observation provenance.
  * @summary Export Events
  */
+export const exportReportingEventsQueryQDefault = ``;
+export const exportReportingEventsQueryQMax = 100;
+
 export const ExportReportingEventsQueryParams = zod.object({
+  q: zod.coerce
+    .string()
+    .max(exportReportingEventsQueryQMax)
+    .default(exportReportingEventsQueryQDefault),
   user_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
   start: zod.union([zod.date(), zod.null()]).optional(),
   end: zod.union([zod.date(), zod.null()]).optional(),

@@ -69,6 +69,23 @@ for (const [name, scheme, viewport] of [['dark desktop', 'dark', { width: 1440, 
     }, scheme);
     await expect(page.getByTestId('section-activity-summary')).toBeVisible();
     await expect(page.getByTestId('section-current-session')).toHaveCount(0);
+    const toolbar = page.getByTestId('toolbar-activity');
+    await expect(toolbar.getByRole('tablist')).toBeVisible();
+    await expect(toolbar.getByRole('searchbox', { name: 'Search sessions' })).toBeVisible();
+    await expect(toolbar.getByRole('button', { name: 'Export sessions CSV' })).toBeVisible();
+    expect(await toolbar.getByRole('tablist').getByRole('searchbox').count()).toBe(0);
+    const tabsBox = await toolbar.getByRole('tablist').boundingBox();
+    const searchBox = await toolbar.getByRole('searchbox').boundingBox();
+    const exportBox = await toolbar.getByRole('button', { name: 'Export sessions CSV' }).boundingBox();
+    if (viewport.width > 640) {
+      expect(searchBox.x).toBeGreaterThan(tabsBox.x + tabsBox.width);
+      expect(Math.abs(searchBox.y - tabsBox.y)).toBeLessThan(5);
+      expect(Math.abs(exportBox.y - tabsBox.y)).toBeLessThan(5);
+    }
+    for (const box of [tabsBox, searchBox, exportBox]) {
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
     await page.screenshot({ path: testInfo.outputPath(`activity-${scheme}.png`), fullPage: true });
   });
@@ -337,7 +354,7 @@ test('overflow, network, incomplete response and browser download failures never
   }
 });
 
-for (const cancel of ['logout', 'filters', 'tab', 'authorization']) {
+for (const cancel of ['logout', 'filters', 'tab', 'authorization', 'search']) {
   test(`pending CSV is discarded on ${cancel}`, async ({ page }) => {
     await authenticateAdmin(page);
     await page.goto(`${base()}/admin/activity-logs`);
@@ -364,6 +381,9 @@ for (const cancel of ['logout', 'filters', 'tab', 'authorization']) {
     } else if (cancel === 'tab') {
       await page.getByTestId('tab-activity-events').click();
       await expect(page.getByTestId('button-activity-export-events')).toBeEnabled();
+    } else if (cancel === 'search') {
+      await page.getByTestId('input-activity-session-search').fill('cancel-export');
+      await expect(page.getByTestId('status-activity-export')).toContainText('cancelled');
     } else {
       // The final server authorization check must fail closed even after a
       // successful snapshot response, without releasing that snapshot.
@@ -375,3 +395,94 @@ for (const cancel of ['logout', 'filters', 'tab', 'authorization']) {
     expect(downloads).toHaveLength(0);
   });
 }
+
+test('activity whole-result search, serials, independent tabs, keyboard controls and searched CSV', async ({ page }) => {
+  await authenticateAdmin(page);
+  const rows = Array.from({ length: 28 }, (_, i) => ({
+    id: `event-${i}`, created_at: '2030-02-02T00:00:00Z',
+    user: { label: 'Paged actor', role: 'super_admin', account_state: 'enabled' },
+    action: 'browser_created', outcome: 'reported', reason: 'browser_reported',
+    resource_type: 'zone', resource_id: null, session_id: `EventRef${i}`, request_id: null,
+  }));
+  const calls = [];
+  await page.route(/\/reporting\/events(?:\/export)?(?:\?|$)/, async (route) => {
+    const url = new URL(route.request().url());
+    calls.push(url);
+    const q = (url.searchParams.get('q') || '').toLowerCase();
+    const filtered = rows.filter((row) => !q || row.session_id.toLowerCase().includes(q) ||
+      'record created zone master browser-reported paged actor'.includes(q));
+    if (url.pathname.endsWith('/export')) {
+      return route.fulfill({ json: {
+        columns: ['Occurred (UTC)', 'User', 'Role', 'Account state', 'Action', 'Outcome', 'Reason', 'Resource type', 'Provenance'],
+        rows: filtered.map((row) => [row.created_at, row.user.label, 'super_admin', 'enabled',
+          row.action, row.outcome, row.reason, row.resource_type, 'Browser-reported']),
+        row_count: filtered.length, limit: 5000,
+      } });
+    }
+    const offset = Number(url.searchParams.get('offset') || 0);
+    const limit = Number(url.searchParams.get('limit') || 25);
+    return route.fulfill({ json: {
+      items: filtered.slice(offset, offset + limit), offset, limit, has_more: offset + limit < filtered.length,
+    } });
+  });
+  await page.goto(`${base()}/admin/activity-logs`);
+  await page.getByTestId('input-activity-session-search').fill('independent-session-query');
+  await expect(page.getByTestId('panel-activity-sessions')).toContainText('No sessions found');
+  await page.getByTestId('tab-activity-sessions').focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByTestId('tab-activity-events')).toBeFocused();
+  const panel = page.getByTestId('panel-activity-events');
+  const search = page.getByRole('searchbox', { name: 'Search activity events' });
+  await expect(panel).toContainText('Page 1 · Rows 1–25');
+  await panel.getByRole('button', { name: 'Next page' }).click();
+  await expect(panel).toContainText('Page 2 · Rows 26–28');
+  await expect(panel.locator('tbody tr td').first()).toHaveText('26');
+  await expect(panel.getByRole('button', { name: 'Next page' })).toBeDisabled();
+  await search.fill('EventRef27');
+  await expect(page.getByTestId('button-activity-export-events')).toBeDisabled();
+  await expect(panel).toContainText('Page 1 · Rows 1–1');
+  await expect(panel.locator('tbody tr td').first()).toHaveText('1');
+  await expect(panel).toContainText('EventRef27');
+  await page.getByTestId('tab-activity-sessions').click();
+  await expect(page.getByTestId('input-activity-session-search')).toHaveValue('independent-session-query');
+  await page.getByTestId('tab-activity-events').click();
+  await expect(search).toHaveValue('EventRef27');
+  let download = page.waitForEvent('download');
+  await page.getByTestId('button-activity-export-events').click();
+  let csv = await readFile(await (await download).path(), 'utf8');
+  expect(csv.trim().split('\r\n')).toHaveLength(2);
+  expect(calls.filter((u) => u.pathname.endsWith('/export')).at(-1).searchParams.get('q')).toBe('EventRef27');
+  await search.fill('Record created');
+  await expect(panel).toContainText('Page 1 · Rows 1–25');
+  download = page.waitForEvent('download');
+  await page.getByTestId('button-activity-export-events').click();
+  csv = await readFile(await (await download).path(), 'utf8');
+  expect(csv.trim().split('\r\n')).toHaveLength(29);
+  expect(csv).not.toContain('EventRef');
+  await search.fill('no-such-event');
+  await expect(panel).toContainText('No events found');
+  await expect(panel).toContainText('No rows · Page 1');
+  await expect(panel.getByRole('button', { name: 'Previous page' })).toBeDisabled();
+  await expect(panel.getByRole('button', { name: 'Next page' })).toBeDisabled();
+});
+
+test('activity pending search and export cannot release stale results or downloads', async ({ page }) => {
+  await authenticateAdmin(page);
+  await page.goto(`${base()}/admin/activity-logs`);
+  await page.getByTestId('tab-activity-events').click();
+  let pending, intercepted;
+  const started = new Promise((resolve) => { intercepted = resolve; });
+  const downloads = [];
+  page.on('download', (download) => downloads.push(download));
+  await page.route('**/reporting/events/export*', async (route) => {
+    pending = [route, await route.fetch()];
+    intercepted();
+  });
+  await page.getByTestId('button-activity-export-events').click();
+  await started;
+  await page.getByTestId('input-activity-event-search').fill('no-such-activity-query');
+  await expect(page.getByTestId('status-activity-export')).toContainText('cancelled');
+  await pending[0].fulfill({ response: pending[1] }).catch(() => {});
+  await expect(page.getByTestId('panel-activity-events')).toContainText('No events found');
+  expect(downloads).toHaveLength(0);
+});

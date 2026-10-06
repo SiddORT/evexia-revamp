@@ -358,6 +358,14 @@ test('session exports permit state and search filters but never pagination or ev
   assert.equal(query.get('state'), 'REVOKED');
   await assert.rejects(api.reportingRequest('sessions/export', { offset: 25 }), /Unsupported/);
   await assert.rejects(api.reportingRequest('events/export', { state: 'REVOKED' }), /Unsupported/);
+  for (const resource of ['events', 'events/export']) {
+    await api.reportingRequest(resource, { q: 'Browser-reported %_/', user_id: user.id, start: '2030-02-02T00:00:00Z' });
+    const eventQuery = new URL(calls.at(-1), 'https://example.test').searchParams;
+    assert.equal(eventQuery.get('q'), 'Browser-reported %_/');
+    assert.equal(eventQuery.get('user_id'), user.id);
+    assert.equal(eventQuery.get('start'), '2030-02-02T00:00:00Z');
+  }
+  await assert.rejects(api.reportingRequest('events/export', { limit: 25 }), /Unsupported/);
   await api.logoutAdmin();
 });
 

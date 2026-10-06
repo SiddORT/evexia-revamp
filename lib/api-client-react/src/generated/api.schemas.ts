@@ -333,6 +333,10 @@ export interface UserPage {
 
 export type ListReportingEventsParams = {
   /**
+   * @maxLength 100
+   */
+  q?: string;
+  /**
    * @minimum 1
    * @maximum 100
    */
@@ -348,6 +352,10 @@ export type ListReportingEventsParams = {
 };
 
 export type ExportReportingEventsParams = {
+  /**
+   * @maxLength 100
+   */
+  q?: string;
   user_id?: string | null;
   start?: string | null;
   end?: string | null;

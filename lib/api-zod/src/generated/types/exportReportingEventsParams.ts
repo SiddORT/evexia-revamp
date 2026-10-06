@@ -7,6 +7,10 @@
  */
 
 export type ExportReportingEventsParams = {
+  /**
+   * @maxLength 100
+   */
+  q?: string;
   user_id?: string | null;
   start?: Date | null;
   end?: Date | null;

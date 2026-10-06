@@ -177,6 +177,8 @@ export default function ActivityLogs() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
+  const [eventSearch, setEventSearch] = useState('');
+  const [eventQuery, setEventQuery] = useState('');
   const [formError, setFormError] = useState('');
   const [view, setView] = useState('sessions');
   const [sum, setSum] = useState({ loading: false, data: null, error: null });
@@ -187,11 +189,20 @@ export default function ActivityLogs() {
     const timer = setTimeout(() => setQuery(search.trim()), 300);
     return () => clearTimeout(timer);
   }, [search]);
+  useEffect(() => {
+    const timer = setTimeout(() => setEventQuery(eventSearch.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [eventSearch]);
   const sessionParams = { ...params, ...(query ? { q: query } : {}), ...(applied.state ? { state: applied.state } : {}) };
-  const exportParams = view === 'sessions' ? sessionParams : params;
-  const searchPending = view === 'sessions' && search.trim() !== query;
-  const sessions = useReport('sessions', sessionParams, enabled && view === 'sessions', identity);
-  const events = useReport('events', params, enabled && view === 'events', identity);
+  const eventParams = { ...params, ...(eventQuery ? { q: eventQuery } : {}) };
+  const exportParams = view === 'sessions' ? sessionParams : eventParams;
+  const sessionPending = search.trim() !== query;
+  const eventPending = eventSearch.trim() !== eventQuery;
+  const searchPending = view === 'sessions' ? sessionPending : eventPending;
+  const sessionReport = useReport('sessions', sessionParams, enabled && view === 'sessions' && !sessionPending, identity);
+  const eventReport = useReport('events', eventParams, enabled && view === 'events' && !eventPending, identity);
+  const sessions = sessionPending ? { ...sessionReport, loading: true, data: null, error: null } : sessionReport;
+  const events = eventPending ? { ...eventReport, loading: true, data: null, error: null } : eventReport;
   const idRef = useRef(identity);
   const exportController = useRef(null);
   const [exportState, setExportState] = useState({ busy: false, error: false, message: '' });
@@ -200,14 +211,14 @@ export default function ActivityLogs() {
     if (!exportController.current) return;
     exportController.current.abort();
     exportController.current = null;
-    setExportState({ busy: false, error: true, message: 'Export cancelled because the filters, tab or session changed. No file was downloaded.' });
+    setExportState({ busy: false, error: true, message: 'Export cancelled because the search, filters, tab or session changed. No file was downloaded.' });
   };
 
   useEffect(() => {
     if (exportController.current) {
       exportController.current.abort();
       exportController.current = null;
-      setExportState({ busy: false, error: true, message: 'Export cancelled because the filters, tab or session changed. No file was downloaded.' });
+      setExportState({ busy: false, error: true, message: 'Export cancelled because the search, filters, tab or session changed. No file was downloaded.' });
     } else setExportState({ busy: false, error: false, message: '' });
     return () => { exportController.current?.abort(); };
   }, [enabled, identity, view, exportKey]);
@@ -231,7 +242,7 @@ export default function ActivityLogs() {
     if (idRef.current !== identity) {
       idRef.current = identity;
       setDraft({ user: null, start: '', end: '', state: '' }); setApplied({ user: null, start: '', end: '', state: '' }); setFormError('');
-      setSearch(''); setQuery(''); setFilterOpen(false);
+      setSearch(''); setQuery(''); setEventSearch(''); setEventQuery(''); setFilterOpen(false);
     }
   }, [identity]);
 
@@ -301,24 +312,36 @@ export default function ActivityLogs() {
       </form>
        </div>
 
+      <div className="alog-toolbar" data-testid="toolbar-activity">
       <div className="alog-tabs" role="tablist" aria-label="History">
         {[['sessions', 'Sessions'], ['events', 'Activity events']].map(([k, l]) => (
-          <button key={k} type="button" role="tab" aria-selected={view === k} className={`alog-tab${view === k ? ' alog-tab--on' : ''}`} onClick={() => { if (view !== k) cancelExport(); setView(k); }} data-testid={`tab-activity-${k}`}>{l}</button>
+          <button key={k} id={`alog-tab-${k}`} type="button" role="tab" aria-selected={view === k} aria-controls={`alog-panel-${k}`} tabIndex={view === k ? 0 : -1} className={`alog-tab${view === k ? ' alog-tab--on' : ''}`} onClick={() => { if (view !== k) cancelExport(); setView(k); }} onKeyDown={(e) => {
+            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+            e.preventDefault();
+            const next = e.key === 'Home' ? 'sessions' : e.key === 'End' ? 'events' : view === 'sessions' ? 'events' : 'sessions';
+            if (view !== next) cancelExport();
+            setView(next);
+            document.getElementById(`alog-tab-${next}`)?.focus();
+          }} data-testid={`tab-activity-${k}`}>{l}</button>
         ))}
       </div>
-       <p className="alog-muted">Dates filter {view === 'sessions' ? 'session creation / login' : 'event occurrence'} in UTC; the selected end date is included. “—” means not recorded. {view === 'sessions' && 'Active: valid now. Expired: time limit passed. Revoked: ended by logout, a new login, or a security action. Invalidated: account is ineligible or its security version changed. Last refreshed: when login credentials were renewed within this session. Refresh report only reloads these results.'}</p>
-      <div className="alog-export">
+      <div className="alog-toolbar__controls">
+        <div className="alog-search admin-search"><Search size={16} aria-hidden="true" /><input type="search" aria-label={view === 'sessions' ? 'Search sessions' : 'Search activity events'} placeholder={view === 'sessions' ? 'Search user name, email or session reference' : 'Search user, action, outcome or reference'} maxLength={100} value={view === 'sessions' ? search : eventSearch} onChange={(e) => { cancelExport(); if (view === 'sessions') setSearch(e.target.value); else setEventSearch(e.target.value); }} data-testid={`input-activity-${view === 'sessions' ? 'session' : 'event'}-search`} /></div>
         <button type="button" className="admin-button admin-button--secondary" onClick={exportCSV} disabled={exportState.busy || !enabled || !!checked.error || searchPending} data-testid={`button-activity-export-${view}`}>
           <Download size={14} aria-hidden="true" />{exportState.busy ? 'Exporting…' : `Export ${view === 'sessions' ? 'sessions' : 'activity'} CSV`}
         </button>
-        <p className="alog-muted">Exports all matching rows, not just this page, using applied filters. Maximum 5,000 rows; narrow filters if exceeded. Session and record identifiers are excluded. Downloaded files contain account labels; keep them private.</p>
+      </div>
+      </div>
+       <p className="alog-muted">Dates filter {view === 'sessions' ? 'session creation / login' : 'event occurrence'} in UTC; the selected end date is included. “—” means not recorded. {view === 'sessions' && 'Active: valid now. Expired: time limit passed. Revoked: ended by logout, a new login, or a security action. Invalidated: account is ineligible or its security version changed. Last refreshed: when login credentials were renewed within this session. Refresh report only reloads these results.'}</p>
+      <div className="alog-export">
+        <p className="alog-muted">Exports all matching rows, not just this page, using applied filters and search. Maximum 5,000 rows; narrow filters if exceeded. Session and record identifiers are excluded. Downloaded files contain account labels; keep them private.</p>
+        {searchPending && <p className="alog-muted" role="status">Applying search… Export will be available when search is applied.</p>}
         {exportState.message && <p role={exportState.error ? 'alert' : 'status'} className={exportState.error ? 'admin-feedback admin-feedback--error' : 'alog-muted'} data-testid="status-activity-export">{exportState.message}</p>}
       </div>
 
-      <section className="admin-panel" aria-label={view === 'sessions' ? 'Sessions' : 'Activity events'} data-testid={`panel-activity-${view}`}>
+      <section id={`alog-panel-${view}`} role="tabpanel" aria-labelledby={`alog-tab-${view}`} className="admin-panel" data-testid={`panel-activity-${view}`}>
         {view === 'sessions' ? (
            <>
-           <div className="alog-search admin-search"><Search size={16} aria-hidden="true" /><input type="search" aria-label="Search sessions" placeholder="Search user name, email or session reference" maxLength={100} value={search} onChange={(e) => { cancelExport(); setSearch(e.target.value); }} data-testid="input-activity-session-search" /></div>
           <State r={sessions} empty="No sessions found" cols="sessions">
              <thead><tr><th scope="col">Sr No</th><th>User</th><th>Session reference</th><th>State</th><th>Session created / login</th><th>Last refreshed</th><th>Expires</th><th>Revoked</th><th>Remember me / persistent</th></tr></thead>
              <tbody>{sessions.data?.items?.map((s, index) => (
@@ -331,9 +354,9 @@ export default function ActivityLogs() {
            </>
         ) : (
           <State r={events} empty="No events found" cols="events">
-            <thead><tr><th>Event occurred</th><th>User</th><th>Action</th><th>Outcome</th><th>Reason</th><th>Resource</th><th>Session</th><th>Request</th></tr></thead>
-            <tbody>{events.data?.items?.map((ev) => (
-              <tr key={ev.id}><td>{fmt(ev.created_at)}</td><td>{who(ev.user)}</td><td>{browserActions[ev.action] || dash(ev.action)}</td>
+            <thead><tr><th scope="col">Sr No</th><th>Event occurred</th><th>User</th><th>Action</th><th>Outcome</th><th>Reason</th><th>Resource</th><th>Session</th><th>Request</th></tr></thead>
+            <tbody>{events.data?.items?.map((ev, index) => (
+              <tr key={ev.id}><td>{events.offset + index + 1}</td><td>{fmt(ev.created_at)}</td><td>{who(ev.user)}</td><td>{browserActions[ev.action] || dash(ev.action)}</td>
                 <td><span className={`admin-badge${['success', 'reported'].includes(String(ev.outcome).toLowerCase()) ? '' : ' admin-badge--inactive'}`}>{dash(ev.outcome)}</span></td>
                 <td>{ev.reason === 'browser_reported' ? 'Browser-reported' : dash(ev.reason)}</td><td>{resourceNames[ev.resource_type] || dash(ev.resource_type)}{ev.resource_id ? ` / ${ev.resource_id}` : ''}</td>
                 <td className="alog-mono">{dash(ev.session_id)}</td><td className="alog-mono">{dash(ev.request_id)}</td></tr>

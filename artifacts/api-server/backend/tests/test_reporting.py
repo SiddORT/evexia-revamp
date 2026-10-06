@@ -231,6 +231,71 @@ def test_session_search_combines_with_effective_state_dates_user_and_pages(clien
         assert forbidden not in first.text
 
 
+def test_event_search_entire_history_safe_labels_filters_and_exports(client):
+    api, db, _ = client
+    headers, admin = admin_headers(api, db)
+    user = create_user(db, "search-events@example.com")
+    user.username = "Event Search Actor"
+    start = datetime(2030, 2, 2, tzinfo=timezone.utc)
+    reference = uuid.uuid4()
+    ids = []
+    for i in range(28):
+        add_session(db, user, start, id=f"SafeEventRef{i:02d}")
+        event = AuditEvent(
+            actor_id=user.id, action="browser_created", outcome="reported",
+            reason="browser_reported", resource_type="zone", resource_id=reference,
+            session_id=f"SafeEventRef{i:02d}", request_id=f"Request.Event:{i:02d}",
+            created_at=start + timedelta(minutes=i),
+        )
+        db.add(event)
+        db.flush()
+        ids.append(str(event.id))
+    # Missing/deleted actors must survive search and keep their public fallback.
+    db.add(AuditEvent(actor_id=None, action="file_upload", outcome="success",
+                      resource_type="file", created_at=start))
+    # All of these contain a marker that must never be searchable or displayed.
+    add_session(db, admin, start, id="private_marker token")
+    add_session(db, admin, start, id="session_marker\n")
+    db.add(AuditEvent(actor_id=admin.id, action="private_marker action", outcome="private_marker!",
+                      reason="private_marker secret", resource_type="private_marker secret",
+                      session_id="private_marker token", request_id="private_marker secret",
+                      created_at=start))
+    db.add(AuditEvent(actor_id=admin.id, action="newline_marker\n", outcome="success",
+                      reason="reason_marker\n", resource_type="resource_marker\n",
+                      request_id="request_marker\n", session_id="session_marker\n",
+                      created_at=start))
+    db.commit()
+
+    selection = dict(user_id=str(user.id), start="2030-02-02T00:00:00Z", end="2030-02-03T00:00:00Z")
+    for q in ["EVENT SEARCH", "search-events@", "Record created", "ZONE MASTER",
+              "Browser-reported", "browser_created", "reported", "zone", str(reference)]:
+        first = api.get(f"{BASE}/events", headers=headers, params={**selection, "q": q, "limit": 25}).json()
+        second = api.get(f"{BASE}/events", headers=headers, params={**selection, "q": q, "limit": 25, "offset": 25}).json()
+        assert first["has_more"] and not second["has_more"]
+        assert [row["id"] for row in first["items"] + second["items"]] == list(reversed(ids))
+        exported = api.get(f"{BASE}/events/export", headers=headers, params={**selection, "q": q}).json()
+        assert exported["row_count"] == 28
+        assert all(row[-1] == "Browser-reported" for row in exported["rows"])
+        assert str(reference) not in str(exported)
+    for q in ["SafeEventRef27", "request.event:27"]:
+        rows = api.get(f"{BASE}/events", headers=headers, params={**selection, "q": q}).json()["items"]
+        assert [row["id"] for row in rows] == [ids[27]]
+        assert api.get(f"{BASE}/events/export", headers=headers, params={**selection, "q": q}).json()["row_count"] == 1
+    for q in ["%", "private_marker", "newline_marker", "reason_marker", "resource_marker",
+              "request_marker", "session_marker"]:
+        assert api.get(f"{BASE}/events", headers=headers, params={"q": q}).json()["items"] == []
+        assert api.get(f"{BASE}/events/export", headers=headers, params={"q": q}).json()["row_count"] == 0
+    # '_' is literal, not a wildcard: only actual underscores may match.
+    assert api.get(f"{BASE}/events", headers=headers, params={**selection, "q": "SafeEventRef_"}).json()["items"] == []
+    for q in ["Unknown/System", "Server-recorded", "file_upload"]:
+        result = api.get(f"{BASE}/events", headers=headers, params={"q": q, "start": selection["start"], "end": selection["end"]}).json()
+        assert any(row["user"] is None for row in result["items"])
+    assert api.get(f"{BASE}/events", headers=headers, params={**selection, "user_id": str(admin.id), "q": "Record created"}).json()["items"] == []
+    assert api.get(f"{BASE}/events", headers=headers, params={**selection, "end": "2030-02-02T00:01:00Z", "q": "Record created"}).json()["items"][0]["id"] == ids[0]
+    for resource in ["events", "events/export"]:
+        assert api.get(f"{BASE}/{resource}", headers=headers, params={"q": "x" * 101}).status_code == 422
+
+
 @pytest.mark.parametrize("query", [
     "start=2030-01-01T00:00:00", "end=bad", "user_id=not-uuid",
     "start=2030-02-03T00:00:00Z&end=2030-02-02T00:00:00Z",

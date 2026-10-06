@@ -1,9 +1,10 @@
 """Read-only bounded reports. Never load credentials or mutate lifecycle history."""
 import re
 
-from sqlalchemy import and_, case, exists, func, or_, select
+from sqlalchemy import String, and_, case, cast, exists, func, or_, select
 
 from app.db.models import AuditEvent, AuthSession, MRProfile, User
+from app.repositories.report_labels import BROWSER_ACTIONS, RESOURCE_NAMES
 
 
 def eligible():
@@ -148,11 +149,41 @@ def public_event(row):
     )
 
 
-def events(db, limit, offset, user_id, start, end):
+def event_search(q):
+    # Match the public projection, never hidden/unsafe legacy values. NULL actors
+    # remain searchable and are not removed by an inner join.
+    def literal(column, maximum, fallback=None):
+        return case((and_(func.length(column) <= maximum,
+                         column.op("~")(r"^[a-z][a-z0-9_]*$")), column), else_=fallback)
+
+    action = literal(AuditEvent.action, 80, "unavailable")
+    outcome = literal(AuditEvent.outcome, 16, "unavailable")
+    reason = literal(AuditEvent.reason, 40)
+    resource = literal(AuditEvent.resource_type, 60)
+    session = case((AuditEvent.session_id.op("~")(r"^[A-Za-z0-9_-]{1,64}$"),
+                    AuditEvent.session_id))
+    request = case((and_(func.length(AuditEvent.request_id) <= 64,
+                        AuditEvent.request_id.op("~")(r"^[A-Za-z0-9._:\-]+$")),
+                    AuditEvent.request_id))
+    fields = [
+        case((User.id.is_(None), "Unknown/System"),
+             else_=func.coalesce(User.username, User.email)),
+        User.email, action, outcome, reason, resource, session, request,
+        cast(AuditEvent.resource_id, String),
+        case(BROWSER_ACTIONS, value=action, else_=action),
+        case(RESOURCE_NAMES, value=resource, else_=resource),
+        case((reason == "browser_reported", "Browser-reported"), else_="Server-recorded"),
+    ]
+    return or_(*(field.icontains(q, autoescape=True) for field in fields))
+
+
+def events(db, limit, offset, user_id, start, end, q=""):
     query = select(
         AuditEvent.id, AuditEvent.actor_id, AuditEvent.action, AuditEvent.outcome,
         AuditEvent.reason, AuditEvent.resource_type, AuditEvent.resource_id,
         AuditEvent.session_id, AuditEvent.request_id, AuditEvent.created_at, *user_columns(),
     ).select_from(AuditEvent).outerjoin(User, User.id == AuditEvent.actor_id)
     query = filtered(query, AuditEvent.actor_id, AuditEvent.created_at, user_id, start, end)
+    if q:
+        query = query.where(event_search(q))
     return bounded_page(db, query.order_by(AuditEvent.id.desc()), limit, offset, public_event)

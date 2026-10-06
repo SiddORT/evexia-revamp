@@ -234,9 +234,9 @@ export async function reportingRequest(resource, params = {}, { signal } = {}) {
   const keys = writing ? ['events'] : resource === 'users' ? ['q', 'limit', 'offset']
     : resource === 'summary' ? [] : resource === 'sessions/export'
       ? ['user_id', 'start', 'end', 'state', 'q']
-      : resource === 'events/export' ? ['user_id', 'start', 'end'] : resource === 'sessions'
+       : resource === 'events/export' ? ['user_id', 'start', 'end', 'q'] : resource === 'sessions'
       ? ['user_id', 'start', 'end', 'state', 'q', 'limit', 'offset']
-      : ['user_id', 'start', 'end', 'limit', 'offset'];
+       : ['user_id', 'start', 'end', 'q', 'limit', 'offset'];
   for (const [key, value] of Object.entries(params)) {
     if (!keys.includes(key)) throw new SessionError('Unsupported report filter.');
     if (!writing && value !== undefined && value !== null && value !== '') query.set(key, String(value));

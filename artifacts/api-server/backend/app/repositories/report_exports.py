@@ -25,7 +25,7 @@ def export_report(db, resource, now, current_id, selection, q="", state=None):
     # One SELECT (limit+1), never stitch shifting offset pages together.
     result = (reporting.sessions(db, now, current_id, EXPORT_LIMIT, 0, *selection, q, state)
               if resource == "sessions"
-              else reporting.events(db, EXPORT_LIMIT, 0, *selection))
+              else reporting.events(db, EXPORT_LIMIT, 0, *selection, q))
     if result["has_more"]:
         raise HTTPException(409, "Too many rows to export. Narrow the user or UTC date filters.")
     rows = []
