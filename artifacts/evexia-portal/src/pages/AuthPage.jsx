@@ -26,7 +26,7 @@ export default function AuthPage({ role }) {
           <Link href="/" className="auth-back" data-testid="link-back-portals">
             <ArrowLeft size={15} aria-hidden="true" /> Choose a different portal
           </Link>
-          <p className="auth-legal">{role.short === 'ADMIN' ? 'Admin access requires a verified system account. Remember me keeps a bounded session cookie; otherwise the cookie lasts for this browser session. ' : 'This portal is a mock preview: no account is checked or credentials sent. Do not enter a real password. '}Master records remain fictional and browser-local, not secured backend records. Do not enter real patient, staff, or vendor data. Browser data may be lost when cleared.</p>
+          <p className="auth-legal">{role.short === 'ADMIN' ? 'Admin access requires a verified system account. Remember me keeps a bounded session cookie; otherwise the cookie lasts for this browser session.' : 'This portal is a mock preview: no account is checked or credentials sent. Do not enter a real password.'}</p>
         </div>
       </section>
     </main>

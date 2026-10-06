@@ -280,7 +280,6 @@ export default function AdminLayout({ title, children }) {
           </div>
         </header>
         <main className="admin-content">
-          <p className="admin-preview-notice" role="note">Admin access is authenticated. Master records remain fictional and browser-local, not secured backend records; anyone with access to this browser’s data can view or change them. Do not enter real patient, staff, or vendor data.</p>
           {children}
         </main>
       </div>
