@@ -22,3 +22,4 @@
 - [Reporting export privacy](reporting-export-privacy.md) — portable CSVs omit session and record references even when the protected history UI shows them.
 - [Session-ending reasons](session-ending-reasons.md) — allowlist the first owner-matched revocation cause; never infer missing history from later events.
 - [Activity search planning](activity-search-planning.md) — measure broad searches as well as rare ones; redundant safe predicates can defeat ordered early termination.
+- [Post-merge verification](post-merge-verification.md) — reconciliation success does not guarantee restarted services are healthy; confirm readiness separately.
