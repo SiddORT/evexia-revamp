@@ -152,6 +152,107 @@ test('sessions pagination numbers across pages and recovers after refreshed resu
   await expect(panel).toContainText('PagedRef00');
 });
 
+for (const [name, viewport] of [
+  ['desktop', { width: 1440, height: 900 }],
+  ['mobile', { width: 375, height: 812 }],
+]) {
+  test(`session-ending explanations survive filters and pagination: ${name}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await authenticateAdmin(page);
+    // Deliberately spell out the UI contract rather than importing its mapping.
+    // Projection/history attribution belongs to the backend reporting tests.
+    const cases = [
+      { state: 'REVOKED', revocation_reason: 'new_login', expected: 'Replaced by a new login' },
+      { state: 'REVOKED', revocation_reason: 'logout', expected: 'Logged out' },
+      { state: 'REVOKED', revocation_reason: 'password_change', expected: 'Password changed' },
+      { state: 'REVOKED', revocation_reason: 'identity_change', expected: 'Account access changed' },
+      { state: 'REVOKED', revocation_reason: 'identity_invalid', expected: 'Account security changed' },
+      { state: 'REVOKED', revocation_reason: 'replay', expected: 'Revoked for security' },
+      { state: 'REVOKED', revocation_reason: null, expected: 'Reason unavailable' },
+      { state: 'REVOKED', expected: 'Reason unavailable' }, // Older response without the field.
+      { state: 'REVOKED', revocation_reason: '', expected: 'Reason unavailable' },
+      { state: 'REVOKED', revocation_reason: 'unknown_internal_cause', expected: 'Reason unavailable' },
+      { state: 'ACTIVE', revocation_reason: 'new_login', expected: '—' },
+      { state: 'EXPIRED', revocation_reason: 'logout', expected: 'Session time limit passed' },
+      { state: 'INVALIDATED', revocation_reason: 'replay', expected: 'Account access or security changed' },
+    ];
+    // Each 25-row page contains every case, including a different session with
+    // the same cause. This catches explanations disappearing on later pages.
+    const rows = Array.from({ length: 50 }, (_, i) => {
+      const { expected, ...fields } = cases[(i % 25) % cases.length];
+      return {
+        id: `EndingRef${String(i).padStart(2, '0')}`,
+        user: { label: 'Session explanation example', role: 'super_admin', account_state: 'enabled' },
+        created_at: '2030-02-02T00:00:00Z', last_refreshed_at: null,
+        expires_at: '2030-02-03T00:00:00Z',
+        revoked_at: fields.state === 'REVOKED' ? '2030-02-02T01:00:00Z' : null,
+        persistent: false, is_current: false, ...fields, expected,
+      };
+    });
+    await page.route(/\/reporting\/sessions(?:\?|$)/, async (route) => {
+      const url = new URL(route.request().url());
+      const q = (url.searchParams.get('q') || '').toLowerCase();
+      const state = url.searchParams.get('state');
+      const filtered = rows.filter((row) =>
+        (!q || row.id.toLowerCase().includes(q)) && (!state || row.state === state));
+      const offset = Number(url.searchParams.get('offset') || 0);
+      const limit = Number(url.searchParams.get('limit') || 25);
+      await route.fulfill({ json: {
+        items: filtered.slice(offset, offset + limit).map(({ expected, ...row }) => row),
+        offset, limit, has_more: offset + limit < filtered.length,
+      } });
+    });
+    await page.goto(`${base()}/admin/activity-logs`);
+    const panel = page.getByTestId('panel-activity-sessions');
+    const header = panel.getByRole('columnheader', { name: 'Why session ended', exact: true });
+    const assertExplanations = async (expectedRows, pageNumber, offset) => {
+      await expect(panel).toContainText(`Page ${pageNumber} · Rows ${offset + 1}–${offset + expectedRows.length}`);
+      await expect(panel.locator('tbody tr')).toHaveCount(expectedRows.length);
+      await header.scrollIntoViewIfNeeded();
+      await expect(header).toBeVisible();
+      for (const row of expectedRows) {
+        const rendered = panel.locator('tbody tr').filter({
+          has: page.getByRole('cell', { name: row.id, exact: true }),
+        });
+        // Check the actual column as well as the test hook, not unrelated text
+        // elsewhere in the row or explanatory text above the table.
+        await expect(rendered.getByRole('cell').nth(4)).toHaveText(row.expected);
+        await expect(rendered.getByTestId('text-session-ending-reason')).toHaveText(row.expected);
+      }
+      for (const raw of ['new_login', 'logout', 'password_change', 'identity_change',
+        'identity_invalid', 'replay', 'unknown_internal_cause']) {
+        await expect(panel).not.toContainText(raw);
+      }
+    };
+    await assertExplanations(rows.slice(0, 25), 1, 0);
+    await panel.getByRole('button', { name: 'Next page' }).click();
+    await assertExplanations(rows.slice(25), 2, 25);
+    await expect(panel.getByRole('button', { name: 'Next page' })).toBeDisabled();
+    await panel.getByRole('button', { name: 'Previous page' }).click();
+    await assertExplanations(rows.slice(0, 25), 1, 0);
+
+    await page.getByTestId('button-activity-filters').click();
+    await page.getByTestId('select-activity-state').selectOption('REVOKED');
+    await page.getByTestId('button-activity-apply').click();
+    const revoked = rows.filter((row) => row.state === 'REVOKED');
+    await assertExplanations(revoked.slice(0, 25), 1, 0);
+    await panel.getByRole('button', { name: 'Next page' }).click();
+    await assertExplanations(revoked.slice(25), 2, 25);
+
+    const search = page.getByTestId('input-activity-session-search');
+    await search.fill('EndingRef34'); // Unknown cause on the original second page.
+    await assertExplanations([rows[34]], 1, 0);
+    await search.fill('EndingRef25'); // Replacement explanation on that same page.
+    await assertExplanations([rows[25]], 1, 0);
+    await search.fill('');
+    await assertExplanations(revoked.slice(0, 25), 1, 0);
+    await page.getByTestId('button-activity-reset').click();
+    await assertExplanations(rows.slice(0, 25), 1, 0);
+    await page.getByTestId('button-activity-refresh').click();
+    await assertExplanations(rows.slice(0, 25), 1, 0);
+  });
+}
+
 test('late filtered responses cannot replace Reset and a late history cannot survive logout', async ({ page }) => {
   await authenticateAdmin(page);
   await page.goto(`${base()}/admin/activity-logs`);
