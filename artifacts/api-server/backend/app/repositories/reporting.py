@@ -1,11 +1,10 @@
 """Read-only bounded reports. Never load credentials or mutate lifecycle history."""
 import re
 
-from sqlalchemy import String, and_, case, cast, exists, func, or_, select
-
 from app.db.models import AuditEvent, AuthSession, MRProfile, User
 from app.repositories.report_labels import BROWSER_ACTIONS, RESOURCE_NAMES
 from app.repositories.sessions import revocation_reason_projection
+from sqlalchemy import String, and_, case, cast, exists, func, literal, or_, select, union
 
 
 def eligible():
@@ -153,10 +152,8 @@ def public_event(row):
         created_at=row["created_at"],
     )
 
-
-def event_search(q):
-    # Match the public projection, never hidden/unsafe legacy values. NULL actors
-    # remain searchable and are not removed by an inner join.
+def event_text_fields():
+    """The safe, event-local projection used by the original search path."""
     def literal(column, maximum, fallback=None):
         return case((and_(func.length(column) <= maximum,
                          column.op("~")(r"^[a-z][a-z0-9_]*$")), column), else_=fallback)
@@ -170,18 +167,69 @@ def event_search(q):
     request = case((and_(func.length(AuditEvent.request_id) <= 64,
                         AuditEvent.request_id.op("~")(r"^[A-Za-z0-9._:\-]+$")),
                     AuditEvent.request_id))
-    fields = [
-        case((User.id.is_(None), "Unknown/System"),
-             else_=func.coalesce(User.username, User.email)),
-        User.email, action, outcome, reason, resource, session, request,
-        cast(AuditEvent.resource_id, String),
+    return [
+        action, outcome, reason, resource, session, request, cast(AuditEvent.resource_id, String),
         case(BROWSER_ACTIONS, value=action, else_=action),
         case(RESOURCE_NAMES, value=resource, else_=resource),
         case((reason == "browser_reported", "Browser-reported"), else_="Server-recorded"),
     ]
+def event_search(q):
+    # Match the public projection, never hidden/unsafe legacy values. NULL actors
+    # remain searchable and are not removed by an inner join.
+    fields = [
+        case((User.id.is_(None), "Unknown/System"),
+             else_=func.coalesce(User.username, User.email)),
+        User.email, *event_text_fields(),
+    ]
     return or_(*(field.icontains(q, autoescape=True) for field in fields))
 
+def event_candidates(q, count, user_id, start, end):
+    """Union each source's top K; their union contains the global top K.
 
+    The indexed projection contains only ASCII-safe fields, none allowing '|'.
+    A query without '|' cannot cross a field boundary. Disallowed ASCII
+    characters cannot match any raw field at all. Alias comparisons stay in
+    SQL to preserve PostgreSQL's case semantics.
+    """
+    indexed_text = func.lower(func.evexia_activity_text_v1(
+        AuditEvent.action, AuditEvent.outcome, AuditEvent.reason, AuditEvent.resource_type,
+        AuditEvent.session_id, AuditEvent.request_id, AuditEvent.resource_id,
+    ))
+    raw = select(AuditEvent.id, AuditEvent.created_at).where(
+        indexed_text.contains(func.lower(literal(
+            q.replace("/", "//").replace("%", "/%").replace("_", "/_")
+        )), escape="/") if not impossible_raw_search(q) else literal(False),
+    )
+    aliases = [
+        and_(literal(label).icontains(q, autoescape=True), column == value)
+        for mapping, column in ((BROWSER_ACTIONS, AuditEvent.action),
+                                (RESOURCE_NAMES, AuditEvent.resource_type))
+        for value, label in mapping.items()
+    ]
+    # Only these two explicit provenance labels exist; no unrestricted reasons.
+    browser = AuditEvent.reason == "browser_reported"
+    aliases.extend([
+        and_(literal("Browser-reported").icontains(q, autoescape=True), browser),
+        and_(literal("Server-recorded").icontains(q, autoescape=True),
+             or_(AuditEvent.reason.is_(None), AuditEvent.reason != "browser_reported")),
+    ])
+    friendly = select(AuditEvent.id, AuditEvent.created_at).where(or_(*aliases))
+    actors = select(AuditEvent.id, AuditEvent.created_at).join(
+        User, User.id == AuditEvent.actor_id,
+    ).where(or_(
+        func.coalesce(User.username, User.email).icontains(q, autoescape=True),
+        User.email.icontains(q, autoescape=True),
+    ))
+    unknown = select(AuditEvent.id, AuditEvent.created_at).where(
+        literal("Unknown/System").icontains(q, autoescape=True),
+        ~exists(select(User.id).where(User.id == AuditEvent.actor_id)),
+    )
+    branches = [
+        filtered(branch, AuditEvent.actor_id, AuditEvent.created_at, user_id, start, end)
+        .order_by(AuditEvent.id.desc()).limit(count)
+        for branch in (raw, friendly, actors, unknown)
+    ]
+    return union(*branches).subquery()
 def events(db, limit, offset, user_id, start, end, q=""):
     query = select(
         AuditEvent.id, AuditEvent.actor_id, AuditEvent.action, AuditEvent.outcome,
@@ -189,6 +237,15 @@ def events(db, limit, offset, user_id, start, end, q=""):
         AuditEvent.session_id, AuditEvent.request_id, AuditEvent.created_at, *user_columns(),
     ).select_from(AuditEvent).outerjoin(User, User.id == AuditEvent.actor_id)
     query = filtered(query, AuditEvent.actor_id, AuditEvent.created_at, user_id, start, end)
-    if q:
+    # No extractable trigrams: retain the ordered original path rather than
+    # walking an entire GIN index for punctuation or very short searches.
+    if q and (re.search(r"[A-Za-z0-9]{3}", q) or impossible_raw_search(q)):
+        candidates = event_candidates(q, offset + limit + 1, user_id, start, end)
+        query = query.join(candidates, candidates.c.id == AuditEvent.id)
+    elif q:
         query = query.where(event_search(q))
     return bounded_page(db, query.order_by(AuditEvent.id.desc()), limit, offset, public_event)
+
+def impossible_raw_search(q):
+    # Only rule out ASCII characters: PostgreSQL owns Unicode case semantics.
+    return any(ord(char) < 128 and not re.fullmatch(r"[A-Za-z0-9_.:\-]", char) for char in q)

@@ -36,7 +36,12 @@ staff, or vendor data into the preview.
   downgrade commands manually; review the managed publish schema operation and
   take a backup first. The current ordered migrations are `0001_identity_foundation`,
   `0002_optional_username`, `0003_system_identity_domain`, `0004_private_files`,
-  `0005_protected_super_admin_sessions`, and `0006_auth_sessions`.
+  `0005_protected_super_admin_sessions`, `0006_auth_sessions`,
+  `0007_reporting_indexes`, and `0008_activity_search`. The activity search
+  migration requires PostgreSQL `pg_trgm` and adds only safe reporting indexes,
+  a versioned sanitizer function, and expression statistics. Reproducible
+  synthetic plans and operational costs are documented in
+  [the activity search measurements](../../../docs/activity-search-performance.md).
   A downgrade is not a general rollback plan: it can remove data/schema state and
   cannot reverse issued credentials, uploaded objects, or external side effects.
   Migration `0005` refuses to proceed over existing Super Admin mappings for

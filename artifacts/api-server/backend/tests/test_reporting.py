@@ -484,6 +484,46 @@ def test_session_export_search_and_state_match_the_filtered_table(client):
     for query in ["state=bad", f"q={'x' * 101}"]:
         assert api.get(f"{BASE}/sessions/export?{query}", headers=headers).status_code == 422
 
+def test_index_candidates_match_original_projection_and_do_not_match_across_fields(client):
+    from app.repositories import reporting
+    from app.repositories.report_labels import BROWSER_ACTIONS, RESOURCE_NAMES
+    api, db, _ = client
+    _headers, _admin = admin_headers(api, db)
+    actor = create_user(db, "candidate-actor@example.test")
+    actor.username = "Record created"  # same row matches raw, alias AND actor branches
+    start = datetime(2031, 1, 1, tzinfo=timezone.utc)
+    actions = list(BROWSER_ACTIONS) + ["login_success", "unsafe action!", "unavailable"]
+    resources = list(RESOURCE_NAMES)
+    missing = uuid.uuid4()
+    for i in range(180):
+        db.add(AuditEvent(
+            id=uuid.UUID(int=i + 1), created_at=start + timedelta(seconds=i // 3),
+            actor_id=[actor.id, None, missing][i % 3],
+            action=actions[i % len(actions)], outcome="success",
+            resource_type=resources[i % len(resources)],
+            reason=["browser_reported", None, "private marker!"][i % 3],
+            request_id=["Literal._:%/x", "unsafe marker!", "Unicode_needle"][i % 3],
+        ))
+    db.commit()
+    for q in [
+        *BROWSER_ACTIONS.values(), *RESOURCE_NAMES.values(),
+        "Record created", "Unknown/System", "Server-recorded", "Browser-reported",
+        "unavailable", "success", "Literal._:", "Literal._:%/x", "Unicode_needle",
+        "private marker", "unsafe marker", "login_success|success",
+        "%", "_", "/", "\\", "İ", "不存在", "a",
+    ]:
+        for actor_id, end in [(None, None), (actor.id, start + timedelta(seconds=40)),
+                              (missing, None)]:
+            base = select(AuditEvent.id).outerjoin(User, User.id == AuditEvent.actor_id)
+            oracle = reporting.filtered(
+                base, AuditEvent.actor_id, AuditEvent.created_at, actor_id, start, end,
+            ).where(reporting.event_search(q)).order_by(AuditEvent.id.desc())
+            expected = list(db.scalars(oracle))
+            for offset in [0, 7, 25]:
+                result = reporting.events(db, 7, offset, actor_id, start, end, q)
+                assert [r["id"] for r in result["items"]] == expected[offset:offset + 7], q
+                assert result["has_more"] == (len(expected) > offset + 7), q
+
 def test_session_reasons_ignore_untrusted_events_and_fail_closed_for_legacy_text(client):
     api, db, _ = client
     headers, admin = admin_headers(api, db)
@@ -541,3 +581,34 @@ def test_session_reasons_ignore_untrusted_events_and_fail_closed_for_legacy_text
         for forbidden in ["NEVER_ECHO_CREDENTIAL", "secret_looks", "password_hash",
                           "token_hash", "family_id", "token_version", "identity_version"]:
             assert forbidden not in response.text
+
+def test_search_real_export_ceiling_and_maximum_offset_with_overlapping_matches(client):
+    from sqlalchemy import insert
+    api, db, _ = client
+    headers, _admin = admin_headers(api, db)
+    actor = create_user(db, "ceiling-actor@example.test")
+    actor.username = "Record created"
+    start = datetime(2032, 1, 1, tzinfo=timezone.utc)
+    db.execute(insert(AuditEvent), [
+        dict(id=uuid.UUID(int=i + 1), actor_id=actor.id, action="browser_created",
+             outcome="reported", reason="browser_reported", resource_type="patient",
+             request_id="ceiling_probe" if i < 5001 else "other_probe", created_at=start)
+        for i in range(10040)
+    ])
+    db.commit()
+    page = api.get(f"{BASE}/events", headers=headers,
+                   params={"q": "Record created", "start": start.isoformat(),
+                           "offset": 10000, "limit": 25}).json()
+    assert [row["id"] for row in page["items"]] == [
+        str(uuid.UUID(int=i)) for i in range(40, 15, -1)
+    ]
+    assert page["has_more"]
+    params = {"q": "ceiling_probe", "start": start.isoformat()}
+    overflow = api.get(f"{BASE}/events/export", headers=headers, params=params)
+    assert overflow.status_code == 409 and "rows" not in overflow.json()
+    db.get(AuditEvent, uuid.UUID(int=1)).request_id = "other_probe"
+    db.commit()
+    exact = api.get(f"{BASE}/events/export", headers=headers, params=params)
+    assert exact.status_code == 200
+    assert exact.json()["row_count"] == exact.json()["limit"] == 5000
+    assert len(exact.json()["rows"]) == 5000

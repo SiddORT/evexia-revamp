@@ -155,6 +155,10 @@ class AuditEvent(Base):
         Index("ix_audit_events_session_created", "session_id", "created_at"),
         Index("ix_audit_events_created_id", "created_at", "id"),
         Index("ix_audit_events_actor_created_id", "actor_id", "created_at", "id"),
+        Index("ix_audit_events_action_created_id", "action", "created_at", "id"),
+        Index("ix_audit_events_resource_created_id", "resource_type", "created_at", "id"),
+        # The function-backed GIN index and expression statistics are managed
+        # by Alembic, not create_all (which cannot provision their prerequisites).
     )
 
 
