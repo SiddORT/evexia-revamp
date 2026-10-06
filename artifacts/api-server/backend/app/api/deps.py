@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.config import Settings, get_settings
 from app.db.session import get_db
 from app.repositories.sessions import event
-from app.services.auth import AuthError, Identity, identity_from_token
+from app.services.auth import AuthError, Identity, SessionReplaced, identity_from_token
 
 bearer = HTTPBearer(auto_error=False)
 
@@ -31,8 +31,11 @@ def current_identity(
         raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"})
     try:
         return identity_from_token(db, credentials.credentials, settings)
-    except AuthError:
-        raise HTTPException(status_code=401, detail="Authentication required", headers={"WWW-Authenticate": "Bearer"}) from None
+    except AuthError as exc:
+        headers = {"WWW-Authenticate": "Bearer", "Cache-Control": "no-store"}
+        if isinstance(exc, SessionReplaced):
+            headers["X-Session-Reason"] = "replaced"
+        raise HTTPException(status_code=401, detail="Authentication required", headers=headers) from None
 
 
 def require_roles(*roles: str) -> Callable:

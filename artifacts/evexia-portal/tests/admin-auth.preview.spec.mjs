@@ -386,6 +386,7 @@ test('expired refresh redirects without loops and unconfirmed logout offers retr
   await page.route('**/api/v1/auth/refresh', (route) => route.fulfill({ status: 401, contentType: 'application/json', body: '{}' }));
   await page.evaluate(async () => (await import('/src/auth/adminSession.js')).verifySession(true));
   await expect(page).toHaveURL(/\/admin\/login/);
+  await expect(page.getByTestId('status-auth-message')).toHaveCount(0);
   await page.unroute('**/api/v1/auth/refresh');
   await login(page);
   await page.route('**/api/v1/auth/logout', (route) => route.abort());
@@ -395,6 +396,35 @@ test('expired refresh redirects without loops and unconfirmed logout offers retr
   await page.unroute('**/api/v1/auth/logout');
   await page.getByRole('button', { name: 'Retry Sign Out' }).click();
   await expect(page.getByTestId('status-auth-message')).toHaveCount(0);
+});
+
+test('another browser login ends the earlier session with a safe notice, not a silent renewal', async ({ page, browser }) => {
+  await login(page);
+  await page.goto(`${base()}/admin/masters/patients/new`);
+  await page.getByTestId('input-patient-name').fill('Fictional replaced-session draft');
+  const otherContext = await browser.newContext();
+  try {
+    const other = await otherContext.newPage();
+    await login(other);
+    let refreshes = 0;
+    page.on('request', (request) => { if (request.url().endsWith('/auth/refresh')) refreshes++; });
+    await page.evaluate(async () => (await import('/src/auth/adminSession.js')).verifySession(true));
+    await expect(page).toHaveURL(/\/admin\/login\?returnTo=/);
+    await expect(page.getByTestId('status-auth-message')).toHaveText(
+      'Your Admin session ended because this account was signed in elsewhere. Please log in again.',
+    );
+    await expect(page.getByTestId('input-patient-name')).toHaveCount(0);
+    await expect(page.getByTestId('button-admin-profile')).toHaveCount(0);
+    expect(refreshes).toBe(0);
+    await expect(other.getByTestId('button-admin-profile')).toBeVisible();
+    // The explanation is memory-only and cannot be manufactured by a URL.
+    await page.reload();
+    await expect(page.getByTestId('status-auth-message')).toHaveCount(0);
+    await page.goto(`${base()}/admin/login?reason=replaced`);
+    await expect(page.getByTestId('status-auth-message')).toHaveCount(0);
+    await login(page);
+    await expect(page.getByTestId('status-auth-message')).toHaveCount(0);
+  } finally { await otherContext.close(); }
 });
 
 test('external return path never navigates away and forged frontend roles cannot authorize', async ({ page }) => {

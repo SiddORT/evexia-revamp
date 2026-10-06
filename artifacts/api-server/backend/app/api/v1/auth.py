@@ -74,11 +74,14 @@ def refresh(request: Request, response: Response,
         raise HTTPException(status_code=401, detail="Authentication required")
     try:
         identity, new_value = service.rotate_refresh(db, value, settings, request.state.request_id)
-    except service.AuthError:
+    except service.AuthError as exc:
         expired = JSONResponse({"error": {
             "code": "authentication_required", "message": "Authentication required",
             "request_id": request.state.request_id, "fields": [],
-        }}, status_code=401)
+        }}, status_code=401, headers={
+            "Cache-Control": "no-store",
+            **({"X-Session-Reason": "replaced"} if isinstance(exc, service.SessionReplaced) else {}),
+        })
         clear_refresh_cookie(expired, settings)
         return expired
     session = service.refresh_session(db, new_value)

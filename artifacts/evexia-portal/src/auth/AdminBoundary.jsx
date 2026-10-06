@@ -19,6 +19,8 @@ export default function AdminBoundary({ children }) {
   }, [path, protectedPath]);
   useEffect(() => {
     if (protectedPath && verifiedPath === path && session.status === 'anonymous') {
+      // Session notices remain in module memory, never in the return URL.
+      // Definitive denial still drops protected drafts/content before redirect.
       navigate(`/admin/login?returnTo=${encodeURIComponent(path)}`, { replace: true });
     }
   }, [path, protectedPath, verifiedPath, session.status, navigate]);

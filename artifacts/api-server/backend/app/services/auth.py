@@ -23,6 +23,29 @@ class AuthError(Exception):
     pass
 
 
+class SessionReplaced(AuthError):
+    """A presented, owner-bound credential belongs to a new-login revocation."""
+
+
+def _was_replaced(db: Session, session: AuthSession | None, user: User) -> bool:
+    # Never classify unknown, foreign, expired or security-version-invalid
+    # credentials. Only persisted revocation evidence can identify replacement.
+    if (not session or session.user_id != user.id or session.status != "REVOKED"
+            or session.expires_at <= utcnow() or not user.is_active
+            or session.token_version != user.token_version
+            or session.identity_version != user.identity_version):
+        return False
+    try:
+        _load_identity(db, user)
+    except AuthError:
+        return False
+    return db.scalar(select(AuditEvent.id).where(
+        AuditEvent.actor_id == user.id, AuditEvent.session_id == session.id,
+        AuditEvent.action == "session_revoked", AuditEvent.outcome == "success",
+        AuditEvent.reason == "new_login",
+    ).limit(1)) is not None
+
+
 class TooManyAttempts(Exception):
     pass
 
@@ -233,7 +256,13 @@ def identity_from_token(db: Session, token: str, settings: Settings) -> Identity
         _reject(db, "token_version_rejection", "identity_version", request_id)
     session = repository.get_session(db, claims["sid"])
     if not _effective_session(db, session, user, request_id, commit_expiry=True):
-        _reject(db, "authentication_rejection", "session_invalid", request_id)
+        replaced = _was_replaced(db, session, user)
+        try:
+            _reject(db, "authentication_rejection", "session_invalid", request_id)
+        except AuthError:
+            if replaced:
+                raise SessionReplaced() from None
+            raise
     try:
         identity = _load_identity(db, user)
     except AuthError:
@@ -281,9 +310,16 @@ def rotate_refresh(db: Session, value: str, settings: Settings, request_id: str)
     if row is None or row.session_id != snapshot.session_id or not user or not session:
         _reject(db, "refresh_rejected", "invalid", request_id)
     if row.consumed_at or row.revoked_at:
+        replaced = (row.user_id == user.id and row.family_id == session.family_id
+                    and row.organization_id is None
+                    and row.identity_version == user.identity_version
+                    and row.expires_at > utcnow() and row.family_expires_at > utcnow()
+                    and _was_replaced(db, session, user))
         repository.event(db, "refresh_reuse", "failure", request_id, user.id, session.id, "replayed")
         repository.revoke_session(db, session, "replay", request_id)
         db.commit()
+        if replaced:
+            raise SessionReplaced()
         raise AuthError()
     if (not user.is_active or row.identity_version != user.identity_version
             or not _effective_session(db, session, user, request_id)):

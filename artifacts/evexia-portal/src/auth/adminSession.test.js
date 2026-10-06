@@ -19,6 +19,52 @@ async function setup(handler) {
 const reply = (body, status = 200) => new Response(status === 204 ? null : JSON.stringify(body), { status });
 const payload = { access_token: 'synthetic-memory-token', expires_in: 900, user };
 
+test('replacement is terminal only for a previously verified tab and never restores a newer cookie', async () => {
+  let replaced = false;
+  let refreshes = 0;
+  const api = await setup(async (url) => {
+    if (url.endsWith('/refresh')) refreshes++;
+    if (replaced && url.endsWith('/me')) return new Response('{}', {
+      status: 401, headers: { 'X-Session-Reason': 'replaced' },
+    });
+    return reply(url.endsWith('/me') ? user : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  replaced = true;
+  await api.verifySession(true);
+  assert.equal(api.getSession().status, 'anonymous');
+  assert.equal(api.getSession().user, null);
+  assert.match(api.getSession().message, /signed in elsewhere/);
+  await api.verifySession();
+  assert.match(api.getSession().message, /signed in elsewhere/);
+  assert.equal(refreshes, 0);
+  replaced = false;
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  assert.equal(api.getSession().message, '');
+  await api.logoutAdmin();
+});
+
+test('refresh replacement notice needs a previous identity; login, expiry and unknown reasons stay generic', async () => {
+  for (const initial of [true, false]) {
+    let denied = initial;
+    const api = await setup(async (url) => {
+      if (denied) return new Response('{"private":"never display"}', {
+        status: 401, headers: { 'X-Session-Reason': url.endsWith('/refresh') ? 'replaced' : 'unknown' },
+      });
+      return reply(url.endsWith('/me') ? user : payload);
+    });
+    if (!initial) await api.loginAdmin(user.email, 'synthetic-password', false);
+    denied = true;
+    await api.verifySession(true);
+    assert.equal(api.getSession().status, 'anonymous');
+    assert.equal(api.getSession().user, null);
+    assert.equal(api.getSession().message.includes('signed in elsewhere'), !initial);
+    await assert.rejects(api.loginAdmin(user.email, 'synthetic-password', false));
+    assert.ok(!api.getSession().message.includes('signed in elsewhere'));
+    assert.ok(!api.getSession().message.includes('private'));
+  }
+});
+
 test('login sends bounded cookie request, verifies permission via me and allowlists identity', async () => {
   const calls = [];
   const api = await setup(async (url, options) => {

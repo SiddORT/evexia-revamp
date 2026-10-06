@@ -275,9 +275,48 @@ def test_access_jwt_rejects_revoked_expired_or_identity_changed_session(client, 
     else:
         user.identity_version += 1
     db.flush()
-    assert api.get(
+    denial = api.get(
         "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"},
-    ).status_code == 401
+    )
+    assert denial.status_code == 401
+    assert "x-session-reason" not in denial.headers
+
+
+def test_replaced_credentials_return_only_safe_hint_and_remain_revoked(client):
+    api, db, _ = client
+    user = create_user(db, "replacement-notice@example.com")
+    first = login(api, user.email)
+    old_token = first.json()["access_token"]
+    old_cookie = api.cookies.get("evexia_refresh")
+    old_sid = session_id_from_response(first, old_token)
+    second = login(api, user.email)
+    new_token = second.json()["access_token"]
+    new_sid = session_id_from_response(second, new_token)
+    denial = api.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {old_token}"})
+    assert denial.status_code == 401
+    assert denial.headers["x-session-reason"] == "replaced"
+    assert user.email not in denial.text and old_sid not in denial.text and new_sid not in denial.text
+    assert denial.headers["cache-control"] == "no-store"
+    api.cookies.clear()
+    api.cookies.set("evexia_refresh", old_cookie, path="/api/v1/auth")
+    for _ in range(2):
+        rejected = api.post("/api/v1/auth/refresh", headers={"Origin": "http://testserver"})
+        assert rejected.status_code == 401
+        assert rejected.headers["x-session-reason"] == "replaced"
+        assert "access_token" not in rejected.json()
+        api.cookies.set("evexia_refresh", old_cookie, path="/api/v1/auth")
+    assert db.get(AuthSession, old_sid).status == "REVOKED"
+    assert db.get(AuthSession, new_sid).status == "ACTIVE"
+    assert api.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {new_token}"}).status_code == 200
+    # A subsequent security change suppresses the old replacement explanation.
+    user.token_version += 1
+    db.flush()
+    assert "x-session-reason" not in api.get(
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {old_token}"},
+    ).headers
+    rejected = api.post("/api/v1/auth/refresh", headers={"Origin": "http://testserver"})
+    assert rejected.status_code == 401
+    assert "x-session-reason" not in rejected.headers
 
 
 def test_replayed_refresh_token_revokes_its_session_and_all_refresh_history(client):

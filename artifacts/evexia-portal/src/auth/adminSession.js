@@ -1,6 +1,7 @@
 // Tokens live only in this module's memory. No credential or identity storage.
 const AUTH_URL = '/api/v1/auth';
 const LOCK_NAME = 'evexia-auth-cookie';
+const REPLACED_MESSAGE = 'Your Admin session ended because this account was signed in elsewhere. Please log in again.';
 let state = Object.freeze({ status: 'idle', user: null, message: '' });
 let token = null;
 let expiresAt = 0;
@@ -12,7 +13,7 @@ const listeners = new Set();
 const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('evexia-auth-events') : null;
 
 export class SessionError extends Error {
-  constructor(message, status = 0) { super(message); this.status = status; }
+  constructor(message, status = 0, replaced = false) { super(message); this.status = status; this.replaced = replaced; }
 }
 
 function publish(next) {
@@ -74,7 +75,11 @@ async function request(path, body, bearer) {
       : response.status === 401 ? 'Invalid credentials or expired session.'
       : response.status === 403 ? 'This account does not have Admin access.'
       : 'The sign-in service is unavailable. Try again later.';
-    throw new SessionError(message, response.status);
+    // Ignore arbitrary response text and reasons on login failures. The hint
+    // is not authorization and is displayed only for a previously verified tab.
+    const replaced = response.status === 401 && ['/me', '/refresh'].includes(path)
+      && response.headers.get('X-Session-Reason') === 'replaced';
+    throw new SessionError(message, response.status, replaced);
   }
   if (response.status === 204) return null;
   try { return await response.json(); }
@@ -138,13 +143,17 @@ export function verifySession(forceRefresh = false) {
   publish({ status: previousUser ? 'renewing' : 'checking', user: previousUser, message: '' });
   pending = (async () => {
     try {
-      if (!forceRefresh && oldToken && Date.now() < expiresAt) {
+      if (oldToken && Date.now() < expiresAt) {
         try {
           const user = safeAdmin(await request('/me', undefined, oldToken));
-          if (epoch === generation) publish({ status: 'authenticated', user, message: '' });
-          return;
+          if (!forceRefresh) {
+            if (epoch === generation) publish({ status: 'authenticated', user, message: '' });
+            return;
+          }
         } catch (error) {
-          if (error.status !== 401) throw error;
+          // A known replaced bearer must not restore through a newer shared
+          // cookie. Ordinary access expiry still follows the renewal path.
+          if (error.status !== 401 || error.replaced) throw error;
         }
       }
       await cookieLock(async () => {
@@ -155,7 +164,10 @@ export function verifySession(forceRefresh = false) {
       if (epoch !== generation) return;
       token = null;
       clearTimeout(expiryTimer);
-      if (error.status === 401 || error.status === 403) clear();
+      if (error.status === 401 || error.status === 403) {
+        restorationAllowed = false;
+        clear(previousUser && error.replaced ? REPLACED_MESSAGE : '');
+      }
       else publish({ status: previousUser ? 'renewal-error' : 'error', user: previousUser, message: error.message });
     } finally { pending = null; }
   })();
