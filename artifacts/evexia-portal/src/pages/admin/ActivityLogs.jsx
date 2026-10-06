@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Activity, ChevronLeft, ChevronRight, Download, Filter, RefreshCw, Search, ShieldAlert } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import TableSkeleton, { TableLoadingStatus } from '../../components/admin/TableSkeleton.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { reportingRequest } from '../../auth/adminSession.js';
 import { downloadReportingCSV } from '../../services/reportingCSV.js';
@@ -162,7 +163,7 @@ function Pager({ r }) {
   const d = r.data;
   return (
     <div className="admin-panel__foot admin-pagination">
-      <span role="status">{d?.items?.length ? `Page ${Math.floor(r.offset / PAGE) + 1} · Rows ${r.offset + 1}–${r.offset + d.items.length}` : r.loading ? 'Loading page…' : r.error ? 'Page unavailable' : 'No rows · Page 1'}</span>
+      <span role={r.loading ? undefined : 'status'}>{d?.items?.length ? `Page ${Math.floor(r.offset / PAGE) + 1} · Rows ${r.offset + 1}–${r.offset + d.items.length}` : r.loading ? 'Loading page…' : r.error ? 'Page unavailable' : 'No rows · Page 1'}</span>
       <div className="admin-pagination__pages">
         <button type="button" aria-label="Previous page" disabled={r.offset === 0 || !d || r.loading || r.error} onClick={() => r.setOffset(Math.max(0, r.offset - PAGE))}><ChevronLeft size={14} /> Previous</button>
         <button type="button" aria-label="Next page" disabled={!d?.has_more || r.loading || r.error || r.offset + PAGE > 10000} onClick={() => r.setOffset(r.offset + PAGE)}>Next <ChevronRight size={14} /></button>
@@ -172,14 +173,27 @@ function Pager({ r }) {
 }
 
 function State({ r, empty, children, cols }) {
-  if (r.loading) return <div className="admin-empty" role="status" aria-busy="true"><div className="alog-skel" /><div className="alog-skel" /><div className="alog-skel" /><p>Loading…</p></div>;
   if (r.error) return (
     <div className="admin-empty" role="alert"><div className="admin-empty__icon"><ShieldAlert size={20} /></div><strong>{r.error.denied ? 'Access denied' : 'Could not load'}</strong><p>{r.error.message}</p>
       {!r.error.denied && <button type="button" className="admin-button admin-button--secondary alog-retry" onClick={r.reload}>Retry</button>}</div>
   );
-  if (!r.data) return null;
-  if (!r.data.items?.length) return <div className="admin-empty"><div className="admin-empty__icon"><Activity size={20} /></div><strong>{empty}</strong><p>Adjust filters or date range.</p></div>;
-  return <div className="admin-table-scroll" tabIndex={0} role="region" aria-label="Results"><table className="admin-table alog-table" data-cols={cols}>{children}</table></div>;
+  if (!r.loading && !r.data) return null;
+  if (!r.loading && !r.data.items?.length) return <div className="admin-empty"><div className="admin-empty__icon"><Activity size={20} /></div><strong>{empty}</strong><p>Adjust filters or date range.</p></div>;
+  const widths = cols === 'sessions' ? [55, 200, 260, 155, 185, 185, 185, 185, 210] : [55, 185, 200, 180, 110, 160, 210, 260, 260];
+  const skeletonColumns = widths.map((width, index) => ({
+    key: index, skeletonWidth: index === 0 ? '22px' : `${Math.round(width * .65)}px`,
+    skeletonLines: cols === 'sessions' && index === 1 ? 2 : 1,
+  }));
+  return <>
+    {r.loading && <TableLoadingStatus label={cols === 'sessions' ? 'Loading sessions…' : 'Loading activity events…'} />}
+    <div className="admin-table-scroll" tabIndex={0} role="region" aria-label="Results">
+      <table className="admin-table alog-table" data-cols={cols} aria-busy={r.loading}>
+        <colgroup>{widths.map((width, index) => <col key={index} style={{ width }} />)}</colgroup>
+        {children[0]}
+        {r.loading ? <TableSkeleton columns={skeletonColumns} rowCount={PAGE} /> : children[1]}
+      </table>
+    </div>
+  </>;
 }
 
 export default function ActivityLogs() {

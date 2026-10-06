@@ -1,6 +1,8 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useLocation } from 'wouter';
 import { getSession, subscribeSession, verifySession } from './adminSession.js';
+import PortalLoader from '../components/PortalLoader.jsx';
+import { useAdminPreferences } from '../components/admin/adminPreferences.js';
 
 export function useAdminSession() {
   return useSyncExternalStore(subscribeSession, getSession, getSession);
@@ -9,6 +11,7 @@ export function useAdminSession() {
 export default function AdminBoundary({ children }) {
   const [path, navigate] = useLocation();
   const session = useAdminSession();
+  const { theme, appearance } = useAdminPreferences();
   const protectedPath = (path === '/admin' || path.startsWith('/admin/')) && path !== '/admin/login';
   const [verifiedPath, setVerifiedPath] = useState(null);
   useEffect(() => {
@@ -36,12 +39,12 @@ export default function AdminBoundary({ children }) {
         {keepMounted ? children : null}
       </div>
       {!authorized && (
-        <main className="auth-page"><section className="auth-panel">
-          {failed ? <>
+        <main className="portal-loading-page" data-admin-theme={theme} data-admin-appearance={appearance}>
+          {failed ? <section className="portal-verification-error">
             <div role="alert">{session.message}</div>
             <button onClick={() => void verifySession()}>Retry session verification</button>
-          </> : <div role="status">Checking Admin access…</div>}
-        </section></main>
+          </section> : <PortalLoader label={session.status === 'renewing' ? 'Renewing Admin access…' : 'Checking Admin access…'} />}
+        </main>
       )}
     </>
   );

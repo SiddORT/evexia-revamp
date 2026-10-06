@@ -1,18 +1,23 @@
-export default function DataTable({ columns, rows, rowKey, empty, label = 'Zone records', testIdPrefix = 'zone', rowOffset = 0 }) {
-  if (!rows.length) return empty;
+import TableSkeleton, { TableLoadingStatus } from './TableSkeleton.jsx';
+
+export default function DataTable({ columns, rows = [], rowKey, empty, label = 'Zone records', testIdPrefix = 'zone', rowOffset = 0, loading = false, loadingLabel = `Loading ${label}…`, skeletonRows = 5 }) {
+  if (!loading && !rows.length) return empty;
   return (
+    <>
+    {loading && <TableLoadingStatus label={loadingLabel} />}
     <div className="admin-table-scroll" role="region" aria-label={label} tabIndex={0}>
-      <table className="admin-table">
+      <table className="admin-table" aria-busy={loading}>
         <thead><tr>{columns.map((column) => <th scope="col" key={column.key}>{column.label}</th>)}</tr></thead>
-        <tbody>
+        {loading ? <TableSkeleton columns={columns} rowCount={skeletonRows} /> : <tbody>
           {rows.map((row, index) => {
             const key = rowKey(row);
             return <tr key={key} data-testid={`row-${testIdPrefix}-${key}`}>
               {columns.map((column) => <td key={column.key}>{column.render(row, index + rowOffset)}</td>)}
             </tr>;
           })}
-        </tbody>
+        </tbody>}
       </table>
     </div>
+    </>
   );
 }

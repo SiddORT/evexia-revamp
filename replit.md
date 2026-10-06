@@ -5,6 +5,7 @@ EVEXIA Life Sciences portal with a protected Admin workspace, mock MR/Doctor log
 ## Run & operate
 
 - The managed `artifacts/evexia-portal: web` workflow serves the portal preview.
+- Loading presentation is request-driven: the HTML startup fallback and Admin access checks use the unchanged official logo; reporting tables use decorative cell skeletons with one status announcement. Local Master reads remain synchronous. Run `pnpm --filter @workspace/evexia-portal run test:loaders:browser` for loading, authenticated draft/session, and Activity Logs browser regressions.
 - `pnpm --filter @workspace/evexia-portal run build` builds the web app.
 - The managed `artifacts/api-server: API Server` workflow runs FastAPI directly with Python on `/api` (no Node.js or pnpm in the API artifact). The portal calls same-origin `/api/v1/auth` routes through its API proxy. API code and operational notes are in `artifacts/api-server/backend/README.md`. Database changes use Alembic migrations; do not create tables at startup.
 

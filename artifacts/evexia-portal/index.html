@@ -13,9 +13,27 @@
     <meta name="twitter:title" content="EVEXIA Portal" />
     <meta name="twitter:description" content="Choose your EVEXIA Life Sciences portal." />
     <link rel="icon" type="image/png" sizes="64x64" href="%BASE_URL%favicon.png" />
+    <link rel="stylesheet" href="%BASE_URL%loading.css" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main class="portal-loading-page" id="portal-startup">
+        <div class="portal-loader">
+          <div class="portal-loader__brand"><img src="%BASE_URL%images/evexia-logo.png" alt="EVEXIA Life Sciences logo" width="631" height="328" /></div>
+          <div class="portal-loader__line" aria-hidden="true"></div>
+          <p role="status" aria-live="polite">Opening EVEXIA Portal…</p>
+          <noscript>JavaScript is required to open the portal. Enable JavaScript and reload.</noscript>
+        </div>
+      </main>
+    </div>
+    <script>
+      // Read appearance only; unavailable storage must never block startup.
+      try {
+        const startup = document.getElementById('portal-startup');
+        startup.dataset.adminAppearance = localStorage.getItem('evexia.admin.appearance') === 'dark' ? 'dark' : 'light';
+        startup.dataset.adminTheme = localStorage.getItem('evexia.admin.theme') === 'modern' ? 'modern' : 'classic';
+      } catch {}
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

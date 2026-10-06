@@ -43,7 +43,10 @@
 .alog-table td { white-space: nowrap; }
 .alog-mono { font-family: ui-monospace, monospace; font-size: 11px !important; }
 .alog-current { color: var(--admin-accent); font-weight: 700; }
-.alog-skel { height: 14px; margin: 10px auto; width: min(420px, 80%); border-radius: 6px; background: var(--admin-state-soft); opacity: .8; }
+.alog-table { table-layout: fixed; }
+.alog-table td { overflow-wrap: anywhere; white-space: normal; }
+.alog-table[data-cols="sessions"] { width: 1640px; }
+.alog-table[data-cols="events"] { width: 1620px; }
 .alog-retry { margin-top: 12px; }
 .alog-export { margin-bottom: 14px; }
 @media (max-width: 640px) { .alog-filters__actions, .alog-filters .admin-filter, .alog-picker__btn { width: 100%; } .alog-filters .admin-select { width: 100%; } .admin-page-head { flex-direction: column; align-items: stretch; } }

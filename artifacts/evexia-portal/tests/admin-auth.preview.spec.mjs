@@ -453,6 +453,7 @@ test('unsaved Patient draft stays mounted but hidden through renewal and transie
   const renewing = page.evaluate(async () => (await import('/src/auth/adminSession.js')).verifySession(true));
   await expect(page.getByTestId('admin-session-content')).toBeHidden();
   await expect(page.getByTestId('admin-session-content')).toHaveAttribute('inert', '');
+  await expect(page.getByTestId('portal-loader').getByRole('status')).toHaveText('Renewing Admin access…');
   await expect(name).toHaveValue('Fictional unsaved renewal draft');
   resume();
   await renewing;
@@ -462,6 +463,7 @@ test('unsaved Patient draft stays mounted but hidden through renewal and transie
   await page.route('**/api/v1/auth/refresh', (route) => route.abort());
   await page.evaluate(async () => (await import('/src/auth/adminSession.js')).verifySession(true));
   await expect(page.getByRole('alert')).toContainText('Unable to reach');
+  await expect(page.getByTestId('portal-loader')).toHaveCount(0);
   await expect(name).toBeHidden();
   await expect(name).toHaveValue('Fictional unsaved renewal draft');
   await page.unroute('**/api/v1/auth/refresh');
