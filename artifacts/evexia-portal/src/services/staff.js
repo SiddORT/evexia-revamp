@@ -36,6 +36,7 @@ export function validateStaff(values, _records = [], _exceptId = null, designati
 }
 
 export const loadStaff = (offset = 0, options = {}) => staffRequest(`?limit=100&offset=${offset}`, undefined, options);
+export const searchStaff = (query, cursor = null, options = {}) => staffRequest('/search', { query, cursor, limit: 100 }, options);
 export const getStaff = (id) => staffRequest(`/${id}`);
 export const createStaff = (values) => staffRequest('', values);
 export const updateStaff = (record, values) => staffRequest(`/${record.id}/edit`, { ...values, expected_version: record.version });

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 if (process.env.EVEXIA_CHROMIUM_PATH) test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
 const base = () => process.env.EVEXIA_PREVIEW_BASE_URL;
 const legacy = '[{"name":"Untouched legacy marker","id":"sample-staff-1"}]';
@@ -159,4 +160,59 @@ test('shared mobile form retains phone countries and clears one-time credentials
   await other.evaluate(async () => { const { logoutAdmin } = await import('/src/auth/adminSession.js'); await logoutAdmin(); });
   await expect(page.getByTestId('text-staff-credential-password')).toHaveCount(0);
   expect(await page.evaluate(() => localStorage.getItem('evexia.admin.staff.v1'))).toBe(legacy);
+});
+
+test('directory search finds beyond the loaded batch, continues empty sections, retries and never stores terms', async ({ page }) => {
+  execFileSync('python3', ['scripts/seed-staff-search-preview.py']);
+  await open(page);
+  await expect(page.getByText('Directory Preview 605', { exact: true })).toHaveCount(0);
+  const input = page.getByTestId('input-directory-search-staff');
+  await input.fill('preview-search-605@example.com');
+  const requestEvent = page.waitForRequest((request) => request.url().endsWith('/api/v1/admin/staff/search'));
+  await page.getByTestId('button-directory-search-staff').click();
+  const request = await requestEvent;
+  expect(request.method()).toBe('POST');
+  expect(request.url()).not.toContain('preview-search-605');
+  expect(request.postDataJSON().query).toBe('preview-search-605@example.com');
+  await expect(page.getByTestId('status-directory-search-staff')).toContainText('500 records checked');
+  await expect(page.getByTestId('status-staff-empty')).toContainText('No matches in this section');
+  await expect(page.getByTestId('button-continue-directory-search-staff')).toBeEnabled();
+  await page.getByTestId('button-continue-directory-search-staff').click();
+  await expect(page.getByText('Directory Preview 605', { exact: true }).first()).toBeVisible();
+  await expect(page.getByTestId('status-directory-search-staff')).toContainText('Search complete');
+  await expect(page.getByTestId('button-continue-directory-search-staff')).toBeDisabled();
+  await expect(page.getByTestId('button-previous-directory-search-staff')).toBeEnabled();
+  const downloadEvent = page.waitForEvent('download');
+  await page.getByTestId('button-export-staff').click();
+  const csv = await readFile(await (await downloadEvent).path(), 'utf8');
+  expect(csv).toContain('preview-search-605@example.com');
+  expect(csv).not.toContain('preview-search-604@example.com');
+  await page.getByTestId('button-previous-directory-search-staff').click();
+  await expect(page.getByTestId('status-directory-search-staff')).toContainText('500 records checked');
+  await expect(page.getByTestId('button-previous-directory-search-staff')).toBeDisabled();
+  await page.getByTestId('button-continue-directory-search-staff').click();
+  await expect(page.getByText('Directory Preview 605', { exact: true }).first()).toBeVisible();
+  const snapshot = await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }));
+  expect(snapshot).not.toContain('preview-search-605');
+  expect(snapshot).not.toContain('Directory Preview');
+  expect(await page.evaluate(() => localStorage.getItem('evexia.admin.staff.v1'))).toBe(legacy);
+  await page.screenshot({ path: '/tmp/evexia-staff-directory-search.png', fullPage: true });
+  await input.fill('not-present-in-directory');
+  let fail = true;
+  await page.route('**/api/v1/admin/staff/search', (route) => {
+    if (fail) { fail = false; return route.fulfill({ status: 503, contentType: 'application/json', body: '{"error":{"code":"staff_unavailable"}}' }); }
+    return route.continue();
+  });
+  await page.getByTestId('button-directory-search-staff').click();
+  await expect(page.getByTestId('button-retry-staff')).toBeVisible();
+  await expect(page.getByTestId('button-export-staff')).toBeDisabled();
+  await page.getByTestId('button-retry-staff').click();
+  await expect(page.getByTestId('status-directory-search-staff')).toContainText('500 records checked');
+  await page.getByTestId('button-continue-directory-search-staff').click();
+  await expect(page.getByTestId('status-directory-search-staff')).toContainText('Search complete');
+  await expect(page.getByTestId('status-staff-empty')).toContainText('No matches in this final section');
+  await page.getByTestId('button-clear-directory-search-staff').click();
+  await expect(page.getByTestId('status-directory-search-staff')).toHaveCount(0);
+  await expect(input).toHaveValue('');
+  await expect(page.getByRole('button', { name: 'Next batch', exact: true })).toBeEnabled();
 });

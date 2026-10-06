@@ -11,7 +11,7 @@ import TablePagination from '../../components/admin/TablePagination.jsx';
 import useTablePagination from '../../hooks/useTablePagination.js';
 import { loadDesignations } from '../../services/designations.js';
 import { getSession, subscribeSession, reportingIdentityGuard } from '../../auth/adminSession.js';
-import { STAFF_COLUMNS, STAFF_ROLES, loadStaff, getStaff, validateStaff, createStaff, updateStaff, setStaffStatus, exportStaffCSV } from '../../services/staff.js';
+import { STAFF_COLUMNS, STAFF_ROLES, loadStaff, searchStaff, getStaff, validateStaff, createStaff, updateStaff, setStaffStatus, exportStaffCSV } from '../../services/staff.js';
 import '../../staff.css';
 
 const FIELDS = ['name', 'phone', 'dialCountry', 'userId', 'email', 'status', 'role', 'designation', 'dateOfJoining'];
@@ -139,6 +139,8 @@ export default function StaffManagement() {
   const [busy, setBusy] = useState(false);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const [directoryTerm, setDirectoryTerm] = useState('');
+  const [directory, setDirectory] = useState(null);
   const request = useRef(null);
   const mutationGate = useRef(false);
   const alive = useRef(true);
@@ -146,18 +148,24 @@ export default function StaffManagement() {
   const pagination = useTablePagination(visible);
   const blocked = Boolean(error || loading || busy);
 
-  async function refresh(nextOffset = offset) {
+  async function refresh(nextOffset = offset, scope = directory) {
     request.current?.abort();
     const controller = new AbortController();
     request.current = controller;
     setLoading(true);
     setError('');
+    // Do not export or display stale results under a newly submitted scope.
+    setRecords([]);
+    setDirectory(scope);
     try {
-      const page = await loadStaff(nextOffset, { signal: controller.signal });
+      const page = scope
+        ? await searchStaff(scope.query, scope.cursor, { signal: controller.signal })
+        : await loadStaff(nextOffset, { signal: controller.signal });
       if (!alive.current || controller.signal.aborted) return;
       setRecords(page.items);
       setOffset(nextOffset);
       setHasMore(page.has_more);
+      if (scope) setDirectory({ ...scope, nextCursor: page.next_cursor, scanned: page.scanned });
       pagination.resetPage();
     } catch (cause) {
       if (alive.current && !controller.signal.aborted) { setError(cause.message); setRecords([]); }
@@ -170,7 +178,7 @@ export default function StaffManagement() {
     void refresh(0);
     const unsubscribe = subscribeSession(() => {
       if (getSession().status !== 'authenticated') setCredentials(null);
-      if (!getSession().user) { request.current?.abort(); setRecords([]); setEditing(undefined); }
+      if (!getSession().user) { request.current?.abort(); setRecords([]); setDirectory(null); setDirectoryTerm(''); setSearch(''); setEditing(undefined); }
     });
     const updateDesignations = () => {
       try { setDesignations(loadDesignations()); setDesignationError(''); }
@@ -192,7 +200,7 @@ export default function StaffManagement() {
       setFeedback(record ? 'Staff member updated.' : 'Staff member created. Credentials are shown once.');
       if (!record) setCredentials({ userId: response.record.userId, password: response.initial_password });
       // The credentials remain visible even if the following list reload fails.
-      void refresh(0);
+      void refresh(0, directory ? { query: directory.query, cursor: null, checked: 0 } : null);
     } finally { mutationGate.current = false; if (alive.current) setBusy(false); }
   }
   async function toggle(record) {
@@ -202,9 +210,23 @@ export default function StaffManagement() {
     setActionError('');
     try {
       const next = await setStaffStatus(record, record.status === 'active' ? 'inactive' : 'active');
-      if (alive.current) setRecords((previous) => previous.map((item) => item.id === next.id ? next : item));
+      if (alive.current) {
+        if (directory) void refresh();
+        else setRecords((previous) => previous.map((item) => item.id === next.id ? next : item));
+      }
     } catch (cause) { if (alive.current) setActionError(cause.message); }
     finally { mutationGate.current = false; if (alive.current) setBusy(false); }
+  }
+  function beginDirectorySearch(event) {
+    event.preventDefault();
+    if (busy || loading || directoryTerm.trim().length < 2) return;
+    setSearch('');
+    void refresh(0, { query: directoryTerm.trim(), cursor: null, checked: 0 });
+  }
+  function clearDirectorySearch() {
+    setDirectoryTerm('');
+    setSearch('');
+    void refresh(0, null);
   }
   async function edit(record) {
     setActionError('');
@@ -244,11 +266,22 @@ export default function StaffManagement() {
     {designationError && <div className="admin-feedback admin-feedback--error" role="alert">Designation choices could not be loaded: {designationError}. Retry loading before editing.</div>}
     {!designationError && !designations.some((item) => item.status === 'active') && <div className="admin-feedback" role="status">No active designations yet. <Link href="/admin/masters/designations">Add an active designation</Link> before creating staff.</div>}
     {actionError && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-staff-action-error">{actionError}</div>}
-    <section className="admin-panel" aria-label="Staff directory"><div className="admin-toolbar"><div className="admin-toolbar__fields"><label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search displayed staff</span><input value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Search displayed name, phone, user ID, email, role or designation" data-testid="input-search-staff" /></label></div></div>
+    <section className="admin-panel" aria-label="Staff directory">
+      <form className="admin-toolbar" onSubmit={beginDirectorySearch}>
+        <div className="admin-toolbar__fields"><label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search entire staff directory</span><input value={directoryTerm} onChange={(event) => setDirectoryTerm(event.target.value)} maxLength={200} minLength={2} autoComplete="off" placeholder="Search entire directory (at least 2 characters)" data-testid="input-directory-search-staff" aria-describedby="staff-directory-search-help" /></label></div>
+        <button type="submit" className="admin-button" disabled={busy || loading || directoryTerm.trim().length < 2} data-testid="button-directory-search-staff">Search directory</button>
+        {directory && <button type="button" className="admin-button admin-button--secondary" disabled={busy || loading} onClick={clearDirectorySearch} data-testid="button-clear-directory-search-staff">Back to directory batches</button>}
+      </form>
+      <p id="staff-directory-search-help" className="admin-feedback">Directory search checks name, local phone digits, user ID, email, country, role, designation, joining date and status (case-insensitive partial match). Each step checks up to 500 records and returns up to 100 matches. Continue until complete. Export covers only the loaded results, not the whole directory.</p>
+      {directory && <div className="admin-feedback" role="status" data-testid="status-directory-search-staff">Directory search active: “{directory.query}”. {directory.checked + (directory.scanned || 0)} records checked. {loading ? 'Checking this section…' : error ? 'Search interrupted; retry this section.' : hasMore ? 'More records remain unchecked.' : 'Search complete.'} Results are not a snapshot; restart after directory changes.</div>}
+      <div className="admin-toolbar"><div className="admin-toolbar__fields"><label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search displayed staff</span><input value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Filter only loaded records" data-testid="input-search-staff" /></label></div></div>
       {loading ? <div className="admin-empty" role="status">Loading staff records…</div> : error ? <div className="admin-empty" role="alert"><strong>Staff records could not be loaded</strong><p>{error}</p><button type="button" className="admin-button" onClick={() => refresh()} data-testid="button-retry-staff">Retry loading</button></div> : <>
-        {visible.length ? <><div className="admin-staff-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} label="Staff records" testIdPrefix="staff" /></div><div className="admin-staff-mobile" role="list" aria-label="Staff records">{pagination.pageRows.map((record, index) => <article className="admin-staff-card" role="listitem" key={record.id} data-testid={`card-staff-${record.id}`}><div className="admin-staff-card__head"><div><small>#{pagination.startIndex + index + 1} · {record.userId}</small><h2>{record.name}</h2></div></div><dl className="admin-staff-card__meta">{['phone', 'userId', 'email', 'role', 'dateOfJoining', 'designation', 'status'].map((key) => <div key={key}><dt>{LABELS[key]}</dt><dd>{key === 'phone' ? <StaffPhone record={record} mobile /> : key === 'dateOfJoining' ? formatAdminDate(record.dateOfJoining) : record[key]}</dd></div>)}<div><dt>Created details</dt><dd>{audit(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated details</dt><dd>{audit(record.updatedBy, record.updatedAt)}</dd></div></dl><div className="admin-staff-card__actions">{rowActions(record, true)}<button type="button" role="switch" aria-checked={record.status === 'active'} className="admin-staff-status" disabled={blocked} onClick={() => toggle(record)} data-testid={`switch-staff-mobile-status-${record.id}`}><span className="admin-staff-status__track" aria-hidden="true" />{record.status === 'active' ? 'Active' : 'Inactive'}</button></div></article>)}</div></> : <div className="admin-empty" data-testid="status-staff-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{records.length ? 'No matching staff members' : 'No staff members yet'}</strong><p>{records.length ? 'Try a different search term.' : 'Add a staff member to begin the server-backed directory.'}</p></div>}
+        {visible.length ? <><div className="admin-staff-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} label="Staff records" testIdPrefix="staff" /></div><div className="admin-staff-mobile" role="list" aria-label="Staff records">{pagination.pageRows.map((record, index) => <article className="admin-staff-card" role="listitem" key={record.id} data-testid={`card-staff-${record.id}`}><div className="admin-staff-card__head"><div><small>#{pagination.startIndex + index + 1} · {record.userId}</small><h2>{record.name}</h2></div></div><dl className="admin-staff-card__meta">{['phone', 'userId', 'email', 'role', 'dateOfJoining', 'designation', 'status'].map((key) => <div key={key}><dt>{LABELS[key]}</dt><dd>{key === 'phone' ? <StaffPhone record={record} mobile /> : key === 'dateOfJoining' ? formatAdminDate(record.dateOfJoining) : record[key]}</dd></div>)}<div><dt>Created details</dt><dd>{audit(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated details</dt><dd>{audit(record.updatedBy, record.updatedAt)}</dd></div></dl><div className="admin-staff-card__actions">{rowActions(record, true)}<button type="button" role="switch" aria-checked={record.status === 'active'} className="admin-staff-status" disabled={blocked} onClick={() => toggle(record)} data-testid={`switch-staff-mobile-status-${record.id}`}><span className="admin-staff-status__track" aria-hidden="true" />{record.status === 'active' ? 'Active' : 'Inactive'}</button></div></article>)}</div></> : <div className="admin-empty" data-testid="status-staff-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{directory ? (records.length ? 'No matches in the loaded results filter' : hasMore ? 'No matches in this section' : 'No matches in this final section') : records.length ? 'No matching staff members' : 'No staff members yet'}</strong><p>{directory ? (hasMore ? 'Continue search to check the remaining directory.' : 'Search complete. Earlier sections may contain matches; restart to review them or try another term.') : records.length ? 'Try a different search term.' : 'Add a staff member to begin the server-backed directory.'}</p></div>}
         <TablePagination {...pagination} filtered={visible.length} total={records.length} label="staff members in loaded batch" onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-staff-count" />
-        <div className="admin-staff-actions"><button type="button" className="admin-button admin-button--secondary" disabled={blocked || !offset} onClick={() => refresh(Math.max(0, offset - 100))}>Previous batch</button><span>Server records {records.length ? offset + 1 : 0}–{offset + records.length}; search and export cover this batch.</span><button type="button" className="admin-button admin-button--secondary" disabled={blocked || !hasMore || offset >= 10000} onClick={() => refresh(offset + 100)}>Next batch</button></div>
+        {directory ? <div className="admin-staff-actions"><button type="button" className="admin-button admin-button--secondary" disabled={blocked} onClick={() => refresh(0, { query: directory.query, cursor: null, checked: 0 })} data-testid="button-restart-directory-search-staff">Restart search</button>
+          <button type="button" className="admin-button admin-button--secondary" disabled={blocked || !directory.history?.length} onClick={() => { setSearch(''); const history = directory.history; void refresh(0, { query: directory.query, ...history.at(-1), history: history.slice(0, -1) }); }} data-testid="button-previous-directory-search-staff">Previous search section</button>
+          <span>{records.length} matches loaded in this section; filter and export cover this section only.</span><button type="button" className="admin-button admin-button--secondary" disabled={blocked || !hasMore} onClick={() => { setSearch(''); void refresh(0, { query: directory.query, cursor: directory.nextCursor, checked: directory.checked + directory.scanned, history: [...(directory.history || []), { cursor: directory.cursor, checked: directory.checked }] }); }} data-testid="button-continue-directory-search-staff">Continue search</button></div>
+          : <div className="admin-staff-actions"><button type="button" className="admin-button admin-button--secondary" disabled={blocked || !offset} onClick={() => refresh(Math.max(0, offset - 100))}>Previous batch</button><span>Server records {records.length ? offset + 1 : 0}–{offset + records.length}; filter and export cover this batch. Use directory search to find other records.</span><button type="button" className="admin-button admin-button--secondary" disabled={blocked || !hasMore || offset >= 10000} onClick={() => refresh(offset + 100)}>Next batch</button></div>}
       </>}
     </section>
     {editing !== undefined && <StaffForm key={editing?.id || 'new'} record={editing} designations={designations} onSave={save} onClose={() => setEditing(undefined)} />}

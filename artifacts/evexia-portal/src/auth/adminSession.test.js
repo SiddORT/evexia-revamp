@@ -55,6 +55,31 @@ test('staff permission is explicit and delayed responses cannot survive logout',
   await assert.rejects(read, /session changed/i);
 });
 
+test('staff search is a no-store body-only read, safely retryable and never replayed automatically', async () => {
+  let searches = 0;
+  const identity = { ...user, permissions: ['admin.access', 'staff.manage'] };
+  const api = await setup(async (url, options) => {
+    if (url.includes('/admin/staff')) {
+      searches++;
+      assert.equal(url, '/api/v1/admin/staff/search');
+      assert.equal(options.method, 'POST');
+      assert.equal(options.cache, 'no-store');
+      assert.equal(options.headers.Authorization, 'Bearer synthetic-memory-token');
+      assert.deepEqual(JSON.parse(options.body), { query: 'fictional-search-term', cursor: null, limit: 100 });
+      if (searches === 1) throw Error('private outage detail');
+      return reply({ items: [], has_more: false, next_cursor: null, scanned: 0, scan_limit: 500, limit: 100 });
+    }
+    return reply(url.endsWith('/me') ? identity : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  const body = { query: 'fictional-search-term', cursor: null, limit: 100 };
+  await assert.rejects(api.staffRequest('/search', body), (error) => !error.ambiguous && /retry/i.test(error.message));
+  assert.equal(searches, 1);
+  assert.deepEqual((await api.staffRequest('/search', body)).items, []);
+  assert.equal(searches, 2);
+  await api.logoutAdmin();
+});
+
 test('replacement is terminal only for a previously verified tab and never restores a newer cookie', async () => {
   let replaced = false;
   let refreshes = 0;

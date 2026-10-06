@@ -512,6 +512,84 @@ export const CreateStaffResponse = zod.object({
 });
 
 /**
+ * Bounded directory scan. Search terms belong in the body, never a URL.
+ * @summary Search Staff
+ */
+export const searchStaffDirectoryBodyLimitDefault = 100;
+export const searchStaffDirectoryBodyLimitMax = 100;
+
+export const searchStaffDirectoryBodyQueryMin = 2;
+export const searchStaffDirectoryBodyQueryMax = 200;
+
+export const SearchStaffDirectoryBody = zod.object({
+  cursor: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  limit: zod
+    .number()
+    .int()
+    .min(1)
+    .max(searchStaffDirectoryBodyLimitMax)
+    .default(searchStaffDirectoryBodyLimitDefault),
+  query: zod
+    .string()
+    .min(searchStaffDirectoryBodyQueryMin)
+    .max(searchStaffDirectoryBodyQueryMax),
+});
+
+export const searchStaffDirectoryResponseItemsItemDesignationMax = 200;
+
+export const searchStaffDirectoryResponseItemsItemEmailMax = 320;
+
+export const searchStaffDirectoryResponseItemsItemNameMax = 200;
+
+export const searchStaffDirectoryResponseItemsItemPhoneMax = 30;
+
+export const SearchStaffDirectoryResponse = zod.object({
+  has_more: zod.boolean(),
+  items: zod.array(
+    zod.object({
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      dateOfJoining: zod.coerce.date(),
+      designation: zod
+        .string()
+        .min(1)
+        .max(searchStaffDirectoryResponseItemsItemDesignationMax),
+      dialCountry: zod.string(),
+      email: zod
+        .string()
+        .email()
+        .max(searchStaffDirectoryResponseItemsItemEmailMax),
+      id: zod.string().uuid(),
+      name: zod
+        .string()
+        .min(1)
+        .max(searchStaffDirectoryResponseItemsItemNameMax),
+      phone: zod
+        .string()
+        .min(1)
+        .max(searchStaffDirectoryResponseItemsItemPhoneMax),
+      role: zod.enum([
+        "Staff",
+        "Manager",
+        "Accountant",
+        "Back End",
+        "Sub Admin",
+        "Super Admin",
+      ]),
+      status: zod.enum(["active", "inactive"]),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      userId: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  next_cursor: zod.union([zod.string().uuid(), zod.null()]),
+  scan_limit: zod.number().int(),
+  scanned: zod.number().int(),
+});
+
+/**
  * @summary Get Staff
  */
 export const GetStaffParams = zod.object({

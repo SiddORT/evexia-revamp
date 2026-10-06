@@ -115,6 +115,47 @@ Other browser-local masters remain unchanged. No VAPT certification is claimed.
 
 ## Verification
 
+### Directory-wide search privacy and resource review
+
+`POST /api/v1/admin/staff/search` accepts a 2–200-character term in the JSON
+body, never in a URL. The same protected Super Admin permission and locked
+session revalidation apply on every continuation. No query or match is written
+to audit history, browser storage, database tables, caches or logs. Responses
+and the dedicated authenticated browser transport are no-store. Generated query
+hooks are not used here, since query caches would retain plaintext results.
+The existing keyed email uniqueness index is unchanged; no additional search
+indexes, plaintext or deterministic substring tokens are introduced.
+
+The selected approach decrypts only in authorized request memory. A primary-key
+keyset scan fetches at most 501 profiles (one lookahead) with joined usernames,
+decrypts at most 500, and returns at most 100 matches per request. It does not
+count all matches, use deep offsets or silently loop through the whole directory.
+Users explicitly continue even after a section with zero matches. A UUID cursor
+contains no search term or personal fields; it is a position, not authorization.
+All non-result objects are discarded at the request boundary. The existing
+transaction also applies a two-second per-statement timeout and a one-second lock
+wait timeout, both transaction-local. The authorization check additionally verifies one stored email against the configured
+uniqueness key; missing, wrong or corrupt keys/ciphertext fail closed, including
+when a failing row would not match. No partial success is returned on failure.
+
+Tradeoff: an authorized administrator sees section sizes, match counts, record
+positions and timing. Encryption at rest does not conceal this access pattern
+from the server/operator, nor personal fields from an authorized browser.
+Per-request work is bounded, but repeated deliberate requests can traverse the
+directory; it is not constant-time or a global abuse-rate guarantee. Adding a
+distributed search rate/concurrency policy would require a separate operational
+decision. The existing admin lock serializes same-actor search transactions.
+Searching is case-insensitive literal substring matching, including local phone
+digits and the non-secret business labels/date/status. No wildcard syntax is used.
+
+Results are UUID-ordered, not creation-ordered, and are not a database snapshot.
+Concurrent changes can move membership between sections; refresh/restart is the
+explicit freshness path. Previous-section navigation stores only cursor/progress
+in page memory, refetching rather than caching results. Changing the search term
+starts from the beginning. Exports and the retained table filter cover only the
+loaded search section. Legacy local records, credential retrieval and optimistic
+write/version semantics are unchanged.
+
 `pnpm run test:api-foundation` uses private ephemeral PostgreSQL, never a configured
 shared database. Staff tests cover forward migrations, encrypted fields, credential
 hashes, missing/wrong keys, field/record substitution, rollback, uniqueness races,

@@ -23,3 +23,4 @@
 - [Session-ending reasons](session-ending-reasons.md) — allowlist the first owner-matched revocation cause; never infer missing history from later events.
 - [Activity search planning](activity-search-planning.md) — measure broad searches as well as rare ones; redundant safe predicates can defeat ordered early termination.
 - [Post-merge verification](post-merge-verification.md) — reconciliation success does not guarantee restarted services are healthy; confirm readiness separately.
+- [Staff search privacy](staff-search-privacy.md) — explicit bounded scans avoid substring-index leakage and unbounded automatic directory traversal.

@@ -1,7 +1,7 @@
 import secrets
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from app.core.security import hash_password, utcnow
@@ -26,10 +26,10 @@ def authorize(db, actor, settings):
     return current, crypto
 
 
-def projection(db, profile, crypto):
-    user = db.get(User, profile.user_id)
+def projection(db, profile, crypto, username=None):
+    username = username if username is not None else db.get(User, profile.user_id).username
     return dict(
-        id=profile.id, userId=user.username, version=profile.version,
+        id=profile.id, userId=username, version=profile.version,
         **{field: crypto.decrypt(profile.id, field, getattr(profile, f"{field}_ciphertext"))
            for field in ("name", "email", "phone")},
         dialCountry=profile.dial_country, role=profile.role, designation=profile.designation,
@@ -108,6 +108,42 @@ def listing(db, actor, settings, limit, offset):
             StaffProfile.created_at.desc(), StaffProfile.id.desc()).limit(limit + 1).offset(offset)))
         result = {"items": [projection(db, row, crypto) for row in rows[:limit]],
                   "has_more": len(rows) > limit, "limit": limit, "offset": offset}
+        db.commit()
+        return result
+    return transaction(work, db)
+
+
+SEARCH_SCAN_LIMIT = 500
+SEARCH_FIELDS = ("name", "email", "phone", "userId", "dialCountry", "role",
+                 "designation", "dateOfJoining", "status")
+
+
+def search(db, actor, settings, body):
+    def work():
+        # Transaction-local only; bound DB execution and same-admin lock waits.
+        db.execute(text("SET LOCAL statement_timeout = '2000ms'"))
+        db.execute(text("SET LOCAL lock_timeout = '1000ms'"))
+        _current, crypto = authorize(db, actor, settings)
+        # Primary-key keyset scan: no plaintext predicates, new blind indexes,
+        # counts, offsets, stored search sessions, or unbounded result buffers.
+        stmt = select(StaffProfile, User.username).join(User, User.id == StaffProfile.user_id)
+        if body.cursor is not None:
+            stmt = stmt.where(StaffProfile.id > body.cursor)
+        rows = list(db.execute(stmt.order_by(StaffProfile.id).limit(SEARCH_SCAN_LIMIT + 1)))
+        term = body.query.casefold()
+        items, scanned, last_id = [], 0, None
+        for profile, username in rows[:SEARCH_SCAN_LIMIT]:
+            record = projection(db, profile, crypto, username)
+            scanned += 1
+            last_id = profile.id
+            if any(term in str(record[field]).casefold() for field in SEARCH_FIELDS):
+                items.append(record)
+                if len(items) == body.limit:
+                    break
+        has_more = len(rows) > scanned
+        result = dict(items=items, has_more=has_more,
+                      next_cursor=last_id if has_more else None,
+                      scanned=scanned, scan_limit=SEARCH_SCAN_LIMIT, limit=body.limit)
         db.commit()
         return result
     return transaction(work, db)

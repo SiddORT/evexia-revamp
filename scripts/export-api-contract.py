@@ -49,6 +49,7 @@ from app.main import app  # noqa: E402
 OPERATION_IDS = {
     ("get", "/v1/admin/staff"): "listStaff",
     ("post", "/v1/admin/staff"): "createStaff",
+    ("post", "/v1/admin/staff/search"): "searchStaffDirectory",
     ("get", "/v1/admin/staff/{staff_id}"): "getStaff",
     ("post", "/v1/admin/staff/{staff_id}/edit"): "editStaff",
     ("post", "/v1/admin/staff/{staff_id}/status"): "setStaffStatus",

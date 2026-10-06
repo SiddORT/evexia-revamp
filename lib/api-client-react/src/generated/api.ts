@@ -50,6 +50,8 @@ import type {
   StaffFields,
   StaffPage,
   StaffResponse,
+  StaffSearch,
+  StaffSearchPage,
   StaffStatus,
   TokenResponse,
   UploadFileParams,
@@ -1073,6 +1075,123 @@ export const useCreateStaff = <
   TContext
 > => {
   return useMutation(getCreateStaffMutationOptions(options));
+};
+
+export const getSearchStaffDirectoryUrl = () => {
+  return `/api/v1/admin/staff/search`;
+};
+
+/**
+ * Bounded directory scan. Search terms belong in the body, never a URL.
+ * @summary Search Staff
+ */
+export const searchStaffDirectory = async (
+  staffSearch: StaffSearch,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StaffSearchPage> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<StaffSearchPage>(getSearchStaffDirectoryUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(staffSearch),
+  });
+};
+
+export const getSearchStaffDirectoryMutationKey = () =>
+  ["searchStaffDirectory"] as const;
+
+export const getSearchStaffDirectoryMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof searchStaffDirectory>>,
+    TError,
+    SearchStaffDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof searchStaffDirectory>>,
+  TError,
+  SearchStaffDirectoryMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSearchStaffDirectoryMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof searchStaffDirectory>>,
+    SearchStaffDirectoryMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return searchStaffDirectory(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SearchStaffDirectoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof searchStaffDirectory>>
+>;
+export type SearchStaffDirectoryMutationBody = BodyType<StaffSearch>;
+export type SearchStaffDirectoryMutationError = ErrorType<ErrorEnvelope>;
+export type SearchStaffDirectoryMutationVariables = {
+  data: BodyType<StaffSearch>;
+};
+
+/**
+ * @summary Search Staff
+ */
+export const useSearchStaffDirectory = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof searchStaffDirectory>>,
+    TError,
+    SearchStaffDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof searchStaffDirectory>>,
+  TError,
+  SearchStaffDirectoryMutationVariables,
+  TContext
+> => {
+  return useMutation(getSearchStaffDirectoryMutationOptions(options));
 };
 
 export const getGetStaffUrl = (staffId: string) => {

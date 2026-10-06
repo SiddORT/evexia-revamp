@@ -483,6 +483,29 @@ export interface StaffPage {
   offset: number;
 }
 
+export interface StaffSearch {
+  cursor?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minLength 2
+   * @maxLength 200
+   */
+  query: string;
+}
+
+export interface StaffSearchPage {
+  has_more: boolean;
+  items: StaffResponse[];
+  limit: number;
+  next_cursor: string | null;
+  scan_limit: number;
+  scanned: number;
+}
+
 export type StaffStatusStatus =
   (typeof StaffStatusStatus)[keyof typeof StaffStatusStatus];
 

@@ -214,9 +214,10 @@ export function reportingIdentityGuard() {
 // Dedicated authenticated staff transport. Never replay mutations: a lost create
 // response may already have committed and its initial password is unrecoverable.
 export async function staffRequest(path = '', body, { signal } = {}) {
-  if (!/^(?:|\/[0-9a-f-]{36}(?:\/(?:edit|status))?|\?limit=\d+&offset=\d+)$/.test(path)) {
+  if (!/^(?:|\/search|\/[0-9a-f-]{36}(?:\/(?:edit|status))?|\?limit=\d+&offset=\d+)$/.test(path)) {
     throw new SessionError('Unsupported staff operation.');
   }
+  const mutation = body !== undefined && path !== '/search';
   const epoch = generation;
   const owner = state.user?.id;
   const check = () => {
@@ -231,7 +232,7 @@ export async function staffRequest(path = '', body, { signal } = {}) {
   check();
   const checkResponse = () => {
     try { check(); }
-    catch (error) { error.ambiguous = body !== undefined; throw error; }
+    catch (error) { error.ambiguous = mutation; throw error; }
   };
   let response;
   try {
@@ -244,9 +245,9 @@ export async function staffRequest(path = '', body, { signal } = {}) {
   } catch {
     if (pending) await pending;
     checkResponse();
-    const error = new SessionError(body === undefined ? 'Unable to load staff. Check your connection and retry.'
+    const error = new SessionError(!mutation ? 'Unable to load staff. Check your connection and retry.'
       : 'Save outcome could not be confirmed. Refresh the directory before submitting again; the server may have saved it.');
-    error.ambiguous = body !== undefined;
+    error.ambiguous = mutation;
     throw error;
   }
   if (pending) await pending;
@@ -255,7 +256,7 @@ export async function staffRequest(path = '', body, { signal } = {}) {
   try { data = await response.json(); }
   catch {
     const error = new SessionError('Staff service returned an invalid response. Refresh the directory before submitting again.');
-    error.ambiguous = body !== undefined;
+    error.ambiguous = mutation;
     throw error;
   }
   if (pending) await pending;
@@ -271,7 +272,7 @@ export async function staffRequest(path = '', body, { signal } = {}) {
         : response.status === 401 ? 'Your session expired. Please sign in again.'
         : 'Staff service is unavailable. Your draft has not been discarded.', response.status);
     error.code = code;
-    error.ambiguous = body !== undefined && response.status >= 500 && code !== 'staff_unavailable';
+    error.ambiguous = mutation && response.status >= 500 && code !== 'staff_unavailable';
     throw error;
   }
   return data;

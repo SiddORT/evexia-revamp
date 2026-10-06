@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import require_permissions
 from app.core.config import Settings, get_settings
 from app.db.session import get_db
-from app.schemas.staff import StaffCreated, StaffEdit, StaffFields, StaffPage, StaffResponse, StaffStatus
+from app.schemas.staff import StaffCreated, StaffEdit, StaffFields, StaffPage, StaffResponse, StaffStatus, StaffSearch, StaffSearchPage
 from app.services.auth import Identity
 from app.services import staff as service
 
@@ -31,6 +31,13 @@ def create_staff(body: StaffFields, actor: Identity = Depends(manager),
 def get_staff(staff_id: uuid.UUID, actor: Identity = Depends(manager),
               db: Session = Depends(get_db), settings: Settings = Depends(get_settings)):
     return service.detail(db, actor, settings, staff_id)
+
+
+@router.post("/search", response_model=StaffSearchPage)
+def search_staff(body: StaffSearch, actor: Identity = Depends(manager),
+                 db: Session = Depends(get_db), settings: Settings = Depends(get_settings)):
+    """Bounded directory scan. Search terms belong in the body, never a URL."""
+    return service.search(db, actor, settings, body)
 
 
 @router.post("/{staff_id}/edit", response_model=StaffResponse)

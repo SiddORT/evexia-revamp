@@ -119,7 +119,7 @@ def create_app() -> FastAPI:
         fields = [{"field": ".".join(str(part) for part in err["loc"] if isinstance(part, (str, int))),
                    "code": err["type"]} for err in exc.errors()[:20]]
         if request.url.path.startswith("/api/v1/admin/staff"):
-            allowed = {"name", "email", "phone", "dialCountry", "role", "designation", "dateOfJoining", "status", "expected_version", "staff_id", "limit", "offset"}
+            allowed = {"name", "email", "phone", "dialCountry", "role", "designation", "dateOfJoining", "status", "expected_version", "staff_id", "limit", "offset", "query", "cursor"}
             locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
             fields = [{"field": field["field"] if field["field"] in locations else "body",
                        "code": field["code"]} for field in fields]
