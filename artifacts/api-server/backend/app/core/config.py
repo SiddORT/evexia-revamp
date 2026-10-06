@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     refresh_token_days: int = 7
     session_refresh_hours: int = 12
     super_admin_initial_password: SecretStr | None = None
+    staff_encryption_keys: SecretStr | None = None
+    staff_encryption_key_id: str = "primary"
+    staff_email_index_key: SecretStr | None = None
     cors_origins: str = ""
     allow_public_registration: bool = False
     s3_bucket: str | None = None

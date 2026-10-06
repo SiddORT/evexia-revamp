@@ -7,4 +7,5 @@ pnpm --filter @workspace/evexia-portal run test:admin-session
 pnpm --filter @workspace/evexia-portal run test:template-preferences:service
 node --test artifacts/evexia-portal/src/services/rolePermissions.test.js
 node --test artifacts/evexia-portal/src/services/reportingCSV.test.js
+node --test artifacts/evexia-portal/src/services/staff.test.js
 sh scripts/run-authenticated-previews.sh

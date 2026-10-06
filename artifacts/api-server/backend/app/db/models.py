@@ -42,7 +42,7 @@ class User(Timestamps, Base):
         ),
     )
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    email: Mapped[str] = mapped_column(String(320), unique=True, index=True, nullable=False)
+    email: Mapped[str | None] = mapped_column(String(320), unique=True, index=True, nullable=True)
     username: Mapped[str | None] = mapped_column(String(32), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
@@ -182,3 +182,4 @@ class Patient(Timestamps, Base):
 # File metadata is maintained independently from identity/domain models, but its
 # tables must be registered before Alembic evaluates Base.metadata.
 from app.db import file_models as _file_models  # noqa: E402,F401
+from app.db import staff_models as _staff_models  # noqa: E402,F401

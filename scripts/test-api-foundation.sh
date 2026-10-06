@@ -21,6 +21,9 @@ createdb -h "$PGROOT/socket" -p 5432 -U "$(id -un)" evexia_api_test
 export DATABASE_URL="postgresql+psycopg://$(id -un)@/evexia_api_test?host=$PGROOT/socket&port=5432"
 export TEST_DATABASE_URL="$DATABASE_URL"
 export APP_ENV=test
+export STAFF_ENCRYPTION_KEYS='{"primary":"QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="}'
+export STAFF_ENCRYPTION_KEY_ID=primary
+export STAFF_EMAIL_INDEX_KEY=QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI=
 export JWT_SECRET=synthetic-isolated-tests-only-signing-key-not-a-live-credential
 export SCANNER_BACKEND=unavailable
 export STORAGE_BACKEND=local

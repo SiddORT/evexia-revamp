@@ -17,6 +17,7 @@ password input; there is no default elevated account.
 | Action | Super Admin | Active MR |
 |---|---|---|
 | Provision/map login and MR; create patient; assign patient | yes | no |
+| Staff list/detail/create/edit/status (`staff.manage`) | protected singleton only | no |
 | Upload, metadata, verified download, download grant | system-wide | own MR or currently assigned active patient |
 | Delete, replace, retry verification/cleanup | yes | no |
 
@@ -25,6 +26,19 @@ at most one assigned MR. An MR profile belongs to one login. Reassignment
 changes database authorization, never keys. Authorization is repeated after
 slow I/O and on every local grant redemption. Denials must occur before adapter
 calls. MR/profile deactivation and user version checks also apply.
+
+Staff uses the same User credential store but is intentionally unmapped and
+ineligible for login. Only explicitly linked staff Users can omit email;
+staff email exists only as AES-GCM ciphertext in the profile, with a unique
+HMAC-SHA256 blind index. Name/phone ciphertext uses randomized nonces and
+record/field/version binding. Business roles/designations never affect
+authorization. Directory status does not enable login.
+All staff mutations are atomic and stale-version checked; passwords are
+generated server-side, Argon2id-hashed and returned once on create only.
+No hard-delete, import, invitation, staff sign-in, password reset or rotation API
+exists. Legacy browser-local staff storage is untouched/unused; Designation
+Master labels are not a verified backend master relationship.
+See `docs/staff-security.md` for key retention and coordinated backup/recovery.
 
 ## File API and validation
 

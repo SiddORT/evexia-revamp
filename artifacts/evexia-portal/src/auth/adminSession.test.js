@@ -19,6 +19,42 @@ async function setup(handler) {
 const reply = (body, status = 200) => new Response(status === 204 ? null : JSON.stringify(body), { status });
 const payload = { access_token: 'synthetic-memory-token', expires_in: 900, user };
 
+test('staff mutations use memory-only bearer and never replay ambiguous create requests', async () => {
+  let writes = 0;
+  const identity = { ...user, permissions: ['admin.access', 'staff.manage'] };
+  const api = await setup(async (url, options) => {
+    if (url.includes('/admin/staff')) {
+      writes++;
+      assert.equal(options.cache, 'no-store');
+      assert.equal(options.headers.Authorization, 'Bearer synthetic-memory-token');
+      throw Error('private outage detail');
+    }
+    return reply(url.endsWith('/me') ? identity : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  await assert.rejects(api.staffRequest('', { name: 'synthetic' }), (error) => error.ambiguous === true && /outcome could not be confirmed/.test(error.message));
+  assert.equal(writes, 1);
+  await api.logoutAdmin();
+});
+
+test('staff permission is explicit and delayed responses cannot survive logout', async () => {
+  const denied = await setup(async (url) => reply(url.endsWith('/me') ? user : payload));
+  await denied.loginAdmin(user.email, 'synthetic-password', false);
+  await assert.rejects(denied.staffRequest(), /access denied/i);
+  await denied.logoutAdmin();
+  let release;
+  const identity = { ...user, permissions: ['admin.access', 'staff.manage'] };
+  const api = await setup(async (url) => {
+    if (url.includes('/admin/staff')) return new Promise((resolve) => { release = resolve; });
+    return reply(url.endsWith('/me') ? identity : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  const read = api.staffRequest();
+  await api.logoutAdmin();
+  release(reply({ items: [] }));
+  await assert.rejects(read, /session changed/i);
+});
+
 test('replacement is terminal only for a previously verified tab and never restores a newer cookie', async () => {
   let replaced = false;
   let refreshes = 0;

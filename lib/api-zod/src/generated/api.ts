@@ -376,6 +376,294 @@ export const ListReportingUsersResponse = zod.object({
 });
 
 /**
+ * @summary List Staff
+ */
+export const listStaffQueryLimitDefault = 20;
+export const listStaffQueryLimitMax = 100;
+
+export const listStaffQueryOffsetDefault = 0;
+export const listStaffQueryOffsetMin = 0;
+export const listStaffQueryOffsetMax = 10000;
+
+export const ListStaffQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listStaffQueryLimitMax)
+    .default(listStaffQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listStaffQueryOffsetMin)
+    .max(listStaffQueryOffsetMax)
+    .default(listStaffQueryOffsetDefault),
+});
+
+export const listStaffResponseItemsItemDesignationMax = 200;
+
+export const listStaffResponseItemsItemEmailMax = 320;
+
+export const listStaffResponseItemsItemNameMax = 200;
+
+export const listStaffResponseItemsItemPhoneMax = 30;
+
+export const ListStaffResponse = zod.object({
+  has_more: zod.boolean(),
+  items: zod.array(
+    zod.object({
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      dateOfJoining: zod.coerce.date(),
+      designation: zod
+        .string()
+        .min(1)
+        .max(listStaffResponseItemsItemDesignationMax),
+      dialCountry: zod.string(),
+      email: zod.string().email().max(listStaffResponseItemsItemEmailMax),
+      id: zod.string().uuid(),
+      name: zod.string().min(1).max(listStaffResponseItemsItemNameMax),
+      phone: zod.string().min(1).max(listStaffResponseItemsItemPhoneMax),
+      role: zod.enum([
+        "Staff",
+        "Manager",
+        "Accountant",
+        "Back End",
+        "Sub Admin",
+        "Super Admin",
+      ]),
+      status: zod.enum(["active", "inactive"]),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      userId: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+});
+
+/**
+ * @summary Create Staff
+ */
+export const createStaffBodyDesignationMax = 200;
+
+export const createStaffBodyEmailMax = 320;
+
+export const createStaffBodyNameMax = 200;
+
+export const createStaffBodyPhoneMax = 30;
+
+export const CreateStaffBody = zod.object({
+  dateOfJoining: zod.coerce.date(),
+  designation: zod.string().min(1).max(createStaffBodyDesignationMax),
+  dialCountry: zod.string(),
+  email: zod.string().email().max(createStaffBodyEmailMax),
+  name: zod.string().min(1).max(createStaffBodyNameMax),
+  phone: zod.string().min(1).max(createStaffBodyPhoneMax),
+  role: zod.enum([
+    "Staff",
+    "Manager",
+    "Accountant",
+    "Back End",
+    "Sub Admin",
+    "Super Admin",
+  ]),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const createStaffResponseRecordDesignationMax = 200;
+
+export const createStaffResponseRecordEmailMax = 320;
+
+export const createStaffResponseRecordNameMax = 200;
+
+export const createStaffResponseRecordPhoneMax = 30;
+
+export const CreateStaffResponse = zod.object({
+  initial_password: zod.string(),
+  record: zod.object({
+    createdAt: zod.coerce.date(),
+    createdBy: zod.string(),
+    dateOfJoining: zod.coerce.date(),
+    designation: zod
+      .string()
+      .min(1)
+      .max(createStaffResponseRecordDesignationMax),
+    dialCountry: zod.string(),
+    email: zod.string().email().max(createStaffResponseRecordEmailMax),
+    id: zod.string().uuid(),
+    name: zod.string().min(1).max(createStaffResponseRecordNameMax),
+    phone: zod.string().min(1).max(createStaffResponseRecordPhoneMax),
+    role: zod.enum([
+      "Staff",
+      "Manager",
+      "Accountant",
+      "Back End",
+      "Sub Admin",
+      "Super Admin",
+    ]),
+    status: zod.enum(["active", "inactive"]),
+    updatedAt: zod.coerce.date(),
+    updatedBy: zod.string(),
+    userId: zod.string(),
+    version: zod.number().int(),
+  }),
+});
+
+/**
+ * @summary Get Staff
+ */
+export const GetStaffParams = zod.object({
+  staff_id: zod.coerce.string().uuid(),
+});
+
+export const getStaffResponseDesignationMax = 200;
+
+export const getStaffResponseEmailMax = 320;
+
+export const getStaffResponseNameMax = 200;
+
+export const getStaffResponsePhoneMax = 30;
+
+export const GetStaffResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dateOfJoining: zod.coerce.date(),
+  designation: zod.string().min(1).max(getStaffResponseDesignationMax),
+  dialCountry: zod.string(),
+  email: zod.string().email().max(getStaffResponseEmailMax),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(getStaffResponseNameMax),
+  phone: zod.string().min(1).max(getStaffResponsePhoneMax),
+  role: zod.enum([
+    "Staff",
+    "Manager",
+    "Accountant",
+    "Back End",
+    "Sub Admin",
+    "Super Admin",
+  ]),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  userId: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit Staff
+ */
+export const EditStaffParams = zod.object({
+  staff_id: zod.coerce.string().uuid(),
+});
+
+export const editStaffBodyDesignationMax = 200;
+
+export const editStaffBodyEmailMax = 320;
+
+export const editStaffBodyNameMax = 200;
+
+export const editStaffBodyPhoneMax = 30;
+
+export const EditStaffBody = zod.object({
+  dateOfJoining: zod.coerce.date(),
+  designation: zod.string().min(1).max(editStaffBodyDesignationMax),
+  dialCountry: zod.string(),
+  email: zod.string().email().max(editStaffBodyEmailMax),
+  expected_version: zod.number().int().min(1),
+  name: zod.string().min(1).max(editStaffBodyNameMax),
+  phone: zod.string().min(1).max(editStaffBodyPhoneMax),
+  role: zod.enum([
+    "Staff",
+    "Manager",
+    "Accountant",
+    "Back End",
+    "Sub Admin",
+    "Super Admin",
+  ]),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const editStaffResponseDesignationMax = 200;
+
+export const editStaffResponseEmailMax = 320;
+
+export const editStaffResponseNameMax = 200;
+
+export const editStaffResponsePhoneMax = 30;
+
+export const EditStaffResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dateOfJoining: zod.coerce.date(),
+  designation: zod.string().min(1).max(editStaffResponseDesignationMax),
+  dialCountry: zod.string(),
+  email: zod.string().email().max(editStaffResponseEmailMax),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(editStaffResponseNameMax),
+  phone: zod.string().min(1).max(editStaffResponsePhoneMax),
+  role: zod.enum([
+    "Staff",
+    "Manager",
+    "Accountant",
+    "Back End",
+    "Sub Admin",
+    "Super Admin",
+  ]),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  userId: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Status Staff
+ */
+export const SetStaffStatusParams = zod.object({
+  staff_id: zod.coerce.string().uuid(),
+});
+
+export const SetStaffStatusBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const setStaffStatusResponseDesignationMax = 200;
+
+export const setStaffStatusResponseEmailMax = 320;
+
+export const setStaffStatusResponseNameMax = 200;
+
+export const setStaffStatusResponsePhoneMax = 30;
+
+export const SetStaffStatusResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dateOfJoining: zod.coerce.date(),
+  designation: zod.string().min(1).max(setStaffStatusResponseDesignationMax),
+  dialCountry: zod.string(),
+  email: zod.string().email().max(setStaffStatusResponseEmailMax),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(setStaffStatusResponseNameMax),
+  phone: zod.string().min(1).max(setStaffStatusResponsePhoneMax),
+  role: zod.enum([
+    "Staff",
+    "Manager",
+    "Accountant",
+    "Back End",
+    "Sub Admin",
+    "Super Admin",
+  ]),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  userId: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
  * @summary Change Password
  */
 export const changePasswordBodyCurrentPasswordMax = 128;

@@ -8,6 +8,7 @@ import { downloadReportingCSV } from '../../services/reportingCSV.js';
 import '../../activityLogs.css';
 
 const browserActions = {
+  staff_create: 'Staff created', staff_update: 'Staff updated', staff_status: 'Staff status changed',
   browser_page_view: 'Page visited', browser_created: 'Record created',
   browser_updated: 'Record updated', browser_deleted: 'Record deleted',
   browser_imported: 'Records imported', browser_exported: 'Export generated',
@@ -308,7 +309,7 @@ export default function ActivityLogs() {
           <p className="admin-page-head__eyebrow">Read-only audit</p>
           <h1>Sessions &amp; Activity Logs</h1>
           <p className="admin-page-head__description">Authentication, server operations, page visits and record actions. Browser-reported activity is labeled separately from verified server operations. All times are UTC.</p>
-          <p className="admin-page-head__description">Counts are global registered backend accounts, not browser-local staff, doctors or patients, and are unaffected by history filters.</p>
+          <p className="admin-page-head__description">Counts are global registered backend accounts, including unmapped staff credentials, not browser-local masters, and are unaffected by history filters.</p>
         </div>
         <div className="alog-head-actions">
           <button type="button" className="admin-button admin-button--secondary alog-filter-button" aria-label={`Filters${[applied.user, applied.start, applied.end, applied.state].filter(Boolean).length ? ` (${[applied.user, applied.start, applied.end, applied.state].filter(Boolean).length} active)` : ''}`} aria-expanded={filterOpen} aria-controls="alog-filter-controls" onClick={() => setFilterOpen((o) => !o)} data-testid="button-activity-filters"><Filter size={16} aria-hidden="true" />{[applied.user, applied.start, applied.end, applied.state].some(Boolean) && <span className="alog-filter-dot" aria-hidden="true" />}</button>

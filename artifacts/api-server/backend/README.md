@@ -2,9 +2,10 @@
 
 This FastAPI modular monolith supplies authoritative authentication for the
 existing EVEXIA Admin login and protected workspace. MR and Doctor login screens
-remain mock previews. Portal master records remain fictional and browser-local,
-not backend-persisted or secured records. Do not enter real patient, health,
-staff, or vendor data into the preview.
+remain mock previews. Staff Management is now an authenticated, encrypted
+PostgreSQL directory with unmapped credentials; all other portal masters remain
+fictional and browser-local. Do not enter real personal or health data into the
+preview. See [staff security and operations](../../../docs/staff-security.md).
 
 ## Local development and operations
 
@@ -37,7 +38,10 @@ staff, or vendor data into the preview.
   take a backup first. The current ordered migrations are `0001_identity_foundation`,
   `0002_optional_username`, `0003_system_identity_domain`, `0004_private_files`,
   `0005_protected_super_admin_sessions`, `0006_auth_sessions`,
-  `0007_reporting_indexes`, and `0008_activity_search`. The activity search
+   `0007_reporting_indexes`, `0008_activity_search`, and `0009_staff`. Staff migration
+   adds an empty encrypted profile table and deferred identity-link integrity
+   guards; it changes no existing identities, sessions or activity history.
+   The activity search
   migration requires PostgreSQL `pg_trgm` and adds only safe reporting indexes,
   a versioned sanitizer function, and expression statistics. Reproducible
   synthetic plans and operational costs are documented in
@@ -225,6 +229,9 @@ artifact-mounted URLs. The development OpenAPI contract includes:
 | Auth | `GET /api/v1/auth/session`, `GET /api/v1/auth/sessions?limit=20&offset=0` | Validated current session and paginated own-session metadata (limit 1–100, offset 0–10000); no other user's sessions. |
 | Auth | `POST /api/v1/auth/change-password` | Bearer-authenticated password change. |
 | Domain | `POST /api/v1/domain/mrs` | Super-admin provisions a mapped MR identity. |
+| Staff | `GET /api/v1/admin/staff?limit=20&offset=0`, `GET /api/v1/admin/staff/{staff_id}` | Explicit `staff.manage`, protected Super Admin only; no-store decrypted directory responses. |
+| Staff | `POST /api/v1/admin/staff` | Atomically generates User ID/Argon2id password hash and encrypted profile; initial password returned once. |
+| Staff | `POST /api/v1/admin/staff/{staff_id}/edit`, `/status` | Immutable ID, mandatory `expected_version`, stale changes return 409. No credential reset or mail. |
 | Domain | `POST /api/v1/domain/mrs/{user_id}/mapping` | Super-admin maps an existing user to an MR profile. |
 | Domain | `POST /api/v1/domain/patients` | Super-admin creates the minimal patient assignment record. |
 | Domain | `POST /api/v1/domain/patients/{patient_id}/assignment` | Authorized administrator assigns or unassigns an MR. |
@@ -281,6 +288,9 @@ These defaults are service behavior, not automatic infrastructure provisioning:
 | `ACCESS_TOKEN_MINUTES`, `REFRESH_TOKEN_DAYS` | 15 minutes, 7 days | 1–60 minutes and 1–30 days respectively; token/session policy is owned by backend security configuration. |
 | `SESSION_REFRESH_HOURS` | 12 hours | 1–24 hours; server expiry for non-persistent browser-session refresh cookies. |
 | `SUPER_ADMIN_INITIAL_PASSWORD` | unset | Backend-managed SecretStr; required only on first protected account creation, never returned or logged. |
+| `STAFF_ENCRYPTION_KEYS` | unset | Managed secret JSON map of key IDs to base64-encoded independent random 32-byte AES keys; all needed historical keys must be retained. |
+| `STAFF_ENCRYPTION_KEY_ID` | `primary` | Non-secret key ID used for new staff ciphertext; must exist in the configured keyring. |
+| `STAFF_EMAIL_INDEX_KEY` | unset | Independent random 32-byte key encoded as base64; stable across staff records and restores, never the JWT/session/encryption key. |
 | `ALLOW_PUBLIC_REGISTRATION` | `false` | Configured field only; registration is currently disabled regardless of value. |
 | `CORS_ORIGINS` | empty | Explicit comma-separated HTTP(S) origins only; wildcards are rejected and production requires HTTPS. Configure only the intended browser origin. |
 | `MAX_UPLOAD_BYTES` | 20 MiB (`20971520`) | 1 byte–100 MiB; backend parser/storage bound. |
@@ -424,7 +434,9 @@ All success and error responses are `Cache-Control: no-store`.
   legacy accounts. Active users are distinct owners of unexpired ACTIVE sessions
   with matching token/identity versions and authentication-eligible identities
   (including an active MR profile when applicable). Multiple sessions count once.
-  This is not online presence, enabled accounts, or browser-local staff/patients.
+   Linked staff credentials count as registered accounts but are unmapped and
+   cannot contribute active sessions. This is not online presence, enabled
+   accounts, or browser-local master records.
   Counts are global, ignore history filters, and carry a UTC refresh timestamp.
 - Session state precedence is REVOKED, EXPIRED (stored or elapsed expiry),
   ACTIVE if eligible and versions match, otherwise INVALIDATED. Reporting

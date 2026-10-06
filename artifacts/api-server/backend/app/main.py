@@ -14,6 +14,8 @@ from app.api.v1.system import router as system_router
 from app.api.v1.domain import router as domain_router
 from app.api.v1.files import router as files_router
 from app.api.v1.reporting import router as reporting_router
+from app.api.v1.staff import router as staff_router
+from app.services.staff_crypto import StaffError
 from app.core.config import get_settings
 from app.core.request_limits import RequestSizeLimit, RequestTooLarge
 from app.services.auth import AuthError
@@ -116,10 +118,19 @@ def create_app() -> FastAPI:
         # Do not echo invalid bodies: they may contain passwords or other sensitive values.
         fields = [{"field": ".".join(str(part) for part in err["loc"] if isinstance(part, (str, int))),
                    "code": err["type"]} for err in exc.errors()[:20]]
+        if request.url.path.startswith("/api/v1/admin/staff"):
+            allowed = {"name", "email", "phone", "dialCountry", "role", "designation", "dateOfJoining", "status", "expected_version", "staff_id", "limit", "offset"}
+            locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
+            fields = [{"field": field["field"] if field["field"] in locations else "body",
+                       "code": field["code"]} for field in fields]
         return JSONResponse(error_body(request, 422, "Invalid request", fields=fields), status_code=422)
 
     @app.exception_handler(FileError)
     async def file_error(request: Request, exc: FileError):
+        return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
+
+    @app.exception_handler(StaffError)
+    async def staff_error(request: Request, exc: StaffError):
         return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
 
     @app.exception_handler(AuthError)
@@ -136,6 +147,7 @@ def create_app() -> FastAPI:
     app.include_router(domain_router, prefix="/api/v1")
     app.include_router(files_router, prefix="/api/v1")
     app.include_router(reporting_router, prefix="/api/v1")
+    app.include_router(staff_router, prefix="/api/v1")
     app.add_api_route("/api/healthz", lambda: {"status": "ok"}, methods=["GET"],
                       response_model=HealthStatus, operation_id="getHealthCheck", tags=["health"])
     original_openapi = app.openapi

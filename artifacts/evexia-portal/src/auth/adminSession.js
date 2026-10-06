@@ -90,7 +90,7 @@ function safeAdmin(user) {
   if (!user || typeof user.id !== 'string' || typeof user.email !== 'string' || user.system_role !== 'super_admin' || !Array.isArray(user.permissions) || !user.permissions.includes('admin.access')) {
     throw new SessionError('This account does not have Admin access.', 403);
   }
-  return Object.freeze({ id: user.id, email: user.email, username: user.username, system_role: user.system_role, permissions: ['admin.access'] });
+  return Object.freeze({ id: user.id, email: user.email, username: user.username, system_role: user.system_role, permissions: user.permissions.filter((permission) => ['admin.access', 'staff.manage'].includes(permission)) });
 }
 
 async function accept(payload, epoch) {
@@ -209,6 +209,72 @@ export function reportingIdentityGuard() {
       throw new SessionError('Your session changed. Export cancelled. Please retry after signing in.', 401);
     }
   };
+}
+
+// Dedicated authenticated staff transport. Never replay mutations: a lost create
+// response may already have committed and its initial password is unrecoverable.
+export async function staffRequest(path = '', body, { signal } = {}) {
+  if (!/^(?:|\/[0-9a-f-]{36}(?:\/(?:edit|status))?|\?limit=\d+&offset=\d+)$/.test(path)) {
+    throw new SessionError('Unsupported staff operation.');
+  }
+  const epoch = generation;
+  const owner = state.user?.id;
+  const check = () => {
+    signal?.throwIfAborted();
+    if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
+      throw new SessionError('Your session changed. Please sign in again.', 401);
+    }
+    if (!state.user.permissions.includes('staff.manage')) throw new SessionError('Staff Management access denied.', 403);
+  };
+  if (pending) await pending;
+  else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true);
+  check();
+  const checkResponse = () => {
+    try { check(); }
+    catch (error) { error.ambiguous = body !== undefined; throw error; }
+  };
+  let response;
+  try {
+    response = await fetch(`/api/v1/admin/staff${path}`, {
+      method: body === undefined ? 'GET' : 'POST', credentials: 'same-origin', cache: 'no-store',
+      headers: { Authorization: `Bearer ${token}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
+    });
+  } catch {
+    if (pending) await pending;
+    checkResponse();
+    const error = new SessionError(body === undefined ? 'Unable to load staff. Check your connection and retry.'
+      : 'Save outcome could not be confirmed. Refresh the directory before submitting again; the server may have saved it.');
+    error.ambiguous = body !== undefined;
+    throw error;
+  }
+  if (pending) await pending;
+  checkResponse();
+  let data;
+  try { data = await response.json(); }
+  catch {
+    const error = new SessionError('Staff service returned an invalid response. Refresh the directory before submitting again.');
+    error.ambiguous = body !== undefined;
+    throw error;
+  }
+  if (pending) await pending;
+  checkResponse();
+  if (!response.ok) {
+    if (response.status === 401) { restorationAllowed = false; clear(); }
+    const code = data?.error?.code;
+    const error = new SessionError(
+      code === 'staff_stale' ? 'This staff record changed. Your draft is still here. Review current details before retrying.'
+        : code === 'staff_duplicate' ? 'That email or identity already exists. Check the directory.'
+        : response.status === 422 ? 'Some staff fields are invalid. Check the details and try again.'
+        : response.status === 403 ? 'Staff Management access denied.'
+        : response.status === 401 ? 'Your session expired. Please sign in again.'
+        : 'Staff service is unavailable. Your draft has not been discarded.', response.status);
+    error.code = code;
+    error.ambiguous = body !== undefined && response.status >= 500 && code !== 'staff_unavailable';
+    throw error;
+  }
+  return data;
 }
 // Narrow reporting facility: credentials never leave this module.
 export async function reportingRequest(resource, params = {}, { signal } = {}) {

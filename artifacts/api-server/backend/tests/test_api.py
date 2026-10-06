@@ -105,6 +105,10 @@ def test_auth_lifecycle_refresh_reuse_and_password_revocation(client):
     api.cookies.set("evexia_refresh", old_refresh, path="/api/v1/auth")
     assert api.post("/api/v1/auth/refresh", headers={"Origin": "http://testserver"}).status_code == 401
     assert db.scalar(select(AuditEvent).where(AuditEvent.action == "refresh_reuse")) is not None
+    # The second login replaced the original session; replay also revoked the
+    # successor. Password mutation needs a newly verified current session.
+    assert api.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {access}"}).status_code == 401
+    access = login(api, "sample").json()["access_token"]
 
     password = api.post(
         "/api/v1/auth/change-password", headers={"Authorization": f"Bearer {access}"},
@@ -239,7 +243,7 @@ def test_superadmin_identity_and_revalidation_interface(client):
     assert response.status_code == 200
     assert response.json()["user"]["system_role"] == "super_admin"
     assert response.json()["user"]["permissions"] == [
-        "admin.access", "domain.assign_patient", "domain.provision",
+        "admin.access", "domain.assign_patient", "domain.provision", "staff.manage",
     ]
     identity = identity_from_token(db, response.json()["access_token"], settings)
     assert revalidate_identity(db, identity, lock=False).role == "super_admin"

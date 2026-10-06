@@ -15,6 +15,7 @@ bearer = HTTPBearer(auto_error=False)
 # into permissions. File-specific object checks belong to the file service.
 PERMISSION_ROLES = {
     "admin.access": frozenset({"super_admin"}),
+    "staff.manage": frozenset({"super_admin"}),
     "domain.provision": frozenset({"super_admin"}),
     "domain.assign_patient": frozenset({"super_admin"}),
 }

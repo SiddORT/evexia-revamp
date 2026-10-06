@@ -2,6 +2,7 @@
 # Run protected portal preview regressions against an isolated synthetic API.
 # The private PostgreSQL instance uses a local socket only and is removed on exit.
 set -eu
+[ "${1:-}" != "--" ] || shift
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 for tool in initdb pg_ctl createdb python3 curl node pnpm; do
@@ -31,6 +32,9 @@ createdb -h "$PGROOT/socket" -p 5432 -U "$(id -un)" evexia_auth_preview_test
 export DATABASE_URL="postgresql+psycopg://$(id -un)@/evexia_auth_preview_test?host=$PGROOT/socket&port=5432"
 export TEST_DATABASE_URL="$DATABASE_URL"
 export APP_ENV=test
+export STAFF_ENCRYPTION_KEYS='{"primary":"QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="}'
+export STAFF_ENCRYPTION_KEY_ID=primary
+export STAFF_EMAIL_INDEX_KEY=QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI=
 export JWT_SECRET=synthetic-isolated-preview-only-signing-key-145
 export SESSION_SECRET=synthetic-isolated-preview-only-session-key-145
 export SUPER_ADMIN_INITIAL_PASSWORD=Synthetic-preview-only-password-145
@@ -92,7 +96,7 @@ export EVEXIA_CHROMIUM_PATH
 if [ "$#" -gt 0 ]; then
   SPECS="$*"
 else
-  SPECS="artifacts/evexia-portal/tests/settings-layout.preview.spec.mjs artifacts/evexia-portal/tests/template-preferences.preview.spec.mjs artifacts/evexia-portal/tests/communication.preview.spec.mjs artifacts/evexia-portal/tests/message-templates.preview.spec.mjs artifacts/evexia-portal/tests/admin-auth.preview.spec.mjs artifacts/evexia-portal/tests/roles-permissions.preview.spec.mjs artifacts/evexia-portal/tests/activity-logs.preview.spec.mjs"
+  SPECS="artifacts/evexia-portal/tests/settings-layout.preview.spec.mjs artifacts/evexia-portal/tests/template-preferences.preview.spec.mjs artifacts/evexia-portal/tests/communication.preview.spec.mjs artifacts/evexia-portal/tests/message-templates.preview.spec.mjs artifacts/evexia-portal/tests/admin-auth.preview.spec.mjs artifacts/evexia-portal/tests/roles-permissions.preview.spec.mjs artifacts/evexia-portal/tests/activity-logs.preview.spec.mjs artifacts/evexia-portal/tests/staff-backend.preview.spec.mjs"
 fi
 echo "Running authenticated browser previews against an isolated synthetic PostgreSQL/API fixture."
 # Intentional word splitting: callers may supply one or more Playwright spec paths.

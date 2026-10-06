@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-EVEXIA is a React/Vite portal with a backend-authenticated Admin workspace and browser-local demonstration records. The Admin UI checks the protected Super Admin identity and `admin.access` permission using the FastAPI authentication service; master records, including patient, staff and vendor fields, still live in browser localStorage. This is **not** a clinical or production data system.
+EVEXIA is a React/Vite portal with a backend-authenticated Admin workspace and browser-local demonstration masters. Staff Management alone is an authenticated encrypted PostgreSQL directory; patient and vendor masters remain browser-local. Admin access checks the protected Super Admin and `admin.access`; staff operations independently require `staff.manage`. This is **not** a clinical or production data system.
 
 ## Assets
 
@@ -45,6 +45,28 @@ The displayed `Admin User` audit attribution in local records is a placeholder, 
 ### Information disclosure
 
 Any user of the browser profile, same-origin script or downloaded CSV can access data. Clearing browser data can destroy it. No real patient/health, staff or vendor personal data should be entered. A real system needs protected storage, retention/deletion policy, access review, transport encryption and a deployment configuration review.
+
+### Encrypted staff directory
+
+Staff names/emails/phones use maintained-library AES-256-GCM, random nonces and
+versioned record/field-bound associated data. A separately keyed normalized-email
+HMAC index enables uniqueness without a plaintext login email column. User hashes
+remain Argon2id; the initial password is returned only on create and kept only in
+a transient one-time display. All staff API responses are no-store; audits use
+opaque IDs/actions/verified actors, not PII. No automatic create replay is allowed
+after an uncertain network outcome, and stale writes preserve client drafts.
+
+Application/operator compromise can decrypt staff data; field encryption is not
+protection from authorized API readers, same-origin XSS, clipboard/download
+disclosure or a compromised key manager. Keys must be independent of signing
+credentials, securely retained with coordinated database recovery, and never
+logged. Missing/mismatched keys or authentication failures reject staff operations
+without local fallback; existing login does not require staff key configuration.
+Staff is linked to an unmapped User, never to a privileged role; business role
+and local designation labels are not authorization. Staff credentials cannot sign
+in in this phase. Local legacy staff remains untouched and is not rendered or
+silently imported. Import/mail/reset/deletion are unavailable. This implementation
+does not claim production deployment approval, compliance or VAPT certification.
 
 ### Denial of service
 
@@ -93,5 +115,5 @@ Migrations are explicit Alembic steps; never use startup DDL. Legacy records are
 - `app/api/v1/auth.py`, `app/api/v1/domain.py`, `app/api/v1/files.py`; `app/api/deps.py` — endpoints and per-request authorization.
 - `app/services/auth.py`, `app/services/domain.py`, `app/services/files.py`, `app/services/file_policy.py`, `app/services/storage.py`, `app/services/verification.py` — identity lifecycle, ownership, persistence boundaries, storage and scanning.
 - `app/operator.py` — explicit trusted identity mapping; not exposed as an API.
-- `scripts/export-api-contract.py`, `lib/api-spec/openapi.yaml` — offline generated API contract. Portal integration and migrations are intentionally out of scope.
+- `scripts/export-api-contract.py`, `lib/api-spec/openapi.yaml` — offline generated API contract; `app/services/staff*.py`, `app/schemas/staff.py`, `app/db/staff_models.py` and migration `0009_staff` cover encrypted staff persistence.
 - Replit publishing and app-storage durability claims are based on the official [Publishing](https://docs.replit.com/learn/projects-and-artifacts/replit-deployments), [App Storage](https://docs.replit.com/features/data-and-storage/object-storage), and [shared responsibility](https://docs.replit.com/features/security/shared-responsibility-model) documentation. Verify current platform behavior during deployment review.

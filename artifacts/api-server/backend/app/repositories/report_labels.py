@@ -1,5 +1,6 @@
 """Explicit UI label aliases for safe activity reporting search."""
 BROWSER_ACTIONS = {
+    "staff_create": "Staff created", "staff_update": "Staff updated", "staff_status": "Staff status changed",
     "browser_page_view": "Page visited", "browser_created": "Record created",
     "browser_updated": "Record updated", "browser_deleted": "Record deleted",
     "browser_imported": "Records imported", "browser_exported": "Export generated",

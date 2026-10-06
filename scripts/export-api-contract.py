@@ -26,6 +26,9 @@ os.environ.update(
         "JWT_AUDIENCE": "evexia-contract-export",
         "SESSION_REFRESH_HOURS": "12",
         "SUPER_ADMIN_INITIAL_PASSWORD": "",
+        "STAFF_ENCRYPTION_KEYS": "",
+        "STAFF_EMAIL_INDEX_KEY": "",
+        "STAFF_ENCRYPTION_KEY_ID": "primary",
         "CORS_ORIGINS": "",
         "ALLOW_PUBLIC_REGISTRATION": "false",
         "STORAGE_BACKEND": "local",
@@ -44,6 +47,11 @@ from app.main import app  # noqa: E402
 
 
 OPERATION_IDS = {
+    ("get", "/v1/admin/staff"): "listStaff",
+    ("post", "/v1/admin/staff"): "createStaff",
+    ("get", "/v1/admin/staff/{staff_id}"): "getStaff",
+    ("post", "/v1/admin/staff/{staff_id}/edit"): "editStaff",
+    ("post", "/v1/admin/staff/{staff_id}/status"): "setStaffStatus",
     ("get", "/healthz"): "getHealthCheck",
     ("get", "/v1/health"): "getHealthStatus",
     ("get", "/v1/version"): "getVersion",

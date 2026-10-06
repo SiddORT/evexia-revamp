@@ -80,7 +80,7 @@ class Identity:
     def permissions(self) -> frozenset[str]:
         if (self.user.is_protected_system_admin and self.user.is_active
                 and self.user.system_role == "super_admin"):
-            return frozenset({"admin.access", "domain.provision", "domain.assign_patient"})
+            return frozenset({"admin.access", "staff.manage", "domain.provision", "domain.assign_patient"})
         return frozenset()
 
     def public(self) -> CurrentUser:

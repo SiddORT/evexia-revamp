@@ -67,7 +67,7 @@ def map_existing_user_to_mr(db: Session, actor: Identity, user_id: uuid.UUID) ->
     user = db.scalar(select(User).where(User.id == user_id).with_for_update())
     if not user or not user.is_active:
         raise DomainError("User not found or inactive", 404)
-    if user.email == SUPER_ADMIN_EMAIL or user.is_protected_system_admin:
+    if user.email is None or user.email == SUPER_ADMIN_EMAIL or user.is_protected_system_admin:
         raise DomainError("Protected system identity cannot be converted", 409)
     if user.system_role not in (None, "mr"):
         raise DomainError("User already has a different system role", 409)

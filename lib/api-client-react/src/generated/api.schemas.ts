@@ -250,15 +250,25 @@ export interface ProvisionMRRequest {
   username?: string | null;
 }
 
-export type ReportSessionRevocationReason =
-  | (typeof ReportSessionRevocationReason)[keyof typeof ReportSessionRevocationReason]
-  | null;
 export interface ReportExport {
   columns: string[];
   limit: number;
   row_count: number;
   rows: string[][];
 }
+
+export type ReportSessionRevocationReason =
+  | (typeof ReportSessionRevocationReason)[keyof typeof ReportSessionRevocationReason]
+  | null;
+
+export const ReportSessionRevocationReason = {
+  new_login: "new_login",
+  logout: "logout",
+  password_change: "password_change",
+  identity_change: "identity_change",
+  identity_invalid: "identity_invalid",
+  replay: "replay",
+} as const;
 
 export type ReportSessionState =
   (typeof ReportSessionState)[keyof typeof ReportSessionState];
@@ -319,6 +329,172 @@ export interface SessionPage {
   items: ReportSession[];
   limit: number;
   offset: number;
+}
+
+export type StaffResponseRole =
+  (typeof StaffResponseRole)[keyof typeof StaffResponseRole];
+
+export const StaffResponseRole = {
+  Staff: "Staff",
+  Manager: "Manager",
+  Accountant: "Accountant",
+  Back_End: "Back End",
+  Sub_Admin: "Sub Admin",
+  Super_Admin: "Super Admin",
+} as const;
+
+export type StaffResponseStatus =
+  (typeof StaffResponseStatus)[keyof typeof StaffResponseStatus];
+
+export const StaffResponseStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface StaffResponse {
+  createdAt: string;
+  createdBy: string;
+  dateOfJoining: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  designation: string;
+  dialCountry: string;
+  /** @maxLength 320 */
+  email: string;
+  id: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  /**
+   * @minLength 1
+   * @maxLength 30
+   */
+  phone: string;
+  role: StaffResponseRole;
+  status: StaffResponseStatus;
+  updatedAt: string;
+  updatedBy: string;
+  userId: string;
+  version: number;
+}
+
+export interface StaffCreated {
+  initial_password: string;
+  record: StaffResponse;
+}
+
+export type StaffEditRole = (typeof StaffEditRole)[keyof typeof StaffEditRole];
+
+export const StaffEditRole = {
+  Staff: "Staff",
+  Manager: "Manager",
+  Accountant: "Accountant",
+  Back_End: "Back End",
+  Sub_Admin: "Sub Admin",
+  Super_Admin: "Super Admin",
+} as const;
+
+export type StaffEditStatus =
+  (typeof StaffEditStatus)[keyof typeof StaffEditStatus];
+
+export const StaffEditStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface StaffEdit {
+  dateOfJoining: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  designation: string;
+  dialCountry: string;
+  /** @maxLength 320 */
+  email: string;
+  /** @minimum 1 */
+  expected_version: number;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  /**
+   * @minLength 1
+   * @maxLength 30
+   */
+  phone: string;
+  role: StaffEditRole;
+  status: StaffEditStatus;
+}
+
+export type StaffFieldsRole =
+  (typeof StaffFieldsRole)[keyof typeof StaffFieldsRole];
+
+export const StaffFieldsRole = {
+  Staff: "Staff",
+  Manager: "Manager",
+  Accountant: "Accountant",
+  Back_End: "Back End",
+  Sub_Admin: "Sub Admin",
+  Super_Admin: "Super Admin",
+} as const;
+
+export type StaffFieldsStatus =
+  (typeof StaffFieldsStatus)[keyof typeof StaffFieldsStatus];
+
+export const StaffFieldsStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface StaffFields {
+  dateOfJoining: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  designation: string;
+  dialCountry: string;
+  /** @maxLength 320 */
+  email: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  /**
+   * @minLength 1
+   * @maxLength 30
+   */
+  phone: string;
+  role: StaffFieldsRole;
+  status: StaffFieldsStatus;
+}
+
+export interface StaffPage {
+  has_more: boolean;
+  items: StaffResponse[];
+  limit: number;
+  offset: number;
+}
+
+export type StaffStatusStatus =
+  (typeof StaffStatusStatus)[keyof typeof StaffStatusStatus];
+
+export const StaffStatusStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface StaffStatus {
+  /** @minimum 1 */
+  expected_version: number;
+  status: StaffStatusStatus;
 }
 
 export interface TokenResponse {
@@ -436,6 +612,19 @@ export type ListReportingUsersParams = {
   offset?: number;
 };
 
+export type ListStaffParams = {
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 10000
+   */
+  offset?: number;
+};
+
 export type ListOwnSessionsParams = {
   /**
    * @minimum 1
@@ -483,12 +672,3 @@ export type ReplaceFileParams = {
    */
   expected_version: number;
 };
-
-export const ReportSessionRevocationReason = {
-  new_login: "new_login",
-  logout: "logout",
-  password_change: "password_change",
-  identity_change: "identity_change",
-  identity_invalid: "identity_invalid",
-  replay: "replay",
-} as const;
