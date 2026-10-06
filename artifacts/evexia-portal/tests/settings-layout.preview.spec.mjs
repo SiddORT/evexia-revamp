@@ -27,7 +27,9 @@ async function checkEdges(page, width) {
     const panel = body.querySelector('.admin-panel');
     const bounds = panel.getBoundingClientRect();
     return {
-      notice: rect('.admin-page-head'),
+      // The authenticated shell no longer renders the old demo-only notice.
+      // Measure against the Settings page heading, which shares its content edge.
+      contentHead: rect('.admin-page-head'),
       layout: rect('.admin-settings-layout'),
       nav: rect('.admin-settings-nav'),
       body: rect('.admin-settings-body'),
@@ -42,9 +44,9 @@ async function checkEdges(page, width) {
     };
   });
   for (const area of ['layout', 'body', 'panel']) {
-    expect(Math.abs(geometry[area].right - geometry.notice.right), `${area} reaches the content edge`).toBeLessThanOrEqual(1);
+    expect(Math.abs(geometry[area].right - geometry.contentHead.right), `${area} reaches the content edge`).toBeLessThanOrEqual(1);
   }
-  expect(Math.abs(geometry.layout.left - geometry.notice.left)).toBeLessThanOrEqual(1);
+  expect(Math.abs(geometry.layout.left - geometry.contentHead.left)).toBeLessThanOrEqual(1);
   expect(Math.abs(geometry.panel.left - geometry.body.left)).toBeLessThanOrEqual(1);
   if (width >= 1000) {
     expect(geometry.nav.width).toBeCloseTo(230, 0);
@@ -52,7 +54,7 @@ async function checkEdges(page, width) {
     if (width >= 1440) expect(geometry.layout.width).toBeGreaterThan(1100);
   } else {
     expect(geometry.body.top).toBeGreaterThanOrEqual(geometry.nav.bottom);
-    expect(Math.abs(geometry.body.left - geometry.notice.left)).toBeLessThanOrEqual(1);
+    expect(Math.abs(geometry.body.left - geometry.contentHead.left)).toBeLessThanOrEqual(1);
   }
   expect(geometry.overflow, 'no page horizontal overflow').toBeLessThanOrEqual(1);
   expect(geometry.panelOverflow, 'no hidden horizontal panel clipping').toBeLessThanOrEqual(1);

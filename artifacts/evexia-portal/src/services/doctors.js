@@ -1,6 +1,7 @@
 import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { loadMRs } from './mrs.js';
 import { loadZones } from './zones.js';
+import { DIAL_COUNTRIES, dialCountry } from './phoneCountries.js';
 
 const STORAGE_KEY = 'evexia.admin.doctors.v1';
 export const DOCTOR_STORAGE_KEY = STORAGE_KEY;
@@ -53,7 +54,7 @@ function validateDoctor(values, records = [], exceptId = null) {
       errors[key] = `${key === 'daysLimit' ? 'Days limit' : key === 'paymentLimit' ? 'Payment limit' : 'Order discount'} must be ${key === 'daysLimit' ? 'a whole ' : 'a '}nonnegative number.`;
     }
   }
-  const phoneDigits = { IN: 10, US: 10, GB: 10, AE: 9 };
+  const phoneDigits = Object.fromEntries(DIAL_COUNTRIES.map((item) => [item.value, item.digits]));
   if (!own(phoneDigits, fields.dialCountry)) errors.dialCountry = 'Choose a valid dialing country.';
   for (const key of ['phone', 'alternatePhone']) {
     if (fields[key] && (!/^[0-9 ()-]+$/.test(fields[key]) || fields[key].replace(/\D/g, '').length !== phoneDigits[fields.dialCountry])) {
@@ -302,7 +303,7 @@ function buildDoctorCSV(visible, mrs, zones) {
   const header = DOCTOR_CSV_COLUMNS.map(([, label]) => csvCell(label)).join(',');
   const rows = visible.map((doctor) => DOCTOR_CSV_COLUMNS.map(([key]) => {
     let value = doctor[key];
-    if (key === 'dialCode') value = { IN: '+91', US: '+1', GB: '+44', AE: '+971' }[doctor.dialCountry];
+    if (key === 'dialCode') value = dialCountry(doctor.dialCountry)?.code;
     if (key === 'mrName') value = mrs.find((mr) => mr.id === doctor.mrId)?.name || (doctor.mrId ? 'Missing MR' : '');
     if (key === 'zoneName') {
       const mr = mrs.find((item) => item.id === doctor.mrId);

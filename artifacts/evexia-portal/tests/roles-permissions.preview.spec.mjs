@@ -36,8 +36,13 @@ test('creation, validation, descriptions, independent drafts, save and reload ar
     }
   });
   const roleRequests = [];
+  const localActivity = [];
   page.on('request', (request) => {
-    if (request.url().includes('/api/') && !/\/auth\/(me|refresh)$|\/reporting\/activity$/.test(new URL(request.url()).pathname)) roleRequests.push(new URL(request.url()).pathname);
+    const path = new URL(request.url()).pathname;
+    // Privacy-safe local observations are allowed; role data stays offline.
+    if (path === '/api/v1/admin/reporting/activity' && request.method() === 'POST') {
+      localActivity.push(request.postDataJSON());
+    } else if (path.includes('/api/') && !/\/auth\/(me|refresh)$/.test(path)) roleRequests.push(path);
   });
   await count(page, total);
   await page.getByTestId('button-add-role').click();
@@ -83,6 +88,14 @@ test('creation, validation, descriptions, independent drafts, save and reload ar
   expect(await stores(page)).toBe(initialStores);
   expect(await page.evaluate(() => window.rolePreviewStorageWrites)).toEqual([]);
   expect(roleRequests).toEqual([]);
+  for (const body of localActivity) {
+    expect(Object.keys(body)).toEqual(['events']);
+    for (const event of body.events) {
+      expect(Object.keys(event).sort()).toEqual(['action', 'event_id', 'resource']);
+      expect(['page_view', 'created', 'updated']).toContain(event.action);
+      expect(event.resource).toBe('roles_permissions');
+    }
+  }
   await page.reload();
   await expect(page.getByTestId('text-role-count')).toHaveText('3');
   await expect(page.getByTestId('text-active-role')).toHaveText('Demo Coordinator');

@@ -40,6 +40,11 @@
 .admin-staff-field [aria-invalid="true"] { border-color: var(--admin-danger); }
 .admin-staff-field__error { color: var(--admin-danger); font-size: 11px; font-weight: 500; }
 .admin-staff-field__hint { color: var(--admin-text-soft); font-size: 11px; line-height: 1.5; font-weight: 400; }
+.admin-staff-field input[readonly] { background: var(--admin-table-head); color: var(--admin-text-soft); }
+.admin-staff-invitation-option { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; color: var(--admin-text); font-size: 12px; }
+.admin-staff-invitation-option label { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; font-weight: 700; }
+.admin-staff-invitation-option input { width: 18px; height: 18px; accent-color: var(--admin-accent); }
+.admin-staff-invitation-option input:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 3px; }
 .admin-staff-field__inline { display: flex; gap: 7px; }
 .admin-staff-field__inline input { min-width: 0; flex: 1; }
 .admin-staff-field__inline button { flex: none; border: 1px solid var(--admin-border); border-radius: 7px; padding: 0 10px; background: var(--admin-table-head); color: var(--admin-text); cursor: pointer; font-size: 11px; font-weight: 700; }

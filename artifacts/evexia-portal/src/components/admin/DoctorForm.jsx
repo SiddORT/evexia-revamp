@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import InfoDisclosure from './InfoDisclosure.jsx';
+import PhoneInput from './PhoneInput.jsx';
+import { DIAL_COUNTRIES } from '../../services/phoneCountries.js';
 import '../../doctor-form.css';
 
 const FIELDS = [
@@ -17,12 +19,6 @@ const TABS = [
   { id: 'clinic', label: 'Clinic & assignment', fields: ['clinicName', 'mrId', 'status'] },
   { id: 'commercial', label: 'Commercial details', fields: ['invoiceType', 'gstNumber', 'drugLicenceNumber', 'orderDiscount', 'daysLimit', 'paymentLimit'] },
   { id: 'address', label: 'Address', fields: ['pincode', 'addressLine1', 'addressLine2', 'landmark', 'country', 'state', 'city'] },
-];
-const DIAL_COUNTRIES = [
-  { value: 'IN', label: '🇮🇳 +91', digits: 10 },
-  { value: 'US', label: '🇺🇸 +1', digits: 10 },
-  { value: 'GB', label: '🇬🇧 +44', digits: 10 },
-  { value: 'AE', label: '🇦🇪 +971', digits: 9 },
 ];
 const FIELD_INFO = {
   phone: 'Country selection determines the expected number of digits and is saved with this record.',
@@ -200,12 +196,12 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
         <option value="">{placeholder || 'Select an option'}</option>
         {selectOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select>;
-    } else if (key === 'phone' || key === 'alternatePhone') {
+    } else if (key === 'phone') {
+      input = <PhoneInput prefix="doctor" country={values.dialCountry} onCountryChange={(value) => change('dialCountry', value)}
+        countryError={errors.dialCountry} controlClassName="doctor-form__control"
+        inputProps={{ ...common, placeholder }} />;
+    } else if (key === 'alternatePhone') {
       input = <div className="doctor-form__input-row">
-        {key === 'phone' && <select id="doctor-dialCountry" name="dialCountry" className="doctor-form__control doctor-form__dial-code" aria-label="Phone country code" aria-invalid={Boolean(errors.dialCountry)}
-          value={values.dialCountry} onChange={(event) => change('dialCountry', event.target.value)} data-testid="select-doctor-dialCountry">
-          {DIAL_COUNTRIES.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}
-        </select>}
         <input {...common} type="tel" placeholder={placeholder} inputMode="tel" autoComplete="tel" />
       </div>;
     }
@@ -214,7 +210,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
          <label className="doctor-form__label" htmlFor={id}>{label} {required && <span className="doctor-form__required" aria-hidden="true">*</span>}</label>
        </InfoDisclosure> : <label className="doctor-form__label" htmlFor={id}>{label} {required && <span className="doctor-form__required" aria-hidden="true">*</span>}</label>}
       {input}
-      {key === 'phone' && errors.dialCountry && <p className="doctor-form__error" role="alert">{errors.dialCountry}</p>}
+      {key === 'phone' && errors.dialCountry && <p id="doctor-dialCountry-error" className="doctor-form__error" role="alert">{errors.dialCountry}</p>}
       {errors[key] && <p id={errorId} className="doctor-form__error" role="alert" data-testid={`error-doctor-${key}`}>{errors[key]}</p>}
     </div>;
   }

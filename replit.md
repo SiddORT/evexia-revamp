@@ -20,6 +20,7 @@ EVEXIA Life Sciences portal with a protected Admin workspace, mock MR/Doctor log
 - Super Admin profile > Sessions & Activity Logs (`/admin/activity-logs`) is read-only backend reporting. Counts are global registered backend accounts and distinct eligible session owners, not local records or presence. Histories use server filters and UTC dates; no private history is persisted in browser storage. See the backend README for scope and pagination semantics.
 - Zone Master records are stored only in the browser's localStorage, not shared across browsers or users. Clearing browser data removes them.
 - Settings > Communication is a demo-only Email (SMTP/API/unconnected platform), SMS and WABA metadata preview. Use dummy values only. No provider is connected, verified or contacted. Password/key/token preview inputs are transient and never saved; endpoint metadata uses HTTPS without embedded credentials, query strings or fragments. Communication resets affect only its dedicated browser-local metadata, not other settings or master records.
+- Staff Management remains browser-local. New staff User IDs are automatically generated and read-only; existing/imported IDs are preserved. The optional “Send portal invitation” control opens a recipient-specific preview only after a successful create, never sends email or creates an account, and is never stored or exported. Doctor and Staff share the country/phone control; legacy staff records and exact older CSV headers default to India without a write on read.
 
 
 ## Settings extensions
