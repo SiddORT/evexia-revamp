@@ -277,7 +277,7 @@ export default function AdminLayout({ title, children }) {
                     <ScrollText size={15} aria-hidden="true" /> Sessions &amp; Activity Logs
                   </DropdownMenu.Item>
                   <DropdownMenu.Item className="admin-profile__signout" onSelect={() => void signOut()} data-testid="link-admin-sign-out">
-                    <LogOut size={15} aria-hidden="true" /> Sign Out
+                    <LogOut size={15} aria-hidden="true" /> Log Out
                   </DropdownMenu.Item>
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>

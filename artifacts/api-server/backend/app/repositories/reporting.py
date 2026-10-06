@@ -47,16 +47,20 @@ def public_user(row):
 
 
 def session_query(now):
-    state = case(
-        (AuthSession.status == "REVOKED", "REVOKED"),
-        (or_(AuthSession.status == "EXPIRED", AuthSession.expires_at <= now), "EXPIRED"),
-        (valid_session(now), "ACTIVE"), else_="INVALIDATED",
-    )
+    state = effective_state(now)
     return select(
         AuthSession.id, AuthSession.created_at, AuthSession.last_refreshed_at,
         AuthSession.expires_at, AuthSession.revoked_at, AuthSession.persistent,
         state.label("state"), *user_columns(),
     ).select_from(AuthSession).outerjoin(User, User.id == AuthSession.user_id)
+
+
+def effective_state(now):
+    return case(
+        (AuthSession.status == "REVOKED", "REVOKED"),
+        (or_(AuthSession.status == "EXPIRED", AuthSession.expires_at <= now), "EXPIRED"),
+        (valid_session(now), "ACTIVE"), else_="INVALIDATED",
+    )
 
 
 def public_session(row, current_id):
@@ -102,9 +106,18 @@ def filtered(query, user_column, date_column, user_id, start, end):
     return query.order_by(date_column.desc())
 
 
-def sessions(db, now, current_id, limit, offset, user_id, start, end):
+def sessions(db, now, current_id, limit, offset, user_id, start, end, q="", state=None):
     query = filtered(session_query(now), AuthSession.user_id, AuthSession.created_at,
                      user_id, start, end).order_by(AuthSession.id.desc())
+    if q:
+        query = query.where(or_(
+            User.username.icontains(q, autoescape=True),
+            User.email.icontains(q, autoescape=True),
+            and_(AuthSession.id.op("~")(r"^[A-Za-z0-9_-]{1,64}$"),
+                 AuthSession.id.icontains(q, autoescape=True)),
+        ))
+    if state:
+        query = query.where(effective_state(now) == state)
     return bounded_page(db, query, limit, offset, lambda row: public_session(row, current_id))
 
 

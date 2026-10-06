@@ -342,6 +342,11 @@ export type ListReportingEventsParams = {
 
 export type ListReportingSessionsParams = {
   /**
+   * @maxLength 100
+   */
+  q?: string;
+  state?: ListReportingSessionsState;
+  /**
    * @minimum 1
    * @maximum 100
    */
@@ -355,6 +360,17 @@ export type ListReportingSessionsParams = {
   start?: string | null;
   end?: string | null;
 };
+
+export type ListReportingSessionsState =
+  | (typeof ListReportingSessionsState)[keyof typeof ListReportingSessionsState]
+  | null;
+
+export const ListReportingSessionsState = {
+  ACTIVE: "ACTIVE",
+  EXPIRED: "EXPIRED",
+  REVOKED: "REVOKED",
+  INVALIDATED: "INVALIDATED",
+} as const;
 
 export type ListReportingUsersParams = {
   /**

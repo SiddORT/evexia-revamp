@@ -11,6 +11,12 @@
 .alog-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; padding: 14px 16px; margin-bottom: 14px; overflow: visible; }
 .alog-filters__actions { display: flex; gap: 8px; }
 .alog-filter-panel { margin-bottom: 14px; overflow: visible; }
+.alog-filter-panel[hidden] { display: none; }
+.alog-head-actions { display: flex; align-items: center; gap: 8px; }
+.alog-filter-button { position: relative; min-width: 38px; justify-content: center; }
+.alog-filter-dot { position: absolute; right: 3px; top: 3px; width: 7px; height: 7px; border-radius: 50%; background: var(--admin-accent); }
+.alog-search { margin: 14px 16px; max-width: 440px; }
+.alog-search input { width: 100%; min-width: 0; }
 .alog-filter-toggle { padding: 14px 16px; color: var(--ink); font-weight: 700; cursor: pointer; }
 .alog-filter-toggle span { float: right; color: var(--muted); font-size: 11px; font-weight: 400; }
 .alog-filter-toggle:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
@@ -31,6 +37,7 @@
 .alog-table th:first-child, .alog-table td:first-child { width: auto; text-align: left; }
 .alog-table[data-cols="events"] { min-width: 1000px; }
 .alog-table[data-cols="sessions"] { min-width: 860px; }
+.alog-table[data-cols="sessions"] th:first-child, .alog-table[data-cols="sessions"] td:first-child { width: 55px; }
 .alog-table td { white-space: nowrap; }
 .alog-mono { font-family: ui-monospace, monospace; font-size: 11px !important; }
 .alog-current { color: var(--admin-accent); font-weight: 700; }

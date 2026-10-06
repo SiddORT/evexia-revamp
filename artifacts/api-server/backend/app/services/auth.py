@@ -174,6 +174,7 @@ def login(db: Session, identifier: str, password: str, settings: Settings,
         _reject(db, "login", "identity_changed", request_id)
     identity = _load_identity(db, locked)
     now = utcnow()
+    repository.replace_active_sessions(db, locked, request_id, now)
     session = AuthSession(
         id=secrets.token_urlsafe(32), user_id=locked.id, family_id=uuid.uuid4(),
         status="ACTIVE", token_version=locked.token_version,

@@ -1,7 +1,7 @@
 """Protected global reporting; owner-only auth endpoints remain unchanged."""
 import uuid
 from datetime import datetime, timezone
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.orm import Session
@@ -63,9 +63,11 @@ def users(identity: Admin, db: Database, pagination=Depends(page),
 
 
 @router.get("/sessions", response_model=SessionPage, operation_id="listReportingSessions")
-def sessions(identity: Admin, db: Database, pagination=Depends(page), selection=Depends(filters)):
+def sessions(identity: Admin, db: Database, pagination=Depends(page), selection=Depends(filters),
+             q: str = Query("", max_length=100),
+             state: Literal["ACTIVE", "EXPIRED", "REVOKED", "INVALIDATED"] | None = None):
     """Creation-time range [start,end), timezone required. Newest timestamp then ID descending."""
-    return reporting.sessions(db, utcnow(), identity.session_id, *pagination, *selection)
+    return reporting.sessions(db, utcnow(), identity.session_id, *pagination, *selection, q, state)
 
 
 @router.get("/events", response_model=EventPage, operation_id="listReportingEvents")

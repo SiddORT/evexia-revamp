@@ -37,7 +37,7 @@ test('creation, validation, descriptions, independent drafts, save and reload ar
   });
   const roleRequests = [];
   page.on('request', (request) => {
-    if (request.url().includes('/api/') && !/\/auth\/(me|refresh)$/.test(new URL(request.url()).pathname)) roleRequests.push(new URL(request.url()).pathname);
+    if (request.url().includes('/api/') && !/\/auth\/(me|refresh)$|\/reporting\/activity$/.test(new URL(request.url()).pathname)) roleRequests.push(new URL(request.url()).pathname);
   });
   await count(page, total);
   await page.getByTestId('button-add-role').click();

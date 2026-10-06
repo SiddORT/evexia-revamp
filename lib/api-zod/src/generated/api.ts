@@ -136,6 +136,9 @@ export const ListReportingEventsResponse = zod.object({
  * Creation-time range [start,end), timezone required. Newest timestamp then ID descending.
  * @summary Sessions
  */
+export const listReportingSessionsQueryQDefault = ``;
+export const listReportingSessionsQueryQMax = 100;
+
 export const listReportingSessionsQueryLimitDefault = 20;
 export const listReportingSessionsQueryLimitMax = 100;
 
@@ -144,6 +147,16 @@ export const listReportingSessionsQueryOffsetMin = 0;
 export const listReportingSessionsQueryOffsetMax = 10000;
 
 export const ListReportingSessionsQueryParams = zod.object({
+  q: zod.coerce
+    .string()
+    .max(listReportingSessionsQueryQMax)
+    .default(listReportingSessionsQueryQDefault),
+  state: zod
+    .union([
+      zod.enum(["ACTIVE", "EXPIRED", "REVOKED", "INVALIDATED"]),
+      zod.null(),
+    ])
+    .optional(),
   limit: zod.coerce
     .number()
     .int()

@@ -27,7 +27,7 @@ async function checkEdges(page, width) {
     const panel = body.querySelector('.admin-panel');
     const bounds = panel.getBoundingClientRect();
     return {
-      notice: rect('.admin-preview-notice'),
+      notice: rect('.admin-page-head'),
       layout: rect('.admin-settings-layout'),
       nav: rect('.admin-settings-nav'),
       body: rect('.admin-settings-body'),

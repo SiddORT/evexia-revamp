@@ -198,6 +198,39 @@ def test_dates_ties_unknown_deleted_actors_safe_projection_and_pagination(client
     assert "unsafe" not in first.text
 
 
+def test_session_search_combines_with_effective_state_dates_user_and_pages(client):
+    api, db, _ = client
+    headers, _ = admin_headers(api, db)
+    user = create_user(db, "searchable-sessions@example.com")
+    now = utcnow()
+    rows = [add_session(db, user, now, id=f"SearchRef{i:02d}", created_at=now - timedelta(minutes=i))
+            for i in range(28)]
+    rows[0].status, rows[0].revoked_at = "REVOKED", now
+    rows[1].expires_at = now - timedelta(seconds=1)
+    rows[2].token_version = user.token_version + 1
+    db.commit()
+    query = f"{BASE}/sessions?q=SEARCHable&user_id={user.id}&limit=25"
+    first = api.get(query, headers=headers)
+    second = api.get(f"{query}&offset=25", headers=headers)
+    assert first.status_code == second.status_code == 200
+    assert first.json()["has_more"] and not second.json()["has_more"]
+    assert len(first.json()["items"]) == 25 and len(second.json()["items"]) == 3
+    assert [r["id"] for r in first.json()["items"] + second.json()["items"]] == [
+        f"SearchRef{i:02d}" for i in range(28)]
+    for state, expected in [("ACTIVE", 25), ("REVOKED", 1), ("EXPIRED", 1), ("INVALIDATED", 1)]:
+        response = api.get(f"{query}&state={state}", headers=headers)
+        assert response.status_code == 200
+        assert len(response.json()["items"]) == expected
+    by_ref = api.get(f"{BASE}/sessions?q=ref27&state=ACTIVE", headers=headers).json()
+    assert [row["id"] for row in by_ref["items"]] == ["SearchRef27"]
+    assert api.get(f"{query}&q=%25", headers=headers).json()["items"] == []
+    assert api.get(f"{query}&start=2099-01-01T00:00:00Z", headers=headers).json()["items"] == []
+    for invalid in ["state=WRONG", f"q={'x' * 101}"]:
+        assert api.get(f"{BASE}/sessions?{invalid}", headers=headers).status_code == 422
+    for forbidden in ["password_hash", "token_hash", "family_id", "access_token"]:
+        assert forbidden not in first.text
+
+
 @pytest.mark.parametrize("query", [
     "start=2030-01-01T00:00:00", "end=bad", "user_id=not-uuid",
     "start=2030-02-03T00:00:00Z&end=2030-02-02T00:00:00Z",

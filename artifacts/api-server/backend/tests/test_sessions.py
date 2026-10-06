@@ -108,6 +108,100 @@ def test_login_and_refresh_tokens_are_bound_to_opaque_session_id(client):
     assert sum(row.consumed_at is not None for row in history) == 1
 
 
+def test_new_login_replaces_only_same_users_valid_session_and_preserves_history(client):
+    api, db, _ = client
+    owner = create_user(db, "replacement-owner@example.com")
+    other = create_user(db, "replacement-other@example.com")
+    first = login(api, owner.email)
+    access = first.json()["access_token"]
+    sid = session_id_from_response(first, access)
+    cookie = api.cookies.get("evexia_refresh")
+    api.cookies.clear()
+    foreign = login(api, other.email)
+    foreign_access = foreign.json()["access_token"]
+    foreign_sid = session_id_from_response(foreign, foreign_access)
+    api.cookies.clear()
+    bad = api.post("/api/v1/auth/login", headers={"Origin": "http://testserver"},
+                   json={"identifier": owner.email, "password": "wrong password"})
+    assert bad.status_code == 401
+    assert db.get(AuthSession, sid).status == "ACTIVE"
+    latest = login(api, owner.email)
+    assert latest.status_code == 200
+    new_sid = session_id_from_response(latest, latest.json()["access_token"])
+    assert new_sid != sid
+    assert db.get(AuthSession, sid).status == "REVOKED"
+    assert db.get(AuthSession, new_sid).status == "ACTIVE"
+    assert db.get(AuthSession, foreign_sid).status == "ACTIVE"
+    assert api.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {access}"}).status_code == 401
+    assert api.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {foreign_access}"}).status_code == 200
+    api.cookies.set("evexia_refresh", cookie, path="/api/v1/auth")
+    assert api.post("/api/v1/auth/refresh", headers={"Origin": "http://testserver"}).status_code == 401
+    assert all(row.revoked_at is not None for row in db.scalars(
+        select(RefreshSession).where(RefreshSession.session_id == sid)))
+    assert db.scalar(select(AuditEvent).where(
+        AuditEvent.session_id == sid, AuditEvent.action == "session_revoked",
+        AuditEvent.reason == "new_login")) is not None
+
+    # An old but already-expired row is historical expiry, not a fresh replacement.
+    db.get(AuthSession, new_sid).created_at = utcnow() - timedelta(hours=1)
+    db.get(AuthSession, new_sid).expires_at = utcnow() - timedelta(seconds=1)
+    db.commit()
+    again = login(api, owner.email)
+    assert again.status_code == 200
+    assert db.get(AuthSession, new_sid).status == "EXPIRED"
+    assert db.scalar(select(AuditEvent).where(
+        AuditEvent.session_id == new_sid, AuditEvent.reason == "new_login")) is None
+
+
+def test_parallel_successful_logins_leave_one_active_session():
+    if get_settings().app_env == "production":
+        pytest.fail("Session concurrency tests refuse to connect with APP_ENV=production")
+    engine = session_factory().kw["bind"]
+    settings = get_settings()
+    user_id = uuid.uuid4()
+    email = f"parallel-login-{user_id.hex}@example.com"
+    with Session(engine) as db:
+        db.add(User(id=user_id, email=email, username=f"pl{user_id.hex[:20]}",
+                    password_hash=hash_password(PASSWORD), system_role="mr", identity_version=1))
+        db.flush()
+        db.add(MRProfile(user_id=user_id, is_active=True))
+        db.commit()
+    gate = Barrier(2)
+
+    def attempt():
+        with Session(engine) as db:
+            gate.wait(timeout=10)
+            identity, raw = auth_service.login(db, email, PASSWORD, settings, False,
+                                               f"parallel-login-{uuid.uuid4().hex}", "127.0.0.1")
+            return identity.session_id, raw
+
+    try:
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(lambda _: attempt(), range(2)))
+        with Session(engine) as db:
+            rows = list(db.scalars(select(AuthSession).where(AuthSession.user_id == user_id)))
+            assert len(rows) == 2
+            assert sorted(s.status for s in rows) == ["ACTIVE", "REVOKED"]
+            active = next(s for s in rows if s.status == "ACTIVE")
+            for sid, raw in results:
+                if sid != active.id:
+                    with pytest.raises(auth_service.AuthError):
+                        auth_service.rotate_refresh(db, raw, settings, "parallel-login-check")
+            assert db.scalar(select(AuditEvent).where(
+                AuditEvent.session_id != active.id, AuditEvent.actor_id == user_id,
+                AuditEvent.reason == "new_login")) is not None
+    finally:
+        with Session(engine) as db:
+            ids = list(db.scalars(select(AuthSession.id).where(AuthSession.user_id == user_id)))
+            db.execute(delete(AuditEvent).where(AuditEvent.actor_id == user_id))
+            db.execute(update(RefreshSession).where(RefreshSession.session_id.in_(ids)).values(replaced_by_id=None))
+            db.execute(delete(RefreshSession).where(RefreshSession.session_id.in_(ids)))
+            db.execute(delete(AuthSession).where(AuthSession.user_id == user_id))
+            db.execute(delete(MRProfile).where(MRProfile.user_id == user_id))
+            db.execute(delete(User).where(User.id == user_id))
+            db.commit()
+
+
 def _looks_like_uuid(value):
     try:
         uuid.UUID(value)

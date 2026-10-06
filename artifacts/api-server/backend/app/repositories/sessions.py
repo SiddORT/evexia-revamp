@@ -149,3 +149,24 @@ def revoke_user_sessions(
     for session in sessions:
         revoke_session(db, session, reason, request_id)
     return sessions
+
+
+def replace_active_sessions(db: Session, user: User, request_id: str, now: datetime) -> None:
+    """Call only after locking User; preserve expired history as expired, not replaced."""
+    sessions = list(db.scalars(
+        select(AuthSession).where(AuthSession.user_id == user.id, AuthSession.status == "ACTIVE")
+        .order_by(AuthSession.created_at.asc(), AuthSession.id.asc()).with_for_update()
+    ))
+    for session in sessions:
+        if session.expires_at <= now:
+            session.status = "EXPIRED"
+            event(db, "session_expired", "success", request_id, user.id, session.id)
+            db.execute(
+                update(RefreshSession).where(
+                    RefreshSession.session_id == session.id, RefreshSession.revoked_at.is_(None),
+                ).values(revoked_at=now).execution_options(synchronize_session=False)
+            )
+        else:
+            reason = ("new_login" if session.token_version == user.token_version
+                      and session.identity_version == user.identity_version else "identity_invalid")
+            revoke_session(db, session, reason, request_id)

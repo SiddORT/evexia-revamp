@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Activity, ChevronLeft, ChevronRight, RefreshCw, Search, ShieldAlert } from 'lucide-react';
+import { Activity, ChevronLeft, ChevronRight, Filter, RefreshCw, Search, ShieldAlert } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { reportingRequest } from '../../auth/adminSession.js';
@@ -61,22 +61,35 @@ function range(f) {
 }
 
 function useReport(resource, params, enabled, identity) {
-  const [offset, setOffset] = useState(0);
-  const [s, setS] = useState({ loading: false, data: null, error: null });
+  const key = JSON.stringify([params, identity]);
+  const [paging, setPaging] = useState({ key, offset: 0 });
+  const offset = paging.key === key ? paging.offset : 0;
+  useEffect(() => { setPaging({ key, offset: 0 }); }, [key]);
+  const setOffset = useCallback((next) => setPaging((previous) => {
+    const current = previous.key === key ? previous.offset : 0;
+    return { key, offset: typeof next === 'function' ? next(current) : next };
+  }), [key]);
+  const [s, setS] = useState({ loading: false, data: null, error: null, requestKey: null });
   const [tick, setTick] = useState(0);
-  const key = JSON.stringify(params);
-  useEffect(() => { setOffset(0); }, [key, identity]);
+  const reload = useCallback(() => setTick((t) => t + 1), []);
   useEffect(() => {
     if (!enabled) { setS({ loading: false, data: null, error: null }); return undefined; }
     const ctl = new AbortController();
-    setS((p) => ({ loading: true, data: null, error: null, prev: p.error }));
+    setS({ loading: true, data: null, error: null, requestKey: `${key}:${offset}:${tick}` });
     reportingRequest(resource, { ...params, limit: PAGE, offset }, { signal: ctl.signal })
-      .then((data) => { if (!ctl.signal.aborted) setS({ loading: false, data, error: null }); })
-      .catch((e) => { const i = errInfo(e); if (i && !ctl.signal.aborted) setS({ loading: false, data: null, error: i }); });
+      .then((data) => {
+        if (ctl.signal.aborted) return;
+        if (offset > 0 && !data.items.length) {
+          setOffset(Math.max(0, offset - PAGE));
+        } else setS({ loading: false, data, error: null, requestKey: `${key}:${offset}:${tick}` });
+      })
+      .catch((e) => { const i = errInfo(e); if (i && !ctl.signal.aborted) setS({ loading: false, data: null, error: i, requestKey: `${key}:${offset}:${tick}` }); });
     return () => ctl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resource, key, offset, enabled, tick, identity]);
-  return { ...s, offset, setOffset, reload: () => setTick((t) => t + 1) };
+  }, [resource, key, offset, enabled, tick, identity, setOffset]);
+  const visible = s.requestKey === `${key}:${offset}:${tick}` && enabled
+    ? s : { loading: enabled, data: null, error: null };
+  return { ...visible, offset, setOffset, reload };
 }
 
 function UserPicker({ value, onChange, enabled, identity }) {
@@ -102,7 +115,7 @@ function UserPicker({ value, onChange, enabled, identity }) {
   useEffect(() => { if (!enabled) { setOpen(false); setQ(''); setOff(0); setS({ loading: false, data: null, error: false }); } }, [enabled, identity]);
   return (
     <div className="alog-picker">
-      <button type="button" className="admin-select alog-picker__btn" aria-expanded={open} onClick={() => setOpen((o) => !o)} data-testid="button-activity-user">
+      <button type="button" className="admin-select alog-picker__btn" aria-labelledby="alog-user-label" aria-expanded={open} onClick={() => setOpen((o) => !o)} data-testid="button-activity-user">
         {value ? value.label : 'All users'}
       </button>
       {open && (
@@ -134,10 +147,10 @@ function Pager({ r }) {
   const d = r.data;
   return (
     <div className="admin-panel__foot admin-pagination">
-      <span>{d?.items?.length ? `Rows ${r.offset + 1}–${r.offset + d.items.length}` : 'No rows'}</span>
+      <span role="status">{d?.items?.length ? `Page ${Math.floor(r.offset / PAGE) + 1} · Rows ${r.offset + 1}–${r.offset + d.items.length}` : r.loading ? 'Loading page…' : r.error ? 'Page unavailable' : 'No rows · Page 1'}</span>
       <div className="admin-pagination__pages">
-        <button type="button" aria-label="Previous page" disabled={r.offset === 0 || r.loading} onClick={() => r.setOffset(Math.max(0, r.offset - PAGE))}><ChevronLeft size={14} /></button>
-        <button type="button" aria-label="Next page" disabled={!d?.has_more || r.loading || r.offset + PAGE > 10000} onClick={() => r.setOffset(r.offset + PAGE)}><ChevronRight size={14} /></button>
+        <button type="button" aria-label="Previous page" disabled={r.offset === 0 || !d || r.loading || r.error} onClick={() => r.setOffset(Math.max(0, r.offset - PAGE))}><ChevronLeft size={14} /> Previous</button>
+        <button type="button" aria-label="Next page" disabled={!d?.has_more || r.loading || r.error || r.offset + PAGE > 10000} onClick={() => r.setOffset(r.offset + PAGE)}>Next <ChevronRight size={14} /></button>
       </div>
     </div>
   );
@@ -158,22 +171,30 @@ export default function ActivityLogs() {
   const session = useAdminSession();
   const enabled = session.status === 'authenticated';
   const identity = session.user?.id || session.user?.email || '';
-  const [draft, setDraft] = useState({ user: null, start: '', end: '' });
-  const [applied, setApplied] = useState({ user: null, start: '', end: '' });
+  const [draft, setDraft] = useState({ user: null, start: '', end: '', state: '' });
+  const [applied, setApplied] = useState({ user: null, start: '', end: '', state: '' });
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [query, setQuery] = useState('');
   const [formError, setFormError] = useState('');
   const [view, setView] = useState('sessions');
   const [sum, setSum] = useState({ loading: false, data: null, error: null });
   const [sumTick, setSumTick] = useState(0);
   const checked = range(applied);
   const params = checked.params || {};
-  const sessions = useReport('sessions', params, enabled && view === 'sessions', identity);
+  useEffect(() => {
+    const timer = setTimeout(() => setQuery(search.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+  const sessions = useReport('sessions', { ...params, ...(query ? { q: query } : {}), ...(applied.state ? { state: applied.state } : {}) }, enabled && view === 'sessions', identity);
   const events = useReport('events', params, enabled && view === 'events', identity);
   const idRef = useRef(identity);
 
   useEffect(() => {
     if (idRef.current !== identity) {
       idRef.current = identity;
-      setDraft({ user: null, start: '', end: '' }); setApplied({ user: null, start: '', end: '' }); setFormError('');
+      setDraft({ user: null, start: '', end: '', state: '' }); setApplied({ user: null, start: '', end: '', state: '' }); setFormError('');
+      setSearch(''); setQuery(''); setFilterOpen(false);
     }
   }, [identity]);
 
@@ -193,8 +214,8 @@ export default function ActivityLogs() {
     if (r.error) { setFormError(r.error); return; }
     setFormError(''); setApplied(draft);
   };
-  const reset = () => { const z = { user: null, start: '', end: '' }; setDraft(z); setApplied(z); setFormError(''); };
-  const refreshAll = useCallback(() => { setSumTick((t) => t + 1); sessions.reload(); events.reload(); }, [sessions, events]);
+  const reset = () => { const z = { user: null, start: '', end: '', state: '' }; setDraft(z); setApplied(z); setFormError(''); };
+  const refreshAll = () => { setSumTick((t) => t + 1); sessions.reload(); events.reload(); };
   const active = view === 'sessions' ? sessions : events;
   useEffect(() => {
     const reload = () => events.reload();
@@ -212,7 +233,10 @@ export default function ActivityLogs() {
           <p className="admin-page-head__description">Authentication, server operations, page visits and record actions. Browser-reported activity is labeled separately from verified server operations. All times are UTC.</p>
           <p className="admin-page-head__description">Counts are global registered backend accounts, not browser-local staff, doctors or patients, and are unaffected by history filters.</p>
         </div>
-        <button type="button" className="admin-button admin-button--secondary" onClick={refreshAll} disabled={!enabled} data-testid="button-activity-refresh"><RefreshCw size={14} aria-hidden="true" /> Refresh all</button>
+        <div className="alog-head-actions">
+          <button type="button" className="admin-button admin-button--secondary alog-filter-button" aria-label={`Filters${[applied.user, applied.start, applied.end, applied.state].filter(Boolean).length ? ` (${[applied.user, applied.start, applied.end, applied.state].filter(Boolean).length} active)` : ''}`} aria-expanded={filterOpen} aria-controls="alog-filter-controls" onClick={() => setFilterOpen((o) => !o)} data-testid="button-activity-filters"><Filter size={16} aria-hidden="true" />{[applied.user, applied.start, applied.end, applied.state].some(Boolean) && <span className="alog-filter-dot" aria-hidden="true" />}</button>
+          <button type="button" className="admin-button admin-button--secondary" onClick={refreshAll} disabled={!enabled} data-testid="button-activity-refresh"><RefreshCw size={14} aria-hidden="true" /> Refresh report</button>
+        </div>
       </div>
 
       <section className="alog-stats" aria-label="Summary" data-testid="section-activity-summary">
@@ -221,42 +245,45 @@ export default function ActivityLogs() {
         ) : (<>
           <div className="admin-panel alog-stat"><span>Registered backend accounts</span><strong data-testid="text-total-users">{sum.loading || !sum.data ? '…' : sum.data.total_users}</strong><small>Includes disabled and unmapped</small></div>
           <div className="admin-panel alog-stat"><span>Users with valid sessions</span><strong data-testid="text-active-users">{sum.loading || !sum.data ? '…' : sum.data.active_users}</strong><small>Distinct users, not live presence</small></div>
-          <div className="admin-panel alog-stat"><span>Summary refreshed</span><strong className="alog-stat__time">{sum.loading ? '…' : fmt(sum.data?.refreshed_at)}</strong></div>
+           <div className="admin-panel alog-stat"><span>Summary refreshed</span><strong className="alog-stat__time">{sum.loading ? '…' : fmt(sum.data?.refreshed_at)}</strong><small>When these counts were fetched, not when your login credentials were renewed.</small></div>
         </>)}
       </section>
 
-      <details className="admin-panel alog-filter-panel" data-testid="section-activity-filters">
-      <summary className="alog-filter-toggle">Filters <span>{[applied.user, applied.start, applied.end].filter(Boolean).length || 'None'} active</span></summary>
+       <div id="alog-filter-controls" className="admin-panel alog-filter-panel" hidden={!filterOpen} data-testid="section-activity-filters">
       <form className="alog-filters" onSubmit={apply} noValidate data-testid="form-activity-filters">
-        <div className="admin-filter"><label>User</label><UserPicker value={draft.user} onChange={(u) => setDraft((d) => ({ ...d, user: u }))} enabled={enabled} identity={identity} /></div>
+         <div className="admin-filter"><span id="alog-user-label">User</span><UserPicker value={draft.user} onChange={(u) => setDraft((d) => ({ ...d, user: u }))} enabled={enabled} identity={identity} /></div>
         <div className="admin-filter"><label htmlFor="alog-start">Start date (UTC)</label><input id="alog-start" type="date" className="admin-select" value={draft.start} onChange={(e) => setDraft((d) => ({ ...d, start: e.target.value }))} data-testid="input-activity-start" /></div>
         <div className="admin-filter"><label htmlFor="alog-end">End date (UTC, inclusive)</label><input id="alog-end" type="date" className="admin-select" value={draft.end} onChange={(e) => setDraft((d) => ({ ...d, end: e.target.value }))} data-testid="input-activity-end" /></div>
+         {view === 'sessions' && <div className="admin-filter"><label htmlFor="alog-state">Session state</label><select id="alog-state" className="admin-select" value={draft.state} onChange={(e) => setDraft((d) => ({ ...d, state: e.target.value }))} data-testid="select-activity-state"><option value="">All states</option>{['ACTIVE', 'EXPIRED', 'REVOKED', 'INVALIDATED'].map((state) => <option key={state} value={state}>{state[0] + state.slice(1).toLowerCase()}</option>)}</select></div>}
         <div className="alog-filters__actions">
           <button type="submit" className="admin-button" data-testid="button-activity-apply">Apply</button>
           <button type="button" className="admin-button admin-button--secondary" onClick={reset} data-testid="button-activity-reset">Reset</button>
         </div>
         {formError && <p className="admin-feedback admin-feedback--error alog-filters__error" role="alert" data-testid="status-activity-filter-error">{formError}</p>}
       </form>
-      </details>
+       </div>
 
       <div className="alog-tabs" role="tablist" aria-label="History">
         {[['sessions', 'Sessions'], ['events', 'Activity events']].map(([k, l]) => (
           <button key={k} type="button" role="tab" aria-selected={view === k} className={`alog-tab${view === k ? ' alog-tab--on' : ''}`} onClick={() => setView(k)} data-testid={`tab-activity-${k}`}>{l}</button>
         ))}
       </div>
-      <p className="alog-muted">Dates filter {view === 'sessions' ? 'session creation / login' : 'event occurrence'} in UTC; the selected end date is included. “—” means not recorded. INVALIDATED means the account is ineligible or its security version changed.</p>
+       <p className="alog-muted">Dates filter {view === 'sessions' ? 'session creation / login' : 'event occurrence'} in UTC; the selected end date is included. “—” means not recorded. {view === 'sessions' && 'Active: valid now. Expired: time limit passed. Revoked: ended by logout, a new login, or a security action. Invalidated: account is ineligible or its security version changed. Last refreshed: when login credentials were renewed within this session. Refresh report only reloads these results.'}</p>
 
       <section className="admin-panel" aria-label={view === 'sessions' ? 'Sessions' : 'Activity events'} data-testid={`panel-activity-${view}`}>
         {view === 'sessions' ? (
+           <>
+           <div className="alog-search admin-search"><Search size={16} aria-hidden="true" /><input type="search" aria-label="Search sessions" placeholder="Search user name, email or session reference" maxLength={100} value={search} onChange={(e) => setSearch(e.target.value)} data-testid="input-activity-session-search" /></div>
           <State r={sessions} empty="No sessions found" cols="sessions">
-            <thead><tr><th>User</th><th>Session reference</th><th>State</th><th>Session created / login</th><th>Last refreshed</th><th>Expires</th><th>Revoked</th><th>Remember me / persistent</th></tr></thead>
-            <tbody>{sessions.data?.items?.map((s) => (
-              <tr key={s.id}><td><span className="admin-table__name">{who(s.user)}</span><br /><small>{dash(s.user?.role)} · {dash(s.user?.account_state)}</small></td>
+             <thead><tr><th scope="col">Sr No</th><th>User</th><th>Session reference</th><th>State</th><th>Session created / login</th><th>Last refreshed</th><th>Expires</th><th>Revoked</th><th>Remember me / persistent</th></tr></thead>
+             <tbody>{sessions.data?.items?.map((s, index) => (
+               <tr key={s.id}><td>{sessions.offset + index + 1}</td><td><span className="admin-table__name">{who(s.user)}</span><br /><small>{dash(s.user?.role)} · {dash(s.user?.account_state)}</small></td>
                 <td className="alog-mono">{s.id}</td>
                 <td><span className={`admin-badge${s.state === 'ACTIVE' ? '' : ' admin-badge--inactive'}`}>{s.state}</span>{s.is_current && <small className="alog-current"> Current</small>}</td>
                 <td>{fmt(s.created_at)}</td><td>{fmt(s.last_refreshed_at)}</td><td>{fmt(s.expires_at)}</td><td>{fmt(s.revoked_at)}</td><td>{s.persistent ? 'Yes' : 'No'}</td></tr>
             ))}</tbody>
           </State>
+           </>
         ) : (
           <State r={events} empty="No events found" cols="events">
             <thead><tr><th>Event occurred</th><th>User</th><th>Action</th><th>Outcome</th><th>Reason</th><th>Resource</th><th>Session</th><th>Request</th></tr></thead>
