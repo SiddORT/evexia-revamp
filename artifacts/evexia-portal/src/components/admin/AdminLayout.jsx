@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Landmark, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, Stethoscope, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
+import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Landmark, LayoutDashboard, LayoutGrid, LogOut, MapPinned, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { logoutAdmin } from '../../auth/adminSession.js';
@@ -9,6 +9,7 @@ import { useAdminPreferences } from './adminPreferences.js';
 import '../../admin.css';
 
 const SIDEBAR_PREFERENCE_KEY = 'evexia.admin.sidebar.collapsed';
+const isUserManagementPath = (path) => path.startsWith('/admin/staff') || path === '/admin/roles-permissions';
 const MASTER_GROUPS = [
   { label: 'Geography & Logistics', links: [
     { label: 'Zone Master', href: '/admin/masters/zones', testId: 'link-admin-zones', Icon: MapPinned },
@@ -44,7 +45,7 @@ export default function AdminLayout({ title, children }) {
   }
   const [mastersOpen, setMastersOpen] = useState(location.startsWith('/admin/masters'));
   const [inventoryOpen, setInventoryOpen] = useState(location.startsWith('/admin/inventory'));
-  const [userManagementOpen, setUserManagementOpen] = useState(location.startsWith('/admin/staff'));
+  const [userManagementOpen, setUserManagementOpen] = useState(isUserManagementPath(location));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [compact, setCompact] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -63,7 +64,9 @@ export default function AdminLayout({ title, children }) {
   const query = search.trim().toLocaleLowerCase();
   const searching = query.length > 0;
   const showDashboard = !searching || 'dashboard'.includes(query);
-  const showUserManagement = !searching || 'user management'.includes(query) || 'staff management'.includes(query);
+  const showStaff = !searching || 'user management'.includes(query) || 'staff management'.includes(query);
+  const showRoles = !searching || 'user management'.includes(query) || 'roles & permissions roles and permissions'.includes(query);
+  const showUserManagement = showStaff || showRoles;
   const showAllMasters = !searching || 'all masters'.includes(query);
   const showPO = !searching || 'inventory purchase orders po'.includes(query);
   const showPR = !searching || 'inventory purchase received pr receipts'.includes(query);
@@ -130,7 +133,7 @@ export default function AdminLayout({ title, children }) {
     setSearchExpanded(false);
     if (location.startsWith('/admin/masters')) setMastersOpen(true);
     if (location.startsWith('/admin/inventory')) setInventoryOpen(true);
-    if (location.startsWith('/admin/staff')) setUserManagementOpen(true);
+    if (isUserManagementPath(location)) setUserManagementOpen(true);
   }, [location]);
 
   useEffect(() => {
@@ -225,13 +228,16 @@ export default function AdminLayout({ title, children }) {
             {showPO && <Link href="/admin/inventory/purchase-orders" className={`admin-nav__item${location.startsWith('/admin/inventory/purchase-orders') ? ' admin-nav__item--active' : ''}`} aria-label="Purchase Orders" aria-current={location === '/admin/inventory/purchase-orders' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-purchase-orders"><ClipboardList size={16} aria-hidden="true" /><span className="admin-nav__label">Purchase Orders</span></Link>}
             {showPR && <Link href="/admin/inventory/purchase-received" className={`admin-nav__item${location.startsWith('/admin/inventory/purchase-received') ? ' admin-nav__item--active' : ''}`} aria-label="Purchase Received" aria-current={location === '/admin/inventory/purchase-received' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-purchase-received"><ClipboardList size={16} aria-hidden="true" /><span className="admin-nav__label">Purchase Received</span></Link>}
           </div>
-          {showUserManagement && <button type="button" disabled={searching} className={`admin-nav__item${location.startsWith('/admin/staff') ? ' admin-nav__item--active' : ''}`} aria-label="User Management" title={isCollapsed ? 'Expand User Management' : undefined} aria-expanded={showUserSubnav} aria-controls="admin-user-management-subnav" onClick={() => { if (isCollapsed) { toggleSidebar(); setUserManagementOpen(true); } else setUserManagementOpen((open) => !open); }} data-testid="button-toggle-user-management">
+          {showUserManagement && <button type="button" disabled={searching} className={`admin-nav__item${isUserManagementPath(location) ? ' admin-nav__item--active' : ''}`} aria-label="User Management" title={isCollapsed ? 'Expand User Management' : undefined} aria-expanded={showUserSubnav} aria-controls="admin-user-management-subnav" onClick={() => { if (isCollapsed) { toggleSidebar(); setUserManagementOpen(true); } else setUserManagementOpen((open) => !open); }} data-testid="button-toggle-user-management">
             <UsersRound size={17} aria-hidden="true" /><span className="admin-nav__label">User Management</span><ChevronDown size={15} className={`admin-nav__chevron${showUserSubnav ? ' admin-nav__chevron--open' : ''}`} aria-hidden="true" />
           </button>}
           <div id="admin-user-management-subnav" className="admin-nav__sub" hidden={!showUserSubnav}>
-            <Link href="/admin/staff" className={`admin-nav__item${location.startsWith('/admin/staff') ? ' admin-nav__item--active' : ''}`} aria-label="Staff Management" aria-current={location === '/admin/staff' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-staff">
+            {showStaff && <Link href="/admin/staff" className={`admin-nav__item${location.startsWith('/admin/staff') ? ' admin-nav__item--active' : ''}`} aria-label="Staff Management" aria-current={location === '/admin/staff' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-staff">
               <UsersRound size={16} aria-hidden="true" /><span className="admin-nav__label">Staff Management</span>
-            </Link>
+            </Link>}
+            {showRoles && <Link href="/admin/roles-permissions" className={`admin-nav__item${location === '/admin/roles-permissions' ? ' admin-nav__item--active' : ''}`} aria-label="Roles & Permissions" aria-current={location === '/admin/roles-permissions' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-roles-permissions">
+              <ShieldCheck size={16} aria-hidden="true" /><span className="admin-nav__label">Roles & Permissions</span>
+            </Link>}
           </div>
           {searching && !showDashboard && !showUserManagement && !showMasters && !showInventory && <p className="admin-nav__empty" role="status" data-testid="status-navigation-empty">No navigation results. Try another search.</p>}
         </nav>

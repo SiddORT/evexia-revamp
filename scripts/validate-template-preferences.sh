@@ -5,4 +5,5 @@ set -eu
 # preview suite once against isolated PostgreSQL/API/Vite and fresh contexts.
 pnpm --filter @workspace/evexia-portal run test:admin-session
 pnpm --filter @workspace/evexia-portal run test:template-preferences:service
+node --test artifacts/evexia-portal/src/services/rolePermissions.test.js
 sh scripts/run-authenticated-previews.sh

@@ -17,3 +17,4 @@
 - [Auth renewal and drafts](auth-renewal-drafts.md) — fail-closed session checks must not discard already-mounted browser-local editor drafts.
 - [Session rollout compatibility](session-rollout.md) — preserve revoked legacy credential history; require fresh login at a new session-binding boundary.
 - [Existing secret confirmations](existing-secret-confirmations.md) — a secret confirmation does not prove its value was replaced; use explicit editing when validation still fails.
+- [Roles preview boundary](roles-preview-boundary.md) — demo permissions are not authorization policy or staff role choices; Save is page memory only.

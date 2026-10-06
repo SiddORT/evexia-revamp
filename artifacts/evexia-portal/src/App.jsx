@@ -33,6 +33,7 @@ import SalesTargetMaster from './pages/admin/SalesTargetMaster.jsx';
 import OpeningBalanceMaster from './pages/admin/OpeningBalanceMaster.jsx';
 import OpeningBalanceFormPage from './pages/admin/OpeningBalanceFormPage.jsx';
 import StaffManagement from './pages/admin/StaffManagement.jsx';
+import RolesPermissions from './pages/admin/RolesPermissions.jsx';
 import AdminSettings from './pages/admin/AdminSettings.jsx';
 import PurchaseOrders from './pages/admin/PurchaseOrders.jsx';
 import PurchaseOrderFormPage from './pages/admin/PurchaseOrderFormPage.jsx';
@@ -46,6 +47,7 @@ function App() {
       <Route path="/admin" component={Dashboard} />
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/staff" component={StaffManagement} />
+      <Route path="/admin/roles-permissions" component={RolesPermissions} />
       <Route path="/admin/inventory/purchase-orders" component={PurchaseOrders} />
       <Route path="/admin/inventory/purchase-orders/new">{() => <PurchaseOrderFormPage />}</Route>
       <Route path="/admin/inventory/purchase-orders/:id">{(params) => <PurchaseOrderFormPage id={params.id} />}</Route>
