@@ -21,6 +21,55 @@ async function login(page, remember = false) {
   await expect(page.getByTestId('button-admin-profile')).toBeVisible();
 }
 
+for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 }]) {
+  test(`Admin login has no workspace shortcut and retains controls at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto(`${base()}/admin/login`);
+    await expect(page.getByTestId('text-login-title')).toHaveText('Admin Portal');
+    // Count DOM matches, not just visible matches: a hidden shortcut must not remain.
+    await expect(page.getByText(/Open Admin workspace/i)).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /Open Admin workspace/i, includeHidden: true })).toHaveCount(0);
+    await expect(page.locator('a[href="/admin"]')).toHaveCount(0);
+
+    const email = page.getByLabel('Email or username');
+    const passwordInput = page.getByLabel('Password', { exact: true });
+    const remember = page.getByRole('checkbox', { name: 'Remember me' });
+    const forgot = page.getByRole('button', { name: 'Forgot password?' });
+    const submit = page.getByRole('button', { name: 'Log in', exact: true });
+    const back = page.getByRole('link', { name: 'Choose a different portal' });
+    const controls = [email, passwordInput, remember, forgot, submit, back];
+    for (const control of controls) {
+      await expect(control).toBeVisible();
+      const box = await control.boundingBox();
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+    }
+    const submitBox = await submit.boundingBox();
+    const backBox = await back.boundingBox();
+    expect(backBox.y - (submitBox.y + submitBox.height)).toBeGreaterThanOrEqual(20);
+    const rememberBox = await page.locator('label.remember').boundingBox();
+    const forgotBox = await forgot.boundingBox();
+    if (viewport.width <= 460) {
+      expect(forgotBox.y - (rememberBox.y + rememberBox.height)).toBeGreaterThanOrEqual(8);
+    } else {
+      expect(rememberBox.x + rememberBox.width).toBeLessThanOrEqual(forgotBox.x);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
+
+    // Removing the shortcut must preserve the remaining keyboard navigation.
+    await page.getByTestId('link-form-home').focus();
+    for (const control of [email, passwordInput, page.getByTestId('button-toggle-password'), remember, forgot, submit, back]) {
+      await page.keyboard.press('Tab');
+      await expect(control).toBeFocused();
+    }
+    await expect(back).toHaveAttribute('href', '/');
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(`${base()}/`);
+    await login(page);
+    await expect(page).toHaveURL(`${base()}/admin`);
+  });
+}
+
 test('deep links wait for verification; unchanged login controls show safe failures and preserve MR/Doctor mocks', async ({ page }) => {
   await page.goto(`${base()}/admin/masters/zones`);
   await expect(page).toHaveURL(/\/admin\/login/);
