@@ -26,6 +26,8 @@ import type {
   DownloadURLResponse,
   ErrorEnvelope,
   EventPage,
+  ExportReportingEventsParams,
+  ExportReportingSessionsParams,
   FileResponse,
   HealthStatus,
   ListOwnSessionsParams,
@@ -37,6 +39,7 @@ import type {
   PatientResponse,
   ProvisionMRRequest,
   ReplaceFileParams,
+  ReportExport,
   ReportSummary,
   SessionListResponse,
   SessionPage,
@@ -369,6 +372,110 @@ export function useListReportingEvents<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
+export const getExportReportingEventsUrl = (
+  params?: ExportReportingEventsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/reporting/events/export?${stringifiedParams}`
+    : `/api/v1/admin/reporting/events/export`;
+};
+
+/**
+ * Fresh bounded snapshot of safe metadata, preserving observation provenance.
+ * @summary Export Events
+ */
+export const exportReportingEvents = async (
+  params?: ExportReportingEventsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ReportExport> => {
+  return customFetch<ReportExport>(getExportReportingEventsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportReportingEventsQueryKey = (
+  params?: ExportReportingEventsParams,
+) => {
+  return [
+    `/api/v1/admin/reporting/events/export`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getExportReportingEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportReportingEvents>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportReportingEventsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportReportingEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getExportReportingEventsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exportReportingEvents>>
+  > = ({ signal }) =>
+    exportReportingEvents(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportReportingEvents>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportReportingEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportReportingEvents>>
+>;
+export type ExportReportingEventsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export Events
+ */
+
+export function useExportReportingEvents<
+  TData = Awaited<ReturnType<typeof exportReportingEvents>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportReportingEventsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportReportingEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportReportingEventsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export const getListReportingSessionsUrl = (
   params?: ListReportingSessionsParams,
 ) => {
@@ -465,6 +572,110 @@ export function useListReportingSessions<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListReportingSessionsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getExportReportingSessionsUrl = (
+  params?: ExportReportingSessionsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/reporting/sessions/export?${stringifiedParams}`
+    : `/api/v1/admin/reporting/sessions/export`;
+};
+
+/**
+ * Fresh bounded snapshot; rejects overflow. No raw session or record identifiers.
+ * @summary Export Sessions
+ */
+export const exportReportingSessions = async (
+  params?: ExportReportingSessionsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ReportExport> => {
+  return customFetch<ReportExport>(getExportReportingSessionsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportReportingSessionsQueryKey = (
+  params?: ExportReportingSessionsParams,
+) => {
+  return [
+    `/api/v1/admin/reporting/sessions/export`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getExportReportingSessionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportReportingSessions>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportReportingSessionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportReportingSessions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getExportReportingSessionsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exportReportingSessions>>
+  > = ({ signal }) =>
+    exportReportingSessions(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportReportingSessions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportReportingSessionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportReportingSessions>>
+>;
+export type ExportReportingSessionsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export Sessions
+ */
+
+export function useExportReportingSessions<
+  TData = Awaited<ReturnType<typeof exportReportingSessions>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportReportingSessionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportReportingSessions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportReportingSessionsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

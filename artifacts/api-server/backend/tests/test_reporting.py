@@ -96,7 +96,7 @@ def add_session(db, user, now, **overrides):
     return row
 
 
-@pytest.mark.parametrize("resource", ["summary", "users", "sessions", "events"])
+@pytest.mark.parametrize("resource", ["summary", "users", "sessions", "events", "sessions/export", "events/export"])
 def test_all_reports_deny_anonymous_and_mr_even_with_forged_filters(client, resource):
     api, db, _ = client
     user = create_user(db, f"denied-{resource}@example.com")
@@ -276,10 +276,42 @@ def test_current_admin_session_must_remain_valid_for_all_reports(client, invalid
     else:
         admin.token_version += 1
     db.commit()
-    for resource in ["summary", "users", "sessions", "events"]:
+    for resource in ["summary", "users", "sessions", "events", "sessions/export", "events/export"]:
         assert api.get(f"{BASE}/{resource}", headers=headers).status_code == 401
 
-
+def test_exports_match_user_and_exclusive_utc_filters_without_identifiers(client):
+    from app.repositories.report_exports import SESSION_COLUMNS, EVENT_COLUMNS
+    api, db, _ = client
+    headers, admin = admin_headers(api, db)
+    other = create_user(db, "other-export@example.com")
+    start = datetime(2030, 2, 2, tzinfo=timezone.utc)
+    end = start + timedelta(days=1)
+    for user in [admin, other]:
+        for time in [start - timedelta(seconds=1), start, end]:
+            session = add_session(db, user, time, created_at=time, expires_at=end + timedelta(days=1))
+            for browser in [False, True]:
+                db.add(AuditEvent(
+                    actor_id=user.id, action="browser_created" if browser else "file_upload",
+                    outcome="reported" if browser else "success", created_at=time,
+                    reason="browser_reported" if browser else None, resource_type="patient",
+                    session_id=session.id, request_id="PRIVATE_REQUEST_REFERENCE",
+                    resource_id=uuid.uuid4(),
+                ))
+    db.commit()
+    query = f"?user_id={admin.id}&start=2030-02-02T00:00:00Z&end=2030-02-03T00:00:00Z"
+    for resource, columns, count in [("sessions", SESSION_COLUMNS, 1), ("events", EVENT_COLUMNS, 2)]:
+        displayed = api.get(f"{BASE}/{resource}{query}", headers=headers).json()
+        response = api.get(f"{BASE}/{resource}/export{query}", headers=headers)
+        assert response.status_code == 200, response.text
+        assert response.headers["cache-control"] == "no-store"
+        body = response.json()
+        assert body["columns"] == columns and body["limit"] == 5000
+        assert body["row_count"] == len(body["rows"]) == len(displayed["items"]) == count
+        assert all(len(row) == len(columns) for row in body["rows"])
+        for forbidden in ["PRIVATE", str(admin.id), str(other.id), "session_id", "resource_id",
+                          "actor_id", "password", "token", "family_id"]:
+            assert forbidden not in response.text
+    assert {row[-1] for row in body["rows"]} == {"Browser-reported", "Server-recorded"}
 def test_api_preserves_real_urlsafe_login_session_references(client):
     api, db, _ = client
     headers, _ = admin_headers(api, db)
@@ -303,3 +335,63 @@ def test_api_preserves_real_urlsafe_login_session_references(client):
     assert any(row["session_id"] == sid and row["action"] == "session_created" for row in rows)
     sessions = api.get(f"{BASE}/sessions?user_id={user.id}", headers=headers)
     assert any(row["id"] == sid for row in sessions.json()["items"])
+
+@pytest.mark.parametrize("resource", ["sessions", "events"])
+def test_export_overflow_and_storage_failure_never_return_partial_data(client, monkeypatch, resource):
+    from app.repositories import reporting, report_exports
+    api, db, _ = client
+    headers, _ = admin_headers(api, db)
+    # Small cap exercises exact-boundary and overflow using real SQL.
+    report = getattr(reporting, resource)
+    count = len(report(db, utcnow(), "", 100, 0, None, None, None)["items"]
+                if resource == "sessions"
+                else report(db, 100, 0, None, None, None)["items"])
+    assert count > 0
+    monkeypatch.setattr(report_exports, "EXPORT_LIMIT", count)
+    assert api.get(f"{BASE}/{resource}/export", headers=headers).status_code == 200
+    monkeypatch.setattr(report_exports, "EXPORT_LIMIT", count - 1)
+    response = api.get(f"{BASE}/{resource}/export", headers=headers)
+    assert response.status_code == 409
+    assert "rows" not in response.json()
+    def unavailable(*args, **kwargs):
+        from sqlalchemy.exc import OperationalError
+        raise OperationalError("synthetic unavailable", {}, Exception("synthetic"))
+    monkeypatch.setattr(reporting, resource, unavailable)
+    from fastapi.testclient import TestClient
+    from app.main import app
+    with TestClient(app, base_url="http://testserver", raise_server_exceptions=False) as failures:
+        response = failures.get(f"{BASE}/{resource}/export", headers=headers)
+    assert response.status_code == 500 and "rows" not in response.json()
+
+@pytest.mark.parametrize("resource", ["sessions", "events"])
+def test_export_invalid_filters_and_empty_matches(client, resource):
+    api, db, _ = client
+    headers, _ = admin_headers(api, db)
+    for query in ["user_id=bad", "start=2030-02-03T00:00:00Z&end=2030-02-02T00:00:00Z",
+                  "start=2030-02-02T00:00:00", "end=bad"]:
+        assert api.get(f"{BASE}/{resource}/export?{query}", headers=headers).status_code == 422
+    response = api.get(f"{BASE}/{resource}/export?user_id={uuid.uuid4()}", headers=headers)
+    assert response.status_code == 200
+    assert response.json()["rows"] == [] and response.json()["row_count"] == 0
+
+
+def test_session_export_search_and_state_match_the_filtered_table(client):
+    api, db, _ = client
+    headers, admin = admin_headers(api, db)
+    user = create_user(db, "filtered-export@example.com")
+    now = utcnow()
+    add_session(db, user, now, id="export-search-active")
+    add_session(db, user, now, id="export-search-revoked",
+                status="REVOKED", revoked_at=now)
+    db.commit()
+    for state in ["ACTIVE", "REVOKED", "EXPIRED", "INVALIDATED"]:
+        query = f"?q=export-search&state={state}&user_id={user.id}"
+        table = api.get(f"{BASE}/sessions{query}", headers=headers).json()
+        response = api.get(f"{BASE}/sessions/export{query}", headers=headers)
+        assert response.status_code == 200, response.text
+        exported = response.json()
+        assert exported["row_count"] == len(table["items"])
+        assert [row[3] for row in exported["rows"]] == [row["state"] for row in table["items"]]
+        assert "export-search" not in response.text
+    for query in ["state=bad", f"q={'x' * 101}"]:
+        assert api.get(f"{BASE}/sessions/export?{query}", headers=headers).status_code == 422

@@ -189,10 +189,18 @@ export async function logoutAdmin({ beforeRevoke } = {}) {
   return true;
 }
 
-// Narrow reporting facility: credentials never leave this module, and renewal
-// uses the same in-tab promise and cross-tab cookie lock as the Admin boundary.
+export function reportingIdentityGuard() {
+  const epoch = generation;
+  const owner = state.user?.id;
+  return () => {
+    if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated') {
+      throw new SessionError('Your session changed. Export cancelled. Please retry after signing in.', 401);
+    }
+  };
+}
+// Narrow reporting facility: credentials never leave this module.
 export async function reportingRequest(resource, params = {}, { signal } = {}) {
-  if (!['summary', 'users', 'sessions', 'events', 'activity'].includes(resource)) {
+  if (!['summary', 'users', 'sessions', 'events', 'activity', 'sessions/export', 'events/export'].includes(resource)) {
     throw new SessionError('Unsupported report.');
   }
   const epoch = generation;
@@ -212,7 +220,9 @@ export async function reportingRequest(resource, params = {}, { signal } = {}) {
   const query = new URLSearchParams();
   const writing = resource === 'activity';
   const keys = writing ? ['events'] : resource === 'users' ? ['q', 'limit', 'offset']
-    : resource === 'summary' ? [] : resource === 'sessions'
+    : resource === 'summary' ? [] : resource === 'sessions/export'
+      ? ['user_id', 'start', 'end', 'state', 'q']
+      : resource === 'events/export' ? ['user_id', 'start', 'end'] : resource === 'sessions'
       ? ['user_id', 'start', 'end', 'state', 'q', 'limit', 'offset']
       : ['user_id', 'start', 'end', 'limit', 'offset'];
   for (const [key, value] of Object.entries(params)) {
@@ -254,6 +264,7 @@ export async function reportingRequest(resource, params = {}, { signal } = {}) {
       response.status === 403 ? 'This account does not have Admin access.'
         : response.status === 401 ? 'Your session expired. Please log in again.'
         : response.status === 422 ? 'Invalid report filters. Check the date range.'
+        : response.status === 409 && resource.endsWith('/export') ? 'More than 5,000 rows match. Narrow the user or UTC date filters and retry. No file was downloaded.'
         : 'Unable to load reports. Please retry.', response.status,
     );
   }

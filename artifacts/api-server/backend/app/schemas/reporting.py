@@ -65,3 +65,10 @@ class EventPage(BaseModel):
     limit: int
     offset: int
     has_more: bool
+
+
+class ReportExport(BaseModel):
+    columns: list[str]
+    rows: list[list[str]]
+    row_count: int
+    limit: int

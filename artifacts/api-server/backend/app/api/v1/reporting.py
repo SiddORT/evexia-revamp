@@ -9,8 +9,8 @@ from sqlalchemy.orm import Session
 from app.api.deps import require_permissions
 from app.core.security import utcnow
 from app.db.session import get_db
-from app.repositories import reporting
-from app.schemas.reporting import EventPage, ReportSummary, SessionPage, UserPage
+from app.repositories import reporting, report_exports
+from app.schemas.reporting import EventPage, ReportExport, ReportSummary, SessionPage, UserPage
 from app.services.auth import Identity
 from app.schemas.activity import BrowserActivityBatch
 from app.services.activity import record_activity
@@ -74,3 +74,15 @@ def sessions(identity: Admin, db: Database, pagination=Depends(page), selection=
 def events(identity: Admin, db: Database, pagination=Depends(page), selection=Depends(filters)):
     """Occurrence-time range [start,end). All recorded categories; missing actors are retained."""
     return reporting.events(db, *pagination, *selection)
+
+@router.get("/sessions/export", response_model=ReportExport, operation_id="exportReportingSessions")
+def export_sessions(identity: Admin, db: Database, selection=Depends(filters),
+                    q: str = Query("", max_length=100),
+                    state: Literal["ACTIVE", "EXPIRED", "REVOKED", "INVALIDATED"] | None = None):
+    """Fresh bounded snapshot; rejects overflow. No raw session or record identifiers."""
+    return report_exports.export_report(db, "sessions", utcnow(), identity.session_id, selection, q, state)
+
+@router.get("/events/export", response_model=ReportExport, operation_id="exportReportingEvents")
+def export_events(identity: Admin, db: Database, selection=Depends(filters)):
+    """Fresh bounded snapshot of safe metadata, preserving observation provenance."""
+    return report_exports.export_report(db, "events", utcnow(), identity.session_id, selection)

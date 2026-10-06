@@ -283,6 +283,38 @@ test('reports use narrow no-store reads and serialize renewal with a single retr
   await api.logoutAdmin();
 });
 
+test('an export identity guard cannot authorize a later login of even the same user', async () => {
+  const api = await setup(async (url) => url.endsWith('/logout') ? reply(null, 204) : reply(url.endsWith('/me') ? user : payload));
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  const guard = api.reportingIdentityGuard();
+  guard();
+  await api.verifySession(true);
+  guard(); // token rotation within the original login is allowed
+  await api.logoutAdmin();
+  assert.throws(guard, /session changed/);
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  assert.throws(guard, /session changed/);
+  api.reportingIdentityGuard()();
+  await api.logoutAdmin();
+});
+
+test('session exports permit state and search filters but never pagination or event-only extras', async () => {
+  const calls = [];
+  const api = await setup(async (url) => {
+    calls.push(url);
+    if (url.includes('/reporting/')) return reply({ rows: [] });
+    return url.endsWith('/logout') ? reply(null, 204) : reply(url.endsWith('/me') ? user : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  await api.reportingRequest('sessions/export', { q: 'literal search', state: 'REVOKED' });
+  const query = new URL(calls.at(-1), 'https://example.test').searchParams;
+  assert.equal(query.get('q'), 'literal search');
+  assert.equal(query.get('state'), 'REVOKED');
+  await assert.rejects(api.reportingRequest('sessions/export', { offset: 25 }), /Unsupported/);
+  await assert.rejects(api.reportingRequest('events/export', { state: 'REVOKED' }), /Unsupported/);
+  await api.logoutAdmin();
+});
+
 test('reports reject late data after logout or identity change, including body decode races', async () => {
   for (const lateBody of [false, true]) {
     let release, started;

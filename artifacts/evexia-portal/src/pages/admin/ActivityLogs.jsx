@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Activity, ChevronLeft, ChevronRight, Filter, RefreshCw, Search, ShieldAlert } from 'lucide-react';
+import { Activity, ChevronLeft, ChevronRight, Download, Filter, RefreshCw, Search, ShieldAlert } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { reportingRequest } from '../../auth/adminSession.js';
+import { downloadReportingCSV } from '../../services/reportingCSV.js';
 import '../../activityLogs.css';
 
 const browserActions = {
@@ -186,9 +187,45 @@ export default function ActivityLogs() {
     const timer = setTimeout(() => setQuery(search.trim()), 300);
     return () => clearTimeout(timer);
   }, [search]);
-  const sessions = useReport('sessions', { ...params, ...(query ? { q: query } : {}), ...(applied.state ? { state: applied.state } : {}) }, enabled && view === 'sessions', identity);
+  const sessionParams = { ...params, ...(query ? { q: query } : {}), ...(applied.state ? { state: applied.state } : {}) };
+  const exportParams = view === 'sessions' ? sessionParams : params;
+  const searchPending = view === 'sessions' && search.trim() !== query;
+  const sessions = useReport('sessions', sessionParams, enabled && view === 'sessions', identity);
   const events = useReport('events', params, enabled && view === 'events', identity);
   const idRef = useRef(identity);
+  const exportController = useRef(null);
+  const [exportState, setExportState] = useState({ busy: false, error: false, message: '' });
+  const exportKey = JSON.stringify(exportParams);
+  const cancelExport = () => {
+    if (!exportController.current) return;
+    exportController.current.abort();
+    exportController.current = null;
+    setExportState({ busy: false, error: true, message: 'Export cancelled because the filters, tab or session changed. No file was downloaded.' });
+  };
+
+  useEffect(() => {
+    if (exportController.current) {
+      exportController.current.abort();
+      exportController.current = null;
+      setExportState({ busy: false, error: true, message: 'Export cancelled because the filters, tab or session changed. No file was downloaded.' });
+    } else setExportState({ busy: false, error: false, message: '' });
+    return () => { exportController.current?.abort(); };
+  }, [enabled, identity, view, exportKey]);
+
+  const exportCSV = async () => {
+    if (exportController.current || !enabled || checked.error || searchPending) return;
+    const ctl = new AbortController();
+    exportController.current = ctl;
+    setExportState({ busy: true, error: false, message: 'Preparing fresh filtered CSV…' });
+    try {
+      const count = await downloadReportingCSV(view, exportParams, ctl.signal);
+      if (!ctl.signal.aborted) setExportState({ busy: false, error: false, message: `CSV download started: ${count} rows matching the applied filters.` });
+    } catch (error) {
+      if (!ctl.signal.aborted) setExportState({ busy: false, error: true, message: error.message || 'Export failed. No file was downloaded. Retry.' });
+    } finally {
+      if (exportController.current === ctl) exportController.current = null;
+    }
+  };
 
   useEffect(() => {
     if (idRef.current !== identity) {
@@ -212,9 +249,10 @@ export default function ActivityLogs() {
     e.preventDefault();
     const r = range(draft);
     if (r.error) { setFormError(r.error); return; }
+    cancelExport();
     setFormError(''); setApplied(draft);
   };
-  const reset = () => { const z = { user: null, start: '', end: '', state: '' }; setDraft(z); setApplied(z); setFormError(''); };
+  const reset = () => { cancelExport(); const z = { user: null, start: '', end: '', state: '' }; setDraft(z); setApplied(z); setFormError(''); };
   const refreshAll = () => { setSumTick((t) => t + 1); sessions.reload(); events.reload(); };
   const active = view === 'sessions' ? sessions : events;
   useEffect(() => {
@@ -265,15 +303,22 @@ export default function ActivityLogs() {
 
       <div className="alog-tabs" role="tablist" aria-label="History">
         {[['sessions', 'Sessions'], ['events', 'Activity events']].map(([k, l]) => (
-          <button key={k} type="button" role="tab" aria-selected={view === k} className={`alog-tab${view === k ? ' alog-tab--on' : ''}`} onClick={() => setView(k)} data-testid={`tab-activity-${k}`}>{l}</button>
+          <button key={k} type="button" role="tab" aria-selected={view === k} className={`alog-tab${view === k ? ' alog-tab--on' : ''}`} onClick={() => { if (view !== k) cancelExport(); setView(k); }} data-testid={`tab-activity-${k}`}>{l}</button>
         ))}
       </div>
        <p className="alog-muted">Dates filter {view === 'sessions' ? 'session creation / login' : 'event occurrence'} in UTC; the selected end date is included. “—” means not recorded. {view === 'sessions' && 'Active: valid now. Expired: time limit passed. Revoked: ended by logout, a new login, or a security action. Invalidated: account is ineligible or its security version changed. Last refreshed: when login credentials were renewed within this session. Refresh report only reloads these results.'}</p>
+      <div className="alog-export">
+        <button type="button" className="admin-button admin-button--secondary" onClick={exportCSV} disabled={exportState.busy || !enabled || !!checked.error || searchPending} data-testid={`button-activity-export-${view}`}>
+          <Download size={14} aria-hidden="true" />{exportState.busy ? 'Exporting…' : `Export ${view === 'sessions' ? 'sessions' : 'activity'} CSV`}
+        </button>
+        <p className="alog-muted">Exports all matching rows, not just this page, using applied filters. Maximum 5,000 rows; narrow filters if exceeded. Session and record identifiers are excluded. Downloaded files contain account labels; keep them private.</p>
+        {exportState.message && <p role={exportState.error ? 'alert' : 'status'} className={exportState.error ? 'admin-feedback admin-feedback--error' : 'alog-muted'} data-testid="status-activity-export">{exportState.message}</p>}
+      </div>
 
       <section className="admin-panel" aria-label={view === 'sessions' ? 'Sessions' : 'Activity events'} data-testid={`panel-activity-${view}`}>
         {view === 'sessions' ? (
            <>
-           <div className="alog-search admin-search"><Search size={16} aria-hidden="true" /><input type="search" aria-label="Search sessions" placeholder="Search user name, email or session reference" maxLength={100} value={search} onChange={(e) => setSearch(e.target.value)} data-testid="input-activity-session-search" /></div>
+           <div className="alog-search admin-search"><Search size={16} aria-hidden="true" /><input type="search" aria-label="Search sessions" placeholder="Search user name, email or session reference" maxLength={100} value={search} onChange={(e) => { cancelExport(); setSearch(e.target.value); }} data-testid="input-activity-session-search" /></div>
           <State r={sessions} empty="No sessions found" cols="sessions">
              <thead><tr><th scope="col">Sr No</th><th>User</th><th>Session reference</th><th>State</th><th>Session created / login</th><th>Last refreshed</th><th>Expires</th><th>Revoked</th><th>Remember me / persistent</th></tr></thead>
              <tbody>{sessions.data?.items?.map((s, index) => (

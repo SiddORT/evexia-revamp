@@ -133,6 +133,23 @@ export const ListReportingEventsResponse = zod.object({
 });
 
 /**
+ * Fresh bounded snapshot of safe metadata, preserving observation provenance.
+ * @summary Export Events
+ */
+export const ExportReportingEventsQueryParams = zod.object({
+  user_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  start: zod.union([zod.date(), zod.null()]).optional(),
+  end: zod.union([zod.date(), zod.null()]).optional(),
+});
+
+export const ExportReportingEventsResponse = zod.object({
+  columns: zod.array(zod.string()),
+  limit: zod.number().int(),
+  row_count: zod.number().int(),
+  rows: zod.array(zod.array(zod.string())),
+});
+
+/**
  * Creation-time range [start,end), timezone required. Newest timestamp then ID descending.
  * @summary Sessions
  */
@@ -204,6 +221,36 @@ export const ListReportingSessionsResponse = zod.object({
   ),
   limit: zod.number().int(),
   offset: zod.number().int(),
+});
+
+/**
+ * Fresh bounded snapshot; rejects overflow. No raw session or record identifiers.
+ * @summary Export Sessions
+ */
+export const exportReportingSessionsQueryQDefault = ``;
+export const exportReportingSessionsQueryQMax = 100;
+
+export const ExportReportingSessionsQueryParams = zod.object({
+  q: zod.coerce
+    .string()
+    .max(exportReportingSessionsQueryQMax)
+    .default(exportReportingSessionsQueryQDefault),
+  state: zod
+    .union([
+      zod.enum(["ACTIVE", "EXPIRED", "REVOKED", "INVALIDATED"]),
+      zod.null(),
+    ])
+    .optional(),
+  user_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  start: zod.union([zod.date(), zod.null()]).optional(),
+  end: zod.union([zod.date(), zod.null()]).optional(),
+});
+
+export const ExportReportingSessionsResponse = zod.object({
+  columns: zod.array(zod.string()),
+  limit: zod.number().int(),
+  row_count: zod.number().int(),
+  rows: zod.array(zod.array(zod.string())),
 });
 
 /**

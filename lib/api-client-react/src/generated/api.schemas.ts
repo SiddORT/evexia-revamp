@@ -250,6 +250,13 @@ export interface ProvisionMRRequest {
   username?: string | null;
 }
 
+export interface ReportExport {
+  columns: string[];
+  limit: number;
+  row_count: number;
+  rows: string[][];
+}
+
 export type ReportSessionState =
   (typeof ReportSessionState)[keyof typeof ReportSessionState];
 
@@ -340,6 +347,12 @@ export type ListReportingEventsParams = {
   end?: string | null;
 };
 
+export type ExportReportingEventsParams = {
+  user_id?: string | null;
+  start?: string | null;
+  end?: string | null;
+};
+
 export type ListReportingSessionsParams = {
   /**
    * @maxLength 100
@@ -366,6 +379,28 @@ export type ListReportingSessionsState =
   | null;
 
 export const ListReportingSessionsState = {
+  ACTIVE: "ACTIVE",
+  EXPIRED: "EXPIRED",
+  REVOKED: "REVOKED",
+  INVALIDATED: "INVALIDATED",
+} as const;
+
+export type ExportReportingSessionsParams = {
+  /**
+   * @maxLength 100
+   */
+  q?: string;
+  state?: ExportReportingSessionsState;
+  user_id?: string | null;
+  start?: string | null;
+  end?: string | null;
+};
+
+export type ExportReportingSessionsState =
+  | (typeof ExportReportingSessionsState)[keyof typeof ExportReportingSessionsState]
+  | null;
+
+export const ExportReportingSessionsState = {
   ACTIVE: "ACTIVE",
   EXPIRED: "EXPIRED",
   REVOKED: "REVOKED",

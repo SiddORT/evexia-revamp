@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { authenticateAdmin } from './helpers/authenticateAdmin.mjs';
+import { readFile } from 'node:fs/promises';
 
 if (process.env.EVEXIA_CHROMIUM_PATH) {
   test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
@@ -228,3 +229,149 @@ test('two tabs renew reports through real cookie locking and persist no private 
   await expect(other).toHaveURL(/\/admin\/login/);
   await expect(other.getByTestId('panel-activity-events')).toHaveCount(0);
 });
+
+test('both CSV tabs export all applied user/UTC filters, not draft filters or the current page', async ({ page }) => {
+  const user = await authenticateAdmin(page);
+  await page.goto(`${base()}/admin/activity-logs`);
+  await expect(page.getByTestId('text-total-users')).not.toHaveText('…');
+  await page.getByTestId('button-activity-filters').click();
+  await page.getByTestId('button-activity-user').click();
+  await page.getByTestId('option-activity-user').filter({ hasText: user.username || user.email }).first().click();
+  await page.getByTestId('input-activity-start').fill('2030-02-02');
+  await page.getByTestId('input-activity-end').fill('2030-02-02');
+  await page.getByTestId('button-activity-apply').click();
+  await expect(page.getByTestId('panel-activity-sessions')).toContainText('No sessions found');
+  await page.getByTestId('input-activity-start').fill('2040-01-01'); // unapplied draft
+  const requests = [];
+  page.on('request', (r) => { if (r.url().includes('/export?')) requests.push(new URL(r.url())); });
+  for (const resource of ['sessions', 'events']) {
+    await page.getByTestId(`tab-activity-${resource}`).click();
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByTestId(`button-activity-export-${resource}`).click();
+    const download = await downloadPromise;
+    const csv = await readFile(await download.path(), 'utf8');
+    expect(csv).toContain('"Provenance"');
+    expect(csv.trim().split('\r\n')).toHaveLength(1); // empty matching snapshot still has headers
+    expect(csv).not.toMatch(/session_id|actor_id|resource_id|access_token/);
+    await expect(page.getByTestId('status-activity-export')).toContainText('0 rows');
+    const query = requests.at(-1).searchParams;
+    expect(query.get('user_id')).toBe(user.id);
+    expect(query.get('start')).toBe('2030-02-02T00:00:00Z');
+    expect(query.get('end')).toBe('2030-02-03T00:00:00Z');
+    expect(query.has('offset')).toBe(false);
+  }
+  await page.getByTestId('button-activity-reset').click();
+  await page.getByTestId('tab-activity-sessions').click();
+  const report = await page.evaluate(async () => {
+    const { reportingRequest } = await import('/src/auth/adminSession.js');
+    return reportingRequest('sessions/export');
+  });
+  const next = page.waitForEvent('download');
+  await page.getByTestId('button-activity-export-sessions').click();
+  const csv = await readFile(await (await next).path(), 'utf8');
+  expect(csv.trim().split('\r\n')).toHaveLength(report.row_count + 1);
+  expect(csv).toContain('Server-recorded');
+});
+
+test('sessions CSV uses the same applied state and debounced search as the table', async ({ page }) => {
+  await authenticateAdmin(page);
+  await page.goto(`${base()}/admin/activity-logs`);
+  await page.getByTestId('button-activity-filters').click();
+  await page.getByTestId('select-activity-state').selectOption('REVOKED');
+  await page.getByTestId('button-activity-apply').click();
+  await page.getByTestId('input-activity-session-search').fill('no-such-session-export');
+  await expect(page.getByTestId('panel-activity-sessions')).toContainText('No sessions found');
+  const request = page.waitForRequest((r) => r.url().includes('/sessions/export?'));
+  const next = page.waitForEvent('download');
+  await page.getByTestId('button-activity-export-sessions').click();
+  const query = new URL((await request).url()).searchParams;
+  expect(query.get('state')).toBe('REVOKED');
+  expect(query.get('q')).toBe('no-such-session-export');
+  const csv = await readFile(await (await next).path(), 'utf8');
+  expect(csv.trim().split('\r\n')).toHaveLength(1);
+});
+
+test('CSV preserves provenance and escapes spreadsheet formulas and embedded quotes', async ({ page }) => {
+  await authenticateAdmin(page);
+  await page.goto(`${base()}/admin/activity-logs`);
+  await page.getByTestId('tab-activity-events').click();
+  await page.route('**/reporting/events/export*', (route) => route.fulfill({
+    json: {
+      columns: ['Occurred (UTC)', 'User', 'Role', 'Account state', 'Action', 'Outcome', 'Reason', 'Resource type', 'Provenance'],
+      rows: [
+        ['2030-02-02T00:00:00Z', '  =formula,"quoted"\r\nsecond line', 'super_admin', 'enabled', 'browser_created', 'reported', 'browser_reported', 'patient', 'Browser-reported'],
+        ['2030-02-02T00:00:00Z', '@formula', 'super_admin', 'enabled', 'login_success', 'success', '', '', 'Server-recorded'],
+      ], row_count: 2, limit: 5000,
+    },
+  }));
+  const next = page.waitForEvent('download');
+  await page.getByTestId('button-activity-export-events').click();
+  const csv = await readFile(await (await next).path(), 'utf8');
+  expect(csv).toContain('"\'  =formula,""quoted""\r\nsecond line"');
+  expect(csv).toContain('"\'@formula"');
+  expect(csv).toContain('Browser-reported');
+  expect(csv).toContain('Server-recorded');
+});
+
+test('overflow, network, incomplete response and browser download failures never export stale table data', async ({ page }) => {
+  await authenticateAdmin(page);
+  await page.goto(`${base()}/admin/activity-logs`);
+  await expect(page.getByTestId('panel-activity-sessions')).toContainText('Current');
+  const downloads = [];
+  page.on('download', (d) => downloads.push(d));
+  for (const [failure, message] of [
+    ['overflow', /5,000/], ['network', /connection|retry/i],
+    ['incomplete', /incomplete or invalid/], ['browser', /browser could not create/],
+  ]) {
+    await page.route('**/reporting/sessions/export*', (route) => {
+      if (failure === 'overflow') return route.fulfill({ status: 409, json: {} });
+      if (failure === 'network') return route.abort();
+      if (failure === 'incomplete') return route.fulfill({ json: { columns: [], rows: [] } });
+      return route.continue();
+    });
+    if (failure === 'browser') await page.evaluate(() => { URL.createObjectURL = () => { throw new Error('synthetic unavailable'); }; });
+    await page.getByTestId('button-activity-export-sessions').click();
+    await expect(page.getByTestId('status-activity-export')).toContainText(message);
+    expect(downloads).toHaveLength(0);
+    await page.unroute('**/reporting/sessions/export*');
+  }
+});
+
+for (const cancel of ['logout', 'filters', 'tab', 'authorization']) {
+  test(`pending CSV is discarded on ${cancel}`, async ({ page }) => {
+    await authenticateAdmin(page);
+    await page.goto(`${base()}/admin/activity-logs`);
+    await expect(page.getByTestId('text-total-users')).not.toHaveText('…');
+    let pending, intercepted;
+    const started = new Promise((resolve) => { intercepted = resolve; });
+    const downloads = [];
+    page.on('download', (d) => downloads.push(d));
+    await page.route('**/reporting/sessions/export*', async (route) => {
+      pending = [route, await route.fetch()];
+      intercepted();
+    });
+    await page.getByTestId('button-activity-export-sessions').click();
+    await started;
+    if (cancel === 'logout') {
+      await page.getByTestId('button-admin-profile').click();
+      await page.getByTestId('link-admin-sign-out').click();
+      await expect(page).toHaveURL(/\/admin\/login/);
+    } else if (cancel === 'filters') {
+      await page.getByTestId('button-activity-filters').click();
+      await page.getByTestId('button-activity-reset').click(); // even unchanged filters cancel
+      await expect(page.getByTestId('status-activity-export')).toContainText('cancelled');
+      await expect(page.getByTestId('button-activity-export-sessions')).toBeEnabled();
+    } else if (cancel === 'tab') {
+      await page.getByTestId('tab-activity-events').click();
+      await expect(page.getByTestId('button-activity-export-events')).toBeEnabled();
+    } else {
+      // The final server authorization check must fail closed even after a
+      // successful snapshot response, without releasing that snapshot.
+      await page.route('**/reporting/summary', (route) => route.fulfill({ status: 403, json: {} }));
+    }
+    await pending[0].fulfill({ response: pending[1] }).catch(() => {});
+    if (cancel === 'authorization') await expect(page).toHaveURL(/\/admin\/login/);
+    else await page.waitForTimeout(200);
+    expect(downloads).toHaveLength(0);
+  });
+}
