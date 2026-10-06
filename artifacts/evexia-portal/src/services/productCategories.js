@@ -1,3 +1,4 @@
+import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { parseCSV } from './masterImport.js';
 
 export const CATEGORY_STORAGE_KEY = 'evexia.admin.product-categories.v1';
@@ -95,6 +96,7 @@ function save(next, expected) {
   if (!same(loadCategories(), expected)) throw new Error('Product categories changed in another tab. Refresh records before saving.');
   try { window.localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(next)); }
   catch { throw new Error('Product categories could not be saved in this browser. Check browser storage settings and try again.'); }
+  recordLocalChanges('product_category', expected, next);
   return next;
 }
 
@@ -128,7 +130,8 @@ function csvCell(value) {
   const safe = /^[\s\u0000-\u001f]*[=+\-@]/.test(text) ? `'${text}` : text;
   return `"${safe.replaceAll('"', '""')}"`;
 }
-export function exportCategoryCSV(records) {
+export function exportCategoryCSV(...args) { return reportExport('product_category', () => buildCategoryCSV(...args)); }
+function buildCategoryCSV(records) {
   return '\uFEFF' + [CATEGORY_COLUMNS.map(([, label]) => csvCell(label)).join(','),
     ...records.map((record) => CATEGORY_COLUMNS.map(([key]) => csvCell(record[key])).join(','))].join('\r\n') + '\r\n';
 }
@@ -159,7 +162,8 @@ export function reviewCategoryCSV(text, records) {
   });
 }
 
-export function importCategories(entries, expected) {
+export function importCategories(...args) { const result = buildImportCategories(...args); recordLocalAction('product_category', 'imported'); return result; }
+function buildImportCategories(entries, expected) {
   const current = loadCategories();
   if (!same(current, expected)) throw new Error('Product categories changed since review. Refresh records and review the CSV again.');
   if (!entries.length || entries.some((entry) => entry.errors?.length || !entry.fields)) {

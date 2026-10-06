@@ -9,6 +9,64 @@ export interface AssignPatientRequest {
   assigned_mr_id: string | null;
 }
 
+export type BrowserActivityAction =
+  (typeof BrowserActivityAction)[keyof typeof BrowserActivityAction];
+
+export const BrowserActivityAction = {
+  page_view: "page_view",
+  created: "created",
+  updated: "updated",
+  deleted: "deleted",
+  imported: "imported",
+  exported: "exported",
+  settings_changed: "settings_changed",
+} as const;
+
+export type BrowserActivityResource =
+  (typeof BrowserActivityResource)[keyof typeof BrowserActivityResource];
+
+export const BrowserActivityResource = {
+  dashboard: "dashboard",
+  zone: "zone",
+  courier_partner: "courier_partner",
+  storage_location: "storage_location",
+  headquarter: "headquarter",
+  mr: "mr",
+  doctor: "doctor",
+  patient: "patient",
+  designation: "designation",
+  staff: "staff",
+  product_category: "product_category",
+  allergen: "allergen",
+  vendor: "vendor",
+  sales_target: "sales_target",
+  opening_balance: "opening_balance",
+  purchase_order: "purchase_order",
+  purchase_received: "purchase_received",
+  communication: "communication",
+  message_template: "message_template",
+  invoice_template: "invoice_template",
+  receipt_template: "receipt_template",
+  settings: "settings",
+  roles_permissions: "roles_permissions",
+  activity_logs: "activity_logs",
+  masters: "masters",
+} as const;
+
+export interface BrowserActivity {
+  action: BrowserActivityAction;
+  event_id: string;
+  resource: BrowserActivityResource;
+}
+
+export interface BrowserActivityBatch {
+  /**
+   * @minItems 1
+   * @maxItems 20
+   */
+  events: BrowserActivity[];
+}
+
 export interface ChangePasswordRequest {
   /**
    * @minLength 1

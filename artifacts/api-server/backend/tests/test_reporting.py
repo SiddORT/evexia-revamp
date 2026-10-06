@@ -13,6 +13,67 @@ from test_sessions import client, create_user, login, PASSWORD
 BASE = "/api/v1/admin/reporting"
 
 
+def activity_batch(action="page_view", resource="zone"):
+    return {"events": [{"event_id": str(uuid.uuid4()), "action": action, "resource": resource}]}
+
+
+def test_browser_activity_is_session_bound_metadata_only_and_idempotent(client):
+    api, db, _ = client
+    headers, user = admin_headers(api, db)
+    headers["Origin"] = "http://testserver"
+    batch = activity_batch("created", "patient")
+    assert api.post(f"{BASE}/activity", headers=headers, json=batch).status_code == 204
+    assert api.post(f"{BASE}/activity", headers=headers, json=batch).status_code == 204
+    rows = db.scalars(select(AuditEvent).where(AuditEvent.reason == "browser_reported")).all()
+    assert len(rows) == 1
+    row = rows[0]
+    assert row.actor_id == user.id and row.session_id
+    assert row.action == "browser_created" and row.resource_type == "patient"
+    assert row.outcome == "reported" and row.resource_id is None
+    report = api.get(f"{BASE}/events", headers=headers).json()
+    assert any(e["id"] == str(row.id) and e["reason"] == "browser_reported" for e in report["items"])
+    assert not any(key in batch["events"][0] for key in ("user_id", "session_id", "password"))
+
+
+@pytest.mark.parametrize("extra", [
+    {"user_id": str(uuid.uuid4())}, {"session_id": "another-session"},
+    {"password": "NEVER_STORE"}, {"record": {"patient": "NEVER_STORE"}},
+])
+def test_browser_activity_rejects_identity_substitution_and_contents(client, extra):
+    api, db, _ = client
+    headers, _user = admin_headers(api, db)
+    headers["Origin"] = "http://testserver"
+    body = activity_batch()
+    body["events"][0].update(extra)
+    assert api.post(f"{BASE}/activity", headers=headers, json=body).status_code == 422
+    assert db.scalar(select(func.count()).select_from(AuditEvent).where(AuditEvent.reason == "browser_reported")) == 0
+
+
+def test_browser_activity_denies_anonymous_cross_origin_and_revoked_sessions(client):
+    api, db, _ = client
+    assert api.post(f"{BASE}/activity", headers={"Origin": "http://testserver"}, json=activity_batch()).status_code == 401
+    headers, _user = admin_headers(api, db)
+    headers["Origin"] = "https://untrusted.example"
+    assert api.post(f"{BASE}/activity", headers=headers, json=activity_batch()).status_code == 403
+    headers["Origin"] = "http://testserver"
+    assert api.post("/api/v1/auth/logout", headers=headers).status_code == 204
+    assert api.post(f"{BASE}/activity", headers=headers, json=activity_batch()).status_code == 401
+
+
+def test_browser_activity_limits_batches_and_per_session_volume(client):
+    api, db, _ = client
+    headers, _user = admin_headers(api, db)
+    headers["Origin"] = "http://testserver"
+    assert api.post(f"{BASE}/activity", headers=headers, json={"events": []}).status_code == 422
+    oversized = {"events": [activity_batch()["events"][0] for _ in range(21)]}
+    assert api.post(f"{BASE}/activity", headers=headers, json=oversized).status_code == 422
+    batches = [{"events": [activity_batch()["events"][0] for _ in range(20)]} for _ in range(6)]
+    for batch in batches:
+        assert api.post(f"{BASE}/activity", headers=headers, json=batch).status_code == 204
+    assert api.post(f"{BASE}/activity", headers=headers, json=batches[0]).status_code == 204
+    assert api.post(f"{BASE}/activity", headers=headers, json=activity_batch()).status_code == 429
+
+
 def admin_headers(api, db):
     from pydantic import SecretStr
     result = bootstrap_super_admin(db, SecretStr(PASSWORD))

@@ -1,3 +1,4 @@
+import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { PO_KEY, eligibleSamplePOs, loadPOs, loadPOReferences, validPODate } from './purchaseOrders.js';
 import { PR_KEY, withPurchaseMutationLock } from './purchaseMutationLock.js';
 import { VENDOR_KEY } from './vendors.js';
@@ -354,6 +355,7 @@ function persistPR(snapshot, next) {
     if (error instanceof Error && /changed in another tab|could not be verified/.test(error.message)) throw error;
     throw new Error('Purchase Received records could not be saved in this browser. Check storage settings and try again.');
   }
+  recordLocalChanges('purchase_received', snapshot.record.receipts, next.receipts);
 }
 
 function appendEvent(snapshot, receipts, receipt, action, summary) {
@@ -562,7 +564,8 @@ const csvHeaders = ['Document Type', 'Record Context', 'PR Number', 'PR Status',
   'PO Number', 'PO Date', 'Vendor', 'Vendor Phone', 'Destination', 'Product', 'Batch Number',
   'Ordered Qty', 'Received Qty', 'Accepted Qty', 'Rejected Qty', 'Expiry Date'];
 
-export function exportPRCSV(receipts, poRecord) {
+export function exportPRCSV(...args) { return reportExport('purchase_received', () => buildPRCSV(...args)); }
+function buildPRCSV(receipts, poRecord) {
   const rows = (receipts || []).flatMap((receipt) => receipt.lines.map((line) => {
     return ['Purchase Received', `${isSamplePR(receipt) ? 'Sample · fictional · ' : ''}Local demo — not a financial invoice or stock-ledger entry`, receipt.number, receipt.status === 'deleted' ? 'Deleted' : 'Active',
       receipt.receivedDate, receipt.receivedBy, receipt.poNumber, receipt.poDate, receipt.vendorName,

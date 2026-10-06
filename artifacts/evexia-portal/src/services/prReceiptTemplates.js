@@ -1,3 +1,4 @@
+import { recordLocalAction } from './localActivity.js';
 export const PR_TEMPLATE_KEY = 'evexia.admin.pr-receipt-template.v1';
 export const PR_TEMPLATES = [
   {
@@ -58,6 +59,7 @@ export function setDefaultPRTemplate(id) {
   } catch {
     throw new Error('The Purchase Received template could not be saved. Check browser storage settings and try again.');
   }
+  recordLocalAction('receipt_template', 'settings_changed');
   return id;
 }
 
@@ -85,5 +87,6 @@ export function resetPRTemplatePreference() {
   } catch {
     throw new Error('The Purchase Received template preference could not be reset. Check browser storage settings and try again.');
   }
+  recordLocalAction('receipt_template', 'settings_changed');
   return 'classic';
 }

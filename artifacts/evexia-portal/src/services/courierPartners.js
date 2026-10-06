@@ -1,3 +1,4 @@
+import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 export const COURIER_PARTNER_STORAGE_KEY = 'evexia.admin.courier-partners.v1';
 const STATUSES = ['active', 'inactive'];
 const nameKey = (name) => name.trim().replace(/\s+/gu, ' ').toLocaleLowerCase();
@@ -56,6 +57,7 @@ function save(records, expected) {
   }
   try { window.localStorage.setItem(COURIER_PARTNER_STORAGE_KEY, JSON.stringify(records)); }
   catch { throw new Error('Courier partners could not be saved. Check browser storage settings and try again.'); }
+  recordLocalChanges('courier_partner', expected, records);
   return records;
 }
 
@@ -104,7 +106,8 @@ export function deleteCourierPartner(records, id) {
   return save(records.filter((record) => record.id !== id), records);
 }
 
-export function exportCourierPartnerCSV(records) {
+export function exportCourierPartnerCSV(...args) { return reportExport('courier_partner', () => buildCourierPartnerCSV(...args)); }
+function buildCourierPartnerCSV(records) {
   const columns = [
     ['name', 'Courier Partner Name'], ['status', 'Status'], ['createdBy', 'Created By'],
     ['createdAt', 'Created At'], ['updatedBy', 'Updated By'], ['updatedAt', 'Updated At'],

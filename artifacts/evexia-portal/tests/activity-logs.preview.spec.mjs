@@ -15,7 +15,9 @@ test('profile menu navigates; deep link, filters, reset, refresh', async ({ page
   await page.goto(`${base()}/admin/activity-logs`);
   await expect(page.getByRole('heading', { name: 'Sessions & Activity Logs' })).toBeVisible();
   await expect(page.getByTestId('text-total-users')).not.toHaveText('…');
-  await expect(page.getByTestId('section-current-session')).toContainText('ACTIVE');
+  await expect(page.getByTestId('section-current-session')).toHaveCount(0);
+  await expect(page.getByTestId('form-activity-filters')).toBeHidden();
+  await page.getByTestId('section-activity-filters').locator('summary').click();
   await expect(page.getByText(/not live presence/)).toBeVisible();
 
   await page.getByTestId('input-activity-start').fill('2030-02-02');
@@ -47,12 +49,12 @@ for (const [name, scheme, viewport] of [['dark desktop', 'dark', { width: 1440, 
     await page.setViewportSize(viewport);
     await authenticateAdmin(page);
     await page.goto(`${base()}/admin/activity-logs`);
-    await expect(page.getByTestId('section-current-session')).toContainText('ACTIVE');
+    await expect(page.getByTestId('text-total-users')).not.toHaveText('…');
     await page.evaluate((appearance) => {
       document.querySelector('[data-admin-appearance]').setAttribute('data-admin-appearance', appearance);
     }, scheme);
     await expect(page.getByTestId('section-activity-summary')).toBeVisible();
-    await expect(page.getByTestId('section-current-session')).toContainText('ACTIVE');
+    await expect(page.getByTestId('section-current-session')).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
     await page.screenshot({ path: testInfo.outputPath(`activity-${scheme}.png`), fullPage: true });
   });
@@ -73,7 +75,8 @@ test('error shows retry and logout clears private data', async ({ page }) => {
 test('late filtered responses cannot replace Reset and a late history cannot survive logout', async ({ page }) => {
   await authenticateAdmin(page);
   await page.goto(`${base()}/admin/activity-logs`);
-  await expect(page.getByTestId('section-current-session')).toContainText('ACTIVE');
+  await expect(page.getByTestId('section-current-session')).toHaveCount(0);
+  await page.getByTestId('section-activity-filters').locator('summary').click();
   const held = [];
   let intercepted;
   const seen = new Promise((resolve) => { intercepted = resolve; });
@@ -108,6 +111,41 @@ test('late filtered responses cannot replace Reset and a late history cannot sur
   await expect(page.getByTestId('panel-activity-events')).toHaveCount(0);
 });
 
+test('page visits and successful local record actions appear without transmitting record data', async ({ page }) => {
+  await authenticateAdmin(page);
+  const reports = [];
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && request.url().includes('/reporting/activity')) reports.push(request.postDataJSON());
+  });
+  await page.goto(`${base()}/admin/masters/zones`);
+  await expect(page.getByTestId('button-admin-profile')).toBeVisible();
+  await page.evaluate(async () => {
+    const zones = await import('/src/services/zones.js');
+    let records = zones.loadZones();
+    records = zones.createZone(records, { name: 'PRIVATE-audit-fixture', status: 'active' });
+    const id = records.find((r) => r.name === 'PRIVATE-audit-fixture').id;
+    records = zones.updateZone(records, id, { name: 'PRIVATE-audit-fixture-edited', status: 'active' });
+    zones.exportZoneCSV(records);
+    zones.deleteZone(records, id);
+  });
+  await expect.poll(() => reports.flatMap((r) => r.events).filter((e) => e.resource === 'zone').map((e) => e.action)).toEqual(expect.arrayContaining(['page_view', 'created', 'updated', 'deleted', 'exported']));
+  expect(JSON.stringify(reports)).not.toContain('PRIVATE');
+  for (const event of reports.flatMap((r) => r.events)) expect(Object.keys(event).sort()).toEqual(['action', 'event_id', 'resource']);
+  await page.goto(`${base()}/admin/activity-logs`);
+  await page.getByTestId('tab-activity-events').click();
+  await expect(page.getByTestId('panel-activity-events')).toContainText('Record created');
+  await expect(page.getByTestId('panel-activity-events')).toContainText('Browser-reported');
+  await expect(page.getByTestId('panel-activity-events')).not.toContainText('PRIVATE');
+  await expect(page.getByTestId('status-activity-recording')).toHaveCount(0);
+  const filters = page.getByTestId('section-activity-filters');
+  await filters.locator('summary').click();
+  await page.getByTestId('input-activity-start').fill('2026-01-01');
+  await filters.locator('summary').click();
+  await expect(page.getByTestId('form-activity-filters')).toBeHidden();
+  await filters.locator('summary').click();
+  await expect(page.getByTestId('input-activity-start')).toHaveValue('2026-01-01');
+});
+
 test('two tabs renew reports through real cookie locking and persist no private history', async ({ page, context }) => {
   await authenticateAdmin(page);
   await page.goto(`${base()}/admin/activity-logs`);
@@ -117,7 +155,7 @@ test('two tabs renew reports through real cookie locking and persist no private 
     await (await import('/src/auth/adminSession.js')).verifySession(true);
   })));
   for (const tab of [page, other]) {
-    await expect(tab.getByTestId('section-current-session')).toContainText('ACTIVE');
+    await expect(tab.getByTestId('section-current-session')).toHaveCount(0);
     await tab.getByTestId('tab-activity-events').click();
     await expect(tab.getByTestId('panel-activity-events')).toContainText('refresh');
     const stored = await tab.evaluate(() => JSON.stringify([Object.entries(localStorage), Object.entries(sessionStorage)]));

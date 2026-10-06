@@ -141,6 +141,49 @@ test('network restoration errors require explicit retry and missing browser lock
   await assert.rejects(api.loginAdmin(user.email, 'synthetic-password', false), /Web Locks/);
 });
 
+test('activity is credential-private metadata with keepalive and no GET query payload', async () => {
+  const calls = [];
+  const api = await setup(async (url, options) => {
+    calls.push([url, options]);
+    if (url.includes('/reporting/activity')) return reply(null, 204);
+    if (url.endsWith('/logout')) return reply(null, 204);
+    return reply(url.endsWith('/me') ? user : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  const events = [{ event_id: '00000000-0000-4000-8000-000000000001', action: 'created', resource: 'zone' }];
+  assert.equal(await api.reportingRequest('activity', { events }), null);
+  const [url, options] = calls.at(-1);
+  assert.equal(url, '/api/v1/admin/reporting/activity');
+  assert.equal(options.method, 'POST');
+  assert.equal(options.keepalive, true);
+  assert.deepEqual(JSON.parse(options.body), { events });
+  assert.equal(options.headers.Authorization, 'Bearer synthetic-memory-token');
+  await api.logoutAdmin();
+});
+
+test('logout clears authorization immediately but lets dispatched activity finish before revocation', async () => {
+  const calls = [];
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  const api = await setup(async (url, options) => {
+    calls.push([url, options]);
+    if (url.includes('/reporting/activity')) { await gate; return reply(null, 204); }
+    if (url.endsWith('/logout')) return reply(null, 204);
+    return reply(url.endsWith('/me') ? user : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  const reporting = api.reportingRequest('activity', { events: [{ event_id: '00000000-0000-4000-8000-000000000001', action: 'page_view', resource: 'dashboard' }] });
+  const closing = api.logoutAdmin({ beforeRevoke: reporting });
+  assert.equal(api.getSession().status, 'anonymous');
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.ok(!calls.some(([url]) => url.endsWith('/logout')));
+  release();
+  await assert.rejects(reporting);
+  assert.equal(await closing, true);
+  assert.equal(calls.at(-1)[0], '/api/v1/auth/logout');
+  assert.deepEqual(JSON.parse(calls.at(-1)[1].body), {});
+});
+
 test('logout clears local authorization immediately and sends only an empty same-origin cookie request', async () => {
   let release;
   const gate = new Promise((resolve) => { release = resolve; });

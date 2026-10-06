@@ -15,6 +15,61 @@ export const GetHealthCheckResponse = zod.object({
 });
 
 /**
+ * Bounded browser-reported metadata; actor/session are server-derived.
+ * @summary Activity
+ */
+export const recordBrowserActivityBodyEventsMax = 20;
+
+export const RecordBrowserActivityBody = zod.object({
+  events: zod
+    .array(
+      zod.object({
+        action: zod.enum([
+          "page_view",
+          "created",
+          "updated",
+          "deleted",
+          "imported",
+          "exported",
+          "settings_changed",
+        ]),
+        event_id: zod.string().uuid(),
+        resource: zod.enum([
+          "dashboard",
+          "zone",
+          "courier_partner",
+          "storage_location",
+          "headquarter",
+          "mr",
+          "doctor",
+          "patient",
+          "designation",
+          "staff",
+          "product_category",
+          "allergen",
+          "vendor",
+          "sales_target",
+          "opening_balance",
+          "purchase_order",
+          "purchase_received",
+          "communication",
+          "message_template",
+          "invoice_template",
+          "receipt_template",
+          "settings",
+          "roles_permissions",
+          "activity_logs",
+          "masters",
+        ]),
+      }),
+    )
+    .min(1)
+    .max(recordBrowserActivityBodyEventsMax),
+});
+
+export const RecordBrowserActivityResponse = zod.void();
+
+/**
  * Occurrence-time range [start,end). All recorded categories; missing actors are retained.
  * @summary Events
  */

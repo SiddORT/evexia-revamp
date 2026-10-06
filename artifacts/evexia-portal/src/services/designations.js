@@ -1,3 +1,4 @@
+import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { parseCSV } from './masterImport.js';
 
 export const DESIGNATION_KEY = 'evexia.admin.designations.v1';
@@ -91,6 +92,7 @@ function save(next, expected) {
   if (!same(loadDesignations(), expected)) throw new Error('Designations changed in another tab. Refresh records before saving.');
   try { window.localStorage.setItem(DESIGNATION_KEY, JSON.stringify(next)); }
   catch { throw new Error('Designations could not be saved in this browser. Check browser storage settings and try again.'); }
+  recordLocalChanges('designation', expected, next);
   return next;
 }
 function checked(values, records, exceptId) {
@@ -123,7 +125,8 @@ function cell(value) {
 export function designationCSVTemplate() {
   return '\uFEFF' + DESIGNATION_COLUMNS.map(([, label]) => cell(label)).join(',') + '\r\n';
 }
-export function exportDesignationCSV(records) {
+export function exportDesignationCSV(...args) { return reportExport('designation', () => buildDesignationCSV(...args)); }
+function buildDesignationCSV(records) {
   return designationCSVTemplate() + records.map((record) => DESIGNATION_COLUMNS.map(([key]) => cell(record[key])).join(',')).join('\r\n') + (records.length ? '\r\n' : '');
 }
 export function reviewDesignationCSV(text, records) {
@@ -144,7 +147,8 @@ export function reviewDesignationCSV(text, records) {
     return { line, values, fields, errors: issues };
   });
 }
-export function importDesignations(entries, expected) {
+export function importDesignations(...args) { const result = buildImportDesignations(...args); recordLocalAction('designation', 'imported'); return result; }
+function buildImportDesignations(entries, expected) {
   const current = loadDesignations();
   if (!same(current, expected)) throw new Error('Designations changed since review. Refresh records and review the CSV again.');
   if (!entries.length || entries.some((entry) => entry.errors?.length || !entry.fields)) {

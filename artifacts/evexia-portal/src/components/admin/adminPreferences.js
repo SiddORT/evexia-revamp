@@ -1,3 +1,4 @@
+import { recordLocalAction } from '../../services/localActivity.js';
 import { useSyncExternalStore } from 'react';
 import { ADMIN_APPEARANCES, ADMIN_THEMES, readAdminAppearance, readAdminTheme, saveAdminAppearance, saveAdminTheme } from './adminTheme.js';
 
@@ -58,6 +59,7 @@ export function setAdminPreference(key, value) {
   else if (key === 'appearance') saveAdminAppearance(value);
   else try { window.localStorage.setItem(DISPLAY_KEYS[key], value); }
   catch { /* In-memory choice remains active for this visit. */ }
+  recordLocalAction('settings', 'settings_changed');
   listeners.forEach((listener) => listener());
 }
 

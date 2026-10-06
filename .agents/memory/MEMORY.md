@@ -18,3 +18,4 @@
 - [Session rollout compatibility](session-rollout.md) — preserve revoked legacy credential history; require fresh login at a new session-binding boundary.
 - [Existing secret confirmations](existing-secret-confirmations.md) — a secret confirmation does not prove its value was replaced; use explicit editing when validation still fails.
 - [Roles preview boundary](roles-preview-boundary.md) — demo permissions are not authorization policy or staff role choices; Save is page memory only.
+- [Super Admin activity scope](browser-activity-scope.md) — track page visits and record actions, not every click; browser reports are not authoritative server operations.

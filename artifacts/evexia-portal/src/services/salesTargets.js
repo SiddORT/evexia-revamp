@@ -1,3 +1,4 @@
+import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { loadMRs } from './mrs.js';
 import { loadZones } from './zones.js';
 import { parseCSV } from './masterImport.js';
@@ -143,6 +144,7 @@ function save(next, expected, expectedMRs, expectedZones) {
   if (!same(loadZones(), expectedZones)) throw new Error('Zones changed in another tab. Refresh records before saving.');
   try { window.localStorage.setItem(SALES_TARGET_KEY, JSON.stringify(next)); }
   catch { throw new Error('Sales targets could not be saved in this browser. Check browser storage settings and try again.'); }
+  recordLocalChanges('sales_target', expected, next);
   return next;
 }
 
@@ -177,7 +179,8 @@ function csvCell(value) {
   return `"${safe.replaceAll('"', '""')}"`;
 }
 
-export function exportSalesTargetCSV(records, mrs) {
+export function exportSalesTargetCSV(...args) { return reportExport('sales_target', () => buildSalesTargetCSV(...args)); }
+function buildSalesTargetCSV(records, mrs) {
   const rows = records.map((record) => {
     const mr = mrs.find((item) => item.id === record.mrId);
     const values = {
@@ -232,7 +235,8 @@ export function reviewSalesTargetCSV(text, records, mrs) {
   });
 }
 
-export function importSalesTargets(entries, expected) {
+export function importSalesTargets(...args) { const result = buildImportSalesTargets(...args); recordLocalAction('sales_target', 'imported'); return result; }
+function buildImportSalesTargets(entries, expected) {
   if (!expected || !Array.isArray(expected.records) || !Array.isArray(expected.mrs) || !Array.isArray(expected.zones)) {
     throw new Error('Sales target snapshots are required. Refresh records and review the CSV again.');
   }

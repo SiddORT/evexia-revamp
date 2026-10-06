@@ -1,3 +1,4 @@
+import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { loadDoctors } from './doctors.js';
 import { parseCSV } from './masterImport.js';
 
@@ -115,6 +116,7 @@ function save(next, expectedRecords, expectedDoctors) {
   if (!same(loadOpeningBalances(latestDoctors), expectedRecords)) throw new Error('Opening balances changed in another tab. Refresh records before saving or importing.');
   try { window.localStorage.setItem(OPENING_BALANCE_KEY, JSON.stringify(next)); }
   catch { throw new Error('Opening balances could not be saved in browser storage. Check storage settings and refresh.'); }
+  recordLocalChanges('opening_balance', expectedRecords, next);
   return next;
 }
 
@@ -152,7 +154,8 @@ function cell(value) {
 export function openingBalanceCSVTemplate() {
   return '\uFEFF' + OPENING_BALANCE_COLUMNS.map(([, label]) => cell(label)).join(',') + '\r\n';
 }
-export function exportOpeningBalanceCSV(records, doctors) {
+export function exportOpeningBalanceCSV(...args) { return reportExport('opening_balance', () => buildOpeningBalanceCSV(...args)); }
+function buildOpeningBalanceCSV(records, doctors) {
   return openingBalanceCSVTemplate() + records.map((record) => OPENING_BALANCE_COLUMNS.map(([field]) =>
     cell(field === 'registrationNumber'
       ? doctors.find((doctor) => doctor.id === record.doctorId)?.registrationNumber ?? ''
@@ -187,7 +190,8 @@ export function reviewOpeningBalanceCSV(text, records, doctors) {
   });
 }
 
-export function importOpeningBalances(entries, expectedRecords, expectedDoctors) {
+export function importOpeningBalances(...args) { const result = buildImportOpeningBalances(...args); recordLocalAction('opening_balance', 'imported'); return result; }
+function buildImportOpeningBalances(entries, expectedRecords, expectedDoctors) {
   const current = loadOpeningBalanceSnapshots();
   if (!same(current.records, expectedRecords) || !same(current.doctors, expectedDoctors)) {
     throw new Error('Opening balances or Doctor Master changed since review. Refresh records and review the CSV again.');

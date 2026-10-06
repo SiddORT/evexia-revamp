@@ -1,3 +1,4 @@
+import { recordLocalAction } from './localActivity.js';
 import { downloadInvoiceDocument } from './poInvoicePdf.js';
 import { loadPRTemplatePreference, PR_TEMPLATES } from './prReceiptTemplates.js';
 import { normalizePRReceipt, makeSamplePRReceipt } from './prReceiptModel.js';
@@ -38,8 +39,12 @@ export async function downloadPRDocument(document, _filename, logoUrl, { format 
     throw new Error('Choose Searchable PDF or Image-only PDF for this receipt.');
   }
   try {
-    const download = format === 'image' ? downloadInvoiceDocument : downloadSearchableReceipt;
-    return await download(document, prReceiptFilename(document.number), logoUrl);
+    const filename = prReceiptFilename(document.number);
+    const result = format === 'image'
+      ? await downloadInvoiceDocument(document, filename, logoUrl, { activityResource: null })
+      : await downloadSearchableReceipt(document, filename, logoUrl);
+    recordLocalAction('purchase_received', 'exported');
+    return result;
   } catch (error) {
     throw new Error((error?.message || 'The receipt PDF could not be downloaded.').replace(/invoice/gi, 'receipt'));
   }

@@ -1,3 +1,4 @@
+import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 const STORAGE_KEY = 'evexia.admin.zones.v1';
 const INITIAL_NAMES = ['North Zone', 'South Zone', 'East Zone', 'West Zone'];
 const STATUSES = ['active', 'inactive'];
@@ -66,7 +67,9 @@ function saveZones(zones, expectedZones) {
   if (JSON.stringify(current) !== JSON.stringify(expectedZones)) {
     throw new Error('Zones changed in another tab. Reload the page to review the latest data before saving.');
   }
-  return writeZones(zones);
+  const saved = writeZones(zones);
+  recordLocalChanges('zone', expectedZones, saved);
+  return saved;
 }
 
 function ensureUnique(zones, name, exceptId) {
@@ -115,11 +118,13 @@ export function deleteZone(zones, id) {
   return saveZones(zones.filter((zone) => zone.id !== id), zones);
 }
 
-export function importZones(zones, next) {
+export function importZones(...args) { const result = buildImportZones(...args); recordLocalAction('zone', 'imported'); return result; }
+function buildImportZones(zones, next) {
   return saveZones(next, zones);
 }
 
-export function exportZoneCSV(zones) {
+export function exportZoneCSV(...args) { return reportExport('zone', () => buildZoneCSV(...args)); }
+function buildZoneCSV(zones) {
   const columns = [
     ['name', 'Zone Name'], ['status', 'Status'], ['createdBy', 'Created By'],
     ['createdAt', 'Created At'], ['updatedBy', 'Updated By'], ['updatedAt', 'Updated At'],

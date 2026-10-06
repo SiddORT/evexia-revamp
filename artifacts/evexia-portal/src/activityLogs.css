@@ -10,6 +10,11 @@
 .alog-kv dd { margin: 2px 0 0; font-size: 12px; overflow-wrap: anywhere; }
 .alog-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; padding: 14px 16px; margin-bottom: 14px; overflow: visible; }
 .alog-filters__actions { display: flex; gap: 8px; }
+.alog-filter-panel { margin-bottom: 14px; overflow: visible; }
+.alog-filter-toggle { padding: 14px 16px; color: var(--ink); font-weight: 700; cursor: pointer; }
+.alog-filter-toggle span { float: right; color: var(--muted); font-size: 11px; font-weight: 400; }
+.alog-filter-toggle:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.alog-filter-panel .alog-filters { margin: 0; border-top: 1px solid var(--line); }
 .alog-filters__error { flex-basis: 100%; margin: 0; }
 .alog-picker { position: relative; }
 .alog-picker__btn { min-width: 200px; max-width: 100%; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -1,3 +1,4 @@
+import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { parseCSV } from './masterImport.js';
 
 export const HEADQUARTER_KEY = 'evexia.admin.headquarters.v1';
@@ -82,6 +83,7 @@ function save(next, expected) {
   if (!same(loadHeadquarters(), expected)) throw new Error('Headquarters changed in another tab. Refresh records before saving.');
   try { window.localStorage.setItem(HEADQUARTER_KEY, JSON.stringify(next)); }
   catch { throw new Error('Headquarters could not be saved in this browser. Check browser storage settings and try again.'); }
+  recordLocalChanges('headquarter', expected, next);
   return next;
 }
 
@@ -118,7 +120,8 @@ function csvCell(value) {
   return `"${safe.replaceAll('"', '""')}"`;
 }
 
-export function exportHeadquarterCSV(records) {
+export function exportHeadquarterCSV(...args) { return reportExport('headquarter', () => buildHeadquarterCSV(...args)); }
+function buildHeadquarterCSV(records) {
   return '\uFEFF' + [HEADQUARTER_COLUMNS.map(([, label]) => csvCell(label)).join(','),
     ...records.map((record) => HEADQUARTER_COLUMNS.map(([key]) => csvCell(record[key])).join(','))].join('\r\n') + '\r\n';
 }
@@ -149,7 +152,8 @@ export function reviewHeadquarterCSV(text, records) {
   });
 }
 
-export function importHeadquarters(entries, expected) {
+export function importHeadquarters(...args) { const result = buildImportHeadquarters(...args); recordLocalAction('headquarter', 'imported'); return result; }
+function buildImportHeadquarters(entries, expected) {
   const current = loadHeadquarters();
   if (!same(current, expected)) throw new Error('Headquarters changed since review. Refresh records and review the CSV again.');
   if (!entries.length || entries.some((entry) => entry.errors?.length || !entry.fields)) {

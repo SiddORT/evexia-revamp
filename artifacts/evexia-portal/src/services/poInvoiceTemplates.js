@@ -1,3 +1,4 @@
+import { recordLocalAction } from './localActivity.js';
 import { calculateLine, totals, validPODate } from './purchaseOrders.js';
 import { renderPOInvoicePages } from './poInvoiceRender.js';
 
@@ -37,11 +38,13 @@ export function setDefaultPOTemplate(id) {
   loadPOTemplatePreference();
   try { window.localStorage.setItem(PO_TEMPLATE_KEY, JSON.stringify({ version: 1, defaultPOInvoiceTemplate: id })); }
   catch { throw new Error('The default template could not be saved. Check browser storage settings and try again.'); }
+  recordLocalAction('invoice_template', 'settings_changed');
   return id;
 }
 export function resetPOTemplatePreference() {
   try { window.localStorage.removeItem(PO_TEMPLATE_KEY); }
   catch { throw new Error('The template preference could not be reset. Check browser storage settings and try again.'); }
+  recordLocalAction('invoice_template', 'settings_changed');
   return 'classic';
 }
 // Read the current value, not event.newValue: another tab may have written again.

@@ -1,3 +1,4 @@
+import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { loadMRs } from './mrs.js';
 import { loadZones } from './zones.js';
 
@@ -215,6 +216,7 @@ function save(next, expectedRecords, expectedMRs) {
   } catch {
     fail('Doctor records could not be saved in this browser. Check browser storage settings and try again.', 'RECOVERY_REQUIRED');
   }
+  recordLocalChanges('doctor', expectedRecords, next);
   return next;
 }
 
@@ -295,7 +297,8 @@ function csvCell(value) {
   return `"${safe.replaceAll('"', '""')}"`;
 }
 
-export function exportDoctorCSV(visible, mrs, zones) {
+export function exportDoctorCSV(...args) { return reportExport('doctor', () => buildDoctorCSV(...args)); }
+function buildDoctorCSV(visible, mrs, zones) {
   const header = DOCTOR_CSV_COLUMNS.map(([, label]) => csvCell(label)).join(',');
   const rows = visible.map((doctor) => DOCTOR_CSV_COLUMNS.map(([key]) => {
     let value = doctor[key];

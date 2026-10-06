@@ -1,3 +1,4 @@
+import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { loadVendors } from './vendors.js';
 import { loadStorageLocations } from './storageLocations.js';
 import { loadAllergenReferences, loadAllergens } from './allergens.js';
@@ -358,6 +359,7 @@ function save(snapshot, next, refs = null) {
   if (!validRecord(next)) throw new Error('Purchase order data could not be validated. Nothing was saved.');
   try { window.localStorage.setItem(PO_KEY, JSON.stringify(next)); }
   catch { throw new Error('Purchase orders could not be saved in this browser. Check storage settings and try again.'); }
+  recordLocalChanges('purchase_order', snapshot.record.orders, next.orders);
   return next;
 }
 export function seedSamplePOs(snapshot) {

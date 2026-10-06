@@ -5,6 +5,26 @@ import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { reportingRequest } from '../../auth/adminSession.js';
 import '../../activityLogs.css';
 
+const browserActions = {
+  browser_page_view: 'Page visited', browser_created: 'Record created',
+  browser_updated: 'Record updated', browser_deleted: 'Record deleted',
+  browser_imported: 'Records imported', browser_exported: 'Export generated',
+  browser_settings_changed: 'Settings changed',
+};
+const resourceNames = {
+  dashboard: 'Dashboard', zone: 'Zone Master', courier_partner: 'Courier Partner',
+  storage_location: 'Storage Location', headquarter: 'Headquarter Master',
+  mr: 'MR Master', doctor: 'Doctor Master', patient: 'Patient Master',
+  designation: 'Designation Master', staff: 'Staff', product_category: 'Product Category',
+  allergen: 'Allergen Master', vendor: 'Vendor Master', sales_target: 'Sales Target',
+  opening_balance: 'Opening Balance', purchase_order: 'Purchase Orders',
+  purchase_received: 'Purchase Received', communication: 'Communication Settings',
+  message_template: 'Message Templates', invoice_template: 'Invoice Templates',
+  receipt_template: 'Receipt Templates', settings: 'Settings',
+  roles_permissions: 'Roles & Permissions preview', activity_logs: 'Sessions & Activity Logs',
+  masters: 'Masters',
+};
+
 const PAGE = 25;
 const USER_PAGE = 8;
 const DAY = 86400000;
@@ -175,8 +195,12 @@ export default function ActivityLogs() {
   };
   const reset = () => { const z = { user: null, start: '', end: '' }; setDraft(z); setApplied(z); setFormError(''); };
   const refreshAll = useCallback(() => { setSumTick((t) => t + 1); sessions.reload(); events.reload(); }, [sessions, events]);
-  const cur = sum.data?.current_session;
   const active = view === 'sessions' ? sessions : events;
+  useEffect(() => {
+    const reload = () => events.reload();
+    window.addEventListener('evexia-admin-activity-recorded', reload);
+    return () => window.removeEventListener('evexia-admin-activity-recorded', reload);
+  }, [events.reload]);
 
   if (!enabled) return null;
   return (
@@ -185,7 +209,7 @@ export default function ActivityLogs() {
         <div>
           <p className="admin-page-head__eyebrow">Read-only audit</p>
           <h1>Sessions &amp; Activity Logs</h1>
-          <p className="admin-page-head__description">Only recorded server operations and authentication events are audited here. Clicks, page views and browser-local master edits are not logged. All times are UTC.</p>
+          <p className="admin-page-head__description">Authentication, server operations, page visits and record actions. Browser-reported activity is labeled separately from verified server operations. All times are UTC.</p>
           <p className="admin-page-head__description">Counts are global registered backend accounts, not browser-local staff, doctors or patients, and are unaffected by history filters.</p>
         </div>
         <button type="button" className="admin-button admin-button--secondary" onClick={refreshAll} disabled={!enabled} data-testid="button-activity-refresh"><RefreshCw size={14} aria-hidden="true" /> Refresh all</button>
@@ -198,13 +222,12 @@ export default function ActivityLogs() {
           <div className="admin-panel alog-stat"><span>Registered backend accounts</span><strong data-testid="text-total-users">{sum.loading || !sum.data ? '…' : sum.data.total_users}</strong><small>Includes disabled and unmapped</small></div>
           <div className="admin-panel alog-stat"><span>Users with valid sessions</span><strong data-testid="text-active-users">{sum.loading || !sum.data ? '…' : sum.data.active_users}</strong><small>Distinct users, not live presence</small></div>
           <div className="admin-panel alog-stat"><span>Summary refreshed</span><strong className="alog-stat__time">{sum.loading ? '…' : fmt(sum.data?.refreshed_at)}</strong></div>
-          <div className="admin-panel alog-stat alog-stat--wide" data-testid="section-current-session"><span>Current session</span>
-            {cur ? <dl className="alog-kv"><div><dt>User</dt><dd>{who(cur.user)}</dd></div><div><dt>Session reference</dt><dd className="alog-mono">{cur.id}</dd></div><div><dt>State</dt><dd>{cur.state}</dd></div><div><dt>Created / login</dt><dd>{fmt(cur.created_at)}</dd></div><div><dt>Last refreshed</dt><dd>{fmt(cur.last_refreshed_at)}</dd></div><div><dt>Expires</dt><dd>{fmt(cur.expires_at)}</dd></div><div><dt>Remember me / persistent</dt><dd>{cur.persistent ? 'Yes' : 'No'}</dd></div></dl> : <strong>{sum.loading ? '…' : 'Unavailable'}</strong>}
-          </div>
         </>)}
       </section>
 
-      <form className="admin-panel alog-filters" onSubmit={apply} noValidate data-testid="form-activity-filters">
+      <details className="admin-panel alog-filter-panel" data-testid="section-activity-filters">
+      <summary className="alog-filter-toggle">Filters <span>{[applied.user, applied.start, applied.end].filter(Boolean).length || 'None'} active</span></summary>
+      <form className="alog-filters" onSubmit={apply} noValidate data-testid="form-activity-filters">
         <div className="admin-filter"><label>User</label><UserPicker value={draft.user} onChange={(u) => setDraft((d) => ({ ...d, user: u }))} enabled={enabled} identity={identity} /></div>
         <div className="admin-filter"><label htmlFor="alog-start">Start date (UTC)</label><input id="alog-start" type="date" className="admin-select" value={draft.start} onChange={(e) => setDraft((d) => ({ ...d, start: e.target.value }))} data-testid="input-activity-start" /></div>
         <div className="admin-filter"><label htmlFor="alog-end">End date (UTC, inclusive)</label><input id="alog-end" type="date" className="admin-select" value={draft.end} onChange={(e) => setDraft((d) => ({ ...d, end: e.target.value }))} data-testid="input-activity-end" /></div>
@@ -214,6 +237,7 @@ export default function ActivityLogs() {
         </div>
         {formError && <p className="admin-feedback admin-feedback--error alog-filters__error" role="alert" data-testid="status-activity-filter-error">{formError}</p>}
       </form>
+      </details>
 
       <div className="alog-tabs" role="tablist" aria-label="History">
         {[['sessions', 'Sessions'], ['events', 'Activity events']].map(([k, l]) => (
@@ -237,9 +261,9 @@ export default function ActivityLogs() {
           <State r={events} empty="No events found" cols="events">
             <thead><tr><th>Event occurred</th><th>User</th><th>Action</th><th>Outcome</th><th>Reason</th><th>Resource</th><th>Session</th><th>Request</th></tr></thead>
             <tbody>{events.data?.items?.map((ev) => (
-              <tr key={ev.id}><td>{fmt(ev.created_at)}</td><td>{who(ev.user)}</td><td>{dash(ev.action)}</td>
-                <td><span className={`admin-badge${String(ev.outcome).toLowerCase() === 'success' ? '' : ' admin-badge--inactive'}`}>{dash(ev.outcome)}</span></td>
-                <td>{dash(ev.reason)}</td><td>{dash(ev.resource_type)}{ev.resource_id ? ` / ${ev.resource_id}` : ''}</td>
+              <tr key={ev.id}><td>{fmt(ev.created_at)}</td><td>{who(ev.user)}</td><td>{browserActions[ev.action] || dash(ev.action)}</td>
+                <td><span className={`admin-badge${['success', 'reported'].includes(String(ev.outcome).toLowerCase()) ? '' : ' admin-badge--inactive'}`}>{dash(ev.outcome)}</span></td>
+                <td>{ev.reason === 'browser_reported' ? 'Browser-reported' : dash(ev.reason)}</td><td>{resourceNames[ev.resource_type] || dash(ev.resource_type)}{ev.resource_id ? ` / ${ev.resource_id}` : ''}</td>
                 <td className="alog-mono">{dash(ev.session_id)}</td><td className="alog-mono">{dash(ev.request_id)}</td></tr>
             ))}</tbody>
           </State>

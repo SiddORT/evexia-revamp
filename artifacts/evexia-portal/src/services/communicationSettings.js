@@ -1,3 +1,4 @@
+import { recordLocalChanges } from './localActivity.js';
 // Demo metadata only. Credential inputs must never be passed to this service.
 export const COMMUNICATION_KEY = 'evexia.admin.communication.v1';
 export const CHANNELS = ['email', 'sms', 'waba'];
@@ -135,6 +136,7 @@ function persist(snapshot, record) {
   const raw = JSON.stringify(record);
   try { window.localStorage.setItem(COMMUNICATION_KEY, raw); }
   catch { throw new Error('Communication metadata could not be saved. Check browser storage permissions or free space, then try again. Your saved metadata is unchanged.'); }
+  recordLocalChanges('communication', snapshot.record, record);
   return { raw, record };
 }
 function prepare(snapshot, channel) {

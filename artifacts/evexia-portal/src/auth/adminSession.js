@@ -162,13 +162,25 @@ export function verifySession(forceRefresh = false) {
   return pending;
 }
 
-export async function logoutAdmin() {
+export async function logoutAdmin({ beforeRevoke } = {}) {
   restorationAllowed = false;
   clear();
   const epoch = generation;
   channel?.postMessage({ type: 'signed-out' });
   try {
-    await cookieLock(() => request('/logout', {}));
+    await cookieLock(async () => {
+      // UI authorization is already cleared. Give already-dispatched,
+      // session-bound activity at most two seconds before server revocation.
+      if (beforeRevoke) {
+        let timeout;
+        await Promise.race([
+          Promise.resolve(beforeRevoke).catch(() => {}),
+          new Promise((resolve) => { timeout = setTimeout(resolve, 2000); }),
+        ]);
+        clearTimeout(timeout);
+      }
+      return request('/logout', {});
+    });
   } catch {
     if (epoch === generation) publish({ status: 'anonymous', user: null, message: 'Signed out of this tab, but server revocation could not be confirmed. Close this browser or retry Sign Out before leaving a shared device.' });
     return false;
@@ -177,10 +189,10 @@ export async function logoutAdmin() {
   return true;
 }
 
-// Narrow read-only facility: credentials never leave this module, and renewal
+// Narrow reporting facility: credentials never leave this module, and renewal
 // uses the same in-tab promise and cross-tab cookie lock as the Admin boundary.
 export async function reportingRequest(resource, params = {}, { signal } = {}) {
-  if (!['summary', 'users', 'sessions', 'events'].includes(resource)) {
+  if (!['summary', 'users', 'sessions', 'events', 'activity'].includes(resource)) {
     throw new SessionError('Unsupported report.');
   }
   const epoch = generation;
@@ -198,18 +210,21 @@ export async function reportingRequest(resource, params = {}, { signal } = {}) {
   else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true);
   check();
   const query = new URLSearchParams();
-  const keys = resource === 'users' ? ['q', 'limit', 'offset']
+  const writing = resource === 'activity';
+  const keys = writing ? ['events'] : resource === 'users' ? ['q', 'limit', 'offset']
     : resource === 'summary' ? [] : ['user_id', 'start', 'end', 'limit', 'offset'];
   for (const [key, value] of Object.entries(params)) {
     if (!keys.includes(key)) throw new SessionError('Unsupported report filter.');
-    if (value !== undefined && value !== null && value !== '') query.set(key, String(value));
+    if (!writing && value !== undefined && value !== null && value !== '') query.set(key, String(value));
   }
   const load = async (bearer) => {
     let response;
     try {
       response = await fetch(`/api/v1/admin/reporting/${resource}${query.size ? `?${query}` : ''}`, {
-        method: 'GET', credentials: 'same-origin', cache: 'no-store',
-        headers: { Authorization: `Bearer ${bearer}` },
+        method: writing ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
+        ...(writing ? { keepalive: true } : {}),
+        headers: { Authorization: `Bearer ${bearer}`, ...(writing ? { 'Content-Type': 'application/json' } : {}) },
+        ...(writing ? { body: JSON.stringify({ events: params.events }) } : {}),
         signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
       });
     } catch {
@@ -241,6 +256,7 @@ export async function reportingRequest(resource, params = {}, { signal } = {}) {
     );
   }
   let body;
+  if (response.status === 204) return null;
   try { body = await response.json(); }
   catch { throw new SessionError('The reporting service returned an invalid response.'); }
   if (pending) await pending;

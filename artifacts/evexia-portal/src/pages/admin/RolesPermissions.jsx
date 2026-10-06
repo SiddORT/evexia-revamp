@@ -1,3 +1,4 @@
+import { recordLocalAction } from '../../services/localActivity.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Plus, Search, ShieldCheck, Square } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
@@ -63,11 +64,13 @@ export default function RolesPermissions() {
   function save() {
     setRoles((all) => all.map((r) => r.id === role.id ? { ...r, savedPermissions: [...r.permissions] } : r));
     setFeedback(`Saved a snapshot of ${role.name} in page memory only. This is a preview: nothing is stored or enforced, and a reload resets it.`);
+    recordLocalAction('roles_permissions', 'updated');
   }
   function addRole(name, description) {
     const id = `demo-role-${Date.now()}-${roles.length}`;
     setRoles((all) => [...all, { id, name, description: description || 'UI-only demo role with no initial permissions.', permissions: [], savedPermissions: [] }]);
     setRoleId(id); setFeedback(''); setAdding(false);
+    recordLocalAction('roles_permissions', 'created');
   }
   if (!role) return null;
 

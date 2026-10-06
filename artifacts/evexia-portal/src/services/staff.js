@@ -1,3 +1,4 @@
+import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { parseCSV } from './masterImport.js';
 import { loadDesignations } from './designations.js';
 
@@ -89,6 +90,7 @@ function save(next, expected) {
   if (!same(loadStaff(), expected)) throw new Error('Staff records changed in another tab. Refresh records before saving.');
   try { window.localStorage.setItem(STAFF_KEY, JSON.stringify(next)); }
   catch { throw new Error('Staff records could not be saved. Check browser storage settings and try again.'); }
+  recordLocalChanges('staff', expected, next);
   return next;
 }
 function checked(values, records, exceptId, designations) {
@@ -134,7 +136,8 @@ function csvCell(value) {
   return `"${safe.replaceAll('"', '""')}"`;
 }
 export function staffCSVTemplate() { return '\uFEFF' + STAFF_COLUMNS.map(([, label]) => csvCell(label)).join(',') + '\r\n'; }
-export function exportStaffCSV(records) {
+export function exportStaffCSV(...args) { return reportExport('staff', () => buildStaffCSV(...args)); }
+function buildStaffCSV(records) {
   return staffCSVTemplate() + records.map((record) => KEYS.map((key) => csvCell(record[key])).join(',')).join('\r\n') + (records.length ? '\r\n' : '');
 }
 function alreadySeededSample(fields, records) {
@@ -167,7 +170,8 @@ export function reviewStaffCSV(text, records, designations = []) {
     return { line, values, fields, errors, skipSample };
   });
 }
-export function importStaff(entries, expected, designations = []) {
+export function importStaff(...args) { const result = buildImportStaff(...args); recordLocalAction('staff', 'imported'); return result; }
+function buildImportStaff(entries, expected, designations = []) {
   checkDesignations(designations);
   if (!entries.length || entries.some((entry) => entry.errors?.length || !entry.fields)) throw new Error('Resolve all row errors before importing. Nothing was saved.');
   const users = new Set(expected.map((item) => norm(item.userId)));

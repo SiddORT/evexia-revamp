@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_permissions
@@ -12,10 +12,21 @@ from app.db.session import get_db
 from app.repositories import reporting
 from app.schemas.reporting import EventPage, ReportSummary, SessionPage, UserPage
 from app.services.auth import Identity
+from app.schemas.activity import BrowserActivityBatch
+from app.services.activity import record_activity
+from app.api.deps import require_cookie_origin
 
 router = APIRouter(prefix="/admin/reporting", tags=["admin-reporting"])
 Admin = Annotated[Identity, Depends(require_permissions("admin.access"))]
 Database = Annotated[Session, Depends(get_db)]
+
+
+@router.post("/activity", status_code=204, operation_id="recordBrowserActivity",
+             dependencies=[Depends(require_cookie_origin)])
+def activity(body: BrowserActivityBatch, request: Request, identity: Admin, db: Database):
+    """Bounded browser-reported metadata; actor/session are server-derived."""
+    record_activity(db, identity, body, request.state.request_id)
+    return Response(status_code=204, headers={"Cache-Control": "no-store"})
 
 
 def page(limit: int = Query(20, ge=1, le=100), offset: int = Query(0, ge=0, le=10000)):

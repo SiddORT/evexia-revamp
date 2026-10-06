@@ -1,3 +1,4 @@
+import { recordLocalAction } from './localActivity.js';
 const PDF_PAGE_WIDTH = 595.28;
 const PDF_PAGE_HEIGHT = 841.89;
 const LOGO_PLACEHOLDER = '__EVEXIA_LOGO__';
@@ -283,7 +284,7 @@ export async function rasterizePage(svg, logoDataUri, pageNumber) {
  * Create and download a real application/pdf document from renderer SVG pages.
  * Pages are rasterized sequentially to keep peak browser memory bounded.
  */
-export async function downloadInvoiceDocument(invoiceDocument, filename, logoUrl) {
+export async function downloadInvoiceDocument(invoiceDocument, filename, logoUrl, { activityResource = 'purchase_order' } = {}) {
   if (!invoiceDocument || typeof invoiceDocument !== 'object' ||
     !Array.isArray(invoiceDocument.pages) || invoiceDocument.pages.length === 0) {
     throw new Error('Invoice document pages are missing; no PDF was downloaded.');
@@ -302,7 +303,9 @@ export async function downloadInvoiceDocument(invoiceDocument, filename, logoUrl
     jpegPages.push(await rasterizePage(invoiceDocument.pages[index], logoDataUri, index + 1));
   }
   const pdfBytes = buildInvoicePdf(jpegPages);
-  return downloadPdfBytes(pdfBytes, filename);
+  const result = downloadPdfBytes(pdfBytes, filename);
+  if (activityResource) recordLocalAction(activityResource, 'exported');
+  return result;
 }
 
 /** Shared browser download only; PDF serialization stays specific to each document type. */

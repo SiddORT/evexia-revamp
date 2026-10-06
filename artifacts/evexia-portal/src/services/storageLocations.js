@@ -1,3 +1,4 @@
+import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { parseCSV } from './masterImport.js';
 
 export const STORAGE_LOCATION_KEY = 'evexia.admin.storage-locations.v1';
@@ -82,6 +83,7 @@ function save(next, expected) {
   if (!same(loadStorageLocations(), expected)) throw new Error('Storage locations changed in another tab. Refresh records before saving.');
   try { window.localStorage.setItem(STORAGE_LOCATION_KEY, JSON.stringify(next)); }
   catch { throw new Error('Storage locations could not be saved in this browser. Check browser storage settings and try again.'); }
+  recordLocalChanges('storage_location', expected, next);
   return next;
 }
 
@@ -118,7 +120,8 @@ function csvCell(value) {
   return `"${safe.replaceAll('"', '""')}"`;
 }
 
-export function exportStorageLocationCSV(records) {
+export function exportStorageLocationCSV(...args) { return reportExport('storage_location', () => buildStorageLocationCSV(...args)); }
+function buildStorageLocationCSV(records) {
   return '\uFEFF' + [STORAGE_LOCATION_COLUMNS.map(([, label]) => csvCell(label)).join(','),
     ...records.map((record) => STORAGE_LOCATION_COLUMNS.map(([key]) => csvCell(record[key])).join(','))].join('\r\n') + '\r\n';
 }
@@ -149,7 +152,8 @@ export function reviewStorageLocationCSV(text, records) {
   });
 }
 
-export function importStorageLocations(entries, expected) {
+export function importStorageLocations(...args) { const result = buildImportStorageLocations(...args); recordLocalAction('storage_location', 'imported'); return result; }
+function buildImportStorageLocations(entries, expected) {
   const current = loadStorageLocations();
   if (!same(current, expected)) throw new Error('Storage locations changed since review. Refresh records and review the CSV again.');
   if (!entries.length || entries.some((entry) => entry.errors?.length || !entry.fields)) {

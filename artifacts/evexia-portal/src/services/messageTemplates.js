@@ -1,3 +1,4 @@
+import { recordLocalChanges } from './localActivity.js';
 export const MESSAGE_TEMPLATES_KEY = 'evexia.admin.message-templates.v1';
 
 export const LIMITS = Object.freeze({
@@ -238,6 +239,7 @@ function persist(snapshot, record) {
   } catch {
     throw new Error('Message templates could not be saved. Check browser storage permissions or free space, then try again. Your saved templates are unchanged.');
   }
+  recordLocalChanges('message_template', snapshot.record, record);
   return { raw, record };
 }
 

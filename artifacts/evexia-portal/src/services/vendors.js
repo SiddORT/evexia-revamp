@@ -1,3 +1,4 @@
+import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { parseCSV } from './masterImport.js';
 
 export const VENDOR_KEY = 'evexia.admin.vendors.v1';
@@ -84,6 +85,7 @@ function save(next, expected) {
   if (!same(loadVendors(), expected)) throw new Error('Vendor records changed in another tab. Refresh records before saving.');
   try { window.localStorage.setItem(VENDOR_KEY, JSON.stringify(next)); }
   catch { throw new Error('Vendor records could not be saved. Check browser storage settings and try again.'); }
+  recordLocalChanges('vendor', expected, next);
   return next;
 }
 function checked(values, records, exceptId) {
@@ -110,7 +112,8 @@ function csvCell(value) {
 }
 const headers = () => VENDOR_COLUMNS.map(([, label]) => csvCell(label)).join(',');
 export function vendorCSVTemplate() { return `\uFEFF${headers()}\r\n`; }
-export function exportVendorCSV(records) {
+export function exportVendorCSV(...args) { return reportExport('vendor', () => buildVendorCSV(...args)); }
+function buildVendorCSV(records) {
   return '\uFEFF' + [headers(), ...records.map((record) => KEYS.map((key) => csvCell(record[key])).join(','))].join('\r\n') + '\r\n';
 }
 export function reviewVendorCSV(text, records) {
@@ -133,7 +136,8 @@ export function reviewVendorCSV(text, records) {
     return { line, values, fields, errors };
   });
 }
-export function importVendors(entries, expected) {
+export function importVendors(...args) { const result = buildImportVendors(...args); recordLocalAction('vendor', 'imported'); return result; }
+function buildImportVendors(entries, expected) {
   if (!entries.length || entries.some((entry) => entry.errors?.length || !entry.fields)) {
     throw new Error('Resolve all row errors before importing. Nothing was saved.');
   }

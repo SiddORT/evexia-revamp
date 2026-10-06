@@ -1,3 +1,4 @@
+import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { parseCSV } from './masterImport.js';
 import { loadCategories } from './productCategories.js';
 import { loadStorageLocations } from './storageLocations.js';
@@ -119,6 +120,7 @@ function save(next, expected, refs) {
   if (!same(loadAllergens(currentRefs), expected)) throw new Error('Allergen records changed in another tab. Refresh records before saving.');
   try { window.localStorage.setItem(ALLERGEN_KEY, JSON.stringify(next)); }
   catch { throw new Error('Allergen records could not be saved in this browser. Check browser storage settings and try again.'); }
+  recordLocalChanges('allergen', expected, next);
   return next;
 }
 function checked(values, records, refs, exceptId) {
@@ -152,7 +154,8 @@ function csvCell(value) {
 export function allergenCSVTemplate() {
   return '\uFEFF' + ALLERGEN_COLUMNS.map(([, label]) => csvCell(label)).join(',') + '\r\n';
 }
-export function exportAllergenCSV(records, refs) {
+export function exportAllergenCSV(...args) { return reportExport('allergen', () => buildAllergenCSV(...args)); }
+function buildAllergenCSV(records, refs) {
   return '\uFEFF' + [ALLERGEN_COLUMNS.map(([, label]) => csvCell(label)).join(','),
     ...records.map((record) => ALLERGEN_COLUMNS.map(([key]) => csvCell(
       key === 'categoryName' ? (refs.categories.find((item) => item.id === record.categoryId)?.name ?? referenceLabel(refs.categories, record.categoryId, 'category'))
@@ -186,7 +189,8 @@ export function reviewAllergenCSV(text, records, refs) {
     return { line, values, fields: result.fields, errors: [...new Set(issues)] };
   });
 }
-export function importAllergens(entries, expected, refs) {
+export function importAllergens(...args) { const result = buildImportAllergens(...args); recordLocalAction('allergen', 'imported'); return result; }
+function buildImportAllergens(entries, expected, refs) {
   if (!entries.length || entries.some((entry) => entry.errors?.length || !entry.fields)) throw new Error('Resolve all row errors before importing. Nothing was saved.');
   const names = new Set(expected.map((record) => norm(record.name)));
   const fields = entries.map((entry) => {

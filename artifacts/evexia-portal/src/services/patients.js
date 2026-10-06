@@ -1,3 +1,4 @@
+import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { loadDoctors } from './doctors.js';
 import { loadMRs } from './mrs.js';
 import { loadZones } from './zones.js';
@@ -117,6 +118,7 @@ function save(next, expected) {
   }
   try { window.localStorage.setItem(PATIENT_STORAGE_KEY, JSON.stringify(next)); }
   catch { throw error('Patient records could not be saved in this browser. Check storage settings, then refresh records.', 'RECOVERY_REQUIRED'); }
+  recordLocalChanges('patient', expected.records, next);
   return next;
 }
 
@@ -166,7 +168,8 @@ const cell = (value) => {
   const safe = /^[\s\p{Cc}]*[=+\-@]/u.test(text) ? `'${text}` : text;
   return `"${safe.replaceAll('"', '""')}"`;
 };
-export function exportPatientCSV(records, doctors) {
+export function exportPatientCSV(...args) { return reportExport('patient', () => buildPatientCSV(...args)); }
+function buildPatientCSV(records, doctors) {
   const rows = records.map((record) => PATIENT_CSV_COLUMNS.map(([key]) => cell(key === 'doctorRegistration'
     ? doctors.find((doctor) => doctor.id === record.doctorId)?.registrationNumber || ''
     : record[key])).join(','));
@@ -211,7 +214,8 @@ export function reviewPatientCSV(text, snapshots) {
   return entries;
 }
 
-export function importPatients(entries, expected) {
+export function importPatients(...args) { const result = buildImportPatients(...args); recordLocalAction('patient', 'imported'); return result; }
+function buildImportPatients(entries, expected) {
   if (!entries.length || entries.some((entry) => entry.errors.length)) throw new Error('Resolve every row error before importing. Nothing was saved.');
   const ids = new Set(expected.records.map((record) => norm(record.id)));
   const identities = new Set(expected.records.map((record) => `${norm(record.name)}|${record.phone.replace(/\D/g, '')}|${record.dateOfBirth}`));

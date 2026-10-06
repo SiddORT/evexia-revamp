@@ -1,3 +1,4 @@
+import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { loadZones } from './zones.js';
 
 const STORAGE_KEY = 'evexia.admin.mrs.v1';
@@ -142,6 +143,7 @@ function save(next, expected, expectedZones) {
   if (JSON.stringify(loadZones()) !== JSON.stringify(expectedZones)) throw new Error('Zones changed in another tab. Refresh records to review the latest zones before saving.');
   try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); }
   catch { throw new Error('MR records could not be saved in this browser. Check browser storage settings and try again.'); }
+  recordLocalChanges('mr', expected, next);
   return next;
 }
 
@@ -183,7 +185,8 @@ export function setMRContactRequirement(records, zones, id, contactRequirement) 
     ? { ...item, contactRequirement, updatedBy: ADMIN_NAME, updatedAt: new Date().toISOString() } : item), records, zones);
 }
 
-export function importMRs(records, zones, next) {
+export function importMRs(...args) { const result = buildImportMRs(...args); recordLocalAction('mr', 'imported'); return result; }
+function buildImportMRs(records, zones, next) {
   return save(next, records, zones);
 }
 
@@ -200,7 +203,8 @@ function csvCell(value) {
   const safe = /^[\s\u0000-\u001f]*[=+\-@]/.test(text) ? `'${text}` : text;
   return `"${safe.replaceAll('"', '""')}"`;
 }
-export function exportMRCSV(records, zones, allRecords) {
+export function exportMRCSV(...args) { return reportExport('mr', () => buildMRCSV(...args)); }
+function buildMRCSV(records, zones, allRecords) {
   const header = CSV_COLUMNS.map(([, label]) => csvCell(label)).join(',');
   const rows = records.map((record) => CSV_COLUMNS.map(([key]) => {
     const value = key === 'zoneName' ? zones.find((zone) => zone.id === record.zoneId)?.name || 'Deleted zone'

@@ -7,6 +7,8 @@ import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { logoutAdmin } from '../../auth/adminSession.js';
 import { useAdminPreferences } from './adminPreferences.js';
 import '../../admin.css';
+import { recordPageVisit, flushActivityBeforeExit } from '../../activity/activityTracker.js';
+import ActivityRecordingStatus from '../../activity/ActivityRecordingStatus.jsx';
 
 const SIDEBAR_PREFERENCE_KEY = 'evexia.admin.sidebar.collapsed';
 const isUserManagementPath = (path) => path.startsWith('/admin/staff') || path === '/admin/roles-permissions';
@@ -37,9 +39,10 @@ const MASTER_GROUPS = [
 export default function AdminLayout({ title, children }) {
   const [location, navigate] = useLocation();
   const { user } = useAdminSession();
+  useEffect(() => { recordPageVisit(location); }, [location, user?.id]);
   const profileName = user?.username || user?.email || 'Super Admin';
   async function signOut() {
-    const result = logoutAdmin();
+    const result = logoutAdmin({ beforeRevoke: flushActivityBeforeExit() });
     navigate('/admin/login', { replace: true });
     await result;
   }
@@ -283,6 +286,7 @@ export default function AdminLayout({ title, children }) {
           </div>
         </header>
         <main className="admin-content">
+          <ActivityRecordingStatus />
           {children}
         </main>
       </div>
