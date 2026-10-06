@@ -1,5 +1,6 @@
 import { Route, Switch } from 'wouter';
 import AdminBoundary from './auth/AdminBoundary.jsx';
+import RouteLoadingBoundary, { lazyRoute } from './components/RouteLoadingBoundary.jsx';
 import { roleConfig } from './config/roles.js';
 import PortalSelection from './pages/PortalSelection.jsx';
 import AuthPage from './pages/AuthPage.jsx';
@@ -7,43 +8,43 @@ import NotFound from './pages/NotFound.jsx';
 import Dashboard from './pages/admin/Dashboard.jsx';
 import Masters from './pages/admin/Masters.jsx';
 import ZoneMaster from './pages/admin/ZoneMaster.jsx';
-import CourierPartnerMaster from './pages/admin/CourierPartnerMaster.jsx';
-import MRMaster from './pages/admin/MRMaster.jsx';
-import MRFormPage from './pages/admin/MRFormPage.jsx';
-import DoctorMaster from './pages/admin/DoctorMaster.jsx';
-import DoctorFormPage from './pages/admin/DoctorFormPage.jsx';
-import DoctorPaymentHistory from './pages/admin/DoctorPaymentHistory.jsx';
-import MasterExcelImportPage from './pages/admin/MasterExcelImportPage.jsx';
-import ProductCategoryMaster from './pages/admin/ProductCategoryMaster.jsx';
-import ProductCategoryFormPage from './pages/admin/ProductCategoryFormPage.jsx';
-import StorageLocationMaster from './pages/admin/StorageLocationMaster.jsx';
-import StorageLocationFormPage from './pages/admin/StorageLocationFormPage.jsx';
-import HeadquarterMaster from './pages/admin/HeadquarterMaster.jsx';
-import HeadquarterFormPage from './pages/admin/HeadquarterFormPage.jsx';
-import DesignationMaster from './pages/admin/DesignationMaster.jsx';
-import DesignationFormPage from './pages/admin/DesignationFormPage.jsx';
-import PatientMaster from './pages/admin/PatientMaster.jsx';
-import PatientFormPage from './pages/admin/PatientFormPage.jsx';
-import PatientImportPage from './pages/admin/PatientImportPage.jsx';
-import AllergenMaster from './pages/admin/AllergenMaster.jsx';
-import AllergenFormPage from './pages/admin/AllergenFormPage.jsx';
-import PatientDosageHistory from './pages/admin/PatientDosageHistory.jsx';
-import VendorMaster from './pages/admin/VendorMaster.jsx';
-import SalesTargetMaster from './pages/admin/SalesTargetMaster.jsx';
-import OpeningBalanceMaster from './pages/admin/OpeningBalanceMaster.jsx';
-import OpeningBalanceFormPage from './pages/admin/OpeningBalanceFormPage.jsx';
-import StaffManagement from './pages/admin/StaffManagement.jsx';
-import RolesPermissions from './pages/admin/RolesPermissions.jsx';
-import AdminSettings from './pages/admin/AdminSettings.jsx';
-import PurchaseOrders from './pages/admin/PurchaseOrders.jsx';
-import PurchaseOrderFormPage from './pages/admin/PurchaseOrderFormPage.jsx';
-import PurchaseReceived from './pages/admin/PurchaseReceived.jsx';
-import PurchaseReceivedFormPage from './pages/admin/PurchaseReceivedFormPage.jsx';
-import ActivityLogs from './pages/admin/ActivityLogs.jsx';
+const CourierPartnerMaster = lazyRoute(() => import('./pages/admin/CourierPartnerMaster.jsx'));
+const MRMaster = lazyRoute(() => import('./pages/admin/MRMaster.jsx'));
+const MRFormPage = lazyRoute(() => import('./pages/admin/MRFormPage.jsx'));
+const DoctorMaster = lazyRoute(() => import('./pages/admin/DoctorMaster.jsx'));
+const DoctorFormPage = lazyRoute(() => import('./pages/admin/DoctorFormPage.jsx'));
+const DoctorPaymentHistory = lazyRoute(() => import('./pages/admin/DoctorPaymentHistory.jsx'));
+const MasterExcelImportPage = lazyRoute(() => import('./pages/admin/MasterExcelImportPage.jsx'));
+const ProductCategoryMaster = lazyRoute(() => import('./pages/admin/ProductCategoryMaster.jsx'));
+const ProductCategoryFormPage = lazyRoute(() => import('./pages/admin/ProductCategoryFormPage.jsx'));
+const StorageLocationMaster = lazyRoute(() => import('./pages/admin/StorageLocationMaster.jsx'));
+const StorageLocationFormPage = lazyRoute(() => import('./pages/admin/StorageLocationFormPage.jsx'));
+const HeadquarterMaster = lazyRoute(() => import('./pages/admin/HeadquarterMaster.jsx'));
+const HeadquarterFormPage = lazyRoute(() => import('./pages/admin/HeadquarterFormPage.jsx'));
+const DesignationMaster = lazyRoute(() => import('./pages/admin/DesignationMaster.jsx'));
+const DesignationFormPage = lazyRoute(() => import('./pages/admin/DesignationFormPage.jsx'));
+const PatientMaster = lazyRoute(() => import('./pages/admin/PatientMaster.jsx'));
+const PatientFormPage = lazyRoute(() => import('./pages/admin/PatientFormPage.jsx'));
+const PatientImportPage = lazyRoute(() => import('./pages/admin/PatientImportPage.jsx'));
+const AllergenMaster = lazyRoute(() => import('./pages/admin/AllergenMaster.jsx'));
+const AllergenFormPage = lazyRoute(() => import('./pages/admin/AllergenFormPage.jsx'));
+const PatientDosageHistory = lazyRoute(() => import('./pages/admin/PatientDosageHistory.jsx'));
+const VendorMaster = lazyRoute(() => import('./pages/admin/VendorMaster.jsx'));
+const SalesTargetMaster = lazyRoute(() => import('./pages/admin/SalesTargetMaster.jsx'));
+const OpeningBalanceMaster = lazyRoute(() => import('./pages/admin/OpeningBalanceMaster.jsx'));
+const OpeningBalanceFormPage = lazyRoute(() => import('./pages/admin/OpeningBalanceFormPage.jsx'));
+const StaffManagement = lazyRoute(() => import('./pages/admin/StaffManagement.jsx'));
+const RolesPermissions = lazyRoute(() => import('./pages/admin/RolesPermissions.jsx'));
+const AdminSettings = lazyRoute(() => import('./pages/admin/AdminSettings.jsx'));
+const PurchaseOrders = lazyRoute(() => import('./pages/admin/PurchaseOrders.jsx'));
+const PurchaseOrderFormPage = lazyRoute(() => import('./pages/admin/PurchaseOrderFormPage.jsx'));
+const PurchaseReceived = lazyRoute(() => import('./pages/admin/PurchaseReceived.jsx'));
+const PurchaseReceivedFormPage = lazyRoute(() => import('./pages/admin/PurchaseReceivedFormPage.jsx'));
+const ActivityLogs = lazyRoute(() => import('./pages/admin/ActivityLogs.jsx'));
 
 function App() {
   return (
-    <AdminBoundary><Switch>
+    <AdminBoundary><RouteLoadingBoundary><Switch>
       <Route path="/" component={PortalSelection} />
       <Route path="/admin" component={Dashboard} />
       <Route path="/admin/settings" component={AdminSettings} />
@@ -96,7 +97,7 @@ function App() {
       <Route path="/mr">{() => <AuthPage role={roleConfig.mr} />}</Route>
       <Route path="/doctor">{() => <AuthPage role={roleConfig.doctor} />}</Route>
       <Route component={NotFound} />
-    </Switch></AdminBoundary>
+    </Switch></RouteLoadingBoundary></AdminBoundary>
   );
 }
 

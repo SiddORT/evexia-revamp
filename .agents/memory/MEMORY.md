@@ -22,5 +22,7 @@
 - [Reporting export privacy](reporting-export-privacy.md) — portable CSVs omit session and record references even when the protected history UI shows them.
 - [Session-ending reasons](session-ending-reasons.md) — allowlist the first owner-matched revocation cause; never infer missing history from later events.
 - [Activity search planning](activity-search-planning.md) — measure broad searches as well as rare ones; redundant safe predicates can defeat ordered early termination.
+- [Route download recovery](route-download-recovery.md) — keep chunk-failure reloads explicit; automatic reloads can discard mounted local drafts.
 - [Post-merge verification](post-merge-verification.md) — reconciliation success does not guarantee restarted services are healthy; confirm readiness separately.
 - [Staff search privacy](staff-search-privacy.md) — explicit bounded scans avoid substring-index leakage and unbounded automatic directory traversal.
+- [Authenticated test isolation](authenticated-test-isolation.md) — isolate test listeners and results, not just databases; shared ports cause synthetic logins to revoke each other.

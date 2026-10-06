@@ -9,12 +9,41 @@ for tool in initdb pg_ctl createdb python3 curl node pnpm; do
   command -v "$tool" >/dev/null || { echo "Missing authenticated-preview prerequisite: $tool" >&2; exit 1; }
 done
 
+# All runs use the same synthetic account and single-session policy. Fixed
+# ports let concurrent checks accidentally share an API and revoke each other.
+# Bind both candidates together to choose distinct free ports, also validating
+# explicit overrides before creating a database or launching any services.
+PORTS=$(python3 - <<'PY'
+import os
+import socket
+
+with socket.socket() as api, socket.socket() as web:
+    api.bind(("127.0.0.1", int(os.environ.get("EVEXIA_TEST_API_PORT") or 0)))
+    web.bind(("127.0.0.1", int(os.environ.get("EVEXIA_TEST_PORT") or 0)))
+    print(api.getsockname()[1], web.getsockname()[1])
+PY
+)
+API_PORT=${PORTS% *}
+PORT=${PORTS#* }
+
 PGROOT=$(mktemp -d /tmp/evexia-auth-preview.XXXXXX)
 chmod 700 "$PGROOT"
 mkdir "$PGROOT/socket"
+# Keep simultaneous task validations from clearing each other's diagnostics.
+RESULTS="$ROOT/test-results/$(basename "$PGROOT")"
 API_PID=
 VITE_PID=
 cleanup() {
+  result=$?
+  if [ "$result" -ne 0 ]; then
+    mkdir -p "$RESULTS/fixture-logs"
+    for log in api vite postgres; do
+      if [ -f "$PGROOT/$log.log" ]; then
+        cp "$PGROOT/$log.log" "$RESULTS/fixture-logs/$log.log"
+      fi
+    done
+    echo "Failed preview diagnostics: $RESULTS" >&2
+  fi
   if [ -n "$VITE_PID" ]; then kill "$VITE_PID" >/dev/null 2>&1 || true; wait "$VITE_PID" 2>/dev/null || true; fi
   if [ -n "$API_PID" ]; then kill "$API_PID" >/dev/null 2>&1 || true; wait "$API_PID" 2>/dev/null || true; fi
   pg_ctl -D "$PGROOT/data" -m immediate stop >/dev/null 2>&1 || true
@@ -44,8 +73,6 @@ export STORAGE_BACKEND=local
 export LOCAL_STORAGE_ROOT="$PGROOT/storage"
 export PYTHONPATH="$ROOT/artifacts/api-server/backend"
 
-API_PORT=${EVEXIA_TEST_API_PORT:-8187}
-PORT=${EVEXIA_TEST_PORT:-5187}
 export EVEXIA_TEST_ADMIN_PASSWORD="$SUPER_ADMIN_INITIAL_PASSWORD"
 export EVEXIA_PREVIEW_BASE_URL="http://127.0.0.1:$PORT"
 export EVEXIA_TEST_API_PROXY_TARGET="http://127.0.0.1:$API_PORT"
@@ -58,8 +85,10 @@ API_PID=$!
 
 ready=0
 for _ in $(seq 1 60); do
-  if curl -fsS "http://127.0.0.1:$API_PORT/api/healthz" >/dev/null; then ready=1; break; fi
   if ! kill -0 "$API_PID" 2>/dev/null; then break; fi
+  # curl alone may succeed against another process that won a bind race.
+  if grep -q "Uvicorn running on http://127.0.0.1:$API_PORT " "$PGROOT/api.log" &&
+    curl -fsS "http://127.0.0.1:$API_PORT/api/healthz" >/dev/null; then ready=1; break; fi
   sleep 1
 done
 if [ "$ready" -ne 1 ]; then
@@ -73,8 +102,9 @@ PORT="$PORT" pnpm --filter @workspace/evexia-portal run dev >"$PGROOT/vite.log" 
 VITE_PID=$!
 ready=0
 for _ in $(seq 1 60); do
-  if curl -fsS "$EVEXIA_PREVIEW_BASE_URL/" >/dev/null; then ready=1; break; fi
   if ! kill -0 "$VITE_PID" 2>/dev/null; then break; fi
+  if grep -q "http://localhost:$PORT/" "$PGROOT/vite.log" &&
+    curl -fsS "$EVEXIA_PREVIEW_BASE_URL/" >/dev/null; then ready=1; break; fi
   sleep 1
 done
 if [ "$ready" -ne 1 ]; then
@@ -98,7 +128,7 @@ if [ "$#" -gt 0 ]; then
 else
   SPECS="artifacts/evexia-portal/tests/settings-layout.preview.spec.mjs artifacts/evexia-portal/tests/template-preferences.preview.spec.mjs artifacts/evexia-portal/tests/communication.preview.spec.mjs artifacts/evexia-portal/tests/message-templates.preview.spec.mjs artifacts/evexia-portal/tests/admin-auth.preview.spec.mjs artifacts/evexia-portal/tests/roles-permissions.preview.spec.mjs artifacts/evexia-portal/tests/activity-logs.preview.spec.mjs artifacts/evexia-portal/tests/staff-backend.preview.spec.mjs"
 fi
-echo "Running authenticated browser previews against an isolated synthetic PostgreSQL/API fixture."
+echo "Running authenticated browser previews against an isolated synthetic PostgreSQL/API fixture (API $API_PORT, portal $PORT)."
 # Intentional word splitting: callers may supply one or more Playwright spec paths.
 # shellcheck disable=SC2086
-pnpm exec playwright test $SPECS --workers=1
+pnpm exec playwright test $SPECS --workers=1 --output="$RESULTS"
