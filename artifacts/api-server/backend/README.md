@@ -407,6 +407,74 @@ authorization is required, and treat response URLs as secrets.
 
 ## API contract and generated libraries
 
+## Read-only Super Admin reporting
+
+`GET /api/v1/admin/reporting/{summary,users,sessions,events}` requires a
+currently validated session and the authoritative `admin.access` permission.
+MR, unmapped, disabled and anonymous identities cannot browse any cross-user
+data. Existing `/auth/session` and `/auth/sessions` remain owner-only.
+All success and error responses are `Cache-Control: no-store`.
+
+- Summary counts all persisted `User` accounts, including disabled and unmapped
+  legacy accounts. Active users are distinct owners of unexpired ACTIVE sessions
+  with matching token/identity versions and authentication-eligible identities
+  (including an active MR profile when applicable). Multiple sessions count once.
+  This is not online presence, enabled accounts, or browser-local staff/patients.
+  Counts are global, ignore history filters, and carry a UTC refresh timestamp.
+- Session state precedence is REVOKED, EXPIRED (stored or elapsed expiry),
+  ACTIVE if eligible and versions match, otherwise INVALIDATED. Reporting
+  queries do not materialize expiry, revoke sessions, or reactivate legacy
+  history. Creation is login time; last refresh is not last activity.
+- Histories accept optional UUID `user_id` and timezone-aware `start`/`end`
+  timestamps in the 1970–2100 range. The interval is `[start,end)`; equal/inverted
+  ranges are rejected. Sessions filter creation, events filter occurrence.
+  The UI uses UTC days and sends the day after the selected inclusive end date.
+- Histories and user selection use `limit` 1–100 (default 20), `offset` 0–10000,
+  `has_more`, and stable newest timestamp then ID descending order. Pagination
+  is offset-based, not a frozen snapshot: newly recorded events can shift pages.
+  User options support literal, escaped `q` search of username/email (max 100).
+  Index-only forward migration `0007_reporting_indexes` supports global and
+  actor/user filtered histories; no managed database migration is run by tests.
+- Explicit projections exclude hashes, passwords, credentials, refresh chains,
+  headers/cookies and unrestricted metadata. Historical identity joins are
+  outer joins. Unattributed or missing identities display Unknown/System, without
+  inferring actors from resources, session owners or submitted login identifiers.
+  Actor UUIDs are retained as historical references, not invented user labels.
+  Legacy unsafe reason/reference strings are suppressed rather than echoed.
+
+The page covers **existing recorded events only**: login/bootstrap/password,
+authentication/session/refresh/security outcomes, domain provisioning/mapping/
+assignment, and file operations where the backend already records them. It does
+not audit every request, click, page view, or browser-local master edit; reporting
+reads do not add a second logging system. No IP/device collection, export,
+retention policy, deletion or session termination UI is introduced.
+
+Focused backend checks: `sh scripts/test-api-foundation.sh tests/test_reporting.py
+tests/test_sessions.py tests/test_api.py`. Client checks are in
+`src/auth/adminSession.test.js`; `activity-logs.preview.spec.mjs` is included in
+the isolated authenticated-preview/release harness. Tests use synthetic accounts
+and a temporary PostgreSQL socket, never the managed database. A managed preview
+with missing migration/bootstrap prerequisites is **BLOCKED**, not evidence of
+production readiness; operators must apply the documented migration/bootstrap
+sequence themselves. No production deployment is part of this feature.
+
+Verification on 2026-10-06: full isolated API foundation suite **152 passed**;
+focused memory-only session client suite **15 passed**; release harness
+**24 authenticated browser tests passed**, plus preference service checks.
+Portal compilation, workspace typecheck and API contract drift check passed.
+An additional real-login audit-reference regression was added afterward;
+all **20 focused reporting backend tests passed**, including URL-safe session
+references containing both hyphens and underscores.
+Screenshots covered dark desktop and light mobile; two-tab renewal and delayed
+filter/logout responses were exercised with real synthetic authentication.
+Managed workflows restarted successfully; the unauthenticated deep link
+redirected to login. Live authenticated managed-preview/database verification is
+**BLOCKED pending operator-confirmed migration/bootstrap readiness**; no managed
+database was migrated, seeded or inspected by this work, and no production
+readiness claim is made.
+
+### Contract export
+
 FastAPI is authoritative for the OpenAPI contract. From the workspace root:
 
 ```sh

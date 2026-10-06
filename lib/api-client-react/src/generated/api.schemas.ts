@@ -65,6 +65,44 @@ export interface ErrorEnvelope {
   error: ErrorDetail;
 }
 
+export type ReportUserAccountState =
+  (typeof ReportUserAccountState)[keyof typeof ReportUserAccountState];
+
+export const ReportUserAccountState = {
+  enabled: "enabled",
+  disabled: "disabled",
+  unmapped: "unmapped",
+  ineligible: "ineligible",
+} as const;
+
+export interface ReportUser {
+  account_state: ReportUserAccountState;
+  id: string;
+  label: string;
+  role: string | null;
+}
+
+export interface ReportEvent {
+  action: string;
+  actor_id: string | null;
+  created_at: string;
+  id: string;
+  outcome: string;
+  reason: string | null;
+  request_id: string | null;
+  resource_id: string | null;
+  resource_type: string | null;
+  session_id: string | null;
+  user: ReportUser | null;
+}
+
+export interface EventPage {
+  has_more: boolean;
+  items: ReportEvent[];
+  limit: number;
+  offset: number;
+}
+
 export type FileResponseCategory =
   (typeof FileResponseCategory)[keyof typeof FileResponseCategory];
 
@@ -154,6 +192,35 @@ export interface ProvisionMRRequest {
   username?: string | null;
 }
 
+export type ReportSessionState =
+  (typeof ReportSessionState)[keyof typeof ReportSessionState];
+
+export const ReportSessionState = {
+  ACTIVE: "ACTIVE",
+  EXPIRED: "EXPIRED",
+  REVOKED: "REVOKED",
+  INVALIDATED: "INVALIDATED",
+} as const;
+
+export interface ReportSession {
+  created_at: string;
+  expires_at: string;
+  id: string;
+  is_current: boolean;
+  last_refreshed_at: string | null;
+  persistent: boolean;
+  revoked_at: string | null;
+  state: ReportSessionState;
+  user: ReportUser | null;
+}
+
+export interface ReportSummary {
+  active_users: number;
+  current_session: ReportSession;
+  refreshed_at: string;
+  total_users: number;
+}
+
 export type SessionResponseStatus =
   (typeof SessionResponseStatus)[keyof typeof SessionResponseStatus];
 
@@ -178,12 +245,75 @@ export interface SessionListResponse {
   offset: number;
 }
 
+export interface SessionPage {
+  has_more: boolean;
+  items: ReportSession[];
+  limit: number;
+  offset: number;
+}
+
 export interface TokenResponse {
   access_token: string;
   expires_in: number;
   token_type?: "bearer";
   user: CurrentUser;
 }
+
+export interface UserPage {
+  has_more: boolean;
+  items: ReportUser[];
+  limit: number;
+  offset: number;
+}
+
+export type ListReportingEventsParams = {
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 10000
+   */
+  offset?: number;
+  user_id?: string | null;
+  start?: string | null;
+  end?: string | null;
+};
+
+export type ListReportingSessionsParams = {
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 10000
+   */
+  offset?: number;
+  user_id?: string | null;
+  start?: string | null;
+  end?: string | null;
+};
+
+export type ListReportingUsersParams = {
+  /**
+   * @maxLength 100
+   */
+  q?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 10000
+   */
+  offset?: number;
+};
 
 export type ListOwnSessionsParams = {
   /**

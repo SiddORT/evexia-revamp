@@ -15,6 +15,216 @@ export const GetHealthCheckResponse = zod.object({
 });
 
 /**
+ * Occurrence-time range [start,end). All recorded categories; missing actors are retained.
+ * @summary Events
+ */
+export const listReportingEventsQueryLimitDefault = 20;
+export const listReportingEventsQueryLimitMax = 100;
+
+export const listReportingEventsQueryOffsetDefault = 0;
+export const listReportingEventsQueryOffsetMin = 0;
+export const listReportingEventsQueryOffsetMax = 10000;
+
+export const ListReportingEventsQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listReportingEventsQueryLimitMax)
+    .default(listReportingEventsQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listReportingEventsQueryOffsetMin)
+    .max(listReportingEventsQueryOffsetMax)
+    .default(listReportingEventsQueryOffsetDefault),
+  user_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  start: zod.union([zod.date(), zod.null()]).optional(),
+  end: zod.union([zod.date(), zod.null()]).optional(),
+});
+
+export const ListReportingEventsResponse = zod.object({
+  has_more: zod.boolean(),
+  items: zod.array(
+    zod.object({
+      action: zod.string(),
+      actor_id: zod.union([zod.string().uuid(), zod.null()]),
+      created_at: zod.coerce.date(),
+      id: zod.string().uuid(),
+      outcome: zod.string(),
+      reason: zod.union([zod.string(), zod.null()]),
+      request_id: zod.union([zod.string(), zod.null()]),
+      resource_id: zod.union([zod.string().uuid(), zod.null()]),
+      resource_type: zod.union([zod.string(), zod.null()]),
+      session_id: zod.union([zod.string(), zod.null()]),
+      user: zod.union([
+        zod.object({
+          account_state: zod.enum([
+            "enabled",
+            "disabled",
+            "unmapped",
+            "ineligible",
+          ]),
+          id: zod.string().uuid(),
+          label: zod.string(),
+          role: zod.union([zod.string(), zod.null()]),
+        }),
+        zod.null(),
+      ]),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+});
+
+/**
+ * Creation-time range [start,end), timezone required. Newest timestamp then ID descending.
+ * @summary Sessions
+ */
+export const listReportingSessionsQueryLimitDefault = 20;
+export const listReportingSessionsQueryLimitMax = 100;
+
+export const listReportingSessionsQueryOffsetDefault = 0;
+export const listReportingSessionsQueryOffsetMin = 0;
+export const listReportingSessionsQueryOffsetMax = 10000;
+
+export const ListReportingSessionsQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listReportingSessionsQueryLimitMax)
+    .default(listReportingSessionsQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listReportingSessionsQueryOffsetMin)
+    .max(listReportingSessionsQueryOffsetMax)
+    .default(listReportingSessionsQueryOffsetDefault),
+  user_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  start: zod.union([zod.date(), zod.null()]).optional(),
+  end: zod.union([zod.date(), zod.null()]).optional(),
+});
+
+export const ListReportingSessionsResponse = zod.object({
+  has_more: zod.boolean(),
+  items: zod.array(
+    zod.object({
+      created_at: zod.coerce.date(),
+      expires_at: zod.coerce.date(),
+      id: zod.string(),
+      is_current: zod.boolean(),
+      last_refreshed_at: zod.union([zod.coerce.date(), zod.null()]),
+      persistent: zod.boolean(),
+      revoked_at: zod.union([zod.coerce.date(), zod.null()]),
+      state: zod.enum(["ACTIVE", "EXPIRED", "REVOKED", "INVALIDATED"]),
+      user: zod.union([
+        zod.object({
+          account_state: zod.enum([
+            "enabled",
+            "disabled",
+            "unmapped",
+            "ineligible",
+          ]),
+          id: zod.string().uuid(),
+          label: zod.string(),
+          role: zod.union([zod.string(), zod.null()]),
+        }),
+        zod.null(),
+      ]),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+});
+
+/**
+ * Global persisted accounts and distinct eligible session owners, unaffected by filters.
+ * @summary Summary
+ */
+export const GetReportingSummaryResponse = zod.object({
+  active_users: zod.number().int(),
+  current_session: zod.object({
+    created_at: zod.coerce.date(),
+    expires_at: zod.coerce.date(),
+    id: zod.string(),
+    is_current: zod.boolean(),
+    last_refreshed_at: zod.union([zod.coerce.date(), zod.null()]),
+    persistent: zod.boolean(),
+    revoked_at: zod.union([zod.coerce.date(), zod.null()]),
+    state: zod.enum(["ACTIVE", "EXPIRED", "REVOKED", "INVALIDATED"]),
+    user: zod.union([
+      zod.object({
+        account_state: zod.enum([
+          "enabled",
+          "disabled",
+          "unmapped",
+          "ineligible",
+        ]),
+        id: zod.string().uuid(),
+        label: zod.string(),
+        role: zod.union([zod.string(), zod.null()]),
+      }),
+      zod.null(),
+    ]),
+  }),
+  refreshed_at: zod.coerce.date(),
+  total_users: zod.number().int(),
+});
+
+/**
+ * Bounded search of registered backend accounts, including disabled/unmapped accounts.
+ * @summary Users
+ */
+export const listReportingUsersQueryQDefault = ``;
+export const listReportingUsersQueryQMax = 100;
+
+export const listReportingUsersQueryLimitDefault = 20;
+export const listReportingUsersQueryLimitMax = 100;
+
+export const listReportingUsersQueryOffsetDefault = 0;
+export const listReportingUsersQueryOffsetMin = 0;
+export const listReportingUsersQueryOffsetMax = 10000;
+
+export const ListReportingUsersQueryParams = zod.object({
+  q: zod.coerce
+    .string()
+    .max(listReportingUsersQueryQMax)
+    .default(listReportingUsersQueryQDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listReportingUsersQueryLimitMax)
+    .default(listReportingUsersQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listReportingUsersQueryOffsetMin)
+    .max(listReportingUsersQueryOffsetMax)
+    .default(listReportingUsersQueryOffsetDefault),
+});
+
+export const ListReportingUsersResponse = zod.object({
+  has_more: zod.boolean(),
+  items: zod.array(
+    zod.object({
+      account_state: zod.enum([
+        "enabled",
+        "disabled",
+        "unmapped",
+        "ineligible",
+      ]),
+      id: zod.string().uuid(),
+      label: zod.string(),
+      role: zod.union([zod.string(), zod.null()]),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+});
+
+/**
  * @summary Change Password
  */
 export const changePasswordBodyCurrentPasswordMax = 128;

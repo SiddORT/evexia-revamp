@@ -39,6 +39,7 @@ import PurchaseOrders from './pages/admin/PurchaseOrders.jsx';
 import PurchaseOrderFormPage from './pages/admin/PurchaseOrderFormPage.jsx';
 import PurchaseReceived from './pages/admin/PurchaseReceived.jsx';
 import PurchaseReceivedFormPage from './pages/admin/PurchaseReceivedFormPage.jsx';
+import ActivityLogs from './pages/admin/ActivityLogs.jsx';
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
       <Route path="/" component={PortalSelection} />
       <Route path="/admin" component={Dashboard} />
       <Route path="/admin/settings" component={AdminSettings} />
+      <Route path="/admin/activity-logs" component={ActivityLogs} />
       <Route path="/admin/staff" component={StaffManagement} />
       <Route path="/admin/roles-permissions" component={RolesPermissions} />
       <Route path="/admin/inventory/purchase-orders" component={PurchaseOrders} />

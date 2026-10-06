@@ -24,18 +24,25 @@ import type {
   DeleteFileParams,
   DownloadURLResponse,
   ErrorEnvelope,
+  EventPage,
   FileResponse,
   HealthStatus,
   ListOwnSessionsParams,
+  ListReportingEventsParams,
+  ListReportingSessionsParams,
+  ListReportingUsersParams,
   LoginRequest,
   MRResponse,
   PatientResponse,
   ProvisionMRRequest,
   ReplaceFileParams,
+  ReportSummary,
   SessionListResponse,
+  SessionPage,
   SessionResponse,
   TokenResponse,
   UploadFileParams,
+  UserPage,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -132,6 +139,391 @@ export function useGetHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListReportingEventsUrl = (
+  params?: ListReportingEventsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/reporting/events?${stringifiedParams}`
+    : `/api/v1/admin/reporting/events`;
+};
+
+/**
+ * Occurrence-time range [start,end). All recorded categories; missing actors are retained.
+ * @summary Events
+ */
+export const listReportingEvents = async (
+  params?: ListReportingEventsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<EventPage> => {
+  return customFetch<EventPage>(getListReportingEventsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListReportingEventsQueryKey = (
+  params?: ListReportingEventsParams,
+) => {
+  return [
+    `/api/v1/admin/reporting/events`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListReportingEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listReportingEvents>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListReportingEventsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listReportingEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListReportingEventsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listReportingEvents>>
+  > = ({ signal }) =>
+    listReportingEvents(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listReportingEvents>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListReportingEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listReportingEvents>>
+>;
+export type ListReportingEventsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Events
+ */
+
+export function useListReportingEvents<
+  TData = Awaited<ReturnType<typeof listReportingEvents>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListReportingEventsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listReportingEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListReportingEventsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListReportingSessionsUrl = (
+  params?: ListReportingSessionsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/reporting/sessions?${stringifiedParams}`
+    : `/api/v1/admin/reporting/sessions`;
+};
+
+/**
+ * Creation-time range [start,end), timezone required. Newest timestamp then ID descending.
+ * @summary Sessions
+ */
+export const listReportingSessions = async (
+  params?: ListReportingSessionsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SessionPage> => {
+  return customFetch<SessionPage>(getListReportingSessionsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListReportingSessionsQueryKey = (
+  params?: ListReportingSessionsParams,
+) => {
+  return [
+    `/api/v1/admin/reporting/sessions`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListReportingSessionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listReportingSessions>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListReportingSessionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listReportingSessions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListReportingSessionsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listReportingSessions>>
+  > = ({ signal }) =>
+    listReportingSessions(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listReportingSessions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListReportingSessionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listReportingSessions>>
+>;
+export type ListReportingSessionsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Sessions
+ */
+
+export function useListReportingSessions<
+  TData = Awaited<ReturnType<typeof listReportingSessions>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListReportingSessionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listReportingSessions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListReportingSessionsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetReportingSummaryUrl = () => {
+  return `/api/v1/admin/reporting/summary`;
+};
+
+/**
+ * Global persisted accounts and distinct eligible session owners, unaffected by filters.
+ * @summary Summary
+ */
+export const getReportingSummary = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ReportSummary> => {
+  return customFetch<ReportSummary>(getGetReportingSummaryUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetReportingSummaryQueryKey = () => {
+  return [`/api/v1/admin/reporting/summary`] as const;
+};
+
+export const getGetReportingSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getReportingSummary>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getReportingSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetReportingSummaryQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getReportingSummary>>
+  > = ({ signal }) => getReportingSummary({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getReportingSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetReportingSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getReportingSummary>>
+>;
+export type GetReportingSummaryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Summary
+ */
+
+export function useGetReportingSummary<
+  TData = Awaited<ReturnType<typeof getReportingSummary>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getReportingSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetReportingSummaryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListReportingUsersUrl = (params?: ListReportingUsersParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/reporting/users?${stringifiedParams}`
+    : `/api/v1/admin/reporting/users`;
+};
+
+/**
+ * Bounded search of registered backend accounts, including disabled/unmapped accounts.
+ * @summary Users
+ */
+export const listReportingUsers = async (
+  params?: ListReportingUsersParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<UserPage> => {
+  return customFetch<UserPage>(getListReportingUsersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListReportingUsersQueryKey = (
+  params?: ListReportingUsersParams,
+) => {
+  return [
+    `/api/v1/admin/reporting/users`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListReportingUsersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listReportingUsers>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListReportingUsersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listReportingUsers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListReportingUsersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listReportingUsers>>
+  > = ({ signal }) => listReportingUsers(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listReportingUsers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListReportingUsersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listReportingUsers>>
+>;
+export type ListReportingUsersQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Users
+ */
+
+export function useListReportingUsers<
+  TData = Awaited<ReturnType<typeof listReportingUsers>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListReportingUsersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listReportingUsers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListReportingUsersQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

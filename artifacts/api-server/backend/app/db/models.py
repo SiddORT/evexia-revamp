@@ -84,6 +84,8 @@ class AuthSession(Base):
         ),
         Index("ix_auth_sessions_user_created", "user_id", "created_at"),
         Index("ix_auth_sessions_user_status", "user_id", "status"),
+        Index("ix_auth_sessions_created_id", "created_at", "id"),
+        Index("ix_auth_sessions_user_created_id", "user_id", "created_at", "id"),
     )
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: secrets.token_urlsafe(32))
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
@@ -151,6 +153,8 @@ class AuditEvent(Base):
     __table_args__ = (
         Index("ix_audit_events_organization_created", "organization_id", "created_at"),
         Index("ix_audit_events_session_created", "session_id", "created_at"),
+        Index("ix_audit_events_created_id", "created_at", "id"),
+        Index("ix_audit_events_actor_created_id", "actor_id", "created_at", "id"),
     )
 
 

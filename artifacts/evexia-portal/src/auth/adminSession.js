@@ -177,6 +177,77 @@ export async function logoutAdmin() {
   return true;
 }
 
+// Narrow read-only facility: credentials never leave this module, and renewal
+// uses the same in-tab promise and cross-tab cookie lock as the Admin boundary.
+export async function reportingRequest(resource, params = {}, { signal } = {}) {
+  if (!['summary', 'users', 'sessions', 'events'].includes(resource)) {
+    throw new SessionError('Unsupported report.');
+  }
+  const epoch = generation;
+  const owner = state.user?.id;
+  const check = () => {
+    signal?.throwIfAborted();
+    if (epoch !== generation || !owner || state.user?.id !== owner) {
+      throw new SessionError('Your session changed. Please log in again.', 401);
+    }
+    if (state.status !== 'authenticated' || !token) {
+      throw new SessionError(state.message || 'Authentication required.', 401);
+    }
+  };
+  if (pending) await pending;
+  else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true);
+  check();
+  const query = new URLSearchParams();
+  const keys = resource === 'users' ? ['q', 'limit', 'offset']
+    : resource === 'summary' ? [] : ['user_id', 'start', 'end', 'limit', 'offset'];
+  for (const [key, value] of Object.entries(params)) {
+    if (!keys.includes(key)) throw new SessionError('Unsupported report filter.');
+    if (value !== undefined && value !== null && value !== '') query.set(key, String(value));
+  }
+  const load = async (bearer) => {
+    let response;
+    try {
+      response = await fetch(`/api/v1/admin/reporting/${resource}${query.size ? `?${query}` : ''}`, {
+        method: 'GET', credentials: 'same-origin', cache: 'no-store',
+        headers: { Authorization: `Bearer ${bearer}` },
+        signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
+      });
+    } catch {
+      signal?.throwIfAborted();
+      if (pending) await pending;
+      check();
+      throw new SessionError('Unable to load reports. Check your connection and retry.');
+    }
+    if (pending) await pending;
+    check();
+    return response;
+  };
+  const original = token;
+  let response = await load(original);
+  if (response.status === 401) {
+    // Another simultaneous request may already have renewed this token.
+    if (pending) await pending;
+    else if (token === original) await verifySession(true);
+    check();
+    response = await load(token); // one retry only
+  }
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) clear();
+    throw new SessionError(
+      response.status === 403 ? 'This account does not have Admin access.'
+        : response.status === 401 ? 'Your session expired. Please log in again.'
+        : response.status === 422 ? 'Invalid report filters. Check the date range.'
+        : 'Unable to load reports. Please retry.', response.status,
+    );
+  }
+  let body;
+  try { body = await response.json(); }
+  catch { throw new SessionError('The reporting service returned an invalid response.'); }
+  if (pending) await pending;
+  check(); // also guard logout while decoding a delayed response body
+  return body;
+}
+
 export function safeAdminReturn(value) {
   if (typeof value !== 'string' || !/^\/admin(?:\/|$)/.test(value) || value.startsWith('/admin/login') || /[\\?#%\u0000-\u0020]/.test(value)) return '/admin';
   if (value.split('/').some((part) => part === '.' || part === '..')) return '/admin';

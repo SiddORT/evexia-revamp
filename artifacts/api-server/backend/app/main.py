@@ -13,6 +13,7 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.system import router as system_router
 from app.api.v1.domain import router as domain_router
 from app.api.v1.files import router as files_router
+from app.api.v1.reporting import router as reporting_router
 from app.core.config import get_settings
 from app.core.request_limits import RequestSizeLimit, RequestTooLarge
 from app.services.auth import AuthError
@@ -134,6 +135,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router, prefix="/api/v1")
     app.include_router(domain_router, prefix="/api/v1")
     app.include_router(files_router, prefix="/api/v1")
+    app.include_router(reporting_router, prefix="/api/v1")
     app.add_api_route("/api/healthz", lambda: {"status": "ok"}, methods=["GET"],
                       response_model=HealthStatus, operation_id="getHealthCheck", tags=["health"])
     original_openapi = app.openapi

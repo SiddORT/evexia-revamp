@@ -87,6 +87,16 @@ never silently falls back to another backend.
 
 ## Abuse cases and verification
 
+Super Admin session/audit reporting is read-only and permission-gated by
+`admin.access`, not by requested user IDs or browser role labels. Counts describe
+persisted backend accounts and distinct currently valid session owners, not
+browser-local records or online presence. Histories preserve missing/unattributed
+actors with outer joins and expose only bounded safe projections, never refresh
+credential history or arbitrary metadata. UTC timestamp ranges are half-open;
+the UI's inclusive end day maps to the following midnight. Reporting queries
+must not change lifecycle state or infer unrecorded activity. Existing owner-only
+session APIs retain their scope.
+
 Cover invalid/expired/wrong issuer/audience/algorithm/version tokens, unmapped
 legacy accounts, function-level privilege escalation, guessed file IDs,
 reassignment during slow I/O, stale replacement versions, actual-byte overflow,

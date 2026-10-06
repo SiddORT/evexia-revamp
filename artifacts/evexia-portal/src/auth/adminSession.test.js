@@ -210,3 +210,96 @@ test('a completed older logout cannot erase a subsequent explicit login', async 
   assert.equal(api.getSession().user.id, user.id);
   await api.logoutAdmin();
 });
+
+test('reports use narrow no-store reads and serialize renewal with a single retry', async () => {
+  let refreshes = 0;
+  let fail = true;
+  const calls = [];
+  const api = await setup(async (url, options) => {
+    calls.push([url, options]);
+    if (url.includes('/reporting/')) {
+      if (fail) return reply({}, 401);
+      return reply({ items: [], limit: 20, offset: 0, has_more: false });
+    }
+    if (url.endsWith('/refresh')) { refreshes++; fail = false; return reply(payload); }
+    return reply(url.endsWith('/me') ? user : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  const results = await Promise.allSettled([
+    api.reportingRequest('events', { limit: 20 }), api.reportingRequest('sessions', {}),
+  ]);
+  assert.equal(refreshes, 1);
+  assert.ok(results.every((r) => r.status === 'fulfilled'));
+  const report = calls.find(([url]) => url.includes('/reporting/'));
+  assert.equal(report[1].method, 'GET');
+  assert.equal(report[1].cache, 'no-store');
+  assert.equal(report[1].body, undefined);
+  assert.equal(report[1].headers.Authorization, 'Bearer synthetic-memory-token');
+  await assert.rejects(api.reportingRequest('../auth/login'), /Unsupported/);
+  await assert.rejects(api.reportingRequest('events', { password: 'no' }), /Unsupported/);
+  await api.logoutAdmin();
+});
+
+test('reports reject late data after logout or identity change, including body decode races', async () => {
+  for (const lateBody of [false, true]) {
+    let release, started;
+    const start = new Promise((resolve) => { started = resolve; });
+    const gate = new Promise((resolve) => { release = resolve; });
+    const api = await setup(async (url) => {
+      if (url.includes('/reporting/')) {
+        if (lateBody) return { ok: true, status: 200, json: async () => { started(); await gate; return { private: true }; } };
+        started(); await gate; return reply({ private: true });
+      }
+      return url.endsWith('/logout') ? reply(null, 204) : reply(url.endsWith('/me') ? user : payload);
+    });
+    await api.loginAdmin(user.email, 'synthetic-password', false);
+    const reading = api.reportingRequest('summary');
+    await start;
+    await api.logoutAdmin();
+    release();
+    await assert.rejects(reading, /session changed/);
+    await assert.rejects(api.reportingRequest('summary'), /session changed/);
+  }
+});
+
+test('report aborts and terminal permissions fail closed, no refresh loop or unsafe messages', async () => {
+  let status = 200, refreshes = 0;
+  const api = await setup(async (url) => {
+    if (url.includes('/reporting/')) return reply({ secret: 'never display' }, status);
+    if (url.endsWith('/refresh')) refreshes++;
+    return url.endsWith('/logout') ? reply(null, 204) : reply(url.endsWith('/me') ? user : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  const ctl = new AbortController();
+  ctl.abort();
+  await assert.rejects(api.reportingRequest('events', {}, { signal: ctl.signal }), { name: 'AbortError' });
+  status = 403;
+  await assert.rejects(api.reportingRequest('summary'), { status: 403 });
+  assert.equal(api.getSession().status, 'anonymous');
+  assert.equal(refreshes, 0);
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  status = 401;
+  await assert.rejects(api.reportingRequest('summary'), { status: 401 });
+  assert.equal(refreshes, 1);
+  assert.equal(api.getSession().status, 'anonymous');
+});
+
+test('a report for an earlier login cannot be returned to a different identity', async () => {
+  let release, start, nextUser = user;
+  const gate = new Promise((resolve) => { release = resolve; });
+  const started = new Promise((resolve) => { start = resolve; });
+  const api = await setup(async (url) => {
+    if (url.includes('/reporting/')) { start(); await gate; return reply({ private: true }); }
+    return url.endsWith('/logout') ? reply(null, 204)
+      : reply(url.endsWith('/me') ? nextUser : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  const reading = api.reportingRequest('summary');
+  await started;
+  nextUser = { ...user, id: 'different-synthetic-id' };
+  await api.loginAdmin(nextUser.email, 'synthetic-password', false);
+  release();
+  await assert.rejects(reading, /session changed/);
+  assert.equal(api.getSession().user.id, nextUser.id);
+  await api.logoutAdmin();
+});
