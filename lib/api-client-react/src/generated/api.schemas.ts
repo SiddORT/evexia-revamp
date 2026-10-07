@@ -80,6 +80,109 @@ export interface ChangePasswordRequest {
   new_password: string;
 }
 
+export type CourierEditStatus =
+  (typeof CourierEditStatus)[keyof typeof CourierEditStatus];
+
+export const CourierEditStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface CourierEdit {
+  /** @minimum 1 */
+  expected_version: number;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  status: CourierEditStatus;
+}
+
+export type CourierFieldsStatus =
+  (typeof CourierFieldsStatus)[keyof typeof CourierFieldsStatus];
+
+export const CourierFieldsStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface CourierFields {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  status: CourierFieldsStatus;
+}
+
+export interface CourierImportResult {
+  imported: number;
+}
+
+export interface CourierImportRow {
+  errors: string[];
+  name: string;
+  row: number;
+  status: string;
+}
+
+export type CourierResponseStatus =
+  (typeof CourierResponseStatus)[keyof typeof CourierResponseStatus];
+
+export const CourierResponseStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface CourierResponse {
+  createdAt: string;
+  createdBy: string;
+  id: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  status: CourierResponseStatus;
+  updatedAt: string;
+  updatedBy: string;
+  version: number;
+}
+
+export interface CourierPage {
+  filtered: number;
+  items: CourierResponse[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export interface CourierReview {
+  digest: string;
+  rows: CourierImportRow[];
+  valid: boolean;
+}
+
+export type CourierStatusStatus =
+  (typeof CourierStatusStatus)[keyof typeof CourierStatusStatus];
+
+export const CourierStatusStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface CourierStatus {
+  /** @minimum 1 */
+  expected_version: number;
+  status: CourierStatusStatus;
+}
+
+export interface CourierVersion {
+  /** @minimum 1 */
+  expected_version: number;
+}
+
 export interface CreatePatientRequest {
   assigned_mr_id?: string | null;
 }
@@ -719,6 +822,88 @@ export interface ZoneVersion {
   /** @minimum 1 */
   expected_version: number;
 }
+
+export type ListCourierPartnersParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ListCourierPartnersStatus;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
+export type ListCourierPartnersStatus =
+  (typeof ListCourierPartnersStatus)[keyof typeof ListCourierPartnersStatus];
+
+export const ListCourierPartnersStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportCourierPartnersParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ExportCourierPartnersStatus;
+  format?: ExportCourierPartnersFormat;
+};
+
+export type ExportCourierPartnersStatus =
+  (typeof ExportCourierPartnersStatus)[keyof typeof ExportCourierPartnersStatus];
+
+export const ExportCourierPartnersStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportCourierPartnersFormat =
+  (typeof ExportCourierPartnersFormat)[keyof typeof ExportCourierPartnersFormat];
+
+export const ExportCourierPartnersFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type CommitCourierImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+  /**
+   * @pattern ^[0-9a-f]{64}$
+   */
+  digest: string;
+  confirm: boolean;
+};
+
+export type CommitCourierImportBody = {
+  file: Blob | File;
+};
+
+export type ReviewCourierImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+};
+
+export type ReviewCourierImportBody = {
+  file: Blob | File;
+};
 
 export type ListReportingEventsParams = {
   /**

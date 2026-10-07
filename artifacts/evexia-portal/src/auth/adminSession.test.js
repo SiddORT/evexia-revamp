@@ -19,6 +19,54 @@ async function setup(handler) {
 const reply = (body, status = 200) => new Response(status === 204 ? null : JSON.stringify(body), { status });
 const payload = { access_token: 'synthetic-memory-token', expires_in: 900, user };
 
+test('courier transport sends versions, raw review and filtered downloads without exposing credentials', async () => {
+  const requests = [];
+  const api = await setup(async (url, options) => {
+    if (url.includes('/admin/courier-partners')) {
+      requests.push({ url, options });
+      assert.equal(options.headers.Authorization, 'Bearer synthetic-memory-token');
+      assert.equal(options.credentials, 'same-origin');
+      assert.equal(options.cache, 'no-store');
+      if (url.includes('/export')) return new Response('Courier Partner Name,Status');
+      if (url.includes('/status')) return reply({ error: { code: 'courier_stale', message: 'Review current record.' } }, 409);
+      if (url.includes('/delete')) throw new Error('private provider detail');
+      return reply({ valid: true, digest: 'review' });
+    }
+    return reply(url.endsWith('/me') ? user : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  await api.courierRequest('/import/review', { file: 'synthetic csv', params: { filename: 'couriers.csv' } });
+  assert.equal(requests[0].options.body, 'synthetic csv');
+  assert.equal(requests[0].options.headers['Content-Type'], 'application/octet-stream');
+  const blob = await api.courierRequest('/export', { params: { query: 'City', status: 'inactive', format: 'xlsx' }, download: true });
+  assert.ok(blob instanceof Blob);
+  assert.match(requests[1].url, /query=City&status=inactive&format=xlsx/);
+  await assert.rejects(api.courierRequest('/00000000-0000-0000-0000-000000000001/status',
+    { body: { status: 'inactive', expected_version: 2 } }), (error) => error.code === 'courier_stale');
+  assert.deepEqual(JSON.parse(requests[2].options.body), { status: 'inactive', expected_version: 2 });
+  await assert.rejects(api.courierRequest('/00000000-0000-0000-0000-000000000001/delete',
+    { body: { expected_version: 2 } }), (error) => error.ambiguous);
+  assert.equal(requests.length, 4); // ambiguous writes are never replayed
+  await api.logoutAdmin();
+});
+
+test('courier body decoding cannot repopulate data after logout', async () => {
+  let release, decoding;
+  const started = new Promise((resolve) => { decoding = resolve; });
+  const api = await setup(async (url) => {
+    if (url.includes('/admin/courier-partners')) return {
+      ok: true, status: 200, json: async () => { decoding(); return new Promise((resolve) => { release = resolve; }); },
+    };
+    return reply(url.endsWith('/me') ? user : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  const read = api.courierRequest();
+  await started;
+  await api.logoutAdmin();
+  release({ items: [{ name: 'Protected data' }] });
+  await assert.rejects(read, /session changed/i);
+});
+
 test('zone transport keeps credentials in memory, uses versions/raw files and never replays ambiguous writes', async () => {
   let writes = 0;
   const api = await setup(async (url, options) => {

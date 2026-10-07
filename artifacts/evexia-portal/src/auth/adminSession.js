@@ -346,10 +346,16 @@ export async function roleRequest(path = '', body, { signal } = {}) {
   return data;
 }
 // Narrow reporting facility: credentials never leave this module.
-// Shared Zone transport. No automatic replay of a potentially committed write.
-export async function zoneRequest(path = '', { body, file, params = {}, download = false, signal } = {}) {
-  if (!/^(?:|\/trash|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|restore))?)$/.test(path)) {
-    throw new SessionError('Unsupported Zone operation.');
+// Shared master transport. No automatic replay of a potentially committed write.
+async function masterRequest(resource, path = '', { body, file, params = {}, download = false, signal } = {}) {
+  const zone = resource === 'zones';
+  const label = zone ? 'Zone' : 'Courier partner';
+  const unavailable = zone ? 'zone_unavailable' : 'courier_unavailable';
+  const route = zone
+    ? /^(?:|\/trash|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|restore))?)$/
+    : /^(?:|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/;
+  if (!route.test(path)) {
+    throw new SessionError(`Unsupported ${label} operation.`);
   }
   const epoch = generation;
   const owner = state.user?.id;
@@ -358,13 +364,13 @@ export async function zoneRequest(path = '', { body, file, params = {}, download
     if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
       throw new SessionError('Your session changed. Sign in again before retrying.', 401);
     }
-    if (!state.user.permissions.includes('admin.access')) throw new SessionError('Zone access denied.', 403);
+    if (!state.user.permissions.includes('admin.access')) throw new SessionError(`${label} access denied.`, 403);
   };
   if (pending) await pending;
   else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true);
   check();
   const writing = body !== undefined || file !== undefined;
-  const load = () => fetch(`/api/v1/admin/zones${path}?${new URLSearchParams(params)}`, {
+  const load = () => fetch(`/api/v1/admin/${resource}${path}?${new URLSearchParams(params)}`, {
     method: writing ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
     headers: { Authorization: `Bearer ${token}`, ...(writing ? { 'Content-Type': file ? 'application/octet-stream' : 'application/json' } : {}) },
     ...(writing ? { body: file || JSON.stringify(body) } : {}),
@@ -386,7 +392,7 @@ export async function zoneRequest(path = '', { body, file, params = {}, download
     if (error instanceof SessionError) throw error;
     const failure = new SessionError(writing
       ? 'Save outcome could not be confirmed. Refresh and inspect records before retrying; the server may have saved it.'
-      : 'Unable to load zones. Check your connection and retry.');
+      : `Unable to load ${resource}. Check your connection and retry.`);
     failure.ambiguous = writing && path !== '/import/review';
     throw failure;
   }
@@ -396,22 +402,24 @@ export async function zoneRequest(path = '', { body, file, params = {}, download
   try { data = response.ok && download ? await response.blob() : await response.json(); }
   catch {
     check();
-    const error = new SessionError('Zone response could not be read. Refresh and inspect current records before retrying.');
+    const error = new SessionError(`${label} response could not be read. Refresh and inspect current records before retrying.`);
     error.ambiguous = writing && path !== '/import/review';
     throw error;
   }
   if (pending) await pending;
   check();
   if (!response.ok) {
-    const error = new SessionError(response.status >= 500 && data?.error?.code !== 'zone_unavailable'
-      ? 'Zone service is unavailable. Your draft is preserved. Retry later; inspect records first if a save was pending.'
-      : data?.error?.message || 'Zone request failed. Review the details and retry.', response.status);
+    const error = new SessionError(response.status >= 500 && data?.error?.code !== unavailable
+      ? `${label} service is unavailable. Your draft is preserved. Retry later; inspect records first if a save was pending.`
+      : data?.error?.message || `${label} request failed. Review the details and retry.`, response.status);
     error.code = data?.error?.code;
-    error.ambiguous = writing && response.status >= 500 && error.code !== 'zone_unavailable';
+    error.ambiguous = writing && response.status >= 500 && error.code !== unavailable;
     throw error;
   }
   return data;
 }
+export const zoneRequest = (path, options) => masterRequest('zones', path, options);
+export const courierRequest = (path, options) => masterRequest('courier-partners', path, options);
 
 export async function reportingRequest(resource, params = {}, { signal } = {}) {
   if (!['summary', 'users', 'sessions', 'events', 'activity', 'sessions/export', 'events/export'].includes(resource)) {

@@ -8,6 +8,8 @@ import { downloadReportingCSV } from '../../services/reportingCSV.js';
 import '../../activityLogs.css';
 
 const browserActions = {
+  courier_create: 'Courier partner created', courier_edit: 'Courier partner updated',
+  courier_status: 'Courier partner status changed', courier_delete: 'Courier partner deleted',
   staff_create: 'Staff created', staff_update: 'Staff updated', staff_status: 'Staff status changed',
   role_create: 'Role created', role_update: 'Role updated', role_delete: 'Role deleted',
   browser_page_view: 'Page visited', browser_created: 'Record created',

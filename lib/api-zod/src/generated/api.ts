@@ -15,6 +15,259 @@ export const GetHealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary Listing
+ */
+export const listCourierPartnersQueryQueryDefault = ``;
+export const listCourierPartnersQueryQueryMax = 200;
+
+export const listCourierPartnersQueryStatusDefault = `all`;
+export const listCourierPartnersQueryLimitDefault = 10;
+export const listCourierPartnersQueryLimitMax = 100;
+
+export const listCourierPartnersQueryOffsetDefault = 0;
+export const listCourierPartnersQueryOffsetMin = 0;
+export const listCourierPartnersQueryOffsetMax = 1000000;
+
+export const ListCourierPartnersQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listCourierPartnersQueryQueryMax)
+    .default(listCourierPartnersQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(listCourierPartnersQueryStatusDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listCourierPartnersQueryLimitMax)
+    .default(listCourierPartnersQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listCourierPartnersQueryOffsetMin)
+    .max(listCourierPartnersQueryOffsetMax)
+    .default(listCourierPartnersQueryOffsetDefault),
+});
+
+export const listCourierPartnersResponseItemsItemNameMax = 200;
+
+export const ListCourierPartnersResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      id: zod.string().uuid(),
+      name: zod
+        .string()
+        .min(1)
+        .max(listCourierPartnersResponseItemsItemNameMax),
+      status: zod.enum(["active", "inactive"]),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+export const createCourierPartnerBodyNameMax = 200;
+
+export const CreateCourierPartnerBody = zod.object({
+  name: zod.string().min(1).max(createCourierPartnerBodyNameMax),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const createCourierPartnerResponseNameMax = 200;
+
+export const CreateCourierPartnerResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(createCourierPartnerResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Export
+ */
+export const exportCourierPartnersQueryQueryDefault = ``;
+export const exportCourierPartnersQueryQueryMax = 200;
+
+export const exportCourierPartnersQueryStatusDefault = `all`;
+export const exportCourierPartnersQueryFormatDefault = `csv`;
+
+export const ExportCourierPartnersQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(exportCourierPartnersQueryQueryMax)
+    .default(exportCourierPartnersQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(exportCourierPartnersQueryStatusDefault),
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(exportCourierPartnersQueryFormatDefault),
+});
+
+export const ExportCourierPartnersResponse = zod.unknown();
+
+/**
+ * @summary Commit
+ */
+export const commitCourierImportQueryFilenameMax = 200;
+
+export const commitCourierImportQueryDigestRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const CommitCourierImportQueryParams = zod.object({
+  filename: zod.coerce.string().min(1).max(commitCourierImportQueryFilenameMax),
+  digest: zod.coerce.string().regex(commitCourierImportQueryDigestRegExp),
+  confirm: zod.coerce.boolean(),
+});
+
+export const CommitCourierImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const CommitCourierImportResponse = zod.object({
+  imported: zod.number().int(),
+});
+
+/**
+ * @summary Review
+ */
+export const reviewCourierImportQueryFilenameMax = 200;
+
+export const ReviewCourierImportQueryParams = zod.object({
+  filename: zod.coerce.string().min(1).max(reviewCourierImportQueryFilenameMax),
+});
+
+export const ReviewCourierImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const ReviewCourierImportResponse = zod.object({
+  digest: zod.string(),
+  rows: zod.array(
+    zod.object({
+      errors: zod.array(zod.string()),
+      name: zod.string(),
+      row: zod.number().int(),
+      status: zod.string(),
+    }),
+  ),
+  valid: zod.boolean(),
+});
+
+/**
+ * @summary Detail
+ */
+export const GetCourierPartnerParams = zod.object({
+  courier_id: zod.coerce.string().uuid(),
+});
+
+export const getCourierPartnerResponseNameMax = 200;
+
+export const GetCourierPartnerResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(getCourierPartnerResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Delete
+ */
+export const DeleteCourierPartnerParams = zod.object({
+  courier_id: zod.coerce.string().uuid(),
+});
+
+export const DeleteCourierPartnerBody = zod.object({
+  expected_version: zod.number().int().min(1),
+});
+
+export const deleteCourierPartnerResponseNameMax = 200;
+
+export const DeleteCourierPartnerResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(deleteCourierPartnerResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditCourierPartnerParams = zod.object({
+  courier_id: zod.coerce.string().uuid(),
+});
+
+export const editCourierPartnerBodyNameMax = 200;
+
+export const EditCourierPartnerBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  name: zod.string().min(1).max(editCourierPartnerBodyNameMax),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const editCourierPartnerResponseNameMax = 200;
+
+export const EditCourierPartnerResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(editCourierPartnerResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Status
+ */
+export const SetCourierPartnerStatusParams = zod.object({
+  courier_id: zod.coerce.string().uuid(),
+});
+
+export const SetCourierPartnerStatusBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const setCourierPartnerStatusResponseNameMax = 200;
+
+export const SetCourierPartnerStatusResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(setCourierPartnerStatusResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
  * Bounded browser-reported metadata; actor/session are server-derived.
  * @summary Activity
  */

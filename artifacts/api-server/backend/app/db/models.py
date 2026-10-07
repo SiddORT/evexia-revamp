@@ -183,3 +183,4 @@ from app.db import file_models as _file_models  # noqa: E402,F401
 from app.db import staff_models as _staff_models  # noqa: E402,F401
 from app.db import zone_models as _zone_models  # noqa: E402,F401
 from app.db import role_models as _role_models  # noqa: E402,F401
+from app.db import courier_models as _courier_models  # noqa: E402,F401

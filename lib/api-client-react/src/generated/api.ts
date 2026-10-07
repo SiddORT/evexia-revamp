@@ -20,18 +20,30 @@ import type {
   AssignPatientRequest,
   BrowserActivityBatch,
   ChangePasswordRequest,
+  CommitCourierImportBody,
+  CommitCourierImportParams,
   CommitZoneImportParams,
+  CourierEdit,
+  CourierFields,
+  CourierImportResult,
+  CourierPage,
+  CourierResponse,
+  CourierReview,
+  CourierStatus,
+  CourierVersion,
   CreatePatientRequest,
   CurrentUser,
   DeleteFileParams,
   DownloadURLResponse,
   ErrorEnvelope,
   EventPage,
+  ExportCourierPartnersParams,
   ExportReportingEventsParams,
   ExportReportingSessionsParams,
   ExportZonesParams,
   FileResponse,
   HealthStatus,
+  ListCourierPartnersParams,
   ListCustomRolesParams,
   ListDeletedZonesParams,
   ListOwnSessionsParams,
@@ -47,6 +59,8 @@ import type {
   ReplaceFileParams,
   ReportExport,
   ReportSummary,
+  ReviewCourierImportBody,
+  ReviewCourierImportParams,
   ReviewZoneImportParams,
   RoleEdit,
   RoleFields,
@@ -179,6 +193,994 @@ export function useGetHealthCheck<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getListCourierPartnersUrl = (
+  params?: ListCourierPartnersParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/courier-partners?${stringifiedParams}`
+    : `/api/v1/admin/courier-partners`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listCourierPartners = async (
+  params?: ListCourierPartnersParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CourierPage> => {
+  return customFetch<CourierPage>(getListCourierPartnersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCourierPartnersQueryKey = (
+  params?: ListCourierPartnersParams,
+) => {
+  return [
+    `/api/v1/admin/courier-partners`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListCourierPartnersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCourierPartners>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListCourierPartnersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCourierPartners>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListCourierPartnersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCourierPartners>>
+  > = ({ signal }) =>
+    listCourierPartners(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCourierPartners>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCourierPartnersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCourierPartners>>
+>;
+export type ListCourierPartnersQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListCourierPartners<
+  TData = Awaited<ReturnType<typeof listCourierPartners>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListCourierPartnersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCourierPartners>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCourierPartnersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateCourierPartnerUrl = () => {
+  return `/api/v1/admin/courier-partners`;
+};
+
+/**
+ * @summary Create
+ */
+export const createCourierPartner = async (
+  courierFields: CourierFields,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CourierResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<CourierResponse>(getCreateCourierPartnerUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(courierFields),
+  });
+};
+
+export const getCreateCourierPartnerMutationKey = () =>
+  ["createCourierPartner"] as const;
+
+export const getCreateCourierPartnerMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCourierPartner>>,
+    TError,
+    CreateCourierPartnerMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createCourierPartner>>,
+  TError,
+  CreateCourierPartnerMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateCourierPartnerMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createCourierPartner>>,
+    CreateCourierPartnerMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createCourierPartner(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateCourierPartnerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createCourierPartner>>
+>;
+export type CreateCourierPartnerMutationBody = BodyType<CourierFields>;
+export type CreateCourierPartnerMutationError = ErrorType<ErrorEnvelope>;
+export type CreateCourierPartnerMutationVariables = {
+  data: BodyType<CourierFields>;
+};
+
+/**
+ * @summary Create
+ */
+export const useCreateCourierPartner = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCourierPartner>>,
+    TError,
+    CreateCourierPartnerMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createCourierPartner>>,
+  TError,
+  CreateCourierPartnerMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateCourierPartnerMutationOptions(options));
+};
+
+export const getExportCourierPartnersUrl = (
+  params?: ExportCourierPartnersParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/courier-partners/export?${stringifiedParams}`
+    : `/api/v1/admin/courier-partners/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportCourierPartners = async (
+  params?: ExportCourierPartnersParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getExportCourierPartnersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportCourierPartnersQueryKey = (
+  params?: ExportCourierPartnersParams,
+) => {
+  return [
+    `/api/v1/admin/courier-partners/export`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getExportCourierPartnersQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportCourierPartners>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportCourierPartnersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportCourierPartners>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getExportCourierPartnersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exportCourierPartners>>
+  > = ({ signal }) =>
+    exportCourierPartners(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportCourierPartners>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportCourierPartnersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportCourierPartners>>
+>;
+export type ExportCourierPartnersQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportCourierPartners<
+  TData = Awaited<ReturnType<typeof exportCourierPartners>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportCourierPartnersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportCourierPartners>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportCourierPartnersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCommitCourierImportUrl = (
+  params: CommitCourierImportParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/courier-partners/import/commit?${stringifiedParams}`
+    : `/api/v1/admin/courier-partners/import/commit`;
+};
+
+/**
+ * @summary Commit
+ */
+export const commitCourierImport = async (
+  commitCourierImportBody: CommitCourierImportBody,
+  params: CommitCourierImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CourierImportResult> => {
+  const formData = new FormData();
+  formData.append(`file`, commitCourierImportBody.file);
+
+  return customFetch<CourierImportResult>(getCommitCourierImportUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getCommitCourierImportMutationKey = () =>
+  ["commitCourierImport"] as const;
+
+export const getCommitCourierImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitCourierImport>>,
+    TError,
+    CommitCourierImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof commitCourierImport>>,
+  TError,
+  CommitCourierImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCommitCourierImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof commitCourierImport>>,
+    CommitCourierImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return commitCourierImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CommitCourierImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof commitCourierImport>>
+>;
+export type CommitCourierImportMutationBody = BodyType<CommitCourierImportBody>;
+export type CommitCourierImportMutationError = ErrorType<ErrorEnvelope>;
+export type CommitCourierImportMutationVariables = {
+  data: BodyType<CommitCourierImportBody>;
+  params: CommitCourierImportParams;
+};
+
+/**
+ * @summary Commit
+ */
+export const useCommitCourierImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitCourierImport>>,
+    TError,
+    CommitCourierImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof commitCourierImport>>,
+  TError,
+  CommitCourierImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getCommitCourierImportMutationOptions(options));
+};
+
+export const getReviewCourierImportUrl = (
+  params: ReviewCourierImportParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/courier-partners/import/review?${stringifiedParams}`
+    : `/api/v1/admin/courier-partners/import/review`;
+};
+
+/**
+ * @summary Review
+ */
+export const reviewCourierImport = async (
+  reviewCourierImportBody: ReviewCourierImportBody,
+  params: ReviewCourierImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CourierReview> => {
+  const formData = new FormData();
+  formData.append(`file`, reviewCourierImportBody.file);
+
+  return customFetch<CourierReview>(getReviewCourierImportUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getReviewCourierImportMutationKey = () =>
+  ["reviewCourierImport"] as const;
+
+export const getReviewCourierImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewCourierImport>>,
+    TError,
+    ReviewCourierImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewCourierImport>>,
+  TError,
+  ReviewCourierImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReviewCourierImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewCourierImport>>,
+    ReviewCourierImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return reviewCourierImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewCourierImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewCourierImport>>
+>;
+export type ReviewCourierImportMutationBody = BodyType<ReviewCourierImportBody>;
+export type ReviewCourierImportMutationError = ErrorType<ErrorEnvelope>;
+export type ReviewCourierImportMutationVariables = {
+  data: BodyType<ReviewCourierImportBody>;
+  params: ReviewCourierImportParams;
+};
+
+/**
+ * @summary Review
+ */
+export const useReviewCourierImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewCourierImport>>,
+    TError,
+    ReviewCourierImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewCourierImport>>,
+  TError,
+  ReviewCourierImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getReviewCourierImportMutationOptions(options));
+};
+
+export const getGetCourierPartnerUrl = (courierId: string) => {
+  return `/api/v1/admin/courier-partners/${courierId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getCourierPartner = async (
+  courierId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CourierResponse> => {
+  return customFetch<CourierResponse>(getGetCourierPartnerUrl(courierId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCourierPartnerQueryKey = (courierId: string) => {
+  return [`/api/v1/admin/courier-partners/${courierId}`] as const;
+};
+
+export const getGetCourierPartnerQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCourierPartner>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  courierId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCourierPartner>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetCourierPartnerQueryKey(courierId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCourierPartner>>
+  > = ({ signal }) =>
+    getCourierPartner(courierId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: courierId !== null && courierId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCourierPartner>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCourierPartnerQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCourierPartner>>
+>;
+export type GetCourierPartnerQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetCourierPartner<
+  TData = Awaited<ReturnType<typeof getCourierPartner>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  courierId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCourierPartner>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCourierPartnerQueryOptions(courierId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDeleteCourierPartnerUrl = (courierId: string) => {
+  return `/api/v1/admin/courier-partners/${courierId}/delete`;
+};
+
+/**
+ * @summary Delete
+ */
+export const deleteCourierPartner = async (
+  courierId: string,
+  courierVersion: CourierVersion,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CourierResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<CourierResponse>(getDeleteCourierPartnerUrl(courierId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(courierVersion),
+  });
+};
+
+export const getDeleteCourierPartnerMutationKey = () =>
+  ["deleteCourierPartner"] as const;
+
+export const getDeleteCourierPartnerMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCourierPartner>>,
+    TError,
+    DeleteCourierPartnerMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteCourierPartner>>,
+  TError,
+  DeleteCourierPartnerMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteCourierPartnerMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteCourierPartner>>,
+    DeleteCourierPartnerMutationVariables
+  > = (props) => {
+    const { courierId, data } = props ?? {};
+
+    return deleteCourierPartner(courierId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteCourierPartnerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteCourierPartner>>
+>;
+export type DeleteCourierPartnerMutationBody = BodyType<CourierVersion>;
+export type DeleteCourierPartnerMutationError = ErrorType<ErrorEnvelope>;
+export type DeleteCourierPartnerMutationVariables = {
+  courierId: string;
+  data: BodyType<CourierVersion>;
+};
+
+/**
+ * @summary Delete
+ */
+export const useDeleteCourierPartner = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCourierPartner>>,
+    TError,
+    DeleteCourierPartnerMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteCourierPartner>>,
+  TError,
+  DeleteCourierPartnerMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteCourierPartnerMutationOptions(options));
+};
+
+export const getEditCourierPartnerUrl = (courierId: string) => {
+  return `/api/v1/admin/courier-partners/${courierId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editCourierPartner = async (
+  courierId: string,
+  courierEdit: CourierEdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CourierResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<CourierResponse>(getEditCourierPartnerUrl(courierId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(courierEdit),
+  });
+};
+
+export const getEditCourierPartnerMutationKey = () =>
+  ["editCourierPartner"] as const;
+
+export const getEditCourierPartnerMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editCourierPartner>>,
+    TError,
+    EditCourierPartnerMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editCourierPartner>>,
+  TError,
+  EditCourierPartnerMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditCourierPartnerMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editCourierPartner>>,
+    EditCourierPartnerMutationVariables
+  > = (props) => {
+    const { courierId, data } = props ?? {};
+
+    return editCourierPartner(courierId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditCourierPartnerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editCourierPartner>>
+>;
+export type EditCourierPartnerMutationBody = BodyType<CourierEdit>;
+export type EditCourierPartnerMutationError = ErrorType<ErrorEnvelope>;
+export type EditCourierPartnerMutationVariables = {
+  courierId: string;
+  data: BodyType<CourierEdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditCourierPartner = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editCourierPartner>>,
+    TError,
+    EditCourierPartnerMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editCourierPartner>>,
+  TError,
+  EditCourierPartnerMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditCourierPartnerMutationOptions(options));
+};
+
+export const getSetCourierPartnerStatusUrl = (courierId: string) => {
+  return `/api/v1/admin/courier-partners/${courierId}/status`;
+};
+
+/**
+ * @summary Status
+ */
+export const setCourierPartnerStatus = async (
+  courierId: string,
+  courierStatus: CourierStatus,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CourierResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<CourierResponse>(
+    getSetCourierPartnerStatusUrl(courierId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(courierStatus),
+    },
+  );
+};
+
+export const getSetCourierPartnerStatusMutationKey = () =>
+  ["setCourierPartnerStatus"] as const;
+
+export const getSetCourierPartnerStatusMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setCourierPartnerStatus>>,
+    TError,
+    SetCourierPartnerStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setCourierPartnerStatus>>,
+  TError,
+  SetCourierPartnerStatusMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSetCourierPartnerStatusMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setCourierPartnerStatus>>,
+    SetCourierPartnerStatusMutationVariables
+  > = (props) => {
+    const { courierId, data } = props ?? {};
+
+    return setCourierPartnerStatus(courierId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetCourierPartnerStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setCourierPartnerStatus>>
+>;
+export type SetCourierPartnerStatusMutationBody = BodyType<CourierStatus>;
+export type SetCourierPartnerStatusMutationError = ErrorType<ErrorEnvelope>;
+export type SetCourierPartnerStatusMutationVariables = {
+  courierId: string;
+  data: BodyType<CourierStatus>;
+};
+
+/**
+ * @summary Status
+ */
+export const useSetCourierPartnerStatus = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setCourierPartnerStatus>>,
+    TError,
+    SetCourierPartnerStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setCourierPartnerStatus>>,
+  TError,
+  SetCourierPartnerStatusMutationVariables,
+  TContext
+> => {
+  return useMutation(getSetCourierPartnerStatusMutationOptions(options));
+};
 
 export const getRecordBrowserActivityUrl = () => {
   return `/api/v1/admin/reporting/activity`;

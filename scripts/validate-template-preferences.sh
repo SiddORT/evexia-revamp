@@ -9,4 +9,5 @@ node --test artifacts/evexia-portal/src/services/rolePermissions.test.js
 node --test artifacts/evexia-portal/src/services/reportingCSV.test.js
 node --test artifacts/evexia-portal/src/services/staff.test.js
 sh scripts/test-api-foundation.sh tests/test_roles.py tests/test_migration_roles.py
+node --test artifacts/evexia-portal/src/services/serverCouriers.test.js
 sh scripts/run-authenticated-previews.sh

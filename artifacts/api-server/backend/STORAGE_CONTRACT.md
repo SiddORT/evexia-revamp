@@ -19,6 +19,7 @@ password input; there is no default elevated account.
 | Provision/map login and MR; create patient; assign patient | yes | no |
 | Staff list/detail/create/edit/status (`staff.manage`) | protected singleton only | no |
 | Zone list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
+| Courier Partner list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
 | Upload, metadata, verified download, download grant | system-wide | own MR or currently assigned active patient |
 | Delete, replace, retry verification/cleanup | yes | no |
 
@@ -48,6 +49,14 @@ deleter metadata; no normal lookup/export exposes deleted rows. CSV/XLSX imports
 are explicit, bounded review/confirm, create-only and transactional. Imported
 audit strings are ignored. Legacy local-zone demo relationships remain untouched.
 See `docs/zone-master.md` for exact schemas, limits and failure recovery.
+
+Courier Partner Master is separate shared persistence with server-owned UTC audit
+times, User actor references, mandatory expected versions and partial normalized
+name uniqueness including inactive rows. Soft deletion preserves the row and
+deleter while excluding it from ordinary reads/exports. Imports are explicit,
+identity-bound review/confirm, bounded, create-only and transactional; incoming
+audit attribution is ignored. Local courier records remain untouched and unused.
+See `docs/courier-partner-master.md` for transfer limits and operations.
 
 ## File API and validation
 

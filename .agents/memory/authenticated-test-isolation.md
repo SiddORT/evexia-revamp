@@ -30,3 +30,16 @@ This is distinct from testing SPA navigation or mounted-draft renewal.
 **How to apply:** Wait for an authenticated screen element, not a fixed sleep or
 only the navigation promise, when a fixture intentionally visits consecutive
 protected documents. Keep replay rejection and single-session policy unchanged.
+
+Cold synthetic previews can exceed short browser defaults when the workspace is
+CPU-contended, even with correctly isolated listeners. Wait for authenticated
+content and route data with bounded startup deadlines, without dropping exact
+assertions or adding retries.
+
+**Why:** A full release reached working loaders but exceeded five-second
+readiness assertions and thirty-second multi-step budgets across changed and
+unchanged pages. The same journeys passed under lower load.
+
+**How to apply:** Distinguish loader/time-budget failures from authorization,
+data or layout failures before changing production code. Increase only bounded
+test readiness/time budgets, not accepted outcomes or security checks.

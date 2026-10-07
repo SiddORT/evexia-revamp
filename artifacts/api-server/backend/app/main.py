@@ -17,6 +17,8 @@ from app.api.v1.reporting import router as reporting_router
 from app.api.v1.staff import router as staff_router
 from app.api.v1.zones import router as zones_router
 from app.services.zones import ZoneError
+from app.api.v1.couriers import router as couriers_router
+from app.services.couriers import CourierError
 from app.api.v1.roles import router as roles_router
 from app.services.roles import RoleError
 from app.services.staff_crypto import StaffError
@@ -130,8 +132,8 @@ def create_app() -> FastAPI:
                              for name in ("name", "description", "expected_version", "role_id", "limit", "cursor")}
             fields = [{"field": field["field"] if field["field"] in locations else "body",
                        "code": field["code"]} for field in fields]
-        if request.url.path.startswith("/api/v1/admin/zones"):
-            allowed = {"name", "status", "expected_version", "query", "limit", "offset", "format", "filename", "digest", "confirm", "zone_id"}
+        if request.url.path.startswith(("/api/v1/admin/zones", "/api/v1/admin/courier-partners")):
+            allowed = {"name", "status", "expected_version", "query", "limit", "offset", "format", "filename", "digest", "confirm", "zone_id", "courier_id"}
             locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
             fields = [{"field": item["field"] if item["field"] in locations else "body",
                        "code": item["code"]} for item in fields]
@@ -147,6 +149,10 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(ZoneError)
     async def zone_error(request: Request, exc: ZoneError):
+        return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
+
+    @app.exception_handler(CourierError)
+    async def courier_error(request: Request, exc: CourierError):
         return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
 
     @app.exception_handler(RoleError)
@@ -169,6 +175,7 @@ def create_app() -> FastAPI:
     app.include_router(reporting_router, prefix="/api/v1")
     app.include_router(staff_router, prefix="/api/v1")
     app.include_router(zones_router, prefix="/api/v1")
+    app.include_router(couriers_router, prefix="/api/v1")
     app.include_router(roles_router, prefix="/api/v1")
     app.add_api_route("/api/healthz", lambda: {"status": "ok"}, methods=["GET"],
                       response_model=HealthStatus, operation_id="getHealthCheck", tags=["health"])

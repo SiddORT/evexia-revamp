@@ -14,7 +14,7 @@ export default function Masters() {
         </Link>
         <Link href="/admin/masters/courier-partners" className="admin-master-link" data-testid="link-master-courier-partners">
           <span className="admin-master-link__icon"><Truck size={20} aria-hidden="true" /></span>
-          <span className="admin-master-link__text"><strong>Courier Partner Master</strong><small>Manage courier partner names and availability in this browser.</small></span>
+          <span className="admin-master-link__text"><strong>Courier Partner Master</strong><small>Manage shared courier partner records and authenticated audit history.</small></span>
           <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
         </Link>
         <Link href="/admin/masters/mrs" className="admin-master-link" data-testid="link-master-mrs">
