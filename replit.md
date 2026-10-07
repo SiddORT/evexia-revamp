@@ -39,6 +39,8 @@ EVEXIA Life Sciences portal with a protected Admin workspace, mock MR/Doctor log
 
 ## Browser regression test
 
+- Move stocks (`/admin/inventory/move-stocks`) is an isolated fictional frontend preview. Its whole-vial/bottle quantities and movements are memory-only, survive SPA route changes and reset on full reload. It never reads or writes masters or procurement data; delivered-by is unverified typed metadata. Run focused checks with `pnpm --filter @workspace/evexia-portal run test:move-stocks` and `test:move-stocks:browser` (isolated synthetic authenticated harness).
+
 - Run `pnpm run test:authenticated-previews` for the Admin-auth, template-preference, and Communication browser regressions in one isolated harness run. `pnpm run test:communication-browser` runs only Communication; `pnpm --filter @workspace/evexia-portal run test:template-preferences` runs its service and browser checks.
 - The authenticated-preview harness starts a temporary local-only PostgreSQL database, applies migrations, creates a synthetic protected Super Admin through the backend bootstrap command, starts FastAPI and a Vite dev server, and removes the database/processes on exit. It overwrites database/auth fixture settings with synthetic test-only values and never connects to a configured or managed database.
 - Preview requests stay same-origin: the harness's opt-in Vite `/api` proxy targets its isolated FastAPI process. Happy-path and existing preference/communication tests use real login and `/me`; protected pages restore with the real refresh-cookie flow. The Admin-auth negative cases intercept outage, rate-limit, expiry, and missing-permission responses to confirm fail-closed UI handling; they never bypass a guard.

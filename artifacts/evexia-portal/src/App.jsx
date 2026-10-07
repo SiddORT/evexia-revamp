@@ -40,6 +40,8 @@ const PurchaseOrders = lazyRoute(() => import('./pages/admin/PurchaseOrders.jsx'
 const PurchaseOrderFormPage = lazyRoute(() => import('./pages/admin/PurchaseOrderFormPage.jsx'));
 const PurchaseReceived = lazyRoute(() => import('./pages/admin/PurchaseReceived.jsx'));
 const PurchaseReceivedFormPage = lazyRoute(() => import('./pages/admin/PurchaseReceivedFormPage.jsx'));
+const MoveStocks = lazyRoute(() => import('./pages/admin/MoveStocks.jsx'));
+const MoveStockFormPage = lazyRoute(() => import('./pages/admin/MoveStockFormPage.jsx'));
 const ActivityLogs = lazyRoute(() => import('./pages/admin/ActivityLogs.jsx'));
 
 function App() {
@@ -57,6 +59,8 @@ function App() {
       <Route path="/admin/inventory/purchase-received" component={PurchaseReceived} />
       <Route path="/admin/inventory/purchase-received/new">{() => <PurchaseReceivedFormPage />}</Route>
       <Route path="/admin/inventory/purchase-received/:id">{(params) => <PurchaseReceivedFormPage id={params.id} />}</Route>
+      <Route path="/admin/inventory/move-stocks" component={MoveStocks} />
+      <Route path="/admin/inventory/move-stocks/new" component={MoveStockFormPage} />
       <Route path="/admin/masters" component={Masters} />
       <Route path="/admin/masters/import/:kind">{(params) => <MasterExcelImportPage key={params.kind} kind={params.kind} />}</Route>
       <Route path="/admin/masters/zones" component={ZoneMaster} />
