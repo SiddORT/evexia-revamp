@@ -1,3 +1,4 @@
+import { downloadBlob } from '../../services/downloads.js';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, CheckCircle2, Download, FileSpreadsheet, Upload, XCircle } from 'lucide-react';
@@ -63,18 +64,11 @@ export default function ZoneImportPage() {
     }
   }
 
-  function sample(format) {
+  async function sample(format) {
     setError('');
     try {
       const blob = format === 'csv' ? new Blob(['\uFEFFZone Name,Status\r\nSample Zone,Active\r\n'], { type: 'text/csv;charset=utf-8' }) : sampleExcel('zone');
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `evexia-zone-sample.${format}`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      await downloadBlob(blob, `evexia-zone-sample.${format}`, { source: 'zone', kind: 'sample', format: format.toUpperCase() });
     } catch (cause) { setError(cause.message || 'Could not download the Zone sample.'); }
   }
 

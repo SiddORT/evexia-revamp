@@ -2,7 +2,7 @@ import asyncio
 import uuid
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Query, Request, Response
+from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_permissions
@@ -10,6 +10,7 @@ from app.db.session import get_db
 from app.schemas.zones import ZoneFields, ZoneEdit, ZoneStatus, ZoneVersion, ZoneResponse, ZonePage, ZoneDeletedPage, ZoneReview, ZoneImportResult
 from app.services.auth import Identity
 from app.services import zones, zone_transfer
+from app.services.downloads import server_record
 
 router = APIRouter(prefix="/admin/zones", tags=["Zone Master"])
 manager = require_permissions("admin.access")
@@ -31,11 +32,14 @@ def create(body: ZoneFields, actor: Identity = Depends(manager), db: Session = D
     "text/csv": {"schema": {"type": "string", "format": "binary"}},
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {"schema": {"type": "string", "format": "binary"}}}}})
 def export(query: str = Query("", max_length=200), status: Literal["all", "active", "inactive"] = "all",
-           format: Literal["csv", "xlsx"] = "csv", actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+           format: Literal["csv", "xlsx"] = "csv", actor: Identity = Depends(manager), db: Session = Depends(get_db),
+           initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation")):
     data = zone_transfer.export(db, actor, query, status, format)
+    evidence = server_record(db, actor, initiation_id, "zone", "export", format.upper())
     return Response(data, media_type="text/csv; charset=utf-8" if format == "csv" else
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    headers={"Content-Disposition": f'attachment; filename="evexia-zone-master.{format}"'})
+                    headers={"Content-Disposition": f'attachment; filename="evexia-zone-master.{format}"',
+                             "X-Download-Log": str(evidence["id"]), "Cache-Control": "no-store"})
 
 
 async def read_file(request):

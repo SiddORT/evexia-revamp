@@ -1,3 +1,4 @@
+import { downloadCSV as loggedCSV } from '../../services/downloads.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Download, Pencil, Plus, RefreshCw, Search, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
@@ -14,14 +15,7 @@ const EMPTY = Object.fromEntries(FIELD_KEYS.map((key) => [key, '']));
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 function downloadCSV(text, name) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = name;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return loggedCSV(text, name, 'vendor', name.includes('template') ? 'template' : 'export');
 }
 
 function audit(by, at) {
@@ -122,7 +116,7 @@ export function VendorImport({ records, stale, onImport, onClose }) {
     footer={<><button type="button" className="admin-button admin-button--secondary" onClick={close} data-testid="button-cancel-vendor-import">Cancel</button><button type="button" className="admin-button" onClick={confirm} disabled={!valid || Boolean(invalid.length) || reading || stale || Boolean(message)} data-testid="button-confirm-vendor-import">Import {valid} {valid === 1 ? 'vendor' : 'vendors'}</button></>}>
     <div className="admin-vendor-import">
       <div className="admin-vendor-import__guide"><strong>CSV columns in this order</strong><p>{VENDOR_COLUMNS.map(([, label]) => label).join(', ')}. All fields are required. IDs and audit details are not imported.</p></div>
-      <button type="button" className="admin-button admin-button--secondary" onClick={() => { try { downloadCSV(vendorCSVTemplate(), 'evexia-vendor-template.csv'); setMessage(''); } catch { setMessage('The CSV template could not be downloaded.'); } }} data-testid="button-vendor-import-template"><Download size={16} aria-hidden="true" /> Download template</button>
+      <button type="button" className="admin-button admin-button--secondary" onClick={async () => { try { await downloadCSV(vendorCSVTemplate(), 'evexia-vendor-template.csv'); setMessage(''); } catch (cause) { setMessage(cause.message || 'The CSV template could not be downloaded. Please retry.'); } }} data-testid="button-vendor-import-template"><Download size={16} aria-hidden="true" /> Download template</button>
       <label className="admin-vendor-import__file">Choose a local CSV file (maximum 2 MB)<input type="file" accept=".csv,text/csv" onChange={choose} disabled={stale || reading} data-testid="input-vendor-import" /></label>
       {reading && <p role="status">Reading CSV file…</p>}
       {stale && <div className="admin-feedback admin-feedback--error" role="alert">Vendor records changed in another tab. Close and refresh before importing.</div>}
@@ -227,9 +221,9 @@ export default function VendorMaster() {
       return { success: false, error: message };
     }
   }
-  function exportRows() {
+  async function exportRows() {
     if (!guard() || !visible.length) return;
-    try { downloadCSV(exportVendorCSV(visible), 'evexia-vendors.csv'); setActionError(''); }
+    try { await downloadCSV(exportVendorCSV(visible), 'evexia-vendors.csv'); setActionError(''); }
     catch (cause) { setActionError(cause.message || 'CSV export failed. Please try again.'); }
   }
   function edit(record) { setEditing(record); setActionError(''); setFeedback(''); }

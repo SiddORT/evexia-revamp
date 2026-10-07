@@ -204,8 +204,98 @@ export interface CurrentUser {
   username: string | null;
 }
 
+export type DownloadEvidenceProvenance =
+  (typeof DownloadEvidenceProvenance)[keyof typeof DownloadEvidenceProvenance];
+
+export const DownloadEvidenceProvenance = {
+  browser_reported: "browser_reported",
+  server_prepared: "server_prepared",
+} as const;
+
+export interface DownloadEvidence {
+  id: string;
+  provenance: DownloadEvidenceProvenance;
+}
+
+export type DownloadInitiationFormat =
+  (typeof DownloadInitiationFormat)[keyof typeof DownloadInitiationFormat];
+
+export const DownloadInitiationFormat = {
+  PDF: "PDF",
+  CSV: "CSV",
+  XLSX: "XLSX",
+} as const;
+
+export interface DownloadInitiation {
+  format: DownloadInitiationFormat;
+  initiation_id: string;
+  /**
+   * @minLength 1
+   * @maxLength 20
+   */
+  kind: string;
+  /**
+   * @minLength 1
+   * @maxLength 40
+   */
+  source: string;
+}
+
+export type DownloadItemFormat =
+  (typeof DownloadItemFormat)[keyof typeof DownloadItemFormat];
+
+export const DownloadItemFormat = {
+  PDF: "PDF",
+  CSV: "CSV",
+  XLSX: "XLSX",
+} as const;
+
+export type DownloadItemProvenance =
+  (typeof DownloadItemProvenance)[keyof typeof DownloadItemProvenance];
+
+export const DownloadItemProvenance = {
+  browser_reported: "browser_reported",
+  server_prepared: "server_prepared",
+} as const;
+
+export type ReportUserAccountState =
+  (typeof ReportUserAccountState)[keyof typeof ReportUserAccountState];
+
+export const ReportUserAccountState = {
+  enabled: "enabled",
+  disabled: "disabled",
+  unmapped: "unmapped",
+  ineligible: "ineligible",
+} as const;
+
+export interface ReportUser {
+  account_state: ReportUserAccountState;
+  id: string;
+  label: string;
+  role: string | null;
+}
+
+export interface DownloadItem {
+  created_at: string;
+  format: DownloadItemFormat;
+  id: string;
+  label: string;
+  module: string;
+  provenance: DownloadItemProvenance;
+  user: ReportUser | null;
+}
+
+export interface DownloadPage {
+  has_more: boolean;
+  items: DownloadItem[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
 export interface DownloadURLResponse {
   bearer_capability: boolean;
+  download_log?: DownloadEvidence | null;
   expires_at: string;
   url: string;
 }
@@ -224,23 +314,6 @@ export interface ErrorDetail {
 
 export interface ErrorEnvelope {
   error: ErrorDetail;
-}
-
-export type ReportUserAccountState =
-  (typeof ReportUserAccountState)[keyof typeof ReportUserAccountState];
-
-export const ReportUserAccountState = {
-  enabled: "enabled",
-  disabled: "disabled",
-  unmapped: "unmapped",
-  ineligible: "ineligible",
-} as const;
-
-export interface ReportUser {
-  account_state: ReportUserAccountState;
-  id: string;
-  label: string;
-  role: string | null;
 }
 
 export interface ReportEvent {
@@ -1023,6 +1096,36 @@ export type ReviewCourierImportParams = {
 export type ReviewCourierImportBody = {
   file: Blob | File;
 };
+
+export type ListDownloadLogsParams = {
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @maxLength 100
+   */
+  q?: string;
+  format?: ListDownloadLogsFormat;
+  user_id?: string | null;
+  start?: string | null;
+  end?: string | null;
+};
+
+export type ListDownloadLogsFormat =
+  (typeof ListDownloadLogsFormat)[keyof typeof ListDownloadLogsFormat] | null;
+
+export const ListDownloadLogsFormat = {
+  PDF: "PDF",
+  CSV: "CSV",
+  XLSX: "XLSX",
+} as const;
 
 export type ListReportingEventsParams = {
   /**

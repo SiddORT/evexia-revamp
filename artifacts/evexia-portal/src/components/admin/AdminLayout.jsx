@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Landmark, LayoutDashboard, LayoutGrid, LogOut, MapPinned, ScrollText, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
+import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Landmark, LayoutDashboard, LayoutGrid, LogOut, MapPinned, FileDown, ScrollText, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { logoutAdmin } from '../../auth/adminSession.js';
@@ -279,6 +279,9 @@ export default function AdminLayout({ title, children }) {
                   </DropdownMenu.Item>
                   <DropdownMenu.Item className="admin-profile__settings" onSelect={() => navigate('/admin/activity-logs')} data-testid="link-admin-activity-logs">
                     <ScrollText size={15} aria-hidden="true" /> Sessions &amp; Activity Logs
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item className="admin-profile__settings" onSelect={() => navigate('/admin/download-logs')} data-testid="link-admin-download-logs">
+                    <FileDown size={15} aria-hidden="true" /> Download Logs
                   </DropdownMenu.Item>
                   <DropdownMenu.Item className="admin-profile__signout" onSelect={() => void signOut()} data-testid="link-admin-sign-out">
                     <LogOut size={15} aria-hidden="true" /> Log Out

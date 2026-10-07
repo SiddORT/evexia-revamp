@@ -36,6 +36,9 @@ import type {
   CreatePatientRequest,
   CurrentUser,
   DeleteFileParams,
+  DownloadEvidence,
+  DownloadInitiation,
+  DownloadPage,
   DownloadURLResponse,
   ErrorEnvelope,
   EventPage,
@@ -49,6 +52,7 @@ import type {
   ListCourierPartnersParams,
   ListCustomRolesParams,
   ListDeletedZonesParams,
+  ListDownloadLogsParams,
   ListOwnSessionsParams,
   ListReportingEventsParams,
   ListReportingSessionsParams,
@@ -1311,6 +1315,222 @@ export const useRecordBrowserActivity = <
   TContext
 > => {
   return useMutation(getRecordBrowserActivityMutationOptions(options));
+};
+
+export const getListDownloadLogsUrl = (params?: ListDownloadLogsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/reporting/downloads?${stringifiedParams}`
+    : `/api/v1/admin/reporting/downloads`;
+};
+
+/**
+ * @summary Download Logs
+ */
+export const listDownloadLogs = async (
+  params?: ListDownloadLogsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DownloadPage> => {
+  return customFetch<DownloadPage>(getListDownloadLogsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListDownloadLogsQueryKey = (
+  params?: ListDownloadLogsParams,
+) => {
+  return [
+    `/api/v1/admin/reporting/downloads`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListDownloadLogsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDownloadLogs>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListDownloadLogsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDownloadLogs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListDownloadLogsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDownloadLogs>>
+  > = ({ signal }) => listDownloadLogs(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDownloadLogs>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListDownloadLogsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDownloadLogs>>
+>;
+export type ListDownloadLogsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Download Logs
+ */
+
+export function useListDownloadLogs<
+  TData = Awaited<ReturnType<typeof listDownloadLogs>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListDownloadLogsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDownloadLogs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListDownloadLogsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getRecordDownloadInitiationUrl = () => {
+  return `/api/v1/admin/reporting/downloads/initiate`;
+};
+
+/**
+ * @summary Initiate Download
+ */
+export const recordDownloadInitiation = async (
+  downloadInitiation: DownloadInitiation,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DownloadEvidence> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<DownloadEvidence>(getRecordDownloadInitiationUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(downloadInitiation),
+  });
+};
+
+export const getRecordDownloadInitiationMutationKey = () =>
+  ["recordDownloadInitiation"] as const;
+
+export const getRecordDownloadInitiationMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordDownloadInitiation>>,
+    TError,
+    RecordDownloadInitiationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordDownloadInitiation>>,
+  TError,
+  RecordDownloadInitiationMutationVariables,
+  TContext
+> => {
+  const mutationKey = getRecordDownloadInitiationMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordDownloadInitiation>>,
+    RecordDownloadInitiationMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return recordDownloadInitiation(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordDownloadInitiationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordDownloadInitiation>>
+>;
+export type RecordDownloadInitiationMutationBody = BodyType<DownloadInitiation>;
+export type RecordDownloadInitiationMutationError = ErrorType<ErrorEnvelope>;
+export type RecordDownloadInitiationMutationVariables = {
+  data: BodyType<DownloadInitiation>;
+};
+
+/**
+ * @summary Initiate Download
+ */
+export const useRecordDownloadInitiation = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordDownloadInitiation>>,
+    TError,
+    RecordDownloadInitiationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof recordDownloadInitiation>>,
+  TError,
+  RecordDownloadInitiationMutationVariables,
+  TContext
+> => {
+  return useMutation(getRecordDownloadInitiationMutationOptions(options));
 };
 
 export const getListReportingEventsUrl = (

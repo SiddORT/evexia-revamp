@@ -1,3 +1,4 @@
+import { downloadCSV } from '../../services/downloads.js';
 import { useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, Download, Upload } from 'lucide-react';
@@ -9,10 +10,7 @@ import '../../patient.css';
 
 const LIST = '/admin/masters/patients';
 function downloadTemplate() {
-  const url = URL.createObjectURL(new Blob([patientTemplateCSV()], { type: 'text/csv;charset=utf-8' }));
-  const link = document.createElement('a'); link.href = url; link.download = 'evexia-patient-template.csv';
-  document.body.append(link); link.click(); link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return downloadCSV(patientTemplateCSV(), 'evexia-patient-template.csv', 'patient', 'template');
 }
 export default function PatientImportPage() {
   const [, navigate] = useLocation();
@@ -56,7 +54,7 @@ export default function PatientImportPage() {
       <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(LIST)}><ArrowLeft size={16} /> Back to Patient Master</button></div>
     <section className="admin-panel patient-import" aria-label="Import patient CSV">
       <div className="patient-import__intro"><h2>Patient CSV</h2><p>Download the template or use an exported Patient Master CSV. Keep the headers in order. Leave Patient ID blank for a new ID, or retain exported IDs when moving records to a clean directory. Doctor ID must identify a saved doctor, or supply their unique registration number. Existing IDs and invalid assignments are rejected; nothing is overwritten.</p>
-        <button type="button" className="admin-button admin-button--secondary" onClick={downloadTemplate} data-testid="button-patient-template"><Download size={16} /> Download CSV template</button>
+        <button type="button" className="admin-button admin-button--secondary" onClick={async () => { try { await downloadTemplate(); setMessage(''); } catch (cause) { setMessage(cause.message || 'Template download failed. Retry.'); } }} data-testid="button-patient-template"><Download size={16} /> Download CSV template</button>
       </div>
       <div className="patient-import__picker"><label htmlFor="patient-csv">Choose CSV file</label><input id="patient-csv" ref={fileRef} type="file" accept=".csv,text/csv" onChange={selectFile} disabled={Boolean(error) || busy} data-testid="input-patient-csv" /></div>
       {error && <div className="admin-feedback admin-feedback--error" role="alert">{error} <button type="button" className="admin-button admin-button--secondary" onClick={refresh}>Refresh records</button></div>}

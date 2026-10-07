@@ -1,3 +1,4 @@
+import { downloadCSV as loggedCSV } from '../../services/downloads.js';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
 import { Download, Eye, EyeOff, Pencil, Plus, RefreshCw, Search, Upload, UsersRound } from 'lucide-react';
@@ -20,14 +21,7 @@ const INITIAL = { name: '', phone: '', dialCountry: 'IN', userId: '', email: '',
 const safeFields = (values) => Object.fromEntries(FIELDS.map((key) => [key, values[key] ?? '']));
 
 function downloadCSV(text) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = 'evexia-staff.csv';
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return loggedCSV(text, 'evexia-staff.csv', 'staff');
 }
 
 function audit(by, at) {
@@ -231,8 +225,8 @@ export default function StaffManagement() {
     try { const latest = await getStaff(record.id); if (alive.current) setEditing(latest); }
     catch (cause) { if (alive.current) setActionError(cause.message); }
   }
-  function exportRows() {
-    try { reportingIdentityGuard()(); downloadCSV(exportStaffCSV(records)); }
+  async function exportRows() {
+    try { reportingIdentityGuard()(); await downloadCSV(exportStaffCSV(records)); }
     catch (cause) { setActionError(cause.message); }
   }
   const rowActions = (record, mobile = false) => <button type="button" className="admin-icon-button" title={`Edit ${record.name}`} aria-label={`Edit ${record.name}`} disabled={blocked || Boolean(designationError)} onClick={() => edit(record)} data-testid={`button-edit-staff-${mobile ? 'mobile-' : ''}${record.id}`}><Pencil size={16} aria-hidden="true" /></button>;

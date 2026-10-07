@@ -28,3 +28,4 @@
 - [Multi-format upload codegen](multi-format-codegen.md) — retain both accepted upload formats in OpenAPI, but generate one supported representation to avoid invalid Blob/object serialization.
 - [Lazy-route print styles](lazy-route-print-styles.md) — gate print layout overrides on the report's presence; imported CSS survives navigation.
 - [Dropdown focus](dropdown-focus.md) — pending menu actions must preserve a focusable return destination while preventing duplicate submissions.
+- [Browser-only auth channels](browser-only-auth-channels.md) — Node exposes BroadcastChannel too; imported browser auth must not keep pure service tests alive.

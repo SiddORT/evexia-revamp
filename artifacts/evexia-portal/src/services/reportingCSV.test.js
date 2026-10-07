@@ -26,7 +26,8 @@ test('activity CSV forwards whole-result search and filters, rechecks authorizat
     else if (url.endsWith('/summary')) {
       if (cancelAtRecheck) controller.abort();
       body = {};
-    } else if (url.endsWith('/me')) body = user;
+    } else if (url.endsWith('/downloads/initiate')) body = { id: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa', provenance: 'browser_reported' };
+    else if (url.endsWith('/me')) body = user;
     else body = { access_token: 'csv-synthetic-memory-token', expires_in: 900 };
     return new Response(JSON.stringify(body));
   };
@@ -50,7 +51,8 @@ test('activity CSV forwards whole-result search and filters, rechecks authorizat
     assert.equal(query.get('q'), params.q);
     assert.equal(query.get('user_id'), user.id);
     assert.equal(query.has('offset'), false);
-    assert.ok(calls.at(-1).endsWith('/summary'));
+    assert.ok(calls.some((url) => url.endsWith('/summary')));
+    assert.ok(calls.some((url) => url.endsWith('/downloads/initiate')));
     cancelAtRecheck = true;
     controller = new AbortController();
     await assert.rejects(downloadReportingCSV('events', params, controller.signal), { name: 'AbortError' });

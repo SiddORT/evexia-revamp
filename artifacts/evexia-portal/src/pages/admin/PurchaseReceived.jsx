@@ -1,3 +1,4 @@
+import { downloadBlob } from '../../services/downloads.js';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { Activity, ArrowUpRight, BarChart3, ChevronDown, ClipboardCheck, Download, Eye, FileDown, Plus, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
@@ -82,11 +83,10 @@ export default function PurchaseReceived() {
   const scopeSelect = <div className="admin-filter"><label htmlFor="pr-scope">Include</label><select id="pr-scope" className="admin-select" value={scope} onChange={(e) => { setScope(e.target.value); eventPages.resetPage(); }} data-testid="select-pr-scope"><option value="active">Active receipts</option><option value="all">Active and deleted receipts</option><option value="deleted">Deleted receipts only</option></select></div>;
 
   function change(key, value) { setFilters((f) => ({ ...f, [key]: value })); pagination.resetPage(); }
-  function exportCsv() {
+  async function exportCsv() {
     try {
       const blob = new Blob([exportPRCSV(visible, poRecord)], { type: 'text/csv;charset=utf-8' });
-      const url = URL.createObjectURL(blob); const a = document.createElement('a');
-      a.href = url; a.download = 'purchase-received.csv'; a.click(); URL.revokeObjectURL(url);
+      await downloadBlob(blob, 'purchase-received.csv', { source: 'purchase_received', kind: 'export', format: 'CSV' });
     } catch (cause) { setActionError(cause.message || 'Could not export CSV.'); }
   }
   async function loadSamples() {

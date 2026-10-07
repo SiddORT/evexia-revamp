@@ -11,7 +11,7 @@ test('courier service sends real filters, versions, review confirmations and dow
   globalThis.fetch = async (url, options) => {
     if (url.includes('/admin/courier-partners')) {
       calls.push({ url, options });
-      if (url.includes('/export')) return new Response('CSV download');
+      if (url.includes('/export')) return new Response('CSV download', { headers: { 'X-Download-Log': 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa' } });
       return new Response(JSON.stringify(url.includes('/import/commit') ? { imported: 2 }
         : url.includes('/import/review') ? { valid: true, rows: [], digest: 'confirmation' }
         : options.method === 'GET' && url.includes('limit=') ? { items: [record], total: 10, filtered: 2 }

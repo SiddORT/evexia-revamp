@@ -243,7 +243,7 @@ def prepare_download(db, identity, file_id, storage, settings, request_id):
         raise FileError(503, "storage_read_failed", "File content is unavailable") from None
 
 
-def issue_url(db, identity, file_id, storage, settings, request_id, base_path=""):
+def issue_url(db, identity, file_id, storage, settings, request_id, base_path="", initiation_id=None):
     row = get_record(db, identity, file_id, "download", lock=True, readable=True)
     expires_at = utcnow() + timedelta(seconds=settings.download_grant_seconds)
     if settings.storage_backend == "local":
@@ -260,8 +260,14 @@ def issue_url(db, identity, file_id, storage, settings, request_id, base_path=""
             raise FileError(503, "storage_link_failed", "Download link unavailable") from None
         get_record(db, identity, file_id, "download", lock=True, readable=True)
     event(db, identity, request_id, "download_grant", file_id, "success")
+    # A local grant is only preparation: redemption prepares and records the file.
+    # A provider bearer URL is issuance evidence, not proof of a subsequent transfer.
+    evidence = None
+    if settings.storage_backend == "s3" and row.content_type == "application/pdf":
+        from app.services.downloads import server_record
+        evidence = server_record(db, identity, initiation_id, "private_attachment", "issuance", "PDF")
     db.commit()
-    return {"url": url, "expires_at": expires_at, "bearer_capability": settings.storage_backend == "s3"}
+    return {"url": url, "expires_at": expires_at, "bearer_capability": settings.storage_backend == "s3", "download_log": evidence}
 
 
 def redeem_grant(db, identity, token):

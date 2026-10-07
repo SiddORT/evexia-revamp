@@ -1,3 +1,4 @@
+import { downloadCSV as loggedCSV } from '../../services/downloads.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Download, FolderOpen, Pencil, Plus, RefreshCw, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
@@ -32,14 +33,7 @@ const initialYear = () => {
 const blankValues = () => ({ mrId: '', startYear: String(initialYear()), endYear: String(initialYear() + 1), q1: '0', q2: '0', q3: '0', q4: '0' });
 
 function saveCSV(text, filename) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return loggedCSV(text, filename, 'sales_target', filename.includes('template') ? 'template' : 'export');
 }
 
 function Audit({ by, at }) {
@@ -146,7 +140,7 @@ function TargetImport({ records, mrs, zones, onDone, onClose }) {
     footer={<><button type="button" className="admin-button admin-button--secondary" onClick={close} data-testid="button-cancel-target-import">Cancel</button><button type="button" className="admin-button" disabled={reading || !ready || bad.length > 0 || Boolean(message)} onClick={confirm} data-testid="button-confirm-target-import">Import {ready} {ready === 1 ? 'target' : 'targets'}</button></>}>
     <div className="admin-target-import">
        <div className="admin-target-import__guide"><strong>CSV format</strong><p>{TARGET_COLUMNS.map(([, label]) => label).join(', ')}. Use the template for the correct column order. Employee codes must match saved MRs.</p></div>
-      <button type="button" className="admin-button admin-button--secondary" onClick={() => { try { saveCSV(salesTargetCSVTemplate(), 'evexia-sales-target-template.csv'); setMessage(''); } catch (cause) { setMessage(cause.message || 'Template download failed.'); } }} data-testid="button-target-template"><Download size={16} aria-hidden="true" /> Download template</button>
+      <button type="button" className="admin-button admin-button--secondary" onClick={async () => { try { await saveCSV(salesTargetCSVTemplate(), 'evexia-sales-target-template.csv'); setMessage(''); } catch (cause) { setMessage(cause.message || 'Template download failed.'); } }} data-testid="button-target-template"><Download size={16} aria-hidden="true" /> Download template</button>
       <label className="admin-target-import__file">Choose a local CSV file<input type="file" accept=".csv,text/csv" onChange={selectFile} data-testid="input-target-import-file" /></label>
       {reading && <p role="status">Reading and checking CSV rows…</p>}
       {message && <div className="admin-feedback admin-feedback--error" role="alert">{message}</div>}
@@ -240,10 +234,10 @@ export default function SalesTargetMaster() {
     refresh();
     setFeedback(`${entries.length} ${entries.length === 1 ? 'target' : 'targets'} imported successfully.`);
   }
-  function exportVisible() {
+  async function exportVisible() {
     try {
       requireFresh();
-      saveCSV(exportSalesTargetCSV(visible, mrs), 'evexia-sales-targets.csv');
+      await saveCSV(exportSalesTargetCSV(visible, mrs), 'evexia-sales-targets.csv');
       setActionError('');
     } catch (cause) { setFeedback(''); setActionError(cause.message || 'Export failed. Please retry.'); }
   }

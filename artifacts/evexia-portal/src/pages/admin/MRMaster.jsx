@@ -1,3 +1,4 @@
+import { downloadCSV } from '../../services/downloads.js';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, Pencil, Plus, Search, Upload, UsersRound } from 'lucide-react';
@@ -75,7 +76,7 @@ export default function MRMaster() {
     if (result.success) { setContactConfirm(null); setActionError(''); }
     else setActionError(result.error);
   }
-  function exportVisible() {
+  async function exportVisible() {
     if (!visible.length || error) return;
     try {
       if (JSON.stringify(loadMRs()) !== JSON.stringify(records) || JSON.stringify(loadZones()) !== JSON.stringify(zones)) {
@@ -83,16 +84,9 @@ export default function MRMaster() {
         return;
       }
       const csv = exportMRCSV(visible, zones, records);
-      const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'evexia-mr-master.csv';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } catch {
-      setActionError('CSV export failed. Please try again.');
+      await downloadCSV(csv, 'evexia-mr-master.csv', 'mr');
+    } catch (cause) {
+      setActionError(cause.message || 'CSV export failed. Please try again.');
     }
   }
   function showDoctors(record) {

@@ -439,7 +439,7 @@ test('overflow, network, incomplete response and browser download failures never
   page.on('download', (d) => downloads.push(d));
   for (const [failure, message] of [
     ['overflow', /5,000/], ['network', /connection|retry/i],
-    ['incomplete', /incomplete or invalid/], ['browser', /browser could not create/],
+    ['incomplete', /incomplete or invalid/], ['browser', /Initiation was recorded.*handoff was cancelled or failed/],
   ]) {
     await page.route('**/reporting/sessions/export*', (route) => {
       if (failure === 'overflow') return route.fulfill({ status: 409, json: {} });

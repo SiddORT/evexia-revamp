@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Dialog from './Dialog.jsx';
-import { reviewLocations, importLocations, downloadLocationFile } from '../../services/serverLocations.js';
+import { reviewLocations, importLocations } from '../../services/serverLocations.js';
+import { downloadBlob } from '../../services/downloads.js';
 import { sampleExcel } from '../../services/mockExcelImport.js';
 
 export default function StorageLocationImportDialog({ onClose, onSaved }) {
@@ -36,10 +37,16 @@ export default function StorageLocationImportDialog({ onClose, onSaved }) {
       if (alive.current) { setError(cause.message); if (commit) setReview(null); }
     } finally { busy.current = false; if (alive.current) setPending(false); }
   }
-  function sample(format) {
-    downloadLocationFile(format === 'csv'
-      ? new Blob(['\uFEFFStorage Location,Address,Status\r\nExample supply room,Building A Ground floor,active\r\n'], { type: 'text/csv;charset=utf-8' })
-      : sampleExcel('storage-location'), format);
+  async function sample(format) {
+    try {
+      await downloadBlob(format === 'csv'
+        ? new Blob(['\uFEFFStorage Location,Address,Status\r\nExample supply room,Building A Ground floor,active\r\n'], { type: 'text/csv;charset=utf-8' })
+        : sampleExcel('storage-location'), `evexia-storage-locations.${format}`,
+      { source: 'storage_location', kind: 'template', format: format.toUpperCase() });
+      if (alive.current) setError('');
+    } catch (cause) {
+      if (alive.current) setError(cause.message || 'Template download failed. Retry.');
+    }
   }
   return <Dialog title="Import storage locations" eyebrow="Storage Location Master"
     description="Review saves nothing. Confirm to create shared database records; the entire batch succeeds or nothing is saved."

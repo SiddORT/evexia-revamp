@@ -10,7 +10,9 @@ let pending = null;
 let expiryTimer = null;
 let restorationAllowed = true;
 const listeners = new Set();
-const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('evexia-auth-events') : null;
+const serverDownloads = new WeakMap();
+const serverInitiations = new Map();
+const channel = typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('evexia-auth-events') : null;
 
 export class SessionError extends Error {
   constructor(message, status = 0, replaced = false) { super(message); this.status = status; this.replaced = replaced; }
@@ -26,6 +28,7 @@ export const subscribeSession = (listener) => { listeners.add(listener); return 
 
 function clear(message = '') {
   generation += 1;
+  serverInitiations.clear();
   token = null;
   expiresAt = 0;
   clearTimeout(expiryTimer);
@@ -369,10 +372,14 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
   if (pending) await pending;
   else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true);
   check();
+  const downloadKey = `${resource}/${params.format || 'csv'}`;
+  const initiation = download ? (serverInitiations.get(downloadKey) || crypto.randomUUID()) : null;
+  if (download) serverInitiations.set(downloadKey, initiation);
+  const downloadGuard = reportingIdentityGuard();
   const writing = body !== undefined || file !== undefined;
   const load = () => fetch(`/api/v1/admin/${resource}${path}?${new URLSearchParams(params)}`, {
     method: writing ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
-    headers: { Authorization: `Bearer ${token}`, ...(writing ? { 'Content-Type': file ? 'application/octet-stream' : 'application/json' } : {}) },
+    headers: { Authorization: `Bearer ${token}`, ...(download ? { 'X-Download-Initiation': initiation } : {}), ...(writing ? { 'Content-Type': file ? 'application/octet-stream' : 'application/json' } : {}) },
     ...(writing ? { body: file || JSON.stringify(body) } : {}),
     signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000),
   });
@@ -416,14 +423,28 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
     error.ambiguous = writing && response.status >= 500 && error.code !== unavailable;
     throw error;
   }
+  if (download) {
+    if (!/^[0-9a-f-]{36}$/i.test(response.headers.get('X-Download-Log') || '')) {
+      throw new SessionError('Download logging could not be confirmed. No file was released. Retry.');
+    }
+    serverDownloads.set(data, downloadGuard);
+    serverInitiations.delete(downloadKey);
+  }
   return data;
+}
+export function serverDownloadGuard(blob) {
+  const guard = serverDownloads.get(blob);
+  if (!guard) throw new SessionError('Server download acceptance is missing. No file was released.');
+  guard();
+  serverDownloads.delete(blob);
+  return guard;
 }
 export const zoneRequest = (path, options) => masterRequest('zones', path, options);
 export const courierRequest = (path, options) => masterRequest('courier-partners', path, options);
 export const locationRequest = (path, options) => masterRequest('storage-locations', path, options);
 
 export async function reportingRequest(resource, params = {}, { signal } = {}) {
-  if (!['summary', 'users', 'sessions', 'events', 'activity', 'sessions/export', 'events/export'].includes(resource)) {
+  if (!['summary', 'users', 'sessions', 'events', 'activity', 'sessions/export', 'events/export', 'downloads', 'downloads/initiate'].includes(resource)) {
     throw new SessionError('Unsupported report.');
   }
   const epoch = generation;
@@ -441,8 +462,10 @@ export async function reportingRequest(resource, params = {}, { signal } = {}) {
   else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true);
   check();
   const query = new URLSearchParams();
-  const writing = resource === 'activity';
-  const keys = writing ? ['events'] : resource === 'users' ? ['q', 'limit', 'offset']
+  const writing = resource === 'activity' || resource === 'downloads/initiate';
+  const keys = resource === 'downloads/initiate' ? ['initiation_id', 'source', 'kind', 'format']
+    : resource === 'downloads' ? ['q', 'user_id', 'start', 'end', 'format', 'limit', 'offset']
+    : writing ? ['events'] : resource === 'users' ? ['q', 'limit', 'offset']
     : resource === 'summary' ? [] : resource === 'sessions/export'
       ? ['user_id', 'start', 'end', 'state', 'q']
        : resource === 'events/export' ? ['user_id', 'start', 'end', 'q'] : resource === 'sessions'
@@ -459,7 +482,7 @@ export async function reportingRequest(resource, params = {}, { signal } = {}) {
         method: writing ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
         ...(writing ? { keepalive: true } : {}),
         headers: { Authorization: `Bearer ${bearer}`, ...(writing ? { 'Content-Type': 'application/json' } : {}) },
-        ...(writing ? { body: JSON.stringify({ events: params.events }) } : {}),
+        ...(writing ? { body: JSON.stringify(params) } : {}),
         signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
       });
     } catch {

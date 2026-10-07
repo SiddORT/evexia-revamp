@@ -1,4 +1,6 @@
 import { validateInvoicePdfPages, logoAsDataUri, rasterizePage, downloadPdfBytes } from './poInvoicePdf.js';
+import { reportingIdentityGuard } from '../auth/adminSession.js';
+import { prepareDownload } from './downloads.js';
 
 const WIDTH = 595.28;
 const HEIGHT = 841.89;
@@ -167,12 +169,20 @@ export function buildReceiptPdf(jpegPages, textPages) {
   return output;
 }
 
-export async function downloadSearchableReceipt(document, filename, logoUrl) {
+export function downloadSearchableReceipt(document, filename, logoUrl, options = {}) {
+  const guard = options.guard || reportingIdentityGuard();
+  return prepareDownload('pr_receipt', () => prepareSearchableReceipt(document, filename, logoUrl, { ...options, guard }));
+}
+
+async function prepareSearchableReceipt(document, filename, logoUrl, {
+  guard = reportingIdentityGuard(), metadata = { source: 'pr_receipt', kind: 'searchable', format: 'PDF' },
+} = {}) {
+  guard();
   const textPages = measureReceiptTextPages(document.pages);
   const logo = await logoAsDataUri(logoUrl);
   const images = [];
   for (let i = 0; i < document.pages.length; i++) {
     images.push(await rasterizePage(document.pages[i], logo, i + 1));
   }
-  return downloadPdfBytes(buildReceiptPdf(images, textPages), filename);
+  return downloadPdfBytes(buildReceiptPdf(images, textPages), filename, { guard, metadata });
 }

@@ -1,4 +1,5 @@
 import { zoneRequest } from '../auth/adminSession.js';
+import { downloadServerBlob } from './downloads.js';
 
 export const listZones = (params, signal) => zoneRequest('', { params, signal });
 export const listDeletedZones = (params, signal) => zoneRequest('/trash', { params, signal });
@@ -13,10 +14,5 @@ export const importZones = (file, digest) => zoneRequest('/import/commit', { fil
 export const exportZones = (params, format) => zoneRequest('/export', { params: { ...params, format }, download: true });
 
 export function downloadZoneFile(blob, format) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `evexia-zone-master.${format}`;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  downloadServerBlob(blob, `evexia-zone-master.${format}`);
 }

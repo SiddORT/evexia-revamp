@@ -1,4 +1,5 @@
 import { locationRequest } from '../auth/adminSession.js';
+import { downloadServerBlob } from './downloads.js';
 
 export const listLocations = (params, signal) => locationRequest('', { params, signal });
 export const createLocation = (body) => locationRequest('', { body });
@@ -11,10 +12,5 @@ export const importLocations = (file, digest) => locationRequest('/import/commit
 export const exportLocations = (params, format) => locationRequest('/export', { params: { ...params, format }, download: true });
 
 export function downloadLocationFile(blob, format) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `evexia-storage-location-master.${format}`;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  downloadServerBlob(blob, `evexia-storage-location-master.${format}`);
 }

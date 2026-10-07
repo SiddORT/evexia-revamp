@@ -1,3 +1,4 @@
+import { downloadBlob } from '../../services/downloads.js';
 import { useMemo, useState } from 'react';
 import { Eye, FileDown, FileText, Info } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
@@ -27,19 +28,14 @@ export default function StockStatus() {
   const allergenLabel = options.find((o) => o.value === productId)?.label || 'All allergens';
   const idOf = (r) => r.productId ?? r.id;
 
-  function exportCsv() {
+  async function exportCsv() {
     setNotice(''); setError('');
     if (!rows.length) { setError('There are no rows to export. Change the filters and try again.'); return; }
-    let url;
     try {
       const blob = new Blob([exportStockCSV(rows, { year, asOf: scope.asOf })], { type: 'text/csv;charset=utf-8' });
-      url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `stock-status-sample-${financialYearLabel(year)}.csv`;
-      document.body.appendChild(a); a.click(); a.remove();
-      setNotice(`Downloaded ${rows.length} sample row${rows.length === 1 ? '' : 's'}.`);
+      await downloadBlob(blob, `stock-status-sample-${financialYearLabel(year)}.csv`, { source: 'stock_status', kind: 'export', format: 'CSV' });
+      setNotice(`Initiated download of ${rows.length} sample row${rows.length === 1 ? '' : 's'}.`);
     } catch (e) { setError(e.message || 'The CSV could not be downloaded.'); }
-    finally { if (url) setTimeout(() => URL.revokeObjectURL(url), 1000); }
   }
   function openReport() {
     setNotice(''); setError('');

@@ -200,18 +200,18 @@ test('marks deleted and explicitly sample receipts without changing their saved 
   assert.equal(sample.number, 'PR-2026-001');
 });
 
-test('rejects malformed source records and requires browser SVG measurement for searchable PDFs', async () => {
+test('rejects malformed source records and requires verified identity for searchable PDF release', async () => {
   assert.throws(() => makePRDocument(null), /saved Purchase Received record/);
   assert.throws(() => makePRDocument({ ...receipt(), lines: null }), /lines must be an array/);
 
   const document = makePRDocument(receipt());
   await assert.rejects(
     downloadPRDocument(document, 'PR-2026-001.pdf', '/images/evexia-logo.png'),
-    /browser with SVG text measurement/,
+    /session changed.*Export cancelled/,
   );
   await assert.rejects(
     downloadPRDocument(document, '', '/images/evexia-logo.png', { format: 'image' }),
-    /browser page with a same-origin logo URL/,
+    /session changed.*Export cancelled/,
   );
   await assert.rejects(
     downloadPRDocument(document, '', '/images/evexia-logo.png', { format: 'unknown' }),
@@ -254,9 +254,9 @@ for (const templateId of ['classic', 'modern', 'compact']) {
   test(`${templateId}: both export options retain explicit errors and supported-template validation`, async () => {
     const document = makePRDocument(receipt(), templateId);
     await assert.rejects(downloadPRDocument(document, '', '/images/evexia-logo.png'),
-      /browser with SVG text measurement/);
+      /session changed.*Export cancelled/);
     await assert.rejects(downloadPRDocument(document, '', '/images/evexia-logo.png', { format: 'image' }),
-      /browser page with a same-origin logo URL/);
+      /session changed.*Export cancelled/);
     await assert.rejects(downloadPRDocument({ ...document, templateId: 'unknown' }, '', '/images/evexia-logo.png'),
       /unsupported template/);
   });

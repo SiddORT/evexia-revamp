@@ -1,3 +1,4 @@
+import { downloadCSV as loggedCSV } from '../../services/downloads.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, FolderOpen, Pencil, Plus, Search, Upload } from 'lucide-react';
@@ -20,14 +21,7 @@ const LIST_PATH = '/admin/masters/headquarters';
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
 
 function downloadCSV(text, filename) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return loggedCSV(text, filename, 'headquarter', filename.includes('template') ? 'template' : 'export');
 }
 
 function audit(name, value) {
@@ -43,9 +37,9 @@ function HeadquarterImportDialog({ records, onImport, onClose }) {
   const valid = review ? review.entries.length - invalid.length : 0;
 
   function close() { sequence.current += 1; onClose(); }
-  function template() {
-    try { downloadCSV(headquarterCSVTemplate(), 'evexia-headquarter-template.csv'); }
-    catch { setMessage('The CSV template could not be downloaded. Please try again.'); }
+  async function template() {
+    try { await downloadCSV(headquarterCSVTemplate(), 'evexia-headquarter-template.csv'); }
+    catch (cause) { setMessage(cause.message || 'The CSV template could not be downloaded. Please try again.'); }
   }
   async function choose(event) {
     const file = event.target.files?.[0];
@@ -138,14 +132,14 @@ export default function HeadquarterMaster() {
       else setActionError(result.error || 'Status could not be changed. Refresh records and try again.');
     } catch (cause) { setActionError(cause.message || 'Status could not be changed.'); }
   }
-  function exportVisible() {
+  async function exportVisible() {
     if (error || !visible.length) return;
     try {
       if (!same(loadHeadquarters(), records)) {
         setActionError('Saved headquarters changed in another tab. Refresh records before exporting.');
         return;
       }
-      downloadCSV(exportHeadquarterCSV(visible), 'evexia-headquarters.csv');
+      await downloadCSV(exportHeadquarterCSV(visible), 'evexia-headquarters.csv');
       setActionError('');
     } catch (cause) { setActionError(cause.message || 'CSV export failed. Please try again.'); }
   }

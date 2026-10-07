@@ -44,6 +44,7 @@ const PurchaseReceivedFormPage = lazyRoute(() => import('./pages/admin/PurchaseR
 const MoveStocks = lazyRoute(() => import('./pages/admin/MoveStocks.jsx'));
 const MoveStockFormPage = lazyRoute(() => import('./pages/admin/MoveStockFormPage.jsx'));
 const ActivityLogs = lazyRoute(() => import('./pages/admin/ActivityLogs.jsx'));
+const DownloadLogs = lazyRoute(() => import('./pages/admin/DownloadLogs.jsx'));
 
 function App() {
   return (
@@ -52,6 +53,7 @@ function App() {
       <Route path="/admin" component={Dashboard} />
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/activity-logs" component={ActivityLogs} />
+      <Route path="/admin/download-logs" component={DownloadLogs} />
       <Route path="/admin/staff" component={StaffManagement} />
       <Route path="/admin/roles-permissions" component={RolesPermissions} />
       <Route path="/admin/inventory/purchase-orders" component={PurchaseOrders} />

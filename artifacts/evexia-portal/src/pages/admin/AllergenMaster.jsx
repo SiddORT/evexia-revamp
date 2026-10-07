@@ -1,3 +1,4 @@
+import { downloadCSV as loggedCSV } from '../../services/downloads.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, FlaskConical, Pencil, Plus, Search, Upload } from 'lucide-react';
@@ -19,14 +20,7 @@ const LIST_PATH = '/admin/masters/allergens';
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 function downloadCSV(text, filename) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return loggedCSV(text, filename, 'allergen', filename.includes('template') ? 'template' : 'export');
 }
 
 function audit(name, value) {
@@ -42,9 +36,9 @@ function AllergenImportDialog({ records, refs, onImport, onClose }) {
   const valid = review ? review.entries.length - invalid.length : 0;
 
   function close() { sequence.current += 1; onClose(); }
-  function template() {
-    try { downloadCSV(allergenCSVTemplate(), 'evexia-allergen-template.csv'); }
-    catch { setMessage('The CSV template could not be downloaded. Please try again.'); }
+  async function template() {
+    try { await downloadCSV(allergenCSVTemplate(), 'evexia-allergen-template.csv'); }
+    catch (cause) { setMessage(cause.message || 'The CSV template could not be downloaded. Please try again.'); }
   }
   async function choose(event) {
     const file = event.target.files?.[0];
@@ -141,7 +135,7 @@ export default function AllergenMaster() {
       else setActionError(result.error || 'Status could not be changed. Refresh records and try again.');
     } catch (cause) { setActionError(cause.message || 'Status could not be changed.'); }
   }
-  function exportVisible() {
+  async function exportVisible() {
     if (error || !visible.length) return;
     try {
       const currentRefs = loadAllergenReferences();
@@ -149,7 +143,7 @@ export default function AllergenMaster() {
         setActionError('Saved products or reference masters changed in another tab. Refresh records before exporting.');
         return;
       }
-      downloadCSV(exportAllergenCSV(visible, currentRefs), 'evexia-allergens.csv');
+      await downloadCSV(exportAllergenCSV(visible, currentRefs), 'evexia-allergens.csv');
       setActionError('');
     } catch (cause) { setActionError(cause.message || 'CSV export failed. Please try again.'); }
   }
@@ -178,9 +172,9 @@ export default function AllergenMaster() {
       <div><p className="admin-page-head__eyebrow">Masters / Inventory</p><h1>Allergen Master</h1><p className="admin-page-head__description">Maintain product identity, reference masters, pricing and handling details in this browser.</p></div>
       <div className="admin-allergen-head-actions">
         <button type="button" className="admin-button admin-button--secondary" onClick={refresh} data-testid="button-refresh-allergens">Refresh records</button>
-        <button type="button" className="admin-button admin-button--secondary" onClick={() => {
-          try { downloadCSV(allergenCSVTemplate(), 'evexia-allergen-template.csv'); setActionError(''); }
-          catch { setActionError('The CSV template could not be downloaded. Please try again.'); }
+        <button type="button" className="admin-button admin-button--secondary" onClick={async () => {
+          try { await downloadCSV(allergenCSVTemplate(), 'evexia-allergen-template.csv'); setActionError(''); }
+          catch (cause) { setActionError(cause.message || 'The CSV template could not be downloaded. Please try again.'); }
         }} data-testid="button-download-allergen-template"><Download size={16} aria-hidden="true" /> CSV template</button>
         <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error)} onClick={() => { setActionError(''); setImporting(true); }} data-testid="button-import-allergens"><Upload size={16} aria-hidden="true" /> Import data</button>
         <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || !visible.length} onClick={exportVisible} data-testid="button-export-allergens"><Download size={16} aria-hidden="true" /> Export data</button>

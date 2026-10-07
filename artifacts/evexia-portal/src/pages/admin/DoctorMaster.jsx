@@ -1,3 +1,4 @@
+import { downloadCSV } from '../../services/downloads.js';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ChevronDown, CirclePower, Download, Filter, Pencil, Plus, ReceiptText, Search, ShieldCheck, ShieldX, Upload, UsersRound } from 'lucide-react';
@@ -86,7 +87,7 @@ export default function DoctorMaster() {
     if (result?.success) { closeConfirmation(); setSelected([]); }
     else setActionError(result?.error || 'The change could not be saved. Refresh records and try again.');
   }
-  function exportVisible() {
+  async function exportVisible() {
     if (error || !visible.length) return;
     setActionError('');
     try {
@@ -97,14 +98,7 @@ export default function DoctorMaster() {
         return;
       }
       const csv = exportDoctorCSV(visible, mrs, zones);
-      const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'evexia-doctor-master.csv';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      await downloadCSV(csv, 'evexia-doctor-master.csv', 'doctor');
     } catch (cause) {
       setActionError(cause?.message || 'CSV export failed. Refresh records and try again.');
     }

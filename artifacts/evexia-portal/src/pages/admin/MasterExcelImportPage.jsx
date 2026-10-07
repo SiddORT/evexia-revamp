@@ -1,3 +1,4 @@
+import { downloadBlob } from '../../services/downloads.js';
 import { useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, CheckCircle2, Download, FileSpreadsheet, Upload, XCircle } from 'lucide-react';
@@ -24,17 +25,10 @@ function PreviewExcelImportPage({ kind }) {
   const template = EXCEL_TEMPLATES[kind];
   if (!template) return <AdminLayout title="Import Excel"><div className="admin-empty" role="alert">Unknown master. Choose a master from the directory.</div></AdminLayout>;
 
-  function downloadSample() {
+  async function downloadSample() {
     setMessage('');
     try {
-      const url = URL.createObjectURL(sampleExcel(kind));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `evexia-${kind}-sample.xlsx`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      await downloadBlob(sampleExcel(kind), `evexia-${kind}-sample.xlsx`, { source: kind === 'courier-partner' ? 'courier' : kind, kind: 'sample', format: 'XLSX' });
     } catch (error) {
       setMessage(error.message || 'Could not prepare the sample Excel file.');
     }

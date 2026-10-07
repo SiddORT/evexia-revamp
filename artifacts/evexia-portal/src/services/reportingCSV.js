@@ -1,5 +1,6 @@
 import { reportingIdentityGuard, reportingRequest } from '../auth/adminSession.js';
 import { recordLocalAction } from './localActivity.js';
+import { downloadBlob } from './downloads.js';
 
 export const REPORT_COLUMNS = {
   sessions: ['User', 'Role', 'Account state', 'State', 'Created / login (UTC)', 'Last refreshed (UTC)', 'Expires (UTC)', 'Revoked (UTC)', 'Persistent', 'Current session', 'Provenance'],
@@ -34,25 +35,11 @@ export async function downloadReportingCSV(resource, params, signal) {
   // Recheck server authorization after fetching/decoding the snapshot, before
   // releasing any data to the browser's download manager.
   await reportingRequest('summary', {}, { signal });
-  signal.throwIfAborted();
+  signal?.throwIfAborted();
   guard();
-  let url;
-  const link = document.createElement('a');
-  try {
-    url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-    link.href = url;
-    link.download = `evexia-${resource}-${new Date().toISOString().replace(/[:.]/g, '-')}.csv`;
-    document.body.appendChild(link);
-    signal.throwIfAborted();
-    guard();
-    link.click();
-  } catch (error) {
-    if (error.name === 'AbortError' || error.status) throw error;
-    throw new Error('The browser could not create the CSV download. No file was downloaded. Retry.');
-  } finally {
-    link.remove();
-    if (url) setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
+  await downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }),
+    `evexia-${resource}-${new Date().toISOString().replace(/[:.]/g, '-')}.csv`,
+    { source: resource === 'events' ? 'activity' : 'sessions', kind: 'export', format: 'CSV' }, { guard, signal });
   recordLocalAction('activity_logs', 'exported');
   return data.row_count;
 }

@@ -20,6 +20,17 @@ router = APIRouter(prefix="/admin/reporting", tags=["admin-reporting"])
 Admin = Annotated[Identity, Depends(require_permissions("admin.access"))]
 Database = Annotated[Session, Depends(get_db)]
 
+from app.schemas.downloads import DownloadInitiation, DownloadEvidence, DownloadPage
+from app.services import downloads as download_service
+from app.repositories import downloads as download_reporting
+
+
+@router.post("/downloads/initiate", response_model=DownloadEvidence, operation_id="recordDownloadInitiation",
+             dependencies=[Depends(require_cookie_origin)])
+def initiate_download(body: DownloadInitiation, identity: Admin, db: Database):
+    return download_service.record(db, identity, body.initiation_id, body.source, body.kind,
+                                   body.format, "browser_reported")
+
 
 @router.post("/activity", status_code=204, operation_id="recordBrowserActivity",
              dependencies=[Depends(require_cookie_origin)])
@@ -47,6 +58,13 @@ def filters(user_id: uuid.UUID | None = None, start: datetime | None = None,
     if start is not None and end is not None and start >= end:
         raise HTTPException(422, "Start must precede exclusive end")
     return user_id, start, end
+
+
+@router.get("/downloads", response_model=DownloadPage, operation_id="listDownloadLogs")
+def download_logs(identity: Admin, db: Database, selection=Depends(filters),
+                  limit: int = Query(20, ge=1, le=100), offset: int = Query(0, ge=0, le=1000000),
+                  q: str = Query("", max_length=100), format: Literal["PDF", "CSV", "XLSX"] | None = None):
+    return download_reporting.listing(db, limit, offset, *selection, q, format)
 
 
 @router.get("/summary", response_model=ReportSummary, operation_id="getReportingSummary")

@@ -1,5 +1,12 @@
 # Private storage feature contract
 
+Private PDF preparation and local grant redemption require durable metadata-only
+download-log acceptance before stream release. S3 PDF capability issuance is
+logged as issuance, not delivery. Logging failure closes the prepared spool and
+releases the transfer lease without sending a file. Accepted preparation remains
+history if a later stream/handoff fails. See `docs/download-logs.md` for privacy,
+retry keys, rollout and release coverage.
+
 This contract supersedes organizational authorization for the new foundation.
 Historical organizations/memberships are retained, not migrated to privileges.
 No tenant identifiers, folder scope, or portal/demo import is introduced.

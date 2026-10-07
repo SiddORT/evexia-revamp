@@ -4,7 +4,7 @@ from email.parser import BytesParser
 from email.policy import default
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Query, Request, Response
+from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
 from app.api.deps import require_permissions
 from app.db.session import get_db
@@ -14,6 +14,7 @@ from app.schemas.locations import (
 )
 from app.services.auth import Identity
 from app.services import locations, location_transfer
+from app.services.downloads import server_record
 
 router = APIRouter(prefix="/admin/storage-locations", tags=["Storage Location Master"])
 manager = require_permissions("admin.access")
@@ -36,11 +37,15 @@ def create(body: LocationFields, actor: Identity = Depends(manager), db: Session
     "text/csv": {"schema": {"type": "string", "format": "binary"}},
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {"schema": {"type": "string", "format": "binary"}}}}})
 def export(query: str = Query("", max_length=200), status: Literal["all", "active", "inactive"] = "all",
-           format: Literal["csv", "xlsx"] = "csv", actor: Identity = Depends(manager), db: Session = Depends(get_db)):
-    return Response(location_transfer.export(db, actor, query, status, format),
+           format: Literal["csv", "xlsx"] = "csv", actor: Identity = Depends(manager), db: Session = Depends(get_db),
+           initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation")):
+    data = location_transfer.export(db, actor, query, status, format)
+    evidence = server_record(db, actor, initiation_id, "storage_location", "export", format.upper())
+    return Response(data,
                     media_type="text/csv; charset=utf-8" if format == "csv" else
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    headers={"Content-Disposition": f'attachment; filename="evexia-storage-location-master.{format}"'})
+                    headers={"Content-Disposition": f'attachment; filename="evexia-storage-location-master.{format}"',
+                             "X-Download-Log": str(evidence["id"]), "Cache-Control": "no-store"})
 
 
 async def read_file(request):

@@ -44,6 +44,12 @@ class FileResponse(BaseModel):
 
 
 class DownloadURLResponse(BaseModel):
+    # Local grants have no initiation evidence until redemption.
+    download_log: "DownloadEvidence | None" = None
     url: str
     expires_at: datetime
     bearer_capability: bool
+
+
+from app.schemas.downloads import DownloadEvidence
+DownloadURLResponse.model_rebuild()

@@ -1,4 +1,5 @@
 import { courierRequest } from '../auth/adminSession.js';
+import { downloadServerBlob } from './downloads.js';
 
 export const listCouriers = (params, signal) => courierRequest('', { params, signal });
 export const createCourier = (body) => courierRequest('', { body });
@@ -11,10 +12,5 @@ export const importCouriers = (file, digest) => courierRequest('/import/commit',
 export const exportCouriers = (params, format) => courierRequest('/export', { params: { ...params, format }, download: true });
 
 export function downloadCourierFile(blob, format) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `evexia-courier-partner-master.${format}`;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  downloadServerBlob(blob, `evexia-courier-partner-master.${format}`);
 }

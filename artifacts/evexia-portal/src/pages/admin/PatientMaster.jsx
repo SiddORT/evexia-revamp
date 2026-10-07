@@ -1,3 +1,4 @@
+import { downloadCSV as loggedCSV } from '../../services/downloads.js';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, History, Pencil, Plus, Search, Upload, UsersRound } from 'lucide-react';
@@ -17,11 +18,7 @@ import '../../patient.css';
 
 const base = '/admin/masters/patients';
 function download(text, filename) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
-  const a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.append(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return loggedCSV(text, filename, 'patient');
 }
 export default function PatientMaster() {
   useAdminPreferences();
@@ -51,14 +48,14 @@ export default function PatientMaster() {
   const pagination = useTablePagination(visible);
   const hasMissing = records.some(missing);
   function refresh() { retry(); setActionError(''); setConfirming(null); }
-  function exportVisible() {
+  async function exportVisible() {
     try {
       if (error) return;
       const current = readPatientSnapshots();
       if (['records', 'doctors', 'mrs', 'zones'].some((key) => JSON.stringify(current[key]) !== JSON.stringify({ records, doctors, mrs, zones }[key]))) {
         setActionError('Records changed in another tab. Refresh records before exporting.'); return;
       }
-      download(exportPatientCSV(visible, doctors), 'evexia-patient-master.csv');
+      await download(exportPatientCSV(visible, doctors), 'evexia-patient-master.csv');
     } catch (cause) { setActionError(cause.message || 'CSV export failed. Refresh records and try again.'); }
   }
   function actions(record, compact = false) {

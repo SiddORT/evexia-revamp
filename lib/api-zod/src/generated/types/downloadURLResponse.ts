@@ -5,9 +5,11 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { DownloadEvidence } from "./downloadEvidence";
 
 export interface DownloadURLResponse {
   bearer_capability: boolean;
+  download_log?: DownloadEvidence | null;
   expires_at: Date;
   url: string;
 }

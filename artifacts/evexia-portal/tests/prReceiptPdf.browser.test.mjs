@@ -10,7 +10,7 @@ import { join } from 'node:path';
 // portal, Chromium, pdftotext and pdftoppm. No receipt records are stored.
 for (const templateId of ['classic', 'modern', 'compact']) {
 test(`${templateId}: downloaded receipt text is searchable and image-identical to every preview page`, {
-  skip: !process.env.EVEXIA_PREVIEW_BASE_URL, timeout: 180000,
+  skip: !process.env.EVEXIA_PREVIEW_BASE_URL || !process.env.EVEXIA_TEST_ADMIN_PASSWORD, timeout: 180000,
 }, async () => {
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || '/repl/tools/bin/chromium', args: ['--no-sandbox'] });
   const temp = mkdtempSync(join(tmpdir(), 'pr-pdf-'));
@@ -24,6 +24,10 @@ test(`${templateId}: downloaded receipt text is searchable and image-identical t
       ? route.fulfill({ contentType: 'text/html', body: '<!doctype html><html><body></body></html>' })
       : route.continue());
     await page.goto(base, { waitUntil: 'networkidle' });
+    // Only the disposable authenticated harness may exercise file release.
+    await page.evaluate(async (password) => {
+      await (await import('/src/auth/adminSession.js')).loginAdmin('crm-admin@allergyevexia.in', password, false);
+    }, process.env.EVEXIA_TEST_ADMIN_PASSWORD);
     page.on('request', (request) => requests.push(request));
     await page.evaluate(async (templateId) => {
       const { makeSamplePRDocument, makePRDocument } = await import('/src/services/prDocuments.js');
@@ -105,7 +109,14 @@ test(`${templateId}: downloaded receipt text is searchable and image-identical t
     assert.match(error, /does not support.*U\+.*Image-only PDF/);
     assert.equal(logoRequests(), before, 'unsupported text must fail before logo loading or downloading');
     assert.ok(requests.every((request) => new URL(request.url()).origin === new URL(base).origin));
-    assert.ok(requests.every((request) => request.method() === 'GET'), 'receipt data never leaves the browser');
+    for (const request of requests.filter((r) => r.method() !== 'GET')) {
+      assert.match(new URL(request.url()).pathname, /\/admin\/reporting\/(?:downloads\/initiate|activity)$/);
+      const metadata = request.postDataJSON();
+      if (request.url().endsWith('/downloads/initiate')) {
+        assert.deepEqual(Object.keys(metadata).sort(), ['format', 'initiation_id', 'kind', 'source']);
+      }
+      assert.ok(!/PR-COPY|BATCH-|Café|source-\d/.test(JSON.stringify(metadata)), 'receipt content never leaves the browser');
+    }
   } finally {
     await browser.close();
     rmSync(temp, { recursive: true, force: true });

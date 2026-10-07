@@ -3,7 +3,7 @@ import uuid
 from tempfile import SpooledTemporaryFile
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
@@ -19,6 +19,7 @@ from app.services.file_locks import operation
 from app.services.file_policy import FileError
 from app.services.file_policy import authorize
 from app.services.storage import get_storage
+from app.services.downloads import server_record
 
 def file_quota(identity: Identity = Depends(current_identity), db: Session = Depends(get_db),
                settings: Settings = Depends(get_settings)):
@@ -83,13 +84,18 @@ async def upload(
         raise
 
 
-def stream_download(db, identity, file_id, settings, storage_factory, request_id):
+def stream_download(db, identity, file_id, settings, storage_factory, request_id, initiation_id=None):
     # Permission before adapter creation, then global capacity throughout stream.
     service.get_record(db, identity, file_id, "download", readable=True)
     lease = operation(db, settings, file_id)
     lease.__enter__()
     try:
         spool, media, size = service.prepare_download(db, identity, file_id, storage_factory(), settings, request_id)
+        try:
+            evidence = server_record(db, identity, initiation_id, "private_attachment", "attachment", "PDF") if media == "application/pdf" else None
+        except BaseException:
+            spool.close()
+            raise
     except BaseException:
         lease.__exit__(None, None, None)
         raise
@@ -112,16 +118,18 @@ def stream_download(db, identity, file_id, settings, storage_factory, request_id
         "Content-Disposition": f'attachment; filename="{file_id}.{extension}"',
         "Content-Length": str(size), "Cache-Control": "no-store",
         "X-Content-Type-Options": "nosniff",
+        **({"X-Download-Log": str(evidence["id"])} if evidence else {}),
     })
 
 
 @router.get("/grants/{token}", response_class=StreamingResponse, responses={200: {"content": {"application/octet-stream": {"schema": {"type": "string", "format": "binary"}}}}})
 def redeem(token: str, request: Request, identity: Identity = Depends(current_identity),
-           db: Session = Depends(get_db), settings: Settings = Depends(get_settings), storage_factory=Depends(storage_dependency)):
+           db: Session = Depends(get_db), settings: Settings = Depends(get_settings), storage_factory=Depends(storage_dependency),
+           initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation")):
     if len(token) > 128:
         raise FileError(404, "not_found", "Download grant unavailable")
     file_id = service.redeem_grant(db, identity, token)
-    return stream_download(db, identity, file_id, settings, storage_factory, request.state.request_id)
+    return stream_download(db, identity, file_id, settings, storage_factory, request.state.request_id, initiation_id)
 
 
 @router.get("/{file_id}", response_model=FileResponse)
@@ -135,17 +143,19 @@ def metadata(file_id: uuid.UUID, request: Request, identity: Identity = Depends(
 
 @router.get("/{file_id}/download", response_class=StreamingResponse, responses={200: {"content": {"application/octet-stream": {"schema": {"type": "string", "format": "binary"}}}}})
 def download(file_id: uuid.UUID, request: Request, identity: Identity = Depends(current_identity),
-             db: Session = Depends(get_db), settings: Settings = Depends(get_settings), storage_factory=Depends(storage_dependency)):
-    return stream_download(db, identity, file_id, settings, storage_factory, request.state.request_id)
+             db: Session = Depends(get_db), settings: Settings = Depends(get_settings), storage_factory=Depends(storage_dependency),
+             initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation")):
+    return stream_download(db, identity, file_id, settings, storage_factory, request.state.request_id, initiation_id)
 
 
 @router.post("/{file_id}/download-url", response_model=DownloadURLResponse)
 def download_url(file_id: uuid.UUID, request: Request, identity: Identity = Depends(current_identity),
-                 db: Session = Depends(get_db), settings: Settings = Depends(get_settings), storage_factory=Depends(storage_dependency)):
+                 db: Session = Depends(get_db), settings: Settings = Depends(get_settings), storage_factory=Depends(storage_dependency),
+                 initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation")):
     service.get_record(db, identity, file_id, "download", readable=True)
     with operation(db, settings, file_id):
         return service.issue_url(db, identity, file_id, storage_factory(), settings,
-                                 request.state.request_id, request.scope.get("root_path", ""))
+                                 request.state.request_id, request.scope.get("root_path", ""), initiation_id)
 
 
 @router.delete("/{file_id}", response_model=FileResponse)

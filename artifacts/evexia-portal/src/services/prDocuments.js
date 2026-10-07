@@ -1,3 +1,4 @@
+import { reportingIdentityGuard } from '../auth/adminSession.js';
 import { recordLocalAction } from './localActivity.js';
 import { downloadInvoiceDocument } from './poInvoicePdf.js';
 import { loadPRTemplatePreference, PR_TEMPLATES } from './prReceiptTemplates.js';
@@ -38,11 +39,14 @@ export async function downloadPRDocument(document, _filename, logoUrl, { format 
   if (!['searchable', 'image'].includes(format)) {
     throw new Error('Choose Searchable PDF or Image-only PDF for this receipt.');
   }
+  const guard = reportingIdentityGuard();
+  guard();
   try {
     const filename = prReceiptFilename(document.number);
+    const metadata = { source: 'pr_receipt', kind: format, format: 'PDF' };
     const result = format === 'image'
-      ? await downloadInvoiceDocument(document, filename, logoUrl, { activityResource: null })
-      : await downloadSearchableReceipt(document, filename, logoUrl);
+      ? await downloadInvoiceDocument(document, filename, logoUrl, { activityResource: null, metadata, guard })
+      : await downloadSearchableReceipt(document, filename, logoUrl, { metadata, guard });
     recordLocalAction('purchase_received', 'exported');
     return result;
   } catch (error) {

@@ -4,7 +4,8 @@ import { ArrowLeft, CheckCircle2, Download, FileSpreadsheet, Upload, XCircle } f
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import MasterImportTabs from '../../components/admin/MasterImportTabs.jsx';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
-import { reviewCouriers, importCouriers, downloadCourierFile } from '../../services/serverCouriers.js';
+import { reviewCouriers, importCouriers } from '../../services/serverCouriers.js';
+import { downloadBlob } from '../../services/downloads.js';
 import { sampleExcel } from '../../services/mockExcelImport.js';
 import '../../excel-import.css';
 
@@ -78,14 +79,19 @@ export default function CourierImportPage() {
       if (active()) { busy.current = false; setPending(''); }
     }
   }
-
-  function sample(format) {
+  async function sample(format) {
+    const current = sequence.current;
+    const owner = getSession().user?.id;
+    const active = () => current === sequence.current && owner && getSession().user?.id === owner;
     setError('');
     try {
       const blob = format === 'csv' ? new Blob(['\uFEFFCourier Partner Name,Status\r\nExample Delivery,Active\r\n'],
         { type: 'text/csv;charset=utf-8' }) : sampleExcel('courier-partner');
-      downloadCourierFile(blob, format);
-    } catch (cause) { setError(cause.message || 'Could not download the Courier sample.'); }
+      await downloadBlob(blob, `evexia-courier-partner-master.${format}`, { source: 'courier', kind: 'sample', format: format.toUpperCase() });
+      if (active()) setError('');
+    } catch (cause) {
+      if (active()) setError(cause.message || 'Could not download the Courier sample. Retry.');
+    }
   }
 
   const valid = review?.rows.filter((row) => !row.errors.length) || [];

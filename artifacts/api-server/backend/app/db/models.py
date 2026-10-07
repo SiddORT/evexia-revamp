@@ -185,3 +185,4 @@ from app.db import zone_models as _zone_models  # noqa: E402,F401
 from app.db import role_models as _role_models  # noqa: E402,F401
 from app.db import courier_models as _courier_models  # noqa: E402,F401
 from app.db import location_models as _location_models  # noqa: E402,F401
+from app.db import download_models as _download_models  # noqa: E402,F401

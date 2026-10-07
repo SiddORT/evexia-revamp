@@ -27,7 +27,9 @@ test('courier transport sends versions, raw review and filtered downloads withou
       assert.equal(options.headers.Authorization, 'Bearer synthetic-memory-token');
       assert.equal(options.credentials, 'same-origin');
       assert.equal(options.cache, 'no-store');
-      if (url.includes('/export')) return new Response('Courier Partner Name,Status');
+      if (url.includes('/export')) return new Response('Courier Partner Name,Status', {
+        headers: { 'X-Download-Log': 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa' },
+      });
       if (url.includes('/status')) return reply({ error: { code: 'courier_stale', message: 'Review current record.' } }, 409);
       if (url.includes('/delete')) throw new Error('private provider detail');
       return reply({ valid: true, digest: 'review' });

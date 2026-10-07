@@ -1,3 +1,4 @@
+import { downloadCSV as loggedCSV } from '../../services/downloads.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, Landmark, Pencil, Plus, RefreshCw, Search, Upload } from 'lucide-react';
@@ -19,14 +20,7 @@ const PATH = '/admin/masters/opening-balances';
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const money = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 function download(text, name) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = name;
-  document.body.append(anchor);
-  anchor.click();
-  anchor.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return loggedCSV(text, name, 'opening_balance', name.includes('template') ? 'template' : 'export');
 }
 function audit(name, value) {
   return <span className="ob-audit"><strong>{name || '—'}</strong><span>{formatAdminTimestamp(value)}</span></span>;
@@ -74,7 +68,7 @@ function ImportDialog({ snapshot, verify, onDone, onClose }) {
     footer={<><button type="button" className="admin-button admin-button--secondary" onClick={close} data-testid="button-cancel-opening-balance-import">Cancel</button><button type="button" className="admin-button" disabled={!review?.entries.length || bad.length > 0 || reading || Boolean(message)} onClick={confirm} data-testid="button-confirm-opening-balance-import">Import {review?.entries.length || 0} records</button></>}>
     <div className="ob-import">
       <div className="ob-import__guide"><strong>CSV columns, in order</strong><p>{OPENING_BALANCE_COLUMNS.map(([, label]) => label).join(', ')}. Use a doctor from Doctor Master; amounts may be positive, negative or zero. IDs and audit details are assigned on save.</p></div>
-      <button type="button" className="admin-button admin-button--secondary" onClick={() => { try { download(openingBalanceCSVTemplate(), 'evexia-opening-balances-template.csv'); setMessage(''); } catch (error) { setMessage(error.message || 'Template download failed.'); } }} data-testid="button-opening-balance-template"><Download size={16} aria-hidden="true" /> Download template</button>
+      <button type="button" className="admin-button admin-button--secondary" onClick={async () => { try { await download(openingBalanceCSVTemplate(), 'evexia-opening-balances-template.csv'); setMessage(''); } catch (error) { setMessage(error.message || 'Template download failed.'); } }} data-testid="button-opening-balance-template"><Download size={16} aria-hidden="true" /> Download template</button>
       <label className="ob-import__file">Choose a local CSV<input type="file" accept=".csv,text/csv" onChange={select} data-testid="input-opening-balance-import" /></label>
       {reading && <div role="status">Reviewing file…</div>}
       {message && <div className="admin-feedback admin-feedback--error" role="alert">{message}</div>}
@@ -144,10 +138,10 @@ export default function OpeningBalanceMaster() {
       setNotice(`Opening balance ${next === 'active' ? 'activated' : 'inactivated'}.`);
     } catch (cause) { setError(cause.message || 'Status could not be changed. Refresh records.'); }
   }
-  function exportRows() {
+  async function exportRows() {
     try {
       verify();
-      download(exportOpeningBalanceCSV(visible, snapshot.doctors), 'evexia-opening-balances.csv');
+      await download(exportOpeningBalanceCSV(visible, snapshot.doctors), 'evexia-opening-balances.csv');
       setError('');
     } catch (cause) { setError(cause.message || 'CSV export failed. Refresh records.'); }
   }

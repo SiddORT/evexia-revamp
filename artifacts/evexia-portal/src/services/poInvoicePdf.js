@@ -1,3 +1,5 @@
+import { downloadBlob, prepareDownload } from './downloads.js';
+import { reportingIdentityGuard } from '../auth/adminSession.js';
 import { recordLocalAction } from './localActivity.js';
 const PDF_PAGE_WIDTH = 595.28;
 const PDF_PAGE_HEIGHT = 841.89;
@@ -284,7 +286,17 @@ export async function rasterizePage(svg, logoDataUri, pageNumber) {
  * Create and download a real application/pdf document from renderer SVG pages.
  * Pages are rasterized sequentially to keep peak browser memory bounded.
  */
-export async function downloadInvoiceDocument(invoiceDocument, filename, logoUrl, { activityResource = 'purchase_order' } = {}) {
+export function downloadInvoiceDocument(invoiceDocument, filename, logoUrl, options = {}) {
+  const guard = options.guard || reportingIdentityGuard();
+  const key = options.metadata?.source || 'po_invoice';
+  return prepareDownload(key, () => prepareInvoiceDownload(invoiceDocument, filename, logoUrl, { ...options, guard }));
+}
+
+async function prepareInvoiceDownload(invoiceDocument, filename, logoUrl, {
+  activityResource = 'purchase_order', metadata = { source: 'po_invoice', kind: 'invoice', format: 'PDF' },
+  guard = reportingIdentityGuard(),
+} = {}) {
+  guard();
   if (!invoiceDocument || typeof invoiceDocument !== 'object' ||
     !Array.isArray(invoiceDocument.pages) || invoiceDocument.pages.length === 0) {
     throw new Error('Invoice document pages are missing; no PDF was downloaded.');
@@ -303,13 +315,15 @@ export async function downloadInvoiceDocument(invoiceDocument, filename, logoUrl
     jpegPages.push(await rasterizePage(invoiceDocument.pages[index], logoDataUri, index + 1));
   }
   const pdfBytes = buildInvoicePdf(jpegPages);
-  const result = downloadPdfBytes(pdfBytes, filename);
+  const result = await downloadPdfBytes(pdfBytes, filename, { metadata, guard });
   if (activityResource) recordLocalAction(activityResource, 'exported');
   return result;
 }
 
 /** Shared browser download only; PDF serialization stays specific to each document type. */
-export function downloadPdfBytes(pdfBytes, filename) {
+export function downloadPdfBytes(pdfBytes, filename, {
+  metadata = { source: 'po_invoice', kind: 'invoice', format: 'PDF' }, guard = reportingIdentityGuard(),
+} = {}) {
   if (typeof document === 'undefined' || typeof Blob === 'undefined' ||
     typeof URL?.createObjectURL !== 'function') {
     throw new Error('This browser cannot download the generated invoice PDF.');
@@ -321,44 +335,5 @@ export function downloadPdfBytes(pdfBytes, filename) {
   } catch {
     throw new Error('The generated invoice PDF could not be packaged for download.');
   }
-  let pdfUrl;
-  try {
-    pdfUrl = URL.createObjectURL(pdfBlob);
-  } catch {
-    throw new Error('The generated invoice PDF could not be prepared for download.');
-  }
-  let anchor;
-  try {
-    anchor = document.createElement('a');
-  } catch {
-    URL.revokeObjectURL(pdfUrl);
-    throw new Error('The invoice PDF download could not be prepared.');
-  }
-  anchor.href = pdfUrl;
-  anchor.download = safeFilename(filename);
-  anchor.style.display = 'none';
-  try {
-    document.body.appendChild(anchor);
-    anchor.click();
-  } catch {
-    try {
-      URL.revokeObjectURL(pdfUrl);
-    } catch {
-      // Preserve the download failure as the actionable error.
-    }
-    throw new Error('The invoice PDF download could not be started.');
-  } finally {
-    try {
-      anchor.remove();
-    } catch {
-      // The temporary anchor is not needed after the click attempt.
-    }
-  }
-  setTimeout(() => {
-    try {
-      URL.revokeObjectURL(pdfUrl);
-    } catch {
-      // Browser URL cleanup is best-effort after the download has started.
-    }
-  }, 0);
+  return downloadBlob(pdfBlob, safeFilename(filename), metadata, { guard });
 }

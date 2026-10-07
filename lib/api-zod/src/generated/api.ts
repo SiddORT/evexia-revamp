@@ -119,6 +119,12 @@ export const ExportCourierPartnersQueryParams = zod.object({
     .default(exportCourierPartnersQueryFormatDefault),
 });
 
+export const ExportCourierPartnersHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
 export const ExportCourierPartnersResponse = zod.unknown();
 
 /**
@@ -321,6 +327,92 @@ export const RecordBrowserActivityBody = zod.object({
 });
 
 export const RecordBrowserActivityResponse = zod.void();
+
+/**
+ * @summary Download Logs
+ */
+export const listDownloadLogsQueryLimitDefault = 20;
+export const listDownloadLogsQueryLimitMax = 100;
+
+export const listDownloadLogsQueryOffsetDefault = 0;
+export const listDownloadLogsQueryOffsetMin = 0;
+export const listDownloadLogsQueryOffsetMax = 1000000;
+
+export const listDownloadLogsQueryQDefault = ``;
+export const listDownloadLogsQueryQMax = 100;
+
+export const ListDownloadLogsQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listDownloadLogsQueryLimitMax)
+    .default(listDownloadLogsQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listDownloadLogsQueryOffsetMin)
+    .max(listDownloadLogsQueryOffsetMax)
+    .default(listDownloadLogsQueryOffsetDefault),
+  q: zod.coerce
+    .string()
+    .max(listDownloadLogsQueryQMax)
+    .default(listDownloadLogsQueryQDefault),
+  format: zod.union([zod.enum(["PDF", "CSV", "XLSX"]), zod.null()]).optional(),
+  user_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  start: zod.union([zod.date(), zod.null()]).optional(),
+  end: zod.union([zod.date(), zod.null()]).optional(),
+});
+
+export const ListDownloadLogsResponse = zod.object({
+  has_more: zod.boolean(),
+  items: zod.array(
+    zod.object({
+      created_at: zod.coerce.date(),
+      format: zod.enum(["PDF", "CSV", "XLSX"]),
+      id: zod.string().uuid(),
+      label: zod.string(),
+      module: zod.string(),
+      provenance: zod.enum(["browser_reported", "server_prepared"]),
+      user: zod.union([
+        zod.object({
+          account_state: zod.enum([
+            "enabled",
+            "disabled",
+            "unmapped",
+            "ineligible",
+          ]),
+          id: zod.string().uuid(),
+          label: zod.string(),
+          role: zod.union([zod.string(), zod.null()]),
+        }),
+        zod.null(),
+      ]),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Initiate Download
+ */
+export const recordDownloadInitiationBodyKindMax = 20;
+
+export const recordDownloadInitiationBodySourceMax = 40;
+
+export const RecordDownloadInitiationBody = zod.object({
+  format: zod.enum(["PDF", "CSV", "XLSX"]),
+  initiation_id: zod.string().uuid(),
+  kind: zod.string().min(1).max(recordDownloadInitiationBodyKindMax),
+  source: zod.string().min(1).max(recordDownloadInitiationBodySourceMax),
+});
+
+export const RecordDownloadInitiationResponse = zod.object({
+  id: zod.string().uuid(),
+  provenance: zod.enum(["browser_reported", "server_prepared"]),
+});
 
 /**
  * Occurrence-time range [start,end). All recorded categories; missing actors are retained.
@@ -1305,6 +1397,12 @@ export const ExportStorageLocationsQueryParams = zod.object({
     .default(exportStorageLocationsQueryFormatDefault),
 });
 
+export const ExportStorageLocationsHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
 export const ExportStorageLocationsResponse = zod.unknown();
 
 /**
@@ -1573,6 +1671,12 @@ export const ExportZonesQueryParams = zod.object({
     .enum(["all", "active", "inactive"])
     .default(exportZonesQueryStatusDefault),
   format: zod.enum(["csv", "xlsx"]).default(exportZonesQueryFormatDefault),
+});
+
+export const ExportZonesHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
 });
 
 export const ExportZonesResponse = zod.unknown();
@@ -2070,6 +2174,12 @@ export const RedeemDownloadGrantParams = zod.object({
   token: zod.coerce.string(),
 });
 
+export const RedeemDownloadGrantHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
 export const RedeemDownloadGrantResponse = zod.unknown();
 
 /**
@@ -2157,6 +2267,12 @@ export const DownloadFileParams = zod.object({
   file_id: zod.coerce.string().uuid(),
 });
 
+export const DownloadFileHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
 export const DownloadFileResponse = zod.unknown();
 
 /**
@@ -2166,8 +2282,23 @@ export const CreateDownloadURLParams = zod.object({
   file_id: zod.coerce.string().uuid(),
 });
 
+export const CreateDownloadURLHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
 export const CreateDownloadURLResponse = zod.object({
   bearer_capability: zod.boolean(),
+  download_log: zod
+    .union([
+      zod.object({
+        id: zod.string().uuid(),
+        provenance: zod.enum(["browser_reported", "server_prepared"]),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   expires_at: zod.coerce.date(),
   url: zod.string(),
 });
