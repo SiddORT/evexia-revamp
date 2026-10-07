@@ -39,10 +39,27 @@
 .excel-import__row dt { color: var(--admin-text-soft); font-size: 10px; }
 .excel-import__row dd { margin: 0; }
 .excel-import__row ul { margin: 10px 0 0; padding-left: 18px; color: var(--admin-danger); }
+/* Courier filenames and diagnostics must stay readable with enlarged text.
+   Keep these overrides local; other master import layouts are unchanged. */
+.excel-import--courier, .excel-import--courier :is(.excel-import__card, .excel-import__report, .excel-import__report-head > div, .admin-page-head > div) { min-width: 0; }
+.excel-import--courier { overflow-wrap: anywhere; }
+.excel-import--courier :is(.admin-button, .excel-import__tab, .excel-import__back) { max-width: 100%; white-space: normal; height: auto; padding-block: 8px; }
+.excel-import--courier .excel-import__sample-actions { max-width: 100%; }
+.excel-import--courier .admin-page-head h1 { line-height: 1.3; }
+.excel-import--courier .excel-import__report-head { flex-wrap: wrap; }
+.excel-import--courier .excel-import__report-head > div:first-child { flex: 1 1 20rem; }
+.excel-import--courier .excel-import__totals { flex-shrink: 0; }
+.excel-import--courier .excel-import__picker span { min-width: 0; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+.excel-import--courier svg { flex-shrink: 0; }
+.excel-import--courier .excel-import__row dl > div { min-width: 0; }
+.excel-import--courier .excel-import__row summary span { float: none; display: block; margin-top: 4px; }
+.excel-import--courier :is(button, summary):focus-visible,
+.excel-import--courier .excel-import__picker:has(input:focus-visible) { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
 @media (max-width: 760px) {
   .excel-import__steps, .excel-import__results { grid-template-columns: 1fr; }
   .excel-import__card { min-height: 0; }
   .excel-import__card > .admin-button { margin-top: 12px; }
   .excel-import__report-head { align-items: flex-start; flex-direction: column; }
+  .excel-import--courier .excel-import__report-head > div:first-child { flex-basis: auto; }
   .excel-import__card, .excel-import__report { padding: 18px; }
 }

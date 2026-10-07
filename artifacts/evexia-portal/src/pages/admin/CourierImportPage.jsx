@@ -91,7 +91,7 @@ export default function CourierImportPage() {
   const valid = review?.rows.filter((row) => !row.errors.length) || [];
   const invalid = review?.rows.filter((row) => row.errors.length) || [];
   return <AdminLayout title="Import Courier Partner data">
-    <div className="excel-import">
+    <div className="excel-import excel-import--courier">
       <button type="button" className="excel-import__back" disabled={pending === 'commit'} onClick={() => navigate('/admin/masters/courier-partners')}><ArrowLeft size={16} aria-hidden="true" /> Back to Courier Partner Master</button>
       <div className="admin-page-head">
         <div><p className="admin-page-head__eyebrow">Masters / Data import</p><h1>Import Courier Partner data</h1>

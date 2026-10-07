@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { enlargeCourierText, expectCourierContentFits, tabToCourierControl } from './helpers/courierImportLayout.mjs';
 if (process.env.EVEXIA_CHROMIUM_PATH) test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
 const base = () => process.env.EVEXIA_PREVIEW_BASE_URL;
 const file = (name) => ({ name: `${name}.csv`, mimeType: 'text/csv', buffer: Buffer.from(`Courier Partner Name,Status\n${name},Active`) });
@@ -13,6 +14,91 @@ async function open(page, importing = true) {
   await expect(importing ? page.getByRole('heading', { name: 'Import Courier Partner data', exact: true }) : page.getByTestId('text-courier-partner-count')).toBeVisible();
 }
 const confirm = (page) => page.getByRole('button', { name: 'Confirm import of 1 courier partners', exact: true });
+
+for (const width of [390, 1440]) {
+  for (const theme of ['classic', 'modern']) {
+    for (const appearance of ['light', 'dark']) {
+      test(`Courier 200% text wraps long content and keyboard controls at ${width}px ${theme}/${appearance}`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await open(page);
+        await page.evaluate(async ({ theme, appearance }) => {
+          const preferences = await import('/src/components/admin/adminPreferences.js');
+          preferences.setAdminPreference('theme', theme);
+          preferences.setAdminPreference('appearance', appearance);
+        }, { theme, appearance });
+        await expect(page.locator('.admin-shell')).toHaveAttribute('data-admin-theme', theme);
+        await expect(page.locator('.admin-shell')).toHaveAttribute('data-admin-appearance', appearance);
+
+        const name = `Synthetic ${width} ${theme} ${appearance} `.padEnd(200, '界');
+        const invalidName = 'Invalid synthetic '.padEnd(200, '配');
+        const filename = `配送-échantillon-${'長いファイル名'.repeat(20)}.csv`;
+        const longError = `Synthetic row diagnostic: ${'配送先のステータスを確認してください。'.repeat(30)} ${'unbroken-diagnostic-'.repeat(20)}`;
+        const picker = page.getByLabel('Courier CSV or Excel file');
+        const upload = page.getByRole('button', { name: 'Upload & review', exact: true });
+        // Exercise the real authenticated parser. Only the displayed diagnostic
+        // is extended synthetically, without relaxing any backend limits.
+        await page.route('**/api/v1/admin/courier-partners/import/review?*', async (route) => {
+          const response = await route.fetch();
+          expect(response.status()).toBe(200);
+          const result = await response.json();
+          expect(result.rows[1].errors.length).toBeGreaterThan(0);
+          result.rows[1].errors.push(longError);
+          await route.fulfill({ response, json: result });
+        });
+        await picker.setInputFiles({ name: filename, mimeType: 'text/csv',
+          buffer: Buffer.from(`Courier Partner Name,Status\n${name},Active\n${invalidName},Invalid`) });
+        await upload.click();
+        const report = page.getByTestId('courier-excel-report');
+        await expect(report).toBeVisible();
+        await expect(page.locator('.excel-import__valid')).toHaveText('1 valid');
+        await expect(page.locator('.excel-import__invalid')).toHaveText('1 invalid');
+        await expect(report.locator('li').last()).toHaveText(longError);
+        await expect(report.locator('h2')).toHaveText(filename);
+        await expect(page.locator('.excel-import__picker span')).toHaveText(filename);
+        await expect(page.getByRole('button', { name: 'Confirm import of 2 courier partners' })).toBeDisabled();
+        const originalSize = await report.locator('h2').evaluate((node) => parseFloat(getComputedStyle(node).fontSize));
+        expect(await enlargeCourierText(page)).toBe(originalSize * 2);
+        await expect(report.locator('h2')).toHaveCSS('font-size', `${originalSize * 2}px`);
+        const summary = report.locator('.excel-import__row:not(.excel-import__row--invalid) summary');
+        await tabToCourierControl(page, summary);
+        await summary.press('Space');
+        await expect(report.locator('dd').first()).toHaveText(name);
+        await expect(report.locator('dd').first()).toBeVisible();
+        await expectCourierContentFits(page);
+        await page.screenshot({ path: test.info().outputPath('courier-enlarged-report.png'), fullPage: true });
+
+        for (const [label, extension] of [['Download CSV sample', 'csv'], ['Download Excel sample', 'xlsx']]) {
+          const sample = page.getByRole('button', { name: label, exact: true });
+          await tabToCourierControl(page, sample);
+          const downloading = page.waitForEvent('download');
+          await sample.press('Enter');
+          const downloaded = await downloading;
+          expect(downloaded.suggestedFilename()).toBe(`evexia-courier-partner-master.${extension}`);
+          expect((await readFile(await downloaded.path())).length).toBeGreaterThan(0);
+        }
+        await tabToCourierControl(page, picker);
+        await page.unroute('**/api/v1/admin/courier-partners/import/review?*');
+        await picker.setInputFiles({ name: filename, mimeType: 'text/csv',
+          buffer: Buffer.from(`Courier Partner Name,Status\n${name},Active`) });
+        await tabToCourierControl(page, upload);
+        await upload.press('Enter');
+        await expect(confirm(page)).toBeEnabled();
+        await expect(report.locator('h2')).toHaveText(filename);
+        await tabToCourierControl(page, report.locator('summary'));
+        await report.locator('summary').press('Enter');
+        await expect(report.locator('dd').first()).toHaveText(name);
+        await expect(report.locator('dd').first()).toBeVisible();
+        await expectCourierContentFits(page);
+        await tabToCourierControl(page, confirm(page));
+        await confirm(page).press('Enter');
+        await expect(page.getByRole('status')).toHaveText('1 courier partners imported into shared server records.');
+        await expect(report).toHaveCount(0);
+        await expect(upload).toBeDisabled();
+        await expectCourierContentFits(page);
+      });
+    }
+  }
+}
 
 test('Courier prepared layout, CSV sample and master tabs in all desktop/mobile themes', async ({ page }) => {
   await open(page);
