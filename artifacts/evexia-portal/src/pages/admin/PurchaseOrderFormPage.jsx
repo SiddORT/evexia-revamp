@@ -137,6 +137,7 @@ function POEditor({ snapshot, record, isNew, onSaved, onCancel, onRefresh }) {
           <InputField id="po-expected-date" label="Expected delivery" type="date" min={values.poDate} value={values.expectedDate} onChange={(value) => change('expectedDate', value)} error={errors.expectedDate} />
           <ReferenceField id="po-vendor" label="Vendor" items={refs.vendors} nameKey="vendorName" value={values.vendorId} existingName={record?.vendorId === values.vendorId ? record.vendorName : ''} error={errors.vendorId} onChange={(value) => change('vendorId', value)} />
           <ReferenceField id="po-location" label="Storage location" items={refs.locations} nameKey="name" activeOnly value={values.locationId} existingName={record?.locationId === values.locationId ? record.locationName : ''} error={errors.locationId} onChange={(value) => change('locationId', value)} />
+          <p className="mr-form__footer-note">Purchasing uses separate browser-local locations and IDs, not the shared Storage Location Master. Server edits do not change these choices or existing orders.</p>
         </div>
         <hr className="po-divider" />
         <h3 className="po-section-title">02 / Product lines <span>Quantity, unit price and GST per item</span></h3>

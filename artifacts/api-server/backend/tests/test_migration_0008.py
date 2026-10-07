@@ -30,7 +30,9 @@ def test_activity_index_projection_upgrade_downgrade_and_history_retention(monke
     config.set_main_option("script_location", str(root / "alembic"))
     isolated = create_engine(isolated_url)
     try:
-        command.upgrade(config, "head")
+        # Test this historical migration in isolation; later forward-only
+        # masters must not be downgraded just to exercise the activity index.
+        command.upgrade(config, "0008_activity_search")
         with isolated.begin() as conn:
             conn.execute(text("""
                 INSERT INTO audit_events(id, action, outcome, request_id)
@@ -54,7 +56,7 @@ def test_activity_index_projection_upgrade_downgrade_and_history_retention(monke
         with isolated.connect() as conn:
             assert conn.scalar(text("SELECT count(*) FROM audit_events")) == 1
             assert conn.scalar(text("SELECT to_regclass('ix_audit_events_safe_text_trgm')")) is None
-        command.upgrade(config, "head")
+        command.upgrade(config, "0008_activity_search")
         with isolated.connect() as conn:
             assert conn.scalar(text("SELECT count(*) FROM audit_events")) == 1
             assert conn.scalar(text("""

@@ -22,6 +22,8 @@ import type {
   ChangePasswordRequest,
   CommitCourierImportBody,
   CommitCourierImportParams,
+  CommitLocationImportBody,
+  CommitLocationImportParams,
   CommitZoneImportParams,
   CourierEdit,
   CourierFields,
@@ -40,6 +42,7 @@ import type {
   ExportCourierPartnersParams,
   ExportReportingEventsParams,
   ExportReportingSessionsParams,
+  ExportStorageLocationsParams,
   ExportZonesParams,
   FileResponse,
   HealthStatus,
@@ -51,7 +54,16 @@ import type {
   ListReportingSessionsParams,
   ListReportingUsersParams,
   ListStaffParams,
+  ListStorageLocationsParams,
   ListZonesParams,
+  LocationEdit,
+  LocationFields,
+  LocationImportResult,
+  LocationPage,
+  LocationResponse,
+  LocationReview,
+  LocationStatus,
+  LocationVersion,
   LoginRequest,
   MRResponse,
   PatientResponse,
@@ -61,6 +73,8 @@ import type {
   ReportSummary,
   ReviewCourierImportBody,
   ReviewCourierImportParams,
+  ReviewLocationImportBody,
+  ReviewLocationImportParams,
   ReviewZoneImportParams,
   RoleEdit,
   RoleFields,
@@ -3064,6 +3078,999 @@ export const useSetStaffStatus = <
   TContext
 > => {
   return useMutation(getSetStaffStatusMutationOptions(options));
+};
+
+export const getListStorageLocationsUrl = (
+  params?: ListStorageLocationsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/storage-locations?${stringifiedParams}`
+    : `/api/v1/admin/storage-locations`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listStorageLocations = async (
+  params?: ListStorageLocationsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LocationPage> => {
+  return customFetch<LocationPage>(getListStorageLocationsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListStorageLocationsQueryKey = (
+  params?: ListStorageLocationsParams,
+) => {
+  return [
+    `/api/v1/admin/storage-locations`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListStorageLocationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listStorageLocations>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListStorageLocationsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStorageLocations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListStorageLocationsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listStorageLocations>>
+  > = ({ signal }) =>
+    listStorageLocations(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listStorageLocations>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListStorageLocationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listStorageLocations>>
+>;
+export type ListStorageLocationsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListStorageLocations<
+  TData = Awaited<ReturnType<typeof listStorageLocations>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListStorageLocationsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStorageLocations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListStorageLocationsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateStorageLocationUrl = () => {
+  return `/api/v1/admin/storage-locations`;
+};
+
+/**
+ * @summary Create
+ */
+export const createStorageLocation = async (
+  locationFields: LocationFields,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LocationResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<LocationResponse>(getCreateStorageLocationUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(locationFields),
+  });
+};
+
+export const getCreateStorageLocationMutationKey = () =>
+  ["createStorageLocation"] as const;
+
+export const getCreateStorageLocationMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createStorageLocation>>,
+    TError,
+    CreateStorageLocationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createStorageLocation>>,
+  TError,
+  CreateStorageLocationMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateStorageLocationMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createStorageLocation>>,
+    CreateStorageLocationMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createStorageLocation(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateStorageLocationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createStorageLocation>>
+>;
+export type CreateStorageLocationMutationBody = BodyType<LocationFields>;
+export type CreateStorageLocationMutationError = ErrorType<ErrorEnvelope>;
+export type CreateStorageLocationMutationVariables = {
+  data: BodyType<LocationFields>;
+};
+
+/**
+ * @summary Create
+ */
+export const useCreateStorageLocation = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createStorageLocation>>,
+    TError,
+    CreateStorageLocationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createStorageLocation>>,
+  TError,
+  CreateStorageLocationMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateStorageLocationMutationOptions(options));
+};
+
+export const getExportStorageLocationsUrl = (
+  params?: ExportStorageLocationsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/storage-locations/export?${stringifiedParams}`
+    : `/api/v1/admin/storage-locations/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportStorageLocations = async (
+  params?: ExportStorageLocationsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getExportStorageLocationsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportStorageLocationsQueryKey = (
+  params?: ExportStorageLocationsParams,
+) => {
+  return [
+    `/api/v1/admin/storage-locations/export`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getExportStorageLocationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportStorageLocations>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportStorageLocationsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportStorageLocations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getExportStorageLocationsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exportStorageLocations>>
+  > = ({ signal }) =>
+    exportStorageLocations(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportStorageLocations>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportStorageLocationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportStorageLocations>>
+>;
+export type ExportStorageLocationsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportStorageLocations<
+  TData = Awaited<ReturnType<typeof exportStorageLocations>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportStorageLocationsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportStorageLocations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportStorageLocationsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCommitLocationImportUrl = (
+  params: CommitLocationImportParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/storage-locations/import/commit?${stringifiedParams}`
+    : `/api/v1/admin/storage-locations/import/commit`;
+};
+
+/**
+ * @summary Commit
+ */
+export const commitLocationImport = async (
+  commitLocationImportBody: CommitLocationImportBody,
+  params: CommitLocationImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LocationImportResult> => {
+  const formData = new FormData();
+  formData.append(`file`, commitLocationImportBody.file);
+
+  return customFetch<LocationImportResult>(getCommitLocationImportUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getCommitLocationImportMutationKey = () =>
+  ["commitLocationImport"] as const;
+
+export const getCommitLocationImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitLocationImport>>,
+    TError,
+    CommitLocationImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof commitLocationImport>>,
+  TError,
+  CommitLocationImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCommitLocationImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof commitLocationImport>>,
+    CommitLocationImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return commitLocationImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CommitLocationImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof commitLocationImport>>
+>;
+export type CommitLocationImportMutationBody =
+  BodyType<CommitLocationImportBody>;
+export type CommitLocationImportMutationError = ErrorType<ErrorEnvelope>;
+export type CommitLocationImportMutationVariables = {
+  data: BodyType<CommitLocationImportBody>;
+  params: CommitLocationImportParams;
+};
+
+/**
+ * @summary Commit
+ */
+export const useCommitLocationImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitLocationImport>>,
+    TError,
+    CommitLocationImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof commitLocationImport>>,
+  TError,
+  CommitLocationImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getCommitLocationImportMutationOptions(options));
+};
+
+export const getReviewLocationImportUrl = (
+  params: ReviewLocationImportParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/storage-locations/import/review?${stringifiedParams}`
+    : `/api/v1/admin/storage-locations/import/review`;
+};
+
+/**
+ * @summary Review
+ */
+export const reviewLocationImport = async (
+  reviewLocationImportBody: ReviewLocationImportBody,
+  params: ReviewLocationImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LocationReview> => {
+  const formData = new FormData();
+  formData.append(`file`, reviewLocationImportBody.file);
+
+  return customFetch<LocationReview>(getReviewLocationImportUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getReviewLocationImportMutationKey = () =>
+  ["reviewLocationImport"] as const;
+
+export const getReviewLocationImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewLocationImport>>,
+    TError,
+    ReviewLocationImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewLocationImport>>,
+  TError,
+  ReviewLocationImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReviewLocationImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewLocationImport>>,
+    ReviewLocationImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return reviewLocationImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewLocationImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewLocationImport>>
+>;
+export type ReviewLocationImportMutationBody =
+  BodyType<ReviewLocationImportBody>;
+export type ReviewLocationImportMutationError = ErrorType<ErrorEnvelope>;
+export type ReviewLocationImportMutationVariables = {
+  data: BodyType<ReviewLocationImportBody>;
+  params: ReviewLocationImportParams;
+};
+
+/**
+ * @summary Review
+ */
+export const useReviewLocationImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewLocationImport>>,
+    TError,
+    ReviewLocationImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewLocationImport>>,
+  TError,
+  ReviewLocationImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getReviewLocationImportMutationOptions(options));
+};
+
+export const getGetStorageLocationUrl = (locationId: string) => {
+  return `/api/v1/admin/storage-locations/${locationId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getStorageLocation = async (
+  locationId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LocationResponse> => {
+  return customFetch<LocationResponse>(getGetStorageLocationUrl(locationId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetStorageLocationQueryKey = (locationId: string) => {
+  return [`/api/v1/admin/storage-locations/${locationId}`] as const;
+};
+
+export const getGetStorageLocationQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStorageLocation>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  locationId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStorageLocation>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetStorageLocationQueryKey(locationId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStorageLocation>>
+  > = ({ signal }) =>
+    getStorageLocation(locationId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: locationId !== null && locationId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStorageLocation>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStorageLocationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStorageLocation>>
+>;
+export type GetStorageLocationQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetStorageLocation<
+  TData = Awaited<ReturnType<typeof getStorageLocation>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  locationId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStorageLocation>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStorageLocationQueryOptions(locationId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDeleteStorageLocationUrl = (locationId: string) => {
+  return `/api/v1/admin/storage-locations/${locationId}/delete`;
+};
+
+/**
+ * @summary Delete
+ */
+export const deleteStorageLocation = async (
+  locationId: string,
+  locationVersion: LocationVersion,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LocationResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<LocationResponse>(
+    getDeleteStorageLocationUrl(locationId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(locationVersion),
+    },
+  );
+};
+
+export const getDeleteStorageLocationMutationKey = () =>
+  ["deleteStorageLocation"] as const;
+
+export const getDeleteStorageLocationMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteStorageLocation>>,
+    TError,
+    DeleteStorageLocationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteStorageLocation>>,
+  TError,
+  DeleteStorageLocationMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteStorageLocationMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteStorageLocation>>,
+    DeleteStorageLocationMutationVariables
+  > = (props) => {
+    const { locationId, data } = props ?? {};
+
+    return deleteStorageLocation(locationId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteStorageLocationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteStorageLocation>>
+>;
+export type DeleteStorageLocationMutationBody = BodyType<LocationVersion>;
+export type DeleteStorageLocationMutationError = ErrorType<ErrorEnvelope>;
+export type DeleteStorageLocationMutationVariables = {
+  locationId: string;
+  data: BodyType<LocationVersion>;
+};
+
+/**
+ * @summary Delete
+ */
+export const useDeleteStorageLocation = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteStorageLocation>>,
+    TError,
+    DeleteStorageLocationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteStorageLocation>>,
+  TError,
+  DeleteStorageLocationMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteStorageLocationMutationOptions(options));
+};
+
+export const getEditStorageLocationUrl = (locationId: string) => {
+  return `/api/v1/admin/storage-locations/${locationId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editStorageLocation = async (
+  locationId: string,
+  locationEdit: LocationEdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LocationResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<LocationResponse>(getEditStorageLocationUrl(locationId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(locationEdit),
+  });
+};
+
+export const getEditStorageLocationMutationKey = () =>
+  ["editStorageLocation"] as const;
+
+export const getEditStorageLocationMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editStorageLocation>>,
+    TError,
+    EditStorageLocationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editStorageLocation>>,
+  TError,
+  EditStorageLocationMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditStorageLocationMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editStorageLocation>>,
+    EditStorageLocationMutationVariables
+  > = (props) => {
+    const { locationId, data } = props ?? {};
+
+    return editStorageLocation(locationId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditStorageLocationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editStorageLocation>>
+>;
+export type EditStorageLocationMutationBody = BodyType<LocationEdit>;
+export type EditStorageLocationMutationError = ErrorType<ErrorEnvelope>;
+export type EditStorageLocationMutationVariables = {
+  locationId: string;
+  data: BodyType<LocationEdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditStorageLocation = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editStorageLocation>>,
+    TError,
+    EditStorageLocationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editStorageLocation>>,
+  TError,
+  EditStorageLocationMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditStorageLocationMutationOptions(options));
+};
+
+export const getSetStorageLocationStatusUrl = (locationId: string) => {
+  return `/api/v1/admin/storage-locations/${locationId}/status`;
+};
+
+/**
+ * @summary Status
+ */
+export const setStorageLocationStatus = async (
+  locationId: string,
+  locationStatus: LocationStatus,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LocationResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<LocationResponse>(
+    getSetStorageLocationStatusUrl(locationId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(locationStatus),
+    },
+  );
+};
+
+export const getSetStorageLocationStatusMutationKey = () =>
+  ["setStorageLocationStatus"] as const;
+
+export const getSetStorageLocationStatusMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setStorageLocationStatus>>,
+    TError,
+    SetStorageLocationStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setStorageLocationStatus>>,
+  TError,
+  SetStorageLocationStatusMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSetStorageLocationStatusMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setStorageLocationStatus>>,
+    SetStorageLocationStatusMutationVariables
+  > = (props) => {
+    const { locationId, data } = props ?? {};
+
+    return setStorageLocationStatus(locationId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetStorageLocationStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setStorageLocationStatus>>
+>;
+export type SetStorageLocationStatusMutationBody = BodyType<LocationStatus>;
+export type SetStorageLocationStatusMutationError = ErrorType<ErrorEnvelope>;
+export type SetStorageLocationStatusMutationVariables = {
+  locationId: string;
+  data: BodyType<LocationStatus>;
+};
+
+/**
+ * @summary Status
+ */
+export const useSetStorageLocationStatus = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setStorageLocationStatus>>,
+    TError,
+    SetStorageLocationStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setStorageLocationStatus>>,
+  TError,
+  SetStorageLocationStatusMutationVariables,
+  TContext
+> => {
+  return useMutation(getSetStorageLocationStatusMutationOptions(options));
 };
 
 export const getListZonesUrl = (params?: ListZonesParams) => {

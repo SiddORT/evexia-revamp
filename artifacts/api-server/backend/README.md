@@ -5,13 +5,18 @@ existing EVEXIA Admin login and protected workspace. MR and Doctor login screens
 remain mock previews. Staff Management is now an authenticated, encrypted
 PostgreSQL directory with unmapped credentials; Zone Master is shared server
 persistence with soft deletion and authenticated audit history. Courier Partner Master
-is separate shared server persistence with its own table and endpoints. Other portal masters remain
+is separate shared server persistence with its own table and endpoints. Storage Location Master
+uses another separate shared name/address/status table and endpoints, while Allergen/PO/PR
+location datasets remain browser-local. Other portal masters remain
 fictional and browser-local. Do not enter real personal or health data into the
 preview. See [staff security and operations](../../../docs/staff-security.md).
 See [Zone Master operations and transfer contract](../../../docs/zone-master.md)
 for its endpoints, limits, duplicate policy and unchanged local-demo assignments.
 See [Courier Partner operations](../../../docs/courier-partner-master.md) for its
 5,000-row export bound, 2 MiB/1,000-row import limit and explicit legacy-backup import.
+See [Storage Location operations](../../../docs/storage-location-master.md) for
+its exact three/seven-column backup schemas, audit/deletion evidence, limits,
+explicit migration and unchanged local-demo purchasing relationships.
 
 ## Local development and operations
 
@@ -45,7 +50,7 @@ See [Courier Partner operations](../../../docs/courier-partner-master.md) for it
   `0002_optional_username`, `0003_system_identity_domain`, `0004_private_files`,
   `0005_protected_super_admin_sessions`, `0006_auth_sessions`,
     `0007_reporting_indexes`, `0008_activity_search`, `0009_staff`,
-    `0010_zones`, `0010_custom_roles`, and `0011_courier_partners`. Zone, role and courier migrations create only empty tables. Staff migration
+    `0010_zones`, `0010_custom_roles`, `0011_courier_partners`, and `0012_storage_locations`. Zone, role, courier and location migrations create only empty tables. Staff migration
    adds an empty encrypted profile table and deferred identity-link integrity
    guards; it changes no existing identities, sessions or activity history.
    The activity search
@@ -239,6 +244,8 @@ artifact-mounted URLs. The development OpenAPI contract includes:
 | Staff | `GET /api/v1/admin/staff?limit=20&offset=0`, `GET /api/v1/admin/staff/{staff_id}` | Explicit `staff.manage`, protected Super Admin only; no-store decrypted directory responses. |
 | Staff | `POST /api/v1/admin/staff` | Atomically generates User ID/Argon2id password hash and encrypted profile; initial password returned once. |
 | Staff | `POST /api/v1/admin/staff/{staff_id}/edit`, `/status` | Immutable ID, mandatory `expected_version`, stale changes return 409. No credential reset or mail. |
+| Storage locations | `GET/POST /api/v1/admin/storage-locations`, `GET /{location_id}`, `POST /{location_id}/edit`, `/status`, `/delete` | Protected Super Admin `admin.access`; name/address/status, mandatory mutation versions, soft deletion and authenticated audit metadata. |
+| Storage locations | `POST /api/v1/admin/storage-locations/import/review`, `/import/commit`; `GET /export` | CSV/XLSX create-only review/confirm and full-filter download. Exact schemas and safety bounds in the Storage Location operations document. |
 | Domain | `POST /api/v1/domain/mrs/{user_id}/mapping` | Super-admin maps an existing user to an MR profile. |
 | Domain | `POST /api/v1/domain/patients` | Super-admin creates the minimal patient assignment record. |
 | Domain | `POST /api/v1/domain/patients/{patient_id}/assignment` | Authorized administrator assigns or unassigns an MR. |
@@ -315,7 +322,7 @@ These defaults are service behavior, not automatic infrastructure provisioning:
 
 The request-body middleware uses a 1 MiB bound for non-upload requests and the
 configured upload limit for raw upload/replacement paths. Zone review/commit
-allow 2 MiB; Courier review/commit allow 2 MiB plus 64 KiB multipart overhead,
+allow 2 MiB; Courier and Storage Location review/commit allow 2 MiB plus 64 KiB multipart overhead,
 with a separate extracted-file 2 MiB bound. Unrelated limits are unchanged.
 No clamd service is
 provided by this repository or artifact. `SCANNER_BACKEND=unavailable` is the

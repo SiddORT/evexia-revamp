@@ -1,200 +1,123 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { CirclePower, Download, FolderOpen, Pencil, Plus, Search, Upload } from 'lucide-react';
+import { CirclePower, Download, Pencil, Plus, Search, Trash2, MapPin, Upload } from 'lucide-react';
+import StorageLocationImportDialog from '../../components/admin/StorageLocationImportDialog.jsx';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
-import Dialog from '../../components/admin/Dialog.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
-import useStorageLocations from '../../hooks/useStorageLocations.js';
-import useTablePagination from '../../hooks/useTablePagination.js';
-import { STORAGE_LOCATION_COLUMNS, storageLocationCSVTemplate, exportStorageLocationCSV, loadStorageLocations, reviewStorageLocationCSV } from '../../services/storageLocations.js';
-import { parseCSV } from '../../services/masterImport.js';
-import '../../mr.css';
-import '../../category.css';
-import '../../storageLocation.css';
+import useServerLocations from '../../hooks/useServerLocations.js';
+import { exportLocations, downloadLocationFile } from '../../services/serverLocations.js';
+import { reportingIdentityGuard } from '../../auth/adminSession.js';
 
-const LIST_PATH = '/admin/masters/storage-locations';
-const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
-
-function downloadCSV(text, filename) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-function audit(name, value) {
-  return <span className="admin-category-audit"><strong>{name || '—'}</strong><time dateTime={value}>{formatAdminTimestamp(value, undefined, true)}</time></span>;
-}
-
-function StorageLocationImportDialog({ records, onImport, onClose }) {
-  const [review, setReview] = useState(null);
-  const [message, setMessage] = useState('');
-  const [reading, setReading] = useState(false);
-  const sequence = useRef(0);
-  const invalid = review?.entries.filter((entry) => entry.errors.length) || [];
-  const valid = review ? review.entries.length - invalid.length : 0;
-
-  function close() { sequence.current += 1; onClose(); }
-  function template() {
-    try { downloadCSV(storageLocationCSVTemplate(), 'evexia-storage-location-template.csv'); }
-    catch { setMessage('The CSV template could not be downloaded. Please try again.'); }
-  }
-  async function choose(event) {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    setReview(null);
-    setMessage('');
-    if (!file) return;
-    const current = ++sequence.current;
-    if (!/\.csv$/i.test(file.name) || file.size > 2_000_000) {
-      setMessage('Choose a .csv file smaller than 2 MB.');
-      return;
-    }
-    setReading(true);
-    try {
-      const text = await file.text();
-      if (current !== sequence.current) return;
-      parseCSV(text);
-      const snapshot = loadStorageLocations();
-      if (!same(snapshot, records)) throw new Error('Saved locations changed in another tab. Refresh records before reviewing this file.');
-      const entries = reviewStorageLocationCSV(text, snapshot);
-      setReview({ fileName: file.name, entries, snapshot });
-    } catch (cause) {
-      if (current === sequence.current) setMessage(cause.message || 'Could not read this CSV file.');
-    } finally {
-      if (current === sequence.current) setReading(false);
-    }
-  }
-  function confirm() {
-    if (!review || !review.entries.length || invalid.length) return;
-    setMessage('');
-    try {
-      const result = onImport(review.entries, review.snapshot);
-      if (result.success) close();
-      else setMessage(result.error || 'Import failed. No locations were saved.');
-    } catch (cause) { setMessage(cause.message || 'Import failed. No locations were saved.'); }
-  }
-
-  return <Dialog title="Import storage locations" eyebrow="Storage Location Master" description="Review a local CSV before adding its locations. Existing records are never replaced." onClose={close} className="admin-import-dialog"
-    footer={<><button type="button" className="admin-button admin-button--secondary" onClick={close} data-testid="button-cancel-storage-import">Cancel</button><button type="button" className="admin-button" disabled={!review || !valid || invalid.length > 0 || reading || Boolean(message)} onClick={confirm} data-testid="button-confirm-storage-import">Import {valid} {valid === 1 ? 'location' : 'locations'}</button></>}>
-    <div className="admin-category-import">
-      <div className="admin-category-import__guide"><strong>CSV columns (exact order)</strong><p>{STORAGE_LOCATION_COLUMNS.map(([, label]) => label).join(', ')}. Status must be active or inactive. IDs and audit fields are not accepted.</p></div>
-      <button type="button" className="admin-button admin-button--secondary" onClick={template} data-testid="button-storage-template"><Download size={16} aria-hidden="true" /> Download CSV template</button>
-      <label className="admin-category-import__file">Choose a local CSV file<input type="file" accept=".csv,text/csv" onChange={choose} data-testid="input-storage-import" /></label>
-      {reading && <p role="status">Reading CSV file…</p>}
-      {message && <div className="admin-feedback admin-feedback--error" role="alert">{message}</div>}
-      {review && <div className="admin-category-import__review" aria-live="polite">
-        <p><strong>{review.fileName}</strong> — {valid} valid {valid === 1 ? 'row' : 'rows'}, {invalid.length} with errors. {invalid.length ? 'Correct the file and choose it again; nothing was saved.' : 'Review the rows before importing the whole batch.'}</p>
-        <div className="admin-category-import__rows" role="list" aria-label="Storage location CSV rows">
-          {review.entries.map((entry) => <div role="listitem" className={`admin-category-import__row${entry.errors.length ? ' admin-category-import__row--error' : ''}`} key={entry.line}>
-            {entry.values || entry.fields ? <details><summary>Line {entry.line}: {entry.values?.name || entry.fields?.name || '(unnamed)'} — {entry.errors.length ? `${entry.errors.length} ${entry.errors.length === 1 ? 'error' : 'errors'}` : 'Ready to add'}</summary>
-              <dl>{STORAGE_LOCATION_COLUMNS.map(([field, label]) => <div key={field}><dt>{label}</dt><dd>{entry.values?.[field] ?? entry.fields?.[field] ?? '—'}</dd></div>)}</dl>
-            </details> : <strong>Line {entry.line}: malformed row</strong>}
-            {entry.errors.length > 0 && <ul>{entry.errors.map((problem, index) => <li key={index}>{problem}</li>)}</ul>}
-          </div>)}
-        </div>
-      </div>}
-    </div>
-  </Dialog>;
+function details(by, at) {
+  return <span className="admin-table__details"><strong>{by}</strong><small>{formatAdminTimestamp(at)}</small></span>;
 }
 
 export default function StorageLocationMaster() {
   useAdminPreferences();
   const [, navigate] = useLocation();
-  const { records, error, feedback, retry, clearFeedback, changeStatus, importRows } = useStorageLocations();
-  const [saveFeedback] = useState(() => {
-    const saved = new URLSearchParams(window.location.search).get('saved');
-    return saved === 'added' ? 'Storage location added successfully.' : saved === 'updated' ? 'Storage location updated successfully.' : '';
-  });
-  useEffect(() => {
-    if (saveFeedback) window.history.replaceState(window.history.state, '', LIST_PATH);
-  }, [saveFeedback]);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [confirming, setConfirming] = useState(null);
+  const [filter, setFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const { records, total, filtered, loading, pending, error, feedback, clearFeedback, retry, add, edit, remove, changeStatus } = useServerLocations(search, filter, page, pageSize);
+  const [exportFormat, setExportFormat] = useState('csv');
+  const [exporting, setExporting] = useState(false);
+  const [blocked, setBlocked] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [confirming, setConfirming] = useState(null);
   const [actionError, setActionError] = useState('');
-  const visible = useMemo(() => records.filter((record) => {
-    const query = search.trim().toLocaleLowerCase();
-    return (!query || [record.name, record.address].some((value) => String(value || '').toLocaleLowerCase().includes(query)))
-      && (statusFilter === 'all' || record.status === statusFilter);
-  }), [records, search, statusFilter]);
-  const pagination = useTablePagination(visible);
+  const [cardView, setCardView] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches);
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 900px)');
+    const sync = () => setCardView(media.matches);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
+  const pageCount = Math.max(1, Math.ceil(filtered / pageSize));
+  const pagination = { page, pageSize, pageCount, pageRows: records, startIndex: (page - 1) * pageSize,
+    setPage, setPageSize: (size) => { setPageSize(size); setPage(1); }, resetPage: () => setPage(1) };
+  useEffect(() => { if (!loading && !error && page > pageCount) setPage(pageCount); }, [loading, error, page, pageCount]);
 
-  function refresh() { retry(); setConfirming(null); setImporting(false); setActionError(''); }
-  function toggle() {
-    const target = confirming.status === 'active' ? 'inactive' : 'active';
-    try {
-      const result = changeStatus(confirming.id, target);
-      if (result.success) { setConfirming(null); setActionError(''); }
-      else setActionError(result.error || 'Status could not be changed. Refresh records and try again.');
-    } catch (cause) { setActionError(cause.message || 'Status could not be changed.'); }
+  function requestAction(record, type) {
+    clearFeedback();
+    setActionError('');
+    setBlocked(false);
+    setConfirming({ record, type });
   }
-  function exportVisible() {
-    if (error || !visible.length) return;
-    try {
-      if (!same(loadStorageLocations(), records)) {
-        setActionError('Saved locations changed in another tab. Refresh records before exporting.');
-        return;
-      }
-      downloadCSV(exportStorageLocationCSV(visible), 'evexia-storage-locations.csv');
-      setActionError('');
-    } catch (cause) { setActionError(cause.message || 'CSV export failed. Please try again.'); }
+  async function confirmAction() {
+    const { record, type } = confirming;
+    const result = await (type === 'delete' ? remove(record) : changeStatus(record, type === 'activate' ? 'active' : 'inactive'));
+    if (result.success) { setConfirming(null); setActionError(''); }
+    else { setActionError(result.error); setBlocked(result.code === 'location_stale' || Boolean(result.ambiguous)); }
   }
-  function actions(record, compact = false) {
-    return <div className={compact ? 'admin-mr-card__actions' : 'admin-table__actions'}>
-      <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} onClick={() => { clearFeedback(); navigate(`${LIST_PATH}/${encodeURIComponent(record.id)}`); }} aria-label={`Edit ${record.name}`} title="Edit" data-testid={`button-edit-storage-${record.id}`}><Pencil size={16} aria-hidden="true" />{compact && 'Edit'}</button>
-      <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} onClick={() => { clearFeedback(); setActionError(''); setConfirming(record); }} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} title={record.status === 'active' ? 'Inactivate' : 'Activate'} data-testid={`button-toggle-storage-${record.id}`}><CirclePower size={16} aria-hidden="true" />{compact && (record.status === 'active' ? 'Inactivate' : 'Activate')}</button>
-    </div>;
+  async function exportVisible() {
+    if (error || exporting) return;
+    setActionError('');
+    setExporting(true);
+    const guard = reportingIdentityGuard();
+    const format = exportFormat;
+    try {
+      const blob = await exportLocations({ query: search, status: filter }, format);
+      guard();
+      downloadLocationFile(blob, format);
+    } catch (cause) {
+      setActionError(cause.message || 'CSV export failed. Refresh records and try again.');
+    } finally { setExporting(false); }
+  }
+  function actions(record, mobile = false) {
+    const toggle = record.status === 'active' ? 'Inactivate' : 'Activate';
+    return <fieldset disabled={loading || pending} style={{ border: 0, margin: 0, padding: 0 }} className={mobile ? 'admin-zone-card__actions' : 'admin-table__actions'}>
+      <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} title="Edit" onClick={() => { clearFeedback(); navigate(`/admin/masters/storage-locations/${record.id}`); }} data-testid={`button-edit-storage-location-${record.id}`}><Pencil size={mobile ? 14 : 16} aria-hidden="true" />{mobile && <span>Edit</span>}</button>
+      <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`${toggle} ${record.name}`} title={toggle} onClick={() => requestAction(record, toggle.toLowerCase())} data-testid={`button-toggle-storage-location-${record.id}`}><CirclePower size={mobile ? 14 : 17} aria-hidden="true" />{mobile && <span>{toggle}</span>}</button>
+      <button type="button" className={mobile ? 'admin-zone-card__action admin-zone-card__action--danger' : 'admin-icon-button admin-icon-button--danger'} aria-label={`Delete ${record.name}`} title="Delete" onClick={() => requestAction(record, 'delete')} data-testid={`button-delete-storage-location-${record.id}`}><Trash2 size={mobile ? 14 : 16} aria-hidden="true" />{mobile && <span>Delete</span>}</button>
+    </fieldset>;
   }
   const columns = [
-    { key: 'serial', label: 'Sr No.', render: (_, index) => index + 1 },
-    { key: 'name', label: 'Storage location', render: (record) => <strong className="admin-category-name">{record.name}</strong> },
-    { key: 'address', label: 'Address', render: (record) => <span className="admin-storage-address">{record.address || '—'}</span> },
-    { key: 'status', label: 'Status', render: (record) => <StatusBadge status={record.status} id={record.id} kind="storage-location" /> },
-    { key: 'created', label: 'Created details', render: (record) => audit(record.createdBy, record.createdAt) },
-    { key: 'updated', label: 'Updated details', render: (record) => audit(record.updatedBy, record.updatedAt) },
+    { key: 'serial', label: 'Sr No', render: (_record, index) => <span className="admin-table__serial">{index + 1}</span> },
+    { key: 'name', label: 'Storage location name', render: (record) => <span className="admin-table__name" data-testid={`text-storage-location-name-${record.id}`}>{record.name}</span> },
+    { key: 'address', label: 'Address', render: (record) => record.address },
+    { key: 'status', label: 'Status', render: (record) => <StatusBadge status={record.status} id={record.id} /> },
+    { key: 'created', label: 'Created details', render: (record) => details(record.createdBy, record.createdAt) },
+    { key: 'updated', label: 'Updated details', render: (record) => details(record.updatedBy, record.updatedAt) },
     { key: 'actions', label: 'Actions', render: (record) => actions(record) },
   ];
-
+  const actionName = confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'activate' ? 'Activate' : 'Inactivate';
   return <AdminLayout title="Storage Location Master">
     <div className="admin-page-head">
-      <div><p className="admin-page-head__eyebrow">Masters / Inventory</p><h1>Storage Location Master</h1><p className="admin-page-head__description">Keep your storage locations, addresses and availability in one place.</p></div>
-      <div className="admin-category-head-actions">
-        <button type="button" className="admin-button admin-button--secondary" onClick={refresh} data-testid="button-refresh-storage-locations">Refresh records</button>
-        <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error)} onClick={() => { setActionError(''); setImporting(true); }} data-testid="button-import-storage-locations"><Upload size={16} aria-hidden="true" /> Import data</button>
-        <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || !visible.length} onClick={exportVisible} data-testid="button-export-storage-locations"><Download size={16} aria-hidden="true" /> Export data</button>
-        <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate(`${LIST_PATH}/new`); }} data-testid="button-add-storage-location"><Plus size={16} aria-hidden="true" /> Add location</button>
+      <div><p className="admin-page-head__eyebrow">Masters / Inventory</p><h1>Storage Location Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Browser data clearing does not remove these storage locations.</p></div>
+      <div className="admin-mr-head-actions">
+        <button type="button" className="admin-button admin-button--secondary" onClick={() => setImporting(true)} data-testid="button-import-storage-locations"><Upload size={16} aria-hidden="true" /> Import data</button>
+        <select aria-label="Location export format" className="admin-select" value={exportFormat} onChange={(event) => setExportFormat(event.target.value)}><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option></select>
+        <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading || exporting} onClick={exportVisible} data-testid="button-export-storage-locations"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
+        <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate('/admin/masters/storage-locations/new'); }} data-testid="button-add-storage-location"><Plus size={16} aria-hidden="true" /> Add storage location</button>
       </div>
     </div>
-    {(feedback || saveFeedback) && <div className="admin-feedback" role="status" data-testid="status-storage-feedback">{feedback || saveFeedback}</div>}
-    {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
+    <p className="admin-page-head__description">Old browser records remain untouched and are not migrated or used as fallback. Explicitly import an existing CSV backup. Exports include all name/address/status matches, up to 5,000 records; larger results require narrower filters.</p>
+    <p className="admin-page-head__description">Allergen, Purchase Order and Purchase Received continue using separate browser-local locations and IDs. Edits here do not change those workflows or inventory.</p>
+    {feedback && <div className="admin-feedback" role="status" data-testid="status-storage-location-feedback">{feedback}</div>}
+    {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-storage-location-action-error">{actionError}</div>}
     <section className="admin-panel" aria-label="Storage location list">
-      <div className="admin-toolbar"><div className="admin-toolbar__fields">
-        <label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search storage locations</span><input value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Search location or address" data-testid="input-search-storage-locations" /></label>
-        <div className="admin-filter"><label htmlFor="storage-status-filter">Status</label><select id="storage-status-filter" className="admin-select" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); pagination.resetPage(); }} data-testid="select-filter-storage-status"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+      <div className="admin-toolbar"><button className="admin-button admin-button--secondary" disabled={loading} onClick={retry}>Refresh records</button><div className="admin-toolbar__fields">
+        <label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search storage locations by name or address</span><input maxLength={200} value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Search by location name or address" data-testid="input-search-storage-locations" /></label>
+        <div className="admin-filter"><label htmlFor="storage-location-filter">Status</label><select id="storage-location-filter" className="admin-select" value={filter} onChange={(event) => { setFilter(event.target.value); pagination.resetPage(); }} data-testid="select-filter-storage-locations"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
       </div></div>
-      {error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><FolderOpen size={21} aria-hidden="true" /></span><strong>Locations could not be loaded</strong><p>{error}</p><button type="button" className="admin-button" onClick={refresh} style={{ marginTop: 16 }} data-testid="button-retry-storage-locations">Refresh records</button></div> : <>
-        {visible.length ? <>
-          <div className="admin-storage-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} label="Storage location records" testIdPrefix="storage-location" /></div>
-          <div className="admin-storage-mobile" role="list" aria-label="Storage location records">{pagination.pageRows.map((record, index) => <article className="admin-mr-card" role="listitem" key={record.id} data-testid={`card-storage-${record.id}`}>
-            <div className="admin-mr-card__head"><div className="admin-mr-card__identity"><span className="admin-mr-card__subtitle">#{pagination.startIndex + index + 1} · Storage location</span><h2 className="admin-mr-card__name">{record.name}</h2></div><StatusBadge status={record.status} id={record.id} kind="storage-location" /></div>
-            <dl className="admin-mr-card__meta"><div><dt>Address</dt><dd className="admin-storage-address">{record.address || '—'}</dd></div><div><dt>Created details</dt><dd>{audit(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated details</dt><dd>{audit(record.updatedBy, record.updatedAt)}</dd></div></dl>
+      {loading ? <p className="admin-empty" role="status">Loading shared storage locations…</p> : error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><MapPin size={21} /></span><strong>Storage locations could not be loaded</strong><p>{error}</p><button className="admin-button" style={{ marginTop: 16 }} type="button" onClick={retry} data-testid="button-retry-storage-locations">Try again</button></div> : <>
+        {records.length ? (cardView ? <div className="admin-zone-cards" role="list" aria-label="Storage location records">
+          {pagination.pageRows.map((record, index) => <article className="admin-zone-card" role="listitem" key={record.id} data-testid={`card-storage-location-${record.id}`}>
+            <div className="admin-zone-card__heading"><div className="admin-zone-card__title"><span className="admin-zone-card__serial">#{pagination.startIndex + index + 1}</span><h2 data-testid={`text-storage-location-name-${record.id}`}>{record.name}</h2></div><StatusBadge status={record.status} id={record.id} /></div>
+            <p>{record.address}</p><dl className="admin-zone-card__meta"><div><dt>Created</dt><dd>{details(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated</dt><dd>{details(record.updatedBy, record.updatedAt)}</dd></div></dl>
             {actions(record, true)}
-          </article>)}</div>
-        </> : <div className="admin-empty" data-testid="status-storage-empty"><span className="admin-empty__icon"><FolderOpen size={21} aria-hidden="true" /></span><strong>{records.length ? 'No matching locations' : 'No storage locations yet'}</strong><p>{records.length ? 'Try another search or status filter.' : 'Add a location to start keeping your storage directory.'}</p></div>}
-        <TablePagination {...pagination} filtered={visible.length} total={records.length} label={visible.length === 1 ? 'location' : 'locations'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-storage-count" />
+          </article>)}
+        </div> : <DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} />) : <div className="admin-empty" data-testid="status-storage-locations-empty"><span className="admin-empty__icon"><MapPin size={21} aria-hidden="true" /></span><strong>{total ? 'No matching storage locations' : 'No storage locations yet'}</strong><p>{total ? 'Try a different name or status filter.' : 'Add your first storage location to get started.'}</p></div>}
+        <TablePagination {...pagination} filtered={filtered} total={total} label={total === 1 ? 'storage location' : 'storage locations'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-storage-location-count" />
       </>}
     </section>
-    {confirming && <ConfirmationDialog title={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} location?`} description={`Change “${confirming.name}” to ${confirming.status === 'active' ? 'inactive' : 'active'}? Its saved details will remain available in this browser.`} actionLabel={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} location`} onConfirm={toggle} onClose={() => { setConfirming(null); setActionError(''); }} error={actionError} />}
-    {importing && <StorageLocationImportDialog records={records} onImport={importRows} onClose={() => setImporting(false)} />}
+    {importing && <StorageLocationImportDialog onClose={() => setImporting(false)} onSaved={retry} />}
+    {confirming && <ConfirmationDialog pending={pending} blocked={blocked} title={`${actionName} storage location?`} description={`Are you sure you want to ${actionName.toLowerCase()} “${confirming.record.name}”?${confirming.type === 'delete' ? ' It will disappear from ordinary lists and exports. Server deletion history is retained; no restore is available here.' : ''}`} actionLabel={`${actionName} storage location`} destructive={confirming.type === 'delete'} onConfirm={confirmAction} onClose={() => { setConfirming(null); retry(); }} error={actionError} />}
   </AdminLayout>;
 }

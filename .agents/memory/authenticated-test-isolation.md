@@ -43,3 +43,15 @@ unchanged pages. The same journeys passed under lower load.
 **How to apply:** Distinguish loader/time-budget failures from authorization,
 data or layout failures before changing production code. Increase only bounded
 test readiness/time budgets, not accepted outcomes or security checks.
+
+Long release suites should run through configured validation or a background
+shell whose result is explicitly awaited, rather than a foreground shell
+deadline that may end before the suite's summary.
+
+**Why:** A progressing isolated release run exceeded the shell's execution
+deadline before reporting its final result. Passing individual flows did not
+prove that the entire release gate completed.
+
+**How to apply:** Retain the isolated result paths and require a final suite
+result. If one flow failed, verify only that failed or unverified remainder with
+the existing tester; do not launch another broad browser pass for confidence.

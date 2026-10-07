@@ -29,13 +29,14 @@ def test_private_file_migration_constraints_and_domain_rollback_retention(monkey
     config.set_main_option("script_location", str(root / "alembic"))
     engine = create_engine(isolated_url)
     try:
-        command.upgrade(config, "head")
+        # The file rollback contract belongs to 0004, not later forward-only
+        # master migrations. Do not weaken those migrations for this fixture.
+        command.upgrade(config, "0004_private_files")
         user_id, patient_id, file_id = (uuid.uuid4() for _ in range(3))
         with engine.begin() as conn:
             conn.execute(text(
-                "INSERT INTO users(id,email,password_hash,is_active,token_version,identity_version,system_role,"
-                "is_protected_system_admin)"
-                " VALUES (:id,'synthetic@example.test','unused',true,0,1,'mr',false)"
+                "INSERT INTO users(id,email,password_hash,is_active,token_version,identity_version,system_role)"
+                " VALUES (:id,'synthetic@example.test','unused',true,0,1,'mr')"
             ), {"id": user_id})
             conn.execute(text(
                 "INSERT INTO patients(id,is_active,version) VALUES(:id,true,1)"

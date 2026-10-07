@@ -4,6 +4,11 @@ import { loadMRs, MR_STORAGE_KEY } from './mrs.js';
 import { loadDoctors } from './doctors.js';
 
 export const EXCEL_TEMPLATES = {
+  'storage-location': {
+    title: 'Storage Location',
+    columns: ['Storage Location', 'Address', 'Status'],
+    sample: [['Example supply room', 'Building A, Ground floor', 'active']],
+  },
   zone: {
     title: 'Zone',
     columns: ['Zone Name', 'Status'],

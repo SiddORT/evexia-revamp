@@ -31,7 +31,7 @@ def invalid(message="Invalid file. Use UTF-8 CSV or a genuine, single-sheet .xls
     raise zones.ZoneError(message, 422, "zone_invalid_file")
 
 
-def workbook_rows(data):
+def workbook_rows(data, max_columns=6):
     try:
         with zipfile.ZipFile(io.BytesIO(data)) as archive:
             members = archive.infolist()
@@ -57,11 +57,11 @@ def workbook_rows(data):
                             invalid("Macro-enabled workbooks are not supported.")
                         if tag == "c":
                             cells += 1
-                            if cells > 6006:
-                                invalid("Workbook exceeds the 6,006-cell limit.")
+                            if cells > max_columns * (MAX_ROWS + 1):
+                                invalid("Workbook exceeds the bounded cell limit.")
                             if name.startswith("xl/worksheets/"):
-                                coordinate = re.fullmatch(r"([A-F])([1-9][0-9]{0,3})", node.attrib.get("r", ""))
-                                if not coordinate or int(coordinate[2]) > MAX_ROWS + 1:
+                                coordinate = re.fullmatch(r"([A-Z])([1-9][0-9]{0,3})", node.attrib.get("r", ""))
+                                if not coordinate or ord(coordinate[1]) - ord("A") >= max_columns or int(coordinate[2]) > MAX_ROWS + 1:
                                     invalid("Workbook cell coordinates exceed the row/column bounds.")
                         if tag == "row" and name.startswith("xl/worksheets/"):
                             number = node.attrib.get("r", "")
@@ -74,8 +74,8 @@ def workbook_rows(data):
             if len(book.worksheets) != 1:
                 invalid("Use exactly one worksheet.")
             sheet = book.worksheets[0]
-            if (sheet.max_row or 0) > MAX_ROWS + 1 or (sheet.max_column or 0) > 6:
-                invalid("Workbook exceeds 1,000 records or six columns.")
+            if (sheet.max_row or 0) > MAX_ROWS + 1 or (sheet.max_column or 0) > max_columns:
+                invalid("Workbook exceeds the record or column bound.")
             # Do not trust an understated producer-controlled dimension to hide
             # rows/cells. Coordinates were bounded independently above.
             sheet.reset_dimensions()

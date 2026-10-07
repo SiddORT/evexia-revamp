@@ -118,6 +118,7 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
         </div>
         {poProblem && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="text-pr-po-problem">{poProblem}</div>}
         {po && <dl className="pr-ctx"><div><dt>Vendor</dt><dd>{receipt ? receipt.vendorName : po.vendorName}<span className="po-secondary">{(receipt ? receipt.vendorPhone : snapshot.refs.vendors.find((v) => v.id === po.vendorId)?.phoneNo) || 'No mobile on record'}</span></dd></div><div><dt>Deliver to</dt><dd>{receipt ? receipt.locationName : po.locationName}</dd></div><div><dt>PO date</dt><dd>{displayDate(po.poDate)} <span className={fclass(getPOFulfillment(po, activeReceipts))}>{getPOFulfillment(po, activeReceipts)}</span></dd></div></dl>}
+        <p className="mr-form__footer-note">Receipt destinations come from browser-local purchase orders and their separate location IDs. Shared Storage Location Master edits do not change these destinations.</p>
         <hr className="po-divider" />
         <h3 className="po-section-title">02 / Product rows <span>Leave received blank or zero to skip a row</span></h3>
         {!isNew && <p className="mr-form__hint" role="note">If later receipts accepted previously rejected units, you can retain or reduce this receipt’s historical received quantity when correcting it. Accepted quantity still cannot exceed the balance after other active receipts; new or increased receiving remains limited by that balance.</p>}

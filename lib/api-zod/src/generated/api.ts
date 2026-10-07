@@ -1191,6 +1191,293 @@ export const SetStaffStatusResponse = zod.object({
 /**
  * @summary Listing
  */
+export const listStorageLocationsQueryQueryDefault = ``;
+export const listStorageLocationsQueryQueryMax = 200;
+
+export const listStorageLocationsQueryStatusDefault = `all`;
+export const listStorageLocationsQueryLimitDefault = 10;
+export const listStorageLocationsQueryLimitMax = 100;
+
+export const listStorageLocationsQueryOffsetDefault = 0;
+export const listStorageLocationsQueryOffsetMin = 0;
+export const listStorageLocationsQueryOffsetMax = 1000000;
+
+export const ListStorageLocationsQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listStorageLocationsQueryQueryMax)
+    .default(listStorageLocationsQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(listStorageLocationsQueryStatusDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listStorageLocationsQueryLimitMax)
+    .default(listStorageLocationsQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listStorageLocationsQueryOffsetMin)
+    .max(listStorageLocationsQueryOffsetMax)
+    .default(listStorageLocationsQueryOffsetDefault),
+});
+
+export const listStorageLocationsResponseItemsItemAddressMax = 2000;
+
+export const listStorageLocationsResponseItemsItemNameMax = 200;
+
+export const ListStorageLocationsResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      address: zod
+        .string()
+        .min(1)
+        .max(listStorageLocationsResponseItemsItemAddressMax),
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      id: zod.string().uuid(),
+      name: zod
+        .string()
+        .min(1)
+        .max(listStorageLocationsResponseItemsItemNameMax),
+      status: zod.enum(["active", "inactive"]),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+export const createStorageLocationBodyAddressMax = 2000;
+
+export const createStorageLocationBodyNameMax = 200;
+
+export const CreateStorageLocationBody = zod.object({
+  address: zod.string().min(1).max(createStorageLocationBodyAddressMax),
+  name: zod.string().min(1).max(createStorageLocationBodyNameMax),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const createStorageLocationResponseAddressMax = 2000;
+
+export const createStorageLocationResponseNameMax = 200;
+
+export const CreateStorageLocationResponse = zod.object({
+  address: zod.string().min(1).max(createStorageLocationResponseAddressMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(createStorageLocationResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Export
+ */
+export const exportStorageLocationsQueryQueryDefault = ``;
+export const exportStorageLocationsQueryQueryMax = 200;
+
+export const exportStorageLocationsQueryStatusDefault = `all`;
+export const exportStorageLocationsQueryFormatDefault = `csv`;
+
+export const ExportStorageLocationsQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(exportStorageLocationsQueryQueryMax)
+    .default(exportStorageLocationsQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(exportStorageLocationsQueryStatusDefault),
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(exportStorageLocationsQueryFormatDefault),
+});
+
+export const ExportStorageLocationsResponse = zod.unknown();
+
+/**
+ * @summary Commit
+ */
+export const commitLocationImportQueryFilenameMax = 200;
+
+export const commitLocationImportQueryDigestRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const CommitLocationImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(commitLocationImportQueryFilenameMax),
+  digest: zod.coerce.string().regex(commitLocationImportQueryDigestRegExp),
+  confirm: zod.coerce.boolean(),
+});
+
+export const CommitLocationImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const CommitLocationImportResponse = zod.object({
+  imported: zod.number().int(),
+});
+
+/**
+ * @summary Review
+ */
+export const reviewLocationImportQueryFilenameMax = 200;
+
+export const ReviewLocationImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(reviewLocationImportQueryFilenameMax),
+});
+
+export const ReviewLocationImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const ReviewLocationImportResponse = zod.object({
+  digest: zod.string(),
+  rows: zod.array(
+    zod.object({
+      address: zod.string(),
+      errors: zod.array(zod.string()),
+      name: zod.string(),
+      row: zod.number().int(),
+      status: zod.string(),
+    }),
+  ),
+  valid: zod.boolean(),
+});
+
+/**
+ * @summary Detail
+ */
+export const GetStorageLocationParams = zod.object({
+  location_id: zod.coerce.string().uuid(),
+});
+
+export const getStorageLocationResponseAddressMax = 2000;
+
+export const getStorageLocationResponseNameMax = 200;
+
+export const GetStorageLocationResponse = zod.object({
+  address: zod.string().min(1).max(getStorageLocationResponseAddressMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(getStorageLocationResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Delete
+ */
+export const DeleteStorageLocationParams = zod.object({
+  location_id: zod.coerce.string().uuid(),
+});
+
+export const DeleteStorageLocationBody = zod.object({
+  expected_version: zod.number().int().min(1),
+});
+
+export const deleteStorageLocationResponseAddressMax = 2000;
+
+export const deleteStorageLocationResponseNameMax = 200;
+
+export const DeleteStorageLocationResponse = zod.object({
+  address: zod.string().min(1).max(deleteStorageLocationResponseAddressMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(deleteStorageLocationResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditStorageLocationParams = zod.object({
+  location_id: zod.coerce.string().uuid(),
+});
+
+export const editStorageLocationBodyAddressMax = 2000;
+
+export const editStorageLocationBodyNameMax = 200;
+
+export const EditStorageLocationBody = zod.object({
+  address: zod.string().min(1).max(editStorageLocationBodyAddressMax),
+  expected_version: zod.number().int().min(1),
+  name: zod.string().min(1).max(editStorageLocationBodyNameMax),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const editStorageLocationResponseAddressMax = 2000;
+
+export const editStorageLocationResponseNameMax = 200;
+
+export const EditStorageLocationResponse = zod.object({
+  address: zod.string().min(1).max(editStorageLocationResponseAddressMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(editStorageLocationResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Status
+ */
+export const SetStorageLocationStatusParams = zod.object({
+  location_id: zod.coerce.string().uuid(),
+});
+
+export const SetStorageLocationStatusBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const setStorageLocationStatusResponseAddressMax = 2000;
+
+export const setStorageLocationStatusResponseNameMax = 200;
+
+export const SetStorageLocationStatusResponse = zod.object({
+  address: zod.string().min(1).max(setStorageLocationStatusResponseAddressMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(setStorageLocationStatusResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Listing
+ */
 export const listZonesQueryQueryDefault = ``;
 export const listZonesQueryQueryMax = 200;
 

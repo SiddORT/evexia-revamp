@@ -70,6 +70,7 @@ function AllergenForm({ record, records, refs, onSave, onCancel, onRefresh }) {
         {field('name', 'Product Name', { placeholder: 'e.g. Diagnostic reagent' })}
         <ReferenceSelect field="categoryId" label="Category" value={values.categoryId} list={categories} onChange={update} error={errors.categoryId} record={record} />
         <ReferenceSelect field="storageLocationId" label="Storage Location" value={values.storageLocationId} list={locations} onChange={update} error={errors.storageLocationId} record={record} />
+        <p className="mr-form__footer-note">These locations use the separate browser-local dataset. Shared Storage Location Master changes do not affect these choices.</p>
         {field('hsnCode', 'HSN code', { optional: true, placeholder: 'e.g. 3822' })}
         <div className="admin-allergen-form__section">Pricing & specification <small>Amounts are non-negative; GST is between 0 and 100</small></div>
         {field('sellingPrice', 'Selling Price', { optional: true, numeric: true, placeholder: '0.00' })}

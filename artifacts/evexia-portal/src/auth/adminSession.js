@@ -349,8 +349,8 @@ export async function roleRequest(path = '', body, { signal } = {}) {
 // Shared master transport. No automatic replay of a potentially committed write.
 async function masterRequest(resource, path = '', { body, file, params = {}, download = false, signal } = {}) {
   const zone = resource === 'zones';
-  const label = zone ? 'Zone' : 'Courier partner';
-  const unavailable = zone ? 'zone_unavailable' : 'courier_unavailable';
+  const label = zone ? 'Zone' : resource === 'storage-locations' ? 'Storage location' : 'Courier partner';
+  const unavailable = zone ? 'zone_unavailable' : resource === 'storage-locations' ? 'location_unavailable' : 'courier_unavailable';
   const route = zone
     ? /^(?:|\/trash|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|restore))?)$/
     : /^(?:|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/;
@@ -420,6 +420,7 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
 }
 export const zoneRequest = (path, options) => masterRequest('zones', path, options);
 export const courierRequest = (path, options) => masterRequest('courier-partners', path, options);
+export const locationRequest = (path, options) => masterRequest('storage-locations', path, options);
 
 export async function reportingRequest(resource, params = {}, { signal } = {}) {
   if (!['summary', 'users', 'sessions', 'events', 'activity', 'sessions/export', 'events/export'].includes(resource)) {

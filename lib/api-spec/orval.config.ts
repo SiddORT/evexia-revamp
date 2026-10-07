@@ -15,7 +15,8 @@ const titleTransformer: InputTransformerFn = (config) => {
   // BodyInit). Generated callers use the supported multipart variant; the
   // portal's memory-only transport uses raw bytes. Authoritative OpenAPI retains
   // both representations.
-  for (const route of ["/v1/admin/courier-partners/import/review", "/v1/admin/courier-partners/import/commit"]) {
+  for (const route of ["/v1/admin/courier-partners/import/review", "/v1/admin/courier-partners/import/commit",
+    "/v1/admin/storage-locations/import/review", "/v1/admin/storage-locations/import/commit"]) {
     const request = config.paths?.[route]?.post?.requestBody;
     if (request && !("$ref" in request) && request.content?.["multipart/form-data"]) {
       delete request.content["application/octet-stream"];

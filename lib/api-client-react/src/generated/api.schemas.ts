@@ -316,6 +316,125 @@ export const HealthStatusValue = {
 } as const;
 export type HealthStatus = typeof HealthStatusValue;
 
+export type LocationEditStatus =
+  (typeof LocationEditStatus)[keyof typeof LocationEditStatus];
+
+export const LocationEditStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface LocationEdit {
+  /**
+   * @minLength 1
+   * @maxLength 2000
+   */
+  address: string;
+  /** @minimum 1 */
+  expected_version: number;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  status: LocationEditStatus;
+}
+
+export type LocationFieldsStatus =
+  (typeof LocationFieldsStatus)[keyof typeof LocationFieldsStatus];
+
+export const LocationFieldsStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface LocationFields {
+  /**
+   * @minLength 1
+   * @maxLength 2000
+   */
+  address: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  status: LocationFieldsStatus;
+}
+
+export interface LocationImportResult {
+  imported: number;
+}
+
+export interface LocationImportRow {
+  address: string;
+  errors: string[];
+  name: string;
+  row: number;
+  status: string;
+}
+
+export type LocationResponseStatus =
+  (typeof LocationResponseStatus)[keyof typeof LocationResponseStatus];
+
+export const LocationResponseStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface LocationResponse {
+  /**
+   * @minLength 1
+   * @maxLength 2000
+   */
+  address: string;
+  createdAt: string;
+  createdBy: string;
+  id: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  status: LocationResponseStatus;
+  updatedAt: string;
+  updatedBy: string;
+  version: number;
+}
+
+export interface LocationPage {
+  filtered: number;
+  items: LocationResponse[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export interface LocationReview {
+  digest: string;
+  rows: LocationImportRow[];
+  valid: boolean;
+}
+
+export type LocationStatusStatus =
+  (typeof LocationStatusStatus)[keyof typeof LocationStatusStatus];
+
+export const LocationStatusStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface LocationStatus {
+  /** @minimum 1 */
+  expected_version: number;
+  status: LocationStatusStatus;
+}
+
+export interface LocationVersion {
+  /** @minimum 1 */
+  expected_version: number;
+}
+
 export interface LoginRequest {
   /**
    * @minLength 3
@@ -1026,6 +1145,88 @@ export type ListStaffParams = {
    * @maximum 10000
    */
   offset?: number;
+};
+
+export type ListStorageLocationsParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ListStorageLocationsStatus;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
+export type ListStorageLocationsStatus =
+  (typeof ListStorageLocationsStatus)[keyof typeof ListStorageLocationsStatus];
+
+export const ListStorageLocationsStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportStorageLocationsParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ExportStorageLocationsStatus;
+  format?: ExportStorageLocationsFormat;
+};
+
+export type ExportStorageLocationsStatus =
+  (typeof ExportStorageLocationsStatus)[keyof typeof ExportStorageLocationsStatus];
+
+export const ExportStorageLocationsStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportStorageLocationsFormat =
+  (typeof ExportStorageLocationsFormat)[keyof typeof ExportStorageLocationsFormat];
+
+export const ExportStorageLocationsFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type CommitLocationImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+  /**
+   * @pattern ^[0-9a-f]{64}$
+   */
+  digest: string;
+  confirm: boolean;
+};
+
+export type CommitLocationImportBody = {
+  file: Blob | File;
+};
+
+export type ReviewLocationImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+};
+
+export type ReviewLocationImportBody = {
+  file: Blob | File;
 };
 
 export type ListZonesParams = {

@@ -20,6 +20,7 @@ password input; there is no default elevated account.
 | Staff list/detail/create/edit/status (`staff.manage`) | protected singleton only | no |
 | Zone list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
 | Courier Partner list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
+| Storage Location list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
 | Upload, metadata, verified download, download grant | system-wide | own MR or currently assigned active patient |
 | Delete, replace, retry verification/cleanup | yes | no |
 
@@ -57,6 +58,14 @@ deleter while excluding it from ordinary reads/exports. Imports are explicit,
 identity-bound review/confirm, bounded, create-only and transactional; incoming
 audit attribution is ignored. Local courier records remain untouched and unused.
 See `docs/courier-partner-master.md` for transfer limits and operations.
+
+Storage Location Master is a distinct shared name/address/status resource, not
+private uploaded-file storage or a Zone. It uses server-owned UTC times, User
+actor references, required expected versions, non-deleted normalized-name
+uniqueness and retained soft-deletion evidence. CSV/XLSX imports are explicit,
+identity/session-bound, create-only and atomic; imported audit values are ignored.
+Allergen/PO/PR keep their separate browser-local location records and IDs.
+See `docs/storage-location-master.md` for exact schemas, limits and recovery.
 
 ## File API and validation
 
