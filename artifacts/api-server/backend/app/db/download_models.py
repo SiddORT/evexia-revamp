@@ -13,6 +13,7 @@ class DownloadLog(Base):
         UniqueConstraint("session_id", "initiation_id", name="uq_download_initiation"),
         Index("ix_download_created_id", "created_at", "id"),
         Index("ix_download_actor_created", "actor_id", "created_at"),
+        Index("ix_download_format_created_id", "format", "created_at", "id"),
     )
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     actor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)

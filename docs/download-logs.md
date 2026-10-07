@@ -1,7 +1,7 @@
 # Download initiation history
 
 Download Logs is protected, read-only system reporting at `/admin/download-logs`.
-Apply forward Alembic migration `0013_download_logs` through the existing operator
+Apply forward Alembic migrations through `0014_download_reporting_index` through the existing operator
 procedure before rollout. No production migration, bootstrap or backfill is run by
 this feature. History begins at rollout and is unrelated to older activity exports.
 The database ledger is append-only, with no clear/delete/export/re-download API.
@@ -71,8 +71,12 @@ Admin preferences. User filtering searches/pages the full protected account dire
 
 ## Verification
 
-Run `sh scripts/test-api-foundation.sh tests/test_downloads.py tests/test_files.py`
+Run `sh scripts/test-api-foundation.sh tests/test_downloads.py tests/test_download_queries.py tests/test_download_files.py`
 against the disposable local-only PostgreSQL harness. Service privacy/failure and
 release coverage tests: `node --test artifacts/evexia-portal/src/services/downloads.test.js`.
 The normal release gate includes these new ledger/service and authenticated page
 checks, without using managed databases or real accounts.
+
+Large-history plans and timings use `sh scripts/profile-download-search.sh`;
+see [download-search-performance.md](download-search-performance.md) for the
+synthetic dataset, measured decisions and remaining scaling limits.

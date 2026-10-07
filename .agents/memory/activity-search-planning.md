@@ -37,3 +37,15 @@ removed shared test objects.
 
 **How to apply:** Use only the disposable schema, and explicitly resolve
 extension namespaces instead of adding public to the search path.
+
+Do not reuse bounded top-K audit candidates for reports that promise exact totals.
+
+**Why:** Audit pagination only needs enough candidates to establish `has_more`.
+The download ledger must count every match and return that count and its page
+from one snapshot. Truncating candidates can make a fast query silently lie
+about history size.
+
+**How to apply:** Treat exact-count reports as a different performance contract.
+Benchmark count work separately from ordered page work, including broad,
+zero-match and past-end requests. Do not trade exact totals for bounded latency
+without an explicit product decision.
