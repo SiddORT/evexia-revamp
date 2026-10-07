@@ -26,3 +26,4 @@
 - [Staff search privacy](staff-search-privacy.md) — explicit bounded scans avoid substring-index leakage and unbounded automatic directory traversal.
 - [Authenticated test isolation](authenticated-test-isolation.md) — isolate test listeners and results, not just databases; shared ports cause synthetic logins to revoke each other.
 - [Multi-format upload codegen](multi-format-codegen.md) — retain both accepted upload formats in OpenAPI, but generate one supported representation to avoid invalid Blob/object serialization.
+- [Lazy-route print styles](lazy-route-print-styles.md) — gate print layout overrides on the report's presence; imported CSS survives navigation.

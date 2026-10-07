@@ -1,0 +1,63 @@
+.stock-actions { display: flex; gap: 9px; flex-wrap: wrap; }
+.stock-disclaimer { display: flex; gap: 8px; align-items: flex-start; }
+.stock-disclaimer svg { flex: none; margin-top: 2px; }
+.stock-toolbar { align-items: flex-end; gap: 14px; }
+.stock-toolbar .admin-select { min-width: 160px; }
+.stock-product { min-width: min(100%, 320px); }
+.stock-product .searchable-select { min-width: 280px; }
+.stock-product .searchable-select { position: relative; }
+.stock-product .searchable-select--open { z-index: 5; }
+.stock-product .searchable-select__control { display: flex; align-items: center; height: 40px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); }
+.stock-product .searchable-select__control:focus-within { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
+.stock-product .searchable-select__control input { width: 100%; min-width: 0; height: 100%; padding: 0 4px 0 11px; border: 0; outline: 0; background: transparent; color: var(--admin-text); font: inherit; font-size: 12px; text-overflow: ellipsis; }
+.stock-product .searchable-select__clear { flex: none; display: grid; place-items: center; padding: 5px; border: 0; background: transparent; color: var(--admin-text-soft); cursor: pointer; }
+.stock-product .searchable-select__clear:focus-visible { outline: 2px solid var(--admin-focus); }
+.stock-product .searchable-select__chevron { flex: none; margin: 0 10px 0 4px; color: var(--admin-text-soft); cursor: pointer; }
+.stock-product .searchable-select__menu { position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 230px; overflow-y: auto; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); box-shadow: 0 8px 24px rgba(0,0,0,.13); padding: 4px; }
+.stock-product .searchable-select__option, .stock-product .searchable-select__empty { padding: 9px 8px; color: var(--admin-text); font-size: 12px; overflow-wrap: anywhere; }
+.stock-product .searchable-select__option { display: flex; justify-content: space-between; gap: 8px; border-radius: 5px; cursor: pointer; }
+.stock-product .searchable-select__option:hover, .stock-product .searchable-select__option--active { background: var(--admin-state-hover); }
+.stock-product .searchable-select__option[aria-selected="true"] { color: var(--admin-accent); }
+.stock-scope { margin: 0; flex: 1 1 260px; color: var(--admin-text-soft); font-size: 12px; line-height: 1.5; }
+.stock-sub { display: block; color: var(--admin-muted); font-size: 11px; margin-top: 2px; }
+.stock-view { min-height: 32px; padding: 0 10px; }
+.stock-status { text-transform: capitalize; font-weight: 700; color: var(--admin-text-soft); }
+.stock-detail { width: min(100%, 860px); }
+.stock-detail__bar { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; margin: 14px 0; border-bottom: 1px solid var(--admin-border); }
+.stock-tabs { display: flex; gap: 4px; }
+.stock-tab { border: 0; border-bottom: 2px solid transparent; background: transparent; padding: 10px 14px; font: inherit; font-size: 13px; font-weight: 700; color: var(--admin-text-soft); cursor: pointer; }
+.stock-tab[aria-selected="true"] { color: var(--admin-accent); border-bottom-color: var(--admin-accent); }
+.stock-tab:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: -2px; }
+.stock-field { display: grid; gap: 4px; font-size: 10px; font-weight: 700; color: var(--admin-text-soft); padding-bottom: 8px; }
+.stock-report-dialog { width: min(100%, 900px); }
+.stock-report { color: var(--admin-text); }
+.stock-report h1 { font-size: 20px; margin: 0 0 12px; }
+.stock-report__meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 0 0 16px; }
+.stock-report__meta dt { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--admin-muted); font-weight: 700; }
+.stock-report__meta dd { margin: 2px 0 0; font-size: 12px; }
+.stock-report table { width: 100%; border-collapse: collapse; font-size: 12px; display: block; overflow-x: auto; }
+.stock-report th, .stock-report td { border: 1px solid var(--admin-border); padding: 6px 8px; text-align: left; }
+.stock-report th { background: var(--admin-table-head); }
+.stock-report__note { font-size: 11px; color: var(--admin-text-soft); margin-top: 12px; }
+@media (max-width: 640px) { .stock-product .searchable-select { min-width: 0; } .stock-toolbar .admin-filter { width: 100%; } }
+@media print {
+  /* This lazy-loaded stylesheet must not affect printing other Admin pages. */
+  body:has(.stock-report) { height: auto !important; overflow: visible !important; background: #fff !important; }
+  body:has(.stock-report) .admin-sidebar,
+  body:has(.stock-report) .admin-header,
+  body:has(.stock-report) .admin-content > :not(.stock-page),
+  body:has(.stock-report) .stock-page > :not(.admin-dialog-backdrop),
+  body:has(.stock-report) .stock-report-dialog > :not(.stock-report) { display: none !important; }
+  body:has(.stock-report) :is(.admin-shell, .admin-workspace, .admin-content, .stock-page, .admin-dialog-backdrop, .stock-report-dialog) {
+    position: static !important; display: block !important; width: 100% !important;
+    height: auto !important; min-height: 0 !important; max-height: none !important;
+    overflow: visible !important; margin: 0 !important; padding: 0 !important;
+    background: #fff !important; box-shadow: none !important; border: 0 !important;
+  }
+  .stock-report { width: 100%; color: #111 !important; }
+  .stock-report *, .stock-report th, .stock-report td { color: #111 !important; background: transparent !important; border-color: #888 !important; }
+  .stock-report table { display: table; overflow: visible; table-layout: fixed; }
+  .stock-report th, .stock-report td { overflow-wrap: anywhere; }
+  .stock-report tr { break-inside: avoid; }
+  .stock-report thead { display: table-header-group; }
+}

@@ -10,6 +10,8 @@
     "test:move-stocks": "node --test src/services/moveStocksDemo.test.js",
     "test:move-stocks:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/move-stocks.preview.spec.mjs",
     "test:startup-bundle": "node --test tests/startup-bundle.test.mjs",
+    "test:stock-status:service": "node --test src/services/stockStatusDemo.test.js",
+    "test:stock-status:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/stock-status.preview.spec.mjs",
     "test:loaders:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/loaders.preview.spec.mjs artifacts/evexia-portal/tests/admin-auth.preview.spec.mjs artifacts/evexia-portal/tests/activity-logs.preview.spec.mjs",
     "test:template-preferences:service": "node --test src/services/templatePreferenceEvents.test.js",
     "test:template-preferences:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/template-preferences.preview.spec.mjs",

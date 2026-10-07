@@ -74,7 +74,8 @@ export default function AdminLayout({ title, children }) {
   const showPO = !searching || 'inventory purchase orders po'.includes(query);
   const showPR = !searching || 'inventory purchase received pr receipts'.includes(query);
   const showMoveStocks = !searching || 'inventory move stocks transfer'.includes(query);
-  const showInventory = showPO || showPR || showMoveStocks;
+  const showStockStatus = !searching || 'inventory stock status allergens'.includes(query);
+  const showInventory = showPO || showPR || showMoveStocks || showStockStatus;
   const visibleGroups = MASTER_GROUPS.map((group) => ({
     ...group,
     links: searching ? group.links.filter((link) => link.label.toLocaleLowerCase().includes(query)) : group.links,
@@ -232,6 +233,7 @@ export default function AdminLayout({ title, children }) {
             {showPO && <Link href="/admin/inventory/purchase-orders" className={`admin-nav__item${location.startsWith('/admin/inventory/purchase-orders') ? ' admin-nav__item--active' : ''}`} aria-label="Purchase Orders" aria-current={location === '/admin/inventory/purchase-orders' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-purchase-orders"><ClipboardList size={16} aria-hidden="true" /><span className="admin-nav__label">Purchase Orders</span></Link>}
             {showPR && <Link href="/admin/inventory/purchase-received" className={`admin-nav__item${location.startsWith('/admin/inventory/purchase-received') ? ' admin-nav__item--active' : ''}`} aria-label="Purchase Received" aria-current={location === '/admin/inventory/purchase-received' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-purchase-received"><ClipboardList size={16} aria-hidden="true" /><span className="admin-nav__label">Purchase Received</span></Link>}
             {showMoveStocks && <Link href="/admin/inventory/move-stocks" className={`admin-nav__item${location.startsWith('/admin/inventory/move-stocks') ? ' admin-nav__item--active' : ''}`} aria-label="Move stocks" aria-current={location.startsWith('/admin/inventory/move-stocks') ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-move-stocks"><Boxes size={16} aria-hidden="true" /><span className="admin-nav__label">Move stocks</span></Link>}
+            {showStockStatus && <Link href="/admin/inventory/stock-status" className={`admin-nav__item${location === '/admin/inventory/stock-status' ? ' admin-nav__item--active' : ''}`} aria-label="Stock Status" aria-current={location === '/admin/inventory/stock-status' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-stock-status"><Boxes size={16} aria-hidden="true" /><span className="admin-nav__label">Stock Status</span></Link>}
           </div>
           {showUserManagement && <button type="button" disabled={searching} className={`admin-nav__item${isUserManagementPath(location) ? ' admin-nav__item--active' : ''}`} aria-label="User Management" title={isCollapsed ? 'Expand User Management' : undefined} aria-expanded={showUserSubnav} aria-controls="admin-user-management-subnav" onClick={() => { if (isCollapsed) { toggleSidebar(); setUserManagementOpen(true); } else setUserManagementOpen((open) => !open); }} data-testid="button-toggle-user-management">
             <UsersRound size={17} aria-hidden="true" /><span className="admin-nav__label">User Management</span><ChevronDown size={15} className={`admin-nav__chevron${showUserSubnav ? ' admin-nav__chevron--open' : ''}`} aria-hidden="true" />
