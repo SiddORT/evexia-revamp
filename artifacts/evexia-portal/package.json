@@ -10,6 +10,8 @@
     "test:zone-permissions": "node --test src/auth/staffPermissions.test.js src/auth/navigationGuard.test.js src/services/rolePermissions.test.js",
     "test:zone-permissions:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/staff-permissions.preview.spec.mjs",
     "test:move-stocks": "node --test src/services/moveStocksDemo.test.js",
+    "test:mrs:service": "node --test src/services/serverMRs.test.js",
+    "test:mrs:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/mrs-backend.preview.spec.mjs",
     "test:move-stocks:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/move-stocks.preview.spec.mjs",
     "test:startup-bundle": "node --test tests/startup-bundle.test.mjs",
     "test:stock-status:service": "node --test src/services/stockStatusDemo.test.js",

@@ -18,3 +18,13 @@ reopening while allowing normal focus return. Verify pending/error states,
 not just Escape. Modal dropdowns hide background roles from assistive technology;
 outside-pointer dismissal tests should target coordinates or DOM elements
 rather than accessibility roles that are intentionally hidden.
+
+This also applies to actions inside nonmodal combobox popups: keep paging
+buttons focusable while pending and return focus before final-page or retry
+actions disappear.
+
+**Why:** Disabling a focused paging action can emit a blur with no destination,
+which an outside-focus handler interprets as dismissal before new choices appear.
+
+**How to apply:** Guard duplicate requests synchronously, use `aria-disabled`
+for pending actions, and test keyboard focus through paging and retry transitions.

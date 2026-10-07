@@ -7,7 +7,7 @@ import { formatAdminDate, formatAdminTimestamp, useAdminPreferences } from '../.
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import ContactRequirementButton from '../../components/admin/ContactRequirementButton.jsx';
 import CredentialReveal from '../../components/admin/CredentialReveal.jsx';
-import MRReferenceSelect from '../../components/admin/MRReferenceSelect.jsx';
+import MRListFilter from '../../components/admin/MRListFilter.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import RecordDetails from '../../components/admin/RecordDetails.jsx';
@@ -18,6 +18,7 @@ import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth
 import '../../mr.css';
 
 const cleanPhone = (phone) => String(phone || '').replace(/[^+\d]/g, '');
+const STATUS_OPTIONS = [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }];
 function auditDetails(name, value) {
   return <span className="admin-mr-audit"><strong>{name}</strong><time dateTime={value}>{formatAdminTimestamp(value)}</time></span>;
 }
@@ -166,9 +167,9 @@ export default function MRMaster() {
         <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/mr')} data-testid="button-import-mrs"><Upload size={16} aria-hidden="true" /> Import data</button>
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild><button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-mrs"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button></DropdownMenu.Trigger>
-          <DropdownMenu.Portal><DropdownMenu.Content className="admin-profile__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} aria-label="MR export format">
-            <DropdownMenu.Item className="admin-profile__settings" disabled={exporting} onSelect={() => void exportFile('csv')}>CSV</DropdownMenu.Item>
-            <DropdownMenu.Item className="admin-profile__settings" disabled={exporting} onSelect={() => void exportFile('xlsx')}>Excel (.xlsx)</DropdownMenu.Item>
+          <DropdownMenu.Portal><DropdownMenu.Content className="admin-dropdown__menu admin-zone-export__menu admin-mr-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} aria-label="MR export format">
+            <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void exportFile('csv')}>CSV</DropdownMenu.Item>
+            <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void exportFile('xlsx')}>Excel (.xlsx)</DropdownMenu.Item>
           </DropdownMenu.Content></DropdownMenu.Portal>
         </DropdownMenu.Root>
         <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { setFeedback(''); navigate('/admin/masters/mrs/new'); }} data-testid="button-add-mr"><Plus size={16} aria-hidden="true" /> Add MR</button>
@@ -177,11 +178,11 @@ export default function MRMaster() {
     {(feedback || saveFeedback) && <div className="admin-feedback" role="status" data-testid="status-mr-feedback">{feedback || saveFeedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     <section className="admin-panel" aria-label="MR list">
-      <div className="admin-toolbar"><div className="admin-toolbar__fields">
-        <label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search MR details</span><input maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search MR details" data-testid="input-search-mrs" /></label>
-        <div className="admin-filter"><label htmlFor="mr-zone-filter">Assigned zone</label><MRReferenceSelect id="mr-zone-filter" kind="zones" label="zone filter" value={zoneFilter} onChange={(v) => { setZoneFilter(v); setPage(1); }} placeholder="All zones" emptyGuidance="No zones exist yet." /></div>
-        <div className="admin-filter"><label htmlFor="mr-hq-filter">Headquarter</label><MRReferenceSelect id="mr-hq-filter" kind="headquarters" label="headquarter filter" value={hqFilter} onChange={(v) => { setHqFilter(v); setPage(1); }} placeholder="All headquarters" emptyGuidance="No headquarters exist yet." /></div>
-        <div className="admin-filter"><label htmlFor="mr-status-filter">Status</label><select id="mr-status-filter" className="admin-select" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} data-testid="select-filter-mr-status"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+      <div className="admin-toolbar admin-mr-toolbar"><div className="admin-toolbar__fields">
+        <div className="admin-filter admin-mr-toolbar__search"><label htmlFor="mr-details-search">MR details</label><div className="admin-search"><Search size={16} aria-hidden="true" /><input id="mr-details-search" aria-label="Search MR details" maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search MR details" data-testid="input-search-mrs" /></div></div>
+        <div className="admin-filter"><label htmlFor="mr-zone-filter">Assigned zone</label><MRListFilter id="mr-zone-filter" kind="zones" label="Assigned zone" value={zoneFilter} onChange={(v) => { setZoneFilter(v); setPage(1); }} allLabel="All zones" emptyGuidance="No zones exist yet." /></div>
+        <div className="admin-filter"><label htmlFor="mr-hq-filter">Headquarter</label><MRListFilter id="mr-hq-filter" kind="headquarters" label="Headquarter" value={hqFilter} onChange={(v) => { setHqFilter(v); setPage(1); }} allLabel="All headquarters" emptyGuidance="No headquarters exist yet." /></div>
+        <div className="admin-filter"><label htmlFor="mr-status-filter">Status</label><MRListFilter id="mr-status-filter" label="Status" value={statusFilter} onChange={(v) => { setStatusFilter(v); setPage(1); }} allLabel="All statuses" allValue="all" options={STATUS_OPTIONS} /></div>
       </div></div>
       {loading ? <p className="admin-empty" role="status">Loading MRs…</p> : error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><UsersRound size={21} /></span><strong>MR records could not be loaded</strong><p>{error}</p><button className="admin-button" type="button" onClick={retry} style={{ marginTop: 16 }} data-testid="button-retry-mrs">Try again</button></div> : <>
         {data.items.length ? <>
