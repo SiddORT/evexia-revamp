@@ -120,6 +120,17 @@ not proof of completed disk writes.
 
 ## Browser recovery and rollout
 
+The existing `/admin/masters/import/headquarter` route uses the prepared master
+import layout: top back link, selected Headquarter tab, numbered sample/upload
+cards and separate valid/invalid upload-summary sections. CSV and genuine Excel
+sample buttons call the authenticated sample endpoints separately; neither
+sample nor export has a standalone format selector. The list's Export data
+menu offers CSV/Excel only after selection, uses the current Admin palette and
+keeps its pending trigger focusable for keyboard focus return. Reviewed rows
+display the server-normalized/generated State Code, not a client suggestion.
+Replacing a file invalidates pending review/sample results and the prior
+summary, but cannot remove an unresolved commit's reconciliation requirement.
+
 Authenticated transport uses memory-only bearer credentials and never caches
 protected records/drafts in browser storage. Same-identity recoverable renewal
 preserves mounted drafts; logout/identity changes clear them and response/decode

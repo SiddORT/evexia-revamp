@@ -1,3 +1,7 @@
+.excel-import--headquarter :is(.excel-import__card, .excel-import__report, .excel-import__columns, .excel-import__row dl > div) { min-width: 0; overflow-wrap: anywhere; }
+.excel-import--headquarter .excel-import__picker { box-sizing: border-box; }
+.excel-import--headquarter .excel-import__picker span { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.excel-import--headquarter svg { flex-shrink: 0; }
 /* Headquarter Master follows the existing Admin semantic palette and table rhythm. */
 .admin-hq-desktop .admin-table { min-width: 860px; }
 .admin-hq-desktop .admin-table td { vertical-align: top; line-height: 1.5; }
