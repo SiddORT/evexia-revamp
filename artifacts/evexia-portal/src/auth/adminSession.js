@@ -449,11 +449,11 @@ function masterAllowed(user, resource, path, writing) {
 
 async function masterRequest(resource, path = '', { body, file, params = {}, download = false, signal } = {}) {
   const zone = resource === 'zones';
-  if (!['zones', 'courier-partners', 'storage-locations', 'designations', 'headquarters', 'mrs', 'product-categories'].includes(resource)) throw new SessionError('Unsupported master resource.');
-  const label = resource === 'mrs' ? 'MR' : resource === 'product-categories' ? 'Product category' : zone ? 'Zone' : resource === 'headquarters' ? 'Headquarter' : resource === 'designations' ? 'Designation' : resource === 'storage-locations' ? 'Storage location' : 'Courier partner';
-  const unavailable = resource === 'mrs' ? 'mr_unavailable' : resource === 'product-categories' ? 'product_category_unavailable' : zone ? 'zone_unavailable' : resource === 'headquarters' ? 'headquarter_unavailable' : resource === 'designations' ? 'designation_unavailable' : resource === 'storage-locations' ? 'location_unavailable' : 'courier_unavailable';
+  if (!['zones', 'courier-partners', 'storage-locations', 'designations', 'headquarters', 'mrs', 'doctors', 'product-categories'].includes(resource)) throw new SessionError('Unsupported master resource.');
+  const label = resource === 'doctors' ? 'Doctor' : resource === 'mrs' ? 'MR' : resource === 'product-categories' ? 'Product category' : zone ? 'Zone' : resource === 'headquarters' ? 'Headquarter' : resource === 'designations' ? 'Designation' : resource === 'storage-locations' ? 'Storage location' : 'Courier partner';
+  const unavailable = resource === 'doctors' ? 'doctor_unavailable' : resource === 'mrs' ? 'mr_unavailable' : resource === 'product-categories' ? 'product_category_unavailable' : zone ? 'zone_unavailable' : resource === 'headquarters' ? 'headquarter_unavailable' : resource === 'designations' ? 'designation_unavailable' : resource === 'storage-locations' ? 'location_unavailable' : 'courier_unavailable';
   const mrRoute = /^(?:|\/references|\/username|\/account\/[a-z][a-z0-9._-]{2,31}|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|contact|delete|reset))?)$/;
-  const route = resource === 'mrs' ? mrRoute : zone
+  const route = resource === 'doctors' ? /^(?:|\/references|\/filters|\/bulk|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|contact))?)$/ : resource === 'mrs' ? mrRoute : zone
     ? /^(?:|\/trash|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|restore))?)$/
     : /^(?:|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/;
   if (!route.test(path) && !(['designations', 'headquarters', 'product-categories'].includes(resource) && path === '/sample')) {
@@ -520,6 +520,10 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
       ? `${label} service is unavailable. Your draft is preserved. Retry later; inspect records first if a save was pending.`
       : data?.error?.message || `${label} request failed. Review the details and retry.`, response.status);
     error.code = data?.error?.code;
+    if (resource === 'doctors' && response.status === 422 && data?.error?.fields?.length) {
+      const fields = [...new Set(data.error.fields.map((item) => item.field.replace(/^body\./, '')))];
+      error.message = `Doctor validation failed: ${fields.join(', ')}. Check required fields, formats and the documented limits. Nothing was saved.`;
+    }
     error.ambiguous = writing && response.status >= 500 && error.code !== unavailable;
     // The server may have revoked one action without ending the staff session.
     // Refresh the authoritative matrix; never replay the denied operation.
@@ -547,6 +551,7 @@ export const courierRequest = (path, options) => masterRequest('courier-partners
 export const locationRequest = (path, options) => masterRequest('storage-locations', path, options);
 export const designationRequest = (path, options) => masterRequest('designations', path, options);
 export const mrRequest = (path, options) => masterRequest('mrs', path, options);
+export const doctorRequest = (path, options) => masterRequest('doctors', path, options);
 export const headquarterRequest = (path, options) => masterRequest('headquarters', path, options);
 export const productCategoryRequest = (path, options) => masterRequest('product-categories', path, options);
 

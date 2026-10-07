@@ -24,6 +24,8 @@ import type {
   CommitCourierImportParams,
   CommitDesignationImportBody,
   CommitDesignationImportParams,
+  CommitDoctorImportBody,
+  CommitDoctorImportParams,
   CommitHeadquarterImportBody,
   CommitHeadquarterImportParams,
   CommitLocationImportBody,
@@ -52,7 +54,19 @@ import type {
   DesignationReview,
   DesignationStatus,
   DesignationVersion,
+  DoctorBulk,
+  DoctorChoices,
+  DoctorContact,
+  DoctorEdit,
+  DoctorFields,
+  DoctorFilters,
+  DoctorImportResult,
+  DoctorPage,
+  DoctorResponse,
+  DoctorReview,
+  DoctorStatus,
   DownloadDesignationSampleParams,
+  DownloadDoctorSampleParams,
   DownloadEvidence,
   DownloadHeadquarterSampleParams,
   DownloadInitiation,
@@ -64,6 +78,7 @@ import type {
   EventPage,
   ExportCourierPartnersParams,
   ExportDesignationsParams,
+  ExportDoctorDirectoryParams,
   ExportHeadquartersParams,
   ExportMRDirectoryParams,
   ExportProductCategoriesParams,
@@ -85,6 +100,8 @@ import type {
   ListCustomRolesParams,
   ListDeletedZonesParams,
   ListDesignationsParams,
+  ListDoctorDirectoryParams,
+  ListDoctorMRChoicesParams,
   ListDownloadLogsParams,
   ListHeadquartersParams,
   ListMRDirectoryParams,
@@ -137,6 +154,8 @@ import type {
   ReviewCourierImportParams,
   ReviewDesignationImportBody,
   ReviewDesignationImportParams,
+  ReviewDoctorImportBody,
+  ReviewDoctorImportParams,
   ReviewHeadquarterImportBody,
   ReviewHeadquarterImportParams,
   ReviewLocationImportBody,
@@ -2360,6 +2379,1379 @@ export const useSetDesignationStatus = <
   TContext
 > => {
   return useMutation(getSetDesignationStatusMutationOptions(options));
+};
+
+export const getListDoctorDirectoryUrl = (
+  params?: ListDoctorDirectoryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/doctors?${stringifiedParams}`
+    : `/api/v1/admin/doctors`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listDoctorDirectory = async (
+  params?: ListDoctorDirectoryParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DoctorPage> => {
+  return customFetch<DoctorPage>(getListDoctorDirectoryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListDoctorDirectoryQueryKey = (
+  params?: ListDoctorDirectoryParams,
+) => {
+  return [`/api/v1/admin/doctors`, ...(params ? [params] : [])] as const;
+};
+
+export const getListDoctorDirectoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDoctorDirectory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListDoctorDirectoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDoctorDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListDoctorDirectoryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDoctorDirectory>>
+  > = ({ signal }) =>
+    listDoctorDirectory(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDoctorDirectory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListDoctorDirectoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDoctorDirectory>>
+>;
+export type ListDoctorDirectoryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListDoctorDirectory<
+  TData = Awaited<ReturnType<typeof listDoctorDirectory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListDoctorDirectoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDoctorDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListDoctorDirectoryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateDoctorDirectoryUrl = () => {
+  return `/api/v1/admin/doctors`;
+};
+
+/**
+ * @summary Create
+ */
+export const createDoctorDirectory = async (
+  doctorFields: DoctorFields,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DoctorResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<DoctorResponse>(getCreateDoctorDirectoryUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(doctorFields),
+  });
+};
+
+export const getCreateDoctorDirectoryMutationKey = () =>
+  ["createDoctorDirectory"] as const;
+
+export const getCreateDoctorDirectoryMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDoctorDirectory>>,
+    TError,
+    CreateDoctorDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createDoctorDirectory>>,
+  TError,
+  CreateDoctorDirectoryMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateDoctorDirectoryMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createDoctorDirectory>>,
+    CreateDoctorDirectoryMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createDoctorDirectory(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateDoctorDirectoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createDoctorDirectory>>
+>;
+export type CreateDoctorDirectoryMutationBody = BodyType<DoctorFields>;
+export type CreateDoctorDirectoryMutationError = ErrorType<ErrorEnvelope>;
+export type CreateDoctorDirectoryMutationVariables = {
+  data: BodyType<DoctorFields>;
+};
+
+/**
+ * @summary Create
+ */
+export const useCreateDoctorDirectory = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDoctorDirectory>>,
+    TError,
+    CreateDoctorDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createDoctorDirectory>>,
+  TError,
+  CreateDoctorDirectoryMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateDoctorDirectoryMutationOptions(options));
+};
+
+export const getBulkDoctorDirectoryUrl = () => {
+  return `/api/v1/admin/doctors/bulk`;
+};
+
+/**
+ * @summary Bulk
+ */
+export const bulkDoctorDirectory = async (
+  doctorBulk: DoctorBulk,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DoctorResponse[]> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<DoctorResponse[]>(getBulkDoctorDirectoryUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(doctorBulk),
+  });
+};
+
+export const getBulkDoctorDirectoryMutationKey = () =>
+  ["bulkDoctorDirectory"] as const;
+
+export const getBulkDoctorDirectoryMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof bulkDoctorDirectory>>,
+    TError,
+    BulkDoctorDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof bulkDoctorDirectory>>,
+  TError,
+  BulkDoctorDirectoryMutationVariables,
+  TContext
+> => {
+  const mutationKey = getBulkDoctorDirectoryMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof bulkDoctorDirectory>>,
+    BulkDoctorDirectoryMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return bulkDoctorDirectory(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type BulkDoctorDirectoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof bulkDoctorDirectory>>
+>;
+export type BulkDoctorDirectoryMutationBody = BodyType<DoctorBulk>;
+export type BulkDoctorDirectoryMutationError = ErrorType<ErrorEnvelope>;
+export type BulkDoctorDirectoryMutationVariables = {
+  data: BodyType<DoctorBulk>;
+};
+
+/**
+ * @summary Bulk
+ */
+export const useBulkDoctorDirectory = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof bulkDoctorDirectory>>,
+    TError,
+    BulkDoctorDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof bulkDoctorDirectory>>,
+  TError,
+  BulkDoctorDirectoryMutationVariables,
+  TContext
+> => {
+  return useMutation(getBulkDoctorDirectoryMutationOptions(options));
+};
+
+export const getExportDoctorDirectoryUrl = (
+  params?: ExportDoctorDirectoryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/doctors/export?${stringifiedParams}`
+    : `/api/v1/admin/doctors/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportDoctorDirectory = async (
+  params?: ExportDoctorDirectoryParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getExportDoctorDirectoryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportDoctorDirectoryQueryKey = (
+  params?: ExportDoctorDirectoryParams,
+) => {
+  return [`/api/v1/admin/doctors/export`, ...(params ? [params] : [])] as const;
+};
+
+export const getExportDoctorDirectoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportDoctorDirectory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportDoctorDirectoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportDoctorDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getExportDoctorDirectoryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exportDoctorDirectory>>
+  > = ({ signal }) =>
+    exportDoctorDirectory(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportDoctorDirectory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportDoctorDirectoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportDoctorDirectory>>
+>;
+export type ExportDoctorDirectoryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportDoctorDirectory<
+  TData = Awaited<ReturnType<typeof exportDoctorDirectory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportDoctorDirectoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportDoctorDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportDoctorDirectoryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetDoctorFilterChoicesUrl = () => {
+  return `/api/v1/admin/doctors/filters`;
+};
+
+/**
+ * @summary Filters
+ */
+export const getDoctorFilterChoices = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DoctorFilters> => {
+  return customFetch<DoctorFilters>(getGetDoctorFilterChoicesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetDoctorFilterChoicesQueryKey = () => {
+  return [`/api/v1/admin/doctors/filters`] as const;
+};
+
+export const getGetDoctorFilterChoicesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDoctorFilterChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getDoctorFilterChoices>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDoctorFilterChoicesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDoctorFilterChoices>>
+  > = ({ signal }) => getDoctorFilterChoices({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDoctorFilterChoices>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDoctorFilterChoicesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDoctorFilterChoices>>
+>;
+export type GetDoctorFilterChoicesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Filters
+ */
+
+export function useGetDoctorFilterChoices<
+  TData = Awaited<ReturnType<typeof getDoctorFilterChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getDoctorFilterChoices>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDoctorFilterChoicesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCommitDoctorImportUrl = (params: CommitDoctorImportParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/doctors/import/commit?${stringifiedParams}`
+    : `/api/v1/admin/doctors/import/commit`;
+};
+
+/**
+ * @summary Commit
+ */
+export const commitDoctorImport = async (
+  commitDoctorImportBody: CommitDoctorImportBody,
+  params: CommitDoctorImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DoctorImportResult> => {
+  const formData = new FormData();
+  formData.append(`file`, commitDoctorImportBody.file);
+
+  return customFetch<DoctorImportResult>(getCommitDoctorImportUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getCommitDoctorImportMutationKey = () =>
+  ["commitDoctorImport"] as const;
+
+export const getCommitDoctorImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitDoctorImport>>,
+    TError,
+    CommitDoctorImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof commitDoctorImport>>,
+  TError,
+  CommitDoctorImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCommitDoctorImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof commitDoctorImport>>,
+    CommitDoctorImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return commitDoctorImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CommitDoctorImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof commitDoctorImport>>
+>;
+export type CommitDoctorImportMutationBody = BodyType<CommitDoctorImportBody>;
+export type CommitDoctorImportMutationError = ErrorType<ErrorEnvelope>;
+export type CommitDoctorImportMutationVariables = {
+  data: BodyType<CommitDoctorImportBody>;
+  params: CommitDoctorImportParams;
+};
+
+/**
+ * @summary Commit
+ */
+export const useCommitDoctorImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitDoctorImport>>,
+    TError,
+    CommitDoctorImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof commitDoctorImport>>,
+  TError,
+  CommitDoctorImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getCommitDoctorImportMutationOptions(options));
+};
+
+export const getReviewDoctorImportUrl = (params: ReviewDoctorImportParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/doctors/import/review?${stringifiedParams}`
+    : `/api/v1/admin/doctors/import/review`;
+};
+
+/**
+ * @summary Review
+ */
+export const reviewDoctorImport = async (
+  reviewDoctorImportBody: ReviewDoctorImportBody,
+  params: ReviewDoctorImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DoctorReview> => {
+  const formData = new FormData();
+  formData.append(`file`, reviewDoctorImportBody.file);
+
+  return customFetch<DoctorReview>(getReviewDoctorImportUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getReviewDoctorImportMutationKey = () =>
+  ["reviewDoctorImport"] as const;
+
+export const getReviewDoctorImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewDoctorImport>>,
+    TError,
+    ReviewDoctorImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewDoctorImport>>,
+  TError,
+  ReviewDoctorImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReviewDoctorImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewDoctorImport>>,
+    ReviewDoctorImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return reviewDoctorImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewDoctorImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewDoctorImport>>
+>;
+export type ReviewDoctorImportMutationBody = BodyType<ReviewDoctorImportBody>;
+export type ReviewDoctorImportMutationError = ErrorType<ErrorEnvelope>;
+export type ReviewDoctorImportMutationVariables = {
+  data: BodyType<ReviewDoctorImportBody>;
+  params: ReviewDoctorImportParams;
+};
+
+/**
+ * @summary Review
+ */
+export const useReviewDoctorImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewDoctorImport>>,
+    TError,
+    ReviewDoctorImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewDoctorImport>>,
+  TError,
+  ReviewDoctorImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getReviewDoctorImportMutationOptions(options));
+};
+
+export const getListDoctorMRChoicesUrl = (
+  params?: ListDoctorMRChoicesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/doctors/references?${stringifiedParams}`
+    : `/api/v1/admin/doctors/references`;
+};
+
+/**
+ * @summary References
+ */
+export const listDoctorMRChoices = async (
+  params?: ListDoctorMRChoicesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DoctorChoices> => {
+  return customFetch<DoctorChoices>(getListDoctorMRChoicesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListDoctorMRChoicesQueryKey = (
+  params?: ListDoctorMRChoicesParams,
+) => {
+  return [
+    `/api/v1/admin/doctors/references`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListDoctorMRChoicesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDoctorMRChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListDoctorMRChoicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDoctorMRChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListDoctorMRChoicesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDoctorMRChoices>>
+  > = ({ signal }) =>
+    listDoctorMRChoices(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDoctorMRChoices>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListDoctorMRChoicesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDoctorMRChoices>>
+>;
+export type ListDoctorMRChoicesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary References
+ */
+
+export function useListDoctorMRChoices<
+  TData = Awaited<ReturnType<typeof listDoctorMRChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListDoctorMRChoicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDoctorMRChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListDoctorMRChoicesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDownloadDoctorSampleUrl = (
+  params?: DownloadDoctorSampleParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/doctors/sample?${stringifiedParams}`
+    : `/api/v1/admin/doctors/sample`;
+};
+
+/**
+ * @summary Sample
+ */
+export const downloadDoctorSample = async (
+  params?: DownloadDoctorSampleParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getDownloadDoctorSampleUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getDownloadDoctorSampleQueryKey = (
+  params?: DownloadDoctorSampleParams,
+) => {
+  return [`/api/v1/admin/doctors/sample`, ...(params ? [params] : [])] as const;
+};
+
+export const getDownloadDoctorSampleQueryOptions = <
+  TData = Awaited<ReturnType<typeof downloadDoctorSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadDoctorSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadDoctorSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getDownloadDoctorSampleQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof downloadDoctorSample>>
+  > = ({ signal }) =>
+    downloadDoctorSample(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof downloadDoctorSample>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type DownloadDoctorSampleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof downloadDoctorSample>>
+>;
+export type DownloadDoctorSampleQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Sample
+ */
+
+export function useDownloadDoctorSample<
+  TData = Awaited<ReturnType<typeof downloadDoctorSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadDoctorSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadDoctorSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getDownloadDoctorSampleQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetDoctorDirectoryUrl = (doctorId: string) => {
+  return `/api/v1/admin/doctors/${doctorId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getDoctorDirectory = async (
+  doctorId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DoctorResponse> => {
+  return customFetch<DoctorResponse>(getGetDoctorDirectoryUrl(doctorId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetDoctorDirectoryQueryKey = (doctorId: string) => {
+  return [`/api/v1/admin/doctors/${doctorId}`] as const;
+};
+
+export const getGetDoctorDirectoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDoctorDirectory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  doctorId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDoctorDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDoctorDirectoryQueryKey(doctorId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDoctorDirectory>>
+  > = ({ signal }) =>
+    getDoctorDirectory(doctorId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: doctorId !== null && doctorId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDoctorDirectory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDoctorDirectoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDoctorDirectory>>
+>;
+export type GetDoctorDirectoryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetDoctorDirectory<
+  TData = Awaited<ReturnType<typeof getDoctorDirectory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  doctorId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDoctorDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDoctorDirectoryQueryOptions(doctorId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getSetDoctorContactRequirementUrl = (doctorId: string) => {
+  return `/api/v1/admin/doctors/${doctorId}/contact`;
+};
+
+/**
+ * @summary Contact
+ */
+export const setDoctorContactRequirement = async (
+  doctorId: string,
+  doctorContact: DoctorContact,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DoctorResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<DoctorResponse>(
+    getSetDoctorContactRequirementUrl(doctorId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(doctorContact),
+    },
+  );
+};
+
+export const getSetDoctorContactRequirementMutationKey = () =>
+  ["setDoctorContactRequirement"] as const;
+
+export const getSetDoctorContactRequirementMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setDoctorContactRequirement>>,
+    TError,
+    SetDoctorContactRequirementMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setDoctorContactRequirement>>,
+  TError,
+  SetDoctorContactRequirementMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSetDoctorContactRequirementMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setDoctorContactRequirement>>,
+    SetDoctorContactRequirementMutationVariables
+  > = (props) => {
+    const { doctorId, data } = props ?? {};
+
+    return setDoctorContactRequirement(doctorId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetDoctorContactRequirementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setDoctorContactRequirement>>
+>;
+export type SetDoctorContactRequirementMutationBody = BodyType<DoctorContact>;
+export type SetDoctorContactRequirementMutationError = ErrorType<ErrorEnvelope>;
+export type SetDoctorContactRequirementMutationVariables = {
+  doctorId: string;
+  data: BodyType<DoctorContact>;
+};
+
+/**
+ * @summary Contact
+ */
+export const useSetDoctorContactRequirement = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setDoctorContactRequirement>>,
+    TError,
+    SetDoctorContactRequirementMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setDoctorContactRequirement>>,
+  TError,
+  SetDoctorContactRequirementMutationVariables,
+  TContext
+> => {
+  return useMutation(getSetDoctorContactRequirementMutationOptions(options));
+};
+
+export const getEditDoctorDirectoryUrl = (doctorId: string) => {
+  return `/api/v1/admin/doctors/${doctorId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editDoctorDirectory = async (
+  doctorId: string,
+  doctorEdit: DoctorEdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DoctorResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<DoctorResponse>(getEditDoctorDirectoryUrl(doctorId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(doctorEdit),
+  });
+};
+
+export const getEditDoctorDirectoryMutationKey = () =>
+  ["editDoctorDirectory"] as const;
+
+export const getEditDoctorDirectoryMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editDoctorDirectory>>,
+    TError,
+    EditDoctorDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editDoctorDirectory>>,
+  TError,
+  EditDoctorDirectoryMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditDoctorDirectoryMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editDoctorDirectory>>,
+    EditDoctorDirectoryMutationVariables
+  > = (props) => {
+    const { doctorId, data } = props ?? {};
+
+    return editDoctorDirectory(doctorId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditDoctorDirectoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editDoctorDirectory>>
+>;
+export type EditDoctorDirectoryMutationBody = BodyType<DoctorEdit>;
+export type EditDoctorDirectoryMutationError = ErrorType<ErrorEnvelope>;
+export type EditDoctorDirectoryMutationVariables = {
+  doctorId: string;
+  data: BodyType<DoctorEdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditDoctorDirectory = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editDoctorDirectory>>,
+    TError,
+    EditDoctorDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editDoctorDirectory>>,
+  TError,
+  EditDoctorDirectoryMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditDoctorDirectoryMutationOptions(options));
+};
+
+export const getSetDoctorDirectoryStatusUrl = (doctorId: string) => {
+  return `/api/v1/admin/doctors/${doctorId}/status`;
+};
+
+/**
+ * @summary Status
+ */
+export const setDoctorDirectoryStatus = async (
+  doctorId: string,
+  doctorStatus: DoctorStatus,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DoctorResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<DoctorResponse>(getSetDoctorDirectoryStatusUrl(doctorId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(doctorStatus),
+  });
+};
+
+export const getSetDoctorDirectoryStatusMutationKey = () =>
+  ["setDoctorDirectoryStatus"] as const;
+
+export const getSetDoctorDirectoryStatusMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setDoctorDirectoryStatus>>,
+    TError,
+    SetDoctorDirectoryStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setDoctorDirectoryStatus>>,
+  TError,
+  SetDoctorDirectoryStatusMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSetDoctorDirectoryStatusMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setDoctorDirectoryStatus>>,
+    SetDoctorDirectoryStatusMutationVariables
+  > = (props) => {
+    const { doctorId, data } = props ?? {};
+
+    return setDoctorDirectoryStatus(doctorId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetDoctorDirectoryStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setDoctorDirectoryStatus>>
+>;
+export type SetDoctorDirectoryStatusMutationBody = BodyType<DoctorStatus>;
+export type SetDoctorDirectoryStatusMutationError = ErrorType<ErrorEnvelope>;
+export type SetDoctorDirectoryStatusMutationVariables = {
+  doctorId: string;
+  data: BodyType<DoctorStatus>;
+};
+
+/**
+ * @summary Status
+ */
+export const useSetDoctorDirectoryStatus = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setDoctorDirectoryStatus>>,
+    TError,
+    SetDoctorDirectoryStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setDoctorDirectoryStatus>>,
+  TError,
+  SetDoctorDirectoryStatusMutationVariables,
+  TContext
+> => {
+  return useMutation(getSetDoctorDirectoryStatusMutationOptions(options));
 };
 
 export const getListHeadquartersUrl = (params?: ListHeadquartersParams) => {

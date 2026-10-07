@@ -326,6 +326,56 @@ test(`Download Logs navigation, filters and table at ${width}px in ${appearance}
 }
 }
 
+// Exercise each handoff with a fresh trusted click, as the real download UI does.
+// Consecutive page.evaluate downloads have no user gesture and can hit Chromium's
+// automatic-download protection even when every file and ledger write succeeds.
+async function userInitiatedFixtureDownload(page, request) {
+  await page.evaluate((request) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.testid = 'button-fixture-download';
+    button.dataset.result = 'idle';
+    button.textContent = request.format ? `Download ${request.format} test sample`
+      : `Download ${request.template} ${request.family} test PDF`;
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      button.dataset.result = 'pending';
+      try {
+        if (request.format) {
+          const { downloadBlob } = await import('/src/services/downloads.js');
+          const { sampleExcel } = await import('/src/services/mockExcelImport.js');
+          const blob = request.format === 'XLSX' ? sampleExcel('zone')
+            : new Blob(['Zone Name,Status\r\nSample,Active\r\n']);
+          await downloadBlob(blob, `zone.${request.format.toLowerCase()}`,
+            { source: 'zone', kind: 'sample', format: request.format });
+        } else if (request.family === 'po') {
+          const document = (await import('/src/services/poInvoiceTemplates.js')).makeSampleInvoiceDocument(request.template);
+          await (await import('/src/services/poInvoicePdf.js')).downloadInvoiceDocument(document, 'sample.pdf', '/images/evexia-logo.png');
+        } else {
+          const { makeSamplePRDocument, downloadPRDocument } = await import('/src/services/prDocuments.js');
+          await downloadPRDocument(makeSamplePRDocument(request.template), 'sample.pdf', '/images/evexia-logo.png',
+            { format: request.family });
+        }
+        button.dataset.result = 'success';
+      } catch (error) {
+        button.dataset.result = 'failed';
+        button.textContent = `Download failed: ${error.message}`;
+      }
+    }, { once: true });
+    document.body.appendChild(button);
+  }, request);
+  const button = page.getByTestId('button-fixture-download');
+  const [download] = await Promise.all([
+    page.waitForEvent('download', { timeout: 45000 }),
+    (async () => {
+      await button.click();
+      await expect(button).toHaveAttribute('data-result', 'success', { timeout: 45000 });
+    })(),
+  ]);
+  await button.evaluate((element) => element.remove());
+  return download;
+}
+
 test('real cross-format downloads wait for durable acceptance and history survives local clearing', async ({ page }, testInfo) => {
   test.setTimeout(180000);
   await authenticateAdmin(page);
@@ -348,14 +398,7 @@ test('real cross-format downloads wait for durable acceptance and history surviv
   expect(downloads).toBe(0);
   await page.unroute('**/reporting/downloads/initiate');
   for (const format of ['CSV', 'XLSX']) {
-    const event = page.waitForEvent('download');
-    await page.evaluate(async (format) => {
-      const { downloadBlob } = await import('/src/services/downloads.js');
-      const { sampleExcel } = await import('/src/services/mockExcelImport.js');
-      await downloadBlob(format === 'XLSX' ? sampleExcel('zone') : new Blob(['Zone Name,Status\r\nSample,Active\r\n']),
-        `zone.${format.toLowerCase()}`, { source: 'zone', kind: 'sample', format });
-    }, format);
-    const downloaded = await event;
+    const downloaded = await userInitiatedFixtureDownload(page, { format });
     expect(await downloaded.failure()).toBeNull();
     const bytes = readFileSync(await downloaded.path());
     if (format === 'XLSX') expect(bytes.subarray(0, 2).toString()).toBe('PK');
@@ -370,17 +413,7 @@ test('real cross-format downloads wait for durable acceptance and history surviv
   expect(reports.length).toBe(countBeforePDF);
   for (const template of ['classic', 'modern', 'compact']) {
     for (const family of ['po', 'searchable', 'image']) {
-      const event = page.waitForEvent('download');
-      await page.evaluate(async ({ template, family }) => {
-        if (family === 'po') {
-          const document = (await import('/src/services/poInvoiceTemplates.js')).makeSampleInvoiceDocument(template);
-          await (await import('/src/services/poInvoicePdf.js')).downloadInvoiceDocument(document, 'sample.pdf', '/images/evexia-logo.png');
-        } else {
-          const { makeSamplePRDocument, downloadPRDocument } = await import('/src/services/prDocuments.js');
-          await downloadPRDocument(makeSamplePRDocument(template), 'sample.pdf', '/images/evexia-logo.png', { format: family });
-        }
-      }, { template, family });
-      const downloaded = await event;
+      const downloaded = await userInitiatedFixtureDownload(page, { template, family });
       expect(await downloaded.failure()).toBeNull();
       expect(readFileSync(await downloaded.path()).subarray(0, 5).toString()).toBe('%PDF-');
     }

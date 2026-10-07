@@ -1,6 +1,6 @@
 # EVEXIA Portal
 
-EVEXIA Life Sciences portal with a protected Admin workspace, mock MR/Doctor login screens, browser-local demonstration masters, and a FastAPI authentication/API service. Admin authentication, Staff Management, Roles, Zone Master, Courier Partner Master, Storage Location Master, Designation Master and Headquarter Master use the backend; unrelated masters remain browser-local.
+EVEXIA Life Sciences portal with protected Admin and MR workspaces, a mock Doctor login screen, browser-local demonstration masters, and a FastAPI authentication/API service. Admin/MR authentication, Staff Management, Roles, Zone, Courier Partner, Storage Location, Designation, Headquarter, Product Category, MR and Doctor Masters use the backend; unrelated masters remain browser-local.
 
 ## Run & operate
 
@@ -16,9 +16,10 @@ EVEXIA Life Sciences portal with a protected Admin workspace, mock MR/Doctor log
 - Headquarter Master is protected singleton-only shared persistence. Migration `0017_headquarters` creates an empty catalogue; names are live-unique, codes are editable HQ-name abbreviations (not geographic codes), mutations are versioned and deletion retains audit evidence. CSV/XLSX transfer supports legacy/current schemas, 2 MiB/1,000-row imports and 5,000-match exports with mandatory download acceptance. Local records/drafts remain untouched and unused. See `docs/headquarter-master.md`.
 
 - React with JavaScript/JSX, Vite, Wouter, and CSS. Keep the web artifact free of TypeScript files.
-- Routes: `/` (portal selection); `/admin/login` (backend-authenticated workspace login); `/mr` and `/doctor` (mock login); `/admin` and `/admin/*` (protected workspace).
+- Routes: `/` (portal selection); `/admin/login` (backend-authenticated workspace login); `/mr` (server-authenticated MR workspace); `/doctor` (mock login); `/admin` and `/admin/*` (protected workspace).
 - Admin routes require a verified backend session. The protected singleton has `admin.access`; explicitly enabled staff have only `workspace.access` and assigned Zone grants, with unrelated routes denied before mounting. The browser guard is not a substitute for server authorization. Sign Out revokes the server refresh session when available and clears the in-memory access token.
 - The new backend is a separate foundation, not a replacement for existing browser-local master records. Do not silently migrate or overwrite those records.
+- Doctor Master and MR's associated-doctor viewer use protected singleton-only server records, with MRProfile-linked IDs and derived MR Zones. Migration `0019_doctor_directory` creates an empty table. Versioned/atomic actions, automatic authenticated PIN filling and full-field CSV/XLSX transfers never migrate local records or expose a payment ledger/login. Patient, Opening Balance and demo-payment services remain local. See `docs/doctor-master.md`.
 - All future backend work must follow the supplied EVEXIA Engineering and Security Standards. EVEXIA is non-tenant: use explicit system Super Admin/MR identities and database ownership/assignment policies, never tenant abstractions or implicit elevation from legacy memberships or portal role labels. See `artifacts/api-server/backend/STORAGE_CONTRACT.md`.
 - Backend API and persistence contract: see `artifacts/api-server/backend/README.md`; FastAPI OpenAPI is authoritative and shared TypeScript clients are generated offline from it. Production uploads cannot rely on the app filesystem: Replit published app files reset on restart/publish, so use explicitly configured durable object storage and operator-managed data backups. See the backend README's official Replit documentation references and recovery procedure.
 - Admin and MR authenticate against FastAPI with explicit portal-bound account verification. Access tokens are memory-only; rotating refresh credentials use an HttpOnly cookie. Login credentials are never stored in browser storage. Doctor login remains mock-only.

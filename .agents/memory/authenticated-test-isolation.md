@@ -79,3 +79,14 @@ Playwright sorted files independently of the supplied spec sequence.
 **How to apply:** Keep uncleanable data-producing Staff scenarios after the
 empty-directory assertion in the same spec, or use genuinely separate fixtures.
 Do not weaken the empty-state assertion or add destructive cleanup endpoints.
+
+Credential-producing suites must also isolate their actor/hour audit budgets.
+Do not weaken production rate limits or erase protected credential history to
+make a broad browser gate pass.
+
+**Why:** Doctor fixtures legitimately provision server MR accounts. Sharing one
+synthetic actor's hourly ledger with MR reset scenarios can exhaust the real
+credential budget despite each suite passing independently.
+
+**How to apply:** Use a separate private database and listeners for credential
+flows when combining suites; retain ordinary server provisioning and audit rules.

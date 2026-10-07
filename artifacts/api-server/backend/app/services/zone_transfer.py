@@ -60,8 +60,12 @@ def workbook_rows(data, max_columns=6):
                             if cells > max_columns * (MAX_ROWS + 1):
                                 invalid("Workbook exceeds the bounded cell limit.")
                             if name.startswith("xl/worksheets/"):
-                                coordinate = re.fullmatch(r"([A-Z])([1-9][0-9]{0,3})", node.attrib.get("r", ""))
-                                if not coordinate or ord(coordinate[1]) - ord("A") >= max_columns or int(coordinate[2]) > MAX_ROWS + 1:
+                                coordinate = re.fullmatch(r"([A-Z]{1,2})([1-9][0-9]{0,3})", node.attrib.get("r", ""))
+                                column = 0
+                                if coordinate:
+                                    for character in coordinate[1]:
+                                        column = column * 26 + ord(character) - ord("A") + 1
+                                if not coordinate or column > max_columns or int(coordinate[2]) > MAX_ROWS + 1:
                                     invalid("Workbook cell coordinates exceed the row/column bounds.")
                         if tag == "row" and name.startswith("xl/worksheets/"):
                             number = node.attrib.get("r", "")

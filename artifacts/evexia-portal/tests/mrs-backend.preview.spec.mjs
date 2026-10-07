@@ -95,7 +95,7 @@ for (const mobile of [false, true]) {
     const record = page.locator(mobile ? 'article[role=listitem]' : 'tbody tr').filter({ hasText: `Synthetic ${label} MR` });
     await expect(record).toContainText('Super Admin');
     await record.getByTestId(`button-doctors-mr-${saved.record.id}`).click();
-    await expect(page.getByTestId('text-mr-doctors-unavailable')).toContainText('not linked');
+    await expect(page.getByTestId('text-mr-doctor-count')).toContainText('0 live assigned doctors');
     await page.getByRole('button', { name: 'Close dialog' }).click();
     expect(await page.evaluate((key) => localStorage.getItem(key), key)).toBe(legacy);
     await page.evaluate(() => localStorage.clear());

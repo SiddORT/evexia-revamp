@@ -25,11 +25,28 @@ async function login(page, remember = false) {
 
 test('shared Doctor phone control preserves all country options, alternate phone and validation', async ({ page }) => {
   await login(page);
-  await page.route('https://api.postalpincode.in/**', (route) => route.fulfill({ status: 503, body: '' }));
+  const doctorId = await page.evaluate(async () => {
+    const label = crypto.randomUUID().slice(0, 8);
+    const session = await import('/src/auth/adminSession.js');
+    const hq = await session.headquarterRequest('', { body: { name: `Phone HQ ${label}`, status: 'active' } });
+    const zone = await session.zoneRequest('', { body: { name: `Phone Zone ${label}`, status: 'active' } });
+    const mr = await session.mrRequest('', { body: {
+      name: `Phone MR ${label}`, userId: `phone.mr.${label}`, employeeCode: `PHONE-${label}`,
+      contactRequirement: 'optional', phone: '', email: '', hq: hq.id, zoneId: zone.id,
+      dateOfJoining: '2020-01-01', designation: 'MR business label', status: 'active',
+      addressLine1: 'Address', landmark: 'Landmark', pincode: '110001', city: 'Delhi', state: 'Delhi', country: 'India',
+      paymentLimit: '0.00', doctorDaysLimit: 0,
+    } });
+    const doctor = await session.doctorRequest('', { body: {
+      name: `Phone Doctor ${label}`, registrationNumber: `PHONE-${label}`, qualification: 'MBBS',
+      mrId: mr.record.id, contactRequirement: 'optional', phone: '', email: '',
+      addressLine1: 'Address', landmark: 'Landmark', pincode: '110001', city: 'Delhi', state: 'Delhi', country: 'India',
+    } });
+    return doctor.id;
+  });
   await page.goto(`${base()}/admin/masters/doctors`);
-  // Navigation may resolve before session restoration and the Doctor load effect.
-  await expect(page.getByTestId('checkbox-doctor-sample-doctor-1')).toBeVisible();
-  const doctorId = await page.evaluate(() => JSON.parse(localStorage.getItem('evexia.admin.doctors.v1'))[0].id);
+  // Navigation may resolve before session restoration and the shared Doctor load.
+  await expect(page.getByTestId(`checkbox-doctor-${doctorId}`)).toBeVisible();
   for (const [country, phone] of [['IN', '9876543210'], ['US', '2025550123'], ['GB', '7700900123'], ['AE', '501234567']]) {
     await page.goto(`${base()}/admin/masters/doctors/${doctorId}`);
     await page.getByLabel('Phone country code').selectOption(country);
@@ -40,7 +57,7 @@ test('shared Doctor phone control preserves all country options, alternate phone
     await page.getByTestId('input-doctor-alternatePhone').fill(phone);
     await page.getByTestId('button-save-doctor').click();
     await expect(page).toHaveURL(/\/admin\/masters\/doctors\?saved=updated/);
-    const saved = await page.evaluate((id) => JSON.parse(localStorage.getItem('evexia.admin.doctors.v1')).find((row) => row.id === id), doctorId);
+    const saved = await page.evaluate(async (id) => (await import('/src/services/serverDoctors.js')).getDoctor(id), doctorId);
     expect(saved.dialCountry).toBe(country);
     expect(saved.phone).toBe(phone);
     expect(saved.alternatePhone).toBe(phone);

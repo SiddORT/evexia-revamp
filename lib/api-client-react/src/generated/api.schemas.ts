@@ -374,6 +374,474 @@ export interface DesignationVersion {
   expected_version: number;
 }
 
+export type DoctorBulkOperation =
+  (typeof DoctorBulkOperation)[keyof typeof DoctorBulkOperation];
+
+export const DoctorBulkOperation = {
+  shift: "shift",
+  verification: "verification",
+} as const;
+
+export type DoctorBulkVerification =
+  (typeof DoctorBulkVerification)[keyof typeof DoctorBulkVerification] | null;
+
+export const DoctorBulkVerification = {
+  verified: "verified",
+  unverified: "unverified",
+} as const;
+
+export interface DoctorSelection {
+  /** @minimum 1 */
+  expected_version: number;
+  id: string;
+}
+
+export interface DoctorBulk {
+  mrId?: string | null;
+  operation: DoctorBulkOperation;
+  /**
+   * @minItems 1
+   * @maxItems 100
+   */
+  selected: DoctorSelection[];
+  verification?: DoctorBulkVerification;
+}
+
+export type DoctorChoiceZoneStatus =
+  (typeof DoctorChoiceZoneStatus)[keyof typeof DoctorChoiceZoneStatus] | null;
+
+export const DoctorChoiceZoneStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface DoctorChoice {
+  deleted: boolean;
+  id: string;
+  name: string;
+  status: string;
+  usable: boolean;
+  zoneId: string | null;
+  zoneName: string;
+  zoneStatus: DoctorChoiceZoneStatus;
+}
+
+export interface DoctorChoices {
+  items: DoctorChoice[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export type DoctorContactContactRequirement =
+  (typeof DoctorContactContactRequirement)[keyof typeof DoctorContactContactRequirement];
+
+export const DoctorContactContactRequirement = {
+  required: "required",
+  optional: "optional",
+} as const;
+
+export interface DoctorContact {
+  contactRequirement: DoctorContactContactRequirement;
+  /** @minimum 1 */
+  expected_version: number;
+}
+
+export type DoctorEditContactRequirement =
+  (typeof DoctorEditContactRequirement)[keyof typeof DoctorEditContactRequirement];
+
+export const DoctorEditContactRequirement = {
+  required: "required",
+  optional: "optional",
+} as const;
+
+export type DoctorEditDialCountry =
+  (typeof DoctorEditDialCountry)[keyof typeof DoctorEditDialCountry];
+
+export const DoctorEditDialCountry = {
+  IN: "IN",
+  US: "US",
+  GB: "GB",
+  AE: "AE",
+} as const;
+
+export type DoctorEditInvoiceType =
+  (typeof DoctorEditInvoiceType)[keyof typeof DoctorEditInvoiceType];
+
+export const DoctorEditInvoiceType = {
+  normal: "normal",
+  gst: "gst",
+} as const;
+
+export type DoctorEditStatus =
+  (typeof DoctorEditStatus)[keyof typeof DoctorEditStatus];
+
+export const DoctorEditStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface DoctorEdit {
+  /**
+   * @minLength 1
+   * @maxLength 300
+   */
+  addressLine1: string;
+  /** @maxLength 300 */
+  addressLine2?: string;
+  /** @maxLength 20 */
+  alternatePhone?: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  city: string;
+  /** @maxLength 200 */
+  clinicName?: string;
+  contactRequirement?: DoctorEditContactRequirement;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  country: string;
+  dateOfJoining?: string | null;
+  /**
+   * @minimum 0
+   * @maximum 2147483647
+   */
+  daysLimit?: number;
+  dialCountry?: DoctorEditDialCountry;
+  /** @maxLength 100 */
+  drugLicenceNumber?: string;
+  /** @maxLength 320 */
+  email?: string;
+  /** @minimum 1 */
+  expected_version: number;
+  /** @maxLength 20 */
+  gstNumber?: string;
+  invoiceType?: DoctorEditInvoiceType;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  landmark: string;
+  mrId: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  orderDiscount?: string | number | null;
+  paymentLimit?: string | number | null;
+  /** @maxLength 20 */
+  phone?: string;
+  /**
+   * @minLength 2
+   * @maxLength 12
+   */
+  pincode: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  qualification: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  registrationNumber: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  state: string;
+  status?: DoctorEditStatus;
+}
+
+export type DoctorFieldsContactRequirement =
+  (typeof DoctorFieldsContactRequirement)[keyof typeof DoctorFieldsContactRequirement];
+
+export const DoctorFieldsContactRequirement = {
+  required: "required",
+  optional: "optional",
+} as const;
+
+export type DoctorFieldsDialCountry =
+  (typeof DoctorFieldsDialCountry)[keyof typeof DoctorFieldsDialCountry];
+
+export const DoctorFieldsDialCountry = {
+  IN: "IN",
+  US: "US",
+  GB: "GB",
+  AE: "AE",
+} as const;
+
+export type DoctorFieldsInvoiceType =
+  (typeof DoctorFieldsInvoiceType)[keyof typeof DoctorFieldsInvoiceType];
+
+export const DoctorFieldsInvoiceType = {
+  normal: "normal",
+  gst: "gst",
+} as const;
+
+export type DoctorFieldsStatus =
+  (typeof DoctorFieldsStatus)[keyof typeof DoctorFieldsStatus];
+
+export const DoctorFieldsStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface DoctorFields {
+  /**
+   * @minLength 1
+   * @maxLength 300
+   */
+  addressLine1: string;
+  /** @maxLength 300 */
+  addressLine2?: string;
+  /** @maxLength 20 */
+  alternatePhone?: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  city: string;
+  /** @maxLength 200 */
+  clinicName?: string;
+  contactRequirement?: DoctorFieldsContactRequirement;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  country: string;
+  dateOfJoining?: string | null;
+  /**
+   * @minimum 0
+   * @maximum 2147483647
+   */
+  daysLimit?: number;
+  dialCountry?: DoctorFieldsDialCountry;
+  /** @maxLength 100 */
+  drugLicenceNumber?: string;
+  /** @maxLength 320 */
+  email?: string;
+  /** @maxLength 20 */
+  gstNumber?: string;
+  invoiceType?: DoctorFieldsInvoiceType;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  landmark: string;
+  mrId: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  orderDiscount?: string | number | null;
+  paymentLimit?: string | number | null;
+  /** @maxLength 20 */
+  phone?: string;
+  /**
+   * @minLength 2
+   * @maxLength 12
+   */
+  pincode: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  qualification: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  registrationNumber: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  state: string;
+  status?: DoctorFieldsStatus;
+}
+
+export interface DoctorFilters {
+  missingMR: boolean;
+  missingZone: boolean;
+  states: string[];
+}
+
+export interface DoctorImportResult {
+  imported: number;
+}
+
+export interface DoctorImportRow {
+  errors: string[];
+  name: string;
+  registrationNumber: string;
+  row: number;
+}
+
+export type DoctorResponseContactRequirement =
+  (typeof DoctorResponseContactRequirement)[keyof typeof DoctorResponseContactRequirement];
+
+export const DoctorResponseContactRequirement = {
+  required: "required",
+  optional: "optional",
+} as const;
+
+export type DoctorResponseDialCountry =
+  (typeof DoctorResponseDialCountry)[keyof typeof DoctorResponseDialCountry];
+
+export const DoctorResponseDialCountry = {
+  IN: "IN",
+  US: "US",
+  GB: "GB",
+  AE: "AE",
+} as const;
+
+export type DoctorResponseInvoiceType =
+  (typeof DoctorResponseInvoiceType)[keyof typeof DoctorResponseInvoiceType];
+
+export const DoctorResponseInvoiceType = {
+  normal: "normal",
+  gst: "gst",
+} as const;
+
+export type DoctorResponseStatus =
+  (typeof DoctorResponseStatus)[keyof typeof DoctorResponseStatus];
+
+export const DoctorResponseStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type DoctorResponseVerification =
+  (typeof DoctorResponseVerification)[keyof typeof DoctorResponseVerification];
+
+export const DoctorResponseVerification = {
+  verified: "verified",
+  unverified: "unverified",
+} as const;
+
+export interface DoctorResponse {
+  /**
+   * @minLength 1
+   * @maxLength 300
+   */
+  addressLine1: string;
+  /** @maxLength 300 */
+  addressLine2?: string;
+  /** @maxLength 20 */
+  alternatePhone?: string;
+  assignmentWarnings: string[];
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  city: string;
+  /** @maxLength 200 */
+  clinicName?: string;
+  contactRequirement?: DoctorResponseContactRequirement;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  country: string;
+  createdAt: string;
+  createdBy: string;
+  dateOfJoining?: string | null;
+  /**
+   * @minimum 0
+   * @maximum 2147483647
+   */
+  daysLimit?: number;
+  dialCountry?: DoctorResponseDialCountry;
+  /** @maxLength 100 */
+  drugLicenceNumber?: string;
+  /** @maxLength 320 */
+  email?: string;
+  /** @maxLength 20 */
+  gstNumber?: string;
+  id: string;
+  invoiceType?: DoctorResponseInvoiceType;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  landmark: string;
+  mrId: string;
+  mrName: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  /** @pattern ^(?!^[-+.]*$)[+-]?0*\d*\.?\d{0,2}0*$ */
+  orderDiscount?: string;
+  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,13}|(?=[\d.]{1,16}0*$)\d{0,13}\.\d{0,2}0*$) */
+  paymentLimit?: string;
+  /** @maxLength 20 */
+  phone?: string;
+  /**
+   * @minLength 2
+   * @maxLength 12
+   */
+  pincode: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  qualification: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  registrationNumber: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  state: string;
+  status?: DoctorResponseStatus;
+  updatedAt: string;
+  updatedBy: string;
+  verification: DoctorResponseVerification;
+  version: number;
+  zoneId: string | null;
+  zoneName: string;
+}
+
+export interface DoctorPage {
+  filtered: number;
+  items: DoctorResponse[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export interface DoctorReview {
+  digest: string;
+  rows: DoctorImportRow[];
+  valid: boolean;
+}
+
+export type DoctorStatusStatus =
+  (typeof DoctorStatusStatus)[keyof typeof DoctorStatusStatus];
+
+export const DoctorStatusStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface DoctorStatus {
+  /** @minimum 1 */
+  expected_version: number;
+  status: DoctorStatusStatus;
+}
+
 export type DownloadEvidenceProvenance =
   (typeof DownloadEvidenceProvenance)[keyof typeof DownloadEvidenceProvenance];
 
@@ -2008,6 +2476,142 @@ export type DownloadDesignationSampleFormat =
   (typeof DownloadDesignationSampleFormat)[keyof typeof DownloadDesignationSampleFormat];
 
 export const DownloadDesignationSampleFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type ListDoctorDirectoryParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ListDoctorDirectoryStatus;
+  /**
+   * @maxLength 36
+   */
+  zone_id?: string;
+  /**
+   * @maxLength 36
+   */
+  mr_id?: string;
+  /**
+   * @maxLength 100
+   */
+  state?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
+export type ListDoctorDirectoryStatus =
+  (typeof ListDoctorDirectoryStatus)[keyof typeof ListDoctorDirectoryStatus];
+
+export const ListDoctorDirectoryStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportDoctorDirectoryParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ExportDoctorDirectoryStatus;
+  /**
+   * @maxLength 36
+   */
+  zone_id?: string;
+  /**
+   * @maxLength 36
+   */
+  mr_id?: string;
+  /**
+   * @maxLength 100
+   */
+  state?: string;
+  format?: ExportDoctorDirectoryFormat;
+};
+
+export type ExportDoctorDirectoryStatus =
+  (typeof ExportDoctorDirectoryStatus)[keyof typeof ExportDoctorDirectoryStatus];
+
+export const ExportDoctorDirectoryStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportDoctorDirectoryFormat =
+  (typeof ExportDoctorDirectoryFormat)[keyof typeof ExportDoctorDirectoryFormat];
+
+export const ExportDoctorDirectoryFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type CommitDoctorImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+  /**
+   * @pattern ^[0-9a-f]{64}$
+   */
+  digest: string;
+  confirm: boolean;
+};
+
+export type CommitDoctorImportBody = {
+  file: Blob | File;
+};
+
+export type ReviewDoctorImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+};
+
+export type ReviewDoctorImportBody = {
+  file: Blob | File;
+};
+
+export type ListDoctorMRChoicesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  include_saved?: string | null;
+};
+
+export type DownloadDoctorSampleParams = {
+  format?: DownloadDoctorSampleFormat;
+};
+
+export type DownloadDoctorSampleFormat =
+  (typeof DownloadDoctorSampleFormat)[keyof typeof DownloadDoctorSampleFormat];
+
+export const DownloadDoctorSampleFormat = {
   csv: "csv",
   xlsx: "xlsx",
 } as const;

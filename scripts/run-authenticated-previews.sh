@@ -138,6 +138,7 @@ if [ "$#" -eq 0 ]; then
   SPECS="$SPECS artifacts/evexia-portal/tests/headquarters-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/product-categories-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/mrs-backend.preview.spec.mjs"
+  SPECS="$SPECS artifacts/evexia-portal/tests/doctors-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/download-logs.preview.spec.mjs artifacts/evexia-portal/tests/staff-permissions.preview.spec.mjs"
 fi
 echo "Running authenticated browser previews against an isolated synthetic PostgreSQL/API fixture (API $API_PORT, portal $PORT)."
@@ -147,9 +148,15 @@ echo "Running authenticated browser previews against an isolated synthetic Postg
 # Run sequentially: concurrent projects would replace the synthetic session.
 OTHER_SPECS=
 DOWNLOADS=0
+ISOLATE_MR=0
 for spec in $SPECS; do
   case "$spec" in
     */download-logs.preview.spec.mjs) DOWNLOADS=1 ;;
+    */mrs-backend.preview.spec.mjs)
+      # Doctor fixtures legitimately provision MR accounts too. Do not consume
+      # the MR password-reset test's ten-per-hour actor budget with other suites,
+      # disable production limits, or erase the protected credential audit.
+      if [ "$#" -eq 0 ]; then ISOLATE_MR=1; else OTHER_SPECS="$OTHER_SPECS $spec"; fi ;;
     *) OTHER_SPECS="$OTHER_SPECS $spec" ;;
   esac
 done
@@ -160,4 +167,8 @@ fi
 if [ "$DOWNLOADS" -eq 1 ]; then
   echo "Download gate: Chromium, Firefox and WebKit (Safari engine, not native Safari). Missing engines are failures."
   pnpm exec playwright test --config=playwright.downloads.config.mjs --workers=1 --output="$RESULTS/download-matrix"
+fi
+if [ "$ISOLATE_MR" -eq 1 ]; then
+  echo "MR credential flows: separate private database, listeners and audit budget."
+  sh "$ROOT/scripts/run-authenticated-previews.sh" artifacts/evexia-portal/tests/mrs-backend.preview.spec.mjs
 fi

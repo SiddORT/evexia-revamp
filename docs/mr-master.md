@@ -32,9 +32,11 @@ Zone grants, business designations and imported labels are not authorization.
 The MR business directory is one-to-one with a newly provisioned MRProfile,
 whose existing ID remains the only MR ownership identity. Identity-only profiles
 remain without invented directory details. No browser-local MR data is migrated,
-mirrored, seeded or used as server references. Doctor, Patient, Sales Target and
-payment demo consumers retain their original local MR collection/IDs.
-The server list's doctors action explains that verified associations are unavailable.
+mirrored, seeded or used as server references. Patient, Sales Target and payment
+demo consumers retain their original local MR collection/IDs. Doctor Master now
+uses server MRProfile-linked directory assignments; the MR doctors action lists
+those live assignments with server counts/pagination. It never uses local Doctors.
+See `doctor-master.md` for that separate directory and remaining local boundaries.
 
 ## Business and account validation
 

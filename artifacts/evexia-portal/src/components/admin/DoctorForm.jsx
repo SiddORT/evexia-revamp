@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import InfoDisclosure from './InfoDisclosure.jsx';
 import PhoneInput from './PhoneInput.jsx';
 import { DIAL_COUNTRIES } from '../../services/phoneCountries.js';
+import { lookupDoctorPIN } from '../../services/serverDoctors.js';
 import '../../doctor-form.css';
 
 const FIELDS = [
@@ -22,9 +23,9 @@ const TABS = [
 ];
 const FIELD_INFO = {
   phone: 'Country selection determines the expected number of digits and is saved with this record.',
-  daysLimit: 'New orders from this doctor will not be accepted if payment remains overdue beyond this days limit.',
+  daysLimit: 'Saved business setting only. No payment ledger, order placement or overdue-payment blocking engine is connected.',
   gstNumber: 'GST Number is required for GST invoices. For Indian addresses, enter a 15-character GSTIN.',
-  pincode: 'Six-digit Indian PINs offer optional address suggestions; other postal codes use manual entry.',
+  pincode: 'Entering a six-digit Indian PIN automatically fills country, state and city. District is used as city when no city is returned. Other postal codes use manual entry.',
 };
 const PASSWORD_INFO = 'Passwords cannot be entered, generated, saved or exported. No doctor login is created.';
 
@@ -77,15 +78,17 @@ function validate(values) {
   if (values.invoiceType === 'gst' && !values.gstNumber.trim()) errors.gstNumber = 'GST number is required for GST invoices.';
   if (values.gstNumber && values.country.toLocaleLowerCase() === 'india' && !/^[0-9A-Z]{15}$/i.test(values.gstNumber.trim())) {
     errors.gstNumber = 'Enter a 15-character GSTIN.';
+  } else if (values.gstNumber && values.country.toLocaleLowerCase() !== 'india' && !/^[A-Za-z0-9 -]{5,20}$/.test(values.gstNumber)) {
+    errors.gstNumber = 'Enter a GST number with 5–20 letters, digits, spaces or hyphens.';
   }
   if (values.orderDiscount && (!/^\d+(\.\d{1,2})?$/.test(values.orderDiscount) || Number(values.orderDiscount) > 100)) {
     errors.orderDiscount = 'Enter a discount from 0 to 100 with up to 2 decimal places.';
   }
-  if (values.daysLimit && (!/^\d+$/.test(values.daysLimit) || !Number.isSafeInteger(Number(values.daysLimit)))) {
-    errors.daysLimit = 'Enter a non-negative whole number.';
+  if (values.daysLimit && (!/^\d+$/.test(values.daysLimit) || Number(values.daysLimit) > 2147483647)) {
+    errors.daysLimit = 'Enter a whole number from 0 to 2147483647.';
   }
-  if (values.paymentLimit && (!/^\d+(\.\d{1,2})?$/.test(values.paymentLimit) || !Number.isFinite(Number(values.paymentLimit)))) {
-    errors.paymentLimit = 'Enter a non-negative amount with up to 2 decimal places.';
+  if (values.paymentLimit && (!/^\d{1,13}(\.\d{1,2})?$/.test(values.paymentLimit))) {
+    errors.paymentLimit = 'Enter a non-negative amount with up to 13 integer digits and 2 decimal places.';
   }
   if (values.status && !['active', 'inactive'].includes(values.status)) errors.status = 'Choose a valid status.';
   return errors;
@@ -104,9 +107,11 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
   const pendingFocus = useRef(null);
   const pinRequest = useRef(0);
   const selectedMR = mrs.find((mr) => String(mr.id) === values.mrId);
-  const activeMRs = mrs.filter((mr) => mr.status === 'active');
-  const mrOptions = selectedMR && selectedMR.status !== 'active' ? [...activeMRs, selectedMR] : activeMRs;
-  const missingMR = Boolean(values.mrId) && !mrs.some((mr) => String(mr.id) === values.mrId);
+  const activeMRs = mrs.filter((mr) => mr.usable);
+  const mrOptions = selectedMR && !activeMRs.includes(selectedMR) ? [...activeMRs, selectedMR] : activeMRs;
+  const missingMR = Boolean(values.mrId) && (!selectedMR || selectedMR.deleted || !selectedMR.zoneId);
+  const addressRevision = useRef(0);
+  const pinEdited = useRef(false);
 
   useEffect(() => {
     if (pendingFocus.current) {
@@ -117,34 +122,36 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
 
   useEffect(() => {
     const request = ++pinRequest.current;
-    if (values.country.trim().toLocaleLowerCase() !== 'india' || !/^\d{6}$/.test(values.pincode)) {
+    if (!pinEdited.current || !/^[1-9]\d{5}$/.test(values.pincode)) {
       setPinState({ status: 'idle', localities: [], error: '' });
       setSelectedLocality('');
       return undefined;
     }
     const controller = new AbortController();
+    const addressAtStart = addressRevision.current;
     setPinState({ status: 'loading', localities: [], error: '' });
     setSelectedLocality('');
     const timer = window.setTimeout(async () => {
       try {
-        const response = await fetch(`https://api.postalpincode.in/pincode/${encodeURIComponent(values.pincode)}`, { signal: controller.signal });
-        if (!response.ok) throw new Error('Pincode lookup is temporarily unavailable.');
-        const result = await response.json();
-        if (request !== pinRequest.current) return;
-        const postOffices = result?.[0]?.Status === 'Success' ? result[0].PostOffice || [] : [];
-        const unique = [...new Map(postOffices.map((office) => [`${office.Name}|${office.District}|${office.State}`, {
-          name: office.Name, city: office.District || office.Name, state: office.State, country: office.Country || 'India',
-        }])).values()];
+        const result = await lookupDoctorPIN(values.pincode, controller.signal);
+        if (controller.signal.aborted || request !== pinRequest.current) return;
+        const unique = result.choices.map((item) => ({ ...item, name: item.city }));
         setPinState(unique.length
           ? { status: 'ready', localities: unique, error: '' }
-          : { status: 'empty', localities: [], error: 'No localities were found for this pincode. Enter the address manually.' });
+          : { status: 'empty', localities: [], error: result.message || 'No localities were found. Enter the address manually.' });
+        if (unique.length && addressAtStart === addressRevision.current) {
+          setSelectedLocality('0');
+          const first = unique[0];
+          setValues((current) => ({ ...current, city: first.city, state: first.state, country: first.country }));
+          setErrors((current) => { const next = { ...current }; delete next.city; delete next.state; delete next.country; return next; });
+        }
       } catch (error) {
         if (error.name === 'AbortError' || request !== pinRequest.current) return;
         setPinState({ status: 'error', localities: [], error: 'Pincode lookup is offline or unavailable. You can enter the address manually.' });
       }
     }, 250);
     return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [values.pincode, values.country]);
+  }, [values.pincode]);
 
   function handleTabKey(event, index) {
     const next = event.key === 'ArrowRight' ? (index + 1) % TABS.length
@@ -157,6 +164,8 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
   }
 
   function change(key, value) {
+    if (key === 'pincode') { pinEdited.current = true; pinRequest.current++; }
+    if (['addressLine1', 'addressLine2', 'landmark', 'country', 'state', 'city'].includes(key)) addressRevision.current++;
     setValues((current) => ({ ...current, [key]: value }));
     setErrors((current) => {
       if (!current[key]) return current;
@@ -167,9 +176,11 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
     setSaveError('');
   }
 
-  function applyLocality() {
-    const locality = pinState.localities[Number(selectedLocality)];
+  function applyLocality(index) {
+    const locality = pinState.localities[Number(index)];
     if (!locality) return;
+    addressRevision.current++;
+    setSelectedLocality(index);
     setValues((current) => ({ ...current, city: locality.city, state: locality.state, country: locality.country }));
     setErrors((current) => {
       const next = { ...current };
@@ -220,7 +231,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
     if (saving || blocked) return;
     const cleaned = Object.fromEntries(FIELDS.map((key) => [key, values[key].trim()]));
     const nextErrors = validate(cleaned);
-    if (cleaned.mrId && !mrOptions.some((mr) => String(mr.id) === cleaned.mrId)) nextErrors.mrId = 'Select an available medical representative.';
+    if (cleaned.mrId && (!selectedMR || selectedMR.deleted || !selectedMR.zoneId || (!selectedMR.usable && cleaned.mrId !== doctor?.mrId))) nextErrors.mrId = 'Select an active server MR with a usable Zone.';
     const normalizedReg = cleaned.registrationNumber.toLocaleLowerCase();
     if (normalizedReg && records.some((record) => String(record.id) !== String(doctor?.id) && String(record.registrationNumber).toLocaleLowerCase() === normalizedReg)) {
       nextErrors.registrationNumber = 'This registration number already belongs to another doctor.';
@@ -239,9 +250,9 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
         ...cleaned,
         phone: cleaned.phone.replace(/[\s()-]/g, ''),
         alternatePhone: cleaned.alternatePhone.replace(/[\s()-]/g, ''),
-        orderDiscount: cleaned.orderDiscount === '' ? 0 : Number(cleaned.orderDiscount),
+        orderDiscount: cleaned.orderDiscount === '' ? '0.00' : cleaned.orderDiscount,
         daysLimit: cleaned.daysLimit === '' ? 0 : Number(cleaned.daysLimit),
-        paymentLimit: cleaned.paymentLimit === '' ? 0 : Number(cleaned.paymentLimit),
+        paymentLimit: cleaned.paymentLimit === '' ? '0.00' : cleaned.paymentLimit,
       });
       if (!result?.success) setSaveError(result?.error || 'This doctor could not be saved. Please try again.');
     } catch (error) {
@@ -253,7 +264,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
 
   return <form className="doctor-form" ref={formRef} onSubmit={handleSubmit} noValidate data-testid="form-doctor">
     <div className="doctor-form__about"><InfoDisclosure id="doctor-form-about" title="this Doctor form"
-      text="Doctor records are stored only in this browser’s local preview. Adding or editing a doctor does not create a login account."
+      text="Doctor records are shared server records. Adding or editing a doctor does not create a login account. Commercial limits are saved settings only; no payment ledger or order enforcement is connected."
       testId="button-doctor-form-info"><strong>About this form</strong></InfoDisclosure></div>
     <div className="doctor-form__tabs" role="tablist" aria-label="Doctor profile sections">
       {TABS.map((tab, index) => <button key={tab.id} ref={(node) => { tabRefs.current[index] = node; }} type="button"
@@ -302,7 +313,8 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
         <div className="doctor-form__section-head"><h3 className="doctor-form__section-title">Clinic & assignment</h3></div>
         <div className="doctor-form__grid">
           {renderField('clinicName', 'Clinic Name', { placeholder: 'Clinic name' })}
-          {renderField('mrId', 'MR Name', { placeholder: 'Select MR', selectOptions: mrOptions.map((mr) => ({ value: String(mr.id), label: `${mr.name}${mr.status === 'inactive' ? ' (inactive)' : ''}` }))})}
+          {renderField('mrId', 'MR Name', { placeholder: 'Select MR', selectOptions: mrOptions.map((mr) => ({ value: String(mr.id), label: `${mr.name} · ${mr.zoneName || 'Missing Zone'}${mr.deleted ? ' (deleted)' : !mr.usable ? ' (inactive assignment)' : ''}` }))})}
+          {selectedMR && <p className="doctor-form__hint">Derived Zone: {selectedMR.zoneName || 'Missing Zone'}. Zone is controlled by MR Master.</p>}
           {renderField('status', 'Status', { selectOptions: [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }] })}
         </div>
       </section>
@@ -326,14 +338,13 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
             {pinState.error && <p className="doctor-form__hint">{pinState.error}</p>}
             {pinState.localities.length > 0 && <>
                <InfoDisclosure id="doctor-locality-help" title="Pincode localities"
-                 text="Suggestions do not change the address until you apply one; you can edit every address field afterwards."
-                 testId="button-doctor-locality-info"><label className="doctor-form__label" htmlFor="doctor-locality">Pincode localities (suggestions only)</label></InfoDisclosure>
+                  text="Country, state and city are filled automatically unless you edited the address while lookup was pending. District is used as city when no city is returned. Choose another returned location to correct it, or edit manually."
+                  testId="button-doctor-locality-info"><label className="doctor-form__label" htmlFor="doctor-locality">PIN locations</label></InfoDisclosure>
               <div className="doctor-form__input-row">
-                <select id="doctor-locality" className="doctor-form__control" value={selectedLocality} onChange={(event) => setSelectedLocality(event.target.value)} data-testid="select-doctor-locality">
+                <select id="doctor-locality" className="doctor-form__control" value={selectedLocality} onChange={(event) => applyLocality(event.target.value)} data-testid="select-doctor-locality">
                   <option value="">Choose a locality suggestion</option>
                   {pinState.localities.map((item, index) => <option key={`${item.name}-${item.city}-${item.state}`} value={String(index)}>{item.name} — {item.city}, {item.state}</option>)}
                 </select>
-                <button type="button" className="admin-button admin-button--secondary" disabled={!selectedLocality} onClick={applyLocality} data-testid="button-apply-doctor-locality">Apply suggestion</button>
               </div>
             </>}
           </div>}

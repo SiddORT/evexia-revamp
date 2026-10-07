@@ -30,9 +30,11 @@
 - [Dropdown focus](dropdown-focus.md) — pending menu actions must preserve a focusable return destination while preventing duplicate submissions.
 - [Browser-only auth channels](browser-only-auth-channels.md) — Node exposes BroadcastChannel too; imported browser auth must not keep pure service tests alive.
 - [Browser engine evidence](browser-engine-evidence.md) — overridden WebKit versions can reflect the driver, not the binary; verify matching revisions and page creation.
+- [Browser download gestures](browser-download-gestures.md) — use a trusted click per expected file handoff; script-only download bursts can hit Chromium protection.
 - [Historical migration fixtures](historical-migration-fixtures.md) — seed older schemas through historical contracts, not current ORM fields.
 - [Frontend test HMR isolation](frontend-test-hmr-isolation.md) — freeze source during Vite browser passes; isolated listeners do not isolate hot reloads.
 - [Exact workbook decimals](exact-workbook-decimals.md) — validate monetary XML lexemes, not parser floats; text cells retain long prices.
 - [Import navigation ownership](import-navigation-ownership.md) — backend-only import tabs must not require mock templates or weaken authenticated transfers.
 - [Delayed browser route teardown](delayed-route-teardown.md) — await held response handlers before removing their interception; avoid global teardown between late-response scenarios.
 - [MR account boundary](mr-account-boundary.md) — real MR login must not silently promote existing identities or mix browser-local demo relationships.
+- [Save navigation evidence](save-navigation-evidence.md) — wait for the terminal list route; prefix-only URL assertions can read before an authenticated save commits.

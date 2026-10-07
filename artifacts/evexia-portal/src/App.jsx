@@ -14,7 +14,7 @@ const MRMaster = lazyRoute(() => import('./pages/admin/MRMaster.jsx'));
 const MRFormPage = lazyRoute(() => import('./pages/admin/MRFormPage.jsx'));
 const DoctorMaster = lazyRoute(() => import('./pages/admin/DoctorMaster.jsx'));
 const DoctorFormPage = lazyRoute(() => import('./pages/admin/DoctorFormPage.jsx'));
-const DoctorPaymentHistory = lazyRoute(() => import('./pages/admin/DoctorPaymentHistory.jsx'));
+const DoctorPaymentHistory = lazyRoute(() => import('./pages/admin/LiveDoctorPaymentHistory.jsx'));
 const MasterExcelImportPage = lazyRoute(() => import('./pages/admin/MasterExcelImportPage.jsx'));
 const ProductCategoryMaster = lazyRoute(() => import('./pages/admin/ProductCategoryMaster.jsx'));
 const ProductCategoryFormPage = lazyRoute(() => import('./pages/admin/ProductCategoryFormPage.jsx'));

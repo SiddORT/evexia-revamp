@@ -274,7 +274,7 @@ test('prepared Zone cards and master tabs retain preview semantics in desktop/mo
   await expect(page.locator('.excel-import__card')).toHaveCount(2);
   await page.getByRole('navigation', { name: 'Select a master for import' }).getByRole('button', { name: 'Doctor Master', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Import Doctor data', exact: true })).toBeVisible();
-  await expect(page.getByText('UI preview · Nothing will be saved')).toBeVisible();
+    await expect(page.getByText('Shared server records')).toBeVisible();
   await page.getByRole('navigation', { name: 'Select a master for import' }).getByRole('button', { name: 'Courier Partner Master', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Import Courier Partner data', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Download Excel sample' })).toBeVisible();

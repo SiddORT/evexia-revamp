@@ -1,5 +1,6 @@
 import { downloadBlob } from '../../services/downloads.js';
 import MRImportPage from './MRImportPage.jsx';
+import DoctorImportPage from './DoctorImportPage.jsx';
 import { useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, CheckCircle2, Download, FileSpreadsheet, Upload, XCircle } from 'lucide-react';
@@ -20,7 +21,7 @@ import DesignationImportPage from './DesignationImportPage.jsx';
 const routes = { zone: '/admin/masters/zones', 'courier-partner': '/admin/masters/courier-partners', mr: '/admin/masters/mrs', doctor: '/admin/masters/doctors' };
 
 export default function MasterExcelImportPage({ kind }) {
-  return kind === 'product-category' ? <ProductCategoryImportPage /> : kind === 'zone' ? <ZoneImportGate /> : kind === 'courier-partner' ? <CourierImportPage /> : kind === 'storage-location' ? <StorageLocationImportPage /> : kind === 'designation' ? <DesignationImportPage /> : kind === 'headquarter' ? <HeadquarterImportPage /> : kind === 'mr' ? <MRImportPage /> : <PreviewExcelImportPage kind={kind} />;
+  return kind === 'product-category' ? <ProductCategoryImportPage /> : kind === 'zone' ? <ZoneImportGate /> : kind === 'courier-partner' ? <CourierImportPage /> : kind === 'storage-location' ? <StorageLocationImportPage /> : kind === 'designation' ? <DesignationImportPage /> : kind === 'headquarter' ? <HeadquarterImportPage /> : kind === 'mr' ? <MRImportPage /> : kind === 'doctor' ? <DoctorImportPage /> : <PreviewExcelImportPage kind={kind} />;
 }
 
 function ZoneImportGate() {

@@ -292,7 +292,7 @@ test('location import route, master tabs and two cards work in desktop/mobile po
     ['Zone Master', 'Import Zone data', false],
     ['Courier Partner Master', 'Import Courier Partner data', false],
     ['MR Master', 'Import MR data', false],
-    ['Doctor Master', 'Import Doctor data', true],
+    ['Doctor Master', 'Import Doctor data', false],
     ['Storage Location Master', 'Import Storage Location data', false],
   ]) {
     await page.getByRole('navigation', { name: 'Select a master for import' }).getByRole('button', { name: tab, exact: true }).click();

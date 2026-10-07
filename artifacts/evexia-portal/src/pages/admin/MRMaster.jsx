@@ -9,6 +9,7 @@ import ContactRequirementButton from '../../components/admin/ContactRequirementB
 import CredentialReveal from '../../components/admin/CredentialReveal.jsx';
 import MRListFilter from '../../components/admin/MRListFilter.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
+import MRDoctorAssignments from '../../components/admin/MRDoctorAssignments.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import RecordDetails from '../../components/admin/RecordDetails.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
@@ -198,7 +199,7 @@ export default function MRMaster() {
     {confirming && <ConfirmationDialog pending={pending} blocked={blocked} title={copy.title} description={copy.description} actionLabel={copy.label} destructive={type === 'delete'} onConfirm={confirmAction} onClose={() => { setConfirming(null); setActionError(''); if (blocked) retry(); }} error={actionError} />}
     {credentials && <CredentialReveal credentials={credentials} title="Password reset. Copy the new credentials" onClose={() => setCredentials(null)} />}
     {doctorView && <Dialog title={`Doctors for ${doctorView.name}`} eyebrow="MR Master" onClose={() => setDoctorView(null)}>
-      <p data-testid="text-mr-doctors-unavailable">Assigned doctors are unavailable for server MRs. Doctor records still live in this browser's local preview and are not linked to verified server MR accounts.</p>
+      <MRDoctorAssignments mr={doctorView} />
     </Dialog>}
   </AdminLayout>;
 }

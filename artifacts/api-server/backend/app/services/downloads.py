@@ -42,6 +42,7 @@ SERVER = {s: {"export": {"CSV", "XLSX"}} for s in ("zone", "courier", "storage_l
 SERVER["designation"]["template"] = {"CSV", "XLSX"}
 SERVER["headquarter"]["template"] = {"CSV", "XLSX"}
 SERVER["mr"] = {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}}
+SERVER["doctor"] = {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}}
 SERVER["product_category"]["template"] = {"CSV", "XLSX"}
 SERVER["private_attachment"] = {"attachment": {"PDF"}, "issuance": {"PDF"}}
 
