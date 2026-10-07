@@ -24,8 +24,10 @@ export default function StockStatusReport({ rows, year, scope, allergenLabel, ge
         <div><dt>{scope.label}</dt><dd>As of {displayStockDate(scope.asOf)}</dd></div>
         <div><dt>Generated</dt><dd>{generatedAt.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</dd></div>
       </dl>
-      <table><thead><tr><th>Sr.</th><th>Product</th><th>Concentration</th><th>Category</th><th>Selling price</th><th>Quantity ({scope.label})</th></tr></thead>
-        <tbody>{rows.map((r, i) => <tr key={r.productId ?? r.id}><td>{i + 1}</td><td>{r.name}</td><td>{r.concentration}</td><td>{r.category}</td><td>{formatStockPrice(r.sellingPrice)}</td><td>{r.quantity} {r.unit}</td></tr>)}</tbody></table>
+      <div className="stock-report-scroll" role="region" aria-label="Sample inventory report table" tabIndex={0}>
+        <table><thead><tr><th>Sr.</th><th>Product</th><th>Concentration</th><th>Category</th><th>Selling price</th><th>Quantity ({scope.label})</th></tr></thead>
+          <tbody>{rows.map((r, i) => <tr key={r.productId ?? r.id}><td>{i + 1}</td><td>{r.name}</td><td>{r.concentration}</td><td>{r.category}</td><td>{formatStockPrice(r.sellingPrice)}</td><td>{r.quantity} {r.unit}</td></tr>)}</tbody></table>
+      </div>
       <p className="stock-report__note">{STOCK_DEMO_DISCLAIMER}</p>
     </article>}
   </Dialog>;

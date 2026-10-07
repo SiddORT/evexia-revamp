@@ -17,6 +17,121 @@ async function choose(page, query, identity) {
   await page.getByRole('option').filter({ hasText: identity }).click();
 }
 
+async function assertStockGeometry(page, width) {
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  const region = page.getByRole('region', { name: 'Stock status', exact: true });
+  await expect(region).toHaveAttribute('tabindex', '0');
+  const geometry = await region.evaluate((node) => {
+    const table = node.querySelector('table');
+    const row = table.querySelector('tbody tr');
+    const cells = [...row.cells];
+    const name = cells[0].querySelector('strong');
+    const style = getComputedStyle(name);
+    return {
+      regionWidth: node.clientWidth, tableWidth: table.getBoundingClientRect().width,
+      productWidth: cells[0].getBoundingClientRect().width,
+      nameLines: name.getBoundingClientRect().height / parseFloat(style.lineHeight),
+      rowHeight: row.getBoundingClientRect().height,
+      alignments: cells.map((cell) => getComputedStyle(cell).textAlign),
+      nowrap: [cells[3], cells[4]].map((cell) => getComputedStyle(cell).whiteSpace),
+      columns: cells.length,
+    };
+  });
+  expect(geometry.columns).toBe(6);
+  expect(geometry.productWidth).toBeGreaterThanOrEqual(175);
+  expect(geometry.nameLines).toBeLessThanOrEqual(2);
+  expect(geometry.rowHeight).toBeLessThanOrEqual(70);
+  expect(geometry.alignments).toEqual(['left', 'left', 'left', 'right', 'right', 'center']);
+  expect(geometry.nowrap).toEqual(['nowrap', 'nowrap']);
+  if (width === 390) expect(geometry.tableWidth).toBeGreaterThan(geometry.regionWidth);
+  else expect(geometry.tableWidth).toBeLessThanOrEqual(geometry.regionWidth + 1);
+  await expect(page.locator('.stock-list-table tbody')).not.toContainText('snapshot');
+  for (const id of ['demo-dust', 'demo-grass']) {
+    const name = page.getByTestId(`row-stock-${id}`).locator('.admin-table__name');
+    expect(await name.evaluate((node) => node.getBoundingClientRect().height / parseFloat(getComputedStyle(node).lineHeight))).toBeLessThanOrEqual(2);
+  }
+}
+
+test('stock geometry, unclipped options and scoped serial columns across widths and themes', async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await open(page);
+  await expect(page.locator('.admin-shell')).not.toHaveClass(/admin-shell--collapsed/);
+  for (const theme of ['classic', 'modern']) for (const appearance of ['light', 'dark']) {
+    await page.evaluate(async ({ theme, appearance }) => {
+      const preferences = await import('/src/components/admin/adminPreferences.js');
+      preferences.setAdminPreference('theme', theme);
+      preferences.setAdminPreference('appearance', appearance);
+    }, { theme, appearance });
+    for (const width of [1024, 1440, 768, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      await assertStockGeometry(page, width);
+      const year = await page.getByTestId('select-stock-year').boundingBox();
+      const allergens = page.getByRole('combobox', { name: 'Allergens', exact: true });
+      const control = await page.locator('.stock-product .searchable-select__control').boundingBox();
+      expect(control.height).toBe(year.height);
+      if (width > 640) expect(control.y).toBe(year.y);
+      const scope = await page.getByTestId('text-stock-scope').boundingBox();
+      expect(scope.y).toBeGreaterThanOrEqual(control.y + control.height);
+      await allergens.fill('Cedar');
+      const options = page.getByRole('listbox', { name: 'Allergens' }).getByRole('option');
+      await expect(options).toHaveCount(2);
+      const lastOption = options.last();
+      await expect(lastOption).toBeInViewport();
+      expect(await lastOption.evaluate((node) => {
+        const rect = node.getBoundingClientRect();
+        return node.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2));
+      })).toBe(true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      await page.keyboard.press('Escape');
+      await page.screenshot({ path: test.info().outputPath(`stock-layout-${width}-${theme}-${appearance}.png`), fullPage: true });
+    }
+  }
+  const region = page.getByRole('region', { name: 'Stock status', exact: true });
+  await region.focus();
+  await expect(region).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(() => region.evaluate((node) => node.scrollLeft)).toBeGreaterThan(0);
+  const view = page.getByTestId('button-view-stock-demo-dust');
+  await view.click();
+  const dialog = page.getByRole('dialog');
+  expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+  for (const tab of ['purchases', 'orders']) {
+    await page.getByTestId(`tab-stock-${tab}`).click();
+    const history = dialog.getByRole('region', { name: `${tab} history` });
+    await expect(history).toHaveAttribute('tabindex', '0');
+    expect(await history.locator('tbody td').first().evaluate((node) => getComputedStyle(node).textAlign)).toBe('left');
+    expect((await history.locator('tbody td').first().boundingBox()).width).toBeGreaterThan(100);
+    await history.focus();
+    await expect(history).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(() => history.evaluate((node) => node.scrollLeft)).toBeGreaterThan(0);
+  }
+  await page.screenshot({ path: test.info().outputPath('stock-history-mobile.png'), fullPage: true });
+  await page.keyboard.press('Escape');
+  await expect(view).toBeFocused();
+  await page.getByTestId('button-inventory-report').click();
+  const reportRegion = page.getByRole('region', { name: 'Sample inventory report table' });
+  await reportRegion.focus();
+  await expect(reportRegion).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(() => reportRegion.evaluate((node) => node.scrollLeft)).toBeGreaterThan(0);
+  expect(await page.getByRole('dialog').evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath('stock-report-mobile.png'), fullPage: true });
+  await page.keyboard.press('Escape');
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await page.goto(`${base()}/admin/masters/zones`);
+  await expect(page.getByRole('heading', { name: 'Zone Master', exact: true })).toBeVisible();
+  // The isolated database starts empty; create a synthetic serial-table row.
+  await page.getByTestId('button-add-zone').click();
+  await page.getByLabel('Zone name *').fill('Stock layout isolation check');
+  await page.getByTestId('button-save-zone').click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const serial = page.locator('.admin-table th').first();
+  await expect(serial).toBeVisible();
+  expect(await serial.evaluate((node) => ({ width: getComputedStyle(node).width, align: getComputedStyle(node).textAlign }))).toEqual({ width: '58px', align: 'center' });
+});
+
 test('direct Stock Status route retains its authentication guard', async ({ page }) => {
   await page.goto(`${base()}${path}`);
   await expect(page.getByTestId('button-submit-login')).toBeVisible();

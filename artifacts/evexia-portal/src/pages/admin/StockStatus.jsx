@@ -50,7 +50,7 @@ export default function StockStatus() {
     { key: 'c', label: 'Concentration', render: (r) => r.concentration },
     { key: 'k', label: 'Category', render: (r) => r.category },
     { key: 's', label: 'Selling Price', render: (r) => formatStockPrice(r.sellingPrice) },
-    { key: 'q', label: 'Quantity', render: (r) => <><strong>{r.quantity} {r.unit}</strong><span className="stock-sub">{scope.label}</span></> },
+    { key: 'q', label: 'Quantity', render: (r) => <strong>{r.quantity} {r.unit}</strong> },
     { key: 'v', label: 'View', render: (r) => <button type="button" className="admin-button admin-button--secondary stock-view" onClick={() => setDetail(r)} aria-label={`View ${r.name} ${r.concentration}`} data-testid={`button-view-stock-${idOf(r)}`}><Eye size={14} /> View</button> },
   ];
   return <AdminLayout title="Stock Status"><div className="stock-page">
@@ -62,16 +62,19 @@ export default function StockStatus() {
     <div className="admin-feedback stock-disclaimer" role="note" data-testid="text-stock-disclaimer"><Info size={14} aria-hidden="true" /> {STOCK_DEMO_DISCLAIMER}</div>
     {notice && <div className="admin-feedback" role="status" data-testid="status-stock-notice">{notice}</div>}
     {error && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-stock-error">{error}</div>}
-    <section className="admin-panel">
+    <section className="admin-panel stock-panel">
       <div className="admin-toolbar stock-toolbar">
         <div className="admin-filter"><label htmlFor="stock-year">Financial year</label>
           <select id="stock-year" className="admin-select" value={year} onChange={(e) => { setYear(Number(e.target.value)); pg.resetPage(); setNotice(''); setError(''); }} data-testid="select-stock-year">
             {demo.years.map((y) => <option key={y} value={y}>{financialYearLabel(y)}</option>)}</select></div>
         <div className="admin-filter stock-product"><label htmlFor="stock-product">Allergens</label>
           <SearchableSelect id="stock-product" label="Allergens" value={productId} options={options} placeholder="All allergens" onChange={(v) => { setProductId(v); pg.resetPage(); setNotice(''); setError(''); }} /></div>
-        <p className="stock-scope" data-testid="text-stock-scope"><strong>{scope.label}</strong> as of {displayStockDate(scope.asOf)}. Year runs {displayStockDate(range.from)} to {displayStockDate(range.to)}.</p>
       </div>
-      {rows.length ? <><DataTable columns={columns} rows={pg.pageRows} rowOffset={pg.startIndex} rowKey={idOf} label="Stock status" testIdPrefix="stock" /></>
+      <div className="stock-scope" id="stock-snapshot-context" data-testid="text-stock-scope">
+        <p><strong>{scope.label}</strong> · As of {displayStockDate(scope.asOf)}</p>
+        <p>Financial year: {displayStockDate(range.from)} to {displayStockDate(range.to)}. Applies to all quantities below.</p>
+      </div>
+      {rows.length ? <div className="stock-list-table" aria-describedby="stock-snapshot-context"><DataTable columns={columns} rows={pg.pageRows} rowOffset={pg.startIndex} rowKey={idOf} label="Stock status" testIdPrefix="stock" /></div>
         : <div className="admin-empty" role="status"><strong>No products match these filters</strong><p>Choose All allergens or another financial year.</p></div>}
       <TablePagination {...pg} filtered={rows.length} total={rows.length} label={rows.length === 1 ? 'product' : 'products'} onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize} testId="text-stock-count" />
     </section>

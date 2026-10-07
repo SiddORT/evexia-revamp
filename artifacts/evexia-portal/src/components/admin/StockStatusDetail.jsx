@@ -47,7 +47,7 @@ export default function StockStatusDetail({ row, demo, year, onClose }) {
         </select>
       </label>
     </div>
-    <div role="tabpanel" id="stock-tabpanel" aria-labelledby={`stock-tab-${tab}`}>
+    <div role="tabpanel" id="stock-tabpanel" className="stock-history-table" aria-labelledby={`stock-tab-${tab}`}>
       {history.length ? <DataTable columns={columns} rows={pg.pageRows} rowOffset={pg.startIndex} rowKey={(r) => r.id} label={`${tab} history`} testIdPrefix={`stock-${tab}`} />
         : <div className="admin-empty"><strong>No {tab} in this period</strong><p>Choose All years to see the full sample history.</p></div>}
       <TablePagination {...pg} filtered={history.length} total={history.length} label={tab} onPageChange={pg.setPage} onPageSizeChange={pg.setPageSize} testId="text-stock-history-count" />
