@@ -31,6 +31,18 @@ This is distinct from testing SPA navigation or mounted-draft renewal.
 only the navigation promise, when a fixture intentionally visits consecutive
 protected documents. Keep replay rejection and single-session policy unchanged.
 
+Synthetic authenticated API fixture identities must satisfy the real response
+validation rules; an intentionally undeliverable reserved suffix is not
+necessarily accepted by an email validator.
+
+**Why:** A synthetic MR with an `.invalid` email authenticated internally but
+failed the safe identity response's EmailStr validation, masking access-denial
+tests with a server error. This is fixture validity, not authorization behavior.
+
+**How to apply:** Use fictional addresses on a validator-supported example
+domain for isolated identity fixtures, with no outbound mail/provider connection.
+Do not weaken production email validation to accommodate synthetic tests.
+
 Cold synthetic previews can exceed short browser defaults when the workspace is
 CPU-contended, even with correctly isolated listeners. Wait for authenticated
 content and route data with bounded startup deadlines, without dropping exact

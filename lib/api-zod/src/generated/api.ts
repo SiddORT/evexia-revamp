@@ -1106,6 +1106,310 @@ export const SetDesignationStatusResponse = zod.object({
 });
 
 /**
+ * @summary Listing
+ */
+export const listHeadquartersQueryQueryDefault = ``;
+export const listHeadquartersQueryQueryMax = 200;
+
+export const listHeadquartersQueryStatusDefault = `all`;
+export const listHeadquartersQueryLimitDefault = 10;
+export const listHeadquartersQueryLimitMax = 100;
+
+export const listHeadquartersQueryOffsetDefault = 0;
+export const listHeadquartersQueryOffsetMin = 0;
+export const listHeadquartersQueryOffsetMax = 1000000;
+
+export const ListHeadquartersQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listHeadquartersQueryQueryMax)
+    .default(listHeadquartersQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(listHeadquartersQueryStatusDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listHeadquartersQueryLimitMax)
+    .default(listHeadquartersQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listHeadquartersQueryOffsetMin)
+    .max(listHeadquartersQueryOffsetMax)
+    .default(listHeadquartersQueryOffsetDefault),
+});
+
+export const listHeadquartersResponseItemsItemNameMax = 200;
+
+export const ListHeadquartersResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      id: zod.string().uuid(),
+      name: zod.string().min(1).max(listHeadquartersResponseItemsItemNameMax),
+      state_code: zod.string(),
+      status: zod.enum(["active", "inactive"]),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+export const createHeadquarterBodyNameMax = 200;
+
+export const createHeadquarterBodyStateCodeOneMax = 16;
+
+export const CreateHeadquarterBody = zod.object({
+  name: zod.string().min(1).max(createHeadquarterBodyNameMax),
+  state_code: zod
+    .union([
+      zod.string().min(1).max(createHeadquarterBodyStateCodeOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const createHeadquarterResponseNameMax = 200;
+
+export const CreateHeadquarterResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(createHeadquarterResponseNameMax),
+  state_code: zod.string(),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Export
+ */
+export const exportHeadquartersQueryQueryDefault = ``;
+export const exportHeadquartersQueryQueryMax = 200;
+
+export const exportHeadquartersQueryStatusDefault = `all`;
+export const exportHeadquartersQueryFormatDefault = `csv`;
+
+export const ExportHeadquartersQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(exportHeadquartersQueryQueryMax)
+    .default(exportHeadquartersQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(exportHeadquartersQueryStatusDefault),
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(exportHeadquartersQueryFormatDefault),
+});
+
+export const ExportHeadquartersHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const ExportHeadquartersResponse = zod.unknown();
+
+/**
+ * @summary Commit
+ */
+export const commitHeadquarterImportQueryFilenameMax = 200;
+
+export const commitHeadquarterImportQueryDigestRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const CommitHeadquarterImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(commitHeadquarterImportQueryFilenameMax),
+  digest: zod.coerce.string().regex(commitHeadquarterImportQueryDigestRegExp),
+  confirm: zod.coerce.boolean(),
+});
+
+export const CommitHeadquarterImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const CommitHeadquarterImportResponse = zod.object({
+  imported: zod.number().int(),
+});
+
+/**
+ * @summary Review
+ */
+export const reviewHeadquarterImportQueryFilenameMax = 200;
+
+export const ReviewHeadquarterImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(reviewHeadquarterImportQueryFilenameMax),
+});
+
+export const ReviewHeadquarterImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const ReviewHeadquarterImportResponse = zod.object({
+  digest: zod.string(),
+  rows: zod.array(
+    zod.object({
+      errors: zod.array(zod.string()),
+      name: zod.string(),
+      row: zod.number().int(),
+      state_code: zod.string(),
+      status: zod.string(),
+    }),
+  ),
+  valid: zod.boolean(),
+});
+
+/**
+ * @summary Sample
+ */
+export const downloadHeadquarterSampleQueryFormatDefault = `csv`;
+
+export const DownloadHeadquarterSampleQueryParams = zod.object({
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(downloadHeadquarterSampleQueryFormatDefault),
+});
+
+export const DownloadHeadquarterSampleHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const DownloadHeadquarterSampleResponse = zod.unknown();
+
+/**
+ * @summary Detail
+ */
+export const GetHeadquarterParams = zod.object({
+  headquarter_id: zod.coerce.string().uuid(),
+});
+
+export const getHeadquarterResponseNameMax = 200;
+
+export const GetHeadquarterResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(getHeadquarterResponseNameMax),
+  state_code: zod.string(),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Delete
+ */
+export const DeleteHeadquarterParams = zod.object({
+  headquarter_id: zod.coerce.string().uuid(),
+});
+
+export const DeleteHeadquarterBody = zod.object({
+  expected_version: zod.number().int().min(1),
+});
+
+export const deleteHeadquarterResponseNameMax = 200;
+
+export const DeleteHeadquarterResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(deleteHeadquarterResponseNameMax),
+  state_code: zod.string(),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditHeadquarterParams = zod.object({
+  headquarter_id: zod.coerce.string().uuid(),
+});
+
+export const editHeadquarterBodyNameMax = 200;
+
+export const editHeadquarterBodyStateCodeOneMax = 16;
+
+export const EditHeadquarterBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  name: zod.string().min(1).max(editHeadquarterBodyNameMax),
+  state_code: zod
+    .union([
+      zod.string().min(1).max(editHeadquarterBodyStateCodeOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const editHeadquarterResponseNameMax = 200;
+
+export const EditHeadquarterResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(editHeadquarterResponseNameMax),
+  state_code: zod.string(),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Status
+ */
+export const SetHeadquarterStatusParams = zod.object({
+  headquarter_id: zod.coerce.string().uuid(),
+});
+
+export const SetHeadquarterStatusBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const setHeadquarterStatusResponseNameMax = 200;
+
+export const SetHeadquarterStatusResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(setHeadquarterStatusResponseNameMax),
+  state_code: zod.string(),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
  * Bounded browser-reported metadata; actor/session are server-derived.
  * @summary Activity
  */

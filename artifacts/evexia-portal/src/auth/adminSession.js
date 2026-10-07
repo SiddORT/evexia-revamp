@@ -384,13 +384,13 @@ function masterAllowed(user, resource, path, writing) {
 
 async function masterRequest(resource, path = '', { body, file, params = {}, download = false, signal } = {}) {
   const zone = resource === 'zones';
-  if (!['zones', 'courier-partners', 'storage-locations', 'designations'].includes(resource)) throw new SessionError('Unsupported master resource.');
-  const label = zone ? 'Zone' : resource === 'designations' ? 'Designation' : resource === 'storage-locations' ? 'Storage location' : 'Courier partner';
-  const unavailable = zone ? 'zone_unavailable' : resource === 'designations' ? 'designation_unavailable' : resource === 'storage-locations' ? 'location_unavailable' : 'courier_unavailable';
+  if (!['zones', 'courier-partners', 'storage-locations', 'designations', 'headquarters'].includes(resource)) throw new SessionError('Unsupported master resource.');
+  const label = zone ? 'Zone' : resource === 'headquarters' ? 'Headquarter' : resource === 'designations' ? 'Designation' : resource === 'storage-locations' ? 'Storage location' : 'Courier partner';
+  const unavailable = zone ? 'zone_unavailable' : resource === 'headquarters' ? 'headquarter_unavailable' : resource === 'designations' ? 'designation_unavailable' : resource === 'storage-locations' ? 'location_unavailable' : 'courier_unavailable';
   const route = zone
     ? /^(?:|\/trash|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|restore))?)$/
     : /^(?:|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/;
-  if (!route.test(path) && !(resource === 'designations' && path === '/sample')) {
+  if (!route.test(path) && !(['designations', 'headquarters'].includes(resource) && path === '/sample')) {
     throw new SessionError(`Unsupported ${label} operation.`);
   }
   const epoch = generation;
@@ -479,6 +479,7 @@ export const zoneRequest = (path, options) => masterRequest('zones', path, optio
 export const courierRequest = (path, options) => masterRequest('courier-partners', path, options);
 export const locationRequest = (path, options) => masterRequest('storage-locations', path, options);
 export const designationRequest = (path, options) => masterRequest('designations', path, options);
+export const headquarterRequest = (path, options) => masterRequest('headquarters', path, options);
 
 export async function reportingRequest(resource, params = {}, { signal } = {}) {
   if (!['summary', 'users', 'sessions', 'events', 'activity', 'sessions/export', 'events/export', 'downloads', 'downloads/initiate'].includes(resource)) {

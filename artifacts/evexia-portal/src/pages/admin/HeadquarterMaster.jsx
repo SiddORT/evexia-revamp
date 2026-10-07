@@ -1,194 +1,119 @@
-import { downloadCSV as loggedCSV } from '../../services/downloads.js';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
-import { CirclePower, Download, FolderOpen, Pencil, Plus, Search, Upload } from 'lucide-react';
+import { CirclePower, Download, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
-import Dialog from '../../components/admin/Dialog.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
-import useHeadquarters from '../../hooks/useHeadquarters.js';
-import useTablePagination from '../../hooks/useTablePagination.js';
-import { HEADQUARTER_COLUMNS, headquarterCSVTemplate, exportHeadquarterCSV, loadHeadquarters, reviewHeadquarterCSV } from '../../services/headquarters.js';
-import { parseCSV } from '../../services/masterImport.js';
+import useServerHeadquarters from '../../hooks/useServerHeadquarters.js';
+import { exportHeadquarters, downloadHeadquarterFile } from '../../services/serverHeadquarters.js';
+import { reportingIdentityGuard } from '../../auth/adminSession.js';
 import '../../mr.css';
 import '../../category.css';
 import '../../headquarter.css';
 
-const LIST_PATH = '/admin/masters/headquarters';
-const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
-
-function downloadCSV(text, filename) {
-  return loggedCSV(text, filename, 'headquarter', filename.includes('template') ? 'template' : 'export');
-}
-
-function audit(name, value) {
-  return <span className="admin-category-audit"><strong>{name || '—'}</strong><time dateTime={value}>{formatAdminTimestamp(value, undefined, true)}</time></span>;
-}
-
-function HeadquarterImportDialog({ records, onImport, onClose }) {
-  const [review, setReview] = useState(null);
-  const [message, setMessage] = useState('');
-  const [reading, setReading] = useState(false);
-  const sequence = useRef(0);
-  const invalid = review?.entries.filter((entry) => entry.errors.length) || [];
-  const valid = review ? review.entries.length - invalid.length : 0;
-
-  function close() { sequence.current += 1; onClose(); }
-  async function template() {
-    try { await downloadCSV(headquarterCSVTemplate(), 'evexia-headquarter-template.csv'); }
-    catch (cause) { setMessage(cause.message || 'The CSV template could not be downloaded. Please try again.'); }
-  }
-  async function choose(event) {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    setReview(null);
-    setMessage('');
-    if (!file) return;
-    const current = ++sequence.current;
-    if (!/\.csv$/i.test(file.name) || file.size > 2_000_000) {
-      setMessage('Choose a .csv file smaller than 2 MB.');
-      return;
-    }
-    setReading(true);
-    try {
-      const text = await file.text();
-      if (current !== sequence.current) return;
-      parseCSV(text);
-      const snapshot = loadHeadquarters();
-      if (!same(snapshot, records)) throw new Error('Saved headquarters changed in another tab. Refresh records before reviewing this file.');
-      const entries = reviewHeadquarterCSV(text, snapshot);
-      setReview({ fileName: file.name, entries, snapshot });
-    } catch (cause) {
-      if (current === sequence.current) setMessage(cause.message || 'Could not read this CSV file.');
-    } finally {
-      if (current === sequence.current) setReading(false);
-    }
-  }
-  function confirm() {
-    if (!review || !review.entries.length || invalid.length) return;
-    setMessage('');
-    try {
-      const result = onImport(review.entries, review.snapshot);
-      if (result.success) close();
-      else setMessage(result.error || 'Import failed. No headquarters were saved.');
-    } catch (cause) { setMessage(cause.message || 'Import failed. No headquarters were saved.'); }
-  }
-
-  return <Dialog title="Import headquarters" eyebrow="Headquarter Master" description="Review a local CSV before adding its headquarters. Existing records are never replaced." onClose={close} className="admin-import-dialog"
-    footer={<><button type="button" className="admin-button admin-button--secondary" onClick={close} data-testid="button-cancel-headquarter-import">Cancel</button><button type="button" className="admin-button" disabled={!review || !valid || invalid.length > 0 || reading} onClick={confirm} data-testid="button-confirm-headquarter-import">Import {valid} {valid === 1 ? 'headquarter' : 'headquarters'}</button></>}>
-    <div className="admin-category-import">
-      <div className="admin-category-import__guide"><strong>CSV columns (exact order)</strong><p>{HEADQUARTER_COLUMNS.map(([, label]) => label).join(', ')}. Status must be active or inactive. IDs and audit fields are not accepted.</p></div>
-      <button type="button" className="admin-button admin-button--secondary" onClick={template} data-testid="button-headquarter-template"><Download size={16} aria-hidden="true" /> Download CSV template</button>
-      <label className="admin-category-import__file">Choose a local CSV file<input type="file" accept=".csv,text/csv" onChange={choose} data-testid="input-headquarter-import" /></label>
-      {reading && <p role="status">Reading CSV file…</p>}
-      {message && <div className="admin-feedback admin-feedback--error" role="alert">{message}</div>}
-      {review && <div className="admin-category-import__review" aria-live="polite">
-        <p><strong>{review.fileName}</strong> — {valid} valid {valid === 1 ? 'row' : 'rows'}, {invalid.length} with errors. {invalid.length ? 'Correct the file and choose it again; nothing was saved.' : 'Review the rows before importing the whole batch.'}</p>
-        <div className="admin-category-import__rows" role="list" aria-label="Headquarter CSV rows">
-          {review.entries.map((entry) => <div role="listitem" className={`admin-category-import__row${entry.errors.length ? ' admin-category-import__row--error' : ''}`} key={entry.line}>
-            {entry.values || entry.fields ? <details><summary>Line {entry.line}: {entry.values?.name || entry.fields?.name || '(unnamed)'} — {entry.errors.length ? `${entry.errors.length} ${entry.errors.length === 1 ? 'error' : 'errors'}` : 'Ready to add'}</summary>
-              <dl>{HEADQUARTER_COLUMNS.map(([field, label]) => <div key={field}><dt>{label}</dt><dd>{entry.values?.[field] ?? entry.fields?.[field] ?? '—'}</dd></div>)}</dl>
-            </details> : <strong>Line {entry.line}: malformed row</strong>}
-            {entry.errors.length > 0 && <ul>{entry.errors.map((problem, index) => <li key={index}>{problem}</li>)}</ul>}
-          </div>)}
-        </div>
-      </div>}
-    </div>
-  </Dialog>;
+const LIST = '/admin/masters/headquarters';
+function details(by, at) {
+  return <span className="admin-table__details"><strong>{by}</strong><small>{formatAdminTimestamp(at)}</small></span>;
 }
 
 export default function HeadquarterMaster() {
   useAdminPreferences();
   const [, navigate] = useLocation();
-  const { records, error, feedback, retry, clearFeedback, changeStatus, importRows } = useHeadquarters();
-  const [saveFeedback] = useState(() => {
-    const saved = new URLSearchParams(window.location.search).get('saved');
-    return saved === 'added' ? 'Headquarter added successfully.' : saved === 'updated' ? 'Headquarter updated successfully.' : '';
-  });
-  useEffect(() => {
-    if (saveFeedback) window.history.replaceState(window.history.state, '', LIST_PATH);
-  }, [saveFeedback]);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [filter, setFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const { records, total, filtered, loading, pending, error, feedback, clearFeedback, retry, remove, changeStatus } = useServerHeadquarters(search, filter, page, pageSize);
+  const [format, setFormat] = useState('csv');
+  const [exporting, setExporting] = useState(false);
+  const busy = useRef(false);
+  const alive = useRef(true);
+  const controller = useRef(null);
+  const [blocked, setBlocked] = useState(false);
   const [confirming, setConfirming] = useState(null);
-  const [importing, setImporting] = useState(false);
   const [actionError, setActionError] = useState('');
-  const visible = useMemo(() => records.filter((record) => {
-    const query = search.trim().toLocaleLowerCase();
-    return (!query || [record.name, record.stateCode].some((value) => String(value || '').toLocaleLowerCase().includes(query)))
-      && (statusFilter === 'all' || record.status === statusFilter);
-  }), [records, search, statusFilter]);
-  const pagination = useTablePagination(visible);
-
-  function refresh() { retry(); setConfirming(null); setImporting(false); setActionError(''); }
-  function toggle() {
-    const target = confirming.status === 'active' ? 'inactive' : 'active';
-    try {
-      const result = changeStatus(confirming.id, target);
-      if (result.success) { setConfirming(null); setActionError(''); }
-      else setActionError(result.error || 'Status could not be changed. Refresh records and try again.');
-    } catch (cause) { setActionError(cause.message || 'Status could not be changed.'); }
+  const [cardView, setCardView] = useState(() => window.matchMedia('(max-width: 900px)').matches);
+  useEffect(() => {
+    alive.current = true;
+    const media = window.matchMedia('(max-width: 900px)');
+    const sync = () => setCardView(media.matches);
+    media.addEventListener('change', sync);
+    return () => { alive.current = false; controller.current?.abort(); media.removeEventListener('change', sync); };
+  }, []);
+  const pageCount = Math.max(1, Math.ceil(filtered / pageSize));
+  useEffect(() => { if (!loading && !error && page > pageCount) setPage(pageCount); }, [loading, error, page, pageCount]);
+  function requestAction(record, type) {
+    clearFeedback(); setActionError(''); setBlocked(false); setConfirming({ record, type });
+  }
+  async function confirmAction() {
+    const guard = reportingIdentityGuard();
+    const { record, type } = confirming;
+    const result = await (type === 'delete' ? remove(record) : changeStatus(record, type === 'activate' ? 'active' : 'inactive'));
+    try { guard(); } catch { return; }
+    if (!alive.current) return;
+    if (result.success) { setConfirming(null); setActionError(''); }
+    else { setActionError(result.error); setBlocked(result.code === 'headquarter_stale' || Boolean(result.ambiguous) || result.code === 'not_found'); }
   }
   async function exportVisible() {
-    if (error || !visible.length) return;
+    if (error || loading || busy.current) return;
+    busy.current = true; setActionError(''); setExporting(true);
+    const guard = reportingIdentityGuard();
+    controller.current = new AbortController();
     try {
-      if (!same(loadHeadquarters(), records)) {
-        setActionError('Saved headquarters changed in another tab. Refresh records before exporting.');
-        return;
-      }
-      await downloadCSV(exportHeadquarterCSV(visible), 'evexia-headquarters.csv');
-      setActionError('');
-    } catch (cause) { setActionError(cause.message || 'CSV export failed. Please try again.'); }
+      const blob = await exportHeadquarters({ query: search, status: filter }, format, controller.current.signal);
+      guard();
+      if (alive.current) downloadHeadquarterFile(blob, format);
+    } catch (cause) {
+      try { guard(); } catch { return; }
+      if (alive.current) setActionError(`Export failed. ${cause.message}`);
+    } finally { busy.current = false; if (alive.current) setExporting(false); }
   }
-  function actions(record, compact = false) {
-    return <div className={compact ? 'admin-mr-card__actions' : 'admin-table__actions'}>
-      <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} onClick={() => { clearFeedback(); navigate(`${LIST_PATH}/${encodeURIComponent(record.id)}`); }} aria-label={`Edit ${record.name}`} title="Edit" data-testid={`button-edit-headquarter-${record.id}`}><Pencil size={16} aria-hidden="true" />{compact && 'Edit'}</button>
-      <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} onClick={() => { clearFeedback(); setActionError(''); setConfirming(record); }} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} title={record.status === 'active' ? 'Inactivate' : 'Activate'} data-testid={`button-toggle-headquarter-${record.id}`}><CirclePower size={16} aria-hidden="true" />{compact && (record.status === 'active' ? 'Inactivate' : 'Activate')}</button>
-    </div>;
+  function actions(record, mobile = false) {
+    const toggle = record.status === 'active' ? 'Inactivate' : 'Activate';
+    return <fieldset disabled={loading || pending} style={{ border: 0, margin: 0, padding: 0 }} className={mobile ? 'admin-zone-card__actions' : 'admin-table__actions'}>
+      <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} onClick={() => navigate(`${LIST}/${record.id}`)}><Pencil size={16} />{mobile && 'Edit'}</button>
+      <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`${toggle} ${record.name}`} onClick={() => requestAction(record, toggle.toLowerCase())}><CirclePower size={16} />{mobile && toggle}</button>
+      <button type="button" className={mobile ? 'admin-zone-card__action admin-zone-card__action--danger' : 'admin-icon-button admin-icon-button--danger'} aria-label={`Delete ${record.name}`} onClick={() => requestAction(record, 'delete')}><Trash2 size={16} />{mobile && 'Delete'}</button>
+    </fieldset>;
   }
   const columns = [
-    { key: 'serial', label: 'Sr No.', render: (_, index) => index + 1 },
-    { key: 'name', label: 'HQ Name', render: (record) => <strong className="admin-category-name">{record.name}</strong> },
-    { key: 'stateCode', label: 'State Code', render: (record) => <span className="admin-hq-code">{record.stateCode || '—'}</span> },
-    { key: 'status', label: 'Status', render: (record) => <StatusBadge status={record.status} id={record.id} kind="headquarter" /> },
-    { key: 'created', label: 'Created details', render: (record) => audit(record.createdBy, record.createdAt) },
-    { key: 'updated', label: 'Updated details', render: (record) => audit(record.updatedBy, record.updatedAt) },
+    { key: 'serial', label: 'Sr No', render: (_record, index) => index + 1 },
+    { key: 'name', label: 'HQ Name', render: (record) => <strong>{record.name}</strong> },
+    { key: 'state_code', label: 'State Code', render: (record) => record.state_code },
+    { key: 'status', label: 'Status', render: (record) => <StatusBadge status={record.status} id={record.id} /> },
+    { key: 'created', label: 'Created details', render: (record) => details(record.createdBy, record.createdAt) },
+    { key: 'updated', label: 'Updated details', render: (record) => details(record.updatedBy, record.updatedAt) },
     { key: 'actions', label: 'Actions', render: (record) => actions(record) },
   ];
-
+  const actionName = confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'activate' ? 'Activate' : 'Inactivate';
   return <AdminLayout title="Headquarter Master">
-    <div className="admin-page-head">
-      <div><p className="admin-page-head__eyebrow">Masters / Directory</p><h1>Headquarter Master</h1><p className="admin-page-head__description">Manage headquarters, state codes and availability in your local directory.</p></div>
-      <div className="admin-category-head-actions">
-        <button type="button" className="admin-button admin-button--secondary" onClick={refresh} data-testid="button-refresh-headquarters">Refresh records</button>
-        <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error)} onClick={() => { setActionError(''); setImporting(true); }} data-testid="button-import-headquarters"><Upload size={16} aria-hidden="true" /> Import data</button>
-        <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || !visible.length} onClick={exportVisible} data-testid="button-export-headquarters"><Download size={16} aria-hidden="true" /> Export data</button>
-        <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate(`${LIST_PATH}/new`); }} data-testid="button-add-headquarter"><Plus size={16} aria-hidden="true" /> Add headquarter</button>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Directory</p><h1>Headquarter Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Clearing browser data does not remove headquarters.</p></div>
+      <div className="admin-mr-head-actions">
+        <button className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/headquarter')}><Upload size={16} /> Import data</button>
+        <label className="admin-filter">Export format<select aria-label="Headquarter export format" className="admin-select" value={format} disabled={exporting} onChange={(event) => setFormat(event.target.value)}><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option></select></label>
+        <button className="admin-button admin-button--secondary" disabled={loading || Boolean(error) || exporting} onClick={exportVisible}><Download size={16} />{exporting ? 'Exporting…' : 'Export data'}</button>
+        <button className="admin-button" onClick={() => navigate(`${LIST}/new`)}><Plus size={16} /> Add headquarter</button>
       </div>
     </div>
-    {(feedback || saveFeedback) && <div className="admin-feedback" role="status" data-testid="status-headquarter-feedback">{feedback || saveFeedback}</div>}
+    <p className="admin-page-head__description">Old browser records and tab drafts remain untouched and unused. You can explicitly import a legacy CSV backup. Exports include every name/code/status match, up to 5,000 records. State Code is an HQ-name abbreviation, not a geographic state identifier.</p>
+    {feedback && <div className="admin-feedback" role="status">{feedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     <section className="admin-panel" aria-label="Headquarter list">
-      <div className="admin-toolbar"><div className="admin-toolbar__fields">
-        <label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search headquarters</span><input value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Search HQ name or state code" data-testid="input-search-headquarters" /></label>
-        <div className="admin-filter"><label htmlFor="headquarter-status-filter">Status</label><select id="headquarter-status-filter" className="admin-select" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); pagination.resetPage(); }} data-testid="select-filter-headquarter-status"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+      <div className="admin-toolbar"><button className="admin-button admin-button--secondary" disabled={loading} onClick={retry}>Refresh records</button><div className="admin-toolbar__fields">
+        <label className="admin-search"><Search size={16} /><span className="sr-only">Search headquarters by name or code</span><input maxLength={200} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search by HQ name or code" /></label>
+        <div className="admin-filter"><label htmlFor="hq-filter">Status</label><select id="hq-filter" className="admin-select" value={filter} onChange={(event) => { setFilter(event.target.value); setPage(1); }}><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
       </div></div>
-      {error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><FolderOpen size={21} aria-hidden="true" /></span><strong>Headquarters could not be loaded</strong><p>{error}</p><button type="button" className="admin-button" onClick={refresh} style={{ marginTop: 16 }} data-testid="button-retry-headquarters">Refresh records</button></div> : <>
-        {visible.length ? <>
-          <div className="admin-hq-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} label="Headquarter records" testIdPrefix="headquarter" /></div>
-          <div className="admin-hq-mobile" role="list" aria-label="Headquarter records">{pagination.pageRows.map((record, index) => <article className="admin-mr-card" role="listitem" key={record.id} data-testid={`card-headquarter-${record.id}`}>
-            <div className="admin-mr-card__head"><div className="admin-mr-card__identity"><span className="admin-mr-card__subtitle">#{pagination.startIndex + index + 1} · Headquarter</span><h2 className="admin-mr-card__name">{record.name}</h2></div><StatusBadge status={record.status} id={record.id} kind="headquarter" /></div>
-            <dl className="admin-mr-card__meta"><div><dt>State Code</dt><dd className="admin-hq-code">{record.stateCode || '—'}</dd></div><div><dt>Created details</dt><dd>{audit(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated details</dt><dd>{audit(record.updatedBy, record.updatedAt)}</dd></div></dl>
-            {actions(record, true)}
-          </article>)}</div>
-        </> : <div className="admin-empty" data-testid="status-headquarter-empty"><span className="admin-empty__icon"><FolderOpen size={21} aria-hidden="true" /></span><strong>{records.length ? 'No matching headquarters' : 'No headquarters yet'}</strong><p>{records.length ? 'Try another search or status filter.' : 'Add a headquarter to start your directory.'}</p></div>}
-        <TablePagination {...pagination} filtered={visible.length} total={records.length} label={visible.length === 1 ? 'headquarter' : 'headquarters'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-headquarter-count" />
+      {loading ? <p className="admin-empty" role="status">Loading shared headquarters…</p> : error ? <div className="admin-empty" role="alert"><strong>Headquarters could not be loaded</strong><p>{error}</p><button className="admin-button" onClick={retry}>Try again</button></div> : <>
+        {records.length ? cardView ? <div className="admin-zone-cards" role="list" aria-label="Headquarter records">{records.map((record, index) => <article className="admin-zone-card" role="listitem" key={record.id}>
+          <div className="admin-zone-card__heading"><div className="admin-zone-card__title"><span className="admin-zone-card__serial">#{(page - 1) * pageSize + index + 1}</span><h2>{record.name}</h2></div><StatusBadge status={record.status} id={record.id} /></div>
+          <p>State Code: <strong>{record.state_code}</strong></p><dl className="admin-zone-card__meta"><div><dt>Created</dt><dd>{details(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated</dt><dd>{details(record.updatedBy, record.updatedAt)}</dd></div></dl>{actions(record, true)}
+        </article>)}</div> : <DataTable columns={columns} rows={records} rowOffset={(page - 1) * pageSize} rowKey={(record) => record.id} /> : <div className="admin-empty"><strong>{total ? 'No matching headquarters' : 'No headquarters yet'}</strong><p>{total ? 'Try another name, code or status filter.' : 'Add your first shared headquarter.'}</p></div>}
+        <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={filtered} total={total} label="headquarters" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} testId="text-headquarter-count" />
       </>}
     </section>
-    {confirming && <ConfirmationDialog title={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} headquarter?`} description={`Change “${confirming.name}” to ${confirming.status === 'active' ? 'inactive' : 'active'}? Its saved details will remain available in this browser.`} actionLabel={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} headquarter`} onConfirm={toggle} onClose={() => { setConfirming(null); setActionError(''); }} error={actionError} />}
-    {importing && <HeadquarterImportDialog records={records} onImport={importRows} onClose={() => setImporting(false)} />}
+    {confirming && <ConfirmationDialog pending={pending} blocked={blocked} title={`${actionName} headquarter?`} description={`Are you sure you want to ${actionName.toLowerCase()} “${confirming.record.name}”?${confirming.type === 'delete' ? ' It disappears from ordinary lists and exports. Server deletion history is retained; no restore is available here.' : ''}`} actionLabel={`${actionName} headquarter`} destructive={confirming.type === 'delete'} onConfirm={confirmAction} onClose={() => { setConfirming(null); retry(); }} error={actionError} />}
   </AdminLayout>;
 }

@@ -31,6 +31,7 @@ password input; there is no default elevated account.
 | Courier Partner list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
 | Storage Location list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
 | Designation list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; Zone staff grants do not apply | no |
+| Headquarter list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; Zone staff grants and business labels do not apply | no |
 | Upload, metadata, verified download, download grant | system-wide | own MR or currently assigned active patient |
 | Delete, replace, retry verification/cleanup | yes | no |
 
@@ -87,6 +88,15 @@ acceptance. No local data or staff labels are migrated; see
 `docs/designation-master.md` for exact ten/fourteen-column schemas and bounds.
 
 ## File API and validation
+
+Headquarter Master is a separate name/code/status catalogue with live-name
+uniqueness, User/UTC audit metadata, expected versions and retained deletion
+evidence. Code defaults abbreviate the HQ name, never geographic lookup;
+manual overrides and saved edit codes persist. Identity/session-bound
+create-only atomic CSV/XLSX transfers ignore incoming audit attribution and
+require durable download acceptance. Legacy local records/drafts are untouched
+and unused. See `docs/headquarter-master.md` for deterministic Unicode generation,
+transfer schemas, resource bounds and approved-operator-only rollout.
 
 Only `profile` and `documents`; only JPEG (`jpg`/`jpeg`), PNG, and PDF.
 Profile permits images only. Uploads use a raw streamed request body, explicit

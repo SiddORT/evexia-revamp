@@ -8,6 +8,8 @@ import { downloadReportingCSV } from '../../services/reportingCSV.js';
 import '../../activityLogs.css';
 
 const browserActions = {
+  headquarter_create: 'Headquarter created', headquarter_edit: 'Headquarter updated',
+  headquarter_status: 'Headquarter status changed', headquarter_delete: 'Headquarter deleted',
   designation_create: 'Designation created', designation_edit: 'Designation updated',
   designation_status: 'Designation status changed', designation_delete: 'Designation deleted',
   courier_create: 'Courier partner created', courier_edit: 'Courier partner updated',

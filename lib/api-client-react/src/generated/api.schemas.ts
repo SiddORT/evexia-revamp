@@ -554,6 +554,113 @@ export interface FileResponse {
   version: number;
 }
 
+export type HeadquarterEditStatus =
+  (typeof HeadquarterEditStatus)[keyof typeof HeadquarterEditStatus];
+
+export const HeadquarterEditStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface HeadquarterEdit {
+  /** @minimum 1 */
+  expected_version: number;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  state_code?: string | null;
+  status: HeadquarterEditStatus;
+}
+
+export type HeadquarterFieldsStatus =
+  (typeof HeadquarterFieldsStatus)[keyof typeof HeadquarterFieldsStatus];
+
+export const HeadquarterFieldsStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface HeadquarterFields {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  state_code?: string | null;
+  status: HeadquarterFieldsStatus;
+}
+
+export interface HeadquarterImportResult {
+  imported: number;
+}
+
+export interface HeadquarterImportRow {
+  errors: string[];
+  name: string;
+  row: number;
+  state_code: string;
+  status: string;
+}
+
+export type HeadquarterResponseStatus =
+  (typeof HeadquarterResponseStatus)[keyof typeof HeadquarterResponseStatus];
+
+export const HeadquarterResponseStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface HeadquarterResponse {
+  createdAt: string;
+  createdBy: string;
+  id: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  state_code: string;
+  status: HeadquarterResponseStatus;
+  updatedAt: string;
+  updatedBy: string;
+  version: number;
+}
+
+export interface HeadquarterPage {
+  filtered: number;
+  items: HeadquarterResponse[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export interface HeadquarterReview {
+  digest: string;
+  rows: HeadquarterImportRow[];
+  valid: boolean;
+}
+
+export type HeadquarterStatusStatus =
+  (typeof HeadquarterStatusStatus)[keyof typeof HeadquarterStatusStatus];
+
+export const HeadquarterStatusStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface HeadquarterStatus {
+  /** @minimum 1 */
+  expected_version: number;
+  status: HeadquarterStatusStatus;
+}
+
+export interface HeadquarterVersion {
+  /** @minimum 1 */
+  expected_version: number;
+}
+
 export const HealthStatusValue = {
   status: "ok",
 } as const;
@@ -1395,6 +1502,100 @@ export type DownloadDesignationSampleFormat =
   (typeof DownloadDesignationSampleFormat)[keyof typeof DownloadDesignationSampleFormat];
 
 export const DownloadDesignationSampleFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type ListHeadquartersParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ListHeadquartersStatus;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
+export type ListHeadquartersStatus =
+  (typeof ListHeadquartersStatus)[keyof typeof ListHeadquartersStatus];
+
+export const ListHeadquartersStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportHeadquartersParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ExportHeadquartersStatus;
+  format?: ExportHeadquartersFormat;
+};
+
+export type ExportHeadquartersStatus =
+  (typeof ExportHeadquartersStatus)[keyof typeof ExportHeadquartersStatus];
+
+export const ExportHeadquartersStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportHeadquartersFormat =
+  (typeof ExportHeadquartersFormat)[keyof typeof ExportHeadquartersFormat];
+
+export const ExportHeadquartersFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type CommitHeadquarterImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+  /**
+   * @pattern ^[0-9a-f]{64}$
+   */
+  digest: string;
+  confirm: boolean;
+};
+
+export type CommitHeadquarterImportBody = {
+  file: Blob | File;
+};
+
+export type ReviewHeadquarterImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+};
+
+export type ReviewHeadquarterImportBody = {
+  file: Blob | File;
+};
+
+export type DownloadHeadquarterSampleParams = {
+  format?: DownloadHeadquarterSampleFormat;
+};
+
+export type DownloadHeadquarterSampleFormat =
+  (typeof DownloadHeadquarterSampleFormat)[keyof typeof DownloadHeadquarterSampleFormat];
+
+export const DownloadHeadquarterSampleFormat = {
   csv: "csv",
   xlsx: "xlsx",
 } as const;

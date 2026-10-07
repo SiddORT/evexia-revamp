@@ -1,5 +1,7 @@
 """Explicit UI label aliases for safe activity reporting search."""
 BROWSER_ACTIONS = {
+    "headquarter_create": "Headquarter created", "headquarter_edit": "Headquarter updated",
+    "headquarter_status": "Headquarter status changed", "headquarter_delete": "Headquarter deleted",
     "designation_create": "Designation created", "designation_edit": "Designation updated",
     "designation_status": "Designation status changed", "designation_delete": "Designation deleted",
     "role_create": "Role created", "role_update": "Role updated", "role_delete": "Role deleted",

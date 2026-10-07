@@ -187,3 +187,4 @@ from app.db import courier_models as _courier_models  # noqa: E402,F401
 from app.db import location_models as _location_models  # noqa: E402,F401
 from app.db import download_models as _download_models  # noqa: E402,F401
 from app.db import designation_models as _designation_models  # noqa: E402,F401
+from app.db import headquarter_models as _headquarter_models  # noqa: E402,F401

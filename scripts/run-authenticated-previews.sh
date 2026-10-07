@@ -135,6 +135,7 @@ else
   SPECS="artifacts/evexia-portal/tests/entry-theme.preview.spec.mjs artifacts/evexia-portal/tests/settings-layout.preview.spec.mjs artifacts/evexia-portal/tests/template-preferences.preview.spec.mjs artifacts/evexia-portal/tests/communication.preview.spec.mjs artifacts/evexia-portal/tests/message-templates.preview.spec.mjs artifacts/evexia-portal/tests/admin-auth.preview.spec.mjs artifacts/evexia-portal/tests/roles-permissions.preview.spec.mjs artifacts/evexia-portal/tests/activity-logs.preview.spec.mjs artifacts/evexia-portal/tests/staff-backend.preview.spec.mjs artifacts/evexia-portal/tests/zones-backend.preview.spec.mjs artifacts/evexia-portal/tests/couriers-backend.preview.spec.mjs artifacts/evexia-portal/tests/locations-backend.preview.spec.mjs artifacts/evexia-portal/tests/designations-backend.preview.spec.mjs artifacts/evexia-portal/tests/courier-transfers.preview.spec.mjs"
 fi
 if [ "$#" -eq 0 ]; then
+  SPECS="$SPECS artifacts/evexia-portal/tests/headquarters-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/download-logs.preview.spec.mjs artifacts/evexia-portal/tests/staff-permissions.preview.spec.mjs"
 fi
 echo "Running authenticated browser previews against an isolated synthetic PostgreSQL/API fixture (API $API_PORT, portal $PORT)."

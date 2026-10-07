@@ -1,6 +1,6 @@
 # EVEXIA Portal
 
-EVEXIA Life Sciences portal with a protected Admin workspace, mock MR/Doctor login screens, browser-local demonstration masters, and a FastAPI authentication/API service. Admin authentication, Staff Management, Roles, Zone Master, Courier Partner Master, Storage Location Master and Designation Master use the backend; unrelated masters remain browser-local.
+EVEXIA Life Sciences portal with a protected Admin workspace, mock MR/Doctor login screens, browser-local demonstration masters, and a FastAPI authentication/API service. Admin authentication, Staff Management, Roles, Zone Master, Courier Partner Master, Storage Location Master, Designation Master and Headquarter Master use the backend; unrelated masters remain browser-local.
 
 ## Run & operate
 
@@ -10,6 +10,8 @@ EVEXIA Life Sciences portal with a protected Admin workspace, mock MR/Doctor log
 - The managed `artifacts/api-server: API Server` workflow runs FastAPI directly with Python on `/api` (no Node.js or pnpm in the API artifact). The portal calls same-origin `/api/v1/auth` routes through its API proxy. API code and operational notes are in `artifacts/api-server/backend/README.md`. Database changes use Alembic migrations; do not create tables at startup.
 
 ## Stack and scope
+
+- Headquarter Master is protected singleton-only shared persistence. Migration `0017_headquarters` creates an empty catalogue; names are live-unique, codes are editable HQ-name abbreviations (not geographic codes), mutations are versioned and deletion retains audit evidence. CSV/XLSX transfer supports legacy/current schemas, 2 MiB/1,000-row imports and 5,000-match exports with mandatory download acceptance. Local records/drafts remain untouched and unused. See `docs/headquarter-master.md`.
 
 - React with JavaScript/JSX, Vite, Wouter, and CSS. Keep the web artifact free of TypeScript files.
 - Routes: `/` (portal selection); `/admin/login` (backend-authenticated workspace login); `/mr` and `/doctor` (mock login); `/admin` and `/admin/*` (protected workspace).

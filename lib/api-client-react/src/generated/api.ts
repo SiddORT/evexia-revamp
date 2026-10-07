@@ -24,6 +24,8 @@ import type {
   CommitCourierImportParams,
   CommitDesignationImportBody,
   CommitDesignationImportParams,
+  CommitHeadquarterImportBody,
+  CommitHeadquarterImportParams,
   CommitLocationImportBody,
   CommitLocationImportParams,
   CommitZoneImportParams,
@@ -48,6 +50,7 @@ import type {
   DesignationVersion,
   DownloadDesignationSampleParams,
   DownloadEvidence,
+  DownloadHeadquarterSampleParams,
   DownloadInitiation,
   DownloadPage,
   DownloadURLResponse,
@@ -55,17 +58,27 @@ import type {
   EventPage,
   ExportCourierPartnersParams,
   ExportDesignationsParams,
+  ExportHeadquartersParams,
   ExportReportingEventsParams,
   ExportReportingSessionsParams,
   ExportStorageLocationsParams,
   ExportZonesParams,
   FileResponse,
+  HeadquarterEdit,
+  HeadquarterFields,
+  HeadquarterImportResult,
+  HeadquarterPage,
+  HeadquarterResponse,
+  HeadquarterReview,
+  HeadquarterStatus,
+  HeadquarterVersion,
   HealthStatus,
   ListCourierPartnersParams,
   ListCustomRolesParams,
   ListDeletedZonesParams,
   ListDesignationsParams,
   ListDownloadLogsParams,
+  ListHeadquartersParams,
   ListOwnSessionsParams,
   ListReportingEventsParams,
   ListReportingSessionsParams,
@@ -92,6 +105,8 @@ import type {
   ReviewCourierImportParams,
   ReviewDesignationImportBody,
   ReviewDesignationImportParams,
+  ReviewHeadquarterImportBody,
+  ReviewHeadquarterImportParams,
   ReviewLocationImportBody,
   ReviewLocationImportParams,
   ReviewZoneImportParams,
@@ -2309,6 +2324,1100 @@ export const useSetDesignationStatus = <
   TContext
 > => {
   return useMutation(getSetDesignationStatusMutationOptions(options));
+};
+
+export const getListHeadquartersUrl = (params?: ListHeadquartersParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/headquarters?${stringifiedParams}`
+    : `/api/v1/admin/headquarters`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listHeadquarters = async (
+  params?: ListHeadquartersParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<HeadquarterPage> => {
+  return customFetch<HeadquarterPage>(getListHeadquartersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListHeadquartersQueryKey = (
+  params?: ListHeadquartersParams,
+) => {
+  return [`/api/v1/admin/headquarters`, ...(params ? [params] : [])] as const;
+};
+
+export const getListHeadquartersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listHeadquarters>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListHeadquartersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listHeadquarters>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListHeadquartersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listHeadquarters>>
+  > = ({ signal }) => listHeadquarters(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listHeadquarters>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListHeadquartersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listHeadquarters>>
+>;
+export type ListHeadquartersQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListHeadquarters<
+  TData = Awaited<ReturnType<typeof listHeadquarters>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListHeadquartersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listHeadquarters>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListHeadquartersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateHeadquarterUrl = () => {
+  return `/api/v1/admin/headquarters`;
+};
+
+/**
+ * @summary Create
+ */
+export const createHeadquarter = async (
+  headquarterFields: HeadquarterFields,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<HeadquarterResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<HeadquarterResponse>(getCreateHeadquarterUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(headquarterFields),
+  });
+};
+
+export const getCreateHeadquarterMutationKey = () =>
+  ["createHeadquarter"] as const;
+
+export const getCreateHeadquarterMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createHeadquarter>>,
+    TError,
+    CreateHeadquarterMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createHeadquarter>>,
+  TError,
+  CreateHeadquarterMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateHeadquarterMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createHeadquarter>>,
+    CreateHeadquarterMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createHeadquarter(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateHeadquarterMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createHeadquarter>>
+>;
+export type CreateHeadquarterMutationBody = BodyType<HeadquarterFields>;
+export type CreateHeadquarterMutationError = ErrorType<ErrorEnvelope>;
+export type CreateHeadquarterMutationVariables = {
+  data: BodyType<HeadquarterFields>;
+};
+
+/**
+ * @summary Create
+ */
+export const useCreateHeadquarter = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createHeadquarter>>,
+    TError,
+    CreateHeadquarterMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createHeadquarter>>,
+  TError,
+  CreateHeadquarterMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateHeadquarterMutationOptions(options));
+};
+
+export const getExportHeadquartersUrl = (params?: ExportHeadquartersParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/headquarters/export?${stringifiedParams}`
+    : `/api/v1/admin/headquarters/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportHeadquarters = async (
+  params?: ExportHeadquartersParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getExportHeadquartersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportHeadquartersQueryKey = (
+  params?: ExportHeadquartersParams,
+) => {
+  return [
+    `/api/v1/admin/headquarters/export`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getExportHeadquartersQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportHeadquarters>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportHeadquartersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportHeadquarters>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getExportHeadquartersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exportHeadquarters>>
+  > = ({ signal }) => exportHeadquarters(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportHeadquarters>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportHeadquartersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportHeadquarters>>
+>;
+export type ExportHeadquartersQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportHeadquarters<
+  TData = Awaited<ReturnType<typeof exportHeadquarters>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportHeadquartersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportHeadquarters>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportHeadquartersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCommitHeadquarterImportUrl = (
+  params: CommitHeadquarterImportParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/headquarters/import/commit?${stringifiedParams}`
+    : `/api/v1/admin/headquarters/import/commit`;
+};
+
+/**
+ * @summary Commit
+ */
+export const commitHeadquarterImport = async (
+  commitHeadquarterImportBody: CommitHeadquarterImportBody,
+  params: CommitHeadquarterImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<HeadquarterImportResult> => {
+  const formData = new FormData();
+  formData.append(`file`, commitHeadquarterImportBody.file);
+
+  return customFetch<HeadquarterImportResult>(
+    getCommitHeadquarterImportUrl(params),
+    {
+      ...options,
+      method: "POST",
+      body: formData,
+    },
+  );
+};
+
+export const getCommitHeadquarterImportMutationKey = () =>
+  ["commitHeadquarterImport"] as const;
+
+export const getCommitHeadquarterImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitHeadquarterImport>>,
+    TError,
+    CommitHeadquarterImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof commitHeadquarterImport>>,
+  TError,
+  CommitHeadquarterImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCommitHeadquarterImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof commitHeadquarterImport>>,
+    CommitHeadquarterImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return commitHeadquarterImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CommitHeadquarterImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof commitHeadquarterImport>>
+>;
+export type CommitHeadquarterImportMutationBody =
+  BodyType<CommitHeadquarterImportBody>;
+export type CommitHeadquarterImportMutationError = ErrorType<ErrorEnvelope>;
+export type CommitHeadquarterImportMutationVariables = {
+  data: BodyType<CommitHeadquarterImportBody>;
+  params: CommitHeadquarterImportParams;
+};
+
+/**
+ * @summary Commit
+ */
+export const useCommitHeadquarterImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitHeadquarterImport>>,
+    TError,
+    CommitHeadquarterImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof commitHeadquarterImport>>,
+  TError,
+  CommitHeadquarterImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getCommitHeadquarterImportMutationOptions(options));
+};
+
+export const getReviewHeadquarterImportUrl = (
+  params: ReviewHeadquarterImportParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/headquarters/import/review?${stringifiedParams}`
+    : `/api/v1/admin/headquarters/import/review`;
+};
+
+/**
+ * @summary Review
+ */
+export const reviewHeadquarterImport = async (
+  reviewHeadquarterImportBody: ReviewHeadquarterImportBody,
+  params: ReviewHeadquarterImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<HeadquarterReview> => {
+  const formData = new FormData();
+  formData.append(`file`, reviewHeadquarterImportBody.file);
+
+  return customFetch<HeadquarterReview>(getReviewHeadquarterImportUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getReviewHeadquarterImportMutationKey = () =>
+  ["reviewHeadquarterImport"] as const;
+
+export const getReviewHeadquarterImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewHeadquarterImport>>,
+    TError,
+    ReviewHeadquarterImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewHeadquarterImport>>,
+  TError,
+  ReviewHeadquarterImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReviewHeadquarterImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewHeadquarterImport>>,
+    ReviewHeadquarterImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return reviewHeadquarterImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewHeadquarterImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewHeadquarterImport>>
+>;
+export type ReviewHeadquarterImportMutationBody =
+  BodyType<ReviewHeadquarterImportBody>;
+export type ReviewHeadquarterImportMutationError = ErrorType<ErrorEnvelope>;
+export type ReviewHeadquarterImportMutationVariables = {
+  data: BodyType<ReviewHeadquarterImportBody>;
+  params: ReviewHeadquarterImportParams;
+};
+
+/**
+ * @summary Review
+ */
+export const useReviewHeadquarterImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewHeadquarterImport>>,
+    TError,
+    ReviewHeadquarterImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewHeadquarterImport>>,
+  TError,
+  ReviewHeadquarterImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getReviewHeadquarterImportMutationOptions(options));
+};
+
+export const getDownloadHeadquarterSampleUrl = (
+  params?: DownloadHeadquarterSampleParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/headquarters/sample?${stringifiedParams}`
+    : `/api/v1/admin/headquarters/sample`;
+};
+
+/**
+ * @summary Sample
+ */
+export const downloadHeadquarterSample = async (
+  params?: DownloadHeadquarterSampleParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getDownloadHeadquarterSampleUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getDownloadHeadquarterSampleQueryKey = (
+  params?: DownloadHeadquarterSampleParams,
+) => {
+  return [
+    `/api/v1/admin/headquarters/sample`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getDownloadHeadquarterSampleQueryOptions = <
+  TData = Awaited<ReturnType<typeof downloadHeadquarterSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadHeadquarterSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadHeadquarterSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getDownloadHeadquarterSampleQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof downloadHeadquarterSample>>
+  > = ({ signal }) =>
+    downloadHeadquarterSample(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof downloadHeadquarterSample>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type DownloadHeadquarterSampleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof downloadHeadquarterSample>>
+>;
+export type DownloadHeadquarterSampleQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Sample
+ */
+
+export function useDownloadHeadquarterSample<
+  TData = Awaited<ReturnType<typeof downloadHeadquarterSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadHeadquarterSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadHeadquarterSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getDownloadHeadquarterSampleQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetHeadquarterUrl = (headquarterId: string) => {
+  return `/api/v1/admin/headquarters/${headquarterId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getHeadquarter = async (
+  headquarterId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<HeadquarterResponse> => {
+  return customFetch<HeadquarterResponse>(getGetHeadquarterUrl(headquarterId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetHeadquarterQueryKey = (headquarterId: string) => {
+  return [`/api/v1/admin/headquarters/${headquarterId}`] as const;
+};
+
+export const getGetHeadquarterQueryOptions = <
+  TData = Awaited<ReturnType<typeof getHeadquarter>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  headquarterId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getHeadquarter>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetHeadquarterQueryKey(headquarterId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getHeadquarter>>> = ({
+    signal,
+  }) => getHeadquarter(headquarterId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: headquarterId !== null && headquarterId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getHeadquarter>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetHeadquarterQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getHeadquarter>>
+>;
+export type GetHeadquarterQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetHeadquarter<
+  TData = Awaited<ReturnType<typeof getHeadquarter>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  headquarterId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getHeadquarter>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetHeadquarterQueryOptions(headquarterId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDeleteHeadquarterUrl = (headquarterId: string) => {
+  return `/api/v1/admin/headquarters/${headquarterId}/delete`;
+};
+
+/**
+ * @summary Delete
+ */
+export const deleteHeadquarter = async (
+  headquarterId: string,
+  headquarterVersion: HeadquarterVersion,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<HeadquarterResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<HeadquarterResponse>(
+    getDeleteHeadquarterUrl(headquarterId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(headquarterVersion),
+    },
+  );
+};
+
+export const getDeleteHeadquarterMutationKey = () =>
+  ["deleteHeadquarter"] as const;
+
+export const getDeleteHeadquarterMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteHeadquarter>>,
+    TError,
+    DeleteHeadquarterMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteHeadquarter>>,
+  TError,
+  DeleteHeadquarterMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteHeadquarterMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteHeadquarter>>,
+    DeleteHeadquarterMutationVariables
+  > = (props) => {
+    const { headquarterId, data } = props ?? {};
+
+    return deleteHeadquarter(headquarterId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteHeadquarterMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteHeadquarter>>
+>;
+export type DeleteHeadquarterMutationBody = BodyType<HeadquarterVersion>;
+export type DeleteHeadquarterMutationError = ErrorType<ErrorEnvelope>;
+export type DeleteHeadquarterMutationVariables = {
+  headquarterId: string;
+  data: BodyType<HeadquarterVersion>;
+};
+
+/**
+ * @summary Delete
+ */
+export const useDeleteHeadquarter = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteHeadquarter>>,
+    TError,
+    DeleteHeadquarterMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteHeadquarter>>,
+  TError,
+  DeleteHeadquarterMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteHeadquarterMutationOptions(options));
+};
+
+export const getEditHeadquarterUrl = (headquarterId: string) => {
+  return `/api/v1/admin/headquarters/${headquarterId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editHeadquarter = async (
+  headquarterId: string,
+  headquarterEdit: HeadquarterEdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<HeadquarterResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<HeadquarterResponse>(
+    getEditHeadquarterUrl(headquarterId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(headquarterEdit),
+    },
+  );
+};
+
+export const getEditHeadquarterMutationKey = () => ["editHeadquarter"] as const;
+
+export const getEditHeadquarterMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editHeadquarter>>,
+    TError,
+    EditHeadquarterMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editHeadquarter>>,
+  TError,
+  EditHeadquarterMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditHeadquarterMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editHeadquarter>>,
+    EditHeadquarterMutationVariables
+  > = (props) => {
+    const { headquarterId, data } = props ?? {};
+
+    return editHeadquarter(headquarterId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditHeadquarterMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editHeadquarter>>
+>;
+export type EditHeadquarterMutationBody = BodyType<HeadquarterEdit>;
+export type EditHeadquarterMutationError = ErrorType<ErrorEnvelope>;
+export type EditHeadquarterMutationVariables = {
+  headquarterId: string;
+  data: BodyType<HeadquarterEdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditHeadquarter = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editHeadquarter>>,
+    TError,
+    EditHeadquarterMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editHeadquarter>>,
+  TError,
+  EditHeadquarterMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditHeadquarterMutationOptions(options));
+};
+
+export const getSetHeadquarterStatusUrl = (headquarterId: string) => {
+  return `/api/v1/admin/headquarters/${headquarterId}/status`;
+};
+
+/**
+ * @summary Status
+ */
+export const setHeadquarterStatus = async (
+  headquarterId: string,
+  headquarterStatus: HeadquarterStatus,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<HeadquarterResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<HeadquarterResponse>(
+    getSetHeadquarterStatusUrl(headquarterId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(headquarterStatus),
+    },
+  );
+};
+
+export const getSetHeadquarterStatusMutationKey = () =>
+  ["setHeadquarterStatus"] as const;
+
+export const getSetHeadquarterStatusMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setHeadquarterStatus>>,
+    TError,
+    SetHeadquarterStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setHeadquarterStatus>>,
+  TError,
+  SetHeadquarterStatusMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSetHeadquarterStatusMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setHeadquarterStatus>>,
+    SetHeadquarterStatusMutationVariables
+  > = (props) => {
+    const { headquarterId, data } = props ?? {};
+
+    return setHeadquarterStatus(headquarterId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetHeadquarterStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setHeadquarterStatus>>
+>;
+export type SetHeadquarterStatusMutationBody = BodyType<HeadquarterStatus>;
+export type SetHeadquarterStatusMutationError = ErrorType<ErrorEnvelope>;
+export type SetHeadquarterStatusMutationVariables = {
+  headquarterId: string;
+  data: BodyType<HeadquarterStatus>;
+};
+
+/**
+ * @summary Status
+ */
+export const useSetHeadquarterStatus = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setHeadquarterStatus>>,
+    TError,
+    SetHeadquarterStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setHeadquarterStatus>>,
+  TError,
+  SetHeadquarterStatusMutationVariables,
+  TContext
+> => {
+  return useMutation(getSetHeadquarterStatusMutationOptions(options));
 };
 
 export const getRecordBrowserActivityUrl = () => {
