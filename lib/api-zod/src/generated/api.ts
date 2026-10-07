@@ -1077,6 +1077,65 @@ export const ReviewZoneImportResponse = zod.object({
 });
 
 /**
+ * @summary Trash
+ */
+export const listDeletedZonesQueryQueryDefault = ``;
+export const listDeletedZonesQueryQueryMax = 200;
+
+export const listDeletedZonesQueryStatusDefault = `all`;
+export const listDeletedZonesQueryLimitDefault = 10;
+export const listDeletedZonesQueryLimitMax = 100;
+
+export const listDeletedZonesQueryOffsetDefault = 0;
+export const listDeletedZonesQueryOffsetMin = 0;
+export const listDeletedZonesQueryOffsetMax = 1000000;
+
+export const ListDeletedZonesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listDeletedZonesQueryQueryMax)
+    .default(listDeletedZonesQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(listDeletedZonesQueryStatusDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listDeletedZonesQueryLimitMax)
+    .default(listDeletedZonesQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listDeletedZonesQueryOffsetMin)
+    .max(listDeletedZonesQueryOffsetMax)
+    .default(listDeletedZonesQueryOffsetDefault),
+});
+
+export const listDeletedZonesResponseItemsItemNameMax = 200;
+
+export const ListDeletedZonesResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      deletedAt: zod.coerce.date(),
+      deletedBy: zod.string(),
+      id: zod.string().uuid(),
+      name: zod.string().min(1).max(listDeletedZonesResponseItemsItemNameMax),
+      status: zod.enum(["active", "inactive"]),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
  * @summary Detail
  */
 export const GetZoneParams = zod.object({
@@ -1142,6 +1201,30 @@ export const EditZoneResponse = zod.object({
   createdBy: zod.string(),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(editZoneResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Restore
+ */
+export const RestoreZoneParams = zod.object({
+  zone_id: zod.coerce.string().uuid(),
+});
+
+export const RestoreZoneBody = zod.object({
+  expected_version: zod.number().int().min(1),
+});
+
+export const restoreZoneResponseNameMax = 200;
+
+export const RestoreZoneResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(restoreZoneResponseNameMax),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),

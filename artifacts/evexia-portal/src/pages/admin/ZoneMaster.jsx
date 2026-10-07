@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { CirclePower, Download, Pencil, Plus, Search, Trash2, MapPinned, Upload } from 'lucide-react';
+import { CirclePower, Download, Pencil, Plus, Search, Trash2, MapPinned, Upload, RotateCcw } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
@@ -23,7 +23,8 @@ export default function ZoneMaster() {
   const [filter, setFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const { zones, total, filtered, loading, pending, error, feedback, clearFeedback, retry, add, edit, remove, changeStatus } = useZones(search, filter, page, pageSize);
+  const [deleted, setDeleted] = useState(false);
+  const { zones, total, filtered, loading, pending, error, feedback, clearFeedback, retry, add, edit, remove, restore, changeStatus } = useZones(search, filter, page, pageSize, deleted);
   const [exportFormat, setExportFormat] = useState('csv');
   const [exporting, setExporting] = useState(false);
   const [blocked, setBlocked] = useState(false);
@@ -51,7 +52,7 @@ export default function ZoneMaster() {
 
   async function confirmAction() {
     const { zone, type } = confirming;
-    const result = await (type === 'delete' ? remove(zone) : changeStatus(zone, type === 'activate' ? 'active' : 'inactive'));
+    const result = await (type === 'restore' ? restore(zone) : type === 'delete' ? remove(zone) : changeStatus(zone, type === 'activate' ? 'active' : 'inactive'));
     if (result.success) { setConfirming(null); setActionError(''); }
     else { setActionError(result.error + (result.code === 'zone_stale' || result.ambiguous ? ' Cancel and refresh the table before confirming again.' : '')); setBlocked(result.code === 'zone_stale' || Boolean(result.ambiguous)); }
   }
@@ -78,6 +79,10 @@ export default function ZoneMaster() {
   }
 
   function renderActions(zone, mobile = false) {
+    if (deleted) return <button type="button" className="admin-button admin-button--secondary" disabled={loading || pending}
+      aria-label={`Restore ${zone.name}`} onClick={() => requestAction(zone, 'restore')} data-testid={`button-restore-zone-${zone.id}`}>
+      <RotateCcw size={16} aria-hidden="true" />Restore
+    </button>;
     const toggleLabel = zone.status === 'active' ? 'Inactivate' : 'Activate';
     return <fieldset disabled={loading || pending} style={{ border: 0, padding: 0, margin: 0 }} className={mobile ? 'admin-zone-card__actions' : 'admin-table__actions'}>
       <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`Edit ${zone.name}`} title="Edit" onClick={() => { clearFeedback(); setEditing(zone); }} data-testid={`button-edit-zone-${zone.id}`}>
@@ -98,24 +103,34 @@ export default function ZoneMaster() {
     { key: 'status', label: 'Status', render: (zone) => <StatusBadge status={zone.status} id={zone.id} /> },
     { key: 'created', label: 'Created details', render: (zone) => details(zone.createdBy, zone.createdAt) },
     { key: 'updated', label: 'Updated details', render: (zone) => details(zone.updatedBy, zone.updatedAt) },
+    ...(deleted ? [{ key: 'deleted', label: 'Deleted details', render: (zone) => details(zone.deletedBy, zone.deletedAt) }] : []),
     { key: 'actions', label: 'Actions', render: (zone) => renderActions(zone) },
   ];
 
-  const actionName = confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'activate' ? 'Activate' : 'Inactivate';
+  const actionName = confirming?.type === 'restore' ? 'Restore' : confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'activate' ? 'Activate' : 'Inactivate';
 
   return (
     <AdminLayout title="Zone Master">
       <div className="admin-page-head">
         <div><p className="admin-page-head__eyebrow">Masters / Geography</p><h1>Zone Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Browser data clearing does not remove these zones.</p></div>
-          <div className="admin-mr-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/zone')} data-testid="button-import-zones"><Upload size={16} aria-hidden="true" /> Import data</button>
+          {!deleted && <div className="admin-mr-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/zone')} data-testid="button-import-zones"><Upload size={16} aria-hidden="true" /> Import data</button>
           <select aria-label="Zone export format" className="admin-select" value={exportFormat} onChange={(event) => setExportFormat(event.target.value)}><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option></select>
           <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading || exporting} onClick={exportVisible} data-testid="button-export-zones"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
-         <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); setEditing('new'); }} data-testid="button-add-zone"><Plus size={16} aria-hidden="true" /> Add zone</button></div>
+         <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); setEditing('new'); }} data-testid="button-add-zone"><Plus size={16} aria-hidden="true" /> Add zone</button></div>}
       </div>
       <p className="admin-page-head__description">MR, Doctor, Patient and Sales Target demo assignments still use their separate browser-local zone dataset. No local records are migrated or mirrored. Use Import data explicitly. Exports include all matches, up to 1,000 records.</p>
+      <div className="admin-toolbar" aria-label="Zone views">
+        {[false, true].map((trash) => <button key={String(trash)} type="button" className="admin-button admin-button--secondary"
+          aria-pressed={deleted === trash} disabled={pending || Boolean(editing) || Boolean(confirming)}
+          data-testid={trash ? 'button-zone-trash' : 'button-zone-current'}
+          onClick={() => { setDeleted(trash); setPage(1); clearFeedback(); setActionError(''); }}>
+          {trash ? 'Deleted zones' : 'Current zones'}
+        </button>)}
+      </div>
+      {deleted && <p className="admin-page-head__description">Deletion history for shared zones only. Restore keeps the original creator and status. A name used by any current active or inactive zone must be freed before restoration. Audit events remain in Activity Logs.</p>}
       {feedback && <div className="admin-feedback" role="status" data-testid="status-zone-feedback">{feedback}</div>}
       {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-zone-action-error">{actionError}</div>}
-      <section className="admin-panel" aria-label="Zone list">
+      <section className="admin-panel" aria-label={deleted ? 'Deleted zone list' : 'Zone list'}>
         <div className="admin-toolbar">
           <button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={retry}>Refresh records</button>
           <div className="admin-toolbar__fields">
@@ -132,7 +147,7 @@ export default function ZoneMaster() {
             </div>
           </div>
         </div>
-        {loading ? <p className="admin-empty" role="status">Loading shared zones…</p> : error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><MapPinned size={21} /></span><strong>Zones could not be loaded</strong><p>{error}</p><button className="admin-button" style={{ marginTop: 16 }} onClick={retry} type="button" data-testid="button-retry-zones">Try again</button></div> : (
+        {loading ? <p className="admin-empty" role="status">{deleted ? 'Loading deleted zones…' : 'Loading shared zones…'}</p> : error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><MapPinned size={21} /></span><strong>Zones could not be loaded</strong><p>{error}</p><button className="admin-button" style={{ marginTop: 16 }} onClick={retry} type="button" data-testid="button-retry-zones">Try again</button></div> : (
           <>
             {zones.length ? (cardView ? (
               <div className="admin-zone-cards" role="list" aria-label="Zone records">
@@ -145,6 +160,7 @@ export default function ZoneMaster() {
                     <dl className="admin-zone-card__meta">
                       <div><dt>Created</dt><dd>{details(zone.createdBy, zone.createdAt)}</dd></div>
                       <div><dt>Updated</dt><dd>{details(zone.updatedBy, zone.updatedAt)}</dd></div>
+                      {deleted && <div><dt>Deleted</dt><dd>{details(zone.deletedBy, zone.deletedAt)}</dd></div>}
                     </dl>
                     {renderActions(zone, true)}
                   </article>
@@ -153,8 +169,8 @@ export default function ZoneMaster() {
             ) : <DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(zone) => zone.id} />) : (
               <div className="admin-empty" data-testid="status-zones-empty">
                 <span className="admin-empty__icon"><MapPinned size={21} aria-hidden="true" /></span>
-                <strong>{total ? 'No matching zones' : 'No zones yet'}</strong>
-                <p>{total ? 'Try a different name or status filter.' : 'Add your first zone to get started.'}</p>
+                <strong>{total ? 'No matching zones' : deleted ? 'No deleted zones' : 'No zones yet'}</strong>
+                <p>{total ? 'Try a different name or status filter.' : deleted ? 'Deleted shared zones will appear here for recovery.' : 'Add your first zone to get started.'}</p>
               </div>
             )}
             <TablePagination {...pagination} filtered={filtered} total={total} label={total === 1 ? 'zone' : 'zones'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-zone-count" />
@@ -162,7 +178,7 @@ export default function ZoneMaster() {
         )}
       </section>
       {editing && <ZoneForm zone={editing === 'new' ? null : editing} onSave={save} onClose={() => setEditing(null)} />}
-      {confirming && <ConfirmationDialog pending={pending} blocked={blocked} title={`${actionName} zone?`} description={`Are you sure you want to ${actionName.toLowerCase()} “${confirming.zone.name}”?${confirming.type === 'delete' ? ' It will disappear from normal lists and exports. Server deletion history is retained; no restore is available here.' : ''}`} actionLabel={`${actionName} zone`} destructive={confirming.type === 'delete'} onConfirm={confirmAction} onClose={() => { setConfirming(null); retry(); }} error={actionError} />}
+      {confirming && <ConfirmationDialog pending={pending} blocked={blocked} title={`${actionName} zone?`} description={`Are you sure you want to ${actionName.toLowerCase()} “${confirming.zone.name}”?${confirming.type === 'delete' ? ' It will disappear from normal lists and exports. Server deletion history is retained; restore is available in Deleted zones.' : confirming.type === 'restore' ? ` It will return to current zones as ${confirming.zone.status}, with its original creator. No browser-local assignments will change.` : ''}`} actionLabel={`${actionName} zone`} destructive={confirming.type === 'delete'} onConfirm={confirmAction} onClose={() => { setConfirming(null); retry(); }} error={actionError} />}
     </AdminLayout>
   );
 }

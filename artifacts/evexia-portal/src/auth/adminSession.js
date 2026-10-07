@@ -348,7 +348,7 @@ export async function roleRequest(path = '', body, { signal } = {}) {
 // Narrow reporting facility: credentials never leave this module.
 // Shared Zone transport. No automatic replay of a potentially committed write.
 export async function zoneRequest(path = '', { body, file, params = {}, download = false, signal } = {}) {
-  if (!/^(?:|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/.test(path)) {
+  if (!/^(?:|\/trash|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|restore))?)$/.test(path)) {
     throw new SessionError('Unsupported Zone operation.');
   }
   const epoch = generation;

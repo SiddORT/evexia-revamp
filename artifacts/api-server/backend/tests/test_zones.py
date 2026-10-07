@@ -108,6 +108,117 @@ def test_authorization_forgery_expired_session_and_validation(client):
     assert api.post(BASE, headers=headers, json={"name": "Expired", "status": "active"}).status_code == 401
 
 
+def test_trash_restore_metadata_versions_and_privacy(client):
+    api, db, _ = client
+    headers, actor = admin_headers(api, db)
+    row = add(api, headers, "Restore original", "inactive")
+    zone_id = row["id"]
+    deleted = api.post(f"{BASE}/{zone_id}/delete", headers=headers, json={"expected_version": 1}).json()
+    add(api, headers, "Current")
+    trash = api.get(BASE + "/trash", headers=headers, params={"query": "original", "status": "inactive", "limit": 1})
+    assert trash.status_code == 200 and trash.headers["cache-control"] == "no-store"
+    page = trash.json()
+    assert page["total"] == page["filtered"] == 1
+    assert page["items"][0] == {**deleted, "deletedBy": "Super Admin", "deletedAt": deleted["updatedAt"]}
+    assert api.get(BASE + "/trash", headers=headers, params={"query": "%"}).json()["filtered"] == 0
+    assert api.get(BASE + "/trash", headers=headers, params={"status": "active"}).json()["filtered"] == 0
+    assert api.get(BASE + "/trash", headers=headers, params={"offset": 1}).json()["items"] == []
+    assert "Restore original" not in api.get(BASE + "/export", headers=headers).text
+    assert api.get(f"{BASE}/{zone_id}", headers=headers).status_code == 404
+    assert api.post(f"{BASE}/{zone_id}/restore", headers=headers, json={"expected_version": 1}).json()["error"]["code"] == "zone_stale"
+    for extra in ({"createdBy": "Forged"}, {"status": "active"}, {"deletedBy": "Forged"}):
+        assert api.post(f"{BASE}/{zone_id}/restore", headers=headers, json={"expected_version": 2, **extra}).status_code == 422
+    assert api.post(f"{BASE}/{zone_id}/restore", headers=headers, json={"expected_version": "2"}).status_code == 422
+    result = api.post(f"{BASE}/{zone_id}/restore", headers=headers, json={"expected_version": 2})
+    assert result.status_code == 200 and result.headers["cache-control"] == "no-store"
+    restored = result.json()
+    assert restored["version"] == 3 and restored["status"] == "inactive"
+    assert restored["createdAt"] == row["createdAt"] and restored["createdBy"] == row["createdBy"]
+    assert restored["updatedAt"] > deleted["updatedAt"]
+    db.expire_all()
+    stored = db.get(Zone, uuid.UUID(zone_id))
+    assert stored.deleted_at is None and stored.deleted_by is None
+    assert stored.created_by == actor.id and stored.updated_by == actor.id
+    assert api.get(BASE + "/trash", headers=headers).json()["total"] == 0
+    assert api.get(f"{BASE}/{zone_id}", headers=headers).json() == restored
+    assert "Restore original" in api.get(BASE + "/export", headers=headers).text
+    assert api.post(f"{BASE}/{zone_id}/restore", headers=headers, json={"expected_version": 3}).status_code == 409
+    assert api.post(f"{BASE}/{uuid.uuid4()}/restore", headers=headers, json={"expected_version": 2}).status_code == 404
+    events = db.scalars(select(AuditEvent).where(AuditEvent.resource_id == stored.id, AuditEvent.action == "zone_restore")).all()
+    assert len(events) == 1 and events[0].actor_id == actor.id and events[0].session_id
+    assert db.scalar(select(AuditEvent.id).where(AuditEvent.resource_id == stored.id, AuditEvent.action == "zone_delete"))
+
+
+@pytest.mark.parametrize("status", ["active", "inactive"])
+def test_restore_duplicate_name_rolls_back_zone_and_audit(client, status):
+    api, db, _ = client
+    headers, _ = admin_headers(api, db)
+    row = add(api, headers, "Reused")
+    deleted = api.post(f"{BASE}/{row['id']}/delete", headers=headers, json={"expected_version": 1}).json()
+    replacement = add(api, headers, "REUSED", status)
+    result = api.post(f"{BASE}/{row['id']}/restore", headers=headers, json={"expected_version": 2})
+    assert result.status_code == 409 and result.json()["error"]["code"] == "zone_duplicate"
+    tombstone = api.get(BASE + "/trash", headers=headers).json()["items"][0]
+    assert tombstone["version"] == 2 and tombstone["updatedAt"] == deleted["updatedAt"]
+    assert tombstone["deletedAt"] == deleted["updatedAt"]
+    assert not db.scalar(select(AuditEvent.id).where(AuditEvent.action == "zone_restore"))
+    # Conflict must be resolved explicitly; restore never renames either record.
+    assert api.post(f"{BASE}/{replacement['id']}/edit", headers=headers,
+                    json={"name": "Freed", "status": status, "expected_version": 1}).status_code == 200
+    assert api.post(f"{BASE}/{row['id']}/restore", headers=headers, json={"expected_version": 2}).status_code == 200
+
+
+def test_restore_audit_failure_is_atomic(client, monkeypatch):
+    from sqlalchemy.exc import SQLAlchemyError
+    from app.services import zones
+    api, db, _ = client
+    headers, _ = admin_headers(api, db)
+    row = add(api, headers)
+    api.post(f"{BASE}/{row['id']}/delete", headers=headers, json={"expected_version": 1})
+    original = zones.audit
+    def fail_audit(db, actor, row, action):
+        original(db, actor, row, action)
+        db.flush()
+        raise SQLAlchemyError("Synthetic audit failure")
+    monkeypatch.setattr(zones, "audit", fail_audit)
+    assert api.post(f"{BASE}/{row['id']}/restore", headers=headers, json={"expected_version": 2}).status_code == 503
+    db.expire_all()
+    stored = db.get(Zone, uuid.UUID(row["id"]))
+    assert stored.deleted_at and stored.deleted_by and stored.version == 2
+    assert not db.scalar(select(AuditEvent.id).where(AuditEvent.action == "zone_restore"))
+
+
+def test_trash_restore_auth_and_live_identity_revalidation(client):
+    from app.db.models import AuthSession
+    from app.services.auth import AuthError, Identity
+    from app.services import zones
+    from app.schemas.zones import ZoneVersion
+    api, db, _ = client
+    path = f"{BASE}/{uuid.uuid4()}/restore"
+    assert api.get(BASE + "/trash").status_code == 401
+    assert api.post(path, json={"expected_version": 1}).status_code == 401
+    mr = create_user(db, "trash-mr@example.com")
+    headers = {"Authorization": "Bearer " + login(api, mr.email).json()["access_token"]}
+    assert api.get(BASE + "/trash", headers=headers).status_code == 403
+    assert api.post(path, headers=headers, json={"expected_version": 1}).status_code == 403
+    headers, actor = admin_headers(api, db)
+    row = add(api, headers)
+    api.post(f"{BASE}/{row['id']}/delete", headers=headers, json={"expected_version": 1})
+    session = db.scalar(select(AuthSession).where(AuthSession.user_id == actor.id, AuthSession.status == "ACTIVE"))
+    snapshot = Identity(actor, session_id=session.id)
+    # Sensitive services must not trust an identity verified before revocation.
+    from app.core.security import utcnow
+    session.status, session.revoked_at = "REVOKED", utcnow()
+    db.commit()
+    with pytest.raises(AuthError):
+        zones.restore(db, snapshot, uuid.UUID(row["id"]), ZoneVersion(expected_version=2))
+    with pytest.raises(AuthError):
+        zones.listing(db, snapshot, "", "all", 10, 0, deleted=True)
+    assert api.get(BASE + "/trash", headers=headers).status_code == 401
+    assert api.post(f"{BASE}/{row['id']}/restore", headers=headers, json={"expected_version": 2}).status_code == 401
+    assert db.get(Zone, uuid.UUID(row["id"])).deleted_at is not None
+
+
 def test_review_create_only_commit_rechecks_and_atomic_rollback(client):
     api, db, _ = client
     headers, actor = admin_headers(api, db)

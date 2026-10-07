@@ -116,3 +116,34 @@ def test_import_flush_conflict_rolls_back_complete_batch(migration_db, monkeypat
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(Zone)) == 0
         assert db.scalar(select(func.count()).select_from(AuditEvent).where(AuditEvent.action == "zone_create")) == 0
+
+
+@pytest.mark.parametrize("race", ["restore", "create"])
+def test_restore_races_keep_one_live_name_and_atomic_audit(migration_db, race):
+    engine, _, actor_id, session_id = prepare(migration_db)
+    with Session(engine) as db:
+        actor = identity(db, actor_id, session_id)
+        row = zones.create(db, actor, ZoneFields(name="Restore race", status="inactive"))
+        zones.mutate(db, actor, row["id"], ZoneVersion(expected_version=1), "delete")
+    barrier = Barrier(2)
+    def compete(index):
+        with Session(engine, expire_on_commit=False) as db:
+            actor = identity(db, actor_id, session_id)
+            barrier.wait(timeout=10)
+            try:
+                if index == 1 and race == "create":
+                    return zones.create(db, actor, ZoneFields(name="RESTORE RACE", status="active"))
+                return zones.restore(db, actor, row["id"], ZoneVersion(expected_version=2))
+            except zones.ZoneError as error:
+                return error.code
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = list(executor.map(compete, range(2)))
+    assert sum(isinstance(result, dict) for result in results) == 1
+    assert ("zone_stale" if race == "restore" else "zone_duplicate") in results
+    with Session(engine) as db:
+        assert db.scalar(select(func.count()).select_from(Zone).where(Zone.deleted_at.is_(None))) == 1
+        restored = db.get(Zone, row["id"])
+        restore_events = db.scalar(select(func.count()).select_from(AuditEvent).where(AuditEvent.action == "zone_restore"))
+        assert restore_events == (0 if restored.deleted_at else 1)
+        assert restored.version == (2 if restored.deleted_at else 3)
+        assert restored.created_by == actor_id

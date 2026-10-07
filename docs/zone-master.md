@@ -18,7 +18,8 @@ a **BLOCKED live-preview prerequisite**, not evidence that synthetic tests faile
 Readiness checks include the Zone schema.
 
 Do not manually downgrade a populated Zone database: dropping the table removes
-history. No purging, restore, trash, hard-delete API or retention schedule exists.
+history. A protected trash view and explicit restore are available; no purging,
+hard-delete API or retention schedule exists.
 Preserve database/audit backups until the operator approves a retention policy.
 
 ## API
@@ -36,6 +37,8 @@ FastAPI OpenAPI is authoritative; regenerate offline libraries with
 | POST `/{id}/edit` | `{name,status,expected_version}` |
 | POST `/{id}/status` | `{status,expected_version}` |
 | POST `/{id}/delete` | Soft deletion with `{expected_version}` |
+| GET `/trash` | Deleted rows only, name/status filters, counts, pagination and deletion metadata |
+| POST `/{id}/restore` | Explicit restore of a deleted row with `{expected_version}` |
 | POST `/import/review?filename=...` | Raw CSV/XLSX body; returns row errors, validity and SHA-256 digest; writes no zones |
 | POST `/import/commit?filename=...&digest=...&confirm=true` | Reupload identical bytes; explicit confirmed create-only transaction |
 | GET `/export?query=...&status=...&format=csv` | Complete matching export; format is `csv` or `xlsx` |
@@ -57,6 +60,33 @@ Actor references are User foreign keys. UTC timestamps and actor identity are
 server-owned. Public actor labels derive from the verified backend identity
 (`Super Admin`); no email, directory fields, credentials or client actor strings
 are projected. Audit events and mutations commit together without record payloads.
+
+## Protected deletion history and recovery
+
+Zone Master's **Deleted zones** view shows the retained creator/update details,
+deleter label and deletion time. `GET /trash` accepts the same bounded
+query/status/pagination inputs as the current list, with counts limited to deleted
+rows and deterministic newest-deleted then UUID ordering. Its response adds
+`deletedBy` and `deletedAt` to each zone. Normal detail, list and exports still
+exclude deleted rows. Trash has no edit, status, export, import or purge action.
+
+Restore requires an explicit confirmation and the displayed `expected_version`.
+The service revalidates the live protected system Super Admin identity and
+`admin.access` with user/session locks, then locks and rereads the zone. It
+preserves name, status, original creator and creation timestamp, clears the
+deletion marker, advances version and current actor/update timestamp, and commits
+a session-bound `zone_restore` audit event atomically. The previous `zone_delete`
+audit event remains in Activity Logs. No new schema or migration is required.
+
+Any current active **or inactive** zone using the same case-insensitive name
+blocks restore with `409 zone_duplicate`, including concurrent create/restore
+races. Rename or delete the conflicting current zone explicitly before retrying;
+restore never overwrites or renames a record. Stale or already-restored targets
+return `409 zone_stale`; missing IDs return 404. Failed restores roll back both
+the row and audit event. Restoration never changes browser-local assignments.
+On success the trash refreshes and the row returns to Current zones, including
+after reload. Cancel and refresh before retrying stale confirmations or ambiguous
+network outcomes; writes are never automatically replayed.
 
 ## Transfer bounds and compatibility
 

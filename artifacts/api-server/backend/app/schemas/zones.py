@@ -53,6 +53,15 @@ class ZonePage(BaseModel):
     offset: int
 
 
+class ZoneDeletedResponse(ZoneResponse):
+    deletedBy: str
+    deletedAt: datetime
+
+
+class ZoneDeletedPage(ZonePage):
+    items: list[ZoneDeletedResponse]
+
+
 class ZoneImportRow(BaseModel):
     row: int
     name: str

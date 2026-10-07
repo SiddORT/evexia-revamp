@@ -584,6 +584,39 @@ export interface UserPage {
   offset: number;
 }
 
+export type ZoneDeletedResponseStatus =
+  (typeof ZoneDeletedResponseStatus)[keyof typeof ZoneDeletedResponseStatus];
+
+export const ZoneDeletedResponseStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface ZoneDeletedResponse {
+  createdAt: string;
+  createdBy: string;
+  deletedAt: string;
+  deletedBy: string;
+  id: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  status: ZoneDeletedResponseStatus;
+  updatedAt: string;
+  updatedBy: string;
+  version: number;
+}
+
+export interface ZoneDeletedPage {
+  filtered: number;
+  items: ZoneDeletedResponse[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
 export type ZoneEditStatus =
   (typeof ZoneEditStatus)[keyof typeof ZoneEditStatus];
 
@@ -883,6 +916,33 @@ export type ReviewZoneImportParams = {
    */
   filename: string;
 };
+
+export type ListDeletedZonesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ListDeletedZonesStatus;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
+export type ListDeletedZonesStatus =
+  (typeof ListDeletedZonesStatus)[keyof typeof ListDeletedZonesStatus];
+
+export const ListDeletedZonesStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
 
 export type ListOwnSessionsParams = {
   /**

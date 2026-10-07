@@ -28,7 +28,8 @@ def transaction(db, work):
 
 def authorize(db, actor):
     current = revalidate_identity(db, actor, lock=True)
-    if "admin.access" not in current.permissions:
+    if (not current.user.is_protected_system_admin or current.role != "super_admin"
+            or "admin.access" not in current.permissions):
         raise ZoneError("Access denied", 403, "access_denied")
     return current
 
@@ -46,8 +47,8 @@ def projection(db, row):
                 createdAt=row.created_at, updatedAt=row.updated_at)
 
 
-def predicates(query="", status="all"):
-    result = [Zone.deleted_at.is_(None)]
+def predicates(query="", status="all", deleted=False):
+    result = [Zone.deleted_at.is_not(None) if deleted else Zone.deleted_at.is_(None)]
     if query.strip():
         result.append(Zone.name.ilike("%" + query.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%", escape="\\"))
     if status != "all":
@@ -55,14 +56,21 @@ def predicates(query="", status="all"):
     return result
 
 
-def listing(db, actor, query, status, limit, offset):
+def listing(db, actor, query, status, limit, offset, deleted=False):
     def work():
         authorize(db, actor)
-        filters = predicates(query, status)
-        total = db.scalar(select(func.count()).select_from(Zone).where(Zone.deleted_at.is_(None)))
+        filters = predicates(query, status, deleted)
+        total = db.scalar(select(func.count()).select_from(Zone).where(*predicates(deleted=deleted)))
         filtered = db.scalar(select(func.count()).select_from(Zone).where(*filters))
-        rows = db.scalars(select(Zone).where(*filters).order_by(Zone.created_at.desc(), Zone.id.desc()).limit(limit).offset(offset))
-        result = dict(items=[projection(db, row) for row in rows], total=total, filtered=filtered, limit=limit, offset=offset)
+        order = Zone.deleted_at if deleted else Zone.created_at
+        rows = db.scalars(select(Zone).where(*filters).order_by(order.desc(), Zone.id.desc()).limit(limit).offset(offset))
+        items = []
+        for row in rows:
+            item = projection(db, row)
+            if deleted:
+                item.update(deletedBy=label(db, row.deleted_by), deletedAt=row.deleted_at)
+            items.append(item)
+        result = dict(items=items, total=total, filtered=filtered, limit=limit, offset=offset)
         db.commit()
         return result
     return transaction(db, work)
@@ -125,6 +133,29 @@ def mutate(db, actor, zone_id, body, operation):
         row.version += 1
         row.updated_at, row.updated_by = now, current.user.id
         audit(db, current, row, "zone_" + operation)
+        db.flush()
+        result = projection(db, row)
+        db.commit()
+        return result
+    return transaction(db, work)
+
+
+def restore(db, actor, zone_id, body):
+    def work():
+        current = authorize(db, actor)
+        row = db.scalar(select(Zone).where(Zone.id == zone_id)
+                        .execution_options(populate_existing=True).with_for_update())
+        if not row:
+            raise ZoneError("Deleted zone not found.", 404, "not_found")
+        if row.version != body.expected_version or row.deleted_at is None:
+            raise ZoneError("Zone changed or was already restored. Cancel and refresh deleted zones before retrying.",
+                            409, "zone_stale")
+        # Clearing the tombstone re-enters the existing partial unique index.
+        # It arbitrates concurrent create/restore races for active AND inactive names.
+        row.deleted_at, row.deleted_by = None, None
+        row.version += 1
+        row.updated_at, row.updated_by = utcnow(), current.user.id
+        audit(db, current, row, "zone_restore")
         db.flush()
         result = projection(db, row)
         db.commit()

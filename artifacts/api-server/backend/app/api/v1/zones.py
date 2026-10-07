@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import require_permissions
 from app.db.session import get_db
-from app.schemas.zones import ZoneFields, ZoneEdit, ZoneStatus, ZoneVersion, ZoneResponse, ZonePage, ZoneReview, ZoneImportResult
+from app.schemas.zones import ZoneFields, ZoneEdit, ZoneStatus, ZoneVersion, ZoneResponse, ZonePage, ZoneDeletedPage, ZoneReview, ZoneImportResult
 from app.services.auth import Identity
 from app.services import zones, zone_transfer
 
@@ -71,6 +71,13 @@ async def commit(request: Request, filename: str = Query(min_length=1, max_lengt
     return zone_transfer.transfer(db, actor, await read_file(request), filename, confirm, digest)
 
 
+@router.get("/trash", response_model=ZoneDeletedPage, operation_id="listDeletedZones")
+def trash(query: str = Query("", max_length=200), status: Literal["all", "active", "inactive"] = "all",
+          limit: int = Query(10, ge=1, le=100), offset: int = Query(0, ge=0, le=1000000),
+          actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return zones.listing(db, actor, query, status, limit, offset, deleted=True)
+
+
 @router.get("/{zone_id}", response_model=ZoneResponse, operation_id="getZone")
 def detail(zone_id: uuid.UUID, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
     return zones.detail(db, actor, zone_id)
@@ -89,3 +96,8 @@ def status(zone_id: uuid.UUID, body: ZoneStatus, actor: Identity = Depends(manag
 @router.post("/{zone_id}/delete", response_model=ZoneResponse, operation_id="deleteZone")
 def delete(zone_id: uuid.UUID, body: ZoneVersion, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
     return zones.mutate(db, actor, zone_id, body, "delete")
+
+
+@router.post("/{zone_id}/restore", response_model=ZoneResponse, operation_id="restoreZone")
+def restore(zone_id: uuid.UUID, body: ZoneVersion, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return zones.restore(db, actor, zone_id, body)

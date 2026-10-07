@@ -140,3 +140,112 @@ test('review is inert, duplicate rows block confirmation, CSV/XLSX transfers and
   await expect(page.locator('tr').filter({ hasText: 'CSV synthetic' })).not.toContainText('Forged');
   expect(await page.evaluate(() => localStorage.getItem('evexia.admin.zones.v1'))).toBe(legacy);
 });
+
+
+for (const mobile of [false, true]) {
+  test(`deleted zones ${mobile ? 'mobile' : 'desktop'} history, explicit restore and local isolation`, async ({ page }) => {
+    if (mobile) await page.setViewportSize({ width: 390, height: 844 });
+    await open(page);
+    const name = `${mobile ? 'Mobile' : 'Desktop'} synthetic recovery`;
+    const row = await create(page, name);
+    await page.getByTestId(`button-toggle-zone-${row.id}`).click();
+    await page.getByTestId('button-confirm-action').click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await page.getByTestId(`button-delete-zone-${row.id}`).click();
+    await page.getByTestId('button-confirm-action').click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByTestId(`text-zone-name-${row.id}`)).toHaveCount(0);
+    await page.getByTestId('button-zone-trash').click();
+    await page.getByTestId('input-search-zones').fill(name);
+    await page.getByTestId('select-filter-zones').selectOption('inactive');
+    await expect(page.getByTestId(`text-zone-name-${row.id}`)).toBeVisible();
+    const record = page.locator(mobile ? `[data-testid="card-zone-${row.id}"]` : 'tr').filter({ has: page.getByTestId(`text-zone-name-${row.id}`) });
+    await expect(record).toContainText('Super Admin');
+    await expect(page.getByText(mobile ? 'Deleted' : 'Deleted details', { exact: true })).toBeVisible();
+    await expect(page.getByTestId(`button-edit-zone-${row.id}`)).toHaveCount(0);
+    await expect(page.getByTestId('button-export-zones')).toHaveCount(0);
+    await page.getByTestId(`button-restore-zone-${row.id}`).click();
+    await expect(page.getByRole('dialog')).toContainText('as inactive, with its original creator');
+    // A cancelled confirmation must not mutate the row.
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(page.getByTestId(`text-zone-name-${row.id}`)).toBeVisible();
+    await page.getByTestId(`button-restore-zone-${row.id}`).click();
+    const restoredResponse = page.waitForResponse((response) => new URL(response.url()).pathname === `/api/v1/admin/zones/${row.id}/restore`);
+    await page.getByTestId('button-confirm-action').click();
+    const restored = await (await restoredResponse).json();
+    expect(restored.version).toBe(4);
+    expect(restored.createdAt).toBe(row.createdAt);
+    expect(restored.createdBy).toBe(row.createdBy);
+    expect(restored.status).toBe('inactive');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByTestId(`text-zone-name-${row.id}`)).toHaveCount(0);
+    await expect(page.getByTestId('status-zone-feedback')).toContainText('Zone restored');
+    await page.getByTestId('button-zone-current').click();
+    await expect(page.getByTestId(`text-zone-name-${row.id}`)).toBeVisible();
+    await page.reload();
+    await page.getByTestId('input-search-zones').fill(name);
+    await expect(page.getByTestId(`text-zone-name-${row.id}`)).toBeVisible();
+    expect(await page.evaluate(() => localStorage.getItem('evexia.admin.zones.v1'))).toBe(legacy);
+    await page.screenshot({ path: test.info().outputPath('zone-restored.png'), fullPage: true });
+  });
+}
+
+test('restore conflicts, unavailable storage, stale targets and ambiguous outcomes require explicit recovery', async ({ page }) => {
+  await open(page);
+  const row = await create(page, 'Synthetic recovery conflict');
+  await page.getByTestId(`button-delete-zone-${row.id}`).click();
+  await page.getByTestId('button-confirm-action').click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const replacement = await create(page, 'SYNTHETIC RECOVERY CONFLICT');
+  await page.getByTestId('button-zone-trash').click();
+  await page.getByTestId('input-search-zones').fill('Synthetic recovery conflict');
+  await page.getByTestId(`button-restore-zone-${row.id}`).click();
+  await page.getByTestId('button-confirm-action').click();
+  await expect(page.getByRole('dialog')).toContainText('A non-deleted zone already uses this name');
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await page.getByTestId('button-zone-current').click();
+  await expect(page.getByTestId(`text-zone-name-${replacement.id}`)).toBeVisible();
+  await page.getByTestId(`button-edit-zone-${replacement.id}`).click();
+  await page.getByLabel('Zone name *').fill('Synthetic replacement renamed');
+  await page.getByTestId('button-save-zone').click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByTestId('button-zone-trash').click();
+  await page.getByTestId(`button-restore-zone-${row.id}`).click();
+  await page.route(`**/api/v1/admin/zones/${row.id}/restore?*`, (route) => route.fulfill({
+    status: 503, contentType: 'application/json', body: JSON.stringify({ error: { code: 'zone_unavailable', message: 'Persistence temporarily unavailable.' } }),
+  }));
+  await page.getByTestId('button-confirm-action').click();
+  await expect(page.getByRole('dialog')).toContainText('Persistence temporarily unavailable');
+  await expect(page.getByTestId('button-confirm-action')).toBeEnabled();
+  await page.unroute(`**/api/v1/admin/zones/${row.id}/restore?*`);
+  // Another session's restore after this confirmation was opened makes it stale.
+  await page.evaluate(async (record) => (await import('/src/services/serverZones.js')).restoreZone(record), { id: row.id, version: 2 });
+  await page.getByTestId('button-confirm-action').click();
+  await expect(page.getByRole('dialog')).toContainText('Zone changed or was already restored');
+  await expect(page.getByTestId('button-confirm-action')).toBeDisabled();
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(page.getByTestId(`text-zone-name-${row.id}`)).toHaveCount(0);
+  await page.getByTestId('button-zone-current').click();
+  await expect(page.getByTestId(`text-zone-name-${row.id}`)).toBeVisible();
+  await page.getByTestId(`button-delete-zone-${row.id}`).click();
+  await page.getByTestId('button-confirm-action').click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByTestId('button-zone-trash').click();
+  await page.getByTestId(`button-restore-zone-${row.id}`).click();
+  let attempts = 0;
+  await page.route(`**/api/v1/admin/zones/${row.id}/restore?*`, async (route) => {
+    attempts += 1;
+    await route.fetch(); // Commit but lose the response; never auto-replay.
+    await route.abort('failed');
+  });
+  await page.getByTestId('button-confirm-action').click();
+  await expect(page.getByRole('dialog')).toContainText('Save outcome could not be confirmed');
+  await expect(page.getByTestId('button-confirm-action')).toBeDisabled();
+  expect(attempts).toBe(1);
+  await page.unroute(`**/api/v1/admin/zones/${row.id}/restore?*`);
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(page.getByTestId(`text-zone-name-${row.id}`)).toHaveCount(0);
+  await page.getByTestId('button-zone-current').click();
+  await expect(page.getByTestId(`text-zone-name-${row.id}`)).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('evexia.admin.zones.v1'))).toBe(legacy);
+});
