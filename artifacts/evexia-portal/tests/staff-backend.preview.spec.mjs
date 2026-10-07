@@ -5,6 +5,69 @@ if (process.env.EVEXIA_CHROMIUM_PATH) test.use({ launchOptions: { executablePath
 const base = () => process.env.EVEXIA_PREVIEW_BASE_URL;
 const legacy = '[{"name":"Untouched legacy marker","id":"sample-staff-1"}]';
 
+async function expectFooter(page, summary, scope) {
+  const footer = page.getByTestId('staff-batch-footer');
+  await expect(footer).toBeVisible();
+  await expect(page.getByTestId('text-staff-batch-summary')).toHaveText(summary);
+  await expect(footer.locator('p')).toHaveText(scope);
+  await expect(page.getByText('Legacy browser-local staff records are retained untouched but are not shown or imported. CSV import and email invitations are unavailable.', { exact: true })).toHaveCount(0);
+  await expect(footer.locator('nav')).toHaveCount(1);
+  await expect(footer.locator('.admin-pagination')).toHaveCount(0);
+}
+
+async function inspectFooterLayouts(page, state) {
+  const originalViewport = page.viewportSize();
+  for (const appearance of ['light', 'dark']) {
+    await page.evaluate(async (value) => {
+      const { setAdminPreference } = await import('/src/components/admin/adminPreferences.js');
+      setAdminPreference('appearance', value);
+    }, appearance);
+    await expect(page.locator('.admin-shell')).toHaveAttribute('data-admin-appearance', appearance);
+    for (const width of [1440, 375]) {
+      await page.setViewportSize({ width, height: 900 });
+      const footer = page.getByTestId('staff-batch-footer');
+      await footer.scrollIntoViewIfNeeded();
+      const layout = await footer.evaluate((element) => {
+        const rect = (node) => {
+          const { x, y, width, height } = node.getBoundingClientRect();
+          return { x, y, width, height };
+        };
+        const summary = element.querySelector('.admin-staff-batch-footer__summary');
+        const controls = element.querySelector('nav');
+        return {
+          footer: rect(element), summary: rect(summary), controls: rect(controls),
+          buttons: [...controls.querySelectorAll('button')].map(rect),
+          textAlign: getComputedStyle(summary).textAlign,
+          border: getComputedStyle(element).borderTopWidth,
+          clipped: element.scrollWidth > element.clientWidth,
+        };
+      });
+      expect(layout.textAlign).toBe('left');
+      expect(layout.border).toBe('1px');
+      expect(layout.clipped).toBe(false);
+      for (const box of [layout.summary, ...layout.buttons]) {
+        expect(box.x).toBeGreaterThanOrEqual(layout.footer.x + 15);
+        expect(box.x + box.width).toBeLessThanOrEqual(layout.footer.x + layout.footer.width - 15);
+        expect(box.y).toBeGreaterThanOrEqual(layout.footer.y + 15);
+        expect(box.y + box.height).toBeLessThanOrEqual(layout.footer.y + layout.footer.height - 15);
+      }
+      if (width === 375) {
+        expect(layout.footer.x).toBeGreaterThanOrEqual(0);
+        expect(layout.controls.y).toBeGreaterThanOrEqual(layout.summary.y + layout.summary.height + 15);
+        expect(layout.footer.x + layout.footer.width).toBeLessThanOrEqual(width);
+      } else {
+        expect(Math.abs(layout.controls.y + layout.controls.height / 2 - layout.summary.y - layout.summary.height / 2)).toBeLessThan(2);
+      }
+      await footer.screenshot({ path: `/tmp/evexia-staff-footer-${state}-${appearance}-${width}.png` });
+    }
+  }
+  await page.setViewportSize(originalViewport);
+  await page.evaluate(async () => {
+    const { setAdminPreference } = await import('/src/components/admin/adminPreferences.js');
+    setAdminPreference('appearance', 'light');
+  });
+}
+
 async function open(page) {
   await page.goto(`${base()}/admin/login`);
   await page.getByLabel('Email or username').fill('crm-admin@allergyevexia.in');
@@ -49,6 +112,10 @@ async function create(page, suffix, country, phone) {
 test('empty database never renders or imports local staff; server credentials, edits, stale conflicts and exports are safe', async ({ page, context }) => {
   await open(page);
   await expect(page.getByTestId('status-staff-empty')).toContainText('No staff members yet');
+  await expectFooter(page, 'No staff records yet', 'Filter and export apply to this batch. Search directory for other records.');
+  await expect(page.getByRole('button', { name: 'Previous batch', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Next batch', exact: true })).toBeDisabled();
+  await inspectFooterLayouts(page, 'empty');
   await expect(page.getByText('Untouched legacy marker')).toHaveCount(0);
   await expect(page.getByTestId('button-import-staff')).toBeDisabled();
   const saved = await create(page, 'desktop');
@@ -61,6 +128,8 @@ test('empty database never renders or imports local staff; server credentials, e
   await page.getByTestId('button-close-staff-credentials').click();
   await page.reload();
   await expect(page.getByTestId(`text-staff-name-${row.id}`)).toHaveText('Fictional desktop');
+  await expectFooter(page, 'Server records 1–1', 'Filter and export apply to this batch. Search directory for other records.');
+  await inspectFooterLayouts(page, 'populated');
   await expect(page.getByTestId('text-staff-credential-password')).toHaveCount(0);
   await page.getByTestId(`button-edit-staff-${row.id}`).click();
   await expect(page.getByTestId('input-staff-userId')).toHaveValue(row.userId);
@@ -169,6 +238,15 @@ test('directory search finds beyond the loaded batch, continues empty sections, 
   execFileSync('python3', ['scripts/seed-staff-search-preview.py']);
   await open(page);
   await expect(page.getByText('Directory Preview 605', { exact: true })).toHaveCount(0);
+  await expectFooter(page, 'Server records 1–100', 'Filter and export apply to this batch. Search directory for other records.');
+  await page.getByRole('combobox', { name: 'Rows per page', exact: true }).selectOption('10');
+  await page.getByRole('button', { name: 'Next page', exact: true }).click();
+  await expect(page.getByTestId('text-staff-count')).toContainText('Showing 11–20');
+  await page.getByRole('button', { name: 'Next batch', exact: true }).click();
+  await expect(page.getByTestId('text-staff-batch-summary')).toHaveText('Server records 101–200');
+  await expect(page.getByTestId('text-staff-count')).toContainText('Showing 1–10');
+  await page.getByRole('button', { name: 'Previous batch', exact: true }).click();
+  await expect(page.getByTestId('text-staff-batch-summary')).toHaveText('Server records 1–100');
   const input = page.getByTestId('input-directory-search-staff');
   await input.fill('preview-search-605@example.com');
   const requestEvent = page.waitForRequest((request) => request.url().endsWith('/api/v1/admin/staff/search'));
@@ -179,10 +257,14 @@ test('directory search finds beyond the loaded batch, continues empty sections, 
   expect(request.postDataJSON().query).toBe('preview-search-605@example.com');
   await expect(page.getByTestId('status-directory-search-staff')).toContainText('500 records checked');
   await expect(page.getByTestId('status-staff-empty')).toContainText('No matches in this section');
+  await expectFooter(page, '0 matches loaded in this section', 'Filter and export apply to this section only.');
+  await inspectFooterLayouts(page, 'search-empty');
   await expect(page.getByTestId('button-continue-directory-search-staff')).toBeEnabled();
   await page.getByTestId('button-continue-directory-search-staff').click();
   await expect(page.getByText('Directory Preview 605', { exact: true }).first()).toBeVisible();
   await expect(page.getByTestId('status-directory-search-staff')).toContainText('Search complete');
+  await expectFooter(page, '1 match loaded in this section', 'Filter and export apply to this section only.');
+  await inspectFooterLayouts(page, 'search-populated');
   await expect(page.getByTestId('button-continue-directory-search-staff')).toBeDisabled();
   await expect(page.getByTestId('button-previous-directory-search-staff')).toBeEnabled();
   const downloadEvent = page.waitForEvent('download');
@@ -214,6 +296,11 @@ test('directory search finds beyond the loaded batch, continues empty sections, 
   await page.getByTestId('button-continue-directory-search-staff').click();
   await expect(page.getByTestId('status-directory-search-staff')).toContainText('Search complete');
   await expect(page.getByTestId('status-staff-empty')).toContainText('No matches in this final section');
+  await expectFooter(page, '0 matches loaded in this section', 'Filter and export apply to this section only.');
+  await page.getByTestId('button-restart-directory-search-staff').click();
+  await expect(page.getByTestId('status-directory-search-staff')).toContainText('500 records checked');
+  await expect(page.getByTestId('button-previous-directory-search-staff')).toBeDisabled();
+  await expect(page.getByTestId('button-continue-directory-search-staff')).toBeEnabled();
   await page.getByTestId('button-clear-directory-search-staff').click();
   await expect(page.getByTestId('status-directory-search-staff')).toHaveCount(0);
   await expect(input).toHaveValue('');

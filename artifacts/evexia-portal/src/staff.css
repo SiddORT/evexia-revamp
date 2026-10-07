@@ -1,5 +1,17 @@
 /* Staff directory: the Admin ledger language, with a more spacious identity column. */
 .admin-staff-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.admin-staff-batch-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px 24px; padding: 16px; border-top: 1px solid var(--admin-border); background: var(--admin-surface); }
+.admin-staff-batch-footer__summary { flex: 1 1 260px; min-width: 0; text-align: left; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.admin-staff-batch-footer__summary strong { color: var(--admin-text); font-weight: 600; }
+.admin-staff-batch-footer__summary p { margin: 4px 0 0; color: var(--admin-text-soft); font-size: 11px; }
+.admin-staff-batch-footer__controls { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.admin-staff-batch-footer__controls .admin-button { min-height: 40px; }
+@media (max-width: 760px) {
+  .admin-staff-batch-footer { flex-direction: column; align-items: stretch; }
+  .admin-staff-batch-footer__summary { flex: none; }
+  .admin-staff-batch-footer__controls { justify-content: flex-start; }
+  .admin-staff-batch-footer__controls .admin-button { flex: 1 1 auto; white-space: normal; }
+}
 .admin-staff-desktop .admin-table { min-width: 1550px; }
 .admin-staff-desktop .admin-table th, .admin-staff-desktop .admin-table td { white-space: nowrap; }
 .admin-staff-desktop .admin-table td { vertical-align: top; line-height: 1.45; }
