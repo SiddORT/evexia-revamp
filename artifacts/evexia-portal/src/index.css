@@ -258,14 +258,6 @@ a { color: inherit; }
   background: #323637;
 }
 
-.auth-visual::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, rgba(29, 32, 33, 0.23), rgba(29, 32, 33, 0.05) 60%, rgba(201, 74, 54, 0.16));
-  pointer-events: none;
-}
-
 .auth-visual img {
   width: 100%;
   height: 100%;
@@ -285,6 +277,14 @@ a { color: inherit; }
   color: var(--surface);
 }
 
+/* Keep contrast at the glyphs without tinting the photograph. */
+.auth-visual__content h2,
+.auth-visual__content p,
+.auth-visual__note {
+  color: #fff;
+  text-shadow: 0 1px 2px #161b1d, 0 0 4px #161b1d;
+}
+
 .auth-visual__content { max-width: 380px; margin: auto 0; padding-bottom: 3vh; }
 .auth-visual__content .eyebrow {
   display: inline-flex;
@@ -298,8 +298,8 @@ a { color: inherit; }
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
 }
 .auth-visual__content h2 { font-family: var(--font-display); font-size: clamp(2.6rem, 4.5vw, 5rem); font-weight: 500; line-height: 1; letter-spacing: -0.06em; margin: 19px 0 16px; }
-.auth-visual__content p { color: rgba(255,255,255,0.73); line-height: 1.65; max-width: 310px; margin: 0; font-size: 0.93rem; }
-.auth-visual__note { display: flex; align-items: center; gap: 11px; color: rgba(255,255,255,0.7); font-size: 0.72rem; letter-spacing: 0.04em; }
+.auth-visual__content p { line-height: 1.65; max-width: 310px; margin: 0; font-size: 0.93rem; }
+.auth-visual__note { display: flex; align-items: center; gap: 11px; font-size: 0.72rem; letter-spacing: 0.04em; }
 .auth-visual__note::before { content: ''; width: 7px; height: 7px; background: #f49a78; border-radius: 50%; }
 
 .auth-panel {

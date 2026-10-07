@@ -79,16 +79,6 @@
 .entry-theme[data-admin-theme="modern"] .auth-visual {
   background: var(--admin-text);
 }
-.entry-theme[data-admin-theme="modern"] .auth-visual::after {
-  background: linear-gradient(90deg,
-    color-mix(in srgb, var(--admin-text) 75%, transparent),
-    color-mix(in srgb, var(--admin-text) 65%, transparent) 60%,
-    color-mix(in srgb, var(--admin-primary-hover) 70%, transparent));
-}
-.entry-theme[data-admin-theme="modern"] .auth-visual__content p,
-.entry-theme[data-admin-theme="modern"] .auth-visual__note {
-  color: var(--admin-primary-ink);
-}
 .entry-theme[data-admin-theme="modern"] .auth-visual__note::before {
   background: var(--admin-sidebar);
 }
