@@ -7,6 +7,8 @@
     "dev": "vite --config vite.config.js --host 0.0.0.0",
     "build": "vite build --config vite.config.js",
     "test:admin-session": "node --test src/auth/adminSession.test.js",
+    "test:zone-permissions": "node --test src/auth/staffPermissions.test.js src/auth/navigationGuard.test.js src/services/rolePermissions.test.js",
+    "test:zone-permissions:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/staff-permissions.preview.spec.mjs",
     "test:move-stocks": "node --test src/services/moveStocksDemo.test.js",
     "test:move-stocks:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/move-stocks.preview.spec.mjs",
     "test:startup-bundle": "node --test tests/startup-bundle.test.mjs",

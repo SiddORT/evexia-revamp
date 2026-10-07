@@ -83,11 +83,13 @@ import type {
   RoleEdit,
   RoleFields,
   RolePage,
+  RolePermissions,
   RoleResponse,
   RoleVersion,
   SessionListResponse,
   SessionPage,
   SessionResponse,
+  StaffAccess,
   StaffCreated,
   StaffEdit,
   StaffFields,
@@ -2657,6 +2659,124 @@ export const useEditCustomRole = <
   return useMutation(getEditCustomRoleMutationOptions(options));
 };
 
+export const getSaveCustomRolePermissionsUrl = (roleId: string) => {
+  return `/api/v1/admin/roles/${roleId}/permissions`;
+};
+
+/**
+ * @summary Permissions Role
+ */
+export const saveCustomRolePermissions = async (
+  roleId: string,
+  rolePermissions: RolePermissions,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<RoleResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<RoleResponse>(getSaveCustomRolePermissionsUrl(roleId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(rolePermissions),
+  });
+};
+
+export const getSaveCustomRolePermissionsMutationKey = () =>
+  ["saveCustomRolePermissions"] as const;
+
+export const getSaveCustomRolePermissionsMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveCustomRolePermissions>>,
+    TError,
+    SaveCustomRolePermissionsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof saveCustomRolePermissions>>,
+  TError,
+  SaveCustomRolePermissionsMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSaveCustomRolePermissionsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof saveCustomRolePermissions>>,
+    SaveCustomRolePermissionsMutationVariables
+  > = (props) => {
+    const { roleId, data } = props ?? {};
+
+    return saveCustomRolePermissions(roleId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SaveCustomRolePermissionsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof saveCustomRolePermissions>>
+>;
+export type SaveCustomRolePermissionsMutationBody = BodyType<RolePermissions>;
+export type SaveCustomRolePermissionsMutationError = ErrorType<ErrorEnvelope>;
+export type SaveCustomRolePermissionsMutationVariables = {
+  roleId: string;
+  data: BodyType<RolePermissions>;
+};
+
+/**
+ * @summary Permissions Role
+ */
+export const useSaveCustomRolePermissions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveCustomRolePermissions>>,
+    TError,
+    SaveCustomRolePermissionsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof saveCustomRolePermissions>>,
+  TError,
+  SaveCustomRolePermissionsMutationVariables,
+  TContext
+> => {
+  return useMutation(getSaveCustomRolePermissionsMutationOptions(options));
+};
+
 export const getListStaffUrl = (params?: ListStaffParams) => {
   const normalizedParams = new URLSearchParams();
 
@@ -3065,6 +3185,124 @@ export function useGetStaff<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getSetStaffWorkspaceAccessUrl = (staffId: string) => {
+  return `/api/v1/admin/staff/${staffId}/access`;
+};
+
+/**
+ * @summary Access Staff
+ */
+export const setStaffWorkspaceAccess = async (
+  staffId: string,
+  staffAccess: StaffAccess,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StaffResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<StaffResponse>(getSetStaffWorkspaceAccessUrl(staffId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(staffAccess),
+  });
+};
+
+export const getSetStaffWorkspaceAccessMutationKey = () =>
+  ["setStaffWorkspaceAccess"] as const;
+
+export const getSetStaffWorkspaceAccessMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setStaffWorkspaceAccess>>,
+    TError,
+    SetStaffWorkspaceAccessMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setStaffWorkspaceAccess>>,
+  TError,
+  SetStaffWorkspaceAccessMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSetStaffWorkspaceAccessMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setStaffWorkspaceAccess>>,
+    SetStaffWorkspaceAccessMutationVariables
+  > = (props) => {
+    const { staffId, data } = props ?? {};
+
+    return setStaffWorkspaceAccess(staffId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetStaffWorkspaceAccessMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setStaffWorkspaceAccess>>
+>;
+export type SetStaffWorkspaceAccessMutationBody = BodyType<StaffAccess>;
+export type SetStaffWorkspaceAccessMutationError = ErrorType<ErrorEnvelope>;
+export type SetStaffWorkspaceAccessMutationVariables = {
+  staffId: string;
+  data: BodyType<StaffAccess>;
+};
+
+/**
+ * @summary Access Staff
+ */
+export const useSetStaffWorkspaceAccess = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setStaffWorkspaceAccess>>,
+    TError,
+    SetStaffWorkspaceAccessMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setStaffWorkspaceAccess>>,
+  TError,
+  SetStaffWorkspaceAccessMutationVariables,
+  TContext
+> => {
+  return useMutation(getSetStaffWorkspaceAccessMutationOptions(options));
+};
 
 export const getEditStaffUrl = (staffId: string) => {
   return `/api/v1/admin/staff/${staffId}/edit`;

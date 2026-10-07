@@ -52,3 +52,17 @@ export function exportStaffCSV(records) {
   return STAFF_COLUMNS.map(([, label]) => csvCell(label)).join(',') + '\r\n'
     + records.map((row) => STAFF_COLUMNS.map(([key]) => csvCell(row[key])).join(',')).join('\r\n') + '\r\n';
 }
+
+// Explicit access assignment. Separate from metadata edits; never implied by labels.
+const UUID = /^[0-9a-f-]{36}$/;
+export function validateAccess({ customRoleId, loginEnabled }) {
+  if (customRoleId !== null && !(typeof customRoleId === 'string' && UUID.test(customRoleId))) return 'Choose a role from the list or select no role.';
+  if (typeof loginEnabled !== 'boolean') return 'Choose whether workspace login is enabled.';
+  return '';
+}
+export const accessOf = (record) => ({ customRoleId: record?.custom_role_id ?? null, loginEnabled: record?.workspace_login_enabled === true });
+export function setStaffAccess(record, { customRoleId, loginEnabled }) {
+  const problem = validateAccess({ customRoleId, loginEnabled });
+  if (problem) return Promise.reject(Object.assign(new Error(problem), { code: 'access_invalid' }));
+  return staffRequest(`/${record.id}/access`, { custom_role_id: customRoleId, workspace_login_enabled: loginEnabled, expected_version: record.version });
+}

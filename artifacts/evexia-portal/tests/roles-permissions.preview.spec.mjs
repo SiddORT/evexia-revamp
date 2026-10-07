@@ -41,7 +41,7 @@ async function create(page, name, description = '') {
 }
 async function remove(page) {
   await page.getByTestId('button-delete-role').click();
-  await expect(page.getByRole('dialog')).toContainText('does not change login or staff rights');
+  await expect(page.getByRole('dialog')).toContainText('cannot be deleted');
   await page.getByTestId('button-confirm-delete-role').click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByTestId('button-add-role')).toBeEnabled();

@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useLocation } from 'wouter';
+import { isStaffIdentity, staffPathAllowed } from './capabilities.js';
 import { getSession, subscribeSession, verifySession } from './adminSession.js';
 import PortalLoader from '../components/PortalLoader.jsx';
 import { useAdminPreferences } from '../components/admin/adminPreferences.js';
@@ -14,6 +15,7 @@ export default function AdminBoundary({ children }) {
   const { theme, appearance } = useAdminPreferences();
   const protectedPath = (path === '/admin' || path.startsWith('/admin/')) && path !== '/admin/login';
   const [verifiedPath, setVerifiedPath] = useState(null);
+  const staffBlocked = Boolean(isStaffIdentity(session.user) && !staffPathAllowed(path));
   useEffect(() => {
     if (!protectedPath) return;
     let active = true;
@@ -27,6 +29,10 @@ export default function AdminBoundary({ children }) {
       navigate(`/admin/login?returnTo=${encodeURIComponent(path)}`, { replace: true });
     }
   }, [path, protectedPath, verifiedPath, session.status, navigate]);
+  useEffect(() => {
+    // Restricted staff never mount unrelated screens; send them to /admin.
+    if (protectedPath && staffBlocked && verifiedPath === path) navigate('/admin', { replace: true });
+  }, [protectedPath, staffBlocked, verifiedPath, path, navigate]);
   if (!protectedPath) return children;
   const authorized = verifiedPath === path && session.status === 'authenticated';
   const keepMounted = verifiedPath === path && ['authenticated', 'renewing', 'renewal-error'].includes(session.status);
@@ -36,7 +42,7 @@ export default function AdminBoundary({ children }) {
       {/* Same-route renewal hides and disables the already-verified subtree
           without discarding drafts. Initial/denied routes never mount it. */}
       <div hidden={!authorized} inert={!authorized ? true : undefined} data-testid="admin-session-content">
-        {keepMounted ? children : null}
+        {keepMounted && !staffBlocked ? children : null}
       </div>
       {!authorized && (
         <main className="portal-loading-page" data-admin-theme={theme} data-admin-appearance={appearance}>

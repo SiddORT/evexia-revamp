@@ -6,7 +6,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.orm import Session
 
-from app.api.deps import require_permissions
+from app.api.deps import require_permissions, current_identity
 from app.core.security import utcnow
 from app.db.session import get_db
 from app.repositories import reporting, report_exports
@@ -27,7 +27,8 @@ from app.repositories import downloads as download_reporting
 
 @router.post("/downloads/initiate", response_model=DownloadEvidence, operation_id="recordDownloadInitiation",
              dependencies=[Depends(require_cookie_origin)])
-def initiate_download(body: DownloadInitiation, identity: Admin, db: Database):
+def initiate_download(body: DownloadInitiation, db: Database,
+                      identity: Identity = Depends(current_identity)):
     return download_service.record(db, identity, body.initiation_id, body.source, body.kind,
                                    body.format, "browser_reported")
 

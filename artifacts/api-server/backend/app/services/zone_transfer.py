@@ -157,7 +157,7 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
     if confirm and digest != fingerprint:
         raise zones.ZoneError("The file changed. Review it again before confirming.", 409, "zone_review_changed")
     def work():
-        current = zones.authorize(db, actor)
+        current = zones.authorize(db, actor, "zone.import")
         # Match exactly the database lower() uniqueness semantics.
         names = [row["name"] for row in rows]
         normalized = list(db.scalars(select(func.lower(func.unnest(cast(names, ARRAY(Text)))))))
@@ -185,7 +185,7 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
 
 def export(db, actor, query, status, format):
     def work():
-        zones.authorize(db, actor)
+        zones.authorize(db, actor, "zone.export")
         records = list(db.scalars(select(Zone).where(*zones.predicates(query, status))
                                   .order_by(Zone.created_at.desc(), Zone.id.desc()).limit(EXPORT_LIMIT + 1)))
         if len(records) > EXPORT_LIMIT:

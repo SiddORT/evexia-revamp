@@ -1,6 +1,7 @@
 """Location migration preservation, constraints and committed-connection races."""
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
+import uuid
 import pytest
 from alembic import command
 from sqlalchemy import func, select, text
@@ -23,10 +24,10 @@ def test_actual_location_migration_preserves_zone_identity_history(migration_db)
     command.downgrade(config, "0011_courier_partners")
     with Session(engine) as db:
         zone = zones.create(db, identity(db, actor_id, session_id), ZoneFields(name="Preserved Zone", status="active"))
-        role = CustomRole(name="Preserved Role", description="Existing business metadata", version=1)
-        db.add(role)
+        role_id = uuid.uuid4()
+        db.execute(text("INSERT INTO custom_roles(id,name,description,version) VALUES (:id,'Preserved Role','Existing business metadata',1)"),
+                   {"id": role_id})
         db.commit()
-        role_id = role.id
         courier = CourierPartner(name="Preserved courier", status="active", created_by=actor_id, updated_by=actor_id)
         db.add(courier)
         db.commit()

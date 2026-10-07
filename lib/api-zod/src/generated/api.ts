@@ -741,7 +741,7 @@ export const listCustomRolesResponseItemsItemDescriptionMax = 1000;
 
 export const listCustomRolesResponseItemsItemNameMax = 100;
 
-export const listCustomRolesResponseItemsItemPermissionsMax = 0;
+export const listCustomRolesResponseItemsItemPermissionsMax = 5;
 
 export const ListCustomRolesResponse = zod.object({
   has_more: zod.boolean(),
@@ -755,7 +755,15 @@ export const ListCustomRolesResponse = zod.object({
       id: zod.string().uuid(),
       name: zod.string().min(1).max(listCustomRolesResponseItemsItemNameMax),
       permissions: zod
-        .array(zod.string())
+        .array(
+          zod.enum([
+            "zone.add",
+            "zone.edit",
+            "zone.delete",
+            "zone.export",
+            "zone.import",
+          ]),
+        )
         .max(listCustomRolesResponseItemsItemPermissionsMax)
         .optional(),
       updated_at: zod.coerce.date(),
@@ -787,7 +795,7 @@ export const createCustomRoleResponseDescriptionMax = 1000;
 
 export const createCustomRoleResponseNameMax = 100;
 
-export const createCustomRoleResponsePermissionsMax = 0;
+export const createCustomRoleResponsePermissionsMax = 5;
 
 export const CreateCustomRoleResponse = zod.object({
   created_at: zod.coerce.date(),
@@ -798,7 +806,15 @@ export const CreateCustomRoleResponse = zod.object({
   id: zod.string().uuid(),
   name: zod.string().min(1).max(createCustomRoleResponseNameMax),
   permissions: zod
-    .array(zod.string())
+    .array(
+      zod.enum([
+        "zone.add",
+        "zone.edit",
+        "zone.delete",
+        "zone.export",
+        "zone.import",
+      ]),
+    )
     .max(createCustomRoleResponsePermissionsMax)
     .optional(),
   updated_at: zod.coerce.date(),
@@ -817,7 +833,7 @@ export const getCustomRoleResponseDescriptionMax = 1000;
 
 export const getCustomRoleResponseNameMax = 100;
 
-export const getCustomRoleResponsePermissionsMax = 0;
+export const getCustomRoleResponsePermissionsMax = 5;
 
 export const GetCustomRoleResponse = zod.object({
   created_at: zod.coerce.date(),
@@ -828,7 +844,15 @@ export const GetCustomRoleResponse = zod.object({
   id: zod.string().uuid(),
   name: zod.string().min(1).max(getCustomRoleResponseNameMax),
   permissions: zod
-    .array(zod.string())
+    .array(
+      zod.enum([
+        "zone.add",
+        "zone.edit",
+        "zone.delete",
+        "zone.export",
+        "zone.import",
+      ]),
+    )
     .max(getCustomRoleResponsePermissionsMax)
     .optional(),
   updated_at: zod.coerce.date(),
@@ -852,7 +876,7 @@ export const deleteCustomRoleResponseDescriptionMax = 1000;
 
 export const deleteCustomRoleResponseNameMax = 100;
 
-export const deleteCustomRoleResponsePermissionsMax = 0;
+export const deleteCustomRoleResponsePermissionsMax = 5;
 
 export const DeleteCustomRoleResponse = zod.object({
   created_at: zod.coerce.date(),
@@ -863,7 +887,15 @@ export const DeleteCustomRoleResponse = zod.object({
   id: zod.string().uuid(),
   name: zod.string().min(1).max(deleteCustomRoleResponseNameMax),
   permissions: zod
-    .array(zod.string())
+    .array(
+      zod.enum([
+        "zone.add",
+        "zone.edit",
+        "zone.delete",
+        "zone.export",
+        "zone.import",
+      ]),
+    )
     .max(deleteCustomRoleResponsePermissionsMax)
     .optional(),
   updated_at: zod.coerce.date(),
@@ -896,7 +928,7 @@ export const editCustomRoleResponseDescriptionMax = 1000;
 
 export const editCustomRoleResponseNameMax = 100;
 
-export const editCustomRoleResponsePermissionsMax = 0;
+export const editCustomRoleResponsePermissionsMax = 5;
 
 export const EditCustomRoleResponse = zod.object({
   created_at: zod.coerce.date(),
@@ -907,8 +939,71 @@ export const EditCustomRoleResponse = zod.object({
   id: zod.string().uuid(),
   name: zod.string().min(1).max(editCustomRoleResponseNameMax),
   permissions: zod
-    .array(zod.string())
+    .array(
+      zod.enum([
+        "zone.add",
+        "zone.edit",
+        "zone.delete",
+        "zone.export",
+        "zone.import",
+      ]),
+    )
     .max(editCustomRoleResponsePermissionsMax)
+    .optional(),
+  updated_at: zod.coerce.date(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Permissions Role
+ */
+export const SaveCustomRolePermissionsParams = zod.object({
+  role_id: zod.coerce.string().uuid(),
+});
+
+export const saveCustomRolePermissionsBodyPermissionsMax = 5;
+
+export const SaveCustomRolePermissionsBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  permissions: zod
+    .array(
+      zod.enum([
+        "zone.add",
+        "zone.edit",
+        "zone.delete",
+        "zone.export",
+        "zone.import",
+      ]),
+    )
+    .max(saveCustomRolePermissionsBodyPermissionsMax),
+});
+
+export const saveCustomRolePermissionsResponseDescriptionDefault = ``;
+export const saveCustomRolePermissionsResponseDescriptionMax = 1000;
+
+export const saveCustomRolePermissionsResponseNameMax = 100;
+
+export const saveCustomRolePermissionsResponsePermissionsMax = 5;
+
+export const SaveCustomRolePermissionsResponse = zod.object({
+  created_at: zod.coerce.date(),
+  description: zod
+    .string()
+    .max(saveCustomRolePermissionsResponseDescriptionMax)
+    .default(saveCustomRolePermissionsResponseDescriptionDefault),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(saveCustomRolePermissionsResponseNameMax),
+  permissions: zod
+    .array(
+      zod.enum([
+        "zone.add",
+        "zone.edit",
+        "zone.delete",
+        "zone.export",
+        "zone.import",
+      ]),
+    )
+    .max(saveCustomRolePermissionsResponsePermissionsMax)
     .optional(),
   updated_at: zod.coerce.date(),
   version: zod.number().int(),
@@ -947,12 +1042,15 @@ export const listStaffResponseItemsItemNameMax = 200;
 
 export const listStaffResponseItemsItemPhoneMax = 30;
 
+export const listStaffResponseItemsItemWorkspaceLoginEnabledDefault = false;
+
 export const ListStaffResponse = zod.object({
   has_more: zod.boolean(),
   items: zod.array(
     zod.object({
       createdAt: zod.coerce.date(),
       createdBy: zod.string(),
+      custom_role_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
       dateOfJoining: zod.coerce.date(),
       designation: zod
         .string()
@@ -976,6 +1074,9 @@ export const ListStaffResponse = zod.object({
       updatedBy: zod.string(),
       userId: zod.string(),
       version: zod.number().int(),
+      workspace_login_enabled: zod
+        .boolean()
+        .default(listStaffResponseItemsItemWorkspaceLoginEnabledDefault),
     }),
   ),
   limit: zod.number().int(),
@@ -1019,11 +1120,14 @@ export const createStaffResponseRecordNameMax = 200;
 
 export const createStaffResponseRecordPhoneMax = 30;
 
+export const createStaffResponseRecordWorkspaceLoginEnabledDefault = false;
+
 export const CreateStaffResponse = zod.object({
   initial_password: zod.string(),
   record: zod.object({
     createdAt: zod.coerce.date(),
     createdBy: zod.string(),
+    custom_role_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
     dateOfJoining: zod.coerce.date(),
     designation: zod
       .string()
@@ -1047,6 +1151,9 @@ export const CreateStaffResponse = zod.object({
     updatedBy: zod.string(),
     userId: zod.string(),
     version: zod.number().int(),
+    workspace_login_enabled: zod
+      .boolean()
+      .default(createStaffResponseRecordWorkspaceLoginEnabledDefault),
   }),
 });
 
@@ -1082,12 +1189,15 @@ export const searchStaffDirectoryResponseItemsItemNameMax = 200;
 
 export const searchStaffDirectoryResponseItemsItemPhoneMax = 30;
 
+export const searchStaffDirectoryResponseItemsItemWorkspaceLoginEnabledDefault = false;
+
 export const SearchStaffDirectoryResponse = zod.object({
   has_more: zod.boolean(),
   items: zod.array(
     zod.object({
       createdAt: zod.coerce.date(),
       createdBy: zod.string(),
+      custom_role_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
       dateOfJoining: zod.coerce.date(),
       designation: zod
         .string()
@@ -1120,6 +1230,11 @@ export const SearchStaffDirectoryResponse = zod.object({
       updatedBy: zod.string(),
       userId: zod.string(),
       version: zod.number().int(),
+      workspace_login_enabled: zod
+        .boolean()
+        .default(
+          searchStaffDirectoryResponseItemsItemWorkspaceLoginEnabledDefault,
+        ),
     }),
   ),
   limit: zod.number().int(),
@@ -1143,9 +1258,12 @@ export const getStaffResponseNameMax = 200;
 
 export const getStaffResponsePhoneMax = 30;
 
+export const getStaffResponseWorkspaceLoginEnabledDefault = false;
+
 export const GetStaffResponse = zod.object({
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
+  custom_role_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
   dateOfJoining: zod.coerce.date(),
   designation: zod.string().min(1).max(getStaffResponseDesignationMax),
   dialCountry: zod.string(),
@@ -1166,6 +1284,64 @@ export const GetStaffResponse = zod.object({
   updatedBy: zod.string(),
   userId: zod.string(),
   version: zod.number().int(),
+  workspace_login_enabled: zod
+    .boolean()
+    .default(getStaffResponseWorkspaceLoginEnabledDefault),
+});
+
+/**
+ * @summary Access Staff
+ */
+export const SetStaffWorkspaceAccessParams = zod.object({
+  staff_id: zod.coerce.string().uuid(),
+});
+
+export const SetStaffWorkspaceAccessBody = zod.object({
+  custom_role_id: zod.union([zod.string().uuid(), zod.null()]),
+  expected_version: zod.number().int().min(1),
+  workspace_login_enabled: zod.boolean(),
+});
+
+export const setStaffWorkspaceAccessResponseDesignationMax = 200;
+
+export const setStaffWorkspaceAccessResponseEmailMax = 320;
+
+export const setStaffWorkspaceAccessResponseNameMax = 200;
+
+export const setStaffWorkspaceAccessResponsePhoneMax = 30;
+
+export const setStaffWorkspaceAccessResponseWorkspaceLoginEnabledDefault = false;
+
+export const SetStaffWorkspaceAccessResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  custom_role_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  dateOfJoining: zod.coerce.date(),
+  designation: zod
+    .string()
+    .min(1)
+    .max(setStaffWorkspaceAccessResponseDesignationMax),
+  dialCountry: zod.string(),
+  email: zod.string().email().max(setStaffWorkspaceAccessResponseEmailMax),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(setStaffWorkspaceAccessResponseNameMax),
+  phone: zod.string().min(1).max(setStaffWorkspaceAccessResponsePhoneMax),
+  role: zod.enum([
+    "Staff",
+    "Manager",
+    "Accountant",
+    "Back End",
+    "Sub Admin",
+    "Super Admin",
+  ]),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  userId: zod.string(),
+  version: zod.number().int(),
+  workspace_login_enabled: zod
+    .boolean()
+    .default(setStaffWorkspaceAccessResponseWorkspaceLoginEnabledDefault),
 });
 
 /**
@@ -1210,9 +1386,12 @@ export const editStaffResponseNameMax = 200;
 
 export const editStaffResponsePhoneMax = 30;
 
+export const editStaffResponseWorkspaceLoginEnabledDefault = false;
+
 export const EditStaffResponse = zod.object({
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
+  custom_role_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
   dateOfJoining: zod.coerce.date(),
   designation: zod.string().min(1).max(editStaffResponseDesignationMax),
   dialCountry: zod.string(),
@@ -1233,6 +1412,9 @@ export const EditStaffResponse = zod.object({
   updatedBy: zod.string(),
   userId: zod.string(),
   version: zod.number().int(),
+  workspace_login_enabled: zod
+    .boolean()
+    .default(editStaffResponseWorkspaceLoginEnabledDefault),
 });
 
 /**
@@ -1255,9 +1437,12 @@ export const setStaffStatusResponseNameMax = 200;
 
 export const setStaffStatusResponsePhoneMax = 30;
 
+export const setStaffStatusResponseWorkspaceLoginEnabledDefault = false;
+
 export const SetStaffStatusResponse = zod.object({
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
+  custom_role_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
   dateOfJoining: zod.coerce.date(),
   designation: zod.string().min(1).max(setStaffStatusResponseDesignationMax),
   dialCountry: zod.string(),
@@ -1278,6 +1463,9 @@ export const SetStaffStatusResponse = zod.object({
   updatedBy: zod.string(),
   userId: zod.string(),
   version: zod.number().int(),
+  workspace_login_enabled: zod
+    .boolean()
+    .default(setStaffStatusResponseWorkspaceLoginEnabledDefault),
 });
 
 /**
@@ -1947,8 +2135,9 @@ export const LoginResponse = zod.object({
   expires_in: zod.number().int(),
   token_type: zod.literal("bearer").default(loginResponseTokenTypeDefault),
   user: zod.object({
-    email: zod.string().email(),
+    email: zod.union([zod.string().email(), zod.null()]),
     id: zod.string().uuid(),
+    identity_kind: zod.enum(["super_admin", "mr", "staff"]),
     mr_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
     permissions: zod.array(zod.string()),
     system_role: zod.union([zod.enum(["super_admin", "mr"]), zod.null()]),
@@ -1965,8 +2154,9 @@ export const LogoutResponse = zod.void();
  * @summary Me
  */
 export const GetCurrentUserResponse = zod.object({
-  email: zod.string().email(),
+  email: zod.union([zod.string().email(), zod.null()]),
   id: zod.string().uuid(),
+  identity_kind: zod.enum(["super_admin", "mr", "staff"]),
   mr_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
   permissions: zod.array(zod.string()),
   system_role: zod.union([zod.enum(["super_admin", "mr"]), zod.null()]),
@@ -1983,8 +2173,9 @@ export const RefreshResponse = zod.object({
   expires_in: zod.number().int(),
   token_type: zod.literal("bearer").default(refreshResponseTokenTypeDefault),
   user: zod.object({
-    email: zod.string().email(),
+    email: zod.union([zod.string().email(), zod.null()]),
     id: zod.string().uuid(),
+    identity_kind: zod.enum(["super_admin", "mr", "staff"]),
     mr_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
     permissions: zod.array(zod.string()),
     system_role: zod.union([zod.enum(["super_admin", "mr"]), zod.null()]),

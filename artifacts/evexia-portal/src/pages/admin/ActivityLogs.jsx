@@ -11,7 +11,7 @@ const browserActions = {
   courier_create: 'Courier partner created', courier_edit: 'Courier partner updated',
   courier_status: 'Courier partner status changed', courier_delete: 'Courier partner deleted',
   staff_create: 'Staff created', staff_update: 'Staff updated', staff_status: 'Staff status changed',
-  role_create: 'Role created', role_update: 'Role updated', role_delete: 'Role deleted',
+  role_create: 'Role created', role_update: 'Role updated', role_delete: 'Role deleted', role_permissions: 'Role permissions changed', staff_access: 'Staff access changed',
   browser_page_view: 'Page visited', browser_created: 'Record created',
   browser_updated: 'Record updated', browser_deleted: 'Record deleted',
   browser_imported: 'Records imported', browser_exported: 'Export generated',

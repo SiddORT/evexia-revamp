@@ -1,4 +1,5 @@
 // Tokens live only in this module's memory. No credential or identity storage.
+import { STAFF_VISIBLE_PERMISSIONS } from './capabilities.js';
 const AUTH_URL = '/api/v1/auth';
 const LOCK_NAME = 'evexia-auth-cookie';
 const REPLACED_MESSAGE = 'Your Admin session ended because this account was signed in elsewhere. Please log in again.';
@@ -90,10 +91,19 @@ async function request(path, body, bearer) {
 }
 
 function safeAdmin(user) {
-  if (!user || typeof user.id !== 'string' || typeof user.email !== 'string' || user.system_role !== 'super_admin' || !Array.isArray(user.permissions) || !user.permissions.includes('admin.access')) {
-    throw new SessionError('This account does not have Admin access.', 403);
+  const permissions = Array.isArray(user?.permissions) ? user.permissions : null;
+  const kind = user?.identity_kind ?? (user?.system_role === 'super_admin' ? 'super_admin' : undefined);
+  if (user && typeof user.id === 'string' && permissions && kind === 'super_admin' && typeof user.email === 'string'
+      && user.system_role === 'super_admin' && permissions.includes('admin.access')) {
+    return Object.freeze({ id: user.id, email: user.email, username: user.username, system_role: user.system_role, identity_kind: 'super_admin', permissions: permissions.filter((permission) => ['admin.access', 'staff.manage', 'roles.manage'].includes(permission)) });
   }
-  return Object.freeze({ id: user.id, email: user.email, username: user.username, system_role: user.system_role, permissions: user.permissions.filter((permission) => ['admin.access', 'staff.manage', 'roles.manage'].includes(permission)) });
+  // Verified restricted staff: never admin.access, never a system role.
+  if (user && typeof user.id === 'string' && permissions && kind === 'staff' && user.system_role == null
+      && (user.email === null || user.email === undefined || typeof user.email === 'string')
+      && permissions.includes('workspace.access') && !permissions.includes('admin.access')) {
+    return Object.freeze({ id: user.id, email: user.email ?? null, username: user.username ?? null, system_role: null, identity_kind: 'staff', permissions: Object.freeze(STAFF_VISIBLE_PERMISSIONS.filter((permission) => permissions.includes(permission))) });
+  }
+  throw new SessionError('This account does not have Admin access.', 403);
 }
 
 async function accept(payload, epoch) {
@@ -217,7 +227,7 @@ export function reportingIdentityGuard() {
 // Dedicated authenticated staff transport. Never replay mutations: a lost create
 // response may already have committed and its initial password is unrecoverable.
 export async function staffRequest(path = '', body, { signal } = {}) {
-  if (!/^(?:|\/search|\/[0-9a-f-]{36}(?:\/(?:edit|status))?|\?limit=\d+&offset=\d+)$/.test(path)) {
+  if (!/^(?:|\/search|\/[0-9a-f-]{36}(?:\/(?:edit|status|access))?|\?limit=\d+&offset=\d+)$/.test(path)) {
     throw new SessionError('Unsupported staff operation.');
   }
   const mutation = body !== undefined && path !== '/search';
@@ -269,6 +279,8 @@ export async function staffRequest(path = '', body, { signal } = {}) {
     const code = data?.error?.code;
     const error = new SessionError(
       code === 'staff_stale' ? 'This staff record changed. Your draft is still here. Review current details before retrying.'
+        : code === 'role_deleted' || code === 'role_not_found' ? 'The selected role no longer exists. Your choices are still here. Reload roles and choose another or remove the assignment.'
+        : code === 'staff_protected' ? 'This account cannot be assigned a role or workspace login.'
         : code === 'staff_duplicate' ? 'That email or identity already exists. Check the directory.'
         : response.status === 422 ? 'Some staff fields are invalid. Check the details and try again.'
         : response.status === 403 ? 'Staff Management access denied.'
@@ -282,8 +294,8 @@ export async function staffRequest(path = '', body, { signal } = {}) {
 }
 
 export async function roleRequest(path = '', body, { signal } = {}) {
-  if (!/^(?:|\/[0-9a-f-]{36}(?:\/(?:edit|delete))?|\?limit=(?:[1-9]\d?|100)(?:&cursor=[0-9a-f-]{36})?)$/.test(path)
-      || (body !== undefined && path !== '' && !/\/(?:edit|delete)$/.test(path))) {
+  if (!/^(?:|\/[0-9a-f-]{36}(?:\/(?:edit|delete|permissions))?|\?limit=(?:[1-9]\d?|100)(?:&cursor=[0-9a-f-]{36})?)$/.test(path)
+      || (body !== undefined && path !== '' && !/\/(?:edit|delete|permissions)$/.test(path))) {
     throw new SessionError('Unsupported role operation.');
   }
   const mutation = body !== undefined;
@@ -336,7 +348,10 @@ export async function roleRequest(path = '', body, { signal } = {}) {
     const error = new SessionError(
       code === 'role_stale' ? 'This role changed. Your draft is still here. Review current details before retrying.'
         : code === 'role_deleted' ? 'This role was deleted. Your draft is still here. Refresh roles to continue.'
+        : code === 'role_assigned' || code === 'role_in_use' ? 'This role is assigned to staff. Remove it from those staff in Staff Management before deleting it.'
         : code === 'role_duplicate' ? 'A role with this name already exists. Choose a different name.'
+        : code === 'role_permission_unknown' ? 'One of the selected permissions is not recognised. Reload this role and try again.'
+        : response.status === 422 && path.endsWith('/permissions') ? 'The permission selection was rejected. Reload this role and try again.'
         : response.status === 422 ? 'Role fields are invalid. Use a name of 1–100 characters and a description of at most 1,000 characters.'
         : response.status === 403 ? 'Role Management access denied.'
         : response.status === 401 ? 'Your session expired. Please sign in again.'
@@ -350,6 +365,23 @@ export async function roleRequest(path = '', body, { signal } = {}) {
 }
 // Narrow reporting facility: credentials never leave this module.
 // Shared master transport. No automatic replay of a potentially committed write.
+// Per-operation Zone authorization. Staff never reach other master services;
+// trash and restore stay Super Admin only. The server re-checks every call.
+function masterAllowed(user, resource, path, writing) {
+  if (user.permissions.includes('admin.access')) return true;
+  if (user.identity_kind !== 'staff' || resource !== 'zones') return false;
+  const grants = user.permissions;
+  if (/^\/(?:trash)$|\/restore$/.test(path)) return false;
+  const need = path === '' ? (writing ? 'zone.add' : null)
+    : /^\/[0-9a-f-]{36}$/.test(path) ? null
+    : /\/(?:edit|status)$/.test(path) ? 'zone.edit'
+    : /\/delete$/.test(path) ? 'zone.delete'
+    : path === '/export' ? 'zone.export'
+    : /^\/import\//.test(path) ? 'zone.import' : undefined;
+  if (need === undefined) return false;
+  return need ? grants.includes(need) : ['zone.add', 'zone.edit', 'zone.delete', 'zone.export', 'zone.import'].some((key) => grants.includes(key));
+}
+
 async function masterRequest(resource, path = '', { body, file, params = {}, download = false, signal } = {}) {
   const zone = resource === 'zones';
   const label = zone ? 'Zone' : resource === 'storage-locations' ? 'Storage location' : 'Courier partner';
@@ -367,7 +399,7 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
     if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
       throw new SessionError('Your session changed. Sign in again before retrying.', 401);
     }
-    if (!state.user.permissions.includes('admin.access')) throw new SessionError(`${label} access denied.`, 403);
+    if (!masterAllowed(state.user, resource, path, body !== undefined || file !== undefined)) throw new SessionError(`${label} access denied.`, 403);
   };
   if (pending) await pending;
   else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true);
@@ -421,6 +453,9 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
       : data?.error?.message || `${label} request failed. Review the details and retry.`, response.status);
     error.code = data?.error?.code;
     error.ambiguous = writing && response.status >= 500 && error.code !== unavailable;
+    // The server may have revoked one action without ending the staff session.
+    // Refresh the authoritative matrix; never replay the denied operation.
+    if (response.status === 403 && zone && state.user?.identity_kind === 'staff') await verifySession();
     throw error;
   }
   if (download) {
@@ -446,6 +481,9 @@ export const locationRequest = (path, options) => masterRequest('storage-locatio
 export async function reportingRequest(resource, params = {}, { signal } = {}) {
   if (!['summary', 'users', 'sessions', 'events', 'activity', 'sessions/export', 'events/export', 'downloads', 'downloads/initiate'].includes(resource)) {
     throw new SessionError('Unsupported report.');
+  }
+  if (state.user?.identity_kind === 'staff' && !(resource === 'downloads/initiate' && params.source === 'zone' && params.kind === 'sample' && state.user.permissions.includes('zone.import'))) {
+    throw new SessionError('Reporting access denied.', 403);
   }
   const epoch = generation;
   const owner = state.user?.id;
@@ -505,9 +543,10 @@ export async function reportingRequest(resource, params = {}, { signal } = {}) {
     response = await load(token); // one retry only
   }
   if (!response.ok) {
-    if (response.status === 401 || response.status === 403) clear();
+    if (response.status === 401 || (response.status === 403 && state.user?.identity_kind !== 'staff')) clear();
+    else if (response.status === 403 && state.user?.identity_kind === 'staff') await verifySession();
     throw new SessionError(
-      response.status === 403 ? 'This account does not have Admin access.'
+      response.status === 403 ? 'This account is not permitted to perform this reporting or download action.'
         : response.status === 401 ? 'Your session expired. Please log in again.'
         : response.status === 422 ? 'Invalid report filters. Check the date range.'
         : response.status === 409 && resource.endsWith('/export') ? 'More than 5,000 rows match. Narrow the user or UTC date filters and retry. No file was downloaded.'

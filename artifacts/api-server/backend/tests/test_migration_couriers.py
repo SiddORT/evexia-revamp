@@ -1,6 +1,7 @@
 """Courier migration preservation, constraints and committed-connection races."""
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
+import uuid
 import pytest
 from alembic import command
 from sqlalchemy import func, select, text
@@ -22,10 +23,12 @@ def test_actual_courier_migration_preserves_zone_identity_history(migration_db):
     command.downgrade(config, "0010_custom_roles")
     with Session(engine) as db:
         zone = zones.create(db, identity(db, actor_id, session_id), ZoneFields(name="Preserved Zone", status="active"))
-        role = CustomRole(name="Preserved Role", description="Existing business metadata", version=1)
-        db.add(role)
+        # Historical schemas predate current ORM fields; preserve the old row
+        # using its actual contract before upgrading to the current model.
+        role_id = uuid.uuid4()
+        db.execute(text("INSERT INTO custom_roles(id,name,description,version) VALUES (:id,'Preserved Role','Existing business metadata',1)"),
+                   {"id": role_id})
         db.commit()
-        role_id = role.id
     command.upgrade(config, "head")
     with Session(engine) as db:
         assert db.get(CustomRole, role_id).description == "Existing business metadata"

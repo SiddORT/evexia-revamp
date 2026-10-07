@@ -8,6 +8,7 @@ from app.core.config import Settings, get_settings
 from app.db.session import get_db
 from app.repositories.sessions import event
 from app.services.auth import AuthError, Identity, SessionReplaced, identity_from_token
+from app.services.zone_policy import zone_allowed
 
 bearer = HTTPBearer(auto_error=False)
 
@@ -70,3 +71,12 @@ def require_cookie_origin(request: Request, settings: Settings = Depends(get_set
     own_origin = str(request.base_url).rstrip("/")
     if not origin or origin.rstrip("/") not in (own_origin, *settings.allowed_origins):
         raise HTTPException(status_code=403, detail="Origin not allowed")
+
+
+def require_zone(action=None, protected=False) -> Callable:
+    """Early refusal before uploads/parsers; services repeat this under locks."""
+    def check(identity: Identity = Depends(current_identity)) -> Identity:
+        if not zone_allowed(identity, action, protected):
+            raise HTTPException(status_code=403, detail="Zone access denied")
+        return identity
+    return check

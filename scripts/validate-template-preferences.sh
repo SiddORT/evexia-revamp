@@ -4,12 +4,13 @@ set -eu
 # Run auth and preference service checks, then the complete authenticated
 # preview suite once against isolated PostgreSQL/API/Vite and fresh contexts.
 pnpm --filter @workspace/evexia-portal run test:admin-session
+node --test artifacts/evexia-portal/src/auth/staffPermissions.test.js artifacts/evexia-portal/src/auth/navigationGuard.test.js
 pnpm --filter @workspace/evexia-portal run test:template-preferences:service
 node --test artifacts/evexia-portal/src/services/rolePermissions.test.js
 node --test artifacts/evexia-portal/src/services/reportingCSV.test.js
 node --test artifacts/evexia-portal/src/services/downloads.test.js
 node --test artifacts/evexia-portal/src/services/staff.test.js
-sh scripts/test-api-foundation.sh tests/test_roles.py tests/test_migration_roles.py tests/test_locations.py tests/test_migration_locations.py tests/test_downloads.py tests/test_download_queries.py tests/test_download_files.py
+sh scripts/test-api-foundation.sh tests/test_roles.py tests/test_migration_roles.py tests/test_zone_permissions.py tests/test_migration_zone_permissions.py tests/test_locations.py tests/test_migration_locations.py tests/test_downloads.py tests/test_download_queries.py tests/test_download_files.py
 node --test artifacts/evexia-portal/src/services/serverCouriers.test.js
 node --test artifacts/evexia-portal/src/services/serverLocations.test.js
 sh scripts/run-authenticated-previews.sh

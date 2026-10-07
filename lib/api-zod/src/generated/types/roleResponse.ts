@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { RoleResponsePermissionsItem } from "./roleResponsePermissionsItem";
 
 export interface RoleResponse {
   created_at: Date;
@@ -16,8 +17,8 @@ export interface RoleResponse {
    * @maxLength 100
    */
   name: string;
-  /** @maxItems 0 */
-  readonly permissions?: readonly string[];
+  /** @maxItems 5 */
+  readonly permissions?: readonly RoleResponsePermissionsItem[];
   updated_at: Date;
   version: number;
 }

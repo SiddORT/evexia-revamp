@@ -4,6 +4,7 @@ import json
 import subprocess
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from alembic import command
 
 import pytest
 from pydantic import SecretStr
@@ -25,7 +26,8 @@ from test_staff import BODY
 
 
 def setup(migration_db):
-    engine, _, admin, session, _ = prepare(migration_db)
+    engine, config, admin, session, _ = prepare(migration_db)
+    command.upgrade(config, "head")
     settings = get_settings().model_copy(update={
         "staff_encryption_keys": SecretStr(json.dumps({
             "primary": base64.b64encode(b"A" * 32).decode(),

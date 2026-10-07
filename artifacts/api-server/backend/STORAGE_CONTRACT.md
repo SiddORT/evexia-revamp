@@ -14,8 +14,10 @@ No tenant identifiers, folder scope, or portal/demo import is introduced.
 ## Identity and permissions
 
 Login uses the existing User, Argon2id, fixed-algorithm JWT and rotating hashed
-refresh-session foundation. Only explicitly provisioned `super_admin` and `mr`
-system identities may authenticate. Legacy/unmapped users and old credentials
+refresh-session foundation. Explicitly provisioned `super_admin`/`mr` identities
+and opt-in active StaffProfile-linked workspace identities may authenticate.
+Staff have no system role; custom role labels are never identities and staff
+cannot access private files or domain administration. Legacy/unmapped users and old credentials
 are denied. Mapping or privilege/activation changes bump the identity version
 and revoke refresh sessions. Public registration remains unavailable regardless
 of its old setting. Bootstrap/mapping is an audited operator command with hidden
@@ -25,7 +27,7 @@ password input; there is no default elevated account.
 |---|---|---|
 | Provision/map login and MR; create patient; assign patient | yes | no |
 | Staff list/detail/create/edit/status (`staff.manage`) | protected singleton only | no |
-| Zone list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
+| Zone list/detail/create/edit/status/soft-delete/import/export | all; opt-in staff limited to five explicit Zone grants | no |
 | Courier Partner list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
 | Storage Location list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
 | Upload, metadata, verified download, download grant | system-wide | own MR or currently assigned active patient |

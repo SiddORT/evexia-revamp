@@ -6,6 +6,9 @@ import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import MasterImportTabs from '../../components/admin/MasterImportTabs.jsx';
 import { EXCEL_TEMPLATES, readExcelRows, reviewExcel, sampleExcel } from '../../services/mockExcelImport.js';
 import '../../excel-import.css';
+import AccessDenied from '../../components/admin/AccessDenied.jsx';
+import { useAdminSession } from '../../auth/AdminBoundary.jsx';
+import { hasZonePermission } from '../../auth/capabilities.js';
 import ZoneImportPage from './ZoneImportPage.jsx';
 import CourierImportPage from './CourierImportPage.jsx';
 import StorageLocationImportPage from './StorageLocationImportPage.jsx';
@@ -13,7 +16,12 @@ import StorageLocationImportPage from './StorageLocationImportPage.jsx';
 const routes = { zone: '/admin/masters/zones', 'courier-partner': '/admin/masters/courier-partners', mr: '/admin/masters/mrs', doctor: '/admin/masters/doctors' };
 
 export default function MasterExcelImportPage({ kind }) {
-  return kind === 'zone' ? <ZoneImportPage /> : kind === 'courier-partner' ? <CourierImportPage /> : kind === 'storage-location' ? <StorageLocationImportPage /> : <PreviewExcelImportPage kind={kind} />;
+  return kind === 'zone' ? <ZoneImportGate /> : kind === 'courier-partner' ? <CourierImportPage /> : kind === 'storage-location' ? <StorageLocationImportPage /> : <PreviewExcelImportPage kind={kind} />;
+}
+
+function ZoneImportGate() {
+  const { user } = useAdminSession();
+  return hasZonePermission(user, 'zone.import') ? <ZoneImportPage /> : <AccessDenied title="Import Zone" heading="Zone import is not permitted" testId="status-zone-import-denied" message="Your role does not include the Import permission under Masters > Zone." />;
 }
 
 function PreviewExcelImportPage({ kind }) {

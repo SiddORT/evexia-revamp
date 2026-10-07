@@ -52,6 +52,7 @@ def identity(db, user_id, session_id):
 
 def test_forward_staff_migration_preserves_accounts_sessions_history_and_constraints(migration_db):
     engine, config, admin_id, session_id, legacy_id = prepare(migration_db)
+    command.upgrade(config, "head")
     with Session(engine, expire_on_commit=False) as db:
         assert db.scalar(select(func.count()).select_from(StaffProfile)) == 0
         assert db.get(User, legacy_id).password_hash == "existing-hash"
@@ -79,12 +80,13 @@ def test_forward_staff_migration_preserves_accounts_sessions_history_and_constra
                 with db.begin_nested():
                     db.execute(text(sql), params)
                     db.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
-    with pytest.raises(RuntimeError, match="Staff records exist"):
+    with pytest.raises(RuntimeError, match="forward-only"):
         command.downgrade(config, "0008_activity_search")
 
 
 def test_committed_duplicate_create_race_and_stale_status_use_independent_connections(migration_db):
     engine, _config, admin_id, session_id, _legacy_id = prepare(migration_db)
+    command.upgrade(_config, "head")
     settings = get_settings()
     barrier = Barrier(2)
     def create():

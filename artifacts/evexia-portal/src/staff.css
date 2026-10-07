@@ -85,4 +85,6 @@
 .admin-staff-invite__copy { white-space: pre-wrap; margin: 0; padding: 14px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-chrome); color: var(--admin-text); font: inherit; }
 @media (max-width: 1050px) { .admin-staff-desktop { display: none; } .admin-staff-mobile { display: grid; gap: 10px; padding: 12px; } }
 @media (max-width: 600px) { .admin-staff-actions { width: 100%; justify-content: flex-start; } .admin-staff-actions .admin-button { flex: 1 1 auto; } .admin-staff-form, .admin-staff-import__row dl, .admin-staff-card__meta { grid-template-columns: minmax(0, 1fr); } }
-@media (prefers-reduced-motion: reduce) { .admin-staff-status__track::after { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .admin-staff-status__track::after { transition: none; } }.admin-staff-access__option { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; }
+.admin-staff-access__option small { color: var(--admin-text-soft); }
+.admin-staff-access__pager { display: flex; align-items: center; justify-content: space-between; gap: 8px; }

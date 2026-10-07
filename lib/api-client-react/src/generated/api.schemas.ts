@@ -187,6 +187,15 @@ export interface CreatePatientRequest {
   assigned_mr_id?: string | null;
 }
 
+export type CurrentUserIdentityKind =
+  (typeof CurrentUserIdentityKind)[keyof typeof CurrentUserIdentityKind];
+
+export const CurrentUserIdentityKind = {
+  super_admin: "super_admin",
+  mr: "mr",
+  staff: "staff",
+} as const;
+
 export type CurrentUserSystemRole =
   (typeof CurrentUserSystemRole)[keyof typeof CurrentUserSystemRole] | null;
 
@@ -196,8 +205,9 @@ export const CurrentUserSystemRole = {
 } as const;
 
 export interface CurrentUser {
-  email: string;
+  email: string | null;
   id: string;
+  identity_kind: CurrentUserIdentityKind;
   mr_id?: string | null;
   permissions: string[];
   system_role: CurrentUserSystemRole;
@@ -617,6 +627,17 @@ export interface RoleFields {
   name: string;
 }
 
+export type RoleResponsePermissionsItem =
+  (typeof RoleResponsePermissionsItem)[keyof typeof RoleResponsePermissionsItem];
+
+export const RoleResponsePermissionsItem = {
+  zoneadd: "zone.add",
+  zoneedit: "zone.edit",
+  zonedelete: "zone.delete",
+  zoneexport: "zone.export",
+  zoneimport: "zone.import",
+} as const;
+
 export interface RoleResponse {
   created_at: string;
   /** @maxLength 1000 */
@@ -627,8 +648,8 @@ export interface RoleResponse {
    * @maxLength 100
    */
   name: string;
-  /** @maxItems 0 */
-  readonly permissions?: readonly string[];
+  /** @maxItems 5 */
+  readonly permissions?: readonly RoleResponsePermissionsItem[];
   updated_at: string;
   version: number;
 }
@@ -638,6 +659,24 @@ export interface RolePage {
   items: RoleResponse[];
   limit: number;
   next_cursor: string | null;
+}
+
+export type RolePermissionsPermissionsItem =
+  (typeof RolePermissionsPermissionsItem)[keyof typeof RolePermissionsPermissionsItem];
+
+export const RolePermissionsPermissionsItem = {
+  zoneadd: "zone.add",
+  zoneedit: "zone.edit",
+  zonedelete: "zone.delete",
+  zoneexport: "zone.export",
+  zoneimport: "zone.import",
+} as const;
+
+export interface RolePermissions {
+  /** @minimum 1 */
+  expected_version: number;
+  /** @maxItems 5 */
+  permissions: RolePermissionsPermissionsItem[];
 }
 
 export interface RoleVersion {
@@ -676,6 +715,13 @@ export interface SessionPage {
   offset: number;
 }
 
+export interface StaffAccess {
+  custom_role_id: string | null;
+  /** @minimum 1 */
+  expected_version: number;
+  workspace_login_enabled: boolean;
+}
+
 export type StaffResponseRole =
   (typeof StaffResponseRole)[keyof typeof StaffResponseRole];
 
@@ -699,6 +745,7 @@ export const StaffResponseStatus = {
 export interface StaffResponse {
   createdAt: string;
   createdBy: string;
+  custom_role_id?: string | null;
   dateOfJoining: string;
   /**
    * @minLength 1
@@ -725,6 +772,7 @@ export interface StaffResponse {
   updatedBy: string;
   userId: string;
   version: number;
+  workspace_login_enabled?: boolean;
 }
 
 export interface StaffCreated {

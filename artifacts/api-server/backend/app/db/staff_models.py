@@ -30,3 +30,5 @@ class StaffProfile(Timestamps, Base):
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     updated_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    custom_role_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("custom_roles.id", ondelete="RESTRICT"), index=True)
+    workspace_login_enabled: Mapped[bool] = mapped_column(nullable=False, default=False, server_default="false")

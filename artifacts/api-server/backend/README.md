@@ -3,7 +3,7 @@
 This FastAPI modular monolith supplies authoritative authentication for the
 existing EVEXIA Admin login and protected workspace. MR and Doctor login screens
 remain mock previews. Staff Management is now an authenticated, encrypted
-PostgreSQL directory with unmapped credentials; Zone Master is shared server
+PostgreSQL directory with disabled-by-default opt-in workspace credentials; Zone Master is shared server
 persistence with soft deletion and authenticated audit history. Courier Partner Master
 is separate shared server persistence with its own table and endpoints. Storage Location Master
 uses another separate shared name/address/status table and endpoints, while Allergen/PO/PR
@@ -50,7 +50,8 @@ explicit migration and unchanged local-demo purchasing relationships.
   `0002_optional_username`, `0003_system_identity_domain`, `0004_private_files`,
   `0005_protected_super_admin_sessions`, `0006_auth_sessions`,
     `0007_reporting_indexes`, `0008_activity_search`, `0009_staff`,
-    `0010_zones`, `0010_custom_roles`, `0011_courier_partners`, and `0012_storage_locations`. Zone, role, courier and location migrations create only empty tables. Staff migration
+    `0010_zones`, `0010_custom_roles`, `0011_courier_partners`, `0012_storage_locations`,
+    `0013_download_logs`, `0014_download_reporting_index`, and `0015_zone_permissions`. Zone, role, courier and location migrations create only empty tables. Staff migration
    adds an empty encrypted profile table and deferred identity-link integrity
    guards; it changes no existing identities, sessions or activity history.
    The activity search
@@ -508,19 +509,21 @@ database was migrated, seeded or inspected by this work, and no production
 readiness claim is made.
 
 
-### Custom role metadata
+### Custom roles and explicit Zone permissions
 
-The `/api/v1/admin/roles` endpoints manage **non-tenant business metadata only**.
+The `/api/v1/admin/roles` endpoints manage custom metadata and five explicit Zone grants.
 They require a currently valid protected singleton Super Admin session and
 the internal `roles.manage` capability. Transaction-time revalidation locks the
 actor and session before role reads or writes. Custom role names never enter
 authentication policy, legacy organization memberships, staff role dropdowns,
-or system identity mappings. A custom name of “Super Admin” grants nothing.
+or system identity mappings. A custom name of “Super Admin” grants nothing beyond
+its explicitly saved Zone grants.
 MR, ordinary staff, unmapped accounts and anonymous callers cannot read or
 mutate these records. Staff encryption keys are not needed for custom roles.
 
 Forward-only migration `0010_custom_roles` adds a separate table with no seed
-rows or foreign keys to identities/assignments/permissions. An operator must
+rows. Migration `0015_zone_permissions`, following `0014_download_reporting_index`, adds
+empty-by-default grants and explicit opt-in staff assignments. An operator must
 apply `python3 -m alembic upgrade head` from this backend directory against
 the intended database using the existing migration/backup procedure before
 using the feature. Do not run fixture scripts against the managed/shared
@@ -544,17 +547,18 @@ Contract:
   spelling. Database-generated `lower(btrim(name))` uniqueness rejects duplicate
   names even from simultaneous requests (`role_duplicate`, 409).
 - Responses contain stable UUID `id`, fields, `version`, `created_at`,
-  `updated_at`, and a read-only `permissions: []` collection. All permission,
-  authorization, identity and attribution input fields are forbidden, including
-  an empty input `permissions` collection. No permission operations exist.
+  `updated_at`, and the saved `permissions` collection. Metadata inputs forbid
+  permission, identity and attribution fields. The separate version-checked
+  `POST /admin/roles/{role_id}/permissions` accepts only the five allowlisted
+  Zone keys. See `docs/zone-role-permissions.md` for the complete contract.
 - Row locks and atomic version checks reject `role_stale` (409); missing rows
   return `role_deleted` (404). Failed changes never increment a committed
   version or add a successful audit. Unexpected pre-commit database failures
   return safe `roles_unavailable` (503). A COMMIT connection failure returns
   `role_outcome_unknown` (503): refresh authoritative list/detail before retry,
   since PostgreSQL might already have committed.
-- Successful changes atomically create `role_create`, `role_update` or
-  `role_delete` audit entries with `custom_role` resource UUID, authenticated
+- Successful changes atomically create `role_create`, `role_update`,
+  `role_permissions` or `role_delete` audit entries with `custom_role` resource UUID, authenticated
   actor, session and server request ID. No role name/description is copied into
   audit metadata. Reporting search and Activity Logs show “Role created”,
   “Role updated”, “Role deleted” and “Custom role”, not browser-reported actions.

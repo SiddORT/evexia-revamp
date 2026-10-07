@@ -1,6 +1,7 @@
 """Explicit UI label aliases for safe activity reporting search."""
 BROWSER_ACTIONS = {
     "role_create": "Role created", "role_update": "Role updated", "role_delete": "Role deleted",
+    "role_permissions": "Role permissions changed", "staff_access": "Staff workspace access changed",
     "courier_create": "Courier partner created", "courier_edit": "Courier partner updated",
     "courier_status": "Courier partner status changed", "courier_delete": "Courier partner deleted",
     "staff_create": "Staff created", "staff_update": "Staff updated", "staff_status": "Staff status changed",

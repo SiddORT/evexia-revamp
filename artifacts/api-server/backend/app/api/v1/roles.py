@@ -5,11 +5,11 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import require_permissions
 from app.db.session import get_db
-from app.schemas.roles import RoleEdit, RoleFields, RolePage, RoleResponse, RoleVersion
+from app.schemas.roles import RoleEdit, RoleFields, RolePage, RoleResponse, RoleVersion, RolePermissions
 from app.services.auth import Identity
 from app.services import roles as service
 
-router = APIRouter(prefix="/admin/roles", tags=["custom role metadata"])
+router = APIRouter(prefix="/admin/roles", tags=["custom roles and Zone permissions"])
 manager = require_permissions("roles.manage")
 
 
@@ -40,3 +40,9 @@ def delete_role(role_id: uuid.UUID, body: RoleVersion,
                 actor: Identity = Depends(manager), db: Session = Depends(get_db)):
     """Version-checked deletion; response contains the removed metadata."""
     return service.mutate(db, actor, body, role_id, deleting=True)
+
+
+@router.post("/{role_id}/permissions", response_model=RoleResponse, operation_id="saveCustomRolePermissions")
+def permissions_role(role_id: uuid.UUID, body: RolePermissions,
+                     actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return service.mutate(db, actor, body, role_id, permissions=True)

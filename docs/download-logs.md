@@ -6,6 +6,13 @@ procedure before rollout. No production migration, bootstrap or backfill is run 
 this feature. History begins at rollout and is unrelated to older activity exports.
 The database ledger is append-only, with no clear/delete/export/re-download API.
 
+Opt-in staff with `zone.export` retain mandatory server-prepared Zone export
+logging. Staff with `zone.import` may initiate only Zone sample downloads; this
+does not grant global ledger read access or other download capabilities. Both
+paths recheck current grants before accepting release evidence. Assignment,
+login state and grants remain disabled/empty by default (see
+`zone-role-permissions.md` and migration `0015_zone_permissions`).
+
 ## Meaning and privacy
 
 `server_prepared` means export bytes were successfully prepared, or a private PDF

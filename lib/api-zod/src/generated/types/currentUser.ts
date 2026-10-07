@@ -5,11 +5,13 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { CurrentUserIdentityKind } from "./currentUserIdentityKind";
 import type { CurrentUserSystemRole } from "./currentUserSystemRole";
 
 export interface CurrentUser {
-  email: string;
+  email: string | null;
   id: string;
+  identity_kind: CurrentUserIdentityKind;
   mr_id?: string | null;
   permissions: string[];
   system_role: CurrentUserSystemRole;

@@ -9,6 +9,9 @@ from app.db.models import AuditEvent, User
 from app.db.staff_models import StaffProfile
 from app.services.auth import revalidate_identity
 from app.services.staff_crypto import StaffCrypto, StaffError
+from app.db.role_models import CustomRole
+from app.repositories import sessions as session_repository
+from app.services.zone_policy import lock_policy
 
 
 def authorize(db, actor, settings):
@@ -36,6 +39,7 @@ def projection(db, profile, crypto, username=None):
         dateOfJoining=profile.joining_date, status=profile.status,
         createdBy=str(profile.created_by), updatedBy=str(profile.updated_by),
         createdAt=profile.created_at, updatedAt=profile.updated_at,
+        custom_role_id=profile.custom_role_id, workspace_login_enabled=profile.workspace_login_enabled,
     )
 
 
@@ -163,7 +167,12 @@ def detail(db, actor, settings, profile_id):
 
 def edit(db, actor, settings, profile_id, body, status_only=False):
     def work():
+        lock_policy(db)
         current, crypto = authorize(db, actor, settings)
+        snapshot = db.get(StaffProfile, profile_id)
+        if not snapshot:
+            raise StaffError("Staff member not found", 404, "not_found")
+        user = session_repository.lock_user(db, snapshot.user_id)
         profile = db.scalar(select(StaffProfile).where(StaffProfile.id == profile_id)
                             .execution_options(populate_existing=True).with_for_update())
         if not profile:
@@ -177,11 +186,53 @@ def edit(db, actor, settings, profile_id, body, status_only=False):
             profile.status = body.status
         else:
             assign(profile, body, crypto)
+        if profile.status != "active":
+            session_repository.revoke_user_sessions(db, user.id, "identity_invalid", db.info.get("request_id"))
         profile.version += 1
         profile.updated_by, profile.updated_at = current.user.id, utcnow()
         audit(db, current, profile, "staff_status" if status_only else "staff_update")
         db.flush()
         result = projection(db, profile, crypto)
         db.commit()
+        return result
+    return transaction(work, db)
+
+
+def access(db, actor, settings, profile_id, body):
+    def work():
+        lock_policy(db)
+        current, crypto = authorize(db, actor, settings)
+        snapshot = db.get(StaffProfile, profile_id)
+        if not snapshot:
+            raise StaffError("Staff member not found", 404, "not_found")
+        user = session_repository.lock_user(db, snapshot.user_id)
+        profile = db.scalar(select(StaffProfile).where(StaffProfile.id == profile_id)
+                            .execution_options(populate_existing=True).with_for_update())
+        if (not profile or not user or user.system_role is not None
+                or user.is_protected_system_admin or user.email is not None):
+            raise StaffError("This identity cannot be assigned staff access", 403, "access_denied")
+        projection(db, profile, crypto)
+        if profile.version != body.expected_version:
+            raise StaffError("Staff record changed. Review current details before retrying.", 409, "staff_stale")
+        if body.custom_role_id is not None:
+            role = db.scalar(select(CustomRole).where(CustomRole.id == body.custom_role_id).with_for_update())
+            if not role:
+                raise StaffError("Selected role no longer exists. Choose a current role.", 409, "role_deleted")
+        if body.workspace_login_enabled and (profile.status != "active" or not user.is_active):
+            raise StaffError("Activate this staff account before enabling workspace login.", 409, "staff_inactive")
+        profile.custom_role_id = body.custom_role_id
+        profile.workspace_login_enabled = body.workspace_login_enabled
+        profile.version += 1
+        profile.updated_by, profile.updated_at = current.user.id, utcnow()
+        if not body.workspace_login_enabled:
+            session_repository.revoke_user_sessions(db, user.id, "identity_invalid", db.info.get("request_id"))
+        audit(db, current, profile, "staff_access")
+        db.flush()
+        result = projection(db, profile, crypto)
+        try:
+            db.commit()
+        except SQLAlchemyError:
+            raise StaffError("Access change outcome unknown. Refresh current staff details before submitting again.",
+                             503, "staff_outcome_unknown") from None
         return result
     return transaction(work, db)

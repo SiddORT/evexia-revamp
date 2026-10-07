@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-const user = { id: 'synthetic-id', email: 'synthetic@example.test', username: null, system_role: 'super_admin', permissions: ['admin.access'], password_hash: 'must-not-leak' };
+const user = { id: 'synthetic-id', email: 'synthetic@example.test', username: null, system_role: 'super_admin', identity_kind: 'super_admin', permissions: ['admin.access'], password_hash: 'must-not-leak' };
 let index = 0;
 async function setup(handler) {
   globalThis.BroadcastChannel = undefined;

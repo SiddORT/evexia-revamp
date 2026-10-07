@@ -45,3 +45,24 @@
 .rp-form__error { color: var(--admin-danger); font-size: 12px; font-weight: 600; display: block; margin-bottom: 6px; }
 @media (max-width: 900px) { .rp { grid-template-columns: minmax(0, 1fr); } .rp-meta { grid-template-columns: minmax(0, 1fr); gap: 2px; } .rp-meta dd { margin-bottom: 8px; } }
 @media (prefers-reduced-motion: reduce) { .rp-skel i { animation: none; } }
+.rp-matrix { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--admin-border); border-radius: 12px; background: var(--admin-state-row); }
+.rp-matrix__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 10px; }
+.rp-matrix__eyebrow { margin: 0; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--admin-muted); }
+.rp-matrix__head h3 { margin: 2px 0 0; font-size: 15px; color: var(--admin-text); }
+.rp-matrix__counts { display: grid; gap: 2px; font-size: 12px; color: var(--admin-text-soft); text-align: right; }
+.rp-matrix__pending { color: var(--admin-primary); font-weight: 600; }
+.rp-matrix__shortcuts { display: flex; gap: 8px; }
+.rp-matrix__grid { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; }
+.rp-check { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 12px; border: 1px solid var(--admin-border); border-radius: 10px; background: var(--admin-surface); cursor: pointer; }
+.rp-check input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.rp-check__box { width: 18px; height: 18px; margin-top: 1px; border: 1.5px solid var(--admin-border); border-radius: 5px; display: grid; place-items: center; color: transparent; }
+.rp-check--on { border-color: var(--admin-primary); }
+.rp-check--on .rp-check__box { background: var(--admin-primary); border-color: var(--admin-primary); color: var(--admin-surface); }
+.rp-check input:focus-visible ~ .rp-check__box { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.rp-check__text { display: grid; gap: 2px; min-width: 0; }
+.rp-check__text strong { font-size: 13px; color: var(--admin-text); }
+.rp-check__text small { font-size: 11px; line-height: 1.4; color: var(--admin-text-soft); }
+.rp-check__saved { font-style: normal; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--admin-muted); }
+.rp-matrix fieldset:disabled .rp-check { opacity: .6; cursor: not-allowed; }
+.rp-matrix__note { margin: 0; font-size: 11px; color: var(--admin-text-soft); line-height: 1.5; }
+.rp-matrix__foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }

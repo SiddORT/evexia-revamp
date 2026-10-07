@@ -60,6 +60,13 @@ class StaffStatus(BaseModel):
     expected_version: int = Field(ge=1)
 
 
+class StaffAccess(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_version: int = Field(ge=1, strict=True)
+    custom_role_id: uuid.UUID | None
+    workspace_login_enabled: bool = Field(strict=True)
+
+
 class StaffResponse(StaffFields):
     id: uuid.UUID
     userId: str
@@ -68,6 +75,8 @@ class StaffResponse(StaffFields):
     updatedBy: str
     createdAt: datetime
     updatedAt: datetime
+    custom_role_id: uuid.UUID | None = None
+    workspace_login_enabled: bool = False
 
 
 class StaffCreated(BaseModel):

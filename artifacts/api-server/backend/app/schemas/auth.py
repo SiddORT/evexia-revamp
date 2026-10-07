@@ -30,11 +30,12 @@ class ChangePasswordRequest(StrictModel):
 
 class CurrentUser(BaseModel):
     id: uuid.UUID
-    email: EmailStr
+    email: EmailStr | None
     username: str | None
     system_role: Literal["super_admin", "mr"] | None
     mr_id: uuid.UUID | None = None
     permissions: list[str]
+    identity_kind: Literal["super_admin", "mr", "staff"]
 
 
 class TokenResponse(BaseModel):

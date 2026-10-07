@@ -5,6 +5,8 @@ from app.core.security import utcnow
 from app.db.models import AuditEvent
 from app.db.role_models import CustomRole
 from app.services.auth import revalidate_identity
+from app.db.staff_models import StaffProfile
+from app.services.zone_policy import lock_policy
 
 
 class RoleError(Exception):
@@ -21,7 +23,7 @@ def authorize(db, actor):
 
 def projection(row):
     return dict(id=row.id, name=row.name, description=row.description, version=row.version,
-                created_at=row.created_at, updated_at=row.updated_at, permissions=[])
+                created_at=row.created_at, updated_at=row.updated_at, permissions=sorted(row.permissions))
 
 
 def transaction(db, work):
@@ -67,8 +69,10 @@ def detail(db, actor, role_id):
     return transaction(db, work)
 
 
-def mutate(db, actor, body, role_id=None, deleting=False):
+def mutate(db, actor, body, role_id=None, deleting=False, permissions=False):
     def work():
+        if deleting or permissions:
+            lock_policy(db)
         current = authorize(db, actor)
         if role_id is None:
             row = CustomRole(name=body.name, description=body.description)
@@ -81,9 +85,15 @@ def mutate(db, actor, body, role_id=None, deleting=False):
                 raise RoleError("Role no longer exists", 404, "role_deleted")
             if row.version != body.expected_version:
                 raise RoleError("Role changed; review current details", 409, "role_stale")
-            action = "role_delete" if deleting else "role_update"
+            action = "role_delete" if deleting else "role_permissions" if permissions else "role_update"
+            if deleting and db.scalar(select(StaffProfile.id).where(StaffProfile.custom_role_id == row.id).limit(1)):
+                raise RoleError("This role is assigned to staff. Explicitly unassign it before deleting.",
+                                409, "role_assigned")
             if not deleting:
-                row.name, row.description = body.name, body.description
+                if permissions:
+                    row.permissions = list(body.permissions)
+                else:
+                    row.name, row.description = body.name, body.description
                 row.version += 1
                 row.updated_at = utcnow()
         db.flush()

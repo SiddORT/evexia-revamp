@@ -1,4 +1,5 @@
 import { createRoot } from 'react-dom/client';
+import './auth/navigationGuard.js';
 import App from './App.jsx';
 import './index.css';
 

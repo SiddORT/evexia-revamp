@@ -4,6 +4,8 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Landmark, LayoutDashboard, LayoutGrid, LogOut, MapPinned, FileDown, ScrollText, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
+import { canViewZones, isStaffIdentity } from '../../auth/capabilities.js';
+import { interceptNavigation } from '../../auth/navigationGuard.js';
 import { logoutAdmin } from '../../auth/adminSession.js';
 import { useAdminPreferences } from './adminPreferences.js';
 import '../../admin.css';
@@ -39,9 +41,16 @@ const MASTER_GROUPS = [
 export default function AdminLayout({ title, children }) {
   const [location, navigate] = useLocation();
   const { user } = useAdminSession();
+  const staff = isStaffIdentity(user);
+  const zoneNav = canViewZones(user);
   useEffect(() => { recordPageVisit(location); }, [location, user?.id]);
-  const profileName = user?.username || user?.email || 'Super Admin';
-  async function signOut() {
+  const profileName = user?.username || user?.email || (staff ? 'Staff member' : 'Super Admin');
+  const go = (href) => { if (!interceptNavigation({ kind: 'href', href })) navigate(href); };
+  function signOut() {
+    if (interceptNavigation({ kind: 'run', run: signOutNow })) return Promise.resolve();
+    return signOutNow();
+  }
+  async function signOutNow() {
     const result = logoutAdmin({ beforeRevoke: flushActivityBeforeExit() });
     navigate('/admin/login', { replace: true });
     await result;
@@ -66,21 +75,21 @@ export default function AdminLayout({ title, children }) {
   const isCollapsed = sidebarCollapsed && !compact && !searchExpanded;
   const query = search.trim().toLocaleLowerCase();
   const searching = query.length > 0;
-  const showDashboard = !searching || 'dashboard'.includes(query);
-  const showStaff = !searching || 'user management'.includes(query) || 'staff management'.includes(query);
-  const showRoles = !searching || 'user management'.includes(query) || 'roles & permissions roles and permissions'.includes(query);
+  const showDashboard = !staff && (!searching || 'dashboard'.includes(query));
+  const showStaff = !staff && (!searching || 'user management'.includes(query) || 'staff management'.includes(query));
+  const showRoles = !staff && (!searching || 'user management'.includes(query) || 'roles & permissions roles and permissions'.includes(query));
   const showUserManagement = showStaff || showRoles;
-  const showAllMasters = !searching || 'all masters'.includes(query);
-  const showPO = !searching || 'inventory purchase orders po'.includes(query);
-  const showPR = !searching || 'inventory purchase received pr receipts'.includes(query);
-  const showMoveStocks = !searching || 'inventory move stocks transfer'.includes(query);
-  const showStockStatus = !searching || 'inventory stock status allergens'.includes(query);
+  const showAllMasters = !staff && (!searching || 'all masters'.includes(query));
+  const showPO = !staff && (!searching || 'inventory purchase orders po'.includes(query));
+  const showPR = !staff && (!searching || 'inventory purchase received pr receipts'.includes(query));
+  const showMoveStocks = !staff && (!searching || 'inventory move stocks transfer'.includes(query));
+  const showStockStatus = !staff && (!searching || 'inventory stock status allergens'.includes(query));
   const showInventory = showPO || showPR || showMoveStocks || showStockStatus;
   const visibleGroups = MASTER_GROUPS.map((group) => ({
     ...group,
-    links: searching ? group.links.filter((link) => link.label.toLocaleLowerCase().includes(query)) : group.links,
+    links: (staff ? (zoneNav ? group.links.filter((link) => link.href === '/admin/masters/zones') : []) : group.links).filter((link) => !searching || link.label.toLocaleLowerCase().includes(query)),
   })).filter((group) => group.links.length > 0);
-  const showMasters = !searching || showAllMasters || visibleGroups.length > 0;
+  const showMasters = staff ? visibleGroups.length > 0 : (!searching || showAllMasters || visibleGroups.length > 0);
   const showSubnav = showMasters && !isCollapsed && (searching || mastersOpen);
   const showUserSubnav = showUserManagement && !isCollapsed && (searching || userManagementOpen);
   const showInventorySubnav = showInventory && !isCollapsed && (searching || inventoryOpen);
@@ -262,8 +271,8 @@ export default function AdminLayout({ title, children }) {
           <DropdownMenu.Root>
             <div className="admin-profile">
               <DropdownMenu.Trigger asChild>
-                <button type="button" className="admin-profile__trigger" aria-label="Super Admin profile menu" data-testid="button-admin-profile">
-                  <span className="admin-profile__avatar" aria-hidden="true">SA</span>
+                <button type="button" className="admin-profile__trigger" aria-label={staff ? 'Staff profile menu' : 'Super Admin profile menu'} data-testid="button-admin-profile">
+                  <span className="admin-profile__avatar" aria-hidden="true">{staff ? profileName.slice(0, 2).toUpperCase() : 'SA'}</span>
                   <span className="admin-profile__name">{profileName}</span>
                   <ChevronDown size={14} aria-hidden="true" />
                 </button>
@@ -271,18 +280,20 @@ export default function AdminLayout({ title, children }) {
               <DropdownMenu.Portal>
                 <DropdownMenu.Content className="admin-profile__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={10}>
                   <DropdownMenu.Label className="admin-profile__identity">
-                    <strong>{profileName}</strong><span>Authenticated Super Admin</span>
+                    <strong>{profileName}</strong><span>{staff ? 'Signed-in staff' : 'Authenticated Super Admin'}</span>
                   </DropdownMenu.Label>
                   <DropdownMenu.Separator className="admin-profile__separator" />
-                  <DropdownMenu.Item className="admin-profile__settings" onSelect={() => navigate('/admin/settings')} data-testid="link-admin-settings">
+                  {!staff && <>
+<DropdownMenu.Item className="admin-profile__settings" onSelect={() => go('/admin/settings')} data-testid="link-admin-settings">
                     <Settings size={15} aria-hidden="true" /> Settings
                   </DropdownMenu.Item>
-                  <DropdownMenu.Item className="admin-profile__settings" onSelect={() => navigate('/admin/activity-logs')} data-testid="link-admin-activity-logs">
+                  <DropdownMenu.Item className="admin-profile__settings" onSelect={() => go('/admin/activity-logs')} data-testid="link-admin-activity-logs">
                     <ScrollText size={15} aria-hidden="true" /> Sessions &amp; Activity Logs
                   </DropdownMenu.Item>
-                  <DropdownMenu.Item className="admin-profile__settings" onSelect={() => navigate('/admin/download-logs')} data-testid="link-admin-download-logs">
+                  <DropdownMenu.Item className="admin-profile__settings" onSelect={() => go('/admin/download-logs')} data-testid="link-admin-download-logs">
                     <FileDown size={15} aria-hidden="true" /> Download Logs
                   </DropdownMenu.Item>
+                  </>}
                   <DropdownMenu.Item className="admin-profile__signout" onSelect={() => void signOut()} data-testid="link-admin-sign-out">
                     <LogOut size={15} aria-hidden="true" /> Log Out
                   </DropdownMenu.Item>

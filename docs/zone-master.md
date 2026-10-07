@@ -1,9 +1,12 @@
 # Shared Zone Master
 
-Zone Master uses authenticated FastAPI/PostgreSQL persistence. Only the protected
-system Super Admin with `admin.access` can use it. Demo Roles and staff business
-labels grant no access. No tenancy, new credentials, production deployment, or
-relationship migration is introduced.
+Zone Master uses authenticated FastAPI/PostgreSQL persistence. The protected
+system Super Admin retains every operation. Explicitly enabled active staff
+require a custom-role assignment with at least one Zone action for list/detail,
+and the matching grant for each mutation/transfer. Trash/restore remain protected
+singleton-only. Business labels grant nothing. No tenancy, new credentials,
+production deployment, or relationship migration is introduced.
+See [Zone role permissions](zone-role-permissions.md) for the action map and rollout.
 
 ## Operations
 
@@ -57,8 +60,8 @@ its authenticated deleter/time, creator, update metadata and incremented version
 The deleted name may be reused by a distinct new row. Stale expected versions and
 concurrent duplicates return explicit 409 errors, never overwrite newer changes.
 Actor references are User foreign keys. UTC timestamps and actor identity are
-server-owned. Public actor labels derive from the verified backend identity
-(`Super Admin`); no email, directory fields, credentials or client actor strings
+server-owned. Public actor labels are `Super Admin` for the protected singleton
+and `Backend user` for other authors; no email, directory fields, credentials or client actor strings
 are projected. Audit events and mutations commit together without record payloads.
 
 ## Protected deletion history and recovery

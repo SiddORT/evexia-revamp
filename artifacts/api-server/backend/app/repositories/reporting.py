@@ -2,6 +2,8 @@
 import re
 
 from app.db.models import AuditEvent, AuthSession, MRProfile, User
+from app.db.staff_models import StaffProfile
+from app.db.role_models import CustomRole
 from app.repositories.report_labels import BROWSER_ACTIONS, RESOURCE_NAMES
 from app.repositories.sessions import revocation_reason_projection
 from sqlalchemy import String, and_, case, cast, exists, func, literal, or_, select, union
@@ -12,9 +14,17 @@ def eligible():
     mr = exists(select(MRProfile.id).where(
         MRProfile.user_id == User.id, MRProfile.is_active.is_(True),
     ))
+    staff = exists(select(StaffProfile.id).where(
+        StaffProfile.user_id == User.id, StaffProfile.status == "active",
+        StaffProfile.workspace_login_enabled.is_(True),
+        or_(StaffProfile.custom_role_id.is_(None), exists(select(CustomRole.id).where(
+            CustomRole.id == StaffProfile.custom_role_id))),
+    ))
     return and_(User.is_active.is_(True), or_(
         and_(User.system_role == "super_admin", User.is_protected_system_admin.is_(True)),
         and_(User.system_role == "mr", User.is_protected_system_admin.is_(False), mr),
+        and_(User.system_role.is_(None), User.email.is_(None), User.username.is_not(None),
+             User.is_protected_system_admin.is_(False), staff),
     ))
 
 
@@ -33,8 +43,8 @@ def user_columns():
         User.system_role.label("role"),
         case(
             (User.is_active.is_(False), "disabled"),
-            (User.system_role.is_(None), "unmapped"),
-            (eligible(), "enabled"), else_="ineligible",
+            (eligible(), "enabled"),
+            (User.system_role.is_(None), "unmapped"), else_="ineligible",
         ).label("account_state"),
     ]
 

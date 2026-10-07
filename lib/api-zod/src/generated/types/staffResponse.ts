@@ -11,6 +11,7 @@ import type { StaffResponseStatus } from "./staffResponseStatus";
 export interface StaffResponse {
   createdAt: Date;
   createdBy: string;
+  custom_role_id?: string | null;
   dateOfJoining: Date;
   /**
    * @minLength 1
@@ -37,4 +38,5 @@ export interface StaffResponse {
   updatedBy: string;
   userId: string;
   version: number;
+  workspace_login_enabled?: boolean;
 }

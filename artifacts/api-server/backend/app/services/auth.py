@@ -17,6 +17,9 @@ from app.core.security import (
 from app.db.models import AuditEvent, AuthSession, LoginAttempt, MRProfile, RefreshSession, User
 from app.repositories import sessions as repository
 from app.schemas.auth import CurrentUser, TokenResponse
+from app.db.staff_models import StaffProfile
+from app.db.role_models import CustomRole
+from app.services.zone_policy import ZONE_ACTIONS
 
 
 class AuthError(Exception):
@@ -59,6 +62,8 @@ class Identity:
     user: User
     mr: MRProfile | None = None
     session_id: str | None = None
+    staff: StaffProfile | None = None
+    zone_grants: frozenset[str] = frozenset()
     _role_snapshot: str | None = field(init=False, repr=False)
     _protected_snapshot: bool = field(init=False, repr=False)
     _token_version_snapshot: int = field(init=False, repr=False)
@@ -81,6 +86,8 @@ class Identity:
         if (self.user.is_protected_system_admin and self.user.is_active
                 and self.user.system_role == "super_admin"):
             return frozenset({"admin.access", "staff.manage", "roles.manage", "domain.provision", "domain.assign_patient"})
+        if self.staff is not None:
+            return frozenset({"workspace.access"}) | (self.zone_grants & ZONE_ACTIONS)
         return frozenset()
 
     def public(self) -> CurrentUser:
@@ -88,6 +95,7 @@ class Identity:
             id=self.user.id, email=self.user.email, username=self.user.username,
             system_role=self.user.system_role, mr_id=self.mr.id if self.mr else None,
             permissions=sorted(self.permissions),
+            identity_kind="staff" if self.staff is not None else self.user.system_role,
         )
 
 
@@ -127,9 +135,29 @@ def register(*_args, **_kwargs):
 
 
 def _load_identity(db: Session, user: User, lock: bool = False) -> Identity:
-    if user.system_role not in ("super_admin", "mr") or not user.is_active:
+    if not user.is_active:
         raise AuthError()
     if (user.system_role == "super_admin") != user.is_protected_system_admin:
+        raise AuthError()
+    if user.system_role is None:
+        query = select(StaffProfile).where(StaffProfile.user_id == user.id).execution_options(populate_existing=True)
+        if lock:
+            query = query.with_for_update()
+        staff = db.scalar(query)
+        if (not staff or not staff.workspace_login_enabled or staff.status != "active"
+                or user.email is not None or not user.username or user.is_protected_system_admin):
+            raise AuthError()
+        grants = frozenset()
+        if staff.custom_role_id is not None:
+            role_query = select(CustomRole).where(CustomRole.id == staff.custom_role_id).execution_options(populate_existing=True)
+            if lock:
+                role_query = role_query.with_for_update(read=True)
+            role = db.scalar(role_query)
+            if not role:
+                raise AuthError()
+            grants = frozenset(role.permissions) & ZONE_ACTIONS
+        return Identity(user, staff=staff, zone_grants=grants)
+    if user.system_role not in ("super_admin", "mr"):
         raise AuthError()
     profile_query = select(MRProfile).where(
         MRProfile.user_id == user.id,
@@ -213,7 +241,7 @@ def login(db: Session, identifier: str, password: str, settings: Settings,
     audit(db, "login", request_id, "success", identity)
     db.execute(delete(LoginAttempt).where(LoginAttempt.identifier_hash == identifier_key))
     db.commit()
-    return Identity(identity.user, identity.mr, session.id), token
+    return Identity(identity.user, identity.mr, session.id, identity.staff, identity.zone_grants), token
 
 
 # A valid Argon2id hash prevents a non-existent account from skipping expensive verification.
@@ -267,7 +295,7 @@ def identity_from_token(db: Session, token: str, settings: Settings) -> Identity
         identity = _load_identity(db, user)
     except AuthError:
         _reject(db, "authentication_rejection", "identity_invalid", request_id)
-    return Identity(identity.user, identity.mr, session.id)
+    return Identity(identity.user, identity.mr, session.id, identity.staff, identity.zone_grants)
 
 
 def revalidate_identity(db: Session, identity: Identity, lock: bool = False) -> Identity:
@@ -294,7 +322,7 @@ def revalidate_identity(db: Session, identity: Identity, lock: bool = False) -> 
     refreshed = _load_identity(db, user, lock=lock)
     if (refreshed.mr.id if refreshed.mr else None) != (identity.mr.id if identity.mr else None):
         raise AuthError()
-    return Identity(refreshed.user, refreshed.mr, identity.session_id)
+    return Identity(refreshed.user, refreshed.mr, identity.session_id, refreshed.staff, refreshed.zone_grants)
 
 
 def rotate_refresh(db: Session, value: str, settings: Settings, request_id: str) -> tuple[Identity, str]:
@@ -344,7 +372,7 @@ def rotate_refresh(db: Session, value: str, settings: Settings, request_id: str)
     repository.event(db, "refresh_success", "success", request_id, user.id, session.id)
     audit(db, "refresh", request_id, "success", identity)
     db.commit()
-    return Identity(identity.user, identity.mr, session.id), new_value
+    return Identity(identity.user, identity.mr, session.id, identity.staff, identity.zone_grants), new_value
 
 
 def logout(db: Session, value: str | None, request_id: str) -> None:

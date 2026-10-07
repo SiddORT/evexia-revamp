@@ -1,7 +1,7 @@
 import uuid
 
 from sqlalchemy import CheckConstraint, Computed, Integer, String, Text, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -9,7 +9,7 @@ from app.db.models import Timestamps
 
 
 class CustomRole(Timestamps, Base):
-    """Business metadata only: deliberately no identity or permission links."""
+    """Custom roles have only explicit allowlisted Zone grants."""
     __tablename__ = "custom_roles"
     __table_args__ = (
         UniqueConstraint("normalized_name", name="uq_custom_roles_name"),
@@ -22,3 +22,4 @@ class CustomRole(Timestamps, Base):
     normalized_name: Mapped[str] = mapped_column(String(100), Computed("lower(btrim(name))", persisted=True))
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    permissions: Mapped[list[str]] = mapped_column(ARRAY(String(32)), nullable=False, default=list, server_default="{}")

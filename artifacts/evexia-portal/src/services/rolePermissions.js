@@ -1,4 +1,5 @@
 import { roleRequest, SessionError } from '../auth/adminSession.js';
+import { ZONE_KEYS } from '../auth/capabilities.js';
 
 export const ROLE_NAME_LIMIT = 100;
 export const ROLE_DESCRIPTION_LIMIT = 1000;
@@ -19,16 +20,23 @@ export function validateRoleDescription(description) {
   if (/[\u0000-\u0008\u000b-\u001f\u007f]/.test(description)) return 'Use a description without control characters.';
   return '';
 }
+export const validPermissions = (list) => Array.isArray(list) && new Set(list).size === list.length && list.every((key) => ZONE_KEYS.includes(key));
+// Canonical catalogue order so comparisons and counts never depend on server order.
+export const normalizePermissions = (list) => ZONE_KEYS.filter((key) => list.includes(key));
+export const samePermissions = (a, b) => normalizePermissions(a).join() === normalizePermissions(b).join();
 export function roleRecord(data) {
+  if (Array.isArray(data?.permissions) && !validPermissions(data.permissions)) {
+    throw new SessionError('Role service returned a permission this portal does not recognise. Nothing was changed. Refresh roles, and update the portal if this continues.');
+  }
   if (!data || typeof data.id !== 'string' || !/^[0-9a-f-]{36}$/.test(data.id)
       || typeof data.name !== 'string' || !data.name.trim() || typeof data.description !== 'string'
       || !Number.isSafeInteger(data.version) || data.version < 1
       || typeof data.created_at !== 'string' || typeof data.updated_at !== 'string'
-      || !Array.isArray(data.permissions) || data.permissions.length !== 0) {
+      || !validPermissions(data.permissions)) {
     throw new SessionError('Role service returned invalid metadata. Refresh roles before submitting again.');
   }
   return { id: data.id, name: data.name, description: data.description, version: data.version,
-    created_at: data.created_at, updated_at: data.updated_at, permissions: [] };
+    created_at: data.created_at, updated_at: data.updated_at, permissions: normalizePermissions(data.permissions) };
 }
 export async function listRoles(cursor = null, options) {
   const path = `?limit=50${cursor ? `&cursor=${idPath(cursor).slice(1)}` : ''}`;
@@ -48,3 +56,7 @@ async function mutation(path, body) {
 export const createRole = (fields) => mutation('', fields);
 export const updateRole = (id, fields, version) => mutation(`${idPath(id)}/edit`, { ...fields, expected_version: version });
 export const deleteRole = (id, version) => mutation(`${idPath(id)}/delete`, { expected_version: version });
+export function setRolePermissions(id, permissions, version) {
+  if (!validPermissions(permissions)) throw new SessionError('Choose only the listed Zone permissions.');
+  return mutation(`${idPath(id)}/permissions`, { permissions: normalizePermissions(permissions), expected_version: version });
+}

@@ -5,6 +5,7 @@ from app.core.security import utcnow
 from app.db.models import AuditEvent, User
 from app.db.zone_models import Zone
 from app.services.auth import revalidate_identity
+from app.services.zone_policy import zone_allowed, lock_policy
 
 
 class ZoneError(Exception):
@@ -26,12 +27,12 @@ def transaction(db, work):
         raise
 
 
-def authorize(db, actor):
+def authorize(db, actor, action=None, protected=False):
+    lock_policy(db)
     current = revalidate_identity(db, actor, lock=True)
-    if (not current.user.is_protected_system_admin or current.role != "super_admin"
-            or "admin.access" not in current.permissions):
-        raise ZoneError("Access denied", 403, "access_denied")
-    return current
+    if zone_allowed(current, action, protected):
+        return current
+    raise ZoneError("Zone access denied. Ask your administrator for the required Zone permission.", 403, "access_denied")
 
 
 def label(db, user_id):
@@ -58,7 +59,7 @@ def predicates(query="", status="all", deleted=False):
 
 def listing(db, actor, query, status, limit, offset, deleted=False):
     def work():
-        authorize(db, actor)
+        authorize(db, actor, protected=deleted)
         filters = predicates(query, status, deleted)
         total = db.scalar(select(func.count()).select_from(Zone).where(*predicates(deleted=deleted)))
         filtered = db.scalar(select(func.count()).select_from(Zone).where(*filters))
@@ -93,7 +94,7 @@ def insert(db, actor, body):
 
 def create(db, actor, body):
     def work():
-        current = authorize(db, actor)
+        current = authorize(db, actor, "zone.add")
         result = projection(db, insert(db, current, body))
         db.commit()
         return result
@@ -119,7 +120,7 @@ def detail(db, actor, zone_id):
 
 def mutate(db, actor, zone_id, body, operation):
     def work():
-        current = authorize(db, actor)
+        current = authorize(db, actor, "zone.delete" if operation == "delete" else "zone.edit")
         row = find(db, zone_id)
         if row.version != body.expected_version:
             raise ZoneError("Zone changed. Your draft is not saved. Refresh and review current details before retrying.", 409, "zone_stale")
@@ -142,7 +143,7 @@ def mutate(db, actor, zone_id, body, operation):
 
 def restore(db, actor, zone_id, body):
     def work():
-        current = authorize(db, actor)
+        current = authorize(db, actor, protected=True)
         row = db.scalar(select(Zone).where(Zone.id == zone_id)
                         .execution_options(populate_existing=True).with_for_update())
         if not row:

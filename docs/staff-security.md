@@ -4,10 +4,16 @@
 
 Only the protected system Super Admin has `staff.manage`. Business role labels,
 including “Super Admin”, and designation labels grant no backend permissions.
-Staff credentials reuse User/Argon2id but have no system role, no User.email and
-no login eligibility. Directory active/inactive is metadata, not login access.
-Existing Super Admin/MR login, refresh, revocation and reporting are unchanged.
-Registered-account counts include new staff Users; active-session counts do not.
+Staff credentials reuse User/Argon2id but have no system role or User.email.
+Login is disabled by default. Only an explicit `workspace_login_enabled` change
+admits active staff through the existing workspace login, using their existing
+User ID/password. A separately chosen custom role ID supplies only Zone grants.
+Active status alone never enables login; inactive or disabled accounts cannot
+authenticate or retain usable sessions. Business labels never become assignments.
+Existing protected Super Admin/MR policy and session rotation remain unchanged.
+Registered-account counts include staff; eligible enabled staff sessions count
+in protected global reporting without granting staff access to those reports.
+See [Zone role permissions](zone-role-permissions.md) for opt-in rollout.
 
 Designation Master remains browser-local. The existing selector supplies a
 bounded selected label only; the server does not verify a catalogue, import one
@@ -221,7 +227,7 @@ and attributed audit event in one transaction.
 
 On successful Add, hand off the masked/revealable/copyable one-time User ID and
 initial password manually through an approved private channel. It is **not a
-usable staff login in this phase**. Dismissal, navigation, reload or session loss
+usable staff login until explicitly enabled**. Dismissal, navigation, reload or session loss
 clears the display; do not rely on retrieving it later. Copying places secrets on
 the system clipboard, outside application control; clear it after handoff. There
 is no later retrieval/reset/rotation UI and ordinary edits never change passwords.
@@ -241,8 +247,11 @@ authorized displayed batch records, uses an allowlist and spreadsheet-formula
 protection, and omits passwords/hashes/internal credential and actor UUIDs.
 Downloads leave application protection and require safe handling.
 
-No invitation send/queue/delivery preview, SMTP/provider, staff sign-in, permission
-assignment, bulk provisioning/import, password recovery or hard deletion exists.
+No invitation send/queue/delivery preview, SMTP/provider, bulk provisioning/import,
+password recovery or hard deletion exists. Workspace access changes are explicit
+and independent of business-label edits, never regenerate credentials, and
+require the current directory version. Role removal denies Zone access on the
+next protected request; disable and inactivation additionally revoke sessions.
 Other browser-local masters remain unchanged. No VAPT certification is claimed.
 
 ## Verification

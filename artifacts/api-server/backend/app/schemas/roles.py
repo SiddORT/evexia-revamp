@@ -1,7 +1,11 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from app.services.zone_policy import ZONE_ACTIONS
+
+ZoneAction = Literal["zone.add", "zone.edit", "zone.delete", "zone.export", "zone.import"]
 
 
 class RoleFields(BaseModel):
@@ -26,12 +30,23 @@ class RoleEdit(RoleFields, RoleVersion):
     pass
 
 
+class RolePermissions(RoleVersion):
+    permissions: list[ZoneAction] = Field(max_length=5)
+
+    @field_validator("permissions")
+    @classmethod
+    def known_unique_grants(cls, value):
+        if len(set(value)) != len(value) or any(key not in ZONE_ACTIONS for key in value):
+            raise ValueError("Use only the five distinct Zone actions")
+        return sorted(value)
+
+
 class RoleResponse(RoleFields):
     id: uuid.UUID
     version: int
     created_at: datetime
     updated_at: datetime
-    permissions: list[str] = Field(default_factory=list, max_length=0, json_schema_extra={"readOnly": True})
+    permissions: list[ZoneAction] = Field(default_factory=list, max_length=5, json_schema_extra={"readOnly": True})
 
 
 class RolePage(BaseModel):

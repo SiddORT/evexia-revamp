@@ -3,7 +3,7 @@ import { getZone } from '../../services/serverZones.js';
 import Field from '../auth/Field.jsx';
 import Dialog from './Dialog.jsx';
 
-export default function ZoneForm({ zone, onSave, onClose }) {
+export default function ZoneForm({ zone, onSave, onClose, canSave = true }) {
   const [name, setName] = useState(zone?.name || '');
   const [status, setStatus] = useState(zone?.status || 'active');
   const [error, setError] = useState('');
@@ -13,7 +13,7 @@ export default function ZoneForm({ zone, onSave, onClose }) {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    if (pending || blocked) return;
+    if (pending || blocked || !canSave) return;
     if (!name.trim()) { setError('Zone name is required.'); return; }
     if (name.trim().length > 200) { setError('Zone name must be at most 200 characters.'); return; }
     setPending(true);
@@ -38,6 +38,7 @@ export default function ZoneForm({ zone, onSave, onClose }) {
     <Dialog title={zone ? 'Edit zone' : 'Add zone'} onClose={pending ? () => {} : onClose}
       titleInfo="Changes are saved to shared server records. Server identity and time determine audit details. Local demo assignments are unchanged.">
       <form id="zone-form" className="admin-dialog__form" onSubmit={handleSubmit} noValidate>
+        {!canSave && <p role="alert">Your permission for this action was removed. This draft is kept for reference, but cannot be saved.</p>}
         <Field id="zone-name" label="Zone name *" value={name} onChange={(event) => { setName(event.target.value); setError(''); }} error={error} placeholder="e.g. Central Zone" autoComplete="off" />
         <label className="admin-dialog__field" htmlFor="zone-status">
           Status
@@ -50,7 +51,7 @@ export default function ZoneForm({ zone, onSave, onClose }) {
         {blocked && !zone && <p role="alert">Close this draft and refresh the table to inspect whether the zone was saved before adding it again.</p>}
         <div className="admin-dialog__actions">
           <button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={onClose} data-testid="button-cancel-zone">Cancel</button>
-          <button type="submit" disabled={pending || blocked} className="admin-button" data-testid="button-save-zone">{pending ? 'Saving…' : zone ? 'Save changes' : 'Add zone'}</button>
+          <button type="submit" disabled={pending || blocked || !canSave} className="admin-button" data-testid="button-save-zone">{pending ? 'Saving…' : zone ? 'Save changes' : 'Add zone'}</button>
         </div>
       </form>
     </Dialog>
