@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, Pencil, Plus, Search, Trash2, MapPinned, Upload, RotateCcw } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
@@ -17,7 +18,7 @@ function details(by, at) {
 }
 
 export default function ZoneMaster() {
-  useAdminPreferences();
+  const { theme, appearance } = useAdminPreferences();
   const [, navigate] = useLocation();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
@@ -25,8 +26,11 @@ export default function ZoneMaster() {
   const [pageSize, setPageSize] = useState(10);
   const [deleted, setDeleted] = useState(false);
   const { zones, total, filtered, loading, pending, error, feedback, clearFeedback, retry, add, edit, remove, restore, changeStatus } = useZones(search, filter, page, pageSize, deleted);
-  const [exportFormat, setExportFormat] = useState('csv');
   const [exporting, setExporting] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const exportBusy = useRef(false);
+  const exportMounted = useRef(true);
+  useEffect(() => { exportMounted.current = true; return () => { exportMounted.current = false; }; }, []);
   const [blocked, setBlocked] = useState(false);
   const [editing, setEditing] = useState(null);
   const [confirming, setConfirming] = useState(null);
@@ -64,18 +68,22 @@ export default function ZoneMaster() {
     setConfirming({ zone, type });
   }
 
-  async function exportVisible() {
-    if (error || exporting) return;
+  async function exportVisible(format) {
+    if (error || loading || exportBusy.current) return;
+    exportBusy.current = true;
     setActionError('');
     setExporting(true);
     const guard = reportingIdentityGuard();
     try {
-      const blob = await exportZones({ query: search, status: filter }, exportFormat);
+      const blob = await exportZones({ query: search, status: filter }, format);
       guard();
-      downloadZoneFile(blob, exportFormat);
+      if (exportMounted.current) downloadZoneFile(blob, format);
     } catch (cause) {
-      setActionError(cause.message || 'CSV export failed. Refresh records and try again.');
-    } finally { setExporting(false); }
+      if (exportMounted.current) setActionError(`Export failed (${format === 'xlsx' ? 'Excel' : 'CSV'}). ${cause.message || 'Refresh records and try again.'}`);
+    } finally {
+      exportBusy.current = false;
+      if (exportMounted.current) setExporting(false);
+    }
   }
 
   function renderActions(zone, mobile = false) {
@@ -114,8 +122,19 @@ export default function ZoneMaster() {
       <div className="admin-page-head">
         <div><p className="admin-page-head__eyebrow">Masters / Geography</p><h1>Zone Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Browser data clearing does not remove these zones.</p></div>
           {!deleted && <div className="admin-mr-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/zone')} data-testid="button-import-zones"><Upload size={16} aria-hidden="true" /> Import data</button>
-          <select aria-label="Zone export format" className="admin-select" value={exportFormat} onChange={(event) => setExportFormat(event.target.value)}><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option></select>
-          <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading || exporting} onClick={exportVisible} data-testid="button-export-zones"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
+          <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>
+            <DropdownMenu.Trigger asChild>
+              {/* Keep the pending trigger focusable for Radix's close-focus return.
+                  The controlled menu and synchronous busy guard block reopening/downloads. */}
+              <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-zones"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content className="admin-profile__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} style={{ maxWidth: 'calc(100vw - 24px)' }} aria-label="Zone export format">
+                <DropdownMenu.Item className="admin-profile__settings" disabled={exporting} onSelect={() => void exportVisible('csv')}>CSV</DropdownMenu.Item>
+                <DropdownMenu.Item className="admin-profile__settings" disabled={exporting} onSelect={() => void exportVisible('xlsx')}>Excel (.xlsx)</DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
          <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); setEditing('new'); }} data-testid="button-add-zone"><Plus size={16} aria-hidden="true" /> Add zone</button></div>}
       </div>
       <p className="admin-page-head__description">MR, Doctor, Patient and Sales Target demo assignments still use their separate browser-local zone dataset. No local records are migrated or mirrored. Use Import data explicitly. Exports include all matches, up to 1,000 records.</p>

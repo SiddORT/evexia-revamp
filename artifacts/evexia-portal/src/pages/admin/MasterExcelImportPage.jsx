@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, CheckCircle2, Download, FileSpreadsheet, Upload, XCircle } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import MasterImportTabs from '../../components/admin/MasterImportTabs.jsx';
 import { EXCEL_TEMPLATES, readExcelRows, reviewExcel, sampleExcel } from '../../services/mockExcelImport.js';
 import '../../excel-import.css';
 import ZoneImportPage from './ZoneImportPage.jsx';
@@ -70,10 +71,7 @@ function PreviewExcelImportPage({ kind }) {
         <span className="excel-import__mock">UI preview · Nothing will be saved</span>
       </div>
 
-      <nav className="excel-import__tabs" aria-label="Select a master for Excel preview">
-        {Object.entries(EXCEL_TEMPLATES).map(([key, item]) =>
-          <button type="button" key={key} className={kind === key ? 'excel-import__tab excel-import__tab--active' : 'excel-import__tab'} aria-current={kind === key ? 'page' : undefined} onClick={() => navigate(`/admin/masters/import/${key}`)}>{item.title} Master</button>)}
-      </nav>
+      <MasterImportTabs kind={kind} />
 
       <div className="excel-import__steps">
         <section className="excel-import__card" aria-labelledby="excel-sample-title">

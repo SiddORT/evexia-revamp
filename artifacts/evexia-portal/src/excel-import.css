@@ -15,6 +15,7 @@
 .excel-import__columns { display: grid; gap: 5px; color: var(--admin-text-soft); font-size: 11px; line-height: 1.5; }
 .excel-import__columns strong { color: var(--admin-text); }
 .excel-import__card > .admin-button { margin-top: auto; }
+.excel-import__sample-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; }
 .excel-import__picker { display: flex; align-items: center; gap: 10px; max-width: 100%; width: 100%; border: 1px dashed var(--admin-border); border-radius: 8px; padding: 15px; color: var(--admin-text); font-size: 12px; cursor: pointer; }
 .excel-import__picker:hover, .excel-import__picker:focus-within { border-color: var(--accent); }
 .excel-import__picker span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
