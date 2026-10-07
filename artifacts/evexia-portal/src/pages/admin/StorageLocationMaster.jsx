@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, Pencil, Plus, Search, Trash2, MapPin, Upload } from 'lucide-react';
-import StorageLocationImportDialog from '../../components/admin/StorageLocationImportDialog.jsx';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
@@ -17,17 +17,23 @@ function details(by, at) {
 }
 
 export default function StorageLocationMaster() {
-  useAdminPreferences();
+  const { theme, appearance } = useAdminPreferences();
   const [, navigate] = useLocation();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const { records, total, filtered, loading, pending, error, feedback, clearFeedback, retry, add, edit, remove, changeStatus } = useServerLocations(search, filter, page, pageSize);
-  const [exportFormat, setExportFormat] = useState('csv');
   const [exporting, setExporting] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const exportBusy = useRef(false);
+  const exportMounted = useRef(true);
+  const exportController = useRef(null);
+  useEffect(() => {
+    exportMounted.current = true;
+    return () => { exportMounted.current = false; exportController.current?.abort(); };
+  }, []);
   const [blocked, setBlocked] = useState(false);
-  const [importing, setImporting] = useState(false);
   const [confirming, setConfirming] = useState(null);
   const [actionError, setActionError] = useState('');
   const [cardView, setCardView] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches);
@@ -55,19 +61,26 @@ export default function StorageLocationMaster() {
     if (result.success) { setConfirming(null); setActionError(''); }
     else { setActionError(result.error); setBlocked(result.code === 'location_stale' || Boolean(result.ambiguous)); }
   }
-  async function exportVisible() {
-    if (error || exporting) return;
+  async function exportVisible(format) {
+    if (error || loading || exportBusy.current) return;
+    exportBusy.current = true;
     setActionError('');
     setExporting(true);
     const guard = reportingIdentityGuard();
-    const format = exportFormat;
+    const controller = new AbortController();
+    exportController.current = controller;
     try {
-      const blob = await exportLocations({ query: search, status: filter }, format);
+      const blob = await exportLocations({ query: search, status: filter }, format, controller.signal);
       guard();
-      downloadLocationFile(blob, format);
+      if (exportMounted.current) downloadLocationFile(blob, format);
     } catch (cause) {
-      setActionError(cause.message || 'CSV export failed. Refresh records and try again.');
-    } finally { setExporting(false); }
+      // Do not let a response from a previous login update this screen.
+      try { guard(); } catch { return; }
+      if (exportMounted.current) setActionError(`Export failed (${format === 'xlsx' ? 'Excel' : 'CSV'}). ${cause.message || 'Refresh records and try again.'}`);
+    } finally {
+      exportBusy.current = false;
+      if (exportMounted.current) setExporting(false);
+    }
   }
   function actions(record, mobile = false) {
     const toggle = record.status === 'active' ? 'Inactivate' : 'Activate';
@@ -91,9 +104,19 @@ export default function StorageLocationMaster() {
     <div className="admin-page-head">
       <div><p className="admin-page-head__eyebrow">Masters / Inventory</p><h1>Storage Location Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Browser data clearing does not remove these storage locations.</p></div>
       <div className="admin-mr-head-actions">
-        <button type="button" className="admin-button admin-button--secondary" onClick={() => setImporting(true)} data-testid="button-import-storage-locations"><Upload size={16} aria-hidden="true" /> Import data</button>
-        <select aria-label="Location export format" className="admin-select" value={exportFormat} onChange={(event) => setExportFormat(event.target.value)}><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option></select>
-        <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading || exporting} onClick={exportVisible} data-testid="button-export-storage-locations"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
+        <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/storage-location')} data-testid="button-import-storage-locations"><Upload size={16} aria-hidden="true" /> Import data</button>
+        <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>
+          <DropdownMenu.Trigger asChild>
+            {/* Remain focusable while pending so closing the menu can return focus. */}
+            <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-storage-locations"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content className="admin-profile__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} style={{ maxWidth: 'calc(100vw - 24px)' }} aria-label="Storage Location export format">
+              <DropdownMenu.Item className="admin-profile__settings" disabled={exporting} onSelect={() => void exportVisible('csv')}>CSV</DropdownMenu.Item>
+              <DropdownMenu.Item className="admin-profile__settings" disabled={exporting} onSelect={() => void exportVisible('xlsx')}>Excel (.xlsx)</DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
         <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate('/admin/masters/storage-locations/new'); }} data-testid="button-add-storage-location"><Plus size={16} aria-hidden="true" /> Add storage location</button>
       </div>
     </div>
@@ -117,7 +140,6 @@ export default function StorageLocationMaster() {
         <TablePagination {...pagination} filtered={filtered} total={total} label={total === 1 ? 'storage location' : 'storage locations'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-storage-location-count" />
       </>}
     </section>
-    {importing && <StorageLocationImportDialog onClose={() => setImporting(false)} onSaved={retry} />}
     {confirming && <ConfirmationDialog pending={pending} blocked={blocked} title={`${actionName} storage location?`} description={`Are you sure you want to ${actionName.toLowerCase()} “${confirming.record.name}”?${confirming.type === 'delete' ? ' It will disappear from ordinary lists and exports. Server deletion history is retained; no restore is available here.' : ''}`} actionLabel={`${actionName} storage location`} destructive={confirming.type === 'delete'} onConfirm={confirmAction} onClose={() => { setConfirming(null); retry(); }} error={actionError} />}
   </AdminLayout>;
 }

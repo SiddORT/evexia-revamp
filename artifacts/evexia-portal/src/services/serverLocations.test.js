@@ -41,6 +41,16 @@ test('location service sends real filters, versions, review confirmations and do
   assert.match(calls[7].url, /digest=confirmation&confirm=true/);
   assert.equal(await (await service.exportLocations({ query: 'City', status: 'inactive' }, 'csv')).text(), 'CSV download');
   assert.match(calls[8].url, /query=City&status=inactive&format=csv/);
+  assert.match(calls[8].options.headers['X-Download-Initiation'], /^[0-9a-f-]{36}$/i);
+  const controller = new AbortController();
+  await service.exportLocations({ query: 'Building A', status: 'all' }, 'xlsx', controller.signal);
+  assert.match(calls[9].url, /query=Building\+A&status=all&format=xlsx/);
+  assert.equal(calls[9].options.signal.aborted, false);
+  controller.abort();
+  assert.equal(calls[9].options.signal.aborted, true);
+  const previousCalls = calls.length;
+  await assert.rejects(service.exportLocations({ query: 'City' }, 'csv', controller.signal), /abort/i);
+  assert.equal(calls.length, previousCalls);
   for (const { options } of calls) {
     assert.equal(options.headers.Authorization, 'Bearer synthetic-token');
     assert.equal(options.cache, 'no-store');

@@ -9,7 +9,7 @@ export const statusLocation = (record, status) => locationRequest(`/${record.id}
 export const deleteLocation = (record) => locationRequest(`/${record.id}/delete`, { body: { expected_version: record.version } });
 export const reviewLocations = (file) => locationRequest('/import/review', { file, params: { filename: file.name } });
 export const importLocations = (file, digest) => locationRequest('/import/commit', { file, params: { filename: file.name, digest, confirm: true } });
-export const exportLocations = (params, format) => locationRequest('/export', { params: { ...params, format }, download: true });
+export const exportLocations = (params, format, signal) => locationRequest('/export', { params: { ...params, format }, download: true, signal });
 
 export function downloadLocationFile(blob, format) {
   downloadServerBlob(blob, `evexia-storage-location-master.${format}`);

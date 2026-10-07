@@ -69,6 +69,22 @@ Admin preferences.
 
 ## Transfers
 
+`Import data` and the Storage Location master-import tab both open
+`/admin/masters/import/storage-location`. The two-card page provides logged CSV
+and genuine XLSX samples, a selected-file draft, server review with row details,
+and explicit confirmation. File replacement discards the review; every commit
+attempt consumes it, even after conflict or uncertain outcome. Inspect shared
+records before retrying an uncertain save. Recoverable same-route session renewal
+keeps the selected file; a new login requires fresh review.
+
+`Export data` opens a keyboard-accessible CSV/Excel menu without preparing a
+download until a format is chosen. Exports include every current name/address/status
+match, not just the visible page. Pending releases keep the trigger focusable but
+block reopening and duplicate requests. Server export acceptance is not reported
+a second time by the browser; samples retain the existing browser-reported
+`storage_location` / `template` initiation metadata. Neither ledger proves a file
+was saved to disk. See `docs/download-logs.md`.
+
 Imports accept UTF-8 CSV (optional BOM) or genuine single-sheet `.xlsx`. The
 exact supported header arrays, including capitalization and order, are:
 

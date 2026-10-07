@@ -63,3 +63,14 @@
   .excel-import--courier .excel-import__report-head > div:first-child { flex-basis: auto; }
   .excel-import__card, .excel-import__report { padding: 18px; }
 }
+
+/* Address values and backup headings must wrap without widening the cards. */
+.excel-import--storage-location :is(.excel-import__card, .excel-import__report, .excel-import__results > div) { min-width: 0; overflow-wrap: anywhere; }
+.excel-import--storage-location .excel-import__columns { min-width: 0; box-sizing: border-box; }
+.excel-import--storage-location .excel-import__picker { max-width: 100%; box-sizing: border-box; }
+.excel-import--storage-location .excel-import__picker span { min-width: 0; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+.excel-import--storage-location svg { flex-shrink: 0; }
+.excel-import--storage-location .excel-import__row dl > div { min-width: 0; }
+.excel-import--storage-location .excel-import__row summary span { float: none; display: block; margin-top: 4px; }
+.excel-import--storage-location :is(button, summary):focus-visible,
+.excel-import--storage-location .excel-import__picker:has(input:focus-visible) { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
