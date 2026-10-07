@@ -297,6 +297,9 @@ test('Zone export menu is compact and right-aligned across themes without resizi
         const menu = page.getByRole('menu', { name: 'Export data', exact: true });
         await expect(menu).toHaveAttribute('data-admin-theme', theme);
         await expect(menu).toHaveAttribute('data-admin-appearance', appearance);
+        await expect(menu).toHaveClass('admin-dropdown__menu admin-zone-export__menu');
+        expect(await menu.evaluate((node) => [node, ...node.querySelectorAll('[class]')]
+          .some((element) => [...element.classList].some((name) => name.startsWith('admin-profile__'))))).toBe(false);
         const bounds = await menu.boundingBox();
         const button = await trigger.boundingBox();
         expect(bounds.width).toBeCloseTo(150, 0);
@@ -314,12 +317,28 @@ test('Zone export menu is compact and right-aligned across themes without resizi
             return text.left >= item.left && text.right <= item.right && text.height <= item.height;
           })).toBe(true);
         }
+        // Profile-only layout changes must not leak into the export surface/items,
+        // even when later rules would otherwise override the compact menu.
+        const dropdownStyles = (node) => [node, ...node.querySelectorAll('[role="menuitem"]')].map((element) => {
+          const style = getComputedStyle(element);
+          return Object.fromEntries(['width', 'padding', 'borderRadius', 'backgroundColor', 'color', 'fontSize', 'display', 'gap', 'boxShadow']
+            .map((property) => [property, style[property]]));
+        });
+        const beforeProfileChange = await menu.evaluate(dropdownStyles);
+        const profileStyles = await page.addStyleTag({ content: `
+          .admin-profile__menu { width: 280px; padding: 24px; border-radius: 0; background: magenta; color: cyan; }
+          .admin-profile__menu [role="menuitem"], .admin-profile__settings { padding: 30px; font-size: 24px; }
+          .admin-profile__identity { display: flex; gap: 40px; }
+        ` });
+        expect(await menu.evaluate(dropdownStyles)).toEqual(beforeProfileChange);
+        await profileStyles.evaluate((node) => node.remove());
         await page.screenshot({ path: test.info().outputPath(`zone-export-${theme}-${appearance}-${width}.png`) });
         await page.keyboard.press('Escape');
         await expect(menu).toHaveCount(0);
         await expect(trigger).toBeFocused();
         await page.getByTestId('button-admin-profile').click();
         const profile = page.getByRole('menu');
+        await expect(profile).toHaveClass('admin-dropdown__menu admin-profile__menu');
         expect((await profile.boundingBox()).width).toBeCloseTo(238, 0);
         await expect(profile.getByText('Authenticated Super Admin')).toBeVisible();
         await expect(profile.getByRole('menuitem', { name: 'Settings', exact: true })).toBeVisible();

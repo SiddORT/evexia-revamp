@@ -278,23 +278,23 @@ export default function AdminLayout({ title, children }) {
                 </button>
               </DropdownMenu.Trigger>
               <DropdownMenu.Portal>
-                <DropdownMenu.Content className="admin-profile__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={10}>
+                <DropdownMenu.Content className="admin-dropdown__menu admin-profile__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={10}>
                   <DropdownMenu.Label className="admin-profile__identity">
                     <strong>{profileName}</strong><span>{staff ? 'Signed-in staff' : 'Authenticated Super Admin'}</span>
                   </DropdownMenu.Label>
-                  <DropdownMenu.Separator className="admin-profile__separator" />
+                  <DropdownMenu.Separator className="admin-dropdown__separator" />
                   {!staff && <>
-<DropdownMenu.Item className="admin-profile__settings" onSelect={() => go('/admin/settings')} data-testid="link-admin-settings">
+                  <DropdownMenu.Item className="admin-dropdown__item" onSelect={() => go('/admin/settings')} data-testid="link-admin-settings">
                     <Settings size={15} aria-hidden="true" /> Settings
                   </DropdownMenu.Item>
-                  <DropdownMenu.Item className="admin-profile__settings" onSelect={() => go('/admin/activity-logs')} data-testid="link-admin-activity-logs">
+                  <DropdownMenu.Item className="admin-dropdown__item" onSelect={() => go('/admin/activity-logs')} data-testid="link-admin-activity-logs">
                     <ScrollText size={15} aria-hidden="true" /> Sessions &amp; Activity Logs
                   </DropdownMenu.Item>
-                  <DropdownMenu.Item className="admin-profile__settings" onSelect={() => go('/admin/download-logs')} data-testid="link-admin-download-logs">
+                  <DropdownMenu.Item className="admin-dropdown__item" onSelect={() => go('/admin/download-logs')} data-testid="link-admin-download-logs">
                     <FileDown size={15} aria-hidden="true" /> Download Logs
                   </DropdownMenu.Item>
                   </>}
-                  <DropdownMenu.Item className="admin-profile__signout" onSelect={() => void signOut()} data-testid="link-admin-sign-out">
+                  <DropdownMenu.Item className="admin-dropdown__item admin-dropdown__item--danger" onSelect={() => void signOut()} data-testid="link-admin-sign-out">
                     <LogOut size={15} aria-hidden="true" /> Log Out
                   </DropdownMenu.Item>
                 </DropdownMenu.Content>

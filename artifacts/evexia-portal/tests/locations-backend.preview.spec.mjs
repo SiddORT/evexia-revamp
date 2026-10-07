@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { checkExportMenuStyles } from './helpers/export-menu-styles.mjs';
 if (process.env.EVEXIA_CHROMIUM_PATH) test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
 const base = () => process.env.EVEXIA_PREVIEW_BASE_URL;
 const key = 'evexia.admin.storage-locations.v1';
@@ -19,6 +20,10 @@ async function open(page) {
   await page.goto(`${base()}/admin/masters/storage-locations`);
   await expect(page.getByTestId('text-storage-location-count')).toBeVisible();
 }
+test('location export menu preserves themed surfaces and keyboard highlights', async ({ page }) => {
+  await open(page);
+  await checkExportMenuStyles(page, 'button-export-storage-locations', 150);
+});
 async function create(page, name, address = 'Building A Ground floor') {
   await page.getByTestId('button-add-storage-location').click();
   await page.getByTestId('input-storage-name').fill(name);
