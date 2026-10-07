@@ -4534,6 +4534,808 @@ export const SetMRDirectoryStatusResponse = zod.object({
 /**
  * @summary Listing
  */
+export const listPatientDirectoryQueryQueryDefault = ``;
+export const listPatientDirectoryQueryQueryMax = 200;
+
+export const listPatientDirectoryQueryStatusDefault = `all`;
+export const listPatientDirectoryQueryZoneIdDefault = ``;
+export const listPatientDirectoryQueryZoneIdMax = 36;
+
+export const listPatientDirectoryQueryMrIdDefault = ``;
+export const listPatientDirectoryQueryMrIdMax = 36;
+
+export const listPatientDirectoryQueryLimitDefault = 10;
+export const listPatientDirectoryQueryLimitMax = 100;
+
+export const listPatientDirectoryQueryOffsetDefault = 0;
+export const listPatientDirectoryQueryOffsetMin = 0;
+export const listPatientDirectoryQueryOffsetMax = 1000000;
+
+export const ListPatientDirectoryQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listPatientDirectoryQueryQueryMax)
+    .default(listPatientDirectoryQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(listPatientDirectoryQueryStatusDefault),
+  zone_id: zod.coerce
+    .string()
+    .max(listPatientDirectoryQueryZoneIdMax)
+    .default(listPatientDirectoryQueryZoneIdDefault),
+  mr_id: zod.coerce
+    .string()
+    .max(listPatientDirectoryQueryMrIdMax)
+    .default(listPatientDirectoryQueryMrIdDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listPatientDirectoryQueryLimitMax)
+    .default(listPatientDirectoryQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listPatientDirectoryQueryOffsetMin)
+    .max(listPatientDirectoryQueryOffsetMax)
+    .default(listPatientDirectoryQueryOffsetDefault),
+});
+
+export const listPatientDirectoryResponseItemsItemAddressLine1Max = 300;
+
+export const listPatientDirectoryResponseItemsItemAddressLine2Default = ``;
+export const listPatientDirectoryResponseItemsItemAddressLine2Max = 300;
+
+export const listPatientDirectoryResponseItemsItemCityMax = 100;
+
+export const listPatientDirectoryResponseItemsItemCountryMax = 100;
+
+export const listPatientDirectoryResponseItemsItemDialCountryDefault = `IN`;
+export const listPatientDirectoryResponseItemsItemEmailDefault = ``;
+export const listPatientDirectoryResponseItemsItemEmailMax = 320;
+
+export const listPatientDirectoryResponseItemsItemInstructionsLanguageMax = 100;
+
+export const listPatientDirectoryResponseItemsItemLandmarkMax = 200;
+
+export const listPatientDirectoryResponseItemsItemNameMax = 200;
+
+export const listPatientDirectoryResponseItemsItemPhoneMax = 20;
+
+export const listPatientDirectoryResponseItemsItemPincodeMin = 2;
+export const listPatientDirectoryResponseItemsItemPincodeMax = 12;
+
+export const listPatientDirectoryResponseItemsItemStateMax = 100;
+
+export const listPatientDirectoryResponseItemsItemStatusDefault = `active`;
+
+export const ListPatientDirectoryResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      addressLine1: zod
+        .string()
+        .min(1)
+        .max(listPatientDirectoryResponseItemsItemAddressLine1Max),
+      addressLine2: zod
+        .string()
+        .max(listPatientDirectoryResponseItemsItemAddressLine2Max)
+        .default(listPatientDirectoryResponseItemsItemAddressLine2Default),
+      assignmentWarnings: zod.array(zod.string()),
+      city: zod
+        .string()
+        .min(1)
+        .max(listPatientDirectoryResponseItemsItemCityMax),
+      code: zod.string(),
+      country: zod
+        .string()
+        .min(1)
+        .max(listPatientDirectoryResponseItemsItemCountryMax),
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      dateOfBirth: zod.coerce.date(),
+      dialCountry: zod
+        .enum(["IN", "US", "GB", "AE"])
+        .default(listPatientDirectoryResponseItemsItemDialCountryDefault),
+      doctorId: zod.string().uuid(),
+      doctorName: zod.string(),
+      doctorRegistrationNumber: zod.string(),
+      email: zod
+        .string()
+        .max(listPatientDirectoryResponseItemsItemEmailMax)
+        .default(listPatientDirectoryResponseItemsItemEmailDefault),
+      gender: zod.enum(["male", "female", "other", "prefer not to say"]),
+      id: zod.string().uuid(),
+      instructionsLanguage: zod
+        .string()
+        .min(1)
+        .max(listPatientDirectoryResponseItemsItemInstructionsLanguageMax),
+      landmark: zod
+        .string()
+        .min(1)
+        .max(listPatientDirectoryResponseItemsItemLandmarkMax),
+      mrId: zod.union([zod.string().uuid(), zod.null()]),
+      mrName: zod.string(),
+      name: zod
+        .string()
+        .min(1)
+        .max(listPatientDirectoryResponseItemsItemNameMax),
+      phone: zod
+        .string()
+        .min(1)
+        .max(listPatientDirectoryResponseItemsItemPhoneMax),
+      pincode: zod
+        .string()
+        .min(listPatientDirectoryResponseItemsItemPincodeMin)
+        .max(listPatientDirectoryResponseItemsItemPincodeMax),
+      state: zod
+        .string()
+        .min(1)
+        .max(listPatientDirectoryResponseItemsItemStateMax),
+      status: zod
+        .enum(["active", "inactive"])
+        .default(listPatientDirectoryResponseItemsItemStatusDefault),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      version: zod.number().int(),
+      zoneId: zod.union([zod.string().uuid(), zod.null()]),
+      zoneName: zod.string(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+export const createPatientDirectoryBodyAddressLine1Max = 300;
+
+export const createPatientDirectoryBodyAddressLine2Default = ``;
+export const createPatientDirectoryBodyAddressLine2Max = 300;
+
+export const createPatientDirectoryBodyCityMax = 100;
+
+export const createPatientDirectoryBodyCountryMax = 100;
+
+export const createPatientDirectoryBodyDialCountryDefault = `IN`;
+export const createPatientDirectoryBodyEmailDefault = ``;
+export const createPatientDirectoryBodyEmailMax = 320;
+
+export const createPatientDirectoryBodyInstructionsLanguageMax = 100;
+
+export const createPatientDirectoryBodyLandmarkMax = 200;
+
+export const createPatientDirectoryBodyNameMax = 200;
+
+export const createPatientDirectoryBodyPhoneMax = 20;
+
+export const createPatientDirectoryBodyPincodeMin = 2;
+export const createPatientDirectoryBodyPincodeMax = 12;
+
+export const createPatientDirectoryBodyStateMax = 100;
+
+export const createPatientDirectoryBodyStatusDefault = `active`;
+
+export const CreatePatientDirectoryBody = zod.object({
+  addressLine1: zod
+    .string()
+    .min(1)
+    .max(createPatientDirectoryBodyAddressLine1Max),
+  addressLine2: zod
+    .string()
+    .max(createPatientDirectoryBodyAddressLine2Max)
+    .default(createPatientDirectoryBodyAddressLine2Default),
+  city: zod.string().min(1).max(createPatientDirectoryBodyCityMax),
+  country: zod.string().min(1).max(createPatientDirectoryBodyCountryMax),
+  dateOfBirth: zod.coerce.date(),
+  dialCountry: zod
+    .enum(["IN", "US", "GB", "AE"])
+    .default(createPatientDirectoryBodyDialCountryDefault),
+  doctorId: zod.string().uuid(),
+  email: zod
+    .string()
+    .max(createPatientDirectoryBodyEmailMax)
+    .default(createPatientDirectoryBodyEmailDefault),
+  gender: zod.enum(["male", "female", "other", "prefer not to say"]),
+  instructionsLanguage: zod
+    .string()
+    .min(1)
+    .max(createPatientDirectoryBodyInstructionsLanguageMax),
+  landmark: zod.string().min(1).max(createPatientDirectoryBodyLandmarkMax),
+  name: zod.string().min(1).max(createPatientDirectoryBodyNameMax),
+  phone: zod.string().min(1).max(createPatientDirectoryBodyPhoneMax),
+  pincode: zod
+    .string()
+    .min(createPatientDirectoryBodyPincodeMin)
+    .max(createPatientDirectoryBodyPincodeMax),
+  state: zod.string().min(1).max(createPatientDirectoryBodyStateMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(createPatientDirectoryBodyStatusDefault),
+});
+
+export const createPatientDirectoryResponseAddressLine1Max = 300;
+
+export const createPatientDirectoryResponseAddressLine2Default = ``;
+export const createPatientDirectoryResponseAddressLine2Max = 300;
+
+export const createPatientDirectoryResponseCityMax = 100;
+
+export const createPatientDirectoryResponseCountryMax = 100;
+
+export const createPatientDirectoryResponseDialCountryDefault = `IN`;
+export const createPatientDirectoryResponseEmailDefault = ``;
+export const createPatientDirectoryResponseEmailMax = 320;
+
+export const createPatientDirectoryResponseInstructionsLanguageMax = 100;
+
+export const createPatientDirectoryResponseLandmarkMax = 200;
+
+export const createPatientDirectoryResponseNameMax = 200;
+
+export const createPatientDirectoryResponsePhoneMax = 20;
+
+export const createPatientDirectoryResponsePincodeMin = 2;
+export const createPatientDirectoryResponsePincodeMax = 12;
+
+export const createPatientDirectoryResponseStateMax = 100;
+
+export const createPatientDirectoryResponseStatusDefault = `active`;
+
+export const CreatePatientDirectoryResponse = zod.object({
+  addressLine1: zod
+    .string()
+    .min(1)
+    .max(createPatientDirectoryResponseAddressLine1Max),
+  addressLine2: zod
+    .string()
+    .max(createPatientDirectoryResponseAddressLine2Max)
+    .default(createPatientDirectoryResponseAddressLine2Default),
+  assignmentWarnings: zod.array(zod.string()),
+  city: zod.string().min(1).max(createPatientDirectoryResponseCityMax),
+  code: zod.string(),
+  country: zod.string().min(1).max(createPatientDirectoryResponseCountryMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dateOfBirth: zod.coerce.date(),
+  dialCountry: zod
+    .enum(["IN", "US", "GB", "AE"])
+    .default(createPatientDirectoryResponseDialCountryDefault),
+  doctorId: zod.string().uuid(),
+  doctorName: zod.string(),
+  doctorRegistrationNumber: zod.string(),
+  email: zod
+    .string()
+    .max(createPatientDirectoryResponseEmailMax)
+    .default(createPatientDirectoryResponseEmailDefault),
+  gender: zod.enum(["male", "female", "other", "prefer not to say"]),
+  id: zod.string().uuid(),
+  instructionsLanguage: zod
+    .string()
+    .min(1)
+    .max(createPatientDirectoryResponseInstructionsLanguageMax),
+  landmark: zod.string().min(1).max(createPatientDirectoryResponseLandmarkMax),
+  mrId: zod.union([zod.string().uuid(), zod.null()]),
+  mrName: zod.string(),
+  name: zod.string().min(1).max(createPatientDirectoryResponseNameMax),
+  phone: zod.string().min(1).max(createPatientDirectoryResponsePhoneMax),
+  pincode: zod
+    .string()
+    .min(createPatientDirectoryResponsePincodeMin)
+    .max(createPatientDirectoryResponsePincodeMax),
+  state: zod.string().min(1).max(createPatientDirectoryResponseStateMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(createPatientDirectoryResponseStatusDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+  zoneId: zod.union([zod.string().uuid(), zod.null()]),
+  zoneName: zod.string(),
+});
+
+/**
+ * @summary Export
+ */
+export const exportPatientDirectoryQueryQueryDefault = ``;
+export const exportPatientDirectoryQueryQueryMax = 200;
+
+export const exportPatientDirectoryQueryStatusDefault = `all`;
+export const exportPatientDirectoryQueryZoneIdDefault = ``;
+export const exportPatientDirectoryQueryZoneIdMax = 36;
+
+export const exportPatientDirectoryQueryMrIdDefault = ``;
+export const exportPatientDirectoryQueryMrIdMax = 36;
+
+export const exportPatientDirectoryQueryFormatDefault = `csv`;
+
+export const ExportPatientDirectoryQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(exportPatientDirectoryQueryQueryMax)
+    .default(exportPatientDirectoryQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(exportPatientDirectoryQueryStatusDefault),
+  zone_id: zod.coerce
+    .string()
+    .max(exportPatientDirectoryQueryZoneIdMax)
+    .default(exportPatientDirectoryQueryZoneIdDefault),
+  mr_id: zod.coerce
+    .string()
+    .max(exportPatientDirectoryQueryMrIdMax)
+    .default(exportPatientDirectoryQueryMrIdDefault),
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(exportPatientDirectoryQueryFormatDefault),
+});
+
+export const ExportPatientDirectoryHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const ExportPatientDirectoryResponse = zod.unknown();
+
+/**
+ * @summary Commit
+ */
+export const commitPatientImportQueryFilenameMax = 200;
+
+export const commitPatientImportQueryDigestRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const CommitPatientImportQueryParams = zod.object({
+  filename: zod.coerce.string().min(1).max(commitPatientImportQueryFilenameMax),
+  digest: zod.coerce.string().regex(commitPatientImportQueryDigestRegExp),
+  confirm: zod.coerce.boolean(),
+});
+
+export const CommitPatientImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const CommitPatientImportResponse = zod.object({
+  imported: zod.number().int(),
+});
+
+/**
+ * @summary Review
+ */
+export const reviewPatientImportQueryFilenameMax = 200;
+
+export const ReviewPatientImportQueryParams = zod.object({
+  filename: zod.coerce.string().min(1).max(reviewPatientImportQueryFilenameMax),
+});
+
+export const ReviewPatientImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const ReviewPatientImportResponse = zod.object({
+  digest: zod.string(),
+  rows: zod.array(
+    zod.object({
+      code: zod.string(),
+      errors: zod.array(zod.string()),
+      name: zod.string(),
+      row: zod.number().int(),
+    }),
+  ),
+  valid: zod.boolean(),
+});
+
+/**
+ * @summary References
+ */
+export const listPatientDoctorChoicesQueryQueryDefault = ``;
+export const listPatientDoctorChoicesQueryQueryMax = 200;
+
+export const listPatientDoctorChoicesQueryLimitDefault = 100;
+export const listPatientDoctorChoicesQueryLimitMax = 100;
+
+export const listPatientDoctorChoicesQueryOffsetDefault = 0;
+export const listPatientDoctorChoicesQueryOffsetMin = 0;
+export const listPatientDoctorChoicesQueryOffsetMax = 1000000;
+
+export const ListPatientDoctorChoicesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listPatientDoctorChoicesQueryQueryMax)
+    .default(listPatientDoctorChoicesQueryQueryDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listPatientDoctorChoicesQueryLimitMax)
+    .default(listPatientDoctorChoicesQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listPatientDoctorChoicesQueryOffsetMin)
+    .max(listPatientDoctorChoicesQueryOffsetMax)
+    .default(listPatientDoctorChoicesQueryOffsetDefault),
+  include_saved: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+});
+
+export const ListPatientDoctorChoicesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      mrName: zod.string(),
+      name: zod.string(),
+      status: zod.string(),
+      usable: zod.boolean(),
+      zoneName: zod.string(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Sample
+ */
+export const downloadPatientSampleQueryFormatDefault = `csv`;
+
+export const DownloadPatientSampleQueryParams = zod.object({
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(downloadPatientSampleQueryFormatDefault),
+});
+
+export const DownloadPatientSampleHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const DownloadPatientSampleResponse = zod.unknown();
+
+/**
+ * @summary Detail
+ */
+export const GetPatientDirectoryParams = zod.object({
+  patient_id: zod.coerce.string().uuid(),
+});
+
+export const getPatientDirectoryResponseAddressLine1Max = 300;
+
+export const getPatientDirectoryResponseAddressLine2Default = ``;
+export const getPatientDirectoryResponseAddressLine2Max = 300;
+
+export const getPatientDirectoryResponseCityMax = 100;
+
+export const getPatientDirectoryResponseCountryMax = 100;
+
+export const getPatientDirectoryResponseDialCountryDefault = `IN`;
+export const getPatientDirectoryResponseEmailDefault = ``;
+export const getPatientDirectoryResponseEmailMax = 320;
+
+export const getPatientDirectoryResponseInstructionsLanguageMax = 100;
+
+export const getPatientDirectoryResponseLandmarkMax = 200;
+
+export const getPatientDirectoryResponseNameMax = 200;
+
+export const getPatientDirectoryResponsePhoneMax = 20;
+
+export const getPatientDirectoryResponsePincodeMin = 2;
+export const getPatientDirectoryResponsePincodeMax = 12;
+
+export const getPatientDirectoryResponseStateMax = 100;
+
+export const getPatientDirectoryResponseStatusDefault = `active`;
+
+export const GetPatientDirectoryResponse = zod.object({
+  addressLine1: zod
+    .string()
+    .min(1)
+    .max(getPatientDirectoryResponseAddressLine1Max),
+  addressLine2: zod
+    .string()
+    .max(getPatientDirectoryResponseAddressLine2Max)
+    .default(getPatientDirectoryResponseAddressLine2Default),
+  assignmentWarnings: zod.array(zod.string()),
+  city: zod.string().min(1).max(getPatientDirectoryResponseCityMax),
+  code: zod.string(),
+  country: zod.string().min(1).max(getPatientDirectoryResponseCountryMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dateOfBirth: zod.coerce.date(),
+  dialCountry: zod
+    .enum(["IN", "US", "GB", "AE"])
+    .default(getPatientDirectoryResponseDialCountryDefault),
+  doctorId: zod.string().uuid(),
+  doctorName: zod.string(),
+  doctorRegistrationNumber: zod.string(),
+  email: zod
+    .string()
+    .max(getPatientDirectoryResponseEmailMax)
+    .default(getPatientDirectoryResponseEmailDefault),
+  gender: zod.enum(["male", "female", "other", "prefer not to say"]),
+  id: zod.string().uuid(),
+  instructionsLanguage: zod
+    .string()
+    .min(1)
+    .max(getPatientDirectoryResponseInstructionsLanguageMax),
+  landmark: zod.string().min(1).max(getPatientDirectoryResponseLandmarkMax),
+  mrId: zod.union([zod.string().uuid(), zod.null()]),
+  mrName: zod.string(),
+  name: zod.string().min(1).max(getPatientDirectoryResponseNameMax),
+  phone: zod.string().min(1).max(getPatientDirectoryResponsePhoneMax),
+  pincode: zod
+    .string()
+    .min(getPatientDirectoryResponsePincodeMin)
+    .max(getPatientDirectoryResponsePincodeMax),
+  state: zod.string().min(1).max(getPatientDirectoryResponseStateMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(getPatientDirectoryResponseStatusDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+  zoneId: zod.union([zod.string().uuid(), zod.null()]),
+  zoneName: zod.string(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditPatientDirectoryParams = zod.object({
+  patient_id: zod.coerce.string().uuid(),
+});
+
+export const editPatientDirectoryBodyAddressLine1Max = 300;
+
+export const editPatientDirectoryBodyAddressLine2Default = ``;
+export const editPatientDirectoryBodyAddressLine2Max = 300;
+
+export const editPatientDirectoryBodyCityMax = 100;
+
+export const editPatientDirectoryBodyCountryMax = 100;
+
+export const editPatientDirectoryBodyDialCountryDefault = `IN`;
+export const editPatientDirectoryBodyEmailDefault = ``;
+export const editPatientDirectoryBodyEmailMax = 320;
+
+export const editPatientDirectoryBodyInstructionsLanguageMax = 100;
+
+export const editPatientDirectoryBodyLandmarkMax = 200;
+
+export const editPatientDirectoryBodyNameMax = 200;
+
+export const editPatientDirectoryBodyPhoneMax = 20;
+
+export const editPatientDirectoryBodyPincodeMin = 2;
+export const editPatientDirectoryBodyPincodeMax = 12;
+
+export const editPatientDirectoryBodyStateMax = 100;
+
+export const editPatientDirectoryBodyStatusDefault = `active`;
+
+export const EditPatientDirectoryBody = zod.object({
+  addressLine1: zod
+    .string()
+    .min(1)
+    .max(editPatientDirectoryBodyAddressLine1Max),
+  addressLine2: zod
+    .string()
+    .max(editPatientDirectoryBodyAddressLine2Max)
+    .default(editPatientDirectoryBodyAddressLine2Default),
+  city: zod.string().min(1).max(editPatientDirectoryBodyCityMax),
+  country: zod.string().min(1).max(editPatientDirectoryBodyCountryMax),
+  dateOfBirth: zod.coerce.date(),
+  dialCountry: zod
+    .enum(["IN", "US", "GB", "AE"])
+    .default(editPatientDirectoryBodyDialCountryDefault),
+  doctorId: zod.string().uuid(),
+  email: zod
+    .string()
+    .max(editPatientDirectoryBodyEmailMax)
+    .default(editPatientDirectoryBodyEmailDefault),
+  expected_version: zod.number().int().min(1),
+  gender: zod.enum(["male", "female", "other", "prefer not to say"]),
+  instructionsLanguage: zod
+    .string()
+    .min(1)
+    .max(editPatientDirectoryBodyInstructionsLanguageMax),
+  landmark: zod.string().min(1).max(editPatientDirectoryBodyLandmarkMax),
+  name: zod.string().min(1).max(editPatientDirectoryBodyNameMax),
+  phone: zod.string().min(1).max(editPatientDirectoryBodyPhoneMax),
+  pincode: zod
+    .string()
+    .min(editPatientDirectoryBodyPincodeMin)
+    .max(editPatientDirectoryBodyPincodeMax),
+  state: zod.string().min(1).max(editPatientDirectoryBodyStateMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(editPatientDirectoryBodyStatusDefault),
+});
+
+export const editPatientDirectoryResponseAddressLine1Max = 300;
+
+export const editPatientDirectoryResponseAddressLine2Default = ``;
+export const editPatientDirectoryResponseAddressLine2Max = 300;
+
+export const editPatientDirectoryResponseCityMax = 100;
+
+export const editPatientDirectoryResponseCountryMax = 100;
+
+export const editPatientDirectoryResponseDialCountryDefault = `IN`;
+export const editPatientDirectoryResponseEmailDefault = ``;
+export const editPatientDirectoryResponseEmailMax = 320;
+
+export const editPatientDirectoryResponseInstructionsLanguageMax = 100;
+
+export const editPatientDirectoryResponseLandmarkMax = 200;
+
+export const editPatientDirectoryResponseNameMax = 200;
+
+export const editPatientDirectoryResponsePhoneMax = 20;
+
+export const editPatientDirectoryResponsePincodeMin = 2;
+export const editPatientDirectoryResponsePincodeMax = 12;
+
+export const editPatientDirectoryResponseStateMax = 100;
+
+export const editPatientDirectoryResponseStatusDefault = `active`;
+
+export const EditPatientDirectoryResponse = zod.object({
+  addressLine1: zod
+    .string()
+    .min(1)
+    .max(editPatientDirectoryResponseAddressLine1Max),
+  addressLine2: zod
+    .string()
+    .max(editPatientDirectoryResponseAddressLine2Max)
+    .default(editPatientDirectoryResponseAddressLine2Default),
+  assignmentWarnings: zod.array(zod.string()),
+  city: zod.string().min(1).max(editPatientDirectoryResponseCityMax),
+  code: zod.string(),
+  country: zod.string().min(1).max(editPatientDirectoryResponseCountryMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dateOfBirth: zod.coerce.date(),
+  dialCountry: zod
+    .enum(["IN", "US", "GB", "AE"])
+    .default(editPatientDirectoryResponseDialCountryDefault),
+  doctorId: zod.string().uuid(),
+  doctorName: zod.string(),
+  doctorRegistrationNumber: zod.string(),
+  email: zod
+    .string()
+    .max(editPatientDirectoryResponseEmailMax)
+    .default(editPatientDirectoryResponseEmailDefault),
+  gender: zod.enum(["male", "female", "other", "prefer not to say"]),
+  id: zod.string().uuid(),
+  instructionsLanguage: zod
+    .string()
+    .min(1)
+    .max(editPatientDirectoryResponseInstructionsLanguageMax),
+  landmark: zod.string().min(1).max(editPatientDirectoryResponseLandmarkMax),
+  mrId: zod.union([zod.string().uuid(), zod.null()]),
+  mrName: zod.string(),
+  name: zod.string().min(1).max(editPatientDirectoryResponseNameMax),
+  phone: zod.string().min(1).max(editPatientDirectoryResponsePhoneMax),
+  pincode: zod
+    .string()
+    .min(editPatientDirectoryResponsePincodeMin)
+    .max(editPatientDirectoryResponsePincodeMax),
+  state: zod.string().min(1).max(editPatientDirectoryResponseStateMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(editPatientDirectoryResponseStatusDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+  zoneId: zod.union([zod.string().uuid(), zod.null()]),
+  zoneName: zod.string(),
+});
+
+/**
+ * @summary Status
+ */
+export const SetPatientDirectoryStatusParams = zod.object({
+  patient_id: zod.coerce.string().uuid(),
+});
+
+export const SetPatientDirectoryStatusBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const setPatientDirectoryStatusResponseAddressLine1Max = 300;
+
+export const setPatientDirectoryStatusResponseAddressLine2Default = ``;
+export const setPatientDirectoryStatusResponseAddressLine2Max = 300;
+
+export const setPatientDirectoryStatusResponseCityMax = 100;
+
+export const setPatientDirectoryStatusResponseCountryMax = 100;
+
+export const setPatientDirectoryStatusResponseDialCountryDefault = `IN`;
+export const setPatientDirectoryStatusResponseEmailDefault = ``;
+export const setPatientDirectoryStatusResponseEmailMax = 320;
+
+export const setPatientDirectoryStatusResponseInstructionsLanguageMax = 100;
+
+export const setPatientDirectoryStatusResponseLandmarkMax = 200;
+
+export const setPatientDirectoryStatusResponseNameMax = 200;
+
+export const setPatientDirectoryStatusResponsePhoneMax = 20;
+
+export const setPatientDirectoryStatusResponsePincodeMin = 2;
+export const setPatientDirectoryStatusResponsePincodeMax = 12;
+
+export const setPatientDirectoryStatusResponseStateMax = 100;
+
+export const setPatientDirectoryStatusResponseStatusDefault = `active`;
+
+export const SetPatientDirectoryStatusResponse = zod.object({
+  addressLine1: zod
+    .string()
+    .min(1)
+    .max(setPatientDirectoryStatusResponseAddressLine1Max),
+  addressLine2: zod
+    .string()
+    .max(setPatientDirectoryStatusResponseAddressLine2Max)
+    .default(setPatientDirectoryStatusResponseAddressLine2Default),
+  assignmentWarnings: zod.array(zod.string()),
+  city: zod.string().min(1).max(setPatientDirectoryStatusResponseCityMax),
+  code: zod.string(),
+  country: zod.string().min(1).max(setPatientDirectoryStatusResponseCountryMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dateOfBirth: zod.coerce.date(),
+  dialCountry: zod
+    .enum(["IN", "US", "GB", "AE"])
+    .default(setPatientDirectoryStatusResponseDialCountryDefault),
+  doctorId: zod.string().uuid(),
+  doctorName: zod.string(),
+  doctorRegistrationNumber: zod.string(),
+  email: zod
+    .string()
+    .max(setPatientDirectoryStatusResponseEmailMax)
+    .default(setPatientDirectoryStatusResponseEmailDefault),
+  gender: zod.enum(["male", "female", "other", "prefer not to say"]),
+  id: zod.string().uuid(),
+  instructionsLanguage: zod
+    .string()
+    .min(1)
+    .max(setPatientDirectoryStatusResponseInstructionsLanguageMax),
+  landmark: zod
+    .string()
+    .min(1)
+    .max(setPatientDirectoryStatusResponseLandmarkMax),
+  mrId: zod.union([zod.string().uuid(), zod.null()]),
+  mrName: zod.string(),
+  name: zod.string().min(1).max(setPatientDirectoryStatusResponseNameMax),
+  phone: zod.string().min(1).max(setPatientDirectoryStatusResponsePhoneMax),
+  pincode: zod
+    .string()
+    .min(setPatientDirectoryStatusResponsePincodeMin)
+    .max(setPatientDirectoryStatusResponsePincodeMax),
+  state: zod.string().min(1).max(setPatientDirectoryStatusResponseStateMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(setPatientDirectoryStatusResponseStatusDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+  zoneId: zod.union([zod.string().uuid(), zod.null()]),
+  zoneName: zod.string(),
+});
+
+/**
+ * @summary Listing
+ */
 export const listProductCategoriesQueryQueryDefault = ``;
 export const listProductCategoriesQueryQueryMax = 200;
 

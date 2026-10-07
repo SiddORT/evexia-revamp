@@ -6,6 +6,7 @@ from sqlalchemy import create_engine, pool
 from app.core.config import get_settings
 from app.db.base import Base
 from app.db import models  # noqa: F401 - register all tables
+from app.db import patient_models  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

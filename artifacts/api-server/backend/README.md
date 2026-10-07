@@ -29,8 +29,10 @@ prerequisites; `/api/v1/health/readiness` checks the installed schema.
 Doctor Master extends that server MR identity with an empty `0019_doctor_directory`
 table, derived Zones, all enabled business fields, versioned atomic actions and
 bounded CSV/XLSX review/confirm/filtered exports. MR's associated-doctor viewer
-uses live assignments. Patient, Opening Balance and payment-preview data are
-still separate local datasets; no Doctor login, ledger or automatic migration
+uses live assignments. Patient Master now adds the empty one-to-one Patient
+extension `0020_patient_directory`, with live ownership synchronization and bounded
+CSV/XLSX transfers; see [Patient Master operations](../../../docs/patient-master.md).
+Opening Balance and payment-preview data remain separate local datasets; no Doctor login, ledger or automatic migration
 is implied. See [Doctor Master operations](../../../docs/doctor-master.md).
 Other unconverted portal masters remain
 fictional and browser-local. Do not enter real personal or health data into the

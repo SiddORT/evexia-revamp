@@ -1,70 +1,114 @@
-import { downloadCSV } from '../../services/downloads.js';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowLeft, Download, Upload } from 'lucide-react';
+import { ArrowLeft, Download, FileSpreadsheet, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
-import usePatients from '../../hooks/usePatients.js';
-import { patientTemplateCSV, readPatientSnapshots, reviewPatientCSV } from '../../services/patients.js';
-import '../../mr.css';
-import '../../patient.css';
+import MasterImportTabs from '../../components/admin/MasterImportTabs.jsx';
+import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
+import { downloadPatientFile, importPatients, reviewPatients, samplePatients } from '../../services/serverPatients.js';
+import '../../excel-import.css';
 
-const LIST = '/admin/masters/patients';
-function downloadTemplate() {
-  return downloadCSV(patientTemplateCSV(), 'evexia-patient-template.csv', 'patient', 'template');
-}
 export default function PatientImportPage() {
   const [, navigate] = useLocation();
-  const { error, retry, importRows } = usePatients();
+  const [file, setFile] = useState(null);
   const [review, setReview] = useState(null);
+  const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [busy, setBusy] = useState(false);
-  const fileRef = useRef(null);
-  async function selectFile(event) {
-    setReview(null); setMessage('');
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!/\.csv$/i.test(file.name)) { setMessage('Choose a CSV file (.csv).'); return; }
-    if (file.size > 2_000_000) { setMessage('CSV is too large. Import up to 1,000 records in a file under 2 MB.'); return; }
-    setBusy(true);
+  const [pending, setPending] = useState('');
+  const [uncertain, setUncertain] = useState(false);
+  const busy = useRef(false);
+  const sequence = useRef(0);
+  const picker = useRef(null);
+  const alive = useRef(true);
+  const controller = useRef(null);
+  useEffect(() => {
+    alive.current = true;
+    const owner = getSession().user?.id;
+    const unsubscribe = subscribeSession(() => {
+      if (getSession().user?.id !== owner) {
+        sequence.current++; controller.current?.abort(); busy.current = false;
+        setPending(''); setReview(null); setFile(null); setError(''); setMessage(''); setUncertain(false);
+        if (picker.current) picker.current.value = '';
+      }
+    });
+    return () => { alive.current = false; sequence.current++; controller.current?.abort(); unsubscribe(); };
+  }, []);
+  function replaceFile(next) {
+    if (busy.current === 'commit') return;
+    sequence.current++; controller.current?.abort(); busy.current = false;
+    setPending(''); setFile(next); setReview(null); setError(''); setMessage('');
+  }
+  async function run(commit) {
+    if (!file || busy.current || getSession().status !== 'authenticated' || (commit && (!review?.valid || uncertain))) return;
+    const current = ++sequence.current;
+    const guard = reportingIdentityGuard();
+    const active = () => alive.current && current === sequence.current;
+    busy.current = commit ? 'commit' : 'review'; setPending(busy.current); setError(''); setMessage('');
+    const digest = review?.digest;
+    setReview(null);
+    controller.current = new AbortController();
     try {
-      const snapshot = readPatientSnapshots();
-      if (error) throw new Error('Refresh records before reviewing a new CSV.');
-      const entries = reviewPatientCSV(await file.text(), snapshot);
-      const latest = readPatientSnapshots();
-      if (['records', 'doctors', 'mrs', 'zones'].some((key) => JSON.stringify(snapshot[key]) !== JSON.stringify(latest[key]))) throw new Error('Records changed while reading the file. Refresh and choose it again.');
-      setReview({ entries, snapshot, name: file.name });
-    } catch (cause) { setMessage(cause.message || 'Could not read this CSV.'); }
-    finally { setBusy(false); }
+      if (file.size > 2 * 1024 * 1024) throw new Error('File exceeds 2 MiB.');
+      if (commit) {
+        const result = await importPatients(file, digest);
+        guard();
+        if (!active()) return;
+        setMessage(`${result.imported} patients imported. All records saved to the shared server directory.`);
+        setFile(null); setUncertain(false);
+        if (picker.current) picker.current.value = '';
+      } else {
+        const result = await reviewPatients(file, controller.current.signal);
+        guard();
+        if (!active()) return;
+        setReview({ ...result, filename: file.name });
+        if (uncertain) setMessage('Current duplicates checked without writes. Inspect Patient Master before retrying the earlier batch.');
+        setUncertain(false);
+      }
+    } catch (cause) {
+      try { guard(); } catch { return; }
+      if (active()) { setUncertain(Boolean(commit && cause.ambiguous)); setError(`${cause.message || 'Import failed.'}${cause.ambiguous ? ' Result uncertain. Inspect Patient Master and review again; do not blindly retry.' : ' Nothing saved by this review. Review again before confirming.'}`); }
+    } finally { if (active()) { busy.current = false; setPending(''); } }
   }
-  function refresh() {
-    retry(); setReview(null); setMessage('');
-    if (fileRef.current) fileRef.current.value = '';
+  async function sample(format) {
+    if (busy.current || getSession().status !== 'authenticated') return;
+    busy.current = 'sample'; setPending('sample'); setError('');
+    const current = ++sequence.current;
+    const guard = reportingIdentityGuard();
+    controller.current = new AbortController();
+    try {
+      const blob = await samplePatients(format, controller.current.signal);
+      guard();
+      if (alive.current && current === sequence.current) downloadPatientFile(blob, format, true);
+    } catch (cause) { try { guard(); } catch { return; } if (alive.current) setError(`Sample download failed. ${cause.message}`); }
+    finally { if (alive.current && current === sequence.current) { busy.current = false; setPending(''); } }
   }
-  function confirm() {
-    if (!review || busy) return;
-    setBusy(true);
-    const result = importRows(review.entries, review.snapshot);
-    setBusy(false);
-    if (result.success) navigate(`${LIST}?saved=imported`);
-    else { setMessage(`${result.error} Nothing was imported. Refresh records and review the CSV again.`); setReview(null); }
-  }
-  const invalid = review?.entries.filter((entry) => entry.errors.length).length || 0;
-  return <AdminLayout title="Import patients">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Patients / CSV import</p><h1>Import patients</h1><p className="admin-page-head__description">Review every row before saving. This browser-local preview is not suitable for real patient or health information.</p></div>
-      <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(LIST)}><ArrowLeft size={16} /> Back to Patient Master</button></div>
-    <section className="admin-panel patient-import" aria-label="Import patient CSV">
-      <div className="patient-import__intro"><h2>Patient CSV</h2><p>Download the template or use an exported Patient Master CSV. Keep the headers in order. Leave Patient ID blank for a new ID, or retain exported IDs when moving records to a clean directory. Doctor ID must identify a saved doctor, or supply their unique registration number. Existing IDs and invalid assignments are rejected; nothing is overwritten.</p>
-        <button type="button" className="admin-button admin-button--secondary" onClick={async () => { try { await downloadTemplate(); setMessage(''); } catch (cause) { setMessage(cause.message || 'Template download failed. Retry.'); } }} data-testid="button-patient-template"><Download size={16} /> Download CSV template</button>
-      </div>
-      <div className="patient-import__picker"><label htmlFor="patient-csv">Choose CSV file</label><input id="patient-csv" ref={fileRef} type="file" accept=".csv,text/csv" onChange={selectFile} disabled={Boolean(error) || busy} data-testid="input-patient-csv" /></div>
-      {error && <div className="admin-feedback admin-feedback--error" role="alert">{error} <button type="button" className="admin-button admin-button--secondary" onClick={refresh}>Refresh records</button></div>}
-      {message && <div className="admin-feedback admin-feedback--error" role="alert">{message} <button type="button" className="admin-button admin-button--secondary" onClick={refresh}>Refresh and review again</button></div>}
-      {review && <div className="patient-import__review">
-        <h2>Review {review.name}</h2>
-        <p role="status">{review.entries.length} row{review.entries.length === 1 ? '' : 's'} · {invalid} with errors. {invalid ? 'Fix the CSV and choose it again; no rows have been saved.' : 'All rows are valid. Confirm to save the entire batch.'}</p>
-        <div className="admin-table-scroll" role="region" aria-label="CSV row review" tabIndex={0}><table className="admin-table"><thead><tr><th scope="col">Line</th><th scope="col">Patient ID</th><th scope="col">Patient</th><th scope="col">Result</th></tr></thead><tbody>{review.entries.map((entry) => <tr key={entry.line}><td>{entry.line}</td><td>{entry.id || '—'}</td><td>{entry.fields?.name || '—'}</td><td>{entry.errors.length ? <span className="admin-mr-missing">{entry.errors.join(' · ')}</span> : 'Ready to import'}</td></tr>)}</tbody></table></div>
-        <div className="patient-import__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => { setReview(null); if (fileRef.current) fileRef.current.value = ''; }}>Cancel review</button><button type="button" className="admin-button" disabled={Boolean(invalid) || busy || Boolean(error)} onClick={confirm} data-testid="button-confirm-patient-import"><Upload size={16} /> Confirm import of {review.entries.length} patients</button></div>
-      </div>}
-    </section>
-  </AdminLayout>;
+  const rows = review?.rows || [];
+  const valid = rows.filter((row) => !row.errors.length);
+  const invalid = rows.filter((row) => row.errors.length);
+  return <AdminLayout title="Import Patient data"><div className="excel-import">
+    <button type="button" className="excel-import__back" disabled={pending === 'commit'} onClick={() => navigate('/admin/masters/patients')}><ArrowLeft size={16} /> Back to Patient Master</button>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Data import</p><h1>Import Patient data</h1><p className="admin-page-head__description">Review CSV or Excel without saving. Explicit confirmation creates a fully valid batch, all-or-nothing.</p></div><span className="excel-import__mock">Shared server records</span></div>
+    <MasterImportTabs kind="patient" />
+    <div className="excel-import__steps">
+      <section className="excel-import__card" aria-labelledby="patient-sample-title"><span className="excel-import__number">01</span><div className="excel-import__icon"><FileSpreadsheet size={23} /></div><h2 id="patient-sample-title">Download sample</h2>
+        <p>Keep the full column order and one worksheet. Use text cells for identifiers, phone numbers, DOB and postcodes.</p>
+        <div className="excel-import__columns"><strong>Business columns</strong><span>Patient ID · Patient Name · Gender · Phone No. · Email ID · Date of Birth · Doctor ID · Doctor Registration Number · Instructions Language · Status · Address Line 1 · Address Line 2 · Landmark · Pincode · City · State · Country · Dial Country</span></div>
+        <p>Legacy 17-column CSVs default national phone numbers to India. Male/Female/Other values are accepted case-insensitively on import. Blank Patient IDs generate PAT-codes. Doctor Registration Number must uniquely identify a server Doctor; local Doctor IDs are not live references. No relationships are created automatically. Optional readable export/audit columns never restore historical attribution.</p>
+        <div className="excel-import__sample-actions"><button className="admin-button admin-button--secondary" type="button" disabled={Boolean(pending)} onClick={() => sample('csv')} data-testid="button-sample-patient-csv">Download CSV sample</button>
+          <button className="admin-button admin-button--secondary" type="button" disabled={Boolean(pending)} onClick={() => sample('xlsx')} data-testid="button-sample-patient-xlsx"><Download size={16} /> Download Excel sample</button></div>
+      </section>
+      <section className="excel-import__card" aria-labelledby="patient-upload-title" aria-busy={Boolean(pending)}><span className="excel-import__number">02</span><div className="excel-import__icon"><Upload size={23} /></div><h2 id="patient-upload-title">Upload &amp; review</h2><p>CSV or genuine .xlsx, up to 2 MiB and 1,000 records. Create-only: every row must be valid; no upserts or partial imports.</p>
+        <label className="excel-import__picker"><FileSpreadsheet size={19} /><span>{file ? file.name : 'Choose CSV or Excel file'}</span><input ref={picker} aria-label="Patient CSV or Excel file" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" disabled={pending === 'commit'} onChange={(event) => replaceFile(event.target.files?.[0] || null)} data-testid="input-patient-import" /></label>
+        <button className="admin-button" type="button" disabled={!file || Boolean(pending)} onClick={() => run(false)} data-testid="button-review-patient-import">{pending === 'review' ? 'Reviewing…' : pending === 'commit' ? 'Importing…' : uncertain ? 'Check current conflicts (no writes)' : 'Upload & review'}</button>
+      </section>
+    </div>
+    {pending === 'sample' && <p role="status">Preparing sample…</p>}
+    {error && <div className="admin-feedback admin-feedback--error" role="alert">{error}</div>}
+    {message && <div className="admin-feedback" role="status" data-testid="status-patient-import">{message}</div>}
+    {review && <section className="excel-import__report" aria-labelledby="patient-report-title" aria-live="polite" data-testid="patient-excel-report">
+      <div className="excel-import__report-head"><div><p className="admin-page-head__eyebrow">Upload summary</p><h2 id="patient-report-title">{review.filename}</h2><p>No records saved by review. {review.valid ? 'Confirm explicitly to create this batch.' : 'Correct every invalid row and review again.'}</p></div><div className="excel-import__totals"><span className="excel-import__valid">{valid.length} valid</span><span className="excel-import__invalid">{invalid.length} invalid</span></div></div>
+      <div className="excel-import__results"><div><h3>Valid data <span>{valid.length}</span></h3>{valid.length ? valid.map((row) => <details className="excel-import__row" key={row.row}><summary>Row {row.row} · {row.name} <span>Valid</span></summary><p>Patient ID: {row.code || 'Generated on creation'}</p></details>) : <p>No valid rows.</p>}</div>
+        <div><h3>Invalid data <span>{invalid.length}</span></h3>{invalid.length ? invalid.map((row) => <details open className="excel-import__row excel-import__row--invalid" key={row.row}><summary>Row {row.row} · {row.name || '(unnamed)'} <span>{row.errors.length} errors</span></summary><ul>{row.errors.map((text, index) => <li key={index}>{text}</li>)}</ul></details>) : <p>No errors found. Nothing saved until confirmation.</p>}</div></div>
+      <button className="admin-button" type="button" disabled={!review.valid || Boolean(pending) || uncertain} onClick={() => run(true)} data-testid="button-confirm-patient-import">Confirm import of {rows.length} patients</button>
+    </section>}
+  </div></AdminLayout>;
 }

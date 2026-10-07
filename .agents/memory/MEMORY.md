@@ -38,3 +38,4 @@
 - [Delayed browser route teardown](delayed-route-teardown.md) — await held response handlers before removing their interception; avoid global teardown between late-response scenarios.
 - [MR account boundary](mr-account-boundary.md) — real MR login must not silently promote existing identities or mix browser-local demo relationships.
 - [Save navigation evidence](save-navigation-evidence.md) — wait for the terminal list route; prefix-only URL assertions can read before an authenticated save commits.
+- [API schema name stability](api-schema-name-stability.md) — unique extension schema names avoid renaming unchanged domain components and breaking handwritten client exports.

@@ -17,6 +17,8 @@ node --test artifacts/evexia-portal/src/services/serverMRs.test.js
 sh scripts/test-api-foundation.sh tests/test_mrs.py tests/test_migration_mrs.py
 node --test artifacts/evexia-portal/src/services/serverDoctors.test.js
 sh scripts/test-api-foundation.sh tests/test_doctors.py tests/test_migration_doctors.py
+node --test artifacts/evexia-portal/src/services/serverPatients.test.js
+sh scripts/test-api-foundation.sh tests/test_patients.py tests/test_migration_patients.py tests/test_patient_files.py
 sh scripts/test-api-foundation.sh tests/test_headquarters.py tests/test_migration_headquarters.py
 sh scripts/test-api-foundation.sh tests/test_roles.py tests/test_migration_roles.py tests/test_zone_permissions.py tests/test_migration_zone_permissions.py tests/test_locations.py tests/test_migration_locations.py tests/test_designations.py tests/test_migration_designations.py tests/test_downloads.py tests/test_download_queries.py tests/test_download_files.py
 node --test artifacts/evexia-portal/src/services/serverCouriers.test.js

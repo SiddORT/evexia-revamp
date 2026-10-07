@@ -1638,11 +1638,337 @@ export interface MRVersion {
   expected_version: number;
 }
 
+export interface PatientChoice {
+  id: string;
+  mrName: string;
+  name: string;
+  status: string;
+  usable: boolean;
+  zoneName: string;
+}
+
+export interface PatientChoices {
+  items: PatientChoice[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export type PatientDirectoryResponseDialCountry =
+  (typeof PatientDirectoryResponseDialCountry)[keyof typeof PatientDirectoryResponseDialCountry];
+
+export const PatientDirectoryResponseDialCountry = {
+  IN: "IN",
+  US: "US",
+  GB: "GB",
+  AE: "AE",
+} as const;
+
+export type PatientDirectoryResponseGender =
+  (typeof PatientDirectoryResponseGender)[keyof typeof PatientDirectoryResponseGender];
+
+export const PatientDirectoryResponseGender = {
+  male: "male",
+  female: "female",
+  other: "other",
+  prefer_not_to_say: "prefer not to say",
+} as const;
+
+export type PatientDirectoryResponseStatus =
+  (typeof PatientDirectoryResponseStatus)[keyof typeof PatientDirectoryResponseStatus];
+
+export const PatientDirectoryResponseStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface PatientDirectoryResponse {
+  /**
+   * @minLength 1
+   * @maxLength 300
+   */
+  addressLine1: string;
+  /** @maxLength 300 */
+  addressLine2?: string;
+  assignmentWarnings: string[];
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  city: string;
+  code: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  country: string;
+  createdAt: string;
+  createdBy: string;
+  dateOfBirth: string;
+  dialCountry?: PatientDirectoryResponseDialCountry;
+  doctorId: string;
+  doctorName: string;
+  doctorRegistrationNumber: string;
+  /** @maxLength 320 */
+  email?: string;
+  gender: PatientDirectoryResponseGender;
+  id: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  instructionsLanguage: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  landmark: string;
+  mrId: string | null;
+  mrName: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  /**
+   * @minLength 1
+   * @maxLength 20
+   */
+  phone: string;
+  /**
+   * @minLength 2
+   * @maxLength 12
+   */
+  pincode: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  state: string;
+  status?: PatientDirectoryResponseStatus;
+  updatedAt: string;
+  updatedBy: string;
+  version: number;
+  zoneId: string | null;
+  zoneName: string;
+}
+
+export type PatientEditDialCountry =
+  (typeof PatientEditDialCountry)[keyof typeof PatientEditDialCountry];
+
+export const PatientEditDialCountry = {
+  IN: "IN",
+  US: "US",
+  GB: "GB",
+  AE: "AE",
+} as const;
+
+export type PatientEditGender =
+  (typeof PatientEditGender)[keyof typeof PatientEditGender];
+
+export const PatientEditGender = {
+  male: "male",
+  female: "female",
+  other: "other",
+  prefer_not_to_say: "prefer not to say",
+} as const;
+
+export type PatientEditStatus =
+  (typeof PatientEditStatus)[keyof typeof PatientEditStatus];
+
+export const PatientEditStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface PatientEdit {
+  /**
+   * @minLength 1
+   * @maxLength 300
+   */
+  addressLine1: string;
+  /** @maxLength 300 */
+  addressLine2?: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  city: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  country: string;
+  dateOfBirth: string;
+  dialCountry?: PatientEditDialCountry;
+  doctorId: string;
+  /** @maxLength 320 */
+  email?: string;
+  /** @minimum 1 */
+  expected_version: number;
+  gender: PatientEditGender;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  instructionsLanguage: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  landmark: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  /**
+   * @minLength 1
+   * @maxLength 20
+   */
+  phone: string;
+  /**
+   * @minLength 2
+   * @maxLength 12
+   */
+  pincode: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  state: string;
+  status?: PatientEditStatus;
+}
+
+export type PatientFieldsDialCountry =
+  (typeof PatientFieldsDialCountry)[keyof typeof PatientFieldsDialCountry];
+
+export const PatientFieldsDialCountry = {
+  IN: "IN",
+  US: "US",
+  GB: "GB",
+  AE: "AE",
+} as const;
+
+export type PatientFieldsGender =
+  (typeof PatientFieldsGender)[keyof typeof PatientFieldsGender];
+
+export const PatientFieldsGender = {
+  male: "male",
+  female: "female",
+  other: "other",
+  prefer_not_to_say: "prefer not to say",
+} as const;
+
+export type PatientFieldsStatus =
+  (typeof PatientFieldsStatus)[keyof typeof PatientFieldsStatus];
+
+export const PatientFieldsStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface PatientFields {
+  /**
+   * @minLength 1
+   * @maxLength 300
+   */
+  addressLine1: string;
+  /** @maxLength 300 */
+  addressLine2?: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  city: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  country: string;
+  dateOfBirth: string;
+  dialCountry?: PatientFieldsDialCountry;
+  doctorId: string;
+  /** @maxLength 320 */
+  email?: string;
+  gender: PatientFieldsGender;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  instructionsLanguage: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  landmark: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  /**
+   * @minLength 1
+   * @maxLength 20
+   */
+  phone: string;
+  /**
+   * @minLength 2
+   * @maxLength 12
+   */
+  pincode: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  state: string;
+  status?: PatientFieldsStatus;
+}
+
+export interface PatientImportResult {
+  imported: number;
+}
+
+export interface PatientImportRow {
+  code: string;
+  errors: string[];
+  name: string;
+  row: number;
+}
+
+export interface PatientPage {
+  filtered: number;
+  items: PatientDirectoryResponse[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
 export interface PatientResponse {
   assigned_mr_id: string | null;
   id: string;
   is_active: boolean;
   version: number;
+}
+
+export interface PatientReview {
+  digest: string;
+  rows: PatientImportRow[];
+  valid: boolean;
+}
+
+export type PatientStatusStatus =
+  (typeof PatientStatusStatus)[keyof typeof PatientStatusStatus];
+
+export const PatientStatusStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface PatientStatus {
+  /** @minimum 1 */
+  expected_version: number;
+  status: PatientStatusStatus;
 }
 
 export interface PostalChoice {
@@ -2833,6 +3159,134 @@ export type DownloadMRSampleFormat =
   (typeof DownloadMRSampleFormat)[keyof typeof DownloadMRSampleFormat];
 
 export const DownloadMRSampleFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type ListPatientDirectoryParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ListPatientDirectoryStatus;
+  /**
+   * @maxLength 36
+   */
+  zone_id?: string;
+  /**
+   * @maxLength 36
+   */
+  mr_id?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
+export type ListPatientDirectoryStatus =
+  (typeof ListPatientDirectoryStatus)[keyof typeof ListPatientDirectoryStatus];
+
+export const ListPatientDirectoryStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportPatientDirectoryParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ExportPatientDirectoryStatus;
+  /**
+   * @maxLength 36
+   */
+  zone_id?: string;
+  /**
+   * @maxLength 36
+   */
+  mr_id?: string;
+  format?: ExportPatientDirectoryFormat;
+};
+
+export type ExportPatientDirectoryStatus =
+  (typeof ExportPatientDirectoryStatus)[keyof typeof ExportPatientDirectoryStatus];
+
+export const ExportPatientDirectoryStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportPatientDirectoryFormat =
+  (typeof ExportPatientDirectoryFormat)[keyof typeof ExportPatientDirectoryFormat];
+
+export const ExportPatientDirectoryFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type CommitPatientImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+  /**
+   * @pattern ^[0-9a-f]{64}$
+   */
+  digest: string;
+  confirm: boolean;
+};
+
+export type CommitPatientImportBody = {
+  file: Blob | File;
+};
+
+export type ReviewPatientImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+};
+
+export type ReviewPatientImportBody = {
+  file: Blob | File;
+};
+
+export type ListPatientDoctorChoicesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  include_saved?: string | null;
+};
+
+export type DownloadPatientSampleParams = {
+  format?: DownloadPatientSampleFormat;
+};
+
+export type DownloadPatientSampleFormat =
+  (typeof DownloadPatientSampleFormat)[keyof typeof DownloadPatientSampleFormat];
+
+export const DownloadPatientSampleFormat = {
   csv: "csv",
   xlsx: "xlsx",
 } as const;

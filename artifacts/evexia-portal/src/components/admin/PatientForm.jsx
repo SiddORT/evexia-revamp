@@ -1,15 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
+import PhoneInput from './PhoneInput.jsx';
+import PatientDoctorSelect from './PatientDoctorSelect.jsx';
+import { dialCountry } from '../../services/phoneCountries.js';
+import { businessToday, patientAge } from '../../services/serverPatients.js';
+import { lookupDoctorPIN } from '../../services/serverDoctors.js';
 import '../../mr.css';
 import '../../patient.css';
 
 const FIELDS = [
-  'name', 'gender', 'phone', 'email', 'dateOfBirth', 'doctorId',
+  'name', 'gender', 'phone', 'dialCountry', 'email', 'dateOfBirth', 'doctorId',
   'instructionsLanguage', 'status', 'addressLine1', 'addressLine2',
   'landmark', 'pincode', 'city', 'state', 'country',
 ];
 const OPTIONAL = new Set(['email', 'addressLine2']);
 const TABS = [
-  { id: 'identity', label: 'Identity & contact', fields: ['name', 'gender', 'phone', 'email', 'dateOfBirth'] },
+  { id: 'identity', label: 'Identity & contact', fields: ['name', 'gender', 'phone', 'dialCountry', 'email', 'dateOfBirth'] },
   { id: 'care', label: 'Care & assignment', fields: ['doctorId', 'instructionsLanguage', 'status'] },
   { id: 'address', label: 'Address', fields: ['addressLine1', 'addressLine2', 'landmark', 'pincode', 'city', 'state', 'country'] },
 ];
@@ -18,7 +23,7 @@ const LANGUAGES = ['English', 'Hindi', 'Bengali', 'Gujarati', 'Kannada', 'Malaya
 function initialValues(patient) {
   return Object.fromEntries(FIELDS.map((key) => [
     key,
-    key === 'status' ? String(patient?.status ?? 'active')
+    key === 'dialCountry' ? String(patient?.dialCountry ?? 'IN') : key === 'status' ? String(patient?.status ?? 'active')
       : key === 'country' ? String(patient?.country ?? 'India')
         : key === 'dateOfBirth' ? String(patient?.[key] ?? '').slice(0, 10)
           : String(patient?.[key] ?? ''),
@@ -35,45 +40,39 @@ function validDate(value) {
 }
 
 function todayLocal() {
-  const today = new Date();
-  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  return businessToday();
 }
 
 function ageFromDate(value) {
-  if (!validDate(value)) return '';
-  const today = new Date();
-  const [year, month, day] = value.split('-').map(Number);
-  if (new Date(`${value}T00:00:00`) > today) return '';
-  return String(today.getFullYear() - year - (today.getMonth() + 1 < month || (today.getMonth() + 1 === month && today.getDate() < day) ? 1 : 0));
+  return validDate(value) && value <= businessToday() ? String(patientAge(value)) : '';
 }
 
-function validate(values, doctorOptions) {
+function validate(values) {
   const errors = {};
   FIELDS.forEach((key) => {
     if (!OPTIONAL.has(key) && !values[key].trim()) errors[key] = 'This field is required.';
   });
-  if (values.phone && !/^[0-9]{10}$/.test(values.phone.replace(/[\s()-]/g, ''))) {
-    errors.phone = 'Enter a 10-digit phone number.';
+  const digits = dialCountry(values.dialCountry)?.digits;
+  if (!digits) errors.dialCountry = 'Choose a supported dialing country.';
+  if (values.phone && (!/^[0-9 ()-]+$/.test(values.phone) || values.phone.replace(/[\s()-]/g, '').length !== digits)) {
+    errors.phone = `Enter a ${digits || 'valid'}-digit national phone number.`;
   }
   if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
     errors.email = 'Enter a valid email address.';
   }
   if (values.dateOfBirth) {
     if (!validDate(values.dateOfBirth)) errors.dateOfBirth = 'Enter a valid date of birth.';
-    else if (new Date(`${values.dateOfBirth}T00:00:00`) > new Date()) errors.dateOfBirth = 'Date of birth cannot be in the future.';
-  }
-  if (values.doctorId && !doctorOptions.some((doctor) => String(doctor.id) === values.doctorId)) {
-    errors.doctorId = 'Select an available doctor.';
+    else if (values.dateOfBirth > businessToday()) errors.dateOfBirth = 'Date of birth cannot be in the future.';
   }
   if (values.pincode && values.country.toLowerCase() === 'india' && !/^[0-9]{6}$/.test(values.pincode)) {
     errors.pincode = 'Enter a 6-digit pincode for India.';
   }
-  if (values.gender && !['male', 'female', 'other'].includes(values.gender)) errors.gender = 'Choose a valid gender.';
+  if (values.gender && !['male', 'female', 'other', 'prefer not to say'].includes(values.gender)) errors.gender = 'Choose a valid gender.';
   if (values.status && !['active', 'inactive'].includes(values.status)) errors.status = 'Choose a valid status.';
   return errors;
 }
 
-export default function PatientForm({ patient, doctors = [], blocked = false, onSave, onClose, onRefresh }) {
+export default function PatientForm({ patient, blocked = false, onSave, onClose, onRefresh }) {
   const [values, setValues] = useState(() => initialValues(patient));
   const [errors, setErrors] = useState({});
   const [saveError, setSaveError] = useState('');
@@ -83,12 +82,34 @@ export default function PatientForm({ patient, doctors = [], blocked = false, on
   const tabRefs = useRef([]);
   const pendingFocus = useRef(null);
 
-  const assignedDoctor = doctors.find((doctor) => String(doctor.id) === values.doctorId);
-  const activeDoctors = doctors.filter((doctor) => doctor.status === 'active');
-  const doctorOptions = assignedDoctor?.status === 'inactive' && !activeDoctors.some((doctor) => String(doctor.id) === values.doctorId)
-    ? [...activeDoctors, assignedDoctor] : activeDoctors;
-  const missingDoctor = Boolean(values.doctorId) && !assignedDoctor;
-  const invalidAssignment = Boolean(values.doctorId) && !doctorOptions.some((doctor) => String(doctor.id) === values.doctorId);
+  const [pinState, setPinState] = useState({ choices: [], message: '' });
+  const pinEdited = useRef(false);
+  const addressRevision = useRef(0);
+  const pinRequest = useRef(0);
+  useEffect(() => {
+    const request = ++pinRequest.current;
+    if (!pinEdited.current || blocked || saving || values.country.toLowerCase() !== 'india' || !/^[1-9]\d{5}$/.test(values.pincode)) {
+      setPinState({ choices: [], message: '' });
+      return;
+    }
+    const controller = new AbortController();
+    const revision = addressRevision.current;
+    setPinState({ choices: [], message: 'Looking up PIN…' });
+    const timer = setTimeout(async () => {
+      try {
+        const result = await lookupDoctorPIN(values.pincode, controller.signal);
+        if (controller.signal.aborted || request !== pinRequest.current || revision !== addressRevision.current || saving) return;
+        setPinState({ choices: result.choices, message: result.choices.length > 1 ? 'Choose a PIN location or enter manually.' : result.message || '' });
+        if (result.choices.length === 1) {
+          const item = result.choices[0];
+          setValues((old) => ({ ...old, country: item.country, state: item.state, city: item.city }));
+        }
+      } catch {
+        if (!controller.signal.aborted && request === pinRequest.current) setPinState({ choices: [], message: 'PIN lookup unavailable. Enter the location manually.' });
+      }
+    }, 250);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [values.pincode, values.country, blocked, saving]);
 
   useEffect(() => {
     if (pendingFocus.current) {
@@ -98,6 +119,11 @@ export default function PatientForm({ patient, doctors = [], blocked = false, on
   }, [activeTab, errors]);
 
   function change(key, value) {
+    if (key === 'pincode') pinEdited.current = true;
+    if (['addressLine1', 'addressLine2', 'landmark', 'city', 'state', 'country'].includes(key)) {
+      addressRevision.current++; pinRequest.current++;
+      setPinState({ choices: [], message: '' });
+    }
     setValues((current) => ({ ...current, [key]: value }));
     setErrors((current) => {
       if (!current[key]) return current;
@@ -142,6 +168,9 @@ export default function PatientForm({ patient, doctors = [], blocked = false, on
             <option value="">{placeholder || 'Select an option'}</option>
             {selectOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
+        ) : key === 'phone' ? (
+          <PhoneInput prefix="patient" country={values.dialCountry} onCountryChange={(value) => change('dialCountry', value)}
+            countryError={errors.dialCountry} controlClassName="mr-form__control" inputProps={{ ...shared, placeholder: 'National phone number', 'data-testid': 'input-patient-phone' }} />
         ) : (
           <input {...shared} type={type} placeholder={placeholder} autoComplete={autoComplete || 'off'}
             inputMode={inputMode} max={type === 'date' ? todayLocal() : undefined}
@@ -149,6 +178,7 @@ export default function PatientForm({ patient, doctors = [], blocked = false, on
         )}
         {hint && <p id={hintId} className="mr-form__hint">{hint}</p>}
         {errors[key] && <p id={errorId} className="mr-form__error" role="alert" data-testid={`error-patient-${key}`}>{errors[key]}</p>}
+        {key === 'phone' && errors.dialCountry && <p id="patient-dialCountry-error" className="mr-form__error" role="alert">{errors.dialCountry}</p>}
       </div>
     );
   }
@@ -157,7 +187,7 @@ export default function PatientForm({ patient, doctors = [], blocked = false, on
     event.preventDefault();
     if (saving || blocked) return;
     const cleaned = Object.fromEntries(FIELDS.map((key) => [key, values[key].trim()]));
-    const nextErrors = validate(cleaned, doctorOptions);
+    const nextErrors = validate(cleaned);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
       const first = FIELDS.find((key) => nextErrors[key]);
@@ -166,6 +196,8 @@ export default function PatientForm({ patient, doctors = [], blocked = false, on
       return;
     }
     setSaveError('');
+    pinEdited.current = false;
+    pinRequest.current++;
     setSaving(true);
     try {
       const result = await onSave({ ...cleaned, phone: cleaned.phone.replace(/[\s()-]/g, '') });
@@ -192,13 +224,12 @@ export default function PatientForm({ patient, doctors = [], blocked = false, on
         ))}
       </div>
       <div className="mr-form__body">
-        <p className="patient-form__privacy" data-testid="notice-patient-preview"><strong>Browser-local preview.</strong> Do not enter real patient or health information. These records are stored in this browser only.</p>
+        <p className="patient-form__privacy"><strong>Protected shared records.</strong> Patient data is saved to the server. Age uses the Asia/Kolkata calendar date.</p>
         {blocked && <div className="patient-form__block" role="alert" data-testid="warning-patient-blocked">
           <p>Saving is unavailable while patient records need attention. Refreshing discards changes on this page.</p>
           <button type="button" className="admin-button admin-button--secondary" onClick={onRefresh} data-testid="button-refresh-patient-blocked">Refresh records</button>
         </div>}
-        {missingDoctor && <p className="mr-form__notice" role="alert" data-testid="warning-patient-doctor">The previously assigned doctor is no longer available. Select an active doctor before saving.</p>}
-        {!missingDoctor && invalidAssignment && <p className="mr-form__notice" role="alert" data-testid="warning-patient-doctor">This doctor is unavailable. Select an active doctor before saving.</p>}
+        {patient?.assignmentWarnings?.map((warning) => <p className="mr-form__notice" role="alert" key={warning}>{warning}</p>)}
         {saveError && (
           <div className="mr-form__notice mr-form__notice--error" role="alert" data-testid="error-patient-save">
             <p>{saveError}</p>
@@ -210,7 +241,7 @@ export default function PatientForm({ patient, doctors = [], blocked = false, on
           <div className="mr-form__section-head"><h3 className="mr-form__section-title">Identity & contact</h3><p className="mr-form__section-note">Fields marked * are required</p></div>
           <div className="mr-form__grid">
             {renderField('name', 'Patient name', { placeholder: 'Patient name', autoComplete: 'name' })}
-            {renderField('gender', 'Gender', { selectOptions: [{ value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }, { value: 'other', label: 'Other' }] })}
+            {renderField('gender', 'Gender', { selectOptions: [{ value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }, { value: 'other', label: 'Other' }, { value: 'prefer not to say', label: 'Prefer not to say' }] })}
             {renderField('phone', 'Phone No.', { placeholder: '10-digit number', autoComplete: 'tel', inputMode: 'tel' })}
             {renderField('email', 'Email ID', { type: 'email', placeholder: 'name@example.com', autoComplete: 'email' })}
             {renderField('dateOfBirth', 'Date of birth', { type: 'date', autoComplete: 'bday' })}
@@ -225,11 +256,7 @@ export default function PatientForm({ patient, doctors = [], blocked = false, on
         <section className="mr-form__section" id="patient-panel-care" role="tabpanel" aria-labelledby="patient-tab-care" tabIndex={0} hidden={activeTab !== 'care'}>
           <div className="mr-form__section-head"><h3 className="mr-form__section-title">Care & assignment</h3></div>
           <div className="mr-form__grid">
-            {renderField('doctorId', 'Assigned doctor', {
-              placeholder: invalidAssignment ? 'Choose a replacement doctor' : 'Select a doctor',
-              hint: assignedDoctor?.status === 'inactive' ? 'This assigned doctor is inactive. You can retain the assignment or select an active doctor.' : undefined,
-              selectOptions: doctorOptions.map((doctor) => ({ value: String(doctor.id), label: `${doctor.name}${doctor.status === 'inactive' ? ' (inactive)' : ''}` })),
-            })}
+            <PatientDoctorSelect value={values.doctorId} original={patient?.doctorId} blocked={blocked || saving} error={errors.doctorId} onChange={(value) => change('doctorId', value)} />
             {renderField('instructionsLanguage', 'Instructions language', {
               selectOptions: [...new Set([...LANGUAGES, values.instructionsLanguage].filter(Boolean))].map((language) => ({ value: language, label: language })),
             })}
@@ -246,14 +273,19 @@ export default function PatientForm({ patient, doctors = [], blocked = false, on
             {renderField('city', 'City', { placeholder: 'City', autoComplete: 'address-level2' })}
             {renderField('state', 'State', { placeholder: 'State', autoComplete: 'address-level1' })}
             {renderField('country', 'Country', { placeholder: 'Country', autoComplete: 'country-name' })}
+            {pinState.message && <p role="status">{pinState.message}</p>}
+            {pinState.choices.length > 1 && <div className="mr-form__field"><label htmlFor="patient-pin-location">PIN locations</label><select id="patient-pin-location" className="mr-form__control" defaultValue="" onChange={(event) => {
+              const item = pinState.choices[Number(event.target.value)];
+              if (item) { addressRevision.current++; pinRequest.current++; setValues((old) => ({ ...old, city: item.city, state: item.state, country: item.country })); }
+            }}><option value="">Select a location</option>{pinState.choices.map((item, index) => <option value={index} key={index}>{item.city}, {item.state}, {item.country}</option>)}</select></div>}
           </div>
         </section>
       </div>
       <div className="mr-form__footer">
-        <span className="mr-form__footer-note">Stored in this browser’s local preview. No real health information.</span>
+        <span className="mr-form__footer-note">Saved securely to the shared Patient directory.</span>
         <div className="mr-form__actions">
           <button type="button" className="admin-button admin-button--secondary" onClick={onClose} disabled={saving} data-testid="button-cancel-patient">Cancel</button>
-          <button type="submit" className="admin-button" disabled={saving || blocked || invalidAssignment} data-testid="button-save-patient">
+          <button type="submit" className="admin-button" disabled={saving || blocked} data-testid="button-save-patient">
             {saving ? 'Saving…' : patient ? 'Save changes' : 'Add patient'}
           </button>
         </div>

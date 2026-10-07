@@ -11,7 +11,7 @@ export default function PhoneInput({ prefix, country, onCountryChange, countryEr
       aria-describedby={countryError ? `${prefix}-dialCountry-error` : undefined}
       value={country} onChange={(event) => onCountryChange(event.target.value)}
       data-testid={`select-${prefix}-dialCountry`}>
-      {DIAL_COUNTRIES.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}
+       {DIAL_COUNTRIES.map((item) => <option value={item.value} key={item.value} aria-label={`${item.name} ${item.code}`}>{item.label}</option>)}
     </select>
     <input {...inputProps} type="tel" inputMode="tel" autoComplete="tel" />
   </div>;

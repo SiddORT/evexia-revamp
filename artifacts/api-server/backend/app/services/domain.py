@@ -130,6 +130,11 @@ def assign_patient(
     snapshot = db.get(Patient, patient_id)
     if not snapshot:
         raise DomainError("Patient not found", 404)
+    from app.db.patient_models import PatientDirectory
+    from app.services.mrs import graph_lock
+    graph_lock(db)
+    if db.get(PatientDirectory, patient_id):
+        raise DomainError("Directory patients must be reassigned through Patient Master and their Doctor.", 409)
     before = snapshot.assigned_mr_id
     lock_ids = {mr_id for mr_id in (before, assigned_mr_id) if mr_id is not None}
     profiles = _lock_mrs(db, lock_ids, require_active=False)

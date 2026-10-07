@@ -28,6 +28,7 @@ from app.services.headquarters import HeadquarterError
 from app.api.v1.mrs import router as mrs_router
 from app.services.mrs import MRError
 from app.api.v1.doctors import router as doctors_router
+from app.api.v1.patients import router as patients_router
 from app.api.v1.product_categories import router as product_categories_router
 from app.services.product_categories import ProductCategoryError
 from app.api.v1.roles import router as roles_router
@@ -167,6 +168,12 @@ def create_app() -> FastAPI:
             locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
             fields = [{"field": item["field"] if item["field"] in locations else "body", "code": item["code"]}
                       for item in fields]
+        if request.url.path.startswith("/api/v1/admin/patients"):
+            from app.schemas.patients import PatientFields
+            allowed = set(PatientFields.model_fields) | {"expected_version", "patient_id", "query", "status",
+                         "limit", "offset", "format", "filename", "digest", "confirm", "include_saved", "zone_id", "mr_id"}
+            locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
+            fields = [{"field": item["field"] if item["field"] in locations else "body", "code": item["code"]} for item in fields]
         return JSONResponse(error_body(request, 422, "Invalid request", fields=fields), status_code=422)
 
     @app.exception_handler(FileError)
@@ -231,6 +238,7 @@ def create_app() -> FastAPI:
     app.include_router(headquarters_router, prefix="/api/v1")
     app.include_router(mrs_router, prefix="/api/v1")
     app.include_router(doctors_router, prefix="/api/v1")
+    app.include_router(patients_router, prefix="/api/v1")
     app.include_router(product_categories_router, prefix="/api/v1")
     app.include_router(roles_router, prefix="/api/v1")
     app.add_api_route("/api/healthz", lambda: {"status": "ok"}, methods=["GET"],

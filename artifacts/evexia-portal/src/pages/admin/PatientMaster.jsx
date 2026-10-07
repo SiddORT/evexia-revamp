@@ -1,5 +1,5 @@
-import { downloadCSV as loggedCSV } from '../../services/downloads.js';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, History, Pencil, Plus, Search, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
@@ -10,53 +10,46 @@ import RecordDetails from '../../components/admin/RecordDetails.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import usePatients from '../../hooks/usePatients.js';
-import useTablePagination from '../../hooks/useTablePagination.js';
-import { exportPatientCSV, patientAge, readPatientSnapshots } from '../../services/patients.js';
-import { getSampleDosageHistory } from '../../services/patientDosageHistory.js';
+import { downloadPatientFile, exportPatients, patientAge } from '../../services/serverPatients.js';
+import { internationalPhone } from '../../services/phoneCountries.js';
 import '../../mr.css';
 import '../../patient.css';
 
 const base = '/admin/masters/patients';
-function download(text, filename) {
-  return loggedCSV(text, filename, 'patient');
-}
 export default function PatientMaster() {
   useAdminPreferences();
   const [, navigate] = useLocation();
-  const { records, doctors, mrs, zones, error, feedback, retry, clearFeedback, changeStatus } = usePatients();
   const [saved] = useState(() => new URLSearchParams(window.location.search).get('saved'));
   useEffect(() => { if (saved) window.history.replaceState(window.history.state, '', base); }, [saved]);
   const [search, setSearch] = useState('');
   const [zone, setZone] = useState('all');
   const [mr, setMR] = useState('all');
   const [status, setStatus] = useState('all');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => { const timer = setTimeout(() => setDebouncedSearch(search), 250); return () => clearTimeout(timer); }, [search]);
+  const params = { query: debouncedSearch, zone_id: zone, mr_id: mr, status, limit: pageSize, offset: (page - 1) * pageSize };
+  const { records, mrs, zones, total, filtered, loading, pending, error, feedback, retry, clearFeedback, changeStatus } = usePatients(params);
+  const [exporting, setExporting] = useState(false);
+  const exportBusy = useRef(false);
   const [confirming, setConfirming] = useState(null);
   const [actionError, setActionError] = useState('');
-  const doctorFor = (record) => doctors.find((item) => item.id === record.doctorId);
-  const mrFor = (record) => mrs.find((item) => item.id === doctorFor(record)?.mrId);
-  const zoneFor = (record) => zones.find((item) => item.id === mrFor(record)?.zoneId);
-  const missing = (record) => !doctorFor(record) || !mrFor(record) || !zoneFor(record);
-  const visible = useMemo(() => records.filter((record) => {
-    const doctor = doctors.find((item) => item.id === record.doctorId);
-    const assignedMR = mrs.find((item) => item.id === doctor?.mrId);
-    const assignedZone = zones.find((item) => item.id === assignedMR?.zoneId);
-    return (!search.trim() || [record.name, record.id].some((value) => value.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())))
-      && (zone === 'all' || (zone === 'missing' ? !assignedZone : assignedZone?.id === zone))
-      && (mr === 'all' || (mr === 'missing' ? !assignedMR : assignedMR?.id === mr))
-      && (status === 'all' || record.status === status);
-  }), [records, doctors, mrs, zones, search, zone, mr, status]);
-  const pagination = useTablePagination(visible);
-  const hasMissing = records.some(missing);
+  const visible = records;
+  const pagination = { page, pageSize, pageCount: Math.max(1, Math.ceil(filtered / pageSize)), startIndex: (page - 1) * pageSize,
+    endIndex: Math.min(page * pageSize, filtered), pageRows: records, resetPage: () => setPage(1), setPage, setPageSize };
+  const hasMissing = records.some((record) => record.assignmentWarnings?.length);
+  useEffect(() => { if (!loading && page > pagination.pageCount) setPage(pagination.pageCount); }, [loading, page, pagination.pageCount]);
   function refresh() { retry(); setActionError(''); setConfirming(null); }
-  async function exportVisible() {
+  async function exportVisible(format) {
+    if (exportBusy.current) return;
+    exportBusy.current = true; setExporting(true);
     try {
       if (error) return;
-      const current = readPatientSnapshots();
-      if (['records', 'doctors', 'mrs', 'zones'].some((key) => JSON.stringify(current[key]) !== JSON.stringify({ records, doctors, mrs, zones }[key]))) {
-        setActionError('Records changed in another tab. Refresh records before exporting.'); return;
-      }
-      await download(exportPatientCSV(visible, doctors), 'evexia-patient-master.csv');
-    } catch (cause) { setActionError(cause.message || 'CSV export failed. Refresh records and try again.'); }
+      const blob = await exportPatients(params, format);
+      downloadPatientFile(blob, format);
+    } catch (cause) { setActionError(cause.message || 'Export failed. Refresh records and try again.'); }
+    finally { exportBusy.current = false; setExporting(false); }
   }
   function actions(record, compact = false) {
     return <div className={compact ? 'admin-mr-card__actions' : 'admin-table__actions'}>
@@ -65,21 +58,18 @@ export default function PatientMaster() {
       <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} title={record.status === 'active' ? 'Inactivate' : 'Activate'} onClick={() => { setActionError(''); setConfirming(record); }} data-testid={`button-toggle-patient-${record.id}`}><CirclePower size={16} />{compact && (record.status === 'active' ? 'Inactivate' : 'Activate')}</button>
     </div>;
   }
-  const reference = (record) => <span className="admin-record-fields"><span className={!doctorFor(record) ? 'admin-record-missing' : ''}><span className="admin-record-fields__label">Doctor: </span>{doctorFor(record)?.name || 'Missing doctor'}</span><span className={!mrFor(record) ? 'admin-record-missing' : ''}><span className="admin-record-fields__label">MR: </span>{mrFor(record)?.name || 'Missing MR'}</span><span className={!zoneFor(record) ? 'admin-record-missing' : ''}><span className="admin-record-fields__label">Zone: </span>{zoneFor(record)?.name || 'Missing zone'}</span></span>;
+  const reference = (record) => <span className="admin-record-fields"><span><span className="admin-record-fields__label">Doctor: </span>{record.doctorName || 'Missing doctor'}</span><span><span className="admin-record-fields__label">MR: </span>{record.mrName || 'Missing MR'}</span><span><span className="admin-record-fields__label">Zone: </span>{record.zoneName || 'Missing zone'}</span></span>;
   const details = (record, showName = true) => <RecordDetails name={record.name} showName={showName} testId={`text-patient-details-${record.id}`} rows={[
     { label: 'Gender and age', value: `${record.gender || 'Not specified'} · ${record.dateOfBirth ? `${patientAge(record.dateOfBirth)} years` : 'Age unavailable'}` },
-    { label: 'Phone', icon: 'phone', value: record.phone, href: record.phone ? `tel:${record.phone.replace(/[^+\d]/g, '')}` : undefined, testId: `link-phone-patient-${record.id}` },
+    { label: 'Phone', icon: 'phone', value: internationalPhone(record), href: `tel:${internationalPhone(record)}`, testId: `link-phone-patient-${record.id}` },
     { label: 'Email', icon: 'email', value: record.email, href: record.email ? `mailto:${record.email}` : undefined, testId: `link-email-patient-${record.id}` },
     { label: 'Date of birth', icon: 'date', value: formatAdminDate(record.dateOfBirth) },
   ]} />;
   const address = (record) => <span className="admin-mr-address">{[record.addressLine1, record.addressLine2, record.landmark, `${record.city}, ${record.state} ${record.pincode}`, record.country].filter(Boolean).join(' · ')}</span>;
-  const lastDose = (record) => {
-    const last = getSampleDosageHistory(record)?.last;
-    return last ? `Sample: ${formatAdminDate(last.date)} (illustrative, not recorded)` : 'Not recorded';
-  };
+  const lastDose = () => 'Not recorded';
   const columns = [
     { key: 'serial', label: 'Sr No.', render: (_, index) => index + 1 },
-    { key: 'id', label: 'Patient ID', render: (r) => r.id },
+    { key: 'id', label: 'Patient ID', render: (r) => r.code },
     { key: 'details', label: 'Patient details', render: details },
     { key: 'address', label: 'Address', render: address },
     { key: 'reference', label: 'Doctor / MR / Zone', render: reference },
@@ -89,11 +79,15 @@ export default function PatientMaster() {
     { key: 'actions', label: 'Actions', render: (r) => actions(r) },
   ];
   return <AdminLayout title="Patient Master">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Patients</p><h1>Patient Master</h1><p className="admin-page-head__description">Browser-local preview only. Do not enter real patient or health information. Sample dosage examples are illustrative, not recorded treatment.</p></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Patients</p><h1>Patient Master</h1><p className="admin-page-head__description">Protected shared records. Doctor, MR and Zone references come from the server. No dosage history is recorded here.</p></div>
       <div className="admin-mr-head-actions">
         <button className="admin-button admin-button--secondary" type="button" onClick={refresh}>Refresh records</button>
-        <button className="admin-button admin-button--secondary" type="button" disabled={Boolean(error)} onClick={() => navigate(`${base}/import`)} data-testid="button-import-patients"><Upload size={16} /> Import CSV</button>
-        <button className="admin-button admin-button--secondary" type="button" disabled={Boolean(error) || !visible.length} onClick={exportVisible} data-testid="button-export-patients"><Download size={16} /> Export CSV</button>
+        <button className="admin-button admin-button--secondary" type="button" disabled={Boolean(error)} onClick={() => navigate(`${base}/import`)} data-testid="button-import-patients"><Upload size={16} /> Import data</button>
+        <DropdownMenu.Root><DropdownMenu.Trigger asChild><button className="admin-button admin-button--secondary" type="button" aria-busy={exporting} disabled={Boolean(error) || loading || search !== debouncedSearch || !filtered} data-testid="button-export-patients"><Download size={16} />{exporting ? 'Preparing export…' : 'Export data'}</button></DropdownMenu.Trigger>
+          <DropdownMenu.Portal><DropdownMenu.Content className="admin-export-menu" sideOffset={6}>
+            <DropdownMenu.Item className="admin-export-menu__item" disabled={exporting} onSelect={() => exportVisible('csv')}>CSV</DropdownMenu.Item>
+            <DropdownMenu.Item className="admin-export-menu__item" disabled={exporting} onSelect={() => exportVisible('xlsx')}>Excel (.xlsx)</DropdownMenu.Item>
+          </DropdownMenu.Content></DropdownMenu.Portal></DropdownMenu.Root>
         <button className="admin-button" type="button" disabled={Boolean(error)} onClick={() => navigate(`${base}/new`)} data-testid="button-add-patient"><Plus size={16} /> Add Patient</button>
       </div>
     </div>
@@ -102,24 +96,24 @@ export default function PatientMaster() {
     <section className="admin-panel" aria-label="Patient list">
       <div className="admin-toolbar"><div className="admin-toolbar__fields">
         <label className="admin-search"><Search size={16} /><span className="sr-only">Search patient name or ID</span><input placeholder="Search name or patient ID" value={search} onChange={(e) => { setSearch(e.target.value); pagination.resetPage(); }} data-testid="input-search-patients" /></label>
-        <div className="admin-filter"><label htmlFor="patient-zone">Zone</label><select className="admin-select" id="patient-zone" value={zone} onChange={(e) => { setZone(e.target.value); pagination.resetPage(); }}><option value="all">All zones</option>{zones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}{hasMissing && <option value="missing">Missing zone</option>}</select></div>
-        <div className="admin-filter"><label htmlFor="patient-mr">MR</label><select className="admin-select" id="patient-mr" value={mr} onChange={(e) => { setMR(e.target.value); pagination.resetPage(); }}><option value="all">All MRs</option>{mrs.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}{records.some((r) => !mrFor(r)) && <option value="missing">Missing MR</option>}</select></div>
+        <div className="admin-filter"><label htmlFor="patient-zone">Zone</label><select className="admin-select" id="patient-zone" value={zone} onChange={(e) => { setZone(e.target.value); pagination.resetPage(); }}><option value="all">All zones</option>{zones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}<option value="missing">Missing zone</option></select></div>
+        <div className="admin-filter"><label htmlFor="patient-mr">MR</label><select className="admin-select" id="patient-mr" value={mr} onChange={(e) => { setMR(e.target.value); pagination.resetPage(); }}><option value="all">All MRs</option>{mrs.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}<option value="missing">Missing MR</option></select></div>
         <div className="admin-filter"><label htmlFor="patient-status">Status</label><select className="admin-select" id="patient-status" value={status} onChange={(e) => { setStatus(e.target.value); pagination.resetPage(); }}><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
-      </div></div>
-      {error ? <div className="admin-empty" role="alert"><strong>Patient records could not be loaded</strong><p>{error}</p><button className="admin-button" type="button" onClick={refresh}>Refresh records</button></div> : <>
+      </div><button type="button" className="admin-button admin-button--secondary" onClick={() => { setSearch(''); setMR('all'); setZone('all'); setStatus('all'); setPage(1); }}>Reset filters</button></div>
+      {loading ? <p className="admin-empty" role="status">Loading Patients…</p> : error ? <div className="admin-empty" role="alert"><strong>Patient records could not be loaded</strong><p>{error}</p><button className="admin-button" type="button" onClick={refresh}>Refresh records</button></div> : <>
         {hasMissing && <div className="admin-feedback admin-feedback--error" role="status">Some patients have missing doctor, MR, or zone assignments. Repair the reference in Doctor or MR Master, or edit the patient assignment.</div>}
         {visible.length ? <>
           <div className="admin-mr-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(r) => r.id} label="Patient records" testIdPrefix="patient" /></div>
            <div className="admin-mr-mobile" role="list" aria-label="Patient records">{pagination.pageRows.map((r) => <article className="admin-record-card" role="listitem" key={r.id} data-testid={`card-patient-${r.id}`}>
-             <div className="admin-record-card__head"><div className="admin-record-card__identity"><h2>{r.name}</h2><small>{r.id}</small></div><StatusBadge status={r.status} /></div>
+              <div className="admin-record-card__head"><div className="admin-record-card__identity"><h2>{r.name}</h2><small>{r.code}</small></div><StatusBadge status={r.status} /></div>
              <div className="admin-record-card__body">{details(r, false)}<dl><div><dt>Address</dt><dd>{address(r)}</dd></div><div><dt>Doctor / MR / Zone</dt><dd>{reference(r)}</dd></div><div><dt>Instructions language</dt><dd>{r.instructionsLanguage}</dd></div><div><dt>Last dose</dt><dd>{lastDose(r)}</dd></div></dl></div>{actions(r, true)}
           </article>)}</div>
-        </> : <div className="admin-empty"><span className="admin-empty__icon"><UsersRound size={21} /></span><strong>{records.length ? 'No matching patients' : 'No patients yet'}</strong><p>{records.length ? 'Try different search or filters.' : 'Add a browser-local preview patient or import a CSV.'}</p></div>}
-        <TablePagination {...pagination} filtered={visible.length} total={records.length} label={records.length === 1 ? 'patient' : 'patients'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} />
+         </> : <div className="admin-empty"><span className="admin-empty__icon"><UsersRound size={21} /></span><strong>{total ? 'No matching patients' : 'No patients yet'}</strong><p>{total ? 'Try different search or filters.' : 'Set up an active Doctor/MR/Zone chain, then add a Patient or import CSV/Excel.'}</p></div>}
+         <TablePagination {...pagination} filtered={filtered} total={total} label="patients" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />
       </>}
     </section>
-    {confirming && <ConfirmationDialog title={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} patient?`} description={`Change “${confirming.name}” to ${confirming.status === 'active' ? 'inactive' : 'active'} in this browser only?`} actionLabel="Confirm status" error={actionError} onClose={() => setConfirming(null)} onConfirm={() => {
-      const result = changeStatus(confirming.id, confirming.status === 'active' ? 'inactive' : 'active');
+    {confirming && <ConfirmationDialog title={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} patient?`} description={`Change “${confirming.name}” to ${confirming.status === 'active' ? 'inactive' : 'active'}? Inactive patients deny MR file access; retained files are not deleted.`} actionLabel="Confirm status" pending={pending} blocked={Boolean(error)} error={actionError} onClose={() => { if (!pending) setConfirming(null); }} onConfirm={async () => {
+      const result = await changeStatus(confirming, confirming.status === 'active' ? 'inactive' : 'active');
       if (result.success) { setConfirming(null); setActionError(''); } else setActionError(result.error);
     }} />}
   </AdminLayout>;

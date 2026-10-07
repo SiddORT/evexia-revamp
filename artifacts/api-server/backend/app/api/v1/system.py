@@ -68,6 +68,11 @@ def readiness(db: Session = Depends(get_db)):
             '"daysLimit", "paymentLimit", verification, version, created_by, updated_by FROM doctor_directory LIMIT 0'
         ))
         db.execute(text("SELECT identifier, user_id FROM account_identifier_reservations LIMIT 0"))
+        db.execute(text(
+            'SELECT id, code, name, gender, phone, "dialCountry", email, "dateOfBirth", "doctorId", '
+            '"instructionsLanguage", status, "addressLine1", "addressLine2", landmark, pincode, city, state, '
+            'country, created_by, updated_by, created_at, updated_at FROM patient_directory LIMIT 0'
+        ))
     except Exception:
         raise HTTPException(status_code=503, detail="Service unavailable") from None
     return {"status": "ready"}

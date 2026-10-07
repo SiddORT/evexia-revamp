@@ -159,6 +159,16 @@ recovery from racing active object writes; bounded operation slots and persisted
 rate limits prevent resource abuse. Slow download streams keep bounded slots
 until closed, but hold no row transaction locks.
 
+Patient Master is a one-to-one directory extension of the existing Patient UUID,
+not a competing file-owner system. Doctor assignment is authoritative for the
+directory Patient's assigned MR. Patient edits, status and single/bulk Doctor
+MR shifts synchronize owner/version atomically under the shared graph and ordered
+User/MRProfile/Patient locks; no object keys move. Deactivation mirrors the owner
+active state. Domain reassignment rejects directory Patients so it cannot
+desynchronize them; identity-only owners retain original behavior. Empty
+`0020_patient_directory` never promotes existing Patient/file history.
+See [Patient Master operations](../../../docs/patient-master.md).
+
 ## Grants and failure boundaries
 
 Local grants contain no path/key, have bounded expiry and identity/version

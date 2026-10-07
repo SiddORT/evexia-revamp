@@ -2,7 +2,7 @@ import { useLocation } from 'wouter';
 import { EXCEL_TEMPLATES } from '../../services/mockExcelImport.js';
 
 // Headquarter uses authenticated server templates, not a mock import template.
-const masters = [...Object.entries(EXCEL_TEMPLATES), ['headquarter', { title: 'Headquarter' }]];
+const masters = [...Object.entries(EXCEL_TEMPLATES), ['headquarter', { title: 'Headquarter' }], ['patient', { title: 'Patient' }]];
 
 export default function MasterImportTabs({ kind }) {
   const [, navigate] = useLocation();

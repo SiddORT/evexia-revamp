@@ -32,6 +32,8 @@ import type {
   CommitLocationImportParams,
   CommitMRImportBody,
   CommitMRImportParams,
+  CommitPatientImportBody,
+  CommitPatientImportParams,
   CommitProductCategoryImportBody,
   CommitProductCategoryImportParams,
   CommitZoneImportParams,
@@ -72,6 +74,7 @@ import type {
   DownloadInitiation,
   DownloadMRSampleParams,
   DownloadPage,
+  DownloadPatientSampleParams,
   DownloadProductCategorySampleParams,
   DownloadURLResponse,
   ErrorEnvelope,
@@ -81,6 +84,7 @@ import type {
   ExportDoctorDirectoryParams,
   ExportHeadquartersParams,
   ExportMRDirectoryParams,
+  ExportPatientDirectoryParams,
   ExportProductCategoriesParams,
   ExportReportingEventsParams,
   ExportReportingSessionsParams,
@@ -107,6 +111,8 @@ import type {
   ListMRDirectoryParams,
   ListMRReferenceChoicesParams,
   ListOwnSessionsParams,
+  ListPatientDirectoryParams,
+  ListPatientDoctorChoicesParams,
   ListProductCategoriesParams,
   ListReportingEventsParams,
   ListReportingSessionsParams,
@@ -136,7 +142,15 @@ import type {
   MRStatus,
   MRUsername,
   MRVersion,
+  PatientChoices,
+  PatientDirectoryResponse,
+  PatientEdit,
+  PatientFields,
+  PatientImportResult,
+  PatientPage,
   PatientResponse,
+  PatientReview,
+  PatientStatus,
   PostalResponse,
   ProductCategoryEdit,
   ProductCategoryFields,
@@ -162,6 +176,8 @@ import type {
   ReviewLocationImportParams,
   ReviewMRImportBody,
   ReviewMRImportParams,
+  ReviewPatientImportBody,
+  ReviewPatientImportParams,
   ReviewProductCategoryImportBody,
   ReviewProductCategoryImportParams,
   ReviewZoneImportParams,
@@ -6487,6 +6503,1085 @@ export const useSetMRDirectoryStatus = <
   TContext
 > => {
   return useMutation(getSetMRDirectoryStatusMutationOptions(options));
+};
+
+export const getListPatientDirectoryUrl = (
+  params?: ListPatientDirectoryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/patients?${stringifiedParams}`
+    : `/api/v1/admin/patients`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listPatientDirectory = async (
+  params?: ListPatientDirectoryParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PatientPage> => {
+  return customFetch<PatientPage>(getListPatientDirectoryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListPatientDirectoryQueryKey = (
+  params?: ListPatientDirectoryParams,
+) => {
+  return [`/api/v1/admin/patients`, ...(params ? [params] : [])] as const;
+};
+
+export const getListPatientDirectoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPatientDirectory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListPatientDirectoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPatientDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListPatientDirectoryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPatientDirectory>>
+  > = ({ signal }) =>
+    listPatientDirectory(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPatientDirectory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPatientDirectoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPatientDirectory>>
+>;
+export type ListPatientDirectoryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListPatientDirectory<
+  TData = Awaited<ReturnType<typeof listPatientDirectory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListPatientDirectoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPatientDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPatientDirectoryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreatePatientDirectoryUrl = () => {
+  return `/api/v1/admin/patients`;
+};
+
+/**
+ * @summary Create
+ */
+export const createPatientDirectory = async (
+  patientFields: PatientFields,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PatientDirectoryResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<PatientDirectoryResponse>(getCreatePatientDirectoryUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(patientFields),
+  });
+};
+
+export const getCreatePatientDirectoryMutationKey = () =>
+  ["createPatientDirectory"] as const;
+
+export const getCreatePatientDirectoryMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPatientDirectory>>,
+    TError,
+    CreatePatientDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createPatientDirectory>>,
+  TError,
+  CreatePatientDirectoryMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreatePatientDirectoryMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createPatientDirectory>>,
+    CreatePatientDirectoryMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createPatientDirectory(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreatePatientDirectoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createPatientDirectory>>
+>;
+export type CreatePatientDirectoryMutationBody = BodyType<PatientFields>;
+export type CreatePatientDirectoryMutationError = ErrorType<ErrorEnvelope>;
+export type CreatePatientDirectoryMutationVariables = {
+  data: BodyType<PatientFields>;
+};
+
+/**
+ * @summary Create
+ */
+export const useCreatePatientDirectory = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPatientDirectory>>,
+    TError,
+    CreatePatientDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createPatientDirectory>>,
+  TError,
+  CreatePatientDirectoryMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreatePatientDirectoryMutationOptions(options));
+};
+
+export const getExportPatientDirectoryUrl = (
+  params?: ExportPatientDirectoryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/patients/export?${stringifiedParams}`
+    : `/api/v1/admin/patients/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportPatientDirectory = async (
+  params?: ExportPatientDirectoryParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getExportPatientDirectoryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportPatientDirectoryQueryKey = (
+  params?: ExportPatientDirectoryParams,
+) => {
+  return [
+    `/api/v1/admin/patients/export`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getExportPatientDirectoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportPatientDirectory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportPatientDirectoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportPatientDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getExportPatientDirectoryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exportPatientDirectory>>
+  > = ({ signal }) =>
+    exportPatientDirectory(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportPatientDirectory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportPatientDirectoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportPatientDirectory>>
+>;
+export type ExportPatientDirectoryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportPatientDirectory<
+  TData = Awaited<ReturnType<typeof exportPatientDirectory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportPatientDirectoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportPatientDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportPatientDirectoryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCommitPatientImportUrl = (
+  params: CommitPatientImportParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/patients/import/commit?${stringifiedParams}`
+    : `/api/v1/admin/patients/import/commit`;
+};
+
+/**
+ * @summary Commit
+ */
+export const commitPatientImport = async (
+  commitPatientImportBody: CommitPatientImportBody,
+  params: CommitPatientImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PatientImportResult> => {
+  const formData = new FormData();
+  formData.append(`file`, commitPatientImportBody.file);
+
+  return customFetch<PatientImportResult>(getCommitPatientImportUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getCommitPatientImportMutationKey = () =>
+  ["commitPatientImport"] as const;
+
+export const getCommitPatientImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitPatientImport>>,
+    TError,
+    CommitPatientImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof commitPatientImport>>,
+  TError,
+  CommitPatientImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCommitPatientImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof commitPatientImport>>,
+    CommitPatientImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return commitPatientImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CommitPatientImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof commitPatientImport>>
+>;
+export type CommitPatientImportMutationBody = BodyType<CommitPatientImportBody>;
+export type CommitPatientImportMutationError = ErrorType<ErrorEnvelope>;
+export type CommitPatientImportMutationVariables = {
+  data: BodyType<CommitPatientImportBody>;
+  params: CommitPatientImportParams;
+};
+
+/**
+ * @summary Commit
+ */
+export const useCommitPatientImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitPatientImport>>,
+    TError,
+    CommitPatientImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof commitPatientImport>>,
+  TError,
+  CommitPatientImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getCommitPatientImportMutationOptions(options));
+};
+
+export const getReviewPatientImportUrl = (
+  params: ReviewPatientImportParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/patients/import/review?${stringifiedParams}`
+    : `/api/v1/admin/patients/import/review`;
+};
+
+/**
+ * @summary Review
+ */
+export const reviewPatientImport = async (
+  reviewPatientImportBody: ReviewPatientImportBody,
+  params: ReviewPatientImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PatientReview> => {
+  const formData = new FormData();
+  formData.append(`file`, reviewPatientImportBody.file);
+
+  return customFetch<PatientReview>(getReviewPatientImportUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getReviewPatientImportMutationKey = () =>
+  ["reviewPatientImport"] as const;
+
+export const getReviewPatientImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewPatientImport>>,
+    TError,
+    ReviewPatientImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewPatientImport>>,
+  TError,
+  ReviewPatientImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReviewPatientImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewPatientImport>>,
+    ReviewPatientImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return reviewPatientImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewPatientImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewPatientImport>>
+>;
+export type ReviewPatientImportMutationBody = BodyType<ReviewPatientImportBody>;
+export type ReviewPatientImportMutationError = ErrorType<ErrorEnvelope>;
+export type ReviewPatientImportMutationVariables = {
+  data: BodyType<ReviewPatientImportBody>;
+  params: ReviewPatientImportParams;
+};
+
+/**
+ * @summary Review
+ */
+export const useReviewPatientImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewPatientImport>>,
+    TError,
+    ReviewPatientImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewPatientImport>>,
+  TError,
+  ReviewPatientImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getReviewPatientImportMutationOptions(options));
+};
+
+export const getListPatientDoctorChoicesUrl = (
+  params?: ListPatientDoctorChoicesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/patients/references?${stringifiedParams}`
+    : `/api/v1/admin/patients/references`;
+};
+
+/**
+ * @summary References
+ */
+export const listPatientDoctorChoices = async (
+  params?: ListPatientDoctorChoicesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PatientChoices> => {
+  return customFetch<PatientChoices>(getListPatientDoctorChoicesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListPatientDoctorChoicesQueryKey = (
+  params?: ListPatientDoctorChoicesParams,
+) => {
+  return [
+    `/api/v1/admin/patients/references`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListPatientDoctorChoicesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPatientDoctorChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListPatientDoctorChoicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPatientDoctorChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListPatientDoctorChoicesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPatientDoctorChoices>>
+  > = ({ signal }) =>
+    listPatientDoctorChoices(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPatientDoctorChoices>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPatientDoctorChoicesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPatientDoctorChoices>>
+>;
+export type ListPatientDoctorChoicesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary References
+ */
+
+export function useListPatientDoctorChoices<
+  TData = Awaited<ReturnType<typeof listPatientDoctorChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListPatientDoctorChoicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPatientDoctorChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPatientDoctorChoicesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDownloadPatientSampleUrl = (
+  params?: DownloadPatientSampleParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/patients/sample?${stringifiedParams}`
+    : `/api/v1/admin/patients/sample`;
+};
+
+/**
+ * @summary Sample
+ */
+export const downloadPatientSample = async (
+  params?: DownloadPatientSampleParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getDownloadPatientSampleUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getDownloadPatientSampleQueryKey = (
+  params?: DownloadPatientSampleParams,
+) => {
+  return [
+    `/api/v1/admin/patients/sample`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getDownloadPatientSampleQueryOptions = <
+  TData = Awaited<ReturnType<typeof downloadPatientSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadPatientSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadPatientSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getDownloadPatientSampleQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof downloadPatientSample>>
+  > = ({ signal }) =>
+    downloadPatientSample(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof downloadPatientSample>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type DownloadPatientSampleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof downloadPatientSample>>
+>;
+export type DownloadPatientSampleQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Sample
+ */
+
+export function useDownloadPatientSample<
+  TData = Awaited<ReturnType<typeof downloadPatientSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadPatientSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadPatientSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getDownloadPatientSampleQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetPatientDirectoryUrl = (patientId: string) => {
+  return `/api/v1/admin/patients/${patientId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getPatientDirectory = async (
+  patientId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PatientDirectoryResponse> => {
+  return customFetch<PatientDirectoryResponse>(
+    getGetPatientDirectoryUrl(patientId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPatientDirectoryQueryKey = (patientId: string) => {
+  return [`/api/v1/admin/patients/${patientId}`] as const;
+};
+
+export const getGetPatientDirectoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPatientDirectory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  patientId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPatientDirectoryQueryKey(patientId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPatientDirectory>>
+  > = ({ signal }) =>
+    getPatientDirectory(patientId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: patientId !== null && patientId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPatientDirectory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPatientDirectoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPatientDirectory>>
+>;
+export type GetPatientDirectoryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetPatientDirectory<
+  TData = Awaited<ReturnType<typeof getPatientDirectory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  patientId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPatientDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPatientDirectoryQueryOptions(patientId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getEditPatientDirectoryUrl = (patientId: string) => {
+  return `/api/v1/admin/patients/${patientId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editPatientDirectory = async (
+  patientId: string,
+  patientEdit: PatientEdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PatientDirectoryResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<PatientDirectoryResponse>(
+    getEditPatientDirectoryUrl(patientId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(patientEdit),
+    },
+  );
+};
+
+export const getEditPatientDirectoryMutationKey = () =>
+  ["editPatientDirectory"] as const;
+
+export const getEditPatientDirectoryMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editPatientDirectory>>,
+    TError,
+    EditPatientDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editPatientDirectory>>,
+  TError,
+  EditPatientDirectoryMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditPatientDirectoryMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editPatientDirectory>>,
+    EditPatientDirectoryMutationVariables
+  > = (props) => {
+    const { patientId, data } = props ?? {};
+
+    return editPatientDirectory(patientId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditPatientDirectoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editPatientDirectory>>
+>;
+export type EditPatientDirectoryMutationBody = BodyType<PatientEdit>;
+export type EditPatientDirectoryMutationError = ErrorType<ErrorEnvelope>;
+export type EditPatientDirectoryMutationVariables = {
+  patientId: string;
+  data: BodyType<PatientEdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditPatientDirectory = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editPatientDirectory>>,
+    TError,
+    EditPatientDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editPatientDirectory>>,
+  TError,
+  EditPatientDirectoryMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditPatientDirectoryMutationOptions(options));
+};
+
+export const getSetPatientDirectoryStatusUrl = (patientId: string) => {
+  return `/api/v1/admin/patients/${patientId}/status`;
+};
+
+/**
+ * @summary Status
+ */
+export const setPatientDirectoryStatus = async (
+  patientId: string,
+  patientStatus: PatientStatus,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PatientDirectoryResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<PatientDirectoryResponse>(
+    getSetPatientDirectoryStatusUrl(patientId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(patientStatus),
+    },
+  );
+};
+
+export const getSetPatientDirectoryStatusMutationKey = () =>
+  ["setPatientDirectoryStatus"] as const;
+
+export const getSetPatientDirectoryStatusMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setPatientDirectoryStatus>>,
+    TError,
+    SetPatientDirectoryStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setPatientDirectoryStatus>>,
+  TError,
+  SetPatientDirectoryStatusMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSetPatientDirectoryStatusMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setPatientDirectoryStatus>>,
+    SetPatientDirectoryStatusMutationVariables
+  > = (props) => {
+    const { patientId, data } = props ?? {};
+
+    return setPatientDirectoryStatus(patientId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetPatientDirectoryStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setPatientDirectoryStatus>>
+>;
+export type SetPatientDirectoryStatusMutationBody = BodyType<PatientStatus>;
+export type SetPatientDirectoryStatusMutationError = ErrorType<ErrorEnvelope>;
+export type SetPatientDirectoryStatusMutationVariables = {
+  patientId: string;
+  data: BodyType<PatientStatus>;
+};
+
+/**
+ * @summary Status
+ */
+export const useSetPatientDirectoryStatus = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setPatientDirectoryStatus>>,
+    TError,
+    SetPatientDirectoryStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setPatientDirectoryStatus>>,
+  TError,
+  SetPatientDirectoryStatusMutationVariables,
+  TContext
+> => {
+  return useMutation(getSetPatientDirectoryStatusMutationOptions(options));
 };
 
 export const getListProductCategoriesUrl = (

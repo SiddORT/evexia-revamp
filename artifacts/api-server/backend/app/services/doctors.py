@@ -197,6 +197,9 @@ def mutate(db, actor, record_id, body, operation):
         if operation == "edit":
             assignment(db, body.mrId, row)
             unique(db, body.registrationNumber, row.id)
+            if body.mrId != row.mrId:
+                from app.services.patients import shift_doctors
+                shift_doctors(db, current, [(row, body.mrId)])
             for key, value in body.model_dump(exclude={"expected_version"}).items():
                 setattr(row, key, value)
         elif operation == "status":
@@ -228,6 +231,9 @@ def bulk(db, actor, body):
                        None if body.operation == "shift" else row)
             rows.append(row)
         now = utcnow()
+        if body.operation == "shift":
+            from app.services.patients import shift_doctors
+            shift_doctors(db, current, [(row, body.mrId) for row in rows])
         for row in rows:
             if body.operation == "shift":
                 row.mrId = body.mrId
