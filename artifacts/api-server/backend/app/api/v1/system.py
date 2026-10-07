@@ -40,6 +40,10 @@ def readiness(db: Session = Depends(get_db)):
             "SELECT user_id, name_ciphertext, email_ciphertext, phone_ciphertext, "
             "email_index, version FROM staff_profiles LIMIT 0"
         ))
+        db.execute(text(
+            "SELECT id, name, status, version, created_by, updated_by, "
+            "created_at, updated_at, deleted_at, deleted_by FROM zones LIMIT 0"
+        ))
     except Exception:
         raise HTTPException(status_code=503, detail="Service unavailable") from None
     return {"status": "ready"}

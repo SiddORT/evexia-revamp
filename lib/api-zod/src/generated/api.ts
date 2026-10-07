@@ -742,6 +742,244 @@ export const SetStaffStatusResponse = zod.object({
 });
 
 /**
+ * @summary Listing
+ */
+export const listZonesQueryQueryDefault = ``;
+export const listZonesQueryQueryMax = 200;
+
+export const listZonesQueryStatusDefault = `all`;
+export const listZonesQueryLimitDefault = 10;
+export const listZonesQueryLimitMax = 100;
+
+export const listZonesQueryOffsetDefault = 0;
+export const listZonesQueryOffsetMin = 0;
+export const listZonesQueryOffsetMax = 1000000;
+
+export const ListZonesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listZonesQueryQueryMax)
+    .default(listZonesQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(listZonesQueryStatusDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listZonesQueryLimitMax)
+    .default(listZonesQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listZonesQueryOffsetMin)
+    .max(listZonesQueryOffsetMax)
+    .default(listZonesQueryOffsetDefault),
+});
+
+export const listZonesResponseItemsItemNameMax = 200;
+
+export const ListZonesResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      id: zod.string().uuid(),
+      name: zod.string().min(1).max(listZonesResponseItemsItemNameMax),
+      status: zod.enum(["active", "inactive"]),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+export const createZoneBodyNameMax = 200;
+
+export const CreateZoneBody = zod.object({
+  name: zod.string().min(1).max(createZoneBodyNameMax),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const createZoneResponseNameMax = 200;
+
+export const CreateZoneResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(createZoneResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Export
+ */
+export const exportZonesQueryQueryDefault = ``;
+export const exportZonesQueryQueryMax = 200;
+
+export const exportZonesQueryStatusDefault = `all`;
+export const exportZonesQueryFormatDefault = `csv`;
+
+export const ExportZonesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(exportZonesQueryQueryMax)
+    .default(exportZonesQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(exportZonesQueryStatusDefault),
+  format: zod.enum(["csv", "xlsx"]).default(exportZonesQueryFormatDefault),
+});
+
+export const ExportZonesResponse = zod.unknown();
+
+/**
+ * @summary Commit
+ */
+export const commitZoneImportQueryFilenameMax = 200;
+
+export const commitZoneImportQueryDigestRegExp = new RegExp("^[0-9a-f]{64}$");
+
+export const CommitZoneImportQueryParams = zod.object({
+  filename: zod.coerce.string().min(1).max(commitZoneImportQueryFilenameMax),
+  digest: zod.coerce.string().regex(commitZoneImportQueryDigestRegExp),
+  confirm: zod.coerce.boolean(),
+});
+
+export const CommitZoneImportResponse = zod.object({
+  imported: zod.number().int(),
+});
+
+/**
+ * @summary Review
+ */
+export const reviewZoneImportQueryFilenameMax = 200;
+
+export const ReviewZoneImportQueryParams = zod.object({
+  filename: zod.coerce.string().min(1).max(reviewZoneImportQueryFilenameMax),
+});
+
+export const ReviewZoneImportResponse = zod.object({
+  digest: zod.string(),
+  rows: zod.array(
+    zod.object({
+      errors: zod.array(zod.string()),
+      name: zod.string(),
+      row: zod.number().int(),
+      status: zod.string(),
+    }),
+  ),
+  valid: zod.boolean(),
+});
+
+/**
+ * @summary Detail
+ */
+export const GetZoneParams = zod.object({
+  zone_id: zod.coerce.string().uuid(),
+});
+
+export const getZoneResponseNameMax = 200;
+
+export const GetZoneResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(getZoneResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Delete
+ */
+export const DeleteZoneParams = zod.object({
+  zone_id: zod.coerce.string().uuid(),
+});
+
+export const DeleteZoneBody = zod.object({
+  expected_version: zod.number().int().min(1),
+});
+
+export const deleteZoneResponseNameMax = 200;
+
+export const DeleteZoneResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(deleteZoneResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditZoneParams = zod.object({
+  zone_id: zod.coerce.string().uuid(),
+});
+
+export const editZoneBodyNameMax = 200;
+
+export const EditZoneBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  name: zod.string().min(1).max(editZoneBodyNameMax),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const editZoneResponseNameMax = 200;
+
+export const EditZoneResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(editZoneResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Status
+ */
+export const SetZoneStatusParams = zod.object({
+  zone_id: zod.coerce.string().uuid(),
+});
+
+export const SetZoneStatusBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const setZoneStatusResponseNameMax = 200;
+
+export const SetZoneStatusResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(setZoneStatusResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
  * @summary Change Password
  */
 export const changePasswordBodyCurrentPasswordMax = 128;

@@ -534,6 +534,109 @@ export interface UserPage {
   offset: number;
 }
 
+export type ZoneEditStatus =
+  (typeof ZoneEditStatus)[keyof typeof ZoneEditStatus];
+
+export const ZoneEditStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface ZoneEdit {
+  /** @minimum 1 */
+  expected_version: number;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  status: ZoneEditStatus;
+}
+
+export type ZoneFieldsStatus =
+  (typeof ZoneFieldsStatus)[keyof typeof ZoneFieldsStatus];
+
+export const ZoneFieldsStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface ZoneFields {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  status: ZoneFieldsStatus;
+}
+
+export interface ZoneImportResult {
+  imported: number;
+}
+
+export interface ZoneImportRow {
+  errors: string[];
+  name: string;
+  row: number;
+  status: string;
+}
+
+export type ZoneResponseStatus =
+  (typeof ZoneResponseStatus)[keyof typeof ZoneResponseStatus];
+
+export const ZoneResponseStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface ZoneResponse {
+  createdAt: string;
+  createdBy: string;
+  id: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  status: ZoneResponseStatus;
+  updatedAt: string;
+  updatedBy: string;
+  version: number;
+}
+
+export interface ZonePage {
+  filtered: number;
+  items: ZoneResponse[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export interface ZoneReview {
+  digest: string;
+  rows: ZoneImportRow[];
+  valid: boolean;
+}
+
+export type ZoneStatusStatus =
+  (typeof ZoneStatusStatus)[keyof typeof ZoneStatusStatus];
+
+export const ZoneStatusStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface ZoneStatus {
+  /** @minimum 1 */
+  expected_version: number;
+  status: ZoneStatusStatus;
+}
+
+export interface ZoneVersion {
+  /** @minimum 1 */
+  expected_version: number;
+}
+
 export type ListReportingEventsParams = {
   /**
    * @maxLength 100
@@ -646,6 +749,80 @@ export type ListStaffParams = {
    * @maximum 10000
    */
   offset?: number;
+};
+
+export type ListZonesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ListZonesStatus;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
+export type ListZonesStatus =
+  (typeof ListZonesStatus)[keyof typeof ListZonesStatus];
+
+export const ListZonesStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportZonesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ExportZonesStatus;
+  format?: ExportZonesFormat;
+};
+
+export type ExportZonesStatus =
+  (typeof ExportZonesStatus)[keyof typeof ExportZonesStatus];
+
+export const ExportZonesStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportZonesFormat =
+  (typeof ExportZonesFormat)[keyof typeof ExportZonesFormat];
+
+export const ExportZonesFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type CommitZoneImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+  /**
+   * @pattern ^[0-9a-f]{64}$
+   */
+  digest: string;
+  confirm: boolean;
+};
+
+export type ReviewZoneImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
 };
 
 export type ListOwnSessionsParams = {

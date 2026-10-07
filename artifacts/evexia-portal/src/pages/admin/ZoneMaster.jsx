@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, Pencil, Plus, Search, Trash2, MapPinned, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
@@ -8,9 +8,9 @@ import DataTable from '../../components/admin/DataTable.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import ZoneForm from '../../components/admin/ZoneForm.jsx';
-import useTablePagination from '../../hooks/useTablePagination.js';
 import useZones from '../../hooks/useZones.js';
-import { exportZoneCSV, loadZones } from '../../services/zones.js';
+import { exportZones, downloadZoneFile } from '../../services/serverZones.js';
+import { reportingIdentityGuard } from '../../auth/adminSession.js';
 
 function details(by, at) {
   return <span className="admin-table__details"><strong>{by}</strong><small>{formatAdminTimestamp(at)}</small></span>;
@@ -19,9 +19,14 @@ function details(by, at) {
 export default function ZoneMaster() {
   useAdminPreferences();
   const [, navigate] = useLocation();
-  const { zones, error, feedback, clearFeedback, retry, add, edit, remove, changeStatus } = useZones();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const { zones, total, filtered, loading, pending, error, feedback, clearFeedback, retry, add, edit, remove, changeStatus } = useZones(search, filter, page, pageSize);
+  const [exportFormat, setExportFormat] = useState('csv');
+  const [exporting, setExporting] = useState(false);
+  const [blocked, setBlocked] = useState(false);
   const [editing, setEditing] = useState(null);
   const [confirming, setConfirming] = useState(null);
   const [actionError, setActionError] = useState('');
@@ -33,54 +38,48 @@ export default function ZoneMaster() {
     media.addEventListener('change', syncView);
     return () => media.removeEventListener('change', syncView);
   }, []);
-  const visibleZones = useMemo(() => zones.filter((zone) =>
-    zone.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()) &&
-    (filter === 'all' || zone.status === filter)), [zones, search, filter]);
-  const pagination = useTablePagination(visibleZones);
+  const pageCount = Math.max(1, Math.ceil(filtered / pageSize));
+  const pagination = { page, pageSize, pageCount, pageRows: zones, startIndex: (page - 1) * pageSize,
+    setPage, setPageSize: (size) => { setPageSize(size); setPage(1); }, resetPage: () => setPage(1) };
+  useEffect(() => { if (!loading && !error && page > pageCount) setPage(pageCount); }, [loading, error, page, pageCount]);
 
-  function save(values) {
-    const result = editing === 'new' ? add(values) : edit(editing.id, values);
+  async function save(values, record) {
+    const result = await (editing === 'new' ? add(values) : edit(record, values));
     if (result.success) setEditing(null);
     return result;
   }
 
-  function confirmAction() {
+  async function confirmAction() {
     const { zone, type } = confirming;
-    const result = type === 'delete' ? remove(zone.id) : changeStatus(zone.id, type === 'activate' ? 'active' : 'inactive');
+    const result = await (type === 'delete' ? remove(zone) : changeStatus(zone, type === 'activate' ? 'active' : 'inactive'));
     if (result.success) { setConfirming(null); setActionError(''); }
-    else setActionError(result.error);
+    else { setActionError(result.error + (result.code === 'zone_stale' || result.ambiguous ? ' Cancel and refresh the table before confirming again.' : '')); setBlocked(result.code === 'zone_stale' || Boolean(result.ambiguous)); }
   }
 
   function requestAction(zone, type) {
     clearFeedback();
     setActionError('');
+    setBlocked(false);
     setConfirming({ zone, type });
   }
 
-  function exportVisible() {
-    if (error || !visibleZones.length) return;
+  async function exportVisible() {
+    if (error || exporting) return;
     setActionError('');
+    setExporting(true);
+    const guard = reportingIdentityGuard();
     try {
-      if (JSON.stringify(loadZones()) !== JSON.stringify(zones)) {
-        setActionError('Zones changed in another tab. Refresh records before exporting.');
-        return;
-      }
-      const url = URL.createObjectURL(new Blob([exportZoneCSV(visibleZones)], { type: 'text/csv;charset=utf-8' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'evexia-zone-master.csv';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const blob = await exportZones({ query: search, status: filter }, exportFormat);
+      guard();
+      downloadZoneFile(blob, exportFormat);
     } catch (cause) {
       setActionError(cause.message || 'CSV export failed. Refresh records and try again.');
-    }
+    } finally { setExporting(false); }
   }
 
   function renderActions(zone, mobile = false) {
     const toggleLabel = zone.status === 'active' ? 'Inactivate' : 'Activate';
-    return <div className={mobile ? 'admin-zone-card__actions' : 'admin-table__actions'}>
+    return <fieldset disabled={loading || pending} style={{ border: 0, padding: 0, margin: 0 }} className={mobile ? 'admin-zone-card__actions' : 'admin-table__actions'}>
       <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`Edit ${zone.name}`} title="Edit" onClick={() => { clearFeedback(); setEditing(zone); }} data-testid={`button-edit-zone-${zone.id}`}>
         <Pencil size={mobile ? 14 : 16} aria-hidden="true" />{mobile && <span>Edit</span>}
       </button>
@@ -90,7 +89,7 @@ export default function ZoneMaster() {
       <button type="button" className={mobile ? 'admin-zone-card__action admin-zone-card__action--danger' : 'admin-icon-button admin-icon-button--danger'} aria-label={`Delete ${zone.name}`} title="Delete" onClick={() => requestAction(zone, 'delete')} data-testid={`button-delete-zone-${zone.id}`}>
         <Trash2 size={mobile ? 14 : 16} aria-hidden="true" />{mobile && <span>Delete</span>}
       </button>
-    </div>;
+    </fieldset>;
   }
 
   const columns = [
@@ -107,20 +106,23 @@ export default function ZoneMaster() {
   return (
     <AdminLayout title="Zone Master">
       <div className="admin-page-head">
-        <div><p className="admin-page-head__eyebrow">Masters / Geography</p><h1>Zone Master</h1><p className="admin-page-head__description">Manage the zones used across your EVEXIA workspace.</p></div>
+        <div><p className="admin-page-head__eyebrow">Masters / Geography</p><h1>Zone Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Browser data clearing does not remove these zones.</p></div>
           <div className="admin-mr-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/zone')} data-testid="button-import-zones"><Upload size={16} aria-hidden="true" /> Import data</button>
-          <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || !visibleZones.length} onClick={exportVisible} data-testid="button-export-zones"><Download size={16} aria-hidden="true" /> Export data</button>
+          <select aria-label="Zone export format" className="admin-select" value={exportFormat} onChange={(event) => setExportFormat(event.target.value)}><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option></select>
+          <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading || exporting} onClick={exportVisible} data-testid="button-export-zones"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
          <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); setEditing('new'); }} data-testid="button-add-zone"><Plus size={16} aria-hidden="true" /> Add zone</button></div>
       </div>
+      <p className="admin-page-head__description">MR, Doctor, Patient and Sales Target demo assignments still use their separate browser-local zone dataset. No local records are migrated or mirrored. Use Import data explicitly. Exports include all matches, up to 1,000 records.</p>
       {feedback && <div className="admin-feedback" role="status" data-testid="status-zone-feedback">{feedback}</div>}
       {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-zone-action-error">{actionError}</div>}
       <section className="admin-panel" aria-label="Zone list">
         <div className="admin-toolbar">
+          <button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={retry}>Refresh records</button>
           <div className="admin-toolbar__fields">
             <label className="admin-search">
               <Search size={16} aria-hidden="true" />
               <span className="sr-only">Search zones by name</span>
-              <input value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Search by zone name" data-testid="input-search-zones" />
+              <input maxLength={200} value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Search by zone name" data-testid="input-search-zones" />
             </label>
             <div className="admin-filter">
               <label htmlFor="zone-filter">Status</label>
@@ -130,9 +132,9 @@ export default function ZoneMaster() {
             </div>
           </div>
         </div>
-        {error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><MapPinned size={21} /></span><strong>Zones could not be loaded</strong><p>{error}</p><button className="admin-button" style={{ marginTop: 16 }} onClick={retry} type="button" data-testid="button-retry-zones">Try again</button></div> : (
+        {loading ? <p className="admin-empty" role="status">Loading shared zones…</p> : error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><MapPinned size={21} /></span><strong>Zones could not be loaded</strong><p>{error}</p><button className="admin-button" style={{ marginTop: 16 }} onClick={retry} type="button" data-testid="button-retry-zones">Try again</button></div> : (
           <>
-            {visibleZones.length ? (cardView ? (
+            {zones.length ? (cardView ? (
               <div className="admin-zone-cards" role="list" aria-label="Zone records">
                 {pagination.pageRows.map((zone, index) => (
                   <article className="admin-zone-card" role="listitem" key={zone.id} data-testid={`card-zone-${zone.id}`}>
@@ -151,16 +153,16 @@ export default function ZoneMaster() {
             ) : <DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(zone) => zone.id} />) : (
               <div className="admin-empty" data-testid="status-zones-empty">
                 <span className="admin-empty__icon"><MapPinned size={21} aria-hidden="true" /></span>
-                <strong>{zones.length ? 'No matching zones' : 'No zones yet'}</strong>
-                <p>{zones.length ? 'Try a different name or status filter.' : 'Add your first zone to get started.'}</p>
+                <strong>{total ? 'No matching zones' : 'No zones yet'}</strong>
+                <p>{total ? 'Try a different name or status filter.' : 'Add your first zone to get started.'}</p>
               </div>
             )}
-            <TablePagination {...pagination} filtered={visibleZones.length} total={zones.length} label={zones.length === 1 ? 'zone' : 'zones'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-zone-count" />
+            <TablePagination {...pagination} filtered={filtered} total={total} label={total === 1 ? 'zone' : 'zones'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-zone-count" />
           </>
         )}
       </section>
       {editing && <ZoneForm zone={editing === 'new' ? null : editing} onSave={save} onClose={() => setEditing(null)} />}
-      {confirming && <ConfirmationDialog title={`${actionName} zone?`} description={`Are you sure you want to ${actionName.toLowerCase()} “${confirming.zone.name}”?${confirming.type === 'delete' ? ' This cannot be undone.' : ''}`} actionLabel={`${actionName} zone`} destructive={confirming.type === 'delete'} onConfirm={confirmAction} onClose={() => setConfirming(null)} error={actionError} />}
+      {confirming && <ConfirmationDialog pending={pending} blocked={blocked} title={`${actionName} zone?`} description={`Are you sure you want to ${actionName.toLowerCase()} “${confirming.zone.name}”?${confirming.type === 'delete' ? ' It will disappear from normal lists and exports. Server deletion history is retained; no restore is available here.' : ''}`} actionLabel={`${actionName} zone`} destructive={confirming.type === 'delete'} onConfirm={confirmAction} onClose={() => { setConfirming(null); retry(); }} error={actionError} />}
     </AdminLayout>
   );
 }

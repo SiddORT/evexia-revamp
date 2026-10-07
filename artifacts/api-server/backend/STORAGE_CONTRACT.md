@@ -18,6 +18,7 @@ password input; there is no default elevated account.
 |---|---|---|
 | Provision/map login and MR; create patient; assign patient | yes | no |
 | Staff list/detail/create/edit/status (`staff.manage`) | protected singleton only | no |
+| Zone list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
 | Upload, metadata, verified download, download grant | system-wide | own MR or currently assigned active patient |
 | Delete, replace, retry verification/cleanup | yes | no |
 
@@ -39,6 +40,14 @@ No hard-delete, import, invitation, staff sign-in, password reset or rotation AP
 exists. Legacy browser-local staff storage is untouched/unused; Designation
 Master labels are not a verified backend master relationship.
 See `docs/staff-security.md` for key retention and coordinated backup/recovery.
+
+Zone Master uses server-owned UTC audit times and User actor references, immutable
+creation metadata, mandatory expected versions and non-deleted lower-name
+uniqueness including inactive rows. Deletion retains a database tombstone and
+deleter metadata; no normal lookup/export exposes deleted rows. CSV/XLSX imports
+are explicit, bounded review/confirm, create-only and transactional. Imported
+audit strings are ignored. Legacy local-zone demo relationships remain untouched.
+See `docs/zone-master.md` for exact schemas, limits and failure recovery.
 
 ## File API and validation
 

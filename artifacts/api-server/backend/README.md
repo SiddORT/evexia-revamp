@@ -3,9 +3,12 @@
 This FastAPI modular monolith supplies authoritative authentication for the
 existing EVEXIA Admin login and protected workspace. MR and Doctor login screens
 remain mock previews. Staff Management is now an authenticated, encrypted
-PostgreSQL directory with unmapped credentials; all other portal masters remain
+PostgreSQL directory with unmapped credentials; Zone Master is shared server
+persistence with soft deletion and authenticated audit history. Other portal masters remain
 fictional and browser-local. Do not enter real personal or health data into the
 preview. See [staff security and operations](../../../docs/staff-security.md).
+See [Zone Master operations and transfer contract](../../../docs/zone-master.md)
+for its endpoints, limits, duplicate policy and unchanged local-demo assignments.
 
 ## Local development and operations
 
@@ -38,7 +41,7 @@ preview. See [staff security and operations](../../../docs/staff-security.md).
   take a backup first. The current ordered migrations are `0001_identity_foundation`,
   `0002_optional_username`, `0003_system_identity_domain`, `0004_private_files`,
   `0005_protected_super_admin_sessions`, `0006_auth_sessions`,
-   `0007_reporting_indexes`, `0008_activity_search`, and `0009_staff`. Staff migration
+    `0007_reporting_indexes`, `0008_activity_search`, `0009_staff`, and `0010_zones`. Zone migration creates only an empty table. Staff migration
    adds an empty encrypted profile table and deferred identity-link integrity
    guards; it changes no existing identities, sessions or activity history.
    The activity search

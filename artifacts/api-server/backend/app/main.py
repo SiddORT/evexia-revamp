@@ -15,9 +15,11 @@ from app.api.v1.domain import router as domain_router
 from app.api.v1.files import router as files_router
 from app.api.v1.reporting import router as reporting_router
 from app.api.v1.staff import router as staff_router
+from app.api.v1.zones import router as zones_router
+from app.services.zones import ZoneError
 from app.services.staff_crypto import StaffError
 from app.core.config import get_settings
-from app.core.request_limits import RequestSizeLimit, RequestTooLarge
+from app.core.request_limits import RequestSizeLimit, RequestTooLarge, body_limit
 from app.services.auth import AuthError
 from app.services.file_policy import FileError
 from app.schemas.errors import ErrorEnvelope
@@ -76,7 +78,7 @@ def create_app() -> FastAPI:
                     request.url.path.startswith("/api/v1/files/") and request.url.path.endswith("/replacement")
                 )
             )
-            limit = settings.max_upload_bytes if is_upload else 1_048_576
+            limit = body_limit(request.method, request.url.path, settings.max_upload_bytes)
             if content_length and (not content_length.isdigit() or int(content_length) > limit):
                 response = JSONResponse(error_body(request, 413, "Request too large"), status_code=413)
             else:
@@ -123,6 +125,11 @@ def create_app() -> FastAPI:
             locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
             fields = [{"field": field["field"] if field["field"] in locations else "body",
                        "code": field["code"]} for field in fields]
+        if request.url.path.startswith("/api/v1/admin/zones"):
+            allowed = {"name", "status", "expected_version", "query", "limit", "offset", "format", "filename", "digest", "confirm", "zone_id"}
+            locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
+            fields = [{"field": item["field"] if item["field"] in locations else "body",
+                       "code": item["code"]} for item in fields]
         return JSONResponse(error_body(request, 422, "Invalid request", fields=fields), status_code=422)
 
     @app.exception_handler(FileError)
@@ -131,6 +138,10 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(StaffError)
     async def staff_error(request: Request, exc: StaffError):
+        return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
+
+    @app.exception_handler(ZoneError)
+    async def zone_error(request: Request, exc: ZoneError):
         return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
 
     @app.exception_handler(AuthError)
@@ -148,6 +159,7 @@ def create_app() -> FastAPI:
     app.include_router(files_router, prefix="/api/v1")
     app.include_router(reporting_router, prefix="/api/v1")
     app.include_router(staff_router, prefix="/api/v1")
+    app.include_router(zones_router, prefix="/api/v1")
     app.add_api_route("/api/healthz", lambda: {"status": "ok"}, methods=["GET"],
                       response_model=HealthStatus, operation_id="getHealthCheck", tags=["health"])
     original_openapi = app.openapi

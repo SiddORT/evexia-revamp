@@ -183,3 +183,4 @@ class Patient(Timestamps, Base):
 # tables must be registered before Alembic evaluates Base.metadata.
 from app.db import file_models as _file_models  # noqa: E402,F401
 from app.db import staff_models as _staff_models  # noqa: E402,F401
+from app.db import zone_models as _zone_models  # noqa: E402,F401

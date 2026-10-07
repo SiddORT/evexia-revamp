@@ -7,6 +7,15 @@ class RequestTooLarge(HTTPException):
         super().__init__(413, "Request too large")
 
 
+def body_limit(method, path, max_upload_bytes):
+    if method == "POST":
+        if path in ("/api/v1/admin/zones/import/review", "/api/v1/admin/zones/import/commit"):
+            return 2 * 1024 * 1024
+        if path == "/api/v1/files" or (path.startswith("/api/v1/files/") and path.endswith("/replacement")):
+            return max_upload_bytes
+    return 1_048_576
+
+
 class RequestSizeLimit:
     def __init__(self, app, max_upload_bytes):
         self.app, self.max_upload_bytes = app, max_upload_bytes
@@ -19,7 +28,7 @@ class RequestSizeLimit:
             path == "/api/v1/files" or
             (path.startswith("/api/v1/files/") and path.endswith("/replacement"))
         )
-        limit = self.max_upload_bytes if is_upload else 1_048_576
+        limit = body_limit(scope["method"], path, self.max_upload_bytes)
         total = 0
         async def bounded_receive():
             nonlocal total

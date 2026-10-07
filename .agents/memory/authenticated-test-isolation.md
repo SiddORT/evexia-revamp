@@ -18,3 +18,15 @@ explicit overrides, and preserve per-run diagnostics. Investigate session
 replacement notices in failed browser tests before assuming chunk-loading
 latency or raising all timeouts. This is test-fixture isolation, not a reason to
 weaken the production single-session policy.
+
+Authenticated browser fixtures must await the verified destination after each
+hard navigation before issuing another hard navigation.
+
+**Why:** Document load does not imply refresh-cookie restoration has completed.
+Interrupting a rotating refresh can consume the server credential without
+accepting its replacement cookie; the next load then correctly rejects replay.
+This is distinct from testing SPA navigation or mounted-draft renewal.
+
+**How to apply:** Wait for an authenticated screen element, not a fixed sleep or
+only the navigation promise, when a fixture intentionally visits consecutive
+protected documents. Keep replay rejection and single-session policy unchanged.

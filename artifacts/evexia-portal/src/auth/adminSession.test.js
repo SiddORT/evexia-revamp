@@ -19,6 +19,49 @@ async function setup(handler) {
 const reply = (body, status = 200) => new Response(status === 204 ? null : JSON.stringify(body), { status });
 const payload = { access_token: 'synthetic-memory-token', expires_in: 900, user };
 
+test('zone transport keeps credentials in memory, uses versions/raw files and never replays ambiguous writes', async () => {
+  let writes = 0;
+  const api = await setup(async (url, options) => {
+    if (url.includes('/admin/zones')) {
+      assert.equal(options.headers.Authorization, 'Bearer synthetic-memory-token');
+      assert.equal(options.cache, 'no-store');
+      if (url.includes('/import/review')) {
+        assert.equal(options.body, 'synthetic csv');
+        assert.equal(options.headers['Content-Type'], 'application/octet-stream');
+        return reply({ valid: true });
+      }
+      writes++;
+      assert.deepEqual(JSON.parse(options.body), { expected_version: 3 });
+      throw new Error('private provider detail');
+    }
+    return reply(url.endsWith('/me') ? user : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  assert.deepEqual(await api.zoneRequest('/import/review', { file: 'synthetic csv', params: { filename: 'zones.csv' } }), { valid: true });
+  await assert.rejects(api.zoneRequest('/00000000-0000-0000-0000-000000000001/delete', { body: { expected_version: 3 } }), (error) => error.ambiguous === true);
+  assert.equal(writes, 1);
+  await api.logoutAdmin();
+});
+
+test('zone decoded responses cannot survive logout and stale errors are actionable', async () => {
+  let release;
+  const api = await setup(async (url) => {
+    if (url.includes('/admin/zones')) return new Promise((resolve) => { release = resolve; });
+    return reply(url.endsWith('/me') ? user : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  const read = api.zoneRequest();
+  await api.logoutAdmin();
+  release(reply({ items: [{ name: 'private record' }] }));
+  await assert.rejects(read, /session changed/i);
+  const stale = await setup(async (url) => reply(url.includes('/admin/zones')
+    ? { error: { code: 'zone_stale', message: 'Refresh and review before retrying.' } } : url.endsWith('/me') ? user : payload,
+    url.includes('/admin/zones') ? 409 : 200));
+  await stale.loginAdmin(user.email, 'synthetic-password', false);
+  await assert.rejects(stale.zoneRequest('', { body: { name: 'draft' } }), (error) => error.code === 'zone_stale' && /review/.test(error.message));
+  await stale.logoutAdmin();
+});
+
 test('staff mutations use memory-only bearer and never replay ambiguous create requests', async () => {
   let writes = 0;
   const identity = { ...user, permissions: ['admin.access', 'staff.manage'] };

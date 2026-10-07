@@ -20,6 +20,7 @@ import type {
   AssignPatientRequest,
   BrowserActivityBatch,
   ChangePasswordRequest,
+  CommitZoneImportParams,
   CreatePatientRequest,
   CurrentUser,
   DeleteFileParams,
@@ -28,6 +29,7 @@ import type {
   EventPage,
   ExportReportingEventsParams,
   ExportReportingSessionsParams,
+  ExportZonesParams,
   FileResponse,
   HealthStatus,
   ListOwnSessionsParams,
@@ -35,6 +37,7 @@ import type {
   ListReportingSessionsParams,
   ListReportingUsersParams,
   ListStaffParams,
+  ListZonesParams,
   LoginRequest,
   MRResponse,
   PatientResponse,
@@ -42,6 +45,7 @@ import type {
   ReplaceFileParams,
   ReportExport,
   ReportSummary,
+  ReviewZoneImportParams,
   SessionListResponse,
   SessionPage,
   SessionResponse,
@@ -56,6 +60,14 @@ import type {
   TokenResponse,
   UploadFileParams,
   UserPage,
+  ZoneEdit,
+  ZoneFields,
+  ZoneImportResult,
+  ZonePage,
+  ZoneResponse,
+  ZoneReview,
+  ZoneStatus,
+  ZoneVersion,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -1511,6 +1523,995 @@ export const useSetStaffStatus = <
   TContext
 > => {
   return useMutation(getSetStaffStatusMutationOptions(options));
+};
+
+export const getListZonesUrl = (params?: ListZonesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/zones?${stringifiedParams}`
+    : `/api/v1/admin/zones`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listZones = async (
+  params?: ListZonesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ZonePage> => {
+  return customFetch<ZonePage>(getListZonesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListZonesQueryKey = (params?: ListZonesParams) => {
+  return [`/api/v1/admin/zones`, ...(params ? [params] : [])] as const;
+};
+
+export const getListZonesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listZones>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListZonesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listZones>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListZonesQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listZones>>> = ({
+    signal,
+  }) => listZones(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listZones>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListZonesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listZones>>
+>;
+export type ListZonesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListZones<
+  TData = Awaited<ReturnType<typeof listZones>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListZonesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listZones>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListZonesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateZoneUrl = () => {
+  return `/api/v1/admin/zones`;
+};
+
+/**
+ * @summary Create
+ */
+export const createZone = async (
+  zoneFields: ZoneFields,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ZoneResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ZoneResponse>(getCreateZoneUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(zoneFields),
+  });
+};
+
+export const getCreateZoneMutationKey = () => ["createZone"] as const;
+
+export const getCreateZoneMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createZone>>,
+    TError,
+    CreateZoneMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createZone>>,
+  TError,
+  CreateZoneMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateZoneMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createZone>>,
+    CreateZoneMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createZone(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateZoneMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createZone>>
+>;
+export type CreateZoneMutationBody = BodyType<ZoneFields>;
+export type CreateZoneMutationError = ErrorType<ErrorEnvelope>;
+export type CreateZoneMutationVariables = { data: BodyType<ZoneFields> };
+
+/**
+ * @summary Create
+ */
+export const useCreateZone = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createZone>>,
+    TError,
+    CreateZoneMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createZone>>,
+  TError,
+  CreateZoneMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateZoneMutationOptions(options));
+};
+
+export const getExportZonesUrl = (params?: ExportZonesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/zones/export?${stringifiedParams}`
+    : `/api/v1/admin/zones/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportZones = async (
+  params?: ExportZonesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getExportZonesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportZonesQueryKey = (params?: ExportZonesParams) => {
+  return [`/api/v1/admin/zones/export`, ...(params ? [params] : [])] as const;
+};
+
+export const getExportZonesQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportZones>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportZonesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportZones>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getExportZonesQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof exportZones>>> = ({
+    signal,
+  }) => exportZones(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportZones>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportZonesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportZones>>
+>;
+export type ExportZonesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportZones<
+  TData = Awaited<ReturnType<typeof exportZones>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportZonesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportZones>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportZonesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCommitZoneImportUrl = (params: CommitZoneImportParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/zones/import/commit?${stringifiedParams}`
+    : `/api/v1/admin/zones/import/commit`;
+};
+
+/**
+ * @summary Commit
+ */
+export const commitZoneImport = async (
+  commitZoneImportBody: Blob,
+  params: CommitZoneImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ZoneImportResult> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ZoneImportResult>(getCommitZoneImportUrl(params), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/octet-stream",
+      ...getHeaders(options?.headers),
+    },
+    body: commitZoneImportBody,
+  });
+};
+
+export const getCommitZoneImportMutationKey = () =>
+  ["commitZoneImport"] as const;
+
+export const getCommitZoneImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitZoneImport>>,
+    TError,
+    CommitZoneImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof commitZoneImport>>,
+  TError,
+  CommitZoneImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCommitZoneImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof commitZoneImport>>,
+    CommitZoneImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return commitZoneImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CommitZoneImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof commitZoneImport>>
+>;
+export type CommitZoneImportMutationBody = BodyType<Blob>;
+export type CommitZoneImportMutationError = ErrorType<ErrorEnvelope>;
+export type CommitZoneImportMutationVariables = {
+  data: BodyType<Blob>;
+  params: CommitZoneImportParams;
+};
+
+/**
+ * @summary Commit
+ */
+export const useCommitZoneImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitZoneImport>>,
+    TError,
+    CommitZoneImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof commitZoneImport>>,
+  TError,
+  CommitZoneImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getCommitZoneImportMutationOptions(options));
+};
+
+export const getReviewZoneImportUrl = (params: ReviewZoneImportParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/zones/import/review?${stringifiedParams}`
+    : `/api/v1/admin/zones/import/review`;
+};
+
+/**
+ * @summary Review
+ */
+export const reviewZoneImport = async (
+  reviewZoneImportBody: Blob,
+  params: ReviewZoneImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ZoneReview> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ZoneReview>(getReviewZoneImportUrl(params), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/octet-stream",
+      ...getHeaders(options?.headers),
+    },
+    body: reviewZoneImportBody,
+  });
+};
+
+export const getReviewZoneImportMutationKey = () =>
+  ["reviewZoneImport"] as const;
+
+export const getReviewZoneImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewZoneImport>>,
+    TError,
+    ReviewZoneImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewZoneImport>>,
+  TError,
+  ReviewZoneImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReviewZoneImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewZoneImport>>,
+    ReviewZoneImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return reviewZoneImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewZoneImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewZoneImport>>
+>;
+export type ReviewZoneImportMutationBody = BodyType<Blob>;
+export type ReviewZoneImportMutationError = ErrorType<ErrorEnvelope>;
+export type ReviewZoneImportMutationVariables = {
+  data: BodyType<Blob>;
+  params: ReviewZoneImportParams;
+};
+
+/**
+ * @summary Review
+ */
+export const useReviewZoneImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewZoneImport>>,
+    TError,
+    ReviewZoneImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewZoneImport>>,
+  TError,
+  ReviewZoneImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getReviewZoneImportMutationOptions(options));
+};
+
+export const getGetZoneUrl = (zoneId: string) => {
+  return `/api/v1/admin/zones/${zoneId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getZone = async (
+  zoneId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ZoneResponse> => {
+  return customFetch<ZoneResponse>(getGetZoneUrl(zoneId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetZoneQueryKey = (zoneId: string) => {
+  return [`/api/v1/admin/zones/${zoneId}`] as const;
+};
+
+export const getGetZoneQueryOptions = <
+  TData = Awaited<ReturnType<typeof getZone>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  zoneId: string,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getZone>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetZoneQueryKey(zoneId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getZone>>> = ({
+    signal,
+  }) => getZone(zoneId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: zoneId !== null && zoneId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getZone>>, TError, TData> & {
+    queryKey: QueryKey;
+  };
+};
+
+export type GetZoneQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getZone>>
+>;
+export type GetZoneQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetZone<
+  TData = Awaited<ReturnType<typeof getZone>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  zoneId: string,
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getZone>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetZoneQueryOptions(zoneId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDeleteZoneUrl = (zoneId: string) => {
+  return `/api/v1/admin/zones/${zoneId}/delete`;
+};
+
+/**
+ * @summary Delete
+ */
+export const deleteZone = async (
+  zoneId: string,
+  zoneVersion: ZoneVersion,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ZoneResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ZoneResponse>(getDeleteZoneUrl(zoneId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(zoneVersion),
+  });
+};
+
+export const getDeleteZoneMutationKey = () => ["deleteZone"] as const;
+
+export const getDeleteZoneMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteZone>>,
+    TError,
+    DeleteZoneMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteZone>>,
+  TError,
+  DeleteZoneMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteZoneMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteZone>>,
+    DeleteZoneMutationVariables
+  > = (props) => {
+    const { zoneId, data } = props ?? {};
+
+    return deleteZone(zoneId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteZoneMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteZone>>
+>;
+export type DeleteZoneMutationBody = BodyType<ZoneVersion>;
+export type DeleteZoneMutationError = ErrorType<ErrorEnvelope>;
+export type DeleteZoneMutationVariables = {
+  zoneId: string;
+  data: BodyType<ZoneVersion>;
+};
+
+/**
+ * @summary Delete
+ */
+export const useDeleteZone = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteZone>>,
+    TError,
+    DeleteZoneMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteZone>>,
+  TError,
+  DeleteZoneMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteZoneMutationOptions(options));
+};
+
+export const getEditZoneUrl = (zoneId: string) => {
+  return `/api/v1/admin/zones/${zoneId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editZone = async (
+  zoneId: string,
+  zoneEdit: ZoneEdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ZoneResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ZoneResponse>(getEditZoneUrl(zoneId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(zoneEdit),
+  });
+};
+
+export const getEditZoneMutationKey = () => ["editZone"] as const;
+
+export const getEditZoneMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editZone>>,
+    TError,
+    EditZoneMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editZone>>,
+  TError,
+  EditZoneMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditZoneMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editZone>>,
+    EditZoneMutationVariables
+  > = (props) => {
+    const { zoneId, data } = props ?? {};
+
+    return editZone(zoneId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditZoneMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editZone>>
+>;
+export type EditZoneMutationBody = BodyType<ZoneEdit>;
+export type EditZoneMutationError = ErrorType<ErrorEnvelope>;
+export type EditZoneMutationVariables = {
+  zoneId: string;
+  data: BodyType<ZoneEdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditZone = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editZone>>,
+    TError,
+    EditZoneMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editZone>>,
+  TError,
+  EditZoneMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditZoneMutationOptions(options));
+};
+
+export const getSetZoneStatusUrl = (zoneId: string) => {
+  return `/api/v1/admin/zones/${zoneId}/status`;
+};
+
+/**
+ * @summary Status
+ */
+export const setZoneStatus = async (
+  zoneId: string,
+  zoneStatus: ZoneStatus,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ZoneResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ZoneResponse>(getSetZoneStatusUrl(zoneId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(zoneStatus),
+  });
+};
+
+export const getSetZoneStatusMutationKey = () => ["setZoneStatus"] as const;
+
+export const getSetZoneStatusMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setZoneStatus>>,
+    TError,
+    SetZoneStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setZoneStatus>>,
+  TError,
+  SetZoneStatusMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSetZoneStatusMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setZoneStatus>>,
+    SetZoneStatusMutationVariables
+  > = (props) => {
+    const { zoneId, data } = props ?? {};
+
+    return setZoneStatus(zoneId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetZoneStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setZoneStatus>>
+>;
+export type SetZoneStatusMutationBody = BodyType<ZoneStatus>;
+export type SetZoneStatusMutationError = ErrorType<ErrorEnvelope>;
+export type SetZoneStatusMutationVariables = {
+  zoneId: string;
+  data: BodyType<ZoneStatus>;
+};
+
+/**
+ * @summary Status
+ */
+export const useSetZoneStatus = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setZoneStatus>>,
+    TError,
+    SetZoneStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setZoneStatus>>,
+  TError,
+  SetZoneStatusMutationVariables,
+  TContext
+> => {
+  return useMutation(getSetZoneStatusMutationOptions(options));
 };
 
 export const getChangePasswordUrl = () => {

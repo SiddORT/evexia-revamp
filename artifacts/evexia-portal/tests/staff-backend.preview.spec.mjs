@@ -149,6 +149,9 @@ test('shared mobile form retains phone countries and clears one-time credentials
   }
   await create(page, 'navigation');
   await page.goto(`${base()}/admin`);
+  // A full navigation restores/rotates the refresh cookie. Do not interrupt it
+  // with another hard navigation before the new authenticated page is ready.
+  await expect(page.getByTestId('button-admin-profile')).toBeVisible();
   await page.goto(`${base()}/admin/staff`);
   await expect(page.getByTestId('button-add-staff')).toBeEnabled();
   await expect(page.getByTestId('text-staff-credential-password')).toHaveCount(0);

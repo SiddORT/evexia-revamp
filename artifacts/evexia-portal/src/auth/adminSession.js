@@ -278,6 +278,73 @@ export async function staffRequest(path = '', body, { signal } = {}) {
   return data;
 }
 // Narrow reporting facility: credentials never leave this module.
+// Shared Zone transport. No automatic replay of a potentially committed write.
+export async function zoneRequest(path = '', { body, file, params = {}, download = false, signal } = {}) {
+  if (!/^(?:|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/.test(path)) {
+    throw new SessionError('Unsupported Zone operation.');
+  }
+  const epoch = generation;
+  const owner = state.user?.id;
+  const check = () => {
+    signal?.throwIfAborted();
+    if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
+      throw new SessionError('Your session changed. Sign in again before retrying.', 401);
+    }
+    if (!state.user.permissions.includes('admin.access')) throw new SessionError('Zone access denied.', 403);
+  };
+  if (pending) await pending;
+  else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true);
+  check();
+  const writing = body !== undefined || file !== undefined;
+  const load = () => fetch(`/api/v1/admin/zones${path}?${new URLSearchParams(params)}`, {
+    method: writing ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
+    headers: { Authorization: `Bearer ${token}`, ...(writing ? { 'Content-Type': file ? 'application/octet-stream' : 'application/json' } : {}) },
+    ...(writing ? { body: file || JSON.stringify(body) } : {}),
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000),
+  });
+  let response;
+  try {
+    response = await load();
+    if (response.status === 401) {
+      // A rejected request cannot have mutated data. Renew, but ask the user
+      // to explicitly retry writes; reads can safely be repeated once.
+      await verifySession(true);
+      check();
+      if (writing) throw new SessionError('Session renewed. Your draft is preserved; retry explicitly.', 401);
+      response = await load();
+    }
+  } catch (error) {
+    check();
+    if (error instanceof SessionError) throw error;
+    const failure = new SessionError(writing
+      ? 'Save outcome could not be confirmed. Refresh and inspect records before retrying; the server may have saved it.'
+      : 'Unable to load zones. Check your connection and retry.');
+    failure.ambiguous = writing && path !== '/import/review';
+    throw failure;
+  }
+  if (pending) await pending;
+  check();
+  let data;
+  try { data = response.ok && download ? await response.blob() : await response.json(); }
+  catch {
+    check();
+    const error = new SessionError('Zone response could not be read. Refresh and inspect current records before retrying.');
+    error.ambiguous = writing && path !== '/import/review';
+    throw error;
+  }
+  if (pending) await pending;
+  check();
+  if (!response.ok) {
+    const error = new SessionError(response.status >= 500 && data?.error?.code !== 'zone_unavailable'
+      ? 'Zone service is unavailable. Your draft is preserved. Retry later; inspect records first if a save was pending.'
+      : data?.error?.message || 'Zone request failed. Review the details and retry.', response.status);
+    error.code = data?.error?.code;
+    error.ambiguous = writing && response.status >= 500 && error.code !== 'zone_unavailable';
+    throw error;
+  }
+  return data;
+}
+
 export async function reportingRequest(resource, params = {}, { signal } = {}) {
   if (!['summary', 'users', 'sessions', 'events', 'activity', 'sessions/export', 'events/export'].includes(resource)) {
     throw new SessionError('Unsupported report.');

@@ -1,6 +1,6 @@
 # EVEXIA Portal
 
-EVEXIA Life Sciences portal with a protected Admin workspace, mock MR/Doctor login screens, browser-local demonstration masters, and a FastAPI authentication/API service. Admin authentication and Staff Management use the backend; unrelated masters remain browser-local.
+EVEXIA Life Sciences portal with a protected Admin workspace, mock MR/Doctor login screens, browser-local demonstration masters, and a FastAPI authentication/API service. Admin authentication, Staff Management and Zone Master use the backend; unrelated masters remain browser-local.
 
 ## Run & operate
 
@@ -20,7 +20,7 @@ EVEXIA Life Sciences portal with a protected Admin workspace, mock MR/Doctor log
 - The Admin form authenticates against the FastAPI API. Access tokens are memory-only; rotating refresh credentials use an HttpOnly cookie. Login credentials are never stored in browser storage. MR/Doctor login screens remain mock-only.
 - Super Admin profile > Sessions & Activity Logs (`/admin/activity-logs`) is read-only backend reporting. Counts are global registered backend accounts and distinct eligible session owners, not local records or presence. Histories use server filters and UTC dates; no private history is persisted in browser storage. See the backend README for scope and pagination semantics.
 - Both reporting tabs keep independent debounced searches, with search and CSV export in a responsive toolbar outside the tablist. Activity search is literal, case-insensitive and bounded to 100 characters, matches safe displayed metadata and explicit friendly labels, and uses identical server matching for pages and the existing 5,000-row export. Keep backend reporting label aliases aligned with the page's action/resource labels; portable CSVs still exclude references.
-- Zone Master records are stored only in the browser's localStorage, not shared across browsers or users. Clearing browser data removes them.
+- Zone Master is shared FastAPI/PostgreSQL persistence, protected by system Super Admin `admin.access`. No local migration or mirroring occurs. MR/Doctor/Patient/Sales Target demo assignments still use the separate legacy browser-local zones. See `docs/zone-master.md` for soft deletion, import/export limits and initialization.
 - Settings > Communication is a demo-only Email (SMTP/API/unconnected platform), SMS and WABA metadata preview. Use dummy values only. No provider is connected, verified or contacted. Password/key/token preview inputs are transient and never saved; endpoint metadata uses HTTPS without embedded credentials, query strings or fragments. Communication resets affect only its dedicated browser-local metadata, not other settings or master records.
 - Staff Management is server-backed and requires protected system Super Admin `staff.manage`. Names/emails/phones are encrypted with dedicated operator-managed AES-GCM keys and a separate keyed email index; missing keys fail staff operations closed without breaking login. User credentials are atomically provisioned with no plaintext User.email and no system role: staff cannot sign in, and business “Super Admin” labels grant no privileges. User ID is immutable; a generated initial password is shown once only, never saved in browser storage or exported. Existing local staff storage is untouched and unused. CSV import and invitation controls are unavailable. Designation Master remains browser-local; its selected label is metadata only. See `docs/staff-security.md` for configuration, migration and manual handoff.
 
@@ -45,7 +45,7 @@ EVEXIA Life Sciences portal with a protected Admin workspace, mock MR/Doctor log
 ## Release validation
 
 - `pnpm run build` runs `pnpm run validate:release` automatically before typechecking or producing build output. A failed service or browser test blocks the build. The direct artifact `build` command is for compilation only, not release approval.
-- The gate runs authentication, staff CSV/validation and preference service checks, then the authenticated browser suites including Staff Management in one isolated harness/Playwright invocation. It is registered as the project's `release` validation command.
+- The gate runs authentication (including Zone transport), staff CSV/validation and preference service checks, then the authenticated browser suites including Staff Management and Zone Master in one isolated harness/Playwright invocation. It is registered as the project's `release` validation command. Backend parser/API/migration/race checks run with `pnpm run test:api-foundation`.
 - The harness starts Vite in dev mode because the template-preferences spec imports a Vite source module. It does not depend on or alter a managed workflow or its database.
 - Set `EVEXIA_CHROMIUM_PATH` when a specific supported Chromium executable is needed. Otherwise the gate selects `chromium` / `chromium-browser` from PATH, falling back to Playwright's installed Chromium. Missing or invalid browser executables fail the gate.
 - Outside Replit, run `EVEXIA_CHROMIUM_PATH=/path/to/chromium pnpm run build` (omit the executable override when using installed Playwright Chromium).
@@ -60,7 +60,7 @@ EVEXIA Life Sciences portal with a protected Admin workspace, mock MR/Doctor log
 - `artifacts/evexia-portal/src/pages/` — landing, login, and not-found pages
 - `artifacts/evexia-portal/src/index.css` — styling and responsive rules
 - `artifacts/evexia-portal/src/components/admin/`, `src/pages/admin/`, and `src/admin.css` — Admin shell and Zone Master UI
-- `artifacts/evexia-portal/src/services/zones.js`, `src/hooks/useZones.js` — local Zone Master data and state
+- `artifacts/evexia-portal/src/services/serverZones.js`, `src/hooks/useZones.js` — shared Zone Master transport and state; `src/services/zones.js` remains the untouched legacy demo dataset for unrelated masters.
 - `artifacts/evexia-portal/public/images/` — coordinated role photography
 
 ## Assets
