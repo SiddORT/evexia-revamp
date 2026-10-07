@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
@@ -19,7 +20,7 @@ function details(by, at) {
 }
 
 export default function ProductCategoryMaster() {
-  useAdminPreferences();
+  const { theme, appearance } = useAdminPreferences();
   const [, navigate] = useLocation();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
@@ -28,7 +29,7 @@ export default function ProductCategoryMaster() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const { records, total, filtered, loading, pending, error, feedback, clearFeedback, retry, remove, changeStatus } = useServerProductCategories(search, filter, page, pageSize, minPrice, maxPrice);
-  const [format, setFormat] = useState('csv');
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const busy = useRef(false);
   const alive = useRef(true);
@@ -58,7 +59,7 @@ export default function ProductCategoryMaster() {
     if (result.success) { setConfirming(null); setActionError(''); }
     else { setActionError(result.error); setBlocked(result.code === 'product_category_stale' || Boolean(result.ambiguous) || result.code === 'not_found'); }
   }
-  async function exportVisible() {
+  async function exportVisible(format) {
     if (error || loading || busy.current) return;
     busy.current = true; setActionError(''); setExporting(true);
     const guard = reportingIdentityGuard();
@@ -69,7 +70,7 @@ export default function ProductCategoryMaster() {
       if (alive.current) downloadProductCategoryFile(blob, format);
     } catch (cause) {
       try { guard(); } catch { return; }
-      if (alive.current) setActionError(`Export failed. ${cause.message}`);
+      if (alive.current) setActionError(`Export failed (${format === 'xlsx' ? 'Excel' : 'CSV'}). ${cause.message}`);
     } finally { busy.current = false; if (alive.current) setExporting(false); }
   }
   function actions(record, mobile = false) {
@@ -95,8 +96,19 @@ export default function ProductCategoryMaster() {
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Directory</p><h1>Product Category Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Clearing browser data does not remove categories.</p></div>
       <div className="admin-mr-head-actions">
         <button className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/product-category')}><Upload size={16} /> Import data</button>
-        <label className="admin-filter">Export format<select aria-label="Product category export format" className="admin-select" value={format} disabled={exporting} onChange={(event) => setFormat(event.target.value)}><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option></select></label>
-        <button className="admin-button admin-button--secondary" disabled={loading || Boolean(error) || exporting} onClick={exportVisible}><Download size={16} />{exporting ? 'Exporting…' : 'Export data'}</button>
+        <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !busy.current) setExportMenuOpen(open); }}>
+          <DropdownMenu.Trigger asChild>
+            {/* Pending stays focusable for close-focus return. The synchronous
+                guard and controlled menu prevent reopening or duplicate downloads. */}
+            <button type="button" className="admin-button admin-button--secondary" disabled={loading || Boolean(error)} aria-disabled={exporting || undefined} data-testid="button-export-categories"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content className="admin-dropdown__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} style={{ maxWidth: 'calc(100vw - 24px)' }} aria-label="Product category export format">
+              <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void exportVisible('csv')}>CSV</DropdownMenu.Item>
+              <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void exportVisible('xlsx')}>Excel (.xlsx)</DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
         <button className="admin-button" onClick={() => navigate(`${LIST}/new`)}><Plus size={16} /> Add category</button>
       </div>
     </div>

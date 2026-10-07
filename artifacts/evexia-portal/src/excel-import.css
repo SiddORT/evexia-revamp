@@ -65,6 +65,13 @@
 }
 
 /* Address values and backup headings must wrap without widening the cards. */
+.excel-import--product-category :is(.excel-import__card, .excel-import__report, .excel-import__report-head > div) { min-width: 0; overflow-wrap: anywhere; }
+.excel-import--product-category .excel-import__picker { box-sizing: border-box; }
+.excel-import--product-category .excel-import__picker span { min-width: 0; }
+.excel-import--product-category svg { flex-shrink: 0; }
+.excel-import--product-category .excel-import__row dl > div { min-width: 0; }
+.excel-import--product-category :is(button, summary):focus-visible,
+.excel-import--product-category .excel-import__picker:has(input:focus-visible) { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
 .excel-import--storage-location :is(.excel-import__card, .excel-import__report, .excel-import__results > div) { min-width: 0; overflow-wrap: anywhere; }
 .excel-import--storage-location .excel-import__columns { min-width: 0; box-sizing: border-box; }
 .excel-import--storage-location .excel-import__picker { max-width: 100%; box-sizing: border-box; }
