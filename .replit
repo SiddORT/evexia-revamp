@@ -41,4 +41,11 @@ timeoutMs = 180000
 
 [nix]
 channel = "stable-25_05"
-packages = ["cargo", "freetype", "lcms2", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "openssl", "pkg-config", "postgresql", "rustc", "tcl", "tk", "zlib"]
+packages = ["cargo", "freetype", "lcms2", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "openssl", "pkg-config", "postgresql", "rustc", "tcl", "tk", "zlib", "patchelf", "libavif", "icu74", "enchant", "hyphen", "libsecret", "libmanette"]
+
+[userenv]
+
+[userenv.development]
+EVEXIA_NIX_BROWSER_LIBRARY_SOURCE = "/nix/store/q70d15vcgipibv45yxp44hdjfhdmdmg5-playwright-browsers"
+EVEXIA_NIX_BROWSER_LOADER = "/repl/tools/qqiqd3ah10x8hzsif4j1y4xc1miw23nx-glibc-2.42-67/lib/ld-linux-x86-64.so.2"
+EVEXIA_NIX_DOWNLOAD_ENGINES = "1"

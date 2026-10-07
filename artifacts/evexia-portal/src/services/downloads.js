@@ -34,7 +34,7 @@ export async function downloadBlob(blob, filename, metadata, { guard = reporting
     signal?.throwIfAborted();
     releaseBlob(blob, filename, operation.guard);
   } catch (cause) {
-    if (accepted) throw new Error('Initiation was recorded, but the browser handoff was cancelled or failed. Retry after signing in to initiate another download.');
+    if (accepted) throw new Error(`Initiation was recorded, but the browser handoff was cancelled or failed. ${cause?.status === 401 ? 'Your session changed. Sign in again, then retry to initiate another download.' : 'Retry to initiate another download.'}`);
     throw new Error(`No file was released. Download logging could not be confirmed. Retry this action. ${cause.message || ''}`);
   } finally {
     operation.busy = false;

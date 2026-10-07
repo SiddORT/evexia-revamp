@@ -8,6 +8,12 @@ ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 for tool in initdb pg_ctl createdb python3 curl node pnpm; do
   command -v "$tool" >/dev/null || { echo "Missing authenticated-preview prerequisite: $tool" >&2; exit 1; }
 done
+if [ "${EVEXIA_NIX_DOWNLOAD_ENGINES:-}" = "1" ]; then
+  case "$*" in
+    ""|*download-logs.preview.spec.mjs*)
+      (cd "$ROOT" && node scripts/prepare-nix-download-browsers.mjs) ;;
+  esac
+fi
 
 # All runs use the same synthetic account and single-session policy. Fixed
 # ports let concurrent checks accidentally share an API and revoke each other.
@@ -133,5 +139,22 @@ if [ "$#" -eq 0 ]; then
 fi
 echo "Running authenticated browser previews against an isolated synthetic PostgreSQL/API fixture (API $API_PORT, portal $PORT)."
 # Intentional word splitting: callers may supply one or more Playwright spec paths.
-# shellcheck disable=SC2086
-pnpm exec playwright test $SPECS --workers=1 --output="$RESULTS"
+# Download regressions must run in all three engines, including on the default
+# release path. Keep unrelated specs in their existing Chromium configuration.
+# Run sequentially: concurrent projects would replace the synthetic session.
+OTHER_SPECS=
+DOWNLOADS=0
+for spec in $SPECS; do
+  case "$spec" in
+    */download-logs.preview.spec.mjs) DOWNLOADS=1 ;;
+    *) OTHER_SPECS="$OTHER_SPECS $spec" ;;
+  esac
+done
+if [ -n "$OTHER_SPECS" ]; then
+  # shellcheck disable=SC2086
+  pnpm exec playwright test $OTHER_SPECS --workers=1 --output="$RESULTS/chromium-previews"
+fi
+if [ "$DOWNLOADS" -eq 1 ]; then
+  echo "Download gate: Chromium, Firefox and WebKit (Safari engine, not native Safari). Missing engines are failures."
+  pnpm exec playwright test --config=playwright.downloads.config.mjs --workers=1 --output="$RESULTS/download-matrix"
+fi

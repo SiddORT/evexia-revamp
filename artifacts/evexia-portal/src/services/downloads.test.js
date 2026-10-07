@@ -5,6 +5,7 @@ import { join } from 'node:path';
 globalThis.BroadcastChannel = undefined;
 const auth = await import('../auth/adminSession.js');
 const { downloadBlob, downloadServerBlob } = await import('./downloads.js');
+const { releaseBlob } = await import('./downloadRelease.js');
 const { buildInvoicePdf } = await import('./poInvoicePdf.js');
 
 test('release waits for durable metadata acceptance; retries, repeat clicks, privacy and identity changes', async () => {
@@ -66,6 +67,35 @@ test('release waits for durable metadata acceptance; retries, repeat clicks, pri
     assert.equal(clicks, clicksBefore);
   } finally {
     await auth.logoutAdmin();
+    URL.createObjectURL = create; URL.revokeObjectURL = revoke;
+    delete globalThis.document;
+  }
+});
+
+test('handoff guards run before URL creation and again before click; refused handoffs clean up', async () => {
+  const create = URL.createObjectURL, revoke = URL.revokeObjectURL;
+  let creates = 0, clicks = 0, removes = 0, revokes = 0;
+  globalThis.document = {
+    createElement: () => ({ click() { clicks++; }, remove() { removes++; } }),
+    body: { appendChild() {} },
+  };
+  URL.createObjectURL = () => { creates++; return 'blob:synthetic-handoff'; };
+  // Earlier test handoffs have delayed cleanup too; count only this test's URL.
+  URL.revokeObjectURL = (url) => { if (url === 'blob:synthetic-handoff') revokes++; };
+  try {
+    for (const failAt of [1, 2]) {
+      let guards = 0;
+      assert.throws(() => releaseBlob(new Blob(['synthetic']), 'synthetic.csv', () => {
+        if (++guards === failAt) throw Object.assign(new Error('session changed'), { status: 401 });
+      }), /recorded.*handoff failed.*Retry.*Your session changed/);
+      assert.equal(guards, failAt);
+      assert.equal(clicks, 0);
+    }
+    assert.equal(creates, 1); // the first guard prevented any object URL
+    assert.equal(removes, 2);
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+    assert.equal(revokes, 1);
+  } finally {
     URL.createObjectURL = create; URL.revokeObjectURL = revoke;
     delete globalThis.document;
   }
