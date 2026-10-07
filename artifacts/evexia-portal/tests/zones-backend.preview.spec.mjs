@@ -280,6 +280,56 @@ test('prepared Zone cards and master tabs retain preview semantics in desktop/mo
   await expect(page.getByRole('button', { name: 'Download Excel template' })).toBeVisible();
 });
 
+test('Zone export menu is compact and right-aligned across themes without resizing the profile menu', async ({ page }) => {
+  test.setTimeout(90000);
+  await open(page);
+  for (const theme of ['classic', 'modern']) {
+    for (const appearance of ['light', 'dark']) {
+      for (const width of [1440, 320]) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.evaluate(async ({ theme, appearance }) => {
+          const preferences = await import('/src/components/admin/adminPreferences.js');
+          preferences.setAdminPreference('theme', theme);
+          preferences.setAdminPreference('appearance', appearance);
+        }, { theme, appearance });
+        const trigger = page.getByTestId('button-export-zones');
+        await trigger.click();
+        const menu = page.getByRole('menu', { name: 'Export data', exact: true });
+        await expect(menu).toHaveAttribute('data-admin-theme', theme);
+        await expect(menu).toHaveAttribute('data-admin-appearance', appearance);
+        const bounds = await menu.boundingBox();
+        const button = await trigger.boundingBox();
+        expect(bounds.width).toBeCloseTo(150, 0);
+        expect(bounds.x).toBeGreaterThanOrEqual(12);
+        expect(bounds.x + bounds.width).toBeLessThanOrEqual(width - 12);
+        expect(bounds.x + bounds.width).toBeCloseTo(button.x + button.width, 0);
+        expect(bounds.y).toBeCloseTo(button.y + button.height + 6, 0);
+        for (const label of ['CSV', 'Excel (.xlsx)']) {
+          const item = menu.getByRole('menuitem', { name: label, exact: true });
+          await expect(item).toBeVisible();
+          expect(await item.evaluate((node) => {
+            const range = document.createRange();
+            range.selectNodeContents(node);
+            const text = range.getBoundingClientRect(), item = node.getBoundingClientRect();
+            return text.left >= item.left && text.right <= item.right && text.height <= item.height;
+          })).toBe(true);
+        }
+        await page.screenshot({ path: test.info().outputPath(`zone-export-${theme}-${appearance}-${width}.png`) });
+        await page.keyboard.press('Escape');
+        await expect(menu).toHaveCount(0);
+        await expect(trigger).toBeFocused();
+        await page.getByTestId('button-admin-profile').click();
+        const profile = page.getByRole('menu');
+        expect((await profile.boundingBox()).width).toBeCloseTo(238, 0);
+        await expect(profile.getByText('Authenticated Super Admin')).toBeVisible();
+        await expect(profile.getByRole('menuitem', { name: 'Settings', exact: true })).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(profile).toHaveCount(0);
+      }
+    }
+  }
+});
+
 test('Zone export menu handles keyboard, dismissal, pending guards, failures and late identity changes', async ({ page }) => {
   test.setTimeout(90000);
   await open(page);
@@ -315,7 +365,13 @@ test('Zone export menu handles keyboard, dismissal, pending guards, failures and
   await trigger.click();
   await page.getByRole('menuitem', { name: 'Excel (.xlsx)', exact: true }).click();
   await expect(trigger).toBeDisabled();
+  // aria-disabled guards actions without disabling the focus-return destination.
+  expect(await trigger.evaluate((node) => node.disabled)).toBe(false);
+  await expect(trigger).toBeFocused();
+  await trigger.press('ArrowDown');
+  await expect(page.getByRole('menu')).toHaveCount(0);
   await trigger.dispatchEvent('click');
+  await expect(page.getByRole('menu')).toHaveCount(0);
   await expect.poll(() => exports).toBe(1);
   release();
   await expect(page.getByRole('alert')).toContainText('Export failed (Excel).');

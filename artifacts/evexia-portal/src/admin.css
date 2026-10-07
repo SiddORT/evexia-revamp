@@ -199,6 +199,7 @@
 .admin-shell[data-admin-theme="modern"] .admin-profile__avatar { background: var(--admin-state-soft); color: var(--admin-secondary); }
 .admin-profile__name { font-size: 12px; font-weight: 700; }
 .admin-profile__menu { z-index: 60; width: 238px; padding: 7px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); box-shadow: var(--shadow-soft); }
+.admin-zone-export__menu { width: 150px; }
 .admin-profile__identity { padding: 12px 11px 15px; display: grid; gap: 4px; }
 .admin-profile__identity strong { font-size: 13px; }
 .admin-profile__identity span { color: var(--ink-soft); font-size: 11px; }
