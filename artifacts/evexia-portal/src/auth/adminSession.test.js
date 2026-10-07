@@ -200,6 +200,49 @@ test('staff permission is explicit and delayed responses cannot survive logout',
   await assert.rejects(read, /session changed/i);
 });
 
+for (const replacement of ['none', 'different identity', 'same identity']) {
+  test(`staff body decoding rejects the old payload after logout with ${replacement === 'none' ? 'no new sign-in' : `a new sign-in for the ${replacement}`}`, async (t) => {
+    const identity = { ...user, permissions: ['admin.access', 'staff.manage'] };
+    const nextIdentity = replacement === 'different identity'
+      ? { ...identity, id: 'synthetic-replacement-id', email: 'replacement@example.test' }
+      : identity;
+    let currentIdentity = identity;
+    let release, start;
+    const started = new Promise((resolve) => { start = resolve; });
+    const body = new Promise((resolve) => { release = resolve; });
+    const api = await setup(async (url) => {
+      if (url.includes('/admin/staff')) return {
+        ok: true, status: 200,
+        // Fetch has delivered the headers. Only body decoding is held, and
+        // this synthetic response intentionally does not react to aborts.
+        json: async () => { start(); return body; },
+      };
+      if (url.endsWith('/logout')) return reply(null, 204);
+      return reply(url.endsWith('/me') ? currentIdentity : { ...payload, user: currentIdentity });
+    });
+    t.after(async () => { release({ items: [] }); await api.logoutAdmin(); });
+    await api.loginAdmin(identity.email, 'synthetic-password', false);
+    const read = api.staffRequest();
+    await started;
+    await api.logoutAdmin();
+    assert.equal(api.getSession().status, 'anonymous');
+    assert.equal(api.getSession().user, null);
+    if (replacement !== 'none') {
+      currentIdentity = nextIdentity;
+      await api.loginAdmin(nextIdentity.email, 'synthetic-password', false);
+      assert.equal(api.getSession().status, 'authenticated');
+      assert.equal(api.getSession().user.id, nextIdentity.id);
+      assert.ok(api.getSession().user.permissions.includes('staff.manage'));
+    }
+    const rejected = assert.rejects(read, (error) =>
+      error instanceof api.SessionError && error.status === 401 && /session changed/i.test(error.message));
+    release({ items: [{ id: 'synthetic-staff-id', name: 'Previous session protected staff' }] });
+    await rejected;
+    assert.equal(api.getSession().status, replacement === 'none' ? 'anonymous' : 'authenticated');
+    assert.equal(api.getSession().user?.id, replacement === 'none' ? undefined : nextIdentity.id);
+  });
+}
+
 test('staff search is a no-store body-only read, safely retryable and never replayed automatically', async () => {
   let searches = 0;
   const identity = { ...user, permissions: ['admin.access', 'staff.manage'] };
