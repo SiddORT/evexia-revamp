@@ -20,6 +20,18 @@ test('CSV is allowlisted, credential-free and formula-protected', () => {
   assert.ok(!/internal-|never-/.test(csv));
   assert.match(csv, /User ID/);
 });
+test('CSV includes every supplied loaded record without applying another search or page limit', () => {
+  const loaded = Array.from({ length: 100 }, (_, index) => ({
+    ...staff, name: `Loaded member ${index + 1}`, userId: `st_loaded_${index + 1}`,
+  }));
+  const before = structuredClone(loaded);
+  const csv = exportStaffCSV(loaded);
+  assert.equal(csv.trim().split('\r\n').length, 101);
+  assert.ok(csv.includes('"st_loaded_1"'));
+  assert.ok(csv.includes('"st_loaded_100"'));
+  assert.ok(!csv.includes('"st_loaded_101"'));
+  assert.deepEqual(loaded, before);
+});
 test('legacy staff key remains an identifier only', () => {
   assert.equal(STAFF_KEY, 'evexia.admin.staff.v1');
 });

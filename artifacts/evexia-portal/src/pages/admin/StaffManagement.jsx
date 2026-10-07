@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
 import { Download, Eye, EyeOff, Pencil, Plus, RefreshCw, Search, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
@@ -132,7 +132,6 @@ export default function StaffManagement() {
   const [designationError, setDesignationError] = useState('');
   const [feedback, setFeedback] = useState('');
   const [actionError, setActionError] = useState('');
-  const [search, setSearch] = useState('');
   const [editing, setEditing] = useState(undefined);
   const [credentials, setCredentials] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -144,8 +143,7 @@ export default function StaffManagement() {
   const request = useRef(null);
   const mutationGate = useRef(false);
   const alive = useRef(true);
-  const visible = useMemo(() => records.filter((record) => FIELDS.some((key) => String(record[key] ?? '').toLowerCase().includes(search.trim().toLowerCase()))), [records, search]);
-  const pagination = useTablePagination(visible);
+  const pagination = useTablePagination(records);
   const blocked = Boolean(error || loading || busy);
 
   async function refresh(nextOffset = offset, scope = directory) {
@@ -178,7 +176,7 @@ export default function StaffManagement() {
     void refresh(0);
     const unsubscribe = subscribeSession(() => {
       if (getSession().status !== 'authenticated') setCredentials(null);
-      if (!getSession().user) { request.current?.abort(); setRecords([]); setDirectory(null); setDirectoryTerm(''); setSearch(''); setEditing(undefined); }
+      if (!getSession().user) { request.current?.abort(); setRecords([]); setDirectory(null); setDirectoryTerm(''); setEditing(undefined); }
     });
     const updateDesignations = () => {
       try { setDesignations(loadDesignations()); setDesignationError(''); }
@@ -220,12 +218,10 @@ export default function StaffManagement() {
   function beginDirectorySearch(event) {
     event.preventDefault();
     if (busy || loading || directoryTerm.trim().length < 2) return;
-    setSearch('');
     void refresh(0, { query: directoryTerm.trim(), cursor: null, checked: 0 });
   }
   function clearDirectorySearch() {
     setDirectoryTerm('');
-    setSearch('');
     void refresh(0, null);
   }
   async function edit(record) {
@@ -236,7 +232,7 @@ export default function StaffManagement() {
     catch (cause) { if (alive.current) setActionError(cause.message); }
   }
   function exportRows() {
-    try { reportingIdentityGuard()(); downloadCSV(exportStaffCSV(visible)); }
+    try { reportingIdentityGuard()(); downloadCSV(exportStaffCSV(records)); }
     catch (cause) { setActionError(cause.message); }
   }
   const rowActions = (record, mobile = false) => <button type="button" className="admin-icon-button" title={`Edit ${record.name}`} aria-label={`Edit ${record.name}`} disabled={blocked || Boolean(designationError)} onClick={() => edit(record)} data-testid={`button-edit-staff-${mobile ? 'mobile-' : ''}${record.id}`}><Pencil size={16} aria-hidden="true" /></button>;
@@ -258,7 +254,7 @@ export default function StaffManagement() {
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">People / Directory</p><h1>Staff Management</h1><p className="admin-page-head__description">Server-backed staff directory. Directory status and business role labels do not grant sign-in or permissions.</p></div><div className="admin-staff-actions">
       <button type="button" className="admin-button admin-button--secondary" onClick={() => refresh()} disabled={busy || loading} data-testid="button-refresh-staff"><RefreshCw size={16} aria-hidden="true" /> Refresh records</button>
       <button type="button" className="admin-button admin-button--secondary" disabled title="CSV bulk account provisioning is unavailable in this phase." data-testid="button-import-staff"><Upload size={16} aria-hidden="true" /> Import unavailable</button>
-      <button type="button" className="admin-button admin-button--secondary" onClick={exportRows} disabled={blocked || !visible.length} data-testid="button-export-staff"><Download size={16} aria-hidden="true" /> Export displayed records</button>
+      <button type="button" className="admin-button admin-button--secondary" onClick={exportRows} disabled={blocked || !records.length} data-testid="button-export-staff"><Download size={16} aria-hidden="true" /> Export loaded records</button>
       <button type="button" className="admin-button" onClick={() => edit(null)} disabled={blocked || Boolean(designationError)} data-testid="button-add-staff"><Plus size={16} aria-hidden="true" /> Add staff</button>
     </div></div>
     {feedback && <div className="admin-feedback" role="status">{feedback}</div>}
@@ -273,21 +269,20 @@ export default function StaffManagement() {
       </form>
       <p id="staff-directory-search-help" className="admin-feedback">Directory search checks name, local phone digits, user ID, email, country, role, designation, joining date and status (case-insensitive partial match). Each step checks up to 500 records and returns up to 100 matches. Continue until complete. Export covers only the loaded results, not the whole directory.</p>
       {directory && <div className="admin-feedback" role="status" data-testid="status-directory-search-staff">Directory search active: “{directory.query}”. {directory.checked + (directory.scanned || 0)} records checked. {loading ? 'Checking this section…' : error ? 'Search interrupted; retry this section.' : hasMore ? 'More records remain unchecked.' : 'Search complete.'} Results are not a snapshot; restart after directory changes.</div>}
-      <div className="admin-toolbar"><div className="admin-toolbar__fields"><label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search displayed staff</span><input value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Filter only loaded records" data-testid="input-search-staff" /></label></div></div>
       {loading ? <div className="admin-empty" role="status">Loading staff records…</div> : error ? <div className="admin-empty" role="alert"><strong>Staff records could not be loaded</strong><p>{error}</p><button type="button" className="admin-button" onClick={() => refresh()} data-testid="button-retry-staff">Retry loading</button></div> : <>
-        {visible.length ? <><div className="admin-staff-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} label="Staff records" testIdPrefix="staff" /></div><div className="admin-staff-mobile" role="list" aria-label="Staff records">{pagination.pageRows.map((record, index) => <article className="admin-staff-card" role="listitem" key={record.id} data-testid={`card-staff-${record.id}`}><div className="admin-staff-card__head"><div><small>#{pagination.startIndex + index + 1} · {record.userId}</small><h2>{record.name}</h2></div></div><dl className="admin-staff-card__meta">{['phone', 'userId', 'email', 'role', 'dateOfJoining', 'designation', 'status'].map((key) => <div key={key}><dt>{LABELS[key]}</dt><dd>{key === 'phone' ? <StaffPhone record={record} mobile /> : key === 'dateOfJoining' ? formatAdminDate(record.dateOfJoining) : record[key]}</dd></div>)}<div><dt>Created details</dt><dd>{audit(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated details</dt><dd>{audit(record.updatedBy, record.updatedAt)}</dd></div></dl><div className="admin-staff-card__actions">{rowActions(record, true)}<button type="button" role="switch" aria-checked={record.status === 'active'} className="admin-staff-status" disabled={blocked} onClick={() => toggle(record)} data-testid={`switch-staff-mobile-status-${record.id}`}><span className="admin-staff-status__track" aria-hidden="true" />{record.status === 'active' ? 'Active' : 'Inactive'}</button></div></article>)}</div></> : <div className="admin-empty" data-testid="status-staff-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{directory ? (records.length ? 'No matches in the loaded results filter' : hasMore ? 'No matches in this section' : 'No matches in this final section') : records.length ? 'No matching staff members' : 'No staff members yet'}</strong><p>{directory ? (hasMore ? 'Continue search to check the remaining directory.' : 'Search complete. Earlier sections may contain matches; restart to review them or try another term.') : records.length ? 'Try a different search term.' : 'Add a staff member to begin the server-backed directory.'}</p></div>}
-        <TablePagination {...pagination} filtered={visible.length} total={records.length} label="staff members in loaded batch" onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-staff-count" />
+        {records.length ? <><div className="admin-staff-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} label="Staff records" testIdPrefix="staff" /></div><div className="admin-staff-mobile" role="list" aria-label="Staff records">{pagination.pageRows.map((record, index) => <article className="admin-staff-card" role="listitem" key={record.id} data-testid={`card-staff-${record.id}`}><div className="admin-staff-card__head"><div><small>#{pagination.startIndex + index + 1} · {record.userId}</small><h2>{record.name}</h2></div></div><dl className="admin-staff-card__meta">{['phone', 'userId', 'email', 'role', 'dateOfJoining', 'designation', 'status'].map((key) => <div key={key}><dt>{LABELS[key]}</dt><dd>{key === 'phone' ? <StaffPhone record={record} mobile /> : key === 'dateOfJoining' ? formatAdminDate(record.dateOfJoining) : record[key]}</dd></div>)}<div><dt>Created details</dt><dd>{audit(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated details</dt><dd>{audit(record.updatedBy, record.updatedAt)}</dd></div></dl><div className="admin-staff-card__actions">{rowActions(record, true)}<button type="button" role="switch" aria-checked={record.status === 'active'} className="admin-staff-status" disabled={blocked} onClick={() => toggle(record)} data-testid={`switch-staff-mobile-status-${record.id}`}><span className="admin-staff-status__track" aria-hidden="true" />{record.status === 'active' ? 'Active' : 'Inactive'}</button></div></article>)}</div></> : <div className="admin-empty" data-testid="status-staff-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{directory ? (hasMore ? 'No matches in this section' : 'No matches in this final section') : offset ? 'No staff members in this batch' : 'No staff members yet'}</strong><p>{directory ? (hasMore ? 'Continue search to check the remaining directory.' : 'Search complete. Earlier sections may contain matches; restart to review them or try another term.') : offset ? 'Return to a previous batch or search the directory.' : 'Add a staff member to begin the server-backed directory.'}</p></div>}
+        <TablePagination {...pagination} filtered={records.length} total={records.length} label={directory ? 'staff matches in loaded section' : 'staff members in loaded batch'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-staff-count" />
         <footer className="admin-staff-batch-footer" data-testid="staff-batch-footer">
           <div className="admin-staff-batch-footer__summary">
             <strong data-testid="text-staff-batch-summary">{directory
               ? `${records.length} ${records.length === 1 ? 'match' : 'matches'} loaded in this section`
               : records.length ? `Server records ${offset + 1}–${offset + records.length}`
                 : offset ? 'No staff records in this batch' : 'No staff records yet'}</strong>
-            <p>{directory ? 'Filter and export apply to this section only.' : 'Filter and export apply to this batch. Search directory for other records.'}</p>
+            <p>{directory ? 'Export includes this loaded search section only, not the whole directory.' : 'Export includes this loaded batch only. Search directory for other records.'}</p>
           </div>
           {directory ? <nav className="admin-staff-batch-footer__controls" aria-label="Directory search sections"><button type="button" className="admin-button admin-button--secondary" disabled={blocked} onClick={() => refresh(0, { query: directory.query, cursor: null, checked: 0 })} data-testid="button-restart-directory-search-staff">Restart search</button>
-          <button type="button" className="admin-button admin-button--secondary" disabled={blocked || !directory.history?.length} onClick={() => { setSearch(''); const history = directory.history; void refresh(0, { query: directory.query, ...history.at(-1), history: history.slice(0, -1) }); }} data-testid="button-previous-directory-search-staff">Previous search section</button>
-          <button type="button" className="admin-button admin-button--secondary" disabled={blocked || !hasMore} onClick={() => { setSearch(''); void refresh(0, { query: directory.query, cursor: directory.nextCursor, checked: directory.checked + directory.scanned, history: [...(directory.history || []), { cursor: directory.cursor, checked: directory.checked }] }); }} data-testid="button-continue-directory-search-staff">Continue search</button></nav>
+          <button type="button" className="admin-button admin-button--secondary" disabled={blocked || !directory.history?.length} onClick={() => { const history = directory.history; void refresh(0, { query: directory.query, ...history.at(-1), history: history.slice(0, -1) }); }} data-testid="button-previous-directory-search-staff">Previous search section</button>
+          <button type="button" className="admin-button admin-button--secondary" disabled={blocked || !hasMore} onClick={() => { void refresh(0, { query: directory.query, cursor: directory.nextCursor, checked: directory.checked + directory.scanned, history: [...(directory.history || []), { cursor: directory.cursor, checked: directory.checked }] }); }} data-testid="button-continue-directory-search-staff">Continue search</button></nav>
           : <nav className="admin-staff-batch-footer__controls" aria-label="Staff directory batches"><button type="button" className="admin-button admin-button--secondary" disabled={blocked || !offset} onClick={() => refresh(Math.max(0, offset - 100))}>Previous batch</button><button type="button" className="admin-button admin-button--secondary" disabled={blocked || !hasMore || offset >= 10000} onClick={() => refresh(offset + 100)}>Next batch</button></nav>}
         </footer>
       </>}
