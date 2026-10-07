@@ -100,43 +100,68 @@ for (const mobile of [false, true]) {
 test('courier complete filtered CSV/XLSX export and explicit transactional import', async ({ page }) => {
   await open(page);
   for (const suffix of ['alpha', 'beta', 'gamma']) await create(page, 'Courier export synthetic ' + suffix);
+  await page.evaluate(async () => {
+    const { createCourier } = await import('/src/services/serverCouriers.js');
+    await createCourier({ name: 'Courier export synthetic excluded inactive', status: 'inactive' });
+    await createCourier({ name: 'Unrelated export synthetic', status: 'active' });
+  });
   await page.getByTestId('input-search-courier-partners').fill('Courier export synthetic');
+  await page.getByTestId('select-filter-courier-partners').selectOption('active');
   await page.getByLabel('Rows per page').selectOption('2');
   await expect(page.getByTestId('text-courier-partner-count')).toContainText('of 3');
   for (const format of ['csv', 'xlsx']) {
-    await page.getByLabel('Courier export format').selectOption(format);
-    const download = page.waitForEvent('download');
     await page.getByTestId('button-export-courier-partners').click();
+    const download = page.waitForEvent('download');
+    await page.getByRole('menuitem', { name: format === 'csv' ? 'CSV' : 'Excel (.xlsx)', exact: true }).click();
     const result = await download;
     expect(result.suggestedFilename()).toBe(`evexia-courier-partner-master.${format}`);
     const contents = await readFile(await result.path());
-    if (format === 'csv') for (const suffix of ['alpha', 'beta', 'gamma']) expect(contents.toString()).toContain('Courier export synthetic ' + suffix);
-    else expect(contents.subarray(0, 2).toString()).toBe('PK');
+    if (format === 'csv') {
+      for (const suffix of ['alpha', 'beta', 'gamma']) expect(contents.toString()).toContain('Courier export synthetic ' + suffix);
+      expect(contents.toString()).not.toContain('excluded inactive');
+      expect(contents.toString()).not.toContain('Unrelated export synthetic');
+    }
+    else {
+      expect(contents.subarray(0, 2).toString()).toBe('PK');
+      const rows = await page.evaluate(async (bytes) => {
+        const { readExcelRows } = await import('/src/services/mockExcelImport.js');
+        return (await readExcelRows(new File([new Uint8Array(bytes)], 'export.xlsx'))).map((row) => row.cells);
+      }, [...contents]);
+      for (const suffix of ['alpha', 'beta', 'gamma']) expect(rows.flat()).toContain('Courier export synthetic ' + suffix);
+      expect(rows[0]).toEqual(['Courier Partner Name', 'Status', 'Created By', 'Created At', 'Updated By', 'Updated At']);
+      expect(rows.flat()).not.toContain('crm-admin@allergyevexia.in');
+      expect(rows.flat()).not.toContain('Courier export synthetic excluded inactive');
+      expect(rows.flat()).not.toContain('Unrelated export synthetic');
+    }
   }
   await page.getByTestId('button-import-courier-partners').click();
   await page.getByLabel('Courier CSV or Excel file').setInputFiles({
     name: 'duplicates.csv', mimeType: 'text/csv',
     buffer: Buffer.from('Courier Partner Name,Status\nDuplicate courier,active\nduplicate   courier,inactive'),
   });
-  await page.getByRole('button', { name: 'Review file', exact: true }).click();
+  await page.getByRole('button', { name: 'Upload & review', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Confirm import of 2 courier partners' })).toBeDisabled();
+  await expect(page.locator('.excel-import__valid')).toHaveText('1 valid');
+  await expect(page.locator('.excel-import__invalid')).toHaveText('1 invalid');
+  await expect(page.locator('.excel-import__row--invalid')).toContainText('Row 3');
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Download Excel template' }).click();
+  await page.getByRole('button', { name: 'Download Excel sample' }).click();
   const sample = await download;
   await page.getByLabel('Courier CSV or Excel file').setInputFiles({
     name: 'template.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     buffer: await readFile(await sample.path()),
   });
-  await page.getByRole('button', { name: 'Review file', exact: true }).click();
+  await page.getByRole('button', { name: 'Upload & review', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Confirm import of 2 courier partners' })).toBeEnabled();
   expect(await page.evaluate(async () => (await (await import('/src/services/serverCouriers.js')).listCouriers({ query: 'Example', status: 'all', limit: 10, offset: 0 })).filtered)).toBe(0);
   await page.getByRole('button', { name: 'Confirm import of 2 courier partners' }).click();
   await expect(page.getByRole('status')).toContainText('2 courier partners imported');
+  expect(await page.getByLabel('Courier CSV or Excel file').evaluate((node) => node.files.length)).toBe(0);
   await page.getByLabel('Courier CSV or Excel file').setInputFiles({
     name: 'backup.csv', mimeType: 'text/csv',
     buffer: Buffer.from('\uFEFFCourier Partner Name,Status,Created By,Created At,Updated By,Updated At\nCSV courier synthetic,Inactive,Forged,1900,Forged,1900'),
   });
-  await page.getByRole('button', { name: 'Review file', exact: true }).click();
+  await page.getByRole('button', { name: 'Upload & review', exact: true }).click();
   await page.getByRole('button', { name: 'Confirm import of 1 courier partners' }).click();
   await expect(page.getByRole('status')).toContainText('1 courier partners imported');
   await page.getByRole('button', { name: 'Back to Courier Partner Master' }).click();

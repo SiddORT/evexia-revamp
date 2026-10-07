@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, Pencil, Plus, Search, Trash2, Truck, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
@@ -17,15 +18,18 @@ function details(by, at) {
 }
 
 export default function CourierPartnerMaster() {
-  useAdminPreferences();
+  const { theme, appearance } = useAdminPreferences();
   const [, navigate] = useLocation();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const { records, total, filtered, loading, pending, error, feedback, clearFeedback, retry, add, edit, remove, changeStatus } = useCourierPartners(search, filter, page, pageSize);
-  const [exportFormat, setExportFormat] = useState('csv');
   const [exporting, setExporting] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const exportBusy = useRef(false);
+  const exportMounted = useRef(true);
+  useEffect(() => { exportMounted.current = true; return () => { exportMounted.current = false; }; }, []);
   const [blocked, setBlocked] = useState(false);
   const [editing, setEditing] = useState(null);
   const [confirming, setConfirming] = useState(null);
@@ -60,18 +64,22 @@ export default function CourierPartnerMaster() {
     if (result.success) { setConfirming(null); setActionError(''); }
     else { setActionError(result.error); setBlocked(result.code === 'courier_stale' || Boolean(result.ambiguous)); }
   }
-  async function exportVisible() {
-    if (error || exporting) return;
+  async function exportVisible(format) {
+    if (error || loading || exportBusy.current) return;
+    exportBusy.current = true;
     setActionError('');
     setExporting(true);
     const guard = reportingIdentityGuard();
     try {
-      const blob = await exportCouriers({ query: search, status: filter }, exportFormat);
+      const blob = await exportCouriers({ query: search, status: filter }, format);
       guard();
-      downloadCourierFile(blob, exportFormat);
+      if (exportMounted.current) downloadCourierFile(blob, format);
     } catch (cause) {
-      setActionError(cause.message || 'CSV export failed. Refresh records and try again.');
-    } finally { setExporting(false); }
+      if (exportMounted.current) setActionError(`Export failed (${format === 'xlsx' ? 'Excel' : 'CSV'}). ${cause.message || 'Refresh records and try again.'}`);
+    } finally {
+      exportBusy.current = false;
+      if (exportMounted.current) setExporting(false);
+    }
   }
   function actions(record, mobile = false) {
     const toggle = record.status === 'active' ? 'Inactivate' : 'Activate';
@@ -95,8 +103,18 @@ export default function CourierPartnerMaster() {
       <div><p className="admin-page-head__eyebrow">Masters / Delivery</p><h1>Courier Partner Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Browser data clearing does not remove these courier partners.</p></div>
       <div className="admin-mr-head-actions">
         <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/courier-partner')} data-testid="button-import-courier-partners"><Upload size={16} aria-hidden="true" /> Import data</button>
-        <select aria-label="Courier export format" className="admin-select" value={exportFormat} onChange={(event) => setExportFormat(event.target.value)}><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option></select>
-        <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading || exporting} onClick={exportVisible} data-testid="button-export-courier-partners"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
+        <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>
+          <DropdownMenu.Trigger asChild>
+            {/* Keep the pending trigger focusable for menu close-focus return. */}
+            <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-courier-partners"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content className="admin-profile__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} style={{ maxWidth: 'calc(100vw - 24px)' }} aria-label="Courier export format">
+              <DropdownMenu.Item className="admin-profile__settings" disabled={exporting} onSelect={() => void exportVisible('csv')}>CSV</DropdownMenu.Item>
+              <DropdownMenu.Item className="admin-profile__settings" disabled={exporting} onSelect={() => void exportVisible('xlsx')}>Excel (.xlsx)</DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
         <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); setEditing('new'); }} data-testid="button-add-courier-partner"><Plus size={16} aria-hidden="true" /> Add courier partner</button>
       </div>
     </div>

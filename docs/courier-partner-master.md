@@ -96,6 +96,21 @@ details before retrying; a form's draft remains unchanged.
 
 ## Failure recovery and verification
 
+The existing `/admin/masters/import/courier-partner` URL and Import data action
+open the prepared master-import screen, with Courier Partner selected in the
+shared master tabs. Two numbered cards provide CSV/XLSX samples and authenticated
+upload/review; the report separates valid and invalid rows. Review saves nothing.
+Only an explicit fully-valid confirmation creates records, then clears the file
+picker and reports the actual server count. Switching files discards the old
+review. Same-route session renewal preserves the selected-file draft; navigation
+or a new login cannot reuse an old review.
+
+Export data opens a keyboard-accessible CSV / Excel (.xlsx) menu, not a separate
+format selector. Opening or dismissing the menu never downloads. It exports all
+current name/status matches, not just the visible page. During a pending download
+the trigger remains focusable for menu focus return but cannot reopen or submit
+another download. Failures identify the attempted format.
+
 No automatic replay of mutations. On unknown network/save outcomes, inspect the
 current record/list before retrying. Stale confirmations are blocked until closed
 and refreshed; stale editor drafts can inspect current details before explicit
@@ -112,6 +127,10 @@ directories are isolated; no real credentials or managed databases are used.
 Passing these tests does not prove live migration/bootstrap readiness. Check
 managed-service readiness separately; report missing live prerequisites as
 **BLOCKED**, not passed, and never seed a managed database with test fixtures.
+
+Focused transfer/browser checks:
+`sh scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/couriers-backend.preview.spec.mjs artifacts/evexia-portal/tests/courier-transfers.preview.spec.mjs artifacts/evexia-portal/tests/zones-backend.preview.spec.mjs`.
+The transfer checks are also included in the release gate.
 
 ### Managed-preview prerequisite check (2026-10-07)
 
