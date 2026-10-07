@@ -165,3 +165,75 @@ def test_hashing_revalidates_revoked_actor_before_create(migration_db, monkeypat
         with pytest.raises(AuthError):
             mrs.create(db, identity(db, actor_id, session_id), MRCreate(**fields(hq, zone)))
         assert db.scalar(select(func.count()).select_from(MRDirectory)) == 0
+
+
+def test_maximum_exports_bulk_queries_exact_rows_caps_and_revocation(migration_db, record_property, monkeypatch):
+    import csv
+    import io
+    from openpyxl import load_workbook
+    from mr_projection_fixture import seed_directory, measured_queries
+    engine, _, actor_id, session_id, _, _ = setup(migration_db)
+    with Session(engine) as db:
+        ids = seed_directory(db, actor_id, 5000)
+    for format in ("csv", "xlsx"):
+        # Fresh connection and session for every measurement; no identity-map cache.
+        with engine.connect() as connection, Session(connection) as db:
+            actor = identity(db, actor_id, session_id)
+            with measured_queries(connection) as metric:
+                data = mr_transfer.export(db, actor, "Bulk MR", "all", None, None, format)
+            record_property(f"mr_{format}_queries", len(metric["statements"]))
+            record_property(f"mr_{format}_seconds", metric["seconds"])
+            assert len(metric["statements"]) <= 48
+            assert max(metric["bind_counts"]) <= 500
+            assert metric["seconds"] < (6 if format == "csv" else 12)
+            if format == "csv":
+                exported = list(csv.reader(io.StringIO(data.decode("utf-8-sig"))))
+                assert exported[0] == mr_transfer.HEADERS
+            else:
+                book = load_workbook(io.BytesIO(data), read_only=True)
+                exported = list(book.active.values)
+                book.close()
+                assert list(exported[0]) == mr_transfer.HEADERS + mr_transfer.AUDIT
+            assert len(exported) == 5001  # Complete, not a silently truncated page.
+            # Compare every exported business field, order and optional audit field.
+            rows = list(db.scalars(select(MRDirectory).where(MRDirectory.id.in_(ids)).order_by(
+                MRDirectory.created_at.desc(), MRDirectory.id.desc())))
+            for record, cells in zip(rows, exported[1:]):
+                index = int(record.employeeCode.removeprefix("FIX-"))
+                values = {key: getattr(record, key) for key, _ in mr_transfer.COLUMNS if key != "userId"}
+                values.update(userId=f"fixture.mr.{index}", hq=f"Fixture headquarters {index % 110}",
+                              zoneId=f"Fixture zones {index % 110}",
+                              reportingManagerId=f"user:fixture.mr.{index - 1 if index else 5000}",
+                              createdBy="Super Admin", updatedBy="Backend user",
+                              createdAt=record.created_at, updatedAt=record.updated_at)
+                expected = [str(values[key]) for key, _ in mr_transfer.COLUMNS]
+                if format == "xlsx":
+                    expected += [str(values[key]) for key in ("createdBy", "createdAt", "updatedBy", "updatedAt")]
+                    expected = [value if value else None for value in expected]
+                assert list(cells) == expected
+            assert "inert-fixture-not-a-password-hash" not in str(exported)
+            assert exported[-1][mr_transfer.HEADERS.index("Reporting Manager")] == "user:fixture.mr.5000"
+    # Make the saved tombstone live: one over the real cap must fail, not truncate.
+    with Session(engine) as db:
+        db.execute(text("UPDATE mr_directory SET deleted_at=NULL, deleted_by=NULL WHERE deleted_at IS NOT NULL"))
+        db.commit()
+        with pytest.raises(mrs.MRError) as error:
+            mr_transfer.export(db, identity(db, actor_id, session_id), "", "all", None, None, "csv")
+        assert error.value.code == "mr_export_limit"
+        # Simulate growth between count and read under READ COMMITTED: the
+        # sentinel row check must independently reject, rather than lose a row.
+        original_scalar = db.scalar
+        def earlier_count(statement, *args, **kwargs):
+            value = original_scalar(statement, *args, **kwargs)
+            return 5000 if "count(" in str(statement) and "mr_directory" in str(statement) else value
+        with monkeypatch.context() as patch:
+            patch.setattr(db, "scalar", earlier_count)
+            with pytest.raises(mrs.MRError) as error:
+                mr_transfer.export(db, identity(db, actor_id, session_id), "", "all", None, None, "xlsx")
+            assert error.value.code == "mr_export_limit"
+        actor = identity(db, actor_id, session_id)
+        db.execute(text("UPDATE auth_sessions SET status='REVOKED',revoked_at=now() WHERE id=:id"), {"id": session_id})
+        db.commit()
+        for read in (lambda: mrs.listing(db, actor), lambda: mr_transfer.export(db, actor, "", "all", None, None, "csv")):
+            with pytest.raises(AuthError):
+                read()

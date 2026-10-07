@@ -421,3 +421,43 @@ def test_xlsx_payment_uses_exact_xml_not_rounded_parser_floats():
     value.text = "1.00000000000000001"
     changed = replace_zip(data, "xl/worksheets/sheet1.xml", lambda _: ElementTree.tostring(root))
     assert mr_transfer.parse(changed, "exact.xlsx")[0]["values"]["paymentLimit"] == "invalid numeric payment"
+
+
+def test_large_page_bulk_queries_exact_projection_pagination_and_ledger(client, record_property):
+    from mr_projection_fixture import seed_directory, measured_queries
+    api, db, _ = client
+    headers, actor, _, _ = setup(api, db)
+    ids = seed_directory(db, actor.id, 240)
+    db.expunge_all()  # No warm identity-map objects can hide per-row lookups.
+    with measured_queries(db.get_bind()) as metric:
+        response = api.get(BASE, headers=headers, params={"limit": 100, "offset": 100, "query": "Bulk MR"})
+    assert response.status_code == 200, response.text
+    record_property("mr_page_queries", len(metric["statements"]))
+    record_property("mr_page_seconds", metric["seconds"])
+    assert len(metric["statements"]) <= 30
+    assert max(metric["bind_counts"]) <= 500
+    assert metric["seconds"] < 3
+    result = response.json()
+    assert (result["total"], result["filtered"], result["limit"], result["offset"]) == (240, 240, 100, 100)
+    assert [row["id"] for row in result["items"]] == [str(key) for key in reversed(ids[40:140])]
+    for item in result["items"]:
+        # Legacy single-record projection remains an independent exact oracle.
+        row = db.get(MRDirectory, uuid.UUID(item["id"]))
+        expected = mrs.projection(db, row)
+        from app.schemas.mrs import MRDirectoryResponse
+        assert item == MRDirectoryResponse.model_validate(expected).model_dump(mode="json")
+        assert item["createdBy"] == "Super Admin" and item["updatedBy"] == "Backend user"
+    assert api.get(BASE, headers=headers, params={"offset": 240}).json()["items"] == []
+    tombstone = api.get(BASE, headers=headers, params={"query": "FIX-00000"}).json()["items"][0]
+    assert tombstone["reportingManagerName"] == "Deleted manager"
+    assert tombstone["assignmentWarnings"] == ["Reporting manager was deleted. Explicitly replace it before saving."]
+    # Filtered full-directory export still requires a durable ledger acknowledgement.
+    response = api.get(BASE + "/export", headers={**headers, "X-Download-Initiation": str(uuid.uuid4())},
+                       params={"format": "csv", "query": "Bulk MR", "status": "inactive"})
+    assert response.status_code == 200 and response.headers["X-Download-Log"]
+    from app.db.download_models import DownloadLog
+    ledger = db.get(DownloadLog, uuid.UUID(response.headers["X-Download-Log"]))
+    assert (ledger.source, ledger.kind, ledger.format, ledger.provenance) == ("mr", "export", "CSV", "server_prepared")
+    exported = list(csv.reader(io.StringIO(response.content.decode("utf-8-sig"))))
+    assert len(exported) == 121
+    assert all(row[mr_transfer.HEADERS.index("Status")] == "inactive" for row in exported[1:])

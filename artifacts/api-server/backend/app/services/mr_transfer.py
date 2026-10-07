@@ -316,12 +316,12 @@ def export(db, actor, query, status, zone_id, hq_id, format):
         if len(records) > EXPORT_LIMIT:
             raise mrs.MRError("More than 5,000 MRs match. Narrow the filters.", 409, "mr_export_limit")
         rows = []
+        context = mrs.projection_context(db, records, manager_accounts=True)
         for record in records:
-            values = mrs.projection(db, record)
+            values = mrs.projection(db, record, context)
             values["hq"], values["zoneId"] = values["hqName"], values["zoneName"]
             if record.reportingManagerId:
-                manager_profile = db.get(MRProfile, record.reportingManagerId)
-                values["reportingManagerId"] = "user:" + db.get(User, manager_profile.user_id).username
+                values["reportingManagerId"] = "user:" + context["accounts"][record.reportingManagerId].username
             else:
                 values["reportingManagerId"] = ""
             rows.append([str(values[key]) for key, _ in COLUMNS] +

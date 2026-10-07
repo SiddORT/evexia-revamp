@@ -196,6 +196,15 @@ is exceeded. No network work is performed under database locks. Reserve enough
 pool capacity for two hash-slot connections plus normal API transactions; do not
 remove budgets to compensate for deployment sizing.
 
+Directory pages and exports load referenced accounts, HQs, zones, managers and
+audit-label identities in request-local batches of at most 500 distinct IDs per
+query, not per MR. Only public scalar account/label columns are loaded by those
+queries. Saved inactive/deleted references retain their names and warnings;
+export manager references remain explicit account usernames. No projection cache
+survives a request or replaces live authorization checks. Ordering, combined
+filters, pagination, the 5,000-row cap (including a post-read overflow check), and
+download ledger acknowledgement are unchanged.
+
 ## Verification
 
 Run the isolated API harness, contract check, generated shared-client checks and
@@ -206,3 +215,11 @@ full validation/defaults, identity-only preservation, CRUD, graph races, account
 namespace/history, filtered transfer, atomic failures, PIN/manual UI, real MR
 authentication, own-password change and one-time credentials. Production rollout
 still requires operator migration/readiness verification and actual account review.
+
+Isolated PostgreSQL regressions also measure cold-session query counts and elapsed
+time for a 100-row page and complete 5,000-row CSV/XLSX exports, with diverse saved
+relationships and audit authors. Budgets are 30 statements / 3 seconds per page
+and 48 statements / 6 seconds for CSV or 12 seconds for XLSX (including encoding).
+These are regression ceilings, not production latency guarantees. Tests compare
+exact projections, assert every exported row, check the real 5,001-row rejection
+and verify revoked identities cannot reuse either read path.

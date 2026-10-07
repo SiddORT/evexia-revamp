@@ -80,11 +80,57 @@ def predicates(query="", status="all", zone_id=None, hq_id=None):
     return clauses
 
 
-def projection(db, row):
-    profile = db.get(MRProfile, row.id)
-    user = db.get(User, profile.user_id)
-    hq, zone = db.get(Headquarter, row.hq), db.get(Zone, row.zoneId)
-    manager = db.get(MRDirectory, row.reportingManagerId) if row.reportingManagerId else None
+PROJECTION_BATCH_SIZE = 500
+
+
+def _bulk(db, ids, statement):
+    """Load only referenced keys, with a bounded number of bind parameters."""
+    keys = list(set(ids) - {None})
+    result = {}
+    for start in range(0, len(keys), PROJECTION_BATCH_SIZE):
+        result.update((row.id, row) for row in db.execute(
+            statement(keys[start:start + PROJECTION_BATCH_SIZE])))
+    return result
+
+
+def projection_context(db, rows, manager_accounts=False):
+    """Request-local projections, never cached across authorization boundaries.
+
+    Read scalar public columns only: account hashes, email and staff ciphertext
+    are not needed for directory labels. Include tombstoned/inactive references
+    so saved assignments retain their exact names and lifecycle warnings.
+    """
+    account_ids = {row.id for row in rows}
+    if manager_accounts:
+        account_ids.update(row.reportingManagerId for row in rows if row.reportingManagerId)
+    accounts = _bulk(db, account_ids, lambda ids: select(
+        MRProfile.id, User.username).join(User, User.id == MRProfile.user_id).where(MRProfile.id.in_(ids)))
+    headquarters = _bulk(db, (row.hq for row in rows), lambda ids: select(
+        Headquarter.id, Headquarter.name, Headquarter.status, Headquarter.deleted_at).where(Headquarter.id.in_(ids)))
+    zones = _bulk(db, (row.zoneId for row in rows), lambda ids: select(
+        Zone.id, Zone.name, Zone.status, Zone.deleted_at).where(Zone.id.in_(ids)))
+    managers = _bulk(db, (row.reportingManagerId for row in rows), lambda ids: select(
+        MRDirectory.id, MRDirectory.name, MRDirectory.status, MRDirectory.deleted_at).where(MRDirectory.id.in_(ids)))
+    authors = _bulk(db, (key for row in rows for key in (row.created_by, row.updated_by)),
+                    lambda ids: select(User.id, User.is_protected_system_admin).where(User.id.in_(ids)))
+    return dict(accounts=accounts, headquarters=headquarters, zones=zones, managers=managers,
+                labels={key: "Super Admin" if user.is_protected_system_admin else "Backend user"
+                        for key, user in authors.items()})
+
+
+def projection(db, row, context=None):
+    if context is None:
+        profile = db.get(MRProfile, row.id)
+        username = db.get(User, profile.user_id).username
+        hq, zone = db.get(Headquarter, row.hq), db.get(Zone, row.zoneId)
+        manager = db.get(MRDirectory, row.reportingManagerId) if row.reportingManagerId else None
+        created_by, updated_by = label(db, row.created_by), label(db, row.updated_by)
+    else:
+        username = context["accounts"][row.id].username
+        hq, zone = context["headquarters"][row.hq], context["zones"][row.zoneId]
+        manager = context["managers"].get(row.reportingManagerId)
+        created_by = context["labels"].get(row.created_by, "Backend user")
+        updated_by = context["labels"].get(row.updated_by, "Backend user")
     warnings = []
     for title, assignment in (("Headquarter", hq), ("Zone", zone), ("Reporting manager", manager)):
         if assignment is None:
@@ -94,10 +140,10 @@ def projection(db, row):
         elif assignment.status == "inactive":
             warnings.append(f"{title} is inactive. You may retain the saved assignment.")
     values = {key: getattr(row, key) for key in MRFields.model_fields if key != "userId"}
-    return dict(**values, userId=user.username, id=row.id, version=row.version,
+    return dict(**values, userId=username, id=row.id, version=row.version,
                 hqName=hq.name, zoneName=zone.name,
                 reportingManagerName=manager.name if manager else "", assignmentWarnings=warnings,
-                createdBy=label(db, row.created_by), updatedBy=label(db, row.updated_by),
+                createdBy=created_by, updatedBy=updated_by,
                 createdAt=row.created_at, updatedAt=row.updated_at)
 
 
@@ -107,9 +153,10 @@ def listing(db, actor, query="", status="all", zone_id=None, hq_id=None, limit=1
         total = db.scalar(select(func.count()).select_from(MRDirectory).where(MRDirectory.deleted_at.is_(None)))
         clauses = predicates(query, status, zone_id, hq_id)
         filtered = db.scalar(select(func.count()).select_from(MRDirectory).where(*clauses))
-        rows = db.scalars(select(MRDirectory).where(*clauses).order_by(
-            MRDirectory.created_at.desc(), MRDirectory.id.desc()).limit(limit).offset(offset))
-        result = dict(items=[projection(db, row) for row in rows], total=total, filtered=filtered, limit=limit, offset=offset)
+        rows = list(db.scalars(select(MRDirectory).where(*clauses).order_by(
+            MRDirectory.created_at.desc(), MRDirectory.id.desc()).limit(limit).offset(offset)))
+        context = projection_context(db, rows)
+        result = dict(items=[projection(db, row, context) for row in rows], total=total, filtered=filtered, limit=limit, offset=offset)
         db.commit()
         return result
     return transaction(db, work)
