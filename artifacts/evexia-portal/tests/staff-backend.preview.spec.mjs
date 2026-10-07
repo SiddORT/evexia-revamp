@@ -258,6 +258,130 @@ test('shared mobile form retains phone countries and clears one-time credentials
   expect(await page.evaluate(() => localStorage.getItem('evexia.admin.staff.v1'))).toBe(legacy);
 });
 
+// Hold only the synthetic search response; authentication, session broadcasts
+// and the application's AbortSignal remain real.
+async function delayedStaffSearch(page) {
+  let batchLoads = 0;
+  let searchLoads = 0;
+  let release;
+  let started;
+  let finished;
+  const gate = new Promise((resolve) => { release = resolve; });
+  const requested = new Promise((resolve) => { started = resolve; });
+  const delivered = new Promise((resolve) => { finished = resolve; });
+  const query = 'abandoned-search@example.com';
+  const record = (id, name, email) => ({
+    id, name, email, userId: `st_${id}`, phone: '9876543210', dialCountry: 'IN',
+    role: 'Staff', designation: 'Synthetic Executive', dateOfJoining: '2025-01-15',
+    status: 'active', version: 1,
+    createdBy: 'Synthetic Admin', updatedBy: 'Synthetic Admin',
+    createdAt: '2025-01-15T00:00:00Z', updatedAt: '2025-01-15T00:00:00Z',
+  });
+  await page.route('**/api/v1/admin/staff?*', (route) => {
+    expect(route.request().method()).toBe('GET');
+    expect(new URL(route.request().url()).search).toBe('?limit=100&offset=0');
+    batchLoads += 1;
+    return route.fulfill({ json: {
+      items: [record(`batch-${batchLoads}`, `Fresh directory batch ${batchLoads}`, `batch-${batchLoads}@example.com`)],
+      has_more: false,
+    } });
+  });
+  await page.route('**/api/v1/admin/staff/search', async (route) => {
+    searchLoads += 1;
+    expect(route.request().method()).toBe('POST');
+    expect(route.request().postDataJSON()).toEqual({ query, cursor: null, limit: 100 });
+    started(route.request());
+    await gate;
+    try {
+      await route.fulfill({ json: {
+        items: [record('late-search', 'Abandoned search record', query)],
+        has_more: false, next_cursor: null, scanned: 1,
+      } });
+    } finally { finished(); }
+  });
+  return {
+    query, requested,
+    release: async () => { release(); await delivered; },
+    counts: () => ({ batchLoads, searchLoads }),
+  };
+}
+
+async function submitDelayedSearch(page, delayed) {
+  await expect(page.getByTestId('text-staff-name-batch-1')).toHaveText('Fresh directory batch 1');
+  await page.getByTestId('input-directory-search-staff').fill(delayed.query);
+  await page.getByTestId('button-directory-search-staff').click();
+  const request = await delayed.requested;
+  await expect(page.getByTestId('status-directory-search-staff')).toContainText('Checking this section');
+  await expect(page.getByTestId('text-staff-name-batch-1')).toHaveCount(0);
+  await expect(page.getByTestId('button-export-staff')).toBeDisabled();
+  return request;
+}
+
+async function expectFreshDirectory(page, delayed) {
+  await expect(page.getByTestId('text-staff-name-batch-2')).toHaveText('Fresh directory batch 2');
+  await expect(page.getByTestId('input-directory-search-staff')).toHaveValue('');
+  await expect(page.getByTestId('status-directory-search-staff')).toHaveCount(0);
+  await expect(page.getByTestId('text-staff-name-late-search')).toHaveCount(0);
+  await expectFooter(page, 'Server records 1–1', batchScope);
+  expect(delayed.counts()).toEqual({ batchLoads: 2, searchLoads: 1 });
+  const csv = await downloadStaffCSV(page);
+  expect(csv).toContain('batch-2@example.com');
+  expect(csv).not.toContain(delayed.query);
+  expect(csv).not.toContain('Abandoned search record');
+}
+
+test('delayed staff search is aborted on SPA navigation and cannot overwrite a newly mounted directory', async ({ page }) => {
+  const delayed = await delayedStaffSearch(page);
+  await open(page);
+  const request = await submitDelayedSearch(page, delayed);
+  const aborted = page.waitForEvent('requestfailed', { predicate: (failed) => failed === request });
+  try {
+    // Use sidebar links, not hard navigation: retain the same JS session.
+    await page.getByTestId('link-admin-brand').click();
+    await expect(page).toHaveURL(`${base()}/admin`);
+    await expect(page.getByTestId('button-admin-profile')).toBeVisible();
+    await expect(page.getByTestId('input-directory-search-staff')).toHaveCount(0);
+    await aborted;
+    expect(request.failure().errorText).toContain('ERR_ABORTED');
+    await page.getByTestId('button-toggle-user-management').click();
+    await page.getByTestId('link-admin-staff').click();
+    await expectFreshDirectory(page, delayed);
+    // The abandoned response is released only after the replacement page's
+    // fresh batch is visible; it must not restore the old term or records.
+    await delayed.release();
+    await expectFreshDirectory(page, delayed);
+  } finally { await delayed.release(); }
+});
+
+test('delayed staff search stays cleared after cross-tab logout and a fresh sign-in', async ({ page, context }) => {
+  const delayed = await delayedStaffSearch(page);
+  await open(page);
+  const other = await context.newPage();
+  await other.goto(`${base()}/admin`);
+  await expect(other.getByTestId('button-admin-profile')).toBeVisible();
+  const request = await submitDelayedSearch(page, delayed);
+  const aborted = page.waitForEvent('requestfailed', { predicate: (failed) => failed === request });
+  try {
+    await other.evaluate(async () => {
+      const { logoutAdmin } = await import('/src/auth/adminSession.js');
+      await logoutAdmin();
+    });
+    await expect(page.getByTestId('button-submit-login')).toBeVisible();
+    await aborted;
+    expect(request.failure().errorText).toContain('ERR_ABORTED');
+    await delayed.release();
+    await expect(page.getByTestId('button-submit-login')).toBeVisible();
+    await expect(page.getByTestId('input-directory-search-staff')).toHaveCount(0);
+    await expect(page.getByTestId('status-directory-search-staff')).toHaveCount(0);
+    await expect(page.getByTestId('text-staff-name-late-search')).toHaveCount(0);
+    await expect(page.getByText(delayed.query, { exact: false })).toHaveCount(0);
+    expect(await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }))).not.toContain(delayed.query);
+    await other.close();
+    await open(page);
+    await expectFreshDirectory(page, delayed);
+  } finally { await delayed.release(); }
+});
+
 test('directory search finds beyond the loaded batch, continues empty sections, retries and never stores terms', async ({ page }) => {
   execFileSync('python3', ['scripts/seed-staff-search-preview.py']);
   const initialBatch = page.waitForResponse((response) => response.url().endsWith('/api/v1/admin/staff?limit=100&offset=0'));
