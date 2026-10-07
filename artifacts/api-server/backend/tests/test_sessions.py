@@ -7,6 +7,7 @@ from threading import Barrier
 import jwt
 import pytest
 from fastapi.testclient import TestClient
+from fastapi import Request
 from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
@@ -30,7 +31,8 @@ def client():
     db = Session(bind=connection, join_transaction_mode="create_savepoint")
     settings = get_settings()
 
-    def override_db():
+    def override_db(request: Request):
+        db.info["request_id"] = request.state.request_id
         yield db
 
     app.dependency_overrides[get_db] = override_db

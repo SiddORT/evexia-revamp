@@ -376,6 +376,200 @@ export const ListReportingUsersResponse = zod.object({
 });
 
 /**
+ * @summary List Roles
+ */
+export const listCustomRolesQueryLimitDefault = 50;
+export const listCustomRolesQueryLimitMax = 100;
+
+export const ListCustomRolesQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listCustomRolesQueryLimitMax)
+    .default(listCustomRolesQueryLimitDefault),
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+});
+
+export const listCustomRolesResponseItemsItemDescriptionDefault = ``;
+export const listCustomRolesResponseItemsItemDescriptionMax = 1000;
+
+export const listCustomRolesResponseItemsItemNameMax = 100;
+
+export const listCustomRolesResponseItemsItemPermissionsMax = 0;
+
+export const ListCustomRolesResponse = zod.object({
+  has_more: zod.boolean(),
+  items: zod.array(
+    zod.object({
+      created_at: zod.coerce.date(),
+      description: zod
+        .string()
+        .max(listCustomRolesResponseItemsItemDescriptionMax)
+        .default(listCustomRolesResponseItemsItemDescriptionDefault),
+      id: zod.string().uuid(),
+      name: zod.string().min(1).max(listCustomRolesResponseItemsItemNameMax),
+      permissions: zod
+        .array(zod.string())
+        .max(listCustomRolesResponseItemsItemPermissionsMax)
+        .optional(),
+      updated_at: zod.coerce.date(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  next_cursor: zod.union([zod.string().uuid(), zod.null()]),
+});
+
+/**
+ * @summary Create Role
+ */
+export const createCustomRoleBodyDescriptionDefault = ``;
+export const createCustomRoleBodyDescriptionMax = 1000;
+
+export const createCustomRoleBodyNameMax = 100;
+
+export const CreateCustomRoleBody = zod.object({
+  description: zod
+    .string()
+    .max(createCustomRoleBodyDescriptionMax)
+    .default(createCustomRoleBodyDescriptionDefault),
+  name: zod.string().min(1).max(createCustomRoleBodyNameMax),
+});
+
+export const createCustomRoleResponseDescriptionDefault = ``;
+export const createCustomRoleResponseDescriptionMax = 1000;
+
+export const createCustomRoleResponseNameMax = 100;
+
+export const createCustomRoleResponsePermissionsMax = 0;
+
+export const CreateCustomRoleResponse = zod.object({
+  created_at: zod.coerce.date(),
+  description: zod
+    .string()
+    .max(createCustomRoleResponseDescriptionMax)
+    .default(createCustomRoleResponseDescriptionDefault),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(createCustomRoleResponseNameMax),
+  permissions: zod
+    .array(zod.string())
+    .max(createCustomRoleResponsePermissionsMax)
+    .optional(),
+  updated_at: zod.coerce.date(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Get Role
+ */
+export const GetCustomRoleParams = zod.object({
+  role_id: zod.coerce.string().uuid(),
+});
+
+export const getCustomRoleResponseDescriptionDefault = ``;
+export const getCustomRoleResponseDescriptionMax = 1000;
+
+export const getCustomRoleResponseNameMax = 100;
+
+export const getCustomRoleResponsePermissionsMax = 0;
+
+export const GetCustomRoleResponse = zod.object({
+  created_at: zod.coerce.date(),
+  description: zod
+    .string()
+    .max(getCustomRoleResponseDescriptionMax)
+    .default(getCustomRoleResponseDescriptionDefault),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(getCustomRoleResponseNameMax),
+  permissions: zod
+    .array(zod.string())
+    .max(getCustomRoleResponsePermissionsMax)
+    .optional(),
+  updated_at: zod.coerce.date(),
+  version: zod.number().int(),
+});
+
+/**
+ * Version-checked deletion; response contains the removed metadata.
+ * @summary Delete Role
+ */
+export const DeleteCustomRoleParams = zod.object({
+  role_id: zod.coerce.string().uuid(),
+});
+
+export const DeleteCustomRoleBody = zod.object({
+  expected_version: zod.number().int().min(1),
+});
+
+export const deleteCustomRoleResponseDescriptionDefault = ``;
+export const deleteCustomRoleResponseDescriptionMax = 1000;
+
+export const deleteCustomRoleResponseNameMax = 100;
+
+export const deleteCustomRoleResponsePermissionsMax = 0;
+
+export const DeleteCustomRoleResponse = zod.object({
+  created_at: zod.coerce.date(),
+  description: zod
+    .string()
+    .max(deleteCustomRoleResponseDescriptionMax)
+    .default(deleteCustomRoleResponseDescriptionDefault),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(deleteCustomRoleResponseNameMax),
+  permissions: zod
+    .array(zod.string())
+    .max(deleteCustomRoleResponsePermissionsMax)
+    .optional(),
+  updated_at: zod.coerce.date(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit Role
+ */
+export const EditCustomRoleParams = zod.object({
+  role_id: zod.coerce.string().uuid(),
+});
+
+export const editCustomRoleBodyDescriptionDefault = ``;
+export const editCustomRoleBodyDescriptionMax = 1000;
+
+export const editCustomRoleBodyNameMax = 100;
+
+export const EditCustomRoleBody = zod.object({
+  description: zod
+    .string()
+    .max(editCustomRoleBodyDescriptionMax)
+    .default(editCustomRoleBodyDescriptionDefault),
+  expected_version: zod.number().int().min(1),
+  name: zod.string().min(1).max(editCustomRoleBodyNameMax),
+});
+
+export const editCustomRoleResponseDescriptionDefault = ``;
+export const editCustomRoleResponseDescriptionMax = 1000;
+
+export const editCustomRoleResponseNameMax = 100;
+
+export const editCustomRoleResponsePermissionsMax = 0;
+
+export const EditCustomRoleResponse = zod.object({
+  created_at: zod.coerce.date(),
+  description: zod
+    .string()
+    .max(editCustomRoleResponseDescriptionMax)
+    .default(editCustomRoleResponseDescriptionDefault),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(editCustomRoleResponseNameMax),
+  permissions: zod
+    .array(zod.string())
+    .max(editCustomRoleResponsePermissionsMax)
+    .optional(),
+  updated_at: zod.coerce.date(),
+  version: zod.number().int(),
+});
+
+/**
  * @summary List Staff
  */
 export const listStaffQueryLimitDefault = 20;

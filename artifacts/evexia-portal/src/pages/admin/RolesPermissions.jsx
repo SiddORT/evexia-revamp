@@ -1,153 +1,237 @@
-import { recordLocalAction } from '../../services/localActivity.js';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Plus, Search, ShieldCheck, Square } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Pencil, Plus, RefreshCw, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
 import { useAdminPreferences } from '../../components/admin/adminPreferences.js';
-import { ACTIONS, MODULES, ALL_PERMISSION_KEYS, permissionKeys, selectionSummary, togglePermissions, createDemoRoles, validateRoleName } from '../../services/rolePermissions.js';
+import { listRoles, getRole, createRole, updateRole, deleteRole, validateRoleName, validateRoleDescription, ROLE_NAME_LIMIT, ROLE_DESCRIPTION_LIMIT } from '../../services/rolePermissions.js';
 import '../../roles-permissions.css';
 
-function Tri({ keys, selected, label, onToggle, testId, disabled }) {
-  const ref = useRef(null);
-  const s = selectionSummary(selected, keys);
-  useEffect(() => { if (ref.current) ref.current.indeterminate = Boolean(s.mixed) && !s.checked; }, [s.mixed, s.checked]);
-  return <input ref={ref} type="checkbox" className="rp-check" checked={Boolean(s.checked)} disabled={disabled || !keys.length} aria-label={label} aria-checked={s.mixed && !s.checked ? 'mixed' : undefined} onChange={onToggle} data-testid={testId} />;
-}
+const fmt = (value) => { const d = new Date(value); return Number.isNaN(d.getTime()) ? value : d.toLocaleString(); };
+const errInfo = (e) => ({ code: e?.code || '', ambiguous: Boolean(e?.ambiguous), message: (e && e.message) || 'The role service could not complete this request.' });
 
-function AddRoleDialog({ roles, onAdd, onClose }) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [error, setError] = useState('');
-  function submit(event) {
-    event.preventDefault();
-    const problem = validateRoleName(name, roles);
-    if (problem) { setError(problem); document.getElementById('rp-role-name')?.focus(); return; }
-    onAdd(name.trim(), description.trim());
-  }
-  return <Dialog title="Add role" eyebrow="Roles & Permissions" description="Preview only. The new role exists in this page's memory and starts with no permissions." onClose={onClose}
-    footer={<><button type="button" className="admin-button admin-button--secondary" onClick={onClose} data-testid="button-cancel-role">Cancel</button><button type="submit" form="rp-add-form" className="admin-button" data-testid="button-create-role">Create role</button></>}>
-    <form id="rp-add-form" className="rp-form" onSubmit={submit} noValidate>
+function RoleForm({ form, setForm, busy, blocked, error, current, onSubmit, onClose, onReview, onAdopt, onUseCurrent, reviewing, onRefresh, refreshing }) {
+  const edit = form.mode === 'edit';
+  const deleted = error?.code === 'role_deleted';
+  const stale = error?.code === 'role_stale';
+  const fieldError = form.touched ? (validateRoleName(form.name) || validateRoleDescription(form.description)) : '';
+  const dup = error?.code === 'role_duplicate';
+  const set = (patch) => setForm((f) => ({ ...f, ...patch, touched: false }));
+  const locked = busy || reviewing || blocked || deleted || stale || refreshing;
+  return <Dialog title={edit ? 'Edit role' : 'Add role'} eyebrow="Roles & Permissions" onClose={onClose}
+    description="Business role metadata only. It cannot affect login or staff rights, and no permissions are configured."
+    footer={<><button type="button" className="admin-button admin-button--secondary" onClick={onClose} disabled={busy} data-testid="button-cancel-role">Cancel</button>
+      <button type="submit" form="rp-role-form" className="admin-button" disabled={locked} data-testid={edit ? 'button-save-role' : 'button-create-role'}>{busy ? 'Saving...' : edit ? 'Save role' : 'Create role'}</button></>}>
+    <form id="rp-role-form" className="rp-form" onSubmit={onSubmit} noValidate aria-busy={busy}>
       <label htmlFor="rp-role-name">Role name</label>
-      <input id="rp-role-name" value={name} onChange={(e) => { setName(e.target.value); setError(''); }} aria-required="true" aria-invalid={Boolean(error)} aria-describedby={error ? 'rp-role-error' : undefined} autoComplete="off" data-testid="input-role-name" />
-      {error && <span id="rp-role-error" className="rp-form__error" role="alert" data-testid="text-role-error">{error}</span>}
+      <input id="rp-role-name" value={form.name} maxLength={ROLE_NAME_LIMIT * 2} readOnly={busy} onChange={(e) => set({ name: e.target.value })} aria-required="true" aria-invalid={Boolean(fieldError || dup)} aria-describedby="rp-role-error" autoComplete="off" data-testid="input-role-name" />
       <label htmlFor="rp-role-description">Description (optional)</label>
-      <textarea id="rp-role-description" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} data-testid="input-role-description" />
+      <textarea id="rp-role-description" rows={3} value={form.description} maxLength={ROLE_DESCRIPTION_LIMIT * 2} readOnly={busy} onChange={(e) => set({ description: e.target.value })} data-testid="input-role-description" />
+      <div id="rp-role-error" aria-live="polite">
+        {fieldError && <span className="rp-form__error" role="alert" data-testid="text-role-error">{fieldError}</span>}
+        {error && <div className="rp-alert" role="alert" data-testid="status-role-save-error">
+          <strong>{deleted ? 'This role was deleted' : stale ? 'This role changed elsewhere' : dup ? 'Duplicate role name' : error.ambiguous ? 'Result unknown' : 'Not saved'}</strong>
+          <p>{error.message}</p>
+          {deleted && <p>It will not be recreated. Close this form and refresh roles. Your draft is shown above for reference only.</p>}
+          {error.ambiguous && <p>Submitting is blocked until you refresh roles and check the current list. Your draft is kept.</p>}
+          {error.ambiguous && <button type="button" className="admin-button admin-button--secondary" onClick={onRefresh} disabled={busy || refreshing} data-testid="button-refresh-draft-roles">{refreshing ? 'Refreshing...' : 'Refresh roles'}</button>}
+          {!deleted && !error.ambiguous && !stale && <p>Your draft is kept. Fix the problem and try again.</p>}
+          {stale && <div className="rp-alert__actions">
+            <button type="button" className="admin-button admin-button--secondary" onClick={onReview} disabled={busy || reviewing} data-testid="button-review-current">{reviewing ? 'Loading...' : 'Review current details'}</button>
+          </div>}
+          {stale && current && <div className="rp-current" data-testid="text-current-role">
+            <dl><dt>Current name</dt><dd>{current.name}</dd><dt>Current description</dt><dd>{current.description || 'None'}</dd><dt>Updated</dt><dd>{fmt(current.updated_at)} (version {current.version})</dd></dl>
+            <div className="rp-alert__actions">
+              <button type="button" className="admin-button" onClick={onAdopt} disabled={busy} data-testid="button-adopt-current">Keep my draft on current version</button>
+              <button type="button" className="admin-button admin-button--secondary" onClick={onUseCurrent} disabled={busy} data-testid="button-use-current">Discard draft, use current</button>
+            </div></div>}
+        </div>}
+      </div>
     </form>
   </Dialog>;
 }
 
 export default function RolesPermissions() {
   useAdminPreferences();
-  const [roles, setRoles] = useState(() => createDemoRoles());
-  const [roleId, setRoleId] = useState(() => roles[0]?.id);
-  const [moduleId, setModuleId] = useState('masters');
-  const [search, setSearch] = useState('');
-  const [adding, setAdding] = useState(false);
-  const [feedback, setFeedback] = useState('');
-  const role = roles.find((r) => r.id === roleId) || roles[0];
-  const mod = MODULES.find((m) => m.id === moduleId) || MODULES[0];
-  const selected = role?.permissions || [];
-  const total = ALL_PERMISSION_KEYS.length;
-  const dirty = role ? [...selected].sort().join('|') !== [...role.savedPermissions].sort().join('|') : false;
-  const query = search.trim().toLocaleLowerCase();
-  const rows = useMemo(() => {
-    if (!query) return mod.rows;
-    const modHit = mod.label.toLocaleLowerCase().includes(query);
-    return mod.rows.filter((row) => modHit || row.label.toLocaleLowerCase().includes(query) || ACTIONS.some((a) => row.actions.includes(a.id) && a.label.toLocaleLowerCase().includes(query)));
-  }, [mod, query]);
-  const modKeys = permissionKeys(mod.rows);
-  const modSum = selectionSummary(selected, modKeys);
-  const pct = total ? (selected.length / total) * 100 : 0;
+  const [cursors, setCursors] = useState([null]);
+  const [idx, setIdx] = useState(0);
+  const [page, setPage] = useState({ items: [], has_more: false, next_cursor: null });
+  const [status, setStatus] = useState('loading');
+  const [listError, setListError] = useState('');
+  const [selectedId, setSelectedId] = useState(null);
+  const [pinned, setPinned] = useState(null);
+  const [form, setForm] = useState(null);
+  const [formError, setFormError] = useState(null);
+  const [current, setCurrent] = useState(null);
+  const [reviewing, setReviewing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [del, setDel] = useState(null);
+  const [notice, setNotice] = useState('');
+  const seq = useRef(0);
+  const ctrl = useRef(null);
+  const busyRef = useRef(false);
+  const mounted = useRef(true);
+  const state = useRef({}); state.current = { cursors, idx, pinned };
 
-  function setPerms(next) { setFeedback(''); setRoles((all) => all.map((r) => r.id === role.id ? { ...r, permissions: next } : r)); }
-  const toggle = (keys) => setPerms(togglePermissions(selected, keys));
-  function save() {
-    setRoles((all) => all.map((r) => r.id === role.id ? { ...r, savedPermissions: [...r.permissions] } : r));
-    setFeedback(`Saved a snapshot of ${role.name} in page memory only. This is a preview: nothing is stored or enforced, and a reload resets it.`);
-    recordLocalAction('roles_permissions', 'updated');
-  }
-  function addRole(name, description) {
-    const id = `demo-role-${Date.now()}-${roles.length}`;
-    setRoles((all) => [...all, { id, name, description: description || 'UI-only demo role with no initial permissions.', permissions: [], savedPermissions: [] }]);
-    setRoleId(id); setFeedback(''); setAdding(false);
-    recordLocalAction('roles_permissions', 'created');
-  }
-  if (!role) return null;
+  const load = useCallback(async (stack, at, silent = false) => {
+    const mine = ++seq.current;
+    ctrl.current?.abort();
+    const c = typeof AbortController === 'undefined' ? null : new AbortController();
+    ctrl.current = c;
+    if (!silent) { setStatus('loading'); setListError(''); }
+    try {
+      const data = await listRoles(stack[at], c ? { signal: c.signal } : undefined);
+      if (mine !== seq.current || !mounted.current) return null;
+      if (!data.items.length && at > 0) return load(stack.slice(0, at), at - 1, silent);
+      const next = data.has_more ? [...stack.slice(0, at + 1), data.next_cursor] : stack.slice(0, at + 1);
+      setCursors(next); setIdx(at); setPage(data); setStatus('ready'); setListError('');
+      const p = state.current.pinned;
+      if (p && !data.items.some((r) => r.id === p.id)) {
+        try { const fresh = await getRole(p.id, c ? { signal: c.signal } : undefined); if (mine === seq.current && mounted.current) setPinned(fresh); }
+        catch (e) { if (mine === seq.current && mounted.current && e?.code === 'role_deleted') setPinned(null); }
+      } else if (p) setPinned(null);
+      return data;
+    } catch (e) {
+      if (mine !== seq.current || !mounted.current || e?.name === 'AbortError') return null;
+      setStatus('unavailable'); setListError(errInfo(e).message);
+      return null;
+    }
+  }, []);
 
+  useEffect(() => { mounted.current = true; load([null], 0); return () => { mounted.current = false; ctrl.current?.abort(); seq.current++; }; }, [load]);
+  useEffect(() => {
+    const refresh = () => { if (document.visibilityState !== 'hidden' && !busyRef.current) load(state.current.cursors, state.current.idx, true); };
+    window.addEventListener('focus', refresh); document.addEventListener('visibilitychange', refresh);
+    return () => { window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh); };
+  }, [load]);
+
+  const role = page.items.find((r) => r.id === selectedId) || (pinned && pinned.id === selectedId ? pinned : null);
+  useEffect(() => {
+    if (status !== 'ready') return;
+    if (!role) setSelectedId(page.items[0]?.id ?? null);
+  }, [status, role, page.items]);
+
+  const refreshAll = async () => {
+    const data = await load(state.current.cursors, state.current.idx);
+    if (data) setBlocked(false);
+    return data;
+  };
+  const go = (to) => { if (to >= 0 && to < cursors.length) load(cursors, to); };
+  const setBusyBoth = (v) => { busyRef.current = v; setBusy(v); };
+
+  function openForm(mode, r) {
+    setFormError(null); setCurrent(null);
+    setForm(mode === 'edit' ? { mode, id: r.id, version: r.version, name: r.name, description: r.description } : { mode, name: '', description: '' });
+  }
+  const closeForm = () => { if (!busyRef.current && !reviewing) { setForm(null); setFormError(null); setCurrent(null); } };
+
+  async function submit(event) {
+    event.preventDefault();
+    if (busyRef.current || blocked || reviewing || ['role_deleted', 'role_stale'].includes(formError?.code)) return;
+    const problem = validateRoleName(form.name) || validateRoleDescription(form.description);
+    if (problem) { setForm((f) => ({ ...f, touched: true })); return; }
+    const fields = { name: form.name.trim(), description: form.description.trim() };
+    setBusyBoth(true); setFormError(null);
+    try {
+      const saved = form.mode === 'edit' ? await updateRole(form.id, fields, form.version) : await createRole(fields);
+      if (!mounted.current) return;
+      setPinned(saved); setSelectedId(saved.id); setForm(null); setCurrent(null);
+      setNotice(form.mode === 'edit' ? `Saved ${saved.name}.` : `Created ${saved.name}.`);
+      setBusyBoth(false);
+      await load(state.current.cursors, state.current.idx);
+    } catch (e) {
+      if (!mounted.current) return;
+      const info = errInfo(e);
+      setFormError(info); if (info.ambiguous) setBlocked(true);
+      setBusyBoth(false);
+    }
+  }
+  async function review() {
+    setReviewing(true);
+    try { const r = await getRole(form.id); if (mounted.current) setCurrent(r); }
+    catch (e) { if (mounted.current) setFormError({ ...errInfo(e), code: e?.code === 'role_deleted' ? 'role_deleted' : 'role_stale' }); }
+    finally { if (mounted.current) setReviewing(false); }
+  }
+  const adopt = () => { setForm((f) => ({ ...f, version: current.version })); setFormError(null); setCurrent(null); };
+  const useCurrent = () => { setForm((f) => ({ ...f, version: current.version, name: current.name, description: current.description })); setFormError(null); setCurrent(null); };
+
+  async function confirmDelete() {
+    if (busyRef.current || blocked || !del) return;
+    setBusyBoth(true); setFormError(null);
+    try {
+      await deleteRole(del.id, del.version);
+      if (!mounted.current) return;
+      const name = del.name;
+      if (selectedId === del.id) setSelectedId(null);
+      setPinned((p) => (p && p.id === del.id ? null : p));
+      setDel(null); setNotice(`Deleted ${name}.`); setBusyBoth(false);
+      await load(state.current.cursors, state.current.idx);
+    } catch (e) {
+      if (!mounted.current) return;
+      const info = errInfo(e);
+      setFormError(info); if (info.ambiguous) setBlocked(true);
+      setBusyBoth(false);
+    }
+  }
+  const closeDelete = () => { if (!busyRef.current) { setDel(null); setFormError(null); } };
+  const delGone = formError?.code === 'role_deleted' || formError?.code === 'role_stale';
+
+  const loading = status === 'loading';
   return <AdminLayout title="Roles & Permissions">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">People / Access preview</p><h1>Roles & Permissions</h1><p className="admin-page-head__description">A UI-only experiment. Changes live in this page's memory, are not saved anywhere, and do not control access.</p></div></div>
-    <p className="admin-preview-notice" role="note">These are UI-only demo roles. They do not grant access or change staff accounts. Roles, drafts and saved preview snapshots reset on page reload or when you leave this page.</p>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">People / Role metadata</p><h1>Roles & Permissions</h1><p className="admin-page-head__description">Manage business role names and descriptions. Permissions are not configured, and role metadata cannot affect login or staff rights. The server records an audit entry for every change.</p></div></div>
+    {blocked && <div className="rp-alert rp-alert--page" role="alert" data-testid="status-roles-blocked">A previous change had an unknown result. Refresh roles to confirm the current state before submitting again.</div>}
+    {notice && <div className="admin-feedback rp-feedback" role="status" data-testid="status-roles-notice">{notice}</div>}
     <div className="rp">
-      <aside className="admin-panel rp-roles" aria-label="Roles">
-        <h2 className="rp-roles__title">Roles <span data-testid="text-role-count">{roles.length}</span></h2>
-        <ul className="rp-roles__list">
-          {roles.map((r) => <li key={r.id}><button type="button" className={`rp-role${r.id === role.id ? ' rp-role--active' : ''}`} aria-pressed={r.id === role.id} onClick={() => { setRoleId(r.id); setFeedback(''); }} data-testid={`button-role-${r.id}`}>
-            <strong>{r.name}</strong><span className="rp-role__description">{r.description}</span><small>{r.permissions.length} of {total} permissions</small></button></li>)}
-        </ul>
-        <button type="button" className="rp-add" onClick={() => setAdding(true)} data-testid="button-add-role"><Plus size={15} aria-hidden="true" /> Add role</button>
+      <aside className="admin-panel rp-roles" aria-label="Roles" aria-busy={loading}>
+        <h2 className="rp-roles__title">Roles <span data-testid="text-role-count">{page.items.length}</span></h2>
+        <p className="rp-pageinfo">Page {idx + 1}{page.has_more ? '' : ' (last)'}</p>
+        {loading && !page.items.length ? <div className="rp-skel" role="status" data-testid="status-roles-loading"><span className="sr-only">Loading roles</span><i /><i /><i /></div> :
+          status === 'unavailable' ? <div className="rp-alert" role="alert" data-testid="status-roles-unavailable"><strong>Roles unavailable</strong><p>{listError}</p></div> :
+          page.items.length === 0 ? <div className="admin-empty" role="status" data-testid="status-roles-empty"><strong>No roles yet</strong><p>Create the first business role.</p></div> :
+          <ul className="rp-roles__list">{page.items.map((r) => <li key={r.id}><button type="button" className={`rp-role${role && r.id === role.id ? ' rp-role--active' : ''}`} aria-pressed={Boolean(role && r.id === role.id)} onClick={() => { setSelectedId(r.id); setNotice(''); }} data-testid={`button-role-${r.id}`}>
+            <strong>{r.name}</strong><span className="rp-role__description">{r.description || 'No description'}</span><small>0 permissions</small></button></li>)}</ul>}
+        <div className="rp-pager">
+          <button type="button" className="admin-button admin-button--secondary" onClick={() => go(idx - 1)} disabled={idx === 0 || loading} data-testid="button-previous-roles"><ChevronLeft size={14} aria-hidden="true" /> Previous</button>
+          <button type="button" className="admin-button admin-button--secondary" onClick={() => go(idx + 1)} disabled={!page.has_more || loading || status !== 'ready'} data-testid="button-next-roles">Next <ChevronRight size={14} aria-hidden="true" /></button>
+        </div>
+        <button type="button" className="admin-button admin-button--secondary" onClick={refreshAll} disabled={loading} data-testid="button-refresh-roles"><RefreshCw size={14} aria-hidden="true" /> Refresh roles</button>
+        <button type="button" className="rp-add" disabled={loading || status !== 'ready'} onClick={() => { setNotice(''); openForm('add'); }} data-testid="button-add-role"><Plus size={15} aria-hidden="true" /> Add role</button>
       </aside>
 
-      <section className="admin-panel rp-work" aria-label={`Permissions for ${role.name}`}>
-        <div className="rp-head">
-          <div className="rp-head__main">
-            <h2 data-testid="text-active-role">{role.name}</h2>
-            <div className="rp-progress" role="progressbar" aria-label={`${role.name} permissions granted`} aria-valuemin={0} aria-valuemax={total} aria-valuenow={selected.length}><i style={{ transform: `scaleX(${pct / 100})` }} /></div>
-            <span className="rp-head__count" data-testid="text-permission-count">{selected.length}/{total}</span>
-          </div>
-          <div className="rp-head__actions">
-            <span className={`rp-state${dirty ? ' rp-state--dirty' : ''}`} data-testid="status-dirty">{dirty ? 'Unsaved changes' : 'Saved snapshot'}</span>
-            <button type="button" className="admin-button admin-button--secondary" onClick={() => setPerms([])} aria-label={`Clear all permissions for ${role.name}, every module`} data-testid="button-clear-role"><Square size={14} aria-hidden="true" /> Clear all</button>
-            <button type="button" className="admin-button admin-button--secondary" onClick={() => setPerms([...ALL_PERMISSION_KEYS])} aria-label={`Grant all permissions to ${role.name}, every module`} data-testid="button-all-role"><Check size={14} aria-hidden="true" /> Grant all</button>
-             <button type="button" className="admin-button" onClick={save} data-testid="button-save-role"><ShieldCheck size={14} aria-hidden="true" /> Save preview</button>
-          </div>
-        </div>
-        {feedback && <div className="admin-feedback rp-feedback" role="status" data-testid="status-save">{feedback}</div>}
-        <label className="admin-search rp-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search permissions in {mod.label}</span><input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={`Search ${mod.label} permissions`} data-testid="input-search-permissions" /></label>
-        <div className="rp-body">
-          <nav className="rp-rail" aria-label="Permission modules">
-            {MODULES.map((m) => {
-              const keys = permissionKeys(m.rows);
-              const sum = selectionSummary(selected, keys);
-              return <div key={m.id} className={`rp-rail__item${m.id === mod.id ? ' rp-rail__item--active' : ''}`}>
-                <Tri keys={keys} selected={selected} label={`${m.label} module: all ${keys.length} permissions, entire module`} onToggle={() => toggle(keys)} testId={`checkbox-module-${m.id}`} />
-                <button type="button" aria-current={m.id === mod.id ? 'true' : undefined} onClick={() => setModuleId(m.id)} data-testid={`button-module-${m.id}`}><span>{m.label}</span><em>{sum.count}/{sum.total}</em>
-                  <i className="rp-mini"><b style={{ transform: `scaleX(${sum.total ? sum.count / sum.total : 0})` }} /></i></button>
-              </div>;
-            })}
-          </nav>
-          <div className="rp-main">
-            <div className="rp-main__head">
-              <Tri keys={modKeys} selected={selected} label={`${mod.label} module: all permissions, entire module (ignores search)`} onToggle={() => toggle(modKeys)} testId="checkbox-module-current" />
-              <h3>{mod.label}</h3>
-              <span className="rp-pill" data-testid="text-module-count">{modSum.count}/{modSum.total}</span>
+      <section className="admin-panel rp-work" aria-label="Role details">
+        {role ? <>
+          <div className="rp-head">
+            <div className="rp-head__main"><h2 data-testid="text-active-role">{role.name}</h2></div>
+            <div className="rp-head__actions">
+              <button type="button" className="admin-button admin-button--secondary" disabled={loading || status !== 'ready'} onClick={() => { setNotice(''); openForm('edit', role); }} data-testid="button-edit-role"><Pencil size={14} aria-hidden="true" /> Edit</button>
+              <button type="button" className="admin-button admin-button--secondary" disabled={loading || status !== 'ready'} onClick={() => { setNotice(''); setFormError(null); setDel(role); }} data-testid="button-delete-role"><Trash2 size={14} aria-hidden="true" /> Delete</button>
             </div>
-            {rows.length === 0 ? <div className="admin-empty" role="status" data-testid="status-no-rows"><strong>No matching permissions</strong><p>Nothing in {mod.label} matches "{search.trim()}". Selections are unchanged.</p></div> :
-              <div className="admin-table-scroll rp-scroll" tabIndex={0} role="region" aria-label={`${mod.label} permission matrix, scrollable`}>
-                <table className="rp-table">
-                  <caption className="sr-only">{mod.label} permissions for {role.name}. Row and column checkboxes affect displayed rows only.</caption>
-                  <thead><tr><th scope="col">Permission</th>{ACTIONS.map((a) => {
-                    const keys = permissionKeys(rows, a.id);
-                    return <th scope="col" key={a.id} className={`rp-col rp-col--${a.id}`}>
-                      <Tri keys={keys} selected={selected} label={`${a.label} column: ${keys.length} displayed rows in ${mod.label}`} onToggle={() => toggle(keys)} testId={`checkbox-column-${a.id}`} /><span>{a.label}</span></th>;
-                  })}</tr></thead>
-                  <tbody>{rows.map((row) => {
-                    const keys = permissionKeys([row]);
-                    return <tr key={row.id}>
-                      <th scope="row"><label className="rp-rowlabel"><Tri keys={keys} selected={selected} label={`${row.label} row: all supported actions, displayed row only`} onToggle={() => toggle(keys)} testId={`checkbox-row-${row.id}`} /><span>{row.label}</span></label></th>
-                      {ACTIONS.map((a) => {
-                        if (!row.actions.includes(a.id)) return <td key={a.id} className="rp-na"><span aria-label={`${a.label} unavailable for ${row.label}`} data-testid={`text-na-${row.id}-${a.id}`}>—</span></td>;
-                        const key = `${row.id}:${a.id}`;
-                        return <td key={a.id}><input type="checkbox" className="rp-check" checked={selected.includes(key)} onChange={() => toggle([key])} aria-label={`${a.label} ${row.label} in ${mod.label} for ${role.name}`} data-testid={`checkbox-perm-${row.id}-${a.id}`} /></td>;
-                      })}
-                    </tr>;
-                  })}</tbody>
-                </table>
-              </div>}
-            <p className="rp-scope">Module checkbox: whole module. Row and column checkboxes: displayed rows only. Clear all and Grant all: every module.</p>
           </div>
-        </div>
+          <dl className="rp-meta">
+            <dt>Description</dt><dd>{role.description || 'No description'}</dd>
+            <dt>Permissions</dt><dd><span data-testid="text-permission-count">0 permissions</span> - permissions not configured</dd>
+            <dt>Created</dt><dd>{fmt(role.created_at)}</dd>
+            <dt>Updated</dt><dd>{fmt(role.updated_at)} (version {role.version})</dd>
+          </dl>
+          <p className="rp-scope">This role is business metadata only. It cannot affect login or staff rights.</p>
+        </> : <div className="admin-empty" role="status">
+          <strong>{loading ? 'Loading roles' : status === 'unavailable' ? 'Roles could not be loaded' : 'No role selected'}</strong>
+          <p>{status === 'unavailable' ? 'Use Refresh roles to try again.' : 'Permissions not configured. 0 permissions. Role metadata cannot affect login or staff rights.'}</p>
+          <span className="sr-only" data-testid="text-permission-count">0 permissions</span>
+        </div>}
       </section>
     </div>
-    {adding && <AddRoleDialog roles={roles} onAdd={addRole} onClose={() => setAdding(false)} />}
+    {form && <RoleForm form={form} setForm={setForm} busy={busy} blocked={blocked} error={formError} current={current} reviewing={reviewing} onSubmit={submit} onClose={closeForm} onReview={review} onAdopt={adopt} onUseCurrent={useCurrent} onRefresh={refreshAll} refreshing={loading} />}
+    {del && <Dialog title="Delete role" eyebrow="Roles & Permissions" onClose={closeDelete} description={`Delete "${del.name}"? This removes the role record. It does not change login or staff rights.`}
+      footer={<><button type="button" className="admin-button admin-button--secondary" onClick={closeDelete} disabled={busy} data-testid="button-cancel-role">Cancel</button>
+        <button type="button" className="admin-button rp-danger" onClick={confirmDelete} disabled={busy || blocked || delGone} data-testid="button-confirm-delete-role">{busy ? 'Deleting...' : 'Delete role'}</button></>}>
+      <div aria-live="polite">{formError && <div className="rp-alert" role="alert" data-testid="text-role-error">
+        <strong>{formError.code === 'role_deleted' ? 'Already deleted' : formError.code === 'role_stale' ? 'Role changed elsewhere' : formError.ambiguous ? 'Result unknown' : 'Not deleted'}</strong>
+        <p>{formError.message}</p>
+        {formError.ambiguous && <p>Deleting is blocked until you refresh roles.</p>}
+        {formError.ambiguous && <button type="button" className="admin-button admin-button--secondary" onClick={refreshAll} disabled={loading} data-testid="button-refresh-draft-roles">Refresh roles</button>}
+        {delGone && <p>Close this dialog and refresh roles to see the current state.</p>}
+      </div>}</div>
+    </Dialog>}
   </AdminLayout>;
 }

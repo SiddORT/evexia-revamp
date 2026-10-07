@@ -9,6 +9,7 @@ import '../../activityLogs.css';
 
 const browserActions = {
   staff_create: 'Staff created', staff_update: 'Staff updated', staff_status: 'Staff status changed',
+  role_create: 'Role created', role_update: 'Role updated', role_delete: 'Role deleted',
   browser_page_view: 'Page visited', browser_created: 'Record created',
   browser_updated: 'Record updated', browser_deleted: 'Record deleted',
   browser_imported: 'Records imported', browser_exported: 'Export generated',
@@ -38,7 +39,7 @@ const resourceNames = {
   purchase_received: 'Purchase Received', communication: 'Communication Settings',
   message_template: 'Message Templates', invoice_template: 'Invoice Templates',
   receipt_template: 'Receipt Templates', settings: 'Settings',
-  roles_permissions: 'Roles & Permissions preview', activity_logs: 'Sessions & Activity Logs',
+  roles_permissions: 'Roles & Permissions', custom_role: 'Custom role', activity_logs: 'Sessions & Activity Logs',
   masters: 'Masters',
 };
 

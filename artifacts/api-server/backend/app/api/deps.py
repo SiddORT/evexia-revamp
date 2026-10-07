@@ -16,6 +16,7 @@ bearer = HTTPBearer(auto_error=False)
 PERMISSION_ROLES = {
     "admin.access": frozenset({"super_admin"}),
     "staff.manage": frozenset({"super_admin"}),
+    "roles.manage": frozenset({"super_admin"}),
     "domain.provision": frozenset({"super_admin"}),
     "domain.assign_patient": frozenset({"super_admin"}),
 }

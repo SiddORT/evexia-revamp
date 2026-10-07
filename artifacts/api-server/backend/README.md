@@ -41,7 +41,8 @@ for its endpoints, limits, duplicate policy and unchanged local-demo assignments
   take a backup first. The current ordered migrations are `0001_identity_foundation`,
   `0002_optional_username`, `0003_system_identity_domain`, `0004_private_files`,
   `0005_protected_super_admin_sessions`, `0006_auth_sessions`,
-    `0007_reporting_indexes`, `0008_activity_search`, `0009_staff`, and `0010_zones`. Zone migration creates only an empty table. Staff migration
+    `0007_reporting_indexes`, `0008_activity_search`, `0009_staff`,
+    `0010_zones`, and `0010_custom_roles`. Zone and role migrations create only empty tables. Staff migration
    adds an empty encrypted profile table and deferred identity-link integrity
    guards; it changes no existing identities, sessions or activity history.
    The activity search
@@ -493,7 +494,111 @@ redirected to login. Live authenticated managed-preview/database verification is
 database was migrated, seeded or inspected by this work, and no production
 readiness claim is made.
 
-### Contract export
+
+### Custom role metadata
+
+The `/api/v1/admin/roles` endpoints manage **non-tenant business metadata only**.
+They require a currently valid protected singleton Super Admin session and
+the internal `roles.manage` capability. Transaction-time revalidation locks the
+actor and session before role reads or writes. Custom role names never enter
+authentication policy, legacy organization memberships, staff role dropdowns,
+or system identity mappings. A custom name of “Super Admin” grants nothing.
+MR, ordinary staff, unmapped accounts and anonymous callers cannot read or
+mutate these records. Staff encryption keys are not needed for custom roles.
+
+Forward-only migration `0010_custom_roles` adds a separate table with no seed
+rows or foreign keys to identities/assignments/permissions. An operator must
+apply `python3 -m alembic upgrade head` from this backend directory against
+the intended database using the existing migration/backup procedure before
+using the feature. Do not run fixture scripts against the managed/shared
+database. Startup does not create tables. Downgrade refuses data loss; use an
+operator backup and an explicitly planned recovery if reversal is required.
+
+Contract:
+
+- `GET /admin/roles?limit=50&cursor=<UUID>` returns `items`, `has_more`,
+  `next_cursor` and `limit`. Limit is 1–100; the default is 50. UUID keyset
+  ordering is deterministic, with no offset ceiling. Fetch successive pages
+  until `has_more` is false. It is a live directory, not a frozen snapshot;
+  additions below a previous cursor require a refresh.
+- `GET /admin/roles/{role_id}` returns one record or `role_deleted` (404).
+- `POST /admin/roles` accepts `name` (trimmed, 1–100 characters) and optional
+  `description` (trimmed, at most 1,000 characters, default empty string).
+  Names reject control characters; descriptions permit newline and tab.
+- `POST /admin/roles/{role_id}/edit` accepts those fields plus positive,
+  strict integer `expected_version`; `/delete` accepts only that version.
+  Description omitted during edit clears it. Names may keep their own current
+  spelling. Database-generated `lower(btrim(name))` uniqueness rejects duplicate
+  names even from simultaneous requests (`role_duplicate`, 409).
+- Responses contain stable UUID `id`, fields, `version`, `created_at`,
+  `updated_at`, and a read-only `permissions: []` collection. All permission,
+  authorization, identity and attribution input fields are forbidden, including
+  an empty input `permissions` collection. No permission operations exist.
+- Row locks and atomic version checks reject `role_stale` (409); missing rows
+  return `role_deleted` (404). Failed changes never increment a committed
+  version or add a successful audit. Unexpected pre-commit database failures
+  return safe `roles_unavailable` (503). A COMMIT connection failure returns
+  `role_outcome_unknown` (503): refresh authoritative list/detail before retry,
+  since PostgreSQL might already have committed.
+- Successful changes atomically create `role_create`, `role_update` or
+  `role_delete` audit entries with `custom_role` resource UUID, authenticated
+  actor, session and server request ID. No role name/description is copied into
+  audit metadata. Reporting search and Activity Logs show “Role created”,
+  “Role updated”, “Role deleted” and “Custom role”, not browser-reported actions.
+
+The portal has no role persistence in browser storage. It restores through the
+existing memory-token/HttpOnly-cookie lifecycle, checks session ownership before
+and after responses, and never automatically resubmits mutations. Page and
+focus refreshes update server state without replacing an open draft. Stale edits
+require review and explicit adoption of the current version; unknown outcomes
+disable mutation until an explicit refresh. Deleted records are never silently
+recreated. Previous/Next directory navigation reaches every bounded page.
+
+Verification (2026-10-07): the isolated backend regression pass covered role,
+staff, auth/session, reporting and migration behavior (131 passed), followed by
+17 focused role checks including ordinary staff denial and COMMIT failures.
+Four authenticated browser cases passed against a synthetic disposable
+PostgreSQL/API/Vite fixture, covering CRUD/reload, two-tab conflicts, deleted
+drafts, committed-but-lost responses, last deletion, 52-role navigation,
+desktop/mobile layout and audit UI labels. Portal compilation, generated client
+typecheck and API contract drift check passed. The release gate includes role
+service, backend/migration and browser checks.
+
+This is synthetic verification, not a live managed authenticated-preview or
+production check. **Live managed authenticated verification remains BLOCKED
+pending operator-confirmed migration/bootstrap readiness and authorized sign-in.**
+This work does not migrate, seed or inspect the managed database, handle live
+credentials, or deploy production.
+
+### Contract export workflow
+
+FastAPI is authoritative for the OpenAPI contract. From the workspace root:
+
+```sh
+pnpm run check:api-contract
+pnpm --filter @workspace/api-spec run export
+pnpm --filter @workspace/api-spec run codegen
+pnpm run typecheck:libs
+```
+
+`scripts/export-api-contract.py` imports the app with explicit synthetic,
+generation-only environment values, without reading Replit Secrets or connecting
+to a database/storage/scanner. It writes deterministic JSON, which is valid YAML,
+to `lib/api-spec/openapi.yaml`. Error and health schemas/responses originate from
+FastAPI/Pydantic models, not exporter-authored copies. The exporter normalizes
+the artifact `/api` mount, pins operation IDs (including `getHealthCheck`), and
+documents runtime response headers such as `X-Request-ID` and post-reservation
+`X-File-ID`. `check:api-contract` fails on drift. Orval derives only the shared
+`lib/api-client-react` and `lib/api-zod` libraries. The existing `healthCheck`
+client name remains a compatibility alias; `HealthStatus` remains a shared
+schema. Do not wire the portal to these clients or migrate its JavaScript/local
+records as part of this backend foundation.
+
+The spec server URL `/api` plus relative `/v1/...` paths produces exactly
+`/api/v1/...`; do not prefix `/api` twice. The managed preview has been verified:
+`/api/v1/health` and `/api/healthz` return 200, while `/api/api/...` returns 404.
+
+### Contract export workflow
 
 FastAPI is authoritative for the OpenAPI contract. From the workspace root:
 

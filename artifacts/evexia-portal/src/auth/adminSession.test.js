@@ -62,6 +62,60 @@ test('zone decoded responses cannot survive logout and stale errors are actionab
   await stale.logoutAdmin();
 });
 
+test('role transport is narrowly scoped, permission guarded and never replays uncertain mutations', async () => {
+  let writes = 0;
+  const identity = { ...user, permissions: ['admin.access', 'roles.manage'] };
+  const api = await setup(async (url, options) => {
+    if (url.includes('/admin/roles')) {
+      writes++;
+      assert.equal(options.headers.Authorization, 'Bearer synthetic-memory-token');
+      assert.equal(options.cache, 'no-store');
+      throw Error('private outage');
+    }
+    return reply(url.endsWith('/me') ? identity : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  await assert.rejects(api.roleRequest('', { name: 'Reviewer' }), (e) => e.ambiguous && /Refresh roles/.test(e.message));
+  assert.equal(writes, 1);
+  await assert.rejects(api.roleRequest('/permissions', {}), /Unsupported/);
+  await assert.rejects(api.roleRequest('?limit=500'), /Unsupported/);
+  await api.logoutAdmin();
+  const denied = await setup(async (url) => reply(url.endsWith('/me') ? user : payload));
+  await denied.loginAdmin(user.email, 'synthetic-password', false);
+  await assert.rejects(denied.roleRequest(), /access denied/);
+  await denied.logoutAdmin();
+});
+
+test('role responses are owner guarded through body decode; safe errors distinguish stale, deleted and ambiguous', async () => {
+  const identity = { ...user, permissions: ['admin.access', 'roles.manage'] };
+  let outcome = 'role_stale', release, start;
+  const started = new Promise((resolve) => { start = resolve; });
+  const api = await setup(async (url) => {
+    if (url.includes('/admin/roles')) {
+      if (outcome === 'late') return { ok: true, status: 200, json: async () => {
+        start(); await new Promise((resolve) => { release = resolve; }); return { private: true };
+      } };
+      if (outcome === 'invalid') return new Response('invalid', { status: 200 });
+      return reply({ error: { code: outcome, message: 'unsafe details' } },
+        outcome === 'role_deleted' ? 404 : outcome === 'roles_unavailable' ? 503 : 409);
+    }
+    return reply(url.endsWith('/me') ? identity : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  for (const [code, message] of [['role_stale', /changed/], ['role_deleted', /deleted/], ['role_duplicate', /already exists/], ['roles_unavailable', /unavailable/]]) {
+    outcome = code;
+    await assert.rejects(api.roleRequest('', { name: 'R' }), (e) => e.code === code && !e.ambiguous && message.test(e.message) && !e.message.includes('unsafe'));
+  }
+  outcome = 'invalid';
+  await assert.rejects(api.roleRequest('', { name: 'R' }), (e) => e.ambiguous === true);
+  outcome = 'late';
+  const read = api.roleRequest();
+  await started;
+  await api.logoutAdmin();
+  release();
+  await assert.rejects(read, /session changed/);
+});
+
 test('staff mutations use memory-only bearer and never replay ambiguous create requests', async () => {
   let writes = 0;
   const identity = { ...user, permissions: ['admin.access', 'staff.manage'] };

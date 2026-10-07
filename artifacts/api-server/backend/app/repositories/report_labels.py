@@ -1,5 +1,6 @@
 """Explicit UI label aliases for safe activity reporting search."""
 BROWSER_ACTIONS = {
+    "role_create": "Role created", "role_update": "Role updated", "role_delete": "Role deleted",
     "staff_create": "Staff created", "staff_update": "Staff updated", "staff_status": "Staff status changed",
     "browser_page_view": "Page visited", "browser_created": "Record created",
     "browser_updated": "Record updated", "browser_deleted": "Record deleted",
@@ -16,6 +17,6 @@ RESOURCE_NAMES = {
     "purchase_received": "Purchase Received", "communication": "Communication Settings",
     "message_template": "Message Templates", "invoice_template": "Invoice Templates",
     "receipt_template": "Receipt Templates", "settings": "Settings",
-    "roles_permissions": "Roles & Permissions preview", "activity_logs": "Sessions & Activity Logs",
+    "roles_permissions": "Roles & Permissions", "custom_role": "Custom role", "activity_logs": "Sessions & Activity Logs",
     "masters": "Masters",
 }

@@ -1,205 +1,242 @@
 import { test, expect } from '@playwright/test';
-import { ALL_PERMISSION_KEYS, MODULES, permissionKeys, createDemoRoles } from '../src/services/rolePermissions.js';
 
-if (process.env.EVEXIA_CHROMIUM_PATH) {
-  test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
-}
+if (process.env.EVEXIA_CHROMIUM_PATH) test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
 const base = () => {
   if (!process.env.EVEXIA_PREVIEW_BASE_URL) throw Error('Use the isolated authenticated preview harness.');
   return process.env.EVEXIA_PREVIEW_BASE_URL.replace(/\/$/, '');
 };
-const total = ALL_PERMISSION_KEYS.length;
 async function open(page) {
   await page.goto(`${base()}/admin/roles-permissions`);
   await expect(page).toHaveURL(/\/admin\/login/);
   await page.getByLabel('Email or username').fill('crm-admin@allergyevexia.in');
-  if (!process.env.EVEXIA_TEST_ADMIN_PASSWORD) throw Error('Missing synthetic fixture password.');
   await page.getByLabel('Password', { exact: true }).fill(process.env.EVEXIA_TEST_ADMIN_PASSWORD);
   await page.getByTestId('button-submit-login').click();
-  await expect(page.getByTestId('text-active-role')).toHaveText('Demo Coordinator');
+  await expect(page.getByTestId('button-add-role')).toBeEnabled();
 }
-const count = (page, n) => expect(page.getByTestId('text-permission-count')).toHaveText(`${n}/${total}`);
-const stores = (page) => page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }));
-
-test('creation, validation, descriptions, independent drafts, save and reload are memory-only', async ({ page }) => {
-  await open(page);
-  await expect(page.getByRole('note').filter({ hasText: 'UI-only demo roles' })).toContainText('reset on page reload');
-  const initialStores = await stores(page);
-  await page.evaluate(() => {
-    window.rolePreviewStorageWrites = [];
-    for (const method of ['setItem', 'removeItem', 'clear']) {
-      const original = Storage.prototype[method];
-      Storage.prototype[method] = function (...args) {
-        window.rolePreviewStorageWrites.push(method);
-        return original.apply(this, args);
-      };
-    }
+async function clearRoles(page) {
+  await page.evaluate(async () => {
+    const { listRoles, deleteRole } = await import('/src/services/rolePermissions.js');
+    // Read all pages first so deletion cannot invalidate the scan.
+    let cursor = null, rows = [];
+    do {
+      const data = await listRoles(cursor);
+      rows.push(...data.items);
+      cursor = data.next_cursor;
+    } while (cursor);
+    for (const row of rows) await deleteRole(row.id, row.version);
   });
-  const roleRequests = [];
-  const localActivity = [];
-  page.on('request', (request) => {
-    const path = new URL(request.url()).pathname;
-    // Privacy-safe local observations are allowed; role data stays offline.
-    if (path === '/api/v1/admin/reporting/activity' && request.method() === 'POST') {
-      localActivity.push(request.postDataJSON());
-    } else if (path.includes('/api/') && !/\/auth\/(me|refresh)$/.test(path)) roleRequests.push(path);
-  });
-  await count(page, total);
+  await page.getByTestId('button-refresh-roles').click();
+  await expect(page.getByTestId('status-roles-empty')).toBeVisible();
+}
+async function create(page, name, description = '') {
   await page.getByTestId('button-add-role').click();
-  await expect(page.getByTestId('button-close-dialog')).toBeFocused();
+  await page.getByTestId('input-role-name').fill(name);
+  await page.getByTestId('input-role-description').fill(description);
+  const response = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/v1/admin/roles' && r.request().method() === 'POST');
+  await page.getByTestId('button-create-role').click();
+  const row = await (await response).json();
+  await expect(page.getByTestId('text-active-role')).toHaveText(name.trim());
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  return row;
+}
+async function remove(page) {
+  await page.getByTestId('button-delete-role').click();
+  await expect(page.getByRole('dialog')).toContainText('does not change login or staff rights');
+  await page.getByTestId('button-confirm-delete-role').click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByTestId('button-add-role')).toBeEnabled();
+}
+
+test('fresh empty state, validated CRUD, persistence, cross-tab reads, last deletion and server audit', async ({ page, context }, testInfo) => {
+  await open(page);
+  await expect(page.getByTestId('status-roles-empty')).toContainText('No roles yet');
+  await expect(page.getByRole('checkbox')).toHaveCount(0);
+  await expect(page.getByText('Grant all', { exact: true })).toHaveCount(0);
+  const stores = await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }));
+  await page.getByTestId('button-add-role').click();
   await page.getByTestId('button-create-role').click();
   await expect(page.getByTestId('text-role-error')).toHaveText('Enter a role name.');
-  await expect(page.getByTestId('input-role-name')).toBeFocused();
-  await page.getByTestId('input-role-name').fill(' demo coordinator ');
+  await page.getByTestId('input-role-name').fill('x'.repeat(101));
   await page.getByTestId('button-create-role').click();
-  await expect(page.getByTestId('text-role-error')).toContainText('already exists');
+  await expect(page.getByTestId('text-role-error')).toContainText('100 characters');
   await page.getByTestId('button-cancel-role').click();
-  await expect(page.getByTestId('button-add-role')).toBeFocused();
+  const row = await create(page, ' Synthetic Reviewer ', ' Review team only. ');
+  expect(row.permissions).toEqual([]);
+  await expect(page.getByTestId('text-permission-count')).toHaveText('0 permissions');
   await page.getByTestId('button-add-role').click();
-  await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(page.getByTestId('button-add-role')).toBeFocused();
-  await page.getByTestId('button-add-role').click();
-  await page.getByTestId('input-role-name').fill('  Fictional Reviewer  ');
-  await page.getByTestId('input-role-description').fill('  Fictional review team only.  ');
+  await page.getByTestId('input-role-name').fill(' synthetic reviewer ');
   await page.getByTestId('button-create-role').click();
-  await expect(page.getByTestId('text-active-role')).toHaveText('Fictional Reviewer');
-  const newRole = page.locator('.rp-role').filter({ hasText: 'Fictional Reviewer' });
-  await expect(newRole).toHaveAttribute('aria-pressed', 'true');
-  await expect(newRole).toContainText('Fictional review team only.');
-  await count(page, 0);
-  await page.getByTestId('checkbox-perm-zones-view').check();
-  await count(page, 1);
-  await expect(page.getByTestId('status-dirty')).toHaveText('Unsaved changes');
-  await page.getByTestId('button-role-demo-reader').click();
-  await count(page, createDemoRoles()[2].permissions.length);
-  await page.getByTestId('checkbox-perm-zones-view').uncheck();
-  await newRole.click();
-  await count(page, 1);
-  await expect(page.getByTestId('checkbox-perm-zones-view')).toBeChecked();
-  await page.getByTestId('button-save-role').click();
-  await expect(page.getByTestId('status-save')).toContainText('page memory only');
-  await expect(page.getByTestId('status-save')).toContainText('nothing is stored or enforced');
-  await expect(page.getByTestId('status-dirty')).toHaveText('Saved snapshot');
-  await page.getByTestId('button-role-demo-reader').click();
-  await expect(page.getByTestId('checkbox-perm-zones-view')).not.toBeChecked();
-  await newRole.click();
-  await expect(page.getByTestId('status-dirty')).toHaveText('Saved snapshot');
-  expect(await stores(page)).toBe(initialStores);
-  expect(await page.evaluate(() => window.rolePreviewStorageWrites)).toEqual([]);
-  expect(roleRequests).toEqual([]);
-  for (const body of localActivity) {
-    expect(Object.keys(body)).toEqual(['events']);
-    for (const event of body.events) {
-      expect(Object.keys(event).sort()).toEqual(['action', 'event_id', 'resource']);
-      expect(['page_view', 'created', 'updated']).toContain(event.action);
-      expect(event.resource).toBe('roles_permissions');
-    }
-  }
+  await expect(page.getByTestId('status-role-save-error')).toContainText('already exists');
+  await page.getByTestId('button-cancel-role').click();
   await page.reload();
-  await expect(page.getByTestId('text-role-count')).toHaveText('3');
-  await expect(page.getByTestId('text-active-role')).toHaveText('Demo Coordinator');
-  await count(page, total);
-  await expect(page.getByText('Fictional Reviewer')).toHaveCount(0);
-});
-
-test('individual, row, column and module aggregates respect unsupported actions and search scopes', async ({ page }) => {
-  await open(page);
-  await page.getByTestId('button-clear-role').click();
-  await count(page, 0);
-  await page.getByTestId('checkbox-perm-zones-view').check();
-  for (const id of ['checkbox-row-zones', 'checkbox-column-view', 'checkbox-module-masters', 'checkbox-module-current']) {
-    await expect(page.getByTestId(id)).toHaveAttribute('aria-checked', 'mixed');
-    expect(await page.getByTestId(id).evaluate((el) => el.indeterminate)).toBe(true);
+  await expect(page.getByTestId('text-active-role')).toHaveText('Synthetic Reviewer');
+  const other = await context.newPage();
+  await other.goto(`${base()}/admin/roles-permissions`);
+  await expect(other.getByTestId('text-active-role')).toHaveText('Synthetic Reviewer');
+  await page.getByTestId('button-edit-role').click();
+  await page.getByTestId('input-role-description').fill('Revised description');
+  await page.getByTestId('button-save-role').click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await other.getByTestId('button-refresh-roles').click();
+  await expect(other.locator('.rp-meta')).toContainText('Revised description');
+  await other.close();
+  await page.screenshot({ path: testInfo.outputPath('roles-metadata-desktop.png'), fullPage: true });
+  await page.getByTestId('button-delete-role').click();
+  await page.getByTestId('button-cancel-role').click();
+  await expect(page.getByTestId('text-active-role')).toHaveText('Synthetic Reviewer');
+  await remove(page);
+  await expect(page.getByTestId('status-roles-empty')).toBeVisible();
+  const next = await create(page, 'Super Admin', 'Business metadata only');
+  expect(next.permissions).toEqual([]);
+  expect(await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }))).toBe(stores);
+  const events = await page.evaluate(async () => {
+    const { reportingRequest } = await import('/src/auth/adminSession.js');
+    return (await reportingRequest('events', { q: 'Custom role', limit: 100 })).items;
+  });
+  const mutations = events.filter((e) => e.resource_id === row.id);
+  expect(mutations.map((e) => e.action).sort()).toEqual(['role_create', 'role_delete', 'role_update']);
+  for (const event of mutations) {
+    expect(event.outcome).toBe('success');
+    expect(event.reason).not.toBe('browser_reported');
+    expect(event.session_id).toBeTruthy();
+    expect(event.request_id).toBeTruthy();
   }
-  await page.getByTestId('checkbox-row-zones').check();
-  await count(page, 4);
-  await expect(page.getByTestId('checkbox-row-zones')).toBeChecked();
-  await page.getByTestId('checkbox-row-zones').uncheck();
-  await count(page, 0);
-  await page.getByTestId('checkbox-perm-patients-view').check();
-  await page.getByTestId('input-search-permissions').fill('Zone Master');
-  await expect(page.locator('.rp-table tbody tr')).toHaveCount(1);
-  await count(page, 1);
-  await page.getByTestId('checkbox-column-view').check();
-  await count(page, 2);
-  await page.getByTestId('checkbox-column-view').uncheck();
-  await count(page, 1);
-  await page.getByTestId('checkbox-module-current').check();
-  const mastersTotal = permissionKeys(MODULES.find((m) => m.id === 'masters').rows).length;
-  await count(page, mastersTotal);
-  await page.getByTestId('input-search-permissions').fill('does-not-exist');
-  await expect(page.getByTestId('status-no-rows')).toContainText('Selections are unchanged');
-  await count(page, mastersTotal);
-  await page.getByTestId('button-all-role').click();
-  await count(page, total);
-  await page.getByTestId('button-clear-role').click();
-  await count(page, 0);
-  await page.getByTestId('input-search-permissions').fill('');
-  await expect(page.getByTestId('checkbox-perm-patients-view')).not.toBeChecked();
-  await expect(page.getByTestId('text-na-patients-delete')).toBeVisible();
-  await expect(page.getByTestId('checkbox-perm-patients-delete')).toHaveCount(0);
-  await page.getByTestId('checkbox-column-delete').check();
-  await count(page, 3);
-  await page.getByTestId('button-module-dashboard').click();
-  await expect(page.locator('.rp-table tbody tr')).toHaveCount(1);
-  await expect(page.getByTestId('checkbox-column-edit')).toBeDisabled();
-  await expect(page.getByTestId('checkbox-column-delete')).toBeDisabled();
-  await expect(page.getByTestId('checkbox-column-download')).toBeDisabled();
-  await page.getByTestId('checkbox-module-dashboard').check();
-  await count(page, 4);
-  await expect(page.getByTestId('checkbox-module-current')).toBeChecked();
-  await page.getByTestId('checkbox-perm-dashboard-view').focus();
-  await page.keyboard.press('Space');
-  await count(page, 3);
+  await page.goto(`${base()}/admin/activity-logs`);
+  await page.getByRole('tab', { name: /Activity/ }).click();
+  await expect(page.getByText('Role created', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Role deleted', { exact: true })).toBeVisible();
 });
 
-test('sidebar placement, search, active group and collapsed access preserve the staff link', async ({ page }) => {
+test('stale edits preserve drafts and require review; deleted records never recreate', async ({ page, context }) => {
   await open(page);
-  const links = page.locator('#admin-user-management-subnav a');
-  await expect(links).toHaveCount(2);
-  await expect(links.nth(0)).toHaveAccessibleName('Staff Management');
-  await expect(links.nth(1)).toHaveAccessibleName('Roles & Permissions');
+  await clearRoles(page);
+  const row = await create(page, 'Conflict Role');
+  await page.getByTestId('button-edit-role').click();
+  await page.getByTestId('input-role-name').fill('Retained draft');
+  const other = await context.newPage();
+  await other.goto(`${base()}/admin/roles-permissions`);
+  await expect(other.getByTestId('text-active-role')).toHaveText('Conflict Role');
+  await other.getByTestId('button-edit-role').click();
+  await other.getByTestId('input-role-description').fill('Another tab update');
+  await other.getByTestId('button-save-role').click();
+  await expect(other.getByRole('dialog')).toHaveCount(0);
+  await page.getByTestId('button-save-role').click();
+  await expect(page.getByTestId('status-role-save-error')).toContainText('changed');
+  await expect(page.getByTestId('input-role-name')).toHaveValue('Retained draft');
+  await expect(page.getByTestId('button-save-role')).toBeDisabled();
+  await page.getByTestId('button-review-current').click();
+  await expect(page.getByTestId('text-current-role')).toContainText('Another tab update');
+  await page.getByTestId('button-adopt-current').click();
+  await page.getByTestId('button-save-role').click();
+  await expect(page.getByTestId('text-active-role')).toHaveText('Retained draft');
+  await page.getByTestId('button-delete-role').click();
+  await other.getByTestId('button-refresh-roles').click();
+  await other.getByTestId('button-edit-role').click();
+  await other.getByTestId('input-role-description').fill('Changed before delete');
+  await other.getByTestId('button-save-role').click();
+  await expect(other.getByRole('dialog')).toHaveCount(0);
+  await page.getByTestId('button-confirm-delete-role').click();
+  await expect(page.getByTestId('text-role-error')).toContainText('changed');
+  await expect(page.getByTestId('button-confirm-delete-role')).toBeDisabled();
+  await page.getByTestId('button-cancel-role').click();
+  await page.getByTestId('button-refresh-roles').click();
+  await page.getByTestId('button-edit-role').click();
+  await page.getByTestId('input-role-description').fill('Deleted draft kept');
+  await remove(other);
+  await page.getByTestId('button-save-role').click();
+  await expect(page.getByTestId('status-role-save-error')).toContainText('deleted');
+  await expect(page.getByTestId('input-role-description')).toHaveValue('Deleted draft kept');
+  await expect(page.getByTestId('button-save-role')).toBeDisabled();
+  await page.getByTestId('button-cancel-role').click();
+  await page.getByTestId('button-refresh-roles').click();
+  await expect(page.getByTestId('status-roles-empty')).toBeVisible();
+  await other.close();
+  expect(row.version).toBe(1);
+});
+
+test('loading and unavailable are distinct; failed and lost saves keep drafts without replay', async ({ page }) => {
+  await open(page);
+  await clearRoles(page);
+  const outage = (route) => route.request().method() === 'GET'
+    ? route.fulfill({ status: 503, contentType: 'application/json', body: '{"error":{"code":"roles_unavailable"}}' })
+    : route.continue();
+  await page.route('**/api/v1/admin/roles?*', outage);
+  await page.getByTestId('button-refresh-roles').click();
+  await expect(page.getByTestId('status-roles-unavailable')).toBeVisible();
+  await expect(page.getByTestId('status-roles-empty')).toHaveCount(0);
+  await expect(page.getByTestId('button-add-role')).toBeDisabled();
+  await page.unroute('**/api/v1/admin/roles?*', outage);
+  let release, started;
+  const wait = new Promise((resolve) => { started = resolve; });
+  await page.route('**/api/v1/admin/roles?*', async (route) => {
+    started(); await new Promise((resolve) => { release = resolve; }); await route.continue();
+  });
+  await page.getByTestId('button-refresh-roles').click();
+  await wait;
+  await expect(page.getByTestId('status-roles-loading')).toBeVisible();
+  release();
+  await expect(page.getByTestId('button-add-role')).toBeEnabled();
+  await page.unroute('**/api/v1/admin/roles?*');
+  await page.getByTestId('button-add-role').click();
+  await page.getByTestId('input-role-name').fill('Retry Draft');
+  const fail = (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{"error":{"code":"roles_unavailable"}}' });
+  await page.route('**/api/v1/admin/roles', fail);
+  await page.getByTestId('button-create-role').click();
+  await expect(page.getByTestId('status-role-save-error')).toContainText('unavailable');
+  await expect(page.getByTestId('input-role-name')).toHaveValue('Retry Draft');
+  await expect(page.getByTestId('button-create-role')).toBeEnabled();
+  await page.unroute('**/api/v1/admin/roles', fail);
+  let writes = 0;
+  await page.route('**/api/v1/admin/roles', async (route) => {
+    writes++;
+    await route.fetch(); // Actually commit, then lose the response.
+    await route.abort('failed');
+  });
+  await page.getByTestId('button-create-role').click();
+  await expect(page.getByTestId('status-role-save-error')).toContainText('outcome could not be confirmed');
+  await expect(page.getByTestId('button-create-role')).toBeDisabled();
+  expect(writes).toBe(1);
+  await page.unroute('**/api/v1/admin/roles');
+  await page.getByTestId('button-refresh-draft-roles').click();
+  await expect(page.getByTestId('button-create-role')).toBeEnabled();
+  await page.getByTestId('button-cancel-role').click();
+  await expect(page.getByTestId('text-active-role')).toHaveText('Retry Draft');
+  await page.reload();
+  await expect(page.getByTestId('text-active-role')).toHaveText('Retry Draft');
+});
+
+test('full bounded directory navigation, sidebar and responsive zero-permission workspace', async ({ page }, testInfo) => {
+  await open(page);
+  await clearRoles(page);
+  await page.evaluate(async () => {
+    const { createRole } = await import('/src/services/rolePermissions.js');
+    for (let n = 0; n < 52; n++) await createRole({ name: `Directory Role ${n}`, description: '' });
+  });
+  await page.getByTestId('button-refresh-roles').click();
+  await expect(page.locator('.rp-role')).toHaveCount(50);
+  await page.getByTestId('button-next-roles').click();
+  await expect(page.locator('.rp-role')).toHaveCount(2);
+  await expect(page.getByTestId('button-next-roles')).toBeDisabled();
+  await page.getByTestId('button-previous-roles').click();
+  await expect(page.locator('.rp-role')).toHaveCount(50);
   await expect(page.getByTestId('link-admin-roles-permissions')).toHaveAttribute('aria-current', 'page');
-  await expect(page.getByTestId('button-toggle-user-management')).toHaveClass(/admin-nav__item--active/);
   await page.getByTestId('input-search-navigation').fill('permissions');
   await expect(page.getByTestId('link-admin-roles-permissions')).toBeVisible();
   await expect(page.getByTestId('link-admin-staff')).toHaveCount(0);
   await page.getByTestId('button-clear-navigation-search').click();
-  await page.getByTestId('button-toggle-sidebar').click();
-  await expect(page.getByTestId('link-admin-roles-permissions')).toBeHidden();
-  await page.getByTestId('button-toggle-user-management').click();
-  await expect(page.getByTestId('link-admin-roles-permissions')).toBeVisible();
-  await page.getByTestId('button-toggle-sidebar').click();
-  await page.getByTestId('button-search-navigation').click();
-  await page.getByTestId('input-search-navigation').fill('roles');
-  await expect(page.getByTestId('link-admin-roles-permissions')).toBeVisible();
-});
-
-for (const [width, theme, appearance] of [[1440, 'classic', 'light'], [1440, 'modern', 'dark'], [375, 'classic', 'light'], [375, 'modern', 'dark']]) {
-  test(`layout and mobile navigation at ${width}px in ${theme} ${appearance}`, async ({ page }) => {
+  for (const [width, theme, appearance] of [[1440, 'classic', 'light'], [375, 'modern', 'dark']]) {
     await page.setViewportSize({ width, height: 900 });
-    await open(page);
-    // Theme fixture uses the same preference setter as Settings; no auth bypass.
     await page.evaluate(async ({ theme, appearance }) => {
       const { setAdminPreference } = await import('/src/components/admin/adminPreferences.js');
-      setAdminPreference('theme', theme);
-      setAdminPreference('appearance', appearance);
+      setAdminPreference('theme', theme); setAdminPreference('appearance', appearance);
     }, { theme, appearance });
-    await expect(page.locator('.admin-shell')).toHaveAttribute('data-admin-appearance', appearance);
-    await expect(page.locator('.admin-shell')).toHaveAttribute('data-admin-theme', theme);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
-    const left = await page.locator('.rp-roles').boundingBox();
-    const work = await page.locator('.rp-work').boundingBox();
-    // Capture the page before opening the animated mobile drawer.
-    await page.screenshot({ path: `test-results/roles-${width}-${theme}-${appearance}.png`, fullPage: true });
     if (width < 900) {
-      expect(work.y).toBeGreaterThan(left.y + left.height);
-      expect(await page.locator('.rp-scroll').evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
-      await page.getByTestId('button-open-navigation').click();
-      await page.getByTestId('input-search-navigation').fill('permissions');
-      await page.getByTestId('link-admin-roles-permissions').click();
-      await expect(page.getByTestId('button-open-navigation')).toHaveAttribute('aria-expanded', 'false');
-    } else expect(work.x).toBeGreaterThan(left.x + left.width);
-  });
-}
+      await expect(page.getByTestId('button-open-navigation')).toBeVisible();
+      await expect(page.locator('#admin-navigation')).toHaveAttribute('aria-hidden', 'true');
+      await page.getByTestId('text-active-role').scrollIntoViewIfNeeded();
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    await page.screenshot({ path: testInfo.outputPath(`roles-${width}.png`), fullPage: false });
+  }
+  await clearRoles(page);
+});

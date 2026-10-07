@@ -42,7 +42,7 @@ def prepare(migration_db):
         db.add(MRProfile(id=uuid.uuid4(), user_id=mr_user.id, is_active=True))
         db.commit()
         session_id = session.id
-    command.upgrade(config, "head")
+    command.upgrade(config, "0009_staff")
     return engine, config, admin_id, session_id, legacy_id
 
 

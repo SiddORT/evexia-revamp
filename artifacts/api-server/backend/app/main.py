@@ -17,6 +17,8 @@ from app.api.v1.reporting import router as reporting_router
 from app.api.v1.staff import router as staff_router
 from app.api.v1.zones import router as zones_router
 from app.services.zones import ZoneError
+from app.api.v1.roles import router as roles_router
+from app.services.roles import RoleError
 from app.services.staff_crypto import StaffError
 from app.core.config import get_settings
 from app.core.request_limits import RequestSizeLimit, RequestTooLarge, body_limit
@@ -120,9 +122,12 @@ def create_app() -> FastAPI:
         # Do not echo invalid bodies: they may contain passwords or other sensitive values.
         fields = [{"field": ".".join(str(part) for part in err["loc"] if isinstance(part, (str, int))),
                    "code": err["type"]} for err in exc.errors()[:20]]
-        if request.url.path.startswith("/api/v1/admin/staff"):
+        if request.url.path.startswith(("/api/v1/admin/staff", "/api/v1/admin/roles")):
             allowed = {"name", "email", "phone", "dialCountry", "role", "designation", "dateOfJoining", "status", "expected_version", "staff_id", "limit", "offset", "query", "cursor"}
             locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
+            if request.url.path.startswith("/api/v1/admin/roles"):
+                locations = {f"{scope}.{name}" for scope in ("body", "query", "path")
+                             for name in ("name", "description", "expected_version", "role_id", "limit", "cursor")}
             fields = [{"field": field["field"] if field["field"] in locations else "body",
                        "code": field["code"]} for field in fields]
         if request.url.path.startswith("/api/v1/admin/zones"):
@@ -144,6 +149,10 @@ def create_app() -> FastAPI:
     async def zone_error(request: Request, exc: ZoneError):
         return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
 
+    @app.exception_handler(RoleError)
+    async def role_error(request: Request, exc: RoleError):
+        return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
+
     @app.exception_handler(AuthError)
     async def revoked_identity(request: Request, exc: AuthError):
         return JSONResponse(error_body(request, 401, "Authentication required"), status_code=401,
@@ -160,6 +169,7 @@ def create_app() -> FastAPI:
     app.include_router(reporting_router, prefix="/api/v1")
     app.include_router(staff_router, prefix="/api/v1")
     app.include_router(zones_router, prefix="/api/v1")
+    app.include_router(roles_router, prefix="/api/v1")
     app.add_api_route("/api/healthz", lambda: {"status": "ok"}, methods=["GET"],
                       response_model=HealthStatus, operation_id="getHealthCheck", tags=["health"])
     original_openapi = app.openapi

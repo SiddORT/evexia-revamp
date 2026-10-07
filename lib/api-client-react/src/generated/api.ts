@@ -32,6 +32,7 @@ import type {
   ExportZonesParams,
   FileResponse,
   HealthStatus,
+  ListCustomRolesParams,
   ListOwnSessionsParams,
   ListReportingEventsParams,
   ListReportingSessionsParams,
@@ -46,6 +47,11 @@ import type {
   ReportExport,
   ReportSummary,
   ReviewZoneImportParams,
+  RoleEdit,
+  RoleFields,
+  RolePage,
+  RoleResponse,
+  RoleVersion,
   SessionListResponse,
   SessionPage,
   SessionResponse,
@@ -881,6 +887,537 @@ export function useListReportingUsers<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getListCustomRolesUrl = (params?: ListCustomRolesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/roles?${stringifiedParams}`
+    : `/api/v1/admin/roles`;
+};
+
+/**
+ * @summary List Roles
+ */
+export const listCustomRoles = async (
+  params?: ListCustomRolesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<RolePage> => {
+  return customFetch<RolePage>(getListCustomRolesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCustomRolesQueryKey = (params?: ListCustomRolesParams) => {
+  return [`/api/v1/admin/roles`, ...(params ? [params] : [])] as const;
+};
+
+export const getListCustomRolesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCustomRoles>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListCustomRolesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCustomRoles>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCustomRolesQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listCustomRoles>>> = ({
+    signal,
+  }) => listCustomRoles(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCustomRoles>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCustomRolesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCustomRoles>>
+>;
+export type ListCustomRolesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary List Roles
+ */
+
+export function useListCustomRoles<
+  TData = Awaited<ReturnType<typeof listCustomRoles>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListCustomRolesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCustomRoles>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCustomRolesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateCustomRoleUrl = () => {
+  return `/api/v1/admin/roles`;
+};
+
+/**
+ * @summary Create Role
+ */
+export const createCustomRole = async (
+  roleFields: RoleFields,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<RoleResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<RoleResponse>(getCreateCustomRoleUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(roleFields),
+  });
+};
+
+export const getCreateCustomRoleMutationKey = () =>
+  ["createCustomRole"] as const;
+
+export const getCreateCustomRoleMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCustomRole>>,
+    TError,
+    CreateCustomRoleMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createCustomRole>>,
+  TError,
+  CreateCustomRoleMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateCustomRoleMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createCustomRole>>,
+    CreateCustomRoleMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createCustomRole(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateCustomRoleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createCustomRole>>
+>;
+export type CreateCustomRoleMutationBody = BodyType<RoleFields>;
+export type CreateCustomRoleMutationError = ErrorType<ErrorEnvelope>;
+export type CreateCustomRoleMutationVariables = { data: BodyType<RoleFields> };
+
+/**
+ * @summary Create Role
+ */
+export const useCreateCustomRole = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCustomRole>>,
+    TError,
+    CreateCustomRoleMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createCustomRole>>,
+  TError,
+  CreateCustomRoleMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateCustomRoleMutationOptions(options));
+};
+
+export const getGetCustomRoleUrl = (roleId: string) => {
+  return `/api/v1/admin/roles/${roleId}`;
+};
+
+/**
+ * @summary Get Role
+ */
+export const getCustomRole = async (
+  roleId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<RoleResponse> => {
+  return customFetch<RoleResponse>(getGetCustomRoleUrl(roleId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCustomRoleQueryKey = (roleId: string) => {
+  return [`/api/v1/admin/roles/${roleId}`] as const;
+};
+
+export const getGetCustomRoleQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCustomRole>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  roleId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCustomRole>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCustomRoleQueryKey(roleId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCustomRole>>> = ({
+    signal,
+  }) => getCustomRole(roleId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: roleId !== null && roleId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCustomRole>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCustomRoleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCustomRole>>
+>;
+export type GetCustomRoleQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Get Role
+ */
+
+export function useGetCustomRole<
+  TData = Awaited<ReturnType<typeof getCustomRole>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  roleId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCustomRole>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCustomRoleQueryOptions(roleId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDeleteCustomRoleUrl = (roleId: string) => {
+  return `/api/v1/admin/roles/${roleId}/delete`;
+};
+
+/**
+ * Version-checked deletion; response contains the removed metadata.
+ * @summary Delete Role
+ */
+export const deleteCustomRole = async (
+  roleId: string,
+  roleVersion: RoleVersion,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<RoleResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<RoleResponse>(getDeleteCustomRoleUrl(roleId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(roleVersion),
+  });
+};
+
+export const getDeleteCustomRoleMutationKey = () =>
+  ["deleteCustomRole"] as const;
+
+export const getDeleteCustomRoleMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCustomRole>>,
+    TError,
+    DeleteCustomRoleMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteCustomRole>>,
+  TError,
+  DeleteCustomRoleMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteCustomRoleMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteCustomRole>>,
+    DeleteCustomRoleMutationVariables
+  > = (props) => {
+    const { roleId, data } = props ?? {};
+
+    return deleteCustomRole(roleId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteCustomRoleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteCustomRole>>
+>;
+export type DeleteCustomRoleMutationBody = BodyType<RoleVersion>;
+export type DeleteCustomRoleMutationError = ErrorType<ErrorEnvelope>;
+export type DeleteCustomRoleMutationVariables = {
+  roleId: string;
+  data: BodyType<RoleVersion>;
+};
+
+/**
+ * @summary Delete Role
+ */
+export const useDeleteCustomRole = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCustomRole>>,
+    TError,
+    DeleteCustomRoleMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteCustomRole>>,
+  TError,
+  DeleteCustomRoleMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteCustomRoleMutationOptions(options));
+};
+
+export const getEditCustomRoleUrl = (roleId: string) => {
+  return `/api/v1/admin/roles/${roleId}/edit`;
+};
+
+/**
+ * @summary Edit Role
+ */
+export const editCustomRole = async (
+  roleId: string,
+  roleEdit: RoleEdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<RoleResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<RoleResponse>(getEditCustomRoleUrl(roleId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(roleEdit),
+  });
+};
+
+export const getEditCustomRoleMutationKey = () => ["editCustomRole"] as const;
+
+export const getEditCustomRoleMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editCustomRole>>,
+    TError,
+    EditCustomRoleMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editCustomRole>>,
+  TError,
+  EditCustomRoleMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditCustomRoleMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editCustomRole>>,
+    EditCustomRoleMutationVariables
+  > = (props) => {
+    const { roleId, data } = props ?? {};
+
+    return editCustomRole(roleId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditCustomRoleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editCustomRole>>
+>;
+export type EditCustomRoleMutationBody = BodyType<RoleEdit>;
+export type EditCustomRoleMutationError = ErrorType<ErrorEnvelope>;
+export type EditCustomRoleMutationVariables = {
+  roleId: string;
+  data: BodyType<RoleEdit>;
+};
+
+/**
+ * @summary Edit Role
+ */
+export const useEditCustomRole = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editCustomRole>>,
+    TError,
+    EditCustomRoleMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editCustomRole>>,
+  TError,
+  EditCustomRoleMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditCustomRoleMutationOptions(options));
+};
 
 export const getListStaffUrl = (params?: ListStaffParams) => {
   const normalizedParams = new URLSearchParams();

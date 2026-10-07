@@ -300,6 +300,56 @@ export interface ReportSummary {
   total_users: number;
 }
 
+export interface RoleEdit {
+  /** @maxLength 1000 */
+  description?: string;
+  /** @minimum 1 */
+  expected_version: number;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+}
+
+export interface RoleFields {
+  /** @maxLength 1000 */
+  description?: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+}
+
+export interface RoleResponse {
+  created_at: string;
+  /** @maxLength 1000 */
+  description?: string;
+  id: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  /** @maxItems 0 */
+  readonly permissions?: readonly string[];
+  updated_at: string;
+  version: number;
+}
+
+export interface RolePage {
+  has_more: boolean;
+  items: RoleResponse[];
+  limit: number;
+  next_cursor: string | null;
+}
+
+export interface RoleVersion {
+  /** @minimum 1 */
+  expected_version: number;
+}
+
 export type SessionResponseStatus =
   (typeof SessionResponseStatus)[keyof typeof SessionResponseStatus];
 
@@ -736,6 +786,15 @@ export type ListReportingUsersParams = {
    * @maximum 10000
    */
   offset?: number;
+};
+
+export type ListCustomRolesParams = {
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  cursor?: string | null;
 };
 
 export type ListStaffParams = {

@@ -243,7 +243,7 @@ def test_superadmin_identity_and_revalidation_interface(client):
     assert response.status_code == 200
     assert response.json()["user"]["system_role"] == "super_admin"
     assert response.json()["user"]["permissions"] == [
-        "admin.access", "domain.assign_patient", "domain.provision", "staff.manage",
+        "admin.access", "domain.assign_patient", "domain.provision", "roles.manage", "staff.manage",
     ]
     identity = identity_from_token(db, response.json()["access_token"], settings)
     assert revalidate_identity(db, identity, lock=False).role == "super_admin"

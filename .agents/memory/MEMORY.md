@@ -17,7 +17,6 @@
 - [Session rollout compatibility](session-rollout.md) — preserve revoked legacy credential history; require fresh login at a new session-binding boundary.
 - [Session replacement notices](session-replacement-notices.md) — show only credential-bound replacement evidence to a previously verified tab; never restore a known replaced bearer.
 - [Existing secret confirmations](existing-secret-confirmations.md) — a secret confirmation does not prove its value was replaced; use explicit editing when validation still fails.
-- [Roles preview boundary](roles-preview-boundary.md) — demo permissions are not authorization policy or staff role choices; Save is page memory only.
 - [Super Admin activity scope](browser-activity-scope.md) — track page visits and record actions, not every click; browser reports are not authoritative server operations.
 - [Reporting export privacy](reporting-export-privacy.md) — portable CSVs omit session and record references even when the protected history UI shows them.
 - [Session-ending reasons](session-ending-reasons.md) — allowlist the first owner-matched revocation cause; never infer missing history from later events.

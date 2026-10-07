@@ -177,10 +177,9 @@ class Patient(Timestamps, Base):
     assigned_mr_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mr_profiles.id"), index=True)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
-
-
 # File metadata is maintained independently from identity/domain models, but its
 # tables must be registered before Alembic evaluates Base.metadata.
 from app.db import file_models as _file_models  # noqa: E402,F401
 from app.db import staff_models as _staff_models  # noqa: E402,F401
 from app.db import zone_models as _zone_models  # noqa: E402,F401
+from app.db import role_models as _role_models  # noqa: E402,F401

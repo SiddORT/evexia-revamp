@@ -90,7 +90,7 @@ function safeAdmin(user) {
   if (!user || typeof user.id !== 'string' || typeof user.email !== 'string' || user.system_role !== 'super_admin' || !Array.isArray(user.permissions) || !user.permissions.includes('admin.access')) {
     throw new SessionError('This account does not have Admin access.', 403);
   }
-  return Object.freeze({ id: user.id, email: user.email, username: user.username, system_role: user.system_role, permissions: user.permissions.filter((permission) => ['admin.access', 'staff.manage'].includes(permission)) });
+  return Object.freeze({ id: user.id, email: user.email, username: user.username, system_role: user.system_role, permissions: user.permissions.filter((permission) => ['admin.access', 'staff.manage', 'roles.manage'].includes(permission)) });
 }
 
 async function accept(payload, epoch) {
@@ -273,6 +273,74 @@ export async function staffRequest(path = '', body, { signal } = {}) {
         : 'Staff service is unavailable. Your draft has not been discarded.', response.status);
     error.code = code;
     error.ambiguous = mutation && response.status >= 500 && code !== 'staff_unavailable';
+    throw error;
+  }
+  return data;
+}
+
+export async function roleRequest(path = '', body, { signal } = {}) {
+  if (!/^(?:|\/[0-9a-f-]{36}(?:\/(?:edit|delete))?|\?limit=(?:[1-9]\d?|100)(?:&cursor=[0-9a-f-]{36})?)$/.test(path)
+      || (body !== undefined && path !== '' && !/\/(?:edit|delete)$/.test(path))) {
+    throw new SessionError('Unsupported role operation.');
+  }
+  const mutation = body !== undefined;
+  const epoch = generation;
+  const owner = state.user?.id;
+  const check = () => {
+    signal?.throwIfAborted();
+    if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
+      throw new SessionError('Your session changed. Please sign in again.', 401);
+    }
+    if (!state.user.permissions.includes('roles.manage')) throw new SessionError('Role Management access denied.', 403);
+  };
+  if (pending) await pending;
+  else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true);
+  check();
+  const guardResponse = () => {
+    try { check(); }
+    catch (error) { error.ambiguous = mutation; throw error; }
+  };
+  const uncertain = () => {
+    const error = new SessionError(mutation
+      ? 'Save outcome could not be confirmed. Refresh roles before submitting again; the server may have saved the change.'
+      : 'Unable to load roles. Check your connection and retry.');
+    error.ambiguous = mutation;
+    return error;
+  };
+  let response;
+  try {
+    response = await fetch(`/api/v1/admin/roles${path}`, {
+      method: mutation ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
+      headers: { Authorization: `Bearer ${token}`, ...(mutation ? { 'Content-Type': 'application/json' } : {}) },
+      ...(mutation ? { body: JSON.stringify(body) } : {}),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
+    });
+  } catch {
+    if (pending) await pending;
+    guardResponse();
+    throw uncertain();
+  }
+  if (pending) await pending;
+  guardResponse();
+  let data;
+  try { data = await response.json(); }
+  catch { throw uncertain(); }
+  if (pending) await pending;
+  guardResponse();
+  if (!response.ok) {
+    if (response.status === 401) { restorationAllowed = false; clear(); }
+    const code = data?.error?.code;
+    const error = new SessionError(
+      code === 'role_stale' ? 'This role changed. Your draft is still here. Review current details before retrying.'
+        : code === 'role_deleted' ? 'This role was deleted. Your draft is still here. Refresh roles to continue.'
+        : code === 'role_duplicate' ? 'A role with this name already exists. Choose a different name.'
+        : response.status === 422 ? 'Role fields are invalid. Use a name of 1–100 characters and a description of at most 1,000 characters.'
+        : response.status === 403 ? 'Role Management access denied.'
+        : response.status === 401 ? 'Your session expired. Please sign in again.'
+        : response.status >= 500 && code !== 'roles_unavailable' && mutation ? uncertain().message
+        : 'Role service is unavailable. Your draft has not been discarded.', response.status);
+    error.code = code;
+    error.ambiguous = mutation && response.status >= 500 && code !== 'roles_unavailable';
     throw error;
   }
   return data;
