@@ -11,6 +11,8 @@ EVEXIA Life Sciences portal with a protected Admin workspace, mock MR/Doctor log
 
 ## Stack and scope
 
+- Product Category Master is protected singleton-only shared persistence with exact `NUMERIC(18,6)` prices, server price/status/search filters, versioned soft deletion and bounded CSV/XLSX review/confirm/downloads. Migration `0018_product_categories` starts empty after Headquarter. Allergen/procurement retain separate untouched local category IDs. See `docs/product-category-master.md`; managed migration requires separate approval.
+
 - Headquarter Master is protected singleton-only shared persistence. Migration `0017_headquarters` creates an empty catalogue; names are live-unique, codes are editable HQ-name abbreviations (not geographic codes), mutations are versioned and deletion retains audit evidence. CSV/XLSX transfer supports legacy/current schemas, 2 MiB/1,000-row imports and 5,000-match exports with mandatory download acceptance. Local records/drafts remain untouched and unused. See `docs/headquarter-master.md`.
 
 - React with JavaScript/JSX, Vite, Wouter, and CSS. Keep the web artifact free of TypeScript files.

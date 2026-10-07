@@ -2,6 +2,8 @@
 BROWSER_ACTIONS = {
     "headquarter_create": "Headquarter created", "headquarter_edit": "Headquarter updated",
     "headquarter_status": "Headquarter status changed", "headquarter_delete": "Headquarter deleted",
+    "product_category_create": "Product category created", "product_category_edit": "Product category updated",
+    "product_category_status": "Product category status changed", "product_category_delete": "Product category deleted",
     "designation_create": "Designation created", "designation_edit": "Designation updated",
     "designation_status": "Designation status changed", "designation_delete": "Designation deleted",
     "role_create": "Role created", "role_update": "Role updated", "role_delete": "Role deleted",
@@ -16,9 +18,9 @@ BROWSER_ACTIONS = {
 }
 RESOURCE_NAMES = {
     "dashboard": "Dashboard", "zone": "Zone Master", "courier_partner": "Courier Partner",
-    "storage_location": "Storage Location", "headquarter": "Headquarter Master",
+    "storage_location": "Storage Location", "headquarter": "Headquarter Master", "product_category": "Product Category Master",
     "mr": "MR Master", "doctor": "Doctor Master", "patient": "Patient Master",
-    "designation": "Designation Master", "staff": "Staff", "product_category": "Product Category",
+    "designation": "Designation Master", "staff": "Staff",
     "allergen": "Allergen Master", "vendor": "Vendor Master", "sales_target": "Sales Target",
     "opening_balance": "Opening Balance", "purchase_order": "Purchase Orders",
     "purchase_received": "Purchase Received", "communication": "Communication Settings",

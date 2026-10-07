@@ -32,3 +32,4 @@
 - [Browser engine evidence](browser-engine-evidence.md) — overridden WebKit versions can reflect the driver, not the binary; verify matching revisions and page creation.
 - [Historical migration fixtures](historical-migration-fixtures.md) — seed older schemas through historical contracts, not current ORM fields.
 - [Frontend test HMR isolation](frontend-test-hmr-isolation.md) — freeze source during Vite browser passes; isolated listeners do not isolate hot reloads.
+- [Exact workbook decimals](exact-workbook-decimals.md) — validate monetary XML lexemes, not parser floats; text cells retain long prices.

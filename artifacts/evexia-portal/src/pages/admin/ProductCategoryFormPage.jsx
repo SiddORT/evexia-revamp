@@ -1,84 +1,128 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, Layers3, RefreshCw } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
-import useProductCategories from '../../hooks/useProductCategories.js';
+import { createProductCategory, editProductCategory, getProductCategory, listProductCategories } from '../../services/serverProductCategories.js';
+import { normalizeCategoryName as normalizeName, validateProductCategory } from '../../services/productCategoryValidation.js';
+import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
 import '../../mr.css';
 import '../../category.css';
 
-const LIST_PATH = '/admin/masters/product-categories';
-const emptyValues = { name: '', description: '', unitPrice: '', status: 'active' };
-
-function validate(values) {
-  const errors = {};
-  if (!values.name.trim()) errors.name = 'Product category name is required.';
-  if (!String(values.unitPrice).trim()) errors.unitPrice = 'Unit price is required.';
-  else if (!/^(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(String(values.unitPrice).trim()) || !Number.isFinite(Number(values.unitPrice))) errors.unitPrice = 'Enter a non-negative numeric price.';
-  if (!['active', 'inactive'].includes(values.status)) errors.status = 'Select a status.';
-  return errors;
-}
+const LIST = '/admin/masters/product-categories';
+const empty = () => ({ name: '', description: '', unit_price: '', status: 'active' });
 
 function CategoryForm({ record, onSave, onCancel, onRefresh }) {
-  const [values, setValues] = useState(() => record ? {
-    name: record.name || '',
-    description: record.description || '',
-    unitPrice: String(record.unitPrice ?? ''),
-    status: record.status || 'active',
-  } : emptyValues);
+  const [values, setValues] = useState(() => record ? { name: record.name, description: record.description, unit_price: record.unit_price, status: record.status } : empty());
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
-
+  const [pending, setPending] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const busy = useRef(false);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    const owner = getSession().user?.id;
+    const unsubscribe = subscribeSession(() => {
+      if (getSession().user?.id !== owner) { setValues(empty()); setServerError(''); setErrors({}); }
+    });
+    return () => { alive.current = false; unsubscribe(); };
+  }, []);
   function update(field, value) {
     setValues((current) => ({ ...current, [field]: value }));
     setErrors((current) => ({ ...current, [field]: undefined }));
-    setServerError('');
+    // Keep uncertain/conflicting outcome visible until authoritative reconciliation.
+    if (!blocked) setServerError('');
   }
-  function submit(event) {
+  async function submit(event) {
     event.preventDefault();
-    const nextErrors = validate(values);
+    if (busy.current || blocked) return;
+    const nextErrors = validateProductCategory(values);
     setErrors(nextErrors);
-    setServerError('');
     if (Object.keys(nextErrors).length) return;
+    const guard = reportingIdentityGuard();
+    busy.current = true; setPending(true); setServerError('');
     try {
-      const result = onSave({ name: values.name.trim(), description: values.description.trim(), unitPrice: Number(values.unitPrice), status: values.status });
-      if (!result.success) setServerError(result.error || 'The category could not be saved. Refresh records and try again.');
-    } catch (cause) { setServerError(cause.message || 'The category could not be saved.'); }
+      await onSave({ name: normalizeName(values.name), description: values.description.trim(), unit_price: values.unit_price.trim(), status: values.status });
+    } catch (cause) {
+      try { guard(); } catch { return; }
+      if (alive.current) { setServerError(cause.message); setBlocked(cause.code === 'product_category_stale' || Boolean(cause.ambiguous) || cause.code === 'not_found'); }
+    } finally { busy.current = false; if (alive.current) setPending(false); }
   }
-
+  async function reconcile() {
+    if (busy.current) return;
+    const guard = reportingIdentityGuard();
+    busy.current = true; setPending(true);
+    try {
+      const current = await onRefresh(values); guard();
+      if (!alive.current) return;
+      setServerError(current ? `Current server record: ${current.name}; ${current.unit_price}; ${current.description}; ${current.status}. Your draft is retained. Compare these details before saving again.` : 'No matching record exists. Your draft is retained; review before retrying.');
+      setBlocked(false);
+    } catch (cause) {
+      try { guard(); } catch { return; }
+      if (alive.current) setServerError(cause.message);
+    } finally { busy.current = false; if (alive.current) setPending(false); }
+  }
   return <form className="admin-category-form" onSubmit={submit} noValidate>
-    <div className="admin-category-form__intro"><div><h2>Category details</h2><p>Fields marked * are required. Changes are saved to this browser only.</p></div><Layers3 size={21} aria-hidden="true" /></div>
+    <div className="admin-category-form__intro"><div><h2>Category details</h2><p>Fields marked * are required. Records are shared on the server.</p></div><Layers3 size={21} /></div>
     <div className="mr-form__body">
-      {serverError && <div className="mr-form__notice mr-form__notice--error" role="alert"><p>{serverError}</p><button type="button" className="admin-button admin-button--secondary" onClick={onRefresh} data-testid="button-refresh-category-error"><RefreshCw size={16} aria-hidden="true" /> Refresh records and discard draft</button></div>}
+      {serverError && <div className="mr-form__notice mr-form__notice--error" role="alert"><p>{serverError}</p><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={reconcile}><RefreshCw size={16} /> Review current server details (keep draft)</button></div>}
       <div className="mr-form__grid">
-        <div className="mr-form__field"><label className="mr-form__label" htmlFor="category-name">Product category name <span className="mr-form__required">*</span></label><input id="category-name" className="mr-form__control" value={values.name} onChange={(event) => update('name', event.target.value)} placeholder="e.g. Diagnostic reagents" aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? 'category-name-error' : undefined} data-testid="input-category-name" />{errors.name && <p className="mr-form__error" id="category-name-error" role="alert">{errors.name}</p>}</div>
-        <div className="mr-form__field mr-form__field--wide"><label className="mr-form__label" htmlFor="category-description">Description <span className="mr-form__hint">(optional)</span></label><textarea id="category-description" className="mr-form__control" value={values.description} onChange={(event) => update('description', event.target.value)} placeholder="What belongs in this category?" data-testid="input-category-description" /></div>
-        <div className="mr-form__field"><label className="mr-form__label" htmlFor="category-price">Unit price <span className="mr-form__required">*</span></label><input id="category-price" className="mr-form__control" type="number" min="0" step="any" inputMode="decimal" value={values.unitPrice} onChange={(event) => update('unitPrice', event.target.value)} placeholder="0.00" aria-invalid={Boolean(errors.unitPrice)} aria-describedby={errors.unitPrice ? 'category-price-error' : undefined} data-testid="input-category-price" />{errors.unitPrice ? <p className="mr-form__error" id="category-price-error" role="alert">{errors.unitPrice}</p> : <p className="mr-form__hint">Enter a non-negative numeric amount.</p>}</div>
-        <div className="mr-form__field"><label className="mr-form__label" htmlFor="category-status">Status <span className="mr-form__required">*</span></label><select id="category-status" className="mr-form__control" value={values.status} onChange={(event) => update('status', event.target.value)} aria-invalid={Boolean(errors.status)} aria-describedby={errors.status ? 'category-status-error' : undefined} data-testid="select-category-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>{errors.status && <p className="mr-form__error" id="category-status-error" role="alert">{errors.status}</p>}</div>
+        <div className="mr-form__field"><label className="mr-form__label" htmlFor="category-name">Product category name *</label><input id="category-name" className="mr-form__control" value={values.name} onChange={(event) => update('name', event.target.value)} placeholder="e.g. Diagnostic reagents" aria-invalid={Boolean(errors.name)} data-testid="input-category-name" />{errors.name && <p className="mr-form__error" role="alert">{errors.name}</p>}</div>
+        <div className="mr-form__field mr-form__field--wide"><label className="mr-form__label" htmlFor="category-description">Description (optional)</label><textarea id="category-description" className="mr-form__control" value={values.description} onChange={(event) => update('description', event.target.value)} data-testid="input-category-description" />{errors.description && <p className="mr-form__error" role="alert">{errors.description}</p>}</div>
+        <div className="mr-form__field"><label className="mr-form__label" htmlFor="category-price">Unit price *</label><input id="category-price" className="mr-form__control" inputMode="decimal" value={values.unit_price} onChange={(event) => update('unit_price', event.target.value)} aria-invalid={Boolean(errors.unit_price)} data-testid="input-category-price" /><p className="mr-form__hint">0–999999999999.999999; up to 12 integer and 6 fractional digits. Plain decimal only, never rounded.</p>{errors.unit_price && <p className="mr-form__error" role="alert">{errors.unit_price}</p>}</div>
+        <div className="mr-form__field"><label className="mr-form__label" htmlFor="category-status">Status *</label><select id="category-status" className="mr-form__control" value={values.status} onChange={(event) => update('status', event.target.value)} aria-invalid={Boolean(errors.status)} data-testid="select-category-status"><option value="" disabled>Select status</option><option value="active">Active</option><option value="inactive">Inactive</option></select>{errors.status && <p className="mr-form__error" role="alert">{errors.status}</p>}</div>
       </div>
     </div>
-    <div className="mr-form__footer"><span className="mr-form__footer-note">Changes stay in this browser. No server account or inventory is updated.</span><div className="mr-form__actions"><button type="button" className="admin-button admin-button--secondary" onClick={onCancel} data-testid="button-cancel-category">Cancel</button><button type="submit" className="admin-button" data-testid="button-save-category">{record ? 'Save changes' : 'Save category'}</button></div></div>
+    <div className="mr-form__footer"><span className="mr-form__footer-note">Drafts stay in memory during same-identity renewal. Legacy browser tab drafts are not loaded.</span><div className="mr-form__actions"><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={onCancel}>Cancel</button><button type="submit" disabled={pending || blocked} className="admin-button" data-testid="button-save-category">{pending ? 'Saving…' : record ? 'Save changes' : 'Save category'}</button></div></div>
   </form>;
 }
 
 export default function ProductCategoryFormPage({ id }) {
   const [, navigate] = useLocation();
-  const { records, error, retry, add, edit } = useProductCategories();
+  const [record, setRecord] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(Boolean(id));
   const [revision, setRevision] = useState(0);
-  const record = id ? records.find((item) => item.id === id) : null;
-  const title = id ? 'Edit product category' : 'Add product category';
-
-  function refresh() {
-    retry();
-    setRevision((current) => current + 1);
+  const snapshot = useRef(null);
+  const alive = useRef(true);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+  useEffect(() => {
+    const owner = getSession().user?.id;
+    return subscribeSession(() => {
+      if (getSession().user?.id !== owner) { snapshot.current = null; setRecord(null); }
+    });
+  }, []);
+  useEffect(() => {
+    let active = true;
+    if (!id) return;
+    const guard = reportingIdentityGuard();
+    setLoading(true);
+    getProductCategory(id).then((row) => { guard(); if (active) { snapshot.current = row; setRecord(row); setError(''); } })
+      .catch((cause) => { try { guard(); } catch { return; } if (active) setError(cause.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [id, revision]);
+  async function refresh(values) {
+    if (!id) {
+      const result = await listProductCategories({ query: normalizeName(values.name), status: 'all', limit: 100, offset: 0 });
+      const same = result.items.find((row) => normalizeName(row.name).toLowerCase() === normalizeName(values.name).toLowerCase());
+      if (same) throw new Error(`A category with this name is already saved: ${same.name}; ${same.unit_price}; ${same.description}; ${same.status}. Your draft is retained. Return to the list and inspect it instead of creating a duplicate.`);
+      if (result.filtered > 100) throw new Error('More than 100 matches. Inspect the list before retrying.');
+      return null;
+    }
+    const current = await getProductCategory(id);
+    snapshot.current = current;
+    return current;
   }
-  function save(values) {
-    const result = id ? edit(id, values) : add(values);
-    if (result.success) navigate(`${LIST_PATH}?saved=${id ? 'updated' : 'added'}`);
-    return result;
+  async function save(values) {
+    const guard = reportingIdentityGuard();
+    await (id ? editProductCategory(snapshot.current, values) : createProductCategory(values));
+    guard();
+    if (alive.current) navigate(`${LIST}?saved=${id ? 'updated' : 'added'}`);
   }
-
+  const title = id ? 'Edit category' : 'Add category';
   return <AdminLayout title={title}>
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Inventory / Product Category Master</p><h1>{title}</h1><p className="admin-page-head__description">{id ? 'Update this category’s details and availability.' : 'Create a browser-local category for your product catalog.'}</p></div><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(LIST_PATH)} data-testid="button-back-categories"><ArrowLeft size={16} aria-hidden="true" /> Back to categories</button></div>
-    {error || (id && !record) ? <section className="admin-panel admin-category-form__recovery" role="alert"><h2>{error ? 'Categories could not be loaded' : 'Category not found'}</h2><p>{error || 'This category may have been removed or the link may be incorrect. Refresh the latest records or return to Product Category Master.'}</p><div className="mr-form__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(LIST_PATH)} data-testid="button-return-categories">Return to categories</button><button type="button" className="admin-button" onClick={refresh} data-testid="button-refresh-category-form"><RefreshCw size={16} aria-hidden="true" /> Refresh records</button></div></section> : <section className="admin-panel" aria-label={title}><CategoryForm key={`${id || 'new'}-${revision}`} record={record} onSave={save} onCancel={() => navigate(LIST_PATH)} onRefresh={refresh} /></section>}
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Directory / Product Category Master</p><h1>{title}</h1><p className="admin-page-head__description">Manage a shared category’s name, description, exact price and availability. Allergen and procurement remain separate browser-local demos.</p></div><button className="admin-button admin-button--secondary" onClick={() => navigate(LIST)}><ArrowLeft size={16} /> Back to categories</button></div>
+    {loading ? <p role="status">Loading category…</p> : error || (id && !record) ? <section className="admin-panel" role="alert"><h2>Product category could not be loaded</h2><p>{error || 'This category may have been deleted.'}</p><button className="admin-button" onClick={() => setRevision((value) => value + 1)}>Retry</button></section> : <section className="admin-panel" aria-label={title}><CategoryForm key={id || 'new'} record={record} onSave={save} onCancel={() => navigate(LIST)} onRefresh={refresh} /></section>}
   </AdminLayout>;
 }

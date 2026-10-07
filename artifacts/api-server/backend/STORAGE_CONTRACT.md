@@ -32,6 +32,7 @@ password input; there is no default elevated account.
 | Storage Location list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
 | Designation list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; Zone staff grants do not apply | no |
 | Headquarter list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; Zone staff grants and business labels do not apply | no |
+| Product Category list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; no Zone/custom-role elevation | no |
 | Upload, metadata, verified download, download grant | system-wide | own MR or currently assigned active patient |
 | Delete, replace, retry verification/cleanup | yes | no |
 
@@ -88,6 +89,13 @@ acceptance. No local data or staff labels are migrated; see
 `docs/designation-master.md` for exact ten/fourteen-column schemas and bounds.
 
 ## File API and validation
+
+Product Category Master uses exact `NUMERIC(18,6)` persistence/string transport,
+server-owned User/UTC audit evidence, live-name uniqueness, expected versions,
+retained soft deletion and bounded identity/session-bound atomic CSV/XLSX imports.
+Price bounds/search/status share predicates with full-filter exports. Allergen and
+procurement keep untouched separate local category IDs. Transfers require durable
+download acceptance. See `docs/product-category-master.md`.
 
 Headquarter Master is a separate name/code/status catalogue with live-name
 uniqueness, User/UTC audit metadata, expected versions and retained deletion

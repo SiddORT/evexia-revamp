@@ -812,6 +812,135 @@ export interface PatientResponse {
   version: number;
 }
 
+export type ProductCategoryEditStatus =
+  (typeof ProductCategoryEditStatus)[keyof typeof ProductCategoryEditStatus];
+
+export const ProductCategoryEditStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface ProductCategoryEdit {
+  /** @maxLength 2000 */
+  description?: string;
+  /** @minimum 1 */
+  expected_version: number;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  status: ProductCategoryEditStatus;
+  /**
+   * Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.
+   * @minLength 1
+   * @maxLength 64
+   */
+  unit_price: string;
+}
+
+export type ProductCategoryFieldsStatus =
+  (typeof ProductCategoryFieldsStatus)[keyof typeof ProductCategoryFieldsStatus];
+
+export const ProductCategoryFieldsStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface ProductCategoryFields {
+  /** @maxLength 2000 */
+  description?: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  status: ProductCategoryFieldsStatus;
+  /**
+   * Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.
+   * @minLength 1
+   * @maxLength 64
+   */
+  unit_price: string;
+}
+
+export interface ProductCategoryImportResult {
+  imported: number;
+}
+
+export interface ProductCategoryImportRow {
+  description: string;
+  errors: string[];
+  name: string;
+  row: number;
+  status: string;
+  unit_price: string;
+}
+
+export type ProductCategoryResponseStatus =
+  (typeof ProductCategoryResponseStatus)[keyof typeof ProductCategoryResponseStatus];
+
+export const ProductCategoryResponseStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface ProductCategoryResponse {
+  createdAt: string;
+  createdBy: string;
+  /** @maxLength 2000 */
+  description?: string;
+  id: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  status: ProductCategoryResponseStatus;
+  /**
+   * Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.
+   * @minLength 1
+   * @maxLength 64
+   */
+  unit_price: string;
+  updatedAt: string;
+  updatedBy: string;
+  version: number;
+}
+
+export interface ProductCategoryPage {
+  filtered: number;
+  items: ProductCategoryResponse[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export interface ProductCategoryReview {
+  digest: string;
+  rows: ProductCategoryImportRow[];
+  valid: boolean;
+}
+
+export type ProductCategoryStatusStatus =
+  (typeof ProductCategoryStatusStatus)[keyof typeof ProductCategoryStatusStatus];
+
+export const ProductCategoryStatusStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface ProductCategoryStatus {
+  /** @minimum 1 */
+  expected_version: number;
+  status: ProductCategoryStatusStatus;
+}
+
+export interface ProductCategoryVersion {
+  /** @minimum 1 */
+  expected_version: number;
+}
+
 export interface ProvisionMRRequest {
   email: string;
   /**
@@ -1596,6 +1725,104 @@ export type DownloadHeadquarterSampleFormat =
   (typeof DownloadHeadquarterSampleFormat)[keyof typeof DownloadHeadquarterSampleFormat];
 
 export const DownloadHeadquarterSampleFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type ListProductCategoriesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ListProductCategoriesStatus;
+  min_price?: string | null;
+  max_price?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
+export type ListProductCategoriesStatus =
+  (typeof ListProductCategoriesStatus)[keyof typeof ListProductCategoriesStatus];
+
+export const ListProductCategoriesStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportProductCategoriesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ExportProductCategoriesStatus;
+  min_price?: string | null;
+  max_price?: string | null;
+  format?: ExportProductCategoriesFormat;
+};
+
+export type ExportProductCategoriesStatus =
+  (typeof ExportProductCategoriesStatus)[keyof typeof ExportProductCategoriesStatus];
+
+export const ExportProductCategoriesStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportProductCategoriesFormat =
+  (typeof ExportProductCategoriesFormat)[keyof typeof ExportProductCategoriesFormat];
+
+export const ExportProductCategoriesFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type CommitProductCategoryImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+  /**
+   * @pattern ^[0-9a-f]{64}$
+   */
+  digest: string;
+  confirm: boolean;
+};
+
+export type CommitProductCategoryImportBody = {
+  file: Blob | File;
+};
+
+export type ReviewProductCategoryImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+};
+
+export type ReviewProductCategoryImportBody = {
+  file: Blob | File;
+};
+
+export type DownloadProductCategorySampleParams = {
+  format?: DownloadProductCategorySampleFormat;
+};
+
+export type DownloadProductCategorySampleFormat =
+  (typeof DownloadProductCategorySampleFormat)[keyof typeof DownloadProductCategorySampleFormat];
+
+export const DownloadProductCategorySampleFormat = {
   csv: "csv",
   xlsx: "xlsx",
 } as const;

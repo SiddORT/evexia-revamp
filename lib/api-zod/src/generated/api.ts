@@ -1410,6 +1410,454 @@ export const SetHeadquarterStatusResponse = zod.object({
 });
 
 /**
+ * @summary Listing
+ */
+export const listProductCategoriesQueryQueryDefault = ``;
+export const listProductCategoriesQueryQueryMax = 200;
+
+export const listProductCategoriesQueryStatusDefault = `all`;
+export const listProductCategoriesQueryMinPriceOneMax = 64;
+
+export const listProductCategoriesQueryMaxPriceOneMax = 64;
+
+export const listProductCategoriesQueryLimitDefault = 10;
+export const listProductCategoriesQueryLimitMax = 100;
+
+export const listProductCategoriesQueryOffsetDefault = 0;
+export const listProductCategoriesQueryOffsetMin = 0;
+export const listProductCategoriesQueryOffsetMax = 1000000;
+
+export const ListProductCategoriesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listProductCategoriesQueryQueryMax)
+    .default(listProductCategoriesQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(listProductCategoriesQueryStatusDefault),
+  min_price: zod
+    .union([
+      zod.coerce.string().max(listProductCategoriesQueryMinPriceOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  max_price: zod
+    .union([
+      zod.coerce.string().max(listProductCategoriesQueryMaxPriceOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listProductCategoriesQueryLimitMax)
+    .default(listProductCategoriesQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listProductCategoriesQueryOffsetMin)
+    .max(listProductCategoriesQueryOffsetMax)
+    .default(listProductCategoriesQueryOffsetDefault),
+});
+
+export const listProductCategoriesResponseItemsItemDescriptionDefault = ``;
+export const listProductCategoriesResponseItemsItemDescriptionMax = 2000;
+
+export const listProductCategoriesResponseItemsItemNameMax = 200;
+
+export const listProductCategoriesResponseItemsItemUnitPriceMax = 64;
+
+export const ListProductCategoriesResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      description: zod
+        .string()
+        .max(listProductCategoriesResponseItemsItemDescriptionMax)
+        .default(listProductCategoriesResponseItemsItemDescriptionDefault),
+      id: zod.string().uuid(),
+      name: zod
+        .string()
+        .min(1)
+        .max(listProductCategoriesResponseItemsItemNameMax),
+      status: zod.enum(["active", "inactive"]),
+      unit_price: zod
+        .string()
+        .min(1)
+        .max(listProductCategoriesResponseItemsItemUnitPriceMax)
+        .describe(
+          "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+        ),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+export const createProductCategoryBodyDescriptionDefault = ``;
+export const createProductCategoryBodyDescriptionMax = 2000;
+
+export const createProductCategoryBodyNameMax = 200;
+
+export const createProductCategoryBodyUnitPriceMax = 64;
+
+export const CreateProductCategoryBody = zod.object({
+  description: zod
+    .string()
+    .max(createProductCategoryBodyDescriptionMax)
+    .default(createProductCategoryBodyDescriptionDefault),
+  name: zod.string().min(1).max(createProductCategoryBodyNameMax),
+  status: zod.enum(["active", "inactive"]),
+  unit_price: zod
+    .string()
+    .min(1)
+    .max(createProductCategoryBodyUnitPriceMax)
+    .describe(
+      "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+    ),
+});
+
+export const createProductCategoryResponseDescriptionDefault = ``;
+export const createProductCategoryResponseDescriptionMax = 2000;
+
+export const createProductCategoryResponseNameMax = 200;
+
+export const createProductCategoryResponseUnitPriceMax = 64;
+
+export const CreateProductCategoryResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  description: zod
+    .string()
+    .max(createProductCategoryResponseDescriptionMax)
+    .default(createProductCategoryResponseDescriptionDefault),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(createProductCategoryResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  unit_price: zod
+    .string()
+    .min(1)
+    .max(createProductCategoryResponseUnitPriceMax)
+    .describe(
+      "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+    ),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Export
+ */
+export const exportProductCategoriesQueryQueryDefault = ``;
+export const exportProductCategoriesQueryQueryMax = 200;
+
+export const exportProductCategoriesQueryStatusDefault = `all`;
+export const exportProductCategoriesQueryMinPriceOneMax = 64;
+
+export const exportProductCategoriesQueryMaxPriceOneMax = 64;
+
+export const exportProductCategoriesQueryFormatDefault = `csv`;
+
+export const ExportProductCategoriesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(exportProductCategoriesQueryQueryMax)
+    .default(exportProductCategoriesQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(exportProductCategoriesQueryStatusDefault),
+  min_price: zod
+    .union([
+      zod.coerce.string().max(exportProductCategoriesQueryMinPriceOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  max_price: zod
+    .union([
+      zod.coerce.string().max(exportProductCategoriesQueryMaxPriceOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(exportProductCategoriesQueryFormatDefault),
+});
+
+export const ExportProductCategoriesHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const ExportProductCategoriesResponse = zod.unknown();
+
+/**
+ * @summary Commit
+ */
+export const commitProductCategoryImportQueryFilenameMax = 200;
+
+export const commitProductCategoryImportQueryDigestRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const CommitProductCategoryImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(commitProductCategoryImportQueryFilenameMax),
+  digest: zod.coerce
+    .string()
+    .regex(commitProductCategoryImportQueryDigestRegExp),
+  confirm: zod.coerce.boolean(),
+});
+
+export const CommitProductCategoryImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const CommitProductCategoryImportResponse = zod.object({
+  imported: zod.number().int(),
+});
+
+/**
+ * @summary Review
+ */
+export const reviewProductCategoryImportQueryFilenameMax = 200;
+
+export const ReviewProductCategoryImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(reviewProductCategoryImportQueryFilenameMax),
+});
+
+export const ReviewProductCategoryImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const ReviewProductCategoryImportResponse = zod.object({
+  digest: zod.string(),
+  rows: zod.array(
+    zod.object({
+      description: zod.string(),
+      errors: zod.array(zod.string()),
+      name: zod.string(),
+      row: zod.number().int(),
+      status: zod.string(),
+      unit_price: zod.string(),
+    }),
+  ),
+  valid: zod.boolean(),
+});
+
+/**
+ * @summary Sample
+ */
+export const downloadProductCategorySampleQueryFormatDefault = `csv`;
+
+export const DownloadProductCategorySampleQueryParams = zod.object({
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(downloadProductCategorySampleQueryFormatDefault),
+});
+
+export const DownloadProductCategorySampleHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const DownloadProductCategorySampleResponse = zod.unknown();
+
+/**
+ * @summary Detail
+ */
+export const GetProductCategoryParams = zod.object({
+  product_category_id: zod.coerce.string().uuid(),
+});
+
+export const getProductCategoryResponseDescriptionDefault = ``;
+export const getProductCategoryResponseDescriptionMax = 2000;
+
+export const getProductCategoryResponseNameMax = 200;
+
+export const getProductCategoryResponseUnitPriceMax = 64;
+
+export const GetProductCategoryResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  description: zod
+    .string()
+    .max(getProductCategoryResponseDescriptionMax)
+    .default(getProductCategoryResponseDescriptionDefault),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(getProductCategoryResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  unit_price: zod
+    .string()
+    .min(1)
+    .max(getProductCategoryResponseUnitPriceMax)
+    .describe(
+      "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+    ),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Delete
+ */
+export const DeleteProductCategoryParams = zod.object({
+  product_category_id: zod.coerce.string().uuid(),
+});
+
+export const DeleteProductCategoryBody = zod.object({
+  expected_version: zod.number().int().min(1),
+});
+
+export const deleteProductCategoryResponseDescriptionDefault = ``;
+export const deleteProductCategoryResponseDescriptionMax = 2000;
+
+export const deleteProductCategoryResponseNameMax = 200;
+
+export const deleteProductCategoryResponseUnitPriceMax = 64;
+
+export const DeleteProductCategoryResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  description: zod
+    .string()
+    .max(deleteProductCategoryResponseDescriptionMax)
+    .default(deleteProductCategoryResponseDescriptionDefault),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(deleteProductCategoryResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  unit_price: zod
+    .string()
+    .min(1)
+    .max(deleteProductCategoryResponseUnitPriceMax)
+    .describe(
+      "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+    ),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditProductCategoryParams = zod.object({
+  product_category_id: zod.coerce.string().uuid(),
+});
+
+export const editProductCategoryBodyDescriptionDefault = ``;
+export const editProductCategoryBodyDescriptionMax = 2000;
+
+export const editProductCategoryBodyNameMax = 200;
+
+export const editProductCategoryBodyUnitPriceMax = 64;
+
+export const EditProductCategoryBody = zod.object({
+  description: zod
+    .string()
+    .max(editProductCategoryBodyDescriptionMax)
+    .default(editProductCategoryBodyDescriptionDefault),
+  expected_version: zod.number().int().min(1),
+  name: zod.string().min(1).max(editProductCategoryBodyNameMax),
+  status: zod.enum(["active", "inactive"]),
+  unit_price: zod
+    .string()
+    .min(1)
+    .max(editProductCategoryBodyUnitPriceMax)
+    .describe(
+      "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+    ),
+});
+
+export const editProductCategoryResponseDescriptionDefault = ``;
+export const editProductCategoryResponseDescriptionMax = 2000;
+
+export const editProductCategoryResponseNameMax = 200;
+
+export const editProductCategoryResponseUnitPriceMax = 64;
+
+export const EditProductCategoryResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  description: zod
+    .string()
+    .max(editProductCategoryResponseDescriptionMax)
+    .default(editProductCategoryResponseDescriptionDefault),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(editProductCategoryResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  unit_price: zod
+    .string()
+    .min(1)
+    .max(editProductCategoryResponseUnitPriceMax)
+    .describe(
+      "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+    ),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Status
+ */
+export const SetProductCategoryStatusParams = zod.object({
+  product_category_id: zod.coerce.string().uuid(),
+});
+
+export const SetProductCategoryStatusBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const setProductCategoryStatusResponseDescriptionDefault = ``;
+export const setProductCategoryStatusResponseDescriptionMax = 2000;
+
+export const setProductCategoryStatusResponseNameMax = 200;
+
+export const setProductCategoryStatusResponseUnitPriceMax = 64;
+
+export const SetProductCategoryStatusResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  description: zod
+    .string()
+    .max(setProductCategoryStatusResponseDescriptionMax)
+    .default(setProductCategoryStatusResponseDescriptionDefault),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(setProductCategoryStatusResponseNameMax),
+  status: zod.enum(["active", "inactive"]),
+  unit_price: zod
+    .string()
+    .min(1)
+    .max(setProductCategoryStatusResponseUnitPriceMax)
+    .describe(
+      "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+    ),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
  * Bounded browser-reported metadata; actor/session are server-derived.
  * @summary Activity
  */

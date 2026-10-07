@@ -15,7 +15,12 @@ See [Headquarter Master operations](../../../docs/headquarter-master.md) for
 name-abbreviation generation/overrides, exact legacy/current CSV/XLSX schemas,
 soft-delete evidence, transfer bounds and explicit migration `0017_headquarters`
 following `0016_designations`. No local records, drafts or relationships migrate.
-Other portal masters remain
+Product Category Master now also uses protected singleton-only shared persistence:
+exact six-place decimal strings, server price-range predicates and bounded atomic
+transfers, independent of Allergen/procurement's legacy local categories. Migration
+`0018_product_categories` follows `0017_headquarters` and creates an empty directory.
+See [Product Category operations](../../../docs/product-category-master.md).
+Other unconverted portal masters remain
 fictional and browser-local. Do not enter real personal or health data into the
 preview. See [staff security and operations](../../../docs/staff-security.md).
 See [Zone Master operations and transfer contract](../../../docs/zone-master.md)
@@ -60,7 +65,7 @@ explicit migration and unchanged local-demo purchasing relationships.
     `0007_reporting_indexes`, `0008_activity_search`, `0009_staff`,
     `0010_zones`, `0010_custom_roles`, `0011_courier_partners`, `0012_storage_locations`,
      `0013_download_logs`, `0014_download_reporting_index`, `0015_zone_permissions`,
-      `0016_designations` and `0017_headquarters`. Zone, role, courier, location, designation and headquarter migrations create only empty tables. Staff migration
+      `0016_designations`, `0017_headquarters` and `0018_product_categories`. Zone, role, courier, location, designation, headquarter and product-category migrations create only empty tables. Staff migration
    adds an empty encrypted profile table and deferred identity-link integrity
    guards; it changes no existing identities, sessions or activity history.
    The activity search
@@ -334,7 +339,7 @@ These defaults are service behavior, not automatic infrastructure provisioning:
 
 The request-body middleware uses a 1 MiB bound for non-upload requests and the
 configured upload limit for raw upload/replacement paths. Zone review/commit
-allow 2 MiB; Courier, Storage Location, Designation and Headquarter review/commit allow 2 MiB plus 64 KiB multipart overhead,
+allow 2 MiB; Courier, Storage Location, Designation, Headquarter and Product Category review/commit allow 2 MiB plus 64 KiB multipart overhead,
 with a separate extracted-file 2 MiB bound. Unrelated limits are unchanged.
 No clamd service is
 provided by this repository or artifact. `SCANNER_BACKEND=unavailable` is the

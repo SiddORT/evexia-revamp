@@ -13,12 +13,13 @@ import ZoneImportPage from './ZoneImportPage.jsx';
 import CourierImportPage from './CourierImportPage.jsx';
 import StorageLocationImportPage from './StorageLocationImportPage.jsx';
 import HeadquarterImportPage from './HeadquarterImportPage.jsx';
+import ProductCategoryImportPage from './ProductCategoryImportPage.jsx';
 import DesignationImportPage from './DesignationImportPage.jsx';
 
 const routes = { zone: '/admin/masters/zones', 'courier-partner': '/admin/masters/courier-partners', mr: '/admin/masters/mrs', doctor: '/admin/masters/doctors' };
 
 export default function MasterExcelImportPage({ kind }) {
-  return kind === 'zone' ? <ZoneImportGate /> : kind === 'courier-partner' ? <CourierImportPage /> : kind === 'storage-location' ? <StorageLocationImportPage /> : kind === 'designation' ? <DesignationImportPage /> : kind === 'headquarter' ? <HeadquarterImportPage /> : <PreviewExcelImportPage kind={kind} />;
+  return kind === 'product-category' ? <ProductCategoryImportPage /> : kind === 'zone' ? <ZoneImportGate /> : kind === 'courier-partner' ? <CourierImportPage /> : kind === 'storage-location' ? <StorageLocationImportPage /> : kind === 'designation' ? <DesignationImportPage /> : kind === 'headquarter' ? <HeadquarterImportPage /> : <PreviewExcelImportPage kind={kind} />;
 }
 
 function ZoneImportGate() {

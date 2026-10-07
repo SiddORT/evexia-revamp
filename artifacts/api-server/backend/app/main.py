@@ -25,6 +25,8 @@ from app.api.v1.designations import router as designations_router
 from app.services.designations import DesignationError
 from app.api.v1.headquarters import router as headquarters_router
 from app.services.headquarters import HeadquarterError
+from app.api.v1.product_categories import router as product_categories_router
+from app.services.product_categories import ProductCategoryError
 from app.api.v1.roles import router as roles_router
 from app.services.roles import RoleError
 from app.services.staff_crypto import StaffError
@@ -138,10 +140,11 @@ def create_app() -> FastAPI:
                              for name in ("name", "description", "expected_version", "role_id", "limit", "cursor")}
             fields = [{"field": field["field"] if field["field"] in locations else "body",
                        "code": field["code"]} for field in fields]
-        if request.url.path.startswith(("/api/v1/admin/zones", "/api/v1/admin/courier-partners", "/api/v1/admin/storage-locations", "/api/v1/admin/designations", "/api/v1/admin/headquarters")):
+        if request.url.path.startswith(("/api/v1/admin/zones", "/api/v1/admin/courier-partners", "/api/v1/admin/storage-locations", "/api/v1/admin/designations", "/api/v1/admin/headquarters", "/api/v1/admin/product-categories")):
             allowed = {"name", "address", "status", "expected_version", "query", "limit", "offset", "format", "filename", "digest", "confirm", "zone_id", "courier_id", "location_id"}
             allowed |= {"shortName", "level", "basicDa", "hra", "medicalAllowance", "travellingAllowance", "specialAllowance", "professionalTax", "designation_id"}
             allowed |= {"state_code", "headquarter_id"}
+            allowed |= {"description", "unit_price", "min_price", "max_price", "product_category_id"}
             locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
             fields = [{"field": item["field"] if item["field"] in locations else "body",
                        "code": item["code"]} for item in fields]
@@ -179,6 +182,10 @@ def create_app() -> FastAPI:
     async def headquarter_error(request: Request, exc: HeadquarterError):
         return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
 
+    @app.exception_handler(ProductCategoryError)
+    async def product_category_error(request: Request, exc: ProductCategoryError):
+        return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
+
     @app.exception_handler(AuthError)
     async def revoked_identity(request: Request, exc: AuthError):
         return JSONResponse(error_body(request, 401, "Authentication required"), status_code=401,
@@ -199,6 +206,7 @@ def create_app() -> FastAPI:
     app.include_router(locations_router, prefix="/api/v1")
     app.include_router(designations_router, prefix="/api/v1")
     app.include_router(headquarters_router, prefix="/api/v1")
+    app.include_router(product_categories_router, prefix="/api/v1")
     app.include_router(roles_router, prefix="/api/v1")
     app.add_api_route("/api/healthz", lambda: {"status": "ok"}, methods=["GET"],
                       response_model=HealthStatus, operation_id="getHealthCheck", tags=["health"])
