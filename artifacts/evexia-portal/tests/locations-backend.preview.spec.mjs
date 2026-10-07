@@ -291,7 +291,7 @@ test('location import route, master tabs and two cards work in desktop/mobile po
   for (const [tab, heading, preview] of [
     ['Zone Master', 'Import Zone data', false],
     ['Courier Partner Master', 'Import Courier Partner data', false],
-    ['MR Master', 'Import MR data', true],
+    ['MR Master', 'Import MR data', false],
     ['Doctor Master', 'Import Doctor data', true],
     ['Storage Location Master', 'Import Storage Location data', false],
   ]) {

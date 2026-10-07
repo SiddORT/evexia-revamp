@@ -33,6 +33,8 @@ password input; there is no default elevated account.
 | Designation list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; Zone staff grants do not apply | no |
 | Headquarter list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; Zone staff grants and business labels do not apply | no |
 | Product Category list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; no Zone/custom-role elevation | no |
+| MR business directory list/detail/edit/status/contact/soft-delete/reference/PIN/export/sample (`admin.access`) | protected singleton only | no |
+| MR account create/import/reset/generate username (`admin.access` AND `domain.provision`) | protected singleton only | no |
 | Upload, metadata, verified download, download grant | system-wide | own MR or currently assigned active patient |
 | Delete, replace, retry verification/cleanup | yes | no |
 
@@ -43,7 +45,7 @@ slow I/O and on every local grant redemption. Denials must occur before adapter
 calls. MR/profile deactivation and user version checks also apply.
 
 Staff uses the same User credential store but is intentionally unmapped and
-ineligible for login. Only explicitly linked staff Users can omit email;
+ineligible for login. Only explicitly linked staff or directory-backed MR Users can omit email;
 staff email exists only as AES-GCM ciphertext in the profile, with a unique
 HMAC-SHA256 blind index. Name/phone ciphertext uses randomized nonces and
 record/field/version binding. Business roles/designations never affect
@@ -55,6 +57,14 @@ exists. Legacy browser-local staff storage is untouched/unused; Designation
 Master offers bounded active server choices, but saved staff labels remain
 business metadata, not foreign-key or authorization relationships.
 See `docs/staff-security.md` for key retention and coordinated backup/recovery.
+
+MR Master is a one-to-one business extension of MRProfile, not an automatic
+promotion of identity-only profiles. Enrollment atomically creates fresh User,
+MRProfile and directory rows. Patient/file history and browser-local MR consumers
+remain separate. Status/deletion coordinate identity versions and session revocation;
+all previous account identifiers remain reserved, including tombstones. Labels,
+Zone grants and arbitrary account links confer no MR identity.
+See `docs/mr-master.md` for rollout, resources, transfers and one-time secrets.
 
 Zone Master uses server-owned UTC audit times and User actor references, immutable
 creation metadata, mandatory expected versions and non-deleted lower-name

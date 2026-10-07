@@ -89,7 +89,9 @@ def create(db, actor, body, settings):
                     db.flush()
                 break
             except IntegrityError as error:
-                if getattr(getattr(error.orig, "diag", None), "constraint_name", None) != "ix_users_username":
+                if getattr(getattr(error.orig, "diag", None), "constraint_name", None) not in {
+                    "ix_users_username", "uq_users_lower_username", "uq_users_login_namespace",
+                }:
                     raise
                 if attempt == 4:
                     raise StaffError()

@@ -28,6 +28,8 @@ import type {
   CommitHeadquarterImportParams,
   CommitLocationImportBody,
   CommitLocationImportParams,
+  CommitMRImportBody,
+  CommitMRImportParams,
   CommitProductCategoryImportBody,
   CommitProductCategoryImportParams,
   CommitZoneImportParams,
@@ -54,6 +56,7 @@ import type {
   DownloadEvidence,
   DownloadHeadquarterSampleParams,
   DownloadInitiation,
+  DownloadMRSampleParams,
   DownloadPage,
   DownloadProductCategorySampleParams,
   DownloadURLResponse,
@@ -62,6 +65,7 @@ import type {
   ExportCourierPartnersParams,
   ExportDesignationsParams,
   ExportHeadquartersParams,
+  ExportMRDirectoryParams,
   ExportProductCategoriesParams,
   ExportReportingEventsParams,
   ExportReportingSessionsParams,
@@ -83,6 +87,8 @@ import type {
   ListDesignationsParams,
   ListDownloadLogsParams,
   ListHeadquartersParams,
+  ListMRDirectoryParams,
+  ListMRReferenceChoicesParams,
   ListOwnSessionsParams,
   ListProductCategoriesParams,
   ListReportingEventsParams,
@@ -100,8 +106,21 @@ import type {
   LocationStatus,
   LocationVersion,
   LoginRequest,
+  MRChoices,
+  MRContact,
+  MRCreate,
+  MRCreated,
+  MRDirectoryResponse,
+  MREdit,
+  MRImportResult,
+  MRPage,
   MRResponse,
+  MRReview,
+  MRStatus,
+  MRUsername,
+  MRVersion,
   PatientResponse,
+  PostalResponse,
   ProductCategoryEdit,
   ProductCategoryFields,
   ProductCategoryImportResult,
@@ -122,6 +141,8 @@ import type {
   ReviewHeadquarterImportParams,
   ReviewLocationImportBody,
   ReviewLocationImportParams,
+  ReviewMRImportBody,
+  ReviewMRImportParams,
   ReviewProductCategoryImportBody,
   ReviewProductCategoryImportParams,
   ReviewZoneImportParams,
@@ -3433,6 +3454,1647 @@ export const useSetHeadquarterStatus = <
   TContext
 > => {
   return useMutation(getSetHeadquarterStatusMutationOptions(options));
+};
+
+export const getListMRDirectoryUrl = (params?: ListMRDirectoryParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/mrs?${stringifiedParams}`
+    : `/api/v1/admin/mrs`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listMRDirectory = async (
+  params?: ListMRDirectoryParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRPage> => {
+  return customFetch<MRPage>(getListMRDirectoryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListMRDirectoryQueryKey = (params?: ListMRDirectoryParams) => {
+  return [`/api/v1/admin/mrs`, ...(params ? [params] : [])] as const;
+};
+
+export const getListMRDirectoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMRDirectory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListMRDirectoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMRDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListMRDirectoryQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listMRDirectory>>> = ({
+    signal,
+  }) => listMRDirectory(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMRDirectory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMRDirectoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMRDirectory>>
+>;
+export type ListMRDirectoryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListMRDirectory<
+  TData = Awaited<ReturnType<typeof listMRDirectory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListMRDirectoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMRDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMRDirectoryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateMRDirectoryUrl = () => {
+  return `/api/v1/admin/mrs`;
+};
+
+/**
+ * @summary Create
+ */
+export const createMRDirectory = async (
+  mRCreate: MRCreate,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRCreated> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<MRCreated>(getCreateMRDirectoryUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(mRCreate),
+  });
+};
+
+export const getCreateMRDirectoryMutationKey = () =>
+  ["createMRDirectory"] as const;
+
+export const getCreateMRDirectoryMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createMRDirectory>>,
+    TError,
+    CreateMRDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createMRDirectory>>,
+  TError,
+  CreateMRDirectoryMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateMRDirectoryMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createMRDirectory>>,
+    CreateMRDirectoryMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createMRDirectory(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateMRDirectoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createMRDirectory>>
+>;
+export type CreateMRDirectoryMutationBody = BodyType<MRCreate>;
+export type CreateMRDirectoryMutationError = ErrorType<ErrorEnvelope>;
+export type CreateMRDirectoryMutationVariables = { data: BodyType<MRCreate> };
+
+/**
+ * @summary Create
+ */
+export const useCreateMRDirectory = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createMRDirectory>>,
+    TError,
+    CreateMRDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createMRDirectory>>,
+  TError,
+  CreateMRDirectoryMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateMRDirectoryMutationOptions(options));
+};
+
+export const getResolveMRAccountUrl = (username: string) => {
+  return `/api/v1/admin/mrs/account/${username}`;
+};
+
+/**
+ * @summary Resolve Account
+ */
+export const resolveMRAccount = async (
+  username: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRDirectoryResponse> => {
+  return customFetch<MRDirectoryResponse>(getResolveMRAccountUrl(username), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getResolveMRAccountQueryKey = (username: string) => {
+  return [`/api/v1/admin/mrs/account/${username}`] as const;
+};
+
+export const getResolveMRAccountQueryOptions = <
+  TData = Awaited<ReturnType<typeof resolveMRAccount>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  username: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof resolveMRAccount>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getResolveMRAccountQueryKey(username);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof resolveMRAccount>>
+  > = ({ signal }) => resolveMRAccount(username, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: username !== null && username !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof resolveMRAccount>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ResolveMRAccountQueryResult = NonNullable<
+  Awaited<ReturnType<typeof resolveMRAccount>>
+>;
+export type ResolveMRAccountQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Resolve Account
+ */
+
+export function useResolveMRAccount<
+  TData = Awaited<ReturnType<typeof resolveMRAccount>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  username: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof resolveMRAccount>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getResolveMRAccountQueryOptions(username, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getExportMRDirectoryUrl = (params?: ExportMRDirectoryParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/mrs/export?${stringifiedParams}`
+    : `/api/v1/admin/mrs/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportMRDirectory = async (
+  params?: ExportMRDirectoryParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getExportMRDirectoryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportMRDirectoryQueryKey = (
+  params?: ExportMRDirectoryParams,
+) => {
+  return [`/api/v1/admin/mrs/export`, ...(params ? [params] : [])] as const;
+};
+
+export const getExportMRDirectoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportMRDirectory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportMRDirectoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportMRDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getExportMRDirectoryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exportMRDirectory>>
+  > = ({ signal }) => exportMRDirectory(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportMRDirectory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportMRDirectoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportMRDirectory>>
+>;
+export type ExportMRDirectoryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportMRDirectory<
+  TData = Awaited<ReturnType<typeof exportMRDirectory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportMRDirectoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportMRDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportMRDirectoryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCommitMRImportUrl = (params: CommitMRImportParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/mrs/import/commit?${stringifiedParams}`
+    : `/api/v1/admin/mrs/import/commit`;
+};
+
+/**
+ * @summary Commit
+ */
+export const commitMRImport = async (
+  commitMRImportBody: CommitMRImportBody,
+  params: CommitMRImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRImportResult> => {
+  const formData = new FormData();
+  formData.append(`file`, commitMRImportBody.file);
+
+  return customFetch<MRImportResult>(getCommitMRImportUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getCommitMRImportMutationKey = () => ["commitMRImport"] as const;
+
+export const getCommitMRImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitMRImport>>,
+    TError,
+    CommitMRImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof commitMRImport>>,
+  TError,
+  CommitMRImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCommitMRImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof commitMRImport>>,
+    CommitMRImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return commitMRImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CommitMRImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof commitMRImport>>
+>;
+export type CommitMRImportMutationBody = BodyType<CommitMRImportBody>;
+export type CommitMRImportMutationError = ErrorType<ErrorEnvelope>;
+export type CommitMRImportMutationVariables = {
+  data: BodyType<CommitMRImportBody>;
+  params: CommitMRImportParams;
+};
+
+/**
+ * @summary Commit
+ */
+export const useCommitMRImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitMRImport>>,
+    TError,
+    CommitMRImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof commitMRImport>>,
+  TError,
+  CommitMRImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getCommitMRImportMutationOptions(options));
+};
+
+export const getReviewMRImportUrl = (params: ReviewMRImportParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/mrs/import/review?${stringifiedParams}`
+    : `/api/v1/admin/mrs/import/review`;
+};
+
+/**
+ * @summary Review
+ */
+export const reviewMRImport = async (
+  reviewMRImportBody: ReviewMRImportBody,
+  params: ReviewMRImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRReview> => {
+  const formData = new FormData();
+  formData.append(`file`, reviewMRImportBody.file);
+
+  return customFetch<MRReview>(getReviewMRImportUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getReviewMRImportMutationKey = () => ["reviewMRImport"] as const;
+
+export const getReviewMRImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewMRImport>>,
+    TError,
+    ReviewMRImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewMRImport>>,
+  TError,
+  ReviewMRImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReviewMRImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewMRImport>>,
+    ReviewMRImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return reviewMRImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewMRImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewMRImport>>
+>;
+export type ReviewMRImportMutationBody = BodyType<ReviewMRImportBody>;
+export type ReviewMRImportMutationError = ErrorType<ErrorEnvelope>;
+export type ReviewMRImportMutationVariables = {
+  data: BodyType<ReviewMRImportBody>;
+  params: ReviewMRImportParams;
+};
+
+/**
+ * @summary Review
+ */
+export const useReviewMRImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewMRImport>>,
+    TError,
+    ReviewMRImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewMRImport>>,
+  TError,
+  ReviewMRImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getReviewMRImportMutationOptions(options));
+};
+
+export const getLookupMRPincodeUrl = (pin: string) => {
+  return `/api/v1/admin/mrs/postal/${pin}`;
+};
+
+/**
+ * @summary Postal
+ */
+export const lookupMRPincode = async (
+  pin: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PostalResponse> => {
+  return customFetch<PostalResponse>(getLookupMRPincodeUrl(pin), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getLookupMRPincodeQueryKey = (pin: string) => {
+  return [`/api/v1/admin/mrs/postal/${pin}`] as const;
+};
+
+export const getLookupMRPincodeQueryOptions = <
+  TData = Awaited<ReturnType<typeof lookupMRPincode>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  pin: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupMRPincode>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getLookupMRPincodeQueryKey(pin);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof lookupMRPincode>>> = ({
+    signal,
+  }) => lookupMRPincode(pin, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: pin !== null && pin !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof lookupMRPincode>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type LookupMRPincodeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof lookupMRPincode>>
+>;
+export type LookupMRPincodeQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Postal
+ */
+
+export function useLookupMRPincode<
+  TData = Awaited<ReturnType<typeof lookupMRPincode>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  pin: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupMRPincode>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getLookupMRPincodeQueryOptions(pin, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListMRReferenceChoicesUrl = (
+  params: ListMRReferenceChoicesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/mrs/references?${stringifiedParams}`
+    : `/api/v1/admin/mrs/references`;
+};
+
+/**
+ * @summary References
+ */
+export const listMRReferenceChoices = async (
+  params: ListMRReferenceChoicesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRChoices> => {
+  return customFetch<MRChoices>(getListMRReferenceChoicesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListMRReferenceChoicesQueryKey = (
+  params?: ListMRReferenceChoicesParams,
+) => {
+  return [`/api/v1/admin/mrs/references`, ...(params ? [params] : [])] as const;
+};
+
+export const getListMRReferenceChoicesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMRReferenceChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params: ListMRReferenceChoicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMRReferenceChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListMRReferenceChoicesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listMRReferenceChoices>>
+  > = ({ signal }) =>
+    listMRReferenceChoices(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMRReferenceChoices>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMRReferenceChoicesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMRReferenceChoices>>
+>;
+export type ListMRReferenceChoicesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary References
+ */
+
+export function useListMRReferenceChoices<
+  TData = Awaited<ReturnType<typeof listMRReferenceChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params: ListMRReferenceChoicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMRReferenceChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMRReferenceChoicesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDownloadMRSampleUrl = (params?: DownloadMRSampleParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/mrs/sample?${stringifiedParams}`
+    : `/api/v1/admin/mrs/sample`;
+};
+
+/**
+ * @summary Sample
+ */
+export const downloadMRSample = async (
+  params?: DownloadMRSampleParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getDownloadMRSampleUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getDownloadMRSampleQueryKey = (
+  params?: DownloadMRSampleParams,
+) => {
+  return [`/api/v1/admin/mrs/sample`, ...(params ? [params] : [])] as const;
+};
+
+export const getDownloadMRSampleQueryOptions = <
+  TData = Awaited<ReturnType<typeof downloadMRSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadMRSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadMRSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getDownloadMRSampleQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof downloadMRSample>>
+  > = ({ signal }) => downloadMRSample(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof downloadMRSample>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type DownloadMRSampleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof downloadMRSample>>
+>;
+export type DownloadMRSampleQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Sample
+ */
+
+export function useDownloadMRSample<
+  TData = Awaited<ReturnType<typeof downloadMRSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadMRSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadMRSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getDownloadMRSampleQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGenerateMRUsernameUrl = () => {
+  return `/api/v1/admin/mrs/username`;
+};
+
+/**
+ * @summary Username
+ */
+export const generateMRUsername = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRUsername> => {
+  return customFetch<MRUsername>(getGenerateMRUsernameUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGenerateMRUsernameQueryKey = () => {
+  return [`/api/v1/admin/mrs/username`] as const;
+};
+
+export const getGenerateMRUsernameQueryOptions = <
+  TData = Awaited<ReturnType<typeof generateMRUsername>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof generateMRUsername>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGenerateMRUsernameQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof generateMRUsername>>
+  > = ({ signal }) => generateMRUsername({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof generateMRUsername>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GenerateMRUsernameQueryResult = NonNullable<
+  Awaited<ReturnType<typeof generateMRUsername>>
+>;
+export type GenerateMRUsernameQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Username
+ */
+
+export function useGenerateMRUsername<
+  TData = Awaited<ReturnType<typeof generateMRUsername>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof generateMRUsername>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGenerateMRUsernameQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetMRDirectoryUrl = (mrId: string) => {
+  return `/api/v1/admin/mrs/${mrId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getMRDirectory = async (
+  mrId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRDirectoryResponse> => {
+  return customFetch<MRDirectoryResponse>(getGetMRDirectoryUrl(mrId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMRDirectoryQueryKey = (mrId: string) => {
+  return [`/api/v1/admin/mrs/${mrId}`] as const;
+};
+
+export const getGetMRDirectoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMRDirectory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  mrId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMRDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMRDirectoryQueryKey(mrId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMRDirectory>>> = ({
+    signal,
+  }) => getMRDirectory(mrId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: mrId !== null && mrId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMRDirectory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMRDirectoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMRDirectory>>
+>;
+export type GetMRDirectoryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetMRDirectory<
+  TData = Awaited<ReturnType<typeof getMRDirectory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  mrId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMRDirectory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMRDirectoryQueryOptions(mrId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getSetMRContactRequirementUrl = (mrId: string) => {
+  return `/api/v1/admin/mrs/${mrId}/contact`;
+};
+
+/**
+ * @summary Contact
+ */
+export const setMRContactRequirement = async (
+  mrId: string,
+  mRContact: MRContact,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRDirectoryResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<MRDirectoryResponse>(getSetMRContactRequirementUrl(mrId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(mRContact),
+  });
+};
+
+export const getSetMRContactRequirementMutationKey = () =>
+  ["setMRContactRequirement"] as const;
+
+export const getSetMRContactRequirementMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setMRContactRequirement>>,
+    TError,
+    SetMRContactRequirementMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setMRContactRequirement>>,
+  TError,
+  SetMRContactRequirementMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSetMRContactRequirementMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setMRContactRequirement>>,
+    SetMRContactRequirementMutationVariables
+  > = (props) => {
+    const { mrId, data } = props ?? {};
+
+    return setMRContactRequirement(mrId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetMRContactRequirementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setMRContactRequirement>>
+>;
+export type SetMRContactRequirementMutationBody = BodyType<MRContact>;
+export type SetMRContactRequirementMutationError = ErrorType<ErrorEnvelope>;
+export type SetMRContactRequirementMutationVariables = {
+  mrId: string;
+  data: BodyType<MRContact>;
+};
+
+/**
+ * @summary Contact
+ */
+export const useSetMRContactRequirement = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setMRContactRequirement>>,
+    TError,
+    SetMRContactRequirementMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setMRContactRequirement>>,
+  TError,
+  SetMRContactRequirementMutationVariables,
+  TContext
+> => {
+  return useMutation(getSetMRContactRequirementMutationOptions(options));
+};
+
+export const getDeleteMRDirectoryUrl = (mrId: string) => {
+  return `/api/v1/admin/mrs/${mrId}/delete`;
+};
+
+/**
+ * @summary Delete
+ */
+export const deleteMRDirectory = async (
+  mrId: string,
+  mRVersion: MRVersion,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRDirectoryResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<MRDirectoryResponse>(getDeleteMRDirectoryUrl(mrId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(mRVersion),
+  });
+};
+
+export const getDeleteMRDirectoryMutationKey = () =>
+  ["deleteMRDirectory"] as const;
+
+export const getDeleteMRDirectoryMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMRDirectory>>,
+    TError,
+    DeleteMRDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteMRDirectory>>,
+  TError,
+  DeleteMRDirectoryMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteMRDirectoryMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteMRDirectory>>,
+    DeleteMRDirectoryMutationVariables
+  > = (props) => {
+    const { mrId, data } = props ?? {};
+
+    return deleteMRDirectory(mrId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteMRDirectoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteMRDirectory>>
+>;
+export type DeleteMRDirectoryMutationBody = BodyType<MRVersion>;
+export type DeleteMRDirectoryMutationError = ErrorType<ErrorEnvelope>;
+export type DeleteMRDirectoryMutationVariables = {
+  mrId: string;
+  data: BodyType<MRVersion>;
+};
+
+/**
+ * @summary Delete
+ */
+export const useDeleteMRDirectory = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMRDirectory>>,
+    TError,
+    DeleteMRDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteMRDirectory>>,
+  TError,
+  DeleteMRDirectoryMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteMRDirectoryMutationOptions(options));
+};
+
+export const getEditMRDirectoryUrl = (mrId: string) => {
+  return `/api/v1/admin/mrs/${mrId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editMRDirectory = async (
+  mrId: string,
+  mREdit: MREdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRDirectoryResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<MRDirectoryResponse>(getEditMRDirectoryUrl(mrId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(mREdit),
+  });
+};
+
+export const getEditMRDirectoryMutationKey = () => ["editMRDirectory"] as const;
+
+export const getEditMRDirectoryMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editMRDirectory>>,
+    TError,
+    EditMRDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editMRDirectory>>,
+  TError,
+  EditMRDirectoryMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditMRDirectoryMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editMRDirectory>>,
+    EditMRDirectoryMutationVariables
+  > = (props) => {
+    const { mrId, data } = props ?? {};
+
+    return editMRDirectory(mrId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditMRDirectoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editMRDirectory>>
+>;
+export type EditMRDirectoryMutationBody = BodyType<MREdit>;
+export type EditMRDirectoryMutationError = ErrorType<ErrorEnvelope>;
+export type EditMRDirectoryMutationVariables = {
+  mrId: string;
+  data: BodyType<MREdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditMRDirectory = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editMRDirectory>>,
+    TError,
+    EditMRDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editMRDirectory>>,
+  TError,
+  EditMRDirectoryMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditMRDirectoryMutationOptions(options));
+};
+
+export const getResetMRPasswordUrl = (mrId: string) => {
+  return `/api/v1/admin/mrs/${mrId}/reset`;
+};
+
+/**
+ * @summary Reset
+ */
+export const resetMRPassword = async (
+  mrId: string,
+  mRVersion: MRVersion,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRCreated> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<MRCreated>(getResetMRPasswordUrl(mrId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(mRVersion),
+  });
+};
+
+export const getResetMRPasswordMutationKey = () => ["resetMRPassword"] as const;
+
+export const getResetMRPasswordMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resetMRPassword>>,
+    TError,
+    ResetMRPasswordMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resetMRPassword>>,
+  TError,
+  ResetMRPasswordMutationVariables,
+  TContext
+> => {
+  const mutationKey = getResetMRPasswordMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resetMRPassword>>,
+    ResetMRPasswordMutationVariables
+  > = (props) => {
+    const { mrId, data } = props ?? {};
+
+    return resetMRPassword(mrId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResetMRPasswordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resetMRPassword>>
+>;
+export type ResetMRPasswordMutationBody = BodyType<MRVersion>;
+export type ResetMRPasswordMutationError = ErrorType<ErrorEnvelope>;
+export type ResetMRPasswordMutationVariables = {
+  mrId: string;
+  data: BodyType<MRVersion>;
+};
+
+/**
+ * @summary Reset
+ */
+export const useResetMRPassword = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resetMRPassword>>,
+    TError,
+    ResetMRPasswordMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof resetMRPassword>>,
+  TError,
+  ResetMRPasswordMutationVariables,
+  TContext
+> => {
+  return useMutation(getResetMRPasswordMutationOptions(options));
+};
+
+export const getSetMRDirectoryStatusUrl = (mrId: string) => {
+  return `/api/v1/admin/mrs/${mrId}/status`;
+};
+
+/**
+ * @summary Status
+ */
+export const setMRDirectoryStatus = async (
+  mrId: string,
+  mRStatus: MRStatus,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRDirectoryResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<MRDirectoryResponse>(getSetMRDirectoryStatusUrl(mrId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(mRStatus),
+  });
+};
+
+export const getSetMRDirectoryStatusMutationKey = () =>
+  ["setMRDirectoryStatus"] as const;
+
+export const getSetMRDirectoryStatusMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setMRDirectoryStatus>>,
+    TError,
+    SetMRDirectoryStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setMRDirectoryStatus>>,
+  TError,
+  SetMRDirectoryStatusMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSetMRDirectoryStatusMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setMRDirectoryStatus>>,
+    SetMRDirectoryStatusMutationVariables
+  > = (props) => {
+    const { mrId, data } = props ?? {};
+
+    return setMRDirectoryStatus(mrId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetMRDirectoryStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setMRDirectoryStatus>>
+>;
+export type SetMRDirectoryStatusMutationBody = BodyType<MRStatus>;
+export type SetMRDirectoryStatusMutationError = ErrorType<ErrorEnvelope>;
+export type SetMRDirectoryStatusMutationVariables = {
+  mrId: string;
+  data: BodyType<MRStatus>;
+};
+
+/**
+ * @summary Status
+ */
+export const useSetMRDirectoryStatus = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setMRDirectoryStatus>>,
+    TError,
+    SetMRDirectoryStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setMRDirectoryStatus>>,
+  TError,
+  SetMRDirectoryStatusMutationVariables,
+  TContext
+> => {
+  return useMutation(getSetMRDirectoryStatusMutationOptions(options));
 };
 
 export const getListProductCategoriesUrl = (

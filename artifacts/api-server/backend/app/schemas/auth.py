@@ -13,6 +13,8 @@ class LoginRequest(StrictModel):
     identifier: str = Field(min_length=3, max_length=320)
     password: str = Field(min_length=1, max_length=128)
     remember_me: bool = False
+    # Portal selection constrains issuance; it never grants a role or permission.
+    identity_kind: Literal["admin", "mr"] | None = None
 
     @field_validator("identifier")
     @classmethod

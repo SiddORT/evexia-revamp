@@ -785,12 +785,22 @@ export interface LocationVersion {
   expected_version: number;
 }
 
+export type LoginRequestIdentityKind =
+  | (typeof LoginRequestIdentityKind)[keyof typeof LoginRequestIdentityKind]
+  | null;
+
+export const LoginRequestIdentityKind = {
+  admin: "admin",
+  mr: "mr",
+} as const;
+
 export interface LoginRequest {
   /**
    * @minLength 3
    * @maxLength 320
    */
   identifier: string;
+  identity_kind?: LoginRequestIdentityKind;
   /**
    * @minLength 1
    * @maxLength 128
@@ -799,10 +809,365 @@ export interface LoginRequest {
   remember_me?: boolean;
 }
 
+export interface MRChoice {
+  deleted?: boolean;
+  id: string;
+  name: string;
+  status: string;
+}
+
+export interface MRChoices {
+  items: MRChoice[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export type MRContactContactRequirement =
+  (typeof MRContactContactRequirement)[keyof typeof MRContactContactRequirement];
+
+export const MRContactContactRequirement = {
+  required: "required",
+  optional: "optional",
+} as const;
+
+export interface MRContact {
+  contactRequirement: MRContactContactRequirement;
+  /** @minimum 1 */
+  expected_version: number;
+}
+
+export type MRCreateContactRequirement =
+  (typeof MRCreateContactRequirement)[keyof typeof MRCreateContactRequirement];
+
+export const MRCreateContactRequirement = {
+  required: "required",
+  optional: "optional",
+} as const;
+
+export type MRCreateStatus =
+  (typeof MRCreateStatus)[keyof typeof MRCreateStatus];
+
+export const MRCreateStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface MRCreate {
+  /**
+   * @minLength 1
+   * @maxLength 300
+   */
+  addressLine1: string;
+  /** @maxLength 300 */
+  addressLine2?: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  city: string;
+  contactRequirement?: MRCreateContactRequirement;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  country: string;
+  dateOfJoining: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  designation: string;
+  /**
+   * @minimum 0
+   * @maximum 3650
+   */
+  doctorDaysLimit?: number;
+  /** @maxLength 320 */
+  email?: string;
+  /**
+   * @minLength 1
+   * @maxLength 64
+   */
+  employeeCode: string;
+  hq: string;
+  initialPassword?: string | null;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  landmark: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  paymentLimit?: number | string;
+  /** @maxLength 20 */
+  phone?: string;
+  /** @pattern ^[1-9][0-9]{5}$ */
+  pincode: string;
+  reportingManagerId?: string | null;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  state: string;
+  status: MRCreateStatus;
+  /**
+   * @minLength 3
+   * @maxLength 32
+   * @pattern ^[a-z][a-z0-9._-]{2,31}$
+   */
+  userId: string;
+  zoneId: string;
+}
+
+export interface MRCredentials {
+  password: string;
+  userId: string;
+}
+
+export type MRDirectoryResponseContactRequirement =
+  (typeof MRDirectoryResponseContactRequirement)[keyof typeof MRDirectoryResponseContactRequirement];
+
+export const MRDirectoryResponseContactRequirement = {
+  required: "required",
+  optional: "optional",
+} as const;
+
+export type MRDirectoryResponseStatus =
+  (typeof MRDirectoryResponseStatus)[keyof typeof MRDirectoryResponseStatus];
+
+export const MRDirectoryResponseStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface MRDirectoryResponse {
+  /**
+   * @minLength 1
+   * @maxLength 300
+   */
+  addressLine1: string;
+  /** @maxLength 300 */
+  addressLine2?: string;
+  assignmentWarnings: string[];
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  city: string;
+  contactRequirement?: MRDirectoryResponseContactRequirement;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  country: string;
+  createdAt: string;
+  createdBy: string;
+  dateOfJoining: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  designation: string;
+  /**
+   * @minimum 0
+   * @maximum 3650
+   */
+  doctorDaysLimit?: number;
+  /** @maxLength 320 */
+  email?: string;
+  /**
+   * @minLength 1
+   * @maxLength 64
+   */
+  employeeCode: string;
+  hq: string;
+  hqName: string;
+  id: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  landmark: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
+  paymentLimit?: string;
+  /** @maxLength 20 */
+  phone?: string;
+  /** @pattern ^[1-9][0-9]{5}$ */
+  pincode: string;
+  reportingManagerId?: string | null;
+  reportingManagerName: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  state: string;
+  status: MRDirectoryResponseStatus;
+  updatedAt: string;
+  updatedBy: string;
+  /**
+   * @minLength 3
+   * @maxLength 32
+   * @pattern ^[a-z][a-z0-9._-]{2,31}$
+   */
+  userId: string;
+  version: number;
+  zoneId: string;
+  zoneName: string;
+}
+
+export interface MRCreated {
+  credentials: MRCredentials;
+  record: MRDirectoryResponse;
+}
+
+export type MREditContactRequirement =
+  (typeof MREditContactRequirement)[keyof typeof MREditContactRequirement];
+
+export const MREditContactRequirement = {
+  required: "required",
+  optional: "optional",
+} as const;
+
+export type MREditStatus = (typeof MREditStatus)[keyof typeof MREditStatus];
+
+export const MREditStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface MREdit {
+  /**
+   * @minLength 1
+   * @maxLength 300
+   */
+  addressLine1: string;
+  /** @maxLength 300 */
+  addressLine2?: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  city: string;
+  contactRequirement?: MREditContactRequirement;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  country: string;
+  dateOfJoining: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  designation: string;
+  /**
+   * @minimum 0
+   * @maximum 3650
+   */
+  doctorDaysLimit?: number;
+  /** @maxLength 320 */
+  email?: string;
+  /**
+   * @minLength 1
+   * @maxLength 64
+   */
+  employeeCode: string;
+  /** @minimum 1 */
+  expected_version: number;
+  hq: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  landmark: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  paymentLimit?: number | string;
+  /** @maxLength 20 */
+  phone?: string;
+  /** @pattern ^[1-9][0-9]{5}$ */
+  pincode: string;
+  reportingManagerId?: string | null;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  state: string;
+  status: MREditStatus;
+  /**
+   * @minLength 3
+   * @maxLength 32
+   * @pattern ^[a-z][a-z0-9._-]{2,31}$
+   */
+  userId: string;
+  zoneId: string;
+}
+
+export interface MRImportResult {
+  credentials: MRCredentials[];
+  imported: number;
+}
+
+export interface MRImportRow {
+  errors: string[];
+  name: string;
+  row: number;
+  userId: string;
+}
+
+export interface MRPage {
+  filtered: number;
+  items: MRDirectoryResponse[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
 export interface MRResponse {
   id: string;
   is_active: boolean;
   user_id: string;
+}
+
+export interface MRReview {
+  digest: string;
+  rows: MRImportRow[];
+  valid: boolean;
+}
+
+export type MRStatusStatus =
+  (typeof MRStatusStatus)[keyof typeof MRStatusStatus];
+
+export const MRStatusStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface MRStatus {
+  /** @minimum 1 */
+  expected_version: number;
+  status: MRStatusStatus;
+}
+
+export interface MRUsername {
+  userId: string;
+}
+
+export interface MRVersion {
+  /** @minimum 1 */
+  expected_version: number;
 }
 
 export interface PatientResponse {
@@ -810,6 +1175,18 @@ export interface PatientResponse {
   id: string;
   is_active: boolean;
   version: number;
+}
+
+export interface PostalChoice {
+  city: string;
+  country: string;
+  state: string;
+}
+
+export interface PostalResponse {
+  choices: PostalChoice[];
+  message: string;
+  pincode: string;
 }
 
 export type ProductCategoryEditStatus =
@@ -1725,6 +2102,133 @@ export type DownloadHeadquarterSampleFormat =
   (typeof DownloadHeadquarterSampleFormat)[keyof typeof DownloadHeadquarterSampleFormat];
 
 export const DownloadHeadquarterSampleFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type ListMRDirectoryParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ListMRDirectoryStatus;
+  zone_id?: string | null;
+  hq_id?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
+export type ListMRDirectoryStatus =
+  (typeof ListMRDirectoryStatus)[keyof typeof ListMRDirectoryStatus];
+
+export const ListMRDirectoryStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportMRDirectoryParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ExportMRDirectoryStatus;
+  zone_id?: string | null;
+  hq_id?: string | null;
+  format?: ExportMRDirectoryFormat;
+};
+
+export type ExportMRDirectoryStatus =
+  (typeof ExportMRDirectoryStatus)[keyof typeof ExportMRDirectoryStatus];
+
+export const ExportMRDirectoryStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportMRDirectoryFormat =
+  (typeof ExportMRDirectoryFormat)[keyof typeof ExportMRDirectoryFormat];
+
+export const ExportMRDirectoryFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type CommitMRImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+  /**
+   * @pattern ^[0-9a-f]{64}$
+   */
+  digest: string;
+  confirm: boolean;
+};
+
+export type CommitMRImportBody = {
+  file: Blob | File;
+};
+
+export type ReviewMRImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+};
+
+export type ReviewMRImportBody = {
+  file: Blob | File;
+};
+
+export type ListMRReferenceChoicesParams = {
+  kind: ListMRReferenceChoicesKind;
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  include_saved?: string | null;
+};
+
+export type ListMRReferenceChoicesKind =
+  (typeof ListMRReferenceChoicesKind)[keyof typeof ListMRReferenceChoicesKind];
+
+export const ListMRReferenceChoicesKind = {
+  zones: "zones",
+  headquarters: "headquarters",
+  managers: "managers",
+  designations: "designations",
+} as const;
+
+export type DownloadMRSampleParams = {
+  format?: DownloadMRSampleFormat;
+};
+
+export type DownloadMRSampleFormat =
+  (typeof DownloadMRSampleFormat)[keyof typeof DownloadMRSampleFormat];
+
+export const DownloadMRSampleFormat = {
   csv: "csv",
   xlsx: "xlsx",
 } as const;

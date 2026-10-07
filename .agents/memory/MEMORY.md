@@ -35,3 +35,4 @@
 - [Exact workbook decimals](exact-workbook-decimals.md) — validate monetary XML lexemes, not parser floats; text cells retain long prices.
 - [Import navigation ownership](import-navigation-ownership.md) — backend-only import tabs must not require mock templates or weaken authenticated transfers.
 - [Delayed browser route teardown](delayed-route-teardown.md) — await held response handlers before removing their interception; avoid global teardown between late-response scenarios.
+- [MR account boundary](mr-account-boundary.md) — real MR login must not silently promote existing identities or mix browser-local demo relationships.

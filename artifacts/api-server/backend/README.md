@@ -1,8 +1,8 @@
 # EVEXIA backend foundation
 
 This FastAPI modular monolith supplies authoritative authentication for the
-existing EVEXIA Admin login and protected workspace. MR and Doctor login screens
-remain mock previews. Staff Management is now an authenticated, encrypted
+existing EVEXIA Admin and MR login and protected workspaces. Doctor login remains
+mock-only. Staff Management is now an authenticated, encrypted
 PostgreSQL directory with disabled-by-default opt-in workspace credentials; Zone Master is shared server
 persistence with soft deletion and authenticated audit history. Courier Partner Master
 is separate shared server persistence with its own table and endpoints. Storage Location Master
@@ -20,6 +20,12 @@ exact six-place decimal strings, server price-range predicates and bounded atomi
 transfers, independent of Allergen/procurement's legacy local categories. Migration
 `0018_product_categories` follows `0017_headquarters` and creates an empty directory.
 See [Product Category operations](../../../docs/product-category-master.md).
+MR Master provisions fresh accounts with a one-to-one extension of MRProfile.
+See [MR Master operations](../../../docs/mr-master.md) for `0018_mr_directory`
+(after `0018_product_categories`), identifier preflight, one-time credentials and
+server transfer/resource limits. Local MR consumers and existing identities stay
+separate. Managed migrations, real-account changes and deployment are operator
+prerequisites; `/api/v1/health/readiness` checks the installed schema.
 Other unconverted portal masters remain
 fictional and browser-local. Do not enter real personal or health data into the
 preview. See [staff security and operations](../../../docs/staff-security.md).

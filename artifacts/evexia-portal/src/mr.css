@@ -219,3 +219,12 @@
    .admin-mr-card__actions > :nth-child(2n) { border-right: 0; }
    .admin-mr-card__actions > :nth-last-child(-n+2) { border-bottom: 0; }
 }
+.mr-reference { display: grid; gap: 6px; }
+.mr-reference__search { min-height: 36px; }
+.mr-credentials { display: grid; gap: 14px; }
+.mr-credentials__actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.mr-credentials__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 45dvh; overflow: auto; }
+.mr-credentials__list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--admin-border, var(--line)); border-radius: 8px; }
+.mr-credentials__list code { font-family: ui-monospace, monospace; word-break: break-all; }
+.mr-form__postal-choices { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.mr-home { max-width: 560px; margin: 0 auto; padding: 48px 24px; display: grid; gap: 18px; }

@@ -96,7 +96,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 
   });
 }
 
-test('deep links wait for verification; unchanged login controls show safe failures and preserve MR/Doctor mocks', async ({ page }) => {
+test('deep links wait for verification; login controls show safe failures, real MR login and Doctor mock', async ({ page }) => {
   await page.goto(`${base()}/admin/masters/zones`);
   await expect(page).toHaveURL(/\/admin\/login/);
   await expect(page.getByTestId('button-admin-profile')).toHaveCount(0);
@@ -128,8 +128,8 @@ test('deep links wait for verification; unchanged login controls show safe failu
     await page.getByLabel('Email or username').fill('fictional@example.test');
     await page.getByLabel('Password', { exact: true }).fill('mock-only');
     await page.getByTestId('button-submit-login').click();
-    await expect(page.getByTestId('status-auth-message')).toContainText('No credentials were sent');
-    expect(requests).toBe(0);
+    await expect(page.getByTestId('status-auth-message')).toContainText(path === '/doctor' ? 'No credentials were sent' : 'Invalid credentials');
+    expect(requests).toBe(path === '/doctor' ? 0 : 1);
     page.off('request', observe);
   }
 });

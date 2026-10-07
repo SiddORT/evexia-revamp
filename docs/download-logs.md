@@ -37,12 +37,13 @@ on-device. General audit/activity remains independent.
 | Release action | Format | Recorded by |
 |---|---|---|
 | Zone / Courier / Storage Location filtered export | CSV, XLSX | Server |
-| MR / Doctor / Patient master export | CSV | Browser |
+| MR filtered export and import sample | CSV, XLSX | Server |
+| Doctor / Patient master export | CSV | Browser |
 | Designation / Vendor / Allergen / Opening Balance / Headquarter / Product Category / Sales Target export and import template | CSV | Browser |
 | Staff loaded-record export / Stock Status sample export / PR list export | CSV | Browser |
 | Zone / Courier import sample | CSV, XLSX | Browser |
 | Storage Location import template | CSV, XLSX | Browser |
-| MR / Doctor sample workbook | XLSX | Browser |
+| Doctor sample workbook | XLSX | Browser |
 | Patient import template | CSV | Browser |
 | Sessions / Activity whole-result report download | CSV | Browser (the JSON snapshot builder is not a release) |
 | PO invoice, all three layouts, list and preview | PDF | Browser |

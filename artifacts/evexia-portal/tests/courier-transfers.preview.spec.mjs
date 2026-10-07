@@ -132,7 +132,7 @@ test('Courier prepared layout, CSV sample and master tabs in all desktop/mobile 
   const tabs = () => page.getByRole('navigation', { name: 'Select a master for import' });
   for (const master of ['MR', 'Doctor']) {
     await tabs().getByRole('button', { name: `${master} Master`, exact: true }).click();
-    await expect(page.getByText('UI preview · Nothing will be saved')).toBeVisible();
+    await expect(page.getByText(master === 'MR' ? 'Shared server records' : 'UI preview · Nothing will be saved')).toBeVisible();
   }
   await tabs().getByRole('button', { name: 'Zone Master', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Import Zone data', exact: true })).toBeVisible();

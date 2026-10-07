@@ -1,7 +1,7 @@
 kind = "web"
 previewPath = "/"
 title = "EVEXIA Portal"
-description = "A frontend-only portal-selection and login experience for EVEXIA Life Sciences, with mock interactions for Admin, Medical Representative, and Doctor users."
+description = "EVEXIA Life Sciences portal with authenticated Admin and Medical Representative workspaces, shared server-owned master directories and a separate mock-only Doctor login."
 version = "1.0.0"
 id = "artifacts/evexia-portal"
 router = "path"

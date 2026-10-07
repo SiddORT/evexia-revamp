@@ -137,6 +137,7 @@ fi
 if [ "$#" -eq 0 ]; then
   SPECS="$SPECS artifacts/evexia-portal/tests/headquarters-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/product-categories-backend.preview.spec.mjs"
+  SPECS="$SPECS artifacts/evexia-portal/tests/mrs-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/download-logs.preview.spec.mjs artifacts/evexia-portal/tests/staff-permissions.preview.spec.mjs"
 fi
 echo "Running authenticated browser previews against an isolated synthetic PostgreSQL/API fixture (API $API_PORT, portal $PORT)."

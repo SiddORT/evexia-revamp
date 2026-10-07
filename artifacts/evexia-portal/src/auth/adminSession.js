@@ -46,7 +46,7 @@ if (typeof window !== 'undefined') {
   const recheck = () => {
     // Fresh-token focus changes must not unmount forms or discard local drafts.
     // Route changes verify /me; only an expired token needs a blocking restore.
-    if (state.status === 'authenticated' && Date.now() >= expiresAt) void verifySession(true);
+    if (state.status === 'authenticated' && Date.now() >= expiresAt) void verifySession(true, portalOf(state.user));
   };
   window.addEventListener('focus', recheck);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) recheck(); });
@@ -90,6 +90,19 @@ async function request(path, body, bearer) {
   catch { throw new SessionError('The sign-in service returned an invalid response.'); }
 }
 
+const portalOf = (user) => (user?.identity_kind === 'mr' ? 'mr' : 'admin');
+
+// Verified MR identity from the database /me response: never admin, staff or permissions.
+function safeMr(user) {
+  if (user && typeof user.id === 'string' && user.identity_kind === 'mr' && user.system_role === 'mr'
+      && typeof user.mr_id === 'string' && /^[0-9a-f-]{36}$/i.test(user.mr_id)
+      && Array.isArray(user.permissions) && user.permissions.length === 0) {
+    return Object.freeze({ id: user.id, mr_id: user.mr_id, email: user.email ?? null, username: user.username ?? null, system_role: 'mr', identity_kind: 'mr', permissions: Object.freeze([]) });
+  }
+  throw new SessionError('This account does not have MR access.', 403);
+}
+const safeFor = (user, portal) => (portal === 'mr' ? safeMr(user) : safeAdmin(user));
+
 function safeAdmin(user) {
   const permissions = Array.isArray(user?.permissions) ? user.permissions : null;
   const kind = user?.identity_kind ?? (user?.system_role === 'super_admin' ? 'super_admin' : undefined);
@@ -106,19 +119,19 @@ function safeAdmin(user) {
   throw new SessionError('This account does not have Admin access.', 403);
 }
 
-async function accept(payload, epoch) {
+async function accept(payload, epoch, portal = 'admin') {
   if (epoch !== generation) return;
   if (typeof payload?.access_token !== 'string' || !Number.isFinite(payload.expires_in) || payload.expires_in <= 0) {
     throw new SessionError('The sign-in service returned an invalid session.');
   }
   // Do not authorize using login/refresh role selection alone: verify DB identity.
-  const user = safeAdmin(await request('/me', undefined, payload.access_token));
+  const user = safeFor(await request('/me', undefined, payload.access_token), portal);
   if (epoch !== generation) return;
   token = payload.access_token;
   expiresAt = Date.now() + payload.expires_in * 1000;
   publish({ status: 'authenticated', user, message: '' });
   clearTimeout(expiryTimer);
-  expiryTimer = setTimeout(() => { void verifySession(true); }, Math.max(0, expiresAt - Date.now()));
+  expiryTimer = setTimeout(() => { void verifySession(true, portal); }, Math.max(0, expiresAt - Date.now()));
 }
 
 export async function loginAdmin(identifier, password, remember) {
@@ -129,7 +142,7 @@ export async function loginAdmin(identifier, password, remember) {
   try {
     await cookieLock(async () => {
       if (epoch !== generation) return;
-      const payload = await request('/login', { identifier, password, remember_me: remember });
+      const payload = await request('/login', { identifier, password, remember_me: remember, identity_kind: 'admin' });
       try {
         await accept(payload, epoch);
       } catch (error) {
@@ -145,8 +158,57 @@ export async function loginAdmin(identifier, password, remember) {
   }
 }
 
-export function verifySession(forceRefresh = false) {
-  if (pending) return pending;
+export async function loginMr(identifier, password, remember) {
+  restorationAllowed = true;
+  clear();
+  const epoch = generation;
+  publish({ status: 'checking', user: null, message: '' });
+  try {
+    await cookieLock(async () => {
+      if (epoch !== generation) return;
+      const payload = await request('/login', { identifier, password, remember_me: remember, identity_kind: 'mr' });
+      try { await accept(payload, epoch, 'mr'); }
+      catch (error) {
+        // A valid Admin/staff login must not leave its cookie signed in via the MR portal.
+        if (error.status === 403) await request('/logout', {});
+        throw error;
+      }
+    });
+    if (epoch === generation && state.status === 'authenticated') channel?.postMessage({ type: 'identity-changed' });
+  } catch (error) {
+    if (epoch === generation) clear(error.status === 403 ? 'This account is not an MR account. Use the matching portal.' : error.message);
+    throw error;
+  }
+}
+
+// Change-own-password for a verified MR. Revokes sessions server-side, so end locally too.
+export async function changeMrPassword(currentPassword, newPassword) {
+  if (state.status !== 'authenticated' || state.user?.identity_kind !== 'mr' || !token) throw new SessionError('Your session changed. Please sign in again.', 401);
+  const epoch = generation;
+  let response;
+  try {
+    response = await fetch(`${AUTH_URL}/change-password`, {
+      method: 'POST', credentials: 'same-origin', cache: 'no-store',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+      signal: AbortSignal.timeout(20000),
+    });
+  } catch { throw new SessionError('Password change could not be confirmed. Try signing in with the new password before retrying.'); }
+  if (epoch !== generation) throw new SessionError('Your session changed. Please sign in again.', 401);
+  if (!response.ok) {
+    throw new SessionError(response.status === 401 || response.status === 403 ? 'Current password is incorrect or your session expired.'
+      : response.status === 422 ? 'The new password does not meet the password policy.'
+      : response.status === 429 ? 'Too many attempts. Try again later.' : 'Password change failed. Try again later.', response.status);
+  }
+  return true;
+}
+
+let pendingPortal = null;
+export function verifySession(forceRefresh = false, portalArg) {
+  // Omitted portal follows the already-verified identity; never default a verified MR to Admin.
+  const portal = portalArg ?? portalOf(state.user);
+  if (pending) return pendingPortal === portal ? pending : pending.then(() => verifySession(forceRefresh, portal));
+  pendingPortal = portal;
   if (!restorationAllowed) return Promise.resolve();
   const epoch = generation;
   const oldToken = token;
@@ -158,7 +220,7 @@ export function verifySession(forceRefresh = false) {
     try {
       if (oldToken && Date.now() < expiresAt) {
         try {
-          const user = safeAdmin(await request('/me', undefined, oldToken));
+          const user = safeFor(await request('/me', undefined, oldToken), portal);
           if (!forceRefresh) {
             if (epoch === generation) publish({ status: 'authenticated', user, message: '' });
             return;
@@ -171,7 +233,7 @@ export function verifySession(forceRefresh = false) {
       }
       await cookieLock(async () => {
         if (epoch !== generation || !restorationAllowed) return;
-        await accept(await request('/refresh', {}), epoch);
+        await accept(await request('/refresh', {}), epoch, portal);
       });
     } catch (error) {
       if (epoch !== generation) return;
@@ -179,7 +241,8 @@ export function verifySession(forceRefresh = false) {
       clearTimeout(expiryTimer);
       if (error.status === 401 || error.status === 403) {
         restorationAllowed = false;
-        clear(previousUser && error.replaced ? REPLACED_MESSAGE : '');
+        clear(previousUser && error.replaced ? (previousUser.identity_kind === 'mr'
+          ? REPLACED_MESSAGE.replace('Admin', 'MR') : REPLACED_MESSAGE) : '');
       }
       else publish({ status: previousUser ? 'renewal-error' : 'error', user: previousUser, message: error.message });
     } finally { pending = null; }
@@ -368,7 +431,9 @@ export async function roleRequest(path = '', body, { signal } = {}) {
 // Per-operation Zone authorization. Staff never reach other master services;
 // trash and restore stay Super Admin only. The server re-checks every call.
 function masterAllowed(user, resource, path, writing) {
+  if (user.identity_kind === 'mr') return false;
   if (user.permissions.includes('admin.access')) return true;
+  if (resource === 'mrs') return false;
   if (user.identity_kind !== 'staff' || resource !== 'zones') return false;
   const grants = user.permissions;
   if (/^\/(?:trash)$|\/restore$/.test(path)) return false;
@@ -384,10 +449,11 @@ function masterAllowed(user, resource, path, writing) {
 
 async function masterRequest(resource, path = '', { body, file, params = {}, download = false, signal } = {}) {
   const zone = resource === 'zones';
-  if (!['zones', 'courier-partners', 'storage-locations', 'designations', 'headquarters', 'product-categories'].includes(resource)) throw new SessionError('Unsupported master resource.');
-  const label = zone ? 'Zone' : resource === 'product-categories' ? 'Product category' : resource === 'headquarters' ? 'Headquarter' : resource === 'designations' ? 'Designation' : resource === 'storage-locations' ? 'Storage location' : 'Courier partner';
-  const unavailable = zone ? 'zone_unavailable' : resource === 'product-categories' ? 'product_category_unavailable' : resource === 'headquarters' ? 'headquarter_unavailable' : resource === 'designations' ? 'designation_unavailable' : resource === 'storage-locations' ? 'location_unavailable' : 'courier_unavailable';
-  const route = zone
+  if (!['zones', 'courier-partners', 'storage-locations', 'designations', 'headquarters', 'mrs', 'product-categories'].includes(resource)) throw new SessionError('Unsupported master resource.');
+  const label = resource === 'mrs' ? 'MR' : resource === 'product-categories' ? 'Product category' : zone ? 'Zone' : resource === 'headquarters' ? 'Headquarter' : resource === 'designations' ? 'Designation' : resource === 'storage-locations' ? 'Storage location' : 'Courier partner';
+  const unavailable = resource === 'mrs' ? 'mr_unavailable' : resource === 'product-categories' ? 'product_category_unavailable' : zone ? 'zone_unavailable' : resource === 'headquarters' ? 'headquarter_unavailable' : resource === 'designations' ? 'designation_unavailable' : resource === 'storage-locations' ? 'location_unavailable' : 'courier_unavailable';
+  const mrRoute = /^(?:|\/references|\/username|\/account\/[a-z][a-z0-9._-]{2,31}|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|contact|delete|reset))?)$/;
+  const route = resource === 'mrs' ? mrRoute : zone
     ? /^(?:|\/trash|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|restore))?)$/
     : /^(?:|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/;
   if (!route.test(path) && !(['designations', 'headquarters', 'product-categories'].includes(resource) && path === '/sample')) {
@@ -410,11 +476,12 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
   if (download) serverInitiations.set(downloadKey, initiation);
   const downloadGuard = reportingIdentityGuard();
   const writing = body !== undefined || file !== undefined;
+  const budget = resource === 'mrs' && path === '/import/commit' ? 150000 : 30000;
   const load = () => fetch(`/api/v1/admin/${resource}${path}?${new URLSearchParams(params)}`, {
     method: writing ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
     headers: { Authorization: `Bearer ${token}`, ...(download ? { 'X-Download-Initiation': initiation } : {}), ...(writing ? { 'Content-Type': file ? 'application/octet-stream' : 'application/json' } : {}) },
     ...(writing ? { body: file || JSON.stringify(body) } : {}),
-    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000),
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(budget)]) : AbortSignal.timeout(budget),
   });
   let response;
   try {
@@ -479,6 +546,7 @@ export const zoneRequest = (path, options) => masterRequest('zones', path, optio
 export const courierRequest = (path, options) => masterRequest('courier-partners', path, options);
 export const locationRequest = (path, options) => masterRequest('storage-locations', path, options);
 export const designationRequest = (path, options) => masterRequest('designations', path, options);
+export const mrRequest = (path, options) => masterRequest('mrs', path, options);
 export const headquarterRequest = (path, options) => masterRequest('headquarters', path, options);
 export const productCategoryRequest = (path, options) => masterRequest('product-categories', path, options);
 
@@ -486,6 +554,7 @@ export async function reportingRequest(resource, params = {}, { signal } = {}) {
   if (!['summary', 'users', 'sessions', 'events', 'activity', 'sessions/export', 'events/export', 'downloads', 'downloads/initiate'].includes(resource)) {
     throw new SessionError('Unsupported report.');
   }
+  if (state.user?.identity_kind === 'mr') throw new SessionError('Reporting access denied.', 403);
   if (state.user?.identity_kind === 'staff' && !(resource === 'downloads/initiate' && params.source === 'zone' && params.kind === 'sample' && state.user.permissions.includes('zone.import'))) {
     throw new SessionError('Reporting access denied.', 403);
   }

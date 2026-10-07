@@ -270,7 +270,7 @@ test('prepared Zone cards and master tabs retain preview semantics in desktop/mo
   expect(await readFile(await sample.path(), 'utf8')).toContain('Zone Name,Status');
   const tabs = page.getByRole('navigation', { name: 'Select a master for import' });
   await tabs.getByRole('button', { name: 'MR Master', exact: true }).click();
-  await expect(page.getByText('UI preview · Nothing will be saved')).toBeVisible();
+  await expect(page.getByText('Shared server records')).toBeVisible();
   await expect(page.locator('.excel-import__card')).toHaveCount(2);
   await page.getByRole('navigation', { name: 'Select a master for import' }).getByRole('button', { name: 'Doctor Master', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Import Doctor data', exact: true })).toBeVisible();

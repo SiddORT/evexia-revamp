@@ -4,6 +4,7 @@ import RouteLoadingBoundary, { lazyRoute } from './components/RouteLoadingBounda
 import { roleConfig } from './config/roles.js';
 import PortalSelection from './pages/PortalSelection.jsx';
 import AuthPage from './pages/AuthPage.jsx';
+import MRHome from './pages/MRHome.jsx';
 import NotFound from './pages/NotFound.jsx';
 import Dashboard from './pages/admin/Dashboard.jsx';
 import Masters from './pages/admin/Masters.jsx';
@@ -102,6 +103,7 @@ function App() {
       <Route path="/admin/masters/patients/:id/dosage-history">{(params) => <PatientDosageHistory id={params.id} />}</Route>
       <Route path="/admin/masters/patients/:id">{(params) => <PatientFormPage id={params.id} />}</Route>
       <Route path="/admin/login">{() => <AuthPage role={roleConfig.admin} />}</Route>
+      <Route path="/mr/home" component={MRHome} />
       <Route path="/mr">{() => <AuthPage role={roleConfig.mr} />}</Route>
       <Route path="/doctor">{() => <AuthPage role={roleConfig.doctor} />}</Route>
       <Route component={NotFound} />

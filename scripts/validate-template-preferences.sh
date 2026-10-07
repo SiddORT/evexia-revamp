@@ -13,6 +13,8 @@ node --test artifacts/evexia-portal/src/services/staff.test.js
 node --test artifacts/evexia-portal/src/services/serverHeadquarters.test.js
 node --test artifacts/evexia-portal/src/services/serverProductCategories.test.js artifacts/evexia-portal/src/services/productCategories.test.js
 sh scripts/test-api-foundation.sh tests/test_product_categories.py tests/test_product_category_files.py tests/test_migration_product_categories.py
+node --test artifacts/evexia-portal/src/services/serverMRs.test.js
+sh scripts/test-api-foundation.sh tests/test_mrs.py tests/test_migration_mrs.py
 sh scripts/test-api-foundation.sh tests/test_headquarters.py tests/test_migration_headquarters.py
 sh scripts/test-api-foundation.sh tests/test_roles.py tests/test_migration_roles.py tests/test_zone_permissions.py tests/test_migration_zone_permissions.py tests/test_locations.py tests/test_migration_locations.py tests/test_designations.py tests/test_migration_designations.py tests/test_downloads.py tests/test_download_queries.py tests/test_download_files.py
 node --test artifacts/evexia-portal/src/services/serverCouriers.test.js

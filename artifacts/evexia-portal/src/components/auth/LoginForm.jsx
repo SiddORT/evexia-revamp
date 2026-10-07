@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import Field from './Field.jsx';
 import { useLocation } from 'wouter';
-import { getSession, loginAdmin, logoutAdmin, safeAdminReturn } from '../../auth/adminSession.js';
+import { getSession, loginAdmin, loginMr, logoutAdmin, safeAdminReturn } from '../../auth/adminSession.js';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 
 export default function LoginForm({ role }) {
@@ -35,6 +35,14 @@ export default function LoginForm({ role }) {
         if (getSession().status === 'authenticated') {
           navigate(safeAdminReturn(new URLSearchParams(window.location.search).get('returnTo')));
         }
+      } catch (error) { setMessage(error.message); }
+      finally { setPassword(''); setIsLoading(false); }
+      return;
+    }
+    if (role.short === 'MR') {
+      try {
+        await loginMr(email.trim(), password, remember);
+        if (getSession().status === 'authenticated') navigate('/mr/home');
       } catch (error) { setMessage(error.message); }
       finally { setPassword(''); setIsLoading(false); }
       return;
@@ -94,7 +102,7 @@ export default function LoginForm({ role }) {
           Forgot password?
         </button>
       </div>
-      {(message || (role.short === 'ADMIN' && session.message)) && <div className="form-message" role="status" data-testid="status-auth-message">{message || session.message}
+      {(message || (role.short !== 'DOCTOR' && session.message)) && <div className="form-message" role="status" data-testid="status-auth-message">{message || session.message}
         {role.short === 'ADMIN' && session.message.includes('revocation') && <button type="button" onClick={() => void logoutAdmin()}>Retry Sign Out</button>}
       </div>}
       <button className="submit-button" type="submit" disabled={isLoading} data-testid="button-submit-login">

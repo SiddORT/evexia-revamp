@@ -54,6 +54,7 @@ def login(body: LoginRequest, request: Request, response: Response,
             db, body.identifier, body.password, settings,
             body.remember_me,
             request.state.request_id, request.client.host if request.client else "unknown",
+            body.identity_kind,
         )
     except service.TooManyAttempts:
         raise HTTPException(status_code=429, detail="Too many attempts. Try again later.") from None

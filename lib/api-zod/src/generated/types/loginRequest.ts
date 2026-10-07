@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { LoginRequestIdentityKind } from "./loginRequestIdentityKind";
 
 export interface LoginRequest {
   /**
@@ -12,6 +13,7 @@ export interface LoginRequest {
    * @maxLength 320
    */
   identifier: string;
+  identity_kind?: LoginRequestIdentityKind;
   /**
    * @minLength 1
    * @maxLength 128

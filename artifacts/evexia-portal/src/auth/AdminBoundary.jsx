@@ -19,7 +19,7 @@ export default function AdminBoundary({ children }) {
   useEffect(() => {
     if (!protectedPath) return;
     let active = true;
-    void verifySession().then(() => { if (active) setVerifiedPath(path); });
+    void verifySession(false, 'admin').then(() => { if (active) setVerifiedPath(path); });
     return () => { active = false; };
   }, [path, protectedPath]);
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function AdminBoundary({ children }) {
         <main className="portal-loading-page" data-admin-theme={theme} data-admin-appearance={appearance}>
           {failed ? <section className="portal-verification-error">
             <div role="alert">{session.message}</div>
-            <button onClick={() => void verifySession()}>Retry session verification</button>
+            <button onClick={() => void verifySession(false, 'admin')}>Retry session verification</button>
           </section> : <PortalLoader label={session.status === 'renewing' ? 'Renewing Admin access…' : 'Checking Admin access…'} />}
         </main>
       )}

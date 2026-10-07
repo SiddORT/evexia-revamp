@@ -1412,6 +1412,1504 @@ export const SetHeadquarterStatusResponse = zod.object({
 /**
  * @summary Listing
  */
+export const listMRDirectoryQueryQueryDefault = ``;
+export const listMRDirectoryQueryQueryMax = 200;
+
+export const listMRDirectoryQueryStatusDefault = `all`;
+export const listMRDirectoryQueryLimitDefault = 10;
+export const listMRDirectoryQueryLimitMax = 100;
+
+export const listMRDirectoryQueryOffsetDefault = 0;
+export const listMRDirectoryQueryOffsetMin = 0;
+export const listMRDirectoryQueryOffsetMax = 1000000;
+
+export const ListMRDirectoryQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listMRDirectoryQueryQueryMax)
+    .default(listMRDirectoryQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(listMRDirectoryQueryStatusDefault),
+  zone_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  hq_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listMRDirectoryQueryLimitMax)
+    .default(listMRDirectoryQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listMRDirectoryQueryOffsetMin)
+    .max(listMRDirectoryQueryOffsetMax)
+    .default(listMRDirectoryQueryOffsetDefault),
+});
+
+export const listMRDirectoryResponseItemsItemAddressLine1Max = 300;
+
+export const listMRDirectoryResponseItemsItemAddressLine2Default = ``;
+export const listMRDirectoryResponseItemsItemAddressLine2Max = 300;
+
+export const listMRDirectoryResponseItemsItemCityMax = 100;
+
+export const listMRDirectoryResponseItemsItemContactRequirementDefault = `required`;
+export const listMRDirectoryResponseItemsItemCountryMax = 100;
+
+export const listMRDirectoryResponseItemsItemDesignationMax = 200;
+
+export const listMRDirectoryResponseItemsItemDoctorDaysLimitDefault = 0;
+export const listMRDirectoryResponseItemsItemDoctorDaysLimitMin = 0;
+export const listMRDirectoryResponseItemsItemDoctorDaysLimitMax = 3650;
+
+export const listMRDirectoryResponseItemsItemEmailDefault = ``;
+export const listMRDirectoryResponseItemsItemEmailMax = 320;
+
+export const listMRDirectoryResponseItemsItemEmployeeCodeMax = 64;
+
+export const listMRDirectoryResponseItemsItemLandmarkMax = 200;
+
+export const listMRDirectoryResponseItemsItemNameMax = 200;
+
+export const listMRDirectoryResponseItemsItemPaymentLimitDefault = `0.00`;
+export const listMRDirectoryResponseItemsItemPaymentLimitRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const listMRDirectoryResponseItemsItemPhoneDefault = ``;
+export const listMRDirectoryResponseItemsItemPhoneMax = 20;
+
+export const listMRDirectoryResponseItemsItemPincodeRegExp = new RegExp(
+  "^[1-9][0-9]{5}$",
+);
+export const listMRDirectoryResponseItemsItemStateMax = 100;
+
+export const listMRDirectoryResponseItemsItemUserIdMin = 3;
+export const listMRDirectoryResponseItemsItemUserIdMax = 32;
+
+export const listMRDirectoryResponseItemsItemUserIdRegExp = new RegExp(
+  "^[a-z][a-z0-9._-]{2,31}$",
+);
+
+export const ListMRDirectoryResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      addressLine1: zod
+        .string()
+        .min(1)
+        .max(listMRDirectoryResponseItemsItemAddressLine1Max),
+      addressLine2: zod
+        .string()
+        .max(listMRDirectoryResponseItemsItemAddressLine2Max)
+        .default(listMRDirectoryResponseItemsItemAddressLine2Default),
+      assignmentWarnings: zod.array(zod.string()),
+      city: zod.string().min(1).max(listMRDirectoryResponseItemsItemCityMax),
+      contactRequirement: zod
+        .enum(["required", "optional"])
+        .default(listMRDirectoryResponseItemsItemContactRequirementDefault),
+      country: zod
+        .string()
+        .min(1)
+        .max(listMRDirectoryResponseItemsItemCountryMax),
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      dateOfJoining: zod.coerce.date(),
+      designation: zod
+        .string()
+        .min(1)
+        .max(listMRDirectoryResponseItemsItemDesignationMax),
+      doctorDaysLimit: zod
+        .number()
+        .int()
+        .min(listMRDirectoryResponseItemsItemDoctorDaysLimitMin)
+        .max(listMRDirectoryResponseItemsItemDoctorDaysLimitMax)
+        .default(listMRDirectoryResponseItemsItemDoctorDaysLimitDefault),
+      email: zod
+        .string()
+        .max(listMRDirectoryResponseItemsItemEmailMax)
+        .default(listMRDirectoryResponseItemsItemEmailDefault),
+      employeeCode: zod
+        .string()
+        .min(1)
+        .max(listMRDirectoryResponseItemsItemEmployeeCodeMax),
+      hq: zod.string().uuid(),
+      hqName: zod.string(),
+      id: zod.string().uuid(),
+      landmark: zod
+        .string()
+        .min(1)
+        .max(listMRDirectoryResponseItemsItemLandmarkMax),
+      name: zod.string().min(1).max(listMRDirectoryResponseItemsItemNameMax),
+      paymentLimit: zod
+        .string()
+        .regex(listMRDirectoryResponseItemsItemPaymentLimitRegExp)
+        .default(listMRDirectoryResponseItemsItemPaymentLimitDefault),
+      phone: zod
+        .string()
+        .max(listMRDirectoryResponseItemsItemPhoneMax)
+        .default(listMRDirectoryResponseItemsItemPhoneDefault),
+      pincode: zod
+        .string()
+        .regex(listMRDirectoryResponseItemsItemPincodeRegExp),
+      reportingManagerId: zod
+        .union([zod.string().uuid(), zod.null()])
+        .optional(),
+      reportingManagerName: zod.string(),
+      state: zod.string().min(1).max(listMRDirectoryResponseItemsItemStateMax),
+      status: zod.enum(["active", "inactive"]),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      userId: zod
+        .string()
+        .min(listMRDirectoryResponseItemsItemUserIdMin)
+        .max(listMRDirectoryResponseItemsItemUserIdMax)
+        .regex(listMRDirectoryResponseItemsItemUserIdRegExp),
+      version: zod.number().int(),
+      zoneId: zod.string().uuid(),
+      zoneName: zod.string(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+export const createMRDirectoryBodyAddressLine1Max = 300;
+
+export const createMRDirectoryBodyAddressLine2Default = ``;
+export const createMRDirectoryBodyAddressLine2Max = 300;
+
+export const createMRDirectoryBodyCityMax = 100;
+
+export const createMRDirectoryBodyContactRequirementDefault = `required`;
+export const createMRDirectoryBodyCountryMax = 100;
+
+export const createMRDirectoryBodyDesignationMax = 200;
+
+export const createMRDirectoryBodyDoctorDaysLimitDefault = 0;
+export const createMRDirectoryBodyDoctorDaysLimitMin = 0;
+export const createMRDirectoryBodyDoctorDaysLimitMax = 3650;
+
+export const createMRDirectoryBodyEmailDefault = ``;
+export const createMRDirectoryBodyEmailMax = 320;
+
+export const createMRDirectoryBodyEmployeeCodeMax = 64;
+
+export const createMRDirectoryBodyInitialPasswordOneMin = 12;
+export const createMRDirectoryBodyInitialPasswordOneMax = 128;
+
+export const createMRDirectoryBodyLandmarkMax = 200;
+
+export const createMRDirectoryBodyNameMax = 200;
+
+export const createMRDirectoryBodyPaymentLimitOneMin = 0;
+export const createMRDirectoryBodyPaymentLimitOneMax = 999999999.99;
+
+export const createMRDirectoryBodyPaymentLimitTwoRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const createMRDirectoryBodyPaymentLimitDefault = `0.00`;
+export const createMRDirectoryBodyPhoneDefault = ``;
+export const createMRDirectoryBodyPhoneMax = 20;
+
+export const createMRDirectoryBodyPincodeRegExp = new RegExp("^[1-9][0-9]{5}$");
+export const createMRDirectoryBodyStateMax = 100;
+
+export const createMRDirectoryBodyUserIdMin = 3;
+export const createMRDirectoryBodyUserIdMax = 32;
+
+export const createMRDirectoryBodyUserIdRegExp = new RegExp(
+  "^[a-z][a-z0-9._-]{2,31}$",
+);
+
+export const CreateMRDirectoryBody = zod.object({
+  addressLine1: zod.string().min(1).max(createMRDirectoryBodyAddressLine1Max),
+  addressLine2: zod
+    .string()
+    .max(createMRDirectoryBodyAddressLine2Max)
+    .default(createMRDirectoryBodyAddressLine2Default),
+  city: zod.string().min(1).max(createMRDirectoryBodyCityMax),
+  contactRequirement: zod
+    .enum(["required", "optional"])
+    .default(createMRDirectoryBodyContactRequirementDefault),
+  country: zod.string().min(1).max(createMRDirectoryBodyCountryMax),
+  dateOfJoining: zod.coerce.date(),
+  designation: zod.string().min(1).max(createMRDirectoryBodyDesignationMax),
+  doctorDaysLimit: zod
+    .number()
+    .int()
+    .min(createMRDirectoryBodyDoctorDaysLimitMin)
+    .max(createMRDirectoryBodyDoctorDaysLimitMax)
+    .default(createMRDirectoryBodyDoctorDaysLimitDefault),
+  email: zod
+    .string()
+    .max(createMRDirectoryBodyEmailMax)
+    .default(createMRDirectoryBodyEmailDefault),
+  employeeCode: zod.string().min(1).max(createMRDirectoryBodyEmployeeCodeMax),
+  hq: zod.string().uuid(),
+  initialPassword: zod
+    .union([
+      zod
+        .string()
+        .min(createMRDirectoryBodyInitialPasswordOneMin)
+        .max(createMRDirectoryBodyInitialPasswordOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  landmark: zod.string().min(1).max(createMRDirectoryBodyLandmarkMax),
+  name: zod.string().min(1).max(createMRDirectoryBodyNameMax),
+  paymentLimit: zod
+    .union([
+      zod
+        .number()
+        .min(createMRDirectoryBodyPaymentLimitOneMin)
+        .max(createMRDirectoryBodyPaymentLimitOneMax),
+      zod.string().regex(createMRDirectoryBodyPaymentLimitTwoRegExp),
+    ])
+    .default(createMRDirectoryBodyPaymentLimitDefault),
+  phone: zod
+    .string()
+    .max(createMRDirectoryBodyPhoneMax)
+    .default(createMRDirectoryBodyPhoneDefault),
+  pincode: zod.string().regex(createMRDirectoryBodyPincodeRegExp),
+  reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  state: zod.string().min(1).max(createMRDirectoryBodyStateMax),
+  status: zod.enum(["active", "inactive"]),
+  userId: zod
+    .string()
+    .min(createMRDirectoryBodyUserIdMin)
+    .max(createMRDirectoryBodyUserIdMax)
+    .regex(createMRDirectoryBodyUserIdRegExp),
+  zoneId: zod.string().uuid(),
+});
+
+export const createMRDirectoryResponseRecordAddressLine1Max = 300;
+
+export const createMRDirectoryResponseRecordAddressLine2Default = ``;
+export const createMRDirectoryResponseRecordAddressLine2Max = 300;
+
+export const createMRDirectoryResponseRecordCityMax = 100;
+
+export const createMRDirectoryResponseRecordContactRequirementDefault = `required`;
+export const createMRDirectoryResponseRecordCountryMax = 100;
+
+export const createMRDirectoryResponseRecordDesignationMax = 200;
+
+export const createMRDirectoryResponseRecordDoctorDaysLimitDefault = 0;
+export const createMRDirectoryResponseRecordDoctorDaysLimitMin = 0;
+export const createMRDirectoryResponseRecordDoctorDaysLimitMax = 3650;
+
+export const createMRDirectoryResponseRecordEmailDefault = ``;
+export const createMRDirectoryResponseRecordEmailMax = 320;
+
+export const createMRDirectoryResponseRecordEmployeeCodeMax = 64;
+
+export const createMRDirectoryResponseRecordLandmarkMax = 200;
+
+export const createMRDirectoryResponseRecordNameMax = 200;
+
+export const createMRDirectoryResponseRecordPaymentLimitDefault = `0.00`;
+export const createMRDirectoryResponseRecordPaymentLimitRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const createMRDirectoryResponseRecordPhoneDefault = ``;
+export const createMRDirectoryResponseRecordPhoneMax = 20;
+
+export const createMRDirectoryResponseRecordPincodeRegExp = new RegExp(
+  "^[1-9][0-9]{5}$",
+);
+export const createMRDirectoryResponseRecordStateMax = 100;
+
+export const createMRDirectoryResponseRecordUserIdMin = 3;
+export const createMRDirectoryResponseRecordUserIdMax = 32;
+
+export const createMRDirectoryResponseRecordUserIdRegExp = new RegExp(
+  "^[a-z][a-z0-9._-]{2,31}$",
+);
+
+export const CreateMRDirectoryResponse = zod.object({
+  credentials: zod.object({
+    password: zod.string(),
+    userId: zod.string(),
+  }),
+  record: zod.object({
+    addressLine1: zod
+      .string()
+      .min(1)
+      .max(createMRDirectoryResponseRecordAddressLine1Max),
+    addressLine2: zod
+      .string()
+      .max(createMRDirectoryResponseRecordAddressLine2Max)
+      .default(createMRDirectoryResponseRecordAddressLine2Default),
+    assignmentWarnings: zod.array(zod.string()),
+    city: zod.string().min(1).max(createMRDirectoryResponseRecordCityMax),
+    contactRequirement: zod
+      .enum(["required", "optional"])
+      .default(createMRDirectoryResponseRecordContactRequirementDefault),
+    country: zod.string().min(1).max(createMRDirectoryResponseRecordCountryMax),
+    createdAt: zod.coerce.date(),
+    createdBy: zod.string(),
+    dateOfJoining: zod.coerce.date(),
+    designation: zod
+      .string()
+      .min(1)
+      .max(createMRDirectoryResponseRecordDesignationMax),
+    doctorDaysLimit: zod
+      .number()
+      .int()
+      .min(createMRDirectoryResponseRecordDoctorDaysLimitMin)
+      .max(createMRDirectoryResponseRecordDoctorDaysLimitMax)
+      .default(createMRDirectoryResponseRecordDoctorDaysLimitDefault),
+    email: zod
+      .string()
+      .max(createMRDirectoryResponseRecordEmailMax)
+      .default(createMRDirectoryResponseRecordEmailDefault),
+    employeeCode: zod
+      .string()
+      .min(1)
+      .max(createMRDirectoryResponseRecordEmployeeCodeMax),
+    hq: zod.string().uuid(),
+    hqName: zod.string(),
+    id: zod.string().uuid(),
+    landmark: zod
+      .string()
+      .min(1)
+      .max(createMRDirectoryResponseRecordLandmarkMax),
+    name: zod.string().min(1).max(createMRDirectoryResponseRecordNameMax),
+    paymentLimit: zod
+      .string()
+      .regex(createMRDirectoryResponseRecordPaymentLimitRegExp)
+      .default(createMRDirectoryResponseRecordPaymentLimitDefault),
+    phone: zod
+      .string()
+      .max(createMRDirectoryResponseRecordPhoneMax)
+      .default(createMRDirectoryResponseRecordPhoneDefault),
+    pincode: zod.string().regex(createMRDirectoryResponseRecordPincodeRegExp),
+    reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    reportingManagerName: zod.string(),
+    state: zod.string().min(1).max(createMRDirectoryResponseRecordStateMax),
+    status: zod.enum(["active", "inactive"]),
+    updatedAt: zod.coerce.date(),
+    updatedBy: zod.string(),
+    userId: zod
+      .string()
+      .min(createMRDirectoryResponseRecordUserIdMin)
+      .max(createMRDirectoryResponseRecordUserIdMax)
+      .regex(createMRDirectoryResponseRecordUserIdRegExp),
+    version: zod.number().int(),
+    zoneId: zod.string().uuid(),
+    zoneName: zod.string(),
+  }),
+});
+
+/**
+ * @summary Resolve Account
+ */
+export const resolveMRAccountPathUsernameRegExp = new RegExp(
+  "^[a-z][a-z0-9._-]{2,31}$",
+);
+
+export const ResolveMRAccountParams = zod.object({
+  username: zod.coerce.string().regex(resolveMRAccountPathUsernameRegExp),
+});
+
+export const resolveMRAccountResponseAddressLine1Max = 300;
+
+export const resolveMRAccountResponseAddressLine2Default = ``;
+export const resolveMRAccountResponseAddressLine2Max = 300;
+
+export const resolveMRAccountResponseCityMax = 100;
+
+export const resolveMRAccountResponseContactRequirementDefault = `required`;
+export const resolveMRAccountResponseCountryMax = 100;
+
+export const resolveMRAccountResponseDesignationMax = 200;
+
+export const resolveMRAccountResponseDoctorDaysLimitDefault = 0;
+export const resolveMRAccountResponseDoctorDaysLimitMin = 0;
+export const resolveMRAccountResponseDoctorDaysLimitMax = 3650;
+
+export const resolveMRAccountResponseEmailDefault = ``;
+export const resolveMRAccountResponseEmailMax = 320;
+
+export const resolveMRAccountResponseEmployeeCodeMax = 64;
+
+export const resolveMRAccountResponseLandmarkMax = 200;
+
+export const resolveMRAccountResponseNameMax = 200;
+
+export const resolveMRAccountResponsePaymentLimitDefault = `0.00`;
+export const resolveMRAccountResponsePaymentLimitRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const resolveMRAccountResponsePhoneDefault = ``;
+export const resolveMRAccountResponsePhoneMax = 20;
+
+export const resolveMRAccountResponsePincodeRegExp = new RegExp(
+  "^[1-9][0-9]{5}$",
+);
+export const resolveMRAccountResponseStateMax = 100;
+
+export const resolveMRAccountResponseUserIdMin = 3;
+export const resolveMRAccountResponseUserIdMax = 32;
+
+export const resolveMRAccountResponseUserIdRegExp = new RegExp(
+  "^[a-z][a-z0-9._-]{2,31}$",
+);
+
+export const ResolveMRAccountResponse = zod.object({
+  addressLine1: zod
+    .string()
+    .min(1)
+    .max(resolveMRAccountResponseAddressLine1Max),
+  addressLine2: zod
+    .string()
+    .max(resolveMRAccountResponseAddressLine2Max)
+    .default(resolveMRAccountResponseAddressLine2Default),
+  assignmentWarnings: zod.array(zod.string()),
+  city: zod.string().min(1).max(resolveMRAccountResponseCityMax),
+  contactRequirement: zod
+    .enum(["required", "optional"])
+    .default(resolveMRAccountResponseContactRequirementDefault),
+  country: zod.string().min(1).max(resolveMRAccountResponseCountryMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dateOfJoining: zod.coerce.date(),
+  designation: zod.string().min(1).max(resolveMRAccountResponseDesignationMax),
+  doctorDaysLimit: zod
+    .number()
+    .int()
+    .min(resolveMRAccountResponseDoctorDaysLimitMin)
+    .max(resolveMRAccountResponseDoctorDaysLimitMax)
+    .default(resolveMRAccountResponseDoctorDaysLimitDefault),
+  email: zod
+    .string()
+    .max(resolveMRAccountResponseEmailMax)
+    .default(resolveMRAccountResponseEmailDefault),
+  employeeCode: zod
+    .string()
+    .min(1)
+    .max(resolveMRAccountResponseEmployeeCodeMax),
+  hq: zod.string().uuid(),
+  hqName: zod.string(),
+  id: zod.string().uuid(),
+  landmark: zod.string().min(1).max(resolveMRAccountResponseLandmarkMax),
+  name: zod.string().min(1).max(resolveMRAccountResponseNameMax),
+  paymentLimit: zod
+    .string()
+    .regex(resolveMRAccountResponsePaymentLimitRegExp)
+    .default(resolveMRAccountResponsePaymentLimitDefault),
+  phone: zod
+    .string()
+    .max(resolveMRAccountResponsePhoneMax)
+    .default(resolveMRAccountResponsePhoneDefault),
+  pincode: zod.string().regex(resolveMRAccountResponsePincodeRegExp),
+  reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  reportingManagerName: zod.string(),
+  state: zod.string().min(1).max(resolveMRAccountResponseStateMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  userId: zod
+    .string()
+    .min(resolveMRAccountResponseUserIdMin)
+    .max(resolveMRAccountResponseUserIdMax)
+    .regex(resolveMRAccountResponseUserIdRegExp),
+  version: zod.number().int(),
+  zoneId: zod.string().uuid(),
+  zoneName: zod.string(),
+});
+
+/**
+ * @summary Export
+ */
+export const exportMRDirectoryQueryQueryDefault = ``;
+export const exportMRDirectoryQueryQueryMax = 200;
+
+export const exportMRDirectoryQueryStatusDefault = `all`;
+export const exportMRDirectoryQueryFormatDefault = `csv`;
+
+export const ExportMRDirectoryQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(exportMRDirectoryQueryQueryMax)
+    .default(exportMRDirectoryQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(exportMRDirectoryQueryStatusDefault),
+  zone_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  hq_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(exportMRDirectoryQueryFormatDefault),
+});
+
+export const ExportMRDirectoryHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const ExportMRDirectoryResponse = zod.unknown();
+
+/**
+ * @summary Commit
+ */
+export const commitMRImportQueryFilenameMax = 200;
+
+export const commitMRImportQueryDigestRegExp = new RegExp("^[0-9a-f]{64}$");
+
+export const CommitMRImportQueryParams = zod.object({
+  filename: zod.coerce.string().min(1).max(commitMRImportQueryFilenameMax),
+  digest: zod.coerce.string().regex(commitMRImportQueryDigestRegExp),
+  confirm: zod.coerce.boolean(),
+});
+
+export const CommitMRImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const CommitMRImportResponse = zod.object({
+  credentials: zod.array(
+    zod.object({
+      password: zod.string(),
+      userId: zod.string(),
+    }),
+  ),
+  imported: zod.number().int(),
+});
+
+/**
+ * @summary Review
+ */
+export const reviewMRImportQueryFilenameMax = 200;
+
+export const ReviewMRImportQueryParams = zod.object({
+  filename: zod.coerce.string().min(1).max(reviewMRImportQueryFilenameMax),
+});
+
+export const ReviewMRImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const ReviewMRImportResponse = zod.object({
+  digest: zod.string(),
+  rows: zod.array(
+    zod.object({
+      errors: zod.array(zod.string()),
+      name: zod.string(),
+      row: zod.number().int(),
+      userId: zod.string(),
+    }),
+  ),
+  valid: zod.boolean(),
+});
+
+/**
+ * @summary Postal
+ */
+export const LookupMRPincodeParams = zod.object({
+  pin: zod.coerce.string(),
+});
+
+export const LookupMRPincodeResponse = zod.object({
+  choices: zod.array(
+    zod.object({
+      city: zod.string(),
+      country: zod.string(),
+      state: zod.string(),
+    }),
+  ),
+  message: zod.string(),
+  pincode: zod.string(),
+});
+
+/**
+ * @summary References
+ */
+export const listMRReferenceChoicesQueryQueryDefault = ``;
+export const listMRReferenceChoicesQueryQueryMax = 200;
+
+export const listMRReferenceChoicesQueryLimitDefault = 100;
+export const listMRReferenceChoicesQueryLimitMax = 100;
+
+export const listMRReferenceChoicesQueryOffsetDefault = 0;
+export const listMRReferenceChoicesQueryOffsetMin = 0;
+export const listMRReferenceChoicesQueryOffsetMax = 1000000;
+
+export const ListMRReferenceChoicesQueryParams = zod.object({
+  kind: zod.enum(["zones", "headquarters", "managers", "designations"]),
+  query: zod.coerce
+    .string()
+    .max(listMRReferenceChoicesQueryQueryMax)
+    .default(listMRReferenceChoicesQueryQueryDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listMRReferenceChoicesQueryLimitMax)
+    .default(listMRReferenceChoicesQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listMRReferenceChoicesQueryOffsetMin)
+    .max(listMRReferenceChoicesQueryOffsetMax)
+    .default(listMRReferenceChoicesQueryOffsetDefault),
+  include_saved: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+});
+
+export const listMRReferenceChoicesResponseItemsItemDeletedDefault = false;
+
+export const ListMRReferenceChoicesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      deleted: zod
+        .boolean()
+        .default(listMRReferenceChoicesResponseItemsItemDeletedDefault),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.string(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Sample
+ */
+export const downloadMRSampleQueryFormatDefault = `csv`;
+
+export const DownloadMRSampleQueryParams = zod.object({
+  format: zod.enum(["csv", "xlsx"]).default(downloadMRSampleQueryFormatDefault),
+});
+
+export const DownloadMRSampleHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const DownloadMRSampleResponse = zod.unknown();
+
+/**
+ * @summary Username
+ */
+export const GenerateMRUsernameResponse = zod.object({
+  userId: zod.string(),
+});
+
+/**
+ * @summary Detail
+ */
+export const GetMRDirectoryParams = zod.object({
+  mr_id: zod.coerce.string().uuid(),
+});
+
+export const getMRDirectoryResponseAddressLine1Max = 300;
+
+export const getMRDirectoryResponseAddressLine2Default = ``;
+export const getMRDirectoryResponseAddressLine2Max = 300;
+
+export const getMRDirectoryResponseCityMax = 100;
+
+export const getMRDirectoryResponseContactRequirementDefault = `required`;
+export const getMRDirectoryResponseCountryMax = 100;
+
+export const getMRDirectoryResponseDesignationMax = 200;
+
+export const getMRDirectoryResponseDoctorDaysLimitDefault = 0;
+export const getMRDirectoryResponseDoctorDaysLimitMin = 0;
+export const getMRDirectoryResponseDoctorDaysLimitMax = 3650;
+
+export const getMRDirectoryResponseEmailDefault = ``;
+export const getMRDirectoryResponseEmailMax = 320;
+
+export const getMRDirectoryResponseEmployeeCodeMax = 64;
+
+export const getMRDirectoryResponseLandmarkMax = 200;
+
+export const getMRDirectoryResponseNameMax = 200;
+
+export const getMRDirectoryResponsePaymentLimitDefault = `0.00`;
+export const getMRDirectoryResponsePaymentLimitRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const getMRDirectoryResponsePhoneDefault = ``;
+export const getMRDirectoryResponsePhoneMax = 20;
+
+export const getMRDirectoryResponsePincodeRegExp = new RegExp(
+  "^[1-9][0-9]{5}$",
+);
+export const getMRDirectoryResponseStateMax = 100;
+
+export const getMRDirectoryResponseUserIdMin = 3;
+export const getMRDirectoryResponseUserIdMax = 32;
+
+export const getMRDirectoryResponseUserIdRegExp = new RegExp(
+  "^[a-z][a-z0-9._-]{2,31}$",
+);
+
+export const GetMRDirectoryResponse = zod.object({
+  addressLine1: zod.string().min(1).max(getMRDirectoryResponseAddressLine1Max),
+  addressLine2: zod
+    .string()
+    .max(getMRDirectoryResponseAddressLine2Max)
+    .default(getMRDirectoryResponseAddressLine2Default),
+  assignmentWarnings: zod.array(zod.string()),
+  city: zod.string().min(1).max(getMRDirectoryResponseCityMax),
+  contactRequirement: zod
+    .enum(["required", "optional"])
+    .default(getMRDirectoryResponseContactRequirementDefault),
+  country: zod.string().min(1).max(getMRDirectoryResponseCountryMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dateOfJoining: zod.coerce.date(),
+  designation: zod.string().min(1).max(getMRDirectoryResponseDesignationMax),
+  doctorDaysLimit: zod
+    .number()
+    .int()
+    .min(getMRDirectoryResponseDoctorDaysLimitMin)
+    .max(getMRDirectoryResponseDoctorDaysLimitMax)
+    .default(getMRDirectoryResponseDoctorDaysLimitDefault),
+  email: zod
+    .string()
+    .max(getMRDirectoryResponseEmailMax)
+    .default(getMRDirectoryResponseEmailDefault),
+  employeeCode: zod.string().min(1).max(getMRDirectoryResponseEmployeeCodeMax),
+  hq: zod.string().uuid(),
+  hqName: zod.string(),
+  id: zod.string().uuid(),
+  landmark: zod.string().min(1).max(getMRDirectoryResponseLandmarkMax),
+  name: zod.string().min(1).max(getMRDirectoryResponseNameMax),
+  paymentLimit: zod
+    .string()
+    .regex(getMRDirectoryResponsePaymentLimitRegExp)
+    .default(getMRDirectoryResponsePaymentLimitDefault),
+  phone: zod
+    .string()
+    .max(getMRDirectoryResponsePhoneMax)
+    .default(getMRDirectoryResponsePhoneDefault),
+  pincode: zod.string().regex(getMRDirectoryResponsePincodeRegExp),
+  reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  reportingManagerName: zod.string(),
+  state: zod.string().min(1).max(getMRDirectoryResponseStateMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  userId: zod
+    .string()
+    .min(getMRDirectoryResponseUserIdMin)
+    .max(getMRDirectoryResponseUserIdMax)
+    .regex(getMRDirectoryResponseUserIdRegExp),
+  version: zod.number().int(),
+  zoneId: zod.string().uuid(),
+  zoneName: zod.string(),
+});
+
+/**
+ * @summary Contact
+ */
+export const SetMRContactRequirementParams = zod.object({
+  mr_id: zod.coerce.string().uuid(),
+});
+
+export const SetMRContactRequirementBody = zod.object({
+  contactRequirement: zod.enum(["required", "optional"]),
+  expected_version: zod.number().int().min(1),
+});
+
+export const setMRContactRequirementResponseAddressLine1Max = 300;
+
+export const setMRContactRequirementResponseAddressLine2Default = ``;
+export const setMRContactRequirementResponseAddressLine2Max = 300;
+
+export const setMRContactRequirementResponseCityMax = 100;
+
+export const setMRContactRequirementResponseContactRequirementDefault = `required`;
+export const setMRContactRequirementResponseCountryMax = 100;
+
+export const setMRContactRequirementResponseDesignationMax = 200;
+
+export const setMRContactRequirementResponseDoctorDaysLimitDefault = 0;
+export const setMRContactRequirementResponseDoctorDaysLimitMin = 0;
+export const setMRContactRequirementResponseDoctorDaysLimitMax = 3650;
+
+export const setMRContactRequirementResponseEmailDefault = ``;
+export const setMRContactRequirementResponseEmailMax = 320;
+
+export const setMRContactRequirementResponseEmployeeCodeMax = 64;
+
+export const setMRContactRequirementResponseLandmarkMax = 200;
+
+export const setMRContactRequirementResponseNameMax = 200;
+
+export const setMRContactRequirementResponsePaymentLimitDefault = `0.00`;
+export const setMRContactRequirementResponsePaymentLimitRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const setMRContactRequirementResponsePhoneDefault = ``;
+export const setMRContactRequirementResponsePhoneMax = 20;
+
+export const setMRContactRequirementResponsePincodeRegExp = new RegExp(
+  "^[1-9][0-9]{5}$",
+);
+export const setMRContactRequirementResponseStateMax = 100;
+
+export const setMRContactRequirementResponseUserIdMin = 3;
+export const setMRContactRequirementResponseUserIdMax = 32;
+
+export const setMRContactRequirementResponseUserIdRegExp = new RegExp(
+  "^[a-z][a-z0-9._-]{2,31}$",
+);
+
+export const SetMRContactRequirementResponse = zod.object({
+  addressLine1: zod
+    .string()
+    .min(1)
+    .max(setMRContactRequirementResponseAddressLine1Max),
+  addressLine2: zod
+    .string()
+    .max(setMRContactRequirementResponseAddressLine2Max)
+    .default(setMRContactRequirementResponseAddressLine2Default),
+  assignmentWarnings: zod.array(zod.string()),
+  city: zod.string().min(1).max(setMRContactRequirementResponseCityMax),
+  contactRequirement: zod
+    .enum(["required", "optional"])
+    .default(setMRContactRequirementResponseContactRequirementDefault),
+  country: zod.string().min(1).max(setMRContactRequirementResponseCountryMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dateOfJoining: zod.coerce.date(),
+  designation: zod
+    .string()
+    .min(1)
+    .max(setMRContactRequirementResponseDesignationMax),
+  doctorDaysLimit: zod
+    .number()
+    .int()
+    .min(setMRContactRequirementResponseDoctorDaysLimitMin)
+    .max(setMRContactRequirementResponseDoctorDaysLimitMax)
+    .default(setMRContactRequirementResponseDoctorDaysLimitDefault),
+  email: zod
+    .string()
+    .max(setMRContactRequirementResponseEmailMax)
+    .default(setMRContactRequirementResponseEmailDefault),
+  employeeCode: zod
+    .string()
+    .min(1)
+    .max(setMRContactRequirementResponseEmployeeCodeMax),
+  hq: zod.string().uuid(),
+  hqName: zod.string(),
+  id: zod.string().uuid(),
+  landmark: zod.string().min(1).max(setMRContactRequirementResponseLandmarkMax),
+  name: zod.string().min(1).max(setMRContactRequirementResponseNameMax),
+  paymentLimit: zod
+    .string()
+    .regex(setMRContactRequirementResponsePaymentLimitRegExp)
+    .default(setMRContactRequirementResponsePaymentLimitDefault),
+  phone: zod
+    .string()
+    .max(setMRContactRequirementResponsePhoneMax)
+    .default(setMRContactRequirementResponsePhoneDefault),
+  pincode: zod.string().regex(setMRContactRequirementResponsePincodeRegExp),
+  reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  reportingManagerName: zod.string(),
+  state: zod.string().min(1).max(setMRContactRequirementResponseStateMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  userId: zod
+    .string()
+    .min(setMRContactRequirementResponseUserIdMin)
+    .max(setMRContactRequirementResponseUserIdMax)
+    .regex(setMRContactRequirementResponseUserIdRegExp),
+  version: zod.number().int(),
+  zoneId: zod.string().uuid(),
+  zoneName: zod.string(),
+});
+
+/**
+ * @summary Delete
+ */
+export const DeleteMRDirectoryParams = zod.object({
+  mr_id: zod.coerce.string().uuid(),
+});
+
+export const DeleteMRDirectoryBody = zod.object({
+  expected_version: zod.number().int().min(1),
+});
+
+export const deleteMRDirectoryResponseAddressLine1Max = 300;
+
+export const deleteMRDirectoryResponseAddressLine2Default = ``;
+export const deleteMRDirectoryResponseAddressLine2Max = 300;
+
+export const deleteMRDirectoryResponseCityMax = 100;
+
+export const deleteMRDirectoryResponseContactRequirementDefault = `required`;
+export const deleteMRDirectoryResponseCountryMax = 100;
+
+export const deleteMRDirectoryResponseDesignationMax = 200;
+
+export const deleteMRDirectoryResponseDoctorDaysLimitDefault = 0;
+export const deleteMRDirectoryResponseDoctorDaysLimitMin = 0;
+export const deleteMRDirectoryResponseDoctorDaysLimitMax = 3650;
+
+export const deleteMRDirectoryResponseEmailDefault = ``;
+export const deleteMRDirectoryResponseEmailMax = 320;
+
+export const deleteMRDirectoryResponseEmployeeCodeMax = 64;
+
+export const deleteMRDirectoryResponseLandmarkMax = 200;
+
+export const deleteMRDirectoryResponseNameMax = 200;
+
+export const deleteMRDirectoryResponsePaymentLimitDefault = `0.00`;
+export const deleteMRDirectoryResponsePaymentLimitRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const deleteMRDirectoryResponsePhoneDefault = ``;
+export const deleteMRDirectoryResponsePhoneMax = 20;
+
+export const deleteMRDirectoryResponsePincodeRegExp = new RegExp(
+  "^[1-9][0-9]{5}$",
+);
+export const deleteMRDirectoryResponseStateMax = 100;
+
+export const deleteMRDirectoryResponseUserIdMin = 3;
+export const deleteMRDirectoryResponseUserIdMax = 32;
+
+export const deleteMRDirectoryResponseUserIdRegExp = new RegExp(
+  "^[a-z][a-z0-9._-]{2,31}$",
+);
+
+export const DeleteMRDirectoryResponse = zod.object({
+  addressLine1: zod
+    .string()
+    .min(1)
+    .max(deleteMRDirectoryResponseAddressLine1Max),
+  addressLine2: zod
+    .string()
+    .max(deleteMRDirectoryResponseAddressLine2Max)
+    .default(deleteMRDirectoryResponseAddressLine2Default),
+  assignmentWarnings: zod.array(zod.string()),
+  city: zod.string().min(1).max(deleteMRDirectoryResponseCityMax),
+  contactRequirement: zod
+    .enum(["required", "optional"])
+    .default(deleteMRDirectoryResponseContactRequirementDefault),
+  country: zod.string().min(1).max(deleteMRDirectoryResponseCountryMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dateOfJoining: zod.coerce.date(),
+  designation: zod.string().min(1).max(deleteMRDirectoryResponseDesignationMax),
+  doctorDaysLimit: zod
+    .number()
+    .int()
+    .min(deleteMRDirectoryResponseDoctorDaysLimitMin)
+    .max(deleteMRDirectoryResponseDoctorDaysLimitMax)
+    .default(deleteMRDirectoryResponseDoctorDaysLimitDefault),
+  email: zod
+    .string()
+    .max(deleteMRDirectoryResponseEmailMax)
+    .default(deleteMRDirectoryResponseEmailDefault),
+  employeeCode: zod
+    .string()
+    .min(1)
+    .max(deleteMRDirectoryResponseEmployeeCodeMax),
+  hq: zod.string().uuid(),
+  hqName: zod.string(),
+  id: zod.string().uuid(),
+  landmark: zod.string().min(1).max(deleteMRDirectoryResponseLandmarkMax),
+  name: zod.string().min(1).max(deleteMRDirectoryResponseNameMax),
+  paymentLimit: zod
+    .string()
+    .regex(deleteMRDirectoryResponsePaymentLimitRegExp)
+    .default(deleteMRDirectoryResponsePaymentLimitDefault),
+  phone: zod
+    .string()
+    .max(deleteMRDirectoryResponsePhoneMax)
+    .default(deleteMRDirectoryResponsePhoneDefault),
+  pincode: zod.string().regex(deleteMRDirectoryResponsePincodeRegExp),
+  reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  reportingManagerName: zod.string(),
+  state: zod.string().min(1).max(deleteMRDirectoryResponseStateMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  userId: zod
+    .string()
+    .min(deleteMRDirectoryResponseUserIdMin)
+    .max(deleteMRDirectoryResponseUserIdMax)
+    .regex(deleteMRDirectoryResponseUserIdRegExp),
+  version: zod.number().int(),
+  zoneId: zod.string().uuid(),
+  zoneName: zod.string(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditMRDirectoryParams = zod.object({
+  mr_id: zod.coerce.string().uuid(),
+});
+
+export const editMRDirectoryBodyAddressLine1Max = 300;
+
+export const editMRDirectoryBodyAddressLine2Default = ``;
+export const editMRDirectoryBodyAddressLine2Max = 300;
+
+export const editMRDirectoryBodyCityMax = 100;
+
+export const editMRDirectoryBodyContactRequirementDefault = `required`;
+export const editMRDirectoryBodyCountryMax = 100;
+
+export const editMRDirectoryBodyDesignationMax = 200;
+
+export const editMRDirectoryBodyDoctorDaysLimitDefault = 0;
+export const editMRDirectoryBodyDoctorDaysLimitMin = 0;
+export const editMRDirectoryBodyDoctorDaysLimitMax = 3650;
+
+export const editMRDirectoryBodyEmailDefault = ``;
+export const editMRDirectoryBodyEmailMax = 320;
+
+export const editMRDirectoryBodyEmployeeCodeMax = 64;
+
+export const editMRDirectoryBodyLandmarkMax = 200;
+
+export const editMRDirectoryBodyNameMax = 200;
+
+export const editMRDirectoryBodyPaymentLimitOneMin = 0;
+export const editMRDirectoryBodyPaymentLimitOneMax = 999999999.99;
+
+export const editMRDirectoryBodyPaymentLimitTwoRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const editMRDirectoryBodyPaymentLimitDefault = `0.00`;
+export const editMRDirectoryBodyPhoneDefault = ``;
+export const editMRDirectoryBodyPhoneMax = 20;
+
+export const editMRDirectoryBodyPincodeRegExp = new RegExp("^[1-9][0-9]{5}$");
+export const editMRDirectoryBodyStateMax = 100;
+
+export const editMRDirectoryBodyUserIdMin = 3;
+export const editMRDirectoryBodyUserIdMax = 32;
+
+export const editMRDirectoryBodyUserIdRegExp = new RegExp(
+  "^[a-z][a-z0-9._-]{2,31}$",
+);
+
+export const EditMRDirectoryBody = zod.object({
+  addressLine1: zod.string().min(1).max(editMRDirectoryBodyAddressLine1Max),
+  addressLine2: zod
+    .string()
+    .max(editMRDirectoryBodyAddressLine2Max)
+    .default(editMRDirectoryBodyAddressLine2Default),
+  city: zod.string().min(1).max(editMRDirectoryBodyCityMax),
+  contactRequirement: zod
+    .enum(["required", "optional"])
+    .default(editMRDirectoryBodyContactRequirementDefault),
+  country: zod.string().min(1).max(editMRDirectoryBodyCountryMax),
+  dateOfJoining: zod.coerce.date(),
+  designation: zod.string().min(1).max(editMRDirectoryBodyDesignationMax),
+  doctorDaysLimit: zod
+    .number()
+    .int()
+    .min(editMRDirectoryBodyDoctorDaysLimitMin)
+    .max(editMRDirectoryBodyDoctorDaysLimitMax)
+    .default(editMRDirectoryBodyDoctorDaysLimitDefault),
+  email: zod
+    .string()
+    .max(editMRDirectoryBodyEmailMax)
+    .default(editMRDirectoryBodyEmailDefault),
+  employeeCode: zod.string().min(1).max(editMRDirectoryBodyEmployeeCodeMax),
+  expected_version: zod.number().int().min(1),
+  hq: zod.string().uuid(),
+  landmark: zod.string().min(1).max(editMRDirectoryBodyLandmarkMax),
+  name: zod.string().min(1).max(editMRDirectoryBodyNameMax),
+  paymentLimit: zod
+    .union([
+      zod
+        .number()
+        .min(editMRDirectoryBodyPaymentLimitOneMin)
+        .max(editMRDirectoryBodyPaymentLimitOneMax),
+      zod.string().regex(editMRDirectoryBodyPaymentLimitTwoRegExp),
+    ])
+    .default(editMRDirectoryBodyPaymentLimitDefault),
+  phone: zod
+    .string()
+    .max(editMRDirectoryBodyPhoneMax)
+    .default(editMRDirectoryBodyPhoneDefault),
+  pincode: zod.string().regex(editMRDirectoryBodyPincodeRegExp),
+  reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  state: zod.string().min(1).max(editMRDirectoryBodyStateMax),
+  status: zod.enum(["active", "inactive"]),
+  userId: zod
+    .string()
+    .min(editMRDirectoryBodyUserIdMin)
+    .max(editMRDirectoryBodyUserIdMax)
+    .regex(editMRDirectoryBodyUserIdRegExp),
+  zoneId: zod.string().uuid(),
+});
+
+export const editMRDirectoryResponseAddressLine1Max = 300;
+
+export const editMRDirectoryResponseAddressLine2Default = ``;
+export const editMRDirectoryResponseAddressLine2Max = 300;
+
+export const editMRDirectoryResponseCityMax = 100;
+
+export const editMRDirectoryResponseContactRequirementDefault = `required`;
+export const editMRDirectoryResponseCountryMax = 100;
+
+export const editMRDirectoryResponseDesignationMax = 200;
+
+export const editMRDirectoryResponseDoctorDaysLimitDefault = 0;
+export const editMRDirectoryResponseDoctorDaysLimitMin = 0;
+export const editMRDirectoryResponseDoctorDaysLimitMax = 3650;
+
+export const editMRDirectoryResponseEmailDefault = ``;
+export const editMRDirectoryResponseEmailMax = 320;
+
+export const editMRDirectoryResponseEmployeeCodeMax = 64;
+
+export const editMRDirectoryResponseLandmarkMax = 200;
+
+export const editMRDirectoryResponseNameMax = 200;
+
+export const editMRDirectoryResponsePaymentLimitDefault = `0.00`;
+export const editMRDirectoryResponsePaymentLimitRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const editMRDirectoryResponsePhoneDefault = ``;
+export const editMRDirectoryResponsePhoneMax = 20;
+
+export const editMRDirectoryResponsePincodeRegExp = new RegExp(
+  "^[1-9][0-9]{5}$",
+);
+export const editMRDirectoryResponseStateMax = 100;
+
+export const editMRDirectoryResponseUserIdMin = 3;
+export const editMRDirectoryResponseUserIdMax = 32;
+
+export const editMRDirectoryResponseUserIdRegExp = new RegExp(
+  "^[a-z][a-z0-9._-]{2,31}$",
+);
+
+export const EditMRDirectoryResponse = zod.object({
+  addressLine1: zod.string().min(1).max(editMRDirectoryResponseAddressLine1Max),
+  addressLine2: zod
+    .string()
+    .max(editMRDirectoryResponseAddressLine2Max)
+    .default(editMRDirectoryResponseAddressLine2Default),
+  assignmentWarnings: zod.array(zod.string()),
+  city: zod.string().min(1).max(editMRDirectoryResponseCityMax),
+  contactRequirement: zod
+    .enum(["required", "optional"])
+    .default(editMRDirectoryResponseContactRequirementDefault),
+  country: zod.string().min(1).max(editMRDirectoryResponseCountryMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dateOfJoining: zod.coerce.date(),
+  designation: zod.string().min(1).max(editMRDirectoryResponseDesignationMax),
+  doctorDaysLimit: zod
+    .number()
+    .int()
+    .min(editMRDirectoryResponseDoctorDaysLimitMin)
+    .max(editMRDirectoryResponseDoctorDaysLimitMax)
+    .default(editMRDirectoryResponseDoctorDaysLimitDefault),
+  email: zod
+    .string()
+    .max(editMRDirectoryResponseEmailMax)
+    .default(editMRDirectoryResponseEmailDefault),
+  employeeCode: zod.string().min(1).max(editMRDirectoryResponseEmployeeCodeMax),
+  hq: zod.string().uuid(),
+  hqName: zod.string(),
+  id: zod.string().uuid(),
+  landmark: zod.string().min(1).max(editMRDirectoryResponseLandmarkMax),
+  name: zod.string().min(1).max(editMRDirectoryResponseNameMax),
+  paymentLimit: zod
+    .string()
+    .regex(editMRDirectoryResponsePaymentLimitRegExp)
+    .default(editMRDirectoryResponsePaymentLimitDefault),
+  phone: zod
+    .string()
+    .max(editMRDirectoryResponsePhoneMax)
+    .default(editMRDirectoryResponsePhoneDefault),
+  pincode: zod.string().regex(editMRDirectoryResponsePincodeRegExp),
+  reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  reportingManagerName: zod.string(),
+  state: zod.string().min(1).max(editMRDirectoryResponseStateMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  userId: zod
+    .string()
+    .min(editMRDirectoryResponseUserIdMin)
+    .max(editMRDirectoryResponseUserIdMax)
+    .regex(editMRDirectoryResponseUserIdRegExp),
+  version: zod.number().int(),
+  zoneId: zod.string().uuid(),
+  zoneName: zod.string(),
+});
+
+/**
+ * @summary Reset
+ */
+export const ResetMRPasswordParams = zod.object({
+  mr_id: zod.coerce.string().uuid(),
+});
+
+export const ResetMRPasswordBody = zod.object({
+  expected_version: zod.number().int().min(1),
+});
+
+export const resetMRPasswordResponseRecordAddressLine1Max = 300;
+
+export const resetMRPasswordResponseRecordAddressLine2Default = ``;
+export const resetMRPasswordResponseRecordAddressLine2Max = 300;
+
+export const resetMRPasswordResponseRecordCityMax = 100;
+
+export const resetMRPasswordResponseRecordContactRequirementDefault = `required`;
+export const resetMRPasswordResponseRecordCountryMax = 100;
+
+export const resetMRPasswordResponseRecordDesignationMax = 200;
+
+export const resetMRPasswordResponseRecordDoctorDaysLimitDefault = 0;
+export const resetMRPasswordResponseRecordDoctorDaysLimitMin = 0;
+export const resetMRPasswordResponseRecordDoctorDaysLimitMax = 3650;
+
+export const resetMRPasswordResponseRecordEmailDefault = ``;
+export const resetMRPasswordResponseRecordEmailMax = 320;
+
+export const resetMRPasswordResponseRecordEmployeeCodeMax = 64;
+
+export const resetMRPasswordResponseRecordLandmarkMax = 200;
+
+export const resetMRPasswordResponseRecordNameMax = 200;
+
+export const resetMRPasswordResponseRecordPaymentLimitDefault = `0.00`;
+export const resetMRPasswordResponseRecordPaymentLimitRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const resetMRPasswordResponseRecordPhoneDefault = ``;
+export const resetMRPasswordResponseRecordPhoneMax = 20;
+
+export const resetMRPasswordResponseRecordPincodeRegExp = new RegExp(
+  "^[1-9][0-9]{5}$",
+);
+export const resetMRPasswordResponseRecordStateMax = 100;
+
+export const resetMRPasswordResponseRecordUserIdMin = 3;
+export const resetMRPasswordResponseRecordUserIdMax = 32;
+
+export const resetMRPasswordResponseRecordUserIdRegExp = new RegExp(
+  "^[a-z][a-z0-9._-]{2,31}$",
+);
+
+export const ResetMRPasswordResponse = zod.object({
+  credentials: zod.object({
+    password: zod.string(),
+    userId: zod.string(),
+  }),
+  record: zod.object({
+    addressLine1: zod
+      .string()
+      .min(1)
+      .max(resetMRPasswordResponseRecordAddressLine1Max),
+    addressLine2: zod
+      .string()
+      .max(resetMRPasswordResponseRecordAddressLine2Max)
+      .default(resetMRPasswordResponseRecordAddressLine2Default),
+    assignmentWarnings: zod.array(zod.string()),
+    city: zod.string().min(1).max(resetMRPasswordResponseRecordCityMax),
+    contactRequirement: zod
+      .enum(["required", "optional"])
+      .default(resetMRPasswordResponseRecordContactRequirementDefault),
+    country: zod.string().min(1).max(resetMRPasswordResponseRecordCountryMax),
+    createdAt: zod.coerce.date(),
+    createdBy: zod.string(),
+    dateOfJoining: zod.coerce.date(),
+    designation: zod
+      .string()
+      .min(1)
+      .max(resetMRPasswordResponseRecordDesignationMax),
+    doctorDaysLimit: zod
+      .number()
+      .int()
+      .min(resetMRPasswordResponseRecordDoctorDaysLimitMin)
+      .max(resetMRPasswordResponseRecordDoctorDaysLimitMax)
+      .default(resetMRPasswordResponseRecordDoctorDaysLimitDefault),
+    email: zod
+      .string()
+      .max(resetMRPasswordResponseRecordEmailMax)
+      .default(resetMRPasswordResponseRecordEmailDefault),
+    employeeCode: zod
+      .string()
+      .min(1)
+      .max(resetMRPasswordResponseRecordEmployeeCodeMax),
+    hq: zod.string().uuid(),
+    hqName: zod.string(),
+    id: zod.string().uuid(),
+    landmark: zod.string().min(1).max(resetMRPasswordResponseRecordLandmarkMax),
+    name: zod.string().min(1).max(resetMRPasswordResponseRecordNameMax),
+    paymentLimit: zod
+      .string()
+      .regex(resetMRPasswordResponseRecordPaymentLimitRegExp)
+      .default(resetMRPasswordResponseRecordPaymentLimitDefault),
+    phone: zod
+      .string()
+      .max(resetMRPasswordResponseRecordPhoneMax)
+      .default(resetMRPasswordResponseRecordPhoneDefault),
+    pincode: zod.string().regex(resetMRPasswordResponseRecordPincodeRegExp),
+    reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    reportingManagerName: zod.string(),
+    state: zod.string().min(1).max(resetMRPasswordResponseRecordStateMax),
+    status: zod.enum(["active", "inactive"]),
+    updatedAt: zod.coerce.date(),
+    updatedBy: zod.string(),
+    userId: zod
+      .string()
+      .min(resetMRPasswordResponseRecordUserIdMin)
+      .max(resetMRPasswordResponseRecordUserIdMax)
+      .regex(resetMRPasswordResponseRecordUserIdRegExp),
+    version: zod.number().int(),
+    zoneId: zod.string().uuid(),
+    zoneName: zod.string(),
+  }),
+});
+
+/**
+ * @summary Status
+ */
+export const SetMRDirectoryStatusParams = zod.object({
+  mr_id: zod.coerce.string().uuid(),
+});
+
+export const SetMRDirectoryStatusBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const setMRDirectoryStatusResponseAddressLine1Max = 300;
+
+export const setMRDirectoryStatusResponseAddressLine2Default = ``;
+export const setMRDirectoryStatusResponseAddressLine2Max = 300;
+
+export const setMRDirectoryStatusResponseCityMax = 100;
+
+export const setMRDirectoryStatusResponseContactRequirementDefault = `required`;
+export const setMRDirectoryStatusResponseCountryMax = 100;
+
+export const setMRDirectoryStatusResponseDesignationMax = 200;
+
+export const setMRDirectoryStatusResponseDoctorDaysLimitDefault = 0;
+export const setMRDirectoryStatusResponseDoctorDaysLimitMin = 0;
+export const setMRDirectoryStatusResponseDoctorDaysLimitMax = 3650;
+
+export const setMRDirectoryStatusResponseEmailDefault = ``;
+export const setMRDirectoryStatusResponseEmailMax = 320;
+
+export const setMRDirectoryStatusResponseEmployeeCodeMax = 64;
+
+export const setMRDirectoryStatusResponseLandmarkMax = 200;
+
+export const setMRDirectoryStatusResponseNameMax = 200;
+
+export const setMRDirectoryStatusResponsePaymentLimitDefault = `0.00`;
+export const setMRDirectoryStatusResponsePaymentLimitRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const setMRDirectoryStatusResponsePhoneDefault = ``;
+export const setMRDirectoryStatusResponsePhoneMax = 20;
+
+export const setMRDirectoryStatusResponsePincodeRegExp = new RegExp(
+  "^[1-9][0-9]{5}$",
+);
+export const setMRDirectoryStatusResponseStateMax = 100;
+
+export const setMRDirectoryStatusResponseUserIdMin = 3;
+export const setMRDirectoryStatusResponseUserIdMax = 32;
+
+export const setMRDirectoryStatusResponseUserIdRegExp = new RegExp(
+  "^[a-z][a-z0-9._-]{2,31}$",
+);
+
+export const SetMRDirectoryStatusResponse = zod.object({
+  addressLine1: zod
+    .string()
+    .min(1)
+    .max(setMRDirectoryStatusResponseAddressLine1Max),
+  addressLine2: zod
+    .string()
+    .max(setMRDirectoryStatusResponseAddressLine2Max)
+    .default(setMRDirectoryStatusResponseAddressLine2Default),
+  assignmentWarnings: zod.array(zod.string()),
+  city: zod.string().min(1).max(setMRDirectoryStatusResponseCityMax),
+  contactRequirement: zod
+    .enum(["required", "optional"])
+    .default(setMRDirectoryStatusResponseContactRequirementDefault),
+  country: zod.string().min(1).max(setMRDirectoryStatusResponseCountryMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dateOfJoining: zod.coerce.date(),
+  designation: zod
+    .string()
+    .min(1)
+    .max(setMRDirectoryStatusResponseDesignationMax),
+  doctorDaysLimit: zod
+    .number()
+    .int()
+    .min(setMRDirectoryStatusResponseDoctorDaysLimitMin)
+    .max(setMRDirectoryStatusResponseDoctorDaysLimitMax)
+    .default(setMRDirectoryStatusResponseDoctorDaysLimitDefault),
+  email: zod
+    .string()
+    .max(setMRDirectoryStatusResponseEmailMax)
+    .default(setMRDirectoryStatusResponseEmailDefault),
+  employeeCode: zod
+    .string()
+    .min(1)
+    .max(setMRDirectoryStatusResponseEmployeeCodeMax),
+  hq: zod.string().uuid(),
+  hqName: zod.string(),
+  id: zod.string().uuid(),
+  landmark: zod.string().min(1).max(setMRDirectoryStatusResponseLandmarkMax),
+  name: zod.string().min(1).max(setMRDirectoryStatusResponseNameMax),
+  paymentLimit: zod
+    .string()
+    .regex(setMRDirectoryStatusResponsePaymentLimitRegExp)
+    .default(setMRDirectoryStatusResponsePaymentLimitDefault),
+  phone: zod
+    .string()
+    .max(setMRDirectoryStatusResponsePhoneMax)
+    .default(setMRDirectoryStatusResponsePhoneDefault),
+  pincode: zod.string().regex(setMRDirectoryStatusResponsePincodeRegExp),
+  reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  reportingManagerName: zod.string(),
+  state: zod.string().min(1).max(setMRDirectoryStatusResponseStateMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  userId: zod
+    .string()
+    .min(setMRDirectoryStatusResponseUserIdMin)
+    .max(setMRDirectoryStatusResponseUserIdMax)
+    .regex(setMRDirectoryStatusResponseUserIdRegExp),
+  version: zod.number().int(),
+  zoneId: zod.string().uuid(),
+  zoneName: zod.string(),
+});
+
+/**
+ * @summary Listing
+ */
 export const listProductCategoriesQueryQueryDefault = ``;
 export const listProductCategoriesQueryQueryMax = 200;
 
@@ -3708,6 +5206,7 @@ export const LoginBody = zod.object({
     .string()
     .min(loginBodyIdentifierMin)
     .max(loginBodyIdentifierMax),
+  identity_kind: zod.union([zod.enum(["admin", "mr"]), zod.null()]).optional(),
   password: zod.string().min(1).max(loginBodyPasswordMax),
   remember_me: zod.boolean().default(loginBodyRememberMeDefault),
 });

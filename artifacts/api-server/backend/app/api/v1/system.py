@@ -62,6 +62,8 @@ def readiness(db: Session = Depends(get_db)):
             "SELECT id, name, state_code, status, version, created_by, updated_by, "
             "created_at, updated_at, deleted_at, deleted_by FROM headquarters LIMIT 0"
         ))
+        db.execute(text('SELECT id, hq, "zoneId", "reportingManagerId", version, deleted_at FROM mr_directory LIMIT 0'))
+        db.execute(text("SELECT identifier, user_id FROM account_identifier_reservations LIMIT 0"))
     except Exception:
         raise HTTPException(status_code=503, detail="Service unavailable") from None
     return {"status": "ready"}

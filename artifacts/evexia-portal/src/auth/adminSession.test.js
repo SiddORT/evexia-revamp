@@ -325,7 +325,7 @@ test('login sends bounded cookie request, verifies permission via me and allowli
   await api.loginAdmin(user.email, 'synthetic-password', true);
   assert.equal(api.getSession().status, 'authenticated');
   assert.equal(api.getSession().user.password_hash, undefined);
-  assert.deepEqual(JSON.parse(calls[0][1].body), { identifier: user.email, password: 'synthetic-password', remember_me: true });
+  assert.deepEqual(JSON.parse(calls[0][1].body), { identifier: user.email, password: 'synthetic-password', remember_me: true, identity_kind: 'admin' });
   assert.equal(calls[0][1].credentials, 'same-origin');
   assert.equal(calls[1][1].headers.Authorization, 'Bearer synthetic-memory-token');
   await api.logoutAdmin();

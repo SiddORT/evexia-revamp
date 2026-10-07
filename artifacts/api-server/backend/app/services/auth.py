@@ -194,11 +194,11 @@ def _effective_session(db: Session, session: AuthSession | None, user: User,
 
 
 def login(db: Session, identifier: str, password: str, settings: Settings,
-          remember_me: bool, request_id: str, ip: str) -> tuple[Identity, str]:
+          remember_me: bool, request_id: str, ip: str, portal: str | None = None) -> tuple[Identity, str]:
     identifier = identifier.lower()
     identifier_key, identifier_blocked = limit_state(db, settings, "login-identifier", identifier, 5)
     ip_key, ip_blocked = limit_state(db, settings, "login-ip", ip, 30)
-    user = db.scalar(select(User).where(or_(User.email == identifier, User.username == identifier)))
+    user = db.scalar(select(User).where(or_(func.lower(User.email) == identifier, func.lower(User.username) == identifier)))
     valid = verify_password(password, user.password_hash) if user else verify_password(
         password, _DUMMY_HASH,
     )
@@ -208,6 +208,9 @@ def login(db: Session, identifier: str, password: str, settings: Settings,
             identity = _load_identity(db, user)
         except AuthError:
             pass
+    if identity and ((portal == "mr" and identity.role != "mr")
+                     or (portal == "admin" and identity.role == "mr")):
+        identity = None
     if not identity or identifier_blocked or ip_blocked:
         record_attempt(db, identifier_key, ip_key)
         audit(db, "login", request_id, "rate_limited" if identifier_blocked or ip_blocked else "failure")
