@@ -1,5 +1,5 @@
-.admin-shell, .admin-profile__menu, .admin-theme__menu {
-  /* Admin-only semantic roles. Classic values mirror the existing interface. */
+.admin-shell, .admin-profile__menu, .admin-theme__menu, .entry-theme {
+  /* Shared semantic palette, scoped to Admin and themed entry screens. */
   --admin-primary: #c94a36;
   --admin-primary-hover: #a93c2c;
   --admin-primary-ink: #ffffff;
@@ -52,7 +52,7 @@
   --red-soft: var(--admin-state-soft);
 }
 
-.admin-shell[data-admin-theme="modern"], .admin-profile__menu[data-admin-theme="modern"], .admin-theme__menu[data-admin-theme="modern"] {
+.admin-shell[data-admin-theme="modern"], .admin-profile__menu[data-admin-theme="modern"], .admin-theme__menu[data-admin-theme="modern"], .entry-theme[data-admin-theme="modern"] {
   /* Sea green acts, lavender frames, EVEXIA red identifies and warns. */
   --admin-primary: #187368;
   --admin-primary-hover: #125e56;

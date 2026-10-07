@@ -1,0 +1,94 @@
+/* Reuse the Admin semantic palette; entry screens intentionally remain light.
+   Classic and non-Admin login presentation stay in index.css unchanged. */
+@import './admin.css';
+
+.entry-theme[data-admin-theme="modern"] {
+  color: var(--admin-text);
+  --shadow: 0 22px 48px color-mix(in srgb, var(--admin-text) 8%, transparent);
+  --shadow-soft: 0 10px 26px color-mix(in srgb, var(--admin-text) 7%, transparent);
+}
+.entry-theme[data-admin-theme="modern"].portal-page,
+.entry-theme[data-admin-theme="modern"] .auth-panel {
+  background: var(--admin-canvas);
+}
+.entry-theme[data-admin-theme="modern"]::before,
+.entry-theme[data-admin-theme="modern"]::after {
+  border-color: var(--admin-border);
+}
+.entry-theme[data-admin-theme="modern"] .eyebrow::before {
+  background: var(--admin-secondary);
+}
+.entry-theme[data-admin-theme="modern"] .portal-card__visual {
+  background: var(--admin-state-soft);
+}
+.entry-theme[data-admin-theme="modern"] .portal-card__body {
+  background: var(--admin-sidebar);
+}
+.entry-theme[data-admin-theme="modern"] .portal-card__cta,
+.entry-theme[data-admin-theme="modern"] .forgot-button {
+  color: var(--admin-primary);
+}
+.entry-theme[data-admin-theme="modern"] .portal-card:hover,
+.entry-theme[data-admin-theme="modern"] .portal-card:focus-visible,
+.entry-theme[data-admin-theme="modern"] .field input:focus {
+  border-color: var(--admin-focus);
+}
+.entry-theme[data-admin-theme="modern"] .field input:focus {
+  box-shadow: 0 0 0 3px var(--admin-focus-shadow);
+}
+.entry-theme[data-admin-theme="modern"] .field input::placeholder {
+  color: var(--admin-muted);
+}
+.entry-theme[data-admin-theme="modern"] .field--error input,
+.entry-theme[data-admin-theme="modern"] .field--error input:focus {
+  border-color: var(--admin-danger);
+}
+.entry-theme[data-admin-theme="modern"] .field--error input:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--admin-danger) 18%, transparent);
+}
+.entry-theme[data-admin-theme="modern"] .field__error {
+  color: var(--admin-danger);
+}
+.entry-theme[data-admin-theme="modern"] .remember input {
+  accent-color: var(--admin-primary);
+}
+.entry-theme[data-admin-theme="modern"] .password-toggle:hover,
+.entry-theme[data-admin-theme="modern"] .password-toggle:focus-visible,
+.entry-theme[data-admin-theme="modern"] .forgot-button:hover,
+.entry-theme[data-admin-theme="modern"] .auth-back:hover {
+  color: var(--admin-primary-hover);
+}
+.entry-theme[data-admin-theme="modern"] .submit-button {
+  background: var(--admin-primary);
+  color: var(--admin-primary-ink);
+}
+.entry-theme[data-admin-theme="modern"] .submit-button:hover:not(:disabled) {
+  background: var(--admin-primary-hover);
+}
+.entry-theme[data-admin-theme="modern"] .submit-button:disabled {
+  opacity: 1;
+}
+.entry-theme[data-admin-theme="modern"] .form-message {
+  background: var(--admin-highlight-soft);
+  border-color: var(--admin-danger);
+  color: var(--admin-danger);
+}
+.entry-theme[data-admin-theme="modern"] :is(a, button, .remember input):focus-visible {
+  outline: 2px solid var(--admin-focus);
+}
+.entry-theme[data-admin-theme="modern"] .auth-visual {
+  background: var(--admin-text);
+}
+.entry-theme[data-admin-theme="modern"] .auth-visual::after {
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--admin-text) 75%, transparent),
+    color-mix(in srgb, var(--admin-text) 65%, transparent) 60%,
+    color-mix(in srgb, var(--admin-primary-hover) 70%, transparent));
+}
+.entry-theme[data-admin-theme="modern"] .auth-visual__content p,
+.entry-theme[data-admin-theme="modern"] .auth-visual__note {
+  color: var(--admin-primary-ink);
+}
+.entry-theme[data-admin-theme="modern"] .auth-visual__note::before {
+  background: var(--admin-sidebar);
+}

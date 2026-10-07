@@ -2,10 +2,13 @@ import { Link } from 'wouter';
 import BrandMark from '../components/BrandMark.jsx';
 import PortalCard from '../components/portal/PortalCard.jsx';
 import { roleConfig } from '../config/roles.js';
+import { useAdminPreferences } from '../components/admin/adminPreferences.js';
+import '../entryTheme.css';
 
 export default function PortalSelection() {
+  const { theme } = useAdminPreferences();
   return (
-    <main className="app-shell portal-page">
+    <main className="app-shell portal-page entry-theme" data-admin-theme={theme}>
       <div className="container">
         <header className="topbar">
           <Link href="/" aria-label="EVEXIA home" data-testid="link-home">

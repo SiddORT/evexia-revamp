@@ -2,10 +2,14 @@ import { ArrowLeft } from 'lucide-react';
 import { Link } from 'wouter';
 import BrandMark from '../components/BrandMark.jsx';
 import LoginForm from '../components/auth/LoginForm.jsx';
+import { useAdminPreferences } from '../components/admin/adminPreferences.js';
+import '../entryTheme.css';
 
 export default function AuthPage({ role }) {
+  const { theme } = useAdminPreferences();
+  const isAdmin = role.short === 'ADMIN';
   return (
-    <main className="auth-page app-shell">
+    <main className={`auth-page app-shell${isAdmin ? ' entry-theme' : ''}`} data-admin-theme={isAdmin ? theme : undefined}>
       <section className="auth-visual" aria-label={`${role.title} introduction`}>
         <img src={role.image} alt="" />
         <div className="auth-visual__overlay">

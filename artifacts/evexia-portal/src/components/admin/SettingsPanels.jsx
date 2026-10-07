@@ -33,7 +33,7 @@ export function AppearanceSettings() {
   const p = useAdminPreferences();
   return <section className="admin-panel admin-settings__section" aria-labelledby="ui-heading">
     <h2 id="ui-heading">Appearance</h2>
-    <p>These choices change the Admin workspace immediately, without changing public or login pages.</p>
+    <p>Theme colors apply to the Admin workspace, portal selection and Admin login. Light or Dark appearance applies only to the Admin workspace.</p>
     <div className="admin-settings__grid">
       <Setting label="Appearance" id="appearance" value={p.appearance} choices={ADMIN_APPEARANCES} onChange={(v) => setAdminPreference('appearance', v)} description="Choose Light or Dark for the Admin workspace." />
       <Setting label="Theme" id="theme" value={p.theme} choices={ADMIN_THEMES} onChange={(v) => setAdminPreference('theme', v)} description="Choose EVEXIA Classic or EVEXIA Modern colors." />
