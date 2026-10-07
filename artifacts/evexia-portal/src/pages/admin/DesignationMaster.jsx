@@ -1,172 +1,146 @@
-import { downloadCSV as loggedCSV } from '../../services/downloads.js';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
-import { BriefcaseBusiness, CirclePower, Download, Pencil, Plus, Search, Upload } from 'lucide-react';
+import { CirclePower, Download, Pencil, Plus, Search, Trash2, BriefcaseBusiness, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
-import Dialog from '../../components/admin/Dialog.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
-import useDesignations from '../../hooks/useDesignations.js';
-import useTablePagination from '../../hooks/useTablePagination.js';
-import { DESIGNATION_COLUMNS, designationCSVTemplate, exportDesignationCSV, loadDesignations, reviewDesignationCSV } from '../../services/designations.js';
-import '../../mr.css';
-import '../../category.css';
+import useServerDesignations from '../../hooks/useDesignations.js';
+import { exportDesignations, downloadDesignationFile } from '../../services/serverDesignations.js';
+import { reportingIdentityGuard } from '../../auth/adminSession.js';
 import '../../designation.css';
 
-const LIST_PATH = '/admin/masters/designations';
-const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-function downloadCSV(text, filename) {
-  return loggedCSV(text, filename, 'designation', filename.includes('template') ? 'template' : 'export');
-}
-function audit(name, value) {
-  return <span className="admin-category-audit"><strong>{name || '—'}</strong><time dateTime={value}>{formatAdminTimestamp(value, undefined, true)}</time></span>;
-}
-function DesignationImportDialog({ records, onImport, onClose }) {
-  const [review, setReview] = useState(null);
-  const [message, setMessage] = useState('');
-  const [reading, setReading] = useState(false);
-  const sequence = useRef(0);
-  const invalid = review?.entries.filter((entry) => entry.errors.length) || [];
-  const valid = review ? review.entries.length - invalid.length : 0;
-  function close() { sequence.current += 1; onClose(); }
-  async function template() {
-    try { await downloadCSV(designationCSVTemplate(), 'evexia-designation-template.csv'); }
-    catch (cause) { setMessage(cause.message || 'The CSV template could not be downloaded. Please try again.'); }
-  }
-  async function choose(event) {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    setReview(null);
-    setMessage('');
-    if (!file) return;
-    const current = ++sequence.current;
-    if (!/\.csv$/i.test(file.name) || file.size > 2_000_000) { setMessage('Choose a .csv file smaller than 2 MB.'); return; }
-    setReading(true);
-    try {
-      const text = await file.text();
-      if (current !== sequence.current) return;
-      const snapshot = loadDesignations();
-      if (!same(snapshot, records)) throw new Error('Saved designations changed in another tab. Refresh records before reviewing this file.');
-      const entries = reviewDesignationCSV(text, snapshot);
-      setReview({ fileName: file.name, entries, snapshot });
-    } catch (cause) {
-      if (current === sequence.current) setMessage(cause.message || 'Could not read this CSV file.');
-    } finally {
-      if (current === sequence.current) setReading(false);
-    }
-  }
-  function confirm() {
-    if (!review || !review.entries.length || invalid.length) return;
-    setMessage('');
-    try {
-      const result = onImport(review.entries, review.snapshot);
-      if (result.success) close();
-      else setMessage(result.error || 'Import failed. No designations were saved.');
-    } catch (cause) { setMessage(cause.message || 'Import failed. No designations were saved.'); }
-  }
-  return <Dialog title="Import designations" eyebrow="Designation Master" description="Review a local CSV before adding designations. Existing records are never replaced." onClose={close} className="admin-import-dialog"
-    footer={<><button type="button" className="admin-button admin-button--secondary" onClick={close} data-testid="button-cancel-designation-import">Cancel</button><button type="button" className="admin-button" disabled={!review || !valid || invalid.length > 0 || reading || Boolean(message)} onClick={confirm} data-testid="button-confirm-designation-import">Import {valid} {valid === 1 ? 'designation' : 'designations'}</button></>}>
-    <div className="admin-category-import">
-      <div className="admin-category-import__guide"><strong>CSV columns (exact order)</strong><p>{DESIGNATION_COLUMNS.map(([, label]) => label).join(', ')}. Status must be active or inactive. Blank allowances and tax become zero. IDs and audit fields are not accepted.</p></div>
-      <button type="button" className="admin-button admin-button--secondary" onClick={template} data-testid="button-designation-template"><Download size={16} aria-hidden="true" /> Download CSV template</button>
-      <label className="admin-category-import__file">Choose a local CSV file<input type="file" accept=".csv,text/csv" onChange={choose} data-testid="input-designation-import" /></label>
-      {reading && <p role="status">Reading CSV file…</p>}
-      {message && <div className="admin-feedback admin-feedback--error" role="alert">{message}</div>}
-      {review && <div className="admin-category-import__review" aria-live="polite">
-        <p><strong>{review.fileName}</strong> — {valid} valid {valid === 1 ? 'row' : 'rows'}, {invalid.length} with errors. {invalid.length ? 'Correct the file and choose it again; nothing was saved.' : 'Review the rows before importing the whole batch.'}</p>
-        <div className="admin-category-import__rows" role="list" aria-label="Designation CSV rows">
-          {review.entries.map((entry) => <div role="listitem" className={`admin-category-import__row${entry.errors.length ? ' admin-category-import__row--error' : ''}`} key={entry.line}>
-            {entry.values ? <details><summary>Line {entry.line}: {entry.values.name || '(unnamed)'} — {entry.errors.length ? `${entry.errors.length} ${entry.errors.length === 1 ? 'error' : 'errors'}` : 'Ready to add'}</summary><dl>{DESIGNATION_COLUMNS.map(([field, label]) => <div key={field}><dt>{label}</dt><dd>{entry.values[field] || '—'}</dd></div>)}</dl></details> : <strong>Line {entry.line}: malformed row</strong>}
-            {entry.errors.length > 0 && <ul>{entry.errors.map((problem, index) => <li key={index}>{problem}</li>)}</ul>}
-          </div>)}
-        </div>
-      </div>}
-    </div>
-  </Dialog>;
+function details(by, at) {
+  return <span className="admin-table__details"><strong>{by}</strong><small>{formatAdminTimestamp(at)}</small></span>;
 }
 
 export default function DesignationMaster() {
-  useAdminPreferences();
+  const { theme, appearance } = useAdminPreferences();
   const [, navigate] = useLocation();
-  const { records, error, feedback, retry, clearFeedback, changeStatus, importRows } = useDesignations();
-  const [saveFeedback] = useState(() => {
-    const saved = new URLSearchParams(window.location.search).get('saved');
-    return saved === 'added' ? 'Designation added successfully.' : saved === 'updated' ? 'Designation updated successfully.' : '';
-  });
-  useEffect(() => { if (saveFeedback) window.history.replaceState(window.history.state, '', LIST_PATH); }, [saveFeedback]);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [filter, setFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const { records, total, filtered, loading, pending, error, feedback, clearFeedback, retry, add, edit, remove, changeStatus } = useServerDesignations(search, filter, page, pageSize);
+  const [exporting, setExporting] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const exportBusy = useRef(false);
+  const exportMounted = useRef(true);
+  const exportController = useRef(null);
+  useEffect(() => {
+    exportMounted.current = true;
+    return () => { exportMounted.current = false; exportController.current?.abort(); };
+  }, []);
+  const [blocked, setBlocked] = useState(false);
   const [confirming, setConfirming] = useState(null);
-  const [importing, setImporting] = useState(false);
   const [actionError, setActionError] = useState('');
-  const visible = useMemo(() => records.filter((record) => {
-    const query = search.trim().toLocaleLowerCase();
-    return (!query || [record.name, record.shortName, String(record.level)].some((value) => value.toLocaleLowerCase().includes(query)))
-      && (statusFilter === 'all' || record.status === statusFilter);
-  }), [records, search, statusFilter]);
-  const pagination = useTablePagination(visible);
-  function refresh() { retry(); setConfirming(null); setImporting(false); setActionError(''); }
-  function toggle() {
-    const target = confirming.status === 'active' ? 'inactive' : 'active';
-    try {
-      const result = changeStatus(confirming.id, target);
-      if (result.success) { setConfirming(null); setActionError(''); }
-      else setActionError(result.error || 'Status could not be changed. Refresh records and try again.');
-    } catch (cause) { setActionError(cause.message || 'Status could not be changed.'); }
+  const [cardView, setCardView] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches);
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 900px)');
+    const sync = () => setCardView(media.matches);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
+  const pageCount = Math.max(1, Math.ceil(filtered / pageSize));
+  const pagination = { page, pageSize, pageCount, pageRows: records, startIndex: (page - 1) * pageSize,
+    setPage, setPageSize: (size) => { setPageSize(size); setPage(1); }, resetPage: () => setPage(1) };
+  useEffect(() => { if (!loading && !error && page > pageCount) setPage(pageCount); }, [loading, error, page, pageCount]);
+
+  function requestAction(record, type) {
+    clearFeedback();
+    setActionError('');
+    setBlocked(false);
+    setConfirming({ record, type });
   }
-  async function exportVisible() {
-    if (error || !visible.length) return;
-    try {
-      if (!same(loadDesignations(), records)) { setActionError('Saved designations changed in another tab. Refresh records before exporting.'); return; }
-      await downloadCSV(exportDesignationCSV(visible), 'evexia-designations.csv');
-      setActionError('');
-    } catch (cause) { setActionError(cause.message || 'CSV export failed. Please try again.'); }
+  async function confirmAction() {
+    const { record, type } = confirming;
+    const result = await (type === 'delete' ? remove(record) : changeStatus(record, type === 'activate' ? 'active' : 'inactive'));
+    if (result.success) { setConfirming(null); setActionError(''); }
+    else { setActionError(result.error); setBlocked(result.code === 'designation_stale' || Boolean(result.ambiguous)); }
   }
-  function actions(record, compact = false) {
-    return <div className={compact ? 'admin-mr-card__actions' : 'admin-table__actions'}>
-      <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} onClick={() => { clearFeedback(); navigate(`${LIST_PATH}/${encodeURIComponent(record.id)}`); }} aria-label={`Edit ${record.name}`} title="Edit" data-testid={`button-edit-designation-${record.id}`}><Pencil size={16} aria-hidden="true" />{compact && 'Edit'}</button>
-      <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} onClick={() => { clearFeedback(); setActionError(''); setConfirming(record); }} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} title={record.status === 'active' ? 'Inactivate' : 'Activate'} data-testid={`button-toggle-designation-${record.id}`}><CirclePower size={16} aria-hidden="true" />{compact && (record.status === 'active' ? 'Inactivate' : 'Activate')}</button>
-    </div>;
+  async function exportVisible(format) {
+    if (error || loading || exportBusy.current) return;
+    exportBusy.current = true;
+    setActionError('');
+    setExporting(true);
+    const guard = reportingIdentityGuard();
+    const controller = new AbortController();
+    exportController.current = controller;
+    try {
+      const blob = await exportDesignations({ query: search, status: filter }, format, controller.signal);
+      guard();
+      if (exportMounted.current) downloadDesignationFile(blob, format);
+    } catch (cause) {
+      // Do not let a response from a previous login update this screen.
+      try { guard(); } catch { return; }
+      if (exportMounted.current) setActionError(`Export failed (${format === 'xlsx' ? 'Excel' : 'CSV'}). ${cause.message || 'Refresh records and try again.'}`);
+    } finally {
+      exportBusy.current = false;
+      if (exportMounted.current) setExporting(false);
+    }
+  }
+  function actions(record, mobile = false) {
+    const toggle = record.status === 'active' ? 'Inactivate' : 'Activate';
+    return <fieldset disabled={loading || pending} style={{ border: 0, margin: 0, padding: 0 }} className={mobile ? 'admin-zone-card__actions' : 'admin-table__actions'}>
+      <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} title="Edit" onClick={() => { clearFeedback(); navigate(`/admin/masters/designations/${record.id}`); }} data-testid={`button-edit-designation-${record.id}`}><Pencil size={mobile ? 14 : 16} aria-hidden="true" />{mobile && <span>Edit</span>}</button>
+      <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`${toggle} ${record.name}`} title={toggle} onClick={() => requestAction(record, toggle.toLowerCase())} data-testid={`button-toggle-designation-${record.id}`}><CirclePower size={mobile ? 14 : 17} aria-hidden="true" />{mobile && <span>{toggle}</span>}</button>
+      <button type="button" className={mobile ? 'admin-zone-card__action admin-zone-card__action--danger' : 'admin-icon-button admin-icon-button--danger'} aria-label={`Delete ${record.name}`} title="Delete" onClick={() => requestAction(record, 'delete')} data-testid={`button-delete-designation-${record.id}`}><Trash2 size={mobile ? 14 : 16} aria-hidden="true" />{mobile && <span>Delete</span>}</button>
+    </fieldset>;
   }
   const columns = [
-    { key: 'serial', label: 'Sr No.', render: (_, index) => index + 1 },
-    { key: 'name', label: 'Designation', render: (record) => <strong className="admin-category-name">{record.name}</strong> },
+    { key: 'serial', label: 'Sr No', render: (_record, index) => <span className="admin-table__serial">{index + 1}</span> },
+    { key: 'name', label: 'Designation name', render: (record) => <span className="admin-table__name" data-testid={`text-designation-name-${record.id}`}>{record.name}</span> },
     { key: 'shortName', label: 'Short Name', render: (record) => record.shortName },
     { key: 'level', label: 'Level', render: (record) => record.level },
-    { key: 'status', label: 'Status', render: (record) => <StatusBadge status={record.status} id={record.id} kind="designation" /> },
-    { key: 'created', label: 'Created details', render: (record) => audit(record.createdBy, record.createdAt) },
-    { key: 'updated', label: 'Updated details', render: (record) => audit(record.updatedBy, record.updatedAt) },
+    { key: 'status', label: 'Status', render: (record) => <StatusBadge status={record.status} id={record.id} /> },
+    { key: 'created', label: 'Created details', render: (record) => details(record.createdBy, record.createdAt) },
+    { key: 'updated', label: 'Updated details', render: (record) => details(record.updatedBy, record.updatedAt) },
     { key: 'actions', label: 'Actions', render: (record) => actions(record) },
   ];
+  const actionName = confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'activate' ? 'Activate' : 'Inactivate';
   return <AdminLayout title="Designation Master">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / People</p><h1>Designation Master</h1><p className="admin-page-head__description">Manage designation levels, allowances, tax and availability in this browser.</p></div><div className="admin-category-head-actions">
-      <button type="button" className="admin-button admin-button--secondary" onClick={refresh} data-testid="button-refresh-designations">Refresh records</button>
-      <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error)} onClick={() => { setActionError(''); setImporting(true); }} data-testid="button-import-designations"><Upload size={16} aria-hidden="true" /> Import data</button>
-      <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || !visible.length} onClick={exportVisible} data-testid="button-export-designations"><Download size={16} aria-hidden="true" /> Export data</button>
-      <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate(`${LIST_PATH}/new`); }} data-testid="button-add-designation"><Plus size={16} aria-hidden="true" /> Add designation</button>
-    </div></div>
-    {(feedback || saveFeedback) && <div className="admin-feedback" role="status" data-testid="status-designation-feedback">{feedback || saveFeedback}</div>}
-    {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
+    <div className="admin-page-head">
+      <div><p className="admin-page-head__eyebrow">Masters / People</p><h1>Designation Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Browser data clearing does not remove these designations.</p></div>
+      <div className="admin-mr-head-actions">
+        <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/designation')} data-testid="button-import-designations"><Upload size={16} aria-hidden="true" /> Import data</button>
+        <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>
+          <DropdownMenu.Trigger asChild>
+            {/* Remain focusable while pending so closing the menu can return focus. */}
+            <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-designations"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content className="admin-profile__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} style={{ maxWidth: 'calc(100vw - 24px)' }} aria-label="Designation export format">
+              <DropdownMenu.Item className="admin-profile__settings" disabled={exporting} onSelect={() => void exportVisible('csv')}>CSV</DropdownMenu.Item>
+              <DropdownMenu.Item className="admin-profile__settings" disabled={exporting} onSelect={() => void exportVisible('xlsx')}>Excel (.xlsx)</DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
+        <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate('/admin/masters/designations/new'); }} data-testid="button-add-designation"><Plus size={16} aria-hidden="true" /> Add designation</button>
+      </div>
+    </div>
+    <p className="admin-page-head__description">Old browser records remain untouched and are not migrated or used as fallback. Explicitly import an existing CSV backup. Exports include all name/short name/level/status matches, up to 5,000 records; larger results require narrower filters. Designation labels do not grant staff permissions or change payroll.</p>
+    {feedback && <div className="admin-feedback" role="status" data-testid="status-designation-feedback">{feedback}</div>}
+    {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-designation-action-error">{actionError}</div>}
     <section className="admin-panel" aria-label="Designation list">
-      <div className="admin-toolbar"><div className="admin-toolbar__fields">
-        <label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search designations</span><input value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Search designation, short name or level" data-testid="input-search-designations" /></label>
-        <div className="admin-filter"><label htmlFor="designation-status-filter">Status</label><select id="designation-status-filter" className="admin-select" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); pagination.resetPage(); }} data-testid="select-filter-designation-status"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+      <div className="admin-toolbar"><button className="admin-button admin-button--secondary" disabled={loading} onClick={retry}>Refresh records</button><div className="admin-toolbar__fields">
+        <label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search designations by name, short name or level</span><input maxLength={200} value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Search designation, short name or level" data-testid="input-search-designations" /></label>
+        <div className="admin-filter"><label htmlFor="designation-filter">Status</label><select id="designation-filter" className="admin-select" value={filter} onChange={(event) => { setFilter(event.target.value); pagination.resetPage(); }} data-testid="select-filter-designations"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
       </div></div>
-      {error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><BriefcaseBusiness size={21} aria-hidden="true" /></span><strong>Designations could not be loaded</strong><p>{error}</p><button type="button" className="admin-button" onClick={refresh} data-testid="button-retry-designations">Refresh records</button></div> : <>
-        {visible.length ? <>
-          <div className="admin-designation-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} label="Designation records" testIdPrefix="designation" /></div>
-          <div className="admin-designation-mobile" role="list" aria-label="Designation records">{pagination.pageRows.map((record, index) => <article className="admin-mr-card" role="listitem" key={record.id} data-testid={`card-designation-${record.id}`}>
-            <div className="admin-mr-card__head"><div className="admin-mr-card__identity"><span className="admin-mr-card__subtitle">#{pagination.startIndex + index + 1} · Level {record.level}</span><h2 className="admin-mr-card__name">{record.name}</h2></div><StatusBadge status={record.status} id={record.id} kind="designation" /></div>
-            <dl className="admin-mr-card__meta"><div><dt>Short Name</dt><dd>{record.shortName}</dd></div><div><dt>Created details</dt><dd>{audit(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated details</dt><dd>{audit(record.updatedBy, record.updatedAt)}</dd></div></dl>{actions(record, true)}
-          </article>)}</div>
-        </> : <div className="admin-empty" data-testid="status-designation-empty"><span className="admin-empty__icon"><BriefcaseBusiness size={21} aria-hidden="true" /></span><strong>{records.length ? 'No matching designations' : 'No designations yet'}</strong><p>{records.length ? 'Try another search or status filter.' : 'Add a designation to start your directory.'}</p></div>}
-        <TablePagination {...pagination} filtered={visible.length} total={records.length} label={visible.length === 1 ? 'designation' : 'designations'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-designation-count" />
+      {loading ? <p className="admin-empty" role="status">Loading shared designations…</p> : error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><BriefcaseBusiness size={21} /></span><strong>Designations could not be loaded</strong><p>{error}</p><button className="admin-button" style={{ marginTop: 16 }} type="button" onClick={retry} data-testid="button-retry-designations">Try again</button></div> : <>
+        {records.length ? (cardView ? <div className="admin-zone-cards" role="list" aria-label="Designation records">
+          {pagination.pageRows.map((record, index) => <article className="admin-zone-card" role="listitem" key={record.id} data-testid={`card-designation-${record.id}`}>
+            <div className="admin-zone-card__heading"><div className="admin-zone-card__title"><span className="admin-zone-card__serial">#{pagination.startIndex + index + 1}</span><h2 data-testid={`text-designation-name-${record.id}`}>{record.name}</h2></div><StatusBadge status={record.status} id={record.id} /></div>
+            <p>{record.shortName} · Level {record.level}</p><dl className="admin-zone-card__meta"><div><dt>Created details</dt><dd>{details(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated details</dt><dd>{details(record.updatedBy, record.updatedAt)}</dd></div></dl>
+            {actions(record, true)}
+          </article>)}
+        </div> : <DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} />) : <div className="admin-empty" data-testid="status-designations-empty"><span className="admin-empty__icon"><BriefcaseBusiness size={21} aria-hidden="true" /></span><strong>{total ? 'No matching designations' : 'No designations yet'}</strong><p>{total ? 'Try a different name or status filter.' : 'Add your first designation to get started.'}</p></div>}
+        <TablePagination {...pagination} filtered={filtered} total={total} label={total === 1 ? 'designation' : 'designations'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-designation-count" />
       </>}
     </section>
-    {confirming && <ConfirmationDialog title={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} designation?`} description={`Change “${confirming.name}” to ${confirming.status === 'active' ? 'inactive' : 'active'}? Its saved details will remain available in this browser.`} actionLabel={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} designation`} onConfirm={toggle} onClose={() => { setConfirming(null); setActionError(''); }} error={actionError} />}
-    {importing && <DesignationImportDialog records={records} onImport={importRows} onClose={() => setImporting(false)} />}
+    {confirming && <ConfirmationDialog pending={pending} blocked={blocked} title={`${actionName} designation?`} description={`Are you sure you want to ${actionName.toLowerCase()} “${confirming.record.name}”?${confirming.type === 'delete' ? ' It will disappear from ordinary lists and exports. Server deletion history is retained; no restore is available here.' : ''}`} actionLabel={`${actionName} designation`} destructive={confirming.type === 'delete'} onConfirm={confirmAction} onClose={() => { setConfirming(null); retry(); }} error={actionError} />}
   </AdminLayout>;
 }

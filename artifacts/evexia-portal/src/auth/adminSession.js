@@ -384,12 +384,13 @@ function masterAllowed(user, resource, path, writing) {
 
 async function masterRequest(resource, path = '', { body, file, params = {}, download = false, signal } = {}) {
   const zone = resource === 'zones';
-  const label = zone ? 'Zone' : resource === 'storage-locations' ? 'Storage location' : 'Courier partner';
-  const unavailable = zone ? 'zone_unavailable' : resource === 'storage-locations' ? 'location_unavailable' : 'courier_unavailable';
+  if (!['zones', 'courier-partners', 'storage-locations', 'designations'].includes(resource)) throw new SessionError('Unsupported master resource.');
+  const label = zone ? 'Zone' : resource === 'designations' ? 'Designation' : resource === 'storage-locations' ? 'Storage location' : 'Courier partner';
+  const unavailable = zone ? 'zone_unavailable' : resource === 'designations' ? 'designation_unavailable' : resource === 'storage-locations' ? 'location_unavailable' : 'courier_unavailable';
   const route = zone
     ? /^(?:|\/trash|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|restore))?)$/
     : /^(?:|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/;
-  if (!route.test(path)) {
+  if (!route.test(path) && !(resource === 'designations' && path === '/sample')) {
     throw new SessionError(`Unsupported ${label} operation.`);
   }
   const epoch = generation;
@@ -404,7 +405,7 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
   if (pending) await pending;
   else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true);
   check();
-  const downloadKey = `${resource}/${params.format || 'csv'}`;
+  const downloadKey = `${resource}/${path}/${params.format || 'csv'}`;
   const initiation = download ? (serverInitiations.get(downloadKey) || crypto.randomUUID()) : null;
   if (download) serverInitiations.set(downloadKey, initiation);
   const downloadGuard = reportingIdentityGuard();
@@ -477,6 +478,7 @@ export function serverDownloadGuard(blob) {
 export const zoneRequest = (path, options) => masterRequest('zones', path, options);
 export const courierRequest = (path, options) => masterRequest('courier-partners', path, options);
 export const locationRequest = (path, options) => masterRequest('storage-locations', path, options);
+export const designationRequest = (path, options) => masterRequest('designations', path, options);
 
 export async function reportingRequest(resource, params = {}, { signal } = {}) {
   if (!['summary', 'users', 'sessions', 'events', 'activity', 'sessions/export', 'events/export', 'downloads', 'downloads/initiate'].includes(resource)) {

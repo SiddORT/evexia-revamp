@@ -97,9 +97,9 @@ async function open(page) {
   await expect(page.getByTestId('button-admin-profile')).toBeVisible({ timeout: 15000 });
   await page.evaluate(async (raw) => {
     localStorage.setItem('evexia.admin.staff.v1', raw);
-    const { loadDesignations, createDesignation } = await import('/src/services/designations.js');
-    const items = loadDesignations();
-    if (!items.some((row) => row.name === 'Synthetic Executive')) createDesignation(items, { name: 'Synthetic Executive', shortName: 'SE', level: 1, status: 'active' });
+    const { listDesignations, createDesignation } = await import('/src/services/serverDesignations.js');
+    const { items } = await listDesignations({ query: 'Synthetic Executive', status: 'all', limit: 100 });
+    if (!items.some((row) => row.name === 'Synthetic Executive')) await createDesignation({ name: 'Synthetic Executive', shortName: 'SE', level: 1, status: 'active' });
   }, legacy);
   await page.goto(`${base()}/admin/staff`);
   await expect(page.getByTestId('button-add-staff')).toBeEnabled({ timeout: 15000 });
@@ -517,4 +517,30 @@ test('directory search finds beyond the loaded batch, continues empty sections, 
   await page.getByTestId('button-clear-directory-search-staff').click();
   await expect(page.getByTestId('text-staff-count')).toHaveText('Showing 1–10 of 100 staff members in loaded batch');
   await expectSingleSearch(page);
+});
+
+// Shared fixtures do not reset between spec files, and Playwright's file order
+// need not match CLI argument order. Keep staff-producing cross-master scenarios
+// after this file's existing empty-directory assertion.
+test('staff preserves unavailable designation and choice outages keep mounted draft with retry', async ({ page }, testInfo) => {
+  await open(page);
+  const staff = await page.evaluate(async () => {
+    return (await import('/src/services/staff.js')).createStaff({ name: 'Synthetic designation preservation', email: 'designation-preserved@example.com',
+      phone: '9876543210', dialCountry: 'IN', status: 'active', role: 'Staff', designation: 'Unavailable saved designation', dateOfJoining: '2026-01-01' });
+  });
+  await page.goto(`${base()}/admin/staff`);
+  await expect(page.getByTestId(`button-edit-staff-${staff.record.id}`)).toBeEnabled();
+  await expect(page.getByTestId('button-add-staff')).toBeEnabled();
+  await page.route('**/api/v1/admin/designations?*', (route) => route.fulfill({ status: 503, json: { error: { code: 'designation_unavailable', message: 'Choices temporarily unavailable.' } } }));
+  await page.getByTestId(`button-edit-staff-${staff.record.id}`).click();
+  await expect(page.getByTestId('select-staff-designation')).toHaveValue('Unavailable saved designation');
+  await page.getByTestId('input-staff-name').fill('Mounted staff draft');
+  await expect(page.getByRole('dialog').getByRole('alert')).toContainText('Choices temporarily unavailable');
+  await expect(page.getByTestId('button-save-staff')).toBeDisabled();
+  await page.unroute('**/api/v1/admin/designations?*');
+  await page.getByRole('button', { name: 'Retry designation choices (keep draft)' }).click();
+  await expect(page.getByTestId('input-staff-name')).toHaveValue('Mounted staff draft');
+  await expect(page.getByTestId('button-save-staff')).toBeEnabled();
+  await expect(page.getByTestId('select-staff-designation')).toHaveValue('Unavailable saved designation');
+  await page.screenshot({ path: testInfo.outputPath('designation-staff-choices.jpg') });
 });

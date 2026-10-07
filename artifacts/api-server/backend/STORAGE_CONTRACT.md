@@ -30,6 +30,7 @@ password input; there is no default elevated account.
 | Zone list/detail/create/edit/status/soft-delete/import/export | all; opt-in staff limited to five explicit Zone grants | no |
 | Courier Partner list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
 | Storage Location list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
+| Designation list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; Zone staff grants do not apply | no |
 | Upload, metadata, verified download, download grant | system-wide | own MR or currently assigned active patient |
 | Delete, replace, retry verification/cleanup | yes | no |
 
@@ -49,7 +50,8 @@ All staff mutations are atomic and stale-version checked; passwords are
 generated server-side, Argon2id-hashed and returned once on create only.
 No hard-delete, import, invitation, staff sign-in, password reset or rotation API
 exists. Legacy browser-local staff storage is untouched/unused; Designation
-Master labels are not a verified backend master relationship.
+Master offers bounded active server choices, but saved staff labels remain
+business metadata, not foreign-key or authorization relationships.
 See `docs/staff-security.md` for key retention and coordinated backup/recovery.
 
 Zone Master uses server-owned UTC audit times and User actor references, immutable
@@ -75,6 +77,14 @@ uniqueness and retained soft-deletion evidence. CSV/XLSX imports are explicit,
 identity/session-bound, create-only and atomic; imported audit values are ignored.
 Allergen/PO/PR keep their separate browser-local location records and IDs.
 See `docs/storage-location-master.md` for exact schemas, limits and recovery.
+
+Designation Master uses separate shared persistence, exact `NUMERIC(11,2)` values,
+server-owned User/UTC audit details, expected versions and normalized live-name
+uniqueness including inactive rows. Tombstones preserve deletion attribution.
+The protected singleton alone can use CRUD, identity/session-bound atomic CSV/XLSX
+imports, samples and full-filter exports. Transfers require durable download
+acceptance. No local data or staff labels are migrated; see
+`docs/designation-master.md` for exact ten/fourteen-column schemas and bounds.
 
 ## File API and validation
 

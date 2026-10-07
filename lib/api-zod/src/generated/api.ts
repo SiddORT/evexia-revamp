@@ -274,6 +274,838 @@ export const SetCourierPartnerStatusResponse = zod.object({
 });
 
 /**
+ * @summary Listing
+ */
+export const listDesignationsQueryQueryDefault = ``;
+export const listDesignationsQueryQueryMax = 200;
+
+export const listDesignationsQueryStatusDefault = `all`;
+export const listDesignationsQueryLimitDefault = 10;
+export const listDesignationsQueryLimitMax = 100;
+
+export const listDesignationsQueryOffsetDefault = 0;
+export const listDesignationsQueryOffsetMin = 0;
+export const listDesignationsQueryOffsetMax = 1000000;
+
+export const ListDesignationsQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listDesignationsQueryQueryMax)
+    .default(listDesignationsQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(listDesignationsQueryStatusDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listDesignationsQueryLimitMax)
+    .default(listDesignationsQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listDesignationsQueryOffsetMin)
+    .max(listDesignationsQueryOffsetMax)
+    .default(listDesignationsQueryOffsetDefault),
+});
+
+export const listDesignationsResponseItemsItemBasicDaDefault = `0`;
+export const listDesignationsResponseItemsItemBasicDaRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const listDesignationsResponseItemsItemHraDefault = `0`;
+export const listDesignationsResponseItemsItemHraRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const listDesignationsResponseItemsItemLevelMax = 2147483647;
+
+export const listDesignationsResponseItemsItemMedicalAllowanceDefault = `0`;
+export const listDesignationsResponseItemsItemMedicalAllowanceRegExp =
+  new RegExp(
+    "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+  );
+export const listDesignationsResponseItemsItemNameMax = 200;
+
+export const listDesignationsResponseItemsItemProfessionalTaxDefault = `0`;
+export const listDesignationsResponseItemsItemProfessionalTaxRegExp =
+  new RegExp(
+    "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+  );
+export const listDesignationsResponseItemsItemShortNameMax = 50;
+
+export const listDesignationsResponseItemsItemSpecialAllowanceDefault = `0`;
+export const listDesignationsResponseItemsItemSpecialAllowanceRegExp =
+  new RegExp(
+    "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+  );
+export const listDesignationsResponseItemsItemTravellingAllowanceDefault = `0`;
+export const listDesignationsResponseItemsItemTravellingAllowanceRegExp =
+  new RegExp(
+    "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+  );
+
+export const ListDesignationsResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      basicDa: zod
+        .string()
+        .regex(listDesignationsResponseItemsItemBasicDaRegExp)
+        .default(listDesignationsResponseItemsItemBasicDaDefault),
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      hra: zod
+        .string()
+        .regex(listDesignationsResponseItemsItemHraRegExp)
+        .default(listDesignationsResponseItemsItemHraDefault),
+      id: zod.string().uuid(),
+      level: zod
+        .number()
+        .int()
+        .min(1)
+        .max(listDesignationsResponseItemsItemLevelMax),
+      medicalAllowance: zod
+        .string()
+        .regex(listDesignationsResponseItemsItemMedicalAllowanceRegExp)
+        .default(listDesignationsResponseItemsItemMedicalAllowanceDefault),
+      name: zod.string().min(1).max(listDesignationsResponseItemsItemNameMax),
+      professionalTax: zod
+        .string()
+        .regex(listDesignationsResponseItemsItemProfessionalTaxRegExp)
+        .default(listDesignationsResponseItemsItemProfessionalTaxDefault),
+      shortName: zod
+        .string()
+        .min(1)
+        .max(listDesignationsResponseItemsItemShortNameMax),
+      specialAllowance: zod
+        .string()
+        .regex(listDesignationsResponseItemsItemSpecialAllowanceRegExp)
+        .default(listDesignationsResponseItemsItemSpecialAllowanceDefault),
+      status: zod.enum(["active", "inactive"]),
+      travellingAllowance: zod
+        .string()
+        .regex(listDesignationsResponseItemsItemTravellingAllowanceRegExp)
+        .default(listDesignationsResponseItemsItemTravellingAllowanceDefault),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+export const createDesignationBodyBasicDaOneMin = 0;
+export const createDesignationBodyBasicDaOneMax = 999999999.99;
+
+export const createDesignationBodyBasicDaTwoRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const createDesignationBodyBasicDaDefault = `0`;
+export const createDesignationBodyHraOneMin = 0;
+export const createDesignationBodyHraOneMax = 999999999.99;
+
+export const createDesignationBodyHraTwoRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const createDesignationBodyHraDefault = `0`;
+export const createDesignationBodyLevelMax = 2147483647;
+
+export const createDesignationBodyMedicalAllowanceOneMin = 0;
+export const createDesignationBodyMedicalAllowanceOneMax = 999999999.99;
+
+export const createDesignationBodyMedicalAllowanceTwoRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const createDesignationBodyMedicalAllowanceDefault = `0`;
+export const createDesignationBodyNameMax = 200;
+
+export const createDesignationBodyProfessionalTaxOneMin = 0;
+export const createDesignationBodyProfessionalTaxOneMax = 999999999.99;
+
+export const createDesignationBodyProfessionalTaxTwoRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const createDesignationBodyProfessionalTaxDefault = `0`;
+export const createDesignationBodyShortNameMax = 50;
+
+export const createDesignationBodySpecialAllowanceOneMin = 0;
+export const createDesignationBodySpecialAllowanceOneMax = 999999999.99;
+
+export const createDesignationBodySpecialAllowanceTwoRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const createDesignationBodySpecialAllowanceDefault = `0`;
+export const createDesignationBodyTravellingAllowanceOneMin = 0;
+export const createDesignationBodyTravellingAllowanceOneMax = 999999999.99;
+
+export const createDesignationBodyTravellingAllowanceTwoRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const createDesignationBodyTravellingAllowanceDefault = `0`;
+
+export const CreateDesignationBody = zod.object({
+  basicDa: zod
+    .union([
+      zod
+        .number()
+        .min(createDesignationBodyBasicDaOneMin)
+        .max(createDesignationBodyBasicDaOneMax),
+      zod.string().regex(createDesignationBodyBasicDaTwoRegExp),
+    ])
+    .default(createDesignationBodyBasicDaDefault),
+  hra: zod
+    .union([
+      zod
+        .number()
+        .min(createDesignationBodyHraOneMin)
+        .max(createDesignationBodyHraOneMax),
+      zod.string().regex(createDesignationBodyHraTwoRegExp),
+    ])
+    .default(createDesignationBodyHraDefault),
+  level: zod.number().int().min(1).max(createDesignationBodyLevelMax),
+  medicalAllowance: zod
+    .union([
+      zod
+        .number()
+        .min(createDesignationBodyMedicalAllowanceOneMin)
+        .max(createDesignationBodyMedicalAllowanceOneMax),
+      zod.string().regex(createDesignationBodyMedicalAllowanceTwoRegExp),
+    ])
+    .default(createDesignationBodyMedicalAllowanceDefault),
+  name: zod.string().min(1).max(createDesignationBodyNameMax),
+  professionalTax: zod
+    .union([
+      zod
+        .number()
+        .min(createDesignationBodyProfessionalTaxOneMin)
+        .max(createDesignationBodyProfessionalTaxOneMax),
+      zod.string().regex(createDesignationBodyProfessionalTaxTwoRegExp),
+    ])
+    .default(createDesignationBodyProfessionalTaxDefault),
+  shortName: zod.string().min(1).max(createDesignationBodyShortNameMax),
+  specialAllowance: zod
+    .union([
+      zod
+        .number()
+        .min(createDesignationBodySpecialAllowanceOneMin)
+        .max(createDesignationBodySpecialAllowanceOneMax),
+      zod.string().regex(createDesignationBodySpecialAllowanceTwoRegExp),
+    ])
+    .default(createDesignationBodySpecialAllowanceDefault),
+  status: zod.enum(["active", "inactive"]),
+  travellingAllowance: zod
+    .union([
+      zod
+        .number()
+        .min(createDesignationBodyTravellingAllowanceOneMin)
+        .max(createDesignationBodyTravellingAllowanceOneMax),
+      zod.string().regex(createDesignationBodyTravellingAllowanceTwoRegExp),
+    ])
+    .default(createDesignationBodyTravellingAllowanceDefault),
+});
+
+export const createDesignationResponseBasicDaDefault = `0`;
+export const createDesignationResponseBasicDaRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const createDesignationResponseHraDefault = `0`;
+export const createDesignationResponseHraRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const createDesignationResponseLevelMax = 2147483647;
+
+export const createDesignationResponseMedicalAllowanceDefault = `0`;
+export const createDesignationResponseMedicalAllowanceRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const createDesignationResponseNameMax = 200;
+
+export const createDesignationResponseProfessionalTaxDefault = `0`;
+export const createDesignationResponseProfessionalTaxRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const createDesignationResponseShortNameMax = 50;
+
+export const createDesignationResponseSpecialAllowanceDefault = `0`;
+export const createDesignationResponseSpecialAllowanceRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const createDesignationResponseTravellingAllowanceDefault = `0`;
+export const createDesignationResponseTravellingAllowanceRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+
+export const CreateDesignationResponse = zod.object({
+  basicDa: zod
+    .string()
+    .regex(createDesignationResponseBasicDaRegExp)
+    .default(createDesignationResponseBasicDaDefault),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  hra: zod
+    .string()
+    .regex(createDesignationResponseHraRegExp)
+    .default(createDesignationResponseHraDefault),
+  id: zod.string().uuid(),
+  level: zod.number().int().min(1).max(createDesignationResponseLevelMax),
+  medicalAllowance: zod
+    .string()
+    .regex(createDesignationResponseMedicalAllowanceRegExp)
+    .default(createDesignationResponseMedicalAllowanceDefault),
+  name: zod.string().min(1).max(createDesignationResponseNameMax),
+  professionalTax: zod
+    .string()
+    .regex(createDesignationResponseProfessionalTaxRegExp)
+    .default(createDesignationResponseProfessionalTaxDefault),
+  shortName: zod.string().min(1).max(createDesignationResponseShortNameMax),
+  specialAllowance: zod
+    .string()
+    .regex(createDesignationResponseSpecialAllowanceRegExp)
+    .default(createDesignationResponseSpecialAllowanceDefault),
+  status: zod.enum(["active", "inactive"]),
+  travellingAllowance: zod
+    .string()
+    .regex(createDesignationResponseTravellingAllowanceRegExp)
+    .default(createDesignationResponseTravellingAllowanceDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Export
+ */
+export const exportDesignationsQueryQueryDefault = ``;
+export const exportDesignationsQueryQueryMax = 200;
+
+export const exportDesignationsQueryStatusDefault = `all`;
+export const exportDesignationsQueryFormatDefault = `csv`;
+
+export const ExportDesignationsQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(exportDesignationsQueryQueryMax)
+    .default(exportDesignationsQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(exportDesignationsQueryStatusDefault),
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(exportDesignationsQueryFormatDefault),
+});
+
+export const ExportDesignationsHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const ExportDesignationsResponse = zod.unknown();
+
+/**
+ * @summary Commit
+ */
+export const commitDesignationImportQueryFilenameMax = 200;
+
+export const commitDesignationImportQueryDigestRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const CommitDesignationImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(commitDesignationImportQueryFilenameMax),
+  digest: zod.coerce.string().regex(commitDesignationImportQueryDigestRegExp),
+  confirm: zod.coerce.boolean(),
+});
+
+export const CommitDesignationImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const CommitDesignationImportResponse = zod.object({
+  imported: zod.number().int(),
+});
+
+/**
+ * @summary Review
+ */
+export const reviewDesignationImportQueryFilenameMax = 200;
+
+export const ReviewDesignationImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(reviewDesignationImportQueryFilenameMax),
+});
+
+export const ReviewDesignationImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const ReviewDesignationImportResponse = zod.object({
+  digest: zod.string(),
+  invalidCount: zod.number().int(),
+  rows: zod.array(
+    zod.object({
+      errors: zod.array(zod.string()),
+      row: zod.number().int(),
+      values: zod.record(
+        zod.string(),
+        zod.union([zod.string(), zod.number().int()]),
+      ),
+    }),
+  ),
+  valid: zod.boolean(),
+  validCount: zod.number().int(),
+});
+
+/**
+ * @summary Sample
+ */
+export const downloadDesignationSampleQueryFormatDefault = `csv`;
+
+export const DownloadDesignationSampleQueryParams = zod.object({
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(downloadDesignationSampleQueryFormatDefault),
+});
+
+export const DownloadDesignationSampleHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const DownloadDesignationSampleResponse = zod.unknown();
+
+/**
+ * @summary Detail
+ */
+export const GetDesignationParams = zod.object({
+  designation_id: zod.coerce.string().uuid(),
+});
+
+export const getDesignationResponseBasicDaDefault = `0`;
+export const getDesignationResponseBasicDaRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const getDesignationResponseHraDefault = `0`;
+export const getDesignationResponseHraRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const getDesignationResponseLevelMax = 2147483647;
+
+export const getDesignationResponseMedicalAllowanceDefault = `0`;
+export const getDesignationResponseMedicalAllowanceRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const getDesignationResponseNameMax = 200;
+
+export const getDesignationResponseProfessionalTaxDefault = `0`;
+export const getDesignationResponseProfessionalTaxRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const getDesignationResponseShortNameMax = 50;
+
+export const getDesignationResponseSpecialAllowanceDefault = `0`;
+export const getDesignationResponseSpecialAllowanceRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const getDesignationResponseTravellingAllowanceDefault = `0`;
+export const getDesignationResponseTravellingAllowanceRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+
+export const GetDesignationResponse = zod.object({
+  basicDa: zod
+    .string()
+    .regex(getDesignationResponseBasicDaRegExp)
+    .default(getDesignationResponseBasicDaDefault),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  hra: zod
+    .string()
+    .regex(getDesignationResponseHraRegExp)
+    .default(getDesignationResponseHraDefault),
+  id: zod.string().uuid(),
+  level: zod.number().int().min(1).max(getDesignationResponseLevelMax),
+  medicalAllowance: zod
+    .string()
+    .regex(getDesignationResponseMedicalAllowanceRegExp)
+    .default(getDesignationResponseMedicalAllowanceDefault),
+  name: zod.string().min(1).max(getDesignationResponseNameMax),
+  professionalTax: zod
+    .string()
+    .regex(getDesignationResponseProfessionalTaxRegExp)
+    .default(getDesignationResponseProfessionalTaxDefault),
+  shortName: zod.string().min(1).max(getDesignationResponseShortNameMax),
+  specialAllowance: zod
+    .string()
+    .regex(getDesignationResponseSpecialAllowanceRegExp)
+    .default(getDesignationResponseSpecialAllowanceDefault),
+  status: zod.enum(["active", "inactive"]),
+  travellingAllowance: zod
+    .string()
+    .regex(getDesignationResponseTravellingAllowanceRegExp)
+    .default(getDesignationResponseTravellingAllowanceDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Delete
+ */
+export const DeleteDesignationParams = zod.object({
+  designation_id: zod.coerce.string().uuid(),
+});
+
+export const DeleteDesignationBody = zod.object({
+  expected_version: zod.number().int().min(1),
+});
+
+export const deleteDesignationResponseBasicDaDefault = `0`;
+export const deleteDesignationResponseBasicDaRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const deleteDesignationResponseHraDefault = `0`;
+export const deleteDesignationResponseHraRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const deleteDesignationResponseLevelMax = 2147483647;
+
+export const deleteDesignationResponseMedicalAllowanceDefault = `0`;
+export const deleteDesignationResponseMedicalAllowanceRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const deleteDesignationResponseNameMax = 200;
+
+export const deleteDesignationResponseProfessionalTaxDefault = `0`;
+export const deleteDesignationResponseProfessionalTaxRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const deleteDesignationResponseShortNameMax = 50;
+
+export const deleteDesignationResponseSpecialAllowanceDefault = `0`;
+export const deleteDesignationResponseSpecialAllowanceRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const deleteDesignationResponseTravellingAllowanceDefault = `0`;
+export const deleteDesignationResponseTravellingAllowanceRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+
+export const DeleteDesignationResponse = zod.object({
+  basicDa: zod
+    .string()
+    .regex(deleteDesignationResponseBasicDaRegExp)
+    .default(deleteDesignationResponseBasicDaDefault),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  hra: zod
+    .string()
+    .regex(deleteDesignationResponseHraRegExp)
+    .default(deleteDesignationResponseHraDefault),
+  id: zod.string().uuid(),
+  level: zod.number().int().min(1).max(deleteDesignationResponseLevelMax),
+  medicalAllowance: zod
+    .string()
+    .regex(deleteDesignationResponseMedicalAllowanceRegExp)
+    .default(deleteDesignationResponseMedicalAllowanceDefault),
+  name: zod.string().min(1).max(deleteDesignationResponseNameMax),
+  professionalTax: zod
+    .string()
+    .regex(deleteDesignationResponseProfessionalTaxRegExp)
+    .default(deleteDesignationResponseProfessionalTaxDefault),
+  shortName: zod.string().min(1).max(deleteDesignationResponseShortNameMax),
+  specialAllowance: zod
+    .string()
+    .regex(deleteDesignationResponseSpecialAllowanceRegExp)
+    .default(deleteDesignationResponseSpecialAllowanceDefault),
+  status: zod.enum(["active", "inactive"]),
+  travellingAllowance: zod
+    .string()
+    .regex(deleteDesignationResponseTravellingAllowanceRegExp)
+    .default(deleteDesignationResponseTravellingAllowanceDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditDesignationParams = zod.object({
+  designation_id: zod.coerce.string().uuid(),
+});
+
+export const editDesignationBodyBasicDaOneMin = 0;
+export const editDesignationBodyBasicDaOneMax = 999999999.99;
+
+export const editDesignationBodyBasicDaTwoRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const editDesignationBodyBasicDaDefault = `0`;
+export const editDesignationBodyHraOneMin = 0;
+export const editDesignationBodyHraOneMax = 999999999.99;
+
+export const editDesignationBodyHraTwoRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const editDesignationBodyHraDefault = `0`;
+export const editDesignationBodyLevelMax = 2147483647;
+
+export const editDesignationBodyMedicalAllowanceOneMin = 0;
+export const editDesignationBodyMedicalAllowanceOneMax = 999999999.99;
+
+export const editDesignationBodyMedicalAllowanceTwoRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const editDesignationBodyMedicalAllowanceDefault = `0`;
+export const editDesignationBodyNameMax = 200;
+
+export const editDesignationBodyProfessionalTaxOneMin = 0;
+export const editDesignationBodyProfessionalTaxOneMax = 999999999.99;
+
+export const editDesignationBodyProfessionalTaxTwoRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const editDesignationBodyProfessionalTaxDefault = `0`;
+export const editDesignationBodyShortNameMax = 50;
+
+export const editDesignationBodySpecialAllowanceOneMin = 0;
+export const editDesignationBodySpecialAllowanceOneMax = 999999999.99;
+
+export const editDesignationBodySpecialAllowanceTwoRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const editDesignationBodySpecialAllowanceDefault = `0`;
+export const editDesignationBodyTravellingAllowanceOneMin = 0;
+export const editDesignationBodyTravellingAllowanceOneMax = 999999999.99;
+
+export const editDesignationBodyTravellingAllowanceTwoRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const editDesignationBodyTravellingAllowanceDefault = `0`;
+
+export const EditDesignationBody = zod.object({
+  basicDa: zod
+    .union([
+      zod
+        .number()
+        .min(editDesignationBodyBasicDaOneMin)
+        .max(editDesignationBodyBasicDaOneMax),
+      zod.string().regex(editDesignationBodyBasicDaTwoRegExp),
+    ])
+    .default(editDesignationBodyBasicDaDefault),
+  expected_version: zod.number().int().min(1),
+  hra: zod
+    .union([
+      zod
+        .number()
+        .min(editDesignationBodyHraOneMin)
+        .max(editDesignationBodyHraOneMax),
+      zod.string().regex(editDesignationBodyHraTwoRegExp),
+    ])
+    .default(editDesignationBodyHraDefault),
+  level: zod.number().int().min(1).max(editDesignationBodyLevelMax),
+  medicalAllowance: zod
+    .union([
+      zod
+        .number()
+        .min(editDesignationBodyMedicalAllowanceOneMin)
+        .max(editDesignationBodyMedicalAllowanceOneMax),
+      zod.string().regex(editDesignationBodyMedicalAllowanceTwoRegExp),
+    ])
+    .default(editDesignationBodyMedicalAllowanceDefault),
+  name: zod.string().min(1).max(editDesignationBodyNameMax),
+  professionalTax: zod
+    .union([
+      zod
+        .number()
+        .min(editDesignationBodyProfessionalTaxOneMin)
+        .max(editDesignationBodyProfessionalTaxOneMax),
+      zod.string().regex(editDesignationBodyProfessionalTaxTwoRegExp),
+    ])
+    .default(editDesignationBodyProfessionalTaxDefault),
+  shortName: zod.string().min(1).max(editDesignationBodyShortNameMax),
+  specialAllowance: zod
+    .union([
+      zod
+        .number()
+        .min(editDesignationBodySpecialAllowanceOneMin)
+        .max(editDesignationBodySpecialAllowanceOneMax),
+      zod.string().regex(editDesignationBodySpecialAllowanceTwoRegExp),
+    ])
+    .default(editDesignationBodySpecialAllowanceDefault),
+  status: zod.enum(["active", "inactive"]),
+  travellingAllowance: zod
+    .union([
+      zod
+        .number()
+        .min(editDesignationBodyTravellingAllowanceOneMin)
+        .max(editDesignationBodyTravellingAllowanceOneMax),
+      zod.string().regex(editDesignationBodyTravellingAllowanceTwoRegExp),
+    ])
+    .default(editDesignationBodyTravellingAllowanceDefault),
+});
+
+export const editDesignationResponseBasicDaDefault = `0`;
+export const editDesignationResponseBasicDaRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const editDesignationResponseHraDefault = `0`;
+export const editDesignationResponseHraRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const editDesignationResponseLevelMax = 2147483647;
+
+export const editDesignationResponseMedicalAllowanceDefault = `0`;
+export const editDesignationResponseMedicalAllowanceRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const editDesignationResponseNameMax = 200;
+
+export const editDesignationResponseProfessionalTaxDefault = `0`;
+export const editDesignationResponseProfessionalTaxRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const editDesignationResponseShortNameMax = 50;
+
+export const editDesignationResponseSpecialAllowanceDefault = `0`;
+export const editDesignationResponseSpecialAllowanceRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const editDesignationResponseTravellingAllowanceDefault = `0`;
+export const editDesignationResponseTravellingAllowanceRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+
+export const EditDesignationResponse = zod.object({
+  basicDa: zod
+    .string()
+    .regex(editDesignationResponseBasicDaRegExp)
+    .default(editDesignationResponseBasicDaDefault),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  hra: zod
+    .string()
+    .regex(editDesignationResponseHraRegExp)
+    .default(editDesignationResponseHraDefault),
+  id: zod.string().uuid(),
+  level: zod.number().int().min(1).max(editDesignationResponseLevelMax),
+  medicalAllowance: zod
+    .string()
+    .regex(editDesignationResponseMedicalAllowanceRegExp)
+    .default(editDesignationResponseMedicalAllowanceDefault),
+  name: zod.string().min(1).max(editDesignationResponseNameMax),
+  professionalTax: zod
+    .string()
+    .regex(editDesignationResponseProfessionalTaxRegExp)
+    .default(editDesignationResponseProfessionalTaxDefault),
+  shortName: zod.string().min(1).max(editDesignationResponseShortNameMax),
+  specialAllowance: zod
+    .string()
+    .regex(editDesignationResponseSpecialAllowanceRegExp)
+    .default(editDesignationResponseSpecialAllowanceDefault),
+  status: zod.enum(["active", "inactive"]),
+  travellingAllowance: zod
+    .string()
+    .regex(editDesignationResponseTravellingAllowanceRegExp)
+    .default(editDesignationResponseTravellingAllowanceDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Status
+ */
+export const SetDesignationStatusParams = zod.object({
+  designation_id: zod.coerce.string().uuid(),
+});
+
+export const SetDesignationStatusBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const setDesignationStatusResponseBasicDaDefault = `0`;
+export const setDesignationStatusResponseBasicDaRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const setDesignationStatusResponseHraDefault = `0`;
+export const setDesignationStatusResponseHraRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const setDesignationStatusResponseLevelMax = 2147483647;
+
+export const setDesignationStatusResponseMedicalAllowanceDefault = `0`;
+export const setDesignationStatusResponseMedicalAllowanceRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const setDesignationStatusResponseNameMax = 200;
+
+export const setDesignationStatusResponseProfessionalTaxDefault = `0`;
+export const setDesignationStatusResponseProfessionalTaxRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const setDesignationStatusResponseShortNameMax = 50;
+
+export const setDesignationStatusResponseSpecialAllowanceDefault = `0`;
+export const setDesignationStatusResponseSpecialAllowanceRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+export const setDesignationStatusResponseTravellingAllowanceDefault = `0`;
+export const setDesignationStatusResponseTravellingAllowanceRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+
+export const SetDesignationStatusResponse = zod.object({
+  basicDa: zod
+    .string()
+    .regex(setDesignationStatusResponseBasicDaRegExp)
+    .default(setDesignationStatusResponseBasicDaDefault),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  hra: zod
+    .string()
+    .regex(setDesignationStatusResponseHraRegExp)
+    .default(setDesignationStatusResponseHraDefault),
+  id: zod.string().uuid(),
+  level: zod.number().int().min(1).max(setDesignationStatusResponseLevelMax),
+  medicalAllowance: zod
+    .string()
+    .regex(setDesignationStatusResponseMedicalAllowanceRegExp)
+    .default(setDesignationStatusResponseMedicalAllowanceDefault),
+  name: zod.string().min(1).max(setDesignationStatusResponseNameMax),
+  professionalTax: zod
+    .string()
+    .regex(setDesignationStatusResponseProfessionalTaxRegExp)
+    .default(setDesignationStatusResponseProfessionalTaxDefault),
+  shortName: zod.string().min(1).max(setDesignationStatusResponseShortNameMax),
+  specialAllowance: zod
+    .string()
+    .regex(setDesignationStatusResponseSpecialAllowanceRegExp)
+    .default(setDesignationStatusResponseSpecialAllowanceDefault),
+  status: zod.enum(["active", "inactive"]),
+  travellingAllowance: zod
+    .string()
+    .regex(setDesignationStatusResponseTravellingAllowanceRegExp)
+    .default(setDesignationStatusResponseTravellingAllowanceDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
  * Bounded browser-reported metadata; actor/session are server-derived.
  * @summary Activity
  */

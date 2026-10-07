@@ -15,9 +15,12 @@ Registered-account counts include staff; eligible enabled staff sessions count
 in protected global reporting without granting staff access to those reports.
 See [Zone role permissions](zone-role-permissions.md) for opt-in rollout.
 
-Designation Master remains browser-local. The existing selector supplies a
-bounded selected label only; the server does not verify a catalogue, import one
-or treat the label as authorization. Legacy `evexia.admin.staff.v1` is never
+Designation Master uses a separate protected server catalogue. Staff Management
+loads up to 100 active server choices, fails explicitly above that bound and offers
+retry on request failure without discarding drafts. Existing unavailable saved
+labels remain selectable during edit. The server stores a bounded selected label
+only, not a foreign-key or authorization relationship. No staff labels are rewritten.
+See [Designation Master](designation-master.md). Legacy `evexia.admin.staff.v1` is never
 read, changed, cleared or automatically migrated by Staff Management. Existing
 data there can still be inspected by the browser owner but is not live directory
 data. No sample rows are seeded, no local fallback exists.

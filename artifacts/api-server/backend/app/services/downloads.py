@@ -38,7 +38,8 @@ BROWSER = {
     "pr_receipt": {"searchable": {"PDF"}, "image": {"PDF"}},
     "sessions": {"export": {"CSV"}}, "activity": {"export": {"CSV"}},
 }
-SERVER = {s: {"export": {"CSV", "XLSX"}} for s in ("zone", "courier", "storage_location")}
+SERVER = {s: {"export": {"CSV", "XLSX"}} for s in ("zone", "courier", "storage_location", "designation")}
+SERVER["designation"]["template"] = {"CSV", "XLSX"}
 SERVER["private_attachment"] = {"attachment": {"PDF"}, "issuance": {"PDF"}}
 
 

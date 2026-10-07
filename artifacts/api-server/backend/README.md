@@ -7,7 +7,10 @@ PostgreSQL directory with disabled-by-default opt-in workspace credentials; Zone
 persistence with soft deletion and authenticated audit history. Courier Partner Master
 is separate shared server persistence with its own table and endpoints. Storage Location Master
 uses another separate shared name/address/status table and endpoints, while Allergen/PO/PR
-location datasets remain browser-local. Other portal masters remain
+location datasets remain browser-local. Designation Master is a separate protected
+Super Admin-only server catalogue, with exact decimals and bounded Staff choices.
+See [Designation Master operations](../../../docs/designation-master.md).
+Other portal masters remain
 fictional and browser-local. Do not enter real personal or health data into the
 preview. See [staff security and operations](../../../docs/staff-security.md).
 See [Zone Master operations and transfer contract](../../../docs/zone-master.md)
@@ -51,7 +54,8 @@ explicit migration and unchanged local-demo purchasing relationships.
   `0005_protected_super_admin_sessions`, `0006_auth_sessions`,
     `0007_reporting_indexes`, `0008_activity_search`, `0009_staff`,
     `0010_zones`, `0010_custom_roles`, `0011_courier_partners`, `0012_storage_locations`,
-    `0013_download_logs`, `0014_download_reporting_index`, and `0015_zone_permissions`. Zone, role, courier and location migrations create only empty tables. Staff migration
+     `0013_download_logs`, `0014_download_reporting_index`, `0015_zone_permissions`,
+     and `0016_designations`. Zone, role, courier, location and designation migrations create only empty tables. Staff migration
    adds an empty encrypted profile table and deferred identity-link integrity
    guards; it changes no existing identities, sessions or activity history.
    The activity search
@@ -247,6 +251,8 @@ artifact-mounted URLs. The development OpenAPI contract includes:
 | Staff | `POST /api/v1/admin/staff/{staff_id}/edit`, `/status` | Immutable ID, mandatory `expected_version`, stale changes return 409. No credential reset or mail. |
 | Storage locations | `GET/POST /api/v1/admin/storage-locations`, `GET /{location_id}`, `POST /{location_id}/edit`, `/status`, `/delete` | Protected Super Admin `admin.access`; name/address/status, mandatory mutation versions, soft deletion and authenticated audit metadata. |
 | Storage locations | `POST /api/v1/admin/storage-locations/import/review`, `/import/commit`; `GET /export` | CSV/XLSX create-only review/confirm and full-filter download. Exact schemas and safety bounds in the Storage Location operations document. |
+| Designations | `GET/POST /api/v1/admin/designations`, `GET /{designation_id}`, `POST /{designation_id}/edit`, `/status`, `/delete` | Protected singleton `admin.access`; ten business fields, exact two-place decimals, expected versions, soft deletion and server audit. |
+| Designations | `POST /api/v1/admin/designations/import/review`, `/import/commit`; `GET /sample`, `/export` | CSV/XLSX create-only atomic review/confirm, identity-bound exact bytes, 2 MiB/1,000 rows, 5,000 filtered export matches and durable download acceptance. |
 | Domain | `POST /api/v1/domain/mrs/{user_id}/mapping` | Super-admin maps an existing user to an MR profile. |
 | Domain | `POST /api/v1/domain/patients` | Super-admin creates the minimal patient assignment record. |
 | Domain | `POST /api/v1/domain/patients/{patient_id}/assignment` | Authorized administrator assigns or unassigns an MR. |
@@ -323,7 +329,7 @@ These defaults are service behavior, not automatic infrastructure provisioning:
 
 The request-body middleware uses a 1 MiB bound for non-upload requests and the
 configured upload limit for raw upload/replacement paths. Zone review/commit
-allow 2 MiB; Courier and Storage Location review/commit allow 2 MiB plus 64 KiB multipart overhead,
+allow 2 MiB; Courier, Storage Location and Designation review/commit allow 2 MiB plus 64 KiB multipart overhead,
 with a separate extracted-file 2 MiB bound. Unrelated limits are unchanged.
 No clamd service is
 provided by this repository or artifact. `SCANNER_BACKEND=unavailable` is the

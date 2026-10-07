@@ -55,3 +55,15 @@ prove that the entire release gate completed.
 **How to apply:** Retain the isolated result paths and require a final suite
 result. If one flow failed, verify only that failed or unverified remainder with
 the existing tester; do not launch another broad browser pass for confidence.
+
+Shared browser fixture suites need explicit ordering of data-producing scenarios
+relative to empty-state assertions. Do not assume the CLI spec argument order is
+the execution order.
+
+**Why:** A cross-master Staff selector scenario passed alone but seeded a staff
+record before the existing empty-directory assertion in the full release.
+Playwright sorted files independently of the supplied spec sequence.
+
+**How to apply:** Keep uncleanable data-producing Staff scenarios after the
+empty-directory assertion in the same spec, or use genuinely separate fixtures.
+Do not weaken the empty-state assertion or add destructive cleanup endpoints.

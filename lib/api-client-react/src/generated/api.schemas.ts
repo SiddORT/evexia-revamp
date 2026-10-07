@@ -214,6 +214,166 @@ export interface CurrentUser {
   username: string | null;
 }
 
+export type DesignationEditStatus =
+  (typeof DesignationEditStatus)[keyof typeof DesignationEditStatus];
+
+export const DesignationEditStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface DesignationEdit {
+  basicDa?: number | string;
+  /** @minimum 1 */
+  expected_version: number;
+  hra?: number | string;
+  /**
+   * @minimum 1
+   * @maximum 2147483647
+   */
+  level: number;
+  medicalAllowance?: number | string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  professionalTax?: number | string;
+  /**
+   * @minLength 1
+   * @maxLength 50
+   */
+  shortName: string;
+  specialAllowance?: number | string;
+  status: DesignationEditStatus;
+  travellingAllowance?: number | string;
+}
+
+export type DesignationFieldsStatus =
+  (typeof DesignationFieldsStatus)[keyof typeof DesignationFieldsStatus];
+
+export const DesignationFieldsStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface DesignationFields {
+  basicDa?: number | string;
+  hra?: number | string;
+  /**
+   * @minimum 1
+   * @maximum 2147483647
+   */
+  level: number;
+  medicalAllowance?: number | string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  professionalTax?: number | string;
+  /**
+   * @minLength 1
+   * @maxLength 50
+   */
+  shortName: string;
+  specialAllowance?: number | string;
+  status: DesignationFieldsStatus;
+  travellingAllowance?: number | string;
+}
+
+export interface DesignationImportResult {
+  imported: number;
+}
+
+export type DesignationImportRowValues = { [key: string]: string | number };
+
+export interface DesignationImportRow {
+  errors: string[];
+  row: number;
+  values: DesignationImportRowValues;
+}
+
+export type DesignationResponseStatus =
+  (typeof DesignationResponseStatus)[keyof typeof DesignationResponseStatus];
+
+export const DesignationResponseStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface DesignationResponse {
+  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
+  basicDa?: string;
+  createdAt: string;
+  createdBy: string;
+  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
+  hra?: string;
+  id: string;
+  /**
+   * @minimum 1
+   * @maximum 2147483647
+   */
+  level: number;
+  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
+  medicalAllowance?: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
+  professionalTax?: string;
+  /**
+   * @minLength 1
+   * @maxLength 50
+   */
+  shortName: string;
+  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
+  specialAllowance?: string;
+  status: DesignationResponseStatus;
+  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
+  travellingAllowance?: string;
+  updatedAt: string;
+  updatedBy: string;
+  version: number;
+}
+
+export interface DesignationPage {
+  filtered: number;
+  items: DesignationResponse[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export interface DesignationReview {
+  digest: string;
+  invalidCount: number;
+  rows: DesignationImportRow[];
+  valid: boolean;
+  validCount: number;
+}
+
+export type DesignationStatusStatus =
+  (typeof DesignationStatusStatus)[keyof typeof DesignationStatusStatus];
+
+export const DesignationStatusStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface DesignationStatus {
+  /** @minimum 1 */
+  expected_version: number;
+  status: DesignationStatusStatus;
+}
+
+export interface DesignationVersion {
+  /** @minimum 1 */
+  expected_version: number;
+}
+
 export type DownloadEvidenceProvenance =
   (typeof DownloadEvidenceProvenance)[keyof typeof DownloadEvidenceProvenance];
 
@@ -1144,6 +1304,100 @@ export type ReviewCourierImportParams = {
 export type ReviewCourierImportBody = {
   file: Blob | File;
 };
+
+export type ListDesignationsParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ListDesignationsStatus;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
+export type ListDesignationsStatus =
+  (typeof ListDesignationsStatus)[keyof typeof ListDesignationsStatus];
+
+export const ListDesignationsStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportDesignationsParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ExportDesignationsStatus;
+  format?: ExportDesignationsFormat;
+};
+
+export type ExportDesignationsStatus =
+  (typeof ExportDesignationsStatus)[keyof typeof ExportDesignationsStatus];
+
+export const ExportDesignationsStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportDesignationsFormat =
+  (typeof ExportDesignationsFormat)[keyof typeof ExportDesignationsFormat];
+
+export const ExportDesignationsFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type CommitDesignationImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+  /**
+   * @pattern ^[0-9a-f]{64}$
+   */
+  digest: string;
+  confirm: boolean;
+};
+
+export type CommitDesignationImportBody = {
+  file: Blob | File;
+};
+
+export type ReviewDesignationImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+};
+
+export type ReviewDesignationImportBody = {
+  file: Blob | File;
+};
+
+export type DownloadDesignationSampleParams = {
+  format?: DownloadDesignationSampleFormat;
+};
+
+export type DownloadDesignationSampleFormat =
+  (typeof DownloadDesignationSampleFormat)[keyof typeof DownloadDesignationSampleFormat];
+
+export const DownloadDesignationSampleFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
 
 export type ListDownloadLogsParams = {
   /**

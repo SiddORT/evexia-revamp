@@ -1,39 +1,62 @@
-import { useEffect, useState } from 'react';
-import { DESIGNATION_KEY, createDesignation, importDesignations, loadDesignations, setDesignationStatus, updateDesignation } from '../services/designations.js';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import * as service from '../services/serverDesignations.js';
+import { getSession, subscribeSession } from '../auth/adminSession.js';
 
-function readState() {
-  try { return { records: loadDesignations(), error: '' }; }
-  catch (cause) { return { records: [], error: cause.message || 'Designations could not be loaded.' }; }
-}
-export default function useDesignations() {
-  const [state, setState] = useState(readState);
+export default function useServerDesignations(query, status, page, pageSize) {
+  const [data, setData] = useState({ items: [], total: 0, filtered: 0 });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState('');
+  const [revision, refresh] = useState(0);
+  const [pending, setPending] = useState(false);
+  const busy = useRef(false);
+  const retry = useCallback(() => refresh((value) => value + 1), []);
   useEffect(() => {
-    const onStorage = (event) => {
-      if (event.key === DESIGNATION_KEY || event.key === null) {
-        setState((previous) => ({ ...previous, error: 'Designations changed in another tab. Refresh records before saving.' }));
+    const owner = getSession().user?.id;
+    return subscribeSession(() => {
+      const session = getSession();
+      if (!session.user || session.user.id !== owner) {
+        setData({ items: [], total: 0, filtered: 0 });
+        setFeedback('');
+        setError('');
       }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    });
   }, []);
-  function retry() { setState(readState()); setFeedback(''); }
-  function apply(operation, message) {
-    if (state.error) return { success: false, error: 'Refresh records before making changes.' };
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    const timer = setTimeout(() => {
+      service.listDesignations({ query, status, limit: pageSize, offset: (page - 1) * pageSize }, controller.signal)
+        .then((result) => { if (!controller.signal.aborted) { setData(result); setError(''); } })
+        .catch((cause) => { if (!controller.signal.aborted) { setData({ items: [], total: 0, filtered: 0 }); setError(cause.message); } })
+        .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    }, 200);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [query, status, page, pageSize, revision]);
+  useEffect(() => {
+    const listener = () => { if (document.visibilityState === 'visible') retry(); };
+    window.addEventListener('focus', listener);
+    return () => window.removeEventListener('focus', listener);
+  }, [retry]);
+  async function apply(work, message) {
+    if (busy.current) return { success: false, error: 'A save is already pending.' };
+    busy.current = true;
+    setPending(true);
     try {
-      setState({ records: operation(), error: '' });
+      await work();
       setFeedback(message);
+      retry();
       return { success: true };
-    } catch (cause) { return { success: false, error: cause.message || 'Designations could not be saved.' }; }
+    } catch (cause) {
+      return { success: false, error: cause.message, code: cause.code, ambiguous: cause.ambiguous };
+    } finally { busy.current = false; setPending(false); }
   }
   return {
-    ...state, feedback, retry, clearFeedback: () => setFeedback(''),
-    add: (values) => apply(() => createDesignation(state.records, values), 'Designation added successfully.'),
-    edit: (id, values) => apply(() => updateDesignation(state.records, id, values), 'Designation updated successfully.'),
-    changeStatus: (id, status) => apply(() => setDesignationStatus(state.records, id, status), `Designation ${status === 'active' ? 'activated' : 'inactivated'} successfully.`),
-    importRows: (entries, snapshot) => {
-      if (JSON.stringify(state.records) !== JSON.stringify(snapshot)) return { success: false, error: 'Records changed since review. Refresh and review the CSV again.' };
-      return apply(() => importDesignations(entries, snapshot), `${entries.length} ${entries.length === 1 ? 'designation' : 'designations'} imported successfully.`);
-    },
+    records: data.items, total: data.total, filtered: data.filtered, loading, pending, error, feedback, retry,
+    clearFeedback: () => setFeedback(''),
+    add: (values) => apply(() => service.createDesignation(values), 'Designation added to shared records.'),
+    edit: (record, values) => apply(() => service.editDesignation(record, values), 'Designation updated.'),
+    remove: (record) => apply(() => service.deleteDesignation(record), 'Designation deleted. Server deletion history retained.'),
+    changeStatus: (record, status) => apply(() => service.statusDesignation(record, status), 'Designation status updated.'),
   };
 }

@@ -16,7 +16,8 @@ const titleTransformer: InputTransformerFn = (config) => {
   // portal's memory-only transport uses raw bytes. Authoritative OpenAPI retains
   // both representations.
   for (const route of ["/v1/admin/courier-partners/import/review", "/v1/admin/courier-partners/import/commit",
-    "/v1/admin/storage-locations/import/review", "/v1/admin/storage-locations/import/commit"]) {
+    "/v1/admin/storage-locations/import/review", "/v1/admin/storage-locations/import/commit",
+    "/v1/admin/designations/import/review", "/v1/admin/designations/import/commit"]) {
     const request = config.paths?.[route]?.post?.requestBody;
     if (request && !("$ref" in request) && request.content?.["multipart/form-data"]) {
       delete request.content["application/octet-stream"];

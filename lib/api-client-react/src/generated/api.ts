@@ -22,6 +22,8 @@ import type {
   ChangePasswordRequest,
   CommitCourierImportBody,
   CommitCourierImportParams,
+  CommitDesignationImportBody,
+  CommitDesignationImportParams,
   CommitLocationImportBody,
   CommitLocationImportParams,
   CommitZoneImportParams,
@@ -36,6 +38,15 @@ import type {
   CreatePatientRequest,
   CurrentUser,
   DeleteFileParams,
+  DesignationEdit,
+  DesignationFields,
+  DesignationImportResult,
+  DesignationPage,
+  DesignationResponse,
+  DesignationReview,
+  DesignationStatus,
+  DesignationVersion,
+  DownloadDesignationSampleParams,
   DownloadEvidence,
   DownloadInitiation,
   DownloadPage,
@@ -43,6 +54,7 @@ import type {
   ErrorEnvelope,
   EventPage,
   ExportCourierPartnersParams,
+  ExportDesignationsParams,
   ExportReportingEventsParams,
   ExportReportingSessionsParams,
   ExportStorageLocationsParams,
@@ -52,6 +64,7 @@ import type {
   ListCourierPartnersParams,
   ListCustomRolesParams,
   ListDeletedZonesParams,
+  ListDesignationsParams,
   ListDownloadLogsParams,
   ListOwnSessionsParams,
   ListReportingEventsParams,
@@ -77,6 +90,8 @@ import type {
   ReportSummary,
   ReviewCourierImportBody,
   ReviewCourierImportParams,
+  ReviewDesignationImportBody,
+  ReviewDesignationImportParams,
   ReviewLocationImportBody,
   ReviewLocationImportParams,
   ReviewZoneImportParams,
@@ -1200,6 +1215,1100 @@ export const useSetCourierPartnerStatus = <
   TContext
 > => {
   return useMutation(getSetCourierPartnerStatusMutationOptions(options));
+};
+
+export const getListDesignationsUrl = (params?: ListDesignationsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/designations?${stringifiedParams}`
+    : `/api/v1/admin/designations`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listDesignations = async (
+  params?: ListDesignationsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DesignationPage> => {
+  return customFetch<DesignationPage>(getListDesignationsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListDesignationsQueryKey = (
+  params?: ListDesignationsParams,
+) => {
+  return [`/api/v1/admin/designations`, ...(params ? [params] : [])] as const;
+};
+
+export const getListDesignationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDesignations>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListDesignationsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDesignations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListDesignationsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDesignations>>
+  > = ({ signal }) => listDesignations(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDesignations>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListDesignationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDesignations>>
+>;
+export type ListDesignationsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListDesignations<
+  TData = Awaited<ReturnType<typeof listDesignations>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListDesignationsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDesignations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListDesignationsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateDesignationUrl = () => {
+  return `/api/v1/admin/designations`;
+};
+
+/**
+ * @summary Create
+ */
+export const createDesignation = async (
+  designationFields: DesignationFields,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DesignationResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<DesignationResponse>(getCreateDesignationUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(designationFields),
+  });
+};
+
+export const getCreateDesignationMutationKey = () =>
+  ["createDesignation"] as const;
+
+export const getCreateDesignationMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDesignation>>,
+    TError,
+    CreateDesignationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createDesignation>>,
+  TError,
+  CreateDesignationMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateDesignationMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createDesignation>>,
+    CreateDesignationMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createDesignation(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateDesignationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createDesignation>>
+>;
+export type CreateDesignationMutationBody = BodyType<DesignationFields>;
+export type CreateDesignationMutationError = ErrorType<ErrorEnvelope>;
+export type CreateDesignationMutationVariables = {
+  data: BodyType<DesignationFields>;
+};
+
+/**
+ * @summary Create
+ */
+export const useCreateDesignation = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createDesignation>>,
+    TError,
+    CreateDesignationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createDesignation>>,
+  TError,
+  CreateDesignationMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateDesignationMutationOptions(options));
+};
+
+export const getExportDesignationsUrl = (params?: ExportDesignationsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/designations/export?${stringifiedParams}`
+    : `/api/v1/admin/designations/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportDesignations = async (
+  params?: ExportDesignationsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getExportDesignationsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportDesignationsQueryKey = (
+  params?: ExportDesignationsParams,
+) => {
+  return [
+    `/api/v1/admin/designations/export`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getExportDesignationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportDesignations>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportDesignationsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportDesignations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getExportDesignationsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exportDesignations>>
+  > = ({ signal }) => exportDesignations(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportDesignations>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportDesignationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportDesignations>>
+>;
+export type ExportDesignationsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportDesignations<
+  TData = Awaited<ReturnType<typeof exportDesignations>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportDesignationsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportDesignations>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportDesignationsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCommitDesignationImportUrl = (
+  params: CommitDesignationImportParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/designations/import/commit?${stringifiedParams}`
+    : `/api/v1/admin/designations/import/commit`;
+};
+
+/**
+ * @summary Commit
+ */
+export const commitDesignationImport = async (
+  commitDesignationImportBody: CommitDesignationImportBody,
+  params: CommitDesignationImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DesignationImportResult> => {
+  const formData = new FormData();
+  formData.append(`file`, commitDesignationImportBody.file);
+
+  return customFetch<DesignationImportResult>(
+    getCommitDesignationImportUrl(params),
+    {
+      ...options,
+      method: "POST",
+      body: formData,
+    },
+  );
+};
+
+export const getCommitDesignationImportMutationKey = () =>
+  ["commitDesignationImport"] as const;
+
+export const getCommitDesignationImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitDesignationImport>>,
+    TError,
+    CommitDesignationImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof commitDesignationImport>>,
+  TError,
+  CommitDesignationImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCommitDesignationImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof commitDesignationImport>>,
+    CommitDesignationImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return commitDesignationImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CommitDesignationImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof commitDesignationImport>>
+>;
+export type CommitDesignationImportMutationBody =
+  BodyType<CommitDesignationImportBody>;
+export type CommitDesignationImportMutationError = ErrorType<ErrorEnvelope>;
+export type CommitDesignationImportMutationVariables = {
+  data: BodyType<CommitDesignationImportBody>;
+  params: CommitDesignationImportParams;
+};
+
+/**
+ * @summary Commit
+ */
+export const useCommitDesignationImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitDesignationImport>>,
+    TError,
+    CommitDesignationImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof commitDesignationImport>>,
+  TError,
+  CommitDesignationImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getCommitDesignationImportMutationOptions(options));
+};
+
+export const getReviewDesignationImportUrl = (
+  params: ReviewDesignationImportParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/designations/import/review?${stringifiedParams}`
+    : `/api/v1/admin/designations/import/review`;
+};
+
+/**
+ * @summary Review
+ */
+export const reviewDesignationImport = async (
+  reviewDesignationImportBody: ReviewDesignationImportBody,
+  params: ReviewDesignationImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DesignationReview> => {
+  const formData = new FormData();
+  formData.append(`file`, reviewDesignationImportBody.file);
+
+  return customFetch<DesignationReview>(getReviewDesignationImportUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getReviewDesignationImportMutationKey = () =>
+  ["reviewDesignationImport"] as const;
+
+export const getReviewDesignationImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewDesignationImport>>,
+    TError,
+    ReviewDesignationImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewDesignationImport>>,
+  TError,
+  ReviewDesignationImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReviewDesignationImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewDesignationImport>>,
+    ReviewDesignationImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return reviewDesignationImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewDesignationImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewDesignationImport>>
+>;
+export type ReviewDesignationImportMutationBody =
+  BodyType<ReviewDesignationImportBody>;
+export type ReviewDesignationImportMutationError = ErrorType<ErrorEnvelope>;
+export type ReviewDesignationImportMutationVariables = {
+  data: BodyType<ReviewDesignationImportBody>;
+  params: ReviewDesignationImportParams;
+};
+
+/**
+ * @summary Review
+ */
+export const useReviewDesignationImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewDesignationImport>>,
+    TError,
+    ReviewDesignationImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewDesignationImport>>,
+  TError,
+  ReviewDesignationImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getReviewDesignationImportMutationOptions(options));
+};
+
+export const getDownloadDesignationSampleUrl = (
+  params?: DownloadDesignationSampleParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/designations/sample?${stringifiedParams}`
+    : `/api/v1/admin/designations/sample`;
+};
+
+/**
+ * @summary Sample
+ */
+export const downloadDesignationSample = async (
+  params?: DownloadDesignationSampleParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getDownloadDesignationSampleUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getDownloadDesignationSampleQueryKey = (
+  params?: DownloadDesignationSampleParams,
+) => {
+  return [
+    `/api/v1/admin/designations/sample`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getDownloadDesignationSampleQueryOptions = <
+  TData = Awaited<ReturnType<typeof downloadDesignationSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadDesignationSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadDesignationSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getDownloadDesignationSampleQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof downloadDesignationSample>>
+  > = ({ signal }) =>
+    downloadDesignationSample(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof downloadDesignationSample>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type DownloadDesignationSampleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof downloadDesignationSample>>
+>;
+export type DownloadDesignationSampleQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Sample
+ */
+
+export function useDownloadDesignationSample<
+  TData = Awaited<ReturnType<typeof downloadDesignationSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadDesignationSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadDesignationSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getDownloadDesignationSampleQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetDesignationUrl = (designationId: string) => {
+  return `/api/v1/admin/designations/${designationId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getDesignation = async (
+  designationId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DesignationResponse> => {
+  return customFetch<DesignationResponse>(getGetDesignationUrl(designationId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetDesignationQueryKey = (designationId: string) => {
+  return [`/api/v1/admin/designations/${designationId}`] as const;
+};
+
+export const getGetDesignationQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDesignation>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  designationId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDesignation>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDesignationQueryKey(designationId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getDesignation>>> = ({
+    signal,
+  }) => getDesignation(designationId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: designationId !== null && designationId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDesignation>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDesignationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDesignation>>
+>;
+export type GetDesignationQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetDesignation<
+  TData = Awaited<ReturnType<typeof getDesignation>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  designationId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDesignation>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDesignationQueryOptions(designationId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDeleteDesignationUrl = (designationId: string) => {
+  return `/api/v1/admin/designations/${designationId}/delete`;
+};
+
+/**
+ * @summary Delete
+ */
+export const deleteDesignation = async (
+  designationId: string,
+  designationVersion: DesignationVersion,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DesignationResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<DesignationResponse>(
+    getDeleteDesignationUrl(designationId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(designationVersion),
+    },
+  );
+};
+
+export const getDeleteDesignationMutationKey = () =>
+  ["deleteDesignation"] as const;
+
+export const getDeleteDesignationMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteDesignation>>,
+    TError,
+    DeleteDesignationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteDesignation>>,
+  TError,
+  DeleteDesignationMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteDesignationMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteDesignation>>,
+    DeleteDesignationMutationVariables
+  > = (props) => {
+    const { designationId, data } = props ?? {};
+
+    return deleteDesignation(designationId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteDesignationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteDesignation>>
+>;
+export type DeleteDesignationMutationBody = BodyType<DesignationVersion>;
+export type DeleteDesignationMutationError = ErrorType<ErrorEnvelope>;
+export type DeleteDesignationMutationVariables = {
+  designationId: string;
+  data: BodyType<DesignationVersion>;
+};
+
+/**
+ * @summary Delete
+ */
+export const useDeleteDesignation = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteDesignation>>,
+    TError,
+    DeleteDesignationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteDesignation>>,
+  TError,
+  DeleteDesignationMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteDesignationMutationOptions(options));
+};
+
+export const getEditDesignationUrl = (designationId: string) => {
+  return `/api/v1/admin/designations/${designationId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editDesignation = async (
+  designationId: string,
+  designationEdit: DesignationEdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DesignationResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<DesignationResponse>(
+    getEditDesignationUrl(designationId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(designationEdit),
+    },
+  );
+};
+
+export const getEditDesignationMutationKey = () => ["editDesignation"] as const;
+
+export const getEditDesignationMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editDesignation>>,
+    TError,
+    EditDesignationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editDesignation>>,
+  TError,
+  EditDesignationMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditDesignationMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editDesignation>>,
+    EditDesignationMutationVariables
+  > = (props) => {
+    const { designationId, data } = props ?? {};
+
+    return editDesignation(designationId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditDesignationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editDesignation>>
+>;
+export type EditDesignationMutationBody = BodyType<DesignationEdit>;
+export type EditDesignationMutationError = ErrorType<ErrorEnvelope>;
+export type EditDesignationMutationVariables = {
+  designationId: string;
+  data: BodyType<DesignationEdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditDesignation = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editDesignation>>,
+    TError,
+    EditDesignationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editDesignation>>,
+  TError,
+  EditDesignationMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditDesignationMutationOptions(options));
+};
+
+export const getSetDesignationStatusUrl = (designationId: string) => {
+  return `/api/v1/admin/designations/${designationId}/status`;
+};
+
+/**
+ * @summary Status
+ */
+export const setDesignationStatus = async (
+  designationId: string,
+  designationStatus: DesignationStatus,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DesignationResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<DesignationResponse>(
+    getSetDesignationStatusUrl(designationId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(designationStatus),
+    },
+  );
+};
+
+export const getSetDesignationStatusMutationKey = () =>
+  ["setDesignationStatus"] as const;
+
+export const getSetDesignationStatusMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setDesignationStatus>>,
+    TError,
+    SetDesignationStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setDesignationStatus>>,
+  TError,
+  SetDesignationStatusMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSetDesignationStatusMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setDesignationStatus>>,
+    SetDesignationStatusMutationVariables
+  > = (props) => {
+    const { designationId, data } = props ?? {};
+
+    return setDesignationStatus(designationId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetDesignationStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setDesignationStatus>>
+>;
+export type SetDesignationStatusMutationBody = BodyType<DesignationStatus>;
+export type SetDesignationStatusMutationError = ErrorType<ErrorEnvelope>;
+export type SetDesignationStatusMutationVariables = {
+  designationId: string;
+  data: BodyType<DesignationStatus>;
+};
+
+/**
+ * @summary Status
+ */
+export const useSetDesignationStatus = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setDesignationStatus>>,
+    TError,
+    SetDesignationStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setDesignationStatus>>,
+  TError,
+  SetDesignationStatusMutationVariables,
+  TContext
+> => {
+  return useMutation(getSetDesignationStatusMutationOptions(options));
 };
 
 export const getRecordBrowserActivityUrl = () => {

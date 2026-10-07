@@ -1,0 +1,172 @@
+# Shared Designation Master
+
+Designation Master is an empty-on-rollout FastAPI/PostgreSQL catalogue. Only the
+protected system Super Admin with `admin.access` may read or change it. Zone
+staff grants, portal labels, MR and Doctor identities authorize nothing here.
+Every service read, write, import confirmation and export revalidates the live
+identity/session under locks. No new permission, tenancy, staff foreign key,
+payroll calculation, automatic local import or sample seed is introduced.
+
+## Operator rollout (approval required)
+
+Migration `0016_designations` follows the actual `0015_zone_permissions` head.
+It creates only an empty `designations` table, constraints and the partial
+normalized-name unique index. Existing users, sessions, staff labels, other
+masters and browser-local data are unchanged. ORM metadata and readiness now
+require this schema; startup never creates tables or runs migrations.
+
+Before approval, pause writes, take and verify a complete database/audit backup,
+record the current migration head, review runtime privileges and rehearse the
+forward migration and recovery on an isolated restored copy. Apply the existing
+explicit migration/bootstrap procedure in the backend README only after operator
+approval. Roll out API and frontend together; verify liveness and readiness
+separately, then log in with the already-provisioned protected account.
+
+This implementation **does not apply migrations to any managed/shared database,
+deploy, bootstrap real accounts or change real data**. A managed readiness 503
+until approved migration, or a missing protected account, is a **BLOCKED live
+preview prerequisite**, not a failed isolated fixture. Downgrade refuses a
+populated designation table (including tombstones). Use a reviewed forward fix or
+verified coordinated restore, not a destructive downgrade. Retain backups and
+audit evidence pending operator-approved retention.
+
+## Fields and exact decimal policy
+
+- Name: required, 1–200 characters; short name: required, 1–50 characters.
+  Both are trimmed and whitespace-collapsed; unsupported control/surrogate
+  characters are rejected.
+- Name matching uses PostgreSQL `lower(btrim(regexp_replace(name, '\s+', ' ', 'g')))`
+  for both import conflict checking and the database partial unique index.
+  All non-deleted rows, including inactive rows, reserve their name.
+  Deleted names can be reused by a new row without changing historical evidence.
+  There is deliberately **no unique short-name rule**.
+- Level: strict positive integer, 1–2147483647. JSON callers send an integer,
+  not a string, fractional number or boolean; CSV/XLSX whole-number cells are parsed.
+- Status: `active` or `inactive`; transfer status is case-insensitive.
+- Basic + DA, HRA, Medical, Travelling and Special allowance percentages and
+  professional tax: non-negative finite `NUMERIC(11,2)`, **0–999999999.99**,
+  at most two meaningful decimal places. Blank optional inputs become zero.
+  Excess precision/range is rejected before database rounding. There is no 100%
+  cap, sum constraint or payroll inference. The form sends exact decimal strings;
+  JSON responses serialize decimals as strings. CSV/XLSX exports use exact text,
+  never binary floating-point arithmetic.
+
+## HTTP contract
+
+Bearer-authenticated, no-store endpoints under `/api/v1/admin/designations`:
+
+| Method / suffix | Purpose |
+| --- | --- |
+| GET (empty) | Server search/status/counts/pagination |
+| POST (empty) | Create ten business fields |
+| GET `/{designation_id}` | Non-deleted detail |
+| POST `/{designation_id}/edit` | Business fields plus `expected_version` |
+| POST `/{designation_id}/status` | `status`, `expected_version` |
+| POST `/{designation_id}/delete` | Soft-delete with `expected_version` |
+| GET `/sample?format=csv\|xlsx` | Exact legacy-schema sample download |
+| POST `/import/review?filename=...` | Inert row review, errors, totals, signed digest |
+| POST `/import/commit?filename=...&digest=...&confirm=true` | Identical bytes, explicit atomic create-only confirmation |
+| GET `/export?query=...&status=...&format=csv\|xlsx` | Every matching non-deleted record |
+
+Search `query` is at most 200 characters, literal case-insensitive substring
+matching across name, short name and decimal-rendered whole level. Status is
+`all|active|inactive`. Filters precede pagination; limit 1–100, offset 0–1000000.
+`total` counts all non-deleted rows; `filtered` counts matches. Ordering is
+newest-created then UUID descending, stable within each request but not a frozen
+multi-request snapshot. More than **5,000 export matches** produces an explicit
+`designation_export_limit`, never truncation. Import allows 1,000 rows, so larger
+exports must be split before round-trip import.
+
+Client audit/deletion/identity/version properties are forbidden. Creation sets
+both create/update timestamps and User actor references on the server. Edits and
+status changes preserve creation evidence, advance update evidence/version, and
+commit session-bound metadata-only audit events atomically. Safe actors are
+`Super Admin` or `Backend user`, never email/PII. Soft deletion sets deletion and
+update actor/time together and increments version. Repeat deletion returns 404
+without changing original evidence. Normal reads/detail/export exclude tombstones.
+All mutations require the observed version; stale and duplicate races return
+clear 409s. No restore/trash/hard-delete endpoint exists.
+
+## Exactly supported transfer schemas
+
+The exact ten-column legacy schema, including spelling/case/order, is:
+
+```csv
+Designation Name,Short Name,Level,Status,Basic + DA (%),HRA (%),Medical Allowance (%),Travelling Allowance (%),Special Allowance (%),professional tax (Rs)
+```
+
+Current CSV/XLSX exports append exactly these four columns:
+`Created By,Created At,Updated By,Updated At`. Times are UTC ISO strings.
+Incoming audit cells are ignored; new rows receive the authenticated importer's
+current server attribution. Historical audit restoration is never claimed.
+Arbitrary `id`, identity, version, deletion or other columns are rejected.
+
+CSV is strict UTF-8 with optional BOM. Exports include a BOM.
+Genuine XLSX uses one worksheet. File limit **2 MiB**, import limit **1,000 data
+rows**; actual raw bytes are bounded, including requests without Content-Length.
+Multipart allows exactly one `file` part, with at most **64 KiB overhead**.
+Both request middleware layers retain unrelated upload limits. Stream reading
+has a 15-second deadline.
+
+Workbook bounds: 100 ZIP entries, 8 MiB total decompressed, 4 MiB per entry,
+14 columns, 1,001 rows including header, 14,014 cells, and 10,000 characters per
+cell/XML text node. The shared bounded parser validates ZIP/XML before openpyxl
+and distrusts producer-controlled dimensions. It rejects malformed archives/XML,
+formulas, external relationships/links, macros, embedded objects and encrypted
+archives. No execution or network fetch occurs. `.xls`, `.xlsm` and arbitrary
+formats are unsupported.
+
+Review saves no rows/bytes. Its HMAC binds resource, exact bytes, filename/format,
+authenticated user and session. Commit reparses and repeats live identity and
+current duplicate checks, including duplicates within the batch; all valid rows
+and their audit events commit together, or none do. There are no upserts or
+partial imports. A new login/file/format requires a new review.
+
+Current fourteen-column exports escape formula-like name/short-name text
+(`=`, `+`, `-`, `@`, including leading whitespace/control characters) with an
+apostrophe and double literal leading apostrophes. Current-schema imports undo
+exactly that portable escaping. Legacy ten-column files use literal text.
+XLSX export cells are strings. Filename/MIME are server-owned:
+`evexia-designation-master.csv|xlsx` and `evexia-designation-template.csv|xlsx`.
+CSV is `text/csv; charset=utf-8`; XLSX uses the standard OpenXML spreadsheet MIME.
+
+Samples and exports require durable Download Logs acceptance before release.
+They are `designation` / `template|export`, CSV/XLSX, server-prepared evidence.
+`X-Download-Initiation` supports uncertain-ack deduplication;
+`X-Download-Log` must be present before a browser download. Logs contain no file
+content, filenames, search terms or record references and never claim disk completion.
+
+## UI and Staff selector
+
+The list/form no longer read/write the legacy designation store. Server filtering,
+counts, pagination, focus/manual refresh, desktop/mobile actions and explicit
+CSV/XLSX choice use the landed shared conventions. The existing shared import
+screen handles review/confirm. Date/time preferences apply to safe audit details.
+Mounted drafts survive same-identity renewal and retryable outages. Duplicate
+submissions are disabled. Stale/uncertain mutations require an explicit
+authoritative detail/conflict review; writes are never automatically replayed.
+Uncertain imports consume their confirmation and require the read-only server
+conflict check before any fresh explicit confirmation. Logout/identity changes
+discard private data and invalidate async results/download handoffs.
+
+Staff Management requests at most 100 active server choices in one bounded
+request on mount/refresh/editor open. More than 100 fails explicitly rather than
+silently accepting an incomplete list. Choice failure provides retry, blocks
+save and keeps mounted drafts. Editing preserves the existing saved label even
+if inactive/deleted/unavailable. Staff records keep labels only; there is no
+catalogue foreign key, migration, staff rewrite, payroll or authorization effect.
+
+## Isolated verification and contracts
+
+`pnpm run test:api-foundation` includes designation API/parser/lifecycle,
+migration-preservation, independent-connection stale/uniqueness/import races,
+authorization/forgery, exact decimal persistence, atomic rollback and transfer
+compatibility. `pnpm run validate:release` includes its protected transport/form
+validation and authenticated desktop/mobile/transfer/draft/staff-choice specs
+in the existing temporary PostgreSQL/API/Vite harness. Fixtures never use
+managed databases or real account credentials.
+
+FastAPI OpenAPI is authoritative. Regenerate with
+`python3 scripts/export-api-contract.py` then
+`pnpm --filter @workspace/api-spec run codegen`; generated upload callers select
+the supported multipart representation while the portal uses raw bytes.

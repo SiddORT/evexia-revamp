@@ -4,6 +4,11 @@ import { loadMRs, MR_STORAGE_KEY } from './mrs.js';
 import { loadDoctors } from './doctors.js';
 
 export const EXCEL_TEMPLATES = {
+  designation: {
+    title: 'Designation',
+    columns: ['Designation Name', 'Short Name', 'Level', 'Status', 'Basic + DA (%)', 'HRA (%)', 'Medical Allowance (%)', 'Travelling Allowance (%)', 'Special Allowance (%)', 'professional tax (Rs)'],
+    sample: [['Example designation', 'EX', '1', 'active', '0', '0', '0', '0', '0', '0']],
+  },
   'storage-location': {
     title: 'Storage Location',
     columns: ['Storage Location', 'Address', 'Status'],
