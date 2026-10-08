@@ -146,6 +146,7 @@ import type {
   PatientDirectoryResponse,
   PatientEdit,
   PatientFields,
+  PatientFilterChoices,
   PatientImportResult,
   PatientPage,
   PatientResponse,
@@ -6816,6 +6817,82 @@ export function useExportPatientDirectory<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getExportPatientDirectoryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetPatientFilterChoicesUrl = () => {
+  return `/api/v1/admin/patients/filters`;
+};
+
+/**
+ * @summary Filters
+ */
+export const getPatientFilterChoices = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PatientFilterChoices> => {
+  return customFetch<PatientFilterChoices>(getGetPatientFilterChoicesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPatientFilterChoicesQueryKey = () => {
+  return [`/api/v1/admin/patients/filters`] as const;
+};
+
+export const getGetPatientFilterChoicesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPatientFilterChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPatientFilterChoices>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPatientFilterChoicesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPatientFilterChoices>>
+  > = ({ signal }) => getPatientFilterChoices({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPatientFilterChoices>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPatientFilterChoicesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPatientFilterChoices>>
+>;
+export type GetPatientFilterChoicesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Filters
+ */
+
+export function useGetPatientFilterChoices<
+  TData = Awaited<ReturnType<typeof getPatientFilterChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPatientFilterChoices>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPatientFilterChoicesQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

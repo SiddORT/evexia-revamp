@@ -3,14 +3,13 @@ import uuid
 from sqlalchemy import and_, func, or_, select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.core.security import utcnow
-from app.db.models import Patient, AuditEvent
+from app.db.models import Patient, AuditEvent, User
 from app.db.patient_models import PatientDirectory as Directory
 from app.db.doctor_models import DoctorDirectory as Doctor
 from app.db.mr_models import MRDirectory
 from app.db.zone_models import Zone
 from app.schemas.patients import PatientFields
 from app.services import doctors, mrs, domain
-from app.services.zones import label
 
 class PatientError(mrs.MRError):
     def __init__(self, message="Patient service unavailable. Preserve your draft and retry later.", status=503, code="patient_unavailable"):
@@ -49,21 +48,55 @@ def assignment(db, doctor_id, existing=None):
     return doctor, mr, zone
 
 
-def projection(db, row):
-    owner = db.get(Patient, row.id)
-    doctor = db.get(Doctor, row.doctorId)
-    mr = db.get(MRDirectory, doctor.mrId) if doctor else None
-    zone = db.get(Zone, mr.zoneId) if mr and not mr.deleted_at else None
-    warnings = doctors.projection(db, doctor)["assignmentWarnings"] if doctor else ["Missing Doctor; repair explicitly."]
+def doctor_context(db, ids):
+    """Request-local scalar reference reads; include lifecycle tombstones."""
+    doctor_rows = mrs._bulk(db, ids, lambda keys: select(
+        Doctor.id, Doctor.name, Doctor.registrationNumber, Doctor.status, Doctor.mrId
+    ).where(Doctor.id.in_(keys)))
+    mr_rows = mrs._bulk(db, (row.mrId for row in doctor_rows.values()), lambda keys: select(
+        MRDirectory.id, MRDirectory.name, MRDirectory.status, MRDirectory.deleted_at, MRDirectory.zoneId
+    ).where(MRDirectory.id.in_(keys)))
+    zone_rows = mrs._bulk(db, (row.zoneId for row in mr_rows.values() if not row.deleted_at), lambda keys: select(
+        Zone.id, Zone.name, Zone.status, Zone.deleted_at
+    ).where(Zone.id.in_(keys)))
+    return dict(doctors=doctor_rows, mrs=mr_rows, zones=zone_rows)
+
+
+def projection_context(db, rows):
+    context = doctor_context(db, (row.doctorId for row in rows))
+    context["owners"] = mrs._bulk(db, (row.id for row in rows), lambda keys: select(
+        Patient.id, Patient.version).where(Patient.id.in_(keys)))
+    authors = mrs._bulk(db, (key for row in rows for key in (row.created_by, row.updated_by)),
+                       lambda keys: select(User.id, User.is_protected_system_admin).where(User.id.in_(keys)))
+    context["labels"] = {key: "Super Admin" if user.is_protected_system_admin else "Backend user"
+                         for key, user in authors.items()}
+    return context
+
+
+def relationship(context, doctor):
+    mr = context["mrs"].get(doctor.mrId) if doctor else None
+    zone = context["zones"].get(mr.zoneId) if mr and not mr.deleted_at else None
+    warnings = doctors.assignment_warnings(mr, zone) if doctor else ["Missing Doctor; repair explicitly."]
     if doctor and doctor.status != "active":
         warnings = ["Doctor inactive; unchanged assignment may be retained."] + warnings
+    return mr, zone, warnings
+
+
+def projection(db, row, context=None):
+    context = context if context is not None else projection_context(db, [row])
+    owner = context["owners"].get(row.id)
+    if owner is None:
+        raise PatientError("Patient identity is missing. Refresh and repair explicitly.", 409, "patient_identity_missing")
+    doctor = context["doctors"].get(row.doctorId)
+    mr, zone, warnings = relationship(context, doctor)
     return dict(**{key: getattr(row, key) for key in PatientFields.model_fields},
                 id=row.id, code=row.code, version=owner.version,
                 doctorName=doctor.name if doctor else "",
                 doctorRegistrationNumber=doctor.registrationNumber if doctor else "",
                 mrId=mr.id if mr and not mr.deleted_at else None, mrName=mr.name if mr and not mr.deleted_at else "",
                 zoneId=zone.id if zone and not zone.deleted_at else None, zoneName=zone.name if zone and not zone.deleted_at else "",
-                assignmentWarnings=warnings, createdBy=label(db, row.created_by), updatedBy=label(db, row.updated_by),
+                assignmentWarnings=warnings, createdBy=context["labels"].get(row.created_by, "Backend user"),
+                updatedBy=context["labels"].get(row.updated_by, "Backend user"),
                 createdAt=row.created_at, updatedAt=row.updated_at)
 
 
@@ -84,8 +117,9 @@ def listing(db, actor, query="", status="all", zone_id="", mr_id="", limit=10, o
     def work():
         mrs.authorize(db, actor, lock=False)
         clauses = predicates(query, status, zone_id, mr_id)
-        rows = db.scalars(select(Directory).where(*clauses).order_by(Directory.created_at.desc(), Directory.id.desc()).limit(limit).offset(offset))
-        result = dict(items=[projection(db, r) for r in rows],
+        rows = list(db.scalars(select(Directory).where(*clauses).order_by(Directory.created_at.desc(), Directory.id.desc()).limit(limit).offset(offset)))
+        context = projection_context(db, rows)
+        result = dict(items=[projection(db, r, context) for r in rows],
                       total=db.scalar(select(func.count()).select_from(Directory)),
                       filtered=db.scalar(select(func.count()).select_from(Directory).where(*clauses)), limit=limit, offset=offset)
         db.commit()
@@ -118,14 +152,40 @@ def choices(db, actor, query="", limit=100, offset=0, include_saved=None):
         saved = db.get(Doctor, include_saved) if include_saved else None
         if saved and saved not in rows:
             rows.append(saved)
+        context = doctor_context(db, (row.id for row in rows))
         items = []
         for row in rows:
-            value = doctors.projection(db, row)
+            mr, zone, warnings = relationship(context, row)
             items.append(dict(id=row.id, name=row.name, status=row.status,
-                              usable=row.status == "active" and not value["assignmentWarnings"],
-                              mrName=value["mrName"], zoneName=value["zoneName"]))
+                              usable=row.status == "active" and not warnings,
+                              mrName=mr.name if mr and not mr.deleted_at else "",
+                              zoneName=zone.name if zone and not zone.deleted_at else ""))
         db.commit()
         return dict(items=items, total=total, limit=limit, offset=offset)
+    return transaction(db, work)
+
+
+FILTER_CHOICE_LIMIT = 10000
+
+
+def filters(db, actor):
+    """Complete compact MR/Zone filter choices in one bounded snapshot query."""
+    def work():
+        mrs.authorize(db, actor, lock=False)
+        rows = list(db.execute(select(
+            MRDirectory.id, MRDirectory.name, MRDirectory.status,
+            Zone.id.label("zoneId"), Zone.name.label("zoneName")
+        ).outerjoin(Zone, and_(Zone.id == MRDirectory.zoneId, Zone.deleted_at.is_(None)))
+            .where(MRDirectory.deleted_at.is_(None))
+            .order_by(func.lower(MRDirectory.name), MRDirectory.id).limit(FILTER_CHOICE_LIMIT + 1)))
+        if len(rows) > FILTER_CHOICE_LIMIT:
+            raise PatientError("Patient filters exceed 10,000 MR choices. No partial choices were loaded.",
+                               409, "patient_filter_limit")
+        result = dict(items=[dict(id=row.id, name=row.name, status=row.status,
+                                  zoneId=row.zoneId, zoneName=row.zoneName or "") for row in rows],
+                      limit=FILTER_CHOICE_LIMIT)
+        db.commit()
+        return result
     return transaction(db, work)
 
 

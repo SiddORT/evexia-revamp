@@ -10,7 +10,7 @@ from app.api.v1.mrs import BINARY
 from app.db.session import get_db
 from app.schemas.patients import (
     PatientFields, PatientEdit, PatientStatus, PatientDirectoryResponse, PatientPage,
-    PatientChoices, PatientReview, PatientImportResult,
+    PatientChoices, PatientReview, PatientImportResult, PatientFilterChoices,
 )
 from app.services import patients, patient_transfer, mrs
 from app.services.downloads import server_record
@@ -37,6 +37,11 @@ def references(query: str = Query("", max_length=200), limit: int = Query(100, g
                offset: int = Query(0, ge=0, le=1000000), include_saved: uuid.UUID | None = None,
                actor=Depends(manager), db: Session = Depends(get_db)):
     return patients.choices(db, actor, query, limit, offset, include_saved)
+
+
+@router.get("/filters", response_model=PatientFilterChoices, operation_id="getPatientFilterChoices")
+def filters(actor=Depends(manager), db: Session = Depends(get_db)):
+    return patients.filters(db, actor)
 
 
 def file_response(db, actor, data, format, initiation_id, sample=False):

@@ -67,6 +67,60 @@ Doctor/MR/Zone labels are derived from current server relationships, not imports
 Directory search, status/MR/Zone predicates and stable newest-first pagination
 run server-side; counts and full-filter exports use the same predicates.
 
+### Large directories and reference choices
+
+List pages and full-filter exports build one request-local projection context.
+Authoritative Patient versions, Doctor registration/name/status, MR and Zone
+name/lifecycle state, and actor labels are read in batches of at most 500 keys.
+Only the scalar reference columns needed for display are loaded; projecting
+individual records performs no further database reads. These contexts are never
+cached across requests, sessions or mutations. Missing/deleted/inactive
+references retain the existing blank labels and explicit repair/retention
+warnings. Mutation ownership locks and expected-version checks are unchanged.
+Doctor choices use the same relationship warnings, including an explicitly
+requested saved inactive Doctor outside the search page.
+
+`GET /api/v1/admin/patients/filters` returns every non-deleted MR's compact
+ID/name/status and current non-deleted Zone ID/name (including inactive choices).
+It uses one ordered outer-join query, capped at **10,000 MR choices**, plus one
+sentinel row. Exceeding the cap returns `409 patient_filter_limit` without a
+partial response. It requires the same freshly verified protected Super Admin
+as the Patient directory and is no-store. Deleted Zones have blank labels;
+deleted MRs are omitted. The explicit Missing filters still use the existing
+server predicates. The Doctor assignment selector remains searchable and
+paginated at 100 rows maximum; this compact endpoint is for MR/Zone filters,
+not assignment authority.
+
+The Patient hook loads these filter choices once per mount, explicit refresh,
+or successful mutation, rather than fetching every MR page on each search or
+pagination change. Mounted choices are not persisted or shared between users;
+identity changes clear them and delayed responses are rejected. Reference
+failure blocks use with an explicit retry, never a browser-local fallback.
+
+Synthetic PostgreSQL measurements (isolated ephemeral test database; 5,001
+Patients, 501 distinct Doctors, shared MR/Zone; counts include API auth and
+download bookkeeping, timings are illustrative rather than latency guarantees):
+
+| Scenario | Previous SELECTs / seconds | Batched SELECTs / seconds |
+| --- | --- | --- |
+| First 100-row page | 407 / 0.203 | 12 / 0.065 |
+| Second 100-row page | 407 / 0.157 | 12 / 0.028 |
+| Broad search, offset 4,900 | 407 / 0.156 | 12 / 0.031 |
+| Rare one-row search | 11 / 0.014 | 12 / 0.014 |
+| No-match search | 7 / 0.011 | 7 / 0.010 |
+| Last page, offset 5,000 | 11 / 0.014 | 12 / 0.014 |
+| 5,000-row CSV export | 20,012 / 8.201 | 27 / 0.394 |
+| 5,000-row Excel export | 20,012 / 9.551 | 27 / 1.625 |
+| Rejected 5,001-row export | 5 / 0.008 | 5 / 0.008 |
+
+`tests/test_patient_scale.py` asserts query budgets instead of fragile timing
+thresholds, non-overlapping stable pages, exact counts and Patient versions,
+CSV/Excel parity, full-filter export membership (including rare/empty/missing
+filters), complete 106-MR choices, cap failure, authorization, and lifecycle
+label/warning parity. It is part of release validation and runs via
+`sh scripts/test-api-foundation.sh -s tests/test_patient_scale.py`.
+No managed database seeding or production deployment is involved.
+
 Patient creation adds the existing Patient identity. Edits/status changes lock
 and advance that identity's version, with transactional audit metadata. Doctor
 reassignment updates assigned_mr_id atomically without moving or rekeying files.

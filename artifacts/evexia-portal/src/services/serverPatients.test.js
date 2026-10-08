@@ -21,6 +21,10 @@ test('Patient transport protects filters, expected versions, review bytes and la
     if (url.includes('/admin/patients')) {
       if (mode === 'uncertain') throw new TypeError('Synthetic lost response');
       if (mode === 'late') return { ok: true, status: 200, json: () => { arrived(); return new Promise((r) => { release = () => r({ items: [] }); }); } };
+      if (url.includes('/filters')) {
+        if (mode === 'filter-limit') return Response.json({ error: { message: 'No partial choices were loaded.', code: 'patient_filter_limit' } }, { status: 409 });
+        return Response.json({ items: Array.from({ length: 106 }, (_, i) => ({ id: `mr-${i}`, name: `MR ${i}`, zoneId: saved.id, zoneName: 'Zone' })), limit: mode === 'malformed' ? 100 : 10000 });
+      }
       if (url.includes('/sample') || url.includes('/export')) return new Response('prepared workbook', { headers: { 'X-Download-Log': saved.id } });
       return Response.json({ items: [], total: 0, filtered: 0 });
     }
@@ -31,6 +35,14 @@ test('Patient transport protects filters, expected versions, review bytes and la
   const service = await import('./serverPatients.js');
   try {
     await session.loginAdmin('test@example.com', 'Synthetic password', false);
+    const beforeChoices = calls.length;
+    assert.equal((await service.patientMRChoices()).length, 106);
+    assert.equal(calls.length, beforeChoices + 1, 'Complete choices use one Patient request, never all MR pages');
+    mode = 'filter-limit';
+    await assert.rejects(service.patientMRChoices(), /partial choices/);
+    mode = 'malformed';
+    await assert.rejects(service.patientMRChoices(), /filter choices are unavailable/);
+    mode = '';
     await service.listPatients({ query: 'PAT-search', zone_id: saved.id, status: 'inactive', limit: 2, offset: 2 });
     await service.editPatient(saved, { name: 'Edited', dateOfBirth: '2000-01-01', dialCountry: 'GB', phone: '0712345678' });
     await service.statusPatient(saved, 'inactive');
@@ -52,7 +64,7 @@ test('Patient transport protects filters, expected versions, review bytes and la
     assert.equal(calls.length, before + 1);
     mode = 'late';
     const ready = new Promise((r) => { arrived = r; });
-    const pending = service.listPatients();
+    const pending = service.patientMRChoices();
     await ready;
     await session.logoutAdmin();
     release();

@@ -4881,6 +4881,22 @@ export const ExportPatientDirectoryHeader = zod.object({
 export const ExportPatientDirectoryResponse = zod.unknown();
 
 /**
+ * @summary Filters
+ */
+export const GetPatientFilterChoicesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.enum(["active", "inactive"]),
+      zoneId: zod.union([zod.string().uuid(), zod.null()]),
+      zoneName: zod.string(),
+    }),
+  ),
+  limit: zod.number().int(),
+});
+
+/**
  * @summary Commit
  */
 export const commitPatientImportQueryFilenameMax = 200;

@@ -203,9 +203,10 @@ def export(db, actor, query="", status="all", zone_id="", mr_id="", format="csv"
         rows = list(db.scalars(select(Directory).where(*clauses).order_by(Directory.created_at.desc(), Directory.id.desc()).limit(EXPORT_LIMIT + 1)))
         if len(rows) > EXPORT_LIMIT:
             raise patients.PatientError("More than 5,000 patients match. Narrow filters.", 409, "patient_export_limit")
+        context = patients.projection_context(db, rows)
         result = []
         for row in rows:
-            values = patients.projection(db, row)
+            values = patients.projection(db, row, context)
             # Registration is portable across environments; ownership UUID is excluded.
             values["doctorId"] = ""
             values["phone"] = DIAL[row.dialCountry] + row.phone

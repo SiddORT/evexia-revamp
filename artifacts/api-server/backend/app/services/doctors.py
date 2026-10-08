@@ -44,9 +44,7 @@ def assignment(db, mr_id, existing=None):
     return mr, zone
 
 
-def projection(db, row):
-    mr = db.get(MRDirectory, row.mrId)
-    zone = db.get(Zone, mr.zoneId) if mr and not mr.deleted_at else None
+def assignment_warnings(mr, zone):
     warnings = []
     if not mr or mr.deleted_at:
         warnings.append("Missing/deleted MR. Reassign explicitly.")
@@ -56,6 +54,13 @@ def projection(db, row):
         warnings.append("Missing/deleted Zone. Correct the MR assignment.")
     elif zone and zone.status != "active":
         warnings.append("Zone is inactive; the unchanged assignment may be retained.")
+    return warnings
+
+
+def projection(db, row):
+    mr = db.get(MRDirectory, row.mrId)
+    zone = db.get(Zone, mr.zoneId) if mr and not mr.deleted_at else None
+    warnings = assignment_warnings(mr, zone)
     return dict(**{key: getattr(row, key) for key in DoctorFields.model_fields},
                 id=row.id, version=row.version, verification=row.verification,
                 mrName=mr.name if mr and not mr.deleted_at else "",

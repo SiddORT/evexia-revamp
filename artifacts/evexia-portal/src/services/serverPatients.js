@@ -1,12 +1,17 @@
 import { patientRequest } from '../auth/adminSession.js';
 import { downloadServerBlob } from './downloads.js';
-import { allDoctorMRChoices } from './serverDoctors.js';
 
 const clean = (params = {}) => Object.fromEntries(Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '' && value !== 'all'));
 export const listPatients = (params, signal) => patientRequest('', { params: clean(params), signal });
 export const getPatient = (id, signal) => patientRequest(`/${id}`, { signal });
 export const patientDoctorChoices = (params, signal) => patientRequest('/references', { params: clean(params), signal });
-export const patientMRChoices = allDoctorMRChoices;
+export async function patientMRChoices(signal) {
+  const result = await patientRequest('/filters', { signal });
+  if (!Array.isArray(result.items) || !Number.isInteger(result.limit) || result.limit < 1 || result.items.length > result.limit) {
+    throw new Error('Patient filter choices are unavailable. Refresh before continuing.');
+  }
+  return result.items;
+}
 export const createPatient = (body) => patientRequest('', { body });
 export const editPatient = (record, body) => patientRequest(`/${record.id}/edit`, { body: { ...body, expected_version: record.version } });
 export const statusPatient = (record, status) => patientRequest(`/${record.id}/status`, { body: { status, expected_version: record.version } });

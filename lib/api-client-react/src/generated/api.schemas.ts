@@ -1925,6 +1925,27 @@ export interface PatientFields {
   status?: PatientFieldsStatus;
 }
 
+export type PatientFilterMRStatus =
+  (typeof PatientFilterMRStatus)[keyof typeof PatientFilterMRStatus];
+
+export const PatientFilterMRStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface PatientFilterMR {
+  id: string;
+  name: string;
+  status: PatientFilterMRStatus;
+  zoneId: string | null;
+  zoneName: string;
+}
+
+export interface PatientFilterChoices {
+  items: PatientFilterMR[];
+  limit: number;
+}
+
 export interface PatientImportResult {
   imported: number;
 }

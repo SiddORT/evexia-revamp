@@ -106,6 +106,19 @@ class PatientChoices(BaseModel):
     offset: int
 
 
+class PatientFilterMR(BaseModel):
+    id: uuid.UUID
+    name: str
+    status: Literal["active", "inactive"]
+    zoneId: uuid.UUID | None
+    zoneName: str
+
+
+class PatientFilterChoices(BaseModel):
+    items: list[PatientFilterMR]
+    limit: int
+
+
 class PatientImportRow(BaseModel):
     row: int
     name: str
