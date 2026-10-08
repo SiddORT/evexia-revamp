@@ -13,7 +13,8 @@
 .rp-add { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; border: 1px dashed var(--admin-border); border-radius: 9px; background: transparent; color: var(--admin-text-soft); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
 .rp-add:hover { background: var(--admin-state-hover); color: var(--admin-text); }
 .rp-role:focus-visible, .rp-add:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
-.rp-pager { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rp-pager { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.rp-pager .admin-button { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 .rp-skel { display: grid; gap: 8px; }
 .rp-skel i { display: block; height: 62px; border-radius: 9px; background: var(--admin-badge-inactive-bg); animation: rp-pulse 1.2s ease-in-out infinite; }
 @keyframes rp-pulse { 50% { opacity: .45; } }
@@ -69,7 +70,7 @@
 
 /* ---- Tabs ---- */
 .rp-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; margin: 0 0 14px; border: 1px solid var(--admin-border); border-radius: 12px; background: var(--admin-state-row); max-width: 100%; }
-.rp-tabs [role="tab"] { flex: 1 1 140px; min-height: 40px; padding: 8px 14px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--admin-text-soft); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; overflow-wrap: anywhere; }
+.rp-tabs [role="tab"] { flex: 1 1 140px; min-height: 40px; padding: 8px 14px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--admin-text-soft); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; overflow-wrap: anywhere; scroll-margin-block: 8px; }
 .rp-tabs [role="tab"]:hover { background: var(--admin-state-hover); color: var(--admin-text); }
 .rp-tabs [role="tab"][aria-selected="true"] { background: var(--admin-sidebar-active-bg); color: var(--admin-sidebar-active); border-color: var(--admin-primary); }
 .rp-tabs [role="tab"]:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }

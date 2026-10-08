@@ -5,12 +5,18 @@ set -eu
 [ "${1:-}" != "--" ] || shift
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+if [ "${EVEXIA_ROLES_LAYOUT_ONLY:-}" = "1" ]; then
+  if [ "$#" -ne 1 ] || [ "$1" != "artifacts/evexia-portal/tests/roles-permissions.preview.spec.mjs" ]; then
+    echo "EVEXIA_ROLES_LAYOUT_ONLY is diagnostic-only and requires the single Roles and Permissions spec." >&2
+    exit 1
+  fi
+fi
 for tool in initdb pg_ctl createdb python3 curl node pnpm; do
   command -v "$tool" >/dev/null || { echo "Missing authenticated-preview prerequisite: $tool" >&2; exit 1; }
 done
 if [ "${EVEXIA_NIX_DOWNLOAD_ENGINES:-}" = "1" ]; then
   case "$*" in
-    ""|*download-logs.preview.spec.mjs*|*patients-layout.preview.spec.mjs*)
+    ""|*download-logs.preview.spec.mjs*|*patients-layout.preview.spec.mjs*|*roles-permissions.preview.spec.mjs*)
       (cd "$ROOT" && node scripts/prepare-nix-download-browsers.mjs) ;;
   esac
 fi
@@ -80,6 +86,7 @@ export LOCAL_STORAGE_ROOT="$PGROOT/storage"
 export PYTHONPATH="$ROOT/artifacts/api-server/backend"
 
 export EVEXIA_TEST_ADMIN_PASSWORD="$SUPER_ADMIN_INITIAL_PASSWORD"
+export EVEXIA_ISOLATED_AUTH_PREVIEW=1
 export EVEXIA_PREVIEW_BASE_URL="http://127.0.0.1:$PORT"
 export EVEXIA_TEST_API_PROXY_TARGET="http://127.0.0.1:$API_PORT"
 
@@ -151,11 +158,15 @@ echo "Running authenticated browser previews against an isolated synthetic Postg
 OTHER_SPECS=
 DOWNLOADS=0
 PATIENT_LAYOUT=0
+ROLE_LAYOUT=0
 ISOLATE_MR=0
 for spec in $SPECS; do
   case "$spec" in
     */download-logs.preview.spec.mjs) DOWNLOADS=1 ;;
     */patients-layout.preview.spec.mjs) PATIENT_LAYOUT=1 ;;
+    */roles-permissions.preview.spec.mjs)
+      ROLE_LAYOUT=1
+      OTHER_SPECS="$OTHER_SPECS $spec" ;;
     */mrs-backend.preview.spec.mjs)
       # Doctor fixtures legitimately provision MR accounts too. Do not consume
       # the MR password-reset test's ten-per-hour actor budget with other suites,
@@ -164,9 +175,13 @@ for spec in $SPECS; do
     *) OTHER_SPECS="$OTHER_SPECS $spec" ;;
   esac
 done
-if [ -n "$OTHER_SPECS" ]; then
+if [ -n "$OTHER_SPECS" ] && [ "${EVEXIA_ROLES_LAYOUT_ONLY:-}" != "1" ]; then
   # shellcheck disable=SC2086
-  pnpm exec playwright test $OTHER_SPECS --workers=1 --output="$RESULTS/chromium-previews"
+  pnpm exec playwright test $OTHER_SPECS --grep-invert='@roles-layout' --workers=1 --output="$RESULTS/chromium-previews"
+fi
+if [ "$ROLE_LAYOUT" -eq 1 ]; then
+  echo "Roles and Permissions focused gate: Chromium, Firefox and WebKit (not native Safari). Missing engines are failures."
+  pnpm exec playwright test --config=playwright.roles-permissions.config.mjs --workers=1 --output="$RESULTS/roles-permissions-matrix"
 fi
 if [ "$DOWNLOADS" -eq 1 ]; then
   echo "Download gate: Chromium, Firefox and WebKit (Safari engine, not native Safari). Missing engines are failures."

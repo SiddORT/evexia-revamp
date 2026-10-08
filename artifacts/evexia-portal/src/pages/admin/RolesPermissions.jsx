@@ -184,6 +184,16 @@ export default function RolesPermissions() {
     e.preventDefault();
     changeTab(e.key === 'Home' ? 'roles' : e.key === 'End' ? 'permissions' : tab === 'roles' ? 'permissions' : 'roles', true);
   };
+  const revealKeyboardTab = (e) => {
+    const target = e.currentTarget;
+    // Firefox's native focus scroll can leave a tab partly above the viewport.
+    // Run after native focus scrolling and preserve pointer-click positioning.
+    requestAnimationFrame(() => {
+      if (document.activeElement === target && target.matches(':focus-visible')) {
+        target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      }
+    });
+  };
   const proceed = () => {
     const l = leave; setLeave(null); setDraft(null);
     if (l.kind === 'role') { setSelectedId(l.id); setNotice(''); }
@@ -298,7 +308,7 @@ export default function RolesPermissions() {
     {blocked && <div className="rp-alert rp-alert--page" role="alert" data-testid="status-roles-blocked">A previous change had an unknown result. Refresh roles to confirm the current state before submitting again.</div>}
     {notice && <div className="admin-feedback rp-feedback" role="status" data-testid="status-roles-notice">{notice}</div>}
     <div className="rp-tabs" role="tablist" aria-label="Roles and permissions">
-      {['roles', 'permissions'].map((key) => <button key={key} type="button" id={`rp-tab-${key}`} role="tab" aria-selected={tab === key} aria-controls={`rp-panel-${key}`} tabIndex={tab === key ? 0 : -1} onKeyDown={tabKeys} onClick={() => changeTab(key)} data-testid={`tab-${key}`}>{key === 'roles' ? 'Roles' : 'Permissions'}</button>)}
+      {['roles', 'permissions'].map((key) => <button key={key} type="button" id={`rp-tab-${key}`} role="tab" aria-selected={tab === key} aria-controls={`rp-panel-${key}`} tabIndex={tab === key ? 0 : -1} onFocus={revealKeyboardTab} onKeyDown={tabKeys} onClick={() => changeTab(key)} data-testid={`tab-${key}`}>{key === 'roles' ? 'Roles' : 'Permissions'}</button>)}
     </div>
     {guarded && tab === 'roles' && <div className="rp-scope" role="status">A permission draft for {role?.name} is kept. <button type="button" className="admin-button admin-button--secondary" onClick={() => changeTab('permissions')}>Review permission draft</button> Save or discard it before changing roles.</div>}
     <div id={`rp-panel-${tab}`} role="tabpanel" aria-labelledby={`rp-tab-${tab}`} className={`rp rp--${tab === 'roles' ? 'directory' : 'permissions'}`}>

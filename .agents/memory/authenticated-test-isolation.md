@@ -53,6 +53,17 @@ then fail on business uniqueness before reaching the actual regression.
 **How to apply:** Include a fresh synthetic tag in each seeded business identity;
 do not erase records or relax production uniqueness to make later cases run.
 
+Explicitly reselect a fixture's own record after reload when a directory resets
+its selection, rather than assume the first row still belongs to that test.
+
+**Why:** Sequential engine projects share the disposable database. A later
+project can reload into an earlier project's alphabetically first role and
+mistake that role's empty grants for failed permission persistence.
+
+**How to apply:** Retain the created synthetic record's identity and verify its
+selection before asserting persisted state. Do not clear other projects' data
+just to force a predictable first row.
+
 Cold synthetic previews can exceed short browser defaults when the workspace is
 CPU-contended, even with correctly isolated listeners. Wait for authenticated
 content and route data with bounded startup deadlines, without dropping exact

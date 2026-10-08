@@ -1,6 +1,15 @@
 import { test, expect } from '@playwright/test';
+import { enlargeRoleText, expectRoleLayoutFits, expectRoleFocusVisible, reachRoleControlByKeyboard } from './helpers/rolesPermissionsLayout.mjs';
+import { randomUUID } from 'node:crypto';
 
-if (process.env.EVEXIA_CHROMIUM_PATH) test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
+// Matrix projects own their launch settings. Never apply Chromium's executable
+// to a Firefox/WebKit project.
+test.use({
+  launchOptions: async ({ browserName }, use, info) => {
+    await use(info.project.use.launchOptions || (browserName === 'chromium' && process.env.EVEXIA_CHROMIUM_PATH
+      ? { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } : {}));
+  },
+});
 const base = () => {
   if (!process.env.EVEXIA_PREVIEW_BASE_URL) throw Error('Use the isolated authenticated preview harness.');
   return process.env.EVEXIA_PREVIEW_BASE_URL.replace(/\/$/, '');
@@ -377,5 +386,147 @@ test('tabs keep drafts; search and mixed groups use the whole live catalogue; sa
       await page.getByTestId(tab === 'roles' ? 'button-add-role' : 'button-save-permissions').scrollIntoViewIfNeeded();
       await page.screenshot({ path: testInfo.outputPath(`tabs-${tab}-${width}-${appearance}-enlarged.png`) });
     }
+  }
+});
+
+test.describe('@roles-layout focused engine coverage', () => {
+  let layoutRole; // Serial projects/one worker; owned only by the current case.
+  test.beforeEach(async ({ page, browser, browserName }, info) => {
+    if (process.env.EVEXIA_ISOLATED_AUTH_PREVIEW !== '1') throw Error('Disposable authenticated fixture required.');
+    const evidence = { project: info.project.name, engine: browserName, version: browser.version(),
+      nativeSafari: false };
+    console.log(`Roles and Permissions engine: ${JSON.stringify(evidence)}`);
+    await info.attach('engine-evidence', { body: JSON.stringify(evidence), contentType: 'application/json' });
+    await open(page);
+    // Only this new disposable record is edited, and retry/worker restarts
+    // cannot collide with earlier fixture names. No directory-wide deletion.
+    layoutRole = await create(page, `Layout Reviewer ${randomUUID()}`, 'Synthetic review team metadata with a longer readable description.');
+  });
+
+  test('keyboard tabs, native mixed groups and search-independent selection', async ({ page }) => {
+    const roles = page.getByTestId('tab-roles'), permissions = page.getByTestId('tab-permissions');
+    const groups = ['checkbox-zone-permissions', 'checkbox-masters-permissions'];
+    const expectGroups = async (checked, mixed) => {
+      for (const id of groups) {
+        const input = page.getByTestId(id);
+        await expect(input).toHaveAttribute('aria-checked', mixed ? 'mixed' : String(checked));
+        expect(await input.evaluate((node) => ({
+          tag: node.tagName, type: node.type, checked: node.checked, mixed: node.indeterminate,
+        }))).toEqual({ tag: 'INPUT', type: 'checkbox', checked, mixed });
+      }
+    };
+    await roles.focus();
+    // Establish real keyboard modality. Firefox intentionally keeps a
+    // pointer-focused control without :focus-visible after programmatic focus.
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Shift+Tab');
+    await expectRoleFocusVisible(roles);
+    await expect(roles).toHaveAttribute('tabindex', '0');
+    await expect(permissions).toHaveAttribute('tabindex', '-1');
+    for (const [key, target, hidden] of [
+      ['ArrowRight', permissions, roles], ['ArrowRight', roles, permissions],
+      ['ArrowLeft', permissions, roles], ['Home', roles, permissions], ['End', permissions, roles],
+    ]) {
+      await page.keyboard.press(key);
+      await expectRoleFocusVisible(target);
+      await expect(target).toHaveAttribute('aria-selected', 'true');
+      await expect(target).toHaveAttribute('tabindex', '0');
+      await expect(hidden).toHaveAttribute('tabindex', '-1');
+      const panelId = await target.getAttribute('aria-controls');
+      await expect(page.locator(`#${panelId}`)).toBeVisible();
+      await expect(page.locator(`#${await hidden.getAttribute('aria-controls')}`)).toBeHidden();
+    }
+    await page.keyboard.press('Tab');
+    await expect(permissions).not.toBeFocused();
+    await expect(roles).not.toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expectRoleFocusVisible(permissions);
+    await expectGroups(false, false);
+    await page.getByTestId('checkbox-permission-zone.import').check();
+    await expectGroups(false, true);
+    await page.getByTestId('input-search-permissions').fill('Export');
+    await expect(page.locator('.rp-matrix__grid input')).toHaveCount(1);
+    await expect(page.getByTestId('text-selected-permission-count')).toContainText('1 of 5');
+    // Mixed -> all -> none through the actual native keyboard action.
+    for (const id of groups) {
+      await page.getByTestId('input-search-permissions').fill('No matching grant');
+      await expect(page.getByTestId('status-permissions-no-results')).toBeVisible();
+      await reachRoleControlByKeyboard(page, page.getByTestId('input-search-permissions'), page.getByTestId(id));
+      await page.keyboard.press('Space');
+      await expectRoleFocusVisible(page.getByTestId(id));
+      await expectGroups(true, false);
+      await expect(page.getByTestId('text-selected-permission-count')).toContainText('5 of 5');
+      await page.keyboard.press('Space');
+      await expectGroups(false, false);
+      await expect(page.getByTestId('text-selected-permission-count')).toContainText('0 of 5');
+      await page.getByTestId('input-search-permissions').fill('');
+      await expect(page.locator('.rp-matrix__grid input:checked')).toHaveCount(0);
+      await page.getByTestId('checkbox-permission-zone.import').check();
+      await expectGroups(false, true);
+    }
+    await page.getByTestId('input-search-permissions').fill('Export');
+    await page.getByTestId('button-permissions-all').click();
+    await expectGroups(true, false);
+    await page.getByTestId('input-search-permissions').fill('No matching grant');
+    await page.getByTestId('button-permissions-none').click();
+    await expectGroups(false, false);
+    await page.getByTestId('input-search-permissions').fill('');
+    await page.getByTestId('checkbox-permission-zone.import').check();
+    await roles.click();
+    await expect(page.locator('.rp-meta')).toContainText('Synthetic review team metadata');
+    await permissions.click();
+    await expectGroups(false, true);
+    await expect(page.getByTestId('checkbox-permission-zone.import')).toBeChecked();
+    const saved = page.waitForResponse((r) => r.url().endsWith('/permissions') && r.request().method() === 'POST');
+    await page.getByTestId('button-save-permissions').click();
+    const response = await saved;
+    expect(response.status()).toBe(200);
+    expect(response.request().postDataJSON().permissions).toEqual(['zone.import']);
+    await expect(page.getByTestId('button-save-permissions')).toBeDisabled();
+    await page.reload();
+    await expect(page.getByTestId('button-add-role')).toBeEnabled();
+    await page.getByTestId(`button-role-${layoutRole.id}`).click();
+    await expect(page.getByTestId('text-active-role')).toHaveText(layoutRole.name);
+    await permissions.click();
+    await expect(page.getByTestId('checkbox-permission-zone.import')).toBeChecked();
+    await expectGroups(false, true);
+  });
+
+  for (const width of [1440, 375]) for (const theme of ['classic', 'modern']) for (const appearance of ['light', 'dark']) {
+    test(`200% text at ${width}px ${theme}/${appearance} in both tabs`, async ({ page }, info) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.evaluate(async ({ theme, appearance }) => {
+        const { setAdminPreference } = await import('/src/components/admin/adminPreferences.js');
+        setAdminPreference('theme', theme); setAdminPreference('appearance', appearance);
+      }, { theme, appearance });
+      await expect(page.locator('.admin-shell')).toHaveAttribute('data-admin-theme', theme);
+      await expect(page.locator('.admin-shell')).toHaveAttribute('data-admin-appearance', appearance);
+      if (width < 900) {
+        await expect(page.locator('#admin-navigation')).toHaveAttribute('aria-hidden', 'true');
+        await expect.poll(() => page.locator('#admin-navigation').evaluate((node) => node.getBoundingClientRect().right)).toBeLessThanOrEqual(0);
+      }
+      const font = await page.getByTestId('tab-roles').evaluate((node) => parseFloat(getComputedStyle(node).fontSize));
+      const actionFont = await page.getByTestId('button-save-permissions').evaluate((node) => parseFloat(getComputedStyle(node).fontSize));
+      await enlargeRoleText(page);
+      expect(await page.getByTestId('tab-roles').evaluate((node) => parseFloat(getComputedStyle(node).fontSize))).toBe(font * 2);
+      expect(await page.getByTestId('button-save-permissions').evaluate((node) => parseFloat(getComputedStyle(node).fontSize))).toBe(actionFont * 2);
+      for (const tab of ['roles', 'permissions']) {
+        await page.getByRole('tab', { selected: true }).focus();
+        await page.keyboard.press('Tab');
+        await page.keyboard.press('Shift+Tab');
+        await page.keyboard.press(tab === 'roles' ? 'Home' : 'End');
+        await expectRoleFocusVisible(page.getByTestId(`tab-${tab}`));
+        await expectRoleLayoutFits(page);
+        await page.screenshot({ path: info.outputPath(`${tab}-200-percent.png`), fullPage: true });
+      }
+      // Pending counts and enabled actions must also fit; the clean state alone
+      // would miss the dynamic draft layout.
+      await page.getByTestId('checkbox-permission-zone.import').check();
+      await expect(page.getByTestId('button-save-permissions')).toBeEnabled();
+      await enlargeRoleText(page); // Include the newly mounted draft count.
+      await expectRoleLayoutFits(page);
+      await page.getByTestId('button-save-permissions').scrollIntoViewIfNeeded();
+      await page.screenshot({ path: info.outputPath('permissions-draft-actions-200-percent.png') });
+    });
   }
 });
