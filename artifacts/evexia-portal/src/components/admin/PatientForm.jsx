@@ -209,8 +209,16 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
     }
   }
 
+  const selectedPin = pinState.choices.find((item) => item.city === values.city && item.state === values.state && item.country === values.country);
   return (
-    <form className="mr-form patient-form" ref={formRef} onSubmit={handleSubmit} noValidate data-testid="form-patient">
+    <form className="mr-form patient-form" ref={formRef} onSubmit={handleSubmit}
+      onFocusCapture={(event) => {
+        // Native focus scrolling can leave enlarged selects partly below the
+        // viewport in Firefox. Keep the entire focused control (and its scroll
+        // margin) visible without changing its value or moving keyboard focus.
+        if (event.target.matches('input, select, button')) event.target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      }}
+      noValidate data-testid="form-patient">
       <div className="mr-form__tabs" role="tablist" aria-label="Patient profile sections">
         {TABS.map((tab, index) => (
           <button key={tab.id} ref={(node) => { tabRefs.current[index] = node; }} type="button"
@@ -274,10 +282,12 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
             {renderField('state', 'State', { placeholder: 'State', autoComplete: 'address-level1' })}
             {renderField('country', 'Country', { placeholder: 'Country', autoComplete: 'country-name' })}
             {pinState.message && <p role="status">{pinState.message}</p>}
-            {pinState.choices.length > 1 && <div className="mr-form__field"><label htmlFor="patient-pin-location">PIN locations</label><select id="patient-pin-location" className="mr-form__control" defaultValue="" onChange={(event) => {
+            {pinState.choices.length > 1 && <div className="mr-form__field mr-form__field--wide"><label htmlFor="patient-pin-location">PIN locations</label><select id="patient-pin-location" className="mr-form__control" aria-describedby={selectedPin ? 'patient-pin-selection' : undefined} defaultValue="" onChange={(event) => {
               const item = pinState.choices[Number(event.target.value)];
               if (item) { addressRevision.current++; pinRequest.current++; setValues((old) => ({ ...old, city: item.city, state: item.state, country: item.country })); }
-            }}><option value="">Select a location</option>{pinState.choices.map((item, index) => <option value={index} key={index}>{item.city}, {item.state}, {item.country}</option>)}</select></div>}
+            }}><option value="">Select a location</option>{pinState.choices.map((item, index) => <option value={index} key={index}>{item.city}, {item.state}, {item.country}</option>)}</select>
+              {selectedPin && <p id="patient-pin-selection" className="mr-form__hint">{selectedPin.city}, {selectedPin.state}, {selectedPin.country}</p>}
+            </div>}
           </div>
         </section>
       </div>

@@ -10,7 +10,7 @@ for tool in initdb pg_ctl createdb python3 curl node pnpm; do
 done
 if [ "${EVEXIA_NIX_DOWNLOAD_ENGINES:-}" = "1" ]; then
   case "$*" in
-    ""|*download-logs.preview.spec.mjs*)
+    ""|*download-logs.preview.spec.mjs*|*patients-layout.preview.spec.mjs*)
       (cd "$ROOT" && node scripts/prepare-nix-download-browsers.mjs) ;;
   esac
 fi
@@ -140,6 +140,7 @@ if [ "$#" -eq 0 ]; then
   SPECS="$SPECS artifacts/evexia-portal/tests/mrs-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/doctors-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/patients-backend.preview.spec.mjs"
+  SPECS="$SPECS artifacts/evexia-portal/tests/patients-layout.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/download-logs.preview.spec.mjs artifacts/evexia-portal/tests/staff-permissions.preview.spec.mjs"
 fi
 echo "Running authenticated browser previews against an isolated synthetic PostgreSQL/API fixture (API $API_PORT, portal $PORT)."
@@ -149,10 +150,12 @@ echo "Running authenticated browser previews against an isolated synthetic Postg
 # Run sequentially: concurrent projects would replace the synthetic session.
 OTHER_SPECS=
 DOWNLOADS=0
+PATIENT_LAYOUT=0
 ISOLATE_MR=0
 for spec in $SPECS; do
   case "$spec" in
     */download-logs.preview.spec.mjs) DOWNLOADS=1 ;;
+    */patients-layout.preview.spec.mjs) PATIENT_LAYOUT=1 ;;
     */mrs-backend.preview.spec.mjs)
       # Doctor fixtures legitimately provision MR accounts too. Do not consume
       # the MR password-reset test's ten-per-hour actor budget with other suites,
@@ -168,6 +171,16 @@ fi
 if [ "$DOWNLOADS" -eq 1 ]; then
   echo "Download gate: Chromium, Firefox and WebKit (Safari engine, not native Safari). Missing engines are failures."
   pnpm exec playwright test --config=playwright.downloads.config.mjs --workers=1 --output="$RESULTS/download-matrix"
+fi
+if [ "$PATIENT_LAYOUT" -eq 1 ]; then
+  echo "Patient enlarged-text gate: Chromium, Firefox and WebKit (Safari engine, not native Safari). Missing engines are failures."
+  if [ "$#" -eq 0 ]; then
+    # Reference setup legitimately provisions MR credentials. Keep its actor
+    # budget separate from the larger Doctor/Patient baseline release suite.
+    sh "$ROOT/scripts/run-authenticated-previews.sh" artifacts/evexia-portal/tests/patients-layout.preview.spec.mjs
+  else
+    pnpm exec playwright test --config=playwright.patients.config.mjs --workers=1 --output="$RESULTS/patient-layout-matrix"
+  fi
 fi
 if [ "$ISOLATE_MR" -eq 1 ]; then
   echo "MR credential flows: separate private database, listeners and audit budget."

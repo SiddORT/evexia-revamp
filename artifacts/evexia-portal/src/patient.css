@@ -10,6 +10,35 @@
   line-height: 1.5;
 }
 .patient-form__privacy strong { font-weight: 700; }
+/* Keep Patient controls usable when text grows independently of the viewport.
+   Native selects retain their full accessible option labels and can wrap the
+   surrounding layout without reserving a fixed-width country-code column. */
+.patient-form { min-width: 0; overflow-wrap: anywhere; }
+.patient-form .mr-form__tabs { flex-wrap: wrap; }
+.patient-form .mr-form__control { height: auto; min-height: 42px; padding-block: 9px; line-height: 1.5; }
+.patient-form select.mr-form__control {
+  /* WebKit's native closed-select renderer lets long option widths affect
+     ancestor scroll geometry even when the control itself fits. Retain native
+     selection/keyboard behavior with a CSS arrow and contained closed label. */
+  appearance: none;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-inline-end: 32px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--admin-text-soft) 50%), linear-gradient(135deg, var(--admin-text-soft) 50%, transparent 50%);
+  background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+.patient-form .admin-phone-input { flex-wrap: wrap; }
+.patient-form .admin-phone-input > select.admin-phone-input__country { flex: 1 1 9em; width: auto; padding-inline-end: 32px; }
+.patient-form .admin-phone-input > input { flex: 2 1 10em; }
+.patient-form :is(.mr-form__actions, .mr-form__footer, .mr-form__section-head) { flex-wrap: wrap; }
+.patient-form .mr-form__actions { display: flex; }
+.patient-form :is(.admin-button, .mr-form__tab) { max-width: 100%; height: auto; white-space: normal; overflow-wrap: anywhere; }
+.patient-form .mr-form__footer-note { min-width: 0; }
+.patient-form .mr-form__tab-error { flex-shrink: 0; width: 1.6em; height: 1.6em; line-height: 1; }
+.patient-form :is(input, select, button) { scroll-margin-block: 12px; }
 .patient-form__age[readonly] {
   background: var(--admin-table-head);
   color: var(--admin-text-soft);
@@ -38,6 +67,22 @@
 .patient-import__review { margin-top: 22px; }
 .patient-import__review .admin-table { min-width: 650px; }
 .patient-import__actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+.excel-import--patient, .excel-import--patient :is(.excel-import__card, .excel-import__report, .excel-import__report-head > div, .admin-page-head > div) { min-width: 0; }
+.excel-import--patient { overflow-wrap: anywhere; }
+.excel-import--patient :is(.admin-button, .excel-import__tab, .excel-import__back) { max-width: 100%; white-space: normal; height: auto; padding-block: 8px; }
+.excel-import--patient .excel-import__sample-actions { max-width: 100%; }
+.excel-import--patient .admin-page-head h1 { line-height: 1.3; }
+.excel-import--patient .excel-import__report-head { flex-wrap: wrap; }
+.excel-import--patient .excel-import__report-head > div:first-child { flex: 1 1 20rem; }
+.excel-import--patient .excel-import__totals { flex-shrink: 0; }
+.excel-import--patient .excel-import__picker span { min-width: 0; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+.excel-import--patient svg { flex-shrink: 0; }
+.excel-import--patient .excel-import__row summary span { float: none; display: block; margin-top: 4px; }
+.excel-import--patient :is(button, summary):focus-visible,
+.excel-import--patient .excel-import__picker:has(input:focus-visible) { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+@media (max-width: 760px) {
+  .excel-import--patient .excel-import__report-head > div:first-child { flex-basis: auto; }
+}
 @media (max-width: 600px) {
   .patient-form .mr-form__body { min-height: 0; }
   .patient-form__privacy { margin-bottom: 16px; }

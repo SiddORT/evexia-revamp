@@ -43,6 +43,16 @@ tests with a server error. This is fixture validity, not authorization behavior.
 domain for isolated identity fixtures, with no outbound mail/provider connection.
 Do not weaken production email validation to accommodate synthetic tests.
 
+Generate unique business identities on every fixture initialization, including
+worker-level setup, rather than reuse a constant name/phone/date combination.
+
+**Why:** Playwright restarts workers after a failed assertion while the isolated
+API database remains alive. Repeated setup and subsequent engine projects can
+then fail on business uniqueness before reaching the actual regression.
+
+**How to apply:** Include a fresh synthetic tag in each seeded business identity;
+do not erase records or relax production uniqueness to make later cases run.
+
 Cold synthetic previews can exceed short browser defaults when the workspace is
 CPU-contended, even with correctly isolated listeners. Wait for authenticated
 content and route data with bounded startup deadlines, without dropping exact

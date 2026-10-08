@@ -6,6 +6,7 @@ import MasterImportTabs from '../../components/admin/MasterImportTabs.jsx';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
 import { downloadPatientFile, importPatients, reviewPatients, samplePatients } from '../../services/serverPatients.js';
 import '../../excel-import.css';
+import '../../patient.css';
 
 export default function PatientImportPage() {
   const [, navigate] = useLocation();
@@ -84,7 +85,7 @@ export default function PatientImportPage() {
   const rows = review?.rows || [];
   const valid = rows.filter((row) => !row.errors.length);
   const invalid = rows.filter((row) => row.errors.length);
-  return <AdminLayout title="Import Patient data"><div className="excel-import">
+  return <AdminLayout title="Import Patient data"><div className="excel-import excel-import--patient">
     <button type="button" className="excel-import__back" disabled={pending === 'commit'} onClick={() => navigate('/admin/masters/patients')}><ArrowLeft size={16} /> Back to Patient Master</button>
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Data import</p><h1>Import Patient data</h1><p className="admin-page-head__description">Review CSV or Excel without saving. Explicit confirmation creates a fully valid batch, all-or-nothing.</p></div><span className="excel-import__mock">Shared server records</span></div>
     <MasterImportTabs kind="patient" />
