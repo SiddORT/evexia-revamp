@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 globalThis.BroadcastChannel = undefined;
-const { validateRoleName, validateRoleDescription, roleRecord, samePermissions, setRolePermissions } = await import('./rolePermissions.js');
+const { validateRoleName, validateRoleDescription, roleRecord, samePermissions, setRolePermissions, normalizePermissions, validPermissions } = await import('./rolePermissions.js');
 test('bounded fields reject blank, control characters, oversized text and duplicates but permit own name', () => {
   const roles = [{ id: 'own', name: 'Reviewer' }];
   assert.match(validateRoleName('  '), /Enter/);
@@ -29,4 +29,15 @@ test('permissions accept only the five zone keys, normalised; unknown keys are r
 });
 test('setRolePermissions rejects unknown keys before any request', () => {
   assert.throws(() => setRolePermissions('00000000-0000-4000-8000-000000000001', ['zone.view'], 1), /listed Zone/);
+});
+test('zero, partial and all selections keep the five-key scope and never mutate supplied selections', () => {
+  const all = ['zone.add', 'zone.edit', 'zone.delete', 'zone.export', 'zone.import'];
+  for (const selection of [[], ['zone.import'], [...all].reverse()]) {
+    const before = [...selection];
+    assert.equal(validPermissions(selection), true);
+    assert.deepEqual(normalizePermissions(selection), all.filter((key) => selection.includes(key)));
+    assert.deepEqual(selection, before);
+  }
+  assert.equal(validPermissions(['zone.add', 'zone.add']), false);
+  assert.equal(validPermissions(['masters.all']), false);
 });

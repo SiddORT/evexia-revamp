@@ -51,6 +51,7 @@ test('fresh empty state, validated CRUD, persistence, cross-tab reads, last dele
   await open(page);
   await expect(page.getByTestId('status-roles-empty')).toContainText('No roles yet');
   await expect(page.getByRole('checkbox')).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: 'Roles', exact: true })).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByText('Grant all', { exact: true })).toHaveCount(0);
   const stores = await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }));
   await page.getByTestId('button-add-role').click();
@@ -214,8 +215,20 @@ test('full bounded directory navigation, sidebar and responsive zero-permission 
   });
   await page.getByTestId('button-refresh-roles').click();
   await expect(page.locator('.rp-role')).toHaveCount(50);
+  const selectedName = await page.getByTestId('text-active-role').textContent();
+  await page.getByTestId('tab-permissions').click();
+  await page.getByTestId('checkbox-permission-zone.add').check();
+  await page.getByTestId('tab-roles').click();
+  await page.getByTestId('button-next-roles').click();
+  await expect(page.getByRole('dialog')).toHaveAccessibleName('Unsaved permission changes');
+  await page.getByTestId('button-keep-editing-permissions').click();
+  await page.getByTestId('tab-permissions').click();
+  await expect(page.getByTestId('checkbox-permission-zone.add')).toBeChecked();
+  await page.getByTestId('button-cancel-permissions').click();
+  await page.getByTestId('tab-roles').click();
   await page.getByTestId('button-next-roles').click();
   await expect(page.locator('.rp-role')).toHaveCount(2);
+  await expect(page.getByTestId('text-active-role')).toHaveText(selectedName);
   await expect(page.getByTestId('button-next-roles')).toBeDisabled();
   await page.getByTestId('button-previous-roles').click();
   await expect(page.locator('.rp-role')).toHaveCount(50);
@@ -233,10 +246,136 @@ test('full bounded directory navigation, sidebar and responsive zero-permission 
     if (width < 900) {
       await expect(page.getByTestId('button-open-navigation')).toBeVisible();
       await expect(page.locator('#admin-navigation')).toHaveAttribute('aria-hidden', 'true');
+      await expect.poll(() => page.locator('#admin-navigation').evaluate((el) => el.getBoundingClientRect().right)).toBeLessThanOrEqual(0);
       await page.getByTestId('text-active-role').scrollIntoViewIfNeeded();
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     await page.screenshot({ path: testInfo.outputPath(`roles-${width}.png`), fullPage: false });
   }
   await clearRoles(page);
+});
+
+test('confirmed deleted role keeps a draft across tabs until explicit discard', async ({ page }) => {
+  await open(page);
+  await clearRoles(page);
+  const row = await create(page, 'Deleted draft');
+  await page.getByTestId('tab-permissions').click();
+  await page.getByTestId('checkbox-permission-zone.edit').check();
+  await page.evaluate(async (id) => {
+    const roles = await import('/src/services/rolePermissions.js');
+    const current = await roles.getRole(id);
+    await roles.deleteRole(id, current.version);
+  }, row.id);
+  await page.getByTestId('button-refresh-roles').click();
+  await expect(page.getByTestId('status-permissions-deleted')).toBeVisible();
+  await page.getByTestId('tab-roles').click();
+  await expect(page.getByTestId('text-active-role')).toHaveText(row.name);
+  await page.getByTestId('tab-permissions').click();
+  await expect(page.getByTestId('checkbox-permission-zone.edit')).toBeChecked();
+  await expect(page.getByTestId('button-save-permissions')).toBeDisabled();
+  await page.getByTestId('button-discard-permission-draft').click();
+  await expect(page.getByTestId('text-active-role')).toHaveCount(0);
+});
+
+test('tabs keep drafts; search and mixed groups use the whole live catalogue; saves persist zero, all and partial grants', async ({ page }, testInfo) => {
+  test.setTimeout(120000);
+  await open(page);
+  await clearRoles(page);
+  const first = await create(page, 'Tabs Reviewer', 'Saved description and audit details');
+  const second = await create(page, 'Tabs Clerk');
+  // Sibling controls must not select the card they belong to.
+  await page.getByTestId(`button-edit-role-${first.id}`).click();
+  await expect(page.getByTestId('input-role-name')).toHaveValue(first.name);
+  await page.getByTestId('button-cancel-role').click();
+  await expect(page.getByTestId('text-active-role')).toHaveText(second.name);
+  await page.getByTestId(`button-role-${first.id}`).click();
+  await expect(page.locator('.rp-meta')).toContainText(first.description);
+  await expect(page.getByTestId('panel-zone-permissions')).toBeHidden();
+  // Roving keyboard tabs, including focus and Home/End.
+  await page.getByTestId('tab-roles').focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByTestId('tab-permissions')).toBeFocused();
+  await expect(page.getByTestId('tab-permissions')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId('checkbox-zone-permissions')).toHaveAttribute('aria-checked', 'false');
+  await page.getByTestId('checkbox-permission-zone.import').check();
+  for (const id of ['checkbox-zone-permissions', 'checkbox-masters-permissions']) {
+    await expect(page.getByTestId(id)).toHaveAttribute('aria-checked', 'mixed');
+    expect(await page.getByTestId(id).evaluate((el) => el.indeterminate)).toBe(true);
+  }
+  await page.getByTestId('input-search-permissions').fill('Export');
+  await expect(page.locator('.rp-matrix__grid input')).toHaveCount(1);
+  await expect(page.getByTestId('text-selected-permission-count')).toContainText('1 of 5');
+  await page.getByTestId('button-permissions-all').click();
+  await expect(page.getByTestId('text-selected-permission-count')).toContainText('5 of 5');
+  await page.getByTestId('input-search-permissions').fill('No matching grant');
+  await expect(page.getByTestId('status-permissions-no-results')).toBeVisible();
+  await page.getByTestId('button-permissions-none').click();
+  await expect(page.getByTestId('text-selected-permission-count')).toContainText('0 of 5');
+  // Even with no visible actions, grouped selection includes all five grants.
+  await page.getByTestId('checkbox-zone-permissions').check();
+  await expect(page.getByTestId('text-selected-permission-count')).toContainText('5 of 5');
+  await page.getByTestId('tab-roles').click();
+  await expect(page.getByTestId(`button-role-${first.id}`)).toContainText('0 permissions saved');
+  await page.getByTestId('button-edit-role').click();
+  await expect(page.getByRole('dialog')).toHaveAccessibleName('Unsaved permission changes');
+  await page.getByTestId('button-keep-editing-permissions').click();
+  await page.getByTestId('button-add-role').click();
+  await expect(page.getByRole('dialog')).toHaveAccessibleName('Unsaved permission changes');
+  await page.getByTestId('button-keep-editing-permissions').click();
+  await page.getByTestId(`button-role-${second.id}`).click();
+  await expect(page.getByRole('dialog')).toHaveAccessibleName('Unsaved permission changes');
+  await page.getByTestId('button-keep-editing-permissions').click();
+  await page.getByTestId('tab-permissions').click();
+  await expect(page.getByTestId('input-search-permissions')).toHaveValue('No matching grant');
+  await expect(page.getByTestId('text-draft-permission-count')).toContainText('5 of 5');
+  await page.getByTestId('panel-zone-permissions').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath('permissions-workspace-desktop.png'), fullPage: true });
+  const save = async (keys) => {
+    const response = page.waitForResponse((r) => r.url().endsWith(`/${first.id}/permissions`) && r.request().method() === 'POST');
+    await page.getByTestId('button-save-permissions').click();
+    const result = await response;
+    expect(result.request().postDataJSON().permissions).toEqual(keys);
+    expect(result.status()).toBe(200);
+    await expect(page.getByTestId('button-save-permissions')).toBeDisabled();
+    await expect(page.getByTestId('text-saved-permission-count')).toContainText(`${keys.length} of 5`);
+  };
+  const keys = ['zone.add', 'zone.edit', 'zone.delete', 'zone.export', 'zone.import'];
+  await save(keys);
+  await page.getByTestId('button-permissions-none').click();
+  await save([]);
+  await page.getByTestId('input-search-permissions').fill('');
+  await page.getByTestId('checkbox-permission-zone.import').check();
+  await save(['zone.import']);
+  await page.getByTestId('tab-roles').click();
+  await expect(page.getByTestId(`button-role-${first.id}`)).toContainText('1 permission saved');
+  await page.getByTestId('button-edit-role').click();
+  await page.getByTestId('input-role-description').fill('Metadata only');
+  await page.getByTestId('button-save-role').click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByTestId('tab-roles')).toHaveAttribute('aria-selected', 'true');
+  await page.getByTestId(`button-role-${first.id}`).click();
+  await expect(page.locator('.rp-meta')).toContainText('Metadata only');
+  await page.getByTestId('tab-permissions').click();
+  await expect(page.getByTestId('checkbox-permission-zone.import')).toBeChecked();
+  await expect(page.getByTestId('text-selected-permission-count')).toContainText('1 of 5');
+  for (const [width, theme, appearance] of [[1440, 'classic', 'light'], [375, 'modern', 'dark'], [375, 'classic', 'light']]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(async ({ theme, appearance }) => {
+      const { setAdminPreference } = await import('/src/components/admin/adminPreferences.js');
+      setAdminPreference('theme', theme); setAdminPreference('appearance', appearance);
+    }, { theme, appearance });
+    if (width < 900) {
+      await expect(page.locator('#admin-navigation')).toHaveAttribute('aria-hidden', 'true');
+      await expect.poll(() => page.locator('#admin-navigation').evaluate((el) => el.getBoundingClientRect().right)).toBeLessThanOrEqual(0);
+    }
+    // Enlarge all page text, including controls whose original sizing uses px.
+    await page.addStyleTag({ content: '.rp, .rp-tabs, .rp-scope { font-size: 200%; } .rp *, .rp-tabs * { font-size: inherit !important; }' });
+    for (const tab of ['roles', 'permissions']) {
+      await page.getByTestId(`tab-${tab}`).click();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      await page.getByTestId(tab === 'roles' ? 'button-add-role' : 'button-save-permissions').scrollIntoViewIfNeeded();
+      await page.screenshot({ path: testInfo.outputPath(`tabs-${tab}-${width}-${appearance}-enlarged.png`) });
+    }
+  }
 });

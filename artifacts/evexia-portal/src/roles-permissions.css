@@ -66,3 +66,81 @@
 .rp-matrix fieldset:disabled .rp-check { opacity: .6; cursor: not-allowed; }
 .rp-matrix__note { margin: 0; font-size: 11px; color: var(--admin-text-soft); line-height: 1.5; }
 .rp-matrix__foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+
+/* ---- Tabs ---- */
+.rp-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; margin: 0 0 14px; border: 1px solid var(--admin-border); border-radius: 12px; background: var(--admin-state-row); max-width: 100%; }
+.rp-tabs [role="tab"] { flex: 1 1 140px; min-height: 40px; padding: 8px 14px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--admin-text-soft); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; overflow-wrap: anywhere; }
+.rp-tabs [role="tab"]:hover { background: var(--admin-state-hover); color: var(--admin-text); }
+.rp-tabs [role="tab"][aria-selected="true"] { background: var(--admin-sidebar-active-bg); color: var(--admin-sidebar-active); border-color: var(--admin-primary); }
+.rp-tabs [role="tab"]:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+
+/* ---- Directory / permissions layout ---- */
+.rp--directory { grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); }
+.rp--permissions { grid-template-columns: minmax(220px, 280px) minmax(0, 1fr); }
+.rp--directory .rp-matrix { display: none; }
+.rp--permissions .rp-meta { display: none; }
+.rp-roles { border-radius: 16px; }
+.rp-work { border-radius: 16px; }
+.rp--permissions .rp-roles__list { max-height: none; }
+
+/* ---- Role cards ---- */
+.rp-role-card { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 0; border: 1px solid transparent; border-radius: 12px; background: transparent; }
+.rp-role-card:hover { background: var(--admin-state-hover); }
+.rp-role-card > .rp-role { flex: 1 1 140px; min-width: 0; width: auto; padding: 12px; border-radius: 12px; }
+.rp-role-card > .rp-role:hover { background: transparent; }
+.rp-role-card:has(.rp-role--active) { background: var(--admin-sidebar-active-bg); border-color: var(--admin-primary); color: var(--admin-sidebar-active); }
+.rp-role-card:has(.rp-role--active) .rp-role--active { background: transparent; border-color: transparent; }
+.rp-role-card:has(:focus-visible) { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.rp-role-card .rp-role:focus-visible { outline: none; }
+.rp-card-actions { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 8px 8px; flex: 0 1 auto; }
+.rp-card-actions button { min-width: 32px; min-height: 32px; padding: 4px 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: inherit; font: inherit; font-size: 11px; cursor: pointer; }
+.rp-card-actions button:hover { background: var(--admin-state-hover); border-color: var(--admin-border); }
+.rp-card-actions button:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.rp-add { border-width: 1.5px; border-radius: 12px; min-height: 44px; }
+
+/* ---- Progress + search ---- */
+.rp-progress { appearance: none; -webkit-appearance: none; display: block; width: 100%; height: 6px; border: 0; border-radius: 999px; overflow: hidden; background: var(--admin-badge-inactive-bg); color: var(--admin-primary); }
+.rp-progress::-webkit-progress-bar { background: var(--admin-badge-inactive-bg); }
+.rp-progress::-webkit-progress-value { background: var(--admin-primary); border-radius: 999px; }
+.rp-progress::-moz-progress-bar { background: var(--admin-primary); border-radius: 999px; }
+.rp-search { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--admin-text-soft); }
+.rp-search input { width: 100%; min-width: 0; height: 44px; padding: 0 16px; border: 1px solid var(--admin-border); border-radius: 999px; background: var(--admin-surface); color: var(--admin-text); font: inherit; font-size: 13px; }
+.rp-search input:focus { outline: none; border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
+
+/* ---- Matrix body ---- */
+.rp-matrix { background: transparent; border: 0; padding: 0; }
+.rp-body { display: grid; grid-template-columns: minmax(150px, 210px) minmax(0, 1fr); min-width: 0; border: 1px solid var(--admin-border); border-radius: 12px; overflow: hidden; background: var(--admin-surface); }
+.rp-rail { display: grid; align-content: start; min-width: 0; background: var(--admin-state-row); border-right: 1px solid var(--admin-border); max-height: 60vh; overflow-y: auto; }
+.rp-rail > *, .rp-rail__row { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 10px; border-bottom: 1px solid var(--admin-border); }
+.rp-rail__item { flex: 1 1 auto; min-width: 0; min-height: 40px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 2px 8px; padding: 6px 4px; border: 0; border-radius: 8px; background: transparent; color: var(--admin-text); font: inherit; font-size: 12px; font-weight: 700; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.rp-rail__item:hover { background: var(--admin-state-hover); }
+.rp-rail__item button { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; flex: 1; min-width: 0; border: 0; padding: 8px; border-radius: 6px; background: transparent; color: inherit; font: inherit; text-align: left; overflow-wrap: anywhere; cursor: pointer; }
+.rp-rail__item button:focus-visible, .rp-main__head h4:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: -2px; }
+.rp-rail__item[aria-current="true"], .rp-rail__item[aria-selected="true"], .rp-rail__item[aria-pressed="true"], .rp-rail__item--active { background: var(--admin-sidebar-active-bg); color: var(--admin-sidebar-active); box-shadow: inset 3px 0 0 var(--admin-primary); }
+.rp-rail__item:focus-visible, .rp-rail input[type="checkbox"]:focus-visible, .rp-main__head input[type="checkbox"]:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.rp-rail input[type="checkbox"], .rp-main__head input[type="checkbox"] { flex: none; width: 18px; height: 18px; margin: 0; accent-color: var(--admin-primary); cursor: pointer; }
+.rp-main { display: grid; align-content: start; gap: 12px; min-width: 0; padding: 0 0 12px; }
+.rp-main__head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 14px; border-bottom: 1px solid var(--admin-border); background: var(--admin-state-row); }
+.rp-main__head h3, .rp-main__head h4 { margin: 0; flex: 1 1 120px; min-width: 0; font-size: 14px; color: var(--admin-text); overflow-wrap: anywhere; }
+.rp-main__head > span:last-child { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--admin-primary); }
+.rp-main .rp-matrix__grid { padding: 0 12px; }
+.rp-check { width: 100%; min-width: 0; border-radius: 12px; grid-template-columns: 18px minmax(0, 1fr); }
+.rp-check--on { background: var(--admin-sidebar-active-bg); color: var(--admin-sidebar-active); }
+.rp-check--on .rp-check__text strong, .rp-check--on .rp-check__text small { color: inherit; }
+.rp-check__text { overflow-wrap: anywhere; }
+.rp-check__saved { grid-column: 2; overflow-wrap: anywhere; }
+.rp-main .rp-matrix__grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); }
+.rp-matrix__counts { text-align: left; }
+.rp-matrix__shortcuts { flex-wrap: wrap; }
+
+@media (max-width: 900px) {
+  .rp--directory, .rp--permissions { grid-template-columns: minmax(0, 1fr); }
+  .rp-roles__list { max-height: none; }
+}
+@media (max-width: 600px) {
+  .rp-body { grid-template-columns: minmax(0, 1fr); }
+  .rp-rail { max-height: 220px; border-right: 0; border-bottom: 1px solid var(--admin-border); }
+  .rp-work, .rp-roles { padding: 12px; }
+  .rp-matrix__grid { grid-template-columns: minmax(0, 1fr); }
+  .rp-matrix__foot > *, .rp-head__actions > * { flex: 1 1 120px; }
+}

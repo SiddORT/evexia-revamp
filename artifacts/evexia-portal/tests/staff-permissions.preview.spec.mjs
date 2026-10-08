@@ -32,6 +32,7 @@ test('role matrix: All/None, saved count, dirty guard, metadata edit keeps grant
   const ids = await provision(page, s);
   await page.getByTestId('button-refresh-roles').click();
   await page.getByTestId(`button-role-${ids.roleId}`).click();
+  await page.getByRole('tab', { name: 'Permissions', exact: true }).click();
   for (const key of KEYS) await expect(page.getByTestId(`checkbox-permission-zone.${key}`)).not.toBeChecked();
   await expect(page.getByTestId('text-saved-permission-count')).toContainText('0 of 5');
   await page.getByTestId('button-permissions-all').click();
@@ -50,10 +51,14 @@ test('role matrix: All/None, saved count, dirty guard, metadata edit keeps grant
   await page.reload();
   await expect(page.getByTestId(`button-role-${ids.roleId}`)).toContainText('1 permission');
   await page.getByTestId(`button-role-${ids.roleId}`).click();
+  await page.getByRole('tab', { name: 'Permissions', exact: true }).click();
   await expect(page.getByTestId('checkbox-permission-zone.import')).toBeChecked();
+  await page.getByRole('tab', { name: 'Roles', exact: true }).click();
   await page.getByTestId('button-edit-role').click();
   await page.getByTestId('input-role-description').fill('renamed only');
   await page.getByTestId('button-save-role').click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByRole('tab', { name: 'Permissions', exact: true }).click();
   await expect(page.getByTestId('checkbox-permission-zone.import')).toBeChecked();
   await expect(page.getByTestId('checkbox-permission-zone.add')).not.toBeChecked();
   await page.screenshot({ path: testInfo.outputPath('protected-role-permission-matrix.png'), fullPage: true });
@@ -271,6 +276,7 @@ async function openRole(browser) {
   const ids = await provisionWith(page, []);
   await page.getByTestId('button-refresh-roles').click();
   await page.getByTestId(`button-role-${ids.roleId}`).click();
+  await page.getByRole('tab', { name: 'Permissions', exact: true }).click();
   return { context, page, ids };
 }
 
@@ -304,6 +310,37 @@ test('unknown save outcome blocks saving until explicit refresh', async ({ brows
   await page.getByTestId('button-refresh-permission-roles').click();
   await expect(page.getByTestId('status-permissions-error')).toHaveCount(0);
   await expect(page.getByTestId(`button-role-${ids.roleId}`)).toBeVisible();
+  await context.close();
+});
+
+test('committed but lost permission result reconciles across tabs; assigned deletion is explained', async ({ browser }) => {
+  const { context, page, ids } = await openRole(browser);
+  await page.getByTestId('checkbox-permission-zone.export').check();
+  let writes = 0;
+  await page.route('**/api/v1/admin/roles/*/permissions', async (route) => {
+    writes++;
+    await route.fetch();
+    await route.abort('failed');
+  });
+  await page.getByTestId('button-save-permissions').click();
+  await expect(page.getByTestId('status-permissions-error')).toContainText('Result unknown');
+  await page.getByTestId('tab-roles').click();
+  await page.getByTestId('button-edit-role').click();
+  await expect(page.getByRole('dialog')).toHaveAccessibleName('Unsaved permission changes');
+  await page.getByTestId('button-keep-editing-permissions').click();
+  await page.getByTestId('tab-permissions').click();
+  await expect(page.getByTestId('checkbox-permission-zone.export')).toBeChecked();
+  await page.unroute('**/api/v1/admin/roles/*/permissions');
+  await page.getByTestId('button-refresh-permission-roles').click();
+  await expect(page.getByTestId('status-roles-notice')).toContainText('could not be confirmed as yours');
+  await expect(page.getByTestId('text-saved-permission-count')).toContainText('1 of 5');
+  expect(writes).toBe(1);
+  await page.getByTestId('tab-roles').click();
+  await page.getByTestId('button-delete-role').click();
+  await page.getByTestId('button-confirm-delete-role').click();
+  await expect(page.getByTestId('text-role-error')).toContainText('assigned to staff');
+  await page.getByTestId('button-cancel-role').click();
+  await expect(page.getByTestId(`button-role-${ids.roleId}`)).toContainText('1 permission');
   await context.close();
 });
 

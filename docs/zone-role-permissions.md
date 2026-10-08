@@ -67,7 +67,18 @@ PII, credentials and role descriptions are not copied into audit records.
 Lost commit responses require authoritative refresh/review, never automatic
 replay. The permissions editor keeps its draft through recoverable failures.
 Stale/deleted roles and uncertain outcomes require explicit reconciliation.
-Dirty grants must be saved or deliberately discarded before switching/leaving.
+Dirty grants must be saved or deliberately discarded before changing roles,
+pages, metadata or leaving. Switching between the Roles and Permissions tabs
+preserves the selected role and draft without a save or discard.
+
+Roles initially shows the paginated authenticated directory with sibling
+Edit/Delete controls and selected-role description, saved counts and audit
+timestamps. Permissions uses the same directory and selection with a Masters >
+Zone workspace. Selected progress, saved counts, All/Clear and both tri-state
+group selectors always refer to the complete supported five-grant catalogue.
+Search filters action presentation only, not counts, selection or save payloads.
+The historical layout contributes presentation only: there are no sample roles,
+unsupported modules, legacy grant keys or browser-local permission persistence.
 
 ## Transaction ordering
 

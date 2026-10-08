@@ -56,6 +56,7 @@ function RoleForm({ form, setForm, busy, blocked, error, current, onSubmit, onCl
 
 export default function RolesPermissions() {
   useAdminPreferences();
+  const [tab, setTab] = useState('roles');
   const [cursors, setCursors] = useState([null]);
   const [idx, setIdx] = useState(0);
   const [page, setPage] = useState({ items: [], has_more: false, next_cursor: null });
@@ -78,7 +79,7 @@ export default function RolesPermissions() {
   const ctrl = useRef(null);
   const busyRef = useRef(false);
   const mounted = useRef(true);
-  const state = useRef({}); state.current = { cursors, idx, pinned, selectedId, draft, permAmbiguous: Boolean(draft?.ambiguous) };
+  const state = useRef({}); state.current = { cursors, idx, page, pinned, selectedId, draft, permAmbiguous: Boolean(draft?.ambiguous) };
 
   const load = useCallback(async (stack, at, silent = false) => {
     const mine = ++seq.current;
@@ -91,10 +92,8 @@ export default function RolesPermissions() {
       if (mine !== seq.current || !mounted.current) return null;
       if (!data.items.length && at > 0) return load(stack.slice(0, at), at - 1, silent);
       const next = data.has_more ? [...stack.slice(0, at + 1), data.next_cursor] : stack.slice(0, at + 1);
-      setCursors(next); setIdx(at); setPage(data); setStatus('ready'); setListError('');
       const p = state.current.pinned;
-      const dr = state.current.draft;
-      const target = p || (dr && dr.roleId === state.current.selectedId ? { id: dr.roleId } : null);
+      const target = p || (state.current.selectedId ? { id: state.current.selectedId } : null);
       if (target && !data.items.some((r) => r.id === target.id)) {
         // Authoritative read for an off-page role; absence from a page never means deletion.
         try { const fresh = await getRole(target.id, c ? { signal: c.signal } : undefined); if (mine === seq.current && mounted.current) setPinned(fresh); }
@@ -102,9 +101,18 @@ export default function RolesPermissions() {
           if (mine === seq.current && mounted.current && e?.code === 'role_deleted') {
             setPinned(null);
             setDraft((d) => (d && d.roleId === target.id ? { ...d, deleted: true, saving: false, error: { code: 'role_deleted', ambiguous: Boolean(d.ambiguous), message: 'This role was deleted. Your selection is kept for reference only.' } } : d));
+          } else if (mine === seq.current && mounted.current) {
+            // A failed detail read is not proof of deletion. Retain the last
+            // selected snapshot; a later versioned write still fails closed.
+            const known = p || state.current.page.items.find((r) => r.id === target.id) || state.current.draft?.role;
+            if (known?.id === target.id) setPinned(known);
           }
         }
       } else if (p) setPinned(null);
+      if (mine !== seq.current || !mounted.current) return null;
+      // Publish the page only after its off-page selection has been resolved.
+      // Otherwise the default-selection effect can select the new first row.
+      setCursors(next); setIdx(at); setPage(data); setStatus('ready'); setListError('');
       return data;
     } catch (e) {
       if (mine !== seq.current || !mounted.current || e?.name === 'AbortError') return null;
@@ -134,7 +142,7 @@ export default function RolesPermissions() {
   const dirty = Boolean(mine && !samePermissions(mine.selected, mine.role.permissions));
   const behind = Boolean(dirty && !gone && mine.base !== role.version);
   const permBusy = Boolean(mine?.saving);
-  const guarded = dirty || permBusy;
+  const guarded = dirty || permBusy || Boolean(mine?.ambiguous || mine?.deleted || mine?.error);
   useEffect(() => {
     if (status !== 'ready') return;
     if (!role) setSelectedId(page.items[0]?.id ?? null);
@@ -167,8 +175,15 @@ export default function RolesPermissions() {
     }
     return data;
   };
-  const go = (to) => { if (to < 0 || to >= cursors.length || permBusy) return; if (dirty) setLeave({ kind: 'page', to }); else load(cursors, to); };
-  const selectRole = (id) => { if (id === selectedId || permBusy) return; if (dirty) setLeave({ kind: 'role', id }); else { setDraft(null); setSelectedId(id); setNotice(''); } };
+  const go = (to) => { if (to < 0 || to >= cursors.length || busyRef.current) return; if (guarded) setLeave({ kind: 'page', to }); else load(cursors, to); };
+  const selectRole = (id) => { if (id === selectedId || busyRef.current) return; if (guarded) setLeave({ kind: 'role', id }); else { setDraft(null); setSelectedId(id); setNotice(''); } };
+  const mutateRole = (run) => { if (busyRef.current) return; if (guarded) setLeave({ kind: 'run', run }); else { setDraft(null); run(); } };
+  const changeTab = (next, focus = false) => { setTab(next); if (focus) document.getElementById(`rp-tab-${next}`)?.focus(); };
+  const tabKeys = (e) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+    e.preventDefault();
+    changeTab(e.key === 'Home' ? 'roles' : e.key === 'End' ? 'permissions' : tab === 'roles' ? 'permissions' : 'roles', true);
+  };
   const proceed = () => {
     const l = leave; setLeave(null); setDraft(null);
     if (l.kind === 'role') { setSelectedId(l.id); setNotice(''); }
@@ -191,10 +206,16 @@ export default function RolesPermissions() {
     document.addEventListener('click', onClick, true); window.addEventListener('beforeunload', unload);
     return () => { release(); document.removeEventListener('click', onClick, true); window.removeEventListener('beforeunload', unload); };
   }, [guarded]);
-  const edit = (selected) => setDraft((d) => (d && d.roleId === role.id ? { ...d, selected } : { roleId: role.id, role, base: role.version, selected, error: null }));
+  const edit = (selected) => setDraft((d) => {
+    const snapshot = d && d.roleId === role.id ? d : { roleId: role.id, role, base: role.version, error: null };
+    // Returning to the unchanged snapshot ends an ordinary draft. Recovery
+    // evidence is kept until the user explicitly reconciles it.
+    if (!snapshot.error && !snapshot.ambiguous && !snapshot.deleted && samePermissions(selected, snapshot.role.permissions)) return null;
+    return { ...snapshot, selected };
+  });
   const toggle = (key) => edit(ZONE_KEYS.filter((k) => (k === key ? !selectedPerms.includes(k) : selectedPerms.includes(k))));
   async function savePermissions() {
-    if (!mine || !dirty || busyRef.current || mine.ambiguous || behind || gone || mine.error?.code === 'role_deleted') return;
+    if (!mine || !dirty || busyRef.current || blocked || status !== 'ready' || mine.ambiguous || behind || gone || mine.error?.code === 'role_deleted') return;
     setBusyBoth(true); setDraft((d) => ({ ...d, saving: true, error: null }));
     try {
       const saved = await setRolePermissions(role.id, mine.selected, mine.base);
@@ -276,39 +297,48 @@ export default function RolesPermissions() {
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">People / Roles and permissions</p><h1>Roles & Permissions</h1><p className="admin-page-head__description">Manage role names, descriptions and Masters &gt; Zone permissions. Staff only receive a role's permissions when a Super Admin explicitly assigns it in Staff Management. The server records an audit entry for every change.</p></div></div>
     {blocked && <div className="rp-alert rp-alert--page" role="alert" data-testid="status-roles-blocked">A previous change had an unknown result. Refresh roles to confirm the current state before submitting again.</div>}
     {notice && <div className="admin-feedback rp-feedback" role="status" data-testid="status-roles-notice">{notice}</div>}
-    <div className="rp">
+    <div className="rp-tabs" role="tablist" aria-label="Roles and permissions">
+      {['roles', 'permissions'].map((key) => <button key={key} type="button" id={`rp-tab-${key}`} role="tab" aria-selected={tab === key} aria-controls={`rp-panel-${key}`} tabIndex={tab === key ? 0 : -1} onKeyDown={tabKeys} onClick={() => changeTab(key)} data-testid={`tab-${key}`}>{key === 'roles' ? 'Roles' : 'Permissions'}</button>)}
+    </div>
+    {guarded && tab === 'roles' && <div className="rp-scope" role="status">A permission draft for {role?.name} is kept. <button type="button" className="admin-button admin-button--secondary" onClick={() => changeTab('permissions')}>Review permission draft</button> Save or discard it before changing roles.</div>}
+    <div id={`rp-panel-${tab}`} role="tabpanel" aria-labelledby={`rp-tab-${tab}`} className={`rp rp--${tab === 'roles' ? 'directory' : 'permissions'}`}>
       <aside className="admin-panel rp-roles" aria-label="Roles" aria-busy={loading}>
         <h2 className="rp-roles__title">Roles <span data-testid="text-role-count">{page.items.length}</span></h2>
         <p className="rp-pageinfo">Page {idx + 1}{page.has_more ? '' : ' (last)'}</p>
         {loading && !page.items.length ? <div className="rp-skel" role="status" data-testid="status-roles-loading"><span className="sr-only">Loading roles</span><i /><i /><i /></div> :
           status === 'unavailable' ? <div className="rp-alert" role="alert" data-testid="status-roles-unavailable"><strong>Roles unavailable</strong><p>{listError}</p></div> :
           page.items.length === 0 ? <div className="admin-empty" role="status" data-testid="status-roles-empty"><strong>No roles yet</strong><p>Create the first business role.</p></div> :
-          <ul className="rp-roles__list">{page.items.map((r) => <li key={r.id}><button type="button" className={`rp-role${role && r.id === role.id ? ' rp-role--active' : ''}`} aria-pressed={Boolean(role && r.id === role.id)} disabled={permBusy} onClick={() => selectRole(r.id)} data-testid={`button-role-${r.id}`}>
-            <strong>{r.name}</strong><span className="rp-role__description">{r.description || 'No description'}</span><small data-testid={`text-role-permissions-${r.id}`}>{countLabel(r.permissions.length)}</small></button></li>)}</ul>}
+          <ul className="rp-roles__list">{page.items.map((r) => <li key={r.id} className="rp-role-card"><button type="button" className={`rp-role${role && r.id === role.id ? ' rp-role--active' : ''}`} aria-pressed={Boolean(role && r.id === role.id)} disabled={busy} onClick={() => selectRole(r.id)} data-testid={`button-role-${r.id}`}>
+            <strong>{r.name}</strong><small data-testid={`text-role-permissions-${r.id}`}>{countLabel(r.permissions.length)} saved</small></button>
+            {tab === 'roles' && <div className="rp-card-actions">
+              <button type="button" className="admin-button admin-button--secondary" aria-label={`Edit ${r.name}`} disabled={loading || status !== 'ready' || busy || blocked} onClick={() => mutateRole(() => openForm('edit', r))} data-testid={r.id === selectedId ? 'button-edit-role' : `button-edit-role-${r.id}`}><Pencil size={14} aria-hidden="true" /> Edit</button>
+              <button type="button" className="admin-button admin-button--secondary" aria-label={`Delete ${r.name}`} disabled={loading || status !== 'ready' || busy || blocked} onClick={() => mutateRole(() => { setFormError(null); setDel(r); })} data-testid={r.id === selectedId ? 'button-delete-role' : `button-delete-role-${r.id}`}><Trash2 size={14} aria-hidden="true" /> Delete</button>
+            </div>}</li>)}</ul>}
         <div className="rp-pager">
           <button type="button" className="admin-button admin-button--secondary" onClick={() => go(idx - 1)} disabled={idx === 0 || loading || permBusy} data-testid="button-previous-roles"><ChevronLeft size={14} aria-hidden="true" /> Previous</button>
           <button type="button" className="admin-button admin-button--secondary" onClick={() => go(idx + 1)} disabled={!page.has_more || loading || permBusy || status !== 'ready'} data-testid="button-next-roles">Next <ChevronRight size={14} aria-hidden="true" /></button>
         </div>
         <button type="button" className="admin-button admin-button--secondary" onClick={refreshAll} disabled={loading || permBusy} data-testid="button-refresh-roles"><RefreshCw size={14} aria-hidden="true" /> Refresh roles</button>
-        <button type="button" className="rp-add" disabled={loading || status !== 'ready' || guarded} onClick={() => { setNotice(''); openForm('add'); }} data-testid="button-add-role"><Plus size={15} aria-hidden="true" /> Add role</button>
+        {tab === 'roles' && <button type="button" className="rp-add" disabled={loading || status !== 'ready' || busy || blocked} onClick={() => mutateRole(() => { setNotice(''); openForm('add'); })} data-testid="button-add-role"><Plus size={15} aria-hidden="true" /> Add role</button>}
       </aside>
 
       <section className="admin-panel rp-work" aria-label="Role details">
         {role ? <>
           <div className="rp-head">
             <div className="rp-head__main"><h2 data-testid="text-active-role">{role.name}</h2></div>
-            <div className="rp-head__actions">
-              <button type="button" className="admin-button admin-button--secondary" disabled={loading || status !== 'ready' || dirty || gone} title={dirty ? 'Save or cancel permission changes first' : undefined} onClick={() => { setNotice(''); openForm('edit', role); }} data-testid="button-edit-role"><Pencil size={14} aria-hidden="true" /> Edit</button>
-              <button type="button" className="admin-button admin-button--secondary" disabled={loading || status !== 'ready' || dirty || gone} title={dirty ? 'Save or cancel permission changes first' : undefined} onClick={() => { setNotice(''); setFormError(null); setDel(role); }} data-testid="button-delete-role"><Trash2 size={14} aria-hidden="true" /> Delete</button>
-            </div>
+            {tab === 'roles' && !found && <div className="rp-head__actions">
+              <button type="button" className="admin-button admin-button--secondary" disabled={loading || status !== 'ready' || busy || blocked || gone} onClick={() => mutateRole(() => openForm('edit', role))} data-testid="button-edit-role"><Pencil size={14} aria-hidden="true" /> Edit</button>
+              <button type="button" className="admin-button admin-button--secondary" disabled={loading || status !== 'ready' || busy || blocked || gone} onClick={() => mutateRole(() => { setFormError(null); setDel(role); })} data-testid="button-delete-role"><Trash2 size={14} aria-hidden="true" /> Delete</button>
+            </div>}
           </div>
-          <dl className="rp-meta">
+          {tab === 'roles' && <dl className="rp-meta">
             <dt>Description</dt><dd>{role.description || 'No description'}</dd>
             <dt>Permissions</dt><dd><span data-testid="text-permission-count">{countLabel(role.permissions.length)}</span> saved</dd>
             <dt>Created</dt><dd>{fmt(role.created_at)}</dd>
             <dt>Updated</dt><dd>{fmt(role.updated_at)} (version {role.version})</dd>
-          </dl>
-          <ZonePermissionMatrix selected={selectedPerms} saved={role.permissions} dirty={dirty} busy={permBusy} disabled={gone || behind || Boolean(mine?.ambiguous) || mine?.error?.code === 'role_deleted'}
+          </dl>}
+          <div hidden={tab !== 'permissions'}>
+          <ZonePermissionMatrix selected={selectedPerms} saved={role.permissions} dirty={dirty} busy={permBusy} disabled={busy || blocked || status !== 'ready' || gone || behind || Boolean(mine?.ambiguous) || mine?.error?.code === 'role_deleted'}
             onToggle={toggle} onAll={() => edit([...ZONE_KEYS])} onNone={() => edit([])} onSave={savePermissions} onCancel={() => setDraft(null)}>
             <div aria-live="polite">
               {gone && <div className="rp-alert" role="alert" data-testid="status-permissions-deleted"><strong>This role was deleted</strong><p>Nothing was saved. Your unsaved selection is shown for reference only. Discard it to continue.</p><div className="rp-alert__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => setDraft(null)} data-testid="button-discard-permission-draft">Discard draft</button></div></div>}
@@ -317,6 +347,7 @@ export default function RolesPermissions() {
               {mine?.error && dirty && !gone && !behind && <div className="rp-alert" role="alert" data-testid="status-permissions-error"><strong>{mine.ambiguous ? 'Result unknown' : 'Permissions not saved'}</strong><p>{mine.error.message}</p>{mine.ambiguous ? <><p>Saving is blocked until you refresh roles. Your selection is kept.</p><div className="rp-alert__actions"><button type="button" className="admin-button admin-button--secondary" onClick={refreshAll} disabled={loading} data-testid="button-refresh-permission-roles">Refresh roles</button></div></> : <p>Your selection is kept. Try Save permissions again.</p>}</div>}
             </div>
           </ZonePermissionMatrix>
+          </div>
         </> : <div className="admin-empty" role="status">
           <strong>{loading ? 'Loading roles' : status === 'unavailable' ? 'Roles could not be loaded' : 'No role selected'}</strong>
           <p>{status === 'unavailable' ? 'Use Refresh roles to try again.' : 'Select or add a role to configure its Masters > Zone permissions.'}</p>
@@ -324,6 +355,7 @@ export default function RolesPermissions() {
         </div>}
       </section>
     </div>
+    <div id={`rp-panel-${tab === 'roles' ? 'permissions' : 'roles'}`} role="tabpanel" aria-labelledby={`rp-tab-${tab === 'roles' ? 'permissions' : 'roles'}`} hidden />
     {form && <RoleForm form={form} setForm={setForm} busy={busy} blocked={blocked} error={formError} current={current} reviewing={reviewing} onSubmit={submit} onClose={closeForm} onReview={review} onAdopt={adopt} onUseCurrent={useCurrent} onRefresh={refreshAll} refreshing={loading} />}
     {leave && <Dialog title="Unsaved permission changes" eyebrow="Roles & Permissions" onClose={() => setLeave(null)} description={`${role?.name || 'This role'} has permission changes that are not saved. Continuing discards them.`}
       footer={<><button type="button" className="admin-button admin-button--secondary" onClick={() => setLeave(null)} data-testid="button-keep-editing-permissions">Keep editing</button>
