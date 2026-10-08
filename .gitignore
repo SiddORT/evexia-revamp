@@ -55,3 +55,18 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Docker / local deployment
+*.log
+docker-compose.override.yml
+
+# Local secrets / deployment files
+.env.*
+!.env.example
+
+# Runtime data
+data/
+storage/
+
+# Deployment runtime files
+deploy-scripts/*.log

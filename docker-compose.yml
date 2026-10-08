@@ -1,0 +1,22 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: artifacts/api-server/backend/Dockerfile
+    container_name: evexia-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    expose:
+      - "8080"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: artifacts/evexia-portal/Dockerfile
+    container_name: evexia-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    expose:
+      - "80"
