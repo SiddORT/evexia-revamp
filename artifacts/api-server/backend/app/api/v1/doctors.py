@@ -3,7 +3,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
-from app.api.deps import require_permissions
+from app.api.deps import master_router, require_master
 from app.api.v1.designations import read_file, UPLOAD
 from app.api.v1.mrs import BINARY
 from app.db.session import get_db
@@ -14,10 +14,18 @@ from app.schemas.doctors import (
 from app.services import doctors, doctor_transfer, mrs
 from app.services.designations import DesignationError
 from app.services.downloads import server_record
+from app.schemas.mrs import PostalResponse
+from app.services import mr_postal
 
 router = APIRouter(prefix="/admin/doctors", tags=["Doctor Master"])
-manager = require_permissions("admin.access")
+manager = master_router("doctor")
 Reference = str
+
+
+@router.get("/postal/{pin}", response_model=PostalResponse, operation_id="lookupDoctorPincode")
+def postal(pin: str, action: Literal["add", "edit"] = "add",
+           actor=Depends(require_master("doctor")), db: Session = Depends(get_db)):
+    return mr_postal.lookup(db, actor, pin, resource="doctor", action=action)
 
 
 def reference(value):
@@ -71,7 +79,7 @@ def file_response(db, actor, data, format, initiation_id, sample=False):
 def sample(format: Literal["csv", "xlsx"] = "csv", initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation"),
            actor=Depends(manager), db: Session = Depends(get_db)):
     def check():
-        mrs.authorize(db, actor)
+        doctors.authorize(db, actor, "import")
         db.commit()
     doctors.transaction(db, check)
     return file_response(db, actor, doctor_transfer.sample(format), format, initiation_id, True)

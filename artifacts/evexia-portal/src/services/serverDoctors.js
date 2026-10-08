@@ -1,4 +1,4 @@
-import { doctorRequest, mrRequest } from '../auth/adminSession.js';
+import { doctorRequest } from '../auth/adminSession.js';
 import { downloadServerBlob } from './downloads.js';
 
 const clean = (params = {}) => Object.fromEntries(Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '' && value !== 'all'));
@@ -13,6 +13,9 @@ export async function allDoctorMRChoices(signal, saved) {
   let result;
   do {
     result = await doctorMRChoices({ limit: 100, offset, include_saved: saved }, signal);
+    if (!Number.isInteger(result.total) || result.total < 0 || result.total > 10000 || result.limit !== 100) {
+      throw new Error('Doctor reference choices exceed the supported 10,000-record bound or returned an invalid page. No partial choices were loaded.');
+    }
     for (const item of result.items) items.set(item.id, item);
     offset += result.limit;
   } while (offset < result.total);
@@ -26,7 +29,7 @@ export const bulkDoctors = (records, operation, value) => doctorRequest('/bulk',
   selected: records.map((record) => ({ id: record.id, expected_version: record.version })), operation,
   ...(operation === 'shift' ? { mrId: value } : { verification: value }),
 } });
-export const lookupDoctorPIN = (pin, signal) => mrRequest(`/postal/${pin}`, { signal });
+export const lookupDoctorPIN = (pin, signal, action = 'add') => doctorRequest(`/postal/${pin}`, { signal, params: { action } });
 export const sampleDoctors = (format, signal) => doctorRequest('/sample', { params: { format }, download: true, signal });
 export const exportDoctors = (params, format, signal) => doctorRequest('/export', { params: { ...clean(params), format }, download: true, signal });
 export const reviewDoctors = (file, signal) => doctorRequest('/import/review', { file, params: { filename: file.name }, signal });

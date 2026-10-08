@@ -1,5 +1,5 @@
 import { roleRequest, SessionError } from '../auth/adminSession.js';
-import { ZONE_KEYS } from '../auth/capabilities.js';
+import { MASTER_KEYS as ZONE_KEYS } from '../auth/capabilities.js';
 
 export const ROLE_NAME_LIMIT = 100;
 export const ROLE_DESCRIPTION_LIMIT = 1000;
@@ -57,6 +57,6 @@ export const createRole = (fields) => mutation('', fields);
 export const updateRole = (id, fields, version) => mutation(`${idPath(id)}/edit`, { ...fields, expected_version: version });
 export const deleteRole = (id, version) => mutation(`${idPath(id)}/delete`, { expected_version: version });
 export function setRolePermissions(id, permissions, version) {
-  if (!validPermissions(permissions)) throw new SessionError('Choose only the listed Zone permissions.');
+  if (!validPermissions(permissions)) throw new SessionError('Choose only the listed master permissions.');
   return mutation(`${idPath(id)}/permissions`, { permissions: normalizePermissions(permissions), expected_version: version });
 }

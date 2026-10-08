@@ -173,6 +173,22 @@ class MRChoice(BaseModel):
     deleted: bool = False
 
 
+class MRDoctorChoice(BaseModel):
+    id: uuid.UUID
+    name: str
+    registrationNumber: str
+    status: Literal["active", "inactive"]
+    zoneName: str
+
+
+class MRDoctorPage(BaseModel):
+    items: list[MRDoctorChoice]
+    total: int
+    filtered: int
+    limit: int
+    offset: int
+
+
 class MRChoices(BaseModel):
     items: list[MRChoice]
     total: int

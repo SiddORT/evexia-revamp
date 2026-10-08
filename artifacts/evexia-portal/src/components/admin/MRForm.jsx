@@ -60,7 +60,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
     const controller = new AbortController();
     setPostal({ status: 'Looking up pincode…', choices: [] });
     const timer = setTimeout(() => {
-      lookupPincode(pin, controller.signal).then((result) => {
+      lookupPincode(pin, controller.signal, mr ? 'edit' : 'add').then((result) => {
         if (current !== lookupSeq.current) return;
         lookedUp.current = pin;
         const choices = Array.isArray(result?.choices) ? result.choices : [];

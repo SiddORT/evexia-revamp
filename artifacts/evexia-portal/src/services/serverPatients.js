@@ -4,6 +4,7 @@ import { downloadServerBlob } from './downloads.js';
 const clean = (params = {}) => Object.fromEntries(Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '' && value !== 'all'));
 export const listPatients = (params, signal) => patientRequest('', { params: clean(params), signal });
 export const getPatient = (id, signal) => patientRequest(`/${id}`, { signal });
+export const lookupPatientPIN = (pin, signal, action = 'add') => patientRequest(`/postal/${pin}`, { signal, params: { action } });
 export const patientDoctorChoices = (params, signal) => patientRequest('/references', { params: clean(params), signal });
 export async function patientMRChoices(signal) {
   const result = await patientRequest('/filters', { signal });

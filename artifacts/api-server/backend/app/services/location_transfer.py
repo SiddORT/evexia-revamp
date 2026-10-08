@@ -81,7 +81,7 @@ def review_digest(actor, data, filename):
 def transfer(db, actor, data, filename, confirm=False, digest=None):
     rows = parse(data, filename)
     def work():
-        current = locations.authorize(db, actor)
+        current = locations.authorize(db, actor, "import")
         fingerprint = review_digest(current, data, filename)
         if confirm and not hmac.compare_digest(digest or "", fingerprint):
             raise locations.LocationError("File or session changed. Review again before confirming.", 409,
@@ -120,7 +120,7 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
 
 def export(db, actor, query, status, format):
     def work():
-        locations.authorize(db, actor)
+        locations.authorize(db, actor, "export")
         records = list(db.scalars(select(StorageLocation).where(*locations.predicates(query, status))
                                   .order_by(StorageLocation.created_at.desc(), StorageLocation.id.desc())
                                   .limit(EXPORT_LIMIT + 1)))

@@ -1,4 +1,4 @@
-# Restricted staff workspace and Zone grants
+# Restricted staff workspace and master grants
 
 ## Authorization boundary
 
@@ -7,24 +7,27 @@ and staff access (`staff.manage`). The singleton remains outside staff assignmen
 and always retains its existing capabilities. A custom role named Super Admin is
 ordinary custom data, never a protected identity.
 
-The five persisted grant keys are `zone.add`, `zone.edit`, `zone.delete`,
-`zone.export`, and `zone.import`. Unknown or duplicate keys are rejected.
-All/None select checkboxes; they are not permission keys.
+The catalogue contains forty explicit keys: `add`, `edit`, `delete`, `export`,
+and `import` for each of `headquarter`, `zone`, `mr`, `patient`, `doctor`,
+`product_category`, `location` (Storage Location), and `courier` (Courier Partner).
+The original five Zone keys are unchanged. Unknown or duplicate keys are rejected.
+All/Clear select the complete forty-key catalogue; they are not permission keys.
+Each group selects its own five keys even while search hides individual actions.
 
 | Capability | Allowed operations |
 | --- | --- |
-| Any one Zone grant | Non-deleted Zone list/detail as prerequisite |
+| Any one master grant | That master's live list/detail and minimal bounded consuming reference/filter choices |
 | Add | Manual create |
 | Edit | Name/status edits, activation and deactivation |
-| Delete | Soft deletion |
+| Delete | Existing soft deletion where that master supports it; no new Doctor/Patient deletion workflow |
 | Export | Filtered CSV/XLSX exports |
-| Import | CSV/XLSX sample downloads, review and create-only confirmed commit |
-| None or no assignment | No Zone list/detail/action or direct route |
-| Protected singleton only | Trash list, restore, roles/staff administration, global reports, unrelated masters/settings/inventory/private files/domain administration |
+| Import | Available authenticated samples, existing client templates with download evidence, review and create-only confirmed commit |
+| None or no assignment | No master list/detail/action or direct route |
+| Protected singleton only | MR password reset, trash/restore, roles/staff administration, global reports, unrelated masters/settings/inventory/private files/domain administration, Patient treatment/history and Doctor payments |
 
 Import is standalone: it neither needs nor implies Add, Edit or Delete. Existing
 transfer size/row limits, digest review, create-only semantics, download logging
-and recovery behavior remain unchanged. Staff may initiate Zone samples in the
+and recovery behavior remain unchanged. Staff may initiate their permitted master samples in the
 download ledger, but cannot read global history or log unrelated module downloads.
 Exports are reauthorized again before durable ledger acceptance/file release.
 
@@ -37,7 +40,7 @@ The directory role/designation strings remain business metadata.
 Workspace login is opt-in. Eligible staff must have an active User, an active
 profile and `workspace_login_enabled=true`. Role assignment is explicit by UUID
 and may be null. An enabled staff member with no grants may sign in to a clear
-no-access screen, but cannot open Zone or any other module. Effective grants are
+no-access screen, but cannot open any master or other module. Effective grants are
 loaded from current records at login, refresh, `/me` and sensitive requests, never
 trusted from client or token claims. Tokens remain memory-only and refresh cookies
 remain HttpOnly, rotating, session-bound and single-active-session.
@@ -74,8 +77,9 @@ preserves the selected role and draft without a save or discard.
 Roles initially shows the paginated authenticated directory with sibling
 Edit/Delete controls and selected-role description, saved counts and audit
 timestamps. Permissions uses the same directory and selection with a Masters >
-Zone workspace. Selected progress, saved counts, All/Clear and both tri-state
-group selectors always refer to the complete supported five-grant catalogue.
+eight-master workspace. Selected progress, saved counts, All/Clear and tri-state
+module selectors always refer to the complete supported forty-grant catalogue;
+individual master groups select only their own five grants.
 Search filters action presentation only, not counts, selection or save payloads.
 The historical layout contributes presentation only: there are no sample roles,
 unsupported modules, legacy grant keys or browser-local permission persistence.
@@ -83,7 +87,7 @@ unsupported modules, legacy grant keys or browser-local permission persistence.
 ## Transaction ordering
 
 A transaction-scoped authorization-policy lock is acquired before actor User,
-session, StaffProfile, CustomRole and Zone row locks for sensitive Zone actions,
+session, StaffProfile, CustomRole and domain/record row locks for sensitive master actions,
 permission changes, assignments, staff inactivation and file acceptance. This
 serializes policy revocation against writes and exports: an already authorized
 operation may complete before a queued revocation; requests ordered after it
@@ -94,23 +98,51 @@ per-role authorization. Do not change lock order without race validation.
 
 ## Opt-in rollout and operational handoff
 
-Forward migration `0015_zone_permissions` follows the reconciled
-`0014_download_reporting_index` head. Existing roles gain empty grants; existing staff gain
-null assignment and disabled login. There is no matching by business label,
-sample grant, account enablement, local-data migration or automatic upgrade.
+The original `0015_zone_permissions` migration introduced empty grants and
+disabled/unassigned staff defaults. The additive forward migration
+`0021_master_permissions` follows the actual `0020_patient_directory` head and
+only widens the permission constraint. It preserves every existing role's grants,
+metadata/version/timestamps, assignments, staff state and identities. New roles
+remain empty. Downgrade refuses non-Zone grants rather than silently losing them.
+There is no matching by business label, sample grant, account enablement,
+local-data migration or automatic upgrade.
 
 Before an approved shared/production migration, pause writes, verify backups
 and restoration, review the forward migration and apply the established operator
 Alembic procedure. The API never runs DDL at startup. This implementation does
 not migrate a managed/shared database, bootstrap real identities, change real
-staff configuration or deploy. Health readiness verifies the new columns;
-an unmigrated live instance is BLOCKED, not evidence of synthetic test failure.
+staff configuration or deploy. Existing readiness verifies required columns;
+operators must also verify the permission constraint's migration head before
+allowing new grant saves. Startup never automatically widens it.
 
 After migration, a protected administrator must explicitly save desired grants,
 choose a custom role for each intended staff account, and enable workspace login.
 Use the previously handed-off generated credentials; enabling access never
 reveals or regenerates passwords. Unknown/lost initial credentials require a
 separately approved recovery design.
+
+## Narrow account and reference workflows
+
+MR Add and Import create only fresh User/MRProfile/directory identities.
+Neither grants generic `domain.provision`, identity lookup/administration or MR
+password reset. Ambiguous manual MR creation recovery by username is Add-only
+and restricted to a successful creation by the same actor and session; unrelated
+legacy or other actors' identities are unavailable. Credentials remain one-time,
+memory-only responses, absent from list/detail, exports, storage and audit records.
+
+Patient Add/Import creates only a fresh Patient identity and extension; Edit
+synchronizes only that saved extension's owner/status/version. Doctor Edit/bulk
+MR shifts synchronize already-linked Patient owners transactionally without
+granting general `domain.assign_patient`. Existing graph locks, inactive saved
+context, versions and assignment invariants are retained.
+
+Reference helpers authorize their consuming master, return bounded minimal
+identifier/label/status context and do not expose referenced full directories.
+PIN lookup explicitly requires the consuming MR, Doctor or Patient Add/Edit
+action, including a fresh check after provider work. MR's associated-Doctor
+viewer returns paginated labels/registration/status/Zone context only; links to
+Doctor editing appear only with Doctor Edit. Doctor reference aggregation
+refuses directories over 10,000 choices rather than silently loading partial data.
 
 Isolated checks: `pnpm run test:api-foundation`, frontend session/role/staff
 service tests, `pnpm run validate:release`, and the portal compilation command.

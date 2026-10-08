@@ -11,6 +11,7 @@ import TablePagination from '../../components/admin/TablePagination.jsx';
 import useServerProductCategories from '../../hooks/useServerProductCategories.js';
 import { exportProductCategories, downloadProductCategoryFile } from '../../services/serverProductCategories.js';
 import { reportingIdentityGuard } from '../../auth/adminSession.js';
+import { useMasterActions } from '../../auth/useMasterActions.js';
 import '../../mr.css';
 import '../../category.css';
 
@@ -20,6 +21,7 @@ function details(by, at) {
 }
 
 export default function ProductCategoryMaster() {
+  const can = useMasterActions('product_category');
   const { theme, appearance } = useAdminPreferences();
   const [, navigate] = useLocation();
   const [search, setSearch] = useState('');
@@ -76,9 +78,9 @@ export default function ProductCategoryMaster() {
   function actions(record, mobile = false) {
     const toggle = record.status === 'active' ? 'Inactivate' : 'Activate';
     return <fieldset disabled={loading || pending} style={{ border: 0, margin: 0, padding: 0 }} className={mobile ? 'admin-zone-card__actions' : 'admin-table__actions'}>
-      <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} onClick={() => navigate(`${LIST}/${record.id}`)}><Pencil size={16} />{mobile && 'Edit'}</button>
-      <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`${toggle} ${record.name}`} onClick={() => requestAction(record, toggle.toLowerCase())}><CirclePower size={16} />{mobile && toggle}</button>
-      <button type="button" className={mobile ? 'admin-zone-card__action admin-zone-card__action--danger' : 'admin-icon-button admin-icon-button--danger'} aria-label={`Delete ${record.name}`} onClick={() => requestAction(record, 'delete')}><Trash2 size={16} />{mobile && 'Delete'}</button>
+      {can.edit && <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} onClick={() => navigate(`${LIST}/${record.id}`)}><Pencil size={16} />{mobile && 'Edit'}</button>}
+      {can.edit && <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`${toggle} ${record.name}`} onClick={() => requestAction(record, toggle.toLowerCase())}><CirclePower size={16} />{mobile && toggle}</button>}
+      {can.delete && <button type="button" className={mobile ? 'admin-zone-card__action admin-zone-card__action--danger' : 'admin-icon-button admin-icon-button--danger'} aria-label={`Delete ${record.name}`} onClick={() => requestAction(record, 'delete')}><Trash2 size={16} />{mobile && 'Delete'}</button>}
     </fieldset>;
   }
   const columns = [
@@ -95,8 +97,8 @@ export default function ProductCategoryMaster() {
   return <AdminLayout title="Product Category Master">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Directory</p><h1>Product Category Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Clearing browser data does not remove categories.</p></div>
       <div className="admin-mr-head-actions">
-        <button className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/product-category')}><Upload size={16} /> Import data</button>
-        <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !busy.current) setExportMenuOpen(open); }}>
+        {can.import && <button className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/product-category')}><Upload size={16} /> Import data</button>}
+        {can.export && <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !busy.current) setExportMenuOpen(open); }}>
           <DropdownMenu.Trigger asChild>
             {/* Pending stays focusable for close-focus return. The synchronous
                 guard and controlled menu prevent reopening or duplicate downloads. */}
@@ -108,8 +110,8 @@ export default function ProductCategoryMaster() {
               <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void exportVisible('xlsx')}>Excel (.xlsx)</DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
-        </DropdownMenu.Root>
-        <button className="admin-button" onClick={() => navigate(`${LIST}/new`)}><Plus size={16} /> Add category</button>
+        </DropdownMenu.Root>}
+        {can.add && <button className="admin-button" onClick={() => navigate(`${LIST}/new`)}><Plus size={16} /> Add category</button>}
       </div>
     </div>
     <p className="admin-page-head__description">Allergen and procurement keep their separate browser-local category IDs and data. Live changes do not affect demo inventory. Exports include every name/description/price/status match, up to 5,000 records.</p>

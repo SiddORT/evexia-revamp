@@ -97,7 +97,7 @@ for (const width of [390, 768]) for (const theme of ['classic', 'modern']) for (
     await page.screenshot({ path: info.outputPath('relationships-200-percent.png'), fullPage: true });
     await expectPatientFits(page, root);
 
-    await page.route('**/api/v1/admin/mrs/postal/400001*', (route) => route.fulfill({ json: {
+    await page.route('**/api/v1/admin/patients/postal/400001*', (route) => route.fulfill({ json: {
       choices: [{ city: 'Mumbai', state: 'Maharashtra', country: 'India' }, { city: 'Fort', state: 'Maharashtra', country: 'India' }], message: '',
     } }));
     await page.getByTestId('tab-patient-address').click();

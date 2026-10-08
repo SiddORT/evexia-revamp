@@ -16,6 +16,11 @@ class PatientError(mrs.MRError):
         super().__init__(message, status, code)
 
 
+def authorize(db, actor, action=None, lock=True):
+    from app.services.master_policy import authorize_master
+    return authorize_master(db, actor, "patient", action, lock=lock, error=PatientError)
+
+
 def transaction(db, work):
     try:
         db.execute(text("SET LOCAL lock_timeout = '5s'"))
@@ -30,11 +35,6 @@ def transaction(db, work):
     except Exception:
         db.rollback()
         raise
-
-
-def permission(actor, action):
-    if action not in actor.permissions:
-        raise PatientError("Access denied", 403, "access_denied")
 
 
 def assignment(db, doctor_id, existing=None):
@@ -115,7 +115,7 @@ def predicates(query="", status="all", zone_id="", mr_id=""):
 
 def listing(db, actor, query="", status="all", zone_id="", mr_id="", limit=10, offset=0):
     def work():
-        mrs.authorize(db, actor, lock=False)
+        authorize(db, actor, lock=False)
         clauses = predicates(query, status, zone_id, mr_id)
         rows = list(db.scalars(select(Directory).where(*clauses).order_by(Directory.created_at.desc(), Directory.id.desc()).limit(limit).offset(offset)))
         context = projection_context(db, rows)
@@ -136,7 +136,7 @@ def find(db, record_id):
 
 def detail(db, actor, record_id):
     def work():
-        mrs.authorize(db, actor, lock=False)
+        authorize(db, actor, lock=False)
         result = projection(db, find(db, record_id))
         db.commit()
         return result
@@ -145,7 +145,7 @@ def detail(db, actor, record_id):
 
 def choices(db, actor, query="", limit=100, offset=0, include_saved=None):
     def work():
-        mrs.authorize(db, actor, lock=False)
+        authorize(db, actor, lock=False)
         clauses = [Doctor.name.ilike("%" + mrs.literal(query) + "%", escape="\\")] if query else []
         total = db.scalar(select(func.count()).select_from(Doctor).where(*clauses))
         rows = list(db.scalars(select(Doctor).where(*clauses).order_by(func.lower(Doctor.name), Doctor.id).limit(limit).offset(offset)))
@@ -171,7 +171,7 @@ FILTER_CHOICE_LIMIT = 10000
 def filters(db, actor):
     """Complete compact MR/Zone filter choices in one bounded snapshot query."""
     def work():
-        mrs.authorize(db, actor, lock=False)
+        authorize(db, actor, lock=False)
         rows = list(db.execute(select(
             MRDirectory.id, MRDirectory.name, MRDirectory.status,
             Zone.id.label("zoneId"), Zone.name.label("zoneName")
@@ -205,7 +205,10 @@ def audit(db, actor, row, operation):
 
 
 def insert(db, actor, body, code=None):
-    permission(actor, "domain.provision")
+    # Internal fresh-directory enrollment only, never generic identity promotion.
+    from app.services.master_policy import master_allowed
+    if not (master_allowed(actor, "patient", "add") or master_allowed(actor, "patient", "import")):
+        raise PatientError("Access denied", 403, "access_denied")
     doctor, mr, _ = assignment(db, body.doctorId)
     domain._lock_mrs(db, {mr.id})
     owner = Patient(assigned_mr_id=mr.id, is_active=body.status == "active", version=1)
@@ -222,7 +225,7 @@ def insert(db, actor, body, code=None):
 
 def create(db, actor, body):
     def work():
-        current = mrs.authorize(db, actor)
+        current = authorize(db, actor, "add")
         mrs.graph_lock(db)
         unique(db, body)
         row = insert(db, current, body)
@@ -246,14 +249,12 @@ def lock_owner(db, row, target, require_target_active=False):
 
 def mutate(db, actor, record_id, body, operation):
     def work():
-        current = mrs.authorize(db, actor)
+        current = authorize(db, actor, "delete" if operation == "delete" else "edit")
         mrs.graph_lock(db)
         row = find(db, record_id)
         if operation == "edit":
             doctor, mr, _ = assignment(db, body.doctorId, row)
             target = mr.id
-            if body.doctorId != row.doctorId:
-                permission(current, "domain.assign_patient")
         else:
             target = db.get(Patient, row.id).assigned_mr_id
         owner = lock_owner(db, row, target, operation == "edit" and body.doctorId != row.doctorId)
@@ -282,7 +283,9 @@ def shift_doctors(db, actor, changes):
     ids = [row.id for row, _ in changes]
     rows = list(db.scalars(select(Directory).where(Directory.doctorId.in_(ids)).order_by(Directory.id)))
     if rows:
-        permission(actor, "domain.assign_patient")
+        from app.services.master_policy import master_allowed
+        if not master_allowed(actor, "doctor", "edit"):
+            raise PatientError("Access denied", 403, "access_denied")
     targets = {row.id: target for row, target in changes}
     snapshots = {r.id: db.get(Patient, r.id).assigned_mr_id for r in rows}
     domain._lock_mrs(db, {v for v in list(snapshots.values()) + list(targets.values()) if v}, require_active=False)

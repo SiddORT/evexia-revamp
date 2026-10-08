@@ -148,7 +148,7 @@ if [ "$#" -eq 0 ]; then
   SPECS="$SPECS artifacts/evexia-portal/tests/doctors-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/patients-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/patients-layout.preview.spec.mjs"
-  SPECS="$SPECS artifacts/evexia-portal/tests/download-logs.preview.spec.mjs artifacts/evexia-portal/tests/staff-permissions.preview.spec.mjs"
+  SPECS="$SPECS artifacts/evexia-portal/tests/download-logs.preview.spec.mjs artifacts/evexia-portal/tests/staff-permissions.preview.spec.mjs artifacts/evexia-portal/tests/master-staff-permissions.preview.spec.mjs"
 fi
 echo "Running authenticated browser previews against an isolated synthetic PostgreSQL/API fixture (API $API_PORT, portal $PORT)."
 # Intentional word splitting: callers may supply one or more Playwright spec paths.
@@ -160,6 +160,11 @@ DOWNLOADS=0
 PATIENT_LAYOUT=0
 ROLE_LAYOUT=0
 ISOLATE_MR=0
+ISOLATE_MASTER_STAFF=0
+SPEC_COUNT=0
+for spec in $SPECS; do
+  case "$spec" in *.preview.spec.mjs) SPEC_COUNT=$((SPEC_COUNT + 1)) ;; esac
+done
 for spec in $SPECS; do
   case "$spec" in
     */download-logs.preview.spec.mjs) DOWNLOADS=1 ;;
@@ -171,7 +176,11 @@ for spec in $SPECS; do
       # Doctor fixtures legitimately provision MR accounts too. Do not consume
       # the MR password-reset test's ten-per-hour actor budget with other suites,
       # disable production limits, or erase the protected credential audit.
-      if [ "$#" -eq 0 ]; then ISOLATE_MR=1; else OTHER_SPECS="$OTHER_SPECS $spec"; fi ;;
+      if [ "$SPEC_COUNT" -gt 1 ]; then ISOLATE_MR=1; else OTHER_SPECS="$OTHER_SPECS $spec"; fi ;;
+    */master-staff-permissions.preview.spec.mjs)
+      # Staff has no deletion workflow; disabling login cannot restore a fresh
+      # directory. Keep matrix provisioning out of empty-directory baselines.
+      if [ "$SPEC_COUNT" -gt 1 ]; then ISOLATE_MASTER_STAFF=1; else OTHER_SPECS="$OTHER_SPECS $spec"; fi ;;
     *) OTHER_SPECS="$OTHER_SPECS $spec" ;;
   esac
 done
@@ -200,4 +209,8 @@ fi
 if [ "$ISOLATE_MR" -eq 1 ]; then
   echo "MR credential flows: separate private database, listeners and audit budget."
   sh "$ROOT/scripts/run-authenticated-previews.sh" artifacts/evexia-portal/tests/mrs-backend.preview.spec.mjs
+fi
+if [ "$ISOLATE_MASTER_STAFF" -eq 1 ]; then
+  echo "Staff master matrix: separate private database, listeners and directory."
+  sh "$ROOT/scripts/run-authenticated-previews.sh" artifacts/evexia-portal/tests/master-staff-permissions.preview.spec.mjs
 fi

@@ -4,19 +4,20 @@ from typing import Literal
 from fastapi import APIRouter, Depends, Header, Path, Query, Request, Response
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
-from app.api.deps import require_permissions
+from app.api.deps import require_permissions, master_router, require_master
 from app.api.v1.designations import read_file as read_master_file, UPLOAD
 from app.db.session import get_db
 from app.schemas.mrs import (
     MRCreate, MREdit, MRVersion, MRStatus, MRContact, MRDirectoryResponse, MRCreated, MRPage,
     MRChoices, MRUsername, MRReview, MRImportResult, PostalResponse,
+    MRDoctorPage,
 )
 from app.services import mrs, mr_transfer, mr_postal
 from app.services.designations import DesignationError
 from app.services.downloads import server_record
 
 router = APIRouter(prefix="/admin/mrs", tags=["MR Master"])
-manager = require_permissions("admin.access")
+manager = master_router("mr")
 provisioner = require_permissions("admin.access", "domain.provision")
 
 
@@ -29,7 +30,7 @@ def listing(query: str = Query("", max_length=200), status: Literal["all", "acti
 
 
 @router.post("", response_model=MRCreated, status_code=201, operation_id="createMRDirectory")
-def create(body: MRCreate, actor=Depends(provisioner), db: Session = Depends(get_db)):
+def create(body: MRCreate, actor=Depends(manager), db: Session = Depends(get_db)):
     return mrs.create(db, actor, body)
 
 
@@ -42,13 +43,14 @@ def references(kind: Literal["zones", "headquarters", "managers", "designations"
 
 
 @router.get("/username", response_model=MRUsername, operation_id="generateMRUsername")
-def username(actor=Depends(provisioner), db: Session = Depends(get_db)):
+def username(actor=Depends(manager), db: Session = Depends(get_db)):
     return mrs.username(db, actor)
 
 
 @router.get("/postal/{pin}", response_model=PostalResponse, operation_id="lookupMRPincode")
-def postal(pin: str, actor=Depends(manager), db: Session = Depends(get_db)):
-    return mr_postal.lookup(db, actor, pin)
+def postal(pin: str, action: Literal["add", "edit"] = "add",
+           actor=Depends(require_master("mr")), db: Session = Depends(get_db)):
+    return mr_postal.lookup(db, actor, pin, resource="mr", action=action)
 
 
 BINARY = {200: {"content": {
@@ -69,7 +71,7 @@ def file_response(db, actor, data, format, initiation_id, sample=False):
 def sample(format: Literal["csv", "xlsx"] = "csv", actor=Depends(manager), db: Session = Depends(get_db),
            initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation")):
     def check():
-        mrs.authorize(db, actor)
+        mrs.authorize(db, actor, action="import")
         db.commit()
     mrs.transaction(db, check)
     return file_response(db, actor, mr_transfer.sample(format), format, initiation_id, True)
@@ -93,7 +95,7 @@ async def read_file(request):
 
 @router.post("/import/review", response_model=MRReview, operation_id="reviewMRImport", openapi_extra=UPLOAD)
 async def review(request: Request, filename: str = Query(min_length=1, max_length=200),
-                 actor=Depends(provisioner), db: Session = Depends(get_db)):
+                 actor=Depends(manager), db: Session = Depends(get_db)):
     data = await read_file(request)
     return await run_in_threadpool(mr_transfer.transfer, db, actor, data, filename)
 
@@ -101,7 +103,7 @@ async def review(request: Request, filename: str = Query(min_length=1, max_lengt
 @router.post("/import/commit", response_model=MRImportResult, operation_id="commitMRImport", openapi_extra=UPLOAD)
 async def commit(request: Request, filename: str = Query(min_length=1, max_length=200),
                  digest: str = Query(pattern=r"^[0-9a-f]{64}$"), confirm: bool = Query(),
-                 actor=Depends(provisioner), db: Session = Depends(get_db)):
+                 actor=Depends(manager), db: Session = Depends(get_db)):
     if not confirm:
         raise mrs.MRError("Explicit confirmation is required.", 422, "mr_confirmation_required")
     data = await read_file(request)
@@ -113,9 +115,16 @@ def detail(mr_id: uuid.UUID, actor=Depends(manager), db: Session = Depends(get_d
     return mrs.detail(db, actor, mr_id)
 
 
+@router.get("/{mr_id}/doctors", response_model=MRDoctorPage, operation_id="listMRAssociatedDoctorChoices")
+def associated_doctors(mr_id: uuid.UUID, limit: int = Query(10, ge=1, le=100),
+                       offset: int = Query(0, ge=0, le=1000000),
+                       actor=Depends(require_master("mr")), db: Session = Depends(get_db)):
+    return mrs.associated_doctors(db, actor, mr_id, limit, offset)
+
+
 @router.get("/account/{username}", response_model=MRDirectoryResponse, operation_id="resolveMRAccount")
 def resolve_account(username: str = Path(pattern=r"^[a-z][a-z0-9._-]{2,31}$"),
-                    actor=Depends(manager), db: Session = Depends(get_db)):
+                    actor=Depends(require_master("mr", "add")), db: Session = Depends(get_db)):
     return mrs.resolve_account(db, actor, username)
 
 

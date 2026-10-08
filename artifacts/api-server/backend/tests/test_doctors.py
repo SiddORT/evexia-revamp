@@ -263,7 +263,7 @@ def test_limits_bad_files_denials_and_unknown_fields(client):
 def test_migration_constraints_and_empty_directory(client):
     api, db, _ = client
     assert db.scalar(select(func.count()).select_from(DoctorDirectory)) == 0
-    assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0020_patient_directory"
+    assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0021_master_permissions"
     constraints = set(db.scalars(text("SELECT conname FROM pg_constraint WHERE conrelid = 'doctor_directory'::regclass")))
     assert {"ck_doctor_version", "ck_doctor_limits", "ck_doctor_required_contact", "ck_doctor_invoice"} <= constraints
     assert db.scalar(text("SELECT count(*) FROM pg_indexes WHERE tablename='doctor_directory' AND indexname='uq_doctor_registration'")) == 1

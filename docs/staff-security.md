@@ -7,7 +7,8 @@ including “Super Admin”, and designation labels grant no backend permissions
 Staff credentials reuse User/Argon2id but have no system role or User.email.
 Login is disabled by default. Only an explicit `workspace_login_enabled` change
 admits active staff through the existing workspace login, using their existing
-User ID/password. A separately chosen custom role ID supplies only Zone grants.
+User ID/password. A separately chosen custom role ID supplies only the forty
+supported master grants, never broad administrator or generic domain/file powers.
 Active status alone never enables login; inactive or disabled accounts cannot
 authenticate or retain usable sessions. Business labels never become assignments.
 Existing protected Super Admin/MR policy and session rotation remain unchanged.
@@ -253,7 +254,7 @@ Downloads leave application protection and require safe handling.
 No invitation send/queue/delivery preview, SMTP/provider, bulk provisioning/import,
 password recovery or hard deletion exists. Workspace access changes are explicit
 and independent of business-label edits, never regenerate credentials, and
-require the current directory version. Role removal denies Zone access on the
+require the current directory version. Role removal denies granted master access on the
 next protected request; disable and inactivation additionally revoke sessions.
 Other browser-local masters remain unchanged. No VAPT certification is claimed.
 

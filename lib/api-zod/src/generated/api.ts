@@ -1895,6 +1895,33 @@ export const ReviewDoctorImportResponse = zod.object({
 });
 
 /**
+ * @summary Postal
+ */
+export const LookupDoctorPincodeParams = zod.object({
+  pin: zod.coerce.string(),
+});
+
+export const lookupDoctorPincodeQueryActionDefault = `add`;
+
+export const LookupDoctorPincodeQueryParams = zod.object({
+  action: zod
+    .enum(["add", "edit"])
+    .default(lookupDoctorPincodeQueryActionDefault),
+});
+
+export const LookupDoctorPincodeResponse = zod.object({
+  choices: zod.array(
+    zod.object({
+      city: zod.string(),
+      country: zod.string(),
+      state: zod.string(),
+    }),
+  ),
+  message: zod.string(),
+  pincode: zod.string(),
+});
+
+/**
  * @summary References
  */
 export const listDoctorMRChoicesQueryQueryDefault = ``;
@@ -3640,6 +3667,12 @@ export const LookupMRPincodeParams = zod.object({
   pin: zod.coerce.string(),
 });
 
+export const lookupMRPincodeQueryActionDefault = `add`;
+
+export const LookupMRPincodeQueryParams = zod.object({
+  action: zod.enum(["add", "edit"]).default(lookupMRPincodeQueryActionDefault),
+});
+
 export const LookupMRPincodeResponse = zod.object({
   choices: zod.array(
     zod.object({
@@ -4074,6 +4107,51 @@ export const DeleteMRDirectoryResponse = zod.object({
   version: zod.number().int(),
   zoneId: zod.string().uuid(),
   zoneName: zod.string(),
+});
+
+/**
+ * @summary Associated Doctors
+ */
+export const ListMRAssociatedDoctorChoicesParams = zod.object({
+  mr_id: zod.coerce.string().uuid(),
+});
+
+export const listMRAssociatedDoctorChoicesQueryLimitDefault = 10;
+export const listMRAssociatedDoctorChoicesQueryLimitMax = 100;
+
+export const listMRAssociatedDoctorChoicesQueryOffsetDefault = 0;
+export const listMRAssociatedDoctorChoicesQueryOffsetMin = 0;
+export const listMRAssociatedDoctorChoicesQueryOffsetMax = 1000000;
+
+export const ListMRAssociatedDoctorChoicesQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listMRAssociatedDoctorChoicesQueryLimitMax)
+    .default(listMRAssociatedDoctorChoicesQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listMRAssociatedDoctorChoicesQueryOffsetMin)
+    .max(listMRAssociatedDoctorChoicesQueryOffsetMax)
+    .default(listMRAssociatedDoctorChoicesQueryOffsetDefault),
+});
+
+export const ListMRAssociatedDoctorChoicesResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+      registrationNumber: zod.string(),
+      status: zod.enum(["active", "inactive"]),
+      zoneName: zod.string(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
 });
 
 /**
@@ -4943,6 +5021,33 @@ export const ReviewPatientImportResponse = zod.object({
     }),
   ),
   valid: zod.boolean(),
+});
+
+/**
+ * @summary Postal
+ */
+export const LookupPatientPincodeParams = zod.object({
+  pin: zod.coerce.string(),
+});
+
+export const lookupPatientPincodeQueryActionDefault = `add`;
+
+export const LookupPatientPincodeQueryParams = zod.object({
+  action: zod
+    .enum(["add", "edit"])
+    .default(lookupPatientPincodeQueryActionDefault),
+});
+
+export const LookupPatientPincodeResponse = zod.object({
+  choices: zod.array(
+    zod.object({
+      city: zod.string(),
+      country: zod.string(),
+      state: zod.string(),
+    }),
+  ),
+  message: zod.string(),
+  pincode: zod.string(),
 });
 
 /**
@@ -6265,7 +6370,7 @@ export const listCustomRolesResponseItemsItemDescriptionMax = 1000;
 
 export const listCustomRolesResponseItemsItemNameMax = 100;
 
-export const listCustomRolesResponseItemsItemPermissionsMax = 5;
+export const listCustomRolesResponseItemsItemPermissionsMax = 40;
 
 export const ListCustomRolesResponse = zod.object({
   has_more: zod.boolean(),
@@ -6286,6 +6391,41 @@ export const ListCustomRolesResponse = zod.object({
             "zone.delete",
             "zone.export",
             "zone.import",
+            "headquarter.add",
+            "headquarter.edit",
+            "headquarter.delete",
+            "headquarter.export",
+            "headquarter.import",
+            "mr.add",
+            "mr.edit",
+            "mr.delete",
+            "mr.export",
+            "mr.import",
+            "patient.add",
+            "patient.edit",
+            "patient.delete",
+            "patient.export",
+            "patient.import",
+            "doctor.add",
+            "doctor.edit",
+            "doctor.delete",
+            "doctor.export",
+            "doctor.import",
+            "product_category.add",
+            "product_category.edit",
+            "product_category.delete",
+            "product_category.export",
+            "product_category.import",
+            "location.add",
+            "location.edit",
+            "location.delete",
+            "location.export",
+            "location.import",
+            "courier.add",
+            "courier.edit",
+            "courier.delete",
+            "courier.export",
+            "courier.import",
           ]),
         )
         .max(listCustomRolesResponseItemsItemPermissionsMax)
@@ -6319,7 +6459,7 @@ export const createCustomRoleResponseDescriptionMax = 1000;
 
 export const createCustomRoleResponseNameMax = 100;
 
-export const createCustomRoleResponsePermissionsMax = 5;
+export const createCustomRoleResponsePermissionsMax = 40;
 
 export const CreateCustomRoleResponse = zod.object({
   created_at: zod.coerce.date(),
@@ -6337,6 +6477,41 @@ export const CreateCustomRoleResponse = zod.object({
         "zone.delete",
         "zone.export",
         "zone.import",
+        "headquarter.add",
+        "headquarter.edit",
+        "headquarter.delete",
+        "headquarter.export",
+        "headquarter.import",
+        "mr.add",
+        "mr.edit",
+        "mr.delete",
+        "mr.export",
+        "mr.import",
+        "patient.add",
+        "patient.edit",
+        "patient.delete",
+        "patient.export",
+        "patient.import",
+        "doctor.add",
+        "doctor.edit",
+        "doctor.delete",
+        "doctor.export",
+        "doctor.import",
+        "product_category.add",
+        "product_category.edit",
+        "product_category.delete",
+        "product_category.export",
+        "product_category.import",
+        "location.add",
+        "location.edit",
+        "location.delete",
+        "location.export",
+        "location.import",
+        "courier.add",
+        "courier.edit",
+        "courier.delete",
+        "courier.export",
+        "courier.import",
       ]),
     )
     .max(createCustomRoleResponsePermissionsMax)
@@ -6357,7 +6532,7 @@ export const getCustomRoleResponseDescriptionMax = 1000;
 
 export const getCustomRoleResponseNameMax = 100;
 
-export const getCustomRoleResponsePermissionsMax = 5;
+export const getCustomRoleResponsePermissionsMax = 40;
 
 export const GetCustomRoleResponse = zod.object({
   created_at: zod.coerce.date(),
@@ -6375,6 +6550,41 @@ export const GetCustomRoleResponse = zod.object({
         "zone.delete",
         "zone.export",
         "zone.import",
+        "headquarter.add",
+        "headquarter.edit",
+        "headquarter.delete",
+        "headquarter.export",
+        "headquarter.import",
+        "mr.add",
+        "mr.edit",
+        "mr.delete",
+        "mr.export",
+        "mr.import",
+        "patient.add",
+        "patient.edit",
+        "patient.delete",
+        "patient.export",
+        "patient.import",
+        "doctor.add",
+        "doctor.edit",
+        "doctor.delete",
+        "doctor.export",
+        "doctor.import",
+        "product_category.add",
+        "product_category.edit",
+        "product_category.delete",
+        "product_category.export",
+        "product_category.import",
+        "location.add",
+        "location.edit",
+        "location.delete",
+        "location.export",
+        "location.import",
+        "courier.add",
+        "courier.edit",
+        "courier.delete",
+        "courier.export",
+        "courier.import",
       ]),
     )
     .max(getCustomRoleResponsePermissionsMax)
@@ -6400,7 +6610,7 @@ export const deleteCustomRoleResponseDescriptionMax = 1000;
 
 export const deleteCustomRoleResponseNameMax = 100;
 
-export const deleteCustomRoleResponsePermissionsMax = 5;
+export const deleteCustomRoleResponsePermissionsMax = 40;
 
 export const DeleteCustomRoleResponse = zod.object({
   created_at: zod.coerce.date(),
@@ -6418,6 +6628,41 @@ export const DeleteCustomRoleResponse = zod.object({
         "zone.delete",
         "zone.export",
         "zone.import",
+        "headquarter.add",
+        "headquarter.edit",
+        "headquarter.delete",
+        "headquarter.export",
+        "headquarter.import",
+        "mr.add",
+        "mr.edit",
+        "mr.delete",
+        "mr.export",
+        "mr.import",
+        "patient.add",
+        "patient.edit",
+        "patient.delete",
+        "patient.export",
+        "patient.import",
+        "doctor.add",
+        "doctor.edit",
+        "doctor.delete",
+        "doctor.export",
+        "doctor.import",
+        "product_category.add",
+        "product_category.edit",
+        "product_category.delete",
+        "product_category.export",
+        "product_category.import",
+        "location.add",
+        "location.edit",
+        "location.delete",
+        "location.export",
+        "location.import",
+        "courier.add",
+        "courier.edit",
+        "courier.delete",
+        "courier.export",
+        "courier.import",
       ]),
     )
     .max(deleteCustomRoleResponsePermissionsMax)
@@ -6452,7 +6697,7 @@ export const editCustomRoleResponseDescriptionMax = 1000;
 
 export const editCustomRoleResponseNameMax = 100;
 
-export const editCustomRoleResponsePermissionsMax = 5;
+export const editCustomRoleResponsePermissionsMax = 40;
 
 export const EditCustomRoleResponse = zod.object({
   created_at: zod.coerce.date(),
@@ -6470,6 +6715,41 @@ export const EditCustomRoleResponse = zod.object({
         "zone.delete",
         "zone.export",
         "zone.import",
+        "headquarter.add",
+        "headquarter.edit",
+        "headquarter.delete",
+        "headquarter.export",
+        "headquarter.import",
+        "mr.add",
+        "mr.edit",
+        "mr.delete",
+        "mr.export",
+        "mr.import",
+        "patient.add",
+        "patient.edit",
+        "patient.delete",
+        "patient.export",
+        "patient.import",
+        "doctor.add",
+        "doctor.edit",
+        "doctor.delete",
+        "doctor.export",
+        "doctor.import",
+        "product_category.add",
+        "product_category.edit",
+        "product_category.delete",
+        "product_category.export",
+        "product_category.import",
+        "location.add",
+        "location.edit",
+        "location.delete",
+        "location.export",
+        "location.import",
+        "courier.add",
+        "courier.edit",
+        "courier.delete",
+        "courier.export",
+        "courier.import",
       ]),
     )
     .max(editCustomRoleResponsePermissionsMax)
@@ -6485,7 +6765,7 @@ export const SaveCustomRolePermissionsParams = zod.object({
   role_id: zod.coerce.string().uuid(),
 });
 
-export const saveCustomRolePermissionsBodyPermissionsMax = 5;
+export const saveCustomRolePermissionsBodyPermissionsMax = 40;
 
 export const SaveCustomRolePermissionsBody = zod.object({
   expected_version: zod.number().int().min(1),
@@ -6497,6 +6777,41 @@ export const SaveCustomRolePermissionsBody = zod.object({
         "zone.delete",
         "zone.export",
         "zone.import",
+        "headquarter.add",
+        "headquarter.edit",
+        "headquarter.delete",
+        "headquarter.export",
+        "headquarter.import",
+        "mr.add",
+        "mr.edit",
+        "mr.delete",
+        "mr.export",
+        "mr.import",
+        "patient.add",
+        "patient.edit",
+        "patient.delete",
+        "patient.export",
+        "patient.import",
+        "doctor.add",
+        "doctor.edit",
+        "doctor.delete",
+        "doctor.export",
+        "doctor.import",
+        "product_category.add",
+        "product_category.edit",
+        "product_category.delete",
+        "product_category.export",
+        "product_category.import",
+        "location.add",
+        "location.edit",
+        "location.delete",
+        "location.export",
+        "location.import",
+        "courier.add",
+        "courier.edit",
+        "courier.delete",
+        "courier.export",
+        "courier.import",
       ]),
     )
     .max(saveCustomRolePermissionsBodyPermissionsMax),
@@ -6507,7 +6822,7 @@ export const saveCustomRolePermissionsResponseDescriptionMax = 1000;
 
 export const saveCustomRolePermissionsResponseNameMax = 100;
 
-export const saveCustomRolePermissionsResponsePermissionsMax = 5;
+export const saveCustomRolePermissionsResponsePermissionsMax = 40;
 
 export const SaveCustomRolePermissionsResponse = zod.object({
   created_at: zod.coerce.date(),
@@ -6525,6 +6840,41 @@ export const SaveCustomRolePermissionsResponse = zod.object({
         "zone.delete",
         "zone.export",
         "zone.import",
+        "headquarter.add",
+        "headquarter.edit",
+        "headquarter.delete",
+        "headquarter.export",
+        "headquarter.import",
+        "mr.add",
+        "mr.edit",
+        "mr.delete",
+        "mr.export",
+        "mr.import",
+        "patient.add",
+        "patient.edit",
+        "patient.delete",
+        "patient.export",
+        "patient.import",
+        "doctor.add",
+        "doctor.edit",
+        "doctor.delete",
+        "doctor.export",
+        "doctor.import",
+        "product_category.add",
+        "product_category.edit",
+        "product_category.delete",
+        "product_category.export",
+        "product_category.import",
+        "location.add",
+        "location.edit",
+        "location.delete",
+        "location.export",
+        "location.import",
+        "courier.add",
+        "courier.edit",
+        "courier.delete",
+        "courier.export",
+        "courier.import",
       ]),
     )
     .max(saveCustomRolePermissionsResponsePermissionsMax)

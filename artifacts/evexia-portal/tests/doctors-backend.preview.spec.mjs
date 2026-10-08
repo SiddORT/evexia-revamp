@@ -85,7 +85,7 @@ for (const mobile of [false, true]) {
       await page.getByTestId(`input-doctor-${key}`).fill(String(values[key]));
     }
     await page.getByTestId('tab-doctor-address').click();
-    await page.route('**/api/v1/admin/mrs/postal/110001*', (route) => route.fulfill({
+    await page.route('**/api/v1/admin/doctors/postal/110001*', (route) => route.fulfill({
       contentType: 'application/json', body: JSON.stringify({ pincode: '110001', choices: [
         { city: 'District A', state: 'Delhi', country: 'India' }, { city: 'District B', state: 'Delhi', country: 'India' },
       ], message: '' }),
@@ -132,7 +132,7 @@ test('Doctor late PIN requests, manual address protection, non-Indian entries an
   const seen = new Promise((r) => { arrived = r; });
   const gate = new Promise((r) => { release = r; });
   const done = new Promise((r) => { drained = r; });
-  await page.route('**/api/v1/admin/mrs/postal/110002*', async (route) => {
+  await page.route('**/api/v1/admin/doctors/postal/110002*', async (route) => {
     arrived(); await gate;
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ pincode: '110002', choices: [{ city: 'Late old city', state: 'Old state', country: 'India' }], message: '' }) }).catch(() => {});
     drained();
@@ -143,8 +143,8 @@ test('Doctor late PIN requests, manual address protection, non-Indian entries an
   release(); await done;
   await expect(page.getByTestId('select-doctor-locality')).toBeVisible();
   await expect(page.getByTestId('input-doctor-city')).toHaveValue('Manually protected');
-  await page.unroute('**/api/v1/admin/mrs/postal/110002*');
-  await page.route('**/api/v1/admin/mrs/postal/110003*', (route) => route.fulfill({
+  await page.unroute('**/api/v1/admin/doctors/postal/110002*');
+  await page.route('**/api/v1/admin/doctors/postal/110003*', (route) => route.fulfill({
     status: 503, contentType: 'application/json', body: JSON.stringify({ error: { message: 'Synthetic postal service unavailable', code: 'mr_postal_unavailable' } }),
   }));
   await page.getByTestId('input-doctor-pincode').fill('110003');

@@ -58,11 +58,12 @@ def provider(pin):
     return [dict(city=city, state=state, country=country) for city, state, country in sorted(choices)]
 
 
-def lookup(db, actor, pin, fetcher=provider):
+def lookup(db, actor, pin, fetcher=provider, *, resource="mr", action="add"):
     if not re.fullmatch(r"[1-9][0-9]{5}", pin):
         raise mrs.MRError("Enter a complete six-digit Indian PIN. Manual entry remains available.", 422, "mr_pin_invalid")
     def quota():
-        current = mrs.authorize(db, actor)
+        from app.services.master_policy import authorize_master
+        current = authorize_master(db, actor, resource, action)
         count = db.scalar(select(func.count()).select_from(AuditEvent).where(
             AuditEvent.actor_id == current.user.id, AuditEvent.action == "mr_postal_lookup",
             AuditEvent.created_at > utcnow() - timedelta(minutes=1)))
@@ -101,7 +102,8 @@ def lookup(db, actor, pin, fetcher=provider):
             _network.release()
     # Network work held no transaction or row locks. Reauthorize after slow I/O.
     def finish():
-        mrs.authorize(db, actor, lock=False)
+        from app.services.master_policy import authorize_master
+        authorize_master(db, actor, resource, action, lock=False)
         db.commit()
     mrs.transaction(db, finish)
     return dict(pincode=pin, choices=choices, message=message if choices else

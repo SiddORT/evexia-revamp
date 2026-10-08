@@ -232,7 +232,7 @@ def digest_for(actor, data, filename, snapshot):
 def transfer(db, actor, data, filename, confirm=False, digest=None):
     parsed = parse(data, filename)
     def review():
-        current = mrs.authorize(db, actor, provision=True)
+        current = mrs.authorize(db, actor, action="import")
         mrs.graph_lock(db)
         rows, bodies, snapshot = review_state(db, parsed)
         fingerprint = digest_for(current, data, filename, snapshot)
@@ -247,10 +247,10 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
     if not confirm:
         return response
     # Password work is outside row transactions; failures publish no accounts.
-    prepared = mrs.prepare_passwords(db, actor, [None] * len(planned))
+    prepared = mrs.prepare_passwords(db, actor, [None] * len(planned), action="import")
     def commit():
         started = time.monotonic()
-        current = mrs.authorize(db, actor, provision=True)
+        current = mrs.authorize(db, actor, action="import")
         mrs.graph_lock(db)
         rows, bodies, snapshot = review_state(db, parsed)
         if any(row["errors"] for row in rows) or not hmac.compare_digest(digest or "", digest_for(current, data, filename, snapshot)):
@@ -307,7 +307,7 @@ def sample(format):
 
 def export(db, actor, query, status, zone_id, hq_id, format):
     def work():
-        mrs.authorize(db, actor, lock=False)
+        mrs.authorize(db, actor, action="export", lock=False)
         clauses = mrs.predicates(query, status, zone_id, hq_id)
         count = db.scalar(select(func.count()).select_from(MRDirectory).where(*clauses))
         if count > EXPORT_LIMIT:

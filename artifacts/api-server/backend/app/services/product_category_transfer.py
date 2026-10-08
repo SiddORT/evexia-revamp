@@ -118,7 +118,7 @@ def review_digest(actor, data, filename):
 
 def transfer(db, actor, data, filename, confirm=False, digest=None):
     def work():
-        current = product_categories.authorize(db, actor)
+        current = product_categories.authorize(db, actor, "import")
         rows = parse(data, filename)
         fingerprint = review_digest(current, data, filename)
         if confirm and not hmac.compare_digest(digest or "", fingerprint):
@@ -181,7 +181,7 @@ def format_price(value):
 
 def export(db, actor, query, status, format, min_price=None, max_price=None):
     def work():
-        product_categories.authorize(db, actor)
+        product_categories.authorize(db, actor, "export")
         records = list(db.scalars(select(ProductCategory).where(*product_categories.predicates(query, status, min_price, max_price))
                                   .order_by(ProductCategory.created_at.desc(), ProductCategory.id.desc()).limit(EXPORT_LIMIT + 1)))
         if len(records) > EXPORT_LIMIT:

@@ -19,7 +19,7 @@ from app.repositories import sessions as repository
 from app.schemas.auth import CurrentUser, TokenResponse
 from app.db.staff_models import StaffProfile
 from app.db.role_models import CustomRole
-from app.services.zone_policy import ZONE_ACTIONS
+from app.services.master_policy import MASTER_ACTIONS
 
 
 class AuthError(Exception):
@@ -87,7 +87,7 @@ class Identity:
                 and self.user.system_role == "super_admin"):
             return frozenset({"admin.access", "staff.manage", "roles.manage", "domain.provision", "domain.assign_patient"})
         if self.staff is not None:
-            return frozenset({"workspace.access"}) | (self.zone_grants & ZONE_ACTIONS)
+            return frozenset({"workspace.access"}) | (self.zone_grants & MASTER_ACTIONS)
         return frozenset()
 
     def public(self) -> CurrentUser:
@@ -155,7 +155,7 @@ def _load_identity(db: Session, user: User, lock: bool = False) -> Identity:
             role = db.scalar(role_query)
             if not role:
                 raise AuthError()
-            grants = frozenset(role.permissions) & ZONE_ACTIONS
+            grants = frozenset(role.permissions) & MASTER_ACTIONS
         return Identity(user, staff=staff, zone_grants=grants)
     if user.system_role not in ("super_admin", "mr"):
         raise AuthError()

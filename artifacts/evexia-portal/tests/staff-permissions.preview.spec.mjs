@@ -34,12 +34,12 @@ test('role matrix: All/None, saved count, dirty guard, metadata edit keeps grant
   await page.getByTestId(`button-role-${ids.roleId}`).click();
   await page.getByRole('tab', { name: 'Permissions', exact: true }).click();
   for (const key of KEYS) await expect(page.getByTestId(`checkbox-permission-zone.${key}`)).not.toBeChecked();
-  await expect(page.getByTestId('text-saved-permission-count')).toContainText('0 of 5');
+  await expect(page.getByTestId('text-saved-permission-count')).toContainText('0 of 40');
   await page.getByTestId('button-permissions-all').click();
   for (const key of KEYS) await expect(page.getByTestId(`checkbox-permission-zone.${key}`)).toBeChecked();
   await page.getByTestId('button-permissions-none').click();
   await page.getByTestId('checkbox-permission-zone.import').check();
-  await expect(page.getByTestId('text-draft-permission-count')).toContainText('1 of 5');
+  await expect(page.getByTestId('text-draft-permission-count')).toContainText('1 of 40');
   // Dirty switching guard: keep editing preserves the draft.
   await page.getByTestId('link-admin-staff').click();
   await expect(page.getByTestId('button-keep-editing-permissions')).toBeVisible();
@@ -47,7 +47,7 @@ test('role matrix: All/None, saved count, dirty guard, metadata edit keeps grant
   await expect(page.getByTestId('checkbox-permission-zone.import')).toBeChecked();
   await page.getByTestId('button-save-permissions').click();
   await expect(page.getByTestId('status-roles-notice')).toContainText('1 permission');
-  await expect(page.getByTestId('text-saved-permission-count')).toContainText('1 of 5');
+  await expect(page.getByTestId('text-saved-permission-count')).toContainText('1 of 40');
   await page.reload();
   await expect(page.getByTestId(`button-role-${ids.roleId}`)).toContainText('1 permission');
   await page.getByTestId(`button-role-${ids.roleId}`).click();
@@ -110,7 +110,8 @@ test('staff access: explicit assignment, restricted workspace, import without ad
   await login(denied, ids.userId, ids.password, '/admin');
   await expect(denied.getByTestId('status-no-workspace-access')).toBeVisible();
   await denied.goto(`${base()}/admin/masters/zones`);
-  await expect(denied.getByTestId('status-zone-denied')).toBeVisible();
+  await expect(denied.getByTestId('status-no-workspace-access')).toBeVisible();
+  await expect(denied).toHaveURL(/\/admin$/);
   await denied.screenshot({ path: testInfo.outputPath('restricted-zone-denied.png'), fullPage: true });
   await again.close();
 });
@@ -217,7 +218,9 @@ test('staff with Export only exports CSV and XLSX; sample ledger needs Import', 
   expect((await readFileBuffer(await (await xlsx).path())).subarray(0, 2).toString()).toBe('PK');
   const token = await bearer(page);
   await page.goto(`${base()}/admin/masters/import/zone`);
-  await expect(page.getByTestId('status-zone-import-denied')).toBeVisible();
+  await expect(page).toHaveURL(/\/admin\/masters\/zones$/);
+  await expect(page.getByTestId('button-export-zones')).toBeVisible();
+  await expect(page.locator('input[type="file"]')).toHaveCount(0);
   const body = { initiation_id: '00000000-0000-4000-8000-0000000000aa', source: 'zone', kind: 'sample', format: 'CSV' };
   expect((await api(page, token, 'POST', '/admin/reporting/downloads/initiate', body)).status()).toBe(403);
   await sc.close(); await context.close();
@@ -261,7 +264,8 @@ test('revoking the role or login while staff is signed in takes effect on verifi
   await expect(page.getByTestId('button-add-zone')).toBeVisible();
   await setAccess(admin, ids, null, true);
   await page.evaluate(async () => (await import('/src/auth/adminSession.js')).verifySession(false));
-  await expect(page.getByTestId('status-zone-denied')).toBeVisible();
+  await expect(page.getByTestId('status-no-workspace-access')).toBeVisible();
+  await expect(page).toHaveURL(/\/admin$/);
   await expect(page.getByTestId('button-add-zone')).toHaveCount(0);
   await setAccess(admin, ids, ids.roleId, false);
   await page.evaluate(async () => (await import('/src/auth/adminSession.js')).verifySession(false)).catch(() => null);
@@ -295,7 +299,7 @@ test('stale role: external change forces explicit adopt or discard, even when gr
   await expect(page.getByTestId('status-permissions-stale')).toHaveCount(0);
   await page.getByTestId('checkbox-permission-zone.edit').check();
   await page.getByTestId('button-save-permissions').click();
-  await expect(page.getByTestId('text-saved-permission-count')).toContainText('2 of 5');
+  await expect(page.getByTestId('text-saved-permission-count')).toContainText('2 of 40');
   await context.close();
 });
 
@@ -333,7 +337,7 @@ test('committed but lost permission result reconciles across tabs; assigned dele
   await page.unroute('**/api/v1/admin/roles/*/permissions');
   await page.getByTestId('button-refresh-permission-roles').click();
   await expect(page.getByTestId('status-roles-notice')).toContainText('could not be confirmed as yours');
-  await expect(page.getByTestId('text-saved-permission-count')).toContainText('1 of 5');
+  await expect(page.getByTestId('text-saved-permission-count')).toContainText('1 of 40');
   expect(writes).toBe(1);
   await page.getByTestId('tab-roles').click();
   await page.getByTestId('button-delete-role').click();
@@ -367,6 +371,6 @@ test('dirty draft guards profile menu, log out and browser Back; saving blocks s
   await page.getByTestId('button-save-permissions').click();
   await expect(page.getByTestId('button-cancel-permissions')).toBeDisabled();
   await expect(page.locator('[data-testid^="button-role-"]').first()).toBeDisabled();
-  await expect(page.getByTestId('text-saved-permission-count')).toContainText('1 of 5');
+  await expect(page.getByTestId('text-saved-permission-count')).toContainText('1 of 40');
   await context.close();
 });

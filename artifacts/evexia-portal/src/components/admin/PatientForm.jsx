@@ -3,7 +3,7 @@ import PhoneInput from './PhoneInput.jsx';
 import PatientDoctorSelect from './PatientDoctorSelect.jsx';
 import { dialCountry } from '../../services/phoneCountries.js';
 import { businessToday, patientAge } from '../../services/serverPatients.js';
-import { lookupDoctorPIN } from '../../services/serverDoctors.js';
+import { lookupPatientPIN } from '../../services/serverPatients.js';
 import '../../mr.css';
 import '../../patient.css';
 
@@ -97,7 +97,7 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
     setPinState({ choices: [], message: 'Looking up PIN…' });
     const timer = setTimeout(async () => {
       try {
-        const result = await lookupDoctorPIN(values.pincode, controller.signal);
+        const result = await lookupPatientPIN(values.pincode, controller.signal, patient ? 'edit' : 'add');
         if (controller.signal.aborted || request !== pinRequest.current || revision !== addressRevision.current || saving) return;
         setPinState({ choices: result.choices, message: result.choices.length > 1 ? 'Choose a PIN location or enter manually.' : result.message || '' });
         if (result.choices.length === 1) {

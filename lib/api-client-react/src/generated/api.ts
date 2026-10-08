@@ -108,6 +108,7 @@ import type {
   ListDoctorMRChoicesParams,
   ListDownloadLogsParams,
   ListHeadquartersParams,
+  ListMRAssociatedDoctorChoicesParams,
   ListMRDirectoryParams,
   ListMRReferenceChoicesParams,
   ListOwnSessionsParams,
@@ -129,11 +130,15 @@ import type {
   LocationStatus,
   LocationVersion,
   LoginRequest,
+  LookupDoctorPincodeParams,
+  LookupMRPincodeParams,
+  LookupPatientPincodeParams,
   MRChoices,
   MRContact,
   MRCreate,
   MRCreated,
   MRDirectoryResponse,
+  MRDoctorPage,
   MREdit,
   MRImportResult,
   MRPage,
@@ -3122,6 +3127,119 @@ export const useReviewDoctorImport = <
   return useMutation(getReviewDoctorImportMutationOptions(options));
 };
 
+export const getLookupDoctorPincodeUrl = (
+  pin: string,
+  params?: LookupDoctorPincodeParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/doctors/postal/${pin}?${stringifiedParams}`
+    : `/api/v1/admin/doctors/postal/${pin}`;
+};
+
+/**
+ * @summary Postal
+ */
+export const lookupDoctorPincode = async (
+  pin: string,
+  params?: LookupDoctorPincodeParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PostalResponse> => {
+  return customFetch<PostalResponse>(getLookupDoctorPincodeUrl(pin, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getLookupDoctorPincodeQueryKey = (
+  pin: string,
+  params?: LookupDoctorPincodeParams,
+) => {
+  return [
+    `/api/v1/admin/doctors/postal/${pin}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getLookupDoctorPincodeQueryOptions = <
+  TData = Awaited<ReturnType<typeof lookupDoctorPincode>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  pin: string,
+  params?: LookupDoctorPincodeParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupDoctorPincode>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getLookupDoctorPincodeQueryKey(pin, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof lookupDoctorPincode>>
+  > = ({ signal }) =>
+    lookupDoctorPincode(pin, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: pin !== null && pin !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof lookupDoctorPincode>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type LookupDoctorPincodeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof lookupDoctorPincode>>
+>;
+export type LookupDoctorPincodeQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Postal
+ */
+
+export function useLookupDoctorPincode<
+  TData = Awaited<ReturnType<typeof lookupDoctorPincode>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  pin: string,
+  params?: LookupDoctorPincodeParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupDoctorPincode>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getLookupDoctorPincodeQueryOptions(pin, params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export const getListDoctorMRChoicesUrl = (
   params?: ListDoctorMRChoicesParams,
 ) => {
@@ -5472,8 +5590,23 @@ export const useReviewMRImport = <
   return useMutation(getReviewMRImportMutationOptions(options));
 };
 
-export const getLookupMRPincodeUrl = (pin: string) => {
-  return `/api/v1/admin/mrs/postal/${pin}`;
+export const getLookupMRPincodeUrl = (
+  pin: string,
+  params?: LookupMRPincodeParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/mrs/postal/${pin}?${stringifiedParams}`
+    : `/api/v1/admin/mrs/postal/${pin}`;
 };
 
 /**
@@ -5481,16 +5614,23 @@ export const getLookupMRPincodeUrl = (pin: string) => {
  */
 export const lookupMRPincode = async (
   pin: string,
+  params?: LookupMRPincodeParams,
   options?: Parameters<typeof customFetch>[1],
 ): Promise<PostalResponse> => {
-  return customFetch<PostalResponse>(getLookupMRPincodeUrl(pin), {
+  return customFetch<PostalResponse>(getLookupMRPincodeUrl(pin, params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getLookupMRPincodeQueryKey = (pin: string) => {
-  return [`/api/v1/admin/mrs/postal/${pin}`] as const;
+export const getLookupMRPincodeQueryKey = (
+  pin: string,
+  params?: LookupMRPincodeParams,
+) => {
+  return [
+    `/api/v1/admin/mrs/postal/${pin}`,
+    ...(params ? [params] : []),
+  ] as const;
 };
 
 export const getLookupMRPincodeQueryOptions = <
@@ -5498,6 +5638,7 @@ export const getLookupMRPincodeQueryOptions = <
   TError = ErrorType<ErrorEnvelope>,
 >(
   pin: string,
+  params?: LookupMRPincodeParams,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof lookupMRPincode>>,
@@ -5509,11 +5650,12 @@ export const getLookupMRPincodeQueryOptions = <
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getLookupMRPincodeQueryKey(pin);
+  const queryKey =
+    queryOptions?.queryKey ?? getLookupMRPincodeQueryKey(pin, params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof lookupMRPincode>>> = ({
     signal,
-  }) => lookupMRPincode(pin, { signal, ...requestOptions });
+  }) => lookupMRPincode(pin, params, { signal, ...requestOptions });
 
   return {
     queryKey,
@@ -5541,6 +5683,7 @@ export function useLookupMRPincode<
   TError = ErrorType<ErrorEnvelope>,
 >(
   pin: string,
+  params?: LookupMRPincodeParams,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof lookupMRPincode>>,
@@ -5550,7 +5693,7 @@ export function useLookupMRPincode<
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getLookupMRPincodeQueryOptions(pin, options);
+  const queryOptions = getLookupMRPincodeQueryOptions(pin, params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -6153,6 +6296,127 @@ export const useDeleteMRDirectory = <
 > => {
   return useMutation(getDeleteMRDirectoryMutationOptions(options));
 };
+
+export const getListMRAssociatedDoctorChoicesUrl = (
+  mrId: string,
+  params?: ListMRAssociatedDoctorChoicesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/mrs/${mrId}/doctors?${stringifiedParams}`
+    : `/api/v1/admin/mrs/${mrId}/doctors`;
+};
+
+/**
+ * @summary Associated Doctors
+ */
+export const listMRAssociatedDoctorChoices = async (
+  mrId: string,
+  params?: ListMRAssociatedDoctorChoicesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRDoctorPage> => {
+  return customFetch<MRDoctorPage>(
+    getListMRAssociatedDoctorChoicesUrl(mrId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListMRAssociatedDoctorChoicesQueryKey = (
+  mrId: string,
+  params?: ListMRAssociatedDoctorChoicesParams,
+) => {
+  return [
+    `/api/v1/admin/mrs/${mrId}/doctors`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListMRAssociatedDoctorChoicesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMRAssociatedDoctorChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  mrId: string,
+  params?: ListMRAssociatedDoctorChoicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMRAssociatedDoctorChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListMRAssociatedDoctorChoicesQueryKey(mrId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listMRAssociatedDoctorChoices>>
+  > = ({ signal }) =>
+    listMRAssociatedDoctorChoices(mrId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: mrId !== null && mrId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMRAssociatedDoctorChoices>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMRAssociatedDoctorChoicesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMRAssociatedDoctorChoices>>
+>;
+export type ListMRAssociatedDoctorChoicesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Associated Doctors
+ */
+
+export function useListMRAssociatedDoctorChoices<
+  TData = Awaited<ReturnType<typeof listMRAssociatedDoctorChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  mrId: string,
+  params?: ListMRAssociatedDoctorChoicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMRAssociatedDoctorChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMRAssociatedDoctorChoicesQueryOptions(
+    mrId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export const getEditMRDirectoryUrl = (mrId: string) => {
   return `/api/v1/admin/mrs/${mrId}/edit`;
@@ -7120,6 +7384,123 @@ export const useReviewPatientImport = <
 > => {
   return useMutation(getReviewPatientImportMutationOptions(options));
 };
+
+export const getLookupPatientPincodeUrl = (
+  pin: string,
+  params?: LookupPatientPincodeParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/patients/postal/${pin}?${stringifiedParams}`
+    : `/api/v1/admin/patients/postal/${pin}`;
+};
+
+/**
+ * @summary Postal
+ */
+export const lookupPatientPincode = async (
+  pin: string,
+  params?: LookupPatientPincodeParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PostalResponse> => {
+  return customFetch<PostalResponse>(getLookupPatientPincodeUrl(pin, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getLookupPatientPincodeQueryKey = (
+  pin: string,
+  params?: LookupPatientPincodeParams,
+) => {
+  return [
+    `/api/v1/admin/patients/postal/${pin}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getLookupPatientPincodeQueryOptions = <
+  TData = Awaited<ReturnType<typeof lookupPatientPincode>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  pin: string,
+  params?: LookupPatientPincodeParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupPatientPincode>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getLookupPatientPincodeQueryKey(pin, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof lookupPatientPincode>>
+  > = ({ signal }) =>
+    lookupPatientPincode(pin, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: pin !== null && pin !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof lookupPatientPincode>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type LookupPatientPincodeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof lookupPatientPincode>>
+>;
+export type LookupPatientPincodeQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Postal
+ */
+
+export function useLookupPatientPincode<
+  TData = Awaited<ReturnType<typeof lookupPatientPincode>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  pin: string,
+  params?: LookupPatientPincodeParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupPatientPincode>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getLookupPatientPincodeQueryOptions(
+    pin,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export const getListPatientDoctorChoicesUrl = (
   params?: ListPatientDoctorChoicesParams,

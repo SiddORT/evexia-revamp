@@ -6,7 +6,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
-from app.api.deps import require_permissions
+from app.api.deps import master_router
 from app.db.session import get_db
 from app.schemas.couriers import (
     CourierFields, CourierEdit, CourierStatus, CourierVersion, CourierResponse,
@@ -17,7 +17,7 @@ from app.services import couriers, courier_transfer
 from app.services.downloads import server_record
 
 router = APIRouter(prefix="/admin/courier-partners", tags=["Courier Partner Master"])
-manager = require_permissions("admin.access")
+manager = master_router("courier")
 OVERHEAD = 64 * 1024
 
 

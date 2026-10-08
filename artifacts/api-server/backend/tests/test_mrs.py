@@ -318,7 +318,7 @@ def test_postal_unambiguous_choices_manual_failure_and_revocation(client, monkey
     monkeypatch.setattr(mr_postal, "provider", provider)
     # Default argument is bound at definition; inject through the route adapter.
     original = mr_postal.lookup
-    monkeypatch.setattr(mr_postal, "lookup", lambda db, actor, pin: original(db, actor, pin, provider))
+    monkeypatch.setattr(mr_postal, "lookup", lambda db, actor, pin, **policy: original(db, actor, pin, provider, **policy))
     for _ in range(2):
         response = api.get(BASE + "/postal/110001", headers=headers)
         assert response.status_code == 200 and response.json()["choices"][0]["city"] == "District suggestion"
@@ -326,7 +326,7 @@ def test_postal_unambiguous_choices_manual_failure_and_revocation(client, monkey
     assert api.get(BASE + "/postal/invalid", headers=headers).status_code == 422
     def failed(pin):
         raise TimeoutError()
-    monkeypatch.setattr(mr_postal, "lookup", lambda db, actor, pin: original(db, actor, pin, failed))
+    monkeypatch.setattr(mr_postal, "lookup", lambda db, actor, pin, **policy: original(db, actor, pin, failed, **policy))
     response = api.get(BASE + "/postal/110002", headers=headers)
     assert response.status_code == 200 and response.json()["choices"] == []
     assert "manually" in response.json()["message"]
@@ -360,7 +360,7 @@ def test_import_request_review_session_export_and_rate_bounds(client, monkeypatc
     assert api.get(BASE + "/export", headers=new_headers).status_code == 409
     mr_postal._cache.clear()
     original = mr_postal.lookup
-    monkeypatch.setattr(mr_postal, "lookup", lambda db, actor, pin: original(db, actor, pin, lambda _: []))
+    monkeypatch.setattr(mr_postal, "lookup", lambda db, actor, pin, **policy: original(db, actor, pin, lambda _: [], **policy))
     for _ in range(30):
         assert api.get(BASE + "/postal/110001", headers=new_headers).status_code == 200
     assert api.get(BASE + "/postal/110001", headers=new_headers).status_code == 429

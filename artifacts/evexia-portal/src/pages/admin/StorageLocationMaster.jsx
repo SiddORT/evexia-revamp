@@ -11,12 +11,14 @@ import TablePagination from '../../components/admin/TablePagination.jsx';
 import useServerLocations from '../../hooks/useServerLocations.js';
 import { exportLocations, downloadLocationFile } from '../../services/serverLocations.js';
 import { reportingIdentityGuard } from '../../auth/adminSession.js';
+import { useMasterActions } from '../../auth/useMasterActions.js';
 
 function details(by, at) {
   return <span className="admin-table__details"><strong>{by}</strong><small>{formatAdminTimestamp(at)}</small></span>;
 }
 
 export default function StorageLocationMaster() {
+  const can = useMasterActions('location');
   const { theme, appearance } = useAdminPreferences();
   const [, navigate] = useLocation();
   const [search, setSearch] = useState('');
@@ -85,9 +87,9 @@ export default function StorageLocationMaster() {
   function actions(record, mobile = false) {
     const toggle = record.status === 'active' ? 'Inactivate' : 'Activate';
     return <fieldset disabled={loading || pending} style={{ border: 0, margin: 0, padding: 0 }} className={mobile ? 'admin-zone-card__actions' : 'admin-table__actions'}>
-      <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} title="Edit" onClick={() => { clearFeedback(); navigate(`/admin/masters/storage-locations/${record.id}`); }} data-testid={`button-edit-storage-location-${record.id}`}><Pencil size={mobile ? 14 : 16} aria-hidden="true" />{mobile && <span>Edit</span>}</button>
-      <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`${toggle} ${record.name}`} title={toggle} onClick={() => requestAction(record, toggle.toLowerCase())} data-testid={`button-toggle-storage-location-${record.id}`}><CirclePower size={mobile ? 14 : 17} aria-hidden="true" />{mobile && <span>{toggle}</span>}</button>
-      <button type="button" className={mobile ? 'admin-zone-card__action admin-zone-card__action--danger' : 'admin-icon-button admin-icon-button--danger'} aria-label={`Delete ${record.name}`} title="Delete" onClick={() => requestAction(record, 'delete')} data-testid={`button-delete-storage-location-${record.id}`}><Trash2 size={mobile ? 14 : 16} aria-hidden="true" />{mobile && <span>Delete</span>}</button>
+      {can.edit && <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} title="Edit" onClick={() => { clearFeedback(); navigate(`/admin/masters/storage-locations/${record.id}`); }} data-testid={`button-edit-storage-location-${record.id}`}><Pencil size={mobile ? 14 : 16} aria-hidden="true" />{mobile && <span>Edit</span>}</button>}
+      {can.edit && <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`${toggle} ${record.name}`} title={toggle} onClick={() => requestAction(record, toggle.toLowerCase())} data-testid={`button-toggle-storage-location-${record.id}`}><CirclePower size={mobile ? 14 : 17} aria-hidden="true" />{mobile && <span>{toggle}</span>}</button>}
+      {can.delete && <button type="button" className={mobile ? 'admin-zone-card__action admin-zone-card__action--danger' : 'admin-icon-button admin-icon-button--danger'} aria-label={`Delete ${record.name}`} title="Delete" onClick={() => requestAction(record, 'delete')} data-testid={`button-delete-storage-location-${record.id}`}><Trash2 size={mobile ? 14 : 16} aria-hidden="true" />{mobile && <span>Delete</span>}</button>}
     </fieldset>;
   }
   const columns = [
@@ -104,8 +106,8 @@ export default function StorageLocationMaster() {
     <div className="admin-page-head">
       <div><p className="admin-page-head__eyebrow">Masters / Inventory</p><h1>Storage Location Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Browser data clearing does not remove these storage locations.</p></div>
       <div className="admin-mr-head-actions">
-        <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/storage-location')} data-testid="button-import-storage-locations"><Upload size={16} aria-hidden="true" /> Import data</button>
-        <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>
+        {can.import && <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/storage-location')} data-testid="button-import-storage-locations"><Upload size={16} aria-hidden="true" /> Import data</button>}
+        {can.export && <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>
           <DropdownMenu.Trigger asChild>
             {/* Remain focusable while pending so closing the menu can return focus. */}
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-storage-locations"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
@@ -116,8 +118,8 @@ export default function StorageLocationMaster() {
               <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void exportVisible('xlsx')}>Excel (.xlsx)</DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
-        </DropdownMenu.Root>
-        <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate('/admin/masters/storage-locations/new'); }} data-testid="button-add-storage-location"><Plus size={16} aria-hidden="true" /> Add storage location</button>
+        </DropdownMenu.Root>}
+        {can.add && <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate('/admin/masters/storage-locations/new'); }} data-testid="button-add-storage-location"><Plus size={16} aria-hidden="true" /> Add storage location</button>}
       </div>
     </div>
     <p className="admin-page-head__description">Old browser records remain untouched and are not migrated or used as fallback. Explicitly import an existing CSV backup. Exports include all name/address/status matches, up to 5,000 records; larger results require narrower filters.</p>

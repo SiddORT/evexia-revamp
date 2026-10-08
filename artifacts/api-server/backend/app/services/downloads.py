@@ -7,6 +7,7 @@ from app.core.security import utcnow
 from app.db.download_models import DownloadLog
 from app.services.auth import revalidate_identity, AuthError
 from app.services.zone_policy import lock_policy
+from app.services.master_policy import MASTERS, master_allowed
 
 MODULES = {
     "zone": "Zone Master", "courier": "Courier Partner Master",
@@ -64,7 +65,8 @@ def record(db, identity, initiation_id, source, kind, format, provenance="server
     if format not in allowed.get(source, {}).get(kind, set()):
         raise HTTPException(422, "Unsupported download metadata")
     # Serialize against logout/replacement and across retry requests/tabs.
-    if source == "zone":
+    resource = "location" if source == "storage_location" else source
+    if resource in MASTERS:
         lock_policy(db)
     try:
         verified = revalidate_identity(db, identity, lock=True)
@@ -76,9 +78,10 @@ def record(db, identity, initiation_id, source, kind, format, provenance="server
     mr_private = (verified.role == "mr" and verified.mr is not None
                   and source == "private_attachment" and provenance == "server_prepared")
     if "admin.access" not in verified.permissions and not mr_private:
-        capability = ("zone.import" if kind == "sample" and provenance == "browser_reported"
-                      else "zone.export" if kind == "export" and provenance == "server_prepared" else None)
-        if (source != "zone" or verified.staff is None or capability not in verified.permissions):
+        action = ("import" if kind in ("sample", "template")
+                  else "export" if kind == "export" and provenance == "server_prepared" else None)
+        if (resource not in MASTERS or action is None
+                or not master_allowed(verified, resource, action)):
             db.rollback()
             raise HTTPException(403, "Download access denied")
     user = verified.user

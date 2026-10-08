@@ -16,6 +16,7 @@ import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import { contactMR, deleteMR, downloadMRFile, exportMRs, listMRs, resetMRPassword, statusMR } from '../../services/serverMRs.js';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
+import { useMasterActions } from '../../auth/useMasterActions.js';
 import '../../mr.css';
 
 const cleanPhone = (phone) => String(phone || '').replace(/[^+\d]/g, '');
@@ -25,6 +26,7 @@ function auditDetails(name, value) {
 }
 
 export default function MRMaster() {
+  const can = useMasterActions('mr');
   const { theme, appearance } = useAdminPreferences();
   const [, navigate] = useLocation();
   const [saveFeedback] = useState(() => {
@@ -122,12 +124,12 @@ export default function MRMaster() {
   function actions(record, compact = false) {
     const cls = compact ? 'admin-mr-card__action' : 'admin-icon-button';
     return <fieldset disabled={pending} style={{ border: 0, margin: 0, padding: 0 }} className={compact ? 'admin-mr-card__actions' : 'admin-table__actions'}>
-      <ContactRequirementButton record={record} kind="mr" compact={compact} onClick={() => request(record, 'contact')} />
+      {can.edit && <ContactRequirementButton record={record} kind="mr" compact={compact} onClick={() => request(record, 'contact')} />}
       <button type="button" className={cls} aria-label={`View doctors for ${record.name}`} title="View doctors" onClick={() => setDoctorView(record)} data-testid={`button-doctors-mr-${record.id}`}><UsersRound size={16} aria-hidden="true" />{compact && 'Doctors'}</button>
-      <button type="button" className={cls} aria-label={`Edit ${record.name}`} title="Edit" onClick={() => { setFeedback(''); navigate(`/admin/masters/mrs/${encodeURIComponent(record.id)}`); }} data-testid={`button-edit-mr-${record.id}`}><Pencil size={16} aria-hidden="true" />{compact && 'Edit'}</button>
-      <button type="button" className={cls} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} title={record.status === 'active' ? 'Inactivate' : 'Activate'} onClick={() => request(record, 'status')} data-testid={`button-toggle-mr-${record.id}`}><CirclePower size={16} aria-hidden="true" />{compact && (record.status === 'active' ? 'Inactivate' : 'Activate')}</button>
-      <button type="button" className={cls} aria-label={`Reset password for ${record.name}`} title="Reset password" onClick={() => request(record, 'reset')} data-testid={`button-reset-mr-${record.id}`}><KeyRound size={16} aria-hidden="true" />{compact && 'Reset password'}</button>
-      <button type="button" className={cls} aria-label={`Delete ${record.name}`} title="Delete" onClick={() => request(record, 'delete')} data-testid={`button-delete-mr-${record.id}`}><Trash2 size={16} aria-hidden="true" />{compact && 'Delete'}</button>
+      {can.edit && <button type="button" className={cls} aria-label={`Edit ${record.name}`} title="Edit" onClick={() => { setFeedback(''); navigate(`/admin/masters/mrs/${encodeURIComponent(record.id)}`); }} data-testid={`button-edit-mr-${record.id}`}><Pencil size={16} aria-hidden="true" />{compact && 'Edit'}</button>}
+      {can.edit && <button type="button" className={cls} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} title={record.status === 'active' ? 'Inactivate' : 'Activate'} onClick={() => request(record, 'status')} data-testid={`button-toggle-mr-${record.id}`}><CirclePower size={16} aria-hidden="true" />{compact && (record.status === 'active' ? 'Inactivate' : 'Activate')}</button>}
+      {can.protected && <button type="button" className={cls} aria-label={`Reset password for ${record.name}`} title="Reset password" onClick={() => request(record, 'reset')} data-testid={`button-reset-mr-${record.id}`}><KeyRound size={16} aria-hidden="true" />{compact && 'Reset password'}</button>}
+      {can.delete && <button type="button" className={cls} aria-label={`Delete ${record.name}`} title="Delete" onClick={() => request(record, 'delete')} data-testid={`button-delete-mr-${record.id}`}><Trash2 size={16} aria-hidden="true" />{compact && 'Delete'}</button>}
     </fieldset>;
   }
   function details(record, showName = true) {
@@ -165,15 +167,15 @@ export default function MRMaster() {
       <div><p className="admin-page-head__eyebrow">Masters / Team</p><h1>MR Master</h1><p className="admin-page-head__description">Shared server records. Each MR has a login account using the User ID.</p></div>
       <div className="admin-mr-head-actions">
         <button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={() => { retry(); setActionError(''); }} data-testid="button-refresh-mrs">Refresh records</button>
-        <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/mr')} data-testid="button-import-mrs"><Upload size={16} aria-hidden="true" /> Import data</button>
-        <DropdownMenu.Root>
+        {can.import && <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/mr')} data-testid="button-import-mrs"><Upload size={16} aria-hidden="true" /> Import data</button>}
+        {can.export && <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild><button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-mrs"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button></DropdownMenu.Trigger>
           <DropdownMenu.Portal><DropdownMenu.Content className="admin-dropdown__menu admin-zone-export__menu admin-mr-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} aria-label="MR export format">
             <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void exportFile('csv')}>CSV</DropdownMenu.Item>
             <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void exportFile('xlsx')}>Excel (.xlsx)</DropdownMenu.Item>
           </DropdownMenu.Content></DropdownMenu.Portal>
-        </DropdownMenu.Root>
-        <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { setFeedback(''); navigate('/admin/masters/mrs/new'); }} data-testid="button-add-mr"><Plus size={16} aria-hidden="true" /> Add MR</button>
+        </DropdownMenu.Root>}
+        {can.add && <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { setFeedback(''); navigate('/admin/masters/mrs/new'); }} data-testid="button-add-mr"><Plus size={16} aria-hidden="true" /> Add MR</button>}
       </div>
     </div>
     {(feedback || saveFeedback) && <div className="admin-feedback" role="status" data-testid="status-mr-feedback">{feedback || saveFeedback}</div>}

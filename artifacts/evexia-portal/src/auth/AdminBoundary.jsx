@@ -15,7 +15,7 @@ export default function AdminBoundary({ children }) {
   const { theme, appearance } = useAdminPreferences();
   const protectedPath = (path === '/admin' || path.startsWith('/admin/')) && path !== '/admin/login';
   const [verifiedPath, setVerifiedPath] = useState(null);
-  const staffBlocked = Boolean(isStaffIdentity(session.user) && !staffPathAllowed(path));
+  const staffBlocked = Boolean(isStaffIdentity(session.user) && !staffPathAllowed(path, session.user));
   useEffect(() => {
     if (!protectedPath) return;
     let active = true;

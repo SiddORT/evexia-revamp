@@ -90,8 +90,8 @@ test('capability helpers', async () => {
   assert.equal(c.canViewZones(u), true);
   assert.equal(c.canViewZones(staff(['workspace.access'])), false);
   assert.equal(c.hasZonePermission(u, 'zone.add'), false);
-  assert.equal(c.staffPathAllowed('/admin/masters/zones'), true);
-  for (const path of ['/admin/masters/zones/', '/admin/staff', '/admin/settings', '/admin/masters/import/mr', '/admin/masters/zones/trash']) assert.equal(c.staffPathAllowed(path), false);
+  assert.equal(c.staffPathAllowed('/admin/masters/zones', u), true);
+  for (const path of ['/admin/masters/zones/', '/admin/staff', '/admin/settings', '/admin/masters/import/mr', '/admin/masters/zones/trash']) assert.equal(c.staffPathAllowed(path, u), false);
 });
 
 test('staff transient renewal retains verified identity for mounted drafts but does not authorize actions', async () => {

@@ -77,7 +77,7 @@ def review_digest(actor, data, filename):
 def transfer(db, actor, data, filename, confirm=False, digest=None):
     rows = parse(data, filename)
     def work():
-        current = couriers.authorize(db, actor)
+        current = couriers.authorize(db, actor, "import")
         fingerprint = review_digest(current, data, filename)
         if confirm and not hmac.compare_digest(digest or "", fingerprint):
             raise couriers.CourierError("File or session changed. Review again before confirming.", 409,
@@ -116,7 +116,7 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
 
 def export(db, actor, query, status, format):
     def work():
-        couriers.authorize(db, actor)
+        couriers.authorize(db, actor, "export")
         records = list(db.scalars(select(CourierPartner).where(*couriers.predicates(query, status))
                                   .order_by(CourierPartner.created_at.desc(), CourierPartner.id.desc())
                                   .limit(EXPORT_LIMIT + 1)))

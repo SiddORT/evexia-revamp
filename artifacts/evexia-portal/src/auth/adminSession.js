@@ -1,5 +1,5 @@
 // Tokens live only in this module's memory. No credential or identity storage.
-import { STAFF_VISIBLE_PERMISSIONS } from './capabilities.js';
+import { STAFF_VISIBLE_PERMISSIONS, MASTER_CATALOGUE, canViewMaster, hasMasterPermission } from './capabilities.js';
 const AUTH_URL = '/api/v1/auth';
 const LOCK_NAME = 'evexia-auth-cookie';
 const REPLACED_MESSAGE = 'Your Admin session ended because this account was signed in elsewhere. Please log in again.';
@@ -430,21 +430,25 @@ export async function roleRequest(path = '', body, { signal } = {}) {
 // Shared master transport. No automatic replay of a potentially committed write.
 // Per-operation Zone authorization. Staff never reach other master services;
 // trash and restore stay Super Admin only. The server re-checks every call.
-function masterAllowed(user, resource, path, writing) {
+function masterAllowed(user, resource, path, writing, params = {}) {
   if (user.identity_kind === 'mr') return false;
   if (user.permissions.includes('admin.access')) return true;
-  if (resource === 'mrs') return false;
-  if (user.identity_kind !== 'staff' || resource !== 'zones') return false;
-  const grants = user.permissions;
-  if (/^\/(?:trash)$|\/restore$/.test(path)) return false;
-  const need = path === '' ? (writing ? 'zone.add' : null)
+  const master = MASTER_CATALOGUE.find((item) => item.path === resource);
+  if (user.identity_kind !== 'staff' || !master) return false;
+  if (/^\/trash$|\/(?:restore|reset)$/.test(path)) return false;
+  const need = path === '' ? (writing ? 'add' : null)
     : /^\/[0-9a-f-]{36}$/.test(path) ? null
-    : /\/(?:edit|status)$/.test(path) ? 'zone.edit'
-    : /\/delete$/.test(path) ? 'zone.delete'
-    : path === '/export' ? 'zone.export'
-    : /^\/import\//.test(path) ? 'zone.import' : undefined;
+    : /\/(?:edit|status|contact)$/.test(path) || path === '/bulk' ? 'edit'
+    : /\/delete$/.test(path) ? 'delete'
+    : path === '/export' ? 'export'
+    : path === '/sample' || /^\/import\//.test(path) ? 'import'
+    : path === '/username' ? 'add'
+    : /^\/account\//.test(path) ? 'add'
+    : /^\/[0-9a-f-]{36}\/doctors$/.test(path) && resource === 'mrs' ? null
+    : /^\/postal\//.test(path) ? (params.action || 'add')
+    : ['/references', '/filters'].includes(path) ? null : undefined;
   if (need === undefined) return false;
-  return need ? grants.includes(need) : ['zone.add', 'zone.edit', 'zone.delete', 'zone.export', 'zone.import'].some((key) => grants.includes(key));
+  return need ? hasMasterPermission(user, master.key, need) : canViewMaster(user, master.key);
 }
 
 async function masterRequest(resource, path = '', { body, file, params = {}, download = false, signal } = {}) {
@@ -452,8 +456,8 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
   if (!['zones', 'courier-partners', 'storage-locations', 'designations', 'headquarters', 'mrs', 'doctors', 'patients', 'product-categories'].includes(resource)) throw new SessionError('Unsupported master resource.');
   const label = resource === 'patients' ? 'Patient' : resource === 'doctors' ? 'Doctor' : resource === 'mrs' ? 'MR' : resource === 'product-categories' ? 'Product category' : zone ? 'Zone' : resource === 'headquarters' ? 'Headquarter' : resource === 'designations' ? 'Designation' : resource === 'storage-locations' ? 'Storage location' : 'Courier partner';
   const unavailable = resource === 'patients' ? 'patient_unavailable' : resource === 'doctors' ? 'doctor_unavailable' : resource === 'mrs' ? 'mr_unavailable' : resource === 'product-categories' ? 'product_category_unavailable' : zone ? 'zone_unavailable' : resource === 'headquarters' ? 'headquarter_unavailable' : resource === 'designations' ? 'designation_unavailable' : resource === 'storage-locations' ? 'location_unavailable' : 'courier_unavailable';
-  const mrRoute = /^(?:|\/references|\/username|\/account\/[a-z][a-z0-9._-]{2,31}|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|contact|delete|reset))?)$/;
-  const route = resource === 'patients' ? /^(?:|\/references|\/filters|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status))?)$/ : resource === 'doctors' ? /^(?:|\/references|\/filters|\/bulk|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|contact))?)$/ : resource === 'mrs' ? mrRoute : zone
+  const mrRoute = /^(?:|\/references|\/username|\/account\/[a-z][a-z0-9._-]{2,31}|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|contact|delete|reset|doctors))?)$/;
+  const route = resource === 'patients' ? /^(?:|\/references|\/filters|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/ : resource === 'doctors' ? /^(?:|\/references|\/filters|\/bulk|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|contact|delete))?)$/ : resource === 'mrs' ? mrRoute : zone
     ? /^(?:|\/trash|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|restore))?)$/
     : /^(?:|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/;
   if (!route.test(path) && !(['designations', 'headquarters', 'product-categories'].includes(resource) && path === '/sample')) {
@@ -466,7 +470,7 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
     if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
       throw new SessionError('Your session changed. Sign in again before retrying.', 401);
     }
-    if (!masterAllowed(state.user, resource, path, body !== undefined || file !== undefined)) throw new SessionError(`${label} access denied.`, 403);
+    if (!masterAllowed(state.user, resource, path, body !== undefined || file !== undefined, params)) throw new SessionError(`${label} access denied.`, 403);
   };
   if (pending) await pending;
   else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true);
@@ -561,7 +565,9 @@ export async function reportingRequest(resource, params = {}, { signal } = {}) {
     throw new SessionError('Unsupported report.');
   }
   if (state.user?.identity_kind === 'mr') throw new SessionError('Reporting access denied.', 403);
-  if (state.user?.identity_kind === 'staff' && !(resource === 'downloads/initiate' && params.source === 'zone' && params.kind === 'sample' && state.user.permissions.includes('zone.import'))) {
+  if (state.user?.identity_kind === 'staff' && !(resource === 'downloads/initiate'
+      && ['sample', 'template'].includes(params.kind)
+      && hasMasterPermission(state.user, params.source === 'storage_location' ? 'location' : params.source, 'import'))) {
     throw new SessionError('Reporting access denied.', 403);
   }
   const epoch = generation;

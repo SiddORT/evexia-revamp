@@ -16,6 +16,11 @@ class DoctorError(mrs.MRError):
         super().__init__(message, status, code)
 
 
+def authorize(db, actor, action=None, lock=True):
+    from app.services.master_policy import authorize_master
+    return authorize_master(db, actor, "doctor", action, lock=lock, error=DoctorError)
+
+
 def transaction(db, work):
     try:
         db.execute(text("SET LOCAL lock_timeout = '5s'"))
@@ -93,7 +98,7 @@ def predicates(query="", status="all", zone_id="", mr_id="", state=""):
 
 def listing(db, actor, query="", status="all", zone_id="", mr_id="", state="", limit=10, offset=0):
     def work():
-        mrs.authorize(db, actor, lock=False)
+        authorize(db, actor, lock=False)
         clauses = predicates(query, status, zone_id, mr_id, state)
         total = db.scalar(select(func.count()).select_from(Doctor))
         filtered = db.scalar(select(func.count()).select_from(Doctor).where(*clauses))
@@ -114,7 +119,7 @@ def find(db, record_id, lock=False):
 
 def detail(db, actor, record_id):
     def work():
-        mrs.authorize(db, actor, lock=False)
+        authorize(db, actor, lock=False)
         result = projection(db, find(db, record_id))
         db.commit()
         return result
@@ -123,7 +128,7 @@ def detail(db, actor, record_id):
 
 def choices(db, actor, query="", limit=100, offset=0, include_saved=None):
     def work():
-        mrs.authorize(db, actor, lock=False)
+        authorize(db, actor, lock=False)
         clauses = [MRDirectory.deleted_at.is_(None)]
         if query:
             clauses.append(MRDirectory.name.ilike("%" + mrs.literal(query) + "%", escape="\\"))
@@ -147,7 +152,7 @@ def choices(db, actor, query="", limit=100, offset=0, include_saved=None):
 
 def filters(db, actor):
     def work():
-        mrs.authorize(db, actor, lock=False)
+        authorize(db, actor, lock=False)
         result = dict(states=list(db.scalars(select(Doctor.state).distinct().order_by(Doctor.state))),
                       missingMR=bool(db.scalar(select(Doctor.id).where(*predicates(mr_id="missing")).limit(1))),
                       missingZone=bool(db.scalar(select(Doctor.id).where(*predicates(zone_id="missing")).limit(1))))
@@ -182,7 +187,7 @@ def insert(db, actor, body, verification="unverified"):
 
 def create(db, actor, body):
     def work():
-        current = mrs.authorize(db, actor)
+        current = authorize(db, actor, "add")
         mrs.graph_lock(db)
         assignment(db, body.mrId)
         unique(db, body.registrationNumber)
@@ -194,7 +199,7 @@ def create(db, actor, body):
 
 def mutate(db, actor, record_id, body, operation):
     def work():
-        current = mrs.authorize(db, actor)
+        current = authorize(db, actor, "delete" if operation == "delete" else "edit")
         mrs.graph_lock(db)
         row = find(db, record_id, True)
         if row.version != body.expected_version:
@@ -225,7 +230,7 @@ def mutate(db, actor, record_id, body, operation):
 
 def bulk(db, actor, body):
     def work():
-        current = mrs.authorize(db, actor)
+        current = authorize(db, actor, "edit")
         mrs.graph_lock(db)
         rows = []
         for selected in sorted(body.selected, key=lambda item: str(item.id)):

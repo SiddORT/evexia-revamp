@@ -70,7 +70,7 @@ for (const mobile of [false, true]) test(`Patient ${mobile ? 'modern dark mobile
   await page.getByTestId('select-patient-doctorId').selectOption(body.doctorId);
   await page.getByTestId('select-patient-instructionsLanguage').selectOption(body.instructionsLanguage);
   await page.getByTestId('tab-patient-address').click();
-  await page.route('**/api/v1/admin/mrs/postal/110001*', route => route.fulfill({
+  await page.route('**/api/v1/admin/patients/postal/110001*', route => route.fulfill({
     contentType: 'application/json', body: JSON.stringify({ choices: [{ city: 'PIN district', state: 'Delhi', country: 'India' }], message: '' }),
   }));
   await page.getByTestId('input-patient-pincode').fill(body.pincode);
@@ -106,7 +106,7 @@ test('Patient PIN late/manual guards, server exports and prepared atomic CSV imp
   let entered, release;
   const arrived = new Promise(r => { entered = r; });
   const held = new Promise(r => { release = r; });
-  await page.route('**/api/v1/admin/mrs/postal/400001*', async route => {
+  await page.route('**/api/v1/admin/patients/postal/400001*', async route => {
     entered(); await held;
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ choices: [{ city: 'Late city', state: 'Maharashtra', country: 'India' }], message: '' }) }).catch(() => {});
   });
@@ -121,7 +121,9 @@ test('Patient PIN late/manual guards, server exports and prepared atomic CSV imp
   await page.getByTestId('input-search-patients').fill(body.name);
   await expect(page.getByTestId('button-export-patients')).toBeEnabled();
   const trigger = page.getByTestId('button-export-patients');
-  await trigger.focus(); await page.keyboard.press('Enter');
+  await expect(trigger).toBeVisible();
+  await trigger.focus(); await expect(trigger).toBeFocused();
+  await page.keyboard.press('Enter');
   await expect(page.getByRole('menuitem', { name: 'CSV', exact: true })).toBeVisible();
   await page.keyboard.press('Escape'); await expect(trigger).toBeFocused();
   for (const format of ['CSV', 'Excel (.xlsx)']) {

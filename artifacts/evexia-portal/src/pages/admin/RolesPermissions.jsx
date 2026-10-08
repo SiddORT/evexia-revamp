@@ -5,7 +5,7 @@ import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
 import { useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ZonePermissionMatrix, { countLabel } from '../../components/admin/ZonePermissionMatrix.jsx';
-import { ZONE_KEYS } from '../../auth/capabilities.js';
+import { MASTER_KEYS as ZONE_KEYS } from '../../auth/capabilities.js';
 import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import { listRoles, getRole, createRole, updateRole, deleteRole, setRolePermissions, samePermissions, validateRoleName, validateRoleDescription, ROLE_NAME_LIMIT, ROLE_DESCRIPTION_LIMIT } from '../../services/rolePermissions.js';
 import '../../roles-permissions.css';
@@ -231,7 +231,7 @@ export default function RolesPermissions() {
       const saved = await setRolePermissions(role.id, mine.selected, mine.base);
       if (!mounted.current) return;
       setPinned(saved); setDraft(null);
-      setNotice(`Saved permissions for ${saved.name}. ${countLabel(saved.permissions.length)} granted under Masters > Zone.`);
+      setNotice(`Saved permissions for ${saved.name}. ${countLabel(saved.permissions.length)} granted under Masters.`);
       setBusyBoth(false);
       await load(state.current.cursors, state.current.idx);
     } catch (e) {
@@ -304,7 +304,7 @@ export default function RolesPermissions() {
 
   const loading = status === 'loading';
   return <AdminLayout title="Roles & Permissions">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">People / Roles and permissions</p><h1>Roles & Permissions</h1><p className="admin-page-head__description">Manage role names, descriptions and Masters &gt; Zone permissions. Staff only receive a role's permissions when a Super Admin explicitly assigns it in Staff Management. The server records an audit entry for every change.</p></div></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">People / Roles and permissions</p><h1>Roles & Permissions</h1><p className="admin-page-head__description">Manage role names, descriptions and master permissions. Staff only receive a role's permissions when a Super Admin explicitly assigns it in Staff Management. The server records an audit entry for every change.</p></div></div>
     {blocked && <div className="rp-alert rp-alert--page" role="alert" data-testid="status-roles-blocked">A previous change had an unknown result. Refresh roles to confirm the current state before submitting again.</div>}
     {notice && <div className="admin-feedback rp-feedback" role="status" data-testid="status-roles-notice">{notice}</div>}
     <div className="rp-tabs" role="tablist" aria-label="Roles and permissions">
@@ -349,7 +349,7 @@ export default function RolesPermissions() {
           </dl>}
           <div hidden={tab !== 'permissions'}>
           <ZonePermissionMatrix selected={selectedPerms} saved={role.permissions} dirty={dirty} busy={permBusy} disabled={busy || blocked || status !== 'ready' || gone || behind || Boolean(mine?.ambiguous) || mine?.error?.code === 'role_deleted'}
-            onToggle={toggle} onAll={() => edit([...ZONE_KEYS])} onNone={() => edit([])} onSave={savePermissions} onCancel={() => setDraft(null)}>
+            onToggle={toggle} onSelect={edit} onAll={() => edit([...ZONE_KEYS])} onNone={() => edit([])} onSave={savePermissions} onCancel={() => setDraft(null)}>
             <div aria-live="polite">
               {gone && <div className="rp-alert" role="alert" data-testid="status-permissions-deleted"><strong>This role was deleted</strong><p>Nothing was saved. Your unsaved selection is shown for reference only. Discard it to continue.</p><div className="rp-alert__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => setDraft(null)} data-testid="button-discard-permission-draft">Discard draft</button></div></div>}
               {behind && <div className="rp-alert" role="alert" data-testid="status-permissions-stale"><strong>This role changed elsewhere</strong><p>Now at version {role.version}; your draft started from version {mine.base}. Saved: {countLabel(role.permissions.length)}. Choose how to continue.</p><div className="rp-alert__actions"><button type="button" className="admin-button" onClick={adoptDraft} data-testid="button-adopt-permissions">Keep my selection on current version</button><button type="button" className="admin-button admin-button--secondary" onClick={() => setDraft(null)} data-testid="button-use-current-permissions">Discard draft, use current</button></div></div>}
@@ -360,7 +360,7 @@ export default function RolesPermissions() {
           </div>
         </> : <div className="admin-empty" role="status">
           <strong>{loading ? 'Loading roles' : status === 'unavailable' ? 'Roles could not be loaded' : 'No role selected'}</strong>
-          <p>{status === 'unavailable' ? 'Use Refresh roles to try again.' : 'Select or add a role to configure its Masters > Zone permissions.'}</p>
+          <p>{status === 'unavailable' ? 'Use Refresh roles to try again.' : 'Select or add a role to configure its master permissions.'}</p>
           <span className="sr-only" data-testid="text-permission-count">0 permissions</span>
         </div>}
       </section>

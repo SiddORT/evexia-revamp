@@ -1497,6 +1497,30 @@ export interface MRCreated {
   record: MRDirectoryResponse;
 }
 
+export type MRDoctorChoiceStatus =
+  (typeof MRDoctorChoiceStatus)[keyof typeof MRDoctorChoiceStatus];
+
+export const MRDoctorChoiceStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface MRDoctorChoice {
+  id: string;
+  name: string;
+  registrationNumber: string;
+  status: MRDoctorChoiceStatus;
+  zoneName: string;
+}
+
+export interface MRDoctorPage {
+  filtered: number;
+  items: MRDoctorChoice[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
 export type MREditContactRequirement =
   (typeof MREditContactRequirement)[keyof typeof MREditContactRequirement];
 
@@ -2224,6 +2248,41 @@ export const RoleResponsePermissionsItem = {
   zonedelete: "zone.delete",
   zoneexport: "zone.export",
   zoneimport: "zone.import",
+  headquarteradd: "headquarter.add",
+  headquarteredit: "headquarter.edit",
+  headquarterdelete: "headquarter.delete",
+  headquarterexport: "headquarter.export",
+  headquarterimport: "headquarter.import",
+  mradd: "mr.add",
+  mredit: "mr.edit",
+  mrdelete: "mr.delete",
+  mrexport: "mr.export",
+  mrimport: "mr.import",
+  patientadd: "patient.add",
+  patientedit: "patient.edit",
+  patientdelete: "patient.delete",
+  patientexport: "patient.export",
+  patientimport: "patient.import",
+  doctoradd: "doctor.add",
+  doctoredit: "doctor.edit",
+  doctordelete: "doctor.delete",
+  doctorexport: "doctor.export",
+  doctorimport: "doctor.import",
+  product_categoryadd: "product_category.add",
+  product_categoryedit: "product_category.edit",
+  product_categorydelete: "product_category.delete",
+  product_categoryexport: "product_category.export",
+  product_categoryimport: "product_category.import",
+  locationadd: "location.add",
+  locationedit: "location.edit",
+  locationdelete: "location.delete",
+  locationexport: "location.export",
+  locationimport: "location.import",
+  courieradd: "courier.add",
+  courieredit: "courier.edit",
+  courierdelete: "courier.delete",
+  courierexport: "courier.export",
+  courierimport: "courier.import",
 } as const;
 
 export interface RoleResponse {
@@ -2236,7 +2295,7 @@ export interface RoleResponse {
    * @maxLength 100
    */
   name: string;
-  /** @maxItems 5 */
+  /** @maxItems 40 */
   readonly permissions?: readonly RoleResponsePermissionsItem[];
   updated_at: string;
   version: number;
@@ -2258,12 +2317,47 @@ export const RolePermissionsPermissionsItem = {
   zonedelete: "zone.delete",
   zoneexport: "zone.export",
   zoneimport: "zone.import",
+  headquarteradd: "headquarter.add",
+  headquarteredit: "headquarter.edit",
+  headquarterdelete: "headquarter.delete",
+  headquarterexport: "headquarter.export",
+  headquarterimport: "headquarter.import",
+  mradd: "mr.add",
+  mredit: "mr.edit",
+  mrdelete: "mr.delete",
+  mrexport: "mr.export",
+  mrimport: "mr.import",
+  patientadd: "patient.add",
+  patientedit: "patient.edit",
+  patientdelete: "patient.delete",
+  patientexport: "patient.export",
+  patientimport: "patient.import",
+  doctoradd: "doctor.add",
+  doctoredit: "doctor.edit",
+  doctordelete: "doctor.delete",
+  doctorexport: "doctor.export",
+  doctorimport: "doctor.import",
+  product_categoryadd: "product_category.add",
+  product_categoryedit: "product_category.edit",
+  product_categorydelete: "product_category.delete",
+  product_categoryexport: "product_category.export",
+  product_categoryimport: "product_category.import",
+  locationadd: "location.add",
+  locationedit: "location.edit",
+  locationdelete: "location.delete",
+  locationexport: "location.export",
+  locationimport: "location.import",
+  courieradd: "courier.add",
+  courieredit: "courier.edit",
+  courierdelete: "courier.delete",
+  courierexport: "courier.export",
+  courierimport: "courier.import",
 } as const;
 
 export interface RolePermissions {
   /** @minimum 1 */
   expected_version: number;
-  /** @maxItems 5 */
+  /** @maxItems 40 */
   permissions: RolePermissionsPermissionsItem[];
 }
 
@@ -2933,6 +3027,18 @@ export type ReviewDoctorImportBody = {
   file: Blob | File;
 };
 
+export type LookupDoctorPincodeParams = {
+  action?: LookupDoctorPincodeAction;
+};
+
+export type LookupDoctorPincodeAction =
+  (typeof LookupDoctorPincodeAction)[keyof typeof LookupDoctorPincodeAction];
+
+export const LookupDoctorPincodeAction = {
+  add: "add",
+  edit: "edit",
+} as const;
+
 export type ListDoctorMRChoicesParams = {
   /**
    * @maxLength 200
@@ -3143,6 +3249,18 @@ export type ReviewMRImportBody = {
   file: Blob | File;
 };
 
+export type LookupMRPincodeParams = {
+  action?: LookupMRPincodeAction;
+};
+
+export type LookupMRPincodeAction =
+  (typeof LookupMRPincodeAction)[keyof typeof LookupMRPincodeAction];
+
+export const LookupMRPincodeAction = {
+  add: "add",
+  edit: "edit",
+} as const;
+
 export type ListMRReferenceChoicesParams = {
   kind: ListMRReferenceChoicesKind;
   /**
@@ -3183,6 +3301,19 @@ export const DownloadMRSampleFormat = {
   csv: "csv",
   xlsx: "xlsx",
 } as const;
+
+export type ListMRAssociatedDoctorChoicesParams = {
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
 
 export type ListPatientDirectoryParams = {
   /**
@@ -3281,6 +3412,18 @@ export type ReviewPatientImportParams = {
 export type ReviewPatientImportBody = {
   file: Blob | File;
 };
+
+export type LookupPatientPincodeParams = {
+  action?: LookupPatientPincodeAction;
+};
+
+export type LookupPatientPincodeAction =
+  (typeof LookupPatientPincodeAction)[keyof typeof LookupPatientPincodeAction];
+
+export const LookupPatientPincodeAction = {
+  add: "add",
+  edit: "edit",
+} as const;
 
 export type ListPatientDoctorChoicesParams = {
   /**

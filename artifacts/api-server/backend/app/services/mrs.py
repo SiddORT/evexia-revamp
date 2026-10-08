@@ -44,12 +44,10 @@ def transaction(db, work):
         raise
 
 
-def authorize(db, actor, provision=False, lock=True):
-    current = revalidate_identity(db, actor, lock=lock)
-    if (not current.user.is_protected_system_admin or "admin.access" not in current.permissions
-            or (provision and "domain.provision" not in current.permissions)):
-        raise MRError("Access denied", 403, "access_denied")
-    return current
+def authorize(db, actor, provision=False, lock=True, action=None, protected=False):
+    from app.services.master_policy import authorize_master
+    return authorize_master(db, actor, "mr", action or ("add" if provision else None),
+                            protected=protected, lock=lock, error=MRError)
 
 
 def audit(db, actor, row, operation):
@@ -182,13 +180,37 @@ def detail(db, actor, record_id):
 def resolve_account(db, actor, username):
     """Exact authoritative reconciliation after uncertain account-producing writes."""
     def work():
-        authorize(db, actor, lock=False)
+        current = authorize(db, actor, action="add", lock=False)
         row = db.scalar(select(MRDirectory).join(MRProfile, MRProfile.id == MRDirectory.id)
                         .join(User, User.id == MRProfile.user_id).where(
                             func.lower(User.username) == username.strip().lower(), MRDirectory.deleted_at.is_(None)))
         if row is None:
             raise MRError("No live MR directory account has this username.", 404, "not_found")
+        if current.staff is not None and not db.scalar(select(AuditEvent.id).where(
+                AuditEvent.actor_id == current.user.id, AuditEvent.session_id == current.session_id,
+                AuditEvent.resource_id == row.id, AuditEvent.action == "mr_directory_create",
+                AuditEvent.outcome == "success").limit(1)):
+            raise MRError("No fresh MR created in this session has this username.", 404, "not_found")
         result = projection(db, row)
+        db.commit()
+        return result
+    return transaction(db, work)
+
+
+def associated_doctors(db, actor, record_id, limit, offset):
+    """MR-consuming viewer: bounded labels only, no Doctor directory authority."""
+    from app.db.doctor_models import DoctorDirectory
+    def work():
+        authorize(db, actor, lock=False)
+        row = find(db, record_id)
+        zone = db.get(Zone, row.zoneId)
+        clauses = [DoctorDirectory.mrId == row.id]
+        count = db.scalar(select(func.count()).select_from(DoctorDirectory).where(*clauses))
+        rows = db.scalars(select(DoctorDirectory).where(*clauses)
+                          .order_by(DoctorDirectory.name, DoctorDirectory.id).limit(limit).offset(offset))
+        result = dict(items=[dict(id=item.id, name=item.name, registrationNumber=item.registrationNumber,
+                                  status=item.status, zoneName=zone.name if zone and not zone.deleted_at else "")
+                             for item in rows], total=count, filtered=count, limit=limit, offset=offset)
         db.commit()
         return result
     return transaction(db, work)
@@ -282,10 +304,10 @@ def identifiers_available(db, body, exclude_user=None, exclude_record=None):
 
 
 @contextmanager
-def hash_slot(db, actor):
+def hash_slot(db, actor, action="add", protected=False):
     """Two global hashing slots; no User/profile/relationship locks during Argon2."""
     def reserve():
-        current = authorize(db, actor, provision=True)
+        current = authorize(db, actor, action=action, protected=protected)
         count = db.scalar(select(func.count()).select_from(AuditEvent).where(
             AuditEvent.actor_id == current.user.id, AuditEvent.action == "mr_hash_budget",
             AuditEvent.created_at > utcnow() - timedelta(hours=1)))
@@ -314,9 +336,9 @@ def hash_slot(db, actor):
         connection.close()
 
 
-def prepare_passwords(db, actor, passwords):
+def prepare_passwords(db, actor, passwords, action="add", protected=False):
     result, start = [], time.monotonic()
-    with hash_slot(db, actor):
+    with hash_slot(db, actor, action, protected):
         for supplied in passwords:
             if time.monotonic() - start > 120:
                 raise MRError("Credential processing exceeded 120 seconds. Split the file into smaller batches; nothing was imported.",
@@ -369,15 +391,16 @@ def create(db, actor, body):
 def mutate(db, actor, record_id, body, operation):
     if operation == "reset":
         def preflight():
-            authorize(db, actor, provision=True)
+            authorize(db, actor, protected=True)
             row = find(db, record_id)
             if row.version != body.expected_version:
                 raise MRError("MR changed. Review before resetting.", 409, "mr_stale")
             db.commit()
         transaction(db, preflight)
-    prepared = prepare_passwords(db, actor, [None])[0] if operation == "reset" else None
+    prepared = prepare_passwords(db, actor, [None], protected=True)[0] if operation == "reset" else None
     def work():
-        current = authorize(db, actor, provision=operation == "reset")
+        current = authorize(db, actor, action="delete" if operation == "delete" else "edit",
+                            protected=operation == "reset")
         graph_lock(db)
         snapshot = find(db, record_id)
         profile = db.get(MRProfile, snapshot.id)

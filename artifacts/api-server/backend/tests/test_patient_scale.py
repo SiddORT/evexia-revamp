@@ -136,7 +136,10 @@ def test_complete_compact_choices_and_explicit_cap(client, monkeypatch):
         response = api.get(BASE + "/filters", headers=headers)
     assert response.status_code == 200, response.text
     result = response.json()
-    assert len(statements) <= 5
+    # Revocation is serialized by one policy-lock query, not a per-choice query.
+    policy_locks = [statement for statement in statements if "pg_advisory_xact_lock" in statement]
+    assert len(policy_locks) == 1
+    assert len(statements) - len(policy_locks) <= 5
     assert result["limit"] == 10000 and len(result["items"]) == 106
     assert result["items"][-1]["id"] == str(mr_ids[-1])
     assert result["items"][-1]["status"] == "inactive"

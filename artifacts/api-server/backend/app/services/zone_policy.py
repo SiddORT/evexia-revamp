@@ -1,4 +1,4 @@
-"""The only assignable capabilities. Labels and selection shortcuts are not grants."""
+"""Compatibility Zone policy; shared lock also orders all supported master operations."""
 from sqlalchemy import text
 
 ZONE_ACTIONS = frozenset({"zone.add", "zone.edit", "zone.delete", "zone.export", "zone.import"})
@@ -15,5 +15,5 @@ def zone_allowed(identity, action=None, protected=False):
 
 def lock_policy(db):
     # A single transaction-scoped lock orders administrative revocation against
-    # sensitive Zone operations. Acquire before User/Profile/Role/Zone row locks.
+    # sensitive master operations. Acquire before User/Profile/Role/domain row locks.
     db.execute(text("SELECT pg_advisory_xact_lock(hashtextextended('evexia:zone-policy:v1', 0))"))

@@ -12,11 +12,13 @@ import TablePagination from '../../components/admin/TablePagination.jsx';
 import usePatients from '../../hooks/usePatients.js';
 import { downloadPatientFile, exportPatients, patientAge } from '../../services/serverPatients.js';
 import { internationalPhone } from '../../services/phoneCountries.js';
+import { useMasterActions } from '../../auth/useMasterActions.js';
 import '../../mr.css';
 import '../../patient.css';
 
 const base = '/admin/masters/patients';
 export default function PatientMaster() {
+  const can = useMasterActions('patient');
   useAdminPreferences();
   const [, navigate] = useLocation();
   const [saved] = useState(() => new URLSearchParams(window.location.search).get('saved'));
@@ -53,9 +55,9 @@ export default function PatientMaster() {
   }
   function actions(record, compact = false) {
     return <div className={compact ? 'admin-mr-card__actions' : 'admin-table__actions'}>
-      <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button patient-history-action'} aria-label={`Dosage History for ${record.name}`} title="Dosage History" onClick={() => navigate(`${base}/${encodeURIComponent(record.id)}/dosage-history`)} data-testid={`button-dosage-history-patient-${record.id}`}><History size={16} aria-hidden="true" />Dosage History</button>
-      <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} title="Edit" onClick={() => { clearFeedback(); navigate(`${base}/${encodeURIComponent(record.id)}`); }} data-testid={`button-edit-patient-${record.id}`}><Pencil size={16} />{compact && 'Edit'}</button>
-      <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} title={record.status === 'active' ? 'Inactivate' : 'Activate'} onClick={() => { setActionError(''); setConfirming(record); }} data-testid={`button-toggle-patient-${record.id}`}><CirclePower size={16} />{compact && (record.status === 'active' ? 'Inactivate' : 'Activate')}</button>
+      {can.protected && <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button patient-history-action'} aria-label={`Dosage History for ${record.name}`} title="Dosage History" onClick={() => navigate(`${base}/${encodeURIComponent(record.id)}/dosage-history`)} data-testid={`button-dosage-history-patient-${record.id}`}><History size={16} aria-hidden="true" />Dosage History</button>}
+      {can.edit && <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} title="Edit" onClick={() => { clearFeedback(); navigate(`${base}/${encodeURIComponent(record.id)}`); }} data-testid={`button-edit-patient-${record.id}`}><Pencil size={16} />{compact && 'Edit'}</button>}
+      {can.edit && <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} title={record.status === 'active' ? 'Inactivate' : 'Activate'} onClick={() => { setActionError(''); setConfirming(record); }} data-testid={`button-toggle-patient-${record.id}`}><CirclePower size={16} />{compact && (record.status === 'active' ? 'Inactivate' : 'Activate')}</button>}
     </div>;
   }
   const reference = (record) => <span className="admin-record-fields"><span><span className="admin-record-fields__label">Doctor: </span>{record.doctorName || 'Missing doctor'}</span><span><span className="admin-record-fields__label">MR: </span>{record.mrName || 'Missing MR'}</span><span><span className="admin-record-fields__label">Zone: </span>{record.zoneName || 'Missing zone'}</span></span>;
@@ -82,13 +84,13 @@ export default function PatientMaster() {
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Patients</p><h1>Patient Master</h1><p className="admin-page-head__description">Protected shared records. Doctor, MR and Zone references come from the server. No dosage history is recorded here.</p></div>
       <div className="admin-mr-head-actions">
         <button className="admin-button admin-button--secondary" type="button" onClick={refresh}>Refresh records</button>
-        <button className="admin-button admin-button--secondary" type="button" disabled={Boolean(error)} onClick={() => navigate(`${base}/import`)} data-testid="button-import-patients"><Upload size={16} /> Import data</button>
-        <DropdownMenu.Root><DropdownMenu.Trigger asChild><button className="admin-button admin-button--secondary" type="button" aria-busy={exporting} disabled={Boolean(error) || loading || search !== debouncedSearch || !filtered} data-testid="button-export-patients"><Download size={16} />{exporting ? 'Preparing export…' : 'Export data'}</button></DropdownMenu.Trigger>
+        {can.import && <button className="admin-button admin-button--secondary" type="button" disabled={Boolean(error)} onClick={() => navigate(`${base}/import`)} data-testid="button-import-patients"><Upload size={16} /> Import data</button>}
+        {can.export && <DropdownMenu.Root><DropdownMenu.Trigger asChild><button className="admin-button admin-button--secondary" type="button" aria-busy={exporting} disabled={Boolean(error) || loading || search !== debouncedSearch || !filtered} data-testid="button-export-patients"><Download size={16} />{exporting ? 'Preparing export…' : 'Export data'}</button></DropdownMenu.Trigger>
           <DropdownMenu.Portal><DropdownMenu.Content className="admin-export-menu" sideOffset={6}>
             <DropdownMenu.Item className="admin-export-menu__item" disabled={exporting} onSelect={() => exportVisible('csv')}>CSV</DropdownMenu.Item>
             <DropdownMenu.Item className="admin-export-menu__item" disabled={exporting} onSelect={() => exportVisible('xlsx')}>Excel (.xlsx)</DropdownMenu.Item>
-          </DropdownMenu.Content></DropdownMenu.Portal></DropdownMenu.Root>
-        <button className="admin-button" type="button" disabled={Boolean(error)} onClick={() => navigate(`${base}/new`)} data-testid="button-add-patient"><Plus size={16} /> Add Patient</button>
+          </DropdownMenu.Content></DropdownMenu.Portal></DropdownMenu.Root>}
+        {can.add && <button className="admin-button" type="button" disabled={Boolean(error)} onClick={() => navigate(`${base}/new`)} data-testid="button-add-patient"><Plus size={16} /> Add Patient</button>}
       </div>
     </div>
     {(feedback || saved) && <div className="admin-feedback" role="status">{feedback || (saved === 'imported' ? 'Patients imported successfully.' : `Patient ${saved === 'added' ? 'added' : 'updated'} successfully.`)}</div>}

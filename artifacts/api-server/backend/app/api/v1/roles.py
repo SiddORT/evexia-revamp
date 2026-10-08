@@ -9,7 +9,7 @@ from app.schemas.roles import RoleEdit, RoleFields, RolePage, RoleResponse, Role
 from app.services.auth import Identity
 from app.services import roles as service
 
-router = APIRouter(prefix="/admin/roles", tags=["custom roles and Zone permissions"])
+router = APIRouter(prefix="/admin/roles", tags=["custom roles and master permissions"])
 manager = require_permissions("roles.manage")
 
 

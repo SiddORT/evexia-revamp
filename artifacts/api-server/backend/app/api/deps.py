@@ -9,6 +9,7 @@ from app.db.session import get_db
 from app.repositories.sessions import event
 from app.services.auth import AuthError, Identity, SessionReplaced, identity_from_token
 from app.services.zone_policy import zone_allowed
+from app.services.master_policy import master_allowed
 
 bearer = HTTPBearer(auto_error=False)
 
@@ -78,5 +79,28 @@ def require_zone(action=None, protected=False) -> Callable:
     def check(identity: Identity = Depends(current_identity)) -> Identity:
         if not zone_allowed(identity, action, protected):
             raise HTTPException(status_code=403, detail="Zone access denied")
+        return identity
+    return check
+
+
+def require_master(resource, action=None, protected=False) -> Callable:
+    def check(identity: Identity = Depends(current_identity)) -> Identity:
+        if not master_allowed(identity, resource, action, protected):
+            raise HTTPException(status_code=403, detail="Master access denied")
+        return identity
+    return check
+
+
+def master_router(resource) -> Callable:
+    """Early action gate using explicit existing endpoint names, never HTTP verbs."""
+    operations = {"listing": None, "detail": None, "filters": None,
+                  "create": "add", "edit": "edit", "status": "edit", "contact": "edit",
+                  "delete": "delete", "bulk": "edit", "export": "export",
+                  "sample": "import", "review": "import", "commit": "import",
+                  "username": "add", "references": None}
+    def check(request: Request, identity: Identity = Depends(current_identity)) -> Identity:
+        name = request.scope["endpoint"].__name__
+        if name not in operations or not master_allowed(identity, resource, operations[name]):
+            raise HTTPException(403, "Master access denied")
         return identity
     return check

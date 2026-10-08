@@ -29,7 +29,7 @@ test('Doctor transport guards identity, downloads, full MR choices and ambiguous
       }
       return Response.json({ items: [], total: 0, filtered: 0 });
     }
-    if (url.includes('/admin/mrs/postal')) return Response.json({ pincode: '110001', choices: [] });
+    if (url.includes('/admin/doctors/postal')) return Response.json({ pincode: '110001', choices: [] });
     return new Response(url.endsWith('/logout') ? null : JSON.stringify(url.endsWith('/me') ? admin
       : { user: admin, access_token: 'synthetic-token', expires_in: 900 }), { status: url.endsWith('/logout') ? 204 : 200 });
   };

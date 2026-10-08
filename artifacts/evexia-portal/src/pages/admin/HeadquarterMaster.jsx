@@ -11,6 +11,7 @@ import TablePagination from '../../components/admin/TablePagination.jsx';
 import useServerHeadquarters from '../../hooks/useServerHeadquarters.js';
 import { exportHeadquarters, downloadHeadquarterFile } from '../../services/serverHeadquarters.js';
 import { reportingIdentityGuard } from '../../auth/adminSession.js';
+import { useMasterActions } from '../../auth/useMasterActions.js';
 import '../../mr.css';
 import '../../category.css';
 import '../../headquarter.css';
@@ -21,6 +22,7 @@ function details(by, at) {
 }
 
 export default function HeadquarterMaster() {
+  const can = useMasterActions('headquarter');
   const { theme, appearance } = useAdminPreferences();
   const [, navigate] = useLocation();
   const [search, setSearch] = useState('');
@@ -75,9 +77,9 @@ export default function HeadquarterMaster() {
   function actions(record, mobile = false) {
     const toggle = record.status === 'active' ? 'Inactivate' : 'Activate';
     return <fieldset disabled={loading || pending} style={{ border: 0, margin: 0, padding: 0 }} className={mobile ? 'admin-zone-card__actions' : 'admin-table__actions'}>
-      <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} onClick={() => navigate(`${LIST}/${record.id}`)}><Pencil size={16} />{mobile && 'Edit'}</button>
-      <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`${toggle} ${record.name}`} onClick={() => requestAction(record, toggle.toLowerCase())}><CirclePower size={16} />{mobile && toggle}</button>
-      <button type="button" className={mobile ? 'admin-zone-card__action admin-zone-card__action--danger' : 'admin-icon-button admin-icon-button--danger'} aria-label={`Delete ${record.name}`} onClick={() => requestAction(record, 'delete')}><Trash2 size={16} />{mobile && 'Delete'}</button>
+      {can.edit && <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} onClick={() => navigate(`${LIST}/${record.id}`)}><Pencil size={16} />{mobile && 'Edit'}</button>}
+      {can.edit && <button type="button" className={mobile ? 'admin-zone-card__action' : 'admin-icon-button'} aria-label={`${toggle} ${record.name}`} onClick={() => requestAction(record, toggle.toLowerCase())}><CirclePower size={16} />{mobile && toggle}</button>}
+      {can.delete && <button type="button" className={mobile ? 'admin-zone-card__action admin-zone-card__action--danger' : 'admin-icon-button admin-icon-button--danger'} aria-label={`Delete ${record.name}`} onClick={() => requestAction(record, 'delete')}><Trash2 size={16} />{mobile && 'Delete'}</button>}
     </fieldset>;
   }
   const columns = [
@@ -93,8 +95,8 @@ export default function HeadquarterMaster() {
   return <AdminLayout title="Headquarter Master">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Directory</p><h1>Headquarter Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Clearing browser data does not remove headquarters.</p></div>
       <div className="admin-mr-head-actions">
-        <button className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/headquarter')}><Upload size={16} /> Import data</button>
-        <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !busy.current) setExportMenuOpen(open); }}>
+        {can.import && <button className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/headquarter')}><Upload size={16} /> Import data</button>}
+        {can.export && <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !busy.current) setExportMenuOpen(open); }}>
           <DropdownMenu.Trigger asChild>
             {/* Pending remains focusable for close-focus return; the synchronous
                 guard and controlled menu prevent duplicate downloads. */}
@@ -106,8 +108,8 @@ export default function HeadquarterMaster() {
               <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void exportVisible('xlsx')}>Excel (.xlsx)</DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
-        </DropdownMenu.Root>
-        <button className="admin-button" onClick={() => navigate(`${LIST}/new`)}><Plus size={16} /> Add headquarter</button>
+        </DropdownMenu.Root>}
+        {can.add && <button className="admin-button" onClick={() => navigate(`${LIST}/new`)}><Plus size={16} /> Add headquarter</button>}
       </div>
     </div>
     <p className="admin-page-head__description">Old browser records and tab drafts remain untouched and unused. You can explicitly import a legacy CSV backup. Exports include every name/code/status match, up to 5,000 records. State Code is an HQ-name abbreviation, not a geographic state identifier.</p>

@@ -77,7 +77,7 @@ def review_digest(actor, data, filename):
 def transfer(db, actor, data, filename, confirm=False, digest=None):
     rows = parse(data, filename)
     def work():
-        current = headquarters.authorize(db, actor)
+        current = headquarters.authorize(db, actor, "import")
         fingerprint = review_digest(current, data, filename)
         if confirm and not hmac.compare_digest(digest or "", fingerprint):
             raise headquarters.HeadquarterError("File or session changed. Review again before confirming.", 409, "headquarter_review_changed")
@@ -135,7 +135,7 @@ def sample(format):
 
 def export(db, actor, query, status, format):
     def work():
-        headquarters.authorize(db, actor)
+        headquarters.authorize(db, actor, "export")
         records = list(db.scalars(select(Headquarter).where(*headquarters.predicates(query, status))
                                   .order_by(Headquarter.created_at.desc(), Headquarter.id.desc()).limit(EXPORT_LIMIT + 1)))
         if len(records) > EXPORT_LIMIT:

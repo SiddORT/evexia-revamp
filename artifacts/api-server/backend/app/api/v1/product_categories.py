@@ -2,7 +2,7 @@ import uuid
 from typing import Literal
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
-from app.api.deps import require_permissions
+from app.api.deps import master_router
 from app.api.v1.locations import read_file as read_master_file, UPLOAD
 from app.db.session import get_db
 from app.schemas.product_categories import (
@@ -15,7 +15,7 @@ from app.services.locations import LocationError
 from app.services.downloads import server_record
 
 router = APIRouter(prefix="/admin/product-categories", tags=["Product Category Master"])
-manager = require_permissions("admin.access")
+manager = master_router("product_category")
 DOWNLOAD = {200: {"content": {
     "text/csv": {"schema": {"type": "string", "format": "binary"}},
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {"schema": {"type": "string", "format": "binary"}}}}}
@@ -54,7 +54,7 @@ def export(query: str = Query("", max_length=200), status: Literal["all", "activ
 @router.get("/sample", operation_id="downloadProductCategorySample", responses=DOWNLOAD)
 def sample(format: Literal["csv", "xlsx"] = "csv", actor: Identity = Depends(manager), db: Session = Depends(get_db),
            initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation")):
-    product_categories.transaction(db, lambda: product_categories.authorize(db, actor))
+    product_categories.transaction(db, lambda: product_categories.authorize(db, actor, "import"))
     return release(db, actor, initiation_id, format, "template", product_category_transfer.sample(format))
 
 

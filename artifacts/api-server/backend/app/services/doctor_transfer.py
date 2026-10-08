@@ -180,7 +180,7 @@ def digest_for(actor, data, filename, snapshot):
 def transfer(db, actor, data, filename, confirm=False, digest=None):
     parsed = parse(data, filename)
     def work():
-        current = mrs.authorize(db, actor)
+        current = doctors.authorize(db, actor, "import")
         mrs.graph_lock(db)
         rows, bodies, snapshot = review_state(db, parsed)
         fingerprint = digest_for(current, data, filename, snapshot)
@@ -234,7 +234,7 @@ def sample(format):
 
 def export(db, actor, query="", status="all", zone_id="", mr_id="", state="", format="csv"):
     def work():
-        mrs.authorize(db, actor, lock=False)
+        doctors.authorize(db, actor, "export", lock=False)
         clauses = doctors.predicates(query, status, zone_id, mr_id, state)
         count = db.scalar(select(func.count()).select_from(Doctor).where(*clauses))
         if count > EXPORT_LIMIT:

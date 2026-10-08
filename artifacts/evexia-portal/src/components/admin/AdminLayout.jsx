@@ -4,7 +4,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Landmark, LayoutDashboard, LayoutGrid, LogOut, MapPinned, FileDown, ScrollText, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
-import { canViewZones, isStaffIdentity } from '../../auth/capabilities.js';
+import { MASTER_CATALOGUE, canViewMaster, isStaffIdentity } from '../../auth/capabilities.js';
 import { interceptNavigation } from '../../auth/navigationGuard.js';
 import { logoutAdmin } from '../../auth/adminSession.js';
 import { useAdminPreferences } from './adminPreferences.js';
@@ -42,7 +42,6 @@ export default function AdminLayout({ title, children }) {
   const [location, navigate] = useLocation();
   const { user } = useAdminSession();
   const staff = isStaffIdentity(user);
-  const zoneNav = canViewZones(user);
   useEffect(() => { recordPageVisit(location); }, [location, user?.id]);
   const profileName = user?.username || user?.email || (staff ? 'Staff member' : 'Super Admin');
   const go = (href) => { if (!interceptNavigation({ kind: 'href', href })) navigate(href); };
@@ -87,7 +86,9 @@ export default function AdminLayout({ title, children }) {
   const showInventory = showPO || showPR || showMoveStocks || showStockStatus;
   const visibleGroups = MASTER_GROUPS.map((group) => ({
     ...group,
-    links: (staff ? (zoneNav ? group.links.filter((link) => link.href === '/admin/masters/zones') : []) : group.links).filter((link) => !searching || link.label.toLocaleLowerCase().includes(query)),
+    links: group.links.filter((link) => !staff || MASTER_CATALOGUE.some((master) =>
+      link.href === `/admin/masters/${master.path}` && canViewMaster(user, master.key)))
+      .filter((link) => !searching || link.label.toLocaleLowerCase().includes(query)),
   })).filter((group) => group.links.length > 0);
   const showMasters = staff ? visibleGroups.length > 0 : (!searching || showAllMasters || visibleGroups.length > 0);
   const showSubnav = showMasters && !isCollapsed && (searching || mastersOpen);

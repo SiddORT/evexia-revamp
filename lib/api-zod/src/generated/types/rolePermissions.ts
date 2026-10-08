@@ -10,6 +10,6 @@ import type { RolePermissionsPermissionsItem } from "./rolePermissionsPermission
 export interface RolePermissions {
   /** @minimum 1 */
   expected_version: number;
-  /** @maxItems 5 */
+  /** @maxItems 40 */
   permissions: RolePermissionsPermissionsItem[];
 }

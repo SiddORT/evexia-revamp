@@ -14,6 +14,7 @@ import TablePagination from '../../components/admin/TablePagination.jsx';
 import useDoctors from '../../hooks/useDoctors.js';
 import { downloadDoctorFile, exportDoctors } from '../../services/serverDoctors.js';
 import { reportingIdentityGuard } from '../../auth/adminSession.js';
+import { useMasterActions } from '../../auth/useMasterActions.js';
 import '../../doctor-list.css';
 
 const cleanPhone = (value) => String(value || '').replace(/[^\d+]/g, '');
@@ -24,6 +25,7 @@ function auditDetails(actor, at) {
 }
 
 export default function DoctorMaster() {
+  const can = useMasterActions('doctor');
   const { theme, appearance } = useAdminPreferences();
   const [, navigate] = useLocation();
   const [saveFeedback] = useState(() => {
@@ -115,11 +117,12 @@ export default function DoctorMaster() {
   function actions(record, compact = false) {
     const suffix = `${compact ? 'mobile-' : ''}${record.id}`;
     return <fieldset disabled={pending || loading || Boolean(error)} style={{ border: 0, padding: 0, margin: 0 }} className="doctor-master__actions">
-      <button type="button" className="doctor-master__payment-action" aria-label={`Payment history for ${record.name}`} onClick={() => navigate(`/admin/masters/doctors/${encodeURIComponent(record.id)}/payments`)} data-testid={`button-payments-doctor-${suffix}`}><ReceiptText size={15} aria-hidden="true" /> Payment history</button>
-      <ContactRequirementButton record={record} kind="doctor" compact={compact} onClick={() => openConfirmation({ type: 'contact', id: record.id, name: record.name, value: record.contactRequirement === 'required' ? 'optional' : 'required' })} />
+      {can.protected && <button type="button" className="doctor-master__payment-action" aria-label={`Payment history for ${record.name}`} onClick={() => navigate(`/admin/masters/doctors/${encodeURIComponent(record.id)}/payments`)} data-testid={`button-payments-doctor-${suffix}`}><ReceiptText size={15} aria-hidden="true" /> Payment history</button>}
+      {can.edit && <><ContactRequirementButton record={record} kind="doctor" compact={compact} onClick={() => openConfirmation({ type: 'contact', id: record.id, name: record.name, value: record.contactRequirement === 'required' ? 'optional' : 'required' })} />
       <button type="button" className="admin-icon-button" title="Edit doctor" aria-label={`Edit ${record.name}`} onClick={() => { clearFeedback(); navigate(`/admin/masters/doctors/${encodeURIComponent(record.id)}`); }} data-testid={`button-edit-doctor-${suffix}`}><Pencil size={16} aria-hidden="true" /></button>
       <button type="button" className="admin-icon-button" title={record.verification === 'verified' ? 'Unverify' : 'Verify'} aria-label={`${record.verification === 'verified' ? 'Unverify' : 'Verify'} ${record.name}`} onClick={() => openConfirmation({ type: 'verification', ids: [record.id], value: record.verification === 'verified' ? 'unverified' : 'verified' })} data-testid={`button-verification-doctor-${suffix}`}>{record.verification === 'verified' ? <ShieldX size={16} aria-hidden="true" /> : <ShieldCheck size={16} aria-hidden="true" />}</button>
       <button type="button" className="admin-icon-button" title={record.status === 'active' ? 'Inactivate' : 'Activate'} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} onClick={() => openConfirmation({ type: 'status', id: record.id, name: record.name, value: record.status === 'active' ? 'inactive' : 'active' })} data-testid={`button-toggle-doctor-${suffix}`}><CirclePower size={16} aria-hidden="true" /></button>
+      </>}
     </fieldset>;
   }
   function identity(record, mobile = false) {
@@ -152,7 +155,7 @@ export default function DoctorMaster() {
     { key: 'created', label: 'Created details', render: (record) => auditDetails(record.createdBy, record.createdAt) },
     { key: 'updated', label: 'Updated details', render: (record) => auditDetails(record.updatedBy, record.updatedAt) },
     { key: 'actions', label: 'Actions', render: (record) => actions(record) },
-  ];
+  ].filter((column) => column.key !== 'select' || can.edit);
   const count = confirming?.ids?.length || 1;
   return <AdminLayout title="Doctor Master">
     <div className="doctor-master">
@@ -160,13 +163,13 @@ export default function DoctorMaster() {
         <div><p className="admin-page-head__eyebrow">Masters / Care network</p><h1>Doctor Master</h1><p className="admin-page-head__description">Shared server profiles, MR assignments and verification. No doctor login or payment ledger is created.</p></div>
         <div className="doctor-master__head-actions">
           <button type="button" className="admin-button admin-button--secondary" disabled={loading || pending} onClick={() => { retry(); setSelected([]); closeConfirmation(); }} data-testid="button-refresh-doctors">Refresh records</button>
-          <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/doctor')} data-testid="button-import-doctors"><Upload size={16} aria-hidden="true" /> Import data</button>
-          <DropdownMenu.Root><DropdownMenu.Trigger asChild><button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-doctors"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button></DropdownMenu.Trigger>
+          {can.import && <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/doctor')} data-testid="button-import-doctors"><Upload size={16} aria-hidden="true" /> Import data</button>}
+          {can.export && <DropdownMenu.Root><DropdownMenu.Trigger asChild><button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-doctors"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button></DropdownMenu.Trigger>
             <DropdownMenu.Portal><DropdownMenu.Content className="admin-profile__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} aria-label="Doctor export format">
               <DropdownMenu.Item className="admin-profile__settings" disabled={exporting} onSelect={() => void exportVisible('csv')}>CSV</DropdownMenu.Item>
               <DropdownMenu.Item className="admin-profile__settings" disabled={exporting} onSelect={() => void exportVisible('xlsx')}>Excel (.xlsx)</DropdownMenu.Item>
-            </DropdownMenu.Content></DropdownMenu.Portal></DropdownMenu.Root>
-          <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate('/admin/masters/doctors/new'); }} data-testid="button-add-doctor"><Plus size={16} aria-hidden="true" /> Add doctor</button>
+            </DropdownMenu.Content></DropdownMenu.Portal></DropdownMenu.Root>}
+          {can.add && <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate('/admin/masters/doctors/new'); }} data-testid="button-add-doctor"><Plus size={16} aria-hidden="true" /> Add doctor</button>}
         </div>
       </div>
       {(feedback || saveFeedback) && <div className="admin-feedback" role="status" data-testid="status-doctor-feedback">{feedback || saveFeedback}</div>}
@@ -189,7 +192,7 @@ export default function DoctorMaster() {
         </div>
         {error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>Doctor records could not be loaded</strong><p>{error}</p><button className="admin-button" type="button" onClick={() => { retry(); setActionError(''); }} style={{ marginTop: 16 }} data-testid="button-retry-doctors">Refresh records</button></div> : <>
           {(missingMR || missingZone) && <div className="admin-feedback admin-feedback--error" role="status" style={{ margin: '12px 16px' }}>Some doctor assignments reference {missingMR && missingZone ? 'missing MRs or zones' : missingMR ? 'missing MRs' : 'missing zones'}. Review their assignments before shifting records.</div>}
-          {selectedVisible.length > 0 && <div className="doctor-master__bulk" role="group" aria-label="Selected doctor actions"><span className="doctor-master__bulk-label" data-testid="text-selected-doctors">{selectedVisible.length} selected from visible records</span>
+          {can.edit && selectedVisible.length > 0 && <div className="doctor-master__bulk" role="group" aria-label="Selected doctor actions"><span className="doctor-master__bulk-label" data-testid="text-selected-doctors">{selectedVisible.length} selected from visible records</span>
             <button type="button" className="admin-button admin-button--secondary" onClick={() => { setTargetMR(''); openConfirmation({ type: 'shift', ids: selectedVisible }); }} data-testid="button-shift-doctors">Shift MR</button>
             <button type="button" className="admin-button admin-button--secondary" onClick={() => openConfirmation({ type: 'verification', ids: selectedVisible, value: 'verified' })} data-testid="button-verify-doctors">Verify</button>
             <button type="button" className="admin-button admin-button--secondary" onClick={() => openConfirmation({ type: 'verification', ids: selectedVisible, value: 'unverified' })} data-testid="button-unverify-doctors">Unverify</button>
@@ -198,7 +201,7 @@ export default function DoctorMaster() {
           {loading ? <p className="admin-empty" role="status">Loading doctors…</p> : visible.length ? <>
             <div className="doctor-master__table"><DataTable columns={columns} rows={visible} rowKey={(record) => record.id} label="Doctor records" testIdPrefix="doctor" /></div>
              <div className="doctor-master__card-list" role="list" aria-label="Doctor records">{visible.map((record) => <article role="listitem" className="admin-record-card" key={record.id} data-testid={`card-doctor-${record.id}`}>
-               <div className="admin-record-card__head"><div className="admin-record-card__identity"><h2>{record.name}</h2><small>Doctor profile</small></div><input type="checkbox" className="doctor-master__check" checked={selected.includes(record.id)} onChange={(event) => selectOne(record.id, event.target.checked)} aria-label={`Select ${record.name}`} data-testid={`checkbox-mobile-doctor-${record.id}`} /></div>
+               <div className="admin-record-card__head"><div className="admin-record-card__identity"><h2>{record.name}</h2><small>Doctor profile</small></div>{can.edit && <input type="checkbox" className="doctor-master__check" checked={selected.includes(record.id)} onChange={(event) => selectOne(record.id, event.target.checked)} aria-label={`Select ${record.name}`} data-testid={`checkbox-mobile-doctor-${record.id}`} />}</div>
                 <div className="admin-record-card__body">{identity(record, true)}<dl><div><dt>Practice</dt><dd>{professional(record)}</dd></div><div><dt>MR / Zone</dt><dd>{assignment(record)}</dd></div><div><dt>Address</dt><dd>{address(record)}</dd></div><div><dt>Created details</dt><dd>{auditDetails(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated details</dt><dd>{auditDetails(record.updatedBy, record.updatedAt)}</dd></div></dl></div>
                <div className="admin-record-card__foot doctor-master__card-foot"><StatusBadge status={record.status} id={record.id} kind="doctor-mobile" /><span className={`doctor-master__verification${record.verification === 'verified' ? '' : ' doctor-master__verification--pending'}`}>{record.verification === 'verified' ? 'Verified' : 'Unverified'}</span>{actions(record, true)}</div>
             </article>)}</div>

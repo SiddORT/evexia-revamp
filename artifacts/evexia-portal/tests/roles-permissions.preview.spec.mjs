@@ -312,17 +312,17 @@ test('tabs keep drafts; search and mixed groups use the whole live catalogue; sa
     expect(await page.getByTestId(id).evaluate((el) => el.indeterminate)).toBe(true);
   }
   await page.getByTestId('input-search-permissions').fill('Export');
-  await expect(page.locator('.rp-matrix__grid input')).toHaveCount(1);
-  await expect(page.getByTestId('text-selected-permission-count')).toContainText('1 of 5');
+  await expect(page.locator('.rp-matrix__grid input')).toHaveCount(8);
+  await expect(page.getByTestId('text-selected-permission-count')).toContainText('1 of 40');
   await page.getByTestId('button-permissions-all').click();
-  await expect(page.getByTestId('text-selected-permission-count')).toContainText('5 of 5');
+  await expect(page.getByTestId('text-selected-permission-count')).toContainText('40 of 40');
   await page.getByTestId('input-search-permissions').fill('No matching grant');
   await expect(page.getByTestId('status-permissions-no-results')).toBeVisible();
   await page.getByTestId('button-permissions-none').click();
-  await expect(page.getByTestId('text-selected-permission-count')).toContainText('0 of 5');
+  await expect(page.getByTestId('text-selected-permission-count')).toContainText('0 of 40');
   // Even with no visible actions, grouped selection includes all five grants.
   await page.getByTestId('checkbox-zone-permissions').check();
-  await expect(page.getByTestId('text-selected-permission-count')).toContainText('5 of 5');
+  await expect(page.getByTestId('text-selected-permission-count')).toContainText('5 of 40');
   await page.getByTestId('tab-roles').click();
   await expect(page.getByTestId(`button-role-${first.id}`)).toContainText('0 permissions saved');
   await page.getByTestId('button-edit-role').click();
@@ -336,7 +336,7 @@ test('tabs keep drafts; search and mixed groups use the whole live catalogue; sa
   await page.getByTestId('button-keep-editing-permissions').click();
   await page.getByTestId('tab-permissions').click();
   await expect(page.getByTestId('input-search-permissions')).toHaveValue('No matching grant');
-  await expect(page.getByTestId('text-draft-permission-count')).toContainText('5 of 5');
+  await expect(page.getByTestId('text-draft-permission-count')).toContainText('5 of 40');
   await page.getByTestId('panel-zone-permissions').scrollIntoViewIfNeeded();
   await page.screenshot({ path: testInfo.outputPath('permissions-workspace-desktop.png'), fullPage: true });
   const save = async (keys) => {
@@ -346,7 +346,7 @@ test('tabs keep drafts; search and mixed groups use the whole live catalogue; sa
     expect(result.request().postDataJSON().permissions).toEqual(keys);
     expect(result.status()).toBe(200);
     await expect(page.getByTestId('button-save-permissions')).toBeDisabled();
-    await expect(page.getByTestId('text-saved-permission-count')).toContainText(`${keys.length} of 5`);
+    await expect(page.getByTestId('text-saved-permission-count')).toContainText(`${keys.length} of 40`);
   };
   const keys = ['zone.add', 'zone.edit', 'zone.delete', 'zone.export', 'zone.import'];
   await save(keys);
@@ -367,7 +367,7 @@ test('tabs keep drafts; search and mixed groups use the whole live catalogue; sa
   await expect(page.locator('.rp-meta')).toContainText('Metadata only');
   await page.getByTestId('tab-permissions').click();
   await expect(page.getByTestId('checkbox-permission-zone.import')).toBeChecked();
-  await expect(page.getByTestId('text-selected-permission-count')).toContainText('1 of 5');
+  await expect(page.getByTestId('text-selected-permission-count')).toContainText('1 of 40');
   for (const [width, theme, appearance] of [[1440, 'classic', 'light'], [375, 'modern', 'dark'], [375, 'classic', 'light']]) {
     await page.setViewportSize({ width, height: 900 });
     await page.evaluate(async ({ theme, appearance }) => {
@@ -406,13 +406,15 @@ test.describe('@roles-layout focused engine coverage', () => {
   test('keyboard tabs, native mixed groups and search-independent selection', async ({ page }) => {
     const roles = page.getByTestId('tab-roles'), permissions = page.getByTestId('tab-permissions');
     const groups = ['checkbox-zone-permissions', 'checkbox-masters-permissions'];
-    const expectGroups = async (checked, mixed) => {
+    const expectGroups = async (checked, mixed, mastersState = null) => {
       for (const id of groups) {
         const input = page.getByTestId(id);
-        await expect(input).toHaveAttribute('aria-checked', mixed ? 'mixed' : String(checked));
+        const [groupChecked, groupMixed] = id === 'checkbox-masters-permissions' && mastersState
+          ? mastersState : [checked, mixed];
+        await expect(input).toHaveAttribute('aria-checked', groupMixed ? 'mixed' : String(groupChecked));
         expect(await input.evaluate((node) => ({
           tag: node.tagName, type: node.type, checked: node.checked, mixed: node.indeterminate,
-        }))).toEqual({ tag: 'INPUT', type: 'checkbox', checked, mixed });
+        }))).toEqual({ tag: 'INPUT', type: 'checkbox', checked: groupChecked, mixed: groupMixed });
       }
     };
     await roles.focus();
@@ -445,8 +447,8 @@ test.describe('@roles-layout focused engine coverage', () => {
     await page.getByTestId('checkbox-permission-zone.import').check();
     await expectGroups(false, true);
     await page.getByTestId('input-search-permissions').fill('Export');
-    await expect(page.locator('.rp-matrix__grid input')).toHaveCount(1);
-    await expect(page.getByTestId('text-selected-permission-count')).toContainText('1 of 5');
+    await expect(page.locator('.rp-matrix__grid input')).toHaveCount(8);
+    await expect(page.getByTestId('text-selected-permission-count')).toContainText('1 of 40');
     // Mixed -> all -> none through the actual native keyboard action.
     for (const id of groups) {
       await page.getByTestId('input-search-permissions').fill('No matching grant');
@@ -454,11 +456,12 @@ test.describe('@roles-layout focused engine coverage', () => {
       await reachRoleControlByKeyboard(page, page.getByTestId('input-search-permissions'), page.getByTestId(id));
       await page.keyboard.press('Space');
       await expectRoleFocusVisible(page.getByTestId(id));
-      await expectGroups(true, false);
-      await expect(page.getByTestId('text-selected-permission-count')).toContainText('5 of 5');
+      await expectGroups(true, false, id === 'checkbox-zone-permissions' ? [false, true] : null);
+      await expect(page.getByTestId('text-selected-permission-count')).toContainText(
+        id === 'checkbox-zone-permissions' ? '5 of 40' : '40 of 40');
       await page.keyboard.press('Space');
       await expectGroups(false, false);
-      await expect(page.getByTestId('text-selected-permission-count')).toContainText('0 of 5');
+      await expect(page.getByTestId('text-selected-permission-count')).toContainText('0 of 40');
       await page.getByTestId('input-search-permissions').fill('');
       await expect(page.locator('.rp-matrix__grid input:checked')).toHaveCount(0);
       await page.getByTestId('checkbox-permission-zone.import').check();

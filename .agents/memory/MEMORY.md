@@ -40,3 +40,5 @@
 - [MR account boundary](mr-account-boundary.md) — real MR login must not silently promote existing identities or mix browser-local demo relationships.
 - [Save navigation evidence](save-navigation-evidence.md) — wait for the terminal list route; prefix-only URL assertions can read before an authenticated save commits.
 - [API schema name stability](api-schema-name-stability.md) — unique extension schema names avoid renaming unchanged domain components and breaking handwritten client exports.
+- [Master permission scope](master-permission-scope.md) — eight requested masters only; workflow provisioning is not generic identity administration.
+- [Browser cleanup evidence](browser-test-cleanup-evidence.md) — preserve primary failures and capture the actual actor page, not the default administrator page.

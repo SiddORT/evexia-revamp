@@ -133,7 +133,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
     setSelectedLocality('');
     const timer = window.setTimeout(async () => {
       try {
-        const result = await lookupDoctorPIN(values.pincode, controller.signal);
+        const result = await lookupDoctorPIN(values.pincode, controller.signal, doctor ? 'edit' : 'add');
         if (controller.signal.aborted || request !== pinRequest.current) return;
         const unique = result.choices.map((item) => ({ ...item, name: item.city }));
         setPinState(unique.length

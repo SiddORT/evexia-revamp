@@ -5,7 +5,7 @@ from app.db.models import AuditEvent
 from app.db.headquarter_models import Headquarter, normalized_name
 from app.schemas.headquarters import abbreviation
 from app.services.zones import label
-from app.services.auth import revalidate_identity
+from app.services.master_policy import authorize_master
 
 
 class HeadquarterError(Exception):
@@ -31,11 +31,8 @@ def transaction(db, work):
         raise
 
 
-def authorize(db, actor):
-    current = revalidate_identity(db, actor, lock=True)
-    if "admin.access" not in current.permissions or not current.user.is_protected_system_admin:
-        raise HeadquarterError("Access denied", 403, "access_denied")
-    return current
+def authorize(db, actor, action=None):
+    return authorize_master(db, actor, "headquarter", action, error=HeadquarterError)
 
 
 def projection(db, row):
@@ -89,7 +86,7 @@ def insert(db, actor, body):
 
 def create(db, actor, body):
     def work():
-        current = authorize(db, actor)
+        current = authorize(db, actor, "add")
         result = projection(db, insert(db, current, body))
         db.commit()
         return result
@@ -115,7 +112,7 @@ def detail(db, actor, record_id):
 
 def mutate(db, actor, record_id, body, operation):
     def work():
-        current = authorize(db, actor)
+        current = authorize(db, actor, "delete" if operation == "delete" else "edit")
         row = find(db, record_id)
         if row.version != body.expected_version:
             raise HeadquarterError("Headquarter changed. Your draft is not saved. Review current details before retrying.",

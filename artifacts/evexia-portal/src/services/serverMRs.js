@@ -14,12 +14,13 @@ export const USERNAME_PATTERN = /^[a-z][a-z0-9._-]{2,31}$/;
 export const UUID_PATTERN = /^[0-9a-f-]{36}$/i;
 
 export const listMRs = (params, signal) => mrRequest('', { params: clean(params), signal });
+export const mrAssociatedDoctors = (id, params, signal) => mrRequest(`/${id}/doctors`, { params: clean(params), signal });
 export const getMR = (id, signal) => mrRequest(`/${id}`, { signal });
 export const resolveMRAccount = (username, signal) => mrRequest(`/account/${username}`, { signal });
 export const mrReferences = (kind, { query = '', limit = 100, offset = 0, includeSaved } = {}, signal) =>
   mrRequest('/references', { params: clean({ kind, query, limit, offset, include_saved: includeSaved }), signal });
 export const generateMRUsername = (signal) => mrRequest('/username', { signal });
-export const lookupPincode = (pin, signal) => mrRequest(`/postal/${pin}`, { signal });
+export const lookupPincode = (pin, signal, action = 'add') => mrRequest(`/postal/${pin}`, { signal, params: { action } });
 export const createMR = (values, initialPassword) => mrRequest('', { body: { ...values, initialPassword: initialPassword || null } });
 export const editMR = (record, values) => mrRequest(`/${record.id}/edit`, { body: { ...values, expected_version: record.version } });
 export const statusMR = (record, status) => mrRequest(`/${record.id}/status`, { body: { status, expected_version: record.version } });
