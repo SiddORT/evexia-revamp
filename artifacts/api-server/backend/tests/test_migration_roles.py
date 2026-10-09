@@ -27,12 +27,12 @@ def test_migration_empty_preserves_identity_and_db_normalization(migration_db):
         assert db.get(AuthSession, session_id).status == "ACTIVE"
         assert db.scalar(select(func.count()).select_from(AuditEvent).where(AuditEvent.action == "legacy_history")) == 1
         row_id = uuid.uuid4()
-        db.execute(text("INSERT INTO custom_roles(id,name,description,version) VALUES (:id,' Mixed Case ','',1)"), {"id": row_id})
+        db.execute(text("INSERT INTO custom_roles(id,name,description,version,created_by,updated_by) VALUES (:id,' Mixed Case ','',1,:actor,:actor)"), {"id": row_id, "actor": admin_id})
         db.commit()
         with pytest.raises(IntegrityError):
             with db.begin_nested():
-                db.execute(text("INSERT INTO custom_roles(id,name,description,version) VALUES (:id,'mixed case','',1)"), {"id": uuid.uuid4()})
-    with pytest.raises(RuntimeError, match="forward-only"):
+                db.execute(text("INSERT INTO custom_roles(id,name,description,version,created_by,updated_by) VALUES (:id,'mixed case','',1,:actor,:actor)"), {"id": uuid.uuid4(), "actor": admin_id})
+    with pytest.raises(RuntimeError, match="Populated role downgrade"):
         command.downgrade(config, "0009_staff")
 
 
@@ -59,5 +59,8 @@ def test_concurrent_duplicate_edits_and_deletes_commit_atomically(migration_db):
     results = race(lambda db, actor, n: roles.mutate(db, actor, RoleVersion(expected_version=2), row["id"], deleting=True))
     assert sum(isinstance(r, dict) for r in results) == 1 and "role_deleted" in results
     with Session(engine) as db:
-        assert db.scalar(select(func.count()).select_from(CustomRole)) == 0
+        assert db.scalar(select(func.count()).select_from(CustomRole)) == 1
+        retained = db.get(CustomRole, row["id"])
+        assert retained.deleted_at == retained.updated_at and retained.deleted_by == admin_id
+        assert retained.created_by == admin_id and retained.updated_by == admin_id and retained.version == 3
         assert db.scalar(select(func.count()).select_from(AuditEvent).where(AuditEvent.resource_type == "custom_role")) == 3

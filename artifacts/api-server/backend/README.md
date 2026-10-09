@@ -77,6 +77,18 @@ explicit migration and unchanged local-demo purchasing relationships.
 
 ## Local development and operations
 
+- Role lifecycle requires forward `0029_role_lifecycle` after accepted Staff
+  `0028_staff_designation_lifecycle`. Required creator/updater User UUIDs are
+  backfilled only from complete verified audit evidence or explicit reviewed
+  field-specific existing-user mappings; unresolved fields abort atomically.
+  Role deletion retains records/grants/global names and any Staff reference
+  blocks deletion, including retained deleted Staff. Readiness requires the new
+  columns. Connected development rollout was separately approved and applied
+  with a verified coordinated backup and explicit legacy updater review;
+  production remains unverified/unmodified. Future databases require separate
+  approval, backup and coordinated schema/API/frontend rollout. See
+  [role lifecycle operations](../../../docs/role-lifecycle-operations.md).
+
 - Staff migration `0028_staff_designation_lifecycle` follows the merged
   `0028_directory_soft_delete`, which follows MR `0027_mr_designation_identity`.
   Required designation UUIDs replace text only after verified complete

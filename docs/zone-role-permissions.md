@@ -56,7 +56,26 @@ fail closed. No credential reset, invitation or recovery feature is introduced.
 `{permissions: [...], expected_version: N}`. It preserves name/description,
 advances the role version and records `role_permissions`. Metadata edits preserve
 permissions and use that same concurrency version. Role deletion returns
-`409 role_assigned` while any staff profile references it, including disabled ones.
+`409 role_assigned` while any staff profile references it, including inactive,
+login-disabled and retained soft-deleted profiles. Disabling login is not
+unassignment. Explicitly unassign/reassign editable Staff through the access
+workflow; deleted Staff cannot be edited through that workflow and their retained
+links require separate reviewed operator resolution. Never clear links automatically.
+
+Deletion retains the role ID, name, description, normalized global uniqueness
+and permission arrays. It sets `deleted_at`/`deleted_by`, `updated_at`/`updated_by`
+and increments the shared version exactly once with the existing atomic
+`role_delete` audit event. Tombstones are absent from normal list/detail and
+rejected for metadata, permission and assignment mutations (even if login is
+disabled). Repeat/stale deletes cannot replace deletion evidence. Assigned
+tombstones in corruption fixtures fail closed at login, refresh, access/session
+validation and transactional grant checks, without clearing stored grants.
+
+Role responses expose read-only required `created_by` and `updated_by` User
+UUIDs and nullable timezone-aware `deleted_at`/User UUID `deleted_by`. Requests
+reject all four fields. Creators never change; authenticated revalidated actors
+own all new attribution. Staff choice hydration uses an authoritative detail
+request; missing data from one page or a network error is not deletion evidence.
 
 `POST /api/v1/admin/staff/{id}/access` accepts
 `{custom_role_id: UUID|null, workspace_login_enabled: boolean, expected_version: N}`.
@@ -97,6 +116,13 @@ serialization favors correctness for this bounded scope, not high-throughput
 per-role authorization. Do not change lock order without race validation.
 
 ## Opt-in rollout and operational handoff
+
+Required role attribution and soft deletion now use forward `0029_role_lifecycle`
+after the accepted Staff lifecycle migration. See
+[role lifecycle operations](role-lifecycle-operations.md) for read-only preflight,
+conservative evidence rules, reviewed field-specific mappings, blockers, backup,
+coordinated rollout and populated-downgrade refusal. Managed execution is unapplied
+until separately approved; no automatic legacy actor guesses are allowed.
 
 The original `0015_zone_permissions` migration introduced empty grants and
 disabled/unassigned staff defaults. The additive forward migration

@@ -51,7 +51,8 @@ async function create(page, name, description = '') {
 }
 async function remove(page) {
   await page.getByTestId('button-delete-role').click();
-  await expect(page.getByRole('dialog')).toContainText('cannot be deleted');
+  await expect(page.getByRole('dialog')).toContainText('Any staff assignment blocks deletion');
+  await expect(page.getByRole('dialog')).toContainText('record and saved permissions are retained');
   await page.getByTestId('button-confirm-delete-role').click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByTestId('button-add-role')).toBeEnabled();
@@ -73,6 +74,10 @@ test('fresh empty state, validated CRUD, persistence, cross-tab reads, last dele
   await page.getByTestId('button-cancel-role').click();
   const row = await create(page, ' Synthetic Reviewer ', ' Review team only. ');
   expect(row.permissions).toEqual([]);
+  expect(row.created_by).toMatch(/^[0-9a-f-]{36}$/);
+  expect(row.updated_by).toBe(row.created_by);
+  expect(row.deleted_at).toBeNull();
+  expect(row.deleted_by).toBeNull();
   await expect(page.getByTestId('text-permission-count')).toHaveText('0 permissions');
   await page.getByTestId('button-add-role').click();
   await page.getByTestId('input-role-name').fill(' synthetic reviewer ');

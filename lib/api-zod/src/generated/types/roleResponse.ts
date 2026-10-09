@@ -9,6 +9,9 @@ import type { RoleResponsePermissionsItem } from "./roleResponsePermissionsItem"
 
 export interface RoleResponse {
   created_at: Date;
+  readonly created_by: string;
+  readonly deleted_at: Date | null;
+  readonly deleted_by: string | null;
   /** @maxLength 1000 */
   description?: string;
   id: string;
@@ -20,5 +23,6 @@ export interface RoleResponse {
   /** @maxItems 40 */
   readonly permissions?: readonly RoleResponsePermissionsItem[];
   updated_at: Date;
+  readonly updated_by: string;
   version: number;
 }

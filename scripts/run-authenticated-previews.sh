@@ -145,7 +145,7 @@ export EVEXIA_CHROMIUM_PATH
 if [ "$#" -gt 0 ]; then
   SPECS="$*"
 else
-  SPECS="artifacts/evexia-portal/tests/entry-theme.preview.spec.mjs artifacts/evexia-portal/tests/settings-layout.preview.spec.mjs artifacts/evexia-portal/tests/template-preferences.preview.spec.mjs artifacts/evexia-portal/tests/communication.preview.spec.mjs artifacts/evexia-portal/tests/message-templates.preview.spec.mjs artifacts/evexia-portal/tests/admin-auth.preview.spec.mjs artifacts/evexia-portal/tests/roles-permissions.preview.spec.mjs artifacts/evexia-portal/tests/activity-logs.preview.spec.mjs artifacts/evexia-portal/tests/staff-backend.preview.spec.mjs artifacts/evexia-portal/tests/zones-backend.preview.spec.mjs artifacts/evexia-portal/tests/couriers-backend.preview.spec.mjs artifacts/evexia-portal/tests/locations-backend.preview.spec.mjs artifacts/evexia-portal/tests/designations-backend.preview.spec.mjs artifacts/evexia-portal/tests/courier-transfers.preview.spec.mjs"
+  SPECS="artifacts/evexia-portal/tests/entry-theme.preview.spec.mjs artifacts/evexia-portal/tests/settings-layout.preview.spec.mjs artifacts/evexia-portal/tests/template-preferences.preview.spec.mjs artifacts/evexia-portal/tests/communication.preview.spec.mjs artifacts/evexia-portal/tests/message-templates.preview.spec.mjs artifacts/evexia-portal/tests/admin-auth.preview.spec.mjs artifacts/evexia-portal/tests/roles-permissions.preview.spec.mjs artifacts/evexia-portal/tests/activity-logs.preview.spec.mjs artifacts/evexia-portal/tests/staff-backend.preview.spec.mjs artifacts/evexia-portal/tests/zones-backend.preview.spec.mjs artifacts/evexia-portal/tests/couriers-backend.preview.spec.mjs artifacts/evexia-portal/tests/locations-backend.preview.spec.mjs artifacts/evexia-portal/tests/designations-backend.preview.spec.mjs artifacts/evexia-portal/tests/courier-transfers.preview.spec.mjs artifacts/evexia-portal/tests/role-lifecycle.preview.spec.mjs"
 fi
 if [ "$#" -eq 0 ]; then
   SPECS="$SPECS artifacts/evexia-portal/tests/orders-navigation.preview.spec.mjs"
@@ -181,12 +181,17 @@ ISOLATE_OPENING_BALANCE=0
 ISOLATE_MASTER_STAFF=0
 ISOLATE_ORDERS=0
 ISOLATE_DIRECTORY_DELETION=0
+ISOLATE_ROLE_LIFECYCLE=0
 SPEC_COUNT=0
 for spec in $SPECS; do
   case "$spec" in *.preview.spec.mjs) SPEC_COUNT=$((SPEC_COUNT + 1)) ;; esac
 done
 for spec in $SPECS; do
   case "$spec" in
+    */role-lifecycle.preview.spec.mjs)
+      # This fixture intentionally retains a Staff identity and role history.
+      # Never contaminate Roles' empty-state baseline or Staff batch counts.
+      if [ "$SPEC_COUNT" -gt 1 ]; then ISOLATE_ROLE_LIFECYCLE=1; else OTHER_SPECS="$OTHER_SPECS $spec"; fi ;;
     */portal-responsive.preview.spec.mjs) RESPONSIVE=1 ;;
     */download-logs.preview.spec.mjs) DOWNLOADS=1 ;;
     */patients-layout.preview.spec.mjs) PATIENT_LAYOUT=1 ;;
@@ -277,4 +282,8 @@ fi
 if [ "$ISOLATE_DIRECTORY_DELETION" -eq 1 ]; then
   echo "Directory deletion: separate private database, credential ledger and result directory."
   sh "$ROOT/scripts/run-authenticated-previews.sh" artifacts/evexia-portal/tests/directory-deletion.preview.spec.mjs
+fi
+if [ "$ISOLATE_ROLE_LIFECYCLE" -eq 1 ]; then
+  echo "Role lifecycle remediation: separate private database, listeners and history."
+  sh "$ROOT/scripts/run-authenticated-previews.sh" artifacts/evexia-portal/tests/role-lifecycle.preview.spec.mjs
 fi

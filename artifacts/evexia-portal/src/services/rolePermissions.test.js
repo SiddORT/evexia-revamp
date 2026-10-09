@@ -17,14 +17,21 @@ test('bounded fields reject blank, control characters, oversized text and duplic
 test('permissions accept supported master keys, normalised; unknown keys refused; identity fields dropped', () => {
   const row = { id: '00000000-0000-4000-8000-000000000001', name: 'Reviewer', description: '',
     version: 1, created_at: '2026-10-07T00:00:00Z', updated_at: '2026-10-07T00:00:00Z', permissions: [],
+    created_by: '00000000-0000-4000-8000-000000000002', updated_by: '00000000-0000-4000-8000-000000000002',
+    deleted_at: null, deleted_by: null,
     system_role: 'super_admin' };
   assert.equal(roleRecord(row).system_role, undefined);
   assert.deepEqual(roleRecord({ ...row, permissions: ['zone.import', 'zone.add'] }).permissions, ['zone.add', 'zone.import']);
   assert.throws(() => roleRecord({ ...row, permissions: ['admin.access'] }), /does not recognise/);
   assert.throws(() => roleRecord({ ...row, permissions: ['zone.add', 'zone.add'] }), /does not recognise/);
-  for (const changes of [{ permissions: null }, { version: 0 }, { id: 'invalid' }]) {
+  for (const changes of [{ permissions: null }, { version: 0 }, { id: 'invalid' },
+    { created_by: null }, { updated_by: 'bad' }, { deleted_at: 'bad' },
+    { deleted_by: row.created_by }, { created_at: 'bad' }]) {
     assert.throws(() => roleRecord({ ...row, ...changes }), /invalid metadata/);
   }
+  const tombstone = { ...row, deleted_at: row.updated_at, deleted_by: row.updated_by };
+  assert.equal(roleRecord(tombstone).deleted_by, row.updated_by);
+  assert.equal(roleRecord(row).created_by, row.created_by);
   assert.equal(samePermissions(['zone.edit', 'zone.add'], ['zone.add', 'zone.edit']), true);
   assert.equal(samePermissions([], ['zone.add']), false);
 });

@@ -57,7 +57,7 @@ def test_crud_zero_permissions_audit_and_identity_separation(client):
 ])
 def test_validation_forbids_authorization_and_safe_field_errors(client, body):
     api, db, _ = client
-    headers, _ = admin_headers(api, db)
+    headers, admin = admin_headers(api, db)
     response = api.post(BASE, headers=headers, json=body)
     assert response.status_code == 422
     assert "private-extra" not in response.text and "private-value" not in response.text
@@ -66,7 +66,7 @@ def test_validation_forbids_authorization_and_safe_field_errors(client, body):
 
 def test_duplicate_names_and_bounded_full_directory(client):
     api, db, _ = client
-    headers, _ = admin_headers(api, db)
+    headers, admin = admin_headers(api, db)
     assert api.post(BASE, headers=headers, json={"name": "Reviewer"}).status_code == 201
     assert api.post(BASE, headers=headers, json={"name": " reviewer "}).json()["error"]["code"] == "role_duplicate"
     row = api.post(BASE, headers=headers, json={"name": "Different"}).json()
@@ -74,7 +74,7 @@ def test_duplicate_names_and_bounded_full_directory(client):
                     json={"name": "REVIEWER", "expected_version": 1}).status_code == 409
     assert api.get(f"{BASE}/{row['id']}", headers=headers).json()["version"] == 1
     for n in range(105):
-        db.add(CustomRole(name=f"Directory {n}", description=""))
+        db.add(CustomRole(name=f"Directory {n}", description="", created_by=admin.id, updated_by=admin.id))
     db.commit()
     ids, cursor = [], None
     while True:

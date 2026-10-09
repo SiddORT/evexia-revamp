@@ -55,6 +55,10 @@ class RoleResponse(RoleFields):
     version: int
     created_at: datetime
     updated_at: datetime
+    created_by: uuid.UUID = Field(json_schema_extra={"readOnly": True})
+    updated_by: uuid.UUID = Field(json_schema_extra={"readOnly": True})
+    deleted_at: datetime | None = Field(json_schema_extra={"readOnly": True})
+    deleted_by: uuid.UUID | None = Field(json_schema_extra={"readOnly": True})
     permissions: list[ZoneAction] = Field(default_factory=list, max_length=40, json_schema_extra={"readOnly": True})
 
 

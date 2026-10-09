@@ -238,8 +238,8 @@ def access(db, actor, settings, profile_id, body):
             raise StaffError("Staff record changed. Review current details before retrying.", 409, "staff_stale")
         if body.custom_role_id is not None:
             role = db.scalar(select(CustomRole).where(CustomRole.id == body.custom_role_id).with_for_update())
-            if not role:
-                raise StaffError("Selected role no longer exists. Choose a current role.", 409, "role_deleted")
+            if not role or role.deleted_at is not None:
+                raise StaffError("Selected role is unavailable. Choose a current role or explicitly unassign it.", 409, "role_deleted")
         if body.workspace_login_enabled and (profile.status != "active" or not user.is_active):
             raise StaffError("Activate this staff account before enabling workspace login.", 409, "staff_inactive")
         profile.custom_role_id = body.custom_role_id

@@ -18,7 +18,7 @@ from test_migration_0006 import migration_db
 from test_migration_zones import prepare, identity
 
 
-def test_actual_courier_migration_preserves_zone_identity_history(migration_db):
+def test_actual_courier_migration_preserves_zone_identity_history(migration_db, tmp_path):
     engine, config, actor_id, session_id = prepare(migration_db)
     command.downgrade(config, "0010_custom_roles")
     with Session(engine) as db:
@@ -29,6 +29,8 @@ def test_actual_courier_migration_preserves_zone_identity_history(migration_db):
         db.execute(text("INSERT INTO custom_roles(id,name,description,version) VALUES (:id,'Preserved Role','Existing business metadata',1)"),
                    {"id": role_id})
         db.commit()
+    from test_migration_role_lifecycle import reviewed_fixture_mapping
+    reviewed_fixture_mapping(config, tmp_path, role_id, actor_id)
     command.upgrade(config, "head")
     with Session(engine) as db:
         assert db.get(CustomRole, role_id).description == "Existing business metadata"

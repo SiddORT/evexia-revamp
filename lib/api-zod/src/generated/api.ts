@@ -7231,6 +7231,9 @@ export const ListCustomRolesResponse = zod.object({
   items: zod.array(
     zod.object({
       created_at: zod.coerce.date(),
+      created_by: zod.string().uuid(),
+      deleted_at: zod.union([zod.coerce.date(), zod.null()]),
+      deleted_by: zod.union([zod.string().uuid(), zod.null()]),
       description: zod
         .string()
         .max(listCustomRolesResponseItemsItemDescriptionMax)
@@ -7285,6 +7288,7 @@ export const ListCustomRolesResponse = zod.object({
         .max(listCustomRolesResponseItemsItemPermissionsMax)
         .optional(),
       updated_at: zod.coerce.date(),
+      updated_by: zod.string().uuid(),
       version: zod.number().int(),
     }),
   ),
@@ -7317,6 +7321,9 @@ export const createCustomRoleResponsePermissionsMax = 40;
 
 export const CreateCustomRoleResponse = zod.object({
   created_at: zod.coerce.date(),
+  created_by: zod.string().uuid(),
+  deleted_at: zod.union([zod.coerce.date(), zod.null()]),
+  deleted_by: zod.union([zod.string().uuid(), zod.null()]),
   description: zod
     .string()
     .max(createCustomRoleResponseDescriptionMax)
@@ -7371,6 +7378,7 @@ export const CreateCustomRoleResponse = zod.object({
     .max(createCustomRoleResponsePermissionsMax)
     .optional(),
   updated_at: zod.coerce.date(),
+  updated_by: zod.string().uuid(),
   version: zod.number().int(),
 });
 
@@ -7390,6 +7398,9 @@ export const getCustomRoleResponsePermissionsMax = 40;
 
 export const GetCustomRoleResponse = zod.object({
   created_at: zod.coerce.date(),
+  created_by: zod.string().uuid(),
+  deleted_at: zod.union([zod.coerce.date(), zod.null()]),
+  deleted_by: zod.union([zod.string().uuid(), zod.null()]),
   description: zod
     .string()
     .max(getCustomRoleResponseDescriptionMax)
@@ -7444,6 +7455,7 @@ export const GetCustomRoleResponse = zod.object({
     .max(getCustomRoleResponsePermissionsMax)
     .optional(),
   updated_at: zod.coerce.date(),
+  updated_by: zod.string().uuid(),
   version: zod.number().int(),
 });
 
@@ -7468,6 +7480,9 @@ export const deleteCustomRoleResponsePermissionsMax = 40;
 
 export const DeleteCustomRoleResponse = zod.object({
   created_at: zod.coerce.date(),
+  created_by: zod.string().uuid(),
+  deleted_at: zod.union([zod.coerce.date(), zod.null()]),
+  deleted_by: zod.union([zod.string().uuid(), zod.null()]),
   description: zod
     .string()
     .max(deleteCustomRoleResponseDescriptionMax)
@@ -7522,6 +7537,7 @@ export const DeleteCustomRoleResponse = zod.object({
     .max(deleteCustomRoleResponsePermissionsMax)
     .optional(),
   updated_at: zod.coerce.date(),
+  updated_by: zod.string().uuid(),
   version: zod.number().int(),
 });
 
@@ -7555,6 +7571,9 @@ export const editCustomRoleResponsePermissionsMax = 40;
 
 export const EditCustomRoleResponse = zod.object({
   created_at: zod.coerce.date(),
+  created_by: zod.string().uuid(),
+  deleted_at: zod.union([zod.coerce.date(), zod.null()]),
+  deleted_by: zod.union([zod.string().uuid(), zod.null()]),
   description: zod
     .string()
     .max(editCustomRoleResponseDescriptionMax)
@@ -7609,6 +7628,7 @@ export const EditCustomRoleResponse = zod.object({
     .max(editCustomRoleResponsePermissionsMax)
     .optional(),
   updated_at: zod.coerce.date(),
+  updated_by: zod.string().uuid(),
   version: zod.number().int(),
 });
 
@@ -7680,6 +7700,9 @@ export const saveCustomRolePermissionsResponsePermissionsMax = 40;
 
 export const SaveCustomRolePermissionsResponse = zod.object({
   created_at: zod.coerce.date(),
+  created_by: zod.string().uuid(),
+  deleted_at: zod.union([zod.coerce.date(), zod.null()]),
+  deleted_by: zod.union([zod.string().uuid(), zod.null()]),
   description: zod
     .string()
     .max(saveCustomRolePermissionsResponseDescriptionMax)
@@ -7734,6 +7757,7 @@ export const SaveCustomRolePermissionsResponse = zod.object({
     .max(saveCustomRolePermissionsResponsePermissionsMax)
     .optional(),
   updated_at: zod.coerce.date(),
+  updated_by: zod.string().uuid(),
   version: zod.number().int(),
 });
 

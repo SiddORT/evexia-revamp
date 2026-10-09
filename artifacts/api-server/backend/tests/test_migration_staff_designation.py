@@ -55,7 +55,7 @@ def test_exact_normalized_inactive_deleted_mapping_preserves_every_other_column(
         resolved, unresolved = reconcile(db)
         assert unresolved == []
         assert resolved == {"Executive": str(keys[0]), "  eXeCuTiVe  ": str(keys[0]), "Historical": str(keys[1])}
-    command.upgrade(config, "head")
+    command.upgrade(config, "0028_staff_designation_lifecycle")
     with engine.begin() as db:
         after = [dict(row) for row in db.execute(text("SELECT * FROM staff_profiles ORDER BY id")).mappings()]
         for old, new in zip(before, after):
@@ -95,14 +95,14 @@ def test_every_unresolved_value_and_reused_name_candidates_are_reported_atomical
             with pytest.raises(MappingError):
                 reconcile(db, overrides)
     with pytest.raises(RuntimeError, match="reconciliation required"):
-        command.upgrade(config, "head")
+        command.upgrade(config, "0028_staff_designation_lifecycle")
     with engine.connect() as db:
         assert [dict(row) for row in db.execute(text("SELECT * FROM staff_profiles ORDER BY id")).mappings()] == before
         assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0028_directory_soft_delete"
     mapping = tmp_path / "reviewed.json"
     mapping.write_text(json.dumps({"Historical": str(keys[1]), "Unknown": str(keys[2])}))
     config.cmd_opts = SimpleNamespace(x=[f"staff_designation_map={mapping}"])
-    command.upgrade(config, "head")
+    command.upgrade(config, "0028_staff_designation_lifecycle")
     with engine.connect() as db:
         assert db.scalar(text("SELECT count(*) FROM staff_profiles WHERE designation_id=:id"), dict(id=keys[2])) == 2
         assert db.scalar(text("SELECT count(*) FROM designations")) == 4
@@ -115,7 +115,7 @@ def test_invalid_override_file_and_targets_abort_without_ddl(migration_db, tmp_p
     for data in ({"Unknown": str(uuid.uuid4())}, {"Unknown": "not-uuid"}, {"Typo": str(keys[0])}):
         mapping.write_text(json.dumps(data))
         with pytest.raises(MappingError):
-            command.upgrade(config, "head")
+            command.upgrade(config, "0028_staff_designation_lifecycle")
         with engine.connect() as db:
             assert [dict(row) for row in db.execute(text("SELECT * FROM staff_profiles ORDER BY id")).mappings()] == before
             assert "designation_id" not in {col["name"] for col in inspect(db).get_columns("staff_profiles")}
@@ -140,6 +140,6 @@ def test_readonly_preflight_pages_all_unresolved_and_missing_values_cannot_be_gu
         assert page["has_more"] == (offset < 2)
         assert not result.stderr
     with pytest.raises(RuntimeError, match="reconciliation required"):
-        command.upgrade(config, "head")
+        command.upgrade(config, "0028_staff_designation_lifecycle")
     with engine.connect() as db:
         assert [dict(row) for row in db.execute(text("SELECT * FROM staff_profiles ORDER BY id")).mappings()] == before

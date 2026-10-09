@@ -153,7 +153,7 @@ def _load_identity(db: Session, user: User, lock: bool = False) -> Identity:
             if lock:
                 role_query = role_query.with_for_update(read=True)
             role = db.scalar(role_query)
-            if not role:
+            if not role or role.deleted_at is not None:
                 raise AuthError()
             grants = frozenset(role.permissions) & MASTER_ACTIONS
         return Identity(user, staff=staff, zone_grants=grants)

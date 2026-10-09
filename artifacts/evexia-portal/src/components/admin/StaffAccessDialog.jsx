@@ -16,6 +16,7 @@ export default function StaffAccessDialog({ record, onClose, onSaved }) {
   const [rolesState, setRolesState] = useState('loading');
   const [rolesError, setRolesError] = useState('');
   const [assigned, setAssigned] = useState(null);
+  const [roleRetry, setRoleRetry] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [current, setCurrent] = useState(null);
@@ -39,19 +40,23 @@ export default function StaffAccessDialog({ record, onClose, onSaved }) {
   }, []);
   useEffect(() => { void load([null], 0); }, [load]);
 
-  const savedRoleId = base.custom_role_id ?? null;
+  const savedRoleId = values.customRoleId ?? null;
   useEffect(() => {
     if (!savedRoleId) { setAssigned(null); return; }
+    setAssigned({ loading: true });
     let live = true;
-    getRole(savedRoleId).then((role) => { if (live) setAssigned({ role }); }, (cause) => { if (live) setAssigned({ missing: cause.code === 'role_deleted' || cause.status === 404 }); });
+    getRole(savedRoleId).then((role) => { if (live) setAssigned({ role }); }, (cause) => {
+      if (live) setAssigned({ missing: cause.code === 'role_deleted', error: cause.message });
+    });
     return () => { live = false; };
-  }, [savedRoleId]);
+  }, [savedRoleId, roleRetry]);
 
   const onPage = (id) => page.items.some((role) => role.id === id);
-  const known = values.customRoleId && (page.items.find((role) => role.id === values.customRoleId) || (assigned?.role?.id === values.customRoleId ? assigned.role : null));
+  const known = assigned?.role?.id === values.customRoleId ? assigned.role : null;
   const problem = validateAccess(values);
   const dirty = values.customRoleId !== (base.custom_role_id ?? null) || values.loginEnabled !== (base.workspace_login_enabled === true);
-  const blocked = saving || rolesState === 'loading' || error?.ambiguous || error?.code === 'staff_stale';
+  const blocked = saving || rolesState !== 'ready' || (values.customRoleId && !known)
+    || error?.ambiguous || error?.code === 'staff_stale';
 
   async function save(event) {
     event.preventDefault();
@@ -61,7 +66,13 @@ export default function StaffAccessDialog({ record, onClose, onSaved }) {
       const next = await setStaffAccess(base, values);
       if (alive.current) onSaved(next);
     } catch (cause) {
-      if (alive.current) setError({ message: cause.message, code: cause.code, ambiguous: Boolean(cause.ambiguous) });
+      if (alive.current) {
+        setError({ message: cause.message, code: cause.code, ambiguous: Boolean(cause.ambiguous) });
+        if (cause.code === 'role_deleted') {
+          setAssigned({ missing: true });
+          setPage((p) => ({ ...p, items: p.items.filter((r) => r.id !== values.customRoleId) }));
+        }
+      }
     } finally { gate.current = false; if (alive.current) setSaving(false); }
   }
   async function review() {
@@ -79,8 +90,10 @@ export default function StaffAccessDialog({ record, onClose, onSaved }) {
       <div className="admin-staff-field admin-staff-form__wide" role="radiogroup" aria-label="Assigned role">
         <strong>Assigned role</strong>
         <label className="admin-staff-access__option"><input type="radio" name="staff-access-role" checked={values.customRoleId === null} disabled={saving} onChange={() => set({ customRoleId: null })} data-testid="radio-staff-access-none" /> No role (no Zone access)</label>
-        {values.customRoleId && !onPage(values.customRoleId) && <label className="admin-staff-access__option"><input type="radio" name="staff-access-role" checked disabled={saving} readOnly data-testid="radio-staff-access-assigned" /> {known ? `${known.name} (${countLabel(known.permissions.length)})` : assigned?.missing ? 'Assigned role no longer exists' : 'Assigned role (loading name)'}</label>}
-        {page.items.map((role) => <label key={role.id} className="admin-staff-access__option"><input type="radio" name="staff-access-role" checked={values.customRoleId === role.id} disabled={saving} onChange={() => set({ customRoleId: role.id })} data-testid={`radio-staff-access-${role.id}`} /> <span>{role.name} <small>{countLabel(role.permissions.length)}</small></span></label>)}
+        {values.customRoleId && !onPage(values.customRoleId) && <label className="admin-staff-access__option"><input type="radio" name="staff-access-role" checked disabled={saving || !known} readOnly data-testid="radio-staff-access-assigned" /> {known ? `${known.name} (${countLabel(known.permissions.length)})` : assigned?.missing ? 'Assigned role is unavailable' : assigned?.error ? 'Assigned role could not be verified' : 'Assigned role (loading name)'}</label>}
+        {page.items.map((role) => <label key={role.id} className="admin-staff-access__option"><input type="radio" name="staff-access-role" checked={values.customRoleId === role.id} disabled={saving || (assigned?.missing && role.id === values.customRoleId)} onChange={() => set({ customRoleId: role.id })} data-testid={`radio-staff-access-${role.id}`} /> <span>{role.name} <small>{countLabel(role.permissions.length)}</small></span></label>)}
+        {assigned?.missing && <p role="alert">This assigned role is unavailable. Explicitly choose No role or a current role. Disabling login alone does not resolve the assignment.</p>}
+        {assigned?.error && !assigned.missing && <p role="alert">{assigned.error} This does not prove the role was deleted. <button type="button" className="admin-button admin-button--secondary" onClick={() => setRoleRetry((n) => n + 1)}>Retry role verification</button></p>}
         {rolesState === 'loading' && <span className="admin-staff-field__hint" role="status">Loading roles...</span>}
         {rolesState === 'error' && <div className="admin-feedback admin-feedback--error" role="alert">{rolesError} <button type="button" className="admin-button admin-button--secondary" onClick={() => load(cursors, idx)} data-testid="button-retry-access-roles">Retry roles</button></div>}
         {rolesState === 'ready' && !page.items.length && <span className="admin-staff-field__hint">No roles exist yet. Create one in Roles &amp; Permissions.</span>}

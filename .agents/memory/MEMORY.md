@@ -57,3 +57,5 @@
 - [Allergen controls scope](allergen-controls-scope.md) — “one unit” means a combined searchable dropdown, not a new measurement-unit field; avoid incidental global selector changes.
 - [Scroll-region accessibility labels](responsive-scroll-overflow.md) — absolutely positioned hidden labels can extend page overflow beyond a correctly scrollable table.
 - [Browser label locators](browser-label-locators.md) — select controls by role when section and input share an accessible caption.
+- [Legacy attribution evidence](legacy-attribution-evidence.md) — role audit clocks and missing mutation versions often require separate reviewed updater provenance.
+- [Operator PostgreSQL driver](operator-postgres-driver.md) — test bare managed PostgreSQL URLs; explicit-driver disposable fixtures can hide CLI connection failures.

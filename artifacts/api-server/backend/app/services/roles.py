@@ -23,7 +23,9 @@ def authorize(db, actor):
 
 def projection(row):
     return dict(id=row.id, name=row.name, description=row.description, version=row.version,
-                created_at=row.created_at, updated_at=row.updated_at, permissions=sorted(row.permissions))
+                created_at=row.created_at, updated_at=row.updated_at, permissions=sorted(row.permissions),
+                created_by=row.created_by, updated_by=row.updated_by,
+                deleted_at=row.deleted_at, deleted_by=row.deleted_by)
 
 
 def transaction(db, work):
@@ -45,7 +47,7 @@ def transaction(db, work):
 def listing(db, actor, limit, cursor):
     def work():
         authorize(db, actor)
-        query = select(CustomRole).order_by(CustomRole.id).limit(limit + 1)
+        query = select(CustomRole).where(CustomRole.deleted_at.is_(None)).order_by(CustomRole.id).limit(limit + 1)
         if cursor is not None:
             query = query.where(CustomRole.id > cursor)
         rows = list(db.scalars(query))
@@ -61,8 +63,8 @@ def detail(db, actor, role_id):
     def work():
         authorize(db, actor)
         row = db.get(CustomRole, role_id, populate_existing=True)
-        if not row:
-            raise RoleError("Role no longer exists", 404, "role_deleted")
+        if not row or row.deleted_at is not None:
+            raise RoleError("Role is unavailable. Choose a current role or explicitly unassign it.", 404, "role_deleted")
         result = projection(row)
         db.commit()
         return result
@@ -75,34 +77,35 @@ def mutate(db, actor, body, role_id=None, deleting=False, permissions=False):
             lock_policy(db)
         current = authorize(db, actor)
         if role_id is None:
-            row = CustomRole(name=body.name, description=body.description)
+            row = CustomRole(name=body.name, description=body.description,
+                             created_by=current.user.id, updated_by=current.user.id)
             db.add(row)
             action = "role_create"
         else:
             row = db.scalar(select(CustomRole).where(CustomRole.id == role_id)
                             .execution_options(populate_existing=True).with_for_update())
-            if not row:
-                raise RoleError("Role no longer exists", 404, "role_deleted")
+            if not row or row.deleted_at is not None:
+                raise RoleError("Role is unavailable. Choose a current role or explicitly unassign it.", 404, "role_deleted")
             if row.version != body.expected_version:
                 raise RoleError("Role changed; review current details", 409, "role_stale")
             action = "role_delete" if deleting else "role_permissions" if permissions else "role_update"
             if deleting and db.scalar(select(StaffProfile.id).where(StaffProfile.custom_role_id == row.id).limit(1)):
-                raise RoleError("This role is assigned to staff. Explicitly unassign it before deleting.",
+                raise RoleError("This role is assigned to staff, including retained deleted staff. Explicitly unassign or reassign editable staff; retained deleted-staff links require operator resolution.",
                                 409, "role_assigned")
             if not deleting:
                 if permissions:
                     row.permissions = list(body.permissions)
                 else:
                     row.name, row.description = body.name, body.description
-                row.version += 1
-                row.updated_at = utcnow()
+            row.version += 1
+            row.updated_at, row.updated_by = utcnow(), current.user.id
+            if deleting:
+                row.deleted_at, row.deleted_by = row.updated_at, current.user.id
         db.flush()
         result = projection(row)
         db.add(AuditEvent(actor_id=current.user.id, session_id=current.session_id,
                          action=action, resource_type="custom_role", resource_id=row.id,
                          outcome="success", request_id=db.info.get("request_id")))
-        if deleting:
-            db.delete(row)
         try:
             db.commit()
         except IntegrityError:

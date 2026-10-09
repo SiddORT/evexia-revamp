@@ -19,7 +19,7 @@ from test_migration_0006 import migration_db
 from test_migration_zones import prepare, identity
 
 
-def test_actual_location_migration_preserves_zone_identity_history(migration_db):
+def test_actual_location_migration_preserves_zone_identity_history(migration_db, tmp_path):
     engine, config, actor_id, session_id = prepare(migration_db)
     command.downgrade(config, "0011_courier_partners")
     with Session(engine) as db:
@@ -32,6 +32,8 @@ def test_actual_location_migration_preserves_zone_identity_history(migration_db)
         db.add(courier)
         db.commit()
         courier_id = courier.id
+    from test_migration_role_lifecycle import reviewed_fixture_mapping
+    reviewed_fixture_mapping(config, tmp_path, role_id, actor_id)
     command.upgrade(config, "head")
     with Session(engine) as db:
         assert db.get(CustomRole, role_id).description == "Existing business metadata"

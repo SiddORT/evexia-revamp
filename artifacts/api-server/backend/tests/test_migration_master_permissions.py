@@ -22,7 +22,7 @@ from test_migration_staff import identity, prepare
 from test_staff import seed_designation
 
 
-def test_forward_preserves_grants_versions_assignments_and_empty_defaults(migration_db):
+def test_forward_preserves_grants_versions_assignments_and_empty_defaults(migration_db, tmp_path):
     # Seed the historical contract directly; populated lifecycle downgrade is
     # deliberately unavailable and current ORM fields do not exist at 0020.
     engine, config, admin_id, session_id, _ = prepare(migration_db)
@@ -44,6 +44,8 @@ def test_forward_preserves_grants_versions_assignments_and_empty_defaults(migrat
     command.upgrade(config, "0027_mr_designation_identity")
     with Session(engine) as db:
         seed_designation(db, admin_id, "Director")
+    from test_migration_role_lifecycle import reviewed_fixture_mapping
+    reviewed_fixture_mapping(config, tmp_path, role_id, admin_id)
     command.upgrade(config, "head")
     with engine.connect() as conn:
         assert conn.execute(text("SELECT id, permissions, version, updated_at FROM custom_roles")).all() == before
@@ -60,7 +62,7 @@ def test_forward_preserves_grants_versions_assignments_and_empty_defaults(migrat
             db.commit()
         db.rollback()
         assert db.get(CustomRole, role["id"]).permissions == sorted(MASTER_ACTIONS)
-    with pytest.raises(Exception, match="Populated Staff downgrade"):
+    with pytest.raises(Exception, match="Populated role downgrade"):
         command.downgrade(config, "0020_patient_directory")
 
 

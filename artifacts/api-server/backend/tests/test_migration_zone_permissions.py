@@ -48,7 +48,7 @@ def fixture(migration_db):
         return engine, config, admin_id, session_id, role, record, user.id, session.id
 
 
-def test_forward_existing_role_staff_defaults_preserve_identity(migration_db):
+def test_forward_existing_role_staff_defaults_preserve_identity(migration_db, tmp_path):
     engine, config, admin_id, session_id, legacy = prepare(migration_db)
     command.upgrade(config, "0013_download_logs")
     staff_id, user_id, role_id = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
@@ -67,6 +67,8 @@ def test_forward_existing_role_staff_defaults_preserve_identity(migration_db):
     command.upgrade(config, "0027_mr_designation_identity")
     with Session(engine) as db:
         seed_designation(db, admin_id, "Director")
+    from test_migration_role_lifecycle import reviewed_fixture_mapping
+    reviewed_fixture_mapping(config, tmp_path, role_id, admin_id)
     command.upgrade(config, "head")
     with Session(engine) as db:
         profile = db.get(StaffProfile, staff_id)
@@ -87,7 +89,7 @@ def test_forward_existing_role_staff_defaults_preserve_identity(migration_db):
                                {"id": role_id, "grants": grants})
 
 
-@pytest.mark.parametrize("revoke", ["grants", "assignment", "disable"])
+@pytest.mark.parametrize("revoke", ["grants", "assignment", "disable", "tombstone"])
 def test_queued_action_and_file_release_recheck_revoked_policy(migration_db, revoke):
     engine, _, admin_id, admin_sid, role, record, user_id, staff_sid = fixture(migration_db)
     settings = get_settings()
@@ -102,7 +104,13 @@ def test_queued_action_and_file_release_recheck_revoked_policy(migration_db, rev
                 ready.set()
                 assert attempted.wait(10)
                 owner = identity(db, admin_id, admin_sid)
-                if revoke == "grants":
+                if revoke == "tombstone":
+                    # Corrupt historical assignment fixture: no application
+                    # bypass exists. Retained grants must still fail closed.
+                    db.execute(text("UPDATE custom_roles SET deleted_at=now(), deleted_by=:actor WHERE id=:id"),
+                               dict(actor=admin_id, id=role["id"]))
+                    db.commit()
+                elif revoke == "grants":
                     roles.mutate(db, owner, RolePermissions(permissions=[], expected_version=role["version"]),
                                  role["id"], permissions=True)
                 else:
@@ -167,4 +175,5 @@ def test_concurrent_assignment_or_deletion_has_one_valid_outcome(migration_db):
     with Session(engine) as db:
         profile = db.get(StaffProfile, record["id"])
         saved = db.get(CustomRole, role["id"])
-        assert (profile.custom_role_id == role["id"] and saved is not None) or (profile.custom_role_id is None and saved is None)
+        assert saved is not None
+        assert (profile.custom_role_id == role["id"] and saved.deleted_at is None) or (profile.custom_role_id is None and saved.deleted_at is not None)

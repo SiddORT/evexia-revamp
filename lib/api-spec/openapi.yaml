@@ -6496,6 +6496,38 @@
             "title": "Created At",
             "type": "string"
           },
+          "created_by": {
+            "format": "uuid",
+            "readOnly": true,
+            "title": "Created By",
+            "type": "string"
+          },
+          "deleted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "readOnly": true,
+            "title": "Deleted At"
+          },
+          "deleted_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "readOnly": true,
+            "title": "Deleted By"
+          },
           "description": {
             "default": "",
             "maxLength": 1000,
@@ -6569,6 +6601,12 @@
             "title": "Updated At",
             "type": "string"
           },
+          "updated_by": {
+            "format": "uuid",
+            "readOnly": true,
+            "title": "Updated By",
+            "type": "string"
+          },
           "version": {
             "title": "Version",
             "type": "integer"
@@ -6579,7 +6617,11 @@
           "id",
           "version",
           "created_at",
-          "updated_at"
+          "updated_at",
+          "created_by",
+          "updated_by",
+          "deleted_at",
+          "deleted_by"
         ],
         "title": "RoleResponse",
         "type": "object"

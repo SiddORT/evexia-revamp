@@ -24,6 +24,8 @@ export const validPermissions = (list) => Array.isArray(list) && new Set(list).s
 // Canonical catalogue order so comparisons and counts never depend on server order.
 export const normalizePermissions = (list) => ZONE_KEYS.filter((key) => list.includes(key));
 export const samePermissions = (a, b) => normalizePermissions(a).join() === normalizePermissions(b).join();
+const uuid = (value) => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+const timestamp = (value) => typeof value === 'string' && /(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value));
 export function roleRecord(data) {
   if (Array.isArray(data?.permissions) && !validPermissions(data.permissions)) {
     throw new SessionError('Role service returned a permission this portal does not recognise. Nothing was changed. Refresh roles, and update the portal if this continues.');
@@ -31,12 +33,26 @@ export function roleRecord(data) {
   if (!data || typeof data.id !== 'string' || !/^[0-9a-f-]{36}$/.test(data.id)
       || typeof data.name !== 'string' || !data.name.trim() || typeof data.description !== 'string'
       || !Number.isSafeInteger(data.version) || data.version < 1
-      || typeof data.created_at !== 'string' || typeof data.updated_at !== 'string'
+      || !timestamp(data.created_at) || !timestamp(data.updated_at)
+      || !uuid(data.created_by) || !uuid(data.updated_by)
+      || !((data.deleted_at === null && data.deleted_by === null)
+        || (timestamp(data.deleted_at) && uuid(data.deleted_by)))
       || !validPermissions(data.permissions)) {
     throw new SessionError('Role service returned invalid metadata. Refresh roles before submitting again.');
   }
   return { id: data.id, name: data.name, description: data.description, version: data.version,
-    created_at: data.created_at, updated_at: data.updated_at, permissions: normalizePermissions(data.permissions) };
+    created_at: data.created_at, updated_at: data.updated_at, created_by: data.created_by,
+    updated_by: data.updated_by, deleted_at: data.deleted_at, deleted_by: data.deleted_by,
+    permissions: normalizePermissions(data.permissions) };
+}
+function liveRole(data) {
+  const role = roleRecord(data);
+  if (role.deleted_at !== null) {
+    const error = new SessionError('This role is unavailable. Choose a current role or explicitly unassign it.');
+    error.code = 'role_deleted'; error.status = 404;
+    throw error;
+  }
+  return role;
 }
 export async function listRoles(cursor = null, options) {
   const path = `?limit=50${cursor ? `&cursor=${idPath(cursor).slice(1)}` : ''}`;
@@ -45,9 +61,9 @@ export async function listRoles(cursor = null, options) {
       || data.limit !== 50 || (data.has_more && (!data.next_cursor || data.next_cursor === cursor))
       || (!data.has_more && data.next_cursor !== null)) throw new SessionError('Role service returned an invalid directory. Refresh roles.');
   if (data.next_cursor) idPath(data.next_cursor);
-  return { ...data, items: data.items.map(roleRecord) };
+  return { ...data, items: data.items.map(liveRole) };
 }
-export const getRole = async (id, options) => roleRecord(await roleRequest(idPath(id), undefined, options));
+export const getRole = async (id, options) => liveRole(await roleRequest(idPath(id), undefined, options));
 async function mutation(path, body) {
   const data = await roleRequest(path, body);
   try { return roleRecord(data); }

@@ -2602,6 +2602,9 @@ export const RoleResponsePermissionsItem = {
 
 export interface RoleResponse {
   created_at: string;
+  readonly created_by: string;
+  readonly deleted_at: string | null;
+  readonly deleted_by: string | null;
   /** @maxLength 1000 */
   description?: string;
   id: string;
@@ -2613,6 +2616,7 @@ export interface RoleResponse {
   /** @maxItems 40 */
   readonly permissions?: readonly RoleResponsePermissionsItem[];
   updated_at: string;
+  readonly updated_by: string;
   version: number;
 }
 
