@@ -9,6 +9,7 @@ import zipfile
 from decimal import Decimal, InvalidOperation
 from defusedxml import ElementTree
 from openpyxl import Workbook
+from openpyxl.cell import WriteOnlyCell
 from pydantic import ValidationError
 from sqlalchemy import func, select
 from app.core.config import get_settings
@@ -185,13 +186,16 @@ def encode(rows, format):
         csv.writer(output).writerows(rows)
         return output.getvalue().encode("utf-8-sig")
     output = io.BytesIO()
-    book = Workbook()
+    book = Workbook(write_only=True)
     try:
-        book.active.title = "SalesTargets"
+        sheet = book.create_sheet("SalesTargets")
         for row in rows:
-            book.active.append(row)
-            for cell in book.active[book.active.max_row]:
+            cells = []
+            for value in row:
+                cell = WriteOnlyCell(sheet, value=value)
                 cell.data_type = "s"
+                cells.append(cell)
+            sheet.append(cells)
         book.save(output)
         return output.getvalue()
     finally:
@@ -208,18 +212,18 @@ def sample(format):
 def export(db, actor, filters, format):
     def work():
         sales_targets.authorize(db, actor)
-        records = list(db.scalars(select(SalesTarget).where(*sales_targets.predicates(**filters))
-                                  .order_by(SalesTarget.created_at.desc(), SalesTarget.id.desc()).limit(EXPORT_LIMIT + 1)))
+        records = sales_targets.projections(db, select(SalesTarget).where(*sales_targets.predicates(**filters))
+                                           .order_by(SalesTarget.created_at.desc(), SalesTarget.id.desc())
+                                           .limit(EXPORT_LIMIT + 1))
         if len(records) > EXPORT_LIMIT:
             raise sales_targets.SalesTargetError("Export exceeds 5,000 matching targets. Narrow the applied filters.",
                                                 422, "sales_target_export_limit")
         rows = [HEADERS]
-        for row in records:
-            record = sales_targets.projection(db, row)
-            rows.append([safe_text(record["employeeCode"]), str(row.startYear), str(row.endYear),
-                         *(record[key] for key in QUARTERS), row.status,
-                         safe_text(record["createdBy"]), row.created_at.isoformat(),
-                         safe_text(record["updatedBy"]), row.updated_at.isoformat()])
+        for record in records:
+            rows.append([safe_text(record["employeeCode"]), str(record["startYear"]), str(record["endYear"]),
+                         *(record[key] for key in QUARTERS), record["status"],
+                         safe_text(record["createdBy"]), record["createdAt"].isoformat(),
+                         safe_text(record["updatedBy"]), record["updatedAt"].isoformat()])
         db.commit()
         return rows
     return encode(sales_targets.transaction(db, work), format)

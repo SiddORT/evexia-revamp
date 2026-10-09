@@ -1,9 +1,10 @@
 from decimal import Decimal
 from datetime import datetime, timezone
-from sqlalchemy import func, select, or_
+from sqlalchemy import case, func, select, or_
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import aliased
 from app.core.security import utcnow
-from app.db.models import AuditEvent
+from app.db.models import AuditEvent, User
 from app.db.sales_target_models import SalesTarget
 from app.db.mr_models import MRDirectory
 from app.db.zone_models import Zone
@@ -69,17 +70,47 @@ def reference(db, mr_id, lock=False):
     return mr, *related
 
 
-def projection(db, row):
-    # Historical targets remain visible when a reference is soft-deleted.
-    mr = db.get(MRDirectory, row.mrId)
-    zone, hq = db.get(Zone, mr.zoneId), db.get(Headquarter, mr.hq)
+def projection(db, row, related=None):
+    if related is None:
+        # Single-record mutation/detail paths retain their existing locks.
+        mr = db.get(MRDirectory, row.mrId)
+        zone, hq = db.get(Zone, mr.zoneId), db.get(Headquarter, mr.hq)
+        related = dict(mrName=mr.name, employeeCode=mr.employeeCode, zoneId=mr.zoneId,
+                       zoneName=zone.name, headquarterId=mr.hq, headquarterName=hq.name,
+                       createdBy=label(db, row.created_by), updatedBy=label(db, row.updated_by))
     fields = {field: getattr(row, field) for field in BUSINESS_FIELDS}
     fields.update({key: format(getattr(row, key), ".2f") for key in QUARTERS})
-    return dict(id=row.id, **fields, version=row.version, mrName=mr.name, employeeCode=mr.employeeCode,
-                zoneId=mr.zoneId, zoneName=zone.name, headquarterId=mr.hq, headquarterName=hq.name,
+    return dict(id=row.id, **fields, version=row.version, **related,
                 annualTotal=format(sum(getattr(row, key) for key in QUARTERS), ".2f"),
-                createdBy=label(db, row.created_by), updatedBy=label(db, row.updated_by),
                 createdAt=row.created_at, updatedAt=row.updated_at)
+
+
+def projections(db, query):
+    """Resolve display-only references in one bounded query, not per target.
+
+    No live-reference predicates: soft-deleted MR/zone/HQ history is still visible.
+    Select only actor protection flags, never credentials or private staff fields.
+    Authorization remains the caller's protected-singleton check.
+    """
+    creator, updater = aliased(User), aliased(User)
+    query = query.add_columns(
+        MRDirectory.name.label("mrName"), MRDirectory.employeeCode.label("employeeCode"),
+        MRDirectory.zoneId.label("zoneId"), Zone.name.label("zoneName"),
+        MRDirectory.hq.label("headquarterId"), Headquarter.name.label("headquarterName"),
+        case((creator.is_protected_system_admin.is_(True), "Super Admin"),
+             else_="Backend user").label("createdBy"),
+        case((updater.is_protected_system_admin.is_(True), "Super Admin"),
+             else_="Backend user").label("updatedBy"),
+    ).join(MRDirectory, MRDirectory.id == SalesTarget.mrId).join(
+        Zone, Zone.id == MRDirectory.zoneId).join(Headquarter, Headquarter.id == MRDirectory.hq
+    ).outerjoin(creator, creator.id == SalesTarget.created_by).outerjoin(
+        updater, updater.id == SalesTarget.updated_by)
+    result = []
+    for values in db.execute(query).mappings():
+        related = dict(values)
+        row = related.pop("SalesTarget")
+        result.append(projection(db, row, related))
+    return result
 
 
 def predicates(query="", status="all", zoneId=None, mrId=None, startYear=None, endYear=None):
@@ -105,9 +136,9 @@ def listing(db, actor, filters, limit, offset):
                                    for key in QUARTERS)).where(*clauses)).one()
         totals = {key: format(Decimal(value), ".2f") for key, value in zip(QUARTERS, sums)}
         totals["total"] = format(sum(Decimal(value) for value in sums), ".2f")
-        rows = db.scalars(select(SalesTarget).where(*clauses).order_by(
+        rows = projections(db, select(SalesTarget).where(*clauses).order_by(
             SalesTarget.created_at.desc(), SalesTarget.id.desc()).limit(limit).offset(offset))
-        result = dict(items=[projection(db, row) for row in rows],
+        result = dict(items=rows,
                       total=db.scalar(select(func.count()).select_from(SalesTarget).where(SalesTarget.deleted_at.is_(None))),
                       filtered=db.scalar(select(func.count()).select_from(SalesTarget).where(*clauses)),
                       limit=limit, offset=offset, totals=totals)
