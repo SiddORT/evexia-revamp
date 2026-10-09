@@ -1,6 +1,7 @@
 """Doctor business records: no credentials, writable Zone or client audit fields."""
 import re
 import uuid
+from app.schemas.directory_search import SearchSection
 import unicodedata
 from datetime import date, datetime
 from decimal import Decimal
@@ -162,10 +163,10 @@ class DoctorResponse(DoctorFields):
     updatedAt: datetime
 
 
-class DoctorPage(BaseModel):
+class DoctorPage(SearchSection):
     items: list[DoctorResponse]
     total: int
-    filtered: int
+    filtered: int | None
     limit: int
     offset: int
 
@@ -181,14 +182,15 @@ class DoctorChoice(BaseModel):
     deleted: bool
 
 
-class DoctorChoices(BaseModel):
+class DoctorChoices(SearchSection):
     items: list[DoctorChoice]
-    total: int
+    total: int | None
     limit: int
     offset: int
 
 
 class DoctorFilters(BaseModel):
+    zones: list[dict[str, str]]
     states: list[str]
     missingMR: bool
     missingZone: bool

@@ -10,6 +10,8 @@ from app.db.mr_models import MRDirectory
 from app.db.zone_models import Zone
 from app.schemas.patients import PatientFields
 from app.services import doctors, mrs, domain
+from app.services import directory_runtime as encrypted
+from types import SimpleNamespace
 
 class PatientError(mrs.MRError):
     def __init__(self, message="Patient service unavailable. Preserve your draft and retry later.", status=503, code="patient_unavailable"):
@@ -18,7 +20,9 @@ class PatientError(mrs.MRError):
 
 def authorize(db, actor, action=None, lock=True):
     from app.services.master_policy import authorize_master
-    return authorize_master(db, actor, "patient", action, lock=lock, error=PatientError)
+    current = authorize_master(db, actor, "patient", action, lock=True, error=PatientError)
+    encrypted.ready(db)
+    return current
 
 
 def transaction(db, work):
@@ -58,14 +62,18 @@ def assignment(db, doctor_id, existing=None):
 def doctor_context(db, ids):
     """Request-local scalar reference reads; include lifecycle tombstones."""
     doctor_rows = mrs._bulk(db, ids, lambda keys: select(
-        Doctor.id, Doctor.name, Doctor.registrationNumber, Doctor.status, Doctor.mrId, Doctor.deleted_at
+        Doctor.id, Doctor.name_ciphertext, Doctor.registrationNumber, Doctor.status, Doctor.mrId, Doctor.deleted_at
     ).where(Doctor.id.in_(keys)))
     mr_rows = mrs._bulk(db, (row.mrId for row in doctor_rows.values()), lambda keys: select(
-        MRDirectory.id, MRDirectory.name, MRDirectory.status, MRDirectory.deleted_at, MRDirectory.zoneId
+        MRDirectory.id, MRDirectory.name_ciphertext, MRDirectory.status, MRDirectory.deleted_at, MRDirectory.zoneId
     ).where(MRDirectory.id.in_(keys)))
     zone_rows = mrs._bulk(db, (row.zoneId for row in mr_rows.values() if not row.deleted_at), lambda keys: select(
         Zone.id, Zone.name, Zone.status, Zone.deleted_at
     ).where(Zone.id.in_(keys)))
+    doctor_rows = {key: SimpleNamespace(**dict(row._mapping), name=encrypted.read_name(row, "doctor_directory"))
+                   for key, row in doctor_rows.items()}
+    mr_rows = {key: SimpleNamespace(**dict(row._mapping), name=encrypted.read_name(row, "mr_directory"))
+               for key, row in mr_rows.items()}
     return dict(doctors=doctor_rows, mrs=mr_rows, zones=zone_rows)
 
 
@@ -112,8 +120,7 @@ def projection(db, row, context=None):
 def predicates(query="", status="all", zone_id="", mr_id=""):
     clauses = [Directory.deleted_at.is_(None)]
     if query.strip():
-        pattern = "%" + mrs.literal(query) + "%"
-        clauses.append(or_(Directory.name.ilike(pattern, escape="\\"), Directory.code.ilike(pattern, escape="\\")))
+        raise PatientError("Encrypted search requires a bounded authorized scan.")
     if status != "all":
         clauses.append(Directory.status == status)
     for key, value in (("mr_id", mr_id), ("zone_id", zone_id)):
@@ -123,15 +130,20 @@ def predicates(query="", status="all", zone_id="", mr_id=""):
     return clauses
 
 
-def listing(db, actor, query="", status="all", zone_id="", mr_id="", limit=10, offset=0):
+def listing(db, actor, query="", status="all", zone_id="", mr_id="", limit=10, offset=0, cursor=None):
     def work():
         authorize(db, actor, lock=False)
-        clauses = predicates(query, status, zone_id, mr_id)
-        rows = list(db.scalars(select(Directory).where(*clauses).order_by(Directory.created_at.desc(), Directory.id.desc()).limit(limit).offset(offset)))
+        clauses = predicates("", status, zone_id, mr_id)
+        meta = {}
+        if query.strip():
+            rows, meta = encrypted.scan(db, Directory, clauses, lambda row: encrypted.match(query, row.name, row.code),
+                                        limit=limit, cursor=cursor)
+        else:
+            rows = list(db.scalars(select(Directory).where(*clauses).order_by(Directory.created_at.desc(), Directory.id.desc()).limit(limit).offset(offset)))
         context = projection_context(db, rows)
         result = dict(items=[projection(db, r, context) for r in rows],
                       total=db.scalar(select(func.count()).select_from(Directory).where(Directory.deleted_at.is_(None))),
-                      filtered=db.scalar(select(func.count()).select_from(Directory).where(*clauses)), limit=limit, offset=offset)
+                      filtered=None if query.strip() else db.scalar(select(func.count()).select_from(Directory).where(*clauses)), limit=limit, offset=offset, **meta)
         db.commit()
         return result
     return transaction(db, work)
@@ -154,14 +166,17 @@ def detail(db, actor, record_id):
     return transaction(db, work)
 
 
-def choices(db, actor, query="", limit=100, offset=0, include_saved=None):
+def choices(db, actor, query="", limit=100, offset=0, include_saved=None, cursor=None):
     def work():
         authorize(db, actor, lock=False)
         clauses = [Doctor.deleted_at.is_(None)]
         if query:
-            clauses.append(Doctor.name.ilike("%" + mrs.literal(query) + "%", escape="\\"))
-        total = db.scalar(select(func.count()).select_from(Doctor).where(*clauses))
-        rows = list(db.scalars(select(Doctor).where(*clauses).order_by(func.lower(Doctor.name), Doctor.id).limit(limit).offset(offset)))
+            rows, meta = encrypted.scan(db, Doctor, clauses, lambda row: encrypted.match(query, row.name), limit=limit, cursor=cursor)
+            total = None
+        else:
+            total = db.scalar(select(func.count()).select_from(Doctor).where(*clauses))
+            rows = list(db.scalars(select(Doctor).where(*clauses).order_by(Doctor.id).limit(limit).offset(offset)))
+            meta = {}
         saved = db.get(Doctor, include_saved) if include_saved else None
         if saved and not saved.deleted_at and saved not in rows:
             rows.append(saved)
@@ -174,7 +189,7 @@ def choices(db, actor, query="", limit=100, offset=0, include_saved=None):
                               mrName=mr.name if mr and not mr.deleted_at else "",
                               zoneName=zone.name if zone and not zone.deleted_at else ""))
         db.commit()
-        return dict(items=items, total=total, limit=limit, offset=offset)
+        return dict(items=items, total=total, limit=limit, offset=offset, **meta)
     return transaction(db, work)
 
 
@@ -186,15 +201,15 @@ def filters(db, actor):
     def work():
         authorize(db, actor, lock=False)
         rows = list(db.execute(select(
-            MRDirectory.id, MRDirectory.name, MRDirectory.status,
+            MRDirectory.id, MRDirectory.name_ciphertext, MRDirectory.status,
             Zone.id.label("zoneId"), Zone.name.label("zoneName")
         ).outerjoin(Zone, and_(Zone.id == MRDirectory.zoneId, Zone.deleted_at.is_(None)))
             .where(MRDirectory.deleted_at.is_(None))
-            .order_by(func.lower(MRDirectory.name), MRDirectory.id).limit(FILTER_CHOICE_LIMIT + 1)))
+            .order_by(MRDirectory.id).limit(FILTER_CHOICE_LIMIT + 1)))
         if len(rows) > FILTER_CHOICE_LIMIT:
             raise PatientError("Patient filters exceed 10,000 MR choices. No partial choices were loaded.",
                                409, "patient_filter_limit")
-        result = dict(items=[dict(id=row.id, name=row.name, status=row.status,
+        result = dict(items=[dict(id=row.id, name=encrypted.read_name(row, "mr_directory"), status=row.status,
                                   zoneId=row.zoneId, zoneName=row.zoneName or "") for row in rows],
                       limit=FILTER_CHOICE_LIMIT)
         db.commit()
@@ -203,9 +218,7 @@ def filters(db, actor):
 
 
 def unique(db, body, code=None, except_id=None):
-    clauses = [func.lower(func.btrim(Directory.name)) == body.name.lower(), Directory.dialCountry == body.dialCountry,
-               Directory.phone == body.phone, Directory.dateOfBirth == body.dateOfBirth]
-    query = select(Directory.id).where(or_(Directory.code == code, and_(*clauses)))
+    query = select(Directory.id).where(or_(Directory.code == code, Directory.duplicate_identity_index == encrypted.exact_identity(db, body)))
     if except_id:
         query = query.where(Directory.id != except_id)
     if db.scalar(query):

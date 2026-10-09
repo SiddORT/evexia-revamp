@@ -10,6 +10,13 @@ import type { MRChoice } from "./mRChoice";
 export interface MRChoices {
   items: MRChoice[];
   limit: number;
+  nextCursor?: string | null;
   offset: number;
-  total: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
+  total: number | null;
 }

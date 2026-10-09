@@ -9,6 +9,7 @@ from app.db.models import AuditEvent
 from app.schemas.doctors import DoctorFields
 from app.services import mrs
 from app.services.zones import label
+from app.services import directory_runtime as encrypted
 
 
 class DoctorError(mrs.MRError):
@@ -18,7 +19,9 @@ class DoctorError(mrs.MRError):
 
 def authorize(db, actor, action=None, lock=True):
     from app.services.master_policy import authorize_master
-    return authorize_master(db, actor, "doctor", action, lock=lock, error=DoctorError)
+    current = authorize_master(db, actor, "doctor", action, lock=True, error=DoctorError)
+    encrypted.ready(db)
+    return current
 
 
 def transaction(db, work):
@@ -62,9 +65,9 @@ def assignment_warnings(mr, zone):
     return warnings
 
 
-def projection(db, row):
-    mr = db.get(MRDirectory, row.mrId)
-    zone = db.get(Zone, mr.zoneId) if mr and not mr.deleted_at else None
+def projection(db, row, context=None):
+    mr = context["mrs"].get(row.mrId) if context is not None else db.get(MRDirectory, row.mrId)
+    zone = (context["zones"].get(mr.zoneId) if context is not None else db.get(Zone, mr.zoneId)) if mr and not mr.deleted_at else None
     warnings = assignment_warnings(mr, zone)
     return dict(**{key: getattr(row, key) for key in DoctorFields.model_fields},
                 id=row.id, version=row.version, verification=row.verification,
@@ -82,10 +85,7 @@ def predicates(query="", status="all", zone_id="", mr_id="", state="", *, retain
     live_mrs = select(MRDirectory.id).where(MRDirectory.deleted_at.is_(None))
     usable_zone_mrs = live_mrs.where(MRDirectory.zoneId.in_(select(Zone.id).where(Zone.deleted_at.is_(None))))
     if query.strip():
-        pattern = "%" + mrs.literal(query) + "%"
-        clauses.append(or_(*[getattr(Doctor, key).ilike(pattern, escape="\\") for key in (
-            "name", "phone", "alternatePhone", "email", "registrationNumber", "qualification", "clinicName")],
-            Doctor.mrId.in_(live_mrs.where(MRDirectory.name.ilike(pattern, escape="\\")))))
+        raise DoctorError("Encrypted search requires a bounded authorized scan.")
     if status != "all":
         clauses.append(Doctor.status == status)
     if mr_id:
@@ -94,18 +94,35 @@ def predicates(query="", status="all", zone_id="", mr_id="", state="", *, retain
         clauses.append(Doctor.mrId.not_in(usable_zone_mrs) if zone_id == "missing"
                        else Doctor.mrId.in_(usable_zone_mrs.where(MRDirectory.zoneId == zone_id)))
     if state:
-        clauses.append(Doctor.state == state)
+        clauses.append(Doctor.state_index == encrypted.crypto().doctor_state_index(state))
     return clauses
 
 
-def listing(db, actor, query="", status="all", zone_id="", mr_id="", state="", limit=10, offset=0):
+def search_matcher(db, query, rows):
+    from app.services.patients import doctor_context
+    context = doctor_context(db, (row.id for row in rows))
+    return lambda row: encrypted.match(query, *(getattr(row, field) for field in (
+        "name", "phone", "alternatePhone", "email", "registrationNumber", "qualification", "clinicName")),
+        context["mrs"].get(row.mrId).name if context["mrs"].get(row.mrId) and not context["mrs"][row.mrId].deleted_at else "")
+
+
+def listing(db, actor, query="", status="all", zone_id="", mr_id="", state="", limit=10, offset=0, cursor=None):
     def work():
         authorize(db, actor, lock=False)
-        clauses = predicates(query, status, zone_id, mr_id, state)
+        clauses = predicates("", status, zone_id, mr_id, state)
         total = db.scalar(select(func.count()).select_from(Doctor).where(Doctor.deleted_at.is_(None)))
-        filtered = db.scalar(select(func.count()).select_from(Doctor).where(*clauses))
-        rows = db.scalars(select(Doctor).where(*clauses).order_by(Doctor.created_at.desc(), Doctor.id.desc()).limit(limit).offset(offset))
-        result = dict(items=[projection(db, row) for row in rows], total=total, filtered=filtered, limit=limit, offset=offset)
+        meta = {}
+        if query.strip():
+            rows, meta = encrypted.scan(db, Doctor, clauses, None, limit=limit, cursor=cursor,
+                                        prepare=lambda rows: search_matcher(db, query, rows))
+            filtered = None
+        else:
+            filtered = db.scalar(select(func.count()).select_from(Doctor).where(*clauses))
+            rows = db.scalars(select(Doctor).where(*clauses).order_by(Doctor.created_at.desc(), Doctor.id.desc()).limit(limit).offset(offset))
+        from app.services.patients import doctor_context
+        rows = list(rows)
+        context = doctor_context(db, [row.id for row in rows])
+        result = dict(items=[projection(db, row, context) for row in rows], total=total, filtered=filtered, limit=limit, offset=offset, **meta)
         db.commit()
         return result
     return transaction(db, work)
@@ -128,14 +145,17 @@ def detail(db, actor, record_id):
     return transaction(db, work)
 
 
-def choices(db, actor, query="", limit=100, offset=0, include_saved=None):
+def choices(db, actor, query="", limit=100, offset=0, include_saved=None, cursor=None):
     def work():
         authorize(db, actor, lock=False)
         clauses = [MRDirectory.deleted_at.is_(None)]
         if query:
-            clauses.append(MRDirectory.name.ilike("%" + mrs.literal(query) + "%", escape="\\"))
-        total = db.scalar(select(func.count()).select_from(MRDirectory).where(*clauses))
-        rows = list(db.scalars(select(MRDirectory).where(*clauses).order_by(func.lower(MRDirectory.name), MRDirectory.id).limit(limit).offset(offset)))
+            rows, meta = encrypted.scan(db, MRDirectory, clauses, lambda row: encrypted.match(query, row.name), limit=limit, cursor=cursor)
+            total = None
+        else:
+            total = db.scalar(select(func.count()).select_from(MRDirectory).where(*clauses))
+            rows = list(db.scalars(select(MRDirectory).where(*clauses).order_by(MRDirectory.id).limit(limit).offset(offset)))
+            meta = {}
         saved = db.get(MRDirectory, include_saved) if include_saved else None
         if saved and saved not in rows:
             rows.append(saved)
@@ -148,14 +168,21 @@ def choices(db, actor, query="", limit=100, offset=0, include_saved=None):
                                zoneStatus=zone.status if zone and not zone.deleted_at else None,
                               usable=not row.deleted_at and row.status == "active" and bool(zone and not zone.deleted_at and zone.status == "active")))
         db.commit()
-        return dict(items=items, total=total, limit=limit, offset=offset)
+        return dict(items=items, total=total, limit=limit, offset=offset, **meta)
     return transaction(db, work)
 
 
 def filters(db, actor):
     def work():
         authorize(db, actor, lock=False)
-        result = dict(states=list(db.scalars(select(Doctor.state).where(Doctor.deleted_at.is_(None)).distinct().order_by(Doctor.state))),
+        state_rows = list(db.execute(select(Doctor.id, Doctor.state_ciphertext).where(Doctor.deleted_at.is_(None)).limit(10001)))
+        if len(state_rows) > 10000:
+            raise DoctorError("Filter choices exceed 10,000 records. Narrow the directory.", 409, "doctor_filter_limit")
+        zones = list(db.scalars(select(Zone).where(Zone.deleted_at.is_(None)).order_by(Zone.name, Zone.id).limit(10001)))
+        if len(zones) > 10000:
+            raise DoctorError("Zone choices exceed the supported bound.", 409, "doctor_filter_limit")
+        result = dict(zones=[dict(id=str(zone.id), name=zone.name, status=zone.status) for zone in zones],
+                      states=sorted({encrypted.crypto().decrypt("doctor_directory", row.id, "state", row.state_ciphertext) for row in state_rows}),
                       missingMR=bool(db.scalar(select(Doctor.id).where(*predicates(mr_id="missing")).limit(1))),
                       missingZone=bool(db.scalar(select(Doctor.id).where(*predicates(zone_id="missing")).limit(1))))
         db.commit()

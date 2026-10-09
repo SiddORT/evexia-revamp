@@ -18,6 +18,8 @@ from app.repositories.sessions import revoke_user_sessions
 from app.schemas.mrs import MRFields
 from app.services.auth import revalidate_identity
 from app.services.zones import label
+from app.services import directory_runtime as encrypted
+from types import SimpleNamespace
 
 
 class MRError(Exception):
@@ -46,8 +48,10 @@ def transaction(db, work):
 
 def authorize(db, actor, provision=False, lock=True, action=None, protected=False):
     from app.services.master_policy import authorize_master
-    return authorize_master(db, actor, "mr", action or ("add" if provision else None),
-                            protected=protected, lock=lock, error=MRError)
+    current = authorize_master(db, actor, "mr", action or ("add" if provision else None),
+                               protected=protected, lock=True, error=MRError)
+    encrypted.ready(db)
+    return current
 
 
 def audit(db, actor, row, operation):
@@ -63,14 +67,7 @@ def literal(value):
 def predicates(query="", status="all", zone_id=None, hq_id=None):
     clauses = [MRDirectory.deleted_at.is_(None)]
     if query.strip():
-        pattern = "%" + literal(query) + "%"
-        clauses.append(or_(*[field.ilike(pattern, escape="\\") for field in (
-            MRDirectory.name, MRDirectory.employeeCode, MRDirectory.email, MRDirectory.phone,
-             MRDirectory.city,
-         )], MRDirectory.designation_id.in_(select(Designation.id).where(
-             Designation.name.ilike(pattern, escape="\\"))),
-         MRDirectory.id.in_(select(MRProfile.id).join(User, User.id == MRProfile.user_id).where(
-            User.username.ilike(pattern, escape="\\")))))
+        raise MRError("Encrypted search requires a bounded authorized scan.", 503)
     if status != "all":
         clauses.append(MRDirectory.status == status)
     if zone_id:
@@ -112,7 +109,9 @@ def projection_context(db, rows, manager_accounts=False):
     designations = _bulk(db, (row.designation_id for row in rows), lambda ids: select(
         Designation.id, Designation.name, Designation.status, Designation.deleted_at).where(Designation.id.in_(ids)))
     managers = _bulk(db, (row.reportingManagerId for row in rows), lambda ids: select(
-        MRDirectory.id, MRDirectory.name, MRDirectory.status, MRDirectory.deleted_at).where(MRDirectory.id.in_(ids)))
+        MRDirectory.id, MRDirectory.name_ciphertext, MRDirectory.status, MRDirectory.deleted_at).where(MRDirectory.id.in_(ids)))
+    managers = {key: SimpleNamespace(**dict(value._mapping), name=encrypted.read_name(value, "mr_directory"))
+                for key, value in managers.items()}
     authors = _bulk(db, (key for row in rows for key in (row.created_by, row.updated_by)),
                     lambda ids: select(User.id, User.is_protected_system_admin).where(User.id.in_(ids)))
     return dict(accounts=accounts, headquarters=headquarters, zones=zones, managers=managers, designations=designations,
@@ -151,16 +150,29 @@ def projection(db, row, context=None):
                 createdAt=row.created_at, updatedAt=row.updated_at)
 
 
-def listing(db, actor, query="", status="all", zone_id=None, hq_id=None, limit=10, offset=0):
+def search_matcher(db, query, rows):
+    context = projection_context(db, rows)
+    return lambda row: encrypted.match(query, row.name, row.employeeCode, row.email, row.phone,
+                                      row.city, context["designations"][row.designation_id].name,
+                                      context["accounts"][row.id].username)
+
+
+def listing(db, actor, query="", status="all", zone_id=None, hq_id=None, limit=10, offset=0, cursor=None):
     def work():
         authorize(db, actor, lock=False)
         total = db.scalar(select(func.count()).select_from(MRDirectory).where(MRDirectory.deleted_at.is_(None)))
-        clauses = predicates(query, status, zone_id, hq_id)
-        filtered = db.scalar(select(func.count()).select_from(MRDirectory).where(*clauses))
-        rows = list(db.scalars(select(MRDirectory).where(*clauses).order_by(
-            MRDirectory.created_at.desc(), MRDirectory.id.desc()).limit(limit).offset(offset)))
+        clauses = predicates("", status, zone_id, hq_id)
+        meta = {}
+        if query.strip():
+            rows, meta = encrypted.scan(db, MRDirectory, clauses, None, limit=limit, cursor=cursor,
+                                        prepare=lambda rows: search_matcher(db, query, rows))
+            filtered = None
+        else:
+            filtered = db.scalar(select(func.count()).select_from(MRDirectory).where(*clauses))
+            rows = list(db.scalars(select(MRDirectory).where(*clauses).order_by(
+                MRDirectory.created_at.desc(), MRDirectory.id.desc()).limit(limit).offset(offset)))
         context = projection_context(db, rows)
-        result = dict(items=[projection(db, row, context) for row in rows], total=total, filtered=filtered, limit=limit, offset=offset)
+        result = dict(items=[projection(db, row, context) for row in rows], total=total, filtered=filtered, limit=limit, offset=offset, **meta)
         db.commit()
         return result
     return transaction(db, work)
@@ -213,7 +225,7 @@ def associated_doctors(db, actor, record_id, limit, offset):
         clauses = [DoctorDirectory.mrId == row.id, DoctorDirectory.deleted_at.is_(None)]
         count = db.scalar(select(func.count()).select_from(DoctorDirectory).where(*clauses))
         rows = db.scalars(select(DoctorDirectory).where(*clauses)
-                          .order_by(DoctorDirectory.name, DoctorDirectory.id).limit(limit).offset(offset))
+                          .order_by(DoctorDirectory.id).limit(limit).offset(offset))
         result = dict(items=[dict(id=item.id, name=item.name, registrationNumber=item.registrationNumber,
                                   status=item.status, zoneName=zone.name if zone and not zone.deleted_at else "")
                              for item in rows], total=count, filtered=count, limit=limit, offset=offset)
@@ -222,22 +234,28 @@ def associated_doctors(db, actor, record_id, limit, offset):
     return transaction(db, work)
 
 
-def references(db, actor, kind, query, limit, offset, include_saved=None):
+def references(db, actor, kind, query, limit, offset, include_saved=None, cursor=None):
     def work():
         authorize(db, actor, lock=False)
         model = {"zones": Zone, "headquarters": Headquarter, "managers": MRDirectory, "designations": Designation}[kind]
         # All nondeleted entries paginate explicitly; inactive entries are visible,
         # but the assignment validator permits only new active relationships.
         clauses = [model.deleted_at.is_(None)]
-        if query.strip():
-            clauses.append(model.name.ilike("%" + literal(query) + "%", escape="\\"))
-        total = db.scalar(select(func.count()).select_from(model).where(*clauses))
-        choices = list(db.scalars(select(model).where(*clauses).order_by(func.lower(model.name), model.id).limit(limit).offset(offset)))
+        meta = {}
+        if kind == "managers":
+            choices, meta = encrypted.scan(db, model, clauses, lambda row: encrypted.match(query, row.name),
+                                            limit=limit, cursor=cursor)
+            total = None
+        else:
+            if query.strip():
+                clauses.append(model.name.ilike("%" + literal(query) + "%", escape="\\"))
+            total = db.scalar(select(func.count()).select_from(model).where(*clauses))
+            choices = list(db.scalars(select(model).where(*clauses).order_by(func.lower(model.name), model.id).limit(limit).offset(offset)))
         saved = db.get(model, include_saved) if include_saved else None
         if saved and all(row.id != saved.id for row in choices):
             choices.append(saved)
         result = dict(items=[dict(id=row.id, name=row.name, status=row.status, deleted=bool(row.deleted_at))
-                             for row in choices], total=total, limit=limit, offset=offset)
+                             for row in choices], total=total, limit=limit, offset=offset, **meta)
         db.commit()
         return result
     return transaction(db, work)

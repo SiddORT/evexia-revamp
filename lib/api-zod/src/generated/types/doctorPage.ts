@@ -8,9 +8,16 @@
 import type { DoctorResponse } from "./doctorResponse";
 
 export interface DoctorPage {
-  filtered: number;
+  filtered: number | null;
   items: DoctorResponse[];
   limit: number;
+  nextCursor?: string | null;
   offset: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
   total: number;
 }

@@ -14,6 +14,8 @@ import DataTable from '../../components/admin/DataTable.jsx';
 import RecordDetails from '../../components/admin/RecordDetails.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
+import DirectorySearchStatus from '../../components/admin/DirectorySearchStatus.jsx';
+import useDirectoryContinuation from '../../hooks/useDirectoryContinuation.js';
 import { contactMR, deleteMR, downloadMRFile, exportMRs, listMRs, resetMRPassword, statusMR } from '../../services/serverMRs.js';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
 import { useMasterActions } from '../../auth/useMasterActions.js';
@@ -42,6 +44,8 @@ export default function MRMaster() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [data, setData] = useState({ items: [], total: 0, filtered: 0 });
+  const continuation = useDirectoryContinuation({ query: debounced, status: statusFilter, zone_id: zoneFilter, hq_id: hqFilter, limit: pageSize, offset: (page - 1) * pageSize });
+  const searchKey = JSON.stringify(continuation.params);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [revision, setRevision] = useState(0);
@@ -70,12 +74,12 @@ export default function MRMaster() {
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
-    listMRs({ query: debounced, status: statusFilter, zone_id: zoneFilter, hq_id: hqFilter, limit: pageSize, offset: (page - 1) * pageSize }, controller.signal)
+    listMRs(JSON.parse(searchKey), controller.signal)
       .then((result) => { if (!controller.signal.aborted) { setData(result); setError(''); } })
       .catch((cause) => { if (!controller.signal.aborted) { setData({ items: [], total: 0, filtered: 0 }); setError(cause.message || 'MR records could not be loaded.'); } })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [debounced, statusFilter, zoneFilter, hqFilter, page, pageSize, revision]);
+  }, [searchKey, revision]);
   const pageCount = Math.max(1, Math.ceil(data.filtered / pageSize));
   useEffect(() => { if (!loading && !error && page > pageCount) setPage(pageCount); }, [loading, error, page, pageCount]);
   const pagination = { page, pageSize, pageCount, pageRows: data.items, startIndex: (page - 1) * pageSize, setPage, setPageSize: (size) => { setPageSize(size); setPage(1); }, resetPage: () => setPage(1) };
@@ -195,7 +199,7 @@ export default function MRMaster() {
             <div className="admin-record-card__body">{details(r, false)}<dl><div><dt>Address</dt><dd>{address(r)}</dd></div><div><dt>Reporting manager</dt><dd>{r.reportingManagerName || '—'}</dd></div><div><dt>HQ / zone</dt><dd>{r.hqName} / {r.zoneName}{warn(r)}</dd></div><div><dt>Created by</dt><dd>{auditDetails(r.createdBy, r.createdAt)}</dd></div><div><dt>Updated by</dt><dd>{auditDetails(r.updatedBy, r.updatedAt)}</dd></div></dl></div>
             {actions(r, true)}</article>)}</div>
         </> : <div className="admin-empty" data-testid="status-mrs-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{data.total ? 'No matching MRs' : 'No MR records yet'}</strong><p>{data.total ? 'Try different search or filters.' : 'Add an MR, or import a file. Headquarters and zones must exist first.'}</p></div>}
-        <TablePagination {...pagination} filtered={data.filtered} total={data.total} label={data.total === 1 ? 'MR' : 'MRs'} onPageChange={setPage} onPageSizeChange={pagination.setPageSize} testId="text-mr-count" />
+        {data.partial ? <DirectorySearchStatus count={data.items.length} scanned={data.scanned} nextCursor={data.nextCursor} loading={loading} onNext={() => continuation.next(data)} onRestart={() => { continuation.restart(); setRevision((n) => n + 1); }} /> : <TablePagination {...pagination} filtered={data.filtered} total={data.total} label={data.total === 1 ? 'MR' : 'MRs'} onPageChange={setPage} onPageSizeChange={pagination.setPageSize} testId="text-mr-count" />}
       </>}
     </section>
     {confirming && <ConfirmationDialog pending={pending} blocked={blocked} title={copy.title} description={copy.description} actionLabel={copy.label} destructive={type === 'delete'} onConfirm={confirmAction} onClose={() => { setConfirming(null); setActionError(''); if (blocked) retry(); }} error={actionError} />}

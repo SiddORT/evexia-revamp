@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import useDirectoryContinuation from './useDirectoryContinuation.js';
 import * as service from '../services/serverSalesTargets.js';
 
 const ZERO = { q1: '0', q2: '0', q3: '0', q4: '0', total: '0' };
@@ -13,7 +14,8 @@ export default function useSalesTargets(filters, page, pageSize) {
   const [pending, setPending] = useState(false);
   const busy = useRef(false);
   const retry = useCallback(() => { setLoading(true); refresh((value) => value + 1); }, []);
-  const key = JSON.stringify(filters);
+  const continuation = useDirectoryContinuation({ ...filters, limit: pageSize, offset: (page - 1) * pageSize });
+  const key = JSON.stringify(continuation.params);
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
@@ -44,6 +46,8 @@ export default function useSalesTargets(filters, page, pageSize) {
     } finally { busy.current = false; setPending(false); }
   }
   return {
+    partial: data.partial, scanned: data.scanned, nextCursor: data.nextCursor,
+    continueSearch: () => continuation.next(data), restartSearch: () => { continuation.restart(); retry(); },
     records: data.items, total: data.total, filtered: data.filtered, totals: data.totals || ZERO, loading, pending, error, feedback, retry,
     clearFeedback: () => setFeedback(''),
     add: (values) => apply(() => service.createSalesTarget(values), 'Sales target added to shared records.'),

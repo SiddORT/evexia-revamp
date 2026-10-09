@@ -196,11 +196,12 @@ def sample(format):
 def export(db, actor, query="", status="all", zone_id="", mr_id="", format="csv"):
     def work():
         patients.authorize(db, actor, "export", lock=False)
-        clauses = patients.predicates(query, status, zone_id, mr_id)
+        clauses = patients.predicates("", status, zone_id, mr_id)
         count = db.scalar(select(func.count()).select_from(Directory).where(*clauses))
-        if count > EXPORT_LIMIT:
+        if not query.strip() and count > EXPORT_LIMIT:
             raise patients.PatientError("More than 5,000 patients match. Narrow filters.", 409, "patient_export_limit")
-        rows = list(db.scalars(select(Directory).where(*clauses).order_by(Directory.created_at.desc(), Directory.id.desc()).limit(EXPORT_LIMIT + 1)))
+        rows = patients.encrypted.complete(db, Directory, clauses,
+                                          lambda row: patients.encrypted.match(query, row.name, row.code))
         if len(rows) > EXPORT_LIMIT:
             raise patients.PatientError("More than 5,000 patients match. Narrow filters.", 409, "patient_export_limit")
         context = patients.projection_context(db, rows)

@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { mrReferences } from '../../services/serverMRs.js';
 import { getSession, subscribeSession } from '../../auth/adminSession.js';
 import MRFormCombobox from './MRFormCombobox.jsx';
+import '../../pages/admin/mr.css';
 
 const choiceLabel = (item) => `${item.name}${item.status === 'inactive' ? ' (inactive)' : ''}${item.deleted ? ' (deleted)' : ''}`;
 
 // Server search/paging stays separate from the form's selected ID and label.
-export default function MRReferenceSelect({ id, kind, label, value, savedName, onChange, placeholder, invalid, describedBy, excludeId, emptyGuidance, required }) {
+export default function MRReferenceSelect({ id, kind, label, value, savedName, onChange, placeholder, invalid, describedBy, excludeId, emptyGuidance, required, requestChoices = mrReferences, onHydrate, testId }) {
   const [query, setQuery] = useState('');
   const [items, setItems] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -17,6 +18,7 @@ export default function MRReferenceSelect({ id, kind, label, value, savedName, o
   const [more, setMore] = useState(false);
   const sequence = useRef(0);
   const nextOffset = useRef(0);
+  const nextCursor = useRef(null);
   const savedRef = useRef(value);
   const currentValue = useRef(value);
   currentValue.current = value;
@@ -47,12 +49,14 @@ export default function MRReferenceSelect({ id, kind, label, value, savedName, o
     controllerRef.current = controller;
     setState('loading'); setError(''); setItems([]);
     const timer = setTimeout(() => {
-      mrReferences(kind, { query: query.trim(), limit: 100, offset: 0, includeSaved: currentValue.current || undefined }, controller.signal)
+      requestChoices(kind, { query: query.trim(), limit: 100, offset: 0, includeSaved: currentValue.current || undefined }, controller.signal)
         .then((result) => {
           if (current !== sequence.current || controller.signal.aborted) return;
           const saved = result.items.find((item) => item.id === currentValue.current);
           if (saved) setSelected(saved);
-          nextOffset.current = Math.min(result.offset + result.limit, result.total);
+          nextOffset.current = result.partial ? 0 : Math.min(result.offset + result.limit, result.total);
+          nextCursor.current = result.nextCursor;
+          onHydrate?.(result.items);
           setItems(result.items); setTotal(result.total); setState('ready');
         })
         .catch((cause) => {
@@ -69,9 +73,11 @@ export default function MRReferenceSelect({ id, kind, label, value, savedName, o
     moreController.current = controller; moreBusy.current = true;
     setMore(true); setError('');
     try {
-      const result = await mrReferences(kind, { query: query.trim(), limit: 100, offset: nextOffset.current, includeSaved: currentValue.current || undefined }, controller.signal);
+      const result = await requestChoices(kind, { query: query.trim(), limit: 100, offset: nextOffset.current, cursor: nextCursor.current || undefined, includeSaved: currentValue.current || undefined }, controller.signal);
       if (current !== sequence.current || controller.signal.aborted) return;
-      nextOffset.current = Math.min(result.offset + result.limit, result.total);
+      nextOffset.current = result.partial ? 0 : Math.min(result.offset + result.limit, result.total);
+      nextCursor.current = result.nextCursor;
+      onHydrate?.(result.items);
       setItems((existing) => [...existing, ...result.items.filter((item) => !existing.some((known) => known.id === item.id))]);
       setTotal(result.total);
     } catch (cause) {
@@ -92,13 +98,14 @@ export default function MRReferenceSelect({ id, kind, label, value, savedName, o
       setSelected(items.find((item) => item.id === next) || null); onChange(next);
     }} onSearch={search} onDismiss={() => { invalidate(); }}
     placeholder={placeholder} invalid={invalid} describedBy={describedBy} required={required}
-    loading={state === 'loading'} testId={`select-mr-${kind}`}
+    loading={state === 'loading'} testId={testId || `select-mr-${kind}`}
     feedback={state === 'loading' ? 'Loading choices…' : state === 'error' ? `Choices could not be loaded. ${error}`
       : error ? `More choices could not be loaded. ${error}`
+        : total === null ? `Showing ${visible.length} choices in checked sections. ${nextCursor.current ? 'Further records may match. Continue search.' : 'No further records remain.'}`
         : !visible.length ? (query.trim() ? 'No matches found.' : emptyGuidance)
           : `Showing up to ${nextOffset.current} of ${total} choices.`}
     action={state === 'error' ? { label: 'Retry', run: () => search(query) }
-      : state === 'ready' && nextOffset.current < total ? {
-        label: more ? 'Loading…' : error ? 'Retry load more' : 'Load more', pending: more, run: loadMore, testId: `button-more-mr-${kind}`,
+      : state === 'ready' && (nextCursor.current || nextOffset.current < total) ? {
+        label: more ? 'Loading…' : error ? 'Retry load more' : total === null ? 'Continue search' : 'Load more', pending: more, run: loadMore, testId: `button-more-mr-${kind}`,
       } : null} />;
 }

@@ -9,10 +9,17 @@ import type { SalesTargetResponse } from "./salesTargetResponse";
 import type { SalesTargetTotals } from "./salesTargetTotals";
 
 export interface SalesTargetPage {
-  filtered: number;
+  filtered: number | null;
   items: SalesTargetResponse[];
   limit: number;
+  nextCursor?: string | null;
   offset: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
   total: number;
   totals: SalesTargetTotals;
 }

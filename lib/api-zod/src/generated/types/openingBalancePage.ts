@@ -8,9 +8,16 @@
 import type { OpeningBalanceResponse } from "./openingBalanceResponse";
 
 export interface OpeningBalancePage {
-  filtered: number;
+  filtered: number | null;
   items: OpeningBalanceResponse[];
   limit: number;
+  nextCursor?: string | null;
   offset: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
   total: number;
 }

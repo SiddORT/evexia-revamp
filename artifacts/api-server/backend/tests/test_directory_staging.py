@@ -34,15 +34,50 @@ from test_patients import fields
 
 
 def seed(fixture):
-    engine, config, actor_id, sid, mr, doctor = prepare(fixture)
-    with Session(engine, expire_on_commit=False) as db:
-        actor = identity(db, actor_id, sid)
-        one = patients.create(db, actor, PatientFields(**fields(doctor)))
-        two = patients.create(db, actor, PatientFields(**fields(doctor, name="Deleted Synthetic", phone="9000000001")))
-        patients.mutate(db, actor, uuid.UUID(str(two["id"])), PatientDeletion(expected_version=two["version"]), "delete")
-        tombstone = doctors.create(db, actor, DoctorFields(**doctor_fields(
-            mr, name="Deleted Synthetic Doctor", registrationNumber="RETIRED-SYNTHETIC")))
-        doctors.mutate(db, actor, tombstone["id"], DoctorDeletion(expected_version=1), "delete")
+    # Seed through the HISTORICAL plaintext schema, not the encrypted ORM.
+    # These synthetic values are intentionally restricted to disposable DBs.
+    from datetime import datetime, timezone
+    from app.schemas.mrs import MRFields
+    from test_mrs import fields as mr_fields, DESIGNATION_ID
+    engine, config = fixture
+    command.upgrade(config, "0029_directory_crypto_additive")
+    actor_id, sid, mr_id, zone, hq = (uuid.uuid4() for _ in range(5))
+    now = datetime.now(timezone.utc)
+    metadata = MetaData()
+    with engine.begin() as connection:
+        def insert(table, data):
+            reflected = Table(table, metadata, autoload_with=connection, resolve_fks=False)
+            connection.execute(reflected.insert(), data)
+        insert("users", dict(id=actor_id, email=MRFields(**mr_fields(hq, zone)).email,
+                            password_hash="synthetic-not-a-login", system_role="mr",
+                            username="synthetic.mr", is_protected_system_admin=False,
+                            is_active=False, token_version=0, identity_version=1))
+        common = dict(created_by=actor_id, updated_by=actor_id, created_at=now, updated_at=now, version=1)
+        insert("zones", dict(id=zone, name="Staging Zone", status="active", **common))
+        insert("headquarters", dict(id=hq, name="Staging HQ", state_code="DL", status="active", **common))
+        insert("designations", dict(id=DESIGNATION_ID, name="Medical Representative", shortName="MR", status="active", **common))
+        insert("mr_profiles", dict(id=mr_id, user_id=actor_id, is_active=False, version=1,
+                                  created_at=now, updated_at=now))
+        mr_values = MRFields(**mr_fields(hq, zone)).model_dump(exclude={"userId"})
+        mr_values["status"] = "inactive"
+        insert("mr_directory", dict(id=mr_id, **mr_values, **common))
+        mr = dict(id=mr_id)
+        doctor = dict(id=uuid.uuid4(), **DoctorFields(**doctor_fields(mr)).model_dump())
+        insert("doctor_directory", dict(**doctor, verification="unverified", **common))
+        tombstone = dict(id=uuid.uuid4(), **DoctorFields(**doctor_fields(
+            mr, name="Deleted Synthetic Doctor", registrationNumber="RETIRED-SYNTHETIC")).model_dump())
+        insert("doctor_directory", dict(**tombstone, verification="unverified", deleted_at=now, deleted_by=actor_id, **common))
+        one = dict(id=uuid.uuid4())
+        for index, record in enumerate((one, dict(id=uuid.uuid4()))):
+            insert("patients", dict(id=record["id"], assigned_mr_id=mr_id, is_active=index == 0, version=1,
+                                    created_at=now, updated_at=now))
+            values = PatientFields(**fields(doctor, name="Synthetic Patient" if not index else "Deleted Synthetic",
+                                            phone="9000000000" if not index else "9000000001")).model_dump()
+            insert("patient_directory", dict(**record, code=f"PAT-STAGING-{index}", **values,
+                created_by=actor_id, updated_by=actor_id, created_at=now, updated_at=now,
+                deleted_at=now if index else None, deleted_by=actor_id if index else None))
+        insert("audit_events", dict(id=uuid.uuid4(), actor_id=actor_id, action="synthetic-staging",
+                                   resource_type="patient", resource_id=one["id"], outcome="success"))
     return engine, config, actor_id, sid, mr, doctor, one
 
 

@@ -4,7 +4,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from app.db.models import Patient
+from app.db.models import Patient, User
 from app.db.file_models import FileRecord
 from app.db.headquarter_models import Headquarter
 from app.db.zone_models import Zone
@@ -46,6 +46,8 @@ def test_directory_delete_retains_file_access_owner_and_keys(files_env, monkeypa
 def setup_graph(env):
     """Augment only this disposable fixture's owners for file race tests."""
     with Session(env["engine"]) as db:
+        from directory_test_data import initialize_empty_metadata_fixture
+        initialize_empty_metadata_fixture(db)
         actor = env["admin"].id
         seed_designation(db, actor)
         zone = Zone(name="File Patient Zone", status="active", created_by=actor, updated_by=actor)
@@ -53,6 +55,7 @@ def setup_graph(env):
         db.add_all([zone, hq]); db.flush()
         for profile, code in ((env["owner_mr"], "OWNER"), (env["replacement_mr"], "TARGET")):
             body = MRFields(**mr_fields(hq.id, zone.id, code=code, username=code.lower()))
+            body.email = db.get(User, profile.user_id).email or ""
             db.add(MRDirectory(id=profile.id, **body.model_dump(exclude={"userId"}), created_by=actor, updated_by=actor))
         db.flush()
         doctors = []

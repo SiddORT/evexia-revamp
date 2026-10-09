@@ -12,6 +12,7 @@ import SalesTargetForm, { fetchMrs, fetchZones } from '../../components/admin/Sa
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
+import DirectorySearchStatus from '../../components/admin/DirectorySearchStatus.jsx';
 import useSalesTargets from '../../hooks/useSalesTargets.js';
 import useSalesTargetYears from '../../hooks/useSalesTargetYears.js';
 import { exportSalesTargets, downloadSalesTargetFile } from '../../services/serverSalesTargets.js';
@@ -41,7 +42,7 @@ function TargetWorkspace() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const filters = { query: search.trim(), status: applied.status, zoneId: applied.zone?.value, mrId: applied.mr?.value, startYear: applied.startYear, endYear: applied.endYear };
-  const { records, total, filtered, totals, loading, pending, error, feedback, clearFeedback, retry, add, edit, remove, changeStatus } = useSalesTargets(filters, page, pageSize);
+  const { records, total, filtered, partial, scanned, nextCursor, continueSearch, restartSearch, totals, loading, pending, error, feedback, clearFeedback, retry, add, edit, remove, changeStatus } = useSalesTargets(filters, page, pageSize);
   const { years } = useSalesTargetYears([draft.startYear, draft.endYear, applied.startYear, applied.endYear]);
   const [editing, setEditing] = useState(null);
   const [confirming, setConfirming] = useState(null);
@@ -148,7 +149,7 @@ function TargetWorkspace() {
         <label className="admin-search"><span className="sr-only">Search MR name</span><input maxLength={100} value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search MR name" data-testid="input-search-sales-targets" /></label>
         <button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={retry} data-testid="button-refresh-sales-targets"><RefreshCw size={15} aria-hidden="true" /> Refresh</button>
       </div>
-      {(active || dirty) && <p role="status" className="admin-target-filter-feedback" data-testid="text-sales-target-filter-feedback">{active && `${filtered} matching · ${filterLabels.join(', ')} applied`}{dirty && `${active ? ' · ' : ''}unapplied changes`}</p>}
+      {(active || dirty) && <p role="status" className="admin-target-filter-feedback" data-testid="text-sales-target-filter-feedback">{active && `${partial ? 'Search section' : `${filtered} matching`} · ${filterLabels.join(', ')} applied`}{dirty && `${active ? ' · ' : ''}unapplied changes`}</p>}
       <details className="admin-target-filter-disclosure">
         <summary data-testid="button-toggle-sales-target-filters"><Filter size={15} aria-hidden="true" /><span>Filter records{active ? ' · active' : ''}</span><ChevronDown size={15} aria-hidden="true" /></summary>
         <div className="admin-target-toolbar__filter-grid" id="sales-target-filters">
@@ -171,10 +172,10 @@ function TargetWorkspace() {
             {actions(r, true)}
           </article>)}</div>
         </> : <div className="admin-empty" data-testid="status-sales-target-empty"><span className="admin-empty__icon"><FolderOpen size={21} aria-hidden="true" /></span><strong>{total ? 'No matching targets' : 'No sales targets yet'}</strong><p>{total ? 'Try another financial year, zone, MR, status or name.' : 'Add a target or import a CSV or Excel file to start quarterly MR budgets.'}</p></div>}
-        <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} pageRows={records} startIndex={startIndex} filtered={filtered} total={total} label={total === 1 ? 'target' : 'targets'} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} testId="text-sales-target-count" />
+        {partial ? <DirectorySearchStatus count={records.length} scanned={scanned} nextCursor={nextCursor} loading={loading} onNext={continueSearch} onRestart={restartSearch} /> : <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} pageRows={records} startIndex={startIndex} filtered={filtered} total={total} label={total === 1 ? 'target' : 'targets'} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} testId="text-sales-target-count" />}
       </>}
     </section>
-    {summary && <Dialog className="admin-target-summary-dialog" eyebrow="Sales Target Master" title="Target Summary" description={`Quarterly totals for all ${filtered} ${filtered === 1 ? 'target' : 'targets'} matching the applied filters, not just this page.`} onClose={() => setSummary(false)} footer={<button type="button" className="admin-button admin-button--secondary" onClick={() => setSummary(false)} data-testid="button-close-target-summary">Close</button>}>
+    {summary && <Dialog className="admin-target-summary-dialog" eyebrow="Sales Target Master" title="Target Summary" description={partial ? 'Quarterly totals for this search section only—not all matching targets. Export includes every match or fails clearly.' : `Quarterly totals for all ${filtered} ${filtered === 1 ? 'target' : 'targets'} matching the applied filters, not just this page.`} onClose={() => setSummary(false)} footer={<button type="button" className="admin-button admin-button--secondary" onClick={() => setSummary(false)} data-testid="button-close-target-summary">Close</button>}>
       {loading || error ? <p className="admin-empty" role="status" data-testid="status-summary-loading">{error || 'Refreshing totals for the current filters…'}</p> : <div className="admin-target-summary-dialog__rows"><div className="admin-target-summary-dialog__heading"><span>Type</span><span>Amount (in Rs)</span></div>{summaryRows.map((k) => <div key={k}><span>{k === 'total' ? 'Total' : `${k.toUpperCase()} target`}</span><strong data-testid={`text-summary-${k}`}>{formatAmount(totals[k])}</strong></div>)}</div>}</Dialog>}
     {editing && <SalesTargetForm key={editing === 'new' ? 'new' : editing.id} record={editing === 'new' ? null : editing} onSave={save} onClose={() => { setReturnFocus(dialogTrigger.current); setEditing(null); retry(); }} />}
     {confirming && <ConfirmationDialog pending={pending} blocked={blocked} title={`${verb} sales target?`} description={`Are you sure you want to ${verb.toLowerCase()} the target for ${confirming.record.mrName} (${period(confirming.record)})?${confirming.type === 'delete' ? ' It will disappear from ordinary lists and exports. Server deletion history is retained; no restore is available here.' : ''}`} actionLabel={`${verb} target`} destructive={confirming.type === 'delete'} onConfirm={confirmAction} onClose={() => { setReturnFocus(dialogTrigger.current); setConfirming(null); retry(); }} error={actionError} />}

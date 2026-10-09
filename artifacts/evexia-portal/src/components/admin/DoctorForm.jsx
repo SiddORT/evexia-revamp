@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import DoctorMRSelect from './DoctorMRSelect.jsx';
 import InfoDisclosure from './InfoDisclosure.jsx';
 import PhoneInput from './PhoneInput.jsx';
 import { DIAL_COUNTRIES } from '../../services/phoneCountries.js';
@@ -96,6 +97,7 @@ function validate(values) {
 
 export default function DoctorForm({ doctor, records = [], mrs = [], blocked = false, onSave, onClose, onRefresh }) {
   const [values, setValues] = useState(() => initialValues(doctor));
+  const [hydratedMRs, setHydratedMRs] = useState([]);
   const [errors, setErrors] = useState({});
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -106,7 +108,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
   const tabRefs = useRef([]);
   const pendingFocus = useRef(null);
   const pinRequest = useRef(0);
-  const selectedMR = mrs.find((mr) => String(mr.id) === values.mrId);
+  const selectedMR = [...hydratedMRs, ...mrs].find((mr) => String(mr.id) === values.mrId);
   const activeMRs = mrs.filter((mr) => mr.usable);
   const mrOptions = selectedMR && !activeMRs.includes(selectedMR) ? [...activeMRs, selectedMR] : activeMRs;
   const missingMR = Boolean(values.mrId) && (!selectedMR || selectedMR.deleted || !selectedMR.zoneId);
@@ -313,7 +315,10 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
         <div className="doctor-form__section-head"><h3 className="doctor-form__section-title">Clinic & assignment</h3></div>
         <div className="doctor-form__grid">
           {renderField('clinicName', 'Clinic Name', { placeholder: 'Clinic name' })}
-          {renderField('mrId', 'MR Name', { placeholder: 'Select MR', selectOptions: mrOptions.map((mr) => ({ value: String(mr.id), label: `${mr.name} · ${mr.zoneName || 'Missing Zone'}${mr.deleted ? ' (deleted)' : !mr.usable ? ' (inactive assignment)' : ''}` }))})}
+          <div className="doctor-form__field"><DoctorMRSelect value={values.mrId} savedName={doctor?.mrName}
+            onHydrate={(items) => setHydratedMRs((old) => [...items, ...old.filter((row) => !items.some((item) => item.id === row.id))])}
+            onChange={(value) => setValues((old) => ({ ...old, mrId: value }))} error={errors.mrId} />
+            {errors.mrId && <p className="doctor-form__error" role="alert">{errors.mrId}</p>}</div>
           {selectedMR && <p className="doctor-form__hint">Derived Zone: {selectedMR.zoneName || 'Missing Zone'}. Zone is controlled by MR Master.</p>}
           {renderField('status', 'Status', { selectOptions: [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }] })}
         </div>

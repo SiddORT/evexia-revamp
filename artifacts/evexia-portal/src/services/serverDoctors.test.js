@@ -38,7 +38,7 @@ test('Doctor transport guards identity, downloads, full MR choices and ambiguous
   try {
     await session.loginAdmin('test@example.com', 'Synthetic password', false);
     const all = await service.allDoctorMRChoices(undefined, saved.id);
-    assert.equal(all.length, 106, 'No silent truncation at page 1; include missing/deleted saved assignment.');
+    assert.equal(all.length, 101, 'Load one explicit section and hydrate the saved assignment; do not silently traverse the directory.');
     await service.editDoctor(saved, { name: 'Edited', paymentLimit: '9999999999999.99' });
     await service.deleteDoctor(saved);
     assert.deepEqual(JSON.parse(calls.find((c) => c.url.includes('/delete')).options.body), { expected_version: 7 });

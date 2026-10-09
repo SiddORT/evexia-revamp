@@ -10,6 +10,13 @@ import type { OpeningBalanceDoctorChoice } from "./openingBalanceDoctorChoice";
 export interface OpeningBalanceDoctorPage {
   items: OpeningBalanceDoctorChoice[];
   limit: number;
+  nextCursor?: string | null;
   offset: number;
-  total: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
+  total: number | null;
 }

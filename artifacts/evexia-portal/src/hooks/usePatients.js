@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import useDirectoryContinuation from './useDirectoryContinuation.js';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../auth/adminSession.js';
 import { createPatient, deletePatient, editPatient, getPatient, listPatients, patientMRChoices, statusPatient } from '../services/serverPatients.js';
 
@@ -11,7 +12,8 @@ export default function usePatients(params = {}, detailId = null) {
   const [pending, setPending] = useState(false);
   const busy = useRef(false);
   const alive = useRef(true);
-  const requestKey = JSON.stringify(params);
+  const continuation = useDirectoryContinuation(params);
+  const requestKey = JSON.stringify(continuation.params);
   const retry = useCallback(() => setRevision((n) => n + 1), []);
   useEffect(() => {
     const controller = new AbortController();
@@ -55,7 +57,8 @@ export default function usePatients(params = {}, detailId = null) {
         guard();
         if (controller.signal.aborted) return;
         setState((old) => ({ records: detailId ? [data] : data.items, sessionEpoch: old.sessionEpoch,
-          total: detailId ? 1 : data.total, filtered: detailId ? 1 : data.filtered, loading: false, error: '' }));
+          total: detailId ? 1 : data.total, filtered: detailId ? 1 : data.filtered,
+          partial: !detailId && data.partial, scanned: data.scanned, nextCursor: data.nextCursor, loading: false, error: '' }));
       } catch (cause) {
         if (controller.signal.aborted) return;
         try { guard(); } catch { return; }
@@ -83,6 +86,7 @@ export default function usePatients(params = {}, detailId = null) {
   }
   const row = (id) => typeof id === 'object' ? id : state.records.find((record) => record.id === id);
   return { ...state, mrs: references.mrs, zones: references.zones,
+    continueSearch: () => continuation.next(state), restartSearch: () => { continuation.restart(); retry(); },
     loading: state.loading || references.loading, error: state.error || references.error,
     pending, feedback, retry, clearFeedback: () => setFeedback(''),
     add: (values) => apply(() => createPatient(values), 'Patient added successfully.'),

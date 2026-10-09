@@ -25,4 +25,5 @@ export type ListMRDirectoryParams = {
    * @maximum 1000000
    */
   offset?: number;
+  cursor?: string | null;
 };

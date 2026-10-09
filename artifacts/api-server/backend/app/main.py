@@ -31,6 +31,7 @@ from app.api.v1.headquarters import router as headquarters_router
 from app.services.headquarters import HeadquarterError
 from app.api.v1.mrs import router as mrs_router
 from app.services.mrs import MRError
+from app.services.directory_inventory import DirectoryCryptoError
 from app.api.v1.doctors import router as doctors_router
 from app.api.v1.patients import router as patients_router
 from app.api.v1.product_categories import router as product_categories_router
@@ -258,6 +259,11 @@ def create_app() -> FastAPI:
     @app.exception_handler(MRError)
     async def mr_error(request: Request, exc: MRError):
         return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
+
+    @app.exception_handler(DirectoryCryptoError)
+    async def directory_crypto_error(request: Request, exc: DirectoryCryptoError):
+        return JSONResponse(error_body(request, exc.status, exc.message, exc.code),
+                            status_code=exc.status, headers={"Cache-Control": "no-store"})
 
     @app.exception_handler(AuthError)
     async def revoked_identity(request: Request, exc: AuthError):

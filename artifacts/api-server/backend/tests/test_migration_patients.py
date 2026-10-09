@@ -46,7 +46,8 @@ def test_empty_forward_migration_preserves_identity_file_history(migration_db):
         db.commit()
         owner_id = patient.id
         count = db.scalar(select(func.count()).select_from(AuditEvent))
-    command.upgrade(config, "head")
+    from directory_test_data import approved_historical_upgrade
+    approved_historical_upgrade(engine, config)
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(PatientDirectory)) == 0
         assert db.get(Patient, owner_id).version == 7 and not db.get(Patient, owner_id).is_active

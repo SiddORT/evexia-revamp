@@ -211,7 +211,8 @@ def test_reference_retention_search_and_no_automatic_repair(client):
     assert edit(api, headers, record, fields(doctor, name="Retained")).status_code == 200
     assert api.post(BASE, headers=headers, json=fields(doctor, name="New")).status_code == 409
     assert api.get(BASE + "/references", headers=headers, params={"query": "Synthetic", "limit": 1}).json()["items"][0]["usable"] is False
-    assert api.get(BASE, headers=headers, params={"query": record["code"]}).json()["filtered"] == 1
+    searched = api.get(BASE, headers=headers, params={"query": record["code"]}).json()
+    assert searched["filtered"] is None and searched["partial"] and len(searched["items"]) == 1
     assert api.get(BASE + "/" + str(uuid.uuid4()), headers=headers).status_code == 404
 
 
@@ -244,7 +245,7 @@ def test_invalid_workbooks_limits_and_access(client):
 
 def test_migration_preserves_existing_owners_and_empty_directory(client):
     _, db, _ = client
-    assert db.scalar(text("SELECT count(*) FROM pg_indexes WHERE tablename='patient_directory' AND indexname='uq_patient_duplicate'")) == 1
+    assert db.scalar(text("SELECT count(*) FROM pg_indexes WHERE tablename='patient_directory' AND indexname='uq_patient_duplicate_cipher'")) == 1
     assert db.scalar(text("SELECT count(*) FROM patient_directory")) == 0
 
 

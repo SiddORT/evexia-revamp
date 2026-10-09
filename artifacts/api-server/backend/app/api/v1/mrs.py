@@ -25,8 +25,9 @@ provisioner = require_permissions("admin.access", "domain.provision")
 def listing(query: str = Query("", max_length=200), status: Literal["all", "active", "inactive"] = "all",
             zone_id: uuid.UUID | None = None, hq_id: uuid.UUID | None = None,
             limit: int = Query(10, ge=1, le=100), offset: int = Query(0, ge=0, le=1000000),
+            cursor: uuid.UUID | None = None,
             actor=Depends(manager), db: Session = Depends(get_db)):
-    return mrs.listing(db, actor, query, status, zone_id, hq_id, limit, offset)
+    return mrs.listing(db, actor, query, status, zone_id, hq_id, limit, offset, cursor)
 
 
 @router.post("", response_model=MRCreated, status_code=201, operation_id="createMRDirectory")
@@ -38,8 +39,9 @@ def create(body: MRCreate, actor=Depends(manager), db: Session = Depends(get_db)
 def references(kind: Literal["zones", "headquarters", "managers", "designations"],
                query: str = Query("", max_length=200), limit: int = Query(100, ge=1, le=100),
                offset: int = Query(0, ge=0, le=1000000), include_saved: uuid.UUID | None = None,
+               cursor: uuid.UUID | None = None,
                actor=Depends(manager), db: Session = Depends(get_db)):
-    return mrs.references(db, actor, kind, query, limit, offset, include_saved)
+    return mrs.references(db, actor, kind, query, limit, offset, include_saved, cursor)
 
 
 @router.get("/username", response_model=MRUsername, operation_id="generateMRUsername")

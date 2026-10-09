@@ -11,6 +11,8 @@ import RecordDetails from '../../components/admin/RecordDetails.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
+import DirectorySearchStatus from '../../components/admin/DirectorySearchStatus.jsx';
+import DoctorMRSelect from '../../components/admin/DoctorMRSelect.jsx';
 import useDoctors from '../../hooks/useDoctors.js';
 import { downloadDoctorFile, exportDoctors } from '../../services/serverDoctors.js';
 import { reportingIdentityGuard } from '../../auth/adminSession.js';
@@ -49,7 +51,10 @@ export default function DoctorMaster() {
   useEffect(() => () => exportController.current?.abort(), []);
   const filters = { query: debounced, zone_id: zoneFilter, mr_id: mrFilter, state: stateFilter, status: statusFilter };
   const normalizedFilters = Object.fromEntries(Object.entries(filters).map(([key, value]) => [key, value === 'all' ? '' : value]));
-  const { records, mrs, zones, states, missingMR, missingZone, total, filtered, loading, pending, error, feedback, retry, clearFeedback, changeStatus, changeVerification, shiftMR, changeContactRequirement, remove } = useDoctors({ ...normalizedFilters, limit: pageSize, offset: (page - 1) * pageSize });
+  const { records, mrs: initialMRs, zones, states, missingMR, missingZone, total, filtered, partial, scanned, nextCursor, continueSearch, restartSearch, loading, pending, error, feedback, retry, clearFeedback, changeStatus, changeVerification, shiftMR, changeContactRequirement, remove } = useDoctors({ ...normalizedFilters, limit: pageSize, offset: (page - 1) * pageSize });
+  const [hydratedMRs, setHydratedMRs] = useState([]);
+  const mrs = [...hydratedMRs, ...initialMRs.filter((row) => !hydratedMRs.some((item) => item.id === row.id))];
+  const hydrateMRs = (items) => setHydratedMRs((old) => [...items, ...old.filter((row) => !items.some((item) => item.id === row.id))]);
   const [selected, setSelected] = useState([]);
   const [confirming, setConfirming] = useState(null);
   const [targetMR, setTargetMR] = useState('');
@@ -102,7 +107,7 @@ export default function DoctorMaster() {
     if (confirming.type === 'contact') result = await changeContactRequirement(confirming.snapshots[0], confirming.value);
     if (confirming.type === 'verification') result = await changeVerification(confirming.snapshots, confirming.value);
     if (confirming.type === 'shift') {
-      if (!targetMR || !mrById.has(targetMR)) { setActionError('Choose an available MR.'); return; }
+      if (!targetMR || !mrById.get(targetMR)?.usable) { setActionError('Choose an available active MR and Zone.'); return; }
       result = await shiftMR(confirming.snapshots, targetMR);
     }
     if (result?.success) {
@@ -195,13 +200,14 @@ export default function DoctorMaster() {
         <div className="doctor-master__toolbar">
           <div className="doctor-master__toolbar-top">
             <label className="admin-search doctor-master__search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search doctors by name, registration, clinic or contact</span><input maxLength={200} value={search} onChange={(event) => filterWith(setSearch, event.target.value)} placeholder="Search name, registration, clinic or contact" data-testid="input-search-doctors" /></label>
-            <span className="doctor-master__filter-feedback" data-testid="text-doctor-filter-feedback">{hasFilters ? `${filtered} matching · ${activeFilters.join(', ')} applied` : `${total} total doctors`}{hasFilters && <button type="button" className="doctor-master__text-button" onClick={resetFilters} data-testid="button-reset-doctor-filters">Reset filters</button>}</span>
+            <span className="doctor-master__filter-feedback" data-testid="text-doctor-filter-feedback">{hasFilters ? `${partial ? 'Search section' : `${filtered} matching`} · ${activeFilters.join(', ')} applied` : `${total} total doctors`}{hasFilters && <button type="button" className="doctor-master__text-button" onClick={resetFilters} data-testid="button-reset-doctor-filters">Reset filters</button>}</span>
           </div>
           <details className="doctor-master__filters">
             <summary data-testid="button-toggle-doctor-filters"><Filter size={15} aria-hidden="true" /> Filter records{activeFilters.length > 0 && ` · ${activeFilters.length} active`}<ChevronDown size={15} aria-hidden="true" /></summary>
             <div className="doctor-master__filter-grid">
               <div className="admin-filter"><label htmlFor="doctor-zone-filter">Zone</label><select id="doctor-zone-filter" className="admin-select" value={zoneFilter} onChange={(event) => filterWith(setZoneFilter, event.target.value)} data-testid="select-filter-doctor-zone"><option value="all">All zones</option>{zones.map((zone) => <option key={zone.id} value={zone.id}>{zone.name}{zone.status === 'inactive' ? ' (inactive)' : ''}</option>)}{missingZone && <option value="missing">Missing zone</option>}</select></div>
-              <div className="admin-filter"><label htmlFor="doctor-mr-filter">MR</label><select id="doctor-mr-filter" className="admin-select" value={mrFilter} onChange={(event) => filterWith(setMrFilter, event.target.value)} data-testid="select-filter-doctor-mr"><option value="all">All MRs</option>{mrs.map((mr) => <option key={mr.id} value={mr.id}>{mr.name}{mr.status === 'inactive' ? ' (inactive)' : ''}</option>)}{missingMR && <option value="missing">Missing MR</option>}</select></div>
+              <div className="admin-filter"><label htmlFor="doctor-mr-filter">MR</label><DoctorMRSelect id="doctor-mr-filter" testId="select-filter-doctor-mr" value={mrFilter === 'all' || mrFilter === 'missing' ? '' : mrFilter} onHydrate={hydrateMRs} onChange={(value) => filterWith(setMrFilter, value || 'all')} />
+                <button type="button" className="doctor-master__text-button" onClick={() => filterWith(setMrFilter, 'all')}>All MRs</button>{missingMR && <button type="button" className="doctor-master__text-button" onClick={() => filterWith(setMrFilter, 'missing')}>Missing MR</button>}</div>
               <div className="admin-filter"><label htmlFor="doctor-state-filter">State</label><select id="doctor-state-filter" className="admin-select" value={stateFilter} onChange={(event) => filterWith(setStateFilter, event.target.value)} data-testid="select-filter-doctor-state"><option value="all">All states</option>{states.map((state) => <option key={state} value={state}>{state}</option>)}</select></div>
               <div className="admin-filter"><label htmlFor="doctor-status-filter">Status</label><select id="doctor-status-filter" className="admin-select" value={statusFilter} onChange={(event) => filterWith(setStatusFilter, event.target.value)} data-testid="select-filter-doctor-status"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
             </div>
@@ -223,7 +229,7 @@ export default function DoctorMaster() {
                <div className="admin-record-card__foot doctor-master__card-foot"><StatusBadge status={record.status} id={record.id} kind="doctor-mobile" /><span className={`doctor-master__verification${record.verification === 'verified' ? '' : ' doctor-master__verification--pending'}`}>{record.verification === 'verified' ? 'Verified' : 'Unverified'}</span>{actions(record, true)}</div>
             </article>)}</div>
           </> : <div className="admin-empty" data-testid="status-doctors-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{total ? 'No matching doctors' : 'No doctor records yet'}</strong><p>{total ? 'Try a different search or reset the filters.' : 'Add a doctor to start the shared server directory.'}</p>{total > 0 && hasFilters && <button className="doctor-master__text-button" type="button" onClick={resetFilters} data-testid="button-reset-empty-doctor-filters">Reset filters</button>}</div>}
-          {!loading && <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={filtered} total={total} label="doctors" onPageChange={(n) => { setPage(n); setSelected([]); }} onPageSizeChange={(n) => { setPageSize(n); setPage(1); setSelected([]); }} testId="text-doctor-count" />}
+          {partial ? <DirectorySearchStatus count={records.length} scanned={scanned} nextCursor={nextCursor} loading={loading} onNext={continueSearch} onRestart={restartSearch} /> : !loading && <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={filtered} total={total} label="doctors" onPageChange={(n) => { setPage(n); setSelected([]); }} onPageSizeChange={(n) => { setPageSize(n); setPage(1); setSelected([]); }} testId="text-doctor-count" />}
         </>}
       </section>
       {confirming?.type === 'delete' && <ConfirmationDialog destructive pending={pending} blocked={loading || Boolean(error)} title="Delete doctor?" description={`Remove “${confirming.name}” from normal use? Stored relationships, Patients and Opening Balances remain. This does not change business status or reassign records.`} actionLabel="Delete doctor" onConfirm={handleConfirm} onClose={closeConfirmation} error={actionError} />}
@@ -231,7 +237,7 @@ export default function DoctorMaster() {
       {confirming?.type === 'contact' && <ConfirmationDialog pending={pending} blocked={Boolean(error)} title={`Make phone and email ${confirming.value}?`} description={`Change the contact rule for “${confirming.name}”? ${confirming.value === 'required' ? 'Both fields must be filled before they can be required.' : 'Supplied phone and email must still have valid formats.'}`} actionLabel={`Make both ${confirming.value}`} onConfirm={handleConfirm} onClose={closeConfirmation} error={actionError} />}
       {confirming?.type === 'verification' && <ConfirmationDialog pending={pending} blocked={Boolean(error)} title={`${confirming.value === 'verified' ? 'Verify' : 'Unverify'} ${count === 1 ? 'doctor' : `${count} doctors`}?`} description={`Set verification to ${confirming.value} for ${count} selected ${count === 1 ? 'doctor' : 'doctors'}? This does not change active status or create login access.`} actionLabel={confirming.value === 'verified' ? 'Confirm verification' : 'Confirm unverification'} onConfirm={handleConfirm} onClose={closeConfirmation} error={actionError} />}
       {confirming?.type === 'shift' && <Dialog title={`Shift ${count === 1 ? 'doctor' : `${count} doctors`} to another MR?`} eyebrow="Confirm assignment" description="The selected doctors will be assigned to the chosen MR and inherit that MR’s zone." onClose={closeConfirmation} footer={<><button type="button" className="admin-button admin-button--secondary" disabled={pending} onClick={closeConfirmation} data-testid="button-cancel-shift-doctors">Cancel</button><button type="button" className="admin-button" onClick={handleConfirm} disabled={!targetMR || pending || Boolean(error)} data-testid="button-confirm-shift-doctors">{pending ? 'Saving…' : 'Shift MR'}</button></>}>
-        <label className="doctor-master__dialog-field" htmlFor="doctor-target-mr">New MR<select id="doctor-target-mr" className="admin-select" disabled={pending} value={targetMR} onChange={(event) => { setTargetMR(event.target.value); setActionError(''); }} data-testid="select-shift-doctor-mr"><option value="">Choose an MR</option>{mrs.filter((mr) => mr.usable).map((mr) => <option key={mr.id} value={mr.id}>{mr.name} · {mr.zoneName}</option>)}</select></label>
+        <label className="doctor-master__dialog-field" htmlFor="doctor-target-mr">New MR<DoctorMRSelect id="doctor-target-mr" testId="select-shift-doctor-mr" value={targetMR} onHydrate={hydrateMRs} onChange={(value) => { setTargetMR(value); setActionError(''); }} /></label>
         {actionError && <div className="admin-feedback admin-feedback--error" role="alert" style={{ marginTop: 12 }}>{actionError}</div>}
       </Dialog>}
     </div>

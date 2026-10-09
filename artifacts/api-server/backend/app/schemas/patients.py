@@ -1,6 +1,7 @@
 """Patient business input; identity, ownership and attribution are server owned."""
 import re
 import uuid
+from app.schemas.directory_search import SearchSection
 from datetime import date, datetime
 from typing import Literal
 from zoneinfo import ZoneInfo
@@ -85,10 +86,10 @@ class PatientDirectoryResponse(PatientFields):
     updatedAt: datetime
 
 
-class PatientPage(BaseModel):
+class PatientPage(SearchSection):
     items: list[PatientDirectoryResponse]
     total: int
-    filtered: int
+    filtered: int | None
     limit: int
     offset: int
 
@@ -102,9 +103,9 @@ class PatientChoice(BaseModel):
     zoneName: str
 
 
-class PatientChoices(BaseModel):
+class PatientChoices(SearchSection):
     items: list[PatientChoice]
-    total: int
+    total: int | None
     limit: int
     offset: int
 

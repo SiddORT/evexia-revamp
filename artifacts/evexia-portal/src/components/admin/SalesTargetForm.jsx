@@ -8,9 +8,9 @@ import { QUARTERS, defaultTarget, formatAmount, formatCents, sumDraft, targetBod
 import '../../salesTarget.css';
 
 export const mrOption = (mr) => ({ value: mr.id, label: `${mr.name} (${mr.employeeCode})`, raw: mr });
-export const fetchMrs = (extra = {}) => async (query, offset, signal) => {
-  const page = await salesTargetChoices({ query, offset, limit: 20, ...extra }, signal);
-  return { items: page.mrs.map(mrOption), total: page.total };
+export const fetchMrs = (extra = {}) => async (query, offset, signal, cursor) => {
+  const page = await salesTargetChoices({ query, offset, cursor, limit: 20, ...extra }, signal);
+  return { items: page.mrs.map(mrOption), total: page.total, nextCursor: page.nextCursor, partial: page.partial };
 };
 export const fetchZones = async (query, offset, signal) => {
   const page = await salesTargetChoices({ limit: 1, zoneQuery: query, zoneOffset: offset }, signal);

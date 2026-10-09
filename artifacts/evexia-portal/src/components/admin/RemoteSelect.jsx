@@ -8,6 +8,7 @@ export default function RemoteSelect({ id, label, value, selected, fetchPage, re
   const [query, setQuery] = useState('');
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
+  const [nextCursor, setNextCursor] = useState(null);
   const [active, setActive] = useState(-1);
   const [state, setState] = useState('idle');
   const root = useRef(null);
@@ -17,29 +18,30 @@ export default function RemoteSelect({ id, label, value, selected, fetchPage, re
   const loading = useRef(false);
   const fetchRef = useRef(fetchPage);
   fetchRef.current = fetchPage;
-  function load(text, offset) {
-    if (offset && loading.current) return;
+  function load(text, offset, continueCursor = null) {
+    const append = Boolean(offset || continueCursor);
+    if (append && loading.current) return;
     loading.current = true;
     const mine = ++seq.current;
     ctl.current?.abort();
     const controller = new AbortController();
     ctl.current = controller;
     setState('loading');
-    fetchRef.current(text, offset, controller.signal)
+    fetchRef.current(text, offset, controller.signal, continueCursor)
       .then((page) => {
         if (mine !== seq.current) return;
         loading.current = false;
         // The final-page button disappears. Move keyboard focus first, while
         // its DOM node still exists, rather than leave focus on document.body.
-        if (offset && document.activeElement?.dataset.testid === `button-more-${id}`) input.current?.focus();
-        setItems((old) => offset ? [...old, ...page.items] : page.items); setTotal(page.total); setState('ready');
+        if (append && document.activeElement?.dataset.testid === `button-more-${id}`) input.current?.focus();
+        setItems((old) => append ? [...old, ...page.items.filter((item) => !old.some((known) => known.value === item.value))] : page.items); setTotal(page.total); setNextCursor(page.nextCursor); setState('ready');
       })
       .catch((cause) => { if (mine === seq.current) { loading.current = false; setState(cause?.message || 'error'); } });
   }
   useEffect(() => {
     // Invalidate immediately: older responses and options never survive a query or scope change.
     seq.current++; ctl.current?.abort(); loading.current = false;
-    setItems([]); setTotal(0); setActive(-1);
+    setItems([]); setTotal(0); setNextCursor(null); setActive(-1);
     if (!open) { setState('idle'); return undefined; }
     setState('loading');
     const t = setTimeout(() => load(query.trim(), 0), query ? 250 : 0);
@@ -55,7 +57,7 @@ export default function RemoteSelect({ id, label, value, selected, fetchPage, re
   }, [open]);
   function close() { setOpen(false); setQuery(''); setActive(-1); seq.current++; ctl.current?.abort(); loading.current = false; }
   function choose(item) { onChange(item); close(); input.current?.focus(); }
-  const more = items.length < total;
+  const more = Boolean(nextCursor) || items.length < total;
   function key(event) {
     if (event.key === 'Escape' && open) { event.preventDefault(); event.stopPropagation(); close(); }
     else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
@@ -84,9 +86,9 @@ export default function RemoteSelect({ id, label, value, selected, fetchPage, re
       {items.map((item, index) => <div key={item.value} id={`${id}-option-${index}`} role="option" aria-selected={item.value === value}
         className={`searchable-select__option${index === active ? ' searchable-select__option--active' : ''}`} onMouseDown={(e) => e.preventDefault()} onClick={() => choose(item)}>{item.label}{item.value === value && <Check size={15} aria-hidden="true" />}</div>)}
       {state === 'loading' && <div className="searchable-select__empty" role="status">Searching…</div>}
-      {state === 'ready' && !items.length && <div className="searchable-select__empty" role="status">No matches found</div>}
+      {state === 'ready' && !items.length && <div className="searchable-select__empty" role="status">{nextCursor ? 'No matches in this section. More records remain to be checked.' : 'No matches in checked records.'}</div>}
       {state !== 'loading' && state !== 'ready' && state !== 'idle' && <div className="searchable-select__empty" role="alert">{state} <button type="button" className="admin-button admin-button--secondary" onMouseDown={(e) => e.preventDefault()} onClick={() => load(query.trim(), 0)}>Retry</button></div>}
-      {(state === 'ready' || state === 'loading') && items.length > 0 && more && <button type="button" className="admin-button admin-button--secondary" style={{ margin: 6 }} aria-disabled={state === 'loading' || undefined} onFocus={(event) => event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest' })} onMouseDown={(e) => e.preventDefault()} onClick={() => load(query.trim(), items.length)} data-testid={`button-more-${id}`}>Load more ({items.length} of {total})</button>}
+      {(state === 'ready' || state === 'loading') && more && <button type="button" className="admin-button admin-button--secondary" style={{ margin: 6 }} aria-disabled={state === 'loading' || undefined} onFocus={(event) => event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest' })} onMouseDown={(e) => e.preventDefault()} onClick={() => load(query.trim(), items.length, nextCursor)} data-testid={`button-more-${id}`}>{total === null ? `Continue search (${items.length} choices found so far)` : `Load more (${items.length} of ${total})`}</button>}
     </div>}
   </div>;
 }

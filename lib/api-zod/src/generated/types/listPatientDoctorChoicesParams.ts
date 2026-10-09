@@ -22,4 +22,5 @@ export type ListPatientDoctorChoicesParams = {
    */
   offset?: number;
   include_saved?: string | null;
+  cursor?: string | null;
 };

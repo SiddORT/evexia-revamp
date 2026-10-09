@@ -1,6 +1,7 @@
 """Exact string money and existing consecutive April–March period."""
 import re
 import uuid
+from app.schemas.directory_search import SearchSection
 from datetime import datetime
 from decimal import Decimal
 from typing import Literal
@@ -72,10 +73,10 @@ class SalesTargetTotals(BaseModel):
     total: str
 
 
-class SalesTargetPage(BaseModel):
+class SalesTargetPage(SearchSection):
     items: list[SalesTargetResponse]
     total: int
-    filtered: int
+    filtered: int | None
     limit: int
     offset: int
     totals: SalesTargetTotals
@@ -96,11 +97,11 @@ class SalesTargetZoneChoice(BaseModel):
     name: str
 
 
-class SalesTargetChoices(BaseModel):
+class SalesTargetChoices(SearchSection):
     mrs: list[SalesTargetMRChoice]
     zones: list[SalesTargetZoneChoice]
     years: list[int]
-    total: int
+    total: int | None
     limit: int
     offset: int
     zonesTotal: int

@@ -54,7 +54,8 @@ def seed_directory(db, actor_id, size):
             version=i + 1, created_by=actor_id, updated_by=users[i],
             created_at=now + timedelta(microseconds=i), updated_at=now,
             deleted_at=now if i == size else None, deleted_by=actor_id if i == size else None))
-    db.execute(insert(MRDirectory), records)
+    from directory_test_data import encrypted_values
+    db.execute(insert(MRDirectory), [encrypted_values(db, "mr_directory", row) for row in records])
     # First row retains a deleted manager; all others form an acyclic chain.
     # Saved references are intentionally inactive/deleted, not new assignments.
     for start in range(0, size, 500):

@@ -32,7 +32,7 @@ def migration_db(monkeypatch):
     root = Path(__file__).resolve().parents[1]
     config = Config(str(root / "alembic.ini"))
     config.set_main_option("script_location", str(root / "alembic"))
-    engine = create_engine(isolated_url)
+    engine = create_engine(isolated_url, hide_parameters=True)
     try:
         command.upgrade(config, "0005_protected_admin")
         yield engine, config

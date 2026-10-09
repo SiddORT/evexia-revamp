@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import useDirectoryContinuation from './useDirectoryContinuation.js';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../auth/adminSession.js';
 import { allDoctorMRChoices, bulkDoctors, contactDoctor, createDoctor, deleteDoctor, doctorFilters, editDoctor, getDoctor, listDoctors, statusDoctor } from '../services/serverDoctors.js';
 
@@ -9,7 +10,8 @@ export default function useDoctors(params = {}, detailId = null) {
   const [pending, setPending] = useState(false);
   const busy = useRef(false);
   const alive = useRef(true);
-  const requestKey = JSON.stringify(params);
+  const continuation = useDirectoryContinuation(params);
+  const requestKey = JSON.stringify(continuation.params);
   const retry = useCallback(() => { setRevision((n) => n + 1); }, []);
   useEffect(() => {
     alive.current = true;
@@ -32,9 +34,10 @@ export default function useDoctors(params = {}, detailId = null) {
         const mrs = await allDoctorMRChoices(controller.signal, detailId ? data.mrId : undefined);
         guard();
         if (controller.signal.aborted) return;
-        const zones = [...new Map(mrs.filter((mr) => mr.zoneId).map((mr) => [mr.zoneId, { id: mr.zoneId, name: mr.zoneName, status: mr.zoneStatus }])).values()];
+        const zones = filters.zones;
         setState({ records: detailId ? [data] : data.items, doctor: detailId ? data : null, mrs, zones, ...filters,
-          total: detailId ? 1 : data.total, filtered: detailId ? 1 : data.filtered, loading: false, error: '' });
+          total: detailId ? 1 : data.total, filtered: detailId ? 1 : data.filtered,
+          partial: !detailId && data.partial, scanned: data.scanned, nextCursor: data.nextCursor, loading: false, error: '' });
       } catch (cause) {
         if (controller.signal.aborted) return;
         try { guard(); } catch { return; }
@@ -63,6 +66,7 @@ export default function useDoctors(params = {}, detailId = null) {
   const row = (id) => typeof id === 'object' ? id : state.records.find((record) => record.id === id);
   const selection = (ids) => ids.map(row);
   return { ...state, pending, feedback, retry, clearFeedback: () => setFeedback(''),
+    continueSearch: () => continuation.next(state), restartSearch: () => { continuation.restart(); retry(); },
     add: (values) => apply(() => createDoctor(values), 'Doctor added successfully.'),
     edit: (id, values) => apply(() => editDoctor(row(id), values), 'Doctor updated successfully.'),
     changeStatus: (id, status) => apply(() => statusDoctor(row(id), status), 'Doctor status updated.'),

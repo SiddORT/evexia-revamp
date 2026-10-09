@@ -172,7 +172,7 @@ def test_search_filter_pagination_export_parity_and_xlsx_text(client):
                                 registrationNumber=f"00{index}", pincode="010001", status="inactive" if index % 2 else "active"))
     params = {"status": "active", "zone_id": zone, "mr_id": mr["id"], "state": "Delhi", "query": "Clinic"}
     data = api.get(BASE, headers=headers, params={**params, "limit": 2, "offset": 2}).json()
-    assert data["filtered"] == 7 and data["total"] == 13 and len(data["items"]) == 2
+    assert data["filtered"] is None and data["partial"] and data["total"] == 13 and len(data["items"]) == 2
     csv_response = api.get(BASE + "/export", headers=headers, params=params)
     assert csv_response.status_code == 200, csv_response.text
     rows = list(csv.reader(io.StringIO(csv_response.content.decode("utf-8-sig"))))
@@ -185,7 +185,8 @@ def test_search_filter_pagination_export_parity_and_xlsx_text(client):
     book = load_workbook(io.BytesIO(excel.content))
     assert book.active["Y2"].data_type == "s" and book.active["Y2"].value == "010001"
     assert book.active["S2"].data_type == "s"
-    assert api.get(BASE, headers=headers, params={"query": "%_"}).json()["filtered"] == 0
+    literal = api.get(BASE, headers=headers, params={"query": "%_"}).json()
+    assert literal["filtered"] is None and literal["partial"] and not literal["items"]
     assert api.get(BASE + "/export", headers=headers, params={"query": "%_"}).status_code == 200
     assert api.get(BASE, headers=headers, params={"mr_id": "local-mr-id"}).status_code == 422
 
@@ -272,7 +273,8 @@ def test_migration_constraints_and_empty_directory(client):
     assert len(heads) == 1
     assert set(db.scalars(text("SELECT version_num FROM alembic_version"))) == heads
     constraints = set(db.scalars(text("SELECT conname FROM pg_constraint WHERE conrelid = 'doctor_directory'::regclass")))
-    assert {"ck_doctor_version", "ck_doctor_limits", "ck_doctor_required_contact", "ck_doctor_invoice"} <= constraints
+    assert {"ck_doctor_version", "ck_doctor_limits", "ck_doctor_invoice"} <= constraints
+    assert "ck_doctor_required_contact" not in constraints
     assert db.scalar(text("SELECT count(*) FROM pg_indexes WHERE tablename='doctor_directory' AND indexname='uq_doctor_registration'")) == 1
 
 
@@ -293,7 +295,10 @@ def test_complete_mr_choices_beyond_one_page_and_export_limit(client):
     headers, actor, mr, _ = setup_doctor(api, db)
     existing = db.get(MRDirectory, uuid.UUID(mr["id"]))
     prototype = {attribute.key: getattr(existing, attribute.key) for attribute in MRDirectory.__mapper__.column_attrs
-                 if attribute.key not in ("id", "created_at", "updated_at", "deleted_at", "deleted_by")}
+                 if attribute.key not in ("id", "created_at", "updated_at", "deleted_at", "deleted_by", "name_index")
+                 and not attribute.key.endswith("_ciphertext")}
+    from app.services.directory_inventory import FIELDS
+    prototype.update({field: getattr(existing, field) for field in FIELDS["mr_directory"]})
     template_user = db.get(User, db.get(MRProfile, existing.id).user_id)
     last_id = None
     for index in range(105):
@@ -302,18 +307,19 @@ def test_complete_mr_choices_beyond_one_page_and_export_limit(client):
         db.add(user); db.flush()
         profile = MRProfile(user_id=user.id, is_active=True)
         db.add(profile); db.flush()
-        db.add(MRDirectory(**{**prototype, "name": f"ZZ Reference MR {index:03}", "employeeCode": f"REF-{index}"}, id=profile.id))
+        db.add(MRDirectory(**{**prototype, "email": user.email, "name": f"ZZ Reference MR {index:03}", "employeeCode": f"REF-{index}"}, id=profile.id))
         last_id = str(profile.id)
     db.commit()
     first = api.get(BASE + "/references", headers=headers, params={"limit": 100}).json()
     second = api.get(BASE + "/references", headers=headers, params={"limit": 100, "offset": 100}).json()
     assert first["total"] == second["total"] == 106
     assert len(first["items"]) == 100 and len(second["items"]) == 6
-    assert last_id in {row["id"] for row in second["items"]}
+    assert last_id in {row["id"] for row in first["items"] + second["items"]}
     values = DoctorFields(**fields(mr)).model_dump()
-    db.execute(insert(DoctorDirectory), [{**values, "registrationNumber": f"LIMIT-{index}",
+    from directory_test_data import encrypted_values
+    db.execute(insert(DoctorDirectory), [encrypted_values(db, "doctor_directory", {**values, "registrationNumber": f"LIMIT-{index}",
                                          "created_by": actor.id, "updated_by": actor.id, "verification": "unverified",
-                                         "created_at": utcnow(), "updated_at": utcnow()}
+                                         "created_at": utcnow(), "updated_at": utcnow()})
                                         for index in range(5001)])
     db.commit()
     response = api.get(BASE + "/export", headers=headers)

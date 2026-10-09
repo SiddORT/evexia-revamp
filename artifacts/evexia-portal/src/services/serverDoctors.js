@@ -6,20 +6,11 @@ export const listDoctors = (params, signal) => doctorRequest('', { params: clean
 export const getDoctor = (id, signal) => doctorRequest(`/${id}`, { signal });
 export const doctorFilters = (signal) => doctorRequest('/filters', { signal });
 export const doctorMRChoices = (params, signal) => doctorRequest('/references', { params: clean(params), signal });
-// Explicitly traverse every page; no first-page-only selector.
+// Initial section plus saved-selection hydration only. The UI explicitly
+// searches/continues choices; never traverse the complete directory silently.
 export async function allDoctorMRChoices(signal, saved) {
-  const items = new Map();
-  let offset = 0;
-  let result;
-  do {
-    result = await doctorMRChoices({ limit: 100, offset, include_saved: saved }, signal);
-    if (!Number.isInteger(result.total) || result.total < 0 || result.total > 10000 || result.limit !== 100) {
-      throw new Error('Doctor reference choices exceed the supported 10,000-record bound or returned an invalid page. No partial choices were loaded.');
-    }
-    for (const item of result.items) items.set(item.id, item);
-    offset += result.limit;
-  } while (offset < result.total);
-  return [...items.values()];
+  const result = await doctorMRChoices({ limit: 100, offset: 0, include_saved: saved }, signal);
+  return result.items;
 }
 export const createDoctor = (body) => doctorRequest('', { body });
 export const editDoctor = (record, body) => doctorRequest(`/${record.id}/edit`, { body: { ...body, expected_version: record.version } });

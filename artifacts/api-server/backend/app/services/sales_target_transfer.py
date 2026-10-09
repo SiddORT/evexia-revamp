@@ -212,7 +212,10 @@ def sample(format):
 def export(db, actor, filters, format):
     def work():
         sales_targets.authorize(db, actor)
-        records = sales_targets.projections(db, select(SalesTarget).where(*sales_targets.predicates(**filters))
+        clauses = sales_targets.predicates(**{**filters, "query": ""})
+        candidates = sales_targets.encrypted.complete(db, SalesTarget, clauses, None,
+            prepare=lambda rows: sales_targets.search_matcher(db, filters.get("query", ""), rows))
+        records = sales_targets.projections(db, select(SalesTarget).where(SalesTarget.id.in_([row.id for row in candidates]))
                                            .order_by(SalesTarget.created_at.desc(), SalesTarget.id.desc())
                                            .limit(EXPORT_LIMIT + 1))
         if len(records) > EXPORT_LIMIT:

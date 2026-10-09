@@ -13,6 +13,7 @@ export type ListOpeningBalancesParams = {
    */
   query?: string;
   status?: ListOpeningBalancesStatus;
+  cursor?: string | null;
   /**
    * @minimum 1
    * @maximum 100

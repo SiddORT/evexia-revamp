@@ -1285,6 +1285,7 @@ export const ListDoctorDirectoryQueryParams = zod.object({
     .min(listDoctorDirectoryQueryOffsetMin)
     .max(listDoctorDirectoryQueryOffsetMax)
     .default(listDoctorDirectoryQueryOffsetDefault),
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
 });
 
 export const listDoctorDirectoryResponseItemsItemAddressLine1Max = 300;
@@ -1344,8 +1345,9 @@ export const listDoctorDirectoryResponseItemsItemStateMax = 100;
 
 export const listDoctorDirectoryResponseItemsItemStatusDefault = `active`;
 
+export const listDoctorDirectoryResponsePartialDefault = false;
 export const ListDoctorDirectoryResponse = zod.object({
-  filtered: zod.number().int(),
+  filtered: zod.union([zod.number().int(), zod.null()]),
   items: zod.array(
     zod.object({
       addressLine1: zod
@@ -1454,7 +1456,15 @@ export const ListDoctorDirectoryResponse = zod.object({
     }),
   ),
   limit: zod.number().int(),
+  nextCursor: zod.union([zod.string(), zod.null()]).optional(),
   offset: zod.number().int(),
+  partial: zod.boolean().default(listDoctorDirectoryResponsePartialDefault),
+  scanned: zod
+    .number()
+    .int()
+    .min(listDoctorDirectoryResponseScannedMin)
+    .max(listDoctorDirectoryResponseScannedMax)
+    .default(listDoctorDirectoryResponseScannedDefault),
   total: zod.number().int(),
 });
 
@@ -1970,6 +1980,7 @@ export const GetDoctorFilterChoicesResponse = zod.object({
   missingMR: zod.boolean(),
   missingZone: zod.boolean(),
   states: zod.array(zod.string()),
+  zones: zod.array(zod.record(zod.string(), zod.string())),
 });
 
 /**
@@ -2077,8 +2088,10 @@ export const ListDoctorMRChoicesQueryParams = zod.object({
     .max(listDoctorMRChoicesQueryOffsetMax)
     .default(listDoctorMRChoicesQueryOffsetDefault),
   include_saved: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
 });
 
+export const listDoctorMRChoicesResponsePartialDefault = false;
 export const ListDoctorMRChoicesResponse = zod.object({
   items: zod.array(
     zod.object({
@@ -2093,8 +2106,16 @@ export const ListDoctorMRChoicesResponse = zod.object({
     }),
   ),
   limit: zod.number().int(),
+  nextCursor: zod.union([zod.string(), zod.null()]).optional(),
   offset: zod.number().int(),
-  total: zod.number().int(),
+  partial: zod.boolean().default(listDoctorMRChoicesResponsePartialDefault),
+  scanned: zod
+    .number()
+    .int()
+    .min(listDoctorMRChoicesResponseScannedMin)
+    .max(listDoctorMRChoicesResponseScannedMax)
+    .default(listDoctorMRChoicesResponseScannedDefault),
+  total: zod.union([zod.number().int(), zod.null()]),
 });
 
 /**
@@ -3382,6 +3403,7 @@ export const ListMRDirectoryQueryParams = zod.object({
     .min(listMRDirectoryQueryOffsetMin)
     .max(listMRDirectoryQueryOffsetMax)
     .default(listMRDirectoryQueryOffsetDefault),
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
 });
 
 export const listMRDirectoryResponseItemsItemAddressLine1Max = 300;
@@ -3426,8 +3448,9 @@ export const listMRDirectoryResponseItemsItemUserIdRegExp = new RegExp(
   "^[a-z][a-z0-9._-]{2,31}$",
 );
 
+export const listMRDirectoryResponsePartialDefault = false;
 export const ListMRDirectoryResponse = zod.object({
-  filtered: zod.number().int(),
+  filtered: zod.union([zod.number().int(), zod.null()]),
   items: zod.array(
     zod.object({
       addressLine1: zod
@@ -3504,7 +3527,15 @@ export const ListMRDirectoryResponse = zod.object({
     }),
   ),
   limit: zod.number().int(),
+  nextCursor: zod.union([zod.string(), zod.null()]).optional(),
   offset: zod.number().int(),
+  partial: zod.boolean().default(listMRDirectoryResponsePartialDefault),
+  scanned: zod
+    .number()
+    .int()
+    .min(listMRDirectoryResponseScannedMin)
+    .max(listMRDirectoryResponseScannedMax)
+    .default(listMRDirectoryResponseScannedDefault),
   total: zod.number().int(),
 });
 
@@ -3992,10 +4023,12 @@ export const ListMRReferenceChoicesQueryParams = zod.object({
     .max(listMRReferenceChoicesQueryOffsetMax)
     .default(listMRReferenceChoicesQueryOffsetDefault),
   include_saved: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
 });
 
 export const listMRReferenceChoicesResponseItemsItemDeletedDefault = false;
 
+export const listMRReferenceChoicesResponsePartialDefault = false;
 export const ListMRReferenceChoicesResponse = zod.object({
   items: zod.array(
     zod.object({
@@ -4008,8 +4041,16 @@ export const ListMRReferenceChoicesResponse = zod.object({
     }),
   ),
   limit: zod.number().int(),
+  nextCursor: zod.union([zod.string(), zod.null()]).optional(),
   offset: zod.number().int(),
-  total: zod.number().int(),
+  partial: zod.boolean().default(listMRReferenceChoicesResponsePartialDefault),
+  scanned: zod
+    .number()
+    .int()
+    .min(listMRReferenceChoicesResponseScannedMin)
+    .max(listMRReferenceChoicesResponseScannedMax)
+    .default(listMRReferenceChoicesResponseScannedDefault),
+  total: zod.union([zod.number().int(), zod.null()]),
 });
 
 /**
@@ -4889,6 +4930,7 @@ export const ListOpeningBalancesQueryParams = zod.object({
   status: zod
     .enum(["all", "active", "inactive"])
     .default(listOpeningBalancesQueryStatusDefault),
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
   limit: zod.coerce
     .number()
     .int()
@@ -4909,8 +4951,9 @@ export const listOpeningBalancesResponseItemsItemEndYearMax = 9999;
 export const listOpeningBalancesResponseItemsItemStartYearMin = 1900;
 export const listOpeningBalancesResponseItemsItemStartYearMax = 9998;
 
+export const listOpeningBalancesResponsePartialDefault = false;
 export const ListOpeningBalancesResponse = zod.object({
-  filtered: zod.number().int(),
+  filtered: zod.union([zod.number().int(), zod.null()]),
   items: zod.array(
     zod.object({
       amount: zod
@@ -4942,7 +4985,15 @@ export const ListOpeningBalancesResponse = zod.object({
     }),
   ),
   limit: zod.number().int(),
+  nextCursor: zod.union([zod.string(), zod.null()]).optional(),
   offset: zod.number().int(),
+  partial: zod.boolean().default(listOpeningBalancesResponsePartialDefault),
+  scanned: zod
+    .number()
+    .int()
+    .min(listOpeningBalancesResponseScannedMin)
+    .max(listOpeningBalancesResponseScannedMax)
+    .default(listOpeningBalancesResponseScannedDefault),
   total: zod.number().int(),
 });
 
@@ -5124,6 +5175,7 @@ export const OpeningBalanceDoctorChoicesQueryParams = zod.object({
     .min(1)
     .max(openingBalanceDoctorChoicesQueryLimitMax)
     .default(openingBalanceDoctorChoicesQueryLimitDefault),
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
   offset: zod.coerce
     .number()
     .int()
@@ -5133,6 +5185,7 @@ export const OpeningBalanceDoctorChoicesQueryParams = zod.object({
   balance_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
 });
 
+export const openingBalanceDoctorChoicesResponsePartialDefault = false;
 export const OpeningBalanceDoctorChoicesResponse = zod.object({
   items: zod.array(
     zod.object({
@@ -5143,8 +5196,18 @@ export const OpeningBalanceDoctorChoicesResponse = zod.object({
     }),
   ),
   limit: zod.number().int(),
+  nextCursor: zod.union([zod.string(), zod.null()]).optional(),
   offset: zod.number().int(),
-  total: zod.number().int(),
+  partial: zod
+    .boolean()
+    .default(openingBalanceDoctorChoicesResponsePartialDefault),
+  scanned: zod
+    .number()
+    .int()
+    .min(openingBalanceDoctorChoicesResponseScannedMin)
+    .max(openingBalanceDoctorChoicesResponseScannedMax)
+    .default(openingBalanceDoctorChoicesResponseScannedDefault),
+  total: zod.union([zod.number().int(), zod.null()]),
 });
 
 /**
@@ -5418,6 +5481,7 @@ export const ListPatientDirectoryQueryParams = zod.object({
     .min(listPatientDirectoryQueryOffsetMin)
     .max(listPatientDirectoryQueryOffsetMax)
     .default(listPatientDirectoryQueryOffsetDefault),
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
 });
 
 export const listPatientDirectoryResponseItemsItemAddressLine1Max = 300;
@@ -5448,8 +5512,9 @@ export const listPatientDirectoryResponseItemsItemStateMax = 100;
 
 export const listPatientDirectoryResponseItemsItemStatusDefault = `active`;
 
+export const listPatientDirectoryResponsePartialDefault = false;
 export const ListPatientDirectoryResponse = zod.object({
-  filtered: zod.number().int(),
+  filtered: zod.union([zod.number().int(), zod.null()]),
   items: zod.array(
     zod.object({
       addressLine1: zod
@@ -5522,7 +5587,15 @@ export const ListPatientDirectoryResponse = zod.object({
     }),
   ),
   limit: zod.number().int(),
+  nextCursor: zod.union([zod.string(), zod.null()]).optional(),
   offset: zod.number().int(),
+  partial: zod.boolean().default(listPatientDirectoryResponsePartialDefault),
+  scanned: zod
+    .number()
+    .int()
+    .min(listPatientDirectoryResponseScannedMin)
+    .max(listPatientDirectoryResponseScannedMax)
+    .default(listPatientDirectoryResponseScannedDefault),
   total: zod.number().int(),
 });
 
@@ -5842,8 +5915,10 @@ export const ListPatientDoctorChoicesQueryParams = zod.object({
     .max(listPatientDoctorChoicesQueryOffsetMax)
     .default(listPatientDoctorChoicesQueryOffsetDefault),
   include_saved: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
 });
 
+export const listPatientDoctorChoicesResponsePartialDefault = false;
 export const ListPatientDoctorChoicesResponse = zod.object({
   items: zod.array(
     zod.object({
@@ -5856,8 +5931,18 @@ export const ListPatientDoctorChoicesResponse = zod.object({
     }),
   ),
   limit: zod.number().int(),
+  nextCursor: zod.union([zod.string(), zod.null()]).optional(),
   offset: zod.number().int(),
-  total: zod.number().int(),
+  partial: zod
+    .boolean()
+    .default(listPatientDoctorChoicesResponsePartialDefault),
+  scanned: zod
+    .number()
+    .int()
+    .min(listPatientDoctorChoicesResponseScannedMin)
+    .max(listPatientDoctorChoicesResponseScannedMax)
+    .default(listPatientDoctorChoicesResponseScannedDefault),
+  total: zod.union([zod.number().int(), zod.null()]),
 });
 
 /**
@@ -7787,6 +7872,7 @@ export const ListSalesTargetsQueryParams = zod.object({
     .min(1)
     .max(listSalesTargetsQueryLimitMax)
     .default(listSalesTargetsQueryLimitDefault),
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
   offset: zod.coerce
     .number()
     .int()
@@ -7831,8 +7917,9 @@ export const listSalesTargetsResponseItemsItemStartYearMax = 9998;
 
 export const listSalesTargetsResponseItemsItemStatusDefault = `active`;
 
+export const listSalesTargetsResponsePartialDefault = false;
 export const ListSalesTargetsResponse = zod.object({
-  filtered: zod.number().int(),
+  filtered: zod.union([zod.number().int(), zod.null()]),
   items: zod.array(
     zod.object({
       annualTotal: zod.string(),
@@ -7869,7 +7956,15 @@ export const ListSalesTargetsResponse = zod.object({
     }),
   ),
   limit: zod.number().int(),
+  nextCursor: zod.union([zod.string(), zod.null()]).optional(),
   offset: zod.number().int(),
+  partial: zod.boolean().default(listSalesTargetsResponsePartialDefault),
+  scanned: zod
+    .number()
+    .int()
+    .min(listSalesTargetsResponseScannedMin)
+    .max(listSalesTargetsResponseScannedMax)
+    .default(listSalesTargetsResponseScannedDefault),
   total: zod.number().int(),
   totals: zod.object({
     q1: zod.string(),
@@ -7974,6 +8069,7 @@ export const GetSalesTargetChoicesQueryParams = zod.object({
     .max(getSalesTargetChoicesQueryQueryMax)
     .default(getSalesTargetChoicesQueryQueryDefault),
   zoneId: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
   limit: zod.coerce
     .number()
     .int()
@@ -7998,6 +8094,7 @@ export const GetSalesTargetChoicesQueryParams = zod.object({
     .default(getSalesTargetChoicesQueryZoneOffsetDefault),
 });
 
+export const getSalesTargetChoicesResponsePartialDefault = false;
 export const GetSalesTargetChoicesResponse = zod.object({
   limit: zod.number().int(),
   mrs: zod.array(
@@ -8011,8 +8108,16 @@ export const GetSalesTargetChoicesResponse = zod.object({
       zoneName: zod.string(),
     }),
   ),
+  nextCursor: zod.union([zod.string(), zod.null()]).optional(),
   offset: zod.number().int(),
-  total: zod.number().int(),
+  partial: zod.boolean().default(getSalesTargetChoicesResponsePartialDefault),
+  scanned: zod
+    .number()
+    .int()
+    .min(getSalesTargetChoicesResponseScannedMin)
+    .max(getSalesTargetChoicesResponseScannedMax)
+    .default(getSalesTargetChoicesResponseScannedDefault),
+  total: zod.union([zod.number().int(), zod.null()]),
   years: zod.array(zod.number().int()),
   zoneOffset: zod.number().int(),
   zones: zod.array(
@@ -12520,3 +12625,63 @@ export const GetReadinessResponse = zod.unknown();
  * @summary Version
  */
 export const GetVersionResponse = zod.unknown();
+
+export const listOpeningBalancesResponseScannedMin = 0;
+
+export const getSalesTargetChoicesResponseScannedDefault = 0;
+
+export const listDoctorDirectoryResponseScannedMax = 500;
+
+export const openingBalanceDoctorChoicesResponseScannedDefault = 0;
+
+export const openingBalanceDoctorChoicesResponseScannedMin = 0;
+
+export const listDoctorMRChoicesResponseScannedMax = 500;
+
+export const listMRDirectoryResponseScannedMin = 0;
+
+export const listPatientDoctorChoicesResponseScannedMin = 0;
+
+export const listPatientDirectoryResponseScannedDefault = 0;
+
+export const listOpeningBalancesResponseScannedMax = 500;
+
+export const getSalesTargetChoicesResponseScannedMin = 0;
+
+export const listMRReferenceChoicesResponseScannedMax = 500;
+
+export const listSalesTargetsResponseScannedDefault = 0;
+
+export const listSalesTargetsResponseScannedMax = 500;
+
+export const getSalesTargetChoicesResponseScannedMax = 500;
+
+export const listDoctorMRChoicesResponseScannedDefault = 0;
+
+export const listOpeningBalancesResponseScannedDefault = 0;
+
+export const listPatientDirectoryResponseScannedMin = 0;
+
+export const listDoctorDirectoryResponseScannedDefault = 0;
+
+export const listMRDirectoryResponseScannedDefault = 0;
+
+export const listMRReferenceChoicesResponseScannedDefault = 0;
+
+export const listMRReferenceChoicesResponseScannedMin = 0;
+
+export const openingBalanceDoctorChoicesResponseScannedMax = 500;
+
+export const listPatientDirectoryResponseScannedMax = 500;
+
+export const listSalesTargetsResponseScannedMin = 0;
+
+export const listDoctorMRChoicesResponseScannedMin = 0;
+
+export const listPatientDoctorChoicesResponseScannedDefault = 0;
+
+export const listMRDirectoryResponseScannedMax = 500;
+
+export const listDoctorDirectoryResponseScannedMin = 0;
+
+export const listPatientDoctorChoicesResponseScannedMax = 500;

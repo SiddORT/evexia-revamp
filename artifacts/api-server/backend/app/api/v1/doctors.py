@@ -41,8 +41,9 @@ def reference(value):
 def listing(query: str = Query("", max_length=200), status: Literal["all", "active", "inactive"] = "all",
             zone_id: str = Query("", max_length=36), mr_id: str = Query("", max_length=36), state: str = Query("", max_length=100),
             limit: int = Query(10, ge=1, le=100), offset: int = Query(0, ge=0, le=1000000),
+            cursor: uuid.UUID | None = None,
             actor=Depends(manager), db: Session = Depends(get_db)):
-    return doctors.listing(db, actor, query, status, reference(zone_id), reference(mr_id), state, limit, offset)
+    return doctors.listing(db, actor, query, status, reference(zone_id), reference(mr_id), state, limit, offset, cursor)
 
 
 @router.post("", response_model=DoctorResponse, status_code=201, operation_id="createDoctorDirectory")
@@ -53,8 +54,9 @@ def create(body: DoctorFields, actor=Depends(manager), db: Session = Depends(get
 @router.get("/references", response_model=DoctorChoices, operation_id="listDoctorMRChoices")
 def references(query: str = Query("", max_length=200), limit: int = Query(100, ge=1, le=100),
                offset: int = Query(0, ge=0, le=1000000), include_saved: uuid.UUID | None = None,
+               cursor: uuid.UUID | None = None,
                actor=Depends(manager), db: Session = Depends(get_db)):
-    return doctors.choices(db, actor, query, limit, offset, include_saved)
+    return doctors.choices(db, actor, query, limit, offset, include_saved, cursor)
 
 
 @router.get("/filters", response_model=DoctorFilters, operation_id="getDoctorFilterChoices")

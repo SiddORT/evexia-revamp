@@ -12,6 +12,7 @@ export type GetSalesTargetChoicesParams = {
    */
   query?: string;
   zoneId?: string | null;
+  cursor?: string | null;
   /**
    * @minimum 1
    * @maximum 100

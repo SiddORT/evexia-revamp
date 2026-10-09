@@ -10,6 +10,7 @@ from app.services import mrs
 from app.services.auth import revalidate_identity
 from app.services.zone_policy import lock_policy
 from app.services.zones import label
+from app.services import directory_runtime as encrypted
 
 
 class OpeningBalanceError(Exception):
@@ -42,6 +43,7 @@ def authorize(db, actor):
     if not (current.user.is_protected_system_admin and current.role == "super_admin"
             and "admin.access" in current.permissions):
         raise OpeningBalanceError("Access denied", 403, "access_denied")
+    encrypted.ready(db)
     return current
 
 
@@ -58,14 +60,29 @@ def reference(db, doctor_id, existing=None):
     return doctor
 
 
-def projection(db, row):
-    doctor = db.get(Doctor, row.doctorId)
+def projection(db, row, context=None):
+    doctor = context["doctors"].get(row.doctorId) if context is not None else db.get(Doctor, row.doctorId)
     return dict(id=row.id, startYear=row.startYear, endYear=row.endYear, doctorId=row.doctorId,
                 amount=format(row.amount, ".2f"), status=row.status, version=row.version,
                 doctorName=doctor.name if doctor else "Unavailable saved Doctor",
                 registrationNumber=doctor.registrationNumber if doctor else "", doctorUsable=usable(doctor),
-                createdBy=label(db, row.created_by), updatedBy=label(db, row.updated_by),
+                createdBy=context["authors"].get(row.created_by, "Backend user") if context is not None else label(db, row.created_by),
+                updatedBy=context["authors"].get(row.updated_by, "Backend user") if context is not None else label(db, row.updated_by),
                 createdAt=row.created_at, updatedAt=row.updated_at)
+
+
+def projection_context(db, rows):
+    from app.db.models import User
+    from types import SimpleNamespace
+    docs = mrs._bulk(db, (row.doctorId for row in rows),
+                    lambda ids: select(Doctor.id, Doctor.name_ciphertext, Doctor.registrationNumber,
+                                       Doctor.deleted_at, Doctor.status).where(Doctor.id.in_(ids)))
+    docs = {key: SimpleNamespace(**dict(value._mapping), name=encrypted.read_name(value, "doctor_directory"))
+            for key, value in docs.items()}
+    authors = mrs._bulk(db, (key for row in rows for key in (row.created_by, row.updated_by)),
+                       lambda ids: select(User.id, User.is_protected_system_admin).where(User.id.in_(ids)))
+    return dict(doctors=docs, authors={key: "Super Admin" if value.is_protected_system_admin else "Backend user"
+                                     for key, value in authors.items()})
 
 
 def predicates(query="", status="all"):
@@ -81,40 +98,67 @@ def predicates(query="", status="all"):
             grouped_amount.ilike(pattern, escape="\\"),
             cast(Balance.amount, String).ilike(pattern, escape="\\"),
             Balance.doctorId.in_(select(Doctor.id).where(or_(
-                Doctor.name.ilike(pattern, escape="\\"), Doctor.registrationNumber.ilike(pattern, escape="\\"))))))
+                Doctor.registrationNumber.ilike(pattern, escape="\\"))))))
     if status != "all":
         result.append(Balance.status == status)
     return result
 
 
-def listing(db, actor, query="", status="all", limit=10, offset=0):
+def search_matcher(db, query, rows):
+    names = {}
+    ids = list({row.doctorId for row in rows})
+    for start in range(0, len(ids), 500):
+        for row in db.execute(select(Doctor.id, Doctor.name_ciphertext, Doctor.registrationNumber).where(
+                Doctor.id.in_(ids[start:start + 500]))):
+            names[row.id] = (encrypted.read_name(row, "doctor_directory"), row.registrationNumber)
+    def matches(row):
+        import re
+        amount = format(row.amount, ".2f")
+        grouped = re.sub(r"(\d)(?=(\d{2})+\d{3}\.)", r"\1,", amount)
+        grouped = re.sub(r"(\d)(\d{3}\.)", r"\1,\2", grouped)
+        return encrypted.match(query, *names.get(row.doctorId, ()), f"{row.startYear}-{row.endYear}",
+                               f"{row.startYear}–{row.endYear}", amount, grouped)
+    return matches
+
+
+def listing(db, actor, query="", status="all", limit=10, offset=0, cursor=None):
     def work():
         authorize(db, actor)
         total = db.scalar(select(func.count()).select_from(Balance).where(Balance.deleted_at.is_(None)))
-        filtered = db.scalar(select(func.count()).select_from(Balance).where(*predicates(query, status)))
-        rows = db.scalars(select(Balance).where(*predicates(query, status)).order_by(
-            Balance.created_at.desc(), Balance.id.desc()).limit(limit).offset(offset))
-        result = dict(items=[projection(db, row) for row in rows], total=total, filtered=filtered, limit=limit, offset=offset)
+        meta = {}
+        if query.strip():
+            rows, meta = encrypted.scan(db, Balance, predicates("", status), None, limit=limit, cursor=cursor,
+                                        prepare=lambda rows: search_matcher(db, query, rows))
+            filtered = None
+        else:
+            filtered = db.scalar(select(func.count()).select_from(Balance).where(*predicates("", status)))
+            rows = db.scalars(select(Balance).where(*predicates("", status)).order_by(
+                Balance.created_at.desc(), Balance.id.desc()).limit(limit).offset(offset))
+        rows = list(rows)
+        context = projection_context(db, rows)
+        result = dict(items=[projection(db, row, context) for row in rows], total=total, filtered=filtered, limit=limit, offset=offset, **meta)
         db.commit()
         return result
     return transaction(db, work)
 
 
-def choices(db, actor, query="", limit=50, offset=0, balance_id=None):
+def choices(db, actor, query="", limit=50, offset=0, balance_id=None, cursor=None):
     def work():
         authorize(db, actor)
         clauses = [Doctor.status == "active", Doctor.deleted_at.is_(None)]
         if query.strip():
-            pattern = "%" + mrs.literal(query) + "%"
-            clauses.append(or_(Doctor.name.ilike(pattern, escape="\\"), Doctor.registrationNumber.ilike(pattern, escape="\\")))
-        total = db.scalar(select(func.count()).select_from(Doctor).where(*clauses))
-        rows = list(db.scalars(select(Doctor).where(*clauses).order_by(func.lower(Doctor.name), Doctor.id).limit(limit).offset(offset)))
+            rows, meta = encrypted.scan(db, Doctor, clauses, lambda row: encrypted.match(query, row.name, row.registrationNumber), limit=limit, cursor=cursor)
+            total = None
+        else:
+            total = db.scalar(select(func.count()).select_from(Doctor).where(*clauses))
+            rows = list(db.scalars(select(Doctor).where(*clauses).order_by(Doctor.id).limit(limit).offset(offset)))
+            meta = {}
         # Only a saved balance authorizes retaining an unavailable reference.
         saved = db.get(Doctor, find(db, balance_id).doctorId) if balance_id else None
         if saved and not saved.deleted_at and saved not in rows:
             rows.append(saved)
         result = dict(items=[dict(id=d.id, name=d.name, registrationNumber=d.registrationNumber, usable=usable(d)) for d in rows],
-                      total=total, limit=limit, offset=offset)
+                      total=total, limit=limit, offset=offset, **meta)
         db.commit()
         return result
     return transaction(db, work)

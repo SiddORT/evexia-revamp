@@ -51,8 +51,11 @@ def seed(db, actor_id, historical=False):
                      addressLine2="", landmark="", city="Delhi", state="Delhi", country="India",
                      created_by=actor_id, updated_by=actor_id)
     if historical:
+        from app.services.directory_inventory import FIELDS
         values = {column.name: getattr(mr, column.name) for column in MRDirectory.__table__.columns
-                  if column.name not in ("designation_id", "created_at", "updated_at", "version")}
+                  if column.name not in ("designation_id", "name_index", "created_at", "updated_at", "version")
+                  and not column.name.endswith("_ciphertext")}
+        values.update({field: getattr(mr, field) for field in FIELDS["mr_directory"]})
         values["designation"], values["version"] = "MR", 1
         columns = ", ".join(f'"{key}"' for key in values)
         parameters = ", ".join(f":{key}" for key in values)
@@ -68,7 +71,8 @@ def test_empty_migration_preserves_prior_records_rejects_rounding_and_keeps_hist
     command.downgrade(config, "0022_allergen_catalogue")
     with Session(engine) as db:
         mr = seed(db, actor_id, historical=True)
-    command.upgrade(config, "head")
+    from directory_test_data import approved_historical_upgrade
+    approved_historical_upgrade(engine, config)
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(SalesTarget)) == 0
         assert db.get(User, actor_id).is_protected_system_admin
@@ -85,7 +89,7 @@ def test_empty_migration_preserves_prior_records_rejects_rounding_and_keeps_hist
                 with db.begin_nested():
                     db.execute(text(sql))
         sales_targets.mutate(db, actor, row["id"], SalesTargetVersion(expected_version=1), "delete")
-    with pytest.raises(RuntimeError, match="MR designation downgrade"):
+    with pytest.raises(RuntimeError, match="Populated directory retirement"):
         command.downgrade(config, "0022_allergen_catalogue")
     with Session(engine) as db:
         assert db.get(SalesTarget, row["id"]).deleted_by == actor_id

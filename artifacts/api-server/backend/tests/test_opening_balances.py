@@ -68,8 +68,9 @@ def test_crud_exact_audit_filter_versions_and_soft_delete(client):
     assert changed.status_code == 200
     for query in ("2026-2027", "2026–2027", doctor["name"], doctor["registrationNumber"], "0.00"):
         page = api.get(BASE, headers=headers, params={"query": query, "status": "inactive", "limit": 1}).json()
-        assert page["filtered"] == 1 and page["total"] == 1 and len(page["items"]) == 1
-    assert api.get(BASE, headers=headers, params={"query": "%"}).json()["filtered"] == 0
+        assert page["filtered"] is None and page["partial"] and page["total"] == 1 and len(page["items"]) == 1
+    literal = api.get(BASE, headers=headers, params={"query": "%"}).json()
+    assert literal["filtered"] is None and literal["partial"] and not literal["items"]
     assert api.get(BASE, headers=headers, params={"status": "active"}).json()["filtered"] == 0
     deleted = api.post(BASE + "/" + row["id"] + "/delete", headers=headers, json={"expected_version": 3})
     assert deleted.status_code == 200 and deleted.json()["version"] == 4
@@ -82,7 +83,8 @@ def test_crud_exact_audit_filter_versions_and_soft_delete(client):
     assert db.scalar(select(func.count()).select_from(AuditEvent).where(
         AuditEvent.resource_id == historical.id, AuditEvent.actor_id == actor.id)) == 4
     assert add(api, headers, doctor, amount="9999999999999.99")["id"] != row["id"]
-    assert api.get(BASE, headers=headers, params={"query": "99,99,99,99,99,999.99"}).json()["filtered"] == 1
+    searched = api.get(BASE, headers=headers, params={"query": "99,99,99,99,99,999.99"}).json()
+    assert searched["filtered"] is None and len(searched["items"]) == 1
 
 
 @pytest.mark.parametrize("changes", [
@@ -230,9 +232,10 @@ def test_bounded_doctor_paging_and_export_cap(client, monkeypatch):
             created_by=actor.id, updated_by=actor.id, created_at=now, updated_at=now) for i in range(55)]
     db.add_all(docs); db.commit()
     page1 = api.get(BASE + "/references", headers=headers, params={"query": "Paged", "limit": 50}).json()
-    page2 = api.get(BASE + "/references", headers=headers, params={"query": "Paged", "limit": 50, "offset": 50}).json()
+    page2 = api.get(BASE + "/references", headers=headers, params={"query": "Paged", "limit": 50, "cursor": page1["nextCursor"]}).json()
     assert len(page1["items"]) == 50 and len(page2["items"]) == 5
-    assert page1["total"] == page2["total"] == 55
+    assert page1["total"] is None and page2["total"] is None
+    assert page1["partial"] and page2["partial"]
     assert not ({r["id"] for r in page1["items"]} & {r["id"] for r in page2["items"]})
     assert api.get(BASE + "/references", headers=headers, params={"limit": 101}).status_code == 422
     db.add_all([OpeningBalance(startYear=1900+i, endYear=1901+i, doctorId=docs[0].id, amount=Decimal("0.00"),
@@ -240,7 +243,7 @@ def test_bounded_doctor_paging_and_export_cap(client, monkeypatch):
                               created_at=now, updated_at=now) for i in range(5001)])
     db.commit()
     oversized = api.get(BASE + "/export", headers=headers, params={"format": "csv"})
-    assert oversized.status_code == 422 and "5,000" in oversized.text
+    assert oversized.status_code == 409 and "nothing downloaded" in oversized.text
     page = api.get(BASE, headers=headers, params={"limit": 10, "offset": 5000}).json()
     assert page["total"] == page["filtered"] == 5001 and len(page["items"]) == 1
 

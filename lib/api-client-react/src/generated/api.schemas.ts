@@ -592,8 +592,15 @@ export interface DoctorChoice {
 export interface DoctorChoices {
   items: DoctorChoice[];
   limit: number;
+  nextCursor?: string | null;
   offset: number;
-  total: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
+  total: number | null;
 }
 
 export type DoctorContactContactRequirement =
@@ -838,10 +845,12 @@ export interface DoctorFields {
   status?: DoctorFieldsStatus;
 }
 
+export type DoctorFiltersZonesItem = { [key: string]: string };
 export interface DoctorFilters {
   missingMR: boolean;
   missingZone: boolean;
   states: string[];
+  zones: DoctorFiltersZonesItem[];
 }
 
 export interface DoctorImportResult {
@@ -986,10 +995,17 @@ export interface DoctorResponse {
 }
 
 export interface DoctorPage {
-  filtered: number;
+  filtered: number | null;
   items: DoctorResponse[];
   limit: number;
+  nextCursor?: string | null;
   offset: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
   total: number;
 }
 
@@ -1458,8 +1474,15 @@ export interface MRChoice {
 export interface MRChoices {
   items: MRChoice[];
   limit: number;
+  nextCursor?: string | null;
   offset: number;
-  total: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
+  total: number | null;
 }
 
 export type MRContactContactRequirement =
@@ -1780,10 +1803,17 @@ export interface MRImportRow {
 }
 
 export interface MRPage {
-  filtered: number;
+  filtered: number | null;
   items: MRDirectoryResponse[];
   limit: number;
+  nextCursor?: string | null;
   offset: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
   total: number;
 }
 
@@ -1832,8 +1862,15 @@ export interface OpeningBalanceDoctorChoice {
 export interface OpeningBalanceDoctorPage {
   items: OpeningBalanceDoctorChoice[];
   limit: number;
+  nextCursor?: string | null;
   offset: number;
-  total: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
+  total: number | null;
 }
 
 export type OpeningBalanceEditStatus =
@@ -1937,10 +1974,17 @@ export interface OpeningBalanceResponse {
 }
 
 export interface OpeningBalancePage {
-  filtered: number;
+  filtered: number | null;
   items: OpeningBalanceResponse[];
   limit: number;
+  nextCursor?: string | null;
   offset: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
   total: number;
 }
 
@@ -1981,8 +2025,15 @@ export interface PatientChoice {
 export interface PatientChoices {
   items: PatientChoice[];
   limit: number;
+  nextCursor?: string | null;
   offset: number;
-  total: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
+  total: number | null;
 }
 
 /**
@@ -2297,10 +2348,17 @@ export interface PatientImportRow {
 }
 
 export interface PatientPage {
-  filtered: number;
+  filtered: number | null;
   items: PatientDirectoryResponse[];
   limit: number;
+  nextCursor?: string | null;
   offset: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
   total: number;
 }
 
@@ -2703,8 +2761,15 @@ export interface SalesTargetZoneChoice {
 export interface SalesTargetChoices {
   limit: number;
   mrs: SalesTargetMRChoice[];
+  nextCursor?: string | null;
   offset: number;
-  total: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
+  total: number | null;
   years: number[];
   zoneOffset: number;
   zones: SalesTargetZoneChoice[];
@@ -2828,10 +2893,17 @@ export interface SalesTargetTotals {
 }
 
 export interface SalesTargetPage {
-  filtered: number;
+  filtered: number | null;
   items: SalesTargetResponse[];
   limit: number;
+  nextCursor?: string | null;
   offset: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
   total: number;
   totals: SalesTargetTotals;
 }
@@ -4519,6 +4591,7 @@ export type ListDoctorDirectoryParams = {
    * @maximum 1000000
    */
   offset?: number;
+  cursor?: string | null;
 };
 
 export type ListDoctorDirectoryStatus =
@@ -4625,6 +4698,7 @@ export type ListDoctorMRChoicesParams = {
    */
   offset?: number;
   include_saved?: string | null;
+  cursor?: string | null;
 };
 
 export type DownloadDoctorSampleParams = {
@@ -4751,6 +4825,7 @@ export type ListMRDirectoryParams = {
    * @maximum 1000000
    */
   offset?: number;
+  cursor?: string | null;
 };
 
 export type ListMRDirectoryStatus =
@@ -4848,6 +4923,7 @@ export type ListMRReferenceChoicesParams = {
    */
   offset?: number;
   include_saved?: string | null;
+  cursor?: string | null;
 };
 
 export type ListMRReferenceChoicesKind =
@@ -4891,6 +4967,7 @@ export type ListOpeningBalancesParams = {
    */
   query?: string;
   status?: ListOpeningBalancesStatus;
+  cursor?: string | null;
   /**
    * @minimum 1
    * @maximum 100
@@ -4977,6 +5054,7 @@ export type OpeningBalanceDoctorChoicesParams = {
    * @maximum 100
    */
   limit?: number;
+  cursor?: string | null;
   /**
    * @minimum 0
    * @maximum 1000000
@@ -5021,6 +5099,7 @@ export type ListPatientDirectoryParams = {
    * @maximum 1000000
    */
   offset?: number;
+  cursor?: string | null;
 };
 
 export type ListPatientDirectoryStatus =
@@ -5123,6 +5202,7 @@ export type ListPatientDoctorChoicesParams = {
    */
   offset?: number;
   include_saved?: string | null;
+  cursor?: string | null;
 };
 
 export type DownloadPatientSampleParams = {
@@ -5381,6 +5461,7 @@ export type ListSalesTargetsParams = {
    * @maximum 100
    */
   limit?: number;
+  cursor?: string | null;
   /**
    * @minimum 0
    * @maximum 1000000
@@ -5412,6 +5493,7 @@ export type GetSalesTargetChoicesParams = {
    */
   query?: string;
   zoneId?: string | null;
+  cursor?: string | null;
   /**
    * @minimum 1
    * @maximum 100

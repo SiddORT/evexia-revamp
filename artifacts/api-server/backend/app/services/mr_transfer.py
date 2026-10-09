@@ -180,7 +180,8 @@ def resolve_manager(db, value, batch):
         query = query.where(func.lower(MRDirectory.employeeCode) == term)
     else:
         query = query.where(or_(func.lower(User.username) == term, func.lower(MRDirectory.employeeCode) == term,
-                               func.lower(MRDirectory.name) == term))
+                               MRDirectory.name_index == mrs.encrypted.crypto().mr_name_index(
+                                   db.scalar(select(func.lower(term))))))
         try:
             existing = db.get(MRDirectory, uuid.UUID(term))
             if existing and not existing.deleted_at:
@@ -327,11 +328,13 @@ def sample(format):
 def export(db, actor, query, status, zone_id, hq_id, format):
     def work():
         mrs.authorize(db, actor, action="export", lock=False)
-        clauses = mrs.predicates(query, status, zone_id, hq_id)
+        clauses = mrs.predicates("", status, zone_id, hq_id)
         count = db.scalar(select(func.count()).select_from(MRDirectory).where(*clauses))
-        if count > EXPORT_LIMIT:
+        if not query.strip() and count > EXPORT_LIMIT:
             raise mrs.MRError("More than 5,000 MRs match. Narrow the filters; nothing downloaded.", 409, "mr_export_limit")
-        records = list(db.scalars(select(MRDirectory).where(*clauses).order_by(MRDirectory.created_at.desc(), MRDirectory.id.desc()).limit(EXPORT_LIMIT + 1)))
+        records = mrs.encrypted.complete(db, MRDirectory, clauses, lambda row: True,
+                                        prepare=(lambda rows: mrs.search_matcher(db, query, rows))
+                                        if query.strip() else None)
         if len(records) > EXPORT_LIMIT:
             raise mrs.MRError("More than 5,000 MRs match. Narrow the filters.", 409, "mr_export_limit")
         rows = []

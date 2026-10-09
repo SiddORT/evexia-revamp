@@ -1,6 +1,7 @@
 """Business directory input; identifiers are server relationships, never local IDs."""
 import re
 import uuid
+from app.schemas.directory_search import SearchSection
 import unicodedata
 from datetime import date, datetime
 from decimal import Decimal
@@ -159,10 +160,10 @@ class MRCreated(BaseModel):
     credentials: MRCredentials
 
 
-class MRPage(BaseModel):
+class MRPage(SearchSection):
     items: list[MRDirectoryResponse]
     total: int
-    filtered: int
+    filtered: int | None
     limit: int
     offset: int
 
@@ -190,9 +191,9 @@ class MRDoctorPage(BaseModel):
     offset: int
 
 
-class MRChoices(BaseModel):
+class MRChoices(SearchSection):
     items: list[MRChoice]
-    total: int
+    total: int | None
     limit: int
     offset: int
 

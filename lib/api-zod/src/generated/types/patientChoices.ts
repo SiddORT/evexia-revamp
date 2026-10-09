@@ -10,6 +10,13 @@ import type { PatientChoice } from "./patientChoice";
 export interface PatientChoices {
   items: PatientChoice[];
   limit: number;
+  nextCursor?: string | null;
   offset: number;
-  total: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
+  total: number | null;
 }

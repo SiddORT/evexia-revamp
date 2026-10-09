@@ -35,4 +35,5 @@ export type ListDoctorDirectoryParams = {
    * @maximum 1000000
    */
   offset?: number;
+  cursor?: string | null;
 };

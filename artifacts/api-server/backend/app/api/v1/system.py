@@ -21,6 +21,8 @@ def version():
 def readiness(db: Session = Depends(get_db)):
     try:
         # Deployment health must verify the identity schema, not just a live socket.
+        from app.services.directory_runtime import ready
+        ready(db)
         db.execute(text(
             "SELECT username, system_role, identity_version, is_protected_system_admin FROM users LIMIT 0"
         ))
@@ -73,9 +75,10 @@ def readiness(db: Session = Depends(get_db)):
             'created_by, updated_by, deleted_at, deleted_by FROM sales_targets LIMIT 0'
         ))
         db.execute(text(
-            'SELECT id, code, name, gender, phone, "dialCountry", email, "dateOfBirth", "doctorId", '
-            '"instructionsLanguage", status, "addressLine1", "addressLine2", landmark, pincode, city, state, '
-            'country, created_by, updated_by, created_at, updated_at, deleted_at, deleted_by FROM patient_directory LIMIT 0'
+            'SELECT id, code, name_ciphertext, gender_ciphertext, phone_ciphertext, "dialCountry_ciphertext", '
+            'email_ciphertext, "dateOfBirth_ciphertext", "doctorId", "instructionsLanguage_ciphertext", '
+            'duplicate_identity_index, status, created_by, updated_by, created_at, updated_at, '
+            'deleted_at, deleted_by FROM patient_directory LIMIT 0'
         ))
     except Exception:
         raise HTTPException(status_code=503, detail="Service unavailable") from None

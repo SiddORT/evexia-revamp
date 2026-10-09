@@ -26,8 +26,9 @@ def filters(query: str = Query("", max_length=100), status: Literal["all", "acti
 
 @router.get("", response_model=SalesTargetPage, operation_id="listSalesTargets")
 def listing(filters: dict = Depends(filters), limit: int = Query(10, ge=1, le=100),
+            cursor: uuid.UUID | None = None,
             offset: int = Query(0, ge=0, le=1000000), actor: Identity = Depends(manager), db: Session = Depends(get_db)):
-    return sales_targets.listing(db, actor, filters, limit, offset)
+    return sales_targets.listing(db, actor, filters, limit, offset, cursor)
 
 
 @router.post("", response_model=SalesTargetResponse, status_code=201, operation_id="createSalesTarget")
@@ -37,10 +38,11 @@ def create(body: SalesTargetFields, actor: Identity = Depends(manager), db: Sess
 
 @router.get("/choices", response_model=SalesTargetChoices, operation_id="getSalesTargetChoices")
 def choices(query: str = Query("", max_length=100), zoneId: uuid.UUID | None = None,
+            cursor: uuid.UUID | None = None,
             limit: int = Query(100, ge=1, le=100), offset: int = Query(0, ge=0, le=1000000),
             zoneQuery: str = Query("", max_length=100), zoneOffset: int = Query(0, ge=0, le=1000000),
             actor: Identity = Depends(manager), db: Session = Depends(get_db)):
-    return sales_targets.choices(db, actor, query, zoneId, limit, offset, zoneQuery, zoneOffset)
+    return sales_targets.choices(db, actor, query, zoneId, limit, offset, zoneQuery, zoneOffset, cursor)
 
 
 @router.get("/export", operation_id="exportSalesTargets", responses=BINARY_RESPONSES)

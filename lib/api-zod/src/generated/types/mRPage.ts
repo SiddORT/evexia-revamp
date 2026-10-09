@@ -8,9 +8,16 @@
 import type { MRDirectoryResponse } from "./mRDirectoryResponse";
 
 export interface MRPage {
-  filtered: number;
+  filtered: number | null;
   items: MRDirectoryResponse[];
   limit: number;
+  nextCursor?: string | null;
   offset: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
   total: number;
 }

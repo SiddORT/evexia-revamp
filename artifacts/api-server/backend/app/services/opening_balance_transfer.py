@@ -199,13 +199,14 @@ def sample(format):
 def export(db, actor, query, status, format):
     def work():
         balances.authorize(db, actor)
-        records = list(db.scalars(select(Balance).where(*balances.predicates(query, status))
-                                  .order_by(Balance.created_at.desc(), Balance.id.desc()).limit(EXPORT_LIMIT + 1)))
+        records = balances.encrypted.complete(db, Balance, balances.predicates("", status), None,
+            prepare=lambda rows: balances.search_matcher(db, query, rows))
         if len(records) > EXPORT_LIMIT:
             raise balances.OpeningBalanceError("Export exceeds 5,000 matches. Narrow search/status filters.", 422, "opening_balance_export_limit")
         rows = [HEADERS]
+        context = balances.projection_context(db, records)
         for row in records:
-            p = balances.projection(db, row)
+            p = balances.projection(db, row, context)
             rows.append([str(row.startYear), str(row.endYear), safe_text(p["registrationNumber"]),
                          safe_text(p["amount"]) if format == "csv" else p["amount"], row.status,
                          safe_text(p["createdBy"]), row.created_at.isoformat(), safe_text(p["updatedBy"]), row.updated_at.isoformat()])

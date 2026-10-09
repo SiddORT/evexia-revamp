@@ -139,15 +139,15 @@ def test_filters_all_match_totals_year_choices_and_export_agreement(client, monk
         add(api, headers, mr, 1980 + index, **({"status": "inactive"} if index < 11 else {}))
     result = api.get(BASE, headers=headers, params={"status": "inactive", "zoneId": zone,
                      "mrId": mr["id"], "query": mr["name"], "limit": 2}).json()
-    assert result["total"] == 12 and result["filtered"] == 11 and len(result["items"]) == 2
-    assert result["totals"]["q1"] == "1102.75" and result["totals"]["total"] == "11002.75"
+    assert result["total"] == 12 and result["filtered"] is None and result["partial"] and len(result["items"]) == 2
+    assert result["totals"]["q1"] == "200.50" and result["totals"]["total"] == "2000.50"
     assert api.get(BASE, headers=headers, params={"startYear": 1980, "endYear": 1981}).json()["filtered"] == 1
     assert api.get(BASE, headers=headers, params={"startYear": 1980, "endYear": 1982}).json()["filtered"] == 0
     for query in ("%", "_", "\\", "missing"):
         empty = api.get(BASE, headers=headers, params={"query": query}).json()
-        assert empty["filtered"] == 0 and set(empty["totals"].values()) == {"0.00"}
+        assert empty["filtered"] is None and empty["partial"] and not empty["items"] and set(empty["totals"].values()) == {"0.00"}
     choices = api.get(BASE + "/choices", headers=headers, params={"query": "MR-01", "limit": 1}).json()
-    assert choices["mrs"][0]["id"] == mr["id"] and choices["total"] == 1 and 1980 in choices["years"]
+    assert choices["mrs"][0]["id"] == mr["id"] and choices["total"] is None and choices["partial"] and 1980 in choices["years"]
     assert api.get(BASE + "/choices", headers=headers, params={"zoneId": str(uuid.uuid4())}).json()["total"] == 0
     initiation = str(uuid.uuid4())
     for format in ("csv", "xlsx"):

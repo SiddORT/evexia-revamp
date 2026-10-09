@@ -235,16 +235,19 @@ def sample(format):
 def export(db, actor, query="", status="all", zone_id="", mr_id="", state="", format="csv"):
     def work():
         doctors.authorize(db, actor, "export", lock=False)
-        clauses = doctors.predicates(query, status, zone_id, mr_id, state)
+        clauses = doctors.predicates("", status, zone_id, mr_id, state)
         count = db.scalar(select(func.count()).select_from(Doctor).where(*clauses))
-        if count > EXPORT_LIMIT:
+        if not query.strip() and count > EXPORT_LIMIT:
             raise doctors.DoctorError("More than 5,000 doctors match. Narrow the filters.", 409, "doctor_export_limit")
-        rows = list(db.scalars(select(Doctor).where(*clauses).order_by(Doctor.created_at.desc(), Doctor.id.desc()).limit(EXPORT_LIMIT + 1)))
+        rows = doctors.encrypted.complete(db, Doctor, clauses, None,
+                                         prepare=lambda rows: doctors.search_matcher(db, query, rows))
         if len(rows) > EXPORT_LIMIT:
             raise doctors.DoctorError("More than 5,000 doctors match. Narrow the filters.", 409, "doctor_export_limit")
         result = []
+        from app.services.patients import doctor_context
+        context = doctor_context(db, [row.id for row in rows])
         for row in rows:
-            values = doctors.projection(db, row)
+            values = doctors.projection(db, row, context)
             mr = db.get(MRDirectory, row.mrId)
             profile = db.get(MRProfile, row.mrId)
             # Explicit durable server reference, not a potentially ambiguous display label.

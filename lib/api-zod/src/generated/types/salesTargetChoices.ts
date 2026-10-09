@@ -11,8 +11,15 @@ import type { SalesTargetZoneChoice } from "./salesTargetZoneChoice";
 export interface SalesTargetChoices {
   limit: number;
   mrs: SalesTargetMRChoice[];
+  nextCursor?: string | null;
   offset: number;
-  total: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
+  total: number | null;
   years: number[];
   zoneOffset: number;
   zones: SalesTargetZoneChoice[];

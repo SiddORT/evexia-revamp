@@ -46,7 +46,8 @@ def test_designation_identity_lifecycle_names_and_transfer_revalidation(client):
     saved = api.get(BASE + "/" + row["id"], headers=headers).json()
     assert saved["designationName"] == designation.name
     assert "inactive" in " ".join(saved["assignmentWarnings"])
-    assert api.get(BASE, headers=headers, params={"query": "Renamed Medical"}).json()["filtered"] == 1
+    searched = api.get(BASE, headers=headers, params={"query": "Renamed Medical"}).json()
+    assert searched["filtered"] is None and searched["partial"] and len(searched["items"]) == 1
     retained = api.post(BASE + "/" + row["id"] + "/edit", headers=headers,
                         json={**body, "expected_version": row["version"]})
     assert retained.status_code == 200, retained.text
@@ -76,7 +77,8 @@ def test_designation_identity_lifecycle_names_and_transfer_revalidation(client):
     assert commit(api, headers, pending, checked["digest"]).status_code == 409
     deleted = api.get(BASE + "/" + row["id"], headers=headers).json()
     assert deleted["designationName"] == designation.name and "deleted" in " ".join(deleted["assignmentWarnings"])
-    assert api.get(BASE, headers=headers, params={"query": designation.name}).json()["filtered"] == 3
+    searched = api.get(BASE, headers=headers, params={"query": designation.name}).json()
+    assert searched["filtered"] is None and searched["partial"] and len(searched["items"]) == 3
     assert api.post(BASE + "/" + row["id"] + "/edit", headers=headers,
                     json={**body, "expected_version": retained.json()["version"]}).status_code == 409
     for choice in ("Unknown name", str(DESIGNATION_ID)):
@@ -317,9 +319,11 @@ def test_server_combined_filters_full_export_and_ledger(client):
     add(api, headers, {**fields(hq, zone, code="MR-02", username="second.mr"), "status": "inactive"})
     matching = api.get(BASE, headers=headers, params={"query": "synthetic", "status": "inactive",
                        "zone_id": zone, "hq_id": hq, "limit": 1}).json()
-    assert matching["filtered"] == 1 and matching["total"] == 2 and len(matching["items"]) == 1
-    assert api.get(BASE, headers=headers, params={"query": "%"}).json()["filtered"] == 0
-    assert api.get(BASE, headers=headers, params={"query": "second.mr"}).json()["filtered"] == 1
+    assert matching["filtered"] is None and matching["partial"] and matching["total"] == 2 and len(matching["items"]) == 1
+    literal = api.get(BASE, headers=headers, params={"query": "%"}).json()
+    assert literal["filtered"] is None and literal["partial"] and not literal["items"]
+    searched = api.get(BASE, headers=headers, params={"query": "second.mr"}).json()
+    assert searched["filtered"] is None and len(searched["items"]) == 1
     for format in ("csv", "xlsx"):
         response = api.get(BASE + "/export", headers={**headers, "X-Download-Initiation": str(uuid.uuid4())},
                            params={"format": format, "zone_id": zone, "hq_id": hq})
@@ -538,8 +542,9 @@ def test_large_page_bulk_queries_exact_projection_pagination_and_ledger(client, 
     assert max(metric["bind_counts"]) <= 500
     assert metric["seconds"] < 3
     result = response.json()
-    assert (result["total"], result["filtered"], result["limit"], result["offset"]) == (240, 240, 100, 100)
-    assert [row["id"] for row in result["items"]] == [str(key) for key in reversed(ids[40:140])]
+    assert (result["total"], result["filtered"], result["limit"], result["offset"]) == (240, None, 100, 100)
+    assert result["partial"] and result["nextCursor"]
+    assert [row["id"] for row in result["items"]] == [str(key) for key in sorted(ids[:240])[:100]]
     for item in result["items"]:
         # Legacy single-record projection remains an independent exact oracle.
         row = db.get(MRDirectory, uuid.UUID(item["id"]))

@@ -31,4 +31,5 @@ export type ListPatientDirectoryParams = {
    * @maximum 1000000
    */
   offset?: number;
+  cursor?: string | null;
 };

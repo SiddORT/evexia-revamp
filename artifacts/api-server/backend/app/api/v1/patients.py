@@ -31,8 +31,9 @@ def postal(pin: str, action: Literal["add", "edit"] = "add",
 def listing(query: str = Query("", max_length=200), status: Literal["all", "active", "inactive"] = "all",
             zone_id: str = Query("", max_length=36), mr_id: str = Query("", max_length=36),
             limit: int = Query(10, ge=1, le=100), offset: int = Query(0, ge=0, le=1000000),
+            cursor: uuid.UUID | None = None,
             actor=Depends(manager), db: Session = Depends(get_db)):
-    return patients.listing(db, actor, query, status, reference(zone_id), reference(mr_id), limit, offset)
+    return patients.listing(db, actor, query, status, reference(zone_id), reference(mr_id), limit, offset, cursor)
 
 
 @router.post("", response_model=PatientDirectoryResponse, status_code=201, operation_id="createPatientDirectory")
@@ -43,8 +44,9 @@ def create(body: PatientFields, actor=Depends(manager), db: Session = Depends(ge
 @router.get("/references", response_model=PatientChoices, operation_id="listPatientDoctorChoices")
 def references(query: str = Query("", max_length=200), limit: int = Query(100, ge=1, le=100),
                offset: int = Query(0, ge=0, le=1000000), include_saved: uuid.UUID | None = None,
+               cursor: uuid.UUID | None = None,
                actor=Depends(manager), db: Session = Depends(get_db)):
-    return patients.choices(db, actor, query, limit, offset, include_saved)
+    return patients.choices(db, actor, query, limit, offset, include_saved, cursor)
 
 
 @router.get("/filters", response_model=PatientFilterChoices, operation_id="getPatientFilterChoices")

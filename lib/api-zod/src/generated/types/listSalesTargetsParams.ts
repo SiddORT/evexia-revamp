@@ -13,6 +13,7 @@ export type ListSalesTargetsParams = {
    * @maximum 100
    */
   limit?: number;
+  cursor?: string | null;
   /**
    * @minimum 0
    * @maximum 1000000

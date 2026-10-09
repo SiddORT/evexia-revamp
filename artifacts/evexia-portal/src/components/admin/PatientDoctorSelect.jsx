@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { patientDoctorChoices } from '../../services/serverPatients.js';
 import './searchableSelect.css';
+import useDirectoryContinuation from '../../hooks/useDirectoryContinuation.js';
 
 const PAGE_SIZE = 50;
 
@@ -9,6 +10,8 @@ export default function PatientDoctorSelect({ value, original, savedName, blocke
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [offset, setOffset] = useState(0);
+  const continuation = useDirectoryContinuation({ query, offset, value });
+  const cursor = continuation.params.cursor;
   const [state, setState] = useState({ items: [], total: 0, loading: true, error: '' });
   const [revision, setRevision] = useState(0);
   const [selection, setSelection] = useState(null);
@@ -32,7 +35,7 @@ export default function PatientDoctorSelect({ value, original, savedName, blocke
     setState((old) => ({ ...old, items: [], loading: true, error: '' }));
     const timer = setTimeout(async () => {
       try {
-        const data = await patientDoctorChoices({ query, offset, limit: PAGE_SIZE, include_saved: value || undefined }, controller.signal);
+        const data = await patientDoctorChoices({ query, offset, cursor, limit: PAGE_SIZE, include_saved: value || undefined }, controller.signal);
         if (controller.signal.aborted || current !== request.current) return;
         const saved = data.items.find((item) => item.id === value);
         if (saved) setSelection(saved);
@@ -44,7 +47,7 @@ export default function PatientDoctorSelect({ value, original, savedName, blocke
       }
     }, 250);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [query, offset, value, revision]);
+  }, [query, offset, value, revision, cursor]);
 
   function close() { setOpen(false); setActive(-1); }
   useEffect(() => {
@@ -128,7 +131,9 @@ export default function PatientDoctorSelect({ value, original, savedName, blocke
           </div>)}
         </div>
         <p className="searchable-select__empty" role="status">
-          {state.loading ? 'Loading Doctors…' : state.error || (!choices.length
+          {state.loading ? 'Loading Doctors…' : state.error || (state.partial
+            ? `${choices.length} choices in this section; totals are unavailable. ${state.nextCursor ? 'More records remain to be checked.' : 'No further records remain.'}`
+            : !choices.length
             ? 'No matching eligible Doctors. Clear the search, or check active Doctor, MR and Zone records.'
             : `${state.total} matching Doctors`)}
         </p>
@@ -137,8 +142,8 @@ export default function PatientDoctorSelect({ value, original, savedName, blocke
         {!state.error && <div className="patient-doctor__paging">
           <button type="button" className="admin-button admin-button--secondary" aria-disabled={!offset || state.loading}
             onClick={() => { if (offset) pageTo(Math.max(0, offset - PAGE_SIZE)); }}>Previous Doctors</button>
-          <button type="button" className="admin-button admin-button--secondary" aria-disabled={offset + PAGE_SIZE >= state.total || state.loading}
-            onClick={() => { if (offset + PAGE_SIZE < state.total) pageTo(offset + PAGE_SIZE); }}>Next Doctors</button>
+          <button type="button" className="admin-button admin-button--secondary" aria-disabled={(state.partial ? !state.nextCursor : offset + PAGE_SIZE >= state.total) || state.loading}
+            onClick={() => { if (state.loading) return; if (state.partial && state.nextCursor) { invalidate(); continuation.next(state); input.current?.focus(); } else if (!state.partial && offset + PAGE_SIZE < state.total) pageTo(offset + PAGE_SIZE); }}>{state.partial ? 'Continue search' : 'Next Doctors'}</button>
         </div>}
       </div>}
     </div>

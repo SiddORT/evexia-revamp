@@ -11,6 +11,7 @@ from app.db.zone_models import Zone
 from app.db.headquarter_models import Headquarter
 from app.services.auth import revalidate_identity
 from app.services.zones import label
+from app.services import directory_runtime as encrypted
 from app.schemas.sales_targets import BUSINESS_FIELDS, QUARTERS
 
 
@@ -42,6 +43,7 @@ def authorize(db, actor):
     current = revalidate_identity(db, actor, lock=True)
     if not current.user.is_protected_system_admin or current.role != "super_admin" or "admin.access" not in current.permissions:
         raise SalesTargetError("Access denied", 403, "access_denied")
+    encrypted.ready(db)
     return current
 
 
@@ -94,7 +96,8 @@ def projections(db, query):
     """
     creator, updater = aliased(User), aliased(User)
     query = query.add_columns(
-        MRDirectory.name.label("mrName"), MRDirectory.employeeCode.label("employeeCode"),
+        MRDirectory.id.label("_mrAadId"), MRDirectory.name_ciphertext.label("_mrNameCiphertext"),
+        MRDirectory.employeeCode.label("employeeCode"),
         MRDirectory.zoneId.label("zoneId"), Zone.name.label("zoneName"),
         MRDirectory.hq.label("headquarterId"), Headquarter.name.label("headquarterName"),
         case((creator.is_protected_system_admin.is_(True), "Super Admin"),
@@ -109,6 +112,8 @@ def projections(db, query):
     for values in db.execute(query).mappings():
         related = dict(values)
         row = related.pop("SalesTarget")
+        related["mrName"] = encrypted.crypto().decrypt(
+            "mr_directory", related.pop("_mrAadId"), "name", related.pop("_mrNameCiphertext"))
         result.append(projection(db, row, related))
     return result
 
@@ -116,8 +121,7 @@ def projections(db, query):
 def predicates(query="", status="all", zoneId=None, mrId=None, startYear=None, endYear=None):
     filters = [SalesTarget.deleted_at.is_(None)]
     if query.strip():
-        filters.append(SalesTarget.mrId.in_(select(MRDirectory.id).where(
-            MRDirectory.name.ilike("%" + literal(query) + "%", escape="\\"))))
+        raise SalesTargetError("Encrypted search requires a bounded authorized scan.")
     if status != "all":
         filters.append(SalesTarget.status == status)
     if zoneId:
@@ -128,38 +132,56 @@ def predicates(query="", status="all", zoneId=None, mrId=None, startYear=None, e
     return filters
 
 
-def listing(db, actor, filters, limit, offset):
+def search_matcher(db, query, rows):
+    ids = {row.mrId for row in rows}
+    labels = {}
+    for start in range(0, len(ids), 500):
+        for row in db.execute(select(MRDirectory.id, MRDirectory.name_ciphertext).where(
+                MRDirectory.id.in_(list(ids)[start:start + 500]))):
+            labels[row.id] = encrypted.read_name(row, "mr_directory")
+    return lambda row: encrypted.match(query, labels.get(row.mrId))
+
+
+def listing(db, actor, filters, limit, offset, cursor=None):
     def work():
         authorize(db, actor)
-        clauses = predicates(**filters)
+        query = filters.get("query", "")
+        clauses = predicates(**{**filters, "query": ""})
+        meta = {}
+        if query.strip():
+            found, meta = encrypted.scan(db, SalesTarget, clauses, None, limit=limit, cursor=cursor,
+                                         prepare=lambda rows: search_matcher(db, query, rows))
+            clauses.append(SalesTarget.id.in_([row.id for row in found]))
         sums = db.execute(select(*(func.coalesce(func.sum(getattr(SalesTarget, key)), 0)
                                    for key in QUARTERS)).where(*clauses)).one()
         totals = {key: format(Decimal(value), ".2f") for key, value in zip(QUARTERS, sums)}
         totals["total"] = format(sum(Decimal(value) for value in sums), ".2f")
         rows = projections(db, select(SalesTarget).where(*clauses).order_by(
-            SalesTarget.created_at.desc(), SalesTarget.id.desc()).limit(limit).offset(offset))
+            SalesTarget.id if query.strip() else SalesTarget.created_at.desc(),
+            SalesTarget.id.desc()).limit(limit).offset(0 if query.strip() else offset))
         result = dict(items=rows,
                       total=db.scalar(select(func.count()).select_from(SalesTarget).where(SalesTarget.deleted_at.is_(None))),
-                      filtered=db.scalar(select(func.count()).select_from(SalesTarget).where(*clauses)),
-                      limit=limit, offset=offset, totals=totals)
+            filtered=None if query.strip() else db.scalar(select(func.count()).select_from(SalesTarget).where(*clauses)),
+                      limit=limit, offset=offset, totals=totals, **meta)
         db.commit()
         return result
     return transaction(db, work)
 
 
-def choices(db, actor, query, zoneId, limit, offset, zoneQuery, zoneOffset):
+def choices(db, actor, query, zoneId, limit, offset, zoneQuery, zoneOffset, cursor=None):
     def work():
         authorize(db, actor)
         filters = [MRDirectory.deleted_at.is_(None),
                    MRDirectory.zoneId.in_(select(Zone.id).where(Zone.deleted_at.is_(None))),
                    MRDirectory.hq.in_(select(Headquarter.id).where(Headquarter.deleted_at.is_(None)))]
-        if query.strip():
-            filters.append(or_(MRDirectory.name.ilike("%" + literal(query) + "%", escape="\\"),
-                               MRDirectory.employeeCode.ilike("%" + literal(query) + "%", escape="\\")))
         if zoneId:
             filters.append(MRDirectory.zoneId == zoneId)
-        mrs = list(db.scalars(select(MRDirectory).where(*filters).order_by(
-            func.lower(MRDirectory.name), MRDirectory.id).limit(limit).offset(offset)))
+        if query.strip():
+            mrs, meta = encrypted.scan(db, MRDirectory, filters, lambda row: encrypted.match(query, row.name, row.employeeCode),
+                                      limit=limit, cursor=cursor)
+        else:
+            mrs = list(db.scalars(select(MRDirectory).where(*filters).order_by(MRDirectory.id).limit(limit).offset(offset)))
+            meta = {}
         zone_filters = [Zone.deleted_at.is_(None)]
         if zoneQuery.strip():
             zone_filters.append(Zone.name.ilike("%" + literal(zoneQuery) + "%", escape="\\"))
@@ -169,13 +191,16 @@ def choices(db, actor, query, zoneId, limit, offset, zoneQuery, zoneOffset):
         years = set(range(base - 5, base + 7))
         years.update(db.scalars(select(SalesTarget.startYear).where(SalesTarget.deleted_at.is_(None)).distinct()))
         years.update(db.scalars(select(SalesTarget.endYear).where(SalesTarget.deleted_at.is_(None)).distinct()))
+        from app.services.mrs import _bulk
+        zone_labels = _bulk(db, (mr.zoneId for mr in mrs), lambda ids: select(Zone.id, Zone.name).where(Zone.id.in_(ids)))
+        hq_labels = _bulk(db, (mr.hq for mr in mrs), lambda ids: select(Headquarter.id, Headquarter.name).where(Headquarter.id.in_(ids)))
         result = dict(mrs=[dict(id=mr.id, name=mr.name, employeeCode=mr.employeeCode, zoneId=mr.zoneId,
-                                zoneName=db.get(Zone, mr.zoneId).name, headquarterId=mr.hq,
-                                headquarterName=db.get(Headquarter, mr.hq).name) for mr in mrs],
+                                zoneName=zone_labels[mr.zoneId].name, headquarterId=mr.hq,
+                                headquarterName=hq_labels[mr.hq].name) for mr in mrs],
                       zones=[dict(id=z.id, name=z.name) for z in zones], years=sorted(years, reverse=True),
-                      total=db.scalar(select(func.count()).select_from(MRDirectory).where(*filters)),
+                      total=None if query.strip() else db.scalar(select(func.count()).select_from(MRDirectory).where(*filters)),
                       limit=limit, offset=offset,
-                      zonesTotal=db.scalar(select(func.count()).select_from(Zone).where(*zone_filters)), zoneOffset=zoneOffset)
+                      zonesTotal=db.scalar(select(func.count()).select_from(Zone).where(*zone_filters)), zoneOffset=zoneOffset, **meta)
         db.commit()
         return result
     return transaction(db, work)

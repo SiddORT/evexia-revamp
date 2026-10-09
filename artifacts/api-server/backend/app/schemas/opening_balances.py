@@ -1,6 +1,7 @@
 """Exact signed money: JSON numbers are intentionally not accepted."""
 import re
 import uuid
+from app.schemas.directory_search import SearchSection
 from datetime import datetime
 from decimal import Decimal
 from typing import Literal
@@ -61,10 +62,10 @@ class OpeningBalanceResponse(OpeningBalanceFields):
     updatedAt: datetime
 
 
-class OpeningBalancePage(BaseModel):
+class OpeningBalancePage(SearchSection):
     items: list[OpeningBalanceResponse]
     total: int
-    filtered: int
+    filtered: int | None
     limit: int
     offset: int
 
@@ -76,9 +77,9 @@ class OpeningBalanceDoctorChoice(BaseModel):
     usable: bool
 
 
-class OpeningBalanceDoctorPage(BaseModel):
+class OpeningBalanceDoctorPage(SearchSection):
     items: list[OpeningBalanceDoctorChoice]
-    total: int
+    total: int | None
     limit: int
     offset: int
 

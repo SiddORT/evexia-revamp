@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import useDirectoryContinuation from './useDirectoryContinuation.js';
 import * as service from '../services/serverOpeningBalances.js';
 import { getSession, subscribeSession, reportingIdentityGuard } from '../auth/adminSession.js';
 
@@ -11,6 +12,8 @@ export default function useServerOpeningBalances(query, status, page, pageSize) 
   const [revision, refresh] = useState(0);
   const busy = useRef(false);
   const alive = useRef(true);
+  const continuation = useDirectoryContinuation({ query, status, limit: pageSize, offset: (page - 1) * pageSize });
+  const searchKey = JSON.stringify(continuation.params);
   const retry = useCallback(() => refresh((n) => n + 1), []);
   useEffect(() => {
     alive.current = true;
@@ -28,7 +31,7 @@ export default function useServerOpeningBalances(query, status, page, pageSize) 
     setLoading(true);
     const timer = setTimeout(async () => {
       try {
-        const result = await service.listOpeningBalances({ query, status, limit: pageSize, offset: (page - 1) * pageSize }, controller.signal);
+        const result = await service.listOpeningBalances(JSON.parse(searchKey), controller.signal);
         guard(); if (!controller.signal.aborted) { setData(result); setError(''); }
       } catch (cause) {
         try { guard(); } catch { return; }
@@ -36,7 +39,7 @@ export default function useServerOpeningBalances(query, status, page, pageSize) 
       } finally { if (!controller.signal.aborted && alive.current) setLoading(false); }
     }, 200);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [query, status, page, pageSize, revision]);
+  }, [searchKey, revision]);
   async function apply(record, type) {
     if (busy.current) return;
     busy.current = true; setPending(true);
@@ -46,5 +49,6 @@ export default function useServerOpeningBalances(query, status, page, pageSize) 
       guard(); if (alive.current) retry();
     } finally { busy.current = false; if (alive.current) setPending(false); }
   }
-  return { ...data, error, loading, pending, retry, apply };
+  return { ...data, error, loading, pending, retry, apply,
+    continueSearch: () => continuation.next(data), restartSearch: () => { continuation.restart(); retry(); } };
 }

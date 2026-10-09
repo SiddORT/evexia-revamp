@@ -9,6 +9,7 @@ import DataTable from '../../components/admin/DataTable.jsx';
 import RecordDetails from '../../components/admin/RecordDetails.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
+import DirectorySearchStatus from '../../components/admin/DirectorySearchStatus.jsx';
 import usePatients from '../../hooks/usePatients.js';
 import { downloadPatientFile, exportPatients, patientAge } from '../../services/serverPatients.js';
 import { internationalPhone } from '../../services/phoneCountries.js';
@@ -32,7 +33,7 @@ export default function PatientMaster() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   useEffect(() => { const timer = setTimeout(() => setDebouncedSearch(search), 250); return () => clearTimeout(timer); }, [search]);
   const params = { query: debouncedSearch, zone_id: zone, mr_id: mr, status, limit: pageSize, offset: (page - 1) * pageSize };
-  const { records, mrs, zones, total, filtered, loading, pending, error, feedback, retry, clearFeedback, changeStatus, remove } = usePatients(params);
+  const { records, mrs, zones, total, filtered, partial, scanned, nextCursor, continueSearch, restartSearch, loading, pending, error, feedback, retry, clearFeedback, changeStatus, remove } = usePatients(params);
   const [exporting, setExporting] = useState(false);
   const exportBusy = useRef(false);
   const [confirming, setConfirming] = useState(null);
@@ -99,7 +100,7 @@ export default function PatientMaster() {
       <div className="admin-mr-head-actions">
         <button ref={refreshButton} className="admin-button admin-button--secondary" type="button" onClick={refresh}>Refresh records</button>
         {can.import && <button className="admin-button admin-button--secondary" type="button" disabled={Boolean(error)} onClick={() => navigate(`${base}/import`)} data-testid="button-import-patients"><Upload size={16} /> Import data</button>}
-        {can.export && <DropdownMenu.Root><DropdownMenu.Trigger asChild><button className="admin-button admin-button--secondary" type="button" aria-busy={exporting} disabled={Boolean(error) || loading || search !== debouncedSearch || !filtered} data-testid="button-export-patients"><Download size={16} />{exporting ? 'Preparing export…' : 'Export data'}</button></DropdownMenu.Trigger>
+        {can.export && <DropdownMenu.Root><DropdownMenu.Trigger asChild><button className="admin-button admin-button--secondary" type="button" aria-busy={exporting} disabled={Boolean(error) || loading || search !== debouncedSearch || (!partial && !filtered)} data-testid="button-export-patients"><Download size={16} />{exporting ? 'Preparing export…' : 'Export data'}</button></DropdownMenu.Trigger>
           <DropdownMenu.Portal><DropdownMenu.Content className="admin-export-menu" sideOffset={6}>
             <DropdownMenu.Item className="admin-export-menu__item" disabled={exporting} onSelect={() => exportVisible('csv')}>CSV</DropdownMenu.Item>
             <DropdownMenu.Item className="admin-export-menu__item" disabled={exporting} onSelect={() => exportVisible('xlsx')}>Excel (.xlsx)</DropdownMenu.Item>
@@ -125,7 +126,7 @@ export default function PatientMaster() {
              <div className="admin-record-card__body">{details(r, false)}<dl><div><dt>Address</dt><dd>{address(r)}</dd></div><div><dt>Doctor / MR / Zone</dt><dd>{reference(r)}</dd></div><div><dt>Instructions language</dt><dd>{r.instructionsLanguage}</dd></div><div><dt>Last dose</dt><dd>{lastDose(r)}</dd></div></dl></div>{actions(r, true)}
           </article>)}</div>
          </> : <div className="admin-empty"><span className="admin-empty__icon"><UsersRound size={21} /></span><strong>{total ? 'No matching patients' : 'No patients yet'}</strong><p>{total ? 'Try different search or filters.' : 'Set up an active Doctor/MR/Zone chain, then add a Patient or import CSV/Excel.'}</p></div>}
-         <TablePagination {...pagination} filtered={filtered} total={total} label="patients" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />
+         {partial ? <DirectorySearchStatus count={records.length} scanned={scanned} nextCursor={nextCursor} loading={loading} onNext={continueSearch} onRestart={restartSearch} /> : <TablePagination {...pagination} filtered={filtered} total={total} label="patients" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />}
       </>}
     </section>
     {confirming && <ConfirmationDialog title={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} patient?`} description={`Change “${confirming.name}” to ${confirming.status === 'active' ? 'inactive' : 'active'}? Inactive patients deny MR file access; retained files are not deleted.`} actionLabel="Confirm status" pending={pending} blocked={Boolean(error)} error={actionError} onClose={() => { if (!pending) setConfirming(null); }} onConfirm={async () => {

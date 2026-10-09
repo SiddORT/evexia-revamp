@@ -10,6 +10,13 @@ import type { DoctorChoice } from "./doctorChoice";
 export interface DoctorChoices {
   items: DoctorChoice[];
   limit: number;
+  nextCursor?: string | null;
   offset: number;
-  total: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
+  total: number | null;
 }

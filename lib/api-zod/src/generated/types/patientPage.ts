@@ -8,9 +8,16 @@
 import type { PatientDirectoryResponse } from "./patientDirectoryResponse";
 
 export interface PatientPage {
-  filtered: number;
+  filtered: number | null;
   items: PatientDirectoryResponse[];
   limit: number;
+  nextCursor?: string | null;
   offset: number;
+  partial?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 500
+   */
+  scanned?: number;
   total: number;
 }

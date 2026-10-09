@@ -8,6 +8,7 @@ import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
+import DirectorySearchStatus from '../../components/admin/DirectorySearchStatus.jsx';
 import useServerOpeningBalances from '../../hooks/useServerOpeningBalances.js';
 import OpeningBalanceFormPage from './OpeningBalanceFormPage.jsx';
 import { exportOpeningBalances, downloadOpeningBalanceFile } from '../../services/serverOpeningBalances.js';
@@ -112,7 +113,7 @@ export default function OpeningBalanceMaster() {
         {state.items.length ? <><div className="ob-desktop"><DataTable columns={columns} rows={state.items} rowOffset={(page - 1) * pageSize} rowKey={(r) => r.id} label="Opening balance records" testIdPrefix="opening-balance" /></div>
           <div className="ob-mobile" role="list" aria-label="Opening balance records">{state.items.map((r) => <article className="ob-card" key={r.id} role="listitem"><div className="ob-card__head"><div><small>{r.startYear}–{r.endYear}</small><h2>{r.doctorName}</h2><small>{r.registrationNumber}</small></div><StatusBadge status={r.status} id={r.id} /></div><p className="ob-number">{formatBalance(r.amount)}</p><dl className="ob-card__details"><div><dt>Created</dt><dd>{audit(r.createdBy, r.createdAt)}</dd></div><div><dt>Updated</dt><dd>{audit(r.updatedBy, r.updatedAt)}</dd></div></dl>{actions(r, true)}</article>)}</div></> :
           <div className="admin-empty"><strong>{state.total ? 'No matching balances' : 'No opening balances yet'}</strong><p>{state.total ? 'Try another search or status.' : 'Add a shared Doctor’s starting position. Legacy browser data is not imported automatically.'}</p></div>}
-        <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={state.filtered} total={state.total} label="balances" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} testId="text-opening-balance-count" />
+        {state.partial ? <DirectorySearchStatus count={state.items.length} scanned={state.scanned} nextCursor={state.nextCursor} loading={state.loading} onNext={state.continueSearch} onRestart={state.restartSearch} /> : <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={state.filtered} total={state.total} label="balances" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} testId="text-opening-balance-count" />}
       </>}
     </section>
     {confirming && <ConfirmationDialog pending={state.pending} blocked={blocked} title={`${actionName} opening balance?`} description={`${actionName} ${confirming.record.doctorName}’s balance for ${confirming.record.startYear}–${confirming.record.endYear}?${confirming.type === 'delete' ? ' It leaves ordinary lists and exports; versioned server deletion history is retained. No restore is available here.' : ''}`} actionLabel={`${actionName} balance`} destructive={confirming.type === 'delete'} error={error} onConfirm={confirm} onClose={() => { setConfirming(null); setError(''); state.retry(); }} />}

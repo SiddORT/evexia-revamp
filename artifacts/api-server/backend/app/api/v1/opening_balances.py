@@ -21,16 +21,18 @@ manager = require_permissions("admin.access")
 
 @router.get("", response_model=OpeningBalancePage, operation_id="listOpeningBalances")
 def listing(query: str = Query("", max_length=200), status: Literal["all", "active", "inactive"] = "all",
+            cursor: uuid.UUID | None = None,
             limit: int = Query(10, ge=1, le=100), offset: int = Query(0, ge=0, le=1000000),
             actor: Identity = Depends(manager), db: Session = Depends(get_db)):
-    return balances.listing(db, actor, query, status, limit, offset)
+    return balances.listing(db, actor, query, status, limit, offset, cursor)
 
 
 @router.get("/references", response_model=OpeningBalanceDoctorPage, operation_id="openingBalanceDoctorChoices")
 def references(query: str = Query("", max_length=200), limit: int = Query(50, ge=1, le=100),
+               cursor: uuid.UUID | None = None,
                offset: int = Query(0, ge=0, le=1000000), balance_id: uuid.UUID | None = None,
                actor: Identity = Depends(manager), db: Session = Depends(get_db)):
-    return balances.choices(db, actor, query, limit, offset, balance_id)
+    return balances.choices(db, actor, query, limit, offset, balance_id, cursor)
 
 
 @router.post("", response_model=OpeningBalanceResponse, status_code=201, operation_id="createOpeningBalance")
