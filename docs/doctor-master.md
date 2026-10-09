@@ -4,8 +4,48 @@
 
 Doctor Master list, Add/Edit, prepared Doctor import, filtered exports and MR
 Master's associated-doctor viewer use authenticated FastAPI/PostgreSQL records.
-Only the protected system Super Admin with `admin.access` may use Doctor APIs.
-MR tokens, ordinary staff and unrelated Zone grants give no access.
+The protected system Super Admin and explicitly enabled staff with the
+corresponding Doctor grants may use Doctor APIs. MR tokens, ordinary staff
+and unrelated Zone grants give no general Doctor access.
+
+## Directory deletion and rollout
+
+Forward `0028_directory_soft_delete` follows the accepted
+`0027_mr_designation_identity` head. It adds only nullable timezone-aware
+`deleted_at` and UUID `deleted_by` with a non-cascading User foreign key to
+Doctor and Patient directories. Existing rows start with NULL metadata; IDs,
+business values, global uniqueness, assignments, timestamps and files stay intact.
+Readiness requires these fields. Obtain separate operator approval and a verified
+coordinated backup, stop writes and release schema/API/frontend together. No
+managed migration or deployment is performed by this feature.
+
+`POST /api/v1/admin/doctors/{id}/delete` accepts only `expected_version`.
+The authenticated actor and UTC timestamp are server-owned. It requires
+`doctor.delete` (or protected Super Admin), not Edit. Graph locking, current
+identity checks, version/update metadata and a `doctor_directory_delete` audit
+commit atomically. Stale versions reject; repeated or ordinary tombstone
+detail/edit/status/contact/bulk targets return not found.
+
+Deletion removes Doctors from ordinary listings, counts, searches, exports,
+filter values, Patient/Opening Balance pickers and MR-associated Doctor pages.
+It does not change status, reassign Patients or delete balances. Existing saved
+references retain their IDs and readable labels with an unavailable warning;
+an unchanged saved relationship can remain, but deleted Doctors cannot be newly
+assigned. Reviewed imports revalidate availability at commit. Registration
+numbers remain globally reserved after deletion. There is no trash, restore,
+purge or bulk-delete interface. Confirmations never replay a lost response.
+
+Downgrade drops deletion metadata only, losing attribution and making retained
+rows live again; it never deletes directory/identity/file rows. Do not treat this
+as a safe application-only rollback. Prefer a reviewed forward fix or a verified
+coordinated restore and obtain separate approval before any managed downgrade.
+
+Focused regressions use disposable fixtures:
+`sh scripts/test-api-foundation.sh tests/test_directory_deletion.py
+tests/test_migration_directory_deletion.py tests/test_patient_files.py
+tests/test_master_permissions.py`. Run the guarded desktop/mobile confirmation
+suite with `sh scripts/run-authenticated-previews.sh
+artifacts/evexia-portal/tests/directory-deletion.preview.spec.mjs`.
 
 Migration `0019_doctor_directory` follows `0018_mr_directory` and creates an
 **empty** table. It does not migrate, mirror, overwrite or promote any local

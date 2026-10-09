@@ -56,3 +56,14 @@ tests revealed this even though closing and refreshing both succeeded.
 If the original row was deleted or filtered away, return to a stable page
 action instead. Do not retain stale rows or weaken save/version checks just
 to preserve a DOM element.
+
+Block destructive confirmation while its backing directory is loading, not
+only while a mutation is pending.
+
+**Why:** A debounced search began refreshing after a dialog captured its record.
+The enabled confirmation then reached a deliberate local mutation guard instead
+of sending a request, leaving a misleading failure in an otherwise valid dialog.
+
+**How to apply:** Keep the loading and stale/error gates visible at confirmation
+time as well as at row-action time; retain server version validation. Browser
+fixtures should await the matching search response before capturing the row.

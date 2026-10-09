@@ -610,6 +610,14 @@ export interface DoctorContact {
   expected_version: number;
 }
 
+/**
+ * Only the concurrency version is client-owned.
+ */
+export interface DoctorDeletion {
+  /** @minimum 1 */
+  expected_version: number;
+}
+
 export type DoctorEditContactRequirement =
   (typeof DoctorEditContactRequirement)[keyof typeof DoctorEditContactRequirement];
 
@@ -1975,6 +1983,14 @@ export interface PatientChoices {
   limit: number;
   offset: number;
   total: number;
+}
+
+/**
+ * Directory deletion does not change the Patient owner lifecycle.
+ */
+export interface PatientDeletion {
+  /** @minimum 1 */
+  expected_version: number;
 }
 
 export type PatientDirectoryResponseDialCountry =

@@ -29,7 +29,7 @@
 - [Import request boundaries](import-request-boundaries.md) — test valid large raw/multipart imports, not only oversized rejection; request and file limits must agree.
 - [Lazy-route print styles](lazy-route-print-styles.md) — gate print layout overrides on the report's presence; imported CSS survives navigation.
 - [Cold-route component styles](cold-route-component-styles.md) — reused controls must load their own styles, not depend on a previously visited lazy route.
-- [Dropdown focus](dropdown-focus.md) — pending menu actions must preserve a focusable return destination while preventing duplicate submissions.
+- [Dropdown focus](dropdown-focus.md) — async actions need stable focus return; destructive confirmations must also block while their directory loads.
 - [Browser keyboard modality](browser-keyboard-modality.md) — use real Tab entry for cross-engine focus indicators; programmatic focus plus Space/arrows is not equivalent.
 - [Browser-only auth channels](browser-only-auth-channels.md) — Node exposes BroadcastChannel too; imported browser auth must not keep pure service tests alive.
 - [Browser engine evidence](browser-engine-evidence.md) — overridden WebKit versions can reflect the driver, not the binary; verify matching revisions and page creation.

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../auth/adminSession.js';
-import { createPatient, editPatient, getPatient, listPatients, patientMRChoices, statusPatient } from '../services/serverPatients.js';
+import { createPatient, deletePatient, editPatient, getPatient, listPatients, patientMRChoices, statusPatient } from '../services/serverPatients.js';
 
 const EMPTY = { records: [], mrs: [], zones: [], total: 0, filtered: 0, loading: true, error: '', sessionEpoch: 0 };
 export default function usePatients(params = {}, detailId = null) {
@@ -88,5 +88,6 @@ export default function usePatients(params = {}, detailId = null) {
     add: (values) => apply(() => createPatient(values), 'Patient added successfully.'),
     edit: (id, values) => apply(() => editPatient(row(id), values), 'Patient updated successfully.'),
     changeStatus: (id, status) => apply(() => statusPatient(row(id), status), 'Patient status updated.'),
+    remove: (id) => apply(() => deletePatient(row(id)), 'Patient removed from normal use. Stored relationships and files remain.'),
   };
 }

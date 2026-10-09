@@ -41,7 +41,7 @@ export default function OpeningBalanceDoctorSelect({ value, record, disabled, er
   return <div className="mr-form__field">
     <label className="mr-form__label" htmlFor="opening-balance-doctor">Doctor *</label>
     <SearchableSelect id="opening-balance-doctor" label="Doctor" value={value} options={options}
-      searchOptions={() => options} preserveSearch placeholder="Search name or registration" disabled={disabled} invalid={Boolean(error)}
+      searchOptions={() => options.filter((option) => state.items.some((d) => d.id === option.value))} preserveSearch placeholder="Search name or registration" disabled={disabled} invalid={Boolean(error)}
       describedBy="ob-doctor-help" onSearch={(text) => { setQuery(text.slice(0, 200)); setOffset(0); }}
       onChange={(id) => { setSelected(rows.find((d) => d.id === id) || null); onChange(id); }} />
     <p className={error ? 'mr-form__error' : 'ob-form__hint'} id="ob-doctor-help" role={error || state.error ? 'alert' : 'status'}>{error || state.error || (state.loading ? 'Loading shared Doctors…' : `${state.total} matching active Doctors. Search or page; only unchanged saved inactive references can be retained.`)}</p>

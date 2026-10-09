@@ -77,6 +77,20 @@ explicit migration and unchanged local-demo purchasing relationships.
 
 ## Local development and operations
 
+- Directory-only soft deletion requires additive `0028_directory_soft_delete`
+  after accepted `0027_mr_designation_identity`. It adds nullable timezone-aware
+  deletion time and non-cascading User attribution to Doctor/Patient directories
+  only; existing data starts NULL. Readiness/API require it. Coordinate
+  schema/API/frontend rollout after separate operator approval and verified backup.
+  Downgrade discards deletion metadata and returns retained rows to normal use,
+  but deletes no records/files; it is not an application-only rollback.
+  Versioned Doctor/Patient delete grants operate independently of Edit and
+  retain historical references, identity, status and private-file authorization.
+  See the Doctor/Patient operations documents. Focused disposable checks:
+  `sh scripts/test-api-foundation.sh tests/test_directory_deletion.py
+  tests/test_migration_directory_deletion.py tests/test_patient_files.py
+  tests/test_master_permissions.py`.
+
 - MR designation relationship migration `0027_mr_designation_identity` follows
   `0026_designation_target`. It checks every historical MR label against all
   normalized catalogue names, aborting on missing/ambiguous matches, then atomically

@@ -19,7 +19,7 @@ from test_patients import fields as patient_fields, csv_file as patient_csv
 PATHS = dict(zip(MASTERS, ("headquarters", "zones", "mrs", "patients", "doctors",
                           "product-categories", "storage-locations", "courier-partners")))
 BASE = "/api/v1/admin/"
-NO_DELETE = {"doctor", "patient"}  # Neither existing master has a deletion workflow.
+NO_DELETE = set()
 NO_SAMPLE = {"zone", "location", "courier"}  # Existing client templates have durable evidence.
 
 

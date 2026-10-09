@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
-import { ChevronDown, CirclePower, Download, Filter, Pencil, Plus, ReceiptText, Search, ShieldCheck, ShieldX, Upload, UsersRound } from 'lucide-react';
+import { ChevronDown, CirclePower, Download, Filter, Pencil, Plus, ReceiptText, Search, ShieldCheck, ShieldX, Trash2, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { formatAdminDate, formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
@@ -49,11 +49,23 @@ export default function DoctorMaster() {
   useEffect(() => () => exportController.current?.abort(), []);
   const filters = { query: debounced, zone_id: zoneFilter, mr_id: mrFilter, state: stateFilter, status: statusFilter };
   const normalizedFilters = Object.fromEntries(Object.entries(filters).map(([key, value]) => [key, value === 'all' ? '' : value]));
-  const { records, mrs, zones, states, missingMR, missingZone, total, filtered, loading, pending, error, feedback, retry, clearFeedback, changeStatus, changeVerification, shiftMR, changeContactRequirement } = useDoctors({ ...normalizedFilters, limit: pageSize, offset: (page - 1) * pageSize });
+  const { records, mrs, zones, states, missingMR, missingZone, total, filtered, loading, pending, error, feedback, retry, clearFeedback, changeStatus, changeVerification, shiftMR, changeContactRequirement, remove } = useDoctors({ ...normalizedFilters, limit: pageSize, offset: (page - 1) * pageSize });
   const [selected, setSelected] = useState([]);
   const [confirming, setConfirming] = useState(null);
   const [targetMR, setTargetMR] = useState('');
   const [actionError, setActionError] = useState('');
+  const refreshButton = useRef(null);
+  const [focusAfterDelete, setFocusAfterDelete] = useState(false);
+  useEffect(() => {
+    if (!focusAfterDelete || confirming || loading || pending) return;
+    const frame = requestAnimationFrame(() => {
+      if (refreshButton.current && !refreshButton.current.disabled) {
+        refreshButton.current.focus();
+        setFocusAfterDelete(false);
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [focusAfterDelete, confirming, loading, pending]);
   useEffect(() => { const timer = setTimeout(() => { setDebounced(search.trim()); setPage(1); }, 250); return () => clearTimeout(timer); }, [search]);
   useEffect(() => { setSelected([]); }, [page, pageSize, records]);
   const pageCount = Math.max(1, Math.ceil(filtered / pageSize));
@@ -86,13 +98,17 @@ export default function DoctorMaster() {
     if (!confirming || pending) return;
     let result;
     if (confirming.type === 'status') result = await changeStatus(confirming.snapshots[0], confirming.value);
+    if (confirming.type === 'delete') result = await remove(confirming.snapshots[0]);
     if (confirming.type === 'contact') result = await changeContactRequirement(confirming.snapshots[0], confirming.value);
     if (confirming.type === 'verification') result = await changeVerification(confirming.snapshots, confirming.value);
     if (confirming.type === 'shift') {
       if (!targetMR || !mrById.has(targetMR)) { setActionError('Choose an available MR.'); return; }
       result = await shiftMR(confirming.snapshots, targetMR);
     }
-    if (result?.success) { setConfirming(null); setActionError(''); setSelected([]); }
+    if (result?.success) {
+      if (confirming.type === 'delete') setFocusAfterDelete(true);
+      setConfirming(null); setActionError(''); setSelected([]);
+    }
     else setActionError(result?.error || 'The change could not be saved. Refresh records and try again.');
   }
   async function exportVisible(format) {
@@ -123,6 +139,7 @@ export default function DoctorMaster() {
       <button type="button" className="admin-icon-button" title={record.verification === 'verified' ? 'Unverify' : 'Verify'} aria-label={`${record.verification === 'verified' ? 'Unverify' : 'Verify'} ${record.name}`} onClick={() => openConfirmation({ type: 'verification', ids: [record.id], value: record.verification === 'verified' ? 'unverified' : 'verified' })} data-testid={`button-verification-doctor-${suffix}`}>{record.verification === 'verified' ? <ShieldX size={16} aria-hidden="true" /> : <ShieldCheck size={16} aria-hidden="true" />}</button>
       <button type="button" className="admin-icon-button" title={record.status === 'active' ? 'Inactivate' : 'Activate'} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} onClick={() => openConfirmation({ type: 'status', id: record.id, name: record.name, value: record.status === 'active' ? 'inactive' : 'active' })} data-testid={`button-toggle-doctor-${suffix}`}><CirclePower size={16} aria-hidden="true" /></button>
       </>}
+      {can.delete && <button type="button" className="admin-icon-button" title="Delete doctor" aria-label={`Delete ${record.name}`} onClick={() => openConfirmation({ type: 'delete', id: record.id, name: record.name })} data-testid={`button-delete-doctor-${suffix}`}><Trash2 size={16} aria-hidden="true" /></button>}
     </fieldset>;
   }
   function identity(record, mobile = false) {
@@ -162,7 +179,7 @@ export default function DoctorMaster() {
       <div className="admin-page-head">
         <div><p className="admin-page-head__eyebrow">Masters / Care network</p><h1>Doctor Master</h1><p className="admin-page-head__description">Shared server profiles, MR assignments and verification. No doctor login or payment ledger is created.</p></div>
         <div className="doctor-master__head-actions">
-          <button type="button" className="admin-button admin-button--secondary" disabled={loading || pending} onClick={() => { retry(); setSelected([]); closeConfirmation(); }} data-testid="button-refresh-doctors">Refresh records</button>
+          <button ref={refreshButton} type="button" className="admin-button admin-button--secondary" disabled={loading || pending} onClick={() => { retry(); setSelected([]); closeConfirmation(); }} data-testid="button-refresh-doctors">Refresh records</button>
           {can.import && <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/doctor')} data-testid="button-import-doctors"><Upload size={16} aria-hidden="true" /> Import data</button>}
           {can.export && <DropdownMenu.Root><DropdownMenu.Trigger asChild><button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-doctors"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button></DropdownMenu.Trigger>
             <DropdownMenu.Portal><DropdownMenu.Content className="admin-profile__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} aria-label="Doctor export format">
@@ -209,6 +226,7 @@ export default function DoctorMaster() {
           {!loading && <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={filtered} total={total} label="doctors" onPageChange={(n) => { setPage(n); setSelected([]); }} onPageSizeChange={(n) => { setPageSize(n); setPage(1); setSelected([]); }} testId="text-doctor-count" />}
         </>}
       </section>
+      {confirming?.type === 'delete' && <ConfirmationDialog destructive pending={pending} blocked={loading || Boolean(error)} title="Delete doctor?" description={`Remove “${confirming.name}” from normal use? Stored relationships, Patients and Opening Balances remain. This does not change business status or reassign records.`} actionLabel="Delete doctor" onConfirm={handleConfirm} onClose={closeConfirmation} error={actionError} />}
       {confirming?.type === 'status' && <ConfirmationDialog pending={pending} blocked={Boolean(error)} title={`${confirming.value === 'active' ? 'Activate' : 'Inactivate'} doctor?`} description={`Change “${confirming.name}” to ${confirming.value}? Verification is separate and this change does not create login access.`} actionLabel={confirming.value === 'active' ? 'Activate doctor' : 'Inactivate doctor'} onConfirm={handleConfirm} onClose={closeConfirmation} error={actionError} />}
       {confirming?.type === 'contact' && <ConfirmationDialog pending={pending} blocked={Boolean(error)} title={`Make phone and email ${confirming.value}?`} description={`Change the contact rule for “${confirming.name}”? ${confirming.value === 'required' ? 'Both fields must be filled before they can be required.' : 'Supplied phone and email must still have valid formats.'}`} actionLabel={`Make both ${confirming.value}`} onConfirm={handleConfirm} onClose={closeConfirmation} error={actionError} />}
       {confirming?.type === 'verification' && <ConfirmationDialog pending={pending} blocked={Boolean(error)} title={`${confirming.value === 'verified' ? 'Verify' : 'Unverify'} ${count === 1 ? 'doctor' : `${count} doctors`}?`} description={`Set verification to ${confirming.value} for ${count} selected ${count === 1 ? 'doctor' : 'doctors'}? This does not change active status or create login access.`} actionLabel={confirming.value === 'verified' ? 'Confirm verification' : 'Confirm unverification'} onConfirm={handleConfirm} onClose={closeConfirmation} error={actionError} />}

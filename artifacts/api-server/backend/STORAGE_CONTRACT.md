@@ -191,6 +191,18 @@ desynchronize them; identity-only owners retain original behavior. Empty
 `0020_patient_directory` never promotes existing Patient/file history.
 See [Patient Master operations](../../../docs/patient-master.md).
 
+Doctor/Patient directory deletion is metadata-only, not an owner/file lifecycle
+event. Nullable UTC deletion time and User attribution retain the original rows.
+Patient deletion increments the shared owner version for directory concurrency
+without changing assigned MR, owner active state, directory status, files or
+object keys. Later Doctor assignment shifts skip deleted Patient extensions.
+Deleted Doctors remain readable only as historical references; unchanged saved
+references may be retained, but new assignments/imports must reject them.
+Global registration/code/duplicate uniqueness remains reserved. Ordinary
+directory queries/exports/actions and pickers exclude tombstones. Staff delete
+grants authorize only these directory operations, never private-file deletion.
+See the coordinated `0028_directory_soft_delete` rollout in the backend README.
+
 ## Grants and failure boundaries
 
 Local grants contain no path/key, have bounded expiry and identity/version

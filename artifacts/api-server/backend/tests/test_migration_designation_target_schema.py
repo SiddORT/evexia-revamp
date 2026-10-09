@@ -77,10 +77,12 @@ def test_populated_previous_schema_preservation_generated_values_and_safe_refusa
                 connection.execute(text(sql))
         assert failure.value.orig.sqlstate == "428C9"  # GENERATED ALWAYS rejects explicit assignment.
     # Failure occurs before any DDL, including for tombstones; nothing is falsified.
+    with engine.connect() as connection:
+        installed_head = connection.scalar(text("SELECT version_num FROM alembic_version"))
     with pytest.raises(RuntimeError, match="original labels"):
         command.downgrade(config, "0025_vendor_phone")
     with engine.connect() as connection:
-        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0027_mr_designation_identity"
+        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == installed_head
         assert connection.scalar(text("SELECT count(*) FROM sales_targets")) == 3
     # Readiness must fail if a required new column is absent.
     with engine.begin() as connection:

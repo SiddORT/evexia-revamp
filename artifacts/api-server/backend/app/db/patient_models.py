@@ -1,6 +1,6 @@
 import uuid
-from datetime import date
-from sqlalchemy import CheckConstraint, Date, ForeignKey, Index, String, func
+from datetime import date, datetime
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 from app.db.models import Timestamps
@@ -35,6 +35,8 @@ class PatientDirectory(Timestamps, Base):
     country: Mapped[str] = mapped_column(String(100))
     created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     updated_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deleted_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
 
 
 Index("uq_patient_duplicate", func.lower(func.btrim(PatientDirectory.name)),

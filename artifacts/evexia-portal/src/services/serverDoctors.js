@@ -24,6 +24,7 @@ export async function allDoctorMRChoices(signal, saved) {
 export const createDoctor = (body) => doctorRequest('', { body });
 export const editDoctor = (record, body) => doctorRequest(`/${record.id}/edit`, { body: { ...body, expected_version: record.version } });
 export const statusDoctor = (record, status) => doctorRequest(`/${record.id}/status`, { body: { status, expected_version: record.version } });
+export const deleteDoctor = (record) => doctorRequest(`/${record.id}/delete`, { body: { expected_version: record.version } });
 export const contactDoctor = (record, contactRequirement) => doctorRequest(`/${record.id}/contact`, { body: { contactRequirement, expected_version: record.version } });
 export const bulkDoctors = (records, operation, value) => doctorRequest('/bulk', { body: {
   selected: records.map((record) => ({ id: record.id, expected_version: record.version })), operation,

@@ -116,6 +116,9 @@ class DoctorEdit(DoctorFields):
 class DoctorStatus(DoctorVersion):
     status: Literal["active", "inactive"]
 
+class DoctorDeletion(DoctorVersion):
+    """Only the concurrency version is client-owned."""
+
 
 class DoctorContact(DoctorVersion):
     contactRequirement: Literal["required", "optional"]

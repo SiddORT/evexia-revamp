@@ -2437,6 +2437,167 @@ export const SetDoctorContactRequirementResponse = zod.object({
 });
 
 /**
+ * @summary Delete
+ */
+export const DeleteDoctorDirectoryParams = zod.object({
+  doctor_id: zod.coerce.string().uuid(),
+});
+
+export const DeleteDoctorDirectoryBody = zod
+  .object({
+    expected_version: zod.number().int().min(1),
+  })
+  .describe("Only the concurrency version is client-owned.");
+
+export const deleteDoctorDirectoryResponseAddressLine1Max = 300;
+
+export const deleteDoctorDirectoryResponseAddressLine2Default = ``;
+export const deleteDoctorDirectoryResponseAddressLine2Max = 300;
+
+export const deleteDoctorDirectoryResponseAlternatePhoneDefault = ``;
+export const deleteDoctorDirectoryResponseAlternatePhoneMax = 20;
+
+export const deleteDoctorDirectoryResponseCityMax = 100;
+
+export const deleteDoctorDirectoryResponseClinicNameDefault = ``;
+export const deleteDoctorDirectoryResponseClinicNameMax = 200;
+
+export const deleteDoctorDirectoryResponseContactRequirementDefault = `optional`;
+export const deleteDoctorDirectoryResponseCountryMax = 100;
+
+export const deleteDoctorDirectoryResponseDaysLimitDefault = 0;
+export const deleteDoctorDirectoryResponseDaysLimitMin = 0;
+export const deleteDoctorDirectoryResponseDaysLimitMax = 2147483647;
+
+export const deleteDoctorDirectoryResponseDialCountryDefault = `IN`;
+export const deleteDoctorDirectoryResponseDrugLicenceNumberDefault = ``;
+export const deleteDoctorDirectoryResponseDrugLicenceNumberMax = 100;
+
+export const deleteDoctorDirectoryResponseEmailDefault = ``;
+export const deleteDoctorDirectoryResponseEmailMax = 320;
+
+export const deleteDoctorDirectoryResponseGstNumberDefault = ``;
+export const deleteDoctorDirectoryResponseGstNumberMax = 20;
+
+export const deleteDoctorDirectoryResponseInvoiceTypeDefault = `normal`;
+export const deleteDoctorDirectoryResponseLandmarkMax = 200;
+
+export const deleteDoctorDirectoryResponseNameMax = 200;
+
+export const deleteDoctorDirectoryResponseOrderDiscountDefault = `0.00`;
+export const deleteDoctorDirectoryResponseOrderDiscountRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,2}0*$",
+);
+export const deleteDoctorDirectoryResponsePaymentLimitDefault = `0.00`;
+export const deleteDoctorDirectoryResponsePaymentLimitRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,13}|(?=[\\d.]{1,16}0*$)\\d{0,13}\\.\\d{0,2}0*$)",
+);
+export const deleteDoctorDirectoryResponsePhoneDefault = ``;
+export const deleteDoctorDirectoryResponsePhoneMax = 20;
+
+export const deleteDoctorDirectoryResponsePincodeMin = 2;
+export const deleteDoctorDirectoryResponsePincodeMax = 12;
+
+export const deleteDoctorDirectoryResponseQualificationMax = 200;
+
+export const deleteDoctorDirectoryResponseRegistrationNumberMax = 100;
+
+export const deleteDoctorDirectoryResponseStateMax = 100;
+
+export const deleteDoctorDirectoryResponseStatusDefault = `active`;
+
+export const DeleteDoctorDirectoryResponse = zod.object({
+  addressLine1: zod
+    .string()
+    .min(1)
+    .max(deleteDoctorDirectoryResponseAddressLine1Max),
+  addressLine2: zod
+    .string()
+    .max(deleteDoctorDirectoryResponseAddressLine2Max)
+    .default(deleteDoctorDirectoryResponseAddressLine2Default),
+  alternatePhone: zod
+    .string()
+    .max(deleteDoctorDirectoryResponseAlternatePhoneMax)
+    .default(deleteDoctorDirectoryResponseAlternatePhoneDefault),
+  assignmentWarnings: zod.array(zod.string()),
+  city: zod.string().min(1).max(deleteDoctorDirectoryResponseCityMax),
+  clinicName: zod
+    .string()
+    .max(deleteDoctorDirectoryResponseClinicNameMax)
+    .default(deleteDoctorDirectoryResponseClinicNameDefault),
+  contactRequirement: zod
+    .enum(["required", "optional"])
+    .default(deleteDoctorDirectoryResponseContactRequirementDefault),
+  country: zod.string().min(1).max(deleteDoctorDirectoryResponseCountryMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dateOfJoining: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  daysLimit: zod
+    .number()
+    .int()
+    .min(deleteDoctorDirectoryResponseDaysLimitMin)
+    .max(deleteDoctorDirectoryResponseDaysLimitMax)
+    .default(deleteDoctorDirectoryResponseDaysLimitDefault),
+  dialCountry: zod
+    .enum(["IN", "US", "GB", "AE"])
+    .default(deleteDoctorDirectoryResponseDialCountryDefault),
+  drugLicenceNumber: zod
+    .string()
+    .max(deleteDoctorDirectoryResponseDrugLicenceNumberMax)
+    .default(deleteDoctorDirectoryResponseDrugLicenceNumberDefault),
+  email: zod
+    .string()
+    .max(deleteDoctorDirectoryResponseEmailMax)
+    .default(deleteDoctorDirectoryResponseEmailDefault),
+  gstNumber: zod
+    .string()
+    .max(deleteDoctorDirectoryResponseGstNumberMax)
+    .default(deleteDoctorDirectoryResponseGstNumberDefault),
+  id: zod.string().uuid(),
+  invoiceType: zod
+    .enum(["normal", "gst"])
+    .default(deleteDoctorDirectoryResponseInvoiceTypeDefault),
+  landmark: zod.string().min(1).max(deleteDoctorDirectoryResponseLandmarkMax),
+  mrId: zod.string().uuid(),
+  mrName: zod.string(),
+  name: zod.string().min(1).max(deleteDoctorDirectoryResponseNameMax),
+  orderDiscount: zod
+    .string()
+    .regex(deleteDoctorDirectoryResponseOrderDiscountRegExp)
+    .default(deleteDoctorDirectoryResponseOrderDiscountDefault),
+  paymentLimit: zod
+    .string()
+    .regex(deleteDoctorDirectoryResponsePaymentLimitRegExp)
+    .default(deleteDoctorDirectoryResponsePaymentLimitDefault),
+  phone: zod
+    .string()
+    .max(deleteDoctorDirectoryResponsePhoneMax)
+    .default(deleteDoctorDirectoryResponsePhoneDefault),
+  pincode: zod
+    .string()
+    .min(deleteDoctorDirectoryResponsePincodeMin)
+    .max(deleteDoctorDirectoryResponsePincodeMax),
+  qualification: zod
+    .string()
+    .min(1)
+    .max(deleteDoctorDirectoryResponseQualificationMax),
+  registrationNumber: zod
+    .string()
+    .min(1)
+    .max(deleteDoctorDirectoryResponseRegistrationNumberMax),
+  state: zod.string().min(1).max(deleteDoctorDirectoryResponseStateMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(deleteDoctorDirectoryResponseStatusDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  verification: zod.enum(["verified", "unverified"]),
+  version: zod.number().int(),
+  zoneId: zod.union([zod.string().uuid(), zod.null()]),
+  zoneName: zod.string(),
+});
+
+/**
  * @summary Edit
  */
 export const EditDoctorDirectoryParams = zod.object({
@@ -5798,6 +5959,99 @@ export const GetPatientDirectoryResponse = zod.object({
   status: zod
     .enum(["active", "inactive"])
     .default(getPatientDirectoryResponseStatusDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+  zoneId: zod.union([zod.string().uuid(), zod.null()]),
+  zoneName: zod.string(),
+});
+
+/**
+ * @summary Delete
+ */
+export const DeletePatientDirectoryParams = zod.object({
+  patient_id: zod.coerce.string().uuid(),
+});
+
+export const DeletePatientDirectoryBody = zod
+  .object({
+    expected_version: zod.number().int().min(1),
+  })
+  .describe("Directory deletion does not change the Patient owner lifecycle.");
+
+export const deletePatientDirectoryResponseAddressLine1Max = 300;
+
+export const deletePatientDirectoryResponseAddressLine2Default = ``;
+export const deletePatientDirectoryResponseAddressLine2Max = 300;
+
+export const deletePatientDirectoryResponseCityMax = 100;
+
+export const deletePatientDirectoryResponseCountryMax = 100;
+
+export const deletePatientDirectoryResponseDialCountryDefault = `IN`;
+export const deletePatientDirectoryResponseEmailDefault = ``;
+export const deletePatientDirectoryResponseEmailMax = 320;
+
+export const deletePatientDirectoryResponseInstructionsLanguageMax = 100;
+
+export const deletePatientDirectoryResponseLandmarkMax = 200;
+
+export const deletePatientDirectoryResponseNameMax = 200;
+
+export const deletePatientDirectoryResponsePhoneMax = 20;
+
+export const deletePatientDirectoryResponsePincodeMin = 2;
+export const deletePatientDirectoryResponsePincodeMax = 12;
+
+export const deletePatientDirectoryResponseStateMax = 100;
+
+export const deletePatientDirectoryResponseStatusDefault = `active`;
+
+export const DeletePatientDirectoryResponse = zod.object({
+  addressLine1: zod
+    .string()
+    .min(1)
+    .max(deletePatientDirectoryResponseAddressLine1Max),
+  addressLine2: zod
+    .string()
+    .max(deletePatientDirectoryResponseAddressLine2Max)
+    .default(deletePatientDirectoryResponseAddressLine2Default),
+  assignmentWarnings: zod.array(zod.string()),
+  city: zod.string().min(1).max(deletePatientDirectoryResponseCityMax),
+  code: zod.string(),
+  country: zod.string().min(1).max(deletePatientDirectoryResponseCountryMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dateOfBirth: zod.coerce.date(),
+  dialCountry: zod
+    .enum(["IN", "US", "GB", "AE"])
+    .default(deletePatientDirectoryResponseDialCountryDefault),
+  doctorId: zod.string().uuid(),
+  doctorName: zod.string(),
+  doctorRegistrationNumber: zod.string(),
+  email: zod
+    .string()
+    .max(deletePatientDirectoryResponseEmailMax)
+    .default(deletePatientDirectoryResponseEmailDefault),
+  gender: zod.enum(["male", "female", "other", "prefer not to say"]),
+  id: zod.string().uuid(),
+  instructionsLanguage: zod
+    .string()
+    .min(1)
+    .max(deletePatientDirectoryResponseInstructionsLanguageMax),
+  landmark: zod.string().min(1).max(deletePatientDirectoryResponseLandmarkMax),
+  mrId: zod.union([zod.string().uuid(), zod.null()]),
+  mrName: zod.string(),
+  name: zod.string().min(1).max(deletePatientDirectoryResponseNameMax),
+  phone: zod.string().min(1).max(deletePatientDirectoryResponsePhoneMax),
+  pincode: zod
+    .string()
+    .min(deletePatientDirectoryResponsePincodeMin)
+    .max(deletePatientDirectoryResponsePincodeMax),
+  state: zod.string().min(1).max(deletePatientDirectoryResponseStateMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(deletePatientDirectoryResponseStatusDefault),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
   version: zod.number().int(),

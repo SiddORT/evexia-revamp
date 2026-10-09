@@ -76,6 +76,7 @@ import type {
   DoctorBulk,
   DoctorChoices,
   DoctorContact,
+  DoctorDeletion,
   DoctorEdit,
   DoctorFields,
   DoctorFilters,
@@ -189,6 +190,7 @@ import type {
   OpeningBalanceStatus,
   OpeningBalanceVersion,
   PatientChoices,
+  PatientDeletion,
   PatientDirectoryResponse,
   PatientEdit,
   PatientFields,
@@ -4907,6 +4909,124 @@ export const useSetDoctorContactRequirement = <
   TContext
 > => {
   return useMutation(getSetDoctorContactRequirementMutationOptions(options));
+};
+
+export const getDeleteDoctorDirectoryUrl = (doctorId: string) => {
+  return `/api/v1/admin/doctors/${doctorId}/delete`;
+};
+
+/**
+ * @summary Delete
+ */
+export const deleteDoctorDirectory = async (
+  doctorId: string,
+  doctorDeletion: DoctorDeletion,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DoctorResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<DoctorResponse>(getDeleteDoctorDirectoryUrl(doctorId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(doctorDeletion),
+  });
+};
+
+export const getDeleteDoctorDirectoryMutationKey = () =>
+  ["deleteDoctorDirectory"] as const;
+
+export const getDeleteDoctorDirectoryMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteDoctorDirectory>>,
+    TError,
+    DeleteDoctorDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteDoctorDirectory>>,
+  TError,
+  DeleteDoctorDirectoryMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteDoctorDirectoryMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteDoctorDirectory>>,
+    DeleteDoctorDirectoryMutationVariables
+  > = (props) => {
+    const { doctorId, data } = props ?? {};
+
+    return deleteDoctorDirectory(doctorId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteDoctorDirectoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteDoctorDirectory>>
+>;
+export type DeleteDoctorDirectoryMutationBody = BodyType<DoctorDeletion>;
+export type DeleteDoctorDirectoryMutationError = ErrorType<ErrorEnvelope>;
+export type DeleteDoctorDirectoryMutationVariables = {
+  doctorId: string;
+  data: BodyType<DoctorDeletion>;
+};
+
+/**
+ * @summary Delete
+ */
+export const useDeleteDoctorDirectory = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteDoctorDirectory>>,
+    TError,
+    DeleteDoctorDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteDoctorDirectory>>,
+  TError,
+  DeleteDoctorDirectoryMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteDoctorDirectoryMutationOptions(options));
 };
 
 export const getEditDoctorDirectoryUrl = (doctorId: string) => {
@@ -10279,6 +10399,127 @@ export function useGetPatientDirectory<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getDeletePatientDirectoryUrl = (patientId: string) => {
+  return `/api/v1/admin/patients/${patientId}/delete`;
+};
+
+/**
+ * @summary Delete
+ */
+export const deletePatientDirectory = async (
+  patientId: string,
+  patientDeletion: PatientDeletion,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PatientDirectoryResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<PatientDirectoryResponse>(
+    getDeletePatientDirectoryUrl(patientId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(patientDeletion),
+    },
+  );
+};
+
+export const getDeletePatientDirectoryMutationKey = () =>
+  ["deletePatientDirectory"] as const;
+
+export const getDeletePatientDirectoryMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePatientDirectory>>,
+    TError,
+    DeletePatientDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deletePatientDirectory>>,
+  TError,
+  DeletePatientDirectoryMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeletePatientDirectoryMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deletePatientDirectory>>,
+    DeletePatientDirectoryMutationVariables
+  > = (props) => {
+    const { patientId, data } = props ?? {};
+
+    return deletePatientDirectory(patientId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeletePatientDirectoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deletePatientDirectory>>
+>;
+export type DeletePatientDirectoryMutationBody = BodyType<PatientDeletion>;
+export type DeletePatientDirectoryMutationError = ErrorType<ErrorEnvelope>;
+export type DeletePatientDirectoryMutationVariables = {
+  patientId: string;
+  data: BodyType<PatientDeletion>;
+};
+
+/**
+ * @summary Delete
+ */
+export const useDeletePatientDirectory = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePatientDirectory>>,
+    TError,
+    DeletePatientDirectoryMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deletePatientDirectory>>,
+  TError,
+  DeletePatientDirectoryMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeletePatientDirectoryMutationOptions(options));
+};
 
 export const getEditPatientDirectoryUrl = (patientId: string) => {
   return `/api/v1/admin/patients/${patientId}/edit`;

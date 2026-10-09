@@ -22,6 +22,27 @@ from test_patients import fields
 BASE = "/api/v1/admin/patients"
 
 
+def test_directory_delete_retains_file_access_owner_and_keys(files_env, monkeypatch):
+    env = files_env
+    setup_graph(env)
+    file = saved_upload(env, monkeypatch)
+    headers = env["auth"](env["owner"])
+    with Session(env["engine"]) as db:
+        owner = db.get(Patient, env["patient"].id)
+        before = (owner.assigned_mr_id, owner.is_active, owner.version)
+        key = db.get(FileRecord, uuid.UUID(file["id"])).object_key
+    response = env["api"].post(BASE + f"/{env['patient'].id}/delete", headers=env["auth"](env["admin"]),
+                               json={"expected_version": before[2]})
+    assert response.status_code == 200, response.text
+    # Directory-only deletion does not revoke owner-based file authority.
+    assert env["api"].get(f"/api/v1/files/{file['id']}/download", headers=headers).status_code == 200
+    with Session(env["engine"]) as db:
+        owner = db.get(Patient, env["patient"].id)
+        assert (owner.assigned_mr_id, owner.is_active, owner.version) == (*before[:2], before[2] + 1)
+        assert db.get(FileRecord, uuid.UUID(file["id"])).object_key == key
+        assert db.get(FileRecord, uuid.UUID(file["id"])).state == "verified"
+
+
 def setup_graph(env):
     """Augment only this disposable fixture's owners for file race tests."""
     with Session(env["engine"]) as db:

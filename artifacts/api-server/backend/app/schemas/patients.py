@@ -64,6 +64,9 @@ class PatientEdit(PatientFields):
 class PatientStatus(DoctorVersion):
     status: Literal["active", "inactive"]
 
+class PatientDeletion(DoctorVersion):
+    """Directory deletion does not change the Patient owner lifecycle."""
+
 
 class PatientDirectoryResponse(PatientFields):
     id: uuid.UUID

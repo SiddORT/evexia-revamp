@@ -4,6 +4,14 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a mock Docto
 
 ## Run & operate
 
+- Doctor/Patient directory-only soft deletion uses additive `0028_directory_soft_delete`
+  after accepted `0027_mr_designation_identity`. Nullable time/User metadata retains
+  records and global uniqueness; deleted records are absent from live masters and
+  choices. Saved Doctor references remain readable/unavailable and can be retained
+  unchanged; Patient identity, status, assigned MR and private files are preserved.
+  Readiness requires the migration; managed schema/API/frontend rollout needs
+  separate approval and a coordinated backup. See the Doctor/Patient operations docs.
+
 - Live MR designation uses required server UUID identity and derived readable names, not free text. Forward `0027_mr_designation_identity` follows the reduced designation cleanup; all historical labels must uniquely normalize to catalogue records or migration aborts. Managed rollout needs separate approval, backup and coordinated schema/API/frontend release; populated downgrade is refused. Staff/local text stays unchanged. See `docs/mr-master.md`.
 
 - The managed `artifacts/evexia-portal: web` workflow serves the portal preview.

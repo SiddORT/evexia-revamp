@@ -210,7 +210,7 @@ def associated_doctors(db, actor, record_id, limit, offset):
         authorize(db, actor, lock=False)
         row = find(db, record_id)
         zone = db.get(Zone, row.zoneId)
-        clauses = [DoctorDirectory.mrId == row.id]
+        clauses = [DoctorDirectory.mrId == row.id, DoctorDirectory.deleted_at.is_(None)]
         count = db.scalar(select(func.count()).select_from(DoctorDirectory).where(*clauses))
         rows = db.scalars(select(DoctorDirectory).where(*clauses)
                           .order_by(DoctorDirectory.name, DoctorDirectory.id).limit(limit).offset(offset))

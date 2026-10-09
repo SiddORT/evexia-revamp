@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
-import { CirclePower, Download, History, Pencil, Plus, Search, Upload, UsersRound } from 'lucide-react';
+import { CirclePower, Download, History, Pencil, Plus, Search, Trash2, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { formatAdminDate, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
@@ -32,17 +32,30 @@ export default function PatientMaster() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   useEffect(() => { const timer = setTimeout(() => setDebouncedSearch(search), 250); return () => clearTimeout(timer); }, [search]);
   const params = { query: debouncedSearch, zone_id: zone, mr_id: mr, status, limit: pageSize, offset: (page - 1) * pageSize };
-  const { records, mrs, zones, total, filtered, loading, pending, error, feedback, retry, clearFeedback, changeStatus } = usePatients(params);
+  const { records, mrs, zones, total, filtered, loading, pending, error, feedback, retry, clearFeedback, changeStatus, remove } = usePatients(params);
   const [exporting, setExporting] = useState(false);
   const exportBusy = useRef(false);
   const [confirming, setConfirming] = useState(null);
+  const [deleting, setDeleting] = useState(null);
+  const refreshButton = useRef(null);
+  const [focusAfterDelete, setFocusAfterDelete] = useState(false);
+  useEffect(() => {
+    if (!focusAfterDelete || deleting || loading || pending) return;
+    const frame = requestAnimationFrame(() => {
+      if (refreshButton.current && !refreshButton.current.disabled) {
+        refreshButton.current.focus();
+        setFocusAfterDelete(false);
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [focusAfterDelete, deleting, loading, pending]);
   const [actionError, setActionError] = useState('');
   const visible = records;
   const pagination = { page, pageSize, pageCount: Math.max(1, Math.ceil(filtered / pageSize)), startIndex: (page - 1) * pageSize,
     endIndex: Math.min(page * pageSize, filtered), pageRows: records, resetPage: () => setPage(1), setPage, setPageSize };
   const hasMissing = records.some((record) => record.assignmentWarnings?.length);
   useEffect(() => { if (!loading && page > pagination.pageCount) setPage(pagination.pageCount); }, [loading, page, pagination.pageCount]);
-  function refresh() { retry(); setActionError(''); setConfirming(null); }
+  function refresh() { retry(); setActionError(''); setConfirming(null); setDeleting(null); }
   async function exportVisible(format) {
     if (exportBusy.current) return;
     exportBusy.current = true; setExporting(true);
@@ -55,6 +68,7 @@ export default function PatientMaster() {
   }
   function actions(record, compact = false) {
     return <div className={compact ? 'admin-mr-card__actions' : 'admin-table__actions'}>
+      {can.delete && <button type="button" disabled={pending || loading || Boolean(error)} className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`Delete ${record.name}`} title="Delete patient" onClick={() => { setActionError(''); setDeleting(record); }} data-testid={`button-delete-patient-${compact ? 'mobile-' : ''}${record.id}`}><Trash2 size={16} aria-hidden="true" />{compact && 'Delete'}</button>}
       {can.protected && <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button patient-history-action'} aria-label={`Dosage History for ${record.name}`} title="Dosage History" onClick={() => navigate(`${base}/${encodeURIComponent(record.id)}/dosage-history`)} data-testid={`button-dosage-history-patient-${record.id}`}><History size={16} aria-hidden="true" />Dosage History</button>}
       {can.edit && <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`Edit ${record.name}`} title="Edit" onClick={() => { clearFeedback(); navigate(`${base}/${encodeURIComponent(record.id)}`); }} data-testid={`button-edit-patient-${record.id}`}><Pencil size={16} />{compact && 'Edit'}</button>}
       {can.edit && <button type="button" className={compact ? 'admin-mr-card__action' : 'admin-icon-button'} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} title={record.status === 'active' ? 'Inactivate' : 'Activate'} onClick={() => { setActionError(''); setConfirming(record); }} data-testid={`button-toggle-patient-${record.id}`}><CirclePower size={16} />{compact && (record.status === 'active' ? 'Inactivate' : 'Activate')}</button>}
@@ -83,7 +97,7 @@ export default function PatientMaster() {
   return <AdminLayout title="Patient Master">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Patients</p><h1>Patient Master</h1><p className="admin-page-head__description">Protected shared records. Doctor, MR and Zone references come from the server. No dosage history is recorded here.</p></div>
       <div className="admin-mr-head-actions">
-        <button className="admin-button admin-button--secondary" type="button" onClick={refresh}>Refresh records</button>
+        <button ref={refreshButton} className="admin-button admin-button--secondary" type="button" onClick={refresh}>Refresh records</button>
         {can.import && <button className="admin-button admin-button--secondary" type="button" disabled={Boolean(error)} onClick={() => navigate(`${base}/import`)} data-testid="button-import-patients"><Upload size={16} /> Import data</button>}
         {can.export && <DropdownMenu.Root><DropdownMenu.Trigger asChild><button className="admin-button admin-button--secondary" type="button" aria-busy={exporting} disabled={Boolean(error) || loading || search !== debouncedSearch || !filtered} data-testid="button-export-patients"><Download size={16} />{exporting ? 'Preparing export…' : 'Export data'}</button></DropdownMenu.Trigger>
           <DropdownMenu.Portal><DropdownMenu.Content className="admin-export-menu" sideOffset={6}>
@@ -94,7 +108,7 @@ export default function PatientMaster() {
       </div>
     </div>
     {(feedback || saved) && <div className="admin-feedback" role="status">{feedback || (saved === 'imported' ? 'Patients imported successfully.' : `Patient ${saved === 'added' ? 'added' : 'updated'} successfully.`)}</div>}
-    {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
+    {actionError && !confirming && !deleting && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     <section className="admin-panel" aria-label="Patient list">
       <div className="admin-toolbar"><div className="admin-toolbar__fields">
         <label className="admin-search"><Search size={16} /><span className="sr-only">Search patient name or ID</span><input placeholder="Search name or patient ID" value={search} onChange={(e) => { setSearch(e.target.value); pagination.resetPage(); }} data-testid="input-search-patients" /></label>
@@ -117,6 +131,10 @@ export default function PatientMaster() {
     {confirming && <ConfirmationDialog title={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} patient?`} description={`Change “${confirming.name}” to ${confirming.status === 'active' ? 'inactive' : 'active'}? Inactive patients deny MR file access; retained files are not deleted.`} actionLabel="Confirm status" pending={pending} blocked={Boolean(error)} error={actionError} onClose={() => { if (!pending) setConfirming(null); }} onConfirm={async () => {
       const result = await changeStatus(confirming, confirming.status === 'active' ? 'inactive' : 'active');
       if (result.success) { setConfirming(null); setActionError(''); } else setActionError(result.error);
+    }} />}
+    {deleting && <ConfirmationDialog destructive title="Delete patient?" description={`Remove “${deleting.name}” from normal use? The Patient identity, stored relationships, assigned MR, files and history remain. Business status and private-file access rules do not change.`} actionLabel="Delete patient" pending={pending} blocked={loading || Boolean(error)} error={actionError} onClose={() => { if (!pending) { setDeleting(null); setActionError(''); } }} onConfirm={async () => {
+      const result = await remove(deleting);
+      if (result.success) { setFocusAfterDelete(true); setDeleting(null); setActionError(''); } else setActionError(result.error);
     }} />}
   </AdminLayout>;
 }

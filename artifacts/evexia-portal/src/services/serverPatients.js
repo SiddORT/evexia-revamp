@@ -16,6 +16,7 @@ export async function patientMRChoices(signal) {
 export const createPatient = (body) => patientRequest('', { body });
 export const editPatient = (record, body) => patientRequest(`/${record.id}/edit`, { body: { ...body, expected_version: record.version } });
 export const statusPatient = (record, status) => patientRequest(`/${record.id}/status`, { body: { status, expected_version: record.version } });
+export const deletePatient = (record) => patientRequest(`/${record.id}/delete`, { body: { expected_version: record.version } });
 export const samplePatients = (format, signal) => patientRequest('/sample', { params: { format }, download: true, signal });
 export const exportPatients = (params, format, signal) => patientRequest('/export', { params: { ...clean(params), format }, download: true, signal });
 export const reviewPatients = (file, signal) => patientRequest('/import/review', { file, params: { filename: file.name }, signal });

@@ -75,8 +75,10 @@ def projection(db, row):
                 createdAt=row.created_at, updatedAt=row.updated_at)
 
 
-def predicates(query="", status="all", zone_id="", mr_id="", state=""):
-    clauses = []
+def predicates(query="", status="all", zone_id="", mr_id="", state="", *, retained_assignments=False):
+    # Only historical relationship queries opt in. Live masters, actions,
+    # exports and assignment choices always use the tombstone-excluding default.
+    clauses = [] if retained_assignments else [Doctor.deleted_at.is_(None)]
     live_mrs = select(MRDirectory.id).where(MRDirectory.deleted_at.is_(None))
     usable_zone_mrs = live_mrs.where(MRDirectory.zoneId.in_(select(Zone.id).where(Zone.deleted_at.is_(None))))
     if query.strip():
@@ -100,7 +102,7 @@ def listing(db, actor, query="", status="all", zone_id="", mr_id="", state="", l
     def work():
         authorize(db, actor, lock=False)
         clauses = predicates(query, status, zone_id, mr_id, state)
-        total = db.scalar(select(func.count()).select_from(Doctor))
+        total = db.scalar(select(func.count()).select_from(Doctor).where(Doctor.deleted_at.is_(None)))
         filtered = db.scalar(select(func.count()).select_from(Doctor).where(*clauses))
         rows = db.scalars(select(Doctor).where(*clauses).order_by(Doctor.created_at.desc(), Doctor.id.desc()).limit(limit).offset(offset))
         result = dict(items=[projection(db, row) for row in rows], total=total, filtered=filtered, limit=limit, offset=offset)
@@ -110,7 +112,7 @@ def listing(db, actor, query="", status="all", zone_id="", mr_id="", state="", l
 
 
 def find(db, record_id, lock=False):
-    query = select(Doctor).where(Doctor.id == record_id).execution_options(populate_existing=True)
+    query = select(Doctor).where(Doctor.id == record_id, Doctor.deleted_at.is_(None)).execution_options(populate_existing=True)
     row = db.scalar(query.with_for_update() if lock else query)
     if not row:
         raise DoctorError("Doctor not found. Return to the directory or refresh.", 404, "not_found")
@@ -153,7 +155,7 @@ def choices(db, actor, query="", limit=100, offset=0, include_saved=None):
 def filters(db, actor):
     def work():
         authorize(db, actor, lock=False)
-        result = dict(states=list(db.scalars(select(Doctor.state).distinct().order_by(Doctor.state))),
+        result = dict(states=list(db.scalars(select(Doctor.state).where(Doctor.deleted_at.is_(None)).distinct().order_by(Doctor.state))),
                       missingMR=bool(db.scalar(select(Doctor.id).where(*predicates(mr_id="missing")).limit(1))),
                       missingZone=bool(db.scalar(select(Doctor.id).where(*predicates(zone_id="missing")).limit(1))))
         db.commit()
@@ -218,8 +220,12 @@ def mutate(db, actor, record_id, body, operation):
             if body.contactRequirement == "required" and (not row.phone or not row.email):
                 raise DoctorError("Add valid phone and email in Edit before making both required.", 422, "doctor_contact_required")
             row.contactRequirement = body.contactRequirement
+        elif operation == "delete":
+            row.deleted_at, row.deleted_by = utcnow(), current.user.id
+        else:
+            raise ValueError("Unsupported Doctor mutation")
         row.version += 1
-        row.updated_at, row.updated_by = utcnow(), current.user.id
+        row.updated_at, row.updated_by = row.deleted_at if operation == "delete" else utcnow(), current.user.id
         audit(db, current, row, operation)
         db.flush()
         result = projection(db, row)

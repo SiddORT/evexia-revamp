@@ -40,6 +40,8 @@ test('Doctor transport guards identity, downloads, full MR choices and ambiguous
     const all = await service.allDoctorMRChoices(undefined, saved.id);
     assert.equal(all.length, 106, 'No silent truncation at page 1; include missing/deleted saved assignment.');
     await service.editDoctor(saved, { name: 'Edited', paymentLimit: '9999999999999.99' });
+    await service.deleteDoctor(saved);
+    assert.deepEqual(JSON.parse(calls.find((c) => c.url.includes('/delete')).options.body), { expected_version: 7 });
     await service.bulkDoctors([saved], 'verification', 'verified');
     await service.lookupDoctorPIN('110001');
     const edit = calls.find((c) => c.url.includes('/edit'));
@@ -53,7 +55,7 @@ test('Doctor transport guards identity, downloads, full MR choices and ambiguous
     assert.ok(download.url.includes('mr_id=' + saved.id));
     mode = 'uncertain';
     const before = calls.length;
-    await assert.rejects(service.createDoctor({}), (e) => e.ambiguous);
+    await assert.rejects(service.deleteDoctor(saved), (e) => e.ambiguous);
     assert.equal(calls.length, before + 1, 'Writes are never automatically replayed.');
     mode = 'late';
     const ready = new Promise((r) => { arrived = r; });

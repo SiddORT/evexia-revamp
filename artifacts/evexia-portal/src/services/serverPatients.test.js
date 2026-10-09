@@ -46,6 +46,8 @@ test('Patient transport protects filters, expected versions, review bytes and la
     await service.listPatients({ query: 'PAT-search', zone_id: saved.id, status: 'inactive', limit: 2, offset: 2 });
     await service.editPatient(saved, { name: 'Edited', dateOfBirth: '2000-01-01', dialCountry: 'GB', phone: '0712345678' });
     await service.statusPatient(saved, 'inactive');
+    await service.deletePatient(saved);
+    assert.deepEqual(JSON.parse(calls.find((c) => c.url.includes('/delete')).options.body), { expected_version: 9 });
     const file = new File(['exact synthetic bytes'], 'patients.csv');
     await service.reviewPatients(file);
     await service.importPatients(file, 'd'.repeat(64));
@@ -60,7 +62,7 @@ test('Patient transport protects filters, expected versions, review bytes and la
     for (const call of calls.filter((c) => c.url.includes('/admin/patients'))) assert.equal(call.options.cache, 'no-store');
     mode = 'uncertain';
     const before = calls.length;
-    await assert.rejects(service.createPatient({}), (e) => e.ambiguous);
+    await assert.rejects(service.deletePatient(saved), (e) => e.ambiguous);
     assert.equal(calls.length, before + 1);
     mode = 'late';
     const ready = new Promise((r) => { arrived = r; });

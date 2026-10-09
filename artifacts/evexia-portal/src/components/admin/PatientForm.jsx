@@ -264,7 +264,7 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
         <section className="mr-form__section" id="patient-panel-care" role="tabpanel" aria-labelledby="patient-tab-care" tabIndex={0} hidden={activeTab !== 'care'}>
           <div className="mr-form__section-head"><h3 className="mr-form__section-title">Care & assignment</h3></div>
           <div className="mr-form__grid">
-            <PatientDoctorSelect value={values.doctorId} original={patient?.doctorId} blocked={blocked || saving} error={errors.doctorId} onChange={(value) => change('doctorId', value)} />
+            <PatientDoctorSelect value={values.doctorId} original={patient?.doctorId} savedName={patient?.doctorName} blocked={blocked || saving} error={errors.doctorId} onChange={(value) => change('doctorId', value)} />
             {renderField('instructionsLanguage', 'Instructions language', {
               selectOptions: [...new Set([...LANGUAGES, values.instructionsLanguage].filter(Boolean))].map((language) => ({ value: language, label: language })),
             })}

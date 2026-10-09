@@ -13,16 +13,57 @@ Local Patient/Doctor/MR datasets are untouched and remain exclusively available
 to legacy consumers. There is no automatic migration, mirror, sample seeding or
 local fallback. Configure live Zone, Headquarter, MR and Doctor first.
 
-Only the protected singleton system Super Admin with `admin.access` and current
-policy can use `/api/v1/admin/patients`. Creation additionally requires
-`domain.provision`; ownership changes require `domain.assign_patient`. Other
-staff permissions, business labels and Doctor/MR identities cannot grant Patient
-directory access. Files retain their existing object-policy authorization.
+The protected singleton system Super Admin and explicitly enabled staff with
+the corresponding Patient grants can use `/api/v1/admin/patients`. Directory
+creation and owner synchronization are narrowly authorized master workflows,
+not generic identity administration. Unrelated staff grants, business labels
+and Doctor/MR identities cannot grant directory access. Files retain their
+existing object-policy authorization; staff Patient grants never permit files.
 Responses and downloads are no-store. Audit events contain resource UUID,
 operation, actor and UTC time, never submitted clinical/contact/address fields.
 Browser activity contains only fixed action/resource labels, not record contents.
 Never log import bytes or response bodies. This does not add Patient login,
 clinical treatment, orders, payments or attachment UI.
+
+### Directory-only soft deletion
+
+Forward `0028_directory_soft_delete` follows `0027_mr_designation_identity`.
+It adds only nullable UTC `deleted_at` and UUID User-FK `deleted_by` to the two
+populated directories, leaving existing values NULL and all records, unique
+constraints, relationships and files unchanged. Readiness requires the fields.
+Obtain separate operator approval, verify a coordinated backup, stop writes and
+release the schema/API/frontend together; never execute managed changes as tests.
+Downgrade loses deletion evidence and makes retained rows live again, but deletes
+no business, identity or file data. Prefer a reviewed forward fix or coordinated
+backup recovery rather than an application-only rollback.
+
+`POST /api/v1/admin/patients/{id}/delete` accepts only `expected_version`.
+It requires `patient.delete` or protected Super Admin, independently of Edit.
+Server identity revalidation, graph/owner locks, tombstone/update metadata,
+the shared Patient owner version and `patient_directory_delete` audit event
+commit atomically. Stale changes reject; already-deleted normal targets are
+not found. No automatic replay, local fallback, bulk-delete, trash or restore
+is provided. Cancellation sends no mutation.
+
+Deleted Patients are absent from ordinary list/search/status/count/detail,
+edit/status and CSV/XLSX exports. Their one-to-one `patients` identity, business
+status, owner active state, assigned MR, object keys and private-file lifecycle
+are unchanged. The owner version advances for concurrency, not ownership.
+Subsequent single/bulk Doctor MR shifts skip deleted Patient directory history.
+Codes and name/phone/DOB duplicates remain globally reserved.
+
+Deleted Doctors are omitted from choices/counts, including saved append paths.
+Existing Patients keep their Doctor ID and historical readable name/registration
+with an unavailable warning. The form shows this saved reference display-only;
+it can remain unchanged, but cannot be chosen again after changing away or
+newly assigned. Retaining it preserves the saved owner assignment rather than
+deriving a new MR from unavailable history. Imports validate Doctor availability
+again at commit under the shared graph lock.
+MR/Zone filters and filtered exports still resolve retained assignments;
+they do not require the referenced Doctor to remain live.
+
+The shared Doctor/Patient deletion checks and isolated desktop/mobile
+confirmation command are listed in [Doctor Master operations](doctor-master.md).
 
 ## Fields and identities
 
@@ -60,8 +101,9 @@ required `expected_version`, never caller identity/ownership/audit/deletion fiel
 Patient Doctor selectors search/page the live directory with bounded pages;
 selected inactive references remain visible with a warning. New or changed
 assignments require an active Doctor with a usable active MR/Zone/account chain.
-Unchanged inactive relationships may be retained; missing/deleted references
-require explicit repair, never automatic reassignment. Status deactivation
+Unchanged inactive relationships and saved deleted Doctors may be retained;
+missing/deleted MR/Zone references require explicit repair, never automatic
+reassignment. Status deactivation
 remains possible even with broken references to close file access safely.
 Doctor/MR/Zone labels are derived from current server relationships, not imports.
 Directory search, status/MR/Zone predicates and stable newest-first pagination
@@ -75,7 +117,7 @@ name/lifecycle state, and actor labels are read in batches of at most 500 keys.
 Only the scalar reference columns needed for display are loaded; projecting
 individual records performs no further database reads. These contexts are never
 cached across requests, sessions or mutations. Missing/deleted/inactive
-references retain the existing blank labels and explicit repair/retention
+references retain available historical Doctor labels and explicit repair/retention
 warnings. Mutation ownership locks and expected-version checks are unchanged.
 Doctor choices use the same relationship warnings, including an explicitly
 requested saved inactive Doctor outside the search page.

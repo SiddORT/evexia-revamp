@@ -9,7 +9,7 @@ from app.api.v1.designations import UPLOAD
 from app.api.v1.mrs import BINARY
 from app.db.session import get_db
 from app.schemas.patients import (
-    PatientFields, PatientEdit, PatientStatus, PatientDirectoryResponse, PatientPage,
+    PatientFields, PatientEdit, PatientStatus, PatientDirectoryResponse, PatientPage, PatientDeletion,
     PatientChoices, PatientReview, PatientImportResult, PatientFilterChoices,
 )
 from app.services import patients, patient_transfer, mrs
@@ -109,3 +109,8 @@ def edit(patient_id: uuid.UUID, body: PatientEdit, actor=Depends(manager), db: S
 @router.post("/{patient_id}/status", response_model=PatientDirectoryResponse, operation_id="setPatientDirectoryStatus")
 def status(patient_id: uuid.UUID, body: PatientStatus, actor=Depends(manager), db: Session = Depends(get_db)):
     return patients.mutate(db, actor, patient_id, body, "status")
+
+
+@router.post("/{patient_id}/delete", response_model=PatientDirectoryResponse, operation_id="deletePatientDirectory")
+def delete(patient_id: uuid.UUID, body: PatientDeletion, actor=Depends(manager), db: Session = Depends(get_db)):
+    return patients.mutate(db, actor, patient_id, body, "delete")

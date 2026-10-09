@@ -160,6 +160,7 @@ if [ "$#" -eq 0 ]; then
   SPECS="$SPECS artifacts/evexia-portal/tests/mrs-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/doctors-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/patients-backend.preview.spec.mjs"
+  SPECS="$SPECS artifacts/evexia-portal/tests/directory-deletion.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/patients-layout.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/download-logs.preview.spec.mjs artifacts/evexia-portal/tests/staff-permissions.preview.spec.mjs artifacts/evexia-portal/tests/master-staff-permissions.preview.spec.mjs"
 fi
@@ -179,6 +180,7 @@ ISOLATE_SALES_TARGET=0
 ISOLATE_OPENING_BALANCE=0
 ISOLATE_MASTER_STAFF=0
 ISOLATE_ORDERS=0
+ISOLATE_DIRECTORY_DELETION=0
 SPEC_COUNT=0
 for spec in $SPECS; do
   case "$spec" in *.preview.spec.mjs) SPEC_COUNT=$((SPEC_COUNT + 1)) ;; esac
@@ -212,6 +214,10 @@ for spec in $SPECS; do
       # Staff has no deletion workflow; disabling login cannot restore a fresh
       # directory. Keep matrix provisioning out of empty-directory baselines.
       if [ "$SPEC_COUNT" -gt 1 ]; then ISOLATE_MASTER_STAFF=1; else OTHER_SPECS="$OTHER_SPECS $spec"; fi ;;
+    */directory-deletion.preview.spec.mjs)
+      # Independent credential ledger: deletion preserves identities rather
+      # than freeing MR provisioning budget for the following suites.
+      if [ "$SPEC_COUNT" -gt 1 ]; then ISOLATE_DIRECTORY_DELETION=1; else OTHER_SPECS="$OTHER_SPECS $spec"; fi ;;
     */orders-navigation.preview.spec.mjs)
       # Restricted navigation provisions staff with an assigned custom role.
       # Do not contaminate role deletion or empty staff-directory baselines.
@@ -267,4 +273,8 @@ fi
 if [ "$ISOLATE_ORDERS" -eq 1 ]; then
   echo "Orders navigation: separate private database, staff directory and role assignments."
   sh "$ROOT/scripts/run-authenticated-previews.sh" artifacts/evexia-portal/tests/orders-navigation.preview.spec.mjs
+fi
+if [ "$ISOLATE_DIRECTORY_DELETION" -eq 1 ]; then
+  echo "Directory deletion: separate private database, credential ledger and result directory."
+  sh "$ROOT/scripts/run-authenticated-previews.sh" artifacts/evexia-portal/tests/directory-deletion.preview.spec.mjs
 fi

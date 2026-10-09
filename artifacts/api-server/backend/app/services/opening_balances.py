@@ -103,7 +103,7 @@ def listing(db, actor, query="", status="all", limit=10, offset=0):
 def choices(db, actor, query="", limit=50, offset=0, balance_id=None):
     def work():
         authorize(db, actor)
-        clauses = [Doctor.status == "active"]
+        clauses = [Doctor.status == "active", Doctor.deleted_at.is_(None)]
         if query.strip():
             pattern = "%" + mrs.literal(query) + "%"
             clauses.append(or_(Doctor.name.ilike(pattern, escape="\\"), Doctor.registrationNumber.ilike(pattern, escape="\\")))
@@ -111,7 +111,7 @@ def choices(db, actor, query="", limit=50, offset=0, balance_id=None):
         rows = list(db.scalars(select(Doctor).where(*clauses).order_by(func.lower(Doctor.name), Doctor.id).limit(limit).offset(offset)))
         # Only a saved balance authorizes retaining an unavailable reference.
         saved = db.get(Doctor, find(db, balance_id).doctorId) if balance_id else None
-        if saved and saved not in rows:
+        if saved and not saved.deleted_at and saved not in rows:
             rows.append(saved)
         result = dict(items=[dict(id=d.id, name=d.name, registrationNumber=d.registrationNumber, usable=usable(d)) for d in rows],
                       total=total, limit=limit, offset=offset)

@@ -38,10 +38,17 @@ def transaction(db, work):
 
 
 def assignment(db, doctor_id, existing=None):
-    doctor = db.get(Doctor, doctor_id)
+    doctor = db.scalar(select(Doctor).where(Doctor.id == doctor_id)
+                       .execution_options(populate_existing=True).with_for_update())
     if not doctor:
         raise PatientError("Doctor missing. Select a server Doctor explicitly.", 409, "patient_assignment")
     retained = existing is not None and existing.doctorId == doctor_id
+    if doctor.deleted_at:
+        if retained:
+            # Preserve the saved owner rather than deriving a new assignment
+            # from a historical, unavailable Doctor.
+            return doctor, None, None
+        raise PatientError("Doctor deleted. Select an available server Doctor.", 409, "patient_assignment")
     if not retained and doctor.status != "active":
         raise PatientError("New assignments require an active Doctor.", 409, "patient_assignment")
     mr, zone = doctors.assignment(db, doctor.mrId, doctor if retained else None)
@@ -51,7 +58,7 @@ def assignment(db, doctor_id, existing=None):
 def doctor_context(db, ids):
     """Request-local scalar reference reads; include lifecycle tombstones."""
     doctor_rows = mrs._bulk(db, ids, lambda keys: select(
-        Doctor.id, Doctor.name, Doctor.registrationNumber, Doctor.status, Doctor.mrId
+        Doctor.id, Doctor.name, Doctor.registrationNumber, Doctor.status, Doctor.mrId, Doctor.deleted_at
     ).where(Doctor.id.in_(keys)))
     mr_rows = mrs._bulk(db, (row.mrId for row in doctor_rows.values()), lambda keys: select(
         MRDirectory.id, MRDirectory.name, MRDirectory.status, MRDirectory.deleted_at, MRDirectory.zoneId
@@ -77,6 +84,8 @@ def relationship(context, doctor):
     mr = context["mrs"].get(doctor.mrId) if doctor else None
     zone = context["zones"].get(mr.zoneId) if mr and not mr.deleted_at else None
     warnings = doctors.assignment_warnings(mr, zone) if doctor else ["Missing Doctor; repair explicitly."]
+    if doctor and doctor.deleted_at:
+        warnings = ["Doctor unavailable (deleted); the unchanged saved reference may be retained."] + warnings
     if doctor and doctor.status != "active":
         warnings = ["Doctor inactive; unchanged assignment may be retained."] + warnings
     return mr, zone, warnings
@@ -101,7 +110,7 @@ def projection(db, row, context=None):
 
 
 def predicates(query="", status="all", zone_id="", mr_id=""):
-    clauses = []
+    clauses = [Directory.deleted_at.is_(None)]
     if query.strip():
         pattern = "%" + mrs.literal(query) + "%"
         clauses.append(or_(Directory.name.ilike(pattern, escape="\\"), Directory.code.ilike(pattern, escape="\\")))
@@ -109,7 +118,8 @@ def predicates(query="", status="all", zone_id="", mr_id=""):
         clauses.append(Directory.status == status)
     for key, value in (("mr_id", mr_id), ("zone_id", zone_id)):
         if value:
-            clauses.append(Directory.doctorId.in_(select(Doctor.id).where(*doctors.predicates(**{key: value}))))
+            clauses.append(Directory.doctorId.in_(select(Doctor.id).where(
+                *doctors.predicates(retained_assignments=True, **{key: value}))))
     return clauses
 
 
@@ -120,7 +130,7 @@ def listing(db, actor, query="", status="all", zone_id="", mr_id="", limit=10, o
         rows = list(db.scalars(select(Directory).where(*clauses).order_by(Directory.created_at.desc(), Directory.id.desc()).limit(limit).offset(offset)))
         context = projection_context(db, rows)
         result = dict(items=[projection(db, r, context) for r in rows],
-                      total=db.scalar(select(func.count()).select_from(Directory)),
+                      total=db.scalar(select(func.count()).select_from(Directory).where(Directory.deleted_at.is_(None))),
                       filtered=db.scalar(select(func.count()).select_from(Directory).where(*clauses)), limit=limit, offset=offset)
         db.commit()
         return result
@@ -128,7 +138,8 @@ def listing(db, actor, query="", status="all", zone_id="", mr_id="", limit=10, o
 
 
 def find(db, record_id):
-    row = db.get(Directory, record_id)
+    row = db.scalar(select(Directory).where(Directory.id == record_id, Directory.deleted_at.is_(None))
+                    .execution_options(populate_existing=True))
     if not row:
         raise PatientError("Patient record not found.", 404, "not_found")
     return row
@@ -146,11 +157,13 @@ def detail(db, actor, record_id):
 def choices(db, actor, query="", limit=100, offset=0, include_saved=None):
     def work():
         authorize(db, actor, lock=False)
-        clauses = [Doctor.name.ilike("%" + mrs.literal(query) + "%", escape="\\")] if query else []
+        clauses = [Doctor.deleted_at.is_(None)]
+        if query:
+            clauses.append(Doctor.name.ilike("%" + mrs.literal(query) + "%", escape="\\"))
         total = db.scalar(select(func.count()).select_from(Doctor).where(*clauses))
         rows = list(db.scalars(select(Doctor).where(*clauses).order_by(func.lower(Doctor.name), Doctor.id).limit(limit).offset(offset)))
         saved = db.get(Doctor, include_saved) if include_saved else None
-        if saved and saved not in rows:
+        if saved and not saved.deleted_at and saved not in rows:
             rows.append(saved)
         context = doctor_context(db, (row.id for row in rows))
         items = []
@@ -254,7 +267,7 @@ def mutate(db, actor, record_id, body, operation):
         row = find(db, record_id)
         if operation == "edit":
             doctor, mr, _ = assignment(db, body.doctorId, row)
-            target = mr.id
+            target = mr.id if mr else db.get(Patient, row.id).assigned_mr_id
         else:
             target = db.get(Patient, row.id).assigned_mr_id
         owner = lock_owner(db, row, target, operation == "edit" and body.doctorId != row.doctorId)
@@ -264,12 +277,18 @@ def mutate(db, actor, record_id, body, operation):
             unique(db, body, except_id=row.id)
             for key, value in body.model_dump(exclude={"expected_version"}).items():
                 setattr(row, key, value)
-            owner.assigned_mr_id = mr.id
-        else:
+            if mr:
+                owner.assigned_mr_id = mr.id
+        elif operation == "status":
             row.status = body.status
-        owner.is_active = row.status == "active"
+        elif operation == "delete":
+            row.deleted_at, row.deleted_by = utcnow(), current.user.id
+        else:
+            raise ValueError("Unsupported Patient mutation")
+        if operation != "delete":
+            owner.is_active = row.status == "active"
         owner.version += 1
-        row.updated_at, row.updated_by = utcnow(), current.user.id
+        row.updated_at, row.updated_by = row.deleted_at if operation == "delete" else utcnow(), current.user.id
         audit(db, current, row, operation)
         db.flush()
         result = projection(db, row)
@@ -281,7 +300,7 @@ def mutate(db, actor, record_id, body, operation):
 def shift_doctors(db, actor, changes):
     """Called inside Doctor transaction before assignment writes. Atomic with files."""
     ids = [row.id for row, _ in changes]
-    rows = list(db.scalars(select(Directory).where(Directory.doctorId.in_(ids)).order_by(Directory.id)))
+    rows = list(db.scalars(select(Directory).where(Directory.doctorId.in_(ids), Directory.deleted_at.is_(None)).order_by(Directory.id)))
     if rows:
         from app.services.master_policy import master_allowed
         if not master_allowed(actor, "doctor", "edit"):

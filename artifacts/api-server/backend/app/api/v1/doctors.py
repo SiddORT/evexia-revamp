@@ -8,7 +8,7 @@ from app.api.v1.designations import read_file, UPLOAD
 from app.api.v1.mrs import BINARY
 from app.db.session import get_db
 from app.schemas.doctors import (
-    DoctorFields, DoctorEdit, DoctorStatus, DoctorContact, DoctorBulk, DoctorResponse,
+    DoctorFields, DoctorEdit, DoctorStatus, DoctorContact, DoctorBulk, DoctorResponse, DoctorDeletion,
     DoctorPage, DoctorChoices, DoctorFilters, DoctorReview, DoctorImportResult,
 )
 from app.services import doctors, doctor_transfer, mrs
@@ -136,3 +136,8 @@ def status(doctor_id: uuid.UUID, body: DoctorStatus, actor=Depends(manager), db:
 @router.post("/{doctor_id}/contact", response_model=DoctorResponse, operation_id="setDoctorContactRequirement")
 def contact(doctor_id: uuid.UUID, body: DoctorContact, actor=Depends(manager), db: Session = Depends(get_db)):
     return doctors.mutate(db, actor, doctor_id, body, "contact")
+
+
+@router.post("/{doctor_id}/delete", response_model=DoctorResponse, operation_id="deleteDoctorDirectory")
+def delete(doctor_id: uuid.UUID, body: DoctorDeletion, actor=Depends(manager), db: Session = Depends(get_db)):
+    return doctors.mutate(db, actor, doctor_id, body, "delete")

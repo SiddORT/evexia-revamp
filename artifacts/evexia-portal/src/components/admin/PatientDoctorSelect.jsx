@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { patientDoctorChoices } from '../../services/serverPatients.js';
 
-export default function PatientDoctorSelect({ value, original, blocked, error, onChange }) {
+export default function PatientDoctorSelect({ value, original, savedName, blocked, error, onChange }) {
   const [query, setQuery] = useState('');
   const [offset, setOffset] = useState(0);
   const [state, setState] = useState({ items: [], total: 0, loading: true, error: '' });
@@ -28,7 +28,7 @@ export default function PatientDoctorSelect({ value, original, blocked, error, o
       aria-describedby={selected ? 'patient-doctor-selection patient-doctor-help' : 'patient-doctor-help'} value={value} disabled={blocked || state.loading} onChange={(event) => onChange(event.target.value)}
       data-testid="select-patient-doctorId">
       <option value="">{state.loading ? 'Loading Doctors…' : 'Select a Doctor'}</option>
-      {value && !selected && <option value={value}>Missing/unavailable saved Doctor — repair explicitly</option>}
+      {value && !selected && <option value={value} disabled>{value === original ? `${savedName || 'Saved Doctor'} — unavailable; unchanged reference retained` : 'Doctor unavailable — choose another'}</option>}
       {state.items.filter((item) => item.usable || (item.id === original && item.id === value)).map((item) =>
         <option value={item.id} key={item.id}>{item.name}{!item.usable ? ' (inactive relationship; retained only)' : ''}</option>)}
     </select>

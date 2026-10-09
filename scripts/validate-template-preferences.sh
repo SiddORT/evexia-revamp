@@ -21,7 +21,7 @@ sh scripts/test-api-foundation.sh tests/test_mrs.py tests/test_migration_mrs.py 
 node --test artifacts/evexia-portal/src/services/serverDoctors.test.js
 node --test artifacts/evexia-portal/src/services/serverOpeningBalances.test.js
 sh scripts/test-api-foundation.sh tests/test_opening_balances.py tests/test_migration_opening_balances.py tests/test_master_import_request_limits.py
-sh scripts/test-api-foundation.sh tests/test_doctors.py tests/test_migration_doctors.py
+sh scripts/test-api-foundation.sh tests/test_doctors.py tests/test_migration_doctors.py tests/test_directory_deletion.py tests/test_migration_directory_deletion.py
 node --test artifacts/evexia-portal/src/services/serverPatients.test.js
 sh scripts/test-api-foundation.sh tests/test_patients.py tests/test_migration_patients.py tests/test_patient_files.py tests/test_patient_scale.py
 sh scripts/test-api-foundation.sh tests/test_headquarters.py tests/test_migration_headquarters.py
