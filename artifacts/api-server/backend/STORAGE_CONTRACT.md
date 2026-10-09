@@ -36,6 +36,7 @@ password input; there is no default elevated account.
 | Headquarter list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; Zone staff grants and business labels do not apply | no |
 | Product Category list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; no Zone/custom-role elevation | no |
 | Allergen catalogue CRUD/status/soft-delete/import/export/sample/reference choices (`admin.access`) | protected singleton only; outside staff master permission domains | no |
+| Opening Balance CRUD/soft-delete/import/export/sample/minimal Doctor references (`admin.access`) | protected singleton only; outside the eight-master staff catalogue | no |
 | MR business directory list/detail/edit/status/contact/soft-delete/reference/PIN/export/sample (`admin.access`) | protected singleton only | no |
 | MR account create/import/reset/generate username (`admin.access` AND `domain.provision`) | protected singleton only | no |
 | Upload, metadata, verified download, download grant | system-wide | own MR or currently assigned active patient |

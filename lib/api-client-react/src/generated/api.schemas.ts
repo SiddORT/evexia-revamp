@@ -1864,6 +1864,153 @@ export interface MRVersion {
   expected_version: number;
 }
 
+export interface OpeningBalanceDoctorChoice {
+  id: string;
+  name: string;
+  registrationNumber: string;
+  usable: boolean;
+}
+
+export interface OpeningBalanceDoctorPage {
+  items: OpeningBalanceDoctorChoice[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export type OpeningBalanceEditStatus =
+  (typeof OpeningBalanceEditStatus)[keyof typeof OpeningBalanceEditStatus];
+
+export const OpeningBalanceEditStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface OpeningBalanceEdit {
+  /** Exact signed plain decimal; -9999999999999.99 to 9999999999999.99, at most two fractional digits; never rounded. */
+  amount: string;
+  doctorId: string;
+  /**
+   * @minimum 1901
+   * @maximum 9999
+   */
+  endYear: number;
+  /** @minimum 1 */
+  expected_version: number;
+  /**
+   * @minimum 1900
+   * @maximum 9998
+   */
+  startYear: number;
+  status: OpeningBalanceEditStatus;
+}
+
+export type OpeningBalanceFieldsStatus =
+  (typeof OpeningBalanceFieldsStatus)[keyof typeof OpeningBalanceFieldsStatus];
+
+export const OpeningBalanceFieldsStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface OpeningBalanceFields {
+  /** Exact signed plain decimal; -9999999999999.99 to 9999999999999.99, at most two fractional digits; never rounded. */
+  amount: string;
+  doctorId: string;
+  /**
+   * @minimum 1901
+   * @maximum 9999
+   */
+  endYear: number;
+  /**
+   * @minimum 1900
+   * @maximum 9998
+   */
+  startYear: number;
+  status: OpeningBalanceFieldsStatus;
+}
+
+export interface OpeningBalanceImportResult {
+  imported: number;
+}
+
+export interface OpeningBalanceImportRow {
+  amount: string;
+  endYear: string;
+  errors: string[];
+  registrationNumber: string;
+  row: number;
+  startYear: string;
+  status: string;
+}
+
+export type OpeningBalanceResponseStatus =
+  (typeof OpeningBalanceResponseStatus)[keyof typeof OpeningBalanceResponseStatus];
+
+export const OpeningBalanceResponseStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface OpeningBalanceResponse {
+  /** Exact signed plain decimal; -9999999999999.99 to 9999999999999.99, at most two fractional digits; never rounded. */
+  amount: string;
+  createdAt: string;
+  createdBy: string;
+  doctorId: string;
+  doctorName: string;
+  doctorUsable: boolean;
+  /**
+   * @minimum 1901
+   * @maximum 9999
+   */
+  endYear: number;
+  id: string;
+  registrationNumber: string;
+  /**
+   * @minimum 1900
+   * @maximum 9998
+   */
+  startYear: number;
+  status: OpeningBalanceResponseStatus;
+  updatedAt: string;
+  updatedBy: string;
+  version: number;
+}
+
+export interface OpeningBalancePage {
+  filtered: number;
+  items: OpeningBalanceResponse[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export interface OpeningBalanceReview {
+  digest: string;
+  rows: OpeningBalanceImportRow[];
+  valid: boolean;
+}
+
+export type OpeningBalanceStatusStatus =
+  (typeof OpeningBalanceStatusStatus)[keyof typeof OpeningBalanceStatusStatus];
+
+export const OpeningBalanceStatusStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface OpeningBalanceStatus {
+  /** @minimum 1 */
+  expected_version: number;
+  status: OpeningBalanceStatusStatus;
+}
+
+export interface OpeningBalanceVersion {
+  /** @minimum 1 */
+  expected_version: number;
+}
+
 export interface PatientChoice {
   id: string;
   mrName: string;
@@ -4048,6 +4195,118 @@ export type ListMRAssociatedDoctorChoicesParams = {
    */
   offset?: number;
 };
+
+export type ListOpeningBalancesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ListOpeningBalancesStatus;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
+export type ListOpeningBalancesStatus =
+  (typeof ListOpeningBalancesStatus)[keyof typeof ListOpeningBalancesStatus];
+
+export const ListOpeningBalancesStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportOpeningBalancesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ExportOpeningBalancesStatus;
+  format?: ExportOpeningBalancesFormat;
+};
+
+export type ExportOpeningBalancesStatus =
+  (typeof ExportOpeningBalancesStatus)[keyof typeof ExportOpeningBalancesStatus];
+
+export const ExportOpeningBalancesStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportOpeningBalancesFormat =
+  (typeof ExportOpeningBalancesFormat)[keyof typeof ExportOpeningBalancesFormat];
+
+export const ExportOpeningBalancesFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type CommitOpeningBalanceImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+  /**
+   * @pattern ^[0-9a-f]{64}$
+   */
+  digest: string;
+  confirm: boolean;
+};
+
+export type CommitOpeningBalanceImportBody = {
+  file: Blob | File;
+};
+
+export type ReviewOpeningBalanceImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+};
+
+export type ReviewOpeningBalanceImportBody = {
+  file: Blob | File;
+};
+
+export type OpeningBalanceDoctorChoicesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  balance_id?: string | null;
+};
+
+export type DownloadOpeningBalanceSampleParams = {
+  format?: DownloadOpeningBalanceSampleFormat;
+};
+
+export type DownloadOpeningBalanceSampleFormat =
+  (typeof DownloadOpeningBalanceSampleFormat)[keyof typeof DownloadOpeningBalanceSampleFormat];
+
+export const DownloadOpeningBalanceSampleFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
 
 export type ListPatientDirectoryParams = {
   /**

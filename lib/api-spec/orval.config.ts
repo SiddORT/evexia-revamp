@@ -23,6 +23,7 @@ const titleTransformer: InputTransformerFn = (config) => {
     "/v1/admin/headquarters/import/review", "/v1/admin/headquarters/import/commit",
     "/v1/admin/product-categories/import/review", "/v1/admin/product-categories/import/commit",
     "/v1/admin/allergens/import/review", "/v1/admin/allergens/import/commit",
+    "/v1/admin/opening-balances/import/review", "/v1/admin/opening-balances/import/commit",
     "/v1/admin/mrs/import/review", "/v1/admin/mrs/import/commit",
     "/v1/admin/doctors/import/review", "/v1/admin/doctors/import/commit",
     "/v1/admin/patients/import/review", "/v1/admin/patients/import/commit"]) {

@@ -19,6 +19,18 @@ replacement notices in failed browser tests before assuming chunk-loading
 latency or raising all timeouts. This is test-fixture isolation, not a reason to
 weaken the production single-session policy.
 
+Commit synthetic ORM setup before invoking an API whose expected outcome is a
+transaction rollback, even when the fixture itself is protected by an outer
+disposable transaction.
+
+**Why:** An API transaction can share the overridden fixture Session. An
+expected failure correctly rolls back uncommitted setup as well as request
+work, making later count assertions look like catalogue data loss.
+
+**How to apply:** Establish the fixture's own safe commit/savepoint boundary
+before error-path assertions. Do not change production rollback behavior to
+retain test-only setup.
+
 Authenticated browser fixtures must await the verified destination after each
 hard navigation before issuing another hard navigation.
 
@@ -105,9 +117,10 @@ Credential-producing suites must also isolate their actor/hour audit budgets.
 Do not weaken production rate limits or erase protected credential history to
 make a broad browser gate pass.
 
-**Why:** Doctor fixtures legitimately provision server MR accounts. Sharing one
-synthetic actor's hourly ledger with MR reset scenarios can exhaust the real
-credential budget despite each suite passing independently.
+**Why:** Doctor fixtures and consuming workflows such as Opening Balance
+legitimately provision server MR accounts. Sharing one synthetic actor's hourly
+ledger across those workflows, Patient setup or MR reset scenarios can exhaust
+the real credential budget despite each suite passing independently.
 
 **How to apply:** Use a separate private database and listeners for credential
 flows when combining suites; retain ordinary server provisioning and audit rules.

@@ -5257,6 +5257,509 @@ export const SetMRDirectoryStatusResponse = zod.object({
 /**
  * @summary Listing
  */
+export const listOpeningBalancesQueryQueryDefault = ``;
+export const listOpeningBalancesQueryQueryMax = 200;
+
+export const listOpeningBalancesQueryStatusDefault = `all`;
+export const listOpeningBalancesQueryLimitDefault = 10;
+export const listOpeningBalancesQueryLimitMax = 100;
+
+export const listOpeningBalancesQueryOffsetDefault = 0;
+export const listOpeningBalancesQueryOffsetMin = 0;
+export const listOpeningBalancesQueryOffsetMax = 1000000;
+
+export const ListOpeningBalancesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listOpeningBalancesQueryQueryMax)
+    .default(listOpeningBalancesQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(listOpeningBalancesQueryStatusDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listOpeningBalancesQueryLimitMax)
+    .default(listOpeningBalancesQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listOpeningBalancesQueryOffsetMin)
+    .max(listOpeningBalancesQueryOffsetMax)
+    .default(listOpeningBalancesQueryOffsetDefault),
+});
+
+export const listOpeningBalancesResponseItemsItemEndYearMin = 1901;
+export const listOpeningBalancesResponseItemsItemEndYearMax = 9999;
+
+export const listOpeningBalancesResponseItemsItemStartYearMin = 1900;
+export const listOpeningBalancesResponseItemsItemStartYearMax = 9998;
+
+export const ListOpeningBalancesResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      amount: zod
+        .string()
+        .describe(
+          "Exact signed plain decimal; -9999999999999.99 to 9999999999999.99, at most two fractional digits; never rounded.",
+        ),
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      doctorId: zod.string().uuid(),
+      doctorName: zod.string(),
+      doctorUsable: zod.boolean(),
+      endYear: zod
+        .number()
+        .int()
+        .min(listOpeningBalancesResponseItemsItemEndYearMin)
+        .max(listOpeningBalancesResponseItemsItemEndYearMax),
+      id: zod.string().uuid(),
+      registrationNumber: zod.string(),
+      startYear: zod
+        .number()
+        .int()
+        .min(listOpeningBalancesResponseItemsItemStartYearMin)
+        .max(listOpeningBalancesResponseItemsItemStartYearMax),
+      status: zod.enum(["active", "inactive"]),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+export const createOpeningBalanceBodyEndYearMin = 1901;
+export const createOpeningBalanceBodyEndYearMax = 9999;
+
+export const createOpeningBalanceBodyStartYearMin = 1900;
+export const createOpeningBalanceBodyStartYearMax = 9998;
+
+export const CreateOpeningBalanceBody = zod.object({
+  amount: zod
+    .string()
+    .describe(
+      "Exact signed plain decimal; -9999999999999.99 to 9999999999999.99, at most two fractional digits; never rounded.",
+    ),
+  doctorId: zod.string().uuid(),
+  endYear: zod
+    .number()
+    .int()
+    .min(createOpeningBalanceBodyEndYearMin)
+    .max(createOpeningBalanceBodyEndYearMax),
+  startYear: zod
+    .number()
+    .int()
+    .min(createOpeningBalanceBodyStartYearMin)
+    .max(createOpeningBalanceBodyStartYearMax),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const createOpeningBalanceResponseEndYearMin = 1901;
+export const createOpeningBalanceResponseEndYearMax = 9999;
+
+export const createOpeningBalanceResponseStartYearMin = 1900;
+export const createOpeningBalanceResponseStartYearMax = 9998;
+
+export const CreateOpeningBalanceResponse = zod.object({
+  amount: zod
+    .string()
+    .describe(
+      "Exact signed plain decimal; -9999999999999.99 to 9999999999999.99, at most two fractional digits; never rounded.",
+    ),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  doctorId: zod.string().uuid(),
+  doctorName: zod.string(),
+  doctorUsable: zod.boolean(),
+  endYear: zod
+    .number()
+    .int()
+    .min(createOpeningBalanceResponseEndYearMin)
+    .max(createOpeningBalanceResponseEndYearMax),
+  id: zod.string().uuid(),
+  registrationNumber: zod.string(),
+  startYear: zod
+    .number()
+    .int()
+    .min(createOpeningBalanceResponseStartYearMin)
+    .max(createOpeningBalanceResponseStartYearMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Export
+ */
+export const exportOpeningBalancesQueryQueryDefault = ``;
+export const exportOpeningBalancesQueryQueryMax = 200;
+
+export const exportOpeningBalancesQueryStatusDefault = `all`;
+export const exportOpeningBalancesQueryFormatDefault = `csv`;
+
+export const ExportOpeningBalancesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(exportOpeningBalancesQueryQueryMax)
+    .default(exportOpeningBalancesQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(exportOpeningBalancesQueryStatusDefault),
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(exportOpeningBalancesQueryFormatDefault),
+});
+
+export const ExportOpeningBalancesHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const ExportOpeningBalancesResponse = zod.unknown();
+
+/**
+ * @summary Commit
+ */
+export const commitOpeningBalanceImportQueryFilenameMax = 200;
+
+export const commitOpeningBalanceImportQueryDigestRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const CommitOpeningBalanceImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(commitOpeningBalanceImportQueryFilenameMax),
+  digest: zod.coerce
+    .string()
+    .regex(commitOpeningBalanceImportQueryDigestRegExp),
+  confirm: zod.coerce.boolean(),
+});
+
+export const CommitOpeningBalanceImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const CommitOpeningBalanceImportResponse = zod.object({
+  imported: zod.number().int(),
+});
+
+/**
+ * @summary Review
+ */
+export const reviewOpeningBalanceImportQueryFilenameMax = 200;
+
+export const ReviewOpeningBalanceImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(reviewOpeningBalanceImportQueryFilenameMax),
+});
+
+export const ReviewOpeningBalanceImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const ReviewOpeningBalanceImportResponse = zod.object({
+  digest: zod.string(),
+  rows: zod.array(
+    zod.object({
+      amount: zod.string(),
+      endYear: zod.string(),
+      errors: zod.array(zod.string()),
+      registrationNumber: zod.string(),
+      row: zod.number().int(),
+      startYear: zod.string(),
+      status: zod.string(),
+    }),
+  ),
+  valid: zod.boolean(),
+});
+
+/**
+ * @summary References
+ */
+export const openingBalanceDoctorChoicesQueryQueryDefault = ``;
+export const openingBalanceDoctorChoicesQueryQueryMax = 200;
+
+export const openingBalanceDoctorChoicesQueryLimitDefault = 50;
+export const openingBalanceDoctorChoicesQueryLimitMax = 100;
+
+export const openingBalanceDoctorChoicesQueryOffsetDefault = 0;
+export const openingBalanceDoctorChoicesQueryOffsetMin = 0;
+export const openingBalanceDoctorChoicesQueryOffsetMax = 1000000;
+
+export const OpeningBalanceDoctorChoicesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(openingBalanceDoctorChoicesQueryQueryMax)
+    .default(openingBalanceDoctorChoicesQueryQueryDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(openingBalanceDoctorChoicesQueryLimitMax)
+    .default(openingBalanceDoctorChoicesQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(openingBalanceDoctorChoicesQueryOffsetMin)
+    .max(openingBalanceDoctorChoicesQueryOffsetMax)
+    .default(openingBalanceDoctorChoicesQueryOffsetDefault),
+  balance_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+});
+
+export const OpeningBalanceDoctorChoicesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+      registrationNumber: zod.string(),
+      usable: zod.boolean(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Sample
+ */
+export const downloadOpeningBalanceSampleQueryFormatDefault = `csv`;
+
+export const DownloadOpeningBalanceSampleQueryParams = zod.object({
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(downloadOpeningBalanceSampleQueryFormatDefault),
+});
+
+export const DownloadOpeningBalanceSampleHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const DownloadOpeningBalanceSampleResponse = zod.unknown();
+
+/**
+ * @summary Detail
+ */
+export const GetOpeningBalanceParams = zod.object({
+  balance_id: zod.coerce.string().uuid(),
+});
+
+export const getOpeningBalanceResponseEndYearMin = 1901;
+export const getOpeningBalanceResponseEndYearMax = 9999;
+
+export const getOpeningBalanceResponseStartYearMin = 1900;
+export const getOpeningBalanceResponseStartYearMax = 9998;
+
+export const GetOpeningBalanceResponse = zod.object({
+  amount: zod
+    .string()
+    .describe(
+      "Exact signed plain decimal; -9999999999999.99 to 9999999999999.99, at most two fractional digits; never rounded.",
+    ),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  doctorId: zod.string().uuid(),
+  doctorName: zod.string(),
+  doctorUsable: zod.boolean(),
+  endYear: zod
+    .number()
+    .int()
+    .min(getOpeningBalanceResponseEndYearMin)
+    .max(getOpeningBalanceResponseEndYearMax),
+  id: zod.string().uuid(),
+  registrationNumber: zod.string(),
+  startYear: zod
+    .number()
+    .int()
+    .min(getOpeningBalanceResponseStartYearMin)
+    .max(getOpeningBalanceResponseStartYearMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Delete
+ */
+export const DeleteOpeningBalanceParams = zod.object({
+  balance_id: zod.coerce.string().uuid(),
+});
+
+export const DeleteOpeningBalanceBody = zod.object({
+  expected_version: zod.number().int().min(1),
+});
+
+export const deleteOpeningBalanceResponseEndYearMin = 1901;
+export const deleteOpeningBalanceResponseEndYearMax = 9999;
+
+export const deleteOpeningBalanceResponseStartYearMin = 1900;
+export const deleteOpeningBalanceResponseStartYearMax = 9998;
+
+export const DeleteOpeningBalanceResponse = zod.object({
+  amount: zod
+    .string()
+    .describe(
+      "Exact signed plain decimal; -9999999999999.99 to 9999999999999.99, at most two fractional digits; never rounded.",
+    ),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  doctorId: zod.string().uuid(),
+  doctorName: zod.string(),
+  doctorUsable: zod.boolean(),
+  endYear: zod
+    .number()
+    .int()
+    .min(deleteOpeningBalanceResponseEndYearMin)
+    .max(deleteOpeningBalanceResponseEndYearMax),
+  id: zod.string().uuid(),
+  registrationNumber: zod.string(),
+  startYear: zod
+    .number()
+    .int()
+    .min(deleteOpeningBalanceResponseStartYearMin)
+    .max(deleteOpeningBalanceResponseStartYearMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditOpeningBalanceParams = zod.object({
+  balance_id: zod.coerce.string().uuid(),
+});
+
+export const editOpeningBalanceBodyEndYearMin = 1901;
+export const editOpeningBalanceBodyEndYearMax = 9999;
+
+export const editOpeningBalanceBodyStartYearMin = 1900;
+export const editOpeningBalanceBodyStartYearMax = 9998;
+
+export const EditOpeningBalanceBody = zod.object({
+  amount: zod
+    .string()
+    .describe(
+      "Exact signed plain decimal; -9999999999999.99 to 9999999999999.99, at most two fractional digits; never rounded.",
+    ),
+  doctorId: zod.string().uuid(),
+  endYear: zod
+    .number()
+    .int()
+    .min(editOpeningBalanceBodyEndYearMin)
+    .max(editOpeningBalanceBodyEndYearMax),
+  expected_version: zod.number().int().min(1),
+  startYear: zod
+    .number()
+    .int()
+    .min(editOpeningBalanceBodyStartYearMin)
+    .max(editOpeningBalanceBodyStartYearMax),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const editOpeningBalanceResponseEndYearMin = 1901;
+export const editOpeningBalanceResponseEndYearMax = 9999;
+
+export const editOpeningBalanceResponseStartYearMin = 1900;
+export const editOpeningBalanceResponseStartYearMax = 9998;
+
+export const EditOpeningBalanceResponse = zod.object({
+  amount: zod
+    .string()
+    .describe(
+      "Exact signed plain decimal; -9999999999999.99 to 9999999999999.99, at most two fractional digits; never rounded.",
+    ),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  doctorId: zod.string().uuid(),
+  doctorName: zod.string(),
+  doctorUsable: zod.boolean(),
+  endYear: zod
+    .number()
+    .int()
+    .min(editOpeningBalanceResponseEndYearMin)
+    .max(editOpeningBalanceResponseEndYearMax),
+  id: zod.string().uuid(),
+  registrationNumber: zod.string(),
+  startYear: zod
+    .number()
+    .int()
+    .min(editOpeningBalanceResponseStartYearMin)
+    .max(editOpeningBalanceResponseStartYearMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Status
+ */
+export const SetOpeningBalanceStatusParams = zod.object({
+  balance_id: zod.coerce.string().uuid(),
+});
+
+export const SetOpeningBalanceStatusBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const setOpeningBalanceStatusResponseEndYearMin = 1901;
+export const setOpeningBalanceStatusResponseEndYearMax = 9999;
+
+export const setOpeningBalanceStatusResponseStartYearMin = 1900;
+export const setOpeningBalanceStatusResponseStartYearMax = 9998;
+
+export const SetOpeningBalanceStatusResponse = zod.object({
+  amount: zod
+    .string()
+    .describe(
+      "Exact signed plain decimal; -9999999999999.99 to 9999999999999.99, at most two fractional digits; never rounded.",
+    ),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  doctorId: zod.string().uuid(),
+  doctorName: zod.string(),
+  doctorUsable: zod.boolean(),
+  endYear: zod
+    .number()
+    .int()
+    .min(setOpeningBalanceStatusResponseEndYearMin)
+    .max(setOpeningBalanceStatusResponseEndYearMax),
+  id: zod.string().uuid(),
+  registrationNumber: zod.string(),
+  startYear: zod
+    .number()
+    .int()
+    .min(setOpeningBalanceStatusResponseStartYearMin)
+    .max(setOpeningBalanceStatusResponseStartYearMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Listing
+ */
 export const listPatientDirectoryQueryQueryDefault = ``;
 export const listPatientDirectoryQueryQueryMax = 200;
 

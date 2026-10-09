@@ -1,4 +1,26 @@
 .ob-head-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 9px; }
+.ob-actions { border: 0; padding: 0; margin: 0; }
+.ob-form fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.ob-form .searchable-select__menu { max-height: 260px; overflow-y: auto; }
+.ob-form .searchable-select { position: relative; min-width: 0; }
+.ob-form .searchable-select--open { z-index: 5; }
+.ob-form-panel { overflow: visible; }
+.ob-form-panel .mr-form__footer { border-radius: 0 0 12px 12px; }
+.ob-form .searchable-select__control { display: flex; align-items: center; height: 40px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); }
+.ob-form .searchable-select__control:focus-within { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
+.ob-form .searchable-select__control:has(input[aria-invalid="true"]) { border-color: var(--admin-danger); }
+.ob-form .searchable-select__control input { width: 100%; min-width: 0; height: 100%; padding: 0 4px 0 11px; border: 0; outline: 0; background: transparent; color: var(--admin-text); font: inherit; font-size: 12px; text-overflow: ellipsis; }
+.ob-form .searchable-select__control input::placeholder { color: var(--admin-muted); opacity: 1; }
+.ob-form .searchable-select__clear { flex: none; display: grid; place-items: center; padding: 5px; border: 0; background: transparent; color: var(--admin-muted); cursor: pointer; }
+.ob-form .searchable-select__clear:hover { color: var(--admin-text); }
+.ob-form .searchable-select__clear:focus-visible { outline: 2px solid var(--admin-focus); }
+.ob-form .searchable-select__chevron { flex: none; margin: 0 10px 0 4px; color: var(--admin-muted); cursor: pointer; }
+.ob-form .searchable-select__menu { position: absolute; top: calc(100% + 4px); left: 0; right: 0; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); box-shadow: 0 8px 24px rgba(0,0,0,.13); padding: 4px; }
+.ob-form .searchable-select__option, .ob-form .searchable-select__empty { padding: 9px 8px; color: var(--admin-text); font-size: 12px; overflow-wrap: anywhere; }
+.ob-form .searchable-select__option { display: flex; justify-content: space-between; gap: 8px; border-radius: 5px; cursor: pointer; }
+.ob-form .searchable-select__option:hover, .ob-form .searchable-select__option--active { background: var(--admin-state-hover); }
+.ob-form .searchable-select__option[aria-selected="true"] { color: var(--admin-accent); }
+.ob-form .mr-form__field { min-width: 0; }
 .ob-context { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 18px; }
 .ob-context__item { display: flex; align-items: baseline; gap: 9px; padding: 12px 17px; border: 1px solid var(--admin-border, #dbe4df); background: var(--admin-surface, #f9fbf9); border-radius: 10px; }
 .ob-context__item span { color: var(--admin-muted, #687772); font-size: .76rem; }

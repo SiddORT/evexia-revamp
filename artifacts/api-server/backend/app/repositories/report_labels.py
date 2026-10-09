@@ -2,6 +2,8 @@
 BROWSER_ACTIONS = {
     "allergen_create": "Allergen product created", "allergen_edit": "Allergen product updated",
     "allergen_status": "Allergen product status changed", "allergen_delete": "Allergen product deleted",
+    "opening_balance_create": "Opening balance created", "opening_balance_edit": "Opening balance updated",
+    "opening_balance_status": "Opening balance status changed", "opening_balance_delete": "Opening balance deleted",
     "headquarter_create": "Headquarter created", "headquarter_edit": "Headquarter updated",
     "headquarter_status": "Headquarter status changed", "headquarter_delete": "Headquarter deleted",
     "product_category_create": "Product category created", "product_category_edit": "Product category updated",

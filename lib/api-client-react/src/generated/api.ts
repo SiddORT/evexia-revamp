@@ -43,6 +43,8 @@ import type {
   CommitLocationImportParams,
   CommitMRImportBody,
   CommitMRImportParams,
+  CommitOpeningBalanceImportBody,
+  CommitOpeningBalanceImportParams,
   CommitPatientImportBody,
   CommitPatientImportParams,
   CommitProductCategoryImportBody,
@@ -89,6 +91,7 @@ import type {
   DownloadHeadquarterSampleParams,
   DownloadInitiation,
   DownloadMRSampleParams,
+  DownloadOpeningBalanceSampleParams,
   DownloadPage,
   DownloadPatientSampleParams,
   DownloadProductCategorySampleParams,
@@ -103,6 +106,7 @@ import type {
   ExportDoctorDirectoryParams,
   ExportHeadquartersParams,
   ExportMRDirectoryParams,
+  ExportOpeningBalancesParams,
   ExportPatientDirectoryParams,
   ExportProductCategoriesParams,
   ExportReportingEventsParams,
@@ -135,6 +139,7 @@ import type {
   ListMRAssociatedDoctorChoicesParams,
   ListMRDirectoryParams,
   ListMRReferenceChoicesParams,
+  ListOpeningBalancesParams,
   ListOwnSessionsParams,
   ListPatientDirectoryParams,
   ListPatientDoctorChoicesParams,
@@ -173,6 +178,16 @@ import type {
   MRStatus,
   MRUsername,
   MRVersion,
+  OpeningBalanceDoctorChoicesParams,
+  OpeningBalanceDoctorPage,
+  OpeningBalanceEdit,
+  OpeningBalanceFields,
+  OpeningBalanceImportResult,
+  OpeningBalancePage,
+  OpeningBalanceResponse,
+  OpeningBalanceReview,
+  OpeningBalanceStatus,
+  OpeningBalanceVersion,
   PatientChoices,
   PatientDirectoryResponse,
   PatientEdit,
@@ -210,6 +225,8 @@ import type {
   ReviewLocationImportParams,
   ReviewMRImportBody,
   ReviewMRImportParams,
+  ReviewOpeningBalanceImportBody,
+  ReviewOpeningBalanceImportParams,
   ReviewPatientImportBody,
   ReviewPatientImportParams,
   ReviewProductCategoryImportBody,
@@ -8007,6 +8024,1230 @@ export const useSetMRDirectoryStatus = <
   TContext
 > => {
   return useMutation(getSetMRDirectoryStatusMutationOptions(options));
+};
+
+export const getListOpeningBalancesUrl = (
+  params?: ListOpeningBalancesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/opening-balances?${stringifiedParams}`
+    : `/api/v1/admin/opening-balances`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listOpeningBalances = async (
+  params?: ListOpeningBalancesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OpeningBalancePage> => {
+  return customFetch<OpeningBalancePage>(getListOpeningBalancesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListOpeningBalancesQueryKey = (
+  params?: ListOpeningBalancesParams,
+) => {
+  return [
+    `/api/v1/admin/opening-balances`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListOpeningBalancesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listOpeningBalances>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListOpeningBalancesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOpeningBalances>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListOpeningBalancesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listOpeningBalances>>
+  > = ({ signal }) =>
+    listOpeningBalances(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listOpeningBalances>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListOpeningBalancesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listOpeningBalances>>
+>;
+export type ListOpeningBalancesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListOpeningBalances<
+  TData = Awaited<ReturnType<typeof listOpeningBalances>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListOpeningBalancesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listOpeningBalances>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListOpeningBalancesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateOpeningBalanceUrl = () => {
+  return `/api/v1/admin/opening-balances`;
+};
+
+/**
+ * @summary Create
+ */
+export const createOpeningBalance = async (
+  openingBalanceFields: OpeningBalanceFields,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OpeningBalanceResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<OpeningBalanceResponse>(getCreateOpeningBalanceUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(openingBalanceFields),
+  });
+};
+
+export const getCreateOpeningBalanceMutationKey = () =>
+  ["createOpeningBalance"] as const;
+
+export const getCreateOpeningBalanceMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createOpeningBalance>>,
+    TError,
+    CreateOpeningBalanceMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createOpeningBalance>>,
+  TError,
+  CreateOpeningBalanceMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateOpeningBalanceMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createOpeningBalance>>,
+    CreateOpeningBalanceMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createOpeningBalance(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateOpeningBalanceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createOpeningBalance>>
+>;
+export type CreateOpeningBalanceMutationBody = BodyType<OpeningBalanceFields>;
+export type CreateOpeningBalanceMutationError = ErrorType<ErrorEnvelope>;
+export type CreateOpeningBalanceMutationVariables = {
+  data: BodyType<OpeningBalanceFields>;
+};
+
+/**
+ * @summary Create
+ */
+export const useCreateOpeningBalance = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createOpeningBalance>>,
+    TError,
+    CreateOpeningBalanceMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createOpeningBalance>>,
+  TError,
+  CreateOpeningBalanceMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateOpeningBalanceMutationOptions(options));
+};
+
+export const getExportOpeningBalancesUrl = (
+  params?: ExportOpeningBalancesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/opening-balances/export?${stringifiedParams}`
+    : `/api/v1/admin/opening-balances/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportOpeningBalances = async (
+  params?: ExportOpeningBalancesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getExportOpeningBalancesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportOpeningBalancesQueryKey = (
+  params?: ExportOpeningBalancesParams,
+) => {
+  return [
+    `/api/v1/admin/opening-balances/export`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getExportOpeningBalancesQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportOpeningBalances>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportOpeningBalancesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportOpeningBalances>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getExportOpeningBalancesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exportOpeningBalances>>
+  > = ({ signal }) =>
+    exportOpeningBalances(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportOpeningBalances>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportOpeningBalancesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportOpeningBalances>>
+>;
+export type ExportOpeningBalancesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportOpeningBalances<
+  TData = Awaited<ReturnType<typeof exportOpeningBalances>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportOpeningBalancesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportOpeningBalances>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportOpeningBalancesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCommitOpeningBalanceImportUrl = (
+  params: CommitOpeningBalanceImportParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/opening-balances/import/commit?${stringifiedParams}`
+    : `/api/v1/admin/opening-balances/import/commit`;
+};
+
+/**
+ * @summary Commit
+ */
+export const commitOpeningBalanceImport = async (
+  commitOpeningBalanceImportBody: CommitOpeningBalanceImportBody,
+  params: CommitOpeningBalanceImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OpeningBalanceImportResult> => {
+  const formData = new FormData();
+  formData.append(`file`, commitOpeningBalanceImportBody.file);
+
+  return customFetch<OpeningBalanceImportResult>(
+    getCommitOpeningBalanceImportUrl(params),
+    {
+      ...options,
+      method: "POST",
+      body: formData,
+    },
+  );
+};
+
+export const getCommitOpeningBalanceImportMutationKey = () =>
+  ["commitOpeningBalanceImport"] as const;
+
+export const getCommitOpeningBalanceImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitOpeningBalanceImport>>,
+    TError,
+    CommitOpeningBalanceImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof commitOpeningBalanceImport>>,
+  TError,
+  CommitOpeningBalanceImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCommitOpeningBalanceImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof commitOpeningBalanceImport>>,
+    CommitOpeningBalanceImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return commitOpeningBalanceImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CommitOpeningBalanceImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof commitOpeningBalanceImport>>
+>;
+export type CommitOpeningBalanceImportMutationBody =
+  BodyType<CommitOpeningBalanceImportBody>;
+export type CommitOpeningBalanceImportMutationError = ErrorType<ErrorEnvelope>;
+export type CommitOpeningBalanceImportMutationVariables = {
+  data: BodyType<CommitOpeningBalanceImportBody>;
+  params: CommitOpeningBalanceImportParams;
+};
+
+/**
+ * @summary Commit
+ */
+export const useCommitOpeningBalanceImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitOpeningBalanceImport>>,
+    TError,
+    CommitOpeningBalanceImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof commitOpeningBalanceImport>>,
+  TError,
+  CommitOpeningBalanceImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getCommitOpeningBalanceImportMutationOptions(options));
+};
+
+export const getReviewOpeningBalanceImportUrl = (
+  params: ReviewOpeningBalanceImportParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/opening-balances/import/review?${stringifiedParams}`
+    : `/api/v1/admin/opening-balances/import/review`;
+};
+
+/**
+ * @summary Review
+ */
+export const reviewOpeningBalanceImport = async (
+  reviewOpeningBalanceImportBody: ReviewOpeningBalanceImportBody,
+  params: ReviewOpeningBalanceImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OpeningBalanceReview> => {
+  const formData = new FormData();
+  formData.append(`file`, reviewOpeningBalanceImportBody.file);
+
+  return customFetch<OpeningBalanceReview>(
+    getReviewOpeningBalanceImportUrl(params),
+    {
+      ...options,
+      method: "POST",
+      body: formData,
+    },
+  );
+};
+
+export const getReviewOpeningBalanceImportMutationKey = () =>
+  ["reviewOpeningBalanceImport"] as const;
+
+export const getReviewOpeningBalanceImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewOpeningBalanceImport>>,
+    TError,
+    ReviewOpeningBalanceImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewOpeningBalanceImport>>,
+  TError,
+  ReviewOpeningBalanceImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReviewOpeningBalanceImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewOpeningBalanceImport>>,
+    ReviewOpeningBalanceImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return reviewOpeningBalanceImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewOpeningBalanceImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewOpeningBalanceImport>>
+>;
+export type ReviewOpeningBalanceImportMutationBody =
+  BodyType<ReviewOpeningBalanceImportBody>;
+export type ReviewOpeningBalanceImportMutationError = ErrorType<ErrorEnvelope>;
+export type ReviewOpeningBalanceImportMutationVariables = {
+  data: BodyType<ReviewOpeningBalanceImportBody>;
+  params: ReviewOpeningBalanceImportParams;
+};
+
+/**
+ * @summary Review
+ */
+export const useReviewOpeningBalanceImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewOpeningBalanceImport>>,
+    TError,
+    ReviewOpeningBalanceImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewOpeningBalanceImport>>,
+  TError,
+  ReviewOpeningBalanceImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getReviewOpeningBalanceImportMutationOptions(options));
+};
+
+export const getOpeningBalanceDoctorChoicesUrl = (
+  params?: OpeningBalanceDoctorChoicesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/opening-balances/references?${stringifiedParams}`
+    : `/api/v1/admin/opening-balances/references`;
+};
+
+/**
+ * @summary References
+ */
+export const openingBalanceDoctorChoices = async (
+  params?: OpeningBalanceDoctorChoicesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OpeningBalanceDoctorPage> => {
+  return customFetch<OpeningBalanceDoctorPage>(
+    getOpeningBalanceDoctorChoicesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getOpeningBalanceDoctorChoicesQueryKey = (
+  params?: OpeningBalanceDoctorChoicesParams,
+) => {
+  return [
+    `/api/v1/admin/opening-balances/references`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getOpeningBalanceDoctorChoicesQueryOptions = <
+  TData = Awaited<ReturnType<typeof openingBalanceDoctorChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: OpeningBalanceDoctorChoicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof openingBalanceDoctorChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getOpeningBalanceDoctorChoicesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof openingBalanceDoctorChoices>>
+  > = ({ signal }) =>
+    openingBalanceDoctorChoices(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof openingBalanceDoctorChoices>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type OpeningBalanceDoctorChoicesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof openingBalanceDoctorChoices>>
+>;
+export type OpeningBalanceDoctorChoicesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary References
+ */
+
+export function useOpeningBalanceDoctorChoices<
+  TData = Awaited<ReturnType<typeof openingBalanceDoctorChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: OpeningBalanceDoctorChoicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof openingBalanceDoctorChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getOpeningBalanceDoctorChoicesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDownloadOpeningBalanceSampleUrl = (
+  params?: DownloadOpeningBalanceSampleParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/opening-balances/sample?${stringifiedParams}`
+    : `/api/v1/admin/opening-balances/sample`;
+};
+
+/**
+ * @summary Sample
+ */
+export const downloadOpeningBalanceSample = async (
+  params?: DownloadOpeningBalanceSampleParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(
+    getDownloadOpeningBalanceSampleUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getDownloadOpeningBalanceSampleQueryKey = (
+  params?: DownloadOpeningBalanceSampleParams,
+) => {
+  return [
+    `/api/v1/admin/opening-balances/sample`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getDownloadOpeningBalanceSampleQueryOptions = <
+  TData = Awaited<ReturnType<typeof downloadOpeningBalanceSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadOpeningBalanceSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadOpeningBalanceSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getDownloadOpeningBalanceSampleQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof downloadOpeningBalanceSample>>
+  > = ({ signal }) =>
+    downloadOpeningBalanceSample(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof downloadOpeningBalanceSample>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type DownloadOpeningBalanceSampleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof downloadOpeningBalanceSample>>
+>;
+export type DownloadOpeningBalanceSampleQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Sample
+ */
+
+export function useDownloadOpeningBalanceSample<
+  TData = Awaited<ReturnType<typeof downloadOpeningBalanceSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadOpeningBalanceSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadOpeningBalanceSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getDownloadOpeningBalanceSampleQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetOpeningBalanceUrl = (balanceId: string) => {
+  return `/api/v1/admin/opening-balances/${balanceId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getOpeningBalance = async (
+  balanceId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OpeningBalanceResponse> => {
+  return customFetch<OpeningBalanceResponse>(
+    getGetOpeningBalanceUrl(balanceId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetOpeningBalanceQueryKey = (balanceId: string) => {
+  return [`/api/v1/admin/opening-balances/${balanceId}`] as const;
+};
+
+export const getGetOpeningBalanceQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOpeningBalance>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  balanceId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOpeningBalance>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetOpeningBalanceQueryKey(balanceId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getOpeningBalance>>
+  > = ({ signal }) =>
+    getOpeningBalance(balanceId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: balanceId !== null && balanceId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOpeningBalance>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetOpeningBalanceQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOpeningBalance>>
+>;
+export type GetOpeningBalanceQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetOpeningBalance<
+  TData = Awaited<ReturnType<typeof getOpeningBalance>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  balanceId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOpeningBalance>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOpeningBalanceQueryOptions(balanceId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDeleteOpeningBalanceUrl = (balanceId: string) => {
+  return `/api/v1/admin/opening-balances/${balanceId}/delete`;
+};
+
+/**
+ * @summary Delete
+ */
+export const deleteOpeningBalance = async (
+  balanceId: string,
+  openingBalanceVersion: OpeningBalanceVersion,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OpeningBalanceResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<OpeningBalanceResponse>(
+    getDeleteOpeningBalanceUrl(balanceId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(openingBalanceVersion),
+    },
+  );
+};
+
+export const getDeleteOpeningBalanceMutationKey = () =>
+  ["deleteOpeningBalance"] as const;
+
+export const getDeleteOpeningBalanceMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteOpeningBalance>>,
+    TError,
+    DeleteOpeningBalanceMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteOpeningBalance>>,
+  TError,
+  DeleteOpeningBalanceMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteOpeningBalanceMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteOpeningBalance>>,
+    DeleteOpeningBalanceMutationVariables
+  > = (props) => {
+    const { balanceId, data } = props ?? {};
+
+    return deleteOpeningBalance(balanceId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteOpeningBalanceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteOpeningBalance>>
+>;
+export type DeleteOpeningBalanceMutationBody = BodyType<OpeningBalanceVersion>;
+export type DeleteOpeningBalanceMutationError = ErrorType<ErrorEnvelope>;
+export type DeleteOpeningBalanceMutationVariables = {
+  balanceId: string;
+  data: BodyType<OpeningBalanceVersion>;
+};
+
+/**
+ * @summary Delete
+ */
+export const useDeleteOpeningBalance = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteOpeningBalance>>,
+    TError,
+    DeleteOpeningBalanceMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteOpeningBalance>>,
+  TError,
+  DeleteOpeningBalanceMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteOpeningBalanceMutationOptions(options));
+};
+
+export const getEditOpeningBalanceUrl = (balanceId: string) => {
+  return `/api/v1/admin/opening-balances/${balanceId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editOpeningBalance = async (
+  balanceId: string,
+  openingBalanceEdit: OpeningBalanceEdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OpeningBalanceResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<OpeningBalanceResponse>(
+    getEditOpeningBalanceUrl(balanceId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(openingBalanceEdit),
+    },
+  );
+};
+
+export const getEditOpeningBalanceMutationKey = () =>
+  ["editOpeningBalance"] as const;
+
+export const getEditOpeningBalanceMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editOpeningBalance>>,
+    TError,
+    EditOpeningBalanceMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editOpeningBalance>>,
+  TError,
+  EditOpeningBalanceMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditOpeningBalanceMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editOpeningBalance>>,
+    EditOpeningBalanceMutationVariables
+  > = (props) => {
+    const { balanceId, data } = props ?? {};
+
+    return editOpeningBalance(balanceId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditOpeningBalanceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editOpeningBalance>>
+>;
+export type EditOpeningBalanceMutationBody = BodyType<OpeningBalanceEdit>;
+export type EditOpeningBalanceMutationError = ErrorType<ErrorEnvelope>;
+export type EditOpeningBalanceMutationVariables = {
+  balanceId: string;
+  data: BodyType<OpeningBalanceEdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditOpeningBalance = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editOpeningBalance>>,
+    TError,
+    EditOpeningBalanceMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editOpeningBalance>>,
+  TError,
+  EditOpeningBalanceMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditOpeningBalanceMutationOptions(options));
+};
+
+export const getSetOpeningBalanceStatusUrl = (balanceId: string) => {
+  return `/api/v1/admin/opening-balances/${balanceId}/status`;
+};
+
+/**
+ * @summary Status
+ */
+export const setOpeningBalanceStatus = async (
+  balanceId: string,
+  openingBalanceStatus: OpeningBalanceStatus,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<OpeningBalanceResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<OpeningBalanceResponse>(
+    getSetOpeningBalanceStatusUrl(balanceId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(openingBalanceStatus),
+    },
+  );
+};
+
+export const getSetOpeningBalanceStatusMutationKey = () =>
+  ["setOpeningBalanceStatus"] as const;
+
+export const getSetOpeningBalanceStatusMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setOpeningBalanceStatus>>,
+    TError,
+    SetOpeningBalanceStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setOpeningBalanceStatus>>,
+  TError,
+  SetOpeningBalanceStatusMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSetOpeningBalanceStatusMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setOpeningBalanceStatus>>,
+    SetOpeningBalanceStatusMutationVariables
+  > = (props) => {
+    const { balanceId, data } = props ?? {};
+
+    return setOpeningBalanceStatus(balanceId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetOpeningBalanceStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setOpeningBalanceStatus>>
+>;
+export type SetOpeningBalanceStatusMutationBody =
+  BodyType<OpeningBalanceStatus>;
+export type SetOpeningBalanceStatusMutationError = ErrorType<ErrorEnvelope>;
+export type SetOpeningBalanceStatusMutationVariables = {
+  balanceId: string;
+  data: BodyType<OpeningBalanceStatus>;
+};
+
+/**
+ * @summary Status
+ */
+export const useSetOpeningBalanceStatus = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setOpeningBalanceStatus>>,
+    TError,
+    SetOpeningBalanceStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setOpeningBalanceStatus>>,
+  TError,
+  SetOpeningBalanceStatusMutationVariables,
+  TContext
+> => {
+  return useMutation(getSetOpeningBalanceStatusMutationOptions(options));
 };
 
 export const getListPatientDirectoryUrl = (

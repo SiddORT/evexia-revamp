@@ -2,27 +2,30 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, X } from 'lucide-react';
 import './searchableSelect.css';
 
-export default function SearchableSelect({ id, label, value, options, onChange, placeholder, invalid, describedBy }) {
+export default function SearchableSelect({ id, label, value, options, onChange, placeholder, invalid, describedBy, searchOptions, onSearch, preserveSearch = false, disabled = false }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(-1);
   const rootRef = useRef(null);
   const inputRef = useRef(null);
   const selected = options.find((option) => option.value === value);
-  const matches = options.filter((option) => option.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
+  const matches = searchOptions ? searchOptions(query) : options.filter((option) => option.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
+  const searchRef = useRef(onSearch);
+  searchRef.current = onSearch;
+  useEffect(() => { searchRef.current?.(query); }, [query]);
 
   useEffect(() => {
     if (!open) return undefined;
     const closeOutside = (event) => {
       if (!rootRef.current?.contains(event.target)) {
         setOpen(false);
-        setQuery('');
+        if (!preserveSearch) setQuery('');
         setActive(-1);
       }
     };
     document.addEventListener('pointerdown', closeOutside);
     return () => document.removeEventListener('pointerdown', closeOutside);
-  }, [open]);
+  }, [open, preserveSearch]);
 
   useEffect(() => {
     if (open && active >= 0) {
@@ -39,8 +42,9 @@ export default function SearchableSelect({ id, label, value, options, onChange, 
   }
 
   function openMenu() {
+    if (disabled) return;
     setOpen(true);
-    setQuery('');
+    if (!preserveSearch) setQuery('');
     setActive(-1);
   }
 
@@ -48,11 +52,11 @@ export default function SearchableSelect({ id, label, value, options, onChange, 
     if (event.key === 'Escape' && open) {
       event.preventDefault();
       setOpen(false);
-      setQuery('');
+      if (!preserveSearch) setQuery('');
       setActive(-1);
     } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
-      if (!open) { setOpen(true); setQuery(''); setActive(-1); return; }
+      if (!open) { setOpen(true); if (!preserveSearch) setQuery(''); setActive(-1); return; }
       setActive((index) => event.key === 'ArrowDown'
         ? Math.min(index + 1, matches.length - 1)
         : Math.max(index - 1, 0));
@@ -61,7 +65,7 @@ export default function SearchableSelect({ id, label, value, options, onChange, 
       if (matches.length) choose(matches[Math.max(active, 0)]);
     } else if (event.key === 'Tab') {
       setOpen(false);
-      setQuery('');
+      if (!preserveSearch) setQuery('');
       setActive(-1);
     }
   }
@@ -82,6 +86,7 @@ export default function SearchableSelect({ id, label, value, options, onChange, 
         aria-invalid={Boolean(invalid)}
         aria-describedby={describedBy}
         autoComplete="off"
+        disabled={disabled}
         value={open ? query : selected?.label || ''}
         placeholder={open ? `Search ${label.toLowerCase()}…` : placeholder}
         onFocus={openMenu}
@@ -90,7 +95,7 @@ export default function SearchableSelect({ id, label, value, options, onChange, 
         onKeyDown={handleKeyDown}
         data-testid={`select-${id}`}
       />
-      {value && <button type="button" className="searchable-select__clear" aria-label={`Clear ${label.toLowerCase()}`} onClick={() => { onChange(''); setQuery(''); setActive(-1); inputRef.current?.focus(); }}><X size={14} aria-hidden="true" /></button>}
+      {value && <button type="button" disabled={disabled} className="searchable-select__clear" aria-label={`Clear ${label.toLowerCase()}`} onClick={() => { onChange(''); setQuery(''); setActive(-1); inputRef.current?.focus(); }}><X size={14} aria-hidden="true" /></button>}
       <ChevronDown size={16} className="searchable-select__chevron" aria-hidden="true" onClick={() => { inputRef.current?.focus(); openMenu(); }} />
     </div>
     {open && <div id={`${id}-options`} role="listbox" aria-label={label} className="searchable-select__menu">

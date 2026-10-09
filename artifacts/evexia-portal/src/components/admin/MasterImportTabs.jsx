@@ -4,7 +4,7 @@ import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { MASTER_CATALOGUE, hasMasterPermission, isStaffIdentity } from '../../auth/capabilities.js';
 
 // Headquarter uses authenticated server templates, not a mock import template.
-const masters = [...Object.entries(EXCEL_TEMPLATES), ['headquarter', { title: 'Headquarter' }], ['patient', { title: 'Patient' }], ['vendor', { title: 'Vendor' }], ['sales-target', { title: 'Sales Target' }]];
+const masters = [...Object.entries(EXCEL_TEMPLATES), ['headquarter', { title: 'Headquarter' }], ['patient', { title: 'Patient' }], ['vendor', { title: 'Vendor' }], ['sales-target', { title: 'Sales Target' }], ['opening-balance', { title: 'Opening Balance' }]];
 
 export default function MasterImportTabs({ kind }) {
   const [, navigate] = useLocation();

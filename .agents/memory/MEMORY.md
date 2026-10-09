@@ -26,7 +26,9 @@
 - [Staff search privacy](staff-search-privacy.md) — explicit bounded scans avoid substring-index leakage and unbounded automatic directory traversal.
 - [Authenticated test isolation](authenticated-test-isolation.md) — isolate test listeners and results, not just databases; shared ports cause synthetic logins to revoke each other.
 - [Multi-format upload codegen](multi-format-codegen.md) — retain both accepted upload formats in OpenAPI, but generate one supported representation to avoid invalid Blob/object serialization.
+- [Import request boundaries](import-request-boundaries.md) — test valid large raw/multipart imports, not only oversized rejection; request and file limits must agree.
 - [Lazy-route print styles](lazy-route-print-styles.md) — gate print layout overrides on the report's presence; imported CSS survives navigation.
+- [Cold-route component styles](cold-route-component-styles.md) — reused controls must load their own styles, not depend on a previously visited lazy route.
 - [Dropdown focus](dropdown-focus.md) — pending menu actions must preserve a focusable return destination while preventing duplicate submissions.
 - [Browser keyboard modality](browser-keyboard-modality.md) — use real Tab entry for cross-engine focus indicators; programmatic focus plus Space/arrows is not equivalent.
 - [Browser-only auth channels](browser-only-auth-channels.md) — Node exposes BroadcastChannel too; imported browser auth must not keep pure service tests alive.
@@ -38,7 +40,7 @@
 - [Import navigation ownership](import-navigation-ownership.md) — backend-only import tabs must not require mock templates or weaken authenticated transfers.
 - [Delayed browser route teardown](delayed-route-teardown.md) — await held response handlers before removing their interception; avoid global teardown between late-response scenarios.
 - [MR account boundary](mr-account-boundary.md) — real MR login must not silently promote existing identities or mix browser-local demo relationships.
-- [Save navigation evidence](save-navigation-evidence.md) — wait for the terminal list route; prefix-only URL assertions can read before an authenticated save commits.
+- [Authenticated navigation evidence](save-navigation-evidence.md) — wait for terminal protected pages before persistence reads or absent-control assertions.
 - [API schema name stability](api-schema-name-stability.md) — unique extension schema names avoid renaming unchanged domain components and breaking handwritten client exports.
 - [Master permission scope](master-permission-scope.md) — eight requested masters only; workflow provisioning is not generic identity administration.
 - [Browser cleanup evidence](browser-test-cleanup-evidence.md) — preserve primary failures and capture the actual actor page, not the default administrator page.

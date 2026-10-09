@@ -57,8 +57,13 @@ bounded CSV/XLSX review/confirm/filtered exports. MR's associated-doctor viewer
 uses live assignments. Patient Master now adds the empty one-to-one Patient
 extension `0020_patient_directory`, with live ownership synchronization and bounded
 CSV/XLSX transfers; see [Patient Master operations](../../../docs/patient-master.md).
-Opening Balance and payment-preview data remain separate local datasets; no Doctor login, ledger or automatic migration
-is implied. See [Doctor Master operations](../../../docs/doctor-master.md).
+Opening Balance adds an empty `0024_opening_balances` catalogue after
+`0023_sales_targets`, with protected Super Admin-only signed exact balances,
+versioned soft deletion, paged Doctor choices and CSV/XLSX transfers. It does not
+post a ledger or calculate balances. Legacy local balances, local doctors and
+payment-preview data are untouched; no Doctor login or automatic migration is
+implied. See [Opening Balance operations](../../../docs/opening-balance-master.md)
+and [Doctor Master operations](../../../docs/doctor-master.md).
 Other unconverted portal masters remain
 fictional and browser-local. Do not enter real personal or health data into the
 preview. See [staff security and operations](../../../docs/staff-security.md).

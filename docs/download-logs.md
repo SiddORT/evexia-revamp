@@ -39,7 +39,8 @@ on-device. General audit/activity remains independent.
 | Zone / Courier / Storage Location filtered export | CSV, XLSX | Server |
 | MR filtered export and import sample | CSV, XLSX | Server |
 | Doctor / Patient master export | CSV | Browser |
-| Designation / Vendor / Allergen / Opening Balance / Headquarter / Product Category / Sales Target export and import template | CSV | Browser |
+| Opening Balance export and import template | CSV / XLSX | Server |
+| Designation / Vendor / Allergen / Headquarter / Product Category / Sales Target and legacy local Opening Balance export/template | CSV | Browser |
 | Staff loaded-record export / Stock Status sample export / PR list export | CSV | Browser |
 | Zone / Courier import sample | CSV, XLSX | Browser |
 | Storage Location import template | CSV, XLSX | Browser |

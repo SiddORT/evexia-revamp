@@ -55,6 +55,10 @@ for (const master of MASTER_CATALOGUE) test(`${master.key}: single-action staff 
         const route = `/admin/masters/${master.path}`;
         await clerk.goto(`${base()}${route}`);
         await settledStaff(clerk, route);
+        // Zero matching controls is also true while auth is still restoring.
+        // Require a protected page before negative capability assertions or
+        // another full navigation can interrupt rotating refresh cookies.
+        await expect(clerk.getByRole('heading', { name: `${master.label} Master`, exact: true })).toBeVisible();
         await expect(clerk.locator('.admin-error')).toHaveCount(0);
         // Use capability-filtered navigation; unrelated directories and protected menus never appear.
         for (const other of fixture.masters) {
@@ -72,8 +76,12 @@ for (const master of MASTER_CATALOGUE) test(`${master.key}: single-action staff 
         await expect(importing).toHaveCount(action === 'import' ? 1 : 0);
         if (action !== 'add') {
           await clerk.goto(`${base()}${route}/new`);
-          await settledStaff(clerk, ['/admin', route]);
+          await settledStaff(clerk, route);
           await expect(clerk.getByRole('button', { name: /^Save /i })).toHaveCount(0);
+          // The denied route passes through /admin before Dashboard returns
+          // staff to their sole permitted directory. Wait for that terminal
+          // authenticated page, not merely an intermediate URL change.
+          await expect(clerk.getByRole('heading', { name: `${master.label} Master`, exact: true })).toBeVisible();
         } else {
           await add.click();
           if (['zone', 'courier'].includes(master.key)) await expect(clerk.getByRole('dialog')).toBeVisible();

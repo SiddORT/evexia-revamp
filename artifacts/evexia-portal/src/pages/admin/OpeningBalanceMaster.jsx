@@ -1,189 +1,118 @@
-import { downloadCSV as loggedCSV } from '../../services/downloads.js';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
-import { CirclePower, Download, Landmark, Pencil, Plus, RefreshCw, Search, Upload } from 'lucide-react';
+import { CirclePower, Download, Pencil, Plus, RefreshCw, Search, Trash2, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
-import Dialog from '../../components/admin/Dialog.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
-import useTablePagination from '../../hooks/useTablePagination.js';
-import { DOCTOR_STORAGE_KEY } from '../../services/doctors.js';
-import { OPENING_BALANCE_COLUMNS, OPENING_BALANCE_KEY, exportOpeningBalanceCSV, importOpeningBalances, loadOpeningBalanceSnapshots, openingBalanceCSVTemplate, reviewOpeningBalanceCSV, setOpeningBalanceStatus } from '../../services/openingBalances.js';
+import useServerOpeningBalances from '../../hooks/useServerOpeningBalances.js';
+import { exportOpeningBalances, downloadOpeningBalanceFile } from '../../services/serverOpeningBalances.js';
+import { formatBalance } from '../../services/openingBalanceValidation.js';
+import { getSession, subscribeSession, reportingIdentityGuard } from '../../auth/adminSession.js';
 import '../../mr.css';
 import '../../category.css';
 import '../../openingBalance.css';
 
 const PATH = '/admin/masters/opening-balances';
-const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-const money = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-function download(text, name) {
-  return loggedCSV(text, name, 'opening_balance', name.includes('template') ? 'template' : 'export');
-}
-function audit(name, value) {
-  return <span className="ob-audit"><strong>{name || '—'}</strong><span>{formatAdminTimestamp(value)}</span></span>;
-}
-function ImportDialog({ snapshot, verify, onDone, onClose }) {
-  const [review, setReview] = useState(null);
-  const [message, setMessage] = useState('');
-  const [reading, setReading] = useState(false);
-  const sequence = useRef(0);
-  const bad = review?.entries.filter((row) => row.errors.length) || [];
-  function close() { sequence.current++; onClose(); }
-  async function select(event) {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    setReview(null);
-    setMessage('');
-    if (!file) return;
-    if (!/\.csv$/i.test(file.name) || file.size > 2_000_000) { setMessage('Choose a CSV file smaller than 2 MB.'); return; }
-    const current = ++sequence.current;
-    setReading(true);
-    try {
-      const text = await file.text();
-      if (current !== sequence.current) return;
-      verify();
-      const entries = await reviewOpeningBalanceCSV(text, snapshot.records, snapshot.doctors);
-      if (current !== sequence.current) return;
-      verify();
-      setReview({ name: file.name, entries });
-    } catch (error) {
-      if (current === sequence.current) setMessage(error.message || 'This file could not be reviewed.');
-    } finally {
-      if (current === sequence.current) setReading(false);
-    }
-  }
-  function confirm() {
-    if (!review?.entries.length || bad.length) return;
-    try {
-      verify();
-      const records = importOpeningBalances(review.entries, snapshot.records, snapshot.doctors);
-      onDone(records);
-      close();
-    } catch (error) { setMessage(error.message || 'Import failed. No records were saved. Refresh and review again.'); }
-  }
-  return <Dialog title="Import opening balances" eyebrow="Financial year / CSV" description="Review every line before saving. The batch is all-or-nothing; existing balances are not replaced." className="admin-import-dialog" onClose={close}
-    footer={<><button type="button" className="admin-button admin-button--secondary" onClick={close} data-testid="button-cancel-opening-balance-import">Cancel</button><button type="button" className="admin-button" disabled={!review?.entries.length || bad.length > 0 || reading || Boolean(message)} onClick={confirm} data-testid="button-confirm-opening-balance-import">Import {review?.entries.length || 0} records</button></>}>
-    <div className="ob-import">
-      <div className="ob-import__guide"><strong>CSV columns, in order</strong><p>{OPENING_BALANCE_COLUMNS.map(([, label]) => label).join(', ')}. Use a doctor from Doctor Master; amounts may be positive, negative or zero. IDs and audit details are assigned on save.</p></div>
-      <button type="button" className="admin-button admin-button--secondary" onClick={async () => { try { await download(openingBalanceCSVTemplate(), 'evexia-opening-balances-template.csv'); setMessage(''); } catch (error) { setMessage(error.message || 'Template download failed.'); } }} data-testid="button-opening-balance-template"><Download size={16} aria-hidden="true" /> Download template</button>
-      <label className="ob-import__file">Choose a local CSV<input type="file" accept=".csv,text/csv" onChange={select} data-testid="input-opening-balance-import" /></label>
-      {reading && <div role="status">Reviewing file…</div>}
-      {message && <div className="admin-feedback admin-feedback--error" role="alert">{message}</div>}
-      {review && <div aria-live="polite"><p><strong>{review.name}</strong> · {review.entries.length - bad.length} ready · {bad.length} with errors{bad.length ? '. Correct the file and choose it again; nothing was saved.' : '. Confirm to save the entire batch.'}</p>
-        <div className="ob-import__rows" role="list" aria-label="CSV review">{review.entries.map((entry, index) => <div role="listitem" key={`${entry.line}-${index}`} className={`ob-import__row${entry.errors.length ? ' ob-import__row--error' : ''}`}>
-          <details><summary>Line {entry.line}: {entry.values?.registrationNumber || '(no registration number)'} — {entry.errors.length ? `${entry.errors.length} errors` : 'Ready'}</summary>
-            <dl>{OPENING_BALANCE_COLUMNS.map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{entry.fields?.[key] ?? entry.values?.[key] ?? '—'}</dd></div>)}</dl>
-          </details>
-          {entry.errors.length > 0 && <ul>{entry.errors.map((error, i) => <li key={i}>{error}</li>)}</ul>}
-        </div>)}</div>
-      </div>}
-    </div>
-  </Dialog>;
-}
-
+const audit = (by, at) => <span className="ob-audit"><strong>{by}</strong><span>{formatAdminTimestamp(at)}</span></span>;
 export default function OpeningBalanceMaster() {
-  useAdminPreferences();
+  const { theme, appearance } = useAdminPreferences();
   const [, navigate] = useLocation();
-  const [snapshot, setSnapshot] = useState(null);
-  const [error, setError] = useState('');
-  const [stale, setStale] = useState(false);
-  const [notice, setNotice] = useState(() => {
-    const value = new URLSearchParams(window.location.search).get('saved');
-    return value === 'added' ? 'Opening balance added.' : value === 'updated' ? 'Opening balance updated.' : '';
-  });
-  const [search, setSearch] = useState('');
+  const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const state = useServerOpeningBalances(query, status, page, pageSize);
   const [confirming, setConfirming] = useState(null);
-  const [importing, setImporting] = useState(false);
-  useEffect(() => { if (new URLSearchParams(window.location.search).has('saved')) window.history.replaceState(window.history.state, '', PATH); }, []);
+  const [error, setError] = useState('');
+  const [blocked, setBlocked] = useState(false);
+  const [notice, setNotice] = useState(() => new URLSearchParams(window.location.search).has('saved') ? 'Opening balance saved.' : '');
+  const [menu, setMenu] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const busy = useRef(false);
+  const alive = useRef(true);
+  const controller = useRef(null);
   useEffect(() => {
-    function onStorage(event) { if (event.key === OPENING_BALANCE_KEY || event.key === DOCTOR_STORAGE_KEY || event.key === null) setStale(true); }
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    alive.current = true;
+    const owner = getSession().user?.id;
+    if (new URLSearchParams(window.location.search).has('saved')) window.history.replaceState(window.history.state, '', PATH);
+    const unsubscribe = subscribeSession(() => {
+      if (getSession().user?.id !== owner) { controller.current?.abort(); setConfirming(null); setNotice(''); setError(''); setQuery(''); }
+    });
+    return () => { alive.current = false; controller.current?.abort(); unsubscribe(); };
   }, []);
-  function refresh() {
-    try { setSnapshot(loadOpeningBalanceSnapshots()); setError(''); setStale(false); setConfirming(null); setImporting(false); }
-    catch (cause) { setError(cause.message || 'Opening balances could not be loaded.'); setSnapshot(null); setStale(true); }
-  }
-  useEffect(() => { refresh(); }, []);
-  function verify() {
-    if (!snapshot || stale) throw new Error('Records changed in another tab. Refresh before continuing.');
-    const current = loadOpeningBalanceSnapshots();
-    if (!same(current.records, snapshot.records) || !same(current.doctors, snapshot.doctors)) {
-      setStale(true);
-      throw new Error('Opening balances or doctors changed. Refresh records before continuing.');
+  const pageCount = Math.max(1, Math.ceil(state.filtered / pageSize));
+  useEffect(() => { if (!state.loading && !state.error && page > pageCount) setPage(pageCount); }, [state.loading, state.error, page, pageCount]);
+  function request(record, type) { setConfirming({ record, type }); setError(''); setBlocked(false); }
+  async function confirm() {
+    const guard = reportingIdentityGuard();
+    try {
+      await state.apply(confirming.record, confirming.type); guard();
+      if (alive.current) { setConfirming(null); setNotice('Opening balance updated. Server history retained.'); }
+    } catch (cause) {
+      try { guard(); } catch { return; }
+      if (alive.current) { setError(cause.message); setBlocked(cause.code === 'opening_balance_stale' || cause.code === 'not_found' || Boolean(cause.ambiguous)); }
     }
-    return current;
   }
-  const doctors = useMemo(() => new Map((snapshot?.doctors || []).map((doctor) => [doctor.id, doctor])), [snapshot]);
-  const records = snapshot?.records || [];
-  const visible = useMemo(() => records.filter((record) => {
-    const doctor = doctors.get(record.doctorId);
-    const needle = search.trim().toLocaleLowerCase();
-    return (status === 'all' || status === record.status) && (!needle || [record.startYear, record.endYear, `${record.startYear}-${record.endYear}`, doctor?.name, doctor?.registrationNumber, record.doctorId, record.amount].some((value) => String(value ?? '').toLocaleLowerCase().includes(needle)));
-  }), [records, doctors, search, status]);
-  const pagination = useTablePagination(visible);
-  function changeStatus() {
-    if (!confirming) return;
+  async function download(format) {
+    if (busy.current || state.loading || state.error) return;
+    busy.current = true; setExporting(true); setError('');
+    const guard = reportingIdentityGuard();
+    controller.current = new AbortController();
     try {
-      verify();
-      const next = confirming.status === 'active' ? 'inactive' : 'active';
-      const updated = setOpeningBalanceStatus(snapshot.records, snapshot.doctors, confirming.id, next);
-      setSnapshot({ ...snapshot, records: updated });
-      setConfirming(null);
-      setError('');
-      setNotice(`Opening balance ${next === 'active' ? 'activated' : 'inactivated'}.`);
-    } catch (cause) { setError(cause.message || 'Status could not be changed. Refresh records.'); }
-  }
-  async function exportRows() {
-    try {
-      verify();
-      await download(exportOpeningBalanceCSV(visible, snapshot.doctors), 'evexia-opening-balances.csv');
-      setError('');
-    } catch (cause) { setError(cause.message || 'CSV export failed. Refresh records.'); }
+      const blob = await exportOpeningBalances({ query, status }, format, controller.current.signal);
+      guard(); if (alive.current) downloadOpeningBalanceFile(blob, format);
+    } catch (cause) {
+      try { guard(); } catch { return; }
+      if (alive.current) setError(`${format === 'xlsx' ? 'Excel' : 'CSV'} export failed. ${cause.message}`);
+    } finally { busy.current = false; if (alive.current) setExporting(false); }
   }
   function actions(record, mobile = false) {
-    return <div className={mobile ? 'admin-mr-card__actions' : 'admin-table__actions'}>
-      <button type="button" className={mobile ? 'admin-mr-card__action' : 'admin-icon-button'} onClick={() => navigate(`${PATH}/${encodeURIComponent(record.id)}`)} title="Edit" aria-label={`Edit balance for ${doctors.get(record.doctorId)?.name || record.doctorId}`} data-testid={`button-edit-opening-balance-${record.id}`}><Pencil size={16} aria-hidden="true" />{mobile && 'Edit'}</button>
-      <button type="button" className={mobile ? 'admin-mr-card__action' : 'admin-icon-button'} onClick={() => { setConfirming(record); setError(''); }} title={record.status === 'active' ? 'Inactivate' : 'Activate'} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} balance for ${doctors.get(record.doctorId)?.name || record.doctorId}`} data-testid={`button-toggle-opening-balance-${record.id}`}><CirclePower size={16} aria-hidden="true" />{mobile && (record.status === 'active' ? 'Inactivate' : 'Activate')}</button>
-    </div>;
+    const toggle = record.status === 'active' ? 'Inactivate' : 'Activate';
+    return <fieldset disabled={state.loading || state.pending} className={mobile ? 'admin-mr-card__actions ob-actions' : 'admin-table__actions ob-actions'}>
+      <button type="button" className="admin-icon-button" aria-label={`Edit balance for ${record.doctorName}`} onClick={() => navigate(`${PATH}/${record.id}`)}><Pencil size={16} />{mobile && 'Edit'}</button>
+      <button type="button" className="admin-icon-button" aria-label={`${toggle} balance for ${record.doctorName}`} onClick={() => request(record, record.status === 'active' ? 'inactive' : 'active')}><CirclePower size={16} />{mobile && toggle}</button>
+      <button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Delete balance for ${record.doctorName}`} onClick={() => request(record, 'delete')}><Trash2 size={16} />{mobile && 'Delete'}</button>
+    </fieldset>;
   }
   const columns = [
-    { key: 'number', label: 'Sr No.', render: (_, index) => index + 1 },
-    { key: 'year', label: 'Financial year', render: (record) => <span className="ob-period"><strong>{record.startYear}–{record.endYear}</strong>{record.id.startsWith('sample-opening-balance-') && <small className="ob-sample">Sample</small>}</span> },
-    { key: 'doctor', label: 'Doctor', render: (record) => { const doctor = doctors.get(record.doctorId); return doctor ? <span className="ob-doctor"><strong>{doctor.name}</strong><small>{doctor.registrationNumber || 'No registration number'}</small></span> : <span className="ob-doctor ob-missing">Missing doctor<small>ID: {record.doctorId}</small></span>; } },
-    { key: 'amount', label: 'Opening balance', render: (record) => <span className={`ob-number${record.amount < 0 ? ' ob-number--negative' : ''}`} data-testid={`text-opening-balance-amount-${record.id}`}>{money.format(record.amount)}</span> },
-    { key: 'status', label: 'Status', render: (record) => <StatusBadge status={record.status} id={record.id} kind="opening-balance" /> },
-    { key: 'created', label: 'Created details', render: (record) => audit(record.createdBy, record.createdAt) },
-    { key: 'updated', label: 'Updated details', render: (record) => audit(record.updatedBy, record.updatedAt) },
-    { key: 'actions', label: 'Actions', render: (record) => actions(record) },
+    { key: 'serial', label: 'Sr No.', render: (_, i) => i + 1 },
+    { key: 'year', label: 'Financial year', render: (r) => <strong className="ob-period">{r.startYear}–{r.endYear}</strong> },
+    { key: 'doctor', label: 'Doctor', render: (r) => <span className="ob-doctor"><strong>{r.doctorName}</strong><small>{r.registrationNumber}{!r.doctorUsable && ' · inactive/unavailable reference'}</small></span> },
+    { key: 'amount', label: 'Opening balance', render: (r) => <span className={`ob-number${r.amount.startsWith('-') ? ' ob-number--negative' : ''}`}>{formatBalance(r.amount)}</span> },
+    { key: 'status', label: 'Status', render: (r) => <StatusBadge status={r.status} id={r.id} kind="opening-balance" /> },
+    { key: 'created', label: 'Created details', render: (r) => audit(r.createdBy, r.createdAt) },
+    { key: 'updated', label: 'Updated details', render: (r) => audit(r.updatedBy, r.updatedAt) },
+    { key: 'actions', label: 'Actions', render: (r) => actions(r) },
   ];
+  const actionName = confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'active' ? 'Activate' : 'Inactivate';
   return <AdminLayout title="Opening Balance Master">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Finance</p><h1>Opening Balance Master</h1><p className="admin-page-head__description">Set each doctor’s opening position for a financial year. Signed amounts and changes stay in this browser.</p></div>
-      <div className="ob-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={refresh} data-testid="button-refresh-opening-balances"><RefreshCw size={16} aria-hidden="true" /> Refresh records</button>
-        <button type="button" className="admin-button admin-button--secondary" disabled={!snapshot || stale} onClick={() => setImporting(true)} data-testid="button-import-opening-balances"><Upload size={16} aria-hidden="true" /> Import data</button>
-        <button type="button" className="admin-button admin-button--secondary" disabled={!snapshot || stale || !visible.length} onClick={exportRows} data-testid="button-export-opening-balances"><Download size={16} aria-hidden="true" /> Export data</button>
-        <button type="button" className="admin-button" disabled={!snapshot || stale} onClick={() => navigate(`${PATH}/new`)} data-testid="button-add-opening-balance"><Plus size={16} aria-hidden="true" /> Add opening balance</button>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Finance</p><h1>Opening Balance Master</h1><p className="admin-page-head__description">Shared financial-year starting positions. This register does not post ledger entries or calculate payment balances.</p></div>
+      <div className="ob-head-actions">
+        <button className="admin-button admin-button--secondary" onClick={state.retry} disabled={state.loading}><RefreshCw size={16} /> Refresh records</button>
+        <button className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/opening-balance')}><Upload size={16} /> Import data</button>
+        <DropdownMenu.Root open={menu} onOpenChange={(open) => { if (!open || !busy.current) setMenu(open); }}><DropdownMenu.Trigger asChild><button className="admin-button admin-button--secondary" disabled={state.loading || Boolean(state.error)} aria-disabled={exporting || undefined} data-testid="button-export-opening-balances"><Download size={16} />{exporting ? 'Exporting…' : 'Export data'}</button></DropdownMenu.Trigger>
+          <DropdownMenu.Portal><DropdownMenu.Content className="admin-dropdown__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} aria-label="Opening balance export format"><DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void download('csv')}>CSV</DropdownMenu.Item><DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void download('xlsx')}>Excel (.xlsx)</DropdownMenu.Item></DropdownMenu.Content></DropdownMenu.Portal>
+        </DropdownMenu.Root>
+        <button className="admin-button" onClick={() => navigate(`${PATH}/new`)}><Plus size={16} /> Add opening balance</button>
       </div></div>
-    {stale && <div className="admin-feedback admin-feedback--error ob-stale" role="alert"><p>Opening balances or doctor records may have changed in another tab. Refresh before editing, importing or exporting.</p><button type="button" className="admin-button admin-button--secondary" onClick={refresh} data-testid="button-recover-opening-balances">Refresh records</button></div>}
-    {notice && <div className="admin-feedback" role="status" data-testid="status-opening-balance-feedback">{notice}</div>}
+    {notice && <div className="admin-feedback" role="status">{notice}</div>}
     {error && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{error}</div>}
-    {snapshot && <div className="ob-context" aria-label="Balance overview"><div className="ob-context__item"><span>Records</span><strong>{records.length}</strong></div><div className="ob-context__item"><span>Active</span><strong>{records.filter((record) => record.status === 'active').length}</strong></div><span className="ob-context__note">{records.some((record) => record.id.startsWith('sample-opening-balance-')) ? 'Sample balances are illustrative, not real financial data. ' : ''}Browser-local preview · no ledger entries are posted</span></div>}
     <section className="admin-panel" aria-label="Opening balance list">
-      <div className="admin-toolbar"><div className="admin-toolbar__fields"><label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search opening balances</span><input value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Search year, doctor or amount" data-testid="input-search-opening-balances" /></label>
-        <div className="admin-filter"><label htmlFor="ob-status">Status</label><select id="ob-status" className="admin-select" value={status} onChange={(event) => { setStatus(event.target.value); pagination.resetPage(); }} data-testid="select-opening-balance-status"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+      <div className="admin-toolbar"><div className="admin-toolbar__fields"><label className="admin-search"><Search size={16} /><span className="sr-only">Search opening balances</span><input maxLength={200} value={query} placeholder="Search year, doctor, registration or amount" onChange={(e) => { setQuery(e.target.value); setPage(1); }} /></label>
+        <div className="admin-filter"><label htmlFor="ob-status">Status</label><select id="ob-status" className="admin-select" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+        <button className="admin-button admin-button--secondary" disabled={!query && status === 'all'} onClick={() => { setQuery(''); setStatus('all'); setPage(1); }}>Clear filters</button>
       </div></div>
-      {!snapshot && !error && <div aria-label="Loading opening balances" role="status">{[0, 1, 2, 3].map((n) => <div key={n} className="ob-skeleton" />)}</div>}
-      {!snapshot && error && <div className="admin-empty" role="alert"><span className="admin-empty__icon"><Landmark size={22} /></span><strong>Opening balances could not be loaded</strong><p>{error}</p><button type="button" className="admin-button" onClick={refresh} data-testid="button-retry-opening-balances">Try again</button></div>}
-      {snapshot && (visible.length ? <><div className="ob-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} label="Opening balance records" testIdPrefix="opening-balance" /></div>
-        <div className="ob-mobile" role="list" aria-label="Opening balance records">{pagination.pageRows.map((record) => { const doctor = doctors.get(record.doctorId); return <article key={record.id} role="listitem" className="ob-card" data-testid={`card-opening-balance-${record.id}`}><div className="ob-card__head"><div><small className="ob-period">{record.startYear}–{record.endYear}{record.id.startsWith('sample-opening-balance-') && <span className="ob-sample">Sample</span>}</small><h2>{doctor?.name || <span className="ob-missing">Missing doctor · {record.doctorId}</span>}</h2>{doctor && <small>{doctor.registrationNumber}</small>}</div><StatusBadge status={record.status} id={record.id} kind="opening-balance" /></div><dl className="ob-card__details"><div><dt>Opening balance</dt><dd className={`ob-number${record.amount < 0 ? ' ob-number--negative' : ''}`}>{money.format(record.amount)}</dd></div><div><dt>Created details</dt><dd>{audit(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated details</dt><dd>{audit(record.updatedBy, record.updatedAt)}</dd></div></dl>{actions(record, true)}</article>; })}</div></> :
-        <div className="admin-empty" data-testid="status-opening-balance-empty"><span className="admin-empty__icon"><Landmark size={22} aria-hidden="true" /></span><strong>{records.length ? 'No matching balances' : 'No opening balances yet'}</strong><p>{records.length ? 'Try another year, doctor or status.' : 'Add a doctor’s financial-year opening balance to start your register.'}</p>{!records.length && <button type="button" className="admin-button" disabled={stale} onClick={() => navigate(`${PATH}/new`)} data-testid="button-add-first-opening-balance">Add opening balance</button>}</div>)}
-      {snapshot && <TablePagination {...pagination} filtered={visible.length} total={records.length} label={visible.length === 1 ? 'balance' : 'balances'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-opening-balance-count" />}
+      {state.loading ? <p className="admin-empty" role="status">Loading shared opening balances…</p> : state.error ? <div className="admin-empty" role="alert"><p>{state.error}</p><button className="admin-button" onClick={state.retry}>Try again</button></div> : <>
+        {state.items.length ? <><div className="ob-desktop"><DataTable columns={columns} rows={state.items} rowOffset={(page - 1) * pageSize} rowKey={(r) => r.id} label="Opening balance records" testIdPrefix="opening-balance" /></div>
+          <div className="ob-mobile" role="list" aria-label="Opening balance records">{state.items.map((r) => <article className="ob-card" key={r.id} role="listitem"><div className="ob-card__head"><div><small>{r.startYear}–{r.endYear}</small><h2>{r.doctorName}</h2><small>{r.registrationNumber}</small></div><StatusBadge status={r.status} id={r.id} /></div><p className="ob-number">{formatBalance(r.amount)}</p><dl className="ob-card__details"><div><dt>Created</dt><dd>{audit(r.createdBy, r.createdAt)}</dd></div><div><dt>Updated</dt><dd>{audit(r.updatedBy, r.updatedAt)}</dd></div></dl>{actions(r, true)}</article>)}</div></> :
+          <div className="admin-empty"><strong>{state.total ? 'No matching balances' : 'No opening balances yet'}</strong><p>{state.total ? 'Try another search or status.' : 'Add a shared Doctor’s starting position. Legacy browser data is not imported automatically.'}</p></div>}
+        <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={state.filtered} total={state.total} label="balances" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} testId="text-opening-balance-count" />
+      </>}
     </section>
-    {confirming && <ConfirmationDialog title={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} opening balance?`} description={`Set ${doctors.get(confirming.doctorId)?.name || 'this doctor’s balance'} for ${confirming.startYear}–${confirming.endYear} to ${confirming.status === 'active' ? 'inactive' : 'active'}? The saved amount remains in this browser.`} actionLabel={`${confirming.status === 'active' ? 'Inactivate' : 'Activate'} balance`} onConfirm={changeStatus} onClose={() => { setConfirming(null); setError(''); }} error={error} />}
-    {importing && snapshot && <ImportDialog snapshot={snapshot} verify={verify} onDone={(updated) => { setSnapshot({ ...snapshot, records: updated }); setNotice(`${updated.length - snapshot.records.length} opening balances imported.`); setError(''); }} onClose={() => setImporting(false)} />}
+    {confirming && <ConfirmationDialog pending={state.pending} blocked={blocked} title={`${actionName} opening balance?`} description={`${actionName} ${confirming.record.doctorName}’s balance for ${confirming.record.startYear}–${confirming.record.endYear}?${confirming.type === 'delete' ? ' It leaves ordinary lists and exports; versioned server deletion history is retained. No restore is available here.' : ''}`} actionLabel={`${actionName} balance`} destructive={confirming.type === 'delete'} error={error} onConfirm={confirm} onClose={() => { setConfirming(null); setError(''); state.retry(); }} />}
   </AdminLayout>;
 }

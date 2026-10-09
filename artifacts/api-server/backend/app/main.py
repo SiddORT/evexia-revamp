@@ -52,6 +52,8 @@ logger = logging.getLogger("evexia.api")
 logging.getLogger("uvicorn.access").disabled = True
 from app.api.v1.allergens import router as allergens_router
 from app.services.allergens import AllergenError
+from app.api.v1.opening_balances import router as opening_balances_router
+from app.services.opening_balances import OpeningBalanceError
 
 
 def error_body(request, status, message, code=None, fields=None):
@@ -167,12 +169,13 @@ def create_app() -> FastAPI:
                              for name in ("name", "description", "expected_version", "role_id", "limit", "cursor")}
             fields = [{"field": field["field"] if field["field"] in locations else "body",
                        "code": field["code"]} for field in fields]
-        if request.url.path.startswith(("/api/v1/admin/zones", "/api/v1/admin/courier-partners", "/api/v1/admin/storage-locations", "/api/v1/admin/designations", "/api/v1/admin/headquarters", "/api/v1/admin/product-categories", "/api/v1/admin/vendors")):
+        if request.url.path.startswith(("/api/v1/admin/zones", "/api/v1/admin/courier-partners", "/api/v1/admin/storage-locations", "/api/v1/admin/designations", "/api/v1/admin/headquarters", "/api/v1/admin/product-categories", "/api/v1/admin/vendors", "/api/v1/admin/opening-balances")):
             allowed = {"name", "address", "status", "expected_version", "query", "limit", "offset", "format", "filename", "digest", "confirm", "zone_id", "courier_id", "location_id"}
             allowed |= {"shortName", "level", "basicDa", "hra", "medicalAllowance", "travellingAllowance", "specialAllowance", "professionalTax", "designation_id"}
             allowed |= {"state_code", "headquarter_id"}
             allowed |= {"description", "unit_price", "min_price", "max_price", "product_category_id"}
             allowed |= {"vendorName", "gstNo", "registeredAddress", "contactPersonName", "emailId", "phoneNo", "dialCountry", "vendor_id"}
+            allowed |= {"startYear", "endYear", "doctorId", "amount", "balance_id"}
             locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
             fields = [{"field": item["field"] if item["field"] in locations else "body",
                        "code": item["code"]} for item in fields]
@@ -244,6 +247,10 @@ def create_app() -> FastAPI:
     async def product_category_error(request: Request, exc: ProductCategoryError):
         return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
 
+    @app.exception_handler(OpeningBalanceError)
+    async def opening_balance_error(request: Request, exc: OpeningBalanceError):
+        return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
+
     @app.exception_handler(AllergenError)
     async def allergen_error(request: Request, exc: AllergenError):
         return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
@@ -278,6 +285,7 @@ def create_app() -> FastAPI:
     app.include_router(doctors_router, prefix="/api/v1")
     app.include_router(patients_router, prefix="/api/v1")
     app.include_router(product_categories_router, prefix="/api/v1")
+    app.include_router(opening_balances_router, prefix="/api/v1")
     app.include_router(allergens_router, prefix="/api/v1")
     app.include_router(roles_router, prefix="/api/v1")
     app.add_api_route("/api/healthz", lambda: {"status": "ok"}, methods=["GET"],

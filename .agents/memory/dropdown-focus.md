@@ -28,3 +28,18 @@ which an outside-focus handler interprets as dismissal before new choices appear
 
 **How to apply:** Guard duplicate requests synchronously, use `aria-disabled`
 for pending actions, and test keyboard focus through paging and retry transitions.
+
+For server-paged choices, preserve the search/page when dismissal merely moves
+focus to a paging control. Reopening the selector must not silently request
+page zero or erase the current filter.
+
+**Why:** Local-only selectors commonly clear their search when closed or
+focused. Reusing that behavior for a server-paged Doctor picker made a selected
+later page unreachable when the user reopened the menu after paging.
+
+**How to apply:** Make search retention opt-in for server-paged consumers,
+retaining existing local-selector behavior. Explicit search changes/clears and
+completed selections may reset paging; test selection from the actual later
+page rather than re-searching the target's unique identifier. When paging
+controls sit outside the overlaid menu, dismiss it first; do not force clicks
+through the popup and bypass normal pointer hit testing.

@@ -8,6 +8,8 @@ import { downloadReportingCSV } from '../../services/reportingCSV.js';
 import '../../activityLogs.css';
 
 const browserActions = {
+  opening_balance_create: 'Opening balance created', opening_balance_edit: 'Opening balance updated',
+  opening_balance_status: 'Opening balance status changed', opening_balance_delete: 'Opening balance deleted',
   headquarter_create: 'Headquarter created', headquarter_edit: 'Headquarter updated',
   headquarter_status: 'Headquarter status changed', headquarter_delete: 'Headquarter deleted',
   allergen_create: 'Allergen product created', allergen_edit: 'Allergen product updated',

@@ -14,8 +14,11 @@ Doctor's MR foreign key uses the landed server MRDirectory ID, which is the
 existing one-to-one MRProfile ID. No alternate identity model is introduced.
 Zone is derived from the live MR assignment and cannot be independently written.
 
-Patient, Opening Balance, Sales Target and payment previews retain their original
-browser-local services and IDs. Live Doctor payment navigation authenticates the
+Legacy Patient/Opening Balance datasets, Sales Target and payment previews retain
+their original browser-local services and IDs. The new shared Opening Balance
+register references server Doctors explicitly; it never mirrors those legacy
+balances. See [Opening Balance operations](opening-balance-master.md).
+Live Doctor payment navigation authenticates the
 server Doctor ID and shows an honest unavailable-ledger boundary. It never joins
 that ID to local payments or opening balances, even if an ID happens to match.
 Doctor login/password provisioning remains unavailable; password controls stay
