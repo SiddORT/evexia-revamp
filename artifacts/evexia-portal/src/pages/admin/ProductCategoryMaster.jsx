@@ -114,7 +114,7 @@ export default function ProductCategoryMaster() {
         {can.add && <button className="admin-button" onClick={() => navigate(`${LIST}/new`)}><Plus size={16} /> Add category</button>}
       </div>
     </div>
-    <p className="admin-page-head__description">Allergen and procurement keep their separate browser-local category IDs and data. Live changes do not affect demo inventory. Exports include every name/description/price/status match, up to 5,000 records.</p>
+    <p className="admin-page-head__description">The browser-local allergen dataset and procurement keep their separate category IDs and data. Shared Allergen Master uses this live directory. Live changes do not affect demo inventory. Exports include every name/description/price/status match, up to 5,000 records.</p>
     {feedback && <div className="admin-feedback" role="status">{feedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     <section className="admin-panel" aria-label="Product category list">

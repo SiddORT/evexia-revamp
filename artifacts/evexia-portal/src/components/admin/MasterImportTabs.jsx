@@ -13,6 +13,7 @@ export default function MasterImportTabs({ kind }) {
     master.import === key && hasMasterPermission(user, master.key, 'import'));
   return <nav className="excel-import__tabs" aria-label="Select a master for import">
     {allowed('product-category') && <button type="button" className={kind === 'product-category' ? 'excel-import__tab excel-import__tab--active' : 'excel-import__tab'} aria-current={kind === 'product-category' ? 'page' : undefined} onClick={() => navigate('/admin/masters/import/product-category')}>Product Category Master</button>}
+    {allowed('allergen') && <button type="button" className={kind === 'allergen' ? 'excel-import__tab excel-import__tab--active' : 'excel-import__tab'} aria-current={kind === 'allergen' ? 'page' : undefined} onClick={() => navigate('/admin/masters/import/allergen')}>Allergen Master</button>}
     {masters.filter(([key]) => allowed(key)).map(([key, item]) =>
       <button type="button" key={key} className={kind === key ? 'excel-import__tab excel-import__tab--active' : 'excel-import__tab'}
         aria-current={kind === key ? 'page' : undefined} onClick={() => navigate(`/admin/masters/import/${key}`)}>{item.title} Master</button>)}

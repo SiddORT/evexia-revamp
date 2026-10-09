@@ -47,6 +47,7 @@ SERVER["mr"] = {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}}
 SERVER["doctor"] = {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}}
 SERVER["patient"] = {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}}
 SERVER["product_category"]["template"] = {"CSV", "XLSX"}
+SERVER["allergen"] = {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}}
 SERVER["private_attachment"] = {"attachment": {"PDF"}, "issuance": {"PDF"}}
 
 

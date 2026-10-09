@@ -3,6 +3,20 @@ import { MASTER_CATALOGUE } from '../src/auth/capabilities.js';
 if (process.env.EVEXIA_CHROMIUM_PATH) test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
 const base = () => process.env.EVEXIA_PREVIEW_BASE_URL.replace(/\/$/, '');
 
+async function settledStaff(page, path) {
+  const paths = Array.isArray(path) ? path : [path];
+  const escaped = paths.map(value => `${base()}${value}`.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  await expect(page).toHaveURL(new RegExp(`^(?:${escaped.join('|')})$`));
+  // Full document navigation destroys the Web Lock owner. Never navigate again
+  // while restoration is rotating the shared refresh cookie: a delayed response
+  // from the destroyed document can turn the next restore into a replay.
+  await expect.poll(() => page.evaluate(async () => {
+    const { getSession } = await import('/src/auth/adminSession.js');
+    const state = getSession();
+    return state.status === 'authenticated' && state.user?.identity_kind === 'staff';
+  })).toBe(true);
+}
+
 for (const master of MASTER_CATALOGUE) test(`${master.key}: single-action staff roles mount only their own master and applicable controls`, async ({ page, browser }, info) => {
   test.setTimeout(300000);
   await page.goto(`${base()}/admin/roles-permissions`);
@@ -30,6 +44,7 @@ for (const master of MASTER_CATALOGUE) test(`${master.key}: single-action staff 
     await clerk.getByLabel('Password', { exact: true }).fill(fixture.password);
     await clerk.getByTestId('button-submit-login').click();
     await expect(clerk.getByTestId('status-no-workspace-access')).toBeVisible();
+    await settledStaff(clerk, '/admin');
       for (const action of ['add', 'edit', 'delete', 'import', 'export']) {
         await test.step(`${master.key}.${action}`, async () => {
         await page.evaluate(async ({ id, grant }) => {
@@ -39,7 +54,7 @@ for (const master of MASTER_CATALOGUE) test(`${master.key}: single-action staff 
         }, { id: fixture.roleId, grant: `${master.key}.${action}` });
         const route = `/admin/masters/${master.path}`;
         await clerk.goto(`${base()}${route}`);
-        await expect(clerk).toHaveURL(new RegExp(`${route}$`));
+        await settledStaff(clerk, route);
         await expect(clerk.locator('.admin-error')).toHaveCount(0);
         // Use capability-filtered navigation; unrelated directories and protected menus never appear.
         for (const other of fixture.masters) {
@@ -57,7 +72,8 @@ for (const master of MASTER_CATALOGUE) test(`${master.key}: single-action staff 
         await expect(importing).toHaveCount(action === 'import' ? 1 : 0);
         if (action !== 'add') {
           await clerk.goto(`${base()}${route}/new`);
-          await expect(clerk).not.toHaveURL(new RegExp(`${route}/new$`));
+          await settledStaff(clerk, ['/admin', route]);
+          await expect(clerk.getByRole('button', { name: /^Save /i })).toHaveCount(0);
         } else {
           await add.click();
           if (['zone', 'courier'].includes(master.key)) await expect(clerk.getByRole('dialog')).toBeVisible();
@@ -67,12 +83,14 @@ for (const master of MASTER_CATALOGUE) test(`${master.key}: single-action staff 
         }
         if (action === 'import') {
           await clerk.goto(`${base()}${route}`);
+          await settledStaff(clerk, route);
           await clerk.getByRole('button', { name: /^Import data$/i }).click();
           await expect(clerk.locator('.excel-import__tab')).toHaveCount(1);
           await expect(clerk.locator('input[type="file"]')).toBeAttached();
         } else {
           await clerk.goto(`${base()}/admin/masters/import/${master.import}`);
-          await expect(clerk).not.toHaveURL(new RegExp(`/import/${master.import}$`));
+          await settledStaff(clerk, ['/admin', route]);
+          await expect(clerk.locator('input[type="file"]')).toHaveCount(0);
         }
         if (master.key === 'mr') await expect(clerk.locator('[data-testid^="button-reset-mr-"]')).toHaveCount(0);
         });

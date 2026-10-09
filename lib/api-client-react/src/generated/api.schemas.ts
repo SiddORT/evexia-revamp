@@ -5,6 +5,208 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+export type AllergenEditStatus =
+  (typeof AllergenEditStatus)[keyof typeof AllergenEditStatus];
+
+export const AllergenEditStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface AllergenEdit {
+  category_id: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  concentration: string;
+  /** @minimum 1 */
+  expected_version: number;
+  /**
+   * @minLength 1
+   * @maxLength 64
+   */
+  gst: string;
+  /** True means Mix; false means No Mix. Catalogue metadata, not a stock operation. */
+  mix: boolean;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  selling_price?: string | null;
+  status: AllergenEditStatus;
+  storage_location_id: string;
+  threshold_limit?: string | null;
+}
+
+export type AllergenFieldsStatus =
+  (typeof AllergenFieldsStatus)[keyof typeof AllergenFieldsStatus];
+
+export const AllergenFieldsStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface AllergenFields {
+  category_id: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  concentration: string;
+  /**
+   * @minLength 1
+   * @maxLength 64
+   */
+  gst: string;
+  /** True means Mix; false means No Mix. Catalogue metadata, not a stock operation. */
+  mix: boolean;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  selling_price?: string | null;
+  status: AllergenFieldsStatus;
+  storage_location_id: string;
+  threshold_limit?: string | null;
+}
+
+export interface AllergenImportResult {
+  imported: number;
+}
+
+export interface AllergenImportRow {
+  category_name: string;
+  concentration: string;
+  errors: string[];
+  gst: string;
+  mix: string;
+  name: string;
+  row: number;
+  selling_price: string | null;
+  status: string;
+  storage_location_name: string;
+  threshold_limit: string | null;
+}
+
+export type AllergenResponseCategoryStatus =
+  (typeof AllergenResponseCategoryStatus)[keyof typeof AllergenResponseCategoryStatus];
+
+export const AllergenResponseCategoryStatus = {
+  active: "active",
+  inactive: "inactive",
+  deleted: "deleted",
+} as const;
+
+export type AllergenResponseStatus =
+  (typeof AllergenResponseStatus)[keyof typeof AllergenResponseStatus];
+
+export const AllergenResponseStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type AllergenResponseStorageLocationStatus =
+  (typeof AllergenResponseStorageLocationStatus)[keyof typeof AllergenResponseStorageLocationStatus];
+
+export const AllergenResponseStorageLocationStatus = {
+  active: "active",
+  inactive: "inactive",
+  deleted: "deleted",
+} as const;
+
+export interface AllergenResponse {
+  category_id: string;
+  category_name: string;
+  category_status: AllergenResponseCategoryStatus;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  concentration: string;
+  createdAt: string;
+  createdBy: string;
+  /**
+   * @minLength 1
+   * @maxLength 64
+   */
+  gst: string;
+  id: string;
+  /** True means Mix; false means No Mix. Catalogue metadata, not a stock operation. */
+  mix: boolean;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  selling_price?: string | null;
+  status: AllergenResponseStatus;
+  storage_location_id: string;
+  storage_location_name: string;
+  storage_location_status: AllergenResponseStorageLocationStatus;
+  threshold_limit?: string | null;
+  updatedAt: string;
+  updatedBy: string;
+  version: number;
+}
+
+export interface AllergenPage {
+  filtered: number;
+  items: AllergenResponse[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export type AllergenReferenceStatus =
+  (typeof AllergenReferenceStatus)[keyof typeof AllergenReferenceStatus];
+
+export const AllergenReferenceStatus = {
+  active: "active",
+  inactive: "inactive",
+  deleted: "deleted",
+} as const;
+
+export interface AllergenReference {
+  id: string;
+  name: string;
+  status: AllergenReferenceStatus;
+}
+
+export interface AllergenReferencePage {
+  items: AllergenReference[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export interface AllergenReview {
+  digest: string;
+  rows: AllergenImportRow[];
+  valid: boolean;
+}
+
+export type AllergenStatusStatus =
+  (typeof AllergenStatusStatus)[keyof typeof AllergenStatusStatus];
+
+export const AllergenStatusStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface AllergenStatus {
+  /** @minimum 1 */
+  expected_version: number;
+  status: AllergenStatusStatus;
+}
+
+export interface AllergenVersion {
+  /** @minimum 1 */
+  expected_version: number;
+}
+
 export interface AssignPatientRequest {
   assigned_mr_id: string | null;
 }
@@ -2958,6 +3160,146 @@ export interface ZoneVersion {
   /** @minimum 1 */
   expected_version: number;
 }
+
+export type ListAllergensParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ListAllergensStatus;
+  category_id?: string | null;
+  storage_location_id?: string | null;
+  mix?: ListAllergensMix;
+  min_price?: string | null;
+  max_price?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
+export type ListAllergensStatus =
+  (typeof ListAllergensStatus)[keyof typeof ListAllergensStatus];
+
+export const ListAllergensStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ListAllergensMix =
+  (typeof ListAllergensMix)[keyof typeof ListAllergensMix];
+
+export const ListAllergensMix = {
+  all: "all",
+  mix: "mix",
+  no_mix: "no_mix",
+} as const;
+
+export type ExportAllergensParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ExportAllergensStatus;
+  category_id?: string | null;
+  storage_location_id?: string | null;
+  mix?: ExportAllergensMix;
+  min_price?: string | null;
+  max_price?: string | null;
+  format?: ExportAllergensFormat;
+};
+
+export type ExportAllergensStatus =
+  (typeof ExportAllergensStatus)[keyof typeof ExportAllergensStatus];
+
+export const ExportAllergensStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportAllergensMix =
+  (typeof ExportAllergensMix)[keyof typeof ExportAllergensMix];
+
+export const ExportAllergensMix = {
+  all: "all",
+  mix: "mix",
+  no_mix: "no_mix",
+} as const;
+
+export type ExportAllergensFormat =
+  (typeof ExportAllergensFormat)[keyof typeof ExportAllergensFormat];
+
+export const ExportAllergensFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type CommitAllergenImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+  /**
+   * @pattern ^[0-9a-f]{64}$
+   */
+  digest: string;
+  confirm: boolean;
+};
+
+export type CommitAllergenImportBody = {
+  file: Blob | File;
+};
+
+export type ReviewAllergenImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+};
+
+export type ReviewAllergenImportBody = {
+  file: Blob | File;
+};
+
+export type ListAllergenReferencesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  include_unusable?: boolean;
+};
+
+export type DownloadAllergenSampleParams = {
+  format?: DownloadAllergenSampleFormat;
+};
+
+export type DownloadAllergenSampleFormat =
+  (typeof DownloadAllergenSampleFormat)[keyof typeof DownloadAllergenSampleFormat];
+
+export const DownloadAllergenSampleFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
 
 export type ListCourierPartnersParams = {
   /**

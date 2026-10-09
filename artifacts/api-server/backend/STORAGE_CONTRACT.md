@@ -34,6 +34,7 @@ password input; there is no default elevated account.
 | Vendor list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; not assignable in the eight-master staff catalogue | no |
 | Headquarter list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; Zone staff grants and business labels do not apply | no |
 | Product Category list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; no Zone/custom-role elevation | no |
+| Allergen catalogue CRUD/status/soft-delete/import/export/sample/reference choices (`admin.access`) | protected singleton only; outside staff master permission domains | no |
 | MR business directory list/detail/edit/status/contact/soft-delete/reference/PIN/export/sample (`admin.access`) | protected singleton only | no |
 | MR account create/import/reset/generate username (`admin.access` AND `domain.provision`) | protected singleton only | no |
 | Upload, metadata, verified download, download grant | system-wide | own MR or currently assigned active patient |
@@ -88,7 +89,7 @@ private uploaded-file storage or a Zone. It uses server-owned UTC times, User
 actor references, required expected versions, non-deleted normalized-name
 uniqueness and retained soft-deletion evidence. CSV/XLSX imports are explicit,
 identity/session-bound, create-only and atomic; imported audit values are ignored.
-Allergen/PO/PR keep their separate browser-local location records and IDs.
+The legacy browser-local allergen dataset and PO/PR keep separate local location records and IDs.
 See `docs/storage-location-master.md` for exact schemas, limits and recovery.
 
 Designation Master uses separate shared persistence, exact `NUMERIC(11,2)` values,

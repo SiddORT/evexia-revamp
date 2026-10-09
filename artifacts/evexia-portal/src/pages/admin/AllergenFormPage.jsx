@@ -1,110 +1,152 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, FlaskConical, RefreshCw } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
-import useAllergens from '../../hooks/useAllergens.js';
-import { referenceLabel, validateAllergen } from '../../services/allergens.js';
+import AllergenRefPicker from '../../components/admin/AllergenRefPicker.jsx';
+import { allergenPayload, createAllergen, editAllergen, getAllergen, listAllergens, validateAllergen } from '../../services/serverAllergens.js';
+import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
 import '../../mr.css';
 import '../../allergen.css';
 
-const LIST_PATH = '/admin/masters/allergens';
-const emptyValues = { name: '', categoryId: '', sellingPrice: '', gst: '', storageLocationId: '', concentration: '', thresholdLimit: '', hsnCode: '', status: 'active', allergens: true };
+const LIST = '/admin/masters/allergens';
+const empty = () => ({ name: '', category_id: '', storage_location_id: '', selling_price: '', gst: '', concentration: '', threshold_limit: '', status: 'active', mix: false });
+const fromRecord = (r) => ({ name: r.name, category_id: r.category_id, storage_location_id: r.storage_location_id, selling_price: r.selling_price ?? '', gst: r.gst, concentration: r.concentration, threshold_limit: r.threshold_limit ?? '', status: r.status, mix: r.mix === true });
+const norm = (v) => v.trim().replace(/\s+/g, ' ').toLowerCase();
+const summary = (r) => `${r.name}; ${r.category_name}; ${r.storage_location_name}; price ${r.selling_price ?? 'none'}; GST ${r.gst}; ${r.concentration}; threshold ${r.threshold_limit ?? 'none'}; ${r.mix ? 'Mix' : 'No Mix'}; ${r.status}`;
 
-function ReferenceSelect({ field, label, value, list, onChange, error, record }) {
-  const selected = list.find((item) => item.id === value);
-  const legacy = value && (!selected || selected.status !== 'active') && record?.[field] === value;
-  return <div className="mr-form__field">
-    <label className="mr-form__label" htmlFor={`allergen-${field}`}>{label} <span className="mr-form__required">*</span></label>
-    <select id={`allergen-${field}`} className="mr-form__control" value={value} onChange={(event) => onChange(field, event.target.value)} aria-invalid={Boolean(error)} aria-describedby={error ? `allergen-${field}-error` : undefined} data-testid={`select-allergen-${field}`}>
-      <option value="">Select {label.toLowerCase()}</option>
-      {legacy && <option value={value}>{referenceLabel(list, value, label.toLowerCase())} — existing selection</option>}
-      {list.filter((item) => item.status === 'active').map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
-    </select>
-    {error ? <p className="mr-form__error" id={`allergen-${field}-error`} role="alert">{error}</p> : legacy ? <p className="mr-form__hint">This saved reference is no longer active. You may keep it, or choose an active {label.toLowerCase()}.</p> : null}
-  </div>;
-}
-
-function AllergenForm({ record, records, refs, onSave, onCancel, onRefresh }) {
-  const [values, setValues] = useState(() => record ? {
-    name: record.name ?? '', categoryId: record.categoryId ?? '', sellingPrice: String(record.sellingPrice ?? ''),
-    gst: String(record.gst ?? ''), storageLocationId: record.storageLocationId ?? '', concentration: record.concentration ?? '',
-    thresholdLimit: String(record.thresholdLimit ?? ''), hsnCode: record.hsnCode ?? '', status: record.status ?? 'active',
-    allergens: record.allergens,
-  } : { ...emptyValues });
+function AllergenForm({ record, onSave, onCancel, onRefresh }) {
+  const [values, setValues] = useState(() => record ? fromRecord(record) : empty());
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
-  const categories = refs?.categories || [];
-  const locations = refs?.locations || [];
-
+  const [pending, setPending] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const busy = useRef(false);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    const owner = getSession().user?.id;
+    const unsubscribe = subscribeSession(() => {
+      const s = getSession();
+      if (s.user?.id !== owner || !['authenticated', 'renewing', 'renewal-error'].includes(s.status)) { setValues(empty()); setServerError(''); setErrors({}); }
+    });
+    return () => { alive.current = false; unsubscribe(); };
+  }, []);
   function update(field, value) {
-    setValues((current) => ({ ...current, [field]: value }));
-    setErrors((current) => ({ ...current, [field]: undefined, form: undefined }));
-    setServerError('');
+    setValues((c) => ({ ...c, [field]: value }));
+    setErrors((c) => ({ ...c, [field]: undefined }));
+    if (!blocked) setServerError('');
   }
-  function submit(event) {
+  async function submit(event) {
     event.preventDefault();
-    const result = validateAllergen(values, records, refs, record?.id);
-    setErrors(result.errors);
-    setServerError('');
-    if (Object.keys(result.errors).length) return;
+    if (busy.current || blocked) return;
+    const next = validateAllergen(values);
+    setErrors(next);
+    if (Object.keys(next).length) return;
+    const guard = reportingIdentityGuard();
+    busy.current = true; setPending(true); setServerError('');
+    try { await onSave(allergenPayload(values)); }
+    catch (cause) {
+      try { guard(); } catch { return; }
+      if (alive.current) { setServerError(cause.message); setBlocked(/stale|conflict/.test(cause.code || '') || Boolean(cause.ambiguous) || cause.code === 'not_found'); }
+    } finally { busy.current = false; if (alive.current) setPending(false); }
+  }
+  async function reconcile() {
+    if (busy.current) return;
+    const guard = reportingIdentityGuard();
+    busy.current = true; setPending(true);
     try {
-      const saved = onSave(result.fields);
-      if (!saved.success) setServerError(saved.error || 'The product could not be saved. Refresh records and try again.');
-    } catch (cause) { setServerError(cause.message || 'The product could not be saved.'); }
+      const current = await onRefresh(values); guard();
+      if (!alive.current) return;
+      setServerError(current ? `Current server record: ${summary(current)}. Your draft is retained. Compare these details before saving again.` : 'No matching record exists. Your draft is retained; review before retrying.');
+      setBlocked(false);
+    } catch (cause) {
+      try { guard(); } catch { return; }
+      if (alive.current) setServerError(cause.message);
+    } finally { busy.current = false; if (alive.current) setPending(false); }
   }
-  function field(name, label, options = {}) {
-    const { optional = false, numeric = false, placeholder = '' } = options;
-    return <div className="mr-form__field" key={name}>
-      <label className="mr-form__label" htmlFor={`allergen-${name}`}>{label} {optional ? <span className="mr-form__hint">(optional)</span> : <span className="mr-form__required">*</span>}</label>
-      <input id={`allergen-${name}`} className="mr-form__control" type={numeric ? 'number' : 'text'} min={numeric ? '0' : undefined} max={name === 'gst' ? '100' : undefined} step={numeric ? 'any' : undefined} inputMode={numeric ? 'decimal' : undefined} value={values[name]} onChange={(event) => update(name, event.target.value)} placeholder={placeholder} aria-invalid={Boolean(errors[name])} aria-describedby={errors[name] ? `allergen-${name}-error` : undefined} data-testid={`input-allergen-${name}`} />
-      {errors[name] && <p className="mr-form__error" id={`allergen-${name}-error`} role="alert">{errors[name]}</p>}
-    </div>;
-  }
-
+  const err = (name) => errors[name] && <p className="mr-form__error" id={`allergen-${name}-error`} role="alert">{errors[name]}</p>;
+  const text = (name, label, { optional = false, hint, numeric = false, max } = {}) => <div className="mr-form__field">
+    <label className="mr-form__label" htmlFor={`allergen-${name}`}>{label} {optional ? <span className="mr-form__hint">(optional)</span> : <span className="mr-form__required">*</span>}</label>
+    <input id={`allergen-${name}`} className="mr-form__control" inputMode={numeric ? 'decimal' : undefined} maxLength={max} value={values[name]} onChange={(e) => update(name, e.target.value)} aria-invalid={Boolean(errors[name])} aria-describedby={errors[name] ? `allergen-${name}-error` : undefined} data-testid={`input-allergen-${name}`} />
+    {hint && <p className="mr-form__hint">{hint}</p>}{err(name)}
+  </div>;
+  const decimalHint = 'Plain decimal, up to 12 integer and 6 fractional digits. Never rounded.';
   return <form className="admin-allergen-form" onSubmit={submit} noValidate>
-    <div className="admin-allergen-form__intro"><div><h2>Product details</h2><p>Fields marked * are required. Changes are saved to this browser only.</p></div><FlaskConical size={21} aria-hidden="true" /></div>
+    <div className="admin-allergen-form__intro"><div><h2>Product details</h2><p>Fields marked * are required. Records are shared on the server.</p></div><FlaskConical size={21} aria-hidden="true" /></div>
     <div className="mr-form__body">
-      {(serverError || errors.form) && <div className="mr-form__notice mr-form__notice--error" role="alert"><p>{serverError || errors.form}</p>{serverError && <button type="button" className="admin-button admin-button--secondary" onClick={onRefresh} data-testid="button-refresh-allergen-error"><RefreshCw size={16} aria-hidden="true" /> Refresh records and discard draft</button>}</div>}
-      <div className="mr-form__grid">
-        <div className="admin-allergen-form__section">Identity <small>Catalog name and its master references</small></div>
-        {field('name', 'Product Name', { placeholder: 'e.g. Diagnostic reagent' })}
-        <ReferenceSelect field="categoryId" label="Category" value={values.categoryId} list={categories} onChange={update} error={errors.categoryId} record={record} />
-        <ReferenceSelect field="storageLocationId" label="Storage Location" value={values.storageLocationId} list={locations} onChange={update} error={errors.storageLocationId} record={record} />
-        <p className="mr-form__footer-note">These locations use the separate browser-local dataset. Shared Storage Location Master changes do not affect these choices.</p>
-        {field('hsnCode', 'HSN code', { optional: true, placeholder: 'e.g. 3822' })}
-        <div className="admin-allergen-form__section">Pricing & specification <small>Amounts are non-negative; GST is between 0 and 100</small></div>
-        {field('sellingPrice', 'Selling Price', { optional: true, numeric: true, placeholder: '0.00' })}
-        {field('gst', 'GST (%)', { numeric: true, placeholder: 'e.g. 12' })}
-        {field('concentration', 'Concentration', { placeholder: 'e.g. 10 mg/mL' })}
-        {field('thresholdLimit', 'Threshold limit', { optional: true, numeric: true, placeholder: 'e.g. 5' })}
-        <div className="admin-allergen-form__section">Availability & handling <small>Control visibility and the Allergens / No Mix designation</small></div>
-        <div className="mr-form__field"><label className="mr-form__label" htmlFor="allergen-status">Status <span className="mr-form__required">*</span></label><select id="allergen-status" className="mr-form__control" value={values.status} onChange={(event) => update('status', event.target.value)} aria-invalid={Boolean(errors.status)} data-testid="select-allergen-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>{errors.status && <p className="mr-form__error" role="alert">{errors.status}</p>}</div>
-        <fieldset className="mr-form__field"><legend className="mr-form__label">Allergens / No Mix <span className="mr-form__required">*</span></legend><div className="admin-allergen-form__choice"><label><input type="radio" name="allergen-designation" checked={values.allergens === true} onChange={() => update('allergens', true)} data-testid="radio-allergen-allergens" /> Allergens</label><label><input type="radio" name="allergen-designation" checked={values.allergens === false} onChange={() => update('allergens', false)} data-testid="radio-allergen-no-mix" /> No Mix</label></div>{errors.allergens && <p className="mr-form__error" role="alert">{errors.allergens}</p>}</fieldset>
-      </div>
+      {serverError && <div className="mr-form__notice mr-form__notice--error" role="alert"><p>{serverError}</p><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={reconcile} data-testid="button-reconcile-allergen"><RefreshCw size={16} aria-hidden="true" /> Review current server details (keep draft)</button></div>}
+      <fieldset className="mr-form__grid" disabled={pending} style={{ border: 0, margin: 0, padding: 0 }}>
+        {text('name', 'Product name', { max: 200 })}
+        <div className="mr-form__field"><label className="mr-form__label" htmlFor="allergen-category">Product category <span className="mr-form__required">*</span></label>
+          <AllergenRefPicker id="allergen-category" kind="categories" label="Product category" value={values.category_id} invalid={Boolean(errors.category_id)} testId="select-allergen-category"
+            retained={record ? { id: record.category_id, name: record.category_name, status: record.category_status } : null} onChange={(id) => update('category_id', id)} />
+          {err('category_id')}</div>
+        <div className="mr-form__field"><label className="mr-form__label" htmlFor="allergen-location">Storage location <span className="mr-form__required">*</span></label>
+          <AllergenRefPicker id="allergen-location" kind="locations" label="Storage location" value={values.storage_location_id} invalid={Boolean(errors.storage_location_id)} testId="select-allergen-location"
+            retained={record ? { id: record.storage_location_id, name: record.storage_location_name, status: record.storage_location_status } : null} onChange={(id) => update('storage_location_id', id)} />
+          {err('storage_location_id')}</div>
+        {text('selling_price', 'Selling price', { optional: true, numeric: true, hint: decimalHint })}
+        {text('gst', 'GST (%)', { numeric: true, hint: '0 to 100, up to 6 fractional digits.' })}
+        {text('concentration', 'Concentration', { max: 200 })}
+        {text('threshold_limit', 'Threshold limit', { optional: true, numeric: true, hint: decimalHint })}
+        <div className="mr-form__field"><label className="mr-form__label" htmlFor="allergen-status">Status <span className="mr-form__required">*</span></label><select id="allergen-status" className="mr-form__control" value={values.status} onChange={(e) => update('status', e.target.value)} aria-invalid={Boolean(errors.status)} data-testid="select-allergen-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>{err('status')}</div>
+        <div className="mr-form__field"><span className="mr-form__label" id="allergen-mix-label">Mix / No Mix</span>
+          <button type="button" role="switch" aria-checked={values.mix} aria-labelledby="allergen-mix-label allergen-mix-state" className="admin-allergen-switch" onClick={() => update('mix', !values.mix)} data-testid="switch-allergen-mix">
+            <span className="admin-allergen-switch__track" aria-hidden="true"><span className="admin-allergen-switch__thumb" /></span>
+            <strong id="allergen-mix-state" data-testid="text-allergen-mix-state">{values.mix ? 'Mix' : 'No Mix'}</strong>
+          </button>
+          <p className="mr-form__hint">Catalogue metadata only. Not a stock mixing operation.</p></div>
+      </fieldset>
     </div>
-    <div className="mr-form__footer"><span className="mr-form__footer-note">Changes stay in this browser. No server account or inventory is updated.</span><div className="mr-form__actions"><button type="button" className="admin-button admin-button--secondary" onClick={onCancel} data-testid="button-cancel-allergen">Cancel</button><button type="submit" className="admin-button" data-testid="button-save-allergen">{record ? 'Save changes' : 'Save product'}</button></div></div>
+    <div className="mr-form__footer"><span className="mr-form__footer-note">Drafts stay in memory during same-identity renewal. A failed save keeps your draft; use Cancel to discard it.</span><div className="mr-form__actions"><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={onCancel} data-testid="button-cancel-allergen">Cancel</button><button type="submit" disabled={pending || blocked} className="admin-button" data-testid="button-save-allergen">{pending ? 'Saving…' : record ? 'Save changes' : 'Save product'}</button></div></div>
   </form>;
 }
 
 export default function AllergenFormPage({ id }) {
   const [, navigate] = useLocation();
-  const { records, refs, error, retry, add, edit } = useAllergens();
+  const [record, setRecord] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(Boolean(id));
   const [revision, setRevision] = useState(0);
-  const record = id ? records.find((item) => item.id === id) : null;
+  const snapshot = useRef(null);
+  const alive = useRef(true);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+  useEffect(() => {
+    const owner = getSession().user?.id;
+    return subscribeSession(() => { if (getSession().user?.id !== owner) { snapshot.current = null; setRecord(null); } });
+  }, []);
+  useEffect(() => {
+    let active = true;
+    if (!id) return undefined;
+    const guard = reportingIdentityGuard();
+    setLoading(true);
+    getAllergen(id).then((row) => { guard(); if (active) { snapshot.current = row; setRecord(row); setError(''); } })
+      .catch((cause) => { try { guard(); } catch { return; } if (active) setError(cause.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [id, revision]);
+  async function refresh(values) {
+    if (!id) {
+      const result = await listAllergens({ query: values.name.trim(), status: 'all', mix: 'all', limit: 100, offset: 0 });
+      const same = result.items.find((row) => norm(row.name) === norm(values.name));
+      if (same) throw new Error(`A product with this name is already saved: ${summary(same)}. Your draft is retained. Inspect the list instead of creating a duplicate.`);
+      if (result.filtered > 100) throw new Error('More than 100 matches. Inspect the list before retrying.');
+      return null;
+    }
+    const current = await getAllergen(id);
+    snapshot.current = current;
+    return current;
+  }
+  async function save(values) {
+    const guard = reportingIdentityGuard();
+    await (id ? editAllergen(snapshot.current, values) : createAllergen(values));
+    guard();
+    if (alive.current) navigate(`${LIST}?saved=${id ? 'updated' : 'added'}`);
+  }
   const title = id ? 'Edit product' : 'Add product';
-
-  function refresh() {
-    retry();
-    setRevision((current) => current + 1);
-  }
-  function save(values) {
-    const result = id ? edit(id, values) : add(values);
-    if (result.success) navigate(`${LIST_PATH}?saved=${id ? 'updated' : 'added'}`);
-    return result;
-  }
-
   return <AdminLayout title={title}>
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Inventory / Allergen Master</p><h1>{title}</h1><p className="admin-page-head__description">{id ? 'Update this product’s details, reference masters and availability.' : 'Create a browser-local product in Allergen Master.'}</p></div><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(LIST_PATH)} data-testid="button-back-allergens"><ArrowLeft size={16} aria-hidden="true" /> Back to allergens</button></div>
-    {error || (id && !record) ? <section className="admin-panel admin-allergen-form__recovery" role="alert"><h2>{error ? 'Products could not be loaded' : 'Product not found'}</h2><p>{error || 'This product may have been removed or the link may be incorrect. Refresh the latest records or return to Allergen Master.'}</p><div className="mr-form__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(LIST_PATH)} data-testid="button-return-allergens">Return to allergens</button><button type="button" className="admin-button" onClick={refresh} data-testid="button-refresh-allergen-form"><RefreshCw size={16} aria-hidden="true" /> Refresh records</button></div></section> : <section className="admin-panel" aria-label={title}><AllergenForm key={`${id || 'new'}-${revision}`} record={record} records={records} refs={refs} onSave={save} onCancel={() => navigate(LIST_PATH)} onRefresh={refresh} /></section>}
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Inventory / Allergen Master</p><h1>{title}</h1><p className="admin-page-head__description">Manage a shared allergen product’s details, reference masters and availability.</p></div><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(LIST)} data-testid="button-back-allergens"><ArrowLeft size={16} aria-hidden="true" /> Back to allergens</button></div>
+    {loading ? <p role="status">Loading product…</p> : error || (id && !record) ? <section className="admin-panel admin-allergen-form__recovery" role="alert"><h2>Product could not be loaded</h2><p>{error || 'This product may have been deleted.'}</p><div className="mr-form__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(LIST)}>Return to allergens</button><button type="button" className="admin-button" onClick={() => setRevision((v) => v + 1)} data-testid="button-refresh-allergen-form">Retry</button></div></section>
+      : <section className="admin-panel" aria-label={title}><AllergenForm key={id || 'new'} record={record} onSave={save} onCancel={() => navigate(LIST)} onRefresh={refresh} /></section>}
   </AdminLayout>;
 }

@@ -17,6 +17,651 @@ export const GetHealthCheckResponse = zod.object({
 /**
  * @summary Listing
  */
+export const listAllergensQueryQueryDefault = ``;
+export const listAllergensQueryQueryMax = 200;
+
+export const listAllergensQueryStatusDefault = `all`;
+export const listAllergensQueryMixDefault = `all`;
+export const listAllergensQueryMinPriceOneMax = 64;
+
+export const listAllergensQueryMaxPriceOneMax = 64;
+
+export const listAllergensQueryLimitDefault = 10;
+export const listAllergensQueryLimitMax = 100;
+
+export const listAllergensQueryOffsetDefault = 0;
+export const listAllergensQueryOffsetMin = 0;
+export const listAllergensQueryOffsetMax = 1000000;
+
+export const ListAllergensQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listAllergensQueryQueryMax)
+    .default(listAllergensQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(listAllergensQueryStatusDefault),
+  category_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  storage_location_id: zod
+    .union([zod.coerce.string().uuid(), zod.null()])
+    .optional(),
+  mix: zod.enum(["all", "mix", "no_mix"]).default(listAllergensQueryMixDefault),
+  min_price: zod
+    .union([
+      zod.coerce.string().max(listAllergensQueryMinPriceOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  max_price: zod
+    .union([
+      zod.coerce.string().max(listAllergensQueryMaxPriceOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listAllergensQueryLimitMax)
+    .default(listAllergensQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listAllergensQueryOffsetMin)
+    .max(listAllergensQueryOffsetMax)
+    .default(listAllergensQueryOffsetDefault),
+});
+
+export const listAllergensResponseItemsItemConcentrationMax = 200;
+
+export const listAllergensResponseItemsItemGstMax = 64;
+
+export const listAllergensResponseItemsItemNameMax = 200;
+
+export const listAllergensResponseItemsItemSellingPriceOneMax = 64;
+
+export const listAllergensResponseItemsItemThresholdLimitOneMax = 64;
+
+export const ListAllergensResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      category_id: zod.string().uuid(),
+      category_name: zod.string(),
+      category_status: zod.enum(["active", "inactive", "deleted"]),
+      concentration: zod
+        .string()
+        .min(1)
+        .max(listAllergensResponseItemsItemConcentrationMax),
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      gst: zod.string().min(1).max(listAllergensResponseItemsItemGstMax),
+      id: zod.string().uuid(),
+      mix: zod
+        .boolean()
+        .describe(
+          "True means Mix; false means No Mix. Catalogue metadata, not a stock operation.",
+        ),
+      name: zod.string().min(1).max(listAllergensResponseItemsItemNameMax),
+      selling_price: zod
+        .union([
+          zod.string().max(listAllergensResponseItemsItemSellingPriceOneMax),
+          zod.null(),
+        ])
+        .optional(),
+      status: zod.enum(["active", "inactive"]),
+      storage_location_id: zod.string().uuid(),
+      storage_location_name: zod.string(),
+      storage_location_status: zod.enum(["active", "inactive", "deleted"]),
+      threshold_limit: zod
+        .union([
+          zod.string().max(listAllergensResponseItemsItemThresholdLimitOneMax),
+          zod.null(),
+        ])
+        .optional(),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+export const createAllergenBodyConcentrationMax = 200;
+
+export const createAllergenBodyGstMax = 64;
+
+export const createAllergenBodyNameMax = 200;
+
+export const createAllergenBodySellingPriceOneMax = 64;
+
+export const createAllergenBodyThresholdLimitOneMax = 64;
+
+export const CreateAllergenBody = zod.object({
+  category_id: zod.string().uuid(),
+  concentration: zod.string().min(1).max(createAllergenBodyConcentrationMax),
+  gst: zod.string().min(1).max(createAllergenBodyGstMax),
+  mix: zod
+    .boolean()
+    .describe(
+      "True means Mix; false means No Mix. Catalogue metadata, not a stock operation.",
+    ),
+  name: zod.string().min(1).max(createAllergenBodyNameMax),
+  selling_price: zod
+    .union([zod.string().max(createAllergenBodySellingPriceOneMax), zod.null()])
+    .optional(),
+  status: zod.enum(["active", "inactive"]),
+  storage_location_id: zod.string().uuid(),
+  threshold_limit: zod
+    .union([
+      zod.string().max(createAllergenBodyThresholdLimitOneMax),
+      zod.null(),
+    ])
+    .optional(),
+});
+
+export const createAllergenResponseConcentrationMax = 200;
+
+export const createAllergenResponseGstMax = 64;
+
+export const createAllergenResponseNameMax = 200;
+
+export const createAllergenResponseSellingPriceOneMax = 64;
+
+export const createAllergenResponseThresholdLimitOneMax = 64;
+
+export const CreateAllergenResponse = zod.object({
+  category_id: zod.string().uuid(),
+  category_name: zod.string(),
+  category_status: zod.enum(["active", "inactive", "deleted"]),
+  concentration: zod
+    .string()
+    .min(1)
+    .max(createAllergenResponseConcentrationMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  gst: zod.string().min(1).max(createAllergenResponseGstMax),
+  id: zod.string().uuid(),
+  mix: zod
+    .boolean()
+    .describe(
+      "True means Mix; false means No Mix. Catalogue metadata, not a stock operation.",
+    ),
+  name: zod.string().min(1).max(createAllergenResponseNameMax),
+  selling_price: zod
+    .union([
+      zod.string().max(createAllergenResponseSellingPriceOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  status: zod.enum(["active", "inactive"]),
+  storage_location_id: zod.string().uuid(),
+  storage_location_name: zod.string(),
+  storage_location_status: zod.enum(["active", "inactive", "deleted"]),
+  threshold_limit: zod
+    .union([
+      zod.string().max(createAllergenResponseThresholdLimitOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Export
+ */
+export const exportAllergensQueryQueryDefault = ``;
+export const exportAllergensQueryQueryMax = 200;
+
+export const exportAllergensQueryStatusDefault = `all`;
+export const exportAllergensQueryMixDefault = `all`;
+export const exportAllergensQueryMinPriceOneMax = 64;
+
+export const exportAllergensQueryMaxPriceOneMax = 64;
+
+export const exportAllergensQueryFormatDefault = `csv`;
+
+export const ExportAllergensQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(exportAllergensQueryQueryMax)
+    .default(exportAllergensQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(exportAllergensQueryStatusDefault),
+  category_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  storage_location_id: zod
+    .union([zod.coerce.string().uuid(), zod.null()])
+    .optional(),
+  mix: zod
+    .enum(["all", "mix", "no_mix"])
+    .default(exportAllergensQueryMixDefault),
+  min_price: zod
+    .union([
+      zod.coerce.string().max(exportAllergensQueryMinPriceOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  max_price: zod
+    .union([
+      zod.coerce.string().max(exportAllergensQueryMaxPriceOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  format: zod.enum(["csv", "xlsx"]).default(exportAllergensQueryFormatDefault),
+});
+
+export const ExportAllergensHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const ExportAllergensResponse = zod.unknown();
+
+/**
+ * @summary Commit
+ */
+export const commitAllergenImportQueryFilenameMax = 200;
+
+export const commitAllergenImportQueryDigestRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const CommitAllergenImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(commitAllergenImportQueryFilenameMax),
+  digest: zod.coerce.string().regex(commitAllergenImportQueryDigestRegExp),
+  confirm: zod.coerce.boolean(),
+});
+
+export const CommitAllergenImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const CommitAllergenImportResponse = zod.object({
+  imported: zod.number().int(),
+});
+
+/**
+ * @summary Review
+ */
+export const reviewAllergenImportQueryFilenameMax = 200;
+
+export const ReviewAllergenImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(reviewAllergenImportQueryFilenameMax),
+});
+
+export const ReviewAllergenImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const ReviewAllergenImportResponse = zod.object({
+  digest: zod.string(),
+  rows: zod.array(
+    zod.object({
+      category_name: zod.string(),
+      concentration: zod.string(),
+      errors: zod.array(zod.string()),
+      gst: zod.string(),
+      mix: zod.string(),
+      name: zod.string(),
+      row: zod.number().int(),
+      selling_price: zod.union([zod.string(), zod.null()]),
+      status: zod.string(),
+      storage_location_name: zod.string(),
+      threshold_limit: zod.union([zod.string(), zod.null()]),
+    }),
+  ),
+  valid: zod.boolean(),
+});
+
+/**
+ * @summary References
+ */
+export const ListAllergenReferencesParams = zod.object({
+  kind: zod.enum(["categories", "locations"]),
+});
+
+export const listAllergenReferencesQueryQueryDefault = ``;
+export const listAllergenReferencesQueryQueryMax = 200;
+
+export const listAllergenReferencesQueryLimitDefault = 20;
+export const listAllergenReferencesQueryLimitMax = 100;
+
+export const listAllergenReferencesQueryOffsetDefault = 0;
+export const listAllergenReferencesQueryOffsetMin = 0;
+export const listAllergenReferencesQueryOffsetMax = 1000000;
+
+export const listAllergenReferencesQueryIncludeUnusableDefault = false;
+
+export const ListAllergenReferencesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listAllergenReferencesQueryQueryMax)
+    .default(listAllergenReferencesQueryQueryDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listAllergenReferencesQueryLimitMax)
+    .default(listAllergenReferencesQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listAllergenReferencesQueryOffsetMin)
+    .max(listAllergenReferencesQueryOffsetMax)
+    .default(listAllergenReferencesQueryOffsetDefault),
+  include_unusable: zod.coerce
+    .boolean()
+    .default(listAllergenReferencesQueryIncludeUnusableDefault),
+});
+
+export const ListAllergenReferencesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.enum(["active", "inactive", "deleted"]),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Sample
+ */
+export const downloadAllergenSampleQueryFormatDefault = `csv`;
+
+export const DownloadAllergenSampleQueryParams = zod.object({
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(downloadAllergenSampleQueryFormatDefault),
+});
+
+export const DownloadAllergenSampleHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const DownloadAllergenSampleResponse = zod.unknown();
+
+/**
+ * @summary Detail
+ */
+export const GetAllergenParams = zod.object({
+  allergen_id: zod.coerce.string().uuid(),
+});
+
+export const getAllergenResponseConcentrationMax = 200;
+
+export const getAllergenResponseGstMax = 64;
+
+export const getAllergenResponseNameMax = 200;
+
+export const getAllergenResponseSellingPriceOneMax = 64;
+
+export const getAllergenResponseThresholdLimitOneMax = 64;
+
+export const GetAllergenResponse = zod.object({
+  category_id: zod.string().uuid(),
+  category_name: zod.string(),
+  category_status: zod.enum(["active", "inactive", "deleted"]),
+  concentration: zod.string().min(1).max(getAllergenResponseConcentrationMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  gst: zod.string().min(1).max(getAllergenResponseGstMax),
+  id: zod.string().uuid(),
+  mix: zod
+    .boolean()
+    .describe(
+      "True means Mix; false means No Mix. Catalogue metadata, not a stock operation.",
+    ),
+  name: zod.string().min(1).max(getAllergenResponseNameMax),
+  selling_price: zod
+    .union([
+      zod.string().max(getAllergenResponseSellingPriceOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  status: zod.enum(["active", "inactive"]),
+  storage_location_id: zod.string().uuid(),
+  storage_location_name: zod.string(),
+  storage_location_status: zod.enum(["active", "inactive", "deleted"]),
+  threshold_limit: zod
+    .union([
+      zod.string().max(getAllergenResponseThresholdLimitOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Delete
+ */
+export const DeleteAllergenParams = zod.object({
+  allergen_id: zod.coerce.string().uuid(),
+});
+
+export const DeleteAllergenBody = zod.object({
+  expected_version: zod.number().int().min(1),
+});
+
+export const deleteAllergenResponseConcentrationMax = 200;
+
+export const deleteAllergenResponseGstMax = 64;
+
+export const deleteAllergenResponseNameMax = 200;
+
+export const deleteAllergenResponseSellingPriceOneMax = 64;
+
+export const deleteAllergenResponseThresholdLimitOneMax = 64;
+
+export const DeleteAllergenResponse = zod.object({
+  category_id: zod.string().uuid(),
+  category_name: zod.string(),
+  category_status: zod.enum(["active", "inactive", "deleted"]),
+  concentration: zod
+    .string()
+    .min(1)
+    .max(deleteAllergenResponseConcentrationMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  gst: zod.string().min(1).max(deleteAllergenResponseGstMax),
+  id: zod.string().uuid(),
+  mix: zod
+    .boolean()
+    .describe(
+      "True means Mix; false means No Mix. Catalogue metadata, not a stock operation.",
+    ),
+  name: zod.string().min(1).max(deleteAllergenResponseNameMax),
+  selling_price: zod
+    .union([
+      zod.string().max(deleteAllergenResponseSellingPriceOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  status: zod.enum(["active", "inactive"]),
+  storage_location_id: zod.string().uuid(),
+  storage_location_name: zod.string(),
+  storage_location_status: zod.enum(["active", "inactive", "deleted"]),
+  threshold_limit: zod
+    .union([
+      zod.string().max(deleteAllergenResponseThresholdLimitOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditAllergenParams = zod.object({
+  allergen_id: zod.coerce.string().uuid(),
+});
+
+export const editAllergenBodyConcentrationMax = 200;
+
+export const editAllergenBodyGstMax = 64;
+
+export const editAllergenBodyNameMax = 200;
+
+export const editAllergenBodySellingPriceOneMax = 64;
+
+export const editAllergenBodyThresholdLimitOneMax = 64;
+
+export const EditAllergenBody = zod.object({
+  category_id: zod.string().uuid(),
+  concentration: zod.string().min(1).max(editAllergenBodyConcentrationMax),
+  expected_version: zod.number().int().min(1),
+  gst: zod.string().min(1).max(editAllergenBodyGstMax),
+  mix: zod
+    .boolean()
+    .describe(
+      "True means Mix; false means No Mix. Catalogue metadata, not a stock operation.",
+    ),
+  name: zod.string().min(1).max(editAllergenBodyNameMax),
+  selling_price: zod
+    .union([zod.string().max(editAllergenBodySellingPriceOneMax), zod.null()])
+    .optional(),
+  status: zod.enum(["active", "inactive"]),
+  storage_location_id: zod.string().uuid(),
+  threshold_limit: zod
+    .union([zod.string().max(editAllergenBodyThresholdLimitOneMax), zod.null()])
+    .optional(),
+});
+
+export const editAllergenResponseConcentrationMax = 200;
+
+export const editAllergenResponseGstMax = 64;
+
+export const editAllergenResponseNameMax = 200;
+
+export const editAllergenResponseSellingPriceOneMax = 64;
+
+export const editAllergenResponseThresholdLimitOneMax = 64;
+
+export const EditAllergenResponse = zod.object({
+  category_id: zod.string().uuid(),
+  category_name: zod.string(),
+  category_status: zod.enum(["active", "inactive", "deleted"]),
+  concentration: zod.string().min(1).max(editAllergenResponseConcentrationMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  gst: zod.string().min(1).max(editAllergenResponseGstMax),
+  id: zod.string().uuid(),
+  mix: zod
+    .boolean()
+    .describe(
+      "True means Mix; false means No Mix. Catalogue metadata, not a stock operation.",
+    ),
+  name: zod.string().min(1).max(editAllergenResponseNameMax),
+  selling_price: zod
+    .union([
+      zod.string().max(editAllergenResponseSellingPriceOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  status: zod.enum(["active", "inactive"]),
+  storage_location_id: zod.string().uuid(),
+  storage_location_name: zod.string(),
+  storage_location_status: zod.enum(["active", "inactive", "deleted"]),
+  threshold_limit: zod
+    .union([
+      zod.string().max(editAllergenResponseThresholdLimitOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Status
+ */
+export const SetAllergenStatusParams = zod.object({
+  allergen_id: zod.coerce.string().uuid(),
+});
+
+export const SetAllergenStatusBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const setAllergenStatusResponseConcentrationMax = 200;
+
+export const setAllergenStatusResponseGstMax = 64;
+
+export const setAllergenStatusResponseNameMax = 200;
+
+export const setAllergenStatusResponseSellingPriceOneMax = 64;
+
+export const setAllergenStatusResponseThresholdLimitOneMax = 64;
+
+export const SetAllergenStatusResponse = zod.object({
+  category_id: zod.string().uuid(),
+  category_name: zod.string(),
+  category_status: zod.enum(["active", "inactive", "deleted"]),
+  concentration: zod
+    .string()
+    .min(1)
+    .max(setAllergenStatusResponseConcentrationMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  gst: zod.string().min(1).max(setAllergenStatusResponseGstMax),
+  id: zod.string().uuid(),
+  mix: zod
+    .boolean()
+    .describe(
+      "True means Mix; false means No Mix. Catalogue metadata, not a stock operation.",
+    ),
+  name: zod.string().min(1).max(setAllergenStatusResponseNameMax),
+  selling_price: zod
+    .union([
+      zod.string().max(setAllergenStatusResponseSellingPriceOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  status: zod.enum(["active", "inactive"]),
+  storage_location_id: zod.string().uuid(),
+  storage_location_name: zod.string(),
+  storage_location_status: zod.enum(["active", "inactive", "deleted"]),
+  threshold_limit: zod
+    .union([
+      zod.string().max(setAllergenStatusResponseThresholdLimitOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Listing
+ */
 export const listCourierPartnersQueryQueryDefault = ``;
 export const listCourierPartnersQueryQueryMax = 200;
 

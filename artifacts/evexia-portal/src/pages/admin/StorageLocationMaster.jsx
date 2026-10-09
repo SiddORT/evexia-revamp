@@ -123,7 +123,7 @@ export default function StorageLocationMaster() {
       </div>
     </div>
     <p className="admin-page-head__description">Old browser records remain untouched and are not migrated or used as fallback. Explicitly import an existing CSV backup. Exports include all name/address/status matches, up to 5,000 records; larger results require narrower filters.</p>
-    <p className="admin-page-head__description">Allergen, Purchase Order and Purchase Received continue using separate browser-local locations and IDs. Edits here do not change those workflows or inventory.</p>
+    <p className="admin-page-head__description">The browser-local allergen dataset, Purchase Order and Purchase Received keep separate locations and IDs. Shared Allergen Master uses this live directory. Edits here do not change demo procurement or inventory.</p>
     {feedback && <div className="admin-feedback" role="status" data-testid="status-storage-location-feedback">{feedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-storage-location-action-error">{actionError}</div>}
     <section className="admin-panel" aria-label="Storage location list">

@@ -10,6 +10,8 @@ import '../../activityLogs.css';
 const browserActions = {
   headquarter_create: 'Headquarter created', headquarter_edit: 'Headquarter updated',
   headquarter_status: 'Headquarter status changed', headquarter_delete: 'Headquarter deleted',
+  allergen_create: 'Allergen product created', allergen_edit: 'Allergen product updated',
+  allergen_status: 'Allergen product status changed', allergen_delete: 'Allergen product deleted',
   product_category_create: 'Product category created', product_category_edit: 'Product category updated',
   product_category_status: 'Product category status changed', product_category_delete: 'Product category deleted',
   designation_create: 'Designation created', designation_edit: 'Designation updated',

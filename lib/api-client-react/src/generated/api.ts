@@ -17,9 +17,20 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AllergenEdit,
+  AllergenFields,
+  AllergenImportResult,
+  AllergenPage,
+  AllergenReferencePage,
+  AllergenResponse,
+  AllergenReview,
+  AllergenStatus,
+  AllergenVersion,
   AssignPatientRequest,
   BrowserActivityBatch,
   ChangePasswordRequest,
+  CommitAllergenImportBody,
+  CommitAllergenImportParams,
   CommitCourierImportBody,
   CommitCourierImportParams,
   CommitDesignationImportBody,
@@ -69,6 +80,7 @@ import type {
   DoctorResponse,
   DoctorReview,
   DoctorStatus,
+  DownloadAllergenSampleParams,
   DownloadDesignationSampleParams,
   DownloadDoctorSampleParams,
   DownloadEvidence,
@@ -82,6 +94,7 @@ import type {
   DownloadVendorSampleParams,
   ErrorEnvelope,
   EventPage,
+  ExportAllergensParams,
   ExportCourierPartnersParams,
   ExportDesignationsParams,
   ExportDoctorDirectoryParams,
@@ -104,6 +117,8 @@ import type {
   HeadquarterStatus,
   HeadquarterVersion,
   HealthStatus,
+  ListAllergenReferencesParams,
+  ListAllergensParams,
   ListCourierPartnersParams,
   ListCustomRolesParams,
   ListDeletedZonesParams,
@@ -175,6 +190,8 @@ import type {
   ReplaceFileParams,
   ReportExport,
   ReportSummary,
+  ReviewAllergenImportBody,
+  ReviewAllergenImportParams,
   ReviewCourierImportBody,
   ReviewCourierImportParams,
   ReviewDesignationImportBody,
@@ -335,6 +352,1196 @@ export function useGetHealthCheck<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getListAllergensUrl = (params?: ListAllergensParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/allergens?${stringifiedParams}`
+    : `/api/v1/admin/allergens`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listAllergens = async (
+  params?: ListAllergensParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AllergenPage> => {
+  return customFetch<AllergenPage>(getListAllergensUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAllergensQueryKey = (params?: ListAllergensParams) => {
+  return [`/api/v1/admin/allergens`, ...(params ? [params] : [])] as const;
+};
+
+export const getListAllergensQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAllergens>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListAllergensParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAllergens>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAllergensQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllergens>>> = ({
+    signal,
+  }) => listAllergens(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAllergens>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAllergensQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAllergens>>
+>;
+export type ListAllergensQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListAllergens<
+  TData = Awaited<ReturnType<typeof listAllergens>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListAllergensParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAllergens>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAllergensQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateAllergenUrl = () => {
+  return `/api/v1/admin/allergens`;
+};
+
+/**
+ * @summary Create
+ */
+export const createAllergen = async (
+  allergenFields: AllergenFields,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AllergenResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<AllergenResponse>(getCreateAllergenUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(allergenFields),
+  });
+};
+
+export const getCreateAllergenMutationKey = () => ["createAllergen"] as const;
+
+export const getCreateAllergenMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAllergen>>,
+    TError,
+    CreateAllergenMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createAllergen>>,
+  TError,
+  CreateAllergenMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateAllergenMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createAllergen>>,
+    CreateAllergenMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createAllergen(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateAllergenMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createAllergen>>
+>;
+export type CreateAllergenMutationBody = BodyType<AllergenFields>;
+export type CreateAllergenMutationError = ErrorType<ErrorEnvelope>;
+export type CreateAllergenMutationVariables = {
+  data: BodyType<AllergenFields>;
+};
+
+/**
+ * @summary Create
+ */
+export const useCreateAllergen = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAllergen>>,
+    TError,
+    CreateAllergenMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createAllergen>>,
+  TError,
+  CreateAllergenMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateAllergenMutationOptions(options));
+};
+
+export const getExportAllergensUrl = (params?: ExportAllergensParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/allergens/export?${stringifiedParams}`
+    : `/api/v1/admin/allergens/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportAllergens = async (
+  params?: ExportAllergensParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getExportAllergensUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportAllergensQueryKey = (params?: ExportAllergensParams) => {
+  return [
+    `/api/v1/admin/allergens/export`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getExportAllergensQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportAllergens>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportAllergensParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportAllergens>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getExportAllergensQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof exportAllergens>>> = ({
+    signal,
+  }) => exportAllergens(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportAllergens>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportAllergensQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportAllergens>>
+>;
+export type ExportAllergensQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportAllergens<
+  TData = Awaited<ReturnType<typeof exportAllergens>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportAllergensParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportAllergens>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportAllergensQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCommitAllergenImportUrl = (
+  params: CommitAllergenImportParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/allergens/import/commit?${stringifiedParams}`
+    : `/api/v1/admin/allergens/import/commit`;
+};
+
+/**
+ * @summary Commit
+ */
+export const commitAllergenImport = async (
+  commitAllergenImportBody: CommitAllergenImportBody,
+  params: CommitAllergenImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AllergenImportResult> => {
+  const formData = new FormData();
+  formData.append(`file`, commitAllergenImportBody.file);
+
+  return customFetch<AllergenImportResult>(getCommitAllergenImportUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getCommitAllergenImportMutationKey = () =>
+  ["commitAllergenImport"] as const;
+
+export const getCommitAllergenImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitAllergenImport>>,
+    TError,
+    CommitAllergenImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof commitAllergenImport>>,
+  TError,
+  CommitAllergenImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCommitAllergenImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof commitAllergenImport>>,
+    CommitAllergenImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return commitAllergenImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CommitAllergenImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof commitAllergenImport>>
+>;
+export type CommitAllergenImportMutationBody =
+  BodyType<CommitAllergenImportBody>;
+export type CommitAllergenImportMutationError = ErrorType<ErrorEnvelope>;
+export type CommitAllergenImportMutationVariables = {
+  data: BodyType<CommitAllergenImportBody>;
+  params: CommitAllergenImportParams;
+};
+
+/**
+ * @summary Commit
+ */
+export const useCommitAllergenImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitAllergenImport>>,
+    TError,
+    CommitAllergenImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof commitAllergenImport>>,
+  TError,
+  CommitAllergenImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getCommitAllergenImportMutationOptions(options));
+};
+
+export const getReviewAllergenImportUrl = (
+  params: ReviewAllergenImportParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/allergens/import/review?${stringifiedParams}`
+    : `/api/v1/admin/allergens/import/review`;
+};
+
+/**
+ * @summary Review
+ */
+export const reviewAllergenImport = async (
+  reviewAllergenImportBody: ReviewAllergenImportBody,
+  params: ReviewAllergenImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AllergenReview> => {
+  const formData = new FormData();
+  formData.append(`file`, reviewAllergenImportBody.file);
+
+  return customFetch<AllergenReview>(getReviewAllergenImportUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getReviewAllergenImportMutationKey = () =>
+  ["reviewAllergenImport"] as const;
+
+export const getReviewAllergenImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewAllergenImport>>,
+    TError,
+    ReviewAllergenImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewAllergenImport>>,
+  TError,
+  ReviewAllergenImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReviewAllergenImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewAllergenImport>>,
+    ReviewAllergenImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return reviewAllergenImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewAllergenImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewAllergenImport>>
+>;
+export type ReviewAllergenImportMutationBody =
+  BodyType<ReviewAllergenImportBody>;
+export type ReviewAllergenImportMutationError = ErrorType<ErrorEnvelope>;
+export type ReviewAllergenImportMutationVariables = {
+  data: BodyType<ReviewAllergenImportBody>;
+  params: ReviewAllergenImportParams;
+};
+
+/**
+ * @summary Review
+ */
+export const useReviewAllergenImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewAllergenImport>>,
+    TError,
+    ReviewAllergenImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewAllergenImport>>,
+  TError,
+  ReviewAllergenImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getReviewAllergenImportMutationOptions(options));
+};
+
+export const getListAllergenReferencesUrl = (
+  kind: "categories" | "locations",
+  params?: ListAllergenReferencesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/allergens/references/${kind}?${stringifiedParams}`
+    : `/api/v1/admin/allergens/references/${kind}`;
+};
+
+/**
+ * @summary References
+ */
+export const listAllergenReferences = async (
+  kind: "categories" | "locations",
+  params?: ListAllergenReferencesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AllergenReferencePage> => {
+  return customFetch<AllergenReferencePage>(
+    getListAllergenReferencesUrl(kind, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListAllergenReferencesQueryKey = (
+  kind: "categories" | "locations",
+  params?: ListAllergenReferencesParams,
+) => {
+  return [
+    `/api/v1/admin/allergens/references/${kind}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListAllergenReferencesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAllergenReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "categories" | "locations",
+  params?: ListAllergenReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAllergenReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListAllergenReferencesQueryKey(kind, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAllergenReferences>>
+  > = ({ signal }) =>
+    listAllergenReferences(kind, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: kind !== null && kind !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAllergenReferences>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAllergenReferencesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAllergenReferences>>
+>;
+export type ListAllergenReferencesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary References
+ */
+
+export function useListAllergenReferences<
+  TData = Awaited<ReturnType<typeof listAllergenReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "categories" | "locations",
+  params?: ListAllergenReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAllergenReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAllergenReferencesQueryOptions(
+    kind,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDownloadAllergenSampleUrl = (
+  params?: DownloadAllergenSampleParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/allergens/sample?${stringifiedParams}`
+    : `/api/v1/admin/allergens/sample`;
+};
+
+/**
+ * @summary Sample
+ */
+export const downloadAllergenSample = async (
+  params?: DownloadAllergenSampleParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getDownloadAllergenSampleUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getDownloadAllergenSampleQueryKey = (
+  params?: DownloadAllergenSampleParams,
+) => {
+  return [
+    `/api/v1/admin/allergens/sample`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getDownloadAllergenSampleQueryOptions = <
+  TData = Awaited<ReturnType<typeof downloadAllergenSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadAllergenSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadAllergenSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getDownloadAllergenSampleQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof downloadAllergenSample>>
+  > = ({ signal }) =>
+    downloadAllergenSample(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof downloadAllergenSample>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type DownloadAllergenSampleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof downloadAllergenSample>>
+>;
+export type DownloadAllergenSampleQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Sample
+ */
+
+export function useDownloadAllergenSample<
+  TData = Awaited<ReturnType<typeof downloadAllergenSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadAllergenSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadAllergenSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getDownloadAllergenSampleQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetAllergenUrl = (allergenId: string) => {
+  return `/api/v1/admin/allergens/${allergenId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getAllergen = async (
+  allergenId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AllergenResponse> => {
+  return customFetch<AllergenResponse>(getGetAllergenUrl(allergenId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAllergenQueryKey = (allergenId: string) => {
+  return [`/api/v1/admin/allergens/${allergenId}`] as const;
+};
+
+export const getGetAllergenQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAllergen>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  allergenId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAllergen>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAllergenQueryKey(allergenId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAllergen>>> = ({
+    signal,
+  }) => getAllergen(allergenId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: allergenId !== null && allergenId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAllergen>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAllergenQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAllergen>>
+>;
+export type GetAllergenQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetAllergen<
+  TData = Awaited<ReturnType<typeof getAllergen>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  allergenId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAllergen>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAllergenQueryOptions(allergenId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDeleteAllergenUrl = (allergenId: string) => {
+  return `/api/v1/admin/allergens/${allergenId}/delete`;
+};
+
+/**
+ * @summary Delete
+ */
+export const deleteAllergen = async (
+  allergenId: string,
+  allergenVersion: AllergenVersion,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AllergenResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<AllergenResponse>(getDeleteAllergenUrl(allergenId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(allergenVersion),
+  });
+};
+
+export const getDeleteAllergenMutationKey = () => ["deleteAllergen"] as const;
+
+export const getDeleteAllergenMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAllergen>>,
+    TError,
+    DeleteAllergenMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteAllergen>>,
+  TError,
+  DeleteAllergenMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteAllergenMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteAllergen>>,
+    DeleteAllergenMutationVariables
+  > = (props) => {
+    const { allergenId, data } = props ?? {};
+
+    return deleteAllergen(allergenId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteAllergenMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteAllergen>>
+>;
+export type DeleteAllergenMutationBody = BodyType<AllergenVersion>;
+export type DeleteAllergenMutationError = ErrorType<ErrorEnvelope>;
+export type DeleteAllergenMutationVariables = {
+  allergenId: string;
+  data: BodyType<AllergenVersion>;
+};
+
+/**
+ * @summary Delete
+ */
+export const useDeleteAllergen = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAllergen>>,
+    TError,
+    DeleteAllergenMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteAllergen>>,
+  TError,
+  DeleteAllergenMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteAllergenMutationOptions(options));
+};
+
+export const getEditAllergenUrl = (allergenId: string) => {
+  return `/api/v1/admin/allergens/${allergenId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editAllergen = async (
+  allergenId: string,
+  allergenEdit: AllergenEdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AllergenResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<AllergenResponse>(getEditAllergenUrl(allergenId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(allergenEdit),
+  });
+};
+
+export const getEditAllergenMutationKey = () => ["editAllergen"] as const;
+
+export const getEditAllergenMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editAllergen>>,
+    TError,
+    EditAllergenMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editAllergen>>,
+  TError,
+  EditAllergenMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditAllergenMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editAllergen>>,
+    EditAllergenMutationVariables
+  > = (props) => {
+    const { allergenId, data } = props ?? {};
+
+    return editAllergen(allergenId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditAllergenMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editAllergen>>
+>;
+export type EditAllergenMutationBody = BodyType<AllergenEdit>;
+export type EditAllergenMutationError = ErrorType<ErrorEnvelope>;
+export type EditAllergenMutationVariables = {
+  allergenId: string;
+  data: BodyType<AllergenEdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditAllergen = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editAllergen>>,
+    TError,
+    EditAllergenMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editAllergen>>,
+  TError,
+  EditAllergenMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditAllergenMutationOptions(options));
+};
+
+export const getSetAllergenStatusUrl = (allergenId: string) => {
+  return `/api/v1/admin/allergens/${allergenId}/status`;
+};
+
+/**
+ * @summary Status
+ */
+export const setAllergenStatus = async (
+  allergenId: string,
+  allergenStatus: AllergenStatus,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AllergenResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<AllergenResponse>(getSetAllergenStatusUrl(allergenId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(allergenStatus),
+  });
+};
+
+export const getSetAllergenStatusMutationKey = () =>
+  ["setAllergenStatus"] as const;
+
+export const getSetAllergenStatusMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setAllergenStatus>>,
+    TError,
+    SetAllergenStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setAllergenStatus>>,
+  TError,
+  SetAllergenStatusMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSetAllergenStatusMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setAllergenStatus>>,
+    SetAllergenStatusMutationVariables
+  > = (props) => {
+    const { allergenId, data } = props ?? {};
+
+    return setAllergenStatus(allergenId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetAllergenStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setAllergenStatus>>
+>;
+export type SetAllergenStatusMutationBody = BodyType<AllergenStatus>;
+export type SetAllergenStatusMutationError = ErrorType<ErrorEnvelope>;
+export type SetAllergenStatusMutationVariables = {
+  allergenId: string;
+  data: BodyType<AllergenStatus>;
+};
+
+/**
+ * @summary Status
+ */
+export const useSetAllergenStatus = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setAllergenStatus>>,
+    TError,
+    SetAllergenStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setAllergenStatus>>,
+  TError,
+  SetAllergenStatusMutationVariables,
+  TContext
+> => {
+  return useMutation(getSetAllergenStatusMutationOptions(options));
+};
 
 export const getListCourierPartnersUrl = (
   params?: ListCourierPartnersParams,

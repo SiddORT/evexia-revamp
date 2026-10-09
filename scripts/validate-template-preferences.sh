@@ -12,6 +12,8 @@ node --test artifacts/evexia-portal/src/services/downloads.test.js
 node --test artifacts/evexia-portal/src/services/staff.test.js
 node --test artifacts/evexia-portal/src/services/serverHeadquarters.test.js
 node --test artifacts/evexia-portal/src/services/serverProductCategories.test.js artifacts/evexia-portal/src/services/productCategories.test.js
+node --test artifacts/evexia-portal/src/services/serverAllergens.test.js artifacts/evexia-portal/src/services/allergens.test.js
+sh scripts/test-api-foundation.sh tests/test_allergens.py tests/test_migration_allergens.py
 sh scripts/test-api-foundation.sh tests/test_product_categories.py tests/test_product_category_files.py tests/test_migration_product_categories.py
 node --test artifacts/evexia-portal/src/services/serverMRs.test.js
 sh scripts/test-api-foundation.sh tests/test_mrs.py tests/test_migration_mrs.py

@@ -152,7 +152,7 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
     return product_categories.transaction(db, work)
 
 
-def encode(rows, format):
+def encode(rows, format, sheet_title="ProductCategorys"):
     if format == "csv":
         output = io.StringIO()
         csv.writer(output).writerows(rows)
@@ -160,7 +160,7 @@ def encode(rows, format):
     output = io.BytesIO()
     book = Workbook()
     try:
-        book.active.title = "ProductCategorys"
+        book.active.title = sheet_title
         for row in rows:
             book.active.append(row)
             for cell in book.active[book.active.max_row]:

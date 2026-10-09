@@ -14,6 +14,7 @@ def body_limit(method, path, max_upload_bytes):
                     "/api/v1/admin/designations/import/review", "/api/v1/admin/designations/import/commit",
                     "/api/v1/admin/headquarters/import/review", "/api/v1/admin/headquarters/import/commit",
                     "/api/v1/admin/product-categories/import/review", "/api/v1/admin/product-categories/import/commit",
+                    "/api/v1/admin/allergens/import/review", "/api/v1/admin/allergens/import/commit",
                     "/api/v1/admin/mrs/import/review", "/api/v1/admin/mrs/import/commit"):
             return 2 * 1024 * 1024 + 64 * 1024
         if path in ("/api/v1/admin/zones/import/review", "/api/v1/admin/zones/import/commit"):

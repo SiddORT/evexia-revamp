@@ -48,6 +48,8 @@ logger = logging.getLogger("evexia.api")
 # Uvicorn's default access line includes raw grant URLs. Our structured logger
 # below emits only route templates and never query strings or grant tokens.
 logging.getLogger("uvicorn.access").disabled = True
+from app.api.v1.allergens import router as allergens_router
+from app.services.allergens import AllergenError
 
 
 def error_body(request, status, message, code=None, fields=None):
@@ -138,6 +140,14 @@ def create_app() -> FastAPI:
         # Do not echo invalid bodies: they may contain passwords or other sensitive values.
         fields = [{"field": ".".join(str(part) for part in err["loc"] if isinstance(part, (str, int))),
                    "code": err["type"]} for err in exc.errors()[:20]]
+        if request.url.path.startswith("/api/v1/admin/allergens"):
+            from app.schemas.allergens import AllergenFields
+            allowed = set(AllergenFields.model_fields) | {
+                "expected_version", "allergen_id", "kind", "query", "limit", "offset",
+                "format", "filename", "digest", "confirm", "include_unusable", "min_price", "max_price",
+            }
+            locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
+            fields = [{"field": item["field"] if item["field"] in locations else "body", "code": item["code"]} for item in fields]
         if request.url.path.startswith(("/api/v1/admin/staff", "/api/v1/admin/roles")):
             allowed = {"name", "email", "phone", "dialCountry", "role", "designation", "dateOfJoining", "status", "expected_version", "staff_id", "limit", "offset", "query", "cursor"}
             locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
@@ -219,6 +229,10 @@ def create_app() -> FastAPI:
     async def product_category_error(request: Request, exc: ProductCategoryError):
         return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
 
+    @app.exception_handler(AllergenError)
+    async def allergen_error(request: Request, exc: AllergenError):
+        return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
+
     @app.exception_handler(MRError)
     async def mr_error(request: Request, exc: MRError):
         return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
@@ -248,6 +262,7 @@ def create_app() -> FastAPI:
     app.include_router(doctors_router, prefix="/api/v1")
     app.include_router(patients_router, prefix="/api/v1")
     app.include_router(product_categories_router, prefix="/api/v1")
+    app.include_router(allergens_router, prefix="/api/v1")
     app.include_router(roles_router, prefix="/api/v1")
     app.add_api_route("/api/healthz", lambda: {"status": "ok"}, methods=["GET"],
                       response_model=HealthStatus, operation_id="getHealthCheck", tags=["health"])

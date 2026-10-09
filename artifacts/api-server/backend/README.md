@@ -15,7 +15,7 @@ PostgreSQL directory with disabled-by-default opt-in workspace credentials; Zone
 persistence with soft deletion and authenticated audit history. Courier Partner Master
 is separate shared server persistence with its own table and endpoints. Storage Location Master
 uses another separate shared name/address/status table and endpoints, while Allergen/PO/PR
-location datasets remain browser-local. Designation Master is a separate protected
+legacy location datasets remain browser-local. Designation Master is a separate protected
 Super Admin-only server catalogue, with exact decimals and bounded Staff choices.
 See [Designation Master operations](../../../docs/designation-master.md).
 Headquarter Master also uses separate protected singleton-only persistence.
@@ -28,6 +28,15 @@ exact six-place decimal strings, server price-range predicates and bounded atomi
 transfers, independent of Allergen/procurement's legacy local categories. Migration
 `0018_product_categories` follows `0017_headquarters` and creates an empty directory.
 See [Product Category operations](../../../docs/product-category-master.md).
+Allergen Master now adds an empty protected-singleton catalogue with shared
+category/location references, exact optional monetary fields, strict boolean
+Mix/No Mix metadata and versioned atomic CRUD/soft deletion. Bounded create-only
+CSV/XLSX review/confirm and current-filter downloads require durable server
+download acceptance. Migration `0022_allergen_catalogue` follows the restricted
+master-permissions rollout but adds no staff grants. Existing browser-local
+allergen/HSN/procurement datasets remain untouched. See
+[Allergen Master operations](../../../docs/allergen-master.md) for contracts,
+legacy CSV compatibility, authenticated tests and operator-approved rollout.
 MR Master provisions fresh accounts with a one-to-one extension of MRProfile.
 See [MR Master operations](../../../docs/mr-master.md) for `0018_mr_directory`
 (after `0018_product_categories`), identifier preflight, one-time credentials and
@@ -652,7 +661,6 @@ records as part of this backend foundation.
 The spec server URL `/api` plus relative `/v1/...` paths produces exactly
 `/api/v1/...`; do not prefix `/api` twice. The managed preview has been verified:
 `/api/v1/health` and `/api/healthz` return 200, while `/api/api/...` returns 404.
-
 ### Contract export workflow
 
 FastAPI is authoritative for the OpenAPI contract. From the workspace root:

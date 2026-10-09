@@ -44,3 +44,4 @@
 - [Browser cleanup evidence](browser-test-cleanup-evidence.md) — preserve primary failures and capture the actual actor page, not the default administrator page.
 - [Enlarged text whitespace](enlarged-text-whitespace.md) — WebKit can expose hanging preserved spaces that page-overflow checks miss.
 - [Completion gate runtime](completion-gate-runtime.md) — long release suites can exhaust the completion polling budget and be terminated despite passing interim tests.
+- [Document navigation and renewal](document-navigation-renewal.md) — wait for authenticated redirect destinations before another full reload; destroyed Web Locks cannot protect late cookie rotation.
