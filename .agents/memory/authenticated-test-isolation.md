@@ -7,6 +7,16 @@ Give each authenticated browser-test run its own API and portal listeners, and
 its own result directory. Readiness must confirm that the newly launched
 service started, not merely that some listener returns a successful response.
 
+Navigation tests that provision staff and assigned custom roles must also use
+a separate database from suites asserting empty staff directories or deleting
+every role.
+
+**Why:** Persistent synthetic staff assignments prevent role cleanup and change
+the empty-directory baseline even when each test uses a fresh browser context.
+
+**How to apply:** Use the authenticated harness's dedicated-fixture pattern for
+staff-provisioning navigation specs when running a combined release suite.
+
 **Why:** All fixtures intentionally use the same synthetic Super Admin account
 and enforce a single active session. Two otherwise database-isolated fixtures
 on fixed ports can accidentally connect to one API; their logins replace each

@@ -151,6 +151,8 @@
 .admin-nav__sub { display: grid; gap: 2px; margin: 2px 0 5px 19px; padding-left: 10px; border-left: 1px solid var(--line); }
 .admin-nav__sub[hidden] { display: none; }
 .admin-nav__sub .admin-nav__item { min-height: 36px; font-size: 12px; }
+.admin-nav__sub--orders .admin-nav__item { padding-top: 8px; padding-bottom: 8px; }
+.admin-nav__sub--orders .admin-nav__label { min-width: 0; overflow-wrap: anywhere; line-height: 1.4; }
 .admin-nav__group { min-width: 0; padding-top: 9px; }
 .admin-nav__group + .admin-nav__group { border-top: 1px solid var(--admin-border); margin-top: 7px; }
 .admin-nav__group-heading { margin: 0 0 5px; padding: 0 10px; color: var(--admin-accent); font-size: 10px; font-weight: 800; letter-spacing: .055em; line-height: 1.4; text-transform: uppercase; }

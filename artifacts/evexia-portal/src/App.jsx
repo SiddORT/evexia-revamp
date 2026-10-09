@@ -7,6 +7,8 @@ import AuthPage from './pages/AuthPage.jsx';
 import MRHome from './pages/MRHome.jsx';
 import NotFound from './pages/NotFound.jsx';
 import Dashboard from './pages/admin/Dashboard.jsx';
+import { ORDER_DESTINATIONS } from './config/orders.js';
+const OrderPlaceholder = lazyRoute(() => import('./pages/admin/OrderPlaceholder.jsx'));
 import Masters from './pages/admin/Masters.jsx';
 import ZoneMaster from './pages/admin/ZoneMaster.jsx';
 const CourierPartnerMaster = lazyRoute(() => import('./pages/admin/CourierPartnerMaster.jsx'));
@@ -66,6 +68,11 @@ function App() {
       <Route path="/admin/inventory/purchase-received/:id">{(params) => <PurchaseReceivedFormPage id={params.id} />}</Route>
       <Route path="/admin/inventory/move-stocks" component={MoveStocks} />
       <Route path="/admin/inventory/move-stocks/new" component={MoveStockFormPage} />
+      {ORDER_DESTINATIONS.map((destination) => (
+        <Route key={destination.slug} path={`/admin/orders/${destination.slug}`}>
+          {() => <OrderPlaceholder destination={destination} />}
+        </Route>
+      ))}
       <Route path="/admin/masters" component={Masters} />
       <Route path="/admin/masters/import/:kind">{(params) => <MasterExcelImportPage key={params.kind} kind={params.kind} />}</Route>
       <Route path="/admin/masters/zones" component={ZoneMaster} />

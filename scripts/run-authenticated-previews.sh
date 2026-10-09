@@ -148,6 +148,7 @@ else
   SPECS="artifacts/evexia-portal/tests/entry-theme.preview.spec.mjs artifacts/evexia-portal/tests/settings-layout.preview.spec.mjs artifacts/evexia-portal/tests/template-preferences.preview.spec.mjs artifacts/evexia-portal/tests/communication.preview.spec.mjs artifacts/evexia-portal/tests/message-templates.preview.spec.mjs artifacts/evexia-portal/tests/admin-auth.preview.spec.mjs artifacts/evexia-portal/tests/roles-permissions.preview.spec.mjs artifacts/evexia-portal/tests/activity-logs.preview.spec.mjs artifacts/evexia-portal/tests/staff-backend.preview.spec.mjs artifacts/evexia-portal/tests/zones-backend.preview.spec.mjs artifacts/evexia-portal/tests/couriers-backend.preview.spec.mjs artifacts/evexia-portal/tests/locations-backend.preview.spec.mjs artifacts/evexia-portal/tests/designations-backend.preview.spec.mjs artifacts/evexia-portal/tests/courier-transfers.preview.spec.mjs"
 fi
 if [ "$#" -eq 0 ]; then
+  SPECS="$SPECS artifacts/evexia-portal/tests/orders-navigation.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/headquarters-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/vendors-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/sales-targets-backend.preview.spec.mjs"
@@ -174,6 +175,7 @@ ISOLATE_MR=0
 ISOLATE_SALES_TARGET=0
 ISOLATE_OPENING_BALANCE=0
 ISOLATE_MASTER_STAFF=0
+ISOLATE_ORDERS=0
 SPEC_COUNT=0
 for spec in $SPECS; do
   case "$spec" in *.preview.spec.mjs) SPEC_COUNT=$((SPEC_COUNT + 1)) ;; esac
@@ -206,6 +208,10 @@ for spec in $SPECS; do
       # Staff has no deletion workflow; disabling login cannot restore a fresh
       # directory. Keep matrix provisioning out of empty-directory baselines.
       if [ "$SPEC_COUNT" -gt 1 ]; then ISOLATE_MASTER_STAFF=1; else OTHER_SPECS="$OTHER_SPECS $spec"; fi ;;
+    */orders-navigation.preview.spec.mjs)
+      # Restricted navigation provisions staff with an assigned custom role.
+      # Do not contaminate role deletion or empty staff-directory baselines.
+      if [ "$SPEC_COUNT" -gt 1 ]; then ISOLATE_ORDERS=1; else OTHER_SPECS="$OTHER_SPECS $spec"; fi ;;
     *) OTHER_SPECS="$OTHER_SPECS $spec" ;;
   esac
 done
@@ -250,4 +256,8 @@ fi
 if [ "$ISOLATE_MASTER_STAFF" -eq 1 ]; then
   echo "Staff master matrix: separate private database, listeners and directory."
   sh "$ROOT/scripts/run-authenticated-previews.sh" artifacts/evexia-portal/tests/master-staff-permissions.preview.spec.mjs
+fi
+if [ "$ISOLATE_ORDERS" -eq 1 ]; then
+  echo "Orders navigation: separate private database, staff directory and role assignments."
+  sh "$ROOT/scripts/run-authenticated-previews.sh" artifacts/evexia-portal/tests/orders-navigation.preview.spec.mjs
 fi
