@@ -1,27 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import InfoDisclosure from './InfoDisclosure.jsx';
 import MRReferenceSelect from './MRReferenceSelect.jsx';
-import { emptyMRValues, generateMRUsername, lookupPincode, mrReferences, MR_FIELDS as FIELDS, payloadFromValues, validateMRValues } from '../../services/serverMRs.js';
+import { emptyMRValues, generateMRUsername, lookupPincode, MR_FIELDS as FIELDS, payloadFromValues, validateMRValues } from '../../services/serverMRs.js';
 import { getSession, subscribeSession } from '../../auth/adminSession.js';
 import '../../mr.css';
 
 const OPTIONAL = new Set(['reportingManagerId', 'addressLine2', 'paymentLimit', 'doctorDaysLimit']);
 const TABS = [
   { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'userId', 'email', 'contactRequirement', 'password', 'confirmPassword'] },
-  { id: 'assignment', label: 'Assignment & work', fields: ['hq', 'zoneId', 'employeeCode', 'dateOfJoining', 'designation', 'reportingManagerId', 'paymentLimit', 'doctorDaysLimit', 'status'] },
+  { id: 'assignment', label: 'Assignment & work', fields: ['hq', 'zoneId', 'employeeCode', 'dateOfJoining', 'designation_id', 'reportingManagerId', 'paymentLimit', 'doctorDaysLimit', 'status'] },
   { id: 'address', label: 'Address', fields: ['pincode', 'addressLine1', 'addressLine2', 'landmark', 'city', 'state', 'country'] },
 ];
 const ORDER = [...FIELDS, 'password', 'confirmPassword'];
-
-function DesignationSuggestions() {
-  const [items, setItems] = useState([]);
-  useEffect(() => {
-    const controller = new AbortController();
-    mrReferences('designations', { limit: 100 }, controller.signal).then((r) => setItems(r.items)).catch(() => {});
-    return () => controller.abort();
-  }, []);
-  return <datalist id="mr-designation-options">{items.map((item) => <option key={item.id} value={item.name} />)}</datalist>;
-}
 
 export default function MRForm({ mr, onSave, onClose, onRefresh }) {
   const [values, setValues] = useState(() => emptyMRValues(mr));
@@ -251,7 +241,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
               {renderField('zoneId', 'Assigned zone', { info: 'Only active zones can be newly assigned. A saved inactive zone can be kept with a warning; a deleted one must be replaced.', customControl: <MRReferenceSelect id="mr-zoneId" kind="zones" label="Assigned zone" value={values.zoneId} savedName={mr?.zoneName} onChange={(v) => change('zoneId', v)} placeholder="Select a zone" invalid={Boolean(errors.zoneId)} describedBy={errors.zoneId ? 'mr-zoneId-error' : undefined} required emptyGuidance="No zones exist yet. Add one in Zone Master first." /> })}
               {renderField('employeeCode', 'Employee code', { placeholder: 'Employee code' })}
               {renderField('dateOfJoining', 'Date of joining', { type: 'date' })}
-              {renderField('designation', 'Designation', { placeholder: 'Job designation', info: 'A business label only; it grants no permissions. Saved labels are kept.', customControl: <><input id="mr-designation" name="designation" className="mr-form__control" list="mr-designation-options" maxLength={200} value={values.designation} onChange={(e) => change('designation', e.target.value)} placeholder="Job designation" aria-invalid={Boolean(errors.designation)} data-testid="input-mr-designation" /><DesignationSuggestions /></> })}
+              {renderField('designation_id', 'Designation', { info: 'Select an active catalogue designation. A saved inactive assignment can be retained; a deleted assignment must be replaced. Designations grant no permissions.', customControl: <MRReferenceSelect id="mr-designation_id" kind="designations" label="Designation" value={values.designation_id} savedName={mr?.designationName} onChange={(v) => change('designation_id', v)} placeholder="Select a designation" invalid={Boolean(errors.designation_id)} describedBy={errors.designation_id ? 'mr-designation_id-error' : undefined} required emptyGuidance="No designations exist yet. Add one in Designation Master first." /> })}
               {renderField('reportingManagerId', 'Reporting manager', { customControl: <MRReferenceSelect id="mr-reportingManagerId" kind="managers" label="Reporting manager" value={values.reportingManagerId} savedName={mr?.reportingManagerName} excludeId={mr?.id} onChange={(v) => change('reportingManagerId', v)} placeholder="No reporting manager" emptyGuidance="No other MRs exist yet." /> })}
               {renderField('paymentLimit', 'Payment limit', { type: 'number', min: '0', step: '0.01', placeholder: 'Defaults to 0.00', inputMode: 'decimal' })}
               {renderField('doctorDaysLimit', 'Doctor days limit', { type: 'number', min: '0', step: '1', placeholder: 'Defaults to 0', inputMode: 'numeric' })}

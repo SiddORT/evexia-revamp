@@ -31,11 +31,8 @@ export interface MRDirectoryResponse {
   createdAt: Date;
   createdBy: string;
   dateOfJoining: Date;
-  /**
-   * @minLength 1
-   * @maxLength 200
-   */
-  designation: string;
+  readonly designationName: string;
+  designation_id: string;
   /**
    * @minimum 0
    * @maximum 3650

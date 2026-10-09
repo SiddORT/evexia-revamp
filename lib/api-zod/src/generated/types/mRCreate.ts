@@ -28,11 +28,7 @@ export interface MRCreate {
    */
   country: string;
   dateOfJoining: Date;
-  /**
-   * @minLength 1
-   * @maxLength 200
-   */
-  designation: string;
+  designation_id: string;
   /**
    * @minimum 0
    * @maximum 3650

@@ -28,7 +28,7 @@ class MRDirectory(Timestamps, Base):
     zoneId: Mapped[uuid.UUID] = mapped_column(ForeignKey("zones.id"), index=True)
     employeeCode: Mapped[str] = mapped_column(String(64))
     dateOfJoining: Mapped[date] = mapped_column(Date)
-    designation: Mapped[str] = mapped_column(String(200))
+    designation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("designations.id", ondelete="RESTRICT"), nullable=False)
     reportingManagerId: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mr_directory.id"), index=True)
     paymentLimit: Mapped[Decimal] = mapped_column(Numeric(11, 2))
     doctorDaysLimit: Mapped[int] = mapped_column(Integer)

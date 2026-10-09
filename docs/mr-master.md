@@ -1,5 +1,50 @@
 # MR Master: identity, rollout and transfer contract
 
+## Designation identity rollout
+
+Forward `0027_mr_designation_identity` follows the single reconciled
+`0026_designation_target` head. It replaces required text `designation` with
+required UUID `designation_id` and a RESTRICT foreign key to `designations.id`.
+The reduced designation catalogue contract stays unchanged. This does not grant
+permissions, provision accounts, rewrite Staff text or touch browser-local data.
+
+With writes stopped, take a verified coordinated database/audit backup and run
+preflight on a disposable restore before separately approved managed rollout.
+Every historical MR (active, inactive and deleted) must match exactly one catalogue
+row using its PostgreSQL lower/trim/collapsed-whitespace normalization. All catalogue
+history participates, including tombstones; multiple historical matches are
+ambiguous, not an invitation to prefer a live row. Failure reports up to 20 MR IDs
+and match counts and rolls back atomically. An operator must review those labels
+and resolve them through a separately approved reconciliation procedure before
+retrying; migration never guesses IDs, creates entries or discards unmatched labels.
+
+Deploy migrated database, API and frontend together; old nodes require the removed
+text column and cannot safely continue. Readiness requires the UUID column. No
+managed migration or deployment is performed by this work. Populated downgrades
+are refused: catalogue renames mean original text cannot be reconstructed.
+Use a reviewed forward correction or verified coordinated backup restore.
+
+Create/edit accepts only `designation_id`, never writable `designation` or
+`designationName`. Responses derive read-only `designationName` from the linked
+catalogue, including soft-deleted names. Renames change display/search/export
+without changing MR identity or version. New/reassigned choices must be active
+and non-deleted; unchanged inactive choices may be retained with warnings, while
+deleted choices must be explicitly replaced. The selector searches/pages server
+choices, hydrates saved UUIDs and provides loading/retry and required validation.
+
+CSV/XLSX keep the human-readable `Designation` header. Imports resolve a normalized
+active catalogue name or explicit existing active UUID, with missing/ambiguous
+errors; they never create catalogue records. Review binds the resolved UUID,
+version, status and deletion state, rechecked at commit and after password work
+under catalogue locks. Samples require replacing a catalogue-choice placeholder;
+exports use the current linked name. A backup containing an inactive/deleted
+assignment therefore needs explicit active replacement before create-only import.
+
+Focused isolated regression command:
+`sh scripts/test-api-foundation.sh tests/test_mrs.py tests/test_migration_mrs.py tests/test_migration_mr_designation.py`.
+Authenticated desktop/mobile journeys run through
+`sh scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/mrs-backend.preview.spec.mjs`.
+
 ## Operator prerequisites
 
 The MR revision `0018_mr_directory` follows the delivered
@@ -73,7 +118,7 @@ HQ/zone are server UUID relationships. Newly selected relationships must be acti
 and nondeleted. Retaining an inactive assignment is allowed with a warning;
 a deleted assignment must be replaced on edit. Reference search/paging exposes
 all pages and explicitly includes a saved inactive/deleted choice. Designation
-is a free business label with catalogue suggestions and saved-label preservation.
+is a required server UUID relationship with the same lifecycle rules.
 Managers are other directory MRs: new choices must be live/active, retained
 inactive links warn, missing/deleted choices and self/indirect cycles fail.
 All graph writes/imports share a transaction advisory lock, so competing edits
@@ -154,6 +199,7 @@ the importer/server owns all evidence. The old reduced six-column mock Excel
 template is not a full backup and is rejected with schema-correction guidance.
 
 HQ/zone resolve server UUIDs or case-insensitive names only when uniquely suitable;
+Designation resolves existing active UUIDs or unique normalized active catalogue names;
 local IDs/unsupported labels fail with setup guidance. Never auto-create references.
 Managers may use UUID, unique MR name/User ID/employee code, or explicit
 `user:username` / `employee:code`; same-batch managers use these unambiguous
@@ -198,7 +244,7 @@ is exceeded. No network work is performed under database locks. Reserve enough
 pool capacity for two hash-slot connections plus normal API transactions; do not
 remove budgets to compensate for deployment sizing.
 
-Directory pages and exports load referenced accounts, HQs, zones, managers and
+Directory pages and exports load referenced accounts, HQs, zones, designations, managers and
 audit-label identities in request-local batches of at most 500 distinct IDs per
 query, not per MR. Only public scalar account/label columns are loaded by those
 queries. Saved inactive/deleted references retain their names and warnings;

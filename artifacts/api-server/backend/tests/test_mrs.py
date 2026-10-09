@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from sqlalchemy import func, select
 from app.db.models import User, MRProfile, Patient, AuditEvent
 from app.db.mr_models import MRDirectory
+from app.db.designation_models import Designation
 from app.schemas.mrs import MRFields
 from app.services import mr_transfer, mr_postal, mrs
 from app.core.security import verify_password
@@ -19,10 +20,109 @@ from test_reporting import admin_headers
 from test_zones import workbook, replace_zip
 
 BASE = "/api/v1/admin/mrs"
+DESIGNATION_ID = uuid.UUID("cccccccc-cccc-4ccc-cccc-cccccccccccc")
+
+
+def seed_designation(db, actor_id):
+    if not db.get(Designation, DESIGNATION_ID):
+        db.add(Designation(id=DESIGNATION_ID, name="Medical Representative", shortName="MR",
+                           status="active", created_by=actor_id, updated_by=actor_id))
+        db.commit()
+
+
+def test_designation_identity_lifecycle_names_and_transfer_revalidation(client):
+    api, db, _ = client
+    headers, actor, hq, zone = setup(api, db)
+    body = fields(hq, zone)
+    assert api.post(BASE, headers=headers, json={**body, "designation": "obsolete"}).status_code == 422
+    assert api.post(BASE, headers=headers, json={**body, "designationName": "writable"}).status_code == 422
+    assert api.post(BASE, headers=headers, json={**body, "designation_id": str(uuid.uuid4())}).status_code == 409
+    row = add(api, headers, body)["record"]
+    assert row["designationName"] == "Medical Representative" and "designation" not in row
+    designation = db.get(Designation, DESIGNATION_ID)
+    designation.name, designation.status = "Renamed Medical Representative", "inactive"
+    designation.version += 1
+    db.commit()
+    saved = api.get(BASE + "/" + row["id"], headers=headers).json()
+    assert saved["designationName"] == designation.name
+    assert "inactive" in " ".join(saved["assignmentWarnings"])
+    assert api.get(BASE, headers=headers, params={"query": "Renamed Medical"}).json()["filtered"] == 1
+    retained = api.post(BASE + "/" + row["id"] + "/edit", headers=headers,
+                        json={**body, "expected_version": row["version"]})
+    assert retained.status_code == 200, retained.text
+    assert api.post(BASE, headers=headers, json={**fields(hq, zone, code="NEW", username="new.mr")}).status_code == 409
+    choices = api.get(BASE + "/references", headers=headers,
+                      params={"kind": "designations", "query": "no match", "include_saved": str(DESIGNATION_ID)}).json()
+    assert choices["items"][0]["id"] == str(DESIGNATION_ID)
+    designation.status = "active"; designation.version += 1; db.commit()
+    for format in ("csv", "xlsx"):
+        downloaded = api.get(BASE + "/export", headers=headers, params={"format": format})
+        parsed = mr_transfer.parse(downloaded.content, "mrs." + format)
+        assert parsed[0]["values"]["designation_id"] == designation.name
+        imported = {**fields(hq, zone, code="IMPORT-" + format, username="import." + format),
+            "designation_id": "  RENAMED   Medical Representative ", "reportingManagerId": ""}
+        data = mr_transfer.encode([[imported[key] for key, _ in mr_transfer.COLUMNS]], format)
+        checked = review(api, headers, data, "mrs." + format).json()
+        assert checked["valid"], checked
+        designation.version += 1; db.commit()
+        assert commit(api, headers, data, checked["digest"], "mrs." + format).status_code == 409
+        checked = review(api, headers, data, "mrs." + format).json()
+        assert commit(api, headers, data, checked["digest"], "mrs." + format).status_code == 200
+    pending = csv_data([fields(hq, zone, code="PENDING", username="pending.mr")])
+    checked = review(api, headers, pending).json()
+    assert checked["valid"]
+    designation.deleted_by, designation.deleted_at = actor.id, mrs.utcnow()
+    designation.version += 1; db.commit()
+    assert commit(api, headers, pending, checked["digest"]).status_code == 409
+    deleted = api.get(BASE + "/" + row["id"], headers=headers).json()
+    assert deleted["designationName"] == designation.name and "deleted" in " ".join(deleted["assignmentWarnings"])
+    assert api.get(BASE, headers=headers, params={"query": designation.name}).json()["filtered"] == 3
+    assert api.post(BASE + "/" + row["id"] + "/edit", headers=headers,
+                    json={**body, "expected_version": retained.json()["version"]}).status_code == 409
+    for choice in ("Unknown name", str(DESIGNATION_ID)):
+        invalid = review(api, headers, csv_data([{**fields(hq, zone, code="BAD", username="bad.mr"), "designation_id": choice}])).json()
+        assert not invalid["valid"] and "Designation" in invalid["rows"][0]["errors"][0]
+
+
+def test_designation_import_ambiguity_and_hash_phase_revalidation(client, monkeypatch):
+    from sqlalchemy import text
+    api, db, _ = client
+    headers, actor, hq, zone = setup(api, db)
+    data = csv_data([{**fields(hq, zone), "designation_id": "Medical Representative"}])
+    # Synthetic corrupt-catalogue fixture demonstrates explicit ambiguity rejection.
+    with db.begin_nested() as savepoint:
+        db.execute(text("DROP INDEX uq_designation_live_name"))
+        db.add(Designation(name="MEDICAL  Representative", shortName="MR", status="active",
+                           created_by=actor.id, updated_by=actor.id))
+        db.flush()
+        _, bodies, _ = mr_transfer.review_state(db, mr_transfer.parse(data, "mrs.csv"))
+        assert not bodies
+        rows, _, _ = mr_transfer.review_state(db, mr_transfer.parse(data, "mrs.csv"))
+        assert "ambiguous" in rows[0]["errors"][0]
+        # Explicit UUIDs never reinterpret UUID-looking catalogue names.
+        explicit = csv_data([fields(hq, zone)])
+        rows, _, _ = mr_transfer.review_state(db, mr_transfer.parse(explicit, "mrs.csv"))
+        assert not rows[0]["errors"]
+        savepoint.rollback()
+    db.commit()
+    checked = review(api, headers, data).json()
+    assert checked["valid"]
+    original = mrs.prepare_passwords
+    def change_after_hash(db, actor, passwords, **kwargs):
+        prepared = original(db, actor, passwords, **kwargs)
+        designation = db.get(Designation, DESIGNATION_ID)
+        designation.status = "inactive"; designation.version += 1
+        db.commit()
+        return prepared
+    monkeypatch.setattr(mrs, "prepare_passwords", change_after_hash)
+    rejected = commit(api, headers, data, checked["digest"])
+    assert rejected.status_code == 409 and rejected.json()["error"]["code"] == "mr_import_conflict"
+    assert db.scalar(select(func.count()).select_from(MRDirectory)) == 0
 
 
 def setup(api, db):
     headers, actor = admin_headers(api, db)
+    seed_designation(db, actor.id)
     hq = api.post("/api/v1/admin/headquarters", headers=headers, json={"name": "HQ for MRs", "status": "active"}).json()["id"]
     zone = api.post("/api/v1/admin/zones", headers=headers, json={"name": "Zone for MRs", "status": "active"}).json()["id"]
     return headers, actor, hq, zone
@@ -30,7 +130,7 @@ def setup(api, db):
 
 def fields(hq, zone, name="Synthetic MR", code="MR-01", username="synthetic.mr", **changes):
     return dict(name=name, employeeCode=code, userId=username, phone="", email="", contactRequirement="optional",
-                hq=hq, zoneId=zone, dateOfJoining="2020-01-01", designation="Medical Representative",
+                hq=hq, zoneId=zone, dateOfJoining="2020-01-01", designation_id=str(DESIGNATION_ID),
                 reportingManagerId=None, paymentLimit="", doctorDaysLimit="", status="active",
                 pincode="110001", addressLine1="Synthetic address", addressLine2="", landmark="Synthetic landmark",
                 city="Delhi", state="Delhi", country="India", **changes)

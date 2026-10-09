@@ -3233,8 +3233,6 @@ export const listMRDirectoryResponseItemsItemCityMax = 100;
 export const listMRDirectoryResponseItemsItemContactRequirementDefault = `required`;
 export const listMRDirectoryResponseItemsItemCountryMax = 100;
 
-export const listMRDirectoryResponseItemsItemDesignationMax = 200;
-
 export const listMRDirectoryResponseItemsItemDoctorDaysLimitDefault = 0;
 export const listMRDirectoryResponseItemsItemDoctorDaysLimitMin = 0;
 export const listMRDirectoryResponseItemsItemDoctorDaysLimitMax = 3650;
@@ -3291,10 +3289,8 @@ export const ListMRDirectoryResponse = zod.object({
       createdAt: zod.coerce.date(),
       createdBy: zod.string(),
       dateOfJoining: zod.coerce.date(),
-      designation: zod
-        .string()
-        .min(1)
-        .max(listMRDirectoryResponseItemsItemDesignationMax),
+      designationName: zod.string(),
+      designation_id: zod.string().uuid(),
       doctorDaysLimit: zod
         .number()
         .int()
@@ -3364,8 +3360,6 @@ export const createMRDirectoryBodyCityMax = 100;
 export const createMRDirectoryBodyContactRequirementDefault = `required`;
 export const createMRDirectoryBodyCountryMax = 100;
 
-export const createMRDirectoryBodyDesignationMax = 200;
-
 export const createMRDirectoryBodyDoctorDaysLimitDefault = 0;
 export const createMRDirectoryBodyDoctorDaysLimitMin = 0;
 export const createMRDirectoryBodyDoctorDaysLimitMax = 3650;
@@ -3414,7 +3408,7 @@ export const CreateMRDirectoryBody = zod.object({
     .default(createMRDirectoryBodyContactRequirementDefault),
   country: zod.string().min(1).max(createMRDirectoryBodyCountryMax),
   dateOfJoining: zod.coerce.date(),
-  designation: zod.string().min(1).max(createMRDirectoryBodyDesignationMax),
+  designation_id: zod.string().uuid(),
   doctorDaysLimit: zod
     .number()
     .int()
@@ -3473,8 +3467,6 @@ export const createMRDirectoryResponseRecordCityMax = 100;
 export const createMRDirectoryResponseRecordContactRequirementDefault = `required`;
 export const createMRDirectoryResponseRecordCountryMax = 100;
 
-export const createMRDirectoryResponseRecordDesignationMax = 200;
-
 export const createMRDirectoryResponseRecordDoctorDaysLimitDefault = 0;
 export const createMRDirectoryResponseRecordDoctorDaysLimitMin = 0;
 export const createMRDirectoryResponseRecordDoctorDaysLimitMax = 3650;
@@ -3530,10 +3522,8 @@ export const CreateMRDirectoryResponse = zod.object({
     createdAt: zod.coerce.date(),
     createdBy: zod.string(),
     dateOfJoining: zod.coerce.date(),
-    designation: zod
-      .string()
-      .min(1)
-      .max(createMRDirectoryResponseRecordDesignationMax),
+    designationName: zod.string(),
+    designation_id: zod.string().uuid(),
     doctorDaysLimit: zod
       .number()
       .int()
@@ -3603,8 +3593,6 @@ export const resolveMRAccountResponseCityMax = 100;
 export const resolveMRAccountResponseContactRequirementDefault = `required`;
 export const resolveMRAccountResponseCountryMax = 100;
 
-export const resolveMRAccountResponseDesignationMax = 200;
-
 export const resolveMRAccountResponseDoctorDaysLimitDefault = 0;
 export const resolveMRAccountResponseDoctorDaysLimitMin = 0;
 export const resolveMRAccountResponseDoctorDaysLimitMax = 3650;
@@ -3655,7 +3643,8 @@ export const ResolveMRAccountResponse = zod.object({
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   dateOfJoining: zod.coerce.date(),
-  designation: zod.string().min(1).max(resolveMRAccountResponseDesignationMax),
+  designationName: zod.string(),
+  designation_id: zod.string().uuid(),
   doctorDaysLimit: zod
     .number()
     .int()
@@ -3903,8 +3892,6 @@ export const getMRDirectoryResponseCityMax = 100;
 export const getMRDirectoryResponseContactRequirementDefault = `required`;
 export const getMRDirectoryResponseCountryMax = 100;
 
-export const getMRDirectoryResponseDesignationMax = 200;
-
 export const getMRDirectoryResponseDoctorDaysLimitDefault = 0;
 export const getMRDirectoryResponseDoctorDaysLimitMin = 0;
 export const getMRDirectoryResponseDoctorDaysLimitMax = 3650;
@@ -3952,7 +3939,8 @@ export const GetMRDirectoryResponse = zod.object({
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   dateOfJoining: zod.coerce.date(),
-  designation: zod.string().min(1).max(getMRDirectoryResponseDesignationMax),
+  designationName: zod.string(),
+  designation_id: zod.string().uuid(),
   doctorDaysLimit: zod
     .number()
     .int()
@@ -4016,8 +4004,6 @@ export const setMRContactRequirementResponseCityMax = 100;
 export const setMRContactRequirementResponseContactRequirementDefault = `required`;
 export const setMRContactRequirementResponseCountryMax = 100;
 
-export const setMRContactRequirementResponseDesignationMax = 200;
-
 export const setMRContactRequirementResponseDoctorDaysLimitDefault = 0;
 export const setMRContactRequirementResponseDoctorDaysLimitMin = 0;
 export const setMRContactRequirementResponseDoctorDaysLimitMax = 3650;
@@ -4068,10 +4054,8 @@ export const SetMRContactRequirementResponse = zod.object({
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   dateOfJoining: zod.coerce.date(),
-  designation: zod
-    .string()
-    .min(1)
-    .max(setMRContactRequirementResponseDesignationMax),
+  designationName: zod.string(),
+  designation_id: zod.string().uuid(),
   doctorDaysLimit: zod
     .number()
     .int()
@@ -4137,8 +4121,6 @@ export const deleteMRDirectoryResponseCityMax = 100;
 export const deleteMRDirectoryResponseContactRequirementDefault = `required`;
 export const deleteMRDirectoryResponseCountryMax = 100;
 
-export const deleteMRDirectoryResponseDesignationMax = 200;
-
 export const deleteMRDirectoryResponseDoctorDaysLimitDefault = 0;
 export const deleteMRDirectoryResponseDoctorDaysLimitMin = 0;
 export const deleteMRDirectoryResponseDoctorDaysLimitMax = 3650;
@@ -4189,7 +4171,8 @@ export const DeleteMRDirectoryResponse = zod.object({
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   dateOfJoining: zod.coerce.date(),
-  designation: zod.string().min(1).max(deleteMRDirectoryResponseDesignationMax),
+  designationName: zod.string(),
+  designation_id: zod.string().uuid(),
   doctorDaysLimit: zod
     .number()
     .int()
@@ -4296,8 +4279,6 @@ export const editMRDirectoryBodyCityMax = 100;
 export const editMRDirectoryBodyContactRequirementDefault = `required`;
 export const editMRDirectoryBodyCountryMax = 100;
 
-export const editMRDirectoryBodyDesignationMax = 200;
-
 export const editMRDirectoryBodyDoctorDaysLimitDefault = 0;
 export const editMRDirectoryBodyDoctorDaysLimitMin = 0;
 export const editMRDirectoryBodyDoctorDaysLimitMax = 3650;
@@ -4343,7 +4324,7 @@ export const EditMRDirectoryBody = zod.object({
     .default(editMRDirectoryBodyContactRequirementDefault),
   country: zod.string().min(1).max(editMRDirectoryBodyCountryMax),
   dateOfJoining: zod.coerce.date(),
-  designation: zod.string().min(1).max(editMRDirectoryBodyDesignationMax),
+  designation_id: zod.string().uuid(),
   doctorDaysLimit: zod
     .number()
     .int()
@@ -4394,8 +4375,6 @@ export const editMRDirectoryResponseCityMax = 100;
 export const editMRDirectoryResponseContactRequirementDefault = `required`;
 export const editMRDirectoryResponseCountryMax = 100;
 
-export const editMRDirectoryResponseDesignationMax = 200;
-
 export const editMRDirectoryResponseDoctorDaysLimitDefault = 0;
 export const editMRDirectoryResponseDoctorDaysLimitMin = 0;
 export const editMRDirectoryResponseDoctorDaysLimitMax = 3650;
@@ -4443,7 +4422,8 @@ export const EditMRDirectoryResponse = zod.object({
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   dateOfJoining: zod.coerce.date(),
-  designation: zod.string().min(1).max(editMRDirectoryResponseDesignationMax),
+  designationName: zod.string(),
+  designation_id: zod.string().uuid(),
   doctorDaysLimit: zod
     .number()
     .int()
@@ -4506,8 +4486,6 @@ export const resetMRPasswordResponseRecordCityMax = 100;
 export const resetMRPasswordResponseRecordContactRequirementDefault = `required`;
 export const resetMRPasswordResponseRecordCountryMax = 100;
 
-export const resetMRPasswordResponseRecordDesignationMax = 200;
-
 export const resetMRPasswordResponseRecordDoctorDaysLimitDefault = 0;
 export const resetMRPasswordResponseRecordDoctorDaysLimitMin = 0;
 export const resetMRPasswordResponseRecordDoctorDaysLimitMax = 3650;
@@ -4563,10 +4541,8 @@ export const ResetMRPasswordResponse = zod.object({
     createdAt: zod.coerce.date(),
     createdBy: zod.string(),
     dateOfJoining: zod.coerce.date(),
-    designation: zod
-      .string()
-      .min(1)
-      .max(resetMRPasswordResponseRecordDesignationMax),
+    designationName: zod.string(),
+    designation_id: zod.string().uuid(),
     doctorDaysLimit: zod
       .number()
       .int()
@@ -4634,8 +4610,6 @@ export const setMRDirectoryStatusResponseCityMax = 100;
 export const setMRDirectoryStatusResponseContactRequirementDefault = `required`;
 export const setMRDirectoryStatusResponseCountryMax = 100;
 
-export const setMRDirectoryStatusResponseDesignationMax = 200;
-
 export const setMRDirectoryStatusResponseDoctorDaysLimitDefault = 0;
 export const setMRDirectoryStatusResponseDoctorDaysLimitMin = 0;
 export const setMRDirectoryStatusResponseDoctorDaysLimitMax = 3650;
@@ -4686,10 +4660,8 @@ export const SetMRDirectoryStatusResponse = zod.object({
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   dateOfJoining: zod.coerce.date(),
-  designation: zod
-    .string()
-    .min(1)
-    .max(setMRDirectoryStatusResponseDesignationMax),
+  designationName: zod.string(),
+  designation_id: zod.string().uuid(),
   doctorDaysLimit: zod
     .number()
     .int()

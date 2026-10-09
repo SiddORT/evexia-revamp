@@ -22,6 +22,7 @@ from app.db.models import User, MRProfile
 from app.db.mr_models import MRDirectory
 from app.db.zone_models import Zone
 from app.db.headquarter_models import Headquarter
+from app.db.designation_models import Designation, normalized_name
 from app.schemas.mrs import MRFields
 from app.services import mrs
 from app.services.zone_transfer import workbook_rows, safe_text, UNSAFE
@@ -32,7 +33,7 @@ COLUMNS = [
     ("employeeCode", "Employee Code"), ("name", "MR Name"), ("phone", "Phone No."),
     ("userId", "User ID"), ("email", "Email ID"), ("contactRequirement", "Contact Requirement"),
     ("hq", "HQ"), ("zoneId", "Assigned Zone"), ("dateOfJoining", "Date of Joining"),
-    ("designation", "Designation"), ("reportingManagerId", "Reporting Manager"),
+    ("designation_id", "Designation"), ("reportingManagerId", "Reporting Manager"),
     ("paymentLimit", "Payment Limit"), ("doctorDaysLimit", "Doctor Days Limit"),
     ("status", "Status"), ("addressLine1", "Address Line 1"), ("addressLine2", "Address Line 2"),
     ("landmark", "Landmark"), ("pincode", "Pincode"), ("city", "City"), ("state", "State"),
@@ -144,6 +145,22 @@ def resolve_catalog(db, model, value, title):
     return next(iter(unique.values())).id
 
 
+def resolve_designation(db, value):
+    try:
+        key = uuid.UUID(value)
+    except ValueError:
+        key = None
+    query = select(Designation).where(Designation.deleted_at.is_(None), Designation.status == "active")
+    query = query.where(Designation.id == key) if key else query.where(
+        normalized_name(Designation.name) == normalized_name(value))
+    choices = list(db.scalars(query.execution_options(populate_existing=True).with_for_update(read=True)))
+    if len(choices) != 1:
+        reason = "missing or inactive/deleted" if not choices else "ambiguous"
+        raise mrs.MRError(f"Designation is {reason}. Use one active catalogue name or its existing UUID.",
+                          409, "mr_assignment")
+    return choices[0].id
+
+
 def resolve_manager(db, value, batch):
     if not value:
         return None
@@ -187,6 +204,7 @@ def review_state(db, parsed):
         try:
             values["hq"] = resolve_catalog(db, Headquarter, values["hq"], "HQ")
             values["zoneId"] = resolve_catalog(db, Zone, values["zoneId"], "Assigned Zone")
+            values["designation_id"] = resolve_designation(db, values["designation_id"])
             values["reportingManagerId"] = resolve_manager(db, values["reportingManagerId"], batch)
             body = MRFields(**values)
             mrs.identifiers_available(db, body)
@@ -207,7 +225,7 @@ def review_state(db, parsed):
     for record_id, body in bodies.items():
         position = list(batch).index(record_id)
         try:
-            standin = type("Existing", (), {"id": record_id, "hq": None, "zoneId": None, "reportingManagerId": None})()
+            standin = type("Existing", (), {"id": record_id, "hq": None, "zoneId": None, "designation_id": None, "reportingManagerId": None})()
             mrs.validate_assignments(db, body, standin, bodies)
         except mrs.MRError as exc:
             reviewed[position]["errors"].append(exc.message)
@@ -215,10 +233,11 @@ def review_state(db, parsed):
     for record_id, body in bodies.items():
         # Assignment versions bind review to the actual resolved server catalogue.
         refs = []
-        for model, target in ((Headquarter, body.hq), (Zone, body.zoneId), (MRDirectory, body.reportingManagerId)):
-            if target and target not in bodies:
+        for model, target in ((Headquarter, body.hq), (Zone, body.zoneId), (Designation, body.designation_id), (MRDirectory, body.reportingManagerId)):
+            if target and (model is not MRDirectory or target not in bodies):
                 entry = db.get(model, target)
-                refs.append((str(target), entry.version if entry else None))
+                refs.append((str(target), entry.version if entry else None,
+                             entry.status if entry else None, bool(entry.deleted_at) if entry else None))
         snapshot.append((str(record_id), body.model_dump(mode="json"), refs))
     return reviewed, bodies, snapshot
 
@@ -299,7 +318,7 @@ def sample(format):
     values = dict(employeeCode="MR-001", name="Example MR", phone="", userId="example.mr",
                   email="", contactRequirement="optional", hq="Replace with active HQ",
                   zoneId="Replace with active Zone", dateOfJoining=date.today().isoformat(),
-                  designation="Medical Representative", reportingManagerId="", paymentLimit="0.00",
+                  designation_id="Replace with active catalogue Designation name or UUID", reportingManagerId="", paymentLimit="0.00",
                   doctorDaysLimit="0", status="inactive", addressLine1="Example address", addressLine2="",
                   landmark="Example landmark", pincode="110001", city="Delhi", state="Delhi", country="India")
     return encode([[values[key] for key, _ in COLUMNS]], format)
@@ -320,6 +339,7 @@ def export(db, actor, query, status, zone_id, hq_id, format):
         for record in records:
             values = mrs.projection(db, record, context)
             values["hq"], values["zoneId"] = values["hqName"], values["zoneName"]
+            values["designation_id"] = values["designationName"]
             if record.reportingManagerId:
                 values["reportingManagerId"] = "user:" + context["accounts"][record.reportingManagerId].username
             else:

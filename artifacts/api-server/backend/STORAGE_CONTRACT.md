@@ -70,6 +70,15 @@ all previous account identifiers remain reserved, including tombstones. Labels,
 Zone grants and arbitrary account links confer no MR identity.
 See `docs/mr-master.md` for rollout, resources, transfers and one-time secrets.
 
+MR designation is required UUID catalogue metadata with hard-delete RESTRICT,
+not authorization or identity mapping. Read-only names include catalogue
+tombstones. New assignments require active live records; unchanged inactive
+assignments are retained and deleted ones require replacement. Forward
+`0027_mr_designation_identity` checks all historical labels with catalogue
+normalization and refuses unmatched/ambiguous mappings atomically; managed rollout
+needs separate approval. Renames prevent reconstructing original text, so
+populated downgrade is refused. Staff designation text remains unchanged.
+
 Zone Master uses server-owned UTC audit times and User actor references, immutable
 creation metadata, mandatory expected versions and non-deleted lower-name
 uniqueness including inactive rows. Deletion retains a database tombstone and

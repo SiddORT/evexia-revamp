@@ -29,9 +29,13 @@ def prepare(fixture):
 
 
 def test_empty_forward_migration_preserves_identity_file_history(migration_db):
-    engine, config, actor_id, sid, mr, _ = prepare(migration_db)
+    from test_migration_zones import prepare as prepare_identity
+    from test_migration_sales_targets import seed
+    engine, config, actor_id, sid = prepare_identity(migration_db)
     command.downgrade(config, "0019_doctor_directory")
     with Session(engine) as db:
+        mr = seed(db, actor_id, historical=True)
+        mr["id"] = uuid.UUID(mr["id"])
         patient = Patient(assigned_mr_id=mr["id"], is_active=False, version=7)
         db.add(patient); db.flush()
         file_id = uuid.uuid4()

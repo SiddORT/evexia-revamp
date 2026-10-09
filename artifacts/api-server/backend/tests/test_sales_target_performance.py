@@ -22,7 +22,7 @@ from app.services.auth import identity_from_token, AuthError
 from app.services import sales_targets, sales_target_transfer as transfer
 from test_sessions import client
 from test_reporting import admin_headers
-from test_mrs import fields as mr_fields
+from test_mrs import fields as mr_fields, seed_designation
 
 SIZE = 5000
 
@@ -36,6 +36,7 @@ def directory(client):
     assert db.bind.engine.url.query.get("host", "").startswith("/tmp/evexia-api-test.")
     headers, admin = admin_headers(api, db)
     admin_id = admin.id
+    seed_designation(db, admin_id)
     now = utcnow()
     users = [uuid.uuid4() for _ in range(SIZE)]
     mrs = [uuid.uuid4() for _ in range(SIZE)]

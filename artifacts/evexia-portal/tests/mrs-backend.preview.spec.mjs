@@ -18,7 +18,14 @@ async function directory(page, label) {
     const session = await import('/src/auth/adminSession.js');
     const hq = await session.headquarterRequest('', { body: { name: `MR ${label} HQ`, status: 'active' } });
     const zone = await session.zoneRequest('', { body: { name: `MR ${label} Zone`, status: 'active' } });
-    return { hq: hq.id, zone: zone.id };
+    if (label === 'Desktop') {
+      const file = new File([`Designation Name,Short Name,Status\n${Array.from({ length: 101 }, (_, n) => `AA Paged MR Designation ${String(n).padStart(3, '0')},MR,active`).join('\n')}`], 'paged-designations.csv', { type: 'text/csv' });
+      const review = await session.designationRequest('/import/review', { file, params: { filename: file.name } });
+      if (!review.valid) throw new Error('Synthetic designation fixture review failed');
+      await session.designationRequest('/import/commit', { file, params: { filename: file.name, digest: review.digest, confirm: true } });
+    }
+    const designation = await session.designationRequest('', { body: { name: `MR ${label} Designation`, shortName: 'MR', status: 'active' } });
+    return { hq: hq.id, zone: zone.id, designation: designation.id };
   }, label);
   await page.evaluate(({ key, legacy }) => localStorage.setItem(key, legacy), { key, legacy });
   await page.goto(base() + path);
@@ -40,6 +47,14 @@ for (const mobile of [false, true]) {
     if (mobile) await page.setViewportSize({ width: 390, height: 844 });
     const label = mobile ? 'Mobile' : 'Desktop';
     const refs = await directory(page, label);
+    let failDesignation = true;
+    await page.route('**/api/v1/admin/mrs/references*', (route) => {
+      if (new URL(route.request().url()).searchParams.get('kind') === 'designations' && failDesignation) {
+        failDesignation = false;
+        return route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ detail: 'Synthetic reference failure' }) });
+      }
+      return route.continue();
+    });
     await expect(page.getByText('Legacy MR remains local', { exact: true })).toHaveCount(0);
     await page.getByTestId('button-add-mr').click();
     await page.getByTestId('select-mr-contactRequirement').selectOption('optional');
@@ -53,7 +68,20 @@ for (const mobile of [false, true]) {
     await page.getByTestId('select-mr-zones').selectOption(refs.zone);
     await page.getByTestId('input-mr-employeeCode').fill(`MR-${label}`);
     await page.getByTestId('input-mr-dateOfJoining').fill('2020-01-01');
-    await page.getByTestId('input-mr-designation').fill('MR business label only');
+    const designationControl = page.locator('.mr-reference').filter({ has: page.getByTestId('select-mr-designations') });
+    await designationControl.getByRole('button', { name: 'Retry', exact: true }).click();
+    await expect(page.getByTestId('select-mr-designations')).not.toHaveAttribute('aria-busy', 'true');
+    if (!mobile) {
+      await expect(page.getByTestId('select-mr-designations').locator(`option[value="${refs.designation}"]`)).toHaveCount(0);
+      await page.getByTestId('button-more-mr-designations').click();
+    } else {
+      await page.getByTestId('input-search-mr-designations').fill(`MR ${label} Designation`);
+    }
+    await expect(page.getByTestId('select-mr-designations').locator(`option[value="${refs.designation}"]`)).toHaveCount(1);
+    await page.getByTestId('button-save-mr').click();
+    await expect(page.getByTestId('select-mr-designations')).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.getByTestId('select-mr-designations')).toBeFocused();
+    await page.getByTestId('select-mr-designations').selectOption(refs.designation);
     await page.getByTestId('input-mr-paymentLimit').fill('123.45');
     await page.getByTestId('input-mr-doctorDaysLimit').fill('12');
     await page.getByTestId('tab-mr-address').click();
@@ -84,6 +112,9 @@ for (const mobile of [false, true]) {
     await page.getByTestId('button-save-mr').click();
     const saved = await (await response).json();
     expect(saved.record.city).toBe('Manual city');
+    expect(saved.record.designation_id).toBe(refs.designation);
+    expect(saved.record.designationName).toBe(`MR ${label} Designation`);
+    expect(saved.record.designation).toBeUndefined();
     expect(saved.credentials.userId).toBe(username);
     await expect(page.getByTestId('button-close-credentials')).toBeDisabled();
     await page.getByTestId('button-toggle-credentials').click();
@@ -91,6 +122,10 @@ for (const mobile of [false, true]) {
     const storage = await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }));
     expect(storage).not.toContain(saved.credentials.password);
     await discard(page);
+    await page.evaluate(async ({ id, name }) => {
+      const s = await import('/src/auth/adminSession.js');
+      await s.designationRequest(`/${id}/edit`, { body: { name, shortName: 'MR', status: 'inactive', expected_version: 1 } });
+    }, { id: refs.designation, name: `Renamed ${label} Designation` });
     await expect(page.getByTestId('text-mr-count')).toBeVisible();
     const record = page.locator(mobile ? 'article[role=listitem]' : 'tbody tr').filter({ hasText: `Synthetic ${label} MR` });
     await expect(record).toContainText('Super Admin');
@@ -110,10 +145,14 @@ for (const mobile of [false, true]) {
     await page.getByTestId('tab-mr-assignment').click();
     await expect(page.getByTestId('select-mr-zones')).toHaveValue(refs.zone);
     await expect(page.getByTestId('select-mr-headquarters')).toHaveValue(refs.hq);
+    await expect(page.getByTestId('select-mr-designations')).toHaveValue(refs.designation);
+    await expect(page.getByTestId('select-mr-designations').locator(`option[value="${refs.designation}"]`)).toHaveText(`Renamed ${label} Designation (inactive)`);
+    await expect(page.getByText('Designation is inactive. You may retain the saved assignment.')).toBeVisible();
     await expect(page.getByTestId('select-mr-managers')).not.toHaveAttribute('aria-busy', 'true');
     await expect(page.getByTestId('select-mr-managers').locator(`option[value="${saved.record.id}"]`)).toHaveCount(0);
     await page.getByTestId('button-save-mr').click();
     await expect(page.getByTestId('text-mr-count')).toBeVisible();
+    await expect(record).toContainText(`Renamed ${label} Designation`);
     await filter(page, 'mr-zone-filter', `MR ${label} Zone`);
     await filter(page, 'mr-hq-filter', `MR ${label} HQ`);
     await filter(page, 'mr-status-filter', 'Active');
@@ -145,7 +184,7 @@ test('MR import review/confirm, genuine samples, reset and deactivation', async 
   const sample = await sampleDownload;
   expect(sample.suggestedFilename()).toMatch(/\.xlsx$/);
   const headers = 'Employee Code,MR Name,Phone No.,User ID,Email ID,Contact Requirement,HQ,Assigned Zone,Date of Joining,Designation,Reporting Manager,Payment Limit,Doctor Days Limit,Status,Address Line 1,Address Line 2,Landmark,Pincode,City,State,Country';
-  const csv = `${headers}\nMR-Transfer,Synthetic Transfer MR,,synthetic.transfer,,optional,MR Transfer HQ,MR Transfer Zone,2020-01-01,MR label,,0.00,0,active,Synthetic street,,Landmark,110001,Delhi,Delhi,India\n`;
+  const csv = `${headers}\nMR-Transfer,Synthetic Transfer MR,,synthetic.transfer,,optional,MR Transfer HQ,MR Transfer Zone,2020-01-01,MR Transfer Designation,,0.00,0,active,Synthetic street,,Landmark,110001,Delhi,Delhi,India\n`;
   await page.getByTestId('input-mr-import').setInputFiles({ name: 'synthetic-mrs.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });
   await page.getByTestId('button-review-mr-import').click();
   await expect(page.getByTestId('button-confirm-mr-import')).toBeEnabled();
@@ -175,6 +214,48 @@ test('MR import review/confirm, genuine samples, reset and deactivation', async 
   const exported = page.waitForEvent('download');
   await page.getByRole('menuitem', { name: 'Excel (.xlsx)' }).click();
   expect((await exported).suggestedFilename()).toMatch(/\.xlsx$/);
+});
+
+test('MR deleted designation must be replaced without changing the account', async ({ page }) => {
+  const refs = await directory(page, 'Replacement');
+  const record = await page.evaluate(async (refs) => {
+    const s = await import('/src/auth/adminSession.js');
+    const created = await s.mrRequest('', { body: {
+      name: 'Synthetic replacement MR', employeeCode: 'REPLACE-MR', userId: 'replace.mr',
+      phone: '', email: '', contactRequirement: 'optional', hq: refs.hq, zoneId: refs.zone,
+      dateOfJoining: '2020-01-01', designation_id: refs.designation, reportingManagerId: null,
+      paymentLimit: '0.00', doctorDaysLimit: 0, status: 'active', pincode: '110001',
+      addressLine1: 'Synthetic street', addressLine2: '', landmark: 'Landmark',
+      city: 'Delhi', state: 'Delhi', country: 'India',
+    } });
+    await s.designationRequest(`/${refs.designation}/delete`, { body: { expected_version: 1 } });
+    return created.record;
+  }, refs);
+  await page.reload();
+  const recordRow = page.locator('tbody tr').filter({ hasText: 'Synthetic replacement MR' });
+  await expect(recordRow.getByTestId(`button-edit-mr-${record.id}`)).toBeVisible();
+  await recordRow.getByTestId(`button-edit-mr-${record.id}`).click();
+  await page.getByTestId('tab-mr-assignment').click();
+  const control = page.getByTestId('select-mr-designations');
+  await expect(control).toHaveValue(refs.designation);
+  await expect(control.locator(`option[value="${refs.designation}"]`)).toBeDisabled();
+  await expect(page.getByText('Designation was deleted. Explicitly replace it before saving.')).toBeVisible();
+  await page.getByTestId('button-save-mr').click();
+  await expect(page.getByText('Designation is missing or deleted. Explicitly select an active catalogue designation.')).toBeVisible();
+  const replacement = await page.evaluate(async () => (await import('/src/auth/adminSession.js')).designationRequest('', {
+    body: { name: 'ZZ Replacement designation', shortName: 'MR', status: 'active' },
+  }));
+  await page.getByTestId('input-search-mr-designations').fill('ZZ Replacement designation');
+  await expect(control.locator(`option[value="${replacement.id}"]`)).toHaveCount(1);
+  await control.selectOption(replacement.id);
+  const response = page.waitForResponse((r) => r.url().endsWith(`/mrs/${record.id}/edit`));
+  await page.getByTestId('button-save-mr').click();
+  const saved = await (await response).json();
+  expect(saved.id).toBe(record.id);
+  expect(saved.userId).toBe(record.userId);
+  expect(saved.designation_id).toBe(replacement.id);
+  expect(saved.designationName).toBe(replacement.name);
+  await expect(page.getByTestId('text-mr-count')).toBeVisible();
 });
 
 test('MR compact server filters: paging, query isolation, feedback, keyboard, touch and themed exports', async ({ page }, info) => {

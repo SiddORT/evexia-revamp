@@ -17,7 +17,7 @@ async function seed(page) {
     const zone = await auth.zoneRequest('', { body: { name: `Patient Zone ${tag}`, status: 'active' } });
     const mr = (await auth.mrRequest('', { body: {
       name: `Patient MR ${tag}`, userId: `patient.mr.${tag}`, employeeCode: `PAT-${tag}`, contactRequirement: 'optional',
-      dateOfJoining: '2020-01-01', designation: 'Synthetic', phone: '', email: '', hq: hq.id, zoneId: zone.id,
+      dateOfJoining: '2020-01-01', designation_id: (await auth.designationRequest('', { body: { name: `Patient MR designation ${tag}`, shortName: 'MR', status: 'active' } })).id, phone: '', email: '', hq: hq.id, zoneId: zone.id,
       addressLine1: 'Synthetic street', addressLine2: '', landmark: 'Landmark', pincode: '110001', city: 'Delhi',
       state: 'Delhi', country: 'India', status: 'active', paymentLimit: '0.00', doctorDaysLimit: 0,
     } })).record;

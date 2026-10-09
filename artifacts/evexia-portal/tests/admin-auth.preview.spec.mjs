@@ -33,7 +33,7 @@ test('shared Doctor phone control preserves all country options, alternate phone
     const mr = await session.mrRequest('', { body: {
       name: `Phone MR ${label}`, userId: `phone.mr.${label}`, employeeCode: `PHONE-${label}`,
       contactRequirement: 'optional', phone: '', email: '', hq: hq.id, zoneId: zone.id,
-      dateOfJoining: '2020-01-01', designation: 'MR business label', status: 'active',
+      dateOfJoining: '2020-01-01', designation_id: (await session.designationRequest('', { body: { name: `Phone MR designation ${label}`, shortName: 'MR', status: 'active' } })).id, status: 'active',
       addressLine1: 'Address', landmark: 'Landmark', pincode: '110001', city: 'Delhi', state: 'Delhi', country: 'India',
       paymentLimit: '0.00', doctorDaysLimit: 0,
     } });

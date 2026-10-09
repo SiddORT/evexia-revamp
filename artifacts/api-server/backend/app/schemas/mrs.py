@@ -22,7 +22,7 @@ class MRFields(BaseModel):
     zoneId: uuid.UUID
     employeeCode: str = Field(min_length=1, max_length=64)
     dateOfJoining: date
-    designation: str = Field(min_length=1, max_length=200)
+    designation_id: uuid.UUID
     reportingManagerId: uuid.UUID | None = None
     paymentLimit: Decimal = Field(default=Decimal("0.00"), ge=0, le=Decimal("999999999.99"), max_digits=11, decimal_places=2)
     doctorDaysLimit: int = Field(default=0, ge=0, le=3650, strict=True)
@@ -136,6 +136,7 @@ class MRContact(MRVersion):
 
 
 class MRDirectoryResponse(MRFields):
+    designationName: str = Field(json_schema_extra={"readOnly": True})
     id: uuid.UUID
     version: int
     hqName: str

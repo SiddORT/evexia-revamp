@@ -7,9 +7,9 @@ const clean = (params = {}) => Object.fromEntries(Object.entries(params)
   .filter(([, value]) => value !== undefined && value !== null && value !== '' && value !== 'all'));
 
 export const MR_FIELDS = ['name', 'phone', 'userId', 'email', 'contactRequirement', 'hq', 'zoneId', 'employeeCode',
-  'dateOfJoining', 'designation', 'reportingManagerId', 'paymentLimit', 'doctorDaysLimit', 'status', 'pincode',
+  'dateOfJoining', 'designation_id', 'reportingManagerId', 'paymentLimit', 'doctorDaysLimit', 'status', 'pincode',
   'addressLine1', 'addressLine2', 'landmark', 'city', 'state', 'country'];
-export const MAX_LENGTH = { name: 200, employeeCode: 64, addressLine1: 300, addressLine2: 300, landmark: 200, city: 100, state: 100, country: 100, phone: 20, email: 320, designation: 200 };
+export const MAX_LENGTH = { name: 200, employeeCode: 64, addressLine1: 300, addressLine2: 300, landmark: 200, city: 100, state: 100, country: 100, phone: 20, email: 320 };
 export const USERNAME_PATTERN = /^[a-z][a-z0-9._-]{2,31}$/;
 export const UUID_PATTERN = /^[0-9a-f-]{36}$/i;
 
@@ -55,7 +55,7 @@ export function validateMRValues(values, { creating, password = '', confirm = ''
   values = normalizedValues(values);
   const errors = {};
   const optionalContact = values.contactRequirement === 'optional';
-  const required = ['name', 'userId', 'hq', 'zoneId', 'employeeCode', 'dateOfJoining', 'designation', 'pincode', 'addressLine1', 'landmark', 'city', 'state', 'country'];
+  const required = ['name', 'userId', 'hq', 'zoneId', 'employeeCode', 'dateOfJoining', 'designation_id', 'pincode', 'addressLine1', 'landmark', 'city', 'state', 'country'];
   if (!optionalContact) required.push('phone', 'email');
   required.forEach((key) => { if (!values[key].trim()) errors[key] = 'This field is required.'; });
   for (const [key, max] of Object.entries(MAX_LENGTH)) if (values[key].length > max) errors[key] = `Use at most ${max} characters.`;
@@ -75,7 +75,7 @@ export function validateMRValues(values, { creating, password = '', confirm = ''
   if (values.paymentLimit && (!/^\d{1,9}(\.\d{1,2})?$/.test(values.paymentLimit))) errors.paymentLimit = 'Enter an amount from 0 to 999999999.99 with up to 2 decimals.';
   if (values.doctorDaysLimit && (!/^\d{1,4}$/.test(values.doctorDaysLimit) || Number(values.doctorDaysLimit) > 3650)) errors.doctorDaysLimit = 'Enter a whole number from 0 to 3650.';
   if (!['active', 'inactive'].includes(values.status)) errors.status = 'Choose a valid status.';
-  for (const key of ['hq', 'zoneId', 'reportingManagerId']) if (values[key] && !UUID_PATTERN.test(values[key])) errors[key] = 'Select a saved server record.';
+  for (const key of ['hq', 'zoneId', 'designation_id', 'reportingManagerId']) if (values[key] && !UUID_PATTERN.test(values[key])) errors[key] = 'Select a saved server record.';
   if (creating && (password || confirm)) {
     if (password.length < 12 || password.length > 128) errors.password = 'Use 12 to 128 characters, or leave blank to generate one.';
     else if (password !== confirm) errors.confirmPassword = 'Passwords do not match.';

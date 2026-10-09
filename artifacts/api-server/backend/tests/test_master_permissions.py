@@ -36,7 +36,10 @@ def seed(api, admin):
         "product_category": dict(name="Category", description="", unit_price="1.00", status="active"),
     }
     rows = {key: create(key, value) for key, value in bodies.items()}
+    designation = api.post(BASE + "designations", headers=admin,
+                           json=dict(name="Medical Representative", shortName="MR", status="active")).json()
     bodies["mr"] = mr_fields(rows["headquarter"]["id"], rows["zone"]["id"])
+    bodies["mr"]["designation_id"] = designation["id"]
     rows["mr"] = create("mr", bodies["mr"])["record"]
     bodies["doctor"] = doctor_fields(rows["mr"])
     rows["doctor"] = create("doctor", bodies["doctor"])

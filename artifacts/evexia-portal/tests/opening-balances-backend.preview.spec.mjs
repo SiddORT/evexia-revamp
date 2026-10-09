@@ -26,7 +26,7 @@ async function seed(page, mobile = false) {
     const zone = await session.zoneRequest('', { body: { name: `OB Zone ${label}`, status: 'active' } });
     const mr = await session.mrRequest('', { body: {
       name: `OB MR ${label}`, userId: `balance.mr.${label}`, employeeCode: `OB-${label}`, contactRequirement: 'optional',
-      dateOfJoining: '2020-01-01', designation: 'MR', phone: '', email: '', hq: hq.id, zoneId: zone.id,
+      dateOfJoining: '2020-01-01', designation_id: (await session.designationRequest('', { body: { name: `Balance MR designation ${label}`, shortName: 'MR', status: 'active' } })).id, phone: '', email: '', hq: hq.id, zoneId: zone.id,
       addressLine1: 'Address', landmark: 'Landmark', pincode: '110001', city: 'Delhi', state: 'Delhi', country: 'India',
       status: 'active', paymentLimit: '0.00', doctorDaysLimit: 0,
     } });
@@ -330,7 +330,7 @@ test('Opening Balance Doctor picker pages server records, retries errors, and di
     const zone = await s.zoneRequest('', { body: { name: `Extra Zone ${label}`, status: 'active' } });
     const mr = await s.mrRequest('', { body: {
       name: `Extra MR ${label}`, userId: `extra.mr.${label}`, employeeCode: `EXTRA-${label}`, contactRequirement: 'optional',
-      dateOfJoining: '2020-01-01', designation: 'MR', phone: '', email: '', hq: hq.id, zoneId: zone.id,
+      dateOfJoining: '2020-01-01', designation_id: (await s.designationRequest('', { body: { name: `Extra MR designation ${label}`, shortName: 'MR', status: 'active' } })).id, phone: '', email: '', hq: hq.id, zoneId: zone.id,
       addressLine1: 'Address', landmark: 'Landmark', pincode: '110001', city: 'Delhi', state: 'Delhi', country: 'India',
       status: 'active', paymentLimit: '0.00', doctorDaysLimit: 0,
     } });

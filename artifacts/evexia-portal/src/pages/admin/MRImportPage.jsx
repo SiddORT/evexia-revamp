@@ -116,7 +116,7 @@ export default function MRImportPage() {
           <p>Use the sample headers and exactly one worksheet. UTF-8 CSV and genuine .xlsx workbooks are supported.</p>
           <div className="excel-import__columns"><strong>Columns</strong><span>{COLUMNS}</span>
             <strong>Backup schema</strong><span>The same columns, optionally followed by readable audit columns, which are ignored on import. A file without Contact Requirement is treated as required.</span></div>
-          <p>Passwords, hashes, identity links, versions and deletion columns are rejected. HQ, zone and manager labels must match exactly one existing record; reporting managers may also be MRs in the same file.</p>
+          <p>Passwords, hashes, identity links, versions and deletion columns are rejected. HQ, zone and manager labels must match exactly one existing record; reporting managers may also be MRs in the same file. Designation must be one active catalogue name or its existing UUID, not free text. Set up catalogue choices before review.</p>
           <div className="excel-import__sample-actions">
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('csv')} data-testid="button-sample-mr-csv">Download CSV sample</button>
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('xlsx')} data-testid="button-sample-mr-xlsx"><Download size={16} aria-hidden="true" /> Download Excel sample</button>

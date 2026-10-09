@@ -45,7 +45,7 @@ async function open(page) {
     const created = await session.mrRequest('', { body: {
       name: `Target MR ${tag}`, employeeCode: `TARGET-${tag}`, userId: `target.${tag}`,
       phone: '', email: '', contactRequirement: 'optional', hq: hq.id, zoneId: zone.id,
-      dateOfJoining: '2020-01-01', designation: 'Synthetic MR', reportingManagerId: null,
+      dateOfJoining: '2020-01-01', designation_id: (await session.designationRequest('', { body: { name: `Target MR designation ${tag}`, shortName: 'MR', status: 'active' } })).id, reportingManagerId: null,
       paymentLimit: '', doctorDaysLimit: '', status: 'active', pincode: '110001',
       addressLine1: 'Synthetic address', addressLine2: '', landmark: 'Synthetic landmark', city: 'Delhi', state: 'Delhi', country: 'India',
     } });

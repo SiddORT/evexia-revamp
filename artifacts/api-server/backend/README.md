@@ -77,6 +77,15 @@ explicit migration and unchanged local-demo purchasing relationships.
 
 ## Local development and operations
 
+- MR designation relationship migration `0027_mr_designation_identity` follows
+  `0026_designation_target`. It checks every historical MR label against all
+  normalized catalogue names, aborting on missing/ambiguous matches, then atomically
+  installs required UUID references and removes the text column. Stop writes,
+  verify a coordinated backup and obtain separate operator approval before any
+  managed execution. Deploy schema/API/frontend together. Populated downgrade
+  is refused because renamed catalogue labels cannot reconstruct original text.
+  See [MR rollout and reconciliation](../../../docs/mr-master.md).
+
 - Reviewed forward migration `0026_designation_target` follows
   `0025_vendor_phone`. It permanently drops seven designation level/allowance/tax
   columns and their checks and adds the exact PostgreSQL stored generated

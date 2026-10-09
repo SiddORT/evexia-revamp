@@ -6,7 +6,7 @@ import { CSV_COLUMNS as LEGACY_COLUMNS } from './mrs.js';
 
 const values = { ...emptyMRValues(), name: 'Synthetic MR', phone: '', email: '', contactRequirement: 'optional',
   userId: 'synthetic.mr', employeeCode: 'MR-01', hq: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
-  zoneId: 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb', dateOfJoining: '2020-01-01', designation: 'MR label',
+  zoneId: 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb', dateOfJoining: '2020-01-01', designation_id: 'cccccccc-cccc-4ccc-cccc-cccccccccccc',
   addressLine1: 'Synthetic address', landmark: 'Synthetic landmark', pincode: '110001',
   city: 'Delhi', state: 'Delhi', country: 'India', paymentLimit: '', doctorDaysLimit: '' };
 
@@ -19,6 +19,7 @@ test('MR bounded frontend/business validation agrees with authoritative Python d
     ['name', ''], ['name', 'x'.repeat(201)], ['userId', 'a@b.com'], ['email', 'bad'], ['phone', '123'],
     ['dateOfJoining', '2020-02-30'], ['pincode', '012345'], ['paymentLimit', '-1'], ['paymentLimit', '1.001'],
     ['doctorDaysLimit', '3651'], ['doctorDaysLimit', '1.5'], ['contactRequirement', 'required'],
+    ['designation_id', ''], ['designation_id', 'Free text'],
   ].map(([key, value]) => ({ ...values, [key]: value }))];
   const python = execFileSync('python3', ['-c',
     'import sys,json;sys.path.insert(0,"artifacts/api-server/backend");from app.schemas.mrs import MRFields;out=[]\nfor b in json.loads(sys.argv[1]):\n b["reportingManagerId"]=b["reportingManagerId"] or None\n try: MRFields.model_validate(b);out.append(True)\n except ValueError: out.append(False)\nprint(json.dumps(out))', JSON.stringify(cases)], { encoding: 'utf8' });

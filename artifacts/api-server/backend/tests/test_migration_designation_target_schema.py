@@ -25,7 +25,7 @@ def test_populated_previous_schema_preservation_generated_values_and_safe_refusa
     command.downgrade(config, "0025_vendor_phone")
     ids = [uuid.uuid4() for _ in range(3)]
     with Session(engine) as db:
-        mr = seed(db, actor_id)
+        mr = seed(db, actor_id, historical=True)
         for index, record_id in enumerate(ids):
             # Historical SQL contract, not today's ORM: include retired NOT NULL fields.
             db.execute(text(
@@ -58,7 +58,7 @@ def test_populated_previous_schema_preservation_generated_values_and_safe_refusa
         targets = db.execute(text("SELECT * FROM sales_targets ORDER BY id")).mappings().all()
         assert [{k: v for k, v in row.items() if k != "annual_target"} for row in targets] == [dict(r) for r in old_targets]
         assert all(row["annual_target"] == Decimal("0.31") for row in targets)
-        assert db.get(MRDirectory, uuid.UUID(mr["id"])).designation == "MR"
+        assert db.get(Designation, db.get(MRDirectory, uuid.UUID(mr["id"])).designation_id).name == "MR"
         assert readiness(db) == {"status": "ready"}
     for model in (Designation, SalesTarget):
         columns = inspect(engine).get_columns(model.__tablename__)
@@ -77,10 +77,10 @@ def test_populated_previous_schema_preservation_generated_values_and_safe_refusa
                 connection.execute(text(sql))
         assert failure.value.orig.sqlstate == "428C9"  # GENERATED ALWAYS rejects explicit assignment.
     # Failure occurs before any DDL, including for tombstones; nothing is falsified.
-    with pytest.raises(RuntimeError, match="cannot restore discarded values"):
+    with pytest.raises(RuntimeError, match="original labels"):
         command.downgrade(config, "0025_vendor_phone")
     with engine.connect() as connection:
-        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0026_designation_target"
+        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0027_mr_designation_identity"
         assert connection.scalar(text("SELECT count(*) FROM sales_targets")) == 3
     # Readiness must fail if a required new column is absent.
     with engine.begin() as connection:

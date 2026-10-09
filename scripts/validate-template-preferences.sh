@@ -16,7 +16,7 @@ node --test artifacts/evexia-portal/src/services/serverAllergens.test.js artifac
 sh scripts/test-api-foundation.sh tests/test_allergens.py tests/test_migration_allergens.py
 sh scripts/test-api-foundation.sh tests/test_product_categories.py tests/test_product_category_files.py tests/test_migration_product_categories.py
 node --test artifacts/evexia-portal/src/services/serverMRs.test.js
-sh scripts/test-api-foundation.sh tests/test_mrs.py tests/test_migration_mrs.py
+sh scripts/test-api-foundation.sh tests/test_mrs.py tests/test_migration_mrs.py tests/test_migration_mr_designation.py
 node --test artifacts/evexia-portal/src/services/serverDoctors.test.js
 node --test artifacts/evexia-portal/src/services/serverOpeningBalances.test.js
 sh scripts/test-api-foundation.sh tests/test_opening_balances.py tests/test_migration_opening_balances.py tests/test_master_import_request_limits.py

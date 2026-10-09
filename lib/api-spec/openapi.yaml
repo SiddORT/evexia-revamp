@@ -3562,10 +3562,9 @@
             "title": "Dateofjoining",
             "type": "string"
           },
-          "designation": {
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Designation",
+          "designation_id": {
+            "format": "uuid",
+            "title": "Designation Id",
             "type": "string"
           },
           "doctorDaysLimit": {
@@ -3689,7 +3688,7 @@
           "zoneId",
           "employeeCode",
           "dateOfJoining",
-          "designation",
+          "designation_id",
           "status",
           "pincode",
           "addressLine1",
@@ -3792,10 +3791,14 @@
             "title": "Dateofjoining",
             "type": "string"
           },
-          "designation": {
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Designation",
+          "designationName": {
+            "readOnly": true,
+            "title": "Designationname",
+            "type": "string"
+          },
+          "designation_id": {
+            "format": "uuid",
+            "title": "Designation Id",
             "type": "string"
           },
           "doctorDaysLimit": {
@@ -3927,7 +3930,7 @@
           "zoneId",
           "employeeCode",
           "dateOfJoining",
-          "designation",
+          "designation_id",
           "status",
           "pincode",
           "addressLine1",
@@ -3935,6 +3938,7 @@
           "city",
           "state",
           "country",
+          "designationName",
           "id",
           "version",
           "hqName",
@@ -4064,10 +4068,9 @@
             "title": "Dateofjoining",
             "type": "string"
           },
-          "designation": {
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Designation",
+          "designation_id": {
+            "format": "uuid",
+            "title": "Designation Id",
             "type": "string"
           },
           "doctorDaysLimit": {
@@ -4183,7 +4186,7 @@
           "zoneId",
           "employeeCode",
           "dateOfJoining",
-          "designation",
+          "designation_id",
           "status",
           "pincode",
           "addressLine1",

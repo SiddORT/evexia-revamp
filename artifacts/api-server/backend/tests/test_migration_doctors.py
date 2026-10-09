@@ -29,11 +29,15 @@ def prepare(fixture):
 
 
 def test_empty_forward_migration_retains_mr_profile_and_audit(migration_db):
-    engine, config, actor_id, sid, mr = prepare(migration_db)
+    from test_migration_zones import prepare as prepare_identity
+    from test_migration_sales_targets import seed
+    engine, config, actor_id, sid = prepare_identity(migration_db)
     command.downgrade(config, "0018_mr_directory")
     with Session(engine) as db:
+        mr = seed(db, actor_id, historical=True)
+        mr["id"] = uuid.UUID(mr["id"])
         user_id = db.get(MRProfile, mr["id"]).user_id
-        mr_version = db.get(MRDirectory, mr["id"]).version
+        mr_version = db.scalar(text("SELECT version FROM mr_directory WHERE id=:id"), {"id": mr["id"]})
         audit_count = db.scalar(select(func.count()).select_from(AuditEvent))
     command.upgrade(config, "head")
     with Session(engine) as db:

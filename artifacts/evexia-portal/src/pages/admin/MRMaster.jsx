@@ -147,7 +147,7 @@ export default function MRMaster() {
     { key: 'serial', label: 'Sr No.', render: (_, index) => (page - 1) * pageSize + index + 1 },
     { key: 'details', label: 'Employee details', render: (r) => details(r) },
     { key: 'address', label: 'Address', render: address },
-    { key: 'designation', label: 'Designation', render: (r) => r.designation },
+    { key: 'designationName', label: 'Designation', render: (r) => r.designationName },
     { key: 'manager', label: 'Reporting manager', render: (r) => r.reportingManagerName || '—' },
     { key: 'zone', label: 'HQ / zone', render: (r) => <span>{r.hqName} / {r.zoneName}{warn(r)}</span> },
     { key: 'status', label: 'Status', render: (r) => <StatusBadge status={r.status} id={r.id} kind="mr" /> },
@@ -191,7 +191,7 @@ export default function MRMaster() {
         {data.items.length ? <>
           <div className="admin-mr-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(r) => r.id} label="MR records" testIdPrefix="mr" /></div>
           <div className="admin-mr-mobile" role="list" aria-label="MR records">{data.items.map((r) => <article className="admin-record-card" role="listitem" key={r.id} data-testid={`card-mr-${r.id}`}>
-            <div className="admin-record-card__head"><div className="admin-record-card__identity"><h2>{r.name}</h2><small>{r.designation}</small></div><StatusBadge status={r.status} id={r.id} kind="mr" /></div>
+            <div className="admin-record-card__head"><div className="admin-record-card__identity"><h2>{r.name}</h2><small>{r.designationName}</small></div><StatusBadge status={r.status} id={r.id} kind="mr" /></div>
             <div className="admin-record-card__body">{details(r, false)}<dl><div><dt>Address</dt><dd>{address(r)}</dd></div><div><dt>Reporting manager</dt><dd>{r.reportingManagerName || '—'}</dd></div><div><dt>HQ / zone</dt><dd>{r.hqName} / {r.zoneName}{warn(r)}</dd></div><div><dt>Created by</dt><dd>{auditDetails(r.createdBy, r.createdAt)}</dd></div><div><dt>Updated by</dt><dd>{auditDetails(r.updatedBy, r.updatedAt)}</dd></div></dl></div>
             {actions(r, true)}</article>)}</div>
         </> : <div className="admin-empty" data-testid="status-mrs-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{data.total ? 'No matching MRs' : 'No MR records yet'}</strong><p>{data.total ? 'Try different search or filters.' : 'Add an MR, or import a file. Headquarters and zones must exist first.'}</p></div>}

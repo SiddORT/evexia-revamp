@@ -1504,11 +1504,7 @@ export interface MRCreate {
    */
   country: string;
   dateOfJoining: string;
-  /**
-   * @minLength 1
-   * @maxLength 200
-   */
-  designation: string;
+  designation_id: string;
   /**
    * @minimum 0
    * @maximum 3650
@@ -1598,11 +1594,8 @@ export interface MRDirectoryResponse {
   createdAt: string;
   createdBy: string;
   dateOfJoining: string;
-  /**
-   * @minLength 1
-   * @maxLength 200
-   */
-  designation: string;
+  readonly designationName: string;
+  designation_id: string;
   /**
    * @minimum 0
    * @maximum 3650
@@ -1719,11 +1712,7 @@ export interface MREdit {
    */
   country: string;
   dateOfJoining: string;
-  /**
-   * @minLength 1
-   * @maxLength 200
-   */
-  designation: string;
+  designation_id: string;
   /**
    * @minimum 0
    * @maximum 3650

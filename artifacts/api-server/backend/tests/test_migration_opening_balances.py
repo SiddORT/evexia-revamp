@@ -7,6 +7,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError, DataError
 from sqlalchemy.orm import Session
 from app.db.models import AuditEvent, AuthSession, User
+from app.core.security import utcnow
 from app.db.opening_balance_models import OpeningBalance, OpeningBalanceImportReview
 from app.db.doctor_models import DoctorDirectory
 from app.schemas.doctors import DoctorFields, DoctorStatus
@@ -28,9 +29,17 @@ def prepare(fixture):
 
 
 def test_empty_forward_migration_preserves_doctors_identity_and_audit(migration_db):
-    engine, config, actor_id, sid, doctor = prepare(migration_db)
+    from test_migration_zones import prepare as prepare_identity
+    from test_migration_sales_targets import seed
+    engine, config, actor_id, sid = prepare_identity(migration_db)
     command.downgrade(config, "0023_sales_targets")
     with Session(engine) as db:
+        mr = seed(db, actor_id, historical=True)
+        historical_doctor = DoctorDirectory(**DoctorFields(**doctor_fields(mr)).model_dump(),
+                                            verification="unverified", created_by=actor_id, updated_by=actor_id,
+                                            created_at=utcnow(), updated_at=utcnow())
+        db.add(historical_doctor); db.commit()
+        doctor = {"id": historical_doctor.id, "registrationNumber": historical_doctor.registrationNumber}
         original = db.get(DoctorDirectory, doctor["id"])
         count = db.scalar(select(func.count()).select_from(AuditEvent))
         assert original.registrationNumber == doctor["registrationNumber"]

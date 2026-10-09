@@ -4,6 +4,8 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a mock Docto
 
 ## Run & operate
 
+- Live MR designation uses required server UUID identity and derived readable names, not free text. Forward `0027_mr_designation_identity` follows the reduced designation cleanup; all historical labels must uniquely normalize to catalogue records or migration aborts. Managed rollout needs separate approval, backup and coordinated schema/API/frontend release; populated downgrade is refused. Staff/local text stays unchanged. See `docs/mr-master.md`.
+
 - The managed `artifacts/evexia-portal: web` workflow serves the portal preview.
 - Loading presentation is request-driven: the HTML startup fallback and Admin access checks use the unchanged official logo; reporting tables use decorative cell skeletons with one status announcement. Local Master reads remain synchronous. Run `pnpm --filter @workspace/evexia-portal run test:loaders:browser` for loading, authenticated draft/session, and Activity Logs browser regressions.
 - `pnpm --filter @workspace/evexia-portal run build` builds the web app.

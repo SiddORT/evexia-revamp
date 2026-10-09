@@ -18,13 +18,14 @@ from app.services import mrs, zones, headquarters, mr_transfer
 from app.services.auth import AuthError
 from test_migration_0006 import migration_db
 from test_migration_zones import prepare, identity
-from test_mrs import fields, csv_data
+from test_mrs import fields, csv_data, seed_designation
 
 
 def setup(fixture):
     engine, config, actor_id, session_id = prepare(fixture)
     with Session(engine) as db:
         actor = identity(db, actor_id, session_id)
+        seed_designation(db, actor_id)
         hq = headquarters.create(db, actor, HeadquarterFields(name="HQ for MRs", status="active"))["id"]
         zone = zones.create(db, actor, ZoneFields(name="Zone for MRs", status="active"))["id"]
     return engine, config, actor_id, session_id, hq, zone
@@ -201,7 +202,7 @@ def test_maximum_exports_bulk_queries_exact_rows_caps_and_revocation(migration_d
             for record, cells in zip(rows, exported[1:]):
                 index = int(record.employeeCode.removeprefix("FIX-"))
                 values = {key: getattr(record, key) for key, _ in mr_transfer.COLUMNS if key != "userId"}
-                values.update(userId=f"fixture.mr.{index}", hq=f"Fixture headquarters {index % 110}",
+                values.update(designation_id=f"Fixture designations {index % 110}", userId=f"fixture.mr.{index}", hq=f"Fixture headquarters {index % 110}",
                               zoneId=f"Fixture zones {index % 110}",
                               reportingManagerId=f"user:fixture.mr.{index - 1 if index else 5000}",
                               createdBy="Super Admin", updatedBy="Backend user",

@@ -19,7 +19,7 @@ async function seed(page, label) {
     const zone = await session.zoneRequest('', { body: { name: `Doctor Zone ${label}`, status: 'active' } });
     const mr = await session.mrRequest('', { body: {
       name: `Doctor MR ${label}`, userId: `doctor.mr.${label}`, employeeCode: `DOCTOR-${label}`, contactRequirement: 'optional',
-      dateOfJoining: '2020-01-01', designation: 'MR business label',
+      dateOfJoining: '2020-01-01', designation_id: (await session.designationRequest('', { body: { name: `Doctor MR designation ${label}`, shortName: 'MR', status: 'active' } })).id,
       phone: '', email: '', hq: hq.id, zoneId: zone.id, addressLine1: 'Address', landmark: 'Landmark', pincode: '110001',
       city: 'Delhi', state: 'Delhi', country: 'India', status: 'active', paymentLimit: '0.00', doctorDaysLimit: 0,
     } });

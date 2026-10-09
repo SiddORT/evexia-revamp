@@ -35,6 +35,7 @@
 - [Browser engine evidence](browser-engine-evidence.md) — overridden WebKit versions can reflect the driver, not the binary; verify matching revisions and page creation.
 - [Browser download gestures](browser-download-gestures.md) — use a trusted click per expected file handoff; script-only download bursts can hit Chromium protection.
 - [Historical migration fixtures](historical-migration-fixtures.md) — seed older schemas through historical contracts, not current ORM fields.
+- [Deferred migration integrity](deferred-migration-integrity.md) — validate pending integrity checks before backfill-following DDL without disabling guards or breaking atomicity.
 - [Frontend test HMR isolation](frontend-test-hmr-isolation.md) — freeze source during Vite browser passes; isolated listeners do not isolate hot reloads.
 - [Exact workbook decimals](exact-workbook-decimals.md) — validate monetary XML lexemes, not parser floats; text cells retain long prices.
 - [Import navigation ownership](import-navigation-ownership.md) — backend-only import tabs must not require mock templates or weaken authenticated transfers.

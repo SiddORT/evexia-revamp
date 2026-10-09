@@ -48,7 +48,7 @@ export default function MRReferenceSelect({ id, kind, label, value, savedName, o
     <select id={id} name={id.replace('mr-', '')} className="mr-form__control" value={value} onChange={(event) => onChange(event.target.value)}
       aria-required={required} aria-invalid={invalid} aria-describedby={describedBy} aria-busy={state === 'loading'} data-testid={`select-mr-${kind}`}>
       <option value="">{state === 'loading' ? 'Loading choices…' : placeholder}</option>
-      {options.map((item) => <option key={item.id} value={item.id}>{item.name}{item.status === 'inactive' ? ' (inactive)' : ''}{item.deleted ? ' (deleted)' : ''}</option>)}
+      {options.map((item) => <option key={item.id} value={item.id} disabled={kind === 'designations' && (item.deleted || (item.status !== 'active' && item.id !== savedRef.current))}>{item.name}{item.status === 'inactive' ? ' (inactive)' : ''}{item.deleted ? ' (deleted)' : ''}</option>)}
     </select>
     <p className="mr-form__section-note" role="status">
       {failed ? <>Choices could not be loaded. <button type="button" className="mr-form__preview-action" onClick={() => setRevision((n) => n + 1)}>Retry</button></>

@@ -66,8 +66,10 @@ def predicates(query="", status="all", zone_id=None, hq_id=None):
         pattern = "%" + literal(query) + "%"
         clauses.append(or_(*[field.ilike(pattern, escape="\\") for field in (
             MRDirectory.name, MRDirectory.employeeCode, MRDirectory.email, MRDirectory.phone,
-            MRDirectory.designation, MRDirectory.city,
-        )], MRDirectory.id.in_(select(MRProfile.id).join(User, User.id == MRProfile.user_id).where(
+             MRDirectory.city,
+         )], MRDirectory.designation_id.in_(select(Designation.id).where(
+             Designation.name.ilike(pattern, escape="\\"))),
+         MRDirectory.id.in_(select(MRProfile.id).join(User, User.id == MRProfile.user_id).where(
             User.username.ilike(pattern, escape="\\")))))
     if status != "all":
         clauses.append(MRDirectory.status == status)
@@ -107,11 +109,13 @@ def projection_context(db, rows, manager_accounts=False):
         Headquarter.id, Headquarter.name, Headquarter.status, Headquarter.deleted_at).where(Headquarter.id.in_(ids)))
     zones = _bulk(db, (row.zoneId for row in rows), lambda ids: select(
         Zone.id, Zone.name, Zone.status, Zone.deleted_at).where(Zone.id.in_(ids)))
+    designations = _bulk(db, (row.designation_id for row in rows), lambda ids: select(
+        Designation.id, Designation.name, Designation.status, Designation.deleted_at).where(Designation.id.in_(ids)))
     managers = _bulk(db, (row.reportingManagerId for row in rows), lambda ids: select(
         MRDirectory.id, MRDirectory.name, MRDirectory.status, MRDirectory.deleted_at).where(MRDirectory.id.in_(ids)))
     authors = _bulk(db, (key for row in rows for key in (row.created_by, row.updated_by)),
                     lambda ids: select(User.id, User.is_protected_system_admin).where(User.id.in_(ids)))
-    return dict(accounts=accounts, headquarters=headquarters, zones=zones, managers=managers,
+    return dict(accounts=accounts, headquarters=headquarters, zones=zones, managers=managers, designations=designations,
                 labels={key: "Super Admin" if user.is_protected_system_admin else "Backend user"
                         for key, user in authors.items()})
 
@@ -121,16 +125,18 @@ def projection(db, row, context=None):
         profile = db.get(MRProfile, row.id)
         username = db.get(User, profile.user_id).username
         hq, zone = db.get(Headquarter, row.hq), db.get(Zone, row.zoneId)
+        designation = db.get(Designation, row.designation_id)
         manager = db.get(MRDirectory, row.reportingManagerId) if row.reportingManagerId else None
         created_by, updated_by = label(db, row.created_by), label(db, row.updated_by)
     else:
         username = context["accounts"][row.id].username
         hq, zone = context["headquarters"][row.hq], context["zones"][row.zoneId]
+        designation = context["designations"][row.designation_id]
         manager = context["managers"].get(row.reportingManagerId)
         created_by = context["labels"].get(row.created_by, "Backend user")
         updated_by = context["labels"].get(row.updated_by, "Backend user")
     warnings = []
-    for title, assignment in (("Headquarter", hq), ("Zone", zone), ("Reporting manager", manager)):
+    for title, assignment in (("Headquarter", hq), ("Zone", zone), ("Designation", designation), ("Reporting manager", manager)):
         if assignment is None:
             continue
         if assignment.deleted_at:
@@ -139,7 +145,7 @@ def projection(db, row, context=None):
             warnings.append(f"{title} is inactive. You may retain the saved assignment.")
     values = {key: getattr(row, key) for key in MRFields.model_fields if key != "userId"}
     return dict(**values, userId=username, id=row.id, version=row.version,
-                hqName=hq.name, zoneName=zone.name,
+                hqName=hq.name, zoneName=zone.name, designationName=designation.name,
                 reportingManagerName=manager.name if manager else "", assignmentWarnings=warnings,
                 createdBy=created_by, updatedBy=updated_by,
                 createdAt=row.created_at, updatedAt=row.updated_at)
@@ -256,6 +262,13 @@ def graph_lock(db):
 
 
 def validate_assignments(db, body, existing=None, batch=None):
+    target = db.scalar(select(Designation).where(Designation.id == body.designation_id)
+                       .execution_options(populate_existing=True).with_for_update(read=True))
+    if not target or target.deleted_at:
+        raise MRError("Designation is missing or deleted. Explicitly select an active catalogue designation.",
+                      409, "mr_assignment")
+    if target.status != "active" and (existing is None or existing.designation_id != target.id):
+        raise MRError("New designation assignments must be active.", 409, "mr_assignment")
     for field, model, title in (("hq", Headquarter, "Headquarter"), ("zoneId", Zone, "Zone")):
         target = db.get(model, getattr(body, field))
         if not target or target.deleted_at:

@@ -11,14 +11,15 @@ from app.db.models import User, MRProfile
 from app.db.mr_models import MRDirectory
 from app.db.headquarter_models import Headquarter
 from app.db.zone_models import Zone
+from app.db.designation_models import Designation
 
 
 def seed_directory(db, actor_id, size):
     """Bypass hashing only for inert fixture accounts; never provision/login."""
     now = utcnow()
     refs = min(size, 110)
-    hqs, zones = [uuid.uuid4() for _ in range(refs)], [uuid.uuid4() for _ in range(refs)]
-    for model, keys in ((Headquarter, hqs), (Zone, zones)):
+    hqs, zones, designations = ([uuid.uuid4() for _ in range(refs)] for _ in range(3))
+    for model, keys in ((Headquarter, hqs), (Zone, zones), (Designation, designations)):
         values = [dict(id=key, name=f"Fixture {model.__tablename__} {i}",
                        status="inactive" if i % 3 else "active", version=1,
                        created_by=actor_id, updated_by=actor_id, created_at=now, updated_at=now,
@@ -28,6 +29,9 @@ def seed_directory(db, actor_id, size):
         if model is Headquarter:
             for value in values:
                 value["state_code"] = "DL"
+        if model is Designation:
+            for value in values:
+                value["shortName"] = "MR"
         db.execute(insert(model), values)
     ids, users = [uuid.uuid4() for _ in range(size + 1)], [uuid.uuid4() for _ in range(size + 1)]
     db.execute(insert(User), [dict(id=key, username=f"fixture.mr.{i}", email=None,
@@ -42,7 +46,7 @@ def seed_directory(db, actor_id, size):
             id=key, name=f"Bulk MR {i:05}" if i < size else "Deleted manager",
             employeeCode=f"FIX-{i:05}", phone="", email="", contactRequirement="optional",
             hq=hqs[i % refs], zoneId=zones[i % refs], dateOfJoining=date(2020, 1, 1),
-            designation="Medical Representative", reportingManagerId=None,
+            designation_id=designations[i % refs], reportingManagerId=None,
             paymentLimit=Decimal("123456789.12"), doctorDaysLimit=3650,
             status="active" if i % 2 == 0 and i < size else "inactive",
             pincode="110001", addressLine1="Synthetic address", addressLine2="",

@@ -15,7 +15,7 @@ from app.schemas.mrs import MRFields
 from app.schemas.doctors import DoctorFields
 from app.schemas.patients import PatientFields
 from test_files import files_env, clean_scanner, upload, saved_upload
-from test_mrs import fields as mr_fields
+from test_mrs import fields as mr_fields, seed_designation
 from test_doctors import fields as doctor_fields
 from test_patients import fields
 
@@ -26,6 +26,7 @@ def setup_graph(env):
     """Augment only this disposable fixture's owners for file race tests."""
     with Session(env["engine"]) as db:
         actor = env["admin"].id
+        seed_designation(db, actor)
         zone = Zone(name="File Patient Zone", status="active", created_by=actor, updated_by=actor)
         hq = Headquarter(name="File Patient HQ", state_code="FPH", status="active", created_by=actor, updated_by=actor)
         db.add_all([zone, hq]); db.flush()
