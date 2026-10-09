@@ -13,6 +13,7 @@ RUN pnpm --filter @workspace/evexia-portal build
 FROM nginx:alpine
 
 COPY --from=build /workspace/artifacts/evexia-portal/dist/public /usr/share/nginx/html
+COPY artifacts/evexia-portal/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
