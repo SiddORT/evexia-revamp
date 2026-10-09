@@ -43,6 +43,16 @@ test('Patient transport protects filters, expected versions, review bytes and la
     mode = 'malformed';
     await assert.rejects(service.patientMRChoices(), /filter choices are unavailable/);
     mode = '';
+    const referenceController = new AbortController();
+    await service.patientDoctorChoices({ query: 'Doctor & Zone', limit: 50, offset: 50, include_saved: saved.id }, referenceController.signal);
+    const references = calls.find((call) => call.url.includes('/references'));
+    const referenceParams = new URL(references.url, 'https://example.com').searchParams;
+    assert.equal(referenceParams.get('query'), 'Doctor & Zone');
+    assert.equal(referenceParams.get('offset'), '50');
+    assert.equal(referenceParams.get('limit'), '50');
+    assert.equal(referenceParams.get('include_saved'), saved.id);
+    referenceController.abort();
+    assert.equal(references.options.signal.aborted, true, 'Composed authenticated transport signal retains caller cancellation');
     await service.listPatients({ query: 'PAT-search', zone_id: saved.id, status: 'inactive', limit: 2, offset: 2 });
     await service.editPatient(saved, { name: 'Edited', dateOfBirth: '2000-01-01', dialCountry: 'GB', phone: '0712345678' });
     await service.statusPatient(saved, 'inactive');

@@ -1,5 +1,15 @@
 /* Patient Master follows MR Master's spacing and Admin semantic theme tokens. */
 .patient-form .mr-form__body { min-height: 310px; }
+.patient-form .patient-form__care-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 14em), 1fr)); align-items: start; }
+.patient-doctor .searchable-select__control { min-height: 42px; }
+.patient-doctor .searchable-select__control input { min-height: 40px; padding-block: 9px; line-height: 1.5; box-sizing: border-box; }
+/* In-flow popup stays inside the form's clipped panel, including at 200% text. */
+.patient-doctor .patient-doctor__menu { position: static; margin-top: 4px; max-height: 20em; overscroll-behavior: contain; }
+.patient-doctor__menu small { display: block; margin-top: 4px; color: var(--admin-muted); font-size: inherit; }
+.patient-doctor__menu [aria-disabled="true"] { opacity: .65; cursor: not-allowed; }
+.patient-doctor__paging { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px; }
+.patient-doctor__paging .admin-button { flex: 1 1 8em; min-width: 0; }
+.patient-doctor .searchable-select__control:has(input:disabled) { background: var(--admin-canvas); opacity: .7; }
 .patient-form__privacy {
   margin: 0 0 18px;
   padding: 11px 13px;

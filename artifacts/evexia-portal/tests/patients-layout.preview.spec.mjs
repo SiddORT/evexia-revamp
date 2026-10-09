@@ -24,6 +24,35 @@ test.beforeAll(async ({ browser, browserName }) => {
   await page.close();
 });
 
+for (const [theme, appearance] of [['classic', 'light'], ['modern', 'dark']]) {
+  test(`Patient desktop care row ${theme}/${appearance} and enlarged dropdown`, async ({ page }, info) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await authenticateAdmin(page);
+    await page.goto(base() + path);
+    await expect(page.getByTestId('button-add-patient')).toBeVisible();
+    await page.evaluate(({ theme, appearance }) => {
+      localStorage.setItem('evexia.admin.theme', theme);
+      localStorage.setItem('evexia.admin.appearance', appearance);
+    }, { theme, appearance });
+    await page.goto(base() + path + '/' + saved.id);
+    await expect(page.getByTestId('input-patient-name')).toHaveValue(saved.name);
+    await page.getByTestId('tab-patient-care').click();
+    const tops = await page.locator('.patient-form__care-grid > .mr-form__field').evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().top));
+    expect(tops).toHaveLength(3);
+    expect(Math.max(...tops) - Math.min(...tops)).toBeLessThan(1);
+    await expect(page.locator('.admin-shell')).toHaveAttribute('data-admin-appearance', appearance);
+    const doctor = page.getByTestId('select-patient-doctorId');
+    await doctor.click();
+    await expect(page.getByRole('option', { name: refs.doctor.name, exact: false })).toBeVisible();
+    await page.screenshot({ path: info.outputPath('desktop-care-open.png'), fullPage: true });
+    await enlargePatientText(page, '.patient-form');
+    await expectPatientFits(page, '.patient-form');
+    await page.screenshot({ path: info.outputPath('desktop-care-enlarged.png'), fullPage: true });
+    await doctor.press('Escape');
+    await expect(doctor).toHaveValue(refs.doctor.name);
+  });
+}
+
 for (const width of [390, 768]) for (const theme of ['classic', 'modern']) for (const appearance of ['light', 'dark']) {
   test(`Patient 200% text ${width}px ${theme}/${appearance}: form, reviews and menu`, async ({ page }, info) => {
     test.setTimeout(120000);
@@ -75,27 +104,32 @@ for (const width of [390, 768]) for (const theme of ['classic', 'modern']) for (
     await page.getByTestId('tab-patient-care').click();
     // The hidden care panel mounted before interception. Change its search to
     // explicitly load the layout-only reference page instead of cached data.
-    await page.locator('#patient-doctorSearch').fill('Synthetic');
     const doctorSelect = page.getByTestId('select-patient-doctorId');
+    await doctorSelect.click();
+    await doctorSelect.fill('Synthetic');
     await expect.poll(() => offsets.length).toBeGreaterThan(0);
     await expect(doctorSelect).toBeEnabled();
-    await keyboardReach(page, page.locator('#patient-doctorSearch'), doctorSelect);
-    await doctorSelect.selectOption(refs.doctor.id);
+    await expect(page.getByRole('option', { name: /Synthetic Doctor/ })).toBeVisible();
+    await doctorSelect.press('ArrowDown');
+    await doctorSelect.press('Enter');
     await expect(page.locator('#patient-doctor-selection')).toContainText('Synthetic Doctor '.padEnd(180, '界'));
     await expect(doctorSelect).toHaveAttribute('aria-describedby', /patient-doctor-selection/);
     await expect(page.locator('#patient-doctor-help')).toContainText('Synthetic MR');
+    await doctorSelect.click();
     const next = page.getByRole('button', { name: 'Next Doctors', exact: true });
-    await expect(next).toBeEnabled();
+    await expect(next).toHaveAttribute('aria-disabled', 'false');
     await keyboardReach(page, doctorSelect, next);
     await page.keyboard.press('Enter');
     await expect.poll(() => offsets).toContain(50);
     await expect(doctorSelect).toBeEnabled();
-    await expect(page.getByRole('button', { name: 'Previous Doctors', exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Previous Doctors', exact: true })).toHaveAttribute('aria-disabled', 'false');
     await page.getByRole('button', { name: 'Previous Doctors', exact: true }).click();
-    await expect(next).toBeEnabled();
+    await expect(next).toHaveAttribute('aria-disabled', 'false');
+    await expect(page.getByRole('option', { name: /Synthetic Doctor/ })).toBeVisible();
     await enlargePatientText(page, root);
     await page.screenshot({ path: info.outputPath('relationships-200-percent.png'), fullPage: true });
     await expectPatientFits(page, root);
+    await doctorSelect.press('Escape');
 
     await page.route('**/api/v1/admin/patients/postal/400001*', (route) => route.fulfill({ json: {
       choices: [{ city: 'Mumbai', state: 'Maharashtra', country: 'India' }, { city: 'Fort', state: 'Maharashtra', country: 'India' }], message: '',

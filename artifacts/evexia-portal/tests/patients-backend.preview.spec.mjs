@@ -21,14 +21,15 @@ async function seed(page) {
       addressLine1: 'Synthetic street', addressLine2: '', landmark: 'Landmark', pincode: '110001', city: 'Delhi',
       state: 'Delhi', country: 'India', status: 'active', paymentLimit: '0.00', doctorDaysLimit: 0,
     } })).record;
-    const doctor = await auth.doctorRequest('', { body: {
+    const doctorBody = {
       name: `Patient Doctor ${tag}`, registrationNumber: `PATREG-${tag}`, qualification: 'MBBS', phone: '', alternatePhone: '',
       email: '', contactRequirement: 'optional', dialCountry: 'IN', dateOfJoining: null, clinicName: 'Synthetic clinic',
       mrId: mr.id, status: 'active', invoiceType: 'normal', gstNumber: '', drugLicenceNumber: '', orderDiscount: '0.00',
       daysLimit: 0, paymentLimit: '0.00', pincode: '110001', addressLine1: 'Synthetic street', addressLine2: '',
       landmark: 'Landmark', country: 'India', state: 'Delhi', city: 'Delhi',
-    } });
-    return { tag, mr, zone, doctor };
+    };
+    const doctor = await auth.doctorRequest('', { body: doctorBody });
+    return { tag, mr, zone, doctor, doctorBody };
   }, tag);
 }
 function values(refs, name = `Patient ${refs.tag}`) {
@@ -67,7 +68,9 @@ for (const mobile of [false, true]) test(`Patient ${mobile ? 'modern dark mobile
   await page.getByTestId('select-patient-gender').selectOption(body.gender);
   await expect(page.getByTestId('input-patient-age')).not.toHaveValue('');
   await page.getByTestId('tab-patient-care').click();
-  await page.getByTestId('select-patient-doctorId').selectOption(body.doctorId);
+  await page.getByTestId('select-patient-doctorId').click();
+  await page.getByTestId('select-patient-doctorId').fill(refs.doctor.name);
+  await page.getByRole('option', { name: refs.doctor.name, exact: false }).click();
   await page.getByTestId('select-patient-instructionsLanguage').selectOption(body.instructionsLanguage);
   await page.getByTestId('tab-patient-address').click();
   await page.route('**/api/v1/admin/patients/postal/110001*', route => route.fulfill({
@@ -87,10 +90,14 @@ for (const mobile of [false, true]) test(`Patient ${mobile ? 'modern dark mobile
   await page.evaluate(() => localStorage.clear());
   await page.goto(base() + path + '/' + saved.id);
   await expect(page.getByTestId('input-patient-name')).toHaveValue(body.name);
+  await page.getByTestId('tab-patient-care').click();
+  await expect(page.getByTestId('select-patient-doctorId')).toHaveValue(refs.doctor.name);
+  await page.getByTestId('tab-patient-identity').click();
   await page.getByTestId('input-patient-name').fill(body.name + ' edited');
   await page.getByTestId('button-save-patient').click();
   await expect(page).toHaveURL(new RegExp(`${path}(?:\\?.*)?$`));
   expect((await detail(page, saved.id)).name).toBe(body.name + ' edited');
+  expect((await detail(page, saved.id)).doctorId).toBe(body.doctorId);
   await page.goto(base() + path + '/' + saved.id + '/dosage-history');
   await expect(page.getByText(/No dosage history recorded/i)).toBeVisible();
   await page.screenshot({ path: info.outputPath('patient-history.png'), fullPage: true });
@@ -153,4 +160,119 @@ test('Patient PIN late/manual guards, server exports and prepared atomic CSV imp
   await expect(page.getByText(/1 patient.*imported/i)).toBeVisible();
   expect((await list(page, row[1])).items[0].dialCountry).toBe('IN');
   await page.screenshot({ path: info.outputPath('patient-import.png'), fullPage: true });
+});
+
+test('Patient care combobox keeps IDs, real later pages, retained assignments and recovery safe', async ({ page }, info) => {
+  test.setTimeout(120000);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  const refs = await seed(page);
+  const saved = await create(page, values(refs));
+  const prefix = `Care ${refs.tag}`;
+  const doctors = await page.evaluate(async ({ body, prefix }) => {
+    const { createDoctor } = await import('/src/services/serverDoctors.js');
+    const rows = [];
+    for (let i = 0; i < 51; i++) rows.push(await createDoctor({
+      ...body, name: `${prefix} ${String(i).padStart(2, '0')}`, registrationNumber: `${prefix}-${i}`,
+    }));
+    return rows;
+  }, { body: refs.doctorBody, prefix });
+  await page.goto(base() + path + '/' + saved.id);
+  await expect(page.getByTestId('input-patient-name')).toHaveValue(saved.name);
+  await page.getByTestId('tab-patient-care').click();
+  const control = page.getByRole('combobox', { name: 'Assigned doctor' });
+  await expect(control).toHaveValue(refs.doctor.name);
+  await expect(page.getByLabel('Search server Doctors')).toHaveCount(0);
+  const fields = await page.locator('.patient-form__care-grid > .mr-form__field').evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().top));
+  expect(fields).toHaveLength(3);
+  expect(Math.max(...fields) - Math.min(...fields)).toBeLessThan(1);
+  await control.click(); await control.fill(prefix);
+  await expect(page.getByRole('option', { name: doctors[0].name, exact: false })).toBeVisible();
+  await page.getByRole('button', { name: 'Next Doctors' }).click();
+  await expect(page.getByRole('option', { name: doctors[50].name, exact: false })).toBeVisible();
+  await expect(control).toBeFocused();
+  await control.press('ArrowDown'); await control.press('Enter');
+  await expect(control).toHaveValue(doctors[50].name);
+  await control.click(); await control.fill('No such synthetic Doctor');
+  // include_saved can return the assigned Doctor even when the query has no matches.
+  await expect(page.getByRole('status').filter({ hasText: '0 matching Doctors' })).toBeVisible();
+  await control.press('Escape');
+  await expect(control).toHaveValue(doctors[50].name);
+  await expect(page.getByRole('button', { name: 'Next Doctors' })).toHaveCount(0);
+  await page.getByTestId('button-save-patient').click();
+  await expect(page).toHaveURL(new RegExp(`${path}(?:\\?.*)?$`));
+  expect((await detail(page, saved.id)).doctorId).toBe(doctors[50].id);
+
+  // Real inactive/deleted originals stay visible and unchanged; no ineligible
+  // new relationship is made selectable.
+  await page.evaluate(async (doctor) => (await import('/src/services/serverDoctors.js')).statusDoctor(doctor, 'inactive'), doctors[50]);
+  await page.goto(base() + path + '/' + saved.id);
+  await expect(page.getByTestId('input-patient-name')).toHaveValue(saved.name);
+  await page.getByTestId('tab-patient-care').click();
+  await expect(control).toHaveValue(new RegExp('inactive relationship; retained only'));
+  await control.click(); await control.fill(doctors[50].name);
+  const inactive = page.getByRole('option', { name: /inactive relationship; retained only/ });
+  await expect(inactive).toHaveAttribute('aria-disabled', 'true');
+  await control.press('ArrowDown'); await control.press('Enter');
+  await expect(control).toHaveAttribute('aria-expanded', 'true');
+  await control.press('Escape');
+  await page.getByTestId('button-save-patient').click();
+  await expect(page).toHaveURL(new RegExp(`${path}(?:\\?.*)?$`));
+  expect((await detail(page, saved.id)).doctorId).toBe(doctors[50].id);
+  await page.evaluate(async (id) => {
+    const svc = await import('/src/services/serverDoctors.js');
+    await svc.deleteDoctor(await svc.getDoctor(id));
+  }, doctors[50].id);
+  await page.goto(base() + path + '/' + saved.id);
+  await expect(page.getByTestId('input-patient-name')).toHaveValue(saved.name);
+  await page.getByTestId('tab-patient-care').click();
+  await expect(control).toHaveValue(/unavailable; unchanged reference retained/);
+  await page.getByTestId('button-save-patient').click();
+  await expect(page).toHaveURL(new RegExp(`${path}(?:\\?.*)?$`));
+  expect((await detail(page, saved.id)).doctorId).toBe(doctors[50].id);
+
+  await page.goto(base() + path + '/new');
+  await expect(page.getByTestId('input-patient-name')).toBeVisible();
+  for (const key of ['name', 'phone', 'dateOfBirth']) await page.getByTestId(`input-patient-${key}`).fill(key === 'name' ? `Required ${refs.tag}` : key === 'phone' ? '9000000000' : '2000-01-01');
+  await page.getByTestId('select-patient-gender').selectOption('female');
+  await page.getByTestId('button-save-patient').click();
+  await expect(control).toBeFocused();
+  await expect(control).toHaveAttribute('aria-invalid', 'true');
+  await expect(control).toHaveAttribute('aria-required', 'true');
+  await expect(control).toHaveAttribute('aria-describedby', /patient-doctorId-error/);
+
+  let release, arrived;
+  const held = new Promise((resolve) => { release = resolve; });
+  const ready = new Promise((resolve) => { arrived = resolve; });
+  let fail = true;
+  await page.route('**/api/v1/admin/patients/references?*', async (route) => {
+    const query = new URL(route.request().url()).searchParams.get('query');
+    if (query === 'held') {
+      arrived(); await held;
+      await route.fulfill({ json: { items: [{ ...refs.doctor, name: 'Stale synthetic Doctor', usable: true }], total: 1 } }).catch(() => {});
+    } else if (query === 'retry' && fail) await route.fulfill({ status: 503, json: { error: { message: 'Synthetic Doctors unavailable' } } });
+    else await route.fulfill({ json: { items: query === 'empty' ? [] : [{ ...refs.doctor, usable: true }], total: query === 'empty' ? 0 : 1, limit: 50, offset: 0 } });
+  });
+  await control.click(); await control.fill('held'); await ready;
+  await expect(page.getByRole('status').filter({ hasText: 'Loading Doctors' })).toBeVisible();
+  await control.fill('empty');
+  await expect(page.getByText('No matching eligible Doctors.', { exact: false })).toBeVisible();
+  release();
+  await expect(page.getByRole('option', { name: /Stale synthetic/ })).toHaveCount(0);
+  await control.fill('retry');
+  await expect(page.getByRole('status').filter({ hasText: 'Patient service is unavailable. Your draft is preserved.' })).toBeVisible();
+  fail = false;
+  await page.getByRole('button', { name: 'Retry Doctors' }).click();
+  await expect(page.getByRole('option', { name: refs.doctor.name, exact: false })).toBeVisible();
+  await expect(control).toBeFocused();
+  await control.press('ArrowDown'); await control.press('Enter');
+  await expect(control).toHaveValue(refs.doctor.name);
+  await expect(control).toHaveAttribute('aria-invalid', 'false');
+  await control.click(); await control.fill('empty');
+  await page.getByTestId('select-patient-instructionsLanguage').click();
+  await expect(control).toHaveValue(refs.doctor.name);
+  await expect(control).toHaveAttribute('aria-expanded', 'false');
+  await control.click(); await control.press('Tab');
+  await expect(page.getByRole('button', { name: 'Previous Doctors' })).toBeFocused();
+  await page.keyboard.press('Escape'); await expect(control).toBeFocused();
+  await page.screenshot({ path: info.outputPath('patient-care-desktop.png'), fullPage: true });
 });

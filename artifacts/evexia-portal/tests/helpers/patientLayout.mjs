@@ -37,7 +37,7 @@ export async function expectPatientFits(page, selector) {
       // Native select scrollWidth can include its OS-owned popup/options.
       // Check the control bounds and selected-label/description instead.
       if (!node.matches('select') && node.clientWidth && node.scrollWidth > node.clientWidth + 1) failures.push(`horizontal clipping ${node.scrollWidth} > ${node.clientWidth} (rect ${rect.left}, ${rect.right}): ${label}`);
-      if (!node.matches('select') && node.clientHeight && node.scrollHeight > node.clientHeight + 1) failures.push(`vertical clipping ${node.scrollHeight} > ${node.clientHeight}: ${label}`);
+       if (!node.matches('select, .patient-doctor__menu') && node.clientHeight && node.scrollHeight > node.clientHeight + 1) failures.push(`vertical clipping ${node.scrollHeight} > ${node.clientHeight}: ${label}`);
       if (node.matches('select')) {
         const canvas = document.createElement('canvas'), context = canvas.getContext('2d');
         context.font = `${css.fontWeight} ${css.fontSize} ${css.fontFamily}`;

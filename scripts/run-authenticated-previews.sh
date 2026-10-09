@@ -183,6 +183,7 @@ ISOLATE_MASTER_STAFF=0
 ISOLATE_ORDERS=0
 ISOLATE_DIRECTORY_DELETION=0
 ISOLATE_ROLE_LIFECYCLE=0
+ISOLATE_PATIENT=0
 SPEC_COUNT=0
 for spec in $SPECS; do
   case "$spec" in *.preview.spec.mjs) SPEC_COUNT=$((SPEC_COUNT + 1)) ;; esac
@@ -224,6 +225,10 @@ for spec in $SPECS; do
       # Independent credential ledger: deletion preserves identities rather
       # than freeing MR provisioning budget for the following suites.
       if [ "$SPEC_COUNT" -gt 1 ]; then ISOLATE_DIRECTORY_DELETION=1; else OTHER_SPECS="$OTHER_SPECS $spec"; fi ;;
+    */patients-backend.preview.spec.mjs)
+      # Patient workflows need real MR-backed Doctors too. Their reference
+      # creation must not exhaust the shared Doctor/Patient actor budget.
+      if [ "$SPEC_COUNT" -gt 1 ]; then ISOLATE_PATIENT=1; else OTHER_SPECS="$OTHER_SPECS $spec"; fi ;;
     */orders-navigation.preview.spec.mjs)
       # Restricted navigation provisions staff with an assigned custom role.
       # Do not contaminate role deletion or empty staff-directory baselines.
@@ -287,4 +292,8 @@ fi
 if [ "$ISOLATE_ROLE_LIFECYCLE" -eq 1 ]; then
   echo "Role lifecycle remediation: separate private database, listeners and history."
   sh "$ROOT/scripts/run-authenticated-previews.sh" artifacts/evexia-portal/tests/role-lifecycle.preview.spec.mjs
+fi
+if [ "$ISOLATE_PATIENT" -eq 1 ]; then
+  echo "Patient reference workflows: separate private database and credential budget."
+  sh "$ROOT/scripts/run-authenticated-previews.sh" artifacts/evexia-portal/tests/patients-backend.preview.spec.mjs
 fi

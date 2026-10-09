@@ -84,8 +84,10 @@ for (const mobile of [false, true]) test(`Directory deletion cancellation, retai
       await page.goto(`${base()}/admin/masters/patients/${refs.patient.id}`);
       await expect(page.getByTestId('button-save-patient')).toBeVisible();
       await page.getByTestId('tab-patient-care').click();
-      await expect(page.getByTestId('select-patient-doctorId')).toContainText(refs.doctor.name);
-      await expect(page.locator(`#patient-doctorId option[value="${refs.doctor.id}"]`)).toBeDisabled();
+      await expect(page.getByTestId('select-patient-doctorId')).toHaveValue(new RegExp(refs.doctor.name));
+      await page.getByTestId('select-patient-doctorId').click();
+      await expect(page.getByRole('option', { name: new RegExp(refs.doctor.name) })).toHaveCount(0);
+      await page.getByTestId('select-patient-doctorId').press('Escape');
       await expect(page.getByText(/Doctor unavailable \(deleted\)/)).toBeVisible();
       await page.getByTestId('button-save-patient').click();
       await expect(page.getByRole('heading', { name: 'Patient Master', exact: true })).toBeVisible();
