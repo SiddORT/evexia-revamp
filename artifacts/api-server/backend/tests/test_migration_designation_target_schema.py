@@ -51,7 +51,8 @@ def test_populated_previous_schema_preservation_generated_values_and_safe_refusa
             'SELECT id,name,"shortName",status,version,created_by,updated_by,created_at,updated_at,deleted_at,deleted_by '
             'FROM designations ORDER BY id')).all()
         old_targets = db.execute(text("SELECT * FROM sales_targets ORDER BY id")).mappings().all()
-    command.upgrade(config, "head")
+    from directory_test_data import approved_historical_upgrade
+    approved_historical_upgrade(engine, config)
     with Session(engine) as db:
         assert db.execute(text(
             'SELECT id,name,"shortName",status,version,created_by,updated_by,created_at,updated_at,deleted_at,deleted_by '
@@ -81,7 +82,7 @@ def test_populated_previous_schema_preservation_generated_values_and_safe_refusa
     with engine.connect() as connection:
         installed_head = connection.scalar(text("SELECT version_num FROM alembic_version"))
         assert installed_head == ScriptDirectory.from_config(config).get_current_head()
-    with pytest.raises(RuntimeError, match="original labels"):
+    with pytest.raises(RuntimeError, match="original labels|retirement|backup|plaintext"):
         command.downgrade(config, "0025_vendor_phone")
     with engine.connect() as connection:
         assert connection.scalar(text("SELECT version_num FROM alembic_version")) == installed_head

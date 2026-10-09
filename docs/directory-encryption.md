@@ -341,6 +341,17 @@ UUID choice ordering and unknown search counts. Focused disposable checks:
 5,000-row CSV/XLSX parity, explicit export/choice caps, batched-query budgets,
 saved unavailable references and denied-access checks.
 
+The remaining legacy Sales Target scale fixture now generates record-bound MR
+envelopes and verifies all explicit search sections. Summary totals are checked
+against their section; exports remain complete across every match. The shared
+secure export-cap rejection is HTTP 409 `directory_export_limit`, with no
+download acceptance written. The historical designation/target upgrade uses
+the approved synthetic freeze/backfill path instead of bypassing retirement.
+`tests/test_sales_target_performance.py tests/test_migration_designation_target_schema.py`:
+**3 passed in 23.68 seconds**. Measured 5,000-row exports used **15 SELECTs**
+and took **0.7–2.0 seconds** in the preceding measured run; the enforced cap is
+20 SELECTs/15 seconds, including bulk reference and crypto-readiness work.
+
 
 The existing testing harness used isolated synthetic PostgreSQL and authenticated
 Chromium actors. Failed or blocked scenarios were followed up narrowly; passing

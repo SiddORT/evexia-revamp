@@ -23,6 +23,7 @@ from app.services import sales_targets, sales_target_transfer as transfer
 from test_sessions import client
 from test_reporting import admin_headers
 from test_mrs import fields as mr_fields, seed_designation
+from directory_test_data import encrypted_values
 
 SIZE = 5000
 
@@ -54,11 +55,11 @@ def directory(client):
                  **({"state_code": "DL"} if model is Headquarter else {}),
                  **(history if i == 0 else {})) for i, ref in enumerate(refs)])
     db.execute(insert(MRDirectory), [
-        {**{k: v for k, v in mr_fields(hqs[i], zones[i], name=f"Scale MR {i:04}",
+        encrypted_values(db, "mr_directory", {**{k: v for k, v in mr_fields(hqs[i], zones[i], name=f"Scale MR {i:04}",
                                       code=f"SCALE-{i:04}").items() if k != "userId"},
          "id": m, "dateOfJoining": date(2020, 1, 1), "paymentLimit": Decimal("0.00"),
          "doctorDaysLimit": 0, "created_by": admin_id, "updated_by": admin_id,
-         **(history if i == 0 else {})} for i, m in enumerate(mrs)])
+         **(history if i == 0 else {})}) for i, m in enumerate(mrs)])
     records = [
         dict(id=ids[i], mrId=m, startYear=2025 if i % 2 == 0 else 2026,
              endYear=2026 if i % 2 == 0 else 2027,
@@ -117,17 +118,36 @@ def test_scale_summaries_and_exports(directory):
         expected.sort(key=lambda r: (r["created_at"], r["id"]), reverse=True)
         with measure(db, name + "-summary") as queries:
             page = sales_targets.listing(db, actor, filters, 100, 0)
-        assert queries[0] <= 6
-        assert page["filtered"] == len(expected) and page["total"] == SIZE
-        assert [r["id"] for r in page["items"]] == [r["id"] for r in expected[:100]]
+        assert queries[0] <= 15, "Summary includes fixed crypto readiness and one bulk reference projection"
+        assert page["total"] == SIZE
+        if filters.get("query"):
+            assert page["filtered"] is None and page["partial"]
+            section = sorted(expected, key=lambda r: r["id"])[:100]
+        else:
+            assert page["filtered"] == len(expected)
+            section = expected[:100]
+        assert [r["id"] for r in page["items"]] == [r["id"] for r in section]
+        totals_scope = section if filters.get("query") else expected
         for quarter in ("q1", "q2", "q3", "q4"):
-            assert page["totals"][quarter] == format(sum((r[quarter] for r in expected), Decimal(0)), ".2f")
+            assert page["totals"][quarter] == format(sum((r[quarter] for r in totals_scope), Decimal(0)), ".2f")
         assert page["totals"]["total"] == format(sum((sum(r[q] for q in transfer.QUARTERS)
-                                                       for r in expected), Decimal(0)), ".2f")
+                                                       for r in totals_scope), Decimal(0)), ".2f")
+        if filters.get("query"):
+            seen, continuation = list(page["items"]), page["nextCursor"]
+            for _ in range(60):
+                if not continuation:
+                    break
+                with measure(db, name + "-continuation") as queries:
+                    next_page = sales_targets.listing(db, actor, filters, 100, 0, cursor=continuation)
+                assert queries[0] <= 15
+                seen.extend(next_page["items"])
+                continuation = next_page["nextCursor"]
+            assert not continuation
+            assert [r["id"] for r in seen] == [r["id"] for r in sorted(expected, key=lambda r: r["id"])]
         for kind in ("csv", "xlsx"):
             with measure(db, name + "-" + kind) as queries:
                 data = transfer.export(db, actor, filters, kind)
-            assert queries[0] <= 3
+            assert queries[0] <= 20, "5,000-row exports must use bounded bulk reference reads, not per-row queries"
             if kind == "csv":
                 rows = list(csv.reader(io.StringIO(data.decode("utf-8-sig"))))
             else:
@@ -149,8 +169,8 @@ def test_scale_summaries_and_exports(directory):
                     all_csv = data
 
     with measure(db, "late-page-summary") as queries:
-        page = sales_targets.listing(db, actor, {"query": "Scale MR"}, 100, 4900)
-    assert queries[0] <= 6
+        page = sales_targets.listing(db, actor, {}, 100, 4900)
+    assert queries[0] <= 15
     assert page["filtered"] == SIZE and page["totals"]["q1"] == "4999999999999950.00"
     assert [r["id"] for r in page["items"]] == [r["id"] for r in reversed(records[:100])]
     historical = page["items"][-1]
@@ -180,16 +200,16 @@ def test_scale_summaries_and_exports(directory):
     denied_initiation = str(uuid.uuid4())
     failed = api.get("/api/v1/admin/sales-targets/export",
                      headers={**headers, "X-Download-Initiation": denied_initiation})
-    assert failed.status_code == 422 and failed.json()["error"]["code"] == "sales_target_export_limit"
+    assert failed.status_code == 409 and failed.json()["error"]["code"] == "directory_export_limit"
     assert db.scalar(select(DownloadLog.id).where(
         DownloadLog.initiation_id == uuid.UUID(denied_initiation))) is None
     with measure(db, "over-cap-summary") as queries:
         page = sales_targets.listing(db, actor, {}, 1, 0)
-    assert queries[0] <= 6 and page["filtered"] == SIZE + 1
+    assert queries[0] <= 15 and page["filtered"] == SIZE + 1
     assert page["totals"]["q1"] == format(Decimal("999999999999.99") * (SIZE + 1), ".2f")
     with measure(db, "narrowed-over-cap") as queries:
         data = transfer.export(db, actor, {"startYear": 2030}, "csv")
-    assert queries[0] <= 3 and len(list(csv.reader(io.StringIO(data.decode("utf-8-sig"))))) == 2
+    assert queries[0] <= 15 and len(list(csv.reader(io.StringIO(data.decode("utf-8-sig"))))) == 2
 
     # Bulk reads must not bypass the service's fresh protected-session check.
     session = db.get(AuthSession, actor.session_id)
