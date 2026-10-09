@@ -80,7 +80,8 @@ test('portal route and expanded responsive audit', async ({ page, browserName, b
     `/admin/masters/headquarters/${extra.hq.id}`, `/admin/masters/designations/${extra.designation.id}`,
   ];
   const highRisk = ['/admin/masters/allergens', '/admin/masters/doctors/new', '/admin/masters/import/allergen',
-    '/admin/masters/opening-balances', '/admin/settings?tab=communication', '/admin/activity-logs', '/admin/inventory/purchase-orders/new'];
+    '/admin/masters/opening-balances', '/admin/settings?tab=communication', '/admin/activity-logs', '/admin/inventory/purchase-orders/new',
+    '/admin/orders/spt', '/admin/orders/spt/new'];
   if (process.env.EVEXIA_RESPONSIVE_SCOPE === 'table') {
     for (const route of ['/admin/masters/mrs', '/admin/masters/doctors']) {
       await page.setViewportSize({ width: 1366, height: 768 });

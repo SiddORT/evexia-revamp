@@ -52,7 +52,8 @@
 - [Merged schema snapshots](merged-schema-snapshots.md) — completion synchronization can add merged tables after local export validation; regenerate and replace stale downloads.
 - [Listing layout checks](listing-layout-checks.md) — measure changed header/footer surfaces separately from existing record-table scroll metrics.
 - [Sales Target performance safety](sales-target-performance-safety.md) — benchmark synthetic disposable data only; index changes need separate review and operator approval.
-- [Orders scope](orders-scope.md) — Immunotherapy requirements will come next; do not infer workflows from the navigation-only setup.
+- [Orders scope](orders-scope.md) — SPT is an intentional session-only mock; Immunotherapy requirements will come next.
 - [Vendor phone compatibility](vendor-phone-compatibility.md) — retain legacy phone acceptance; international metadata updates must not widen other masters’ contracts.
 - [Allergen controls scope](allergen-controls-scope.md) — “one unit” means a combined searchable dropdown, not a new measurement-unit field; avoid incidental global selector changes.
 - [Scroll-region accessibility labels](responsive-scroll-overflow.md) — absolutely positioned hidden labels can extend page overflow beyond a correctly scrollable table.
+- [Browser label locators](browser-label-locators.md) — select controls by role when section and input share an accessible caption.

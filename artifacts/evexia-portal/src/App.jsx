@@ -9,6 +9,8 @@ import NotFound from './pages/NotFound.jsx';
 import Dashboard from './pages/admin/Dashboard.jsx';
 import { ORDER_DESTINATIONS } from './config/orders.js';
 const OrderPlaceholder = lazyRoute(() => import('./pages/admin/OrderPlaceholder.jsx'));
+const SptOrders = lazyRoute(() => import('./pages/admin/SptOrders.jsx'));
+const SptOrderFormPage = lazyRoute(() => import('./pages/admin/SptOrderFormPage.jsx'));
 import Masters from './pages/admin/Masters.jsx';
 import ZoneMaster from './pages/admin/ZoneMaster.jsx';
 const CourierPartnerMaster = lazyRoute(() => import('./pages/admin/CourierPartnerMaster.jsx'));
@@ -68,7 +70,10 @@ function App() {
       <Route path="/admin/inventory/purchase-received/:id">{(params) => <PurchaseReceivedFormPage id={params.id} />}</Route>
       <Route path="/admin/inventory/move-stocks" component={MoveStocks} />
       <Route path="/admin/inventory/move-stocks/new" component={MoveStockFormPage} />
-      {ORDER_DESTINATIONS.map((destination) => (
+      <Route path="/admin/orders/spt" component={SptOrders} />
+      <Route path="/admin/orders/spt/new">{() => <SptOrderFormPage key="new" />}</Route>
+      <Route path="/admin/orders/spt/:id">{(params) => <SptOrderFormPage key={params.id} id={params.id} />}</Route>
+      {ORDER_DESTINATIONS.filter((destination) => destination.slug !== 'spt').map((destination) => (
         <Route key={destination.slug} path={`/admin/orders/${destination.slug}`}>
           {() => <OrderPlaceholder destination={destination} />}
         </Route>

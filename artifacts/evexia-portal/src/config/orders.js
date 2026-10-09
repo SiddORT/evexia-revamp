@@ -1,3 +1,4 @@
+// SPT is replaced by a frontend-only mock UI (see pages/admin/SptOrders.jsx); the rest are navigation-only.
 // Navigation-only destinations. No order data or processing is implemented.
 export const ORDER_DESTINATIONS = [
   { slug: 'immunotherapy', label: 'IMMUNOTHERAPY' },

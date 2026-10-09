@@ -1,10 +1,12 @@
 ---
 name: Orders scope
-description: Keep Orders navigation separate from future Immunotherapy requirements.
+description: SPT is a session-only mock; keep other Orders workflows separate.
 ---
 
-Orders is a navigation-only setup. The user will provide Immunotherapy page requirements next; do not infer treatment workflows or order processing from the new menu.
+SPT order entry is intentionally a frontend-only evaluation workflow using fictional doctors, MRs, patients and orders. Its demo resets on a full reload. Do not connect it to real masters, persistence, or order submission without new requirements.
 
-**Why:** The user explicitly separated the sidebar setup from the future page requirements.
+The user will provide Immunotherapy page requirements next; do not infer treatment workflows or order processing from SPT or the navigation setup.
 
-**How to apply:** Keep future Immunotherapy work driven by the user's new requirements, not sample records or assumptions based on other inventory pages.
+**Why:** The user explicitly requested a session-only SPT mock before backend work and separated Immunotherapy requirements from the sidebar setup.
+
+**How to apply:** Preserve the SPT evaluation boundary. Keep future Immunotherapy work driven by the user's new requirements, not sample records or assumptions based on other inventory pages.

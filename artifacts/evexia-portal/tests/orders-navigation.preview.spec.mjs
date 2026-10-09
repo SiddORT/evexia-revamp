@@ -31,7 +31,13 @@ async function tabTo(page, target) {
 
 async function selected(page, slug, label) {
   await expect(page.getByRole('heading', { name: label, exact: true })).toBeVisible();
-  await expect(page.getByTestId('status-order-placeholder')).toContainText('this order page is not built yet');
+  if (slug === 'spt') {
+    await expect(page.getByTestId('status-spt-demo')).toContainText('demo');
+    await expect(page.getByRole('link', { name: 'Add Order', exact: true })).toBeVisible();
+    await expect(page.getByTestId('status-order-placeholder')).toHaveCount(0);
+  } else {
+    await expect(page.getByTestId('status-order-placeholder')).toContainText('this order page is not built yet');
+  }
   await expect(orders(page)).toHaveClass(/admin-nav__item--active/);
   await expect(orders(page)).toHaveAttribute('aria-expanded', 'true');
   await expect(child(page, slug)).toHaveClass(/admin-nav__item--active/);
