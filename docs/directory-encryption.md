@@ -332,6 +332,15 @@ preserved while integrating directory continuation; the prior browser evidence
 above predates this synchronization and is not a claim of a new post-merge
 browser pass.
 
+The next release attempt passed migration reconciliation and code review,
+then surfaced legacy deletion/scale assertions. Updated fixtures use fresh
+record-bound envelopes (never copied ciphertext), explicit search continuation,
+UUID choice ordering and unknown search counts. Focused disposable checks:
+`tests/test_directory_deletion.py`: **7 passed in 7.00 seconds**;
+`tests/test_patient_scale.py`: **3 passed in 45.44 seconds**, retaining the
+5,000-row CSV/XLSX parity, explicit export/choice caps, batched-query budgets,
+saved unavailable references and denied-access checks.
+
 
 The existing testing harness used isolated synthetic PostgreSQL and authenticated
 Chromium actors. Failed or blocked scenarios were followed up narrowly; passing
