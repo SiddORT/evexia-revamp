@@ -31,7 +31,7 @@ export default function MoveStocks() {
   return <AdminLayout title="Move Stocks"><div className="move-stocks-page">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Move stocks</p><h1>Move stocks</h1><p className="admin-page-head__description">Transfer whole vials or bottles between storage locations.</p></div>
       <div className="ms-head-actions"><button type="button" className="admin-button" onClick={() => navigate(`${BASE}/new`)} data-testid="button-new-move"><Plus size={16} /> Move stock</button></div></div>
-    <div className="admin-feedback ms-note" role="note" data-testid="text-move-guidance">Isolated fictional inventory preview. It is frontend-only, not server-backed, and resets on a full page reload. It does not change masters, purchase orders or purchase received records. Delivered by is a typed name and is not verified.</div>
+    <div className="admin-feedback ms-note" role="note" data-testid="text-move-guidance">This screen records stock movements between storage locations, including transfer dates, delivery details and product quantities.</div>
     {snapshot.notice && <div className="admin-feedback" role="status" data-testid="status-move-feedback">{snapshot.notice}</div>}
     <section className="admin-panel">
       <div className="ms-table-wrap">

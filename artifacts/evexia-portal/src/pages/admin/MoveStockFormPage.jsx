@@ -57,7 +57,7 @@ export default function MoveStockFormPage() {
   return <AdminLayout title="Move stock"><div className="move-stocks-page">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Move stocks / New</p><h1>Move stock</h1><p className="admin-page-head__description">Choose a source, a destination and whole units to transfer.</p></div>
       <div className="ms-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(BASE)} data-testid="button-back-move"><ArrowLeft size={16} /> All movements</button></div></div>
-    <div className="admin-feedback ms-note" role="note" data-testid="text-move-guidance">Isolated fictional inventory preview. It is frontend-only, not server-backed, and resets on a full page reload. It does not change masters, purchase orders or purchase received records. Delivered by is a typed name and is not verified.</div>
+    <div className="admin-feedback ms-note" role="note" data-testid="text-move-guidance">This screen records stock movements between storage locations, including transfer dates, delivery details and product quantities.</div>
     <section className="admin-panel" aria-label="New stock movement">
       <form onSubmit={submit} noValidate>
         <div className="ms-form-body">

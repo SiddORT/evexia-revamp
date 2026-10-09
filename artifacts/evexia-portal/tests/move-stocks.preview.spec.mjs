@@ -6,6 +6,26 @@ if (process.env.EVEXIA_CHROMIUM_PATH) {
 }
 const path = '/admin/inventory/move-stocks';
 const base = () => process.env.EVEXIA_PREVIEW_BASE_URL.replace(/\/$/, '');
+const guidance = 'This screen records stock movements between storage locations, including transfer dates, delivery details and product quantities.';
+async function expectGuidance(page) {
+  const note = page.getByTestId('text-move-guidance');
+  await expect(note).toBeVisible();
+  await expect(note).toHaveText(guidance);
+  await expect(note).toHaveAttribute('role', 'note');
+  await expect(page.getByText('Isolated fictional inventory preview.', { exact: false })).toHaveCount(0);
+  await expect(page.getByText('Delivered by is a typed name and is not verified.', { exact: false })).toHaveCount(0);
+  expect(await note.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    const text = document.createRange();
+    text.selectNodeContents(element);
+    return box.left >= 0 && box.right <= innerWidth + 1
+      && element.scrollWidth <= element.clientWidth
+      && element.scrollHeight <= element.clientHeight
+      && Array.from(text.getClientRects()).every((rect) =>
+        rect.left >= box.left - 1 && rect.right <= box.right + 1
+        && rect.top >= box.top - 1 && rect.bottom <= box.bottom + 1);
+  })).toBe(true);
+}
 async function choose(page, label, name) {
   const input = page.getByRole('combobox', { name: label, exact: true });
   await input.fill(name);
@@ -17,6 +37,7 @@ async function open(page, suffix = '') {
   await page.goto(`${base()}${path}${suffix}`);
   await expect(page.getByTestId('button-admin-profile')).toBeVisible();
   await expect(page.getByRole('heading', { name: suffix ? 'Move stock' : 'Move stocks', exact: true })).toBeVisible();
+  await expectGuidance(page);
 }
 
 test('navigation, searchable sources, validation, transfer, details, balance consistency and reload isolation', async ({ page }) => {
@@ -32,6 +53,7 @@ test('navigation, searchable sources, validation, transfer, details, balance con
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.getByTestId('button-new-move').click();
   await expect(page).toHaveURL(new RegExp(`${path}/new$`));
+  await expectGuidance(page);
   await page.getByTestId('button-save-move').click();
   await expect(page.locator('#ms-sourceId-error')).toBeVisible();
   await expect(page.locator('#ms-destinationId-error')).toBeVisible();
@@ -124,8 +146,10 @@ for (const theme of ['classic', 'modern']) {
       await page.getByTestId('input-search-navigation').fill('move stocks');
       await page.getByTestId('link-admin-move-stocks').click();
       await expect(page.getByTestId('button-new-move')).toBeVisible();
+      await expectGuidance(page);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.getByTestId('button-new-move').click();
+      await expectGuidance(page);
       await choose(page, 'Source location', 'Demo Main Warehouse');
       await page.getByTestId('checkbox-move-product-demo-dust').check();
       await page.getByTestId('input-move-qty-demo-dust').fill('2');
