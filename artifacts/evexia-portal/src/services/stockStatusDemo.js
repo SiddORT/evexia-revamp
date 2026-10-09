@@ -59,10 +59,25 @@ export function createStockDemo(now = new Date()) {
   return freeze({ currentYear, years, products, snapshots, purchases, orders });
 }
 
-export function filterStock(demo, year, productId = '') {
+export const stockProductLabel = (product) => `${product.name} - ${product.concentration} (${product.id})`;
+export function stockFilterOptions(demo) {
+  const rows = filterStock(demo, demo.currentYear);
+  return {
+    categories: [...new Set(rows.map((row) => row.category))].sort(),
+    allergens: rows.map((row) => ({ value: row.id, label: stockProductLabel(row) })),
+  };
+}
+export function filterStock(demo, year = demo.currentYear, filters = {}) {
+  // Retain the historical single-identity contract for sample/history consumers.
+  const { search = '', category = '', productIds = [] } = typeof filters === 'string'
+    ? { productIds: filters ? [filters] : [] } : filters;
+  const query = search.trim().toLocaleLowerCase();
+  const selected = new Set(productIds);
   const products = new Map(demo.products.map((product) => [product.id, product]));
-  return demo.snapshots.filter((row) => row.year === year && (!productId || row.productId === productId))
-    .map((row) => ({ ...products.get(row.productId), quantity: row.quantity, year: row.year }));
+  return demo.snapshots.filter((row) => row.year === year && (!selected.size || selected.has(row.productId)))
+    .map((row) => ({ ...products.get(row.productId), quantity: row.quantity, year: row.year }))
+    .filter((row) => (!category || row.category === category)
+      && (!query || [row.name, row.concentration, row.id, row.category].some((value) => value.toLocaleLowerCase().includes(query))));
 }
 export function filterHistory(history, productId, year) {
   const range = year === 'all' ? null : financialYearRange(Number(year));

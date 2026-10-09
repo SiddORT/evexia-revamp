@@ -15,6 +15,7 @@ async function open(page) {
 async function choose(page, query, identity) {
   await page.getByRole('combobox', { name: 'Allergens', exact: true }).fill(query);
   await page.getByRole('option').filter({ hasText: identity }).click();
+  await page.keyboard.press('Escape');
 }
 
 async function assertStockGeometry(page, width) {
@@ -25,26 +26,25 @@ async function assertStockGeometry(page, width) {
     const table = node.querySelector('table');
     const row = table.querySelector('tbody tr');
     const cells = [...row.cells];
-    const name = cells[0].querySelector('strong');
+    const name = cells[1].querySelector('strong');
     const style = getComputedStyle(name);
     return {
       regionWidth: node.clientWidth, tableWidth: table.getBoundingClientRect().width,
-      productWidth: cells[0].getBoundingClientRect().width,
+      productWidth: cells[1].getBoundingClientRect().width,
       nameLines: name.getBoundingClientRect().height / parseFloat(style.lineHeight),
       rowHeight: row.getBoundingClientRect().height,
       alignments: cells.map((cell) => getComputedStyle(cell).textAlign),
-      nowrap: [cells[3], cells[4]].map((cell) => getComputedStyle(cell).whiteSpace),
+      nowrap: [cells[4], cells[5]].map((cell) => getComputedStyle(cell).whiteSpace),
       columns: cells.length,
     };
   });
-  expect(geometry.columns).toBe(6);
+  expect(geometry.columns).toBe(7);
   expect(geometry.productWidth).toBeGreaterThanOrEqual(175);
   expect(geometry.nameLines).toBeLessThanOrEqual(2);
   expect(geometry.rowHeight).toBeLessThanOrEqual(70);
-  expect(geometry.alignments).toEqual(['left', 'left', 'left', 'right', 'right', 'center']);
+  expect(geometry.alignments).toEqual(['center', 'left', 'left', 'left', 'right', 'right', 'center']);
   expect(geometry.nowrap).toEqual(['nowrap', 'nowrap']);
-  if (width === 390) expect(geometry.tableWidth).toBeGreaterThan(geometry.regionWidth);
-  else expect(geometry.tableWidth).toBeLessThanOrEqual(geometry.regionWidth + 1);
+  expect(geometry.tableWidth).toBeLessThanOrEqual(Math.max(740, geometry.regionWidth) + 1);
   await expect(page.locator('.stock-list-table tbody')).not.toContainText('snapshot');
   for (const id of ['demo-dust', 'demo-grass']) {
     const name = page.getByTestId(`row-stock-${id}`).locator('.admin-table__name');
@@ -65,12 +65,15 @@ test('stock geometry, unclipped options and scoped serial columns across widths 
     }, { theme, appearance });
     for (const width of [1024, 1440, 768, 390]) {
       await page.setViewportSize({ width, height: 900 });
+      // Full navigation ensures stock styles work without another lazy route.
+      await page.goto(`${base()}${path}`);
+      await expect(page.getByRole('heading', { name: 'Stock status', exact: true })).toBeVisible();
       await assertStockGeometry(page, width);
-      const year = await page.getByTestId('select-stock-year').boundingBox();
+      const category = await page.getByLabel('Product Category', { exact: true }).boundingBox();
       const allergens = page.getByRole('combobox', { name: 'Allergens', exact: true });
       const control = await page.locator('.stock-product .searchable-select__control').boundingBox();
-      expect(control.height).toBe(year.height);
-      if (width > 640) expect(control.y).toBe(year.y);
+      expect(control.height).toBe(category.height);
+      if (width > 900) expect(control.y).toBe(category.y);
       const scope = await page.getByTestId('text-stock-scope').boundingBox();
       expect(scope.y).toBeGreaterThanOrEqual(control.y + control.height);
       await allergens.fill('Cedar');
@@ -141,20 +144,21 @@ test('direct Stock Status route retains its authentication guard', async ({ page
 test('sample snapshot, complete export, combined filters and product histories', async ({ page }) => {
   await open(page);
   const year = fiscalYear();
-  await expect(page.getByTestId('select-stock-year')).toHaveValue(String(year));
-  await expect(page.getByTestId('select-stock-year').locator('option')).toHaveText([`${year}-${year + 1}`, `${year - 1}-${year}`, `${year - 2}-${year - 1}`]);
+   await expect(page.getByTestId('select-stock-year')).toHaveCount(0);
+   await expect(page.getByLabel('Product Category', { exact: true }).locator('option')).toHaveText(['All categories', 'Dander', 'Diagnostic', 'Fungi', 'Mites', 'Pollens']);
   await expect(page.getByTestId('text-stock-disclaimer')).toContainText('not server-backed');
   await expect(page.getByTestId('text-stock-scope')).toContainText('Demo as-of snapshot');
   await expect(page.getByTestId('link-admin-stock-status')).toHaveAttribute('aria-current', 'page');
   await expect(page.getByTestId('link-admin-purchase-orders')).toBeVisible();
   await expect(page.getByTestId('link-admin-purchase-received')).toBeVisible();
-  await expect(page.locator('.stock-page .admin-table th')).toHaveText(['Product', 'Concentration', 'Category', 'Selling Price', 'Quantity', 'View']);
+  await expect(page.locator('.stock-page .admin-table th')).toHaveText(['Sr No', 'Product', 'Concentration', 'Category', 'Selling Price', 'Quantity', 'View']);
   // The product fixtures never read or overwrite unrelated records.
   const keys = ['evexia.admin.allergens.v1', 'evexia.admin.purchaseOrders.v1', 'evexia.admin.purchaseReceived.v1', 'evexia.admin.moveStocks.v1'];
   await page.evaluate((keys) => keys.forEach((key) => localStorage.setItem(key, 'unreadable-sentinel')), keys);
   await page.getByLabel('Rows per page').selectOption('2');
   await page.getByRole('button', { name: 'Next page', exact: true }).click();
   await expect(page.getByTestId('text-stock-count')).toContainText('Showing 3–4 of 8');
+  await expect(page.locator('.stock-list-table tbody tr td:first-child')).toHaveText(['3', '4']);
   const download = page.waitForEvent('download');
   await page.getByTestId('button-export-stock').click();
   const file = await download;
@@ -165,17 +169,43 @@ test('sample snapshot, complete export, combined filters and product histories',
   expect(csv).toContain('"980.50"');
   expect(csv.split('\r\n').length).toBe(10);
   expect(csv).toContain('"Sample Diagnostic Mix"');
-  await page.getByTestId('select-stock-year').selectOption(String(year - 1));
-  await expect(page.getByTestId('text-stock-count')).toContainText('Showing 1–2 of 7');
-  await expect(page.getByTestId('text-stock-scope')).toContainText('Demo year-end snapshot');
+  await page.getByLabel('Search stock', { exact: true }).fill('  PoLLeNs  ');
+  await expect(page.getByTestId('text-stock-count')).toContainText('Showing 1–2 of 4');
+  await expect(page.locator('.stock-list-table tbody tr td:first-child')).toHaveText(['1', '2']);
+  await page.getByLabel('Product Category', { exact: true }).selectOption('Pollens');
+  await choose(page, 'Cedar', 'demo-cedar-low');
   await choose(page, 'Cedar', 'demo-cedar-high');
+  await expect(page.locator('.stock-list-table tbody tr')).toHaveCount(2);
+  await page.getByRole('combobox', { name: 'Allergens', exact: true }).fill('Cedar');
+  for (const option of await page.getByRole('listbox', { name: 'Allergens' }).getByRole('option').all()) await expect(option).toHaveAttribute('aria-selected', 'true');
+  await page.keyboard.press('Escape');
+  await page.getByTestId('button-inventory-report').click();
+  await expect(page.getByTestId('stock-report')).toContainText('PoLLeNs');
+  await expect(page.getByTestId('stock-report')).toContainText('Pollens');
+  await expect(page.getByTestId('stock-report')).toContainText('demo-cedar-low');
+  await expect(page.getByTestId('stock-report')).toContainText('demo-cedar-high');
+  await expect(page.getByTestId('stock-report').locator('tbody tr')).toHaveCount(2);
+  await page.keyboard.press('Escape');
+  const filteredDownload = page.waitForEvent('download');
+  await page.getByTestId('button-export-stock').click();
+  const filteredCsv = await readFile(await (await filteredDownload).path(), 'utf8');
+  expect(filteredCsv.split('\r\n')).toHaveLength(4);
+  expect(filteredCsv).toContain('"1:100 w/v"');
+  expect(filteredCsv).toContain('"1:20 w/v"');
+  expect(filteredCsv).toContain(`"${year}-${year + 1}"`);
+  await page.getByRole('button', { name: 'Remove Cedar Pollen - 1:100 w/v (demo-cedar-low)', exact: true }).click();
   await expect(page.locator('.stock-page .admin-table tbody tr')).toHaveCount(1);
+  await page.getByLabel('Search stock', { exact: true }).fill('  DEMO-CEDAR-HIGH  ');
+  await expect(page.getByTestId('row-stock-demo-cedar-high')).toBeVisible();
+  await page.getByLabel('Search stock', { exact: true }).fill('  1:20 W/V  ');
+  await expect(page.getByTestId('row-stock-demo-cedar-high')).toBeVisible();
   const trigger = page.getByTestId('button-view-stock-demo-cedar-high');
   await trigger.click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toContainText('ID demo-cedar-high');
   await expect(dialog).toContainText('orders are demo sales orders, not procurement POs');
-  await expect(dialog.getByTestId('select-stock-history-year')).toHaveValue(String(year - 1));
+  await expect(dialog.getByTestId('select-stock-history-year')).toHaveValue(String(year));
+  await dialog.getByTestId('select-stock-history-year').selectOption(String(year - 1));
   await expect(dialog.locator('tbody tr')).toHaveCount(1);
   await expect(dialog.locator('tbody tr')).toContainText(`DEMO-PUR-${year - 1}-4`);
   await dialog.getByTestId('tab-stock-purchases').focus();
@@ -199,7 +229,6 @@ test('empty results, report print/PDF, error handling and themed snapshot render
   const year = fiscalYear();
   const keys = ['evexia.admin.allergens.v1', 'evexia.admin.purchaseOrders.v1', 'evexia.admin.purchaseReceived.v1', 'evexia.admin.moveStocks.v1'];
   await page.evaluate((keys) => keys.forEach((key) => localStorage.setItem(key, 'unreadable-sentinel')), keys);
-  await page.getByTestId('select-stock-year').selectOption(String(year - 1));
   await choose(page, 'Birch', 'demo-birch');
   await expect(page.locator('.stock-page .admin-table tbody')).toContainText('0 vials');
   await page.getByTestId('button-view-stock-demo-birch').click();
@@ -208,7 +237,10 @@ test('empty results, report print/PDF, error handling and themed snapshot render
   await page.getByTestId('select-stock-history-year').selectOption('all');
   await expect(page.getByRole('dialog')).toContainText('No orders in this period');
   await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Clear all allergens', exact: true }).click();
   await choose(page, 'Diagnostic', 'demo-new');
+  await page.getByLabel('Product Category', { exact: true }).selectOption('Pollens');
+  await expect(page.getByRole('button', { name: /Remove Sample Diagnostic Mix/ })).toBeVisible();
   await expect(page.getByText('No products match these filters', { exact: true })).toBeVisible();
   await page.getByTestId('button-export-stock').click();
   await expect(page.getByRole('alert')).toContainText('There are no rows to export');
@@ -216,9 +248,12 @@ test('empty results, report print/PDF, error handling and themed snapshot render
   await expect(page.getByRole('dialog')).toContainText('Nothing to report');
   await expect(page.getByTestId('button-print-stock-report')).toBeDisabled();
   await page.keyboard.press('Escape');
-  await page.getByTestId('select-stock-year').selectOption(String(year));
+  await page.getByLabel('Product Category', { exact: true }).selectOption('');
   await expect(page.getByTestId('text-stock-count')).toContainText('of 1');
-  await choose(page, 'All allergens', 'All allergens');
+  await page.getByRole('button', { name: 'Clear all allergens', exact: true }).click();
+  await page.getByLabel('Search stock', { exact: true }).fill('missing stock');
+  await expect(page.getByText('No products match these filters', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Clear all filters', exact: true }).click();
   await page.getByTestId('button-inventory-report').click();
   const report = page.getByTestId('stock-report');
   await expect(report.locator('tbody tr')).toHaveCount(8);
@@ -244,7 +279,7 @@ test('empty results, report print/PDF, error handling and themed snapshot render
   await page.keyboard.press('Escape');
   await page.evaluate(() => { URL.createObjectURL = () => { throw new Error('Synthetic download failure'); }; });
   await page.getByTestId('button-export-stock').click();
-  await expect(page.getByRole('alert')).toContainText('Synthetic download failure');
+  await expect(page.getByRole('alert')).toContainText('browser handoff was cancelled or failed');
   expect(await page.evaluate((keys) => keys.map((key) => localStorage.getItem(key)), keys)).toEqual(keys.map(() => 'unreadable-sentinel'));
   for (const theme of ['classic', 'modern']) for (const appearance of ['light', 'dark']) {
     await page.evaluate(async ({ theme, appearance }) => {
@@ -282,6 +317,11 @@ test('collapsed/sidebar search and narrow-screen keyboard navigation', async ({ 
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
+  await expect(page.getByRole('option').filter({ hasText: 'demo-cedar-high' })).toHaveAttribute('aria-selected', 'true');
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('text-stock-count')).toContainText('of 8');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
   await expect(page.getByTestId('text-stock-count')).toContainText('of 1');
   await expect(page.locator('.stock-page .admin-table tbody')).toContainText('demo-cedar-high');
   await page.getByTestId('button-view-stock-demo-cedar-high').click();

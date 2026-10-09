@@ -4,7 +4,16 @@
 .stock-disclaimer { display: flex; gap: 8px; align-items: flex-start; }
 .stock-disclaimer svg { flex: none; margin-top: 2px; }
 .stock-panel { overflow: visible; }
-.stock-toolbar { display: grid; grid-template-columns: 170px minmax(0, 420px); justify-content: start; align-items: end; gap: 16px; padding: 16px; }
+.stock-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(150px, .65fr) minmax(0, 1.3fr); align-items: start; gap: 16px; padding: 16px; }
+.stock-toolbar .admin-input { width: 100%; min-width: 0; height: 40px; }
+.stock-selection-summary { font-size: 11px; color: var(--admin-text-soft); margin-top: 5px; }
+.stock-selected { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.stock-selection-chip, .stock-clear-all { font: inherit; font-size: 11px; cursor: pointer; color: var(--admin-text); background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: 6px; padding: 5px 7px; }
+.stock-selection-chip { display: flex; align-items: center; gap: 5px; max-width: 100%; text-align: left; }
+.stock-selection-chip span { overflow-wrap: anywhere; }
+.stock-selection-chip svg { flex: none; }
+.stock-clear-all { color: var(--admin-accent); }
+.stock-selection-chip:focus-visible, .stock-clear-all:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
 .stock-toolbar .admin-select { min-width: 0; width: 100%; }
 .stock-toolbar .admin-filter { min-width: 0; }
 .stock-product .searchable-select { min-width: 0; width: 100%; }
@@ -31,13 +40,14 @@
 :is(.stock-list-table, .stock-history-table) .admin-table { table-layout: fixed; }
 :is(.stock-list-table, .stock-history-table) .admin-table :is(th, td) { padding: 10px; line-height: 1.4; }
 :is(.stock-list-table, .stock-history-table) .admin-table :is(th, td):first-child { text-align: left; }
-.stock-list-table .admin-table { min-width: 660px; }
-.stock-list-table .admin-table :is(th, td):nth-child(1) { width: 27%; }
-.stock-list-table .admin-table :is(th, td):nth-child(2) { width: 18%; }
-.stock-list-table .admin-table :is(th, td):nth-child(3) { width: 13%; }
-.stock-list-table .admin-table :is(th, td):nth-child(4) { width: 15%; text-align: right; white-space: nowrap; }
-.stock-list-table .admin-table :is(th, td):nth-child(5) { width: 14%; text-align: right; white-space: nowrap; }
-.stock-list-table .admin-table :is(th, td):nth-child(6) { width: 13%; text-align: center; }
+.stock-list-table .admin-table { min-width: 740px; }
+.stock-list-table .admin-table :is(th, td):nth-child(1) { width: 58px; text-align: center; }
+.stock-list-table .admin-table :is(th, td):nth-child(2) { width: 26%; }
+.stock-list-table .admin-table :is(th, td):nth-child(3) { width: 17%; }
+.stock-list-table .admin-table :is(th, td):nth-child(4) { width: 12%; }
+.stock-list-table .admin-table :is(th, td):nth-child(5) { width: 15%; text-align: right; white-space: nowrap; }
+.stock-list-table .admin-table :is(th, td):nth-child(6) { width: 14%; text-align: right; white-space: nowrap; }
+.stock-list-table .admin-table :is(th, td):nth-child(7) { width: 12%; text-align: center; }
 .stock-list-table .admin-table__name { display: block; }
 .stock-list-table .stock-sub { overflow-wrap: anywhere; }
 .stock-history-table .admin-table { min-width: 780px; }
@@ -63,13 +73,16 @@
 .stock-report h1 { font-size: 20px; margin: 0 0 12px; }
 .stock-report__meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 0 0 16px; }
 .stock-report__meta dt { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--admin-muted); font-weight: 700; }
-.stock-report__meta dd { margin: 2px 0 0; font-size: 12px; }
+.stock-report__meta dd { margin: 2px 0 0; font-size: 12px; overflow-wrap: anywhere; }
 .stock-report-scroll { width: 100%; overflow-x: auto; }
 .stock-report-scroll:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: -2px; }
 .stock-report table { width: 100%; min-width: 660px; border-collapse: collapse; font-size: 12px; }
 .stock-report th, .stock-report td { border: 1px solid var(--admin-border); padding: 6px 8px; text-align: left; }
 .stock-report th { background: var(--admin-table-head); }
 .stock-report__note { font-size: 11px; color: var(--admin-text-soft); margin-top: 12px; }
+@media (max-width: 900px) {
+  .stock-toolbar { grid-template-columns: minmax(0, 1fr); }
+}
 @media (max-width: 640px) {
   .stock-toolbar { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 12px; }
   .stock-scope { padding: 12px; }

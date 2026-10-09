@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createStockDemo, financialYearOf, financialYearLabel, financialYearRange, snapshotScope, filterStock, filterHistory, exportStockCSV, stockCSVCell } from './stockStatusDemo.js';
+import { createStockDemo, financialYearOf, financialYearLabel, financialYearRange, snapshotScope, filterStock, filterHistory, exportStockCSV, stockCSVCell, stockFilterOptions } from './stockStatusDemo.js';
 
 const now = new Date(2026, 9, 7);
 const demo = createStockDemo(now);
@@ -38,6 +38,28 @@ test('fixtures are read-only, immediately populated, use stable identities and h
 test('histories include both year boundaries and exclude adjacent years', () => {
   const history = ['2025-03-31', '2025-04-01', '2026-03-31', '2026-04-01'].map((date) => ({ id: date, productId: 'a', date }));
   assert.deepEqual(filterHistory(history, 'a', 2025).map((row) => row.date), ['2026-03-31', '2025-04-01']);
+});
+test('current-year options and combined normalized filters preserve stable same-name identities', () => {
+  const options = stockFilterOptions(demo);
+  assert.deepEqual(options.categories, ['Dander', 'Diagnostic', 'Fungi', 'Mites', 'Pollens']);
+  assert.equal(options.allergens.length, 8);
+  assert.equal(options.allergens.filter((option) => option.label.includes('Cedar Pollen')).length, 2);
+  assert.ok(options.allergens.find((option) => option.value === 'demo-cedar-high').label.includes('1:20 w/v (demo-cedar-high)'));
+  assert.ok(filterStock(demo).every((row) => row.year === demo.currentYear));
+  for (const [search, count] of [['  cEDar  ', 2], ['  1:20 W/V  ', 2], ['DEMO-CEDAR-HIGH', 1], ['pollens', 4], ['   ', 8]]) {
+    assert.equal(filterStock(demo, demo.currentYear, { search }).length, count);
+  }
+  const filters = { search: ' cedar ', category: 'Pollens', productIds: ['demo-cedar-low', 'demo-cedar-high', 'demo-cat'] };
+  assert.deepEqual(filterStock(demo, demo.currentYear, filters).map((row) => row.id), ['demo-cedar-low', 'demo-cedar-high']);
+  assert.equal(filterStock(demo, demo.currentYear, { ...filters, category: 'Dander' }).length, 0);
+  assert.equal(filterStock(demo, demo.currentYear, { productIds: ['unknown'] }).length, 0);
+  assert.equal(filterStock(demo, demo.currentYear, { productIds: [] }).length, 8);
+  assert.equal(filterStock(demo, demo.currentYear, { category: 'Pollens' }).length, 4);
+  assert.equal(filterStock(demo, demo.currentYear, { ...filters, productIds: ['demo-cedar-high'] }).length, 1);
+  const csv = exportStockCSV(filterStock(demo, demo.currentYear, filters), { year: demo.currentYear, asOf: snapshotScope(demo.currentYear, now).asOf });
+  assert.equal(csv.split('\r\n').length, 4);
+  assert.match(csv, /"2026-2027","2026-10-07"/);
+  assert.doesNotMatch(csv, /Sr No/);
 });
 test('current samples do not become future-dated at April rollover', () => {
   const firstDay = createStockDemo(new Date(2031, 3, 1));
