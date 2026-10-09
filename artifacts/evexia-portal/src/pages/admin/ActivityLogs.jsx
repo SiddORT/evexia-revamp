@@ -197,7 +197,7 @@ function State({ r, empty, children, cols }) {
   );
   if (!r.loading && !r.data) return null;
   if (!r.loading && !r.data.items?.length) return <div className="admin-empty"><div className="admin-empty__icon"><Activity size={20} /></div><strong>{empty}</strong><p>Adjust filters or date range.</p></div>;
-  const widths = cols === 'sessions' ? [55, 200, 260, 155, 185, 185, 185, 185, 210] : [55, 185, 200, 180, 110, 160, 210, 260, 260];
+  const widths = cols === 'sessions' ? [55, 200, 260, 155, 185, 185, 185, 185, 210, 210] : [55, 185, 200, 180, 110, 160, 210, 260, 260];
   const skeletonColumns = widths.map((width, index) => ({
     key: index, skeletonWidth: index === 0 ? '22px' : `${Math.round(width * .65)}px`,
     skeletonLines: cols === 'sessions' && index === 1 ? 2 : 1,
@@ -205,7 +205,8 @@ function State({ r, empty, children, cols }) {
   return <>
     {r.loading && <TableLoadingStatus label={cols === 'sessions' ? 'Loading sessions…' : 'Loading activity events…'} />}
     <div className="admin-table-scroll" tabIndex={0} role="region" aria-label="Results">
-      <table className="admin-table alog-table" data-cols={cols} aria-busy={r.loading}>
+      <table className="admin-table alog-table" data-cols={cols} aria-busy={r.loading}
+        style={cols === 'sessions' ? { width: widths.reduce((total, width) => total + width, 0) } : undefined}>
         <colgroup>{widths.map((width, index) => <col key={index} style={{ width }} />)}</colgroup>
         {children[0]}
         {r.loading ? <TableSkeleton columns={skeletonColumns} rowCount={PAGE} /> : children[1]}
@@ -389,13 +390,13 @@ export default function ActivityLogs() {
         {view === 'sessions' ? (
            <>
           <State r={sessions} empty="No sessions found" cols="sessions">
-             <thead><tr><th scope="col">Sr No</th><th>User</th><th>Session reference</th><th>State</th><th>Why session ended</th><th>Session created / login</th><th>Last refreshed</th><th>Expires</th><th>Revoked</th><th>Remember me / persistent</th></tr></thead>
+             <thead><tr><th scope="col">Sr No</th><th>User</th><th>Session reference</th><th>State</th><th>Why session ended</th><th>Session created / login</th><th>Last refreshed</th><th>Expires</th><th>Revoked</th><th className="alog-persistence">Remember me / persistent</th></tr></thead>
              <tbody>{sessions.data?.items?.map((s, index) => (
                <tr key={s.id}><td>{sessions.offset + index + 1}</td><td><span className="admin-table__name">{who(s.user)}</span><br /><small>{dash(s.user?.role)} · {dash(s.user?.account_state)}</small></td>
                 <td className="alog-mono">{s.id}</td>
                 <td><span className={`admin-badge${s.state === 'ACTIVE' ? '' : ' admin-badge--inactive'}`}>{s.state}</span>{s.is_current && <small className="alog-current"> Current</small>}</td>
                 <td data-testid="text-session-ending-reason">{endingReason(s)}</td>
-                <td>{fmt(s.created_at)}</td><td>{fmt(s.last_refreshed_at)}</td><td>{fmt(s.expires_at)}</td><td>{fmt(s.revoked_at)}</td><td>{s.persistent ? 'Yes' : 'No'}</td></tr>
+                <td>{fmt(s.created_at)}</td><td>{fmt(s.last_refreshed_at)}</td><td>{fmt(s.expires_at)}</td><td>{fmt(s.revoked_at)}</td><td className="alog-persistence">{s.persistent ? 'Yes' : 'No'}</td></tr>
             ))}</tbody>
           </State>
            </>

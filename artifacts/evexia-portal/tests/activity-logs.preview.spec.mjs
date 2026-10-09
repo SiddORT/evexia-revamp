@@ -7,6 +7,113 @@ if (process.env.EVEXIA_CHROMIUM_PATH) {
 }
 const base = () => process.env.EVEXIA_PREVIEW_BASE_URL.replace(/\/$/, '');
 
+for (const width of [1440, 1024, 768, 375]) for (const enlarged of [false, true]) {
+  test(`Remember me column: ${width}px, ${enlarged ? '200% text' : 'normal text'}`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 900 });
+    await authenticateAdmin(page);
+    let release;
+    const ready = new Promise((resolve) => { release = resolve; });
+    await page.route(/\/reporting\/sessions(?:\?|$)/, async (route) => {
+      await ready;
+      await route.fulfill({ json: {
+        items: [true, false].map((persistent, index) => ({
+          id: `ReadableSession${index}`, user: { label: 'Synthetic layout user', role: 'super_admin', account_state: 'enabled' },
+          state: 'ACTIVE', created_at: '2030-02-02T00:00:00Z', last_refreshed_at: null,
+          expires_at: '2030-02-03T00:00:00Z', revoked_at: null, persistent, is_current: false,
+        })),
+        offset: 0, limit: 25, has_more: false,
+      } });
+    });
+    await page.goto(`${base()}/admin/activity-logs`);
+    const table = page.getByTestId('panel-activity-sessions').locator('table');
+    try {
+      await expect(table).toHaveAttribute('aria-busy', 'true');
+      await expect(table.locator('col')).toHaveCount(10);
+      await expect(table.locator('thead th')).toHaveCount(10);
+      await expect(table.getByTestId('table-skeleton').locator('tr')).toHaveCount(25);
+      await expect(table.getByTestId('table-skeleton').locator('tr').first().locator('td')).toHaveCount(10);
+      if (enlarged) await page.addStyleTag({ content: `
+        .alog-table[data-cols="sessions"] th { font-size: 20px; }
+        .alog-table[data-cols="sessions"] td { font-size: 24px; }
+      ` });
+      const loadingWidths = await table.evaluate((node) => {
+        const headers = [...node.querySelectorAll('th')];
+        const cells = [...node.querySelector('tbody tr').children];
+        return headers.map((header, i) => ({
+          header: header.getBoundingClientRect().width,
+          cell: cells[i].getBoundingClientRect().width,
+        }));
+      });
+      const declaredTotal = await table.locator('col').evaluateAll((cols) =>
+        cols.reduce((total, col) => total + parseFloat(col.style.width), 0));
+      expect(await table.evaluate((node) => node.getBoundingClientRect().width)).toBeCloseTo(declaredTotal, 0);
+      for (const column of loadingWidths) expect(column.cell).toBeCloseTo(column.header, 1);
+      release();
+      await expect(table).toHaveAttribute('aria-busy', 'false');
+      await expect(table.locator('tbody tr')).toHaveCount(2);
+      await expect(table.locator('tbody tr').nth(0).locator('td').nth(9)).toHaveText('Yes');
+      await expect(table.locator('tbody tr').nth(1).locator('td').nth(9)).toHaveText('No');
+
+      const geometry = await table.evaluate((node) => {
+        const scroll = node.parentElement;
+        scroll.scrollLeft = scroll.scrollWidth;
+        const box = (element) => {
+          const { left, right, top, bottom, width } = element.getBoundingClientRect ? element.getBoundingClientRect() : element;
+          return { left, right, top, bottom, width };
+        };
+        const textRects = (element, wordsOnly) => {
+          const text = element.firstChild;
+          const tokens = wordsOnly ? [...text.textContent.matchAll(/\S+/g)] :
+            [{ index: 0, 0: text.textContent }];
+          return tokens.map((token) => {
+            const range = document.createRange();
+            range.setStart(text, token.index);
+            range.setEnd(text, token.index + token[0].length);
+            return [...range.getClientRects()].map(box);
+          });
+        };
+        const header = node.querySelector('th:last-child');
+        const values = [...node.querySelectorAll('tbody tr td:last-child')];
+        return {
+          scroll: box(scroll), scrollLeft: scroll.scrollLeft,
+          maxScroll: scroll.scrollWidth - scroll.clientWidth,
+          header: box(header), headerWords: textRects(header, true),
+          values: values.map((cell) => ({ box: box(cell), rects: textRects(cell, false)[0] })),
+          widths: [...node.querySelectorAll('tbody tr:first-child td')].map((cell) => box(cell).width),
+          pageWidth: document.documentElement.scrollWidth,
+          headerFont: parseFloat(getComputedStyle(header).fontSize),
+          valueFont: parseFloat(getComputedStyle(values[0]).fontSize),
+        };
+      });
+      expect(geometry.headerFont).toBe(enlarged ? 20 : 10);
+      expect(geometry.valueFont).toBe(enlarged ? 24 : 12);
+      expect(geometry.pageWidth).toBeLessThanOrEqual(width);
+      expect(geometry.scrollLeft).toBeGreaterThan(0);
+      expect(geometry.scrollLeft).toBeCloseTo(geometry.maxScroll, 0);
+      expect(geometry.header.left).toBeGreaterThanOrEqual(geometry.scroll.left - 1);
+      expect(geometry.header.right).toBeLessThanOrEqual(geometry.scroll.right + 1);
+      for (const [i, cellWidth] of geometry.widths.entries()) {
+        expect(cellWidth).toBeCloseTo(loadingWidths[i].header, 1);
+      }
+      // Range geometry catches actual letter wrapping and clipped text, not
+      // just a visible cell or the presence of the right CSS declaration.
+      for (const { box, rects } of [
+        ...geometry.values,
+        ...geometry.headerWords.map((rects) => ({ box: geometry.header, rects })),
+      ]) {
+        expect(rects).toHaveLength(1);
+        expect(rects[0].left).toBeGreaterThanOrEqual(box.left + 11);
+        expect(rects[0].right).toBeLessThanOrEqual(box.right - 11);
+        expect(rects[0].top).toBeGreaterThanOrEqual(box.top);
+        expect(rects[0].bottom).toBeLessThanOrEqual(box.bottom);
+      }
+      await page.screenshot({ path: info.outputPath('remember-me-final-column.png'), fullPage: true });
+    } finally {
+      release();
+    }
+  });
+}
+
 test('profile menu navigates; deep link, filters, reset, refresh', async ({ page }) => {
   await authenticateAdmin(page);
   await page.goto(`${base()}/admin`);

@@ -18,6 +18,7 @@
     "test:stock-status:service": "node --test src/services/stockStatusDemo.test.js",
     "test:stock-status:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/stock-status.preview.spec.mjs",
     "test:loaders:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/loaders.preview.spec.mjs artifacts/evexia-portal/tests/admin-auth.preview.spec.mjs artifacts/evexia-portal/tests/activity-logs.preview.spec.mjs",
+    "test:activity-logs:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/activity-logs.preview.spec.mjs",
     "test:template-preferences:service": "node --test src/services/templatePreferenceEvents.test.js",
     "test:template-preferences:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/template-preferences.preview.spec.mjs",
     "test:template-preferences": "pnpm run test:template-preferences:service && pnpm run test:template-preferences:browser",

@@ -45,7 +45,8 @@
 .alog-current { color: var(--admin-accent); font-weight: 700; }
 .alog-table { table-layout: fixed; }
 .alog-table td { overflow-wrap: anywhere; white-space: normal; }
-.alog-table[data-cols="sessions"] { width: 1640px; }
+.alog-table[data-cols="sessions"] th.alog-persistence { white-space: normal; overflow-wrap: normal; word-break: normal; }
+.alog-table[data-cols="sessions"] td.alog-persistence { white-space: nowrap; overflow-wrap: normal; word-break: normal; }
 .alog-table[data-cols="events"] { width: 1620px; }
 .alog-retry { margin-top: 12px; }
 .alog-export { margin-bottom: 14px; }
