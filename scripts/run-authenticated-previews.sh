@@ -154,6 +154,7 @@ if [ "$#" -eq 0 ]; then
   SPECS="$SPECS artifacts/evexia-portal/tests/sales-targets-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/product-categories-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/allergens-backend.preview.spec.mjs"
+  SPECS="$SPECS artifacts/evexia-portal/tests/master-listing-notices.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/opening-balances-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/mrs-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/doctors-backend.preview.spec.mjs"

@@ -104,7 +104,7 @@ export default function DesignationMaster() {
   const actionName = confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'activate' ? 'Activate' : 'Inactivate';
   return <AdminLayout title="Designation Master">
     <div className="admin-page-head">
-      <div><p className="admin-page-head__eyebrow">User Management</p><h1>Designation Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Browser data clearing does not remove these designations.</p></div>
+      <div><p className="admin-page-head__eyebrow">User Management</p><h1>Designation Master</h1><p className="admin-page-head__description">Designation labels do not grant staff permissions or change payroll.</p></div>
       <div className="admin-mr-head-actions">
         <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/designation')} data-testid="button-import-designations"><Upload size={16} aria-hidden="true" /> Import data</button>
         <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>
@@ -122,7 +122,6 @@ export default function DesignationMaster() {
         <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate('/admin/masters/designations/new'); }} data-testid="button-add-designation"><Plus size={16} aria-hidden="true" /> Add designation</button>
       </div>
     </div>
-    <p className="admin-page-head__description">Old browser records remain untouched and are not migrated or used as fallback. Explicitly import an existing CSV backup. Exports include all name/short name/level/status matches, up to 5,000 records; larger results require narrower filters. Designation labels do not grant staff permissions or change payroll.</p>
     {feedback && <div className="admin-feedback" role="status" data-testid="status-designation-feedback">{feedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-designation-action-error">{actionError}</div>}
     <section className="admin-panel" aria-label="Designation list">

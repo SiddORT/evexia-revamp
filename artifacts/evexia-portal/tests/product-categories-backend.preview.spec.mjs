@@ -42,7 +42,8 @@ for (const mobile of [false, true]) {
     if (mobile) await page.setViewportSize({ width: 390, height: 844 });
     await open(page);
     await expect(page.getByText('Unused local category', { exact: true })).toHaveCount(0);
-    await expect(page.locator('main')).toContainText('Live changes do not affect demo inventory');
+    await expect(page.locator('.admin-page-head__description')).toHaveText('Shared Allergen Master uses this live directory.');
+    await expect(page.getByText('Live changes do not affect demo inventory')).toHaveCount(0);
     const name = `Synthetic ${mobile ? 'Mobile' : 'Desktop'} Category`;
     const row = await create(page, name);
     const record = page.locator(mobile ? 'article[role=listitem]' : 'tbody tr').filter({ hasText: name });

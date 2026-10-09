@@ -111,7 +111,7 @@ export default function AllergenMaster() {
   ];
   const actionName = confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'activate' ? 'Activate' : 'Inactivate';
   return <AdminLayout title="Allergen Master">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Inventory</p><h1>Allergen Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Mix / No Mix is catalogue metadata only. Clearing browser data does not remove products.</p></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Inventory</p><h1>Allergen Master</h1><p className="admin-page-head__description">Mix / No Mix is catalogue metadata only.</p></div>
       <div className="admin-mr-head-actions admin-allergen-head-actions">
         <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/allergen')} data-testid="button-import-allergens"><Upload size={16} aria-hidden="true" /> Import data</button>
         <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !busy.current) setExportMenuOpen(open); }}>
@@ -128,7 +128,6 @@ export default function AllergenMaster() {
         <button type="button" className="admin-button" onClick={() => navigate(`${LIST_PATH}/new`)} data-testid="button-add-allergen"><Plus size={16} aria-hidden="true" /> Add product</button>
       </div>
     </div>
-    <p className="admin-page-head__description">Exports include every record matching the current filters, up to 5,000 records. Local browser allergen data and procurement demos are separate and unaffected.</p>
     {feedback && <div className="admin-feedback" role="status">{feedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     <section className="admin-panel" aria-label="Allergen list">

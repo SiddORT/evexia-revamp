@@ -11,6 +11,7 @@
     "test:zone-permissions:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/staff-permissions.preview.spec.mjs",
     "test:designation-navigation:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/designation-navigation.preview.spec.mjs",
     "test:orders-navigation:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/orders-navigation.preview.spec.mjs",
+    "test:master-listing-notices:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/master-listing-notices.preview.spec.mjs",
     "test:move-stocks": "node --test src/services/moveStocksDemo.test.js",
     "test:mrs:service": "node --test src/services/serverMRs.test.js",
     "test:mrs:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/mrs-backend.preview.spec.mjs",

@@ -97,7 +97,7 @@ function VendorWorkspace() {
   const actionName = confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'activate' ? 'Activate' : 'Inactivate';
   return <AdminLayout title="Vendor Master">
     <div className="admin-page-head">
-      <div><p className="admin-page-head__eyebrow">Masters / Contacts</p><h1>Vendor Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Browser data clearing does not remove these vendors.</p></div>
+      <div><p className="admin-page-head__eyebrow">Masters / Contacts</p><h1>Vendor Master</h1></div>
       <div className="admin-vendor-actions">
         <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/vendor')} data-testid="button-import-vendors"><Upload size={16} aria-hidden="true" /> Import data</button>
         <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>
@@ -114,7 +114,6 @@ function VendorWorkspace() {
         <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); setEditing('new'); }} data-testid="button-add-vendor"><Plus size={16} aria-hidden="true" /> Add vendor</button>
       </div>
     </div>
-    <p className="admin-page-head__description">Old browser vendor records and any procurement references to them remain untouched; they are not migrated, mirrored or used as fallback. Procurement continues to use its own browser-local data. Exports include all matches, up to 5,000 records; larger results need narrower filters.</p>
     {feedback && <div className="admin-feedback" role="status" data-testid="status-vendor-feedback">{feedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-vendor-action-error">{actionError}</div>}
     <section className="admin-panel" aria-label="Vendor list">

@@ -15,3 +15,14 @@ another instance, causing misleading session and renewal failures.
 fixture. If a pass was contaminated by hot reload, confirm the affected flows in
 a stable fresh fixture rather than weakening session checks or repeating all
 already-passing cases.
+
+Freeze test files too once Playwright starts collecting a run. Fixes made during
+that run need a fresh invocation of only the affected specs.
+
+**Why:** A running check executed an earlier response fixture and earlier text
+assertions even though its error-context source excerpt displayed the newly
+edited file. The displayed source was not proof of which test version ran.
+
+**How to apply:** Finish regression edits before launch. If a test is corrected
+while other specs are running, let their results stand and rerun just the
+corrected specs after the invocation ends.

@@ -102,7 +102,7 @@ export default function CourierPartnerMaster() {
   const actionName = confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'activate' ? 'Activate' : 'Inactivate';
   return <AdminLayout title="Courier Partner Master">
     <div className="admin-page-head">
-      <div><p className="admin-page-head__eyebrow">Masters / Delivery</p><h1>Courier Partner Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Browser data clearing does not remove these courier partners.</p></div>
+      <div><p className="admin-page-head__eyebrow">Masters / Delivery</p><h1>Courier Partner Master</h1></div>
       <div className="admin-mr-head-actions">
         {can.import && <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/courier-partner')} data-testid="button-import-courier-partners"><Upload size={16} aria-hidden="true" /> Import data</button>}
         {can.export && <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>
@@ -120,7 +120,6 @@ export default function CourierPartnerMaster() {
         {can.add && <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); setEditing('new'); }} data-testid="button-add-courier-partner"><Plus size={16} aria-hidden="true" /> Add courier partner</button>}
       </div>
     </div>
-    <p className="admin-page-head__description">Old browser records remain untouched and are not migrated or used as fallback. Explicitly import an existing CSV backup. Exports include all name/status matches, up to 5,000 records; larger results require narrower filters.</p>
     {feedback && <div className="admin-feedback" role="status" data-testid="status-courier-partner-feedback">{feedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-courier-partner-action-error">{actionError}</div>}
     <section className="admin-panel" aria-label="Courier partner list">

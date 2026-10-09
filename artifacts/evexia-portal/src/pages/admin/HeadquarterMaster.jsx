@@ -93,7 +93,7 @@ export default function HeadquarterMaster() {
   ];
   const actionName = confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'activate' ? 'Activate' : 'Inactivate';
   return <AdminLayout title="Headquarter Master">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Directory</p><h1>Headquarter Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Clearing browser data does not remove headquarters.</p></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Directory</p><h1>Headquarter Master</h1><p className="admin-page-head__description">State Code is an HQ-name abbreviation, not a geographic state identifier.</p></div>
       <div className="admin-mr-head-actions">
         {can.import && <button className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/headquarter')}><Upload size={16} /> Import data</button>}
         {can.export && <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !busy.current) setExportMenuOpen(open); }}>
@@ -112,7 +112,6 @@ export default function HeadquarterMaster() {
         {can.add && <button className="admin-button" onClick={() => navigate(`${LIST}/new`)}><Plus size={16} /> Add headquarter</button>}
       </div>
     </div>
-    <p className="admin-page-head__description">Old browser records and tab drafts remain untouched and unused. You can explicitly import a legacy CSV backup. Exports include every name/code/status match, up to 5,000 records. State Code is an HQ-name abbreviation, not a geographic state identifier.</p>
     {feedback && <div className="admin-feedback" role="status">{feedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     <section className="admin-panel" aria-label="Headquarter list">

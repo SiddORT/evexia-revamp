@@ -104,7 +104,7 @@ export default function StorageLocationMaster() {
   const actionName = confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'activate' ? 'Activate' : 'Inactivate';
   return <AdminLayout title="Storage Location Master">
     <div className="admin-page-head">
-      <div><p className="admin-page-head__eyebrow">Masters / Inventory</p><h1>Storage Location Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Browser data clearing does not remove these storage locations.</p></div>
+      <div><p className="admin-page-head__eyebrow">Masters / Inventory</p><h1>Storage Location Master</h1><p className="admin-page-head__description">Shared Allergen Master uses this live directory.</p></div>
       <div className="admin-mr-head-actions">
         {can.import && <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/storage-location')} data-testid="button-import-storage-locations"><Upload size={16} aria-hidden="true" /> Import data</button>}
         {can.export && <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>
@@ -122,8 +122,6 @@ export default function StorageLocationMaster() {
         {can.add && <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); navigate('/admin/masters/storage-locations/new'); }} data-testid="button-add-storage-location"><Plus size={16} aria-hidden="true" /> Add storage location</button>}
       </div>
     </div>
-    <p className="admin-page-head__description">Old browser records remain untouched and are not migrated or used as fallback. Explicitly import an existing CSV backup. Exports include all name/address/status matches, up to 5,000 records; larger results require narrower filters.</p>
-    <p className="admin-page-head__description">The browser-local allergen dataset, Purchase Order and Purchase Received keep separate locations and IDs. Shared Allergen Master uses this live directory. Edits here do not change demo procurement or inventory.</p>
     {feedback && <div className="admin-feedback" role="status" data-testid="status-storage-location-feedback">{feedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-storage-location-action-error">{actionError}</div>}
     <section className="admin-panel" aria-label="Storage location list">

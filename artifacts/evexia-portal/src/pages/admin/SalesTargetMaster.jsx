@@ -124,7 +124,7 @@ function TargetWorkspace() {
   const summaryRows = [...QUARTERS, 'total'];
   return <AdminLayout title="Sales Target Master"><div className="admin-target-page">
     <div className="admin-page-head">
-      <div><p className="admin-page-head__eyebrow">Masters / Planning</p><h1>Sales Target Master</h1><p className="admin-page-head__description">Shared server targets for MRs by financial year, with authenticated audit history. Old browser-local targets are not migrated or used as fallback.</p></div>
+      <div><p className="admin-page-head__eyebrow">Masters / Planning</p><h1>Sales Target Master</h1><p className="admin-page-head__description">Targets for MRs by financial year.</p></div>
       <div className="admin-target-head-actions">
         <button type="button" className="admin-button admin-button--secondary" onClick={() => setSummary(true)} disabled={loading || Boolean(error)} data-testid="button-sales-target-summary">Summary</button>
         <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/sales-target')} data-testid="button-import-sales-targets"><Upload size={16} aria-hidden="true" /> Import data</button>
@@ -138,7 +138,6 @@ function TargetWorkspace() {
         <button type="button" className="admin-button" disabled={Boolean(error)} onClick={(event) => { dialogTrigger.current = event.currentTarget.dataset.testid; clearFeedback(); setEditing('new'); }} data-testid="button-add-sales-target"><Plus size={16} aria-hidden="true" /> Add target</button>
       </div>
     </div>
-    <p className="admin-page-head__description">Exports and the summary cover all matches for the applied filters, up to 5,000 records for exports.</p>
     {feedback && <div className="admin-feedback" role="status" data-testid="status-sales-target-feedback">{feedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-sales-target-action-error">{actionError}</div>}
     <section className="admin-panel" aria-label="Sales target list">

@@ -95,7 +95,7 @@ export default function ProductCategoryMaster() {
   ];
   const actionName = confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'activate' ? 'Activate' : 'Inactivate';
   return <AdminLayout title="Product Category Master">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Directory</p><h1>Product Category Master</h1><p className="admin-page-head__description">Shared server records with authenticated audit history. Clearing browser data does not remove categories.</p></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Directory</p><h1>Product Category Master</h1><p className="admin-page-head__description">Shared Allergen Master uses this live directory.</p></div>
       <div className="admin-mr-head-actions">
         {can.import && <button className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/product-category')}><Upload size={16} /> Import data</button>}
         {can.export && <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !busy.current) setExportMenuOpen(open); }}>
@@ -114,7 +114,6 @@ export default function ProductCategoryMaster() {
         {can.add && <button className="admin-button" onClick={() => navigate(`${LIST}/new`)}><Plus size={16} /> Add category</button>}
       </div>
     </div>
-    <p className="admin-page-head__description">The browser-local allergen dataset and procurement keep their separate category IDs and data. Shared Allergen Master uses this live directory. Live changes do not affect demo inventory. Exports include every name/description/price/status match, up to 5,000 records.</p>
     {feedback && <div className="admin-feedback" role="status">{feedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     <section className="admin-panel" aria-label="Product category list">
