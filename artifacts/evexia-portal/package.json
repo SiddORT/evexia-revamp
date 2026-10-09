@@ -10,6 +10,7 @@
     "test:zone-permissions": "node --test src/auth/staffPermissions.test.js src/auth/masterPermissions.test.js src/auth/navigationGuard.test.js src/services/rolePermissions.test.js",
     "test:zone-permissions:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/staff-permissions.preview.spec.mjs",
     "test:designation-navigation:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/designation-navigation.preview.spec.mjs",
+    "test:masters-directory-import:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/masters-directory-import.preview.spec.mjs",
     "test:orders-navigation:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/orders-navigation.preview.spec.mjs",
     "test:spt-orders": "node --test src/services/sptOrdersDemo.test.js",
     "test:spt-orders:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/spt-orders.preview.spec.mjs",

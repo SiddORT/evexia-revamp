@@ -1,11 +1,15 @@
-import { ArrowUpRight, Boxes, BriefcaseBusiness, Building2, FlaskConical, HeartPulse, Landmark, MapPinned, Stethoscope, Target, Truck, UsersRound, Warehouse } from 'lucide-react';
-import { Link } from 'wouter';
+import { ArrowUpRight, Boxes, BriefcaseBusiness, Building2, FlaskConical, HeartPulse, Landmark, MapPinned, Stethoscope, Target, Truck, Upload, UsersRound, Warehouse } from 'lucide-react';
+import { Link, useLocation } from 'wouter';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 
 export default function Masters() {
+  const [, navigate] = useLocation();
   return (
     <AdminLayout title="Masters">
-      <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Workspace / Configuration</p><h1>Masters</h1></div></div>
+      <div className="admin-page-head">
+        <div><p className="admin-page-head__eyebrow">Workspace / Configuration</p><h1>Masters</h1></div>
+        <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/zone')} data-testid="button-import-masters"><Upload size={16} aria-hidden="true" /> Import data</button>
+      </div>
       <div className="admin-panel">
         <Link href="/admin/masters/zones" className="admin-master-link" data-testid="link-master-zones">
           <span className="admin-master-link__icon"><MapPinned size={20} aria-hidden="true" /></span>
