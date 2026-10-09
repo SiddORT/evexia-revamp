@@ -146,7 +146,7 @@ for (const mobile of [false, true]) {
     await start.press('Escape');
     await expect(start).toHaveValue('1900');
     await start.click();
-    await page.getByRole('heading', { name: 'Financial year details' }).click();
+    await page.getByRole('heading', { name: 'Add opening balance', exact: true }).click();
     await expect(start).toHaveAttribute('aria-expanded', 'false');
     const select = page.getByRole('combobox', { name: 'Doctor', exact: true });
     await select.fill(doctor.registrationNumber);
@@ -309,14 +309,14 @@ for (const mobile of [false, true]) {
     });
     await select.fill(doctor.registrationNumber);
     expect((await matchingResponse).status()).toBe(200);
-    await expect(page.getByRole('status').filter({ hasText: '1 matching active Doctors' })).toBeVisible();
+    await expect(page.locator('#ob-doctor-help')).toBeEmpty();
     await expect(page.getByRole('option', { name: `${doctor.name} · ${doctor.registrationNumber}`, exact: true })).toBeVisible();
     await page.screenshot({ path: info.outputPath('styled-doctor-overlay.png'), fullPage: true });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
   });
 }
 
-test('Opening Balance Doctor picker pages server records, retries errors, and discards late response on logout', async ({ page }) => {
+test('Opening Balance Doctor picker searches beyond bounded results, retries errors, and discards late response on logout', async ({ page }) => {
   test.setTimeout(120000);
   const label = tag();
   await page.goto(base() + '/admin/login');
@@ -360,20 +360,25 @@ test('Opening Balance Doctor picker pages server records, retries errors, and di
   // Other release scenarios share this disposable catalogue. Filter to this
   // fixture before asserting counts rather than assuming an empty directory.
   await doctorSelect.fill(label);
-  await expect(page.locator('#ob-doctor-help')).toContainText('51 matching active Doctors');
-  await expect(page.getByRole('button', { name: 'Next Doctors' })).toBeEnabled();
-  await doctorSelect.press('Escape');
-  const secondPage = page.waitForResponse((response) => {
+  await expect(page.locator('#ob-doctor-help')).toContainText('Refine by name or registration');
+  await expect(page.getByRole('button', { name: /Previous Doctors|Next Doctors/ })).toHaveCount(0);
+  await expect(page.getByRole('listbox', { name: 'Doctor', exact: true }).getByRole('option')).toHaveCount(50);
+  await expect(page.getByRole('option', { name: `${doctors[50].name} · ${doctors[50].registrationNumber}`, exact: true })).toHaveCount(0);
+  const specificSearch = page.waitForResponse((response) => {
     const url = new URL(response.url());
     return url.pathname.endsWith('/opening-balances/references')
-      && url.searchParams.get('query') === label && url.searchParams.get('offset') === '50';
+      && url.searchParams.get('query') === doctors[50].registrationNumber && url.searchParams.get('offset') === '0';
   });
-  await page.getByRole('button', { name: 'Next Doctors' }).click();
-  expect((await secondPage).status()).toBe(200);
-  // Paging dismisses the overlay; reopening must retain its query and page,
-  // not issue an unfiltered page-zero search.
-  await doctorSelect.click();
+  await doctorSelect.fill(doctors[50].registrationNumber);
+  expect((await specificSearch).status()).toBe(200);
   await page.getByRole('option', { name: `${doctors[50].name} · ${doctors[50].registrationNumber}`, exact: true }).click();
+  await expect(doctorSelect).toHaveValue(new RegExp(doctors[50].registrationNumber));
+  await doctorSelect.fill(doctors[50].name);
+  await expect(page.getByRole('option', { name: `${doctors[50].name} · ${doctors[50].registrationNumber}`, exact: true })).toBeVisible();
+  await expect(page.locator('#ob-doctor-help')).toBeEmpty();
+  await doctorSelect.fill('no-matching-doctor-ever');
+  await expect(page.locator('#ob-doctor-help')).toContainText('No matching Doctors');
+  await doctorSelect.press('Escape');
   await expect(doctorSelect).toHaveValue(new RegExp(doctors[50].registrationNumber));
   let release, arrivedResolve, handledResolve;
   const arrived = new Promise((resolve) => { arrivedResolve = resolve; });
@@ -396,4 +401,93 @@ test('Opening Balance Doctor picker pages server records, retries errors, and di
   await expect(page.getByTestId('button-admin-profile')).toHaveCount(0);
   await expect(page.getByRole('combobox', { name: 'Doctor', exact: true })).toHaveCount(0);
   await expect(page.getByText(doctors[50].name, { exact: true })).toHaveCount(0);
+});
+
+test('Opening Balance compact layout stays aligned and reachable in themes, short viewports and enlarged text', async ({ page }, info) => {
+  test.setTimeout(120000);
+  const doctor = await seed(page);
+  for (const theme of ['classic', 'modern']) {
+    for (const appearance of ['light', 'dark']) {
+      await page.evaluate(async ({ theme, appearance }) => {
+        const prefs = await import('/src/components/admin/adminPreferences.js');
+        prefs.setAdminPreference('theme', theme);
+        prefs.setAdminPreference('appearance', appearance);
+      }, { theme, appearance });
+      for (const size of [{ width: 1280, height: 800 }, { width: 900, height: 360 }, { width: 320, height: 568 }]) {
+        await page.setViewportSize(size);
+        await page.getByTestId('button-add-opening-balance').click();
+        const dialog = page.getByRole('dialog', { name: 'Add opening balance' });
+        await expect(dialog).toBeVisible();
+        await expect(page.getByRole('button', { name: /Previous Doctors|Next Doctors/ })).toHaveCount(0);
+        await expect(dialog.locator('.admin-category-form__intro, .mr-form__body, .mr-form__footer')).toHaveCount(0);
+        const layout = await dialog.evaluate((node) => {
+          const rect = (selector) => {
+            const box = node.querySelector(selector).getBoundingClientRect();
+            return { x: box.x, y: box.y, height: box.height, width: box.width };
+          };
+          return { dialogWidth: node.getBoundingClientRect().width, padding: getComputedStyle(node).paddingLeft,
+            bodyPadding: getComputedStyle(node.querySelector('.ob-form__body')).padding,
+            gridGap: getComputedStyle(node.querySelector('.ob-form__grid')).gap,
+            start: rect('.searchable-select:has(#opening-balance-start-year) .searchable-select__control'),
+            end: rect('.searchable-select:has(#opening-balance-end-year) .searchable-select__control'),
+            doctor: rect('.searchable-select:has(#opening-balance-doctor) .searchable-select__control'),
+            amount: rect('#ob-amount'), status: rect('#ob-form-status'),
+            footer: rect('.ob-form__footer') };
+        });
+        expect(layout.dialogWidth).toBeLessThanOrEqual(650);
+        expect(layout.padding).toBe(size.width <= 600 ? '22px' : '27px');
+        expect(layout.bodyPadding).toBe('0px');
+        expect(layout.gridGap).toBe('16px');
+        for (const field of ['start', 'end', 'doctor', 'amount', 'status']) expect(layout[field].height).toBe(40);
+        expect(layout.start.x).toBeCloseTo(layout.doctor.x, 1);
+        expect(layout.status.x).toBeCloseTo(layout.doctor.x, 1);
+        if (size.width > 600) {
+          expect(layout.start.y).toBeCloseTo(layout.end.y, 1);
+          expect(layout.doctor.y).toBeCloseTo(layout.amount.y, 1);
+          expect(layout.footer.y - (layout.status.y + layout.status.height)).toBeCloseTo(27, 1);
+        } else {
+          expect(layout.end.y).toBeGreaterThan(layout.start.y);
+          expect(layout.amount.y).toBeGreaterThan(layout.doctor.y);
+        }
+        // Actual keyboard entry checks the dialog trap and styled focus, not just programmatic focus.
+        await page.getByTestId('button-close-dialog').focus();
+        await page.keyboard.press('Tab');
+        const start = page.getByRole('combobox', { name: 'Financial start year' });
+        await expect(start).toBeFocused();
+        await expect(page.getByRole('listbox', { name: 'Financial start year' })).toBeVisible();
+        await start.press('ArrowDown');
+        await start.press('Enter');
+        const select = page.getByRole('combobox', { name: 'Doctor', exact: true });
+        await select.fill(doctor.registrationNumber);
+        const option = page.getByRole('option', { name: `${doctor.name} · ${doctor.registrationNumber}`, exact: true });
+        await expect(option).toBeVisible();
+        await option.click();
+        await page.getByTestId('input-opening-balance-amount').fill('1.234');
+        await page.getByTestId('button-save-opening-balance').click();
+        await expect(page.locator('#ob-amount-error')).toBeVisible();
+        await expect(page.getByTestId('input-opening-balance-amount')).toHaveAttribute('aria-describedby', 'ob-amount-error');
+        const doubled = await page.addStyleTag({ content: '.ob-add-dialog :is(label, input, select, button, p, .searchable-select__option, .mr-form__error) { font-size: 24px !important; } .ob-add-dialog h2 { font-size: 54px !important; }' });
+        await select.fill(doctor.registrationNumber);
+        await expect(option).toBeVisible();
+        await option.click();
+        await page.getByRole('button', { name: 'About Credit balances' }).click();
+        await expect(page.getByText('Negative amounts indicate a credit balance. Zero is allowed.', { exact: true })).toBeVisible();
+        await page.keyboard.press('Escape');
+        await page.getByRole('button', { name: 'Cancel', exact: true }).scrollIntoViewIfNeeded();
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        expect(await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+        if (theme === 'modern' && appearance === 'dark') await page.screenshot({ path: info.outputPath(`compact-${size.width}.png`), fullPage: true });
+        await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+        await doubled.evaluate((node) => node.remove());
+        await expect(page.getByTestId('button-add-opening-balance')).toBeFocused();
+      }
+    }
+  }
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto(base() + path + '/new');
+  await expect(page.getByTestId('input-opening-balance-amount')).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  expect(await page.locator('.ob-form-panel').evaluate((node) => getComputedStyle(node).overflowY)).toBe('visible');
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(page.getByTestId('text-opening-balance-count')).toBeVisible();
 });

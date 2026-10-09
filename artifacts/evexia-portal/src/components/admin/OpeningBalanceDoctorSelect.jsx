@@ -5,7 +5,6 @@ import { getSession, subscribeSession, reportingIdentityGuard } from '../../auth
 
 export default function OpeningBalanceDoctorSelect({ value, record, disabled, error, onChange }) {
   const [query, setQuery] = useState('');
-  const [offset, setOffset] = useState(0);
   const [state, setState] = useState({ items: [], total: 0, loading: true, error: '' });
   const [selected, setSelected] = useState(record ? { id: record.doctorId, name: record.doctorName, registrationNumber: record.registrationNumber, usable: record.doctorUsable } : null);
   useEffect(() => {
@@ -25,7 +24,7 @@ export default function OpeningBalanceDoctorSelect({ value, record, disabled, er
     setState((old) => ({ ...old, items: [], loading: true, error: '' }));
     const timer = setTimeout(async () => {
       try {
-        const data = await openingBalanceDoctors({ query, offset, limit: 50, ...(record ? { balance_id: record.id } : {}) }, controller.signal);
+        const data = await openingBalanceDoctors({ query, offset: 0, limit: 50, ...(record ? { balance_id: record.id } : {}) }, controller.signal);
         guard(); if (!controller.signal.aborted) setState({ ...data, loading: false, error: '' });
       } catch (cause) {
         try { guard(); } catch { return; }
@@ -33,19 +32,21 @@ export default function OpeningBalanceDoctorSelect({ value, record, disabled, er
       }
     }, 200);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [query, offset, record?.id, revision]);
+  }, [query, record?.id, revision]);
   const rows = [...state.items];
   if (selected && !rows.some((d) => d.id === selected.id)) rows.push(selected);
   const options = rows.filter((d) => d.usable || d.id === record?.doctorId && d.id === value)
     .map((d) => ({ value: d.id, label: `${d.name} · ${d.registrationNumber}${!d.usable ? ' (saved inactive/unavailable reference)' : ''}` }));
+  const feedback = error || state.error || (state.loading ? 'Loading Doctors…'
+    : !state.items.length ? 'No matching Doctors. Try another name or registration.'
+    : state.total > 50 ? 'More Doctors match. Refine by name or registration.' : '');
   return <div className="mr-form__field">
     <label className="mr-form__label" htmlFor="opening-balance-doctor">Doctor *</label>
     <SearchableSelect id="opening-balance-doctor" label="Doctor" value={value} options={options}
       searchOptions={() => options.filter((option) => state.items.some((d) => d.id === option.value))} preserveSearch placeholder="Search name or registration" disabled={disabled} invalid={Boolean(error)}
-      describedBy="ob-doctor-help" onSearch={(text) => { setQuery(text.slice(0, 200)); setOffset(0); }}
+      describedBy={feedback ? 'ob-doctor-help' : undefined} onSearch={(text) => setQuery(text.slice(0, 200))}
       onChange={(id) => { setSelected(rows.find((d) => d.id === id) || null); onChange(id); }} />
-    <p className={error ? 'mr-form__error' : 'ob-form__hint'} id="ob-doctor-help" role={error || state.error ? 'alert' : 'status'}>{error || state.error || (state.loading ? 'Loading shared Doctors…' : `${state.total} matching active Doctors. Search or page; only unchanged saved inactive references can be retained.`)}</p>
-    {state.error && <button type="button" className="admin-button admin-button--secondary" onClick={() => setRevision((n) => n + 1)}>Retry Doctors</button>}
-    <div className="mr-form__actions"><button type="button" className="admin-button admin-button--secondary" disabled={disabled || state.loading || !offset} onClick={() => setOffset((n) => Math.max(0, n - 50))}>Previous Doctors</button><button type="button" className="admin-button admin-button--secondary" disabled={disabled || state.loading || offset + 50 >= state.total} onClick={() => setOffset((n) => n + 50)}>Next Doctors</button></div>
+    <p className={error || state.error ? 'mr-form__error' : 'ob-form__hint'} id="ob-doctor-help" role={error || state.error ? 'alert' : 'status'}>{feedback}</p>
+    {state.error && <button type="button" disabled={disabled} className="admin-button admin-button--secondary" onClick={() => setRevision((n) => n + 1)}>Retry Doctors</button>}
   </div>;
 }

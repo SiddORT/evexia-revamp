@@ -1,7 +1,6 @@
-.ob-add-dialog { width: min(760px, calc(100vw - 24px)); }
-.ob-add-dialog .ob-form { border: 0; }
-.ob-add-dialog .mr-form__footer { justify-content: flex-end; }
-/* Both the 320px modal and 200% text need complete paging/save labels.
+.ob-add-dialog { width: min(100%, 650px); }
+.ob-add-dialog .ob-form { margin-top: 24px; }
+/* Both the 320px modal and 200% text need complete save/recovery labels.
    Keep them inside their grid/flex cells without reducing the text size. */
 .ob-form .admin-button { white-space: normal; min-height: 40px; padding-block: 8px; overflow-wrap: anywhere; }
 .ob-form .mr-form__actions { min-width: 0; max-width: 100%; flex-wrap: wrap; }
@@ -12,7 +11,10 @@
 .ob-form .searchable-select { position: relative; min-width: 0; }
 .ob-form .searchable-select--open { z-index: 5; }
 .ob-form-panel { overflow: visible; }
-.ob-form-panel .mr-form__footer { border-radius: 0 0 12px 12px; }
+.ob-form-panel { padding: 27px; }
+.ob-form__body { padding: 0; }
+.ob-form__footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 9px; margin-top: 27px; }
+.ob-form__footer .admin-button { min-width: 0; max-width: 100%; }
 .ob-form .searchable-select__control { display: flex; align-items: center; height: 40px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); }
 .ob-form .searchable-select__control:focus-within { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
 .ob-form .searchable-select__control:has(input[aria-invalid="true"]) { border-color: var(--admin-danger); }
@@ -27,7 +29,13 @@
 .ob-form .searchable-select__option { display: flex; justify-content: space-between; gap: 8px; border-radius: 5px; cursor: pointer; }
 .ob-form .searchable-select__option:hover, .ob-form .searchable-select__option--active { background: var(--admin-state-hover); }
 .ob-form .searchable-select__option[aria-selected="true"] { color: var(--admin-accent); }
-.ob-form .mr-form__field { min-width: 0; }
+.ob-form .mr-form__field { min-width: 0; gap: 6px; }
+.ob-form .mr-form__label { color: var(--admin-text); font-size: 12px; }
+.ob-form .mr-form__field > .mr-form__label,
+.ob-form .mr-form__field > .admin-info > .admin-info__row { min-height: 1.4em; line-height: 1.4; font-size: 12px; }
+.ob-form .admin-info__row { display: flex; align-items: center; }
+.ob-form .admin-info__button { width: 28px; height: 1.4em; font-size: 12px; }
+.ob-form .mr-form__control { height: 40px; }
 .ob-context { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 18px; }
 .ob-context__item { display: flex; align-items: baseline; gap: 9px; padding: 12px 17px; border: 1px solid var(--admin-border, #dbe4df); background: var(--admin-surface, #f9fbf9); border-radius: 10px; }
 .ob-context__item span { color: var(--admin-muted, #687772); font-size: .76rem; }
@@ -46,8 +54,9 @@
 .ob-skeleton { min-height: 38px; margin: 13px 20px; border-radius: 6px; background: linear-gradient(90deg, var(--admin-border, #e7ede9), var(--admin-surface, #f9fbf9), var(--admin-border, #e7ede9)); background-size: 200% 100%; animation: ob-shimmer 1.6s infinite linear; }
 @keyframes ob-shimmer { to { background-position: -200% 0; } }
 .ob-form { max-width: 100%; }
-.ob-form__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 21px 24px; }
-.ob-form__hint { margin: 6px 0 0; font-size: .74rem; color: var(--admin-muted, #687772); }
+.ob-form__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.ob-form__hint { margin: 0; font-size: 11px; line-height: 1.4; color: var(--admin-text-soft); }
+.ob-form__hint:empty { display: none; }
 .ob-form__audit { display: flex; gap: 26px; flex-wrap: wrap; padding: 16px 0 0; border-top: 1px solid var(--admin-border, #dbe4df); font-size: .77rem; color: var(--admin-muted, #687772); }
 .ob-form__audit strong { color: var(--admin-text, #253d36); }
 .ob-mobile { display: none; }
@@ -78,5 +87,8 @@
   .ob-context__note { width: 100%; margin-left: 0; }
   .ob-desktop { display: none; }
   .ob-mobile { display: block; }
-  .ob-form__grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .ob-form__grid { grid-template-columns: minmax(0, 1fr); }
+  .ob-form-panel { padding: 20px 18px; }
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowLeft, Landmark, RefreshCw } from 'lucide-react';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { formatAdminTimestamp } from '../../components/admin/adminPreferences.js';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
@@ -87,9 +87,8 @@ function BalanceForm({ record, onSave, onCancel, onReload, onPendingChange }) {
     } catch (cause) { try { guard(); } catch { return; } if (alive.current) setMessage(cause.message); }
     finally { busy.current = false; if (alive.current) { setPending(false); onPendingChange(false); } }
   }
-  return <form className="admin-category-form ob-form" onSubmit={submit} noValidate>
-    <div className="admin-category-form__intro"><h2>Financial year details</h2><Landmark size={21} /></div>
-    <div className="mr-form__body">
+  return <form className="ob-form" onSubmit={submit} noValidate>
+    <div className="ob-form__body">
       {message && <div className="mr-form__notice mr-form__notice--error" role="alert"><p>{message}</p><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={reload}><RefreshCw size={16} /> Reload current details and discard draft</button><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={onCancel}>Inspect shared records</button></div>}
       <fieldset disabled={pending}><div className="ob-form__grid">
         <YearField field="startYear" values={values} errors={errors} onChange={update} disabled={pending} />
@@ -100,7 +99,7 @@ function BalanceForm({ record, onSave, onCancel, onReload, onPendingChange }) {
       </div></fieldset>
       {record && <div className="ob-form__audit"><span>Created by <strong>{record.createdBy}</strong> · {formatAdminTimestamp(record.createdAt)}</span><span>Updated by <strong>{record.updatedBy}</strong> · {formatAdminTimestamp(record.updatedAt)}</span><span>Saved amount: {formatBalance(record.amount)}</span></div>}
     </div>
-    <div className="mr-form__footer"><div className="mr-form__actions"><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={onCancel}>Cancel</button><button type="submit" disabled={pending || blocked} className="admin-button" data-testid="button-save-opening-balance">{pending ? 'Saving…' : record ? 'Save changes' : 'Save opening balance'}</button></div></div>
+    <div className="ob-form__footer"><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={onCancel}>Cancel</button><button type="submit" disabled={pending || blocked} className="admin-button" data-testid="button-save-opening-balance">{pending ? 'Saving…' : record ? 'Save changes' : 'Save opening balance'}</button></div>
   </form>;
 }
 
