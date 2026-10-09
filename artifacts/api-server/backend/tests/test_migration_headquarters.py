@@ -21,8 +21,16 @@ def test_forward_empty_migration_preserves_foundations(migration_db):
     engine, config, actor_id, session_id = prepare(migration_db)
     command.downgrade(config, "0016_designations")
     with Session(engine) as db:
-        existing = designations.create(db, identity(db, actor_id, session_id),
-                                       DesignationFields(name="Preserved", shortName="PR", level=1, status="active"))
+        # Seed through the historical SQL contract, not today's reduced model.
+        import uuid
+        existing = {"id": uuid.uuid4()}
+        db.execute(text(
+            'INSERT INTO designations (id,name,"shortName",level,status,"basicDa",hra,'
+            '"medicalAllowance","travellingAllowance","specialAllowance","professionalTax",'
+            'version,created_by,updated_by) VALUES (:id,\'Preserved\',\'PR\',1,\'active\','
+            '0,0,0,0,0,0,1,:actor,:actor)'), {"id": existing["id"], "actor": actor_id})
+        db.add(AuditEvent(actor_id=actor_id, session_id=session_id, action="designation_create", outcome="success"))
+        db.commit()
     command.upgrade(config, "head")
     with Session(engine) as db:
         assert db.get(Designation, existing["id"]).name == "Preserved"

@@ -2,7 +2,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, Numeric, String
+from sqlalchemy import CheckConstraint, Computed, DateTime, ForeignKey, Index, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 from app.db.models import Timestamps
@@ -28,6 +28,8 @@ class SalesTarget(Timestamps, Base):
     q2: Mapped[Decimal] = mapped_column(Numeric(), nullable=False)
     q3: Mapped[Decimal] = mapped_column(Numeric(), nullable=False)
     q4: Mapped[Decimal] = mapped_column(Numeric(), nullable=False)
+    annual_target: Mapped[Decimal] = mapped_column(
+        Numeric(), Computed("q1 + q2 + q3 + q4", persisted=True), nullable=False)
     status: Mapped[str] = mapped_column(String(8), nullable=False)
     version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)

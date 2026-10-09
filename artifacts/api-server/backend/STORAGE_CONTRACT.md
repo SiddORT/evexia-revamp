@@ -94,13 +94,22 @@ identity/session-bound, create-only and atomic; imported audit values are ignore
 The legacy browser-local allergen dataset and PO/PR keep separate local location records and IDs.
 See `docs/storage-location-master.md` for exact schemas, limits and recovery.
 
-Designation Master uses separate shared persistence, exact `NUMERIC(11,2)` values,
+Designation Master uses separate shared name/short-name/status persistence,
 server-owned User/UTC audit details, expected versions and normalized live-name
 uniqueness including inactive rows. Tombstones preserve deletion attribution.
 The protected singleton alone can use CRUD, identity/session-bound atomic CSV/XLSX
 imports, samples and full-filter exports. Transfers require durable download
 acceptance. No local data or staff labels are migrated; see
-`docs/designation-master.md` for exact ten/fourteen-column schemas and bounds.
+`docs/designation-master.md` for exact three/seven-column current and
+ten/fourteen-column legacy import schemas and bounds. Retired level and six
+allowance/tax values are absent from live contracts. Forward
+`0026_designation_target` permanently discards them; backup and coordinated
+operator-approved rollout are required, and downgrade cannot restore them.
+
+Sales Target `annual_target` is PostgreSQL stored generated exact NUMERIC
+`q1 + q2 + q3 + q4`, read-only and exposed through unchanged `annualTotal`
+decimal strings. Quarter constraints remain unchanged; the annual maximum is
+3999999999999.96. No independent annual input or transfer column is introduced.
 
 ## File API and validation
 

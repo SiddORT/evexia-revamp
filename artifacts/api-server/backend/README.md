@@ -24,7 +24,7 @@ persistence with soft deletion and authenticated audit history. Courier Partner 
 is separate shared server persistence with its own table and endpoints. Storage Location Master
 uses another separate shared name/address/status table and endpoints, while Allergen/PO/PR
 legacy location datasets remain browser-local. Designation Master is a separate protected
-Super Admin-only server catalogue, with exact decimals and bounded Staff choices.
+Super Admin-only name/short-name/status catalogue with bounded Staff choices.
 See [Designation Master operations](../../../docs/designation-master.md).
 Headquarter Master also uses separate protected singleton-only persistence.
 See [Headquarter Master operations](../../../docs/headquarter-master.md) for
@@ -76,6 +76,18 @@ its exact three/seven-column backup schemas, audit/deletion evidence, limits,
 explicit migration and unchanged local-demo purchasing relationships.
 
 ## Local development and operations
+
+- Reviewed forward migration `0026_designation_target` follows
+  `0025_vendor_phone`. It permanently drops seven designation level/allowance/tax
+  columns and their checks and adds the exact PostgreSQL stored generated
+  `sales_targets.annual_target` sum. Readiness and the new API require it.
+  Stop writes, take a verified database/audit backup and coordinate the
+  database/API/frontend release; do not serve old nodes against the reduced
+  schema. Managed/production execution needs separate operator approval.
+  Downgrade refuses populated designations (including deleted history) before
+  DDL; empty-only reversal creates no default values and cannot restore discarded
+  values. Recover with a reviewed forward fix or verified coordinated backup
+  restore. See the Designation and Sales Target operations documents.
 
 - International Vendor phones require reviewed migration `0025_vendor_phone`
   after `0024_opening_balances`. It widens the national-number column to 15
@@ -314,7 +326,7 @@ artifact-mounted URLs. The development OpenAPI contract includes:
 | Staff | `POST /api/v1/admin/staff/{staff_id}/edit`, `/status` | Immutable ID, mandatory `expected_version`, stale changes return 409. No credential reset or mail. |
 | Storage locations | `GET/POST /api/v1/admin/storage-locations`, `GET /{location_id}`, `POST /{location_id}/edit`, `/status`, `/delete` | Protected Super Admin `admin.access`; name/address/status, mandatory mutation versions, soft deletion and authenticated audit metadata. |
 | Storage locations | `POST /api/v1/admin/storage-locations/import/review`, `/import/commit`; `GET /export` | CSV/XLSX create-only review/confirm and full-filter download. Exact schemas and safety bounds in the Storage Location operations document. |
-| Designations | `GET/POST /api/v1/admin/designations`, `GET /{designation_id}`, `POST /{designation_id}/edit`, `/status`, `/delete` | Protected singleton `admin.access`; ten business fields, exact two-place decimals, expected versions, soft deletion and server audit. |
+| Designations | `GET/POST /api/v1/admin/designations`, `GET /{designation_id}`, `POST /{designation_id}/edit`, `/status`, `/delete` | Protected singleton `admin.access`; name, short name, status, expected versions, soft deletion and server audit. |
 | Designations | `POST /api/v1/admin/designations/import/review`, `/import/commit`; `GET /sample`, `/export` | CSV/XLSX create-only atomic review/confirm, identity-bound exact bytes, 2 MiB/1,000 rows, 5,000 filtered export matches and durable download acceptance. |
 | Domain | `POST /api/v1/domain/mrs/{user_id}/mapping` | Super-admin maps an existing user to an MR profile. |
 | Domain | `POST /api/v1/domain/patients` | Super-admin creates the minimal patient assignment record. |

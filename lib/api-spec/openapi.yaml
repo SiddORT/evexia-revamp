@@ -1058,61 +1058,10 @@
       "DesignationEdit": {
         "additionalProperties": false,
         "properties": {
-          "basicDa": {
-            "anyOf": [
-              {
-                "maximum": 999999999.99,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
-                "type": "string"
-              }
-            ],
-            "default": "0",
-            "title": "Basicda"
-          },
           "expected_version": {
             "minimum": 1.0,
             "title": "Expected Version",
             "type": "integer"
-          },
-          "hra": {
-            "anyOf": [
-              {
-                "maximum": 999999999.99,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
-                "type": "string"
-              }
-            ],
-            "default": "0",
-            "title": "Hra"
-          },
-          "level": {
-            "maximum": 2147483647.0,
-            "minimum": 1.0,
-            "title": "Level",
-            "type": "integer"
-          },
-          "medicalAllowance": {
-            "anyOf": [
-              {
-                "maximum": 999999999.99,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
-                "type": "string"
-              }
-            ],
-            "default": "0",
-            "title": "Medicalallowance"
           },
           "name": {
             "maxLength": 200,
@@ -1120,41 +1069,11 @@
             "title": "Name",
             "type": "string"
           },
-          "professionalTax": {
-            "anyOf": [
-              {
-                "maximum": 999999999.99,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
-                "type": "string"
-              }
-            ],
-            "default": "0",
-            "title": "Professionaltax"
-          },
           "shortName": {
             "maxLength": 50,
             "minLength": 1,
             "title": "Shortname",
             "type": "string"
-          },
-          "specialAllowance": {
-            "anyOf": [
-              {
-                "maximum": 999999999.99,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
-                "type": "string"
-              }
-            ],
-            "default": "0",
-            "title": "Specialallowance"
           },
           "status": {
             "enum": [
@@ -1163,27 +1082,11 @@
             ],
             "title": "Status",
             "type": "string"
-          },
-          "travellingAllowance": {
-            "anyOf": [
-              {
-                "maximum": 999999999.99,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
-                "type": "string"
-              }
-            ],
-            "default": "0",
-            "title": "Travellingallowance"
           }
         },
         "required": [
           "name",
           "shortName",
-          "level",
           "status",
           "expected_version"
         ],
@@ -1193,98 +1096,17 @@
       "DesignationFields": {
         "additionalProperties": false,
         "properties": {
-          "basicDa": {
-            "anyOf": [
-              {
-                "maximum": 999999999.99,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
-                "type": "string"
-              }
-            ],
-            "default": "0",
-            "title": "Basicda"
-          },
-          "hra": {
-            "anyOf": [
-              {
-                "maximum": 999999999.99,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
-                "type": "string"
-              }
-            ],
-            "default": "0",
-            "title": "Hra"
-          },
-          "level": {
-            "maximum": 2147483647.0,
-            "minimum": 1.0,
-            "title": "Level",
-            "type": "integer"
-          },
-          "medicalAllowance": {
-            "anyOf": [
-              {
-                "maximum": 999999999.99,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
-                "type": "string"
-              }
-            ],
-            "default": "0",
-            "title": "Medicalallowance"
-          },
           "name": {
             "maxLength": 200,
             "minLength": 1,
             "title": "Name",
             "type": "string"
           },
-          "professionalTax": {
-            "anyOf": [
-              {
-                "maximum": 999999999.99,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
-                "type": "string"
-              }
-            ],
-            "default": "0",
-            "title": "Professionaltax"
-          },
           "shortName": {
             "maxLength": 50,
             "minLength": 1,
             "title": "Shortname",
             "type": "string"
-          },
-          "specialAllowance": {
-            "anyOf": [
-              {
-                "maximum": 999999999.99,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
-                "type": "string"
-              }
-            ],
-            "default": "0",
-            "title": "Specialallowance"
           },
           "status": {
             "enum": [
@@ -1293,27 +1115,11 @@
             ],
             "title": "Status",
             "type": "string"
-          },
-          "travellingAllowance": {
-            "anyOf": [
-              {
-                "maximum": 999999999.99,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
-                "type": "string"
-              }
-            ],
-            "default": "0",
-            "title": "Travellingallowance"
           }
         },
         "required": [
           "name",
           "shortName",
-          "level",
           "status"
         ],
         "title": "DesignationFields",
@@ -1407,12 +1213,6 @@
       "DesignationResponse": {
         "additionalProperties": false,
         "properties": {
-          "basicDa": {
-            "default": "0",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
-            "title": "Basicda",
-            "type": "string"
-          },
           "createdAt": {
             "format": "date-time",
             "title": "Createdat",
@@ -1422,27 +1222,9 @@
             "title": "Createdby",
             "type": "string"
           },
-          "hra": {
-            "default": "0",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
-            "title": "Hra",
-            "type": "string"
-          },
           "id": {
             "format": "uuid",
             "title": "Id",
-            "type": "string"
-          },
-          "level": {
-            "maximum": 2147483647.0,
-            "minimum": 1.0,
-            "title": "Level",
-            "type": "integer"
-          },
-          "medicalAllowance": {
-            "default": "0",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
-            "title": "Medicalallowance",
             "type": "string"
           },
           "name": {
@@ -1451,22 +1233,10 @@
             "title": "Name",
             "type": "string"
           },
-          "professionalTax": {
-            "default": "0",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
-            "title": "Professionaltax",
-            "type": "string"
-          },
           "shortName": {
             "maxLength": 50,
             "minLength": 1,
             "title": "Shortname",
-            "type": "string"
-          },
-          "specialAllowance": {
-            "default": "0",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
-            "title": "Specialallowance",
             "type": "string"
           },
           "status": {
@@ -1475,12 +1245,6 @@
               "inactive"
             ],
             "title": "Status",
-            "type": "string"
-          },
-          "travellingAllowance": {
-            "default": "0",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
-            "title": "Travellingallowance",
             "type": "string"
           },
           "updatedAt": {
@@ -1500,7 +1264,6 @@
         "required": [
           "name",
           "shortName",
-          "level",
           "status",
           "id",
           "version",

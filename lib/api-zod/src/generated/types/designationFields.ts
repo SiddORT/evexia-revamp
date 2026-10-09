@@ -8,26 +8,15 @@
 import type { DesignationFieldsStatus } from "./designationFieldsStatus";
 
 export interface DesignationFields {
-  basicDa?: number | string;
-  hra?: number | string;
-  /**
-   * @minimum 1
-   * @maximum 2147483647
-   */
-  level: number;
-  medicalAllowance?: number | string;
   /**
    * @minLength 1
    * @maxLength 200
    */
   name: string;
-  professionalTax?: number | string;
   /**
    * @minLength 1
    * @maxLength 50
    */
   shortName: string;
-  specialAllowance?: number | string;
   status: DesignationFieldsStatus;
-  travellingAllowance?: number | string;
 }

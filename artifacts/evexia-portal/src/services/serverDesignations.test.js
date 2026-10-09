@@ -7,7 +7,7 @@ test('designation service sends real filters, versions, review confirmations and
     value: { locks: { request: async (_key, work) => work() } } });
   const user = { id: 'synthetic-admin', email: 'synthetic@example.test', system_role: 'super_admin', permissions: ['admin.access'] };
   const calls = [];
-  const record = { id: '00000000-0000-0000-0000-000000000001', name: 'City', shortName: 'EX', level: 1, basicDa: '0.10', status: 'active', version: 4 };
+  const record = { id: '00000000-0000-0000-0000-000000000001', name: 'City', shortName: 'EX', status: 'active', version: 4 };
   globalThis.fetch = async (url, options) => {
     if (url.includes('/admin/designations')) {
       calls.push({ url, options });
@@ -26,10 +26,10 @@ test('designation service sends real filters, versions, review confirmations and
   assert.deepEqual(await service.listDesignations({ query: 'City', status: 'inactive', limit: 2, offset: 2 }),
     { items: [record], total: 10, filtered: 2 });
   assert.match(calls[0].url, /query=City&status=inactive&limit=2&offset=2/);
-  await service.createDesignation({ name: 'New', shortName: 'EX', level: 1, basicDa: '0.10', status: 'active' });
+  await service.createDesignation({ name: 'New', shortName: 'EX', status: 'active' });
   await service.getDesignation(record.id);
-  await service.editDesignation(record, { name: 'Revised', shortName: 'EX', level: 1, basicDa: '0.10', status: 'inactive' });
-  assert.deepEqual(JSON.parse(calls[3].options.body), { name: 'Revised', shortName: 'EX', level: 1, basicDa: '0.10', status: 'inactive', expected_version: 4 });
+  await service.editDesignation(record, { name: 'Revised', shortName: 'EX', status: 'inactive' });
+  assert.deepEqual(JSON.parse(calls[3].options.body), { name: 'Revised', shortName: 'EX', status: 'inactive', expected_version: 4 });
   await service.statusDesignation(record, 'inactive');
   assert.deepEqual(JSON.parse(calls[4].options.body), { status: 'inactive', expected_version: 4 });
   await service.deleteDesignation(record);

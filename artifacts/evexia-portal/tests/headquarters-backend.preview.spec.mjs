@@ -65,8 +65,10 @@ for (const mobile of [false, true]) {
     await page.getByRole('button', { name: `Edit ${name}`, exact: true }).click();
     await page.getByTestId('input-headquarter-name').fill(name + ' Edited');
     await expect(page.getByTestId('input-headquarter-state-code')).toHaveValue('OWN');
-    await page.getByRole('button', { name: 'Regenerate from HQ name' }).click();
+    // The accepted form cleanup retains manual code editing, not regeneration.
+    await expect(page.getByRole('button', { name: 'Regenerate from HQ name' })).toHaveCount(0);
     const expectedCode = mobile ? 'SMHE' : 'SDHE';
+    await page.getByTestId('input-headquarter-state-code').fill(expectedCode);
     await expect(page.getByTestId('input-headquarter-state-code')).toHaveValue(expectedCode);
     await page.evaluate(async (row) => {
       await (await import('/src/services/serverHeadquarters.js')).editHeadquarter(row, { name: row.name + ' Concurrent', status: 'active' });

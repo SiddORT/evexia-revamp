@@ -41,6 +41,25 @@ achievements, commissions, payroll and broader reports are outside this feature.
 
 ## API
 
+Migration `0026_designation_target` follows `0025_vendor_phone` and adds
+`sales_targets.annual_target`: PostgreSQL stored generated, unconstrained
+`NUMERIC NOT NULL`, expression `q1 + q2 + q3 + q4`. Every existing/new row,
+including inactive and soft-deleted history, gets the exact sum. Direct SQL
+quarter changes regenerate it; explicit annual writes are rejected by PostgreSQL.
+ORM business inputs/import candidates exclude it. Saved `annualTotal` responses
+read this column and retain two-decimal strings immediately after create/edit/import.
+Draft previews and all-match summaries remain unchanged. Four maximum quarters
+sum to **3999999999999.96**, with no float arithmetic, rounding or quarterly cap
+applied to the annual sum. Sales Target CSV/XLSX schemas do not change.
+
+This migration also permanently removes seven designation columns. A verified
+backup and coordinated database/API/frontend rollout with stopped writes are
+required, only after separate operator approval. Downgrade refuses a populated
+designation catalogue before DDL; it cannot recover removed values. Empty-only
+downgrade can remove the generated sum (recomputed on re-upgrade), but is not a
+general recovery plan. Prefer a reviewed forward fix or coordinated verified restore.
+Readiness requires the new column; no migration or deployment is performed here.
+
 All routes are under `/api/v1/admin/sales-targets`:
 
 | Method/route | Contract |

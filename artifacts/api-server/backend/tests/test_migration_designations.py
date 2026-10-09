@@ -42,10 +42,8 @@ def test_actual_designation_migration_preserves_zone_identity_history(migration_
         assert db.scalar(select(AuditEvent.id).where(AuditEvent.action == "zone_create"))
         assert db.scalar(select(func.count()).select_from(Designation)) == 0
         actor = identity(db, actor_id, session_id)
-        row = designations.create(db, actor, DesignationFields(name="Retained", shortName="EX", level=1, status="active"))
+        row = designations.create(db, actor, DesignationFields(name="Retained", shortName="EX", status="active"))
         for sql in ("UPDATE designations SET version=0", "UPDATE designations SET status='unknown'",
-                    "UPDATE designations SET level=0",
-                    'UPDATE designations SET "basicDa"=-1',
                     "UPDATE designations SET name=' '", "UPDATE designations SET deleted_at=now()"):
             with pytest.raises(IntegrityError):
                 with db.begin_nested():
@@ -65,7 +63,7 @@ def test_concurrent_duplicates_and_stale_mutations(migration_db):
             actor = identity(db, actor_id, session_id)
             barrier.wait(timeout=10)
             try:
-                return designations.create(db, actor, DesignationFields(name=("City Dispatch" if index else " city   DISPATCH "), shortName="EX", level=1, status="inactive"))
+                return designations.create(db, actor, DesignationFields(name=("City Dispatch" if index else " city   DISPATCH "), shortName="EX", status="inactive"))
             except designations.DesignationError as exc:
                 return exc.code
     with ThreadPoolExecutor(max_workers=2) as pool:
@@ -91,7 +89,7 @@ def test_concurrent_duplicates_and_stale_mutations(migration_db):
 def test_constraint_conflict_rolls_back_batch_and_audit(migration_db, monkeypatch):
     engine, _, actor_id, session_id = prepare(migration_db)
     original = designations.insert
-    data = (",".join(designation_transfer.HEADERS[:10]) + "\nFirst,F,1,active,0,0,0,0,0,0\nSecond,S,2,inactive,0,0,0,0,0,0").encode()
+    data = (",".join(designation_transfer.LEGACY_HEADERS[:10]) + "\nFirst,F,1,active,0,0,0,0,0,0\nSecond,S,2,inactive,0,0,0,0,0,0").encode()
     with Session(engine, expire_on_commit=False) as db:
         actor = identity(db, actor_id, session_id)
         report = designation_transfer.transfer(db, actor, data, "designations.csv")
@@ -99,7 +97,7 @@ def test_constraint_conflict_rolls_back_batch_and_audit(migration_db, monkeypatc
         def conflict(db, actor, body):
             nonlocal calls
             calls += 1
-            return original(db, actor, body if calls == 1 else DesignationFields(name=" first ", shortName="EX", level=1, status="active"))
+            return original(db, actor, body if calls == 1 else DesignationFields(name=" first ", shortName="EX", status="active"))
         monkeypatch.setattr(designations, "insert", conflict)
         with pytest.raises(designations.DesignationError, match="already uses"):
             designation_transfer.transfer(db, actor, data, "designations.csv", True, report["digest"])
@@ -110,7 +108,7 @@ def test_constraint_conflict_rolls_back_batch_and_audit(migration_db, monkeypatc
 
 def test_concurrent_imports_are_atomic(migration_db):
     engine, _, actor_id, session_id = prepare(migration_db)
-    data = (",".join(designation_transfer.HEADERS[:10]) + "\nRace one,EX,1,active,0,0,0,0,0,0\nRace two,EX,1,inactive,0,0,0,0,0,0").encode()
+    data = (",".join(designation_transfer.LEGACY_HEADERS[:10]) + "\nRace one,EX,1,active,0,0,0,0,0,0\nRace two,EX,1,inactive,0,0,0,0,0,0").encode()
     barrier = Barrier(2)
     def run(_):
         with Session(engine, expire_on_commit=False) as db:

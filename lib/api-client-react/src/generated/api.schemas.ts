@@ -425,30 +425,19 @@ export const DesignationEditStatus = {
 } as const;
 
 export interface DesignationEdit {
-  basicDa?: number | string;
   /** @minimum 1 */
   expected_version: number;
-  hra?: number | string;
-  /**
-   * @minimum 1
-   * @maximum 2147483647
-   */
-  level: number;
-  medicalAllowance?: number | string;
   /**
    * @minLength 1
    * @maxLength 200
    */
   name: string;
-  professionalTax?: number | string;
   /**
    * @minLength 1
    * @maxLength 50
    */
   shortName: string;
-  specialAllowance?: number | string;
   status: DesignationEditStatus;
-  travellingAllowance?: number | string;
 }
 
 export type DesignationFieldsStatus =
@@ -460,28 +449,17 @@ export const DesignationFieldsStatus = {
 } as const;
 
 export interface DesignationFields {
-  basicDa?: number | string;
-  hra?: number | string;
-  /**
-   * @minimum 1
-   * @maximum 2147483647
-   */
-  level: number;
-  medicalAllowance?: number | string;
   /**
    * @minLength 1
    * @maxLength 200
    */
   name: string;
-  professionalTax?: number | string;
   /**
    * @minLength 1
    * @maxLength 50
    */
   shortName: string;
-  specialAllowance?: number | string;
   status: DesignationFieldsStatus;
-  travellingAllowance?: number | string;
 }
 
 export interface DesignationImportResult {
@@ -505,37 +483,20 @@ export const DesignationResponseStatus = {
 } as const;
 
 export interface DesignationResponse {
-  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
-  basicDa?: string;
   createdAt: string;
   createdBy: string;
-  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
-  hra?: string;
   id: string;
-  /**
-   * @minimum 1
-   * @maximum 2147483647
-   */
-  level: number;
-  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
-  medicalAllowance?: string;
   /**
    * @minLength 1
    * @maxLength 200
    */
   name: string;
-  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
-  professionalTax?: string;
   /**
    * @minLength 1
    * @maxLength 50
    */
   shortName: string;
-  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
-  specialAllowance?: string;
   status: DesignationResponseStatus;
-  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
-  travellingAllowance?: string;
   updatedAt: string;
   updatedBy: string;
   version: number;

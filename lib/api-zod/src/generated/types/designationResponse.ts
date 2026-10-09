@@ -8,37 +8,20 @@
 import type { DesignationResponseStatus } from "./designationResponseStatus";
 
 export interface DesignationResponse {
-  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
-  basicDa?: string;
   createdAt: Date;
   createdBy: string;
-  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
-  hra?: string;
   id: string;
-  /**
-   * @minimum 1
-   * @maximum 2147483647
-   */
-  level: number;
-  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
-  medicalAllowance?: string;
   /**
    * @minLength 1
    * @maxLength 200
    */
   name: string;
-  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
-  professionalTax?: string;
   /**
    * @minLength 1
    * @maxLength 50
    */
   shortName: string;
-  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
-  specialAllowance?: string;
   status: DesignationResponseStatus;
-  /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,9}|(?=[\d.]{1,12}0*$)\d{0,9}\.\d{0,2}0*$) */
-  travellingAllowance?: string;
   updatedAt: Date;
   updatedBy: string;
   version: number;

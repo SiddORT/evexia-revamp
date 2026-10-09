@@ -3,7 +3,6 @@ import csv
 import hashlib
 import hmac
 import io
-import re
 
 from openpyxl import Workbook
 from pydantic import ValidationError
@@ -20,9 +19,10 @@ from app.services.zones import ZoneError
 MAX_BYTES = 2 * 1024 * 1024
 MAX_ROWS = 1000
 EXPORT_LIMIT = 5000
-HEADERS = ["Designation Name", "Short Name", "Level", "Status", "Basic + DA (%)", "HRA (%)",
+LEGACY_HEADERS = ["Designation Name", "Short Name", "Level", "Status", "Basic + DA (%)", "HRA (%)",
            "Medical Allowance (%)", "Travelling Allowance (%)", "Special Allowance (%)",
            "professional tax (Rs)", "Created By", "Created At", "Updated By", "Updated At"]
+HEADERS = ["Designation Name", "Short Name", "Status", *LEGACY_HEADERS[10:]]
 
 
 def invalid(message):
@@ -48,27 +48,27 @@ def parse(data, filename):
             invalid(exc.message)
     else:
         invalid("Only UTF-8 .csv and genuine .xlsx are supported. No .xls or macro-enabled files.")
-    if not rows or rows[0] not in (HEADERS[:10], HEADERS):
-        invalid("Use the exact ten business columns or the current fourteen-column audit export schema.")
+    if not rows or rows[0] not in (HEADERS[:3], HEADERS, LEGACY_HEADERS[:10], LEGACY_HEADERS):
+        invalid("Use the exact three/seven-column current schema or ten/fourteen-column legacy schema, in order.")
     width = len(rows[0])
+    legacy = rows[0] in (LEGACY_HEADERS[:10], LEGACY_HEADERS)
+    positions = (0, 1, 3) if legacy else (0, 1, 2)
     reviewed = []
     for number, cells in enumerate(rows[1:], 2):
         errors = [] if len(cells) == width else ["Row must match the header column count."]
-        values = dict(zip(BUSINESS_FIELDS, (cells + [""] * 10)[:10]))
+        padded = cells + [""] * width
+        values = dict(zip(BUSINESS_FIELDS, (padded[index] for index in positions)))
         for field in ("name", "shortName"):
             value = values[field].strip()
-            if width == 14 and value.startswith("'") and (value[1:].startswith("'") or UNSAFE.match(value[1:])):
+            if width in (7, 14) and value.startswith("'") and (value[1:].startswith("'") or UNSAFE.match(value[1:])):
                 value = value[1:]
             values[field] = value
         values["status"] = values["status"].strip().lower()
-        # No integer truncation or exponent coercion; Excel numeric whole cells are accepted.
-        if re.fullmatch(r"[0-9]+(?:\.0+)?", str(values["level"])):
-            values["level"] = int(str(values["level"]).split(".")[0])
         try:
             fields = DesignationFields(**values)
             values = fields.model_dump(mode="json")
         except ValidationError:
-            errors.append("Name 1–200, short name 1–50, level 1–2147483647, Active/Inactive; amounts 0–999999999.99 with at most two decimals.")
+            errors.append("Name 1–200, short name 1–50; status Active/Inactive.")
         reviewed.append(dict(row=number, values=values, errors=errors))
     if not reviewed:
         invalid("At least one record is required.")
@@ -138,7 +138,7 @@ def encode(rows, format):
 
 
 def sample(format):
-    return encode([HEADERS[:10], ["Example designation", "EX", "1", "active", "0", "0", "0", "0", "0", "0"]], format)
+    return encode([HEADERS[:3], ["Example designation", "EX", "active"]], format)
 
 
 def export(db, actor, query, status, format):
@@ -147,7 +147,7 @@ def export(db, actor, query, status, format):
         records = list(db.scalars(select(Designation).where(*designations.predicates(query, status))
                                   .order_by(Designation.created_at.desc(), Designation.id.desc()).limit(EXPORT_LIMIT + 1)))
         if len(records) > EXPORT_LIMIT:
-            raise designations.DesignationError("Export exceeds 5,000 matching records. Narrow name/short name/level/status filters.", 422, "designation_export_limit")
+            raise designations.DesignationError("Export exceeds 5,000 matching records. Narrow name/short name/status filters.", 422, "designation_export_limit")
         rows = [HEADERS]
         for row in records:
             record = designations.projection(db, row)

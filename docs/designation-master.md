@@ -9,28 +9,36 @@ payroll calculation, automatic local import or sample seed is introduced.
 
 ## Operator rollout (approval required)
 
-Migration `0016_designations` follows the actual `0015_zone_permissions` head.
-It creates only an empty `designations` table, constraints and the partial
-normalized-name unique index. Existing users, sessions, staff labels, other
-masters and browser-local data are unchanged. ORM metadata and readiness now
-require this schema; startup never creates tables or runs migrations.
+Historical migration `0016_designations` created the empty catalogue.
+Forward migration `0026_designation_target` follows `0025_vendor_phone` (the
+accepted master-form cleanup ancestry). It permanently drops `level`, `basicDa`,
+`hra`, `medicalAllowance`, `travellingAllowance`, `specialAllowance` and
+`professionalTax` and their dependent checks, and adds the stored generated
+Sales Target annual sum. It preserves all retained rows, indexes, audit/history,
+Staff/MR labels and permissions. Startup never creates tables or runs migrations.
 
 Before approval, pause writes, take and verify a complete database/audit backup,
 record the current migration head, review runtime privileges and rehearse the
 forward migration and recovery on an isolated restored copy. Apply the existing
 explicit migration/bootstrap procedure in the backend README only after operator
-approval. Roll out API and frontend together; verify liveness and readiness
+approval. Column removal permanently discards the seven values, including
+inactive/deleted history. Back up those values before upgrading. Stop writes
+and roll out the migrated database, API and frontend together; old API nodes
+must not serve the reduced schema and new nodes require `annual_target`.
+Verify liveness and readiness
 separately, then log in with the already-provisioned protected account.
 
 This implementation **does not apply migrations to any managed/shared database,
 deploy, bootstrap real accounts or change real data**. A managed readiness 503
 until approved migration, or a missing protected account, is a **BLOCKED live
-preview prerequisite**, not a failed isolated fixture. Downgrade refuses a
-populated designation table (including tombstones). Use a reviewed forward fix or
+preview prerequisite**, not a failed isolated fixture. This migration's downgrade
+refuses any populated designation table (including tombstones) before any DDL.
+Only an empty catalogue can regain the historical columns, without defaults or
+invented values; downgrade cannot restore discarded values. Use a reviewed forward fix or
 verified coordinated restore, not a destructive downgrade. Retain backups and
 audit evidence pending operator-approved retention.
 
-## Fields and exact decimal policy
+## Current business fields
 
 - Name: required, 1–200 characters; short name: required, 1–50 characters.
   Both are trimmed and whitespace-collapsed; unsupported control/surrogate
@@ -40,16 +48,9 @@ audit evidence pending operator-approved retention.
   All non-deleted rows, including inactive rows, reserve their name.
   Deleted names can be reused by a new row without changing historical evidence.
   There is deliberately **no unique short-name rule**.
-- Level: strict positive integer, 1–2147483647. JSON callers send an integer,
-  not a string, fractional number or boolean; CSV/XLSX whole-number cells are parsed.
 - Status: `active` or `inactive`; transfer status is case-insensitive.
-- Basic + DA, HRA, Medical, Travelling and Special allowance percentages and
-  professional tax: non-negative finite `NUMERIC(11,2)`, **0–999999999.99**,
-  at most two meaningful decimal places. Blank optional inputs become zero.
-  Excess precision/range is rejected before database rounding. There is no 100%
-  cap, sum constraint or payroll inference. The form sends exact decimal strings;
-  JSON responses serialize decimals as strings. CSV/XLSX exports use exact text,
-  never binary floating-point arithmetic.
+- The seven retired fields are forbidden live create/edit inputs and are absent
+  from responses, forms, listings, search, validation and new downloads.
 
 ## HTTP contract
 
@@ -58,18 +59,18 @@ Bearer-authenticated, no-store endpoints under `/api/v1/admin/designations`:
 | Method / suffix | Purpose |
 | --- | --- |
 | GET (empty) | Server search/status/counts/pagination |
-| POST (empty) | Create ten business fields |
+| POST (empty) | Create name, short name, status |
 | GET `/{designation_id}` | Non-deleted detail |
 | POST `/{designation_id}/edit` | Business fields plus `expected_version` |
 | POST `/{designation_id}/status` | `status`, `expected_version` |
 | POST `/{designation_id}/delete` | Soft-delete with `expected_version` |
-| GET `/sample?format=csv\|xlsx` | Exact legacy-schema sample download |
+| GET `/sample?format=csv\|xlsx` | Exact reduced three-column sample download |
 | POST `/import/review?filename=...` | Inert row review, errors, totals, signed digest |
 | POST `/import/commit?filename=...&digest=...&confirm=true` | Identical bytes, explicit atomic create-only confirmation |
 | GET `/export?query=...&status=...&format=csv\|xlsx` | Every matching non-deleted record |
 
 Search `query` is at most 200 characters, literal case-insensitive substring
-matching across name, short name and decimal-rendered whole level. Status is
+matching across name and short name. Status is
 `all|active|inactive`. Filters precede pagination; limit 1–100, offset 0–1000000.
 `total` counts all non-deleted rows; `filtered` counts matches. Ordering is
 newest-created then UUID descending, stable within each request but not a frozen
@@ -89,14 +90,22 @@ clear 409s. No restore/trash/hard-delete endpoint exists.
 
 ## Exactly supported transfer schemas
 
+Current samples use exactly `Designation Name,Short Name,Status`.
+Current exports append `Created By,Created At,Updated By,Updated At` (seven columns).
+Both formats accept the exact three/seven-column current and ten/fourteen-column
+legacy schemas. Unknown or reordered headers are rejected.
+
 The exact ten-column legacy schema, including spelling/case/order, is:
 
 ```csv
 Designation Name,Short Name,Level,Status,Basic + DA (%),HRA (%),Medical Allowance (%),Travelling Allowance (%),Special Allowance (%),professional tax (Rs)
 ```
 
-Current CSV/XLSX exports append exactly these four columns:
+Legacy fourteen-column audit exports append exactly these four columns:
 `Created By,Created At,Updated By,Updated At`. Times are UTC ISO strings.
+Retained legacy fields are selected by their known header positions, not zipped
+against the reduced contract. The seven retired values are ignored, not validated
+or persisted (workbook formula/security checks still apply).
 Incoming audit cells are ignored; new rows receive the authenticated importer's
 current server attribution. Historical audit restoration is never claimed.
 Arbitrary `id`, identity, version, deletion or other columns are rejected.
@@ -122,10 +131,11 @@ current duplicate checks, including duplicates within the batch; all valid rows
 and their audit events commit together, or none do. There are no upserts or
 partial imports. A new login/file/format requires a new review.
 
-Current fourteen-column exports escape formula-like name/short-name text
+Current seven-column exports escape formula-like name/short-name text
 (`=`, `+`, `-`, `@`, including leading whitespace/control characters) with an
 apostrophe and double literal leading apostrophes. Current-schema imports undo
-exactly that portable escaping. Legacy ten-column files use literal text.
+exactly that portable escaping, as do legacy fourteen-column audit files.
+Three-column samples and legacy ten-column files use literal text.
 XLSX export cells are strings. Filename/MIME are server-owned:
 `evexia-designation-master.csv|xlsx` and `evexia-designation-template.csv|xlsx`.
 CSV is `text/csv; charset=utf-8`; XLSX uses the standard OpenXML spreadsheet MIME.
@@ -160,7 +170,7 @@ catalogue foreign key, migration, staff rewrite, payroll or authorization effect
 
 `pnpm run test:api-foundation` includes designation API/parser/lifecycle,
 migration-preservation, independent-connection stale/uniqueness/import races,
-authorization/forgery, exact decimal persistence, atomic rollback and transfer
+authorization/forgery, retired-input rejection, atomic rollback and transfer
 compatibility. `pnpm run validate:release` includes its protected transport/form
 validation and authenticated desktop/mobile/transfer/draft/staff-choice specs
 in the existing temporary PostgreSQL/API/Vite harness. Fixtures never use

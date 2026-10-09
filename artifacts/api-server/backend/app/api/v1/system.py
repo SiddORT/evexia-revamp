@@ -54,8 +54,7 @@ def readiness(db: Session = Depends(get_db)):
             "created_at, updated_at, deleted_at, deleted_by FROM storage_locations LIMIT 0"
         ))
         db.execute(text(
-            'SELECT id, name, "shortName", level, status, "basicDa", hra, "medicalAllowance", '
-            '"travellingAllowance", "specialAllowance", "professionalTax", version, created_by, updated_by, '
+            'SELECT id, name, "shortName", status, version, created_by, updated_by, '
             'created_at, updated_at, deleted_at, deleted_by FROM designations LIMIT 0'
         ))
         db.execute(text(
@@ -69,7 +68,7 @@ def readiness(db: Session = Depends(get_db)):
         ))
         db.execute(text("SELECT identifier, user_id FROM account_identifier_reservations LIMIT 0"))
         db.execute(text(
-            'SELECT id, "mrId", "startYear", "endYear", q1, q2, q3, q4, status, version, '
+            'SELECT id, "mrId", "startYear", "endYear", q1, q2, q3, q4, annual_target, status, version, '
             'created_by, updated_by, deleted_at, deleted_by FROM sales_targets LIMIT 0'
         ))
         db.execute(text(

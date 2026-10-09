@@ -171,7 +171,7 @@ def create_app() -> FastAPI:
                        "code": field["code"]} for field in fields]
         if request.url.path.startswith(("/api/v1/admin/zones", "/api/v1/admin/courier-partners", "/api/v1/admin/storage-locations", "/api/v1/admin/designations", "/api/v1/admin/headquarters", "/api/v1/admin/product-categories", "/api/v1/admin/vendors", "/api/v1/admin/opening-balances")):
             allowed = {"name", "address", "status", "expected_version", "query", "limit", "offset", "format", "filename", "digest", "confirm", "zone_id", "courier_id", "location_id"}
-            allowed |= {"shortName", "level", "basicDa", "hra", "medicalAllowance", "travellingAllowance", "specialAllowance", "professionalTax", "designation_id"}
+            allowed |= {"shortName", "designation_id"}
             allowed |= {"state_code", "headquarter_id"}
             allowed |= {"description", "unit_price", "min_price", "max_price", "product_category_id"}
             allowed |= {"vendorName", "gstNo", "registeredAddress", "contactPersonName", "emailId", "phoneNo", "dialCountry", "vendor_id"}

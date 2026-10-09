@@ -5,6 +5,7 @@ const base = () => process.env.EVEXIA_PREVIEW_BASE_URL;
 const key = 'evexia.admin.designations.v1';
 const legacy = '[{"id":"local-only","name":"Untouched browser designation"}]';
 const headers = 'Designation Name,Short Name,Level,Status,Basic + DA (%),HRA (%),Medical Allowance (%),Travelling Allowance (%),Special Allowance (%),professional tax (Rs)';
+const currentHeaders = 'Designation Name,Short Name,Status';
 async function open(page) {
   await page.goto(`${base()}/admin/login`);
   await page.getByLabel('Email or username').fill('crm-admin@allergyevexia.in');
@@ -19,9 +20,9 @@ async function create(page, name) {
   await page.getByTestId('button-add-designation').click();
   await page.getByTestId('input-designation-name').fill(name);
   await page.getByTestId('input-designation-shortName').fill('SYN');
-  await page.getByTestId('input-designation-level').fill('12');
-  await page.getByTestId('input-designation-basicDa').fill('123.45');
-  await page.getByTestId('input-designation-professionalTax').fill('200.10');
+  for (const field of ['level', 'basicDa', 'hra', 'medicalAllowance', 'travellingAllowance', 'specialAllowance', 'professionalTax']) {
+    await expect(page.getByTestId(`input-designation-${field}`)).toHaveCount(0);
+  }
   await page.getByTestId('select-designation-status').selectOption('active');
   const response = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/v1/admin/designations' && r.request().method() === 'POST');
   await page.getByTestId('button-save-designation').click();
@@ -30,7 +31,7 @@ async function create(page, name) {
   return row;
 }
 for (const mobile of [false, true]) {
-  test(`designation ${mobile ? 'mobile' : 'desktop'} persistence, decimal draft, conflicts and soft delete`, async ({ page }) => {
+  test(`designation ${mobile ? 'mobile' : 'desktop'} persistence, retained draft, conflicts and soft delete`, async ({ page }) => {
     if (mobile) await page.setViewportSize({ width: 390, height: 844 });
     await open(page);
     await expect(page.getByText('Untouched browser designation', { exact: true })).toHaveCount(0);
@@ -50,20 +51,20 @@ for (const mobile of [false, true]) {
     await expect(page.getByTestId(`text-designation-name-${row.id}`)).toBeVisible();
     await page.evaluate(({ key, legacy }) => localStorage.setItem(key, legacy), { key, legacy });
     await page.getByTestId(`button-edit-designation-${row.id}`).click();
-    await expect(page.getByTestId('input-designation-basicDa')).toHaveValue('123.45');
+    await expect(page.getByTestId('input-designation-shortName')).toHaveValue('SYN');
     await page.getByTestId('input-designation-name').fill(row.name + ' edited');
-    await page.getByTestId('input-designation-basicDa').fill('234.56');
+    await page.getByTestId('input-designation-shortName').fill('EDITED');
     await page.evaluate(async (row) => {
       const { editDesignation } = await import('/src/services/serverDesignations.js');
-      const { name, shortName, level, status, basicDa, hra, medicalAllowance, travellingAllowance, specialAllowance, professionalTax } = row;
-      await editDesignation(row, { name: name + ' concurrent', shortName, level, status, basicDa, hra, medicalAllowance, travellingAllowance, specialAllowance, professionalTax });
+      const { name, shortName, status } = row;
+      await editDesignation(row, { name: name + ' concurrent', shortName, status });
     }, row);
     await page.getByTestId('button-save-designation').click();
     await expect(page.getByRole('alert')).toContainText('changed');
     await expect(page.getByTestId('button-save-designation')).toBeDisabled();
     await page.getByTestId('button-refresh-designation-error').click();
     await expect(page.getByRole('alert')).toContainText('concurrent');
-    await expect(page.getByTestId('input-designation-basicDa')).toHaveValue('234.56');
+    await expect(page.getByTestId('input-designation-shortName')).toHaveValue('EDITED');
     await page.getByTestId('button-save-designation').click();
     await expect(page.getByTestId(`text-designation-name-${row.id}`)).toHaveText(row.name + ' edited');
     await page.getByTestId(`button-toggle-designation-${row.id}`).click();
@@ -95,7 +96,7 @@ test('designation review, exact CSV/XLSX bytes, download ledger and uncertain co
     const file = await download;
     const bytes = await readFile(await file.path());
     expect(file.suggestedFilename()).toBe(`evexia-designation-template.${format === 'CSV' ? 'csv' : 'xlsx'}`);
-    if (format === 'CSV') expect(bytes.toString('utf8')).toContain(headers);
+    if (format === 'CSV') expect(bytes.toString('utf8')).toContain(currentHeaders);
     else expect(bytes.subarray(0, 2).toString()).toBe('PK');
   }
   await page.getByTestId('input-designation-import').setInputFiles({ name: 'designation.csv', mimeType: 'text/csv',
@@ -113,14 +114,14 @@ test('designation review, exact CSV/XLSX bytes, download ledger and uncertain co
     await page.getByRole('menuitem', { name: format, exact: true }).click();
     const file = await download;
     const bytes = await readFile(await file.path());
-    if (format === 'CSV') expect(bytes.toString('utf8')).toContain(`${headers},Created By,Created At,Updated By,Updated At`);
+    if (format === 'CSV') expect(bytes.toString('utf8')).toContain(`${currentHeaders},Created By,Created At,Updated By,Updated At`);
     else expect(bytes.subarray(0, 2).toString()).toBe('PK');
   }
   const after = await page.evaluate(async () => (await (await import('/src/auth/adminSession.js')).reportingRequest('downloads')).total);
   expect(after).toBe(before + 4);
   await page.getByTestId('button-import-designations').click();
   await page.getByTestId('input-designation-import').setInputFiles({ name: 'uncertain.csv', mimeType: 'text/csv',
-    buffer: Buffer.from(`${headers}\nSynthetic uncertain import,UNC,4,active,0,0,0,0,0,0`) });
+    buffer: Buffer.from(`${currentHeaders}\nSynthetic uncertain import,UNC,active`) });
   await page.getByRole('button', { name: 'Upload & review', exact: true }).click();
   await expect(page.getByTestId('button-confirm-designation-import')).toBeEnabled();
   await page.route('**/api/v1/admin/designations/import/commit?*', (route) => route.abort());
@@ -135,7 +136,6 @@ test('designation drafts survive renewal; ambiguous create requires reconciliati
   await page.getByTestId('button-add-designation').click();
   await page.getByTestId('input-designation-name').fill('Unsaved synthetic draft');
   await page.getByTestId('input-designation-shortName').fill('DRAFT');
-  await page.getByTestId('input-designation-level').fill('1');
   await page.getByTestId('select-designation-status').selectOption('active');
   await page.evaluate(() => { window.draftNode = document.getElementById('designation-name'); });
   await page.evaluate(async () => (await import('/src/auth/adminSession.js')).verifySession(true));

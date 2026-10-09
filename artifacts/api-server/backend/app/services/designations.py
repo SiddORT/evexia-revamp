@@ -1,4 +1,4 @@
-from sqlalchemy import String, cast, func, select, or_
+from sqlalchemy import func, select, or_
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.core.security import utcnow
 from app.db.models import AuditEvent
@@ -50,8 +50,7 @@ def predicates(query="", status="all"):
     if term:
         term = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         result.append(or_(Designation.name.ilike("%" + term + "%", escape="\\"),
-                          Designation.shortName.ilike("%" + term + "%", escape="\\"),
-                          cast(Designation.level, String).ilike("%" + term + "%", escape="\\")))
+                          Designation.shortName.ilike("%" + term + "%", escape="\\")))
     if status != "all":
         result.append(Designation.status == status)
     return result

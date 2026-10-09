@@ -81,7 +81,7 @@ def projection(db, row, related=None):
     fields = {field: getattr(row, field) for field in BUSINESS_FIELDS}
     fields.update({key: format(getattr(row, key), ".2f") for key in QUARTERS})
     return dict(id=row.id, **fields, version=row.version, **related,
-                annualTotal=format(sum(getattr(row, key) for key in QUARTERS), ".2f"),
+                annualTotal=format(row.annual_target, ".2f"),
                 createdAt=row.created_at, updatedAt=row.updated_at)
 
 

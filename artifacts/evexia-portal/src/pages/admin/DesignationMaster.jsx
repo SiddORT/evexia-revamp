@@ -95,7 +95,6 @@ export default function DesignationMaster() {
     { key: 'serial', label: 'Sr No', render: (_record, index) => <span className="admin-table__serial">{index + 1}</span> },
     { key: 'name', label: 'Designation name', render: (record) => <span className="admin-table__name" data-testid={`text-designation-name-${record.id}`}>{record.name}</span> },
     { key: 'shortName', label: 'Short Name', render: (record) => record.shortName },
-    { key: 'level', label: 'Level', render: (record) => record.level },
     { key: 'status', label: 'Status', render: (record) => <StatusBadge status={record.status} id={record.id} /> },
     { key: 'created', label: 'Created details', render: (record) => details(record.createdBy, record.createdAt) },
     { key: 'updated', label: 'Updated details', render: (record) => details(record.updatedBy, record.updatedAt) },
@@ -126,14 +125,14 @@ export default function DesignationMaster() {
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-designation-action-error">{actionError}</div>}
     <section className="admin-panel" aria-label="Designation list">
       <div className="admin-toolbar"><button className="admin-button admin-button--secondary" disabled={loading} onClick={retry}>Refresh records</button><div className="admin-toolbar__fields">
-        <label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search designations by name, short name or level</span><input maxLength={200} value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Search designation, short name or level" data-testid="input-search-designations" /></label>
+        <label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search designations by name or short name</span><input maxLength={200} value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Search designation or short name" data-testid="input-search-designations" /></label>
         <div className="admin-filter"><label htmlFor="designation-filter">Status</label><select id="designation-filter" className="admin-select" value={filter} onChange={(event) => { setFilter(event.target.value); pagination.resetPage(); }} data-testid="select-filter-designations"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
       </div></div>
       {loading ? <p className="admin-empty" role="status">Loading shared designations…</p> : error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><BriefcaseBusiness size={21} /></span><strong>Designations could not be loaded</strong><p>{error}</p><button className="admin-button" style={{ marginTop: 16 }} type="button" onClick={retry} data-testid="button-retry-designations">Try again</button></div> : <>
         {records.length ? (cardView ? <div className="admin-zone-cards" role="list" aria-label="Designation records">
           {pagination.pageRows.map((record, index) => <article className="admin-zone-card" role="listitem" key={record.id} data-testid={`card-designation-${record.id}`}>
             <div className="admin-zone-card__heading"><div className="admin-zone-card__title"><span className="admin-zone-card__serial">#{pagination.startIndex + index + 1}</span><h2 data-testid={`text-designation-name-${record.id}`}>{record.name}</h2></div><StatusBadge status={record.status} id={record.id} /></div>
-            <p>{record.shortName} · Level {record.level}</p><dl className="admin-zone-card__meta"><div><dt>Created details</dt><dd>{details(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated details</dt><dd>{details(record.updatedBy, record.updatedAt)}</dd></div></dl>
+            <p>{record.shortName}</p><dl className="admin-zone-card__meta"><div><dt>Created details</dt><dd>{details(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated details</dt><dd>{details(record.updatedBy, record.updatedAt)}</dd></div></dl>
             {actions(record, true)}
           </article>)}
         </div> : <DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} />) : <div className="admin-empty" data-testid="status-designations-empty"><span className="admin-empty__icon"><BriefcaseBusiness size={21} aria-hidden="true" /></span><strong>{total ? 'No matching designations' : 'No designations yet'}</strong><p>{total ? 'Try a different name or status filter.' : 'Add your first designation to get started.'}</p></div>}

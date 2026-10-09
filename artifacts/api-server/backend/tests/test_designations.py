@@ -18,9 +18,8 @@ from test_reporting import admin_headers
 from test_zones import workbook, replace_zip
 
 BASE = "/api/v1/admin/designations"
-FIELDS = dict(name="Executive", shortName="EX", level=1, status="active", basicDa="100.01",
-              hra="20.20", medicalAllowance="0", travellingAllowance="0", specialAllowance="0", professionalTax="200.10")
-HEADER = ",".join(designation_transfer.HEADERS[:10]) + "\n"
+FIELDS = dict(name="Executive", shortName="EX", status="active")
+HEADER = ",".join(designation_transfer.LEGACY_HEADERS[:10]) + "\n"
 
 
 def add(api, headers, **changes):
@@ -43,16 +42,16 @@ def test_lifecycle_filters_pagination_and_tombstone(client):
     api, db, _ = client
     headers, actor = admin_headers(api, db)
     assert api.get(BASE, headers=headers).json()["total"] == 0
-    row = add(api, headers, name="  City \t Executive  ", basicDa="123.45", hra="")
-    assert row["name"] == "City Executive" and row["basicDa"] == "123.45" and Decimal(row["hra"]) == 0
+    row = add(api, headers, name="  City \t Executive  ")
+    assert row["name"] == "City Executive" and "basicDa" not in row and "level" not in row
     assert row["createdBy"] == row["updatedBy"] == "Super Admin"
     assert row["createdAt"] == row["updatedAt"]
     assert api.post(BASE, headers=headers, json={**FIELDS, "name": "CITY   executive"}).status_code == 409
     edited = api.post(f"{BASE}/{row['id']}/edit", headers=headers,
-                     json={**FIELDS, "name": "Revised", "level": 12, "expected_version": 1}).json()
+                     json={**FIELDS, "name": "Revised", "expected_version": 1}).json()
     assert edited["createdAt"] == row["createdAt"] and edited["version"] == 2
     assert edited["updatedAt"] > row["updatedAt"]
-    for query in ("revised", "EX", "12"):
+    for query in ("revised", "EX"):
         assert api.get(BASE, headers=headers, params={"query": query}).json()["filtered"] == 1
     assert api.get(BASE, headers=headers, params={"query": "%"}).json()["filtered"] == 0
     assert api.post(f"{BASE}/{row['id']}/status", headers=headers,
@@ -74,7 +73,7 @@ def test_lifecycle_filters_pagination_and_tombstone(client):
     db.expire_all()
     stored = db.get(Designation, uuid.UUID(row["id"]))
     assert stored.deleted_by == stored.updated_by == stored.created_by == actor.id
-    assert stored.deleted_at == stored.updated_at and stored.basicDa == Decimal("100.01")
+    assert stored.deleted_at == stored.updated_at and stored.shortName == "EX"
     deleted = stored.deleted_at
     assert api.post(f"{BASE}/{row['id']}/delete", headers=headers, json={"expected_version": 5}).status_code == 404
     assert api.get(f"{BASE}/{row['id']}", headers=headers).status_code == 404
@@ -102,9 +101,16 @@ def test_validation_forgery_authorization_and_service_boundaries(client):
                     {"basicDa": "-1"}, {"hra": "NaN"}, {"professionalTax": "Infinity"}, {"basicDa": True},
                     {"medicalAllowance": "0.001"}, {"travellingAllowance": "1000000000"}, {"name": "Nul\0name"}):
         assert api.post(BASE, headers=headers, json={**FIELDS, **changes}).status_code == 422
-    # No arbitrary 100% cap, total rule or short-name uniqueness.
-    add(api, headers, basicDa="999999999.99")
-    add(api, headers, name="Second", basicDa="101", specialAllowance="202")
+    # All retired inputs are forbidden, including formerly valid values.
+    for field in ("level", "basicDa", "hra", "medicalAllowance", "travellingAllowance", "specialAllowance", "professionalTax"):
+        response = api.post(BASE, headers=headers, json={**FIELDS, field: 1})
+        assert response.status_code == 422
+        assert response.json()["error"]["fields"][0]["field"] == "body"
+    saved = add(api, headers)
+    for field in ("level", "basicDa", "hra", "medicalAllowance", "travellingAllowance", "specialAllowance", "professionalTax"):
+        assert api.post(f"{BASE}/{saved['id']}/edit", headers=headers,
+                        json={**FIELDS, "expected_version": 1, field: 1}).status_code == 422
+    add(api, headers, name="Second")
     from app.services.auth import identity_from_token
     identity = identity_from_token(db, mr_headers["Authorization"][7:], settings)
     for work in (lambda: designations.create(db, identity, DesignationFields(**FIELDS)),
@@ -118,7 +124,7 @@ def test_validation_forgery_authorization_and_service_boundaries(client):
 def test_atomic_review_identity_and_compatible_exports(client):
     api, db, settings = client
     headers, actor = admin_headers(api, db)
-    data = (",".join(designation_transfer.HEADERS) + "\nFirst,F,1,Active,0.10,0.20,0,0,0,0,Forged,1900,Forged,1900\nSecond,S,2,Inactive,0,0,0,0,0,0,Forged,1900,Forged,1900").encode("utf-8-sig")
+    data = (",".join(designation_transfer.LEGACY_HEADERS) + "\nFirst,F,1,Active,0.10,0.20,0,0,0,0,Forged,1900,Forged,1900\nSecond,S,2,Inactive,0,0,0,0,0,0,Forged,1900,Forged,1900").encode("utf-8-sig")
     report = review(api, headers, data).json()
     assert report["valid"] and report["validCount"] == 2 and report["invalidCount"] == 0
     assert db.scalar(select(func.count()).select_from(Designation)) == 0
@@ -177,7 +183,7 @@ def test_formats_limits_samples_and_multipart(client, monkeypatch):
     assert review(api, headers, b"bad zip", "file.xlsx").status_code == 422
     for filename in ("file.xls", "file.xlsm", "file.zip"):
         assert review(api, headers, data, filename).status_code == 422
-    rows = [designation_transfer.HEADERS[:10], ["Formula", "F", 1, "active", "=1+1", 0, 0, 0, 0, 0]]
+    rows = [designation_transfer.LEGACY_HEADERS[:10], ["Formula", "F", 1, "active", "=1+1", 0, 0, 0, 0, 0]]
     assert review(api, headers, workbook(rows), "file.xlsx").status_code == 422
     assert review(api, headers, replace_zip(workbook([["a"]]), "xl/worksheets/sheet1.xml", lambda _: b"<!DOCTYPE r [<!ENTITY x SYSTEM 'https://example.invalid'>]><r>&x;</r>"), "file.xlsx").status_code == 422
     add(api, headers)
@@ -206,3 +212,27 @@ def test_zone_only_staff_denied_at_routes_and_commit_export_boundaries(client):
         with pytest.raises(designations.DesignationError) as failure:
             work()
         assert failure.value.status == 403
+
+
+@pytest.mark.parametrize("format", ["csv", "xlsx"])
+@pytest.mark.parametrize("headers", [
+    designation_transfer.HEADERS[:3], designation_transfer.HEADERS,
+    designation_transfer.LEGACY_HEADERS[:10], designation_transfer.LEGACY_HEADERS,
+])
+def test_exact_reduced_and_legacy_schemas_ignore_retired_fields(client, format, headers):
+    api, db, _ = client
+    auth, _ = admin_headers(api, db)
+    legacy = len(headers) in (10, 14)
+    values = ["Compatible", "CP", "active"] if not legacy else [
+        "Compatible", "CP", "not a level", "active", "NaN", "-5", "", "retired", "ignored", "Infinity"]
+    if len(headers) in (7, 14):
+        values += ["Forged", "1900", "Forged", "1900"]
+    data = designation_transfer.encode([headers, values], format)
+    report = review(api, auth, data, f"compat.{format}").json()
+    assert report["valid"] and report["rows"][0]["values"] == dict(name="Compatible", shortName="CP", status="active")
+    assert commit(api, auth, data, report["digest"], f"compat.{format}").json() == {"imported": 1}
+    export = api.get(BASE + "/export", headers=auth, params={"format": format})
+    parsed = designation_transfer.parse(export.content, f"current.{format}")
+    assert parsed[0]["values"] == dict(name="Compatible", shortName="CP", status="active")
+    for bad in (headers[::-1], [*headers, "Unknown"]):
+        assert review(api, auth, designation_transfer.encode([bad, values], format), f"bad.{format}").status_code == 422

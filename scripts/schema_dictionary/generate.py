@@ -71,7 +71,7 @@ class DDLRecorder:
         self.indexes = {}
         self.allowed = {
             "create_table", "add_column", "alter_column", "create_foreign_key",
-            "create_check_constraint", "create_index", "drop_constraint", "execute",
+            "create_check_constraint", "create_index", "drop_constraint", "drop_column", "execute",
         }
 
     def create_table(self, name, *elements, **kwargs):
@@ -82,13 +82,20 @@ class DDLRecorder:
     def add_column(self, table, column):
         self.metadata.tables[table].append_column(column)
 
+    def drop_column(self, table, column):
+        # Retired constraints must have been explicitly dropped by the migration.
+        target = self.metadata.tables[table]
+        target._columns.remove(target.c[column])
+
     def alter_column(self, table, column, **kwargs):
         col = self.metadata.tables[table].c[column]
-        supported = {"existing_type", "nullable", "server_default"}
+        supported = {"existing_type", "type_", "nullable", "server_default"}
         if set(kwargs) - supported:
             raise ValueError(f"Unreviewed alter-column arguments: {kwargs}")
         if "nullable" in kwargs:
             col.nullable = kwargs["nullable"]
+        if "type_" in kwargs:
+            col.type = kwargs["type_"]
         if "server_default" in kwargs:
             value = kwargs["server_default"]
             col.server_default = None if value is None else sa.DefaultClause(value)
@@ -164,11 +171,12 @@ def migration_metadata():
                     exec(compile(ast.Module(body=[node], type_ignores=[]), str(path), "exec"), module.__dict__)
                     continue
                 if isinstance(node, ast.For):
-                    # Only current index-creation loops are structural DDL.
+                    # Allow only explicit structural DDL loops, never data writes.
                     if all(isinstance(n, ast.Expr) and isinstance(n.value, ast.Call)
                            and isinstance(n.value.func, ast.Attribute)
                            and isinstance(n.value.func.value, ast.Name)
-                           and n.value.func.value.id == "op" and n.value.func.attr == "create_index"
+                           and n.value.func.value.id == "op"
+                           and n.value.func.attr in ("create_index", "drop_constraint", "drop_column")
                            for n in node.body):
                         exec(compile(ast.Module(body=[node], type_ignores=[]), str(path), "exec"), module.__dict__)
                         continue
@@ -235,7 +243,7 @@ def build_rows(recorder, ordered, heads, commit, source_hash, snapshot):
         ("Core identities versus directory extensions", "users stores credentials. mr_profiles and patients support ownership/authorization. mr_directory and patient_directory are optional one-to-one business extensions with shared PK/FK IDs; identity-only rows need not have directory details. doctor_directory is a business directory, not a login account."),
         ("Staff roles and permissions", "Staff contacts are ciphertext with a keyed blind email index. Business roles/designations grant no privileges by label. Workspace sign-in is explicit opt-in, and custom_roles stores allowlisted action keys for eight masters; system identity is distinct."),
         ("Files and downloads", "files contains metadata and logical object keys, not binary contents, physical paths or public links. download_grants contains digests. download_logs records initiation/issuance metadata, not proof of delivery."),
-        ("Catalogue versus financial/stock ledgers", "Product categories/allergens define catalogue prices, tax, storage choices and thresholds, not stock quantities, opening balances, purchase orders, receipts or payment ledgers. Designation amounts are settings, not payroll. Sales targets are budgets, not achieved sales; annual totals/geography are derived. opening_balances is a separate financial-year starting-position register, not payment processing, settlement or a transaction ledger."),
+        ("Catalogue versus financial/stock ledgers", "Product categories/allergens define catalogue prices, tax, storage choices and thresholds, not stock quantities, opening balances, purchase orders, receipts or payment ledgers. Designations are business labels, not payroll. Sales targets are budgets, not achieved sales; annual totals are stored database-generated sums and geography is derived. opening_balances is a separate financial-year starting-position register, not payment processing, settlement or a transaction ledger."),
         ("Opening-balance imports", "opening_balance_import_reviews stores one current, short-lived review per authenticated session, with keyed digest, actor and expiry only. It stores no file bytes; commit consumes the review. Unused expired metadata is retained until replaced, not automatically purged."),
         ("Sales-target precision", "q1–q4 use unscaled NUMERIC with explicit bounds and trunc(amount, 2) checks to reject excess precision instead of letting fixed-scale NUMERIC round it. One non-deleted target per MR/start year is enforced by a partial unique index."),
         ("Infrastructure separately documented", f"alembic_version: Alembic migration tracking table, one column version_num ({compiled(infrastructure.c.version_num.type)}), NOT NULL primary key; no default or foreign key. Excluded from application counts; infrastructure rows are explicitly marked in Tables and Columns."),

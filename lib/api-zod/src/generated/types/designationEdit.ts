@@ -8,28 +8,17 @@
 import type { DesignationEditStatus } from "./designationEditStatus";
 
 export interface DesignationEdit {
-  basicDa?: number | string;
   /** @minimum 1 */
   expected_version: number;
-  hra?: number | string;
-  /**
-   * @minimum 1
-   * @maximum 2147483647
-   */
-  level: number;
-  medicalAllowance?: number | string;
   /**
    * @minLength 1
    * @maxLength 200
    */
   name: string;
-  professionalTax?: number | string;
   /**
    * @minLength 1
    * @maxLength 50
    */
   shortName: string;
-  specialAllowance?: number | string;
   status: DesignationEditStatus;
-  travellingAllowance?: number | string;
 }

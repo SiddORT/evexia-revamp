@@ -5,7 +5,7 @@ import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import MasterImportTabs from '../../components/admin/MasterImportTabs.jsx';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
 import { reviewDesignations, importDesignations, sampleDesignations, downloadDesignationFile } from '../../services/serverDesignations.js';
-import { DESIGNATION_COLUMNS } from '../../services/designations.js';
+import { DESIGNATION_COLUMNS } from '../../services/serverDesignationValidation.js';
 import '../../excel-import.css';
 
 export default function DesignationImportPage() {
@@ -143,9 +143,9 @@ export default function DesignationImportPage() {
           <h2 id="excel-sample-title">Download sample Excel</h2>
           <p>Use the sample headers and exactly one worksheet. UTF-8 CSV and genuine .xlsx workbooks are supported.</p>
           <div className="excel-import__columns"><strong>Expected columns (exact order)</strong><span>{DESIGNATION_COLUMNS.map(([, label]) => label).join(' · ')}</span>
-            <strong>Current backup schema (CSV or Excel)</strong><span>The same ten columns, followed by Created By · Created At · Updated By · Updated At</span>
+            <strong>Current backup schema (CSV or Excel)</strong><span>The same three columns, followed by Created By · Created At · Updated By · Updated At</span>
           </div>
-          <p>Amounts default to zero, range 0–999999999.99 and support two decimal places. Level is a whole number from 1 to 2147483647.</p>
+          <p>Exact legacy ten-business/fourteen-audit column files are also accepted. Retired level and allowance/tax values and incoming audit attribution are ignored. Unknown or reordered headers are rejected.</p>
           <div className="excel-import__sample-actions">
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('csv')}>Download CSV sample</button>
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('xlsx')}><Download size={16} aria-hidden="true" /> Download Excel sample</button>
@@ -166,7 +166,7 @@ export default function DesignationImportPage() {
           <button type="button" className="admin-button" disabled={Boolean(pending) || !file || uncertain} onClick={() => run(false)}>{pending === 'review' ? 'Reviewing…' : pending === 'commit' ? 'Importing…' : 'Upload & review'}</button>
         </section>
       </div>
-      <p className="admin-page-head__description">Old ten-column browser backups remain compatible; no browser records are automatically migrated or mirrored. Staff labels remain business metadata, not authorization or payroll relationships. Exports allow 5,000 name/short name/level/status matches; files above 1,000 rows must be split before import. A new login requires fresh review.</p>
+      <p className="admin-page-head__description">Old exact ten/fourteen-column backups remain compatible; no browser records are automatically migrated or mirrored. Staff labels remain business metadata, not authorization or payroll relationships. Exports allow 5,000 name/short name/status matches; files above 1,000 rows must be split before import. A new login requires fresh review.</p>
       {error && <div className="admin-feedback admin-feedback--error" role="alert">{error}</div>}
       {uncertain && <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(pending)} onClick={() => run(false, true)}>Check current server conflicts (no writes)</button>}
       {message && <div className="admin-feedback" role="status">{message}</div>}

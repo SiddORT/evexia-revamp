@@ -3,14 +3,13 @@ import { useLocation } from 'wouter';
 import { ArrowLeft, BriefcaseBusiness, RefreshCw } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { createDesignation, editDesignation, getDesignation, listDesignations } from '../../services/serverDesignations.js';
-import { validateServerDesignation } from '../../services/serverDesignationValidation.js';
-import { DESIGNATION_COLUMNS } from '../../services/designations.js';
+import { validateServerDesignation, DESIGNATION_COLUMNS } from '../../services/serverDesignationValidation.js';
 import '../../mr.css';
 import '../../category.css';
 import '../../designation.css';
 
 const LIST_PATH = '/admin/masters/designations';
-const empty = { name: '', shortName: '', level: '', status: '', basicDa: '0', hra: '0', medicalAllowance: '0', travellingAllowance: '0', specialAllowance: '0', professionalTax: '0' };
+const empty = { name: '', shortName: '', status: '' };
 
 function DesignationForm({ record, onSave, onCancel, onRefresh }) {
   const [values, setValues] = useState(() => record ? Object.fromEntries(DESIGNATION_COLUMNS.map(([key]) => [key, String(record[key])])) : empty);
@@ -41,7 +40,7 @@ function DesignationForm({ record, onSave, onCancel, onRefresh }) {
     } finally { busy.current = false; setPending(false); }
   }
   return <form className="admin-category-form admin-designation-form" onSubmit={submit} noValidate>
-    <div className="admin-category-form__intro"><div><h2>Designation details</h2><p>Fields marked * are required. Amounts default to zero and support 0–999999999.99, up to two decimal places. No percentage cap or total rule. Records save on the server.</p></div><BriefcaseBusiness size={21} aria-hidden="true" /></div>
+    <div className="admin-category-form__intro"><div><h2>Designation details</h2><p>Fields marked * are required. Records save on the server.</p></div><BriefcaseBusiness size={21} aria-hidden="true" /></div>
     <div className="mr-form__body">
       {serverError && <div className="mr-form__notice mr-form__notice--error" role="alert"><p>{serverError}</p><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={async () => {
         if (busy.current) return;
@@ -55,9 +54,9 @@ function DesignationForm({ record, onSave, onCancel, onRefresh }) {
       }} data-testid="button-refresh-designation-error"><RefreshCw size={16} aria-hidden="true" /> Review current server details (keep draft)</button></div>}
       <div className="mr-form__grid admin-designation-grid">
         {DESIGNATION_COLUMNS.map(([key, label]) => <div className="mr-form__field" key={key}>
-          <label className="mr-form__label" htmlFor={`designation-${key}`}>{label}{['name', 'shortName', 'level', 'status'].includes(key) && <> <span className="mr-form__required">*</span></>}</label>
+          <label className="mr-form__label" htmlFor={`designation-${key}`}>{label} <span className="mr-form__required">*</span></label>
           {key === 'status' ? <select disabled={pending} id={`designation-${key}`} className="mr-form__control" value={values[key]} onChange={(event) => update(key, event.target.value)} aria-invalid={Boolean(errors[key])} aria-describedby={errors[key] ? `designation-${key}-error` : undefined} data-testid="select-designation-status"><option value="" disabled>Select status</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
-            : <input disabled={pending} id={`designation-${key}`} className="mr-form__control" type={key === 'name' || key === 'shortName' ? 'text' : 'number'} maxLength={key === 'name' ? 200 : key === 'shortName' ? 50 : undefined} min={key === 'level' ? '1' : '0'} max={key === 'level' ? '2147483647' : '999999999.99'} step={key === 'level' ? '1' : '0.01'} value={values[key]} onChange={(event) => update(key, event.target.value)} placeholder={key === 'name' ? 'Designation Name' : key === 'shortName' ? 'Short name' : key === 'level' ? 'Level' : '0'} aria-invalid={Boolean(errors[key])} aria-describedby={errors[key] ? `designation-${key}-error` : undefined} data-testid={`input-designation-${key}`} />}
+            : <input disabled={pending} id={`designation-${key}`} className="mr-form__control" type="text" maxLength={key === 'name' ? 200 : 50} value={values[key]} onChange={(event) => update(key, event.target.value)} placeholder={key === 'name' ? 'Designation Name' : 'Short name'} aria-invalid={Boolean(errors[key])} aria-describedby={errors[key] ? `designation-${key}-error` : undefined} data-testid={`input-designation-${key}`} />}
           {errors[key] && <p className="mr-form__error" id={`designation-${key}-error`} role="alert">{errors[key]}</p>}
         </div>)}
       </div>
@@ -91,7 +90,7 @@ export default function DesignationFormPage({ id }) {
     if (!id) {
       const result = await listDesignations({ query: values.name.trim(), status: 'all', limit: 100, offset: 0 });
       const sameName = result.items.find((row) => row.name.toLowerCase() === values.name.trim().replace(/\s+/g, ' ').toLowerCase());
-      if (sameName) throw new Error(`A designation with this name is already saved: ${sameName.name}; short name ${sameName.shortName}; level ${sameName.level}; ${sameName.status}. Your draft is retained. Return to the list and inspect it instead of creating a duplicate.`);
+      if (sameName) throw new Error(`A designation with this name is already saved: ${sameName.name}; short name ${sameName.shortName}; ${sameName.status}. Your draft is retained. Return to the list and inspect it instead of creating a duplicate.`);
       if (result.filtered > 100) throw new Error('More than 100 matching records. Narrow or inspect the list before retrying. Your draft is retained.');
       return null;
     }
@@ -106,7 +105,7 @@ export default function DesignationFormPage({ id }) {
   }
 
   return <AdminLayout title={title}>
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">User Management / Designation Master</p><h1>{title}</h1><p className="admin-page-head__description">Maintain levels, allowance percentages and professional tax in shared server records.</p></div><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(LIST_PATH)} data-testid="button-back-designations"><ArrowLeft size={16} aria-hidden="true" /> Back to designations</button></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">User Management / Designation Master</p><h1>{title}</h1><p className="admin-page-head__description">Maintain designation names, short names and status in shared server records.</p></div><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(LIST_PATH)} data-testid="button-back-designations"><ArrowLeft size={16} aria-hidden="true" /> Back to designations</button></div>
     {loading ? <p role="status">Loading designation…</p> : error || (id && !record) ? <section className="admin-panel admin-category-form__recovery" role="alert"><h2>Designation could not be loaded</h2><p>{error || 'This designation may have been deleted.'}</p><button type="button" className="admin-button" onClick={() => setRevision((value) => value + 1)} data-testid="button-refresh-designation-form">Retry</button></section> : <section className="admin-panel" aria-label={title}><DesignationForm key={id || 'new'} record={record} onSave={save} onCancel={() => navigate(LIST_PATH)} onRefresh={refresh} /></section>}
   </AdminLayout>;
 }

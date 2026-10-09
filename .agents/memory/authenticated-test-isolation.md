@@ -145,3 +145,13 @@ the real credential budget despite each suite passing independently.
 
 **How to apply:** Use a separate private database and listeners for credential
 flows when combining suites; retain ordinary server provisioning and audit rules.
+
+Verify the collected test count when forwarding a targeted name filter through
+the shell preview harness; avoid whitespace in the filter unless argument
+preservation has been confirmed.
+
+**Why:** A quoted multiword `--grep` was flattened by the wrapper and unexpectedly
+ran the whole spec instead of only the previously blocked journey.
+
+**How to apply:** Use a distinctive single-token filter and check the terminal
+collection count before interpreting the run as a focused continuation.

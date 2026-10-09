@@ -99,7 +99,7 @@ async function open(page) {
     localStorage.setItem('evexia.admin.staff.v1', raw);
     const { listDesignations, createDesignation } = await import('/src/services/serverDesignations.js');
     const { items } = await listDesignations({ query: 'Synthetic Executive', status: 'all', limit: 100 });
-    if (!items.some((row) => row.name === 'Synthetic Executive')) await createDesignation({ name: 'Synthetic Executive', shortName: 'SE', level: 1, status: 'active' });
+    if (!items.some((row) => row.name === 'Synthetic Executive')) await createDesignation({ name: 'Synthetic Executive', shortName: 'SE', status: 'active' });
   }, legacy);
   await page.goto(`${base()}/admin/staff`);
   await expect(page.getByTestId('button-add-staff')).toBeEnabled({ timeout: 15000 });

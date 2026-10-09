@@ -32,6 +32,26 @@ def fields(mr, year=2025, **changes):
                    q1="100.25", q2="200.00", q3="300.00", q4="400.00", status="active"), **changes}
 
 
+def test_generated_annual_create_edit_import_freshness_and_rejected_writes(client):
+    api, db, _ = client
+    headers, _, mr, _, _ = setup(api, db)
+    for index, (amount, expected) in enumerate((
+            ("0", "0.00"), ("0.01", "0.04"), ("999999999999.99", "3999999999999.96"))):
+        row = add(api, headers, mr, year=2040 + index, **{q: amount for q in ("q1", "q2", "q3", "q4")})
+        assert row["annualTotal"] == expected
+        body = fields(mr, year=2040 + index, q1="0.10", q2="0.20", q3="0", q4="0.01")
+        edited = api.post(f"{BASE}/{row['id']}/edit", headers=headers, json={**body, "expected_version": 1})
+        assert edited.status_code == 200 and edited.json()["annualTotal"] == "0.31"
+        for key in ("annual_target", "annualTotal"):
+            assert api.post(BASE, headers=headers, json={**body, key: "1"}).status_code == 422
+    data = (HEADER + f"{mr['employeeCode']},2050,2051,0.1,0.2,0,0.01,inactive").encode()
+    report = review(api, headers, data).json()
+    assert report["valid"]
+    assert commit(api, headers, data, report["digest"]).json()["imported"] == 1
+    listing = api.get(BASE, headers=headers, params={"startYear": 2050}).json()
+    assert any(row["startYear"] == 2050 and row["annualTotal"] == "0.31" for row in listing["items"])
+
+
 def add(api, headers, mr, year=2025, **changes):
     response = api.post(BASE, headers=headers, json=fields(mr, year, **changes))
     assert response.status_code == 201, response.text
