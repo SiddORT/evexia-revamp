@@ -106,7 +106,7 @@ export default function DesignationFormPage({ id }) {
   }
 
   return <AdminLayout title={title}>
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / People / Designation Master</p><h1>{title}</h1><p className="admin-page-head__description">Maintain levels, allowance percentages and professional tax in shared server records.</p></div><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(LIST_PATH)} data-testid="button-back-designations"><ArrowLeft size={16} aria-hidden="true" /> Back to designations</button></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">User Management / Designation Master</p><h1>{title}</h1><p className="admin-page-head__description">Maintain levels, allowance percentages and professional tax in shared server records.</p></div><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(LIST_PATH)} data-testid="button-back-designations"><ArrowLeft size={16} aria-hidden="true" /> Back to designations</button></div>
     {loading ? <p role="status">Loading designation…</p> : error || (id && !record) ? <section className="admin-panel admin-category-form__recovery" role="alert"><h2>Designation could not be loaded</h2><p>{error || 'This designation may have been deleted.'}</p><button type="button" className="admin-button" onClick={() => setRevision((value) => value + 1)} data-testid="button-refresh-designation-form">Retry</button></section> : <section className="admin-panel" aria-label={title}><DesignationForm key={id || 'new'} record={record} onSave={save} onCancel={() => navigate(LIST_PATH)} onRefresh={refresh} /></section>}
   </AdminLayout>;
 }

@@ -21,7 +21,9 @@ for (const master of MASTER_CATALOGUE) {
       assert.equal(staffPathAllowed(`/admin/masters/import/${master.import}`, user), action === 'import');
       for (const op of ['add', 'edit', 'delete', 'export', 'import']) assert.equal(hasMasterPermission(user, master.key, op), action === op);
       for (const route of ['/admin/staff', '/admin/roles-permissions', '/admin/settings', '/admin/masters',
-        '/admin/masters/designations', `/admin/masters/${master.path}/trash`,
+        '/admin/masters/designations', '/admin/masters/designations/new',
+        '/admin/masters/designations/00000000-0000-4000-8000-000000000001',
+        '/admin/masters/import/designation', `/admin/masters/${master.path}/trash`,
         `/admin/masters/${master.path}/00000000-0000-4000-8000-000000000001/payments`,
         `/admin/masters/${master.path}/00000000-0000-4000-8000-000000000001/dosage-history`]) {
         assert.equal(staffPathAllowed(route, user), false);

@@ -130,7 +130,7 @@ export default function DesignationImportPage() {
     <div className="excel-import excel-import--designation">
       <button type="button" className="excel-import__back" disabled={pending === 'commit'} onClick={() => navigate('/admin/masters/designations')}><ArrowLeft size={16} aria-hidden="true" /> Back to Designation Master</button>
       <div className="admin-page-head">
-        <div><p className="admin-page-head__eyebrow">Masters / Data import</p><h1>Import Designation data</h1>
+        <div><p className="admin-page-head__eyebrow">User Management / Data import</p><h1>Import Designation data</h1>
           <p className="admin-page-head__description">Download a sample, choose CSV or Excel and review each row. Review saves nothing; explicit confirmation creates shared server records only, all-or-nothing.</p>
         </div>
         <span className="excel-import__mock">Shared server records</span>

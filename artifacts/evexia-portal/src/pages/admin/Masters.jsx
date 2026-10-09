@@ -47,11 +47,6 @@ export default function Masters() {
           <span className="admin-master-link__text"><strong>Headquarter Master</strong><small>Manage HQ names, state codes and availability in this browser.</small></span>
           <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
         </Link>
-        <Link href="/admin/masters/designations" className="admin-master-link" data-testid="link-master-designations">
-          <span className="admin-master-link__icon"><BriefcaseBusiness size={20} aria-hidden="true" /></span>
-          <span className="admin-master-link__text"><strong>Designation Master</strong><small>Manage designation levels, allowances, professional tax and status in this browser.</small></span>
-          <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
-        </Link>
         <Link href="/admin/masters/allergens" className="admin-master-link" data-testid="link-master-allergens">
           <span className="admin-master-link__icon"><FlaskConical size={20} aria-hidden="true" /></span>
           <span className="admin-master-link__text"><strong>Allergen Master</strong><small>Manage product details, reference assignments and CSV records in this browser.</small></span>

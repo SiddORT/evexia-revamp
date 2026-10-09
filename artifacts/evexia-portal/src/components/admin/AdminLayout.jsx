@@ -13,7 +13,9 @@ import { recordPageVisit, flushActivityBeforeExit } from '../../activity/activit
 import ActivityRecordingStatus from '../../activity/ActivityRecordingStatus.jsx';
 
 const SIDEBAR_PREFERENCE_KEY = 'evexia.admin.sidebar.collapsed';
-const isUserManagementPath = (path) => path.startsWith('/admin/staff') || path === '/admin/roles-permissions';
+const isDesignationPath = (path) => path === '/admin/masters/designations' || path.startsWith('/admin/masters/designations/') || path === '/admin/masters/import/designation';
+const isUserManagementPath = (path) => path.startsWith('/admin/staff') || path === '/admin/roles-permissions' || isDesignationPath(path);
+const isMastersPath = (path) => path.startsWith('/admin/masters') && !isDesignationPath(path);
 const MASTER_GROUPS = [
   { label: 'Geography & Logistics', links: [
     { label: 'Zone Master', href: '/admin/masters/zones', testId: 'link-admin-zones', Icon: MapPinned },
@@ -25,7 +27,6 @@ const MASTER_GROUPS = [
     { label: 'MR Master', href: '/admin/masters/mrs', testId: 'link-admin-mrs', Icon: UsersRound },
     { label: 'Doctor Master', href: '/admin/masters/doctors', testId: 'link-admin-doctors', Icon: Stethoscope, nested: true },
     { label: 'Patient Master', href: '/admin/masters/patients', testId: 'link-admin-patients', Icon: HeartPulse, nested: true },
-    { label: 'Designation Master', href: '/admin/masters/designations', testId: 'link-admin-designations', Icon: BriefcaseBusiness, nested: true },
   ] },
   { label: 'Products & Supply', links: [
     { label: 'Product Category', href: '/admin/masters/product-categories', testId: 'link-admin-product-categories', Icon: Boxes, nested: true },
@@ -54,7 +55,7 @@ export default function AdminLayout({ title, children }) {
     navigate('/admin/login', { replace: true });
     await result;
   }
-  const [mastersOpen, setMastersOpen] = useState(location.startsWith('/admin/masters'));
+  const [mastersOpen, setMastersOpen] = useState(isMastersPath(location));
   const [inventoryOpen, setInventoryOpen] = useState(location.startsWith('/admin/inventory'));
   const [userManagementOpen, setUserManagementOpen] = useState(isUserManagementPath(location));
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -77,7 +78,8 @@ export default function AdminLayout({ title, children }) {
   const showDashboard = !staff && (!searching || 'dashboard'.includes(query));
   const showStaff = !staff && (!searching || 'user management'.includes(query) || 'staff management'.includes(query));
   const showRoles = !staff && (!searching || 'user management'.includes(query) || 'roles & permissions roles and permissions'.includes(query));
-  const showUserManagement = showStaff || showRoles;
+  const showDesignations = !staff && (!searching || 'user management'.includes(query) || 'designation master'.includes(query));
+  const showUserManagement = showStaff || showRoles || showDesignations;
   const showAllMasters = !staff && (!searching || 'all masters'.includes(query));
   const showPO = !staff && (!searching || 'inventory purchase orders po'.includes(query));
   const showPR = !staff && (!searching || 'inventory purchase received pr receipts'.includes(query));
@@ -146,7 +148,8 @@ export default function AdminLayout({ title, children }) {
     setDrawerOpen(false);
     setSearch('');
     setSearchExpanded(false);
-    if (location.startsWith('/admin/masters')) setMastersOpen(true);
+    if (isMastersPath(location)) setMastersOpen(true);
+    if (isDesignationPath(location)) setMastersOpen(false);
     if (location.startsWith('/admin/inventory')) setInventoryOpen(true);
     if (isUserManagementPath(location)) setUserManagementOpen(true);
   }, [location]);
@@ -219,7 +222,7 @@ export default function AdminLayout({ title, children }) {
           {showDashboard && <Link href="/admin" className={`admin-nav__item${location === '/admin' ? ' admin-nav__item--active' : ''}`} aria-label="Dashboard" title={isCollapsed ? 'Dashboard' : undefined} aria-current={location === '/admin' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-dashboard">
             <LayoutDashboard size={17} aria-hidden="true" /><span className="admin-nav__label">Dashboard</span>
           </Link>}
-          {showMasters && <button type="button" disabled={searching} className={`admin-nav__item${location.startsWith('/admin/masters') ? ' admin-nav__item--active' : ''}`} aria-label="Masters" title={isCollapsed ? 'Expand Masters' : undefined} aria-expanded={showSubnav} aria-controls="admin-masters-subnav" onClick={() => { if (isCollapsed) { toggleSidebar(); setMastersOpen(true); } else setMastersOpen((open) => !open); }} data-testid="button-toggle-masters">
+          {showMasters && <button type="button" disabled={searching} className={`admin-nav__item${isMastersPath(location) ? ' admin-nav__item--active' : ''}`} aria-label="Masters" title={isCollapsed ? 'Expand Masters' : undefined} aria-expanded={showSubnav} aria-controls="admin-masters-subnav" onClick={() => { if (isCollapsed) { toggleSidebar(); setMastersOpen(true); } else setMastersOpen((open) => !open); }} data-testid="button-toggle-masters">
             <PanelsTopLeft size={17} aria-hidden="true" /><span className="admin-nav__label">Masters</span><ChevronDown size={15} className={`admin-nav__chevron${showSubnav ? ' admin-nav__chevron--open' : ''}`} aria-hidden="true" />
           </button>}
           {showSubnav && (
@@ -254,6 +257,9 @@ export default function AdminLayout({ title, children }) {
             </Link>}
             {showRoles && <Link href="/admin/roles-permissions" className={`admin-nav__item${location === '/admin/roles-permissions' ? ' admin-nav__item--active' : ''}`} aria-label="Roles & Permissions" aria-current={location === '/admin/roles-permissions' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-roles-permissions">
               <ShieldCheck size={16} aria-hidden="true" /><span className="admin-nav__label">Roles & Permissions</span>
+            </Link>}
+            {showDesignations && <Link href="/admin/masters/designations" className={`admin-nav__item${isDesignationPath(location) ? ' admin-nav__item--active' : ''}`} aria-label="Designation Master" aria-current={location === '/admin/masters/designations' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-designations">
+              <BriefcaseBusiness size={16} aria-hidden="true" /><span className="admin-nav__label">Designation Master</span>
             </Link>}
           </div>
           {searching && !showDashboard && !showUserManagement && !showMasters && !showInventory && <p className="admin-nav__empty" role="status" data-testid="status-navigation-empty">No navigation results. Try another search.</p>}
