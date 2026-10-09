@@ -59,3 +59,4 @@
 - [Browser label locators](browser-label-locators.md) — select controls by role when section and input share an accessible caption.
 - [Legacy attribution evidence](legacy-attribution-evidence.md) — role audit clocks and missing mutation versions often require separate reviewed updater provenance.
 - [Operator PostgreSQL driver](operator-postgres-driver.md) — test bare managed PostgreSQL URLs; explicit-driver disposable fixtures can hide CLI connection failures.
+- [Browser fixture failure isolation](browser-fixture-failure-isolation.md) — earlier retry scenarios must not consume failures intended for later paging checks.

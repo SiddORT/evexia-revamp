@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import InfoDisclosure from './InfoDisclosure.jsx';
 import MRReferenceSelect from './MRReferenceSelect.jsx';
+import MRFormCombobox from './MRFormCombobox.jsx';
 import { emptyMRValues, generateMRUsername, lookupPincode, MR_FIELDS as FIELDS, payloadFromValues, validateMRValues } from '../../services/serverMRs.js';
 import { getSession, subscribeSession } from '../../auth/adminSession.js';
 import '../../mr.css';
@@ -12,6 +13,7 @@ const TABS = [
   { id: 'address', label: 'Address', fields: ['pincode', 'addressLine1', 'addressLine2', 'landmark', 'city', 'state', 'country'] },
 ];
 const ORDER = [...FIELDS, 'password', 'confirmPassword'];
+const STATUS_CHOICES = [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }];
 
 export default function MRForm({ mr, onSave, onClose, onRefresh }) {
   const [values, setValues] = useState(() => emptyMRValues(mr));
@@ -242,10 +244,13 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
               {renderField('employeeCode', 'Employee code', { placeholder: 'Employee code' })}
               {renderField('dateOfJoining', 'Date of joining', { type: 'date' })}
               {renderField('designation_id', 'Designation', { info: 'Select an active catalogue designation. A saved inactive assignment can be retained; a deleted assignment must be replaced. Designations grant no permissions.', customControl: <MRReferenceSelect id="mr-designation_id" kind="designations" label="Designation" value={values.designation_id} savedName={mr?.designationName} onChange={(v) => change('designation_id', v)} placeholder="Select a designation" invalid={Boolean(errors.designation_id)} describedBy={errors.designation_id ? 'mr-designation_id-error' : undefined} required emptyGuidance="No designations exist yet. Add one in Designation Master first." /> })}
-              {renderField('reportingManagerId', 'Reporting manager', { customControl: <MRReferenceSelect id="mr-reportingManagerId" kind="managers" label="Reporting manager" value={values.reportingManagerId} savedName={mr?.reportingManagerName} excludeId={mr?.id} onChange={(v) => change('reportingManagerId', v)} placeholder="No reporting manager" emptyGuidance="No other MRs exist yet." /> })}
+              {renderField('reportingManagerId', 'Reporting manager', { customControl: <MRReferenceSelect id="mr-reportingManagerId" kind="managers" label="Reporting manager" value={values.reportingManagerId} savedName={mr?.reportingManagerName} excludeId={mr?.id} onChange={(v) => change('reportingManagerId', v)} placeholder="No reporting manager" invalid={Boolean(errors.reportingManagerId)} describedBy={errors.reportingManagerId ? 'mr-reportingManagerId-error' : undefined} emptyGuidance="No other MRs exist yet." /> })}
               {renderField('paymentLimit', 'Payment limit', { type: 'number', min: '0', step: '0.01', placeholder: 'Defaults to 0.00', inputMode: 'decimal' })}
               {renderField('doctorDaysLimit', 'Doctor days limit', { type: 'number', min: '0', step: '1', placeholder: 'Defaults to 0', inputMode: 'numeric' })}
-              {renderField('status', 'Status', { selectOptions: [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }] })}
+              {renderField('status', 'Status', { customControl: <MRFormCombobox id="mr-status" label="Status"
+                value={values.status} selectedLabel={values.status === 'active' ? 'Active' : values.status === 'inactive' ? 'Inactive' : ''}
+                choices={STATUS_CHOICES} onChange={(v) => change('status', v)} placeholder="Select status" required
+                invalid={Boolean(errors.status)} describedBy={errors.status ? 'mr-status-error' : undefined} /> })}
             </div>
           </section>
 

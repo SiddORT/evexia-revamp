@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { emptyMRValues, payloadFromValues, validateMRValues } from './serverMRs.js';
 import { CSV_COLUMNS as LEGACY_COLUMNS } from './mrs.js';
 
@@ -9,11 +10,12 @@ const values = { ...emptyMRValues(), name: 'Synthetic MR', phone: '', email: '',
   zoneId: 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb', dateOfJoining: '2020-01-01', designation_id: 'cccccccc-cccc-4ccc-cccc-cccccccccccc',
   addressLine1: 'Synthetic address', landmark: 'Synthetic landmark', pincode: '110001',
   city: 'Delhi', state: 'Delhi', country: 'India', paymentLimit: '', doctorDaysLimit: '' };
+const pythonOptions = { encoding: 'utf8', cwd: fileURLToPath(new URL('../../../../', import.meta.url)) };
 
 test('MR bounded frontend/business validation agrees with authoritative Python defaults', () => {
   const headers = execFileSync('python3', ['-c',
     'import sys,json;sys.path.insert(0,"artifacts/api-server/backend");from app.services.mr_transfer import HEADERS;print(json.dumps(HEADERS))'],
-    { encoding: 'utf8' });
+    pythonOptions);
   assert.deepEqual(LEGACY_COLUMNS.map(([, label]) => label), JSON.parse(headers), 'Preserve the exact shipped legacy CSV header');
   const cases = [values, ...[
     ['name', ''], ['name', 'x'.repeat(201)], ['userId', 'a@b.com'], ['email', 'bad'], ['phone', '123'],
@@ -22,7 +24,7 @@ test('MR bounded frontend/business validation agrees with authoritative Python d
     ['designation_id', ''], ['designation_id', 'Free text'],
   ].map(([key, value]) => ({ ...values, [key]: value }))];
   const python = execFileSync('python3', ['-c',
-    'import sys,json;sys.path.insert(0,"artifacts/api-server/backend");from app.schemas.mrs import MRFields;out=[]\nfor b in json.loads(sys.argv[1]):\n b["reportingManagerId"]=b["reportingManagerId"] or None\n try: MRFields.model_validate(b);out.append(True)\n except ValueError: out.append(False)\nprint(json.dumps(out))', JSON.stringify(cases)], { encoding: 'utf8' });
+    'import sys,json;sys.path.insert(0,"artifacts/api-server/backend");from app.schemas.mrs import MRFields;out=[]\nfor b in json.loads(sys.argv[1]):\n b["reportingManagerId"]=b["reportingManagerId"] or None\n try: MRFields.model_validate(b);out.append(True)\n except ValueError: out.append(False)\nprint(json.dumps(out))', JSON.stringify(cases)], pythonOptions);
   assert.deepEqual(cases.map((v) => Object.keys(validateMRValues(v)).length === 0), JSON.parse(python));
   assert.equal(payloadFromValues(values).paymentLimit, '0.00');
   assert.equal(payloadFromValues(values).doctorDaysLimit, 0);
@@ -52,6 +54,16 @@ test('MR transport is no-store, versioned, ledger-backed and never replays ambig
   try {
     await session.loginAdmin(admin.email, 'Synthetic password', false);
     await service.listMRs({ status: 'inactive', zone_id: values.zoneId, hq_id: values.hq });
+    const referenceController = new AbortController();
+    await service.mrReferences('designations', { query: 'Beyond first page', offset: 100, limit: 100, includeSaved: values.designation_id }, referenceController.signal);
+    const referenceCall = calls.find((c) => c.url.includes('/references'));
+    const referenceParams = new URL(referenceCall.url, 'http://synthetic.test').searchParams;
+    assert.equal(referenceParams.get('query'), 'Beyond first page');
+    assert.equal(referenceParams.get('offset'), '100');
+    assert.equal(referenceParams.get('limit'), '100');
+    assert.equal(referenceParams.get('include_saved'), values.designation_id);
+    referenceController.abort();
+    assert.equal(referenceCall.options.signal.aborted, true);
     await service.createMR(payloadFromValues(values), 'Synthetic manual initial password');
     await service.editMR({ id: values.hq, version: 7 }, payloadFromValues(values));
     await service.resetMRPassword({ id: values.hq, version: 7 });

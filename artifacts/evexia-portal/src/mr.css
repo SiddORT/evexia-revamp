@@ -219,8 +219,25 @@
    .admin-mr-card__actions > :nth-child(2n) { border-right: 0; }
    .admin-mr-card__actions > :nth-last-child(-n+2) { border-bottom: 0; }
 }
-.mr-reference { display: grid; gap: 6px; }
-.mr-reference__search { min-height: 36px; }
+.mr-form-combobox { min-width: 0; }
+.mr-form-combobox__control { box-sizing: border-box; display: flex; height: 42px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); }
+.mr-form-combobox__control:focus-within { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
+.mr-form-combobox__control:has(input[aria-invalid="true"]) { border-color: var(--admin-danger); }
+.mr-form-combobox__control input { width: 100%; min-width: 0; border: 0; outline: 0; padding: 0 0 0 11px; background: transparent; color: var(--admin-text); font: inherit; font-size: 12px; text-overflow: ellipsis; }
+.mr-form-combobox__control input::placeholder { color: var(--admin-muted); opacity: 1; }
+.mr-form-combobox__control button { display: grid; place-items: center; width: 34px; flex: none; border: 0; background: transparent; color: var(--admin-text-soft); cursor: pointer; }
+.mr-form-combobox__menu { position: fixed; box-sizing: border-box; z-index: 65; overflow-y: auto; overscroll-behavior: contain; color: var(--admin-text); }
+.mr-form-combobox__option { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 40px; padding: 9px 8px; border-radius: 6px; cursor: pointer; font-size: 12px; line-height: 1.4; }
+.mr-form-combobox__option span { min-width: 0; overflow-wrap: anywhere; }
+.mr-form-combobox__option svg { flex: none; }
+.mr-form-combobox__option:hover, .mr-form-combobox__option--active { background: var(--admin-state-hover); }
+.mr-form-combobox__option[aria-selected="true"] { color: var(--admin-accent); font-weight: 700; }
+.mr-form-combobox__option[aria-disabled="true"] { opacity: .6; cursor: not-allowed; }
+.mr-form-combobox__feedback { margin: 0; padding: 7px 8px; font-size: 12px; line-height: 1.5; color: var(--admin-text-soft); overflow-wrap: anywhere; }
+.mr-form-combobox__feedback:empty { display: none; }
+.mr-form-combobox__action { min-height: 40px; width: 100%; border: 1px solid var(--admin-border); border-radius: 6px; background: var(--admin-canvas); color: var(--admin-text); font: inherit; font-size: 12px; cursor: pointer; }
+.mr-form-combobox__action:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: -3px; }
+.mr-form-combobox__action[aria-disabled="true"] { opacity: .6; cursor: wait; }
 .mr-credentials { display: grid; gap: 14px; }
 .mr-credentials__actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .mr-credentials__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 45dvh; overflow: auto; }

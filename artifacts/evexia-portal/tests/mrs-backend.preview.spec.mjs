@@ -50,7 +50,6 @@ for (const mobile of [false, true]) {
     let failDesignation = true;
     await page.route('**/api/v1/admin/mrs/references*', (route) => {
       if (new URL(route.request().url()).searchParams.get('kind') === 'designations' && failDesignation) {
-        failDesignation = false;
         return route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ detail: 'Synthetic reference failure' }) });
       }
       return route.continue();
@@ -63,27 +62,30 @@ for (const mobile of [false, true]) {
     await expect(page.getByTestId('input-mr-userId')).toHaveValue(/^mr\.[a-f0-9]+$/);
     const username = await page.getByTestId('input-mr-userId').inputValue();
     await page.getByTestId('tab-mr-assignment').click();
-    await expect(page.getByTestId('select-mr-headquarters').locator(`option[value="${refs.hq}"]`)).toHaveCount(1);
-    await page.getByTestId('select-mr-headquarters').selectOption(refs.hq);
-    await page.getByTestId('select-mr-zones').selectOption(refs.zone);
+    await filter(page, 'mr-headquarters', `MR ${label} HQ`);
+    await filter(page, 'mr-zones', `MR ${label} Zone`);
     await page.getByTestId('input-mr-employeeCode').fill(`MR-${label}`);
     await page.getByTestId('input-mr-dateOfJoining').fill('2020-01-01');
-    const designationControl = page.locator('.mr-reference').filter({ has: page.getByTestId('select-mr-designations') });
-    await designationControl.getByRole('button', { name: 'Retry', exact: true }).click();
+    await page.getByTestId('select-mr-designations').click();
+    await expect(page.getByRole('button', { name: 'Retry', exact: true })).toBeVisible();
+    failDesignation = false;
+    await page.getByRole('button', { name: 'Retry', exact: true }).click();
     await expect(page.getByTestId('select-mr-designations')).not.toHaveAttribute('aria-busy', 'true');
     if (!mobile) {
-      await expect(page.getByTestId('select-mr-designations').locator(`option[value="${refs.designation}"]`)).toHaveCount(0);
+      await expect(page.getByRole('option', { name: `MR ${label} Designation`, exact: true })).toHaveCount(0);
       await page.getByTestId('button-more-mr-designations').click();
     } else {
-      await page.getByTestId('input-search-mr-designations').fill(`MR ${label} Designation`);
+      await page.getByTestId('select-mr-designations').fill(`MR ${label} Designation`);
     }
-    await expect(page.getByTestId('select-mr-designations').locator(`option[value="${refs.designation}"]`)).toHaveCount(1);
+    await expect(page.getByRole('option', { name: `MR ${label} Designation`, exact: true })).toBeVisible();
     await page.getByTestId('button-save-mr').click();
     await expect(page.getByTestId('select-mr-designations')).toHaveAttribute('aria-invalid', 'true');
     await expect(page.getByTestId('select-mr-designations')).toBeFocused();
-    await page.getByTestId('select-mr-designations').selectOption(refs.designation);
+    await page.getByTestId('select-mr-designations').fill(`MR ${label} Designation`);
+    await page.getByRole('option', { name: `MR ${label} Designation`, exact: true }).click();
     await page.getByTestId('input-mr-paymentLimit').fill('123.45');
     await page.getByTestId('input-mr-doctorDaysLimit').fill('12');
+    await page.screenshot({ path: info.outputPath(`mr-${label.toLowerCase()}-assignment.png`), fullPage: true });
     await page.getByTestId('tab-mr-address').click();
     await page.route('**/api/v1/admin/mrs/postal/110001*', (route) => route.fulfill({
       contentType: 'application/json', body: JSON.stringify({ pincode: '110001', choices: [{ city: 'District suggestion', state: 'Delhi', country: 'India' }], message: '' }),
@@ -112,6 +114,10 @@ for (const mobile of [false, true]) {
     await page.getByTestId('button-save-mr').click();
     const saved = await (await response).json();
     expect(saved.record.city).toBe('Manual city');
+    expect(saved.record.hq).toBe(refs.hq);
+    expect(saved.record.zoneId).toBe(refs.zone);
+    expect(saved.record.reportingManagerId).toBeNull();
+    expect(saved.record.status).toBe('active');
     expect(saved.record.designation_id).toBe(refs.designation);
     expect(saved.record.designationName).toBe(`MR ${label} Designation`);
     expect(saved.record.designation).toBeUndefined();
@@ -143,13 +149,15 @@ for (const mobile of [false, true]) {
     await page.evaluate(async () => (await import('/src/auth/adminSession.js')).verifySession(true));
     await expect(page.getByTestId('input-mr-name')).toHaveValue(`Synthetic ${label} MR Edited`);
     await page.getByTestId('tab-mr-assignment').click();
-    await expect(page.getByTestId('select-mr-zones')).toHaveValue(refs.zone);
-    await expect(page.getByTestId('select-mr-headquarters')).toHaveValue(refs.hq);
-    await expect(page.getByTestId('select-mr-designations')).toHaveValue(refs.designation);
-    await expect(page.getByTestId('select-mr-designations').locator(`option[value="${refs.designation}"]`)).toHaveText(`Renamed ${label} Designation (inactive)`);
+    await expect(page.getByTestId('select-mr-zones')).toHaveValue(`MR ${label} Zone`);
+    await expect(page.getByTestId('select-mr-headquarters')).toHaveValue(`MR ${label} HQ`);
+    await expect(page.getByTestId('select-mr-designations')).toHaveValue(`Renamed ${label} Designation (inactive)`);
     await expect(page.getByText('Designation is inactive. You may retain the saved assignment.')).toBeVisible();
     await expect(page.getByTestId('select-mr-managers')).not.toHaveAttribute('aria-busy', 'true');
-    await expect(page.getByTestId('select-mr-managers').locator(`option[value="${saved.record.id}"]`)).toHaveCount(0);
+    await page.getByTestId('select-mr-managers').click();
+    await expect(page.getByTestId('select-mr-managers')).not.toHaveAttribute('aria-busy', 'true');
+    await expect(page.getByRole('option', { name: `Synthetic ${label} MR`, exact: true })).toHaveCount(0);
+    await page.getByTestId('select-mr-managers').press('Escape');
     await page.getByTestId('button-save-mr').click();
     await expect(page.getByTestId('text-mr-count')).toBeVisible();
     await expect(record).toContainText(`Renamed ${label} Designation`);
@@ -237,18 +245,24 @@ test('MR deleted designation must be replaced without changing the account', asy
   await recordRow.getByTestId(`button-edit-mr-${record.id}`).click();
   await page.getByTestId('tab-mr-assignment').click();
   const control = page.getByTestId('select-mr-designations');
-  await expect(control).toHaveValue(refs.designation);
-  await expect(control.locator(`option[value="${refs.designation}"]`)).toBeDisabled();
+  await expect(control).toHaveValue('MR Replacement Designation (deleted)');
+  await control.click();
+  await expect(page.getByRole('option', { name: 'MR Replacement Designation (deleted)', exact: true })).toHaveAttribute('aria-disabled', 'true');
+  await control.press('Escape');
   await expect(page.getByText('Designation was deleted. Explicitly replace it before saving.')).toBeVisible();
   await page.getByTestId('button-save-mr').click();
   await expect(page.getByText('Designation is missing or deleted. Explicitly select an active catalogue designation.')).toBeVisible();
+  // Keep the existing conflict/reconciliation boundary; rejection is not
+  // permission to silently replay a later write from the same stale form.
+  await page.getByTestId('button-reconcile-mr').click();
+  await expect(page.getByText('Latest saved version loaded. Review it before saving again.')).toBeVisible();
+  await page.getByTestId('tab-mr-assignment').click();
   const replacement = await page.evaluate(async () => (await import('/src/auth/adminSession.js')).designationRequest('', {
     body: { name: 'ZZ Replacement designation', shortName: 'MR', status: 'active' },
   }));
-  await page.getByTestId('input-search-mr-designations').fill('ZZ Replacement designation');
-  await expect(control.locator(`option[value="${replacement.id}"]`)).toHaveCount(1);
-  await control.selectOption(replacement.id);
-  const response = page.waitForResponse((r) => r.url().endsWith(`/mrs/${record.id}/edit`));
+  await control.fill('ZZ Replacement designation');
+  await page.getByRole('option', { name: 'ZZ Replacement designation', exact: true }).click();
+  const response = page.waitForResponse((r) => new URL(r.url()).pathname.endsWith(`/mrs/${record.id}/edit`));
   await page.getByTestId('button-save-mr').click();
   const saved = await (await response).json();
   expect(saved.id).toBe(record.id);
@@ -256,6 +270,129 @@ test('MR deleted designation must be replaced without changing the account', asy
   expect(saved.designation_id).toBe(replacement.id);
   expect(saved.designationName).toBe(replacement.name);
   await expect(page.getByTestId('text-mr-count')).toBeVisible();
+});
+
+test('MR assignment comboboxes: selected IDs, manager clearing, stale responses, paging retry and layouts', async ({ page }, info) => {
+  test.setTimeout(120000);
+  const refs = await directory(page, 'Assignments');
+  const records = await page.evaluate(async (refs) => {
+    const s = await import('/src/auth/adminSession.js');
+    const body = {
+      name: 'Assignment manager', employeeCode: 'ASSIGN-MANAGER', userId: 'assignment.manager',
+      phone: '', email: '', contactRequirement: 'optional', hq: refs.hq, zoneId: refs.zone,
+      dateOfJoining: '2020-01-01', designation_id: refs.designation, reportingManagerId: null,
+      paymentLimit: '0.00', doctorDaysLimit: 0, status: 'active', pincode: '110001',
+      addressLine1: 'Synthetic street', addressLine2: '', landmark: 'Landmark',
+      city: 'Delhi', state: 'Delhi', country: 'India',
+    };
+    const manager = (await s.mrRequest('', { body })).record;
+    const mr = (await s.mrRequest('', { body: { ...body, name: 'Assignment worker',
+      employeeCode: 'ASSIGN-WORKER', userId: 'assignment.worker', reportingManagerId: manager.id } })).record;
+    return { mr, manager };
+  }, refs);
+  await page.goto(base() + path + '/' + records.mr.id);
+  await page.getByTestId('tab-mr-assignment').click();
+  const zone = page.getByTestId('select-mr-zones');
+  const manager = page.getByTestId('select-mr-managers');
+  const status = page.getByTestId('select-mr-status');
+  await expect(manager).toHaveValue('Assignment manager');
+  await expect(page.locator('#mr-panel-assignment input[role=combobox]')).toHaveCount(5);
+  await expect(page.locator('#mr-panel-assignment select')).toHaveCount(0);
+  await expect(page.locator('[data-testid^="input-search-mr-"]')).toHaveCount(0);
+  await expect(page.getByText(/^Showing up to/)).toHaveCount(0);
+  await manager.click();
+  await expect(manager).not.toHaveAttribute('aria-busy', 'true');
+  await expect(page.getByRole('option', { name: 'Assignment worker', exact: true })).toHaveCount(0);
+  await manager.fill('missing manager');
+  await expect(page.getByText('No matches found.', { exact: true })).toBeVisible();
+  await manager.press('Escape');
+  await expect(manager).toHaveValue('Assignment manager');
+  await filter(page, 'mr-managers', 'No reporting manager');
+  await expect(manager).toHaveValue('');
+  await status.click(); await status.fill('inactive'); await status.press('ArrowDown'); await status.press('Enter');
+  await expect(status).toHaveValue('Inactive');
+  const savedResponse = page.waitForResponse((r) => new URL(r.url()).pathname.endsWith(`/mrs/${records.mr.id}/edit`));
+  await page.getByTestId('button-save-mr').click();
+  const saved = await (await savedResponse).json();
+  expect(saved.reportingManagerId).toBeNull(); expect(saved.status).toBe('inactive');
+  expect(saved.hq).toBe(refs.hq); expect(saved.zoneId).toBe(refs.zone);
+  expect(saved.designation_id).toBe(refs.designation);
+  await expect(page.getByTestId('text-mr-count')).toBeVisible();
+  await page.goto(base() + path + '/' + records.mr.id);
+  await page.getByTestId('tab-mr-assignment').click();
+  await expect(manager).toHaveValue(''); await expect(status).toHaveValue('Inactive');
+  await expect(zone).toHaveValue('MR Assignments Zone');
+
+  let mode = 'empty', held = false, release, finished;
+  let failMore = true;
+  await page.route('**/api/v1/admin/mrs/references*', async (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    if (params.get('kind') !== 'zones') return route.continue();
+    const q = params.get('query') || '';
+    const offset = Number(params.get('offset'));
+    if (mode === 'error' || (mode === 'more' && offset && failMore)) {
+      if (mode === 'more') failMore = false;
+      return route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ detail: 'Synthetic reference failure' }) });
+    }
+    if ((mode === 'late' && q === 'old') || mode === 'held') {
+      held = true; await new Promise((resolve) => { release = resolve; });
+    }
+    const items = mode === 'late' ? [{ id: 'eeeeeeee-eeee-4eee-aeee-eeeeeeeeeeee', name: q === 'old' ? 'Old late assignment' : 'New current assignment', status: 'active' }]
+      : mode === 'more' ? offset ? [{ id: refs.zone, name: 'Final paged zone', status: 'active' }]
+        : Array.from({ length: 100 }, (_, n) => ({ id: `synthetic-${n}`, name: `Choice ${n}`, status: 'active' })) : [];
+    await route.fulfill({ contentType: 'application/json',
+      body: JSON.stringify({ items, total: mode === 'more' ? 101 : items.length, limit: 100, offset }) }).catch(() => {});
+    finished?.();
+  });
+  await zone.click();
+  await expect(page.getByText('No zones exist yet. Add one in Zone Master first.', { exact: true })).toBeVisible();
+  await zone.fill('missing'); await expect(page.getByText('No matches found.', { exact: true })).toBeVisible();
+  mode = 'error'; await zone.fill('failure');
+  await expect(page.getByRole('button', { name: 'Retry', exact: true })).toBeVisible();
+  await zone.press('Tab'); await expect(page.getByRole('button', { name: 'Retry', exact: true })).toBeFocused();
+  mode = 'empty'; await page.keyboard.press('Enter');
+  await expect(zone).toBeFocused();
+  await expect(page.getByText('No matches found.', { exact: true })).toBeVisible();
+  mode = 'late'; await zone.fill('old'); await expect.poll(() => held).toBe(true);
+  await zone.fill('new'); await expect(page.getByRole('option', { name: 'New current assignment', exact: true })).toBeVisible();
+  const done = new Promise((resolve) => { finished = resolve; }); release(); await done; finished = null;
+  await expect(page.getByRole('option', { name: 'Old late assignment', exact: true })).toHaveCount(0);
+  await zone.press('Escape'); await expect(zone).toHaveValue('MR Assignments Zone');
+  mode = 'more'; await zone.click();
+  await page.getByRole('button', { name: 'Load more', exact: true }).click();
+  await page.getByRole('button', { name: 'Retry load more', exact: true }).click();
+  await expect(zone).toBeFocused();
+  await page.getByRole('option', { name: 'Final paged zone', exact: true }).click();
+  await expect(zone).toHaveValue('Final paged zone');
+  await zone.fill('not chosen'); await zone.press('Escape');
+  await expect(zone).toHaveValue('Final paged zone');
+
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    for (const appearance of ['light', 'dark']) {
+      await page.evaluate(async (appearance) => (await import('/src/components/admin/adminPreferences.js')).setAdminPreference('appearance', appearance), appearance);
+      const heights = await page.locator('#mr-panel-assignment .mr-form-combobox__control, #mr-panel-assignment .mr-form__control')
+        .evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().height));
+      expect(heights).toHaveLength(9); for (const height of heights) expect(height).toBe(42);
+      const grid = await page.locator('#mr-panel-assignment .mr-form__grid').evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(' ').length);
+      expect(grid).toBe(width === 390 ? 1 : 2);
+      await status.click();
+      const menu = page.locator('.mr-form-combobox__menu');
+      const bounds = await menu.boundingBox();
+      expect(bounds.x).toBeGreaterThanOrEqual(0); expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
+      expect(bounds.y).toBeGreaterThanOrEqual(0); expect(bounds.y + bounds.height).toBeLessThanOrEqual(844);
+      const style = await menu.evaluate((node) => ({ bg: getComputedStyle(node).backgroundColor, color: getComputedStyle(node).color }));
+      expect(style.bg).not.toBe('rgba(0, 0, 0, 0)'); expect(style.bg).not.toBe(style.color);
+      await page.screenshot({ path: info.outputPath(`mr-assignment-${width}-${appearance}.png`), fullPage: true });
+      await status.press('Escape');
+    }
+  }
+  // Owner/unmount cleanup must not apply a response to another session.
+  mode = 'held'; held = false; await zone.click(); await expect.poll(() => held).toBe(true);
+  await expect(page.getByRole('status').filter({ hasText: 'Loading choices' })).toBeVisible();
+  await page.evaluate(async () => (await import('/src/auth/adminSession.js')).logoutAdmin());
+  const closed = new Promise((resolve) => { finished = resolve; }); release(); await closed;
+  await expect(page.getByRole('listbox')).toHaveCount(0);
 });
 
 test('MR compact server filters: paging, query isolation, feedback, keyboard, touch and themed exports', async ({ page }, info) => {
