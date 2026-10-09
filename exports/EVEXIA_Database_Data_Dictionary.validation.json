@@ -1,0 +1,22 @@
+{
+  "application_tables": 29,
+  "application_columns": 351,
+  "foreign_key_constraints": 73,
+  "foreign_key_column_pairs": 74,
+  "logical_or_derived_rows": 8,
+  "infrastructure_tables": 1,
+  "sheets": [
+    "Read Me",
+    "Tables",
+    "Columns",
+    "Relationships"
+  ],
+  "validation": "PASS",
+  "snapshot_utc": "2026-10-09T08:55:34+00:00",
+  "source_commit": "2498a1231019e37edfe6d24514886d50e1d42e15",
+  "schema_sha256": "e25fd33a8858fca8e6adeaee6fcbc16e921a7683929068de13e3205682e25281",
+  "migration_heads": [
+    "0024_opening_balances"
+  ],
+  "file": "exports/EVEXIA_Database_Data_Dictionary.xlsx"
+}

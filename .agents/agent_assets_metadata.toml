@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "yJs3oN3vtfu_E6iEBHpbc"
+uri = "file://exports/EVEXIA_Database_Data_Dictionary.xlsx"
+type = "table"
+title = "EVEXIA Database Data Dictionary — Updated"
+description = "Replaces the earlier snapshot. Validated four-sheet Excel workbook covering 29 application tables, 351 columns and 73 foreign-key constraints through 0024_opening_balances, including both new Opening Balance tables. Alembic infrastructure is separately labeled and excluded from application counts. Offline merged-code snapshot; no live records or credentials."
+logical_id = "2eba0cdf-df39-4265-b8b7-c350002b232e"
+content_hash = "sha256:b3b0b09d6f1ffa20c6468a956bfd8109589710ff0a98118674e908795cd70633"
+size = 55414
+mtime_ms = 1791536135382
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0/2eba0cdf-df39-4265-b8b7-c350002b232e/a70401ad-2aec-4cba-80f0-fc4f2d48aa6b"
+storage_version_token = "1791537363237666"
+content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

@@ -48,3 +48,4 @@
 - [Completion gate runtime](completion-gate-runtime.md) — long release suites can exhaust the completion polling budget and be terminated despite passing interim tests.
 - [Document navigation and renewal](document-navigation-renewal.md) — wait for authenticated redirect destinations before another full reload; destroyed Web Locks cannot protect late cookie rotation.
 - [Monetary rejection boundary](monetary-rejection-boundary.md) — fixed-scale PostgreSQL NUMERIC rounds before CHECK; reject excess input precision before coercion.
+- [Merged schema snapshots](merged-schema-snapshots.md) — completion synchronization can add merged tables after local export validation; regenerate and replace stale downloads.
