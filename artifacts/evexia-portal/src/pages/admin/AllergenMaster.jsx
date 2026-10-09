@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
-import { CirclePower, Download, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react';
+import { ChevronDown, CirclePower, Download, Filter, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import AllergenRefPicker from '../../components/admin/AllergenRefPicker.jsx';
 import AllergenSearchableSelect from '../../components/admin/AllergenSearchableSelect.jsx';
@@ -31,6 +31,7 @@ export default function AllergenMaster() {
   const [mix, setMix] = useState('all');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const filterDisclosure = useRef(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const priceErrors = validatePriceBounds(minPrice.trim(), maxPrice.trim());
@@ -46,6 +47,11 @@ export default function AllergenMaster() {
   const [confirming, setConfirming] = useState(null);
   const [actionError, setActionError] = useState('');
   const hasFilters = Boolean(search || status !== 'all' || categoryId || locationId || mix !== 'all' || minPrice || maxPrice);
+  const activeFilters = [search.trim() && 'search', status !== 'all' && 'status', mix !== 'all' && 'mix', categoryId && 'category', locationId && 'storage location', minPrice && 'minimum price', maxPrice && 'maximum price'].filter(Boolean);
+  function correctPriceBounds() {
+    filterDisclosure.current.open = true;
+    document.getElementById(priceErrors.min ? 'allergen-min-price' : 'allergen-max-price')?.focus();
+  }
   useEffect(() => {
     alive.current = true;
     return () => { alive.current = false; controller.current?.abort(); };
@@ -132,19 +138,27 @@ export default function AllergenMaster() {
     {feedback && <div className="admin-feedback" role="status">{feedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     <section className="admin-panel admin-allergen-panel" aria-label="Allergen list">
-      <div className="admin-allergen-filters">
+      <div className="admin-allergen-toolbar">
+        <div className="admin-allergen-toolbar__top">
         <div className="admin-filter admin-allergen-filters__search"><label htmlFor="allergen-filter-search">Search products</label><div className="admin-search"><Search size={16} aria-hidden="true" /><input id="allergen-filter-search" aria-label="Search products by name, category, storage location or concentration" maxLength={200} value={search} onChange={reset(setSearch)} placeholder="Product, category, location or concentration" data-testid="input-search-allergens" /></div></div>
+        <span className="admin-allergen-filter-feedback" role="status" data-testid="text-allergen-filter-feedback">{invalid ? 'Price bounds need correction' : loading ? 'Loading products…' : error ? 'Product counts unavailable' : hasFilters ? `${filtered} matching · ${total} total products` : `${total} total products`}{activeFilters.length > 0 && ` · ${activeFilters.join(', ')} applied`}</span>
+        <div className="admin-allergen-filters__actions"><button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={retry}>Refresh records</button>
+          <button type="button" className="admin-button admin-button--secondary" disabled={!hasFilters} onClick={clearFilters} data-testid="button-clear-filters">Clear filters</button>
+        </div>
+        </div>
+        <details ref={filterDisclosure} className="admin-allergen-filter-disclosure">
+          <summary data-testid="button-toggle-allergen-filters"><Filter size={15} aria-hidden="true" /> Filter records{activeFilters.length > 0 && ` · ${activeFilters.length} active`}<ChevronDown size={15} aria-hidden="true" /></summary>
+          <div className="admin-allergen-filters">
         <div className="admin-filter"><label htmlFor="allergen-filter-status">Status</label><AllergenSearchableSelect id="allergen-filter-status" label="Status" value={status} testId="select-filter-status" options={[{ value: 'all', label: 'All statuses' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} onChange={(value) => { setStatus(value || 'all'); setPage(1); }} /></div>
         <div className="admin-filter"><label htmlFor="allergen-filter-mix">Mix / No Mix</label><AllergenSearchableSelect id="allergen-filter-mix" label="Mix / No Mix" value={mix} testId="select-filter-mix" options={[{ value: 'all', label: 'All' }, { value: 'mix', label: 'Mix' }, { value: 'no_mix', label: 'No Mix' }]} onChange={(value) => { setMix(value || 'all'); setPage(1); }} /></div>
         <div className="admin-filter"><label htmlFor="allergen-filter-category">Product category</label><AllergenRefPicker id="allergen-filter-category" kind="categories" label="Product category" value={categoryId} includeUnusable allLabel="All categories" className="admin-select" testId="select-filter-category" onChange={(id) => { setCategoryId(id); setPage(1); }} /></div>
         <div className="admin-filter"><label htmlFor="allergen-filter-location">Storage location</label><AllergenRefPicker id="allergen-filter-location" kind="locations" label="Storage location" value={locationId} includeUnusable allLabel="All locations" className="admin-select" testId="select-filter-location" onChange={(id) => { setLocationId(id); setPage(1); }} /></div>
         <div className="admin-filter"><label htmlFor="allergen-min-price">Minimum price</label><input id="allergen-min-price" className="admin-select" inputMode="decimal" value={minPrice} onChange={reset(setMinPrice)} aria-invalid={Boolean(priceErrors.min)} aria-describedby={priceErrors.min ? 'allergen-min-price-error' : undefined} data-testid="input-min-price" />{priceErrors.min && <p id="allergen-min-price-error" className="admin-allergen-filter-error" role="alert">{priceErrors.min}</p>}</div>
         <div className="admin-filter"><label htmlFor="allergen-max-price">Maximum price</label><input id="allergen-max-price" className="admin-select" inputMode="decimal" value={maxPrice} onChange={reset(setMaxPrice)} aria-invalid={Boolean(priceErrors.max)} aria-describedby={priceErrors.max ? 'allergen-max-price-error' : undefined} data-testid="input-max-price" />{priceErrors.max && <p id="allergen-max-price-error" className="admin-allergen-filter-error" role="alert">{priceErrors.max}</p>}</div>
-        <div className="admin-allergen-filters__actions"><button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={retry}>Refresh records</button>
-        <button type="button" className="admin-button admin-button--secondary" disabled={!hasFilters} onClick={clearFilters} data-testid="button-clear-filters">Clear filters</button>
-        </div>
+          </div>
+        </details>
       </div>
-      {invalid ? <div className="admin-empty" role="status"><strong>Fix the price bounds</strong><p>Results are not loaded until minimum and maximum price are valid.</p></div>
+      {invalid ? <div className="admin-empty" role="status"><strong>Fix the price bounds</strong><p>Results are not loaded until minimum and maximum price are valid.</p><p className="admin-allergen-filter-error">{[priceErrors.min, priceErrors.max].filter(Boolean).join(' ')}</p><button type="button" className="admin-button admin-button--secondary" onClick={correctPriceBounds} data-testid="button-correct-allergen-prices">Open filters to correct prices</button></div>
         : loading ? <p className="admin-empty" role="status">Loading shared allergen products…</p>
         : error ? <div className="admin-empty" role="alert"><strong>Allergen products could not be loaded</strong><p>{error}</p><button type="button" className="admin-button" onClick={retry}>Try again</button></div> : <>
           {records.length ? <>

@@ -39,6 +39,23 @@ for (const [label, viewport, scheme] of [['desktop light', { width: 1280, height
     await page.setViewportSize(viewport);
     await page.emulateMedia({ colorScheme: scheme });
     await open(page);
+    const disclosure = page.locator('.admin-allergen-filter-disclosure');
+    const toggle = page.getByTestId('button-toggle-allergen-filters');
+    await expect(disclosure).not.toHaveAttribute('open');
+    await expect(page.getByTestId('input-search-allergens')).toBeVisible();
+    await expect(page.getByTestId('select-filter-status')).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Refresh records', exact: true })).toBeVisible();
+    await expect(page.getByTestId('button-clear-filters')).toBeVisible();
+    await page.getByRole('button', { name: 'Refresh records', exact: true }).focus();
+    await page.keyboard.press('Tab'); // disabled Clear filters is skipped
+    await expect(toggle).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('select-filter-status')).toBeVisible();
+    await page.keyboard.press('Space');
+    await expect(disclosure).not.toHaveAttribute('open');
+    await page.keyboard.press('Tab');
+    await expect(page.getByTestId('select-filter-status')).not.toBeFocused();
+    expect(await page.evaluate(() => Boolean(document.activeElement.closest('.admin-allergen-filters')))).toBe(false);
     await page.evaluate(async (scheme) => {
       const { setAdminPreference } = await import('/src/components/admin/adminPreferences.js');
       setAdminPreference('appearance', scheme);
@@ -91,6 +108,7 @@ for (const [label, viewport, scheme] of [['desktop light', { width: 1280, height
     await expect(visibleId(page, `text-allergen-name-${row.id}`)).toBeVisible();
     // Filters: exact bounds, invalid bounds, clear.
     await page.getByTestId('input-search-allergens').fill(name);
+    await toggle.click();
     await pick(page, 'select-filter-status', 'Active');
     await pick(page, 'select-filter-category', row.category_name);
     await pick(page, 'select-filter-location', row.storage_location_name);
@@ -100,8 +118,19 @@ for (const [label, viewport, scheme] of [['desktop light', { width: 1280, height
     await page.getByTestId('input-min-price').fill('12.345678');
     await page.getByTestId('input-max-price').fill('12.345677');
     await expect(page.getByRole('alert').filter({ hasText: 'Maximum price' })).toBeVisible();
+    await toggle.click();
+    await expect(page.getByTestId('input-max-price')).toBeHidden();
+    await expect(page.getByRole('status').filter({ hasText: 'Fix the price bounds' })).toContainText('Maximum price must not be below minimum price.');
+    await expect(page.getByTestId('button-export-allergens')).toBeDisabled();
+    await page.getByTestId('button-correct-allergen-prices').click();
+    await expect(page.getByTestId('input-max-price')).toBeFocused();
+    await expect(page.getByTestId('input-max-price')).toHaveValue('12.345677');
+    await expect(page.getByTestId('input-max-price')).toHaveAttribute('aria-invalid', 'true');
     await page.getByTestId('input-max-price').fill('12.345678');
     await expect(visibleId(page, `text-allergen-name-${row.id}`)).toBeVisible();
+    await toggle.click();
+    await expect(toggle).toContainText('7 active');
+    await expect(page.getByTestId('text-allergen-filter-feedback')).toContainText('1 matching');
     for (const format of ['csv', 'xlsx']) {
       const response = page.waitForResponse(r => r.url().includes('/allergens/export?'));
       const download = page.waitForEvent('download');
@@ -113,6 +142,15 @@ for (const [label, viewport, scheme] of [['desktop light', { width: 1280, height
     }
     await page.getByTestId('button-clear-filters').click();
     await expect(page.getByTestId('input-search-allergens')).toHaveValue('');
+    await expect(disclosure).not.toHaveAttribute('open');
+    await expect(toggle).toHaveText('Filter records');
+    await toggle.click();
+    await expect(page.getByTestId('input-min-price')).toHaveValue('');
+    await expect(page.getByTestId('input-max-price')).toHaveValue('');
+    await expect(page.getByTestId('select-filter-status')).toContainText('All statuses');
+    await expect(page.getByTestId('select-filter-mix')).toContainText('All');
+    await expect(page.getByTestId('select-filter-category')).toContainText('All categories');
+    await expect(page.getByTestId('select-filter-location')).toContainText('All locations');
     // Concurrency: stale edit is blocked and draft kept.
     await page.getByTestId('input-search-allergens').fill(name);
     await visibleId(page, `button-edit-allergen-${row.id}`).click();
@@ -168,6 +206,78 @@ for (const [label, viewport, scheme] of [['desktop light', { width: 1280, height
     await expect(page.getByText('Untouched browser allergen')).toHaveCount(0);
   });
 }
+test('allergen disclosure retains pagination, requests and all theme layouts', async ({ page }) => {
+  await open(page);
+  const prefix = `Disclosure ${Date.now()}`;
+  await page.evaluate(async prefix => {
+    const { createAllergen, listAllergenReferences } = await import('/src/services/serverAllergens.js');
+    const category = (await listAllergenReferences('categories', {})).items[0];
+    const location = (await listAllergenReferences('locations', {})).items[0];
+    for (let index = 0; index < 3; index++) await createAllergen({
+      name: `${prefix} ${index}`, category_id: category.id, storage_location_id: location.id,
+      selling_price: '5', gst: '0', concentration: '1:10', threshold_limit: null, status: 'active', mix: false,
+    });
+  }, prefix);
+  const requests = [];
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (url.pathname === '/api/v1/admin/allergens' && request.method() === 'GET') requests.push(Object.fromEntries(url.searchParams));
+  });
+  const toggle = page.getByTestId('button-toggle-allergen-filters');
+  await page.getByTestId('input-search-allergens').fill(prefix);
+  await toggle.click();
+  await pick(page, 'select-filter-status', 'Active');
+  await page.getByTestId('input-min-price').fill('1');
+  await page.getByTestId('input-max-price').fill('9');
+  await expect(page.getByTestId('text-allergen-count')).toContainText('of 3 products');
+  await page.getByRole('combobox', { name: 'Rows per page' }).selectOption('2');
+  await page.getByRole('button', { name: 'Next page', exact: true }).click();
+  await expect(page.getByTestId('text-allergen-count')).toContainText('Showing 3–3 of 3');
+  const lastRequest = requests.at(-1);
+  const beforeToggle = requests.length;
+  await toggle.click();
+  await toggle.click();
+  await expect(page.getByTestId('input-min-price')).toHaveValue('1');
+  await expect(page.getByTestId('input-max-price')).toHaveValue('9');
+  await expect(page.getByTestId('select-filter-status')).toContainText('Active');
+  await expect(page.getByTestId('text-allergen-count')).toContainText('Showing 3–3 of 3');
+  expect(requests.length).toBe(beforeToggle);
+  await toggle.click();
+  const refreshed = page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/admin/allergens');
+  await page.getByRole('button', { name: 'Refresh records', exact: true }).click();
+  await refreshed;
+  expect(requests.at(-1)).toEqual(lastRequest);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  for (const width of [1280, 390]) for (const theme of ['classic', 'modern']) for (const appearance of ['light', 'dark']) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.evaluate(async ({ theme, appearance }) => {
+      const { setAdminPreference } = await import('/src/components/admin/adminPreferences.js');
+      setAdminPreference('theme', theme);
+      setAdminPreference('appearance', appearance);
+    }, { theme, appearance });
+    for (const expanded of [false, true]) {
+      if (expanded) await toggle.click();
+      await expect(toggle).toContainText('4 active');
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+      for (const locator of [toggle, page.getByTestId('input-search-allergens'), page.getByTestId('button-clear-filters'), ...(expanded ? [page.getByTestId('input-min-price'), page.getByTestId('select-filter-category')] : [])]) {
+        const box = await locator.boundingBox();
+        expect(box.width).toBeGreaterThan(0);
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
+      }
+      await page.screenshot({ path: test.info().outputPath(`allergen-disclosure-${width}-${theme}-${appearance}-${expanded}.png`), fullPage: true });
+      if (expanded) await toggle.click();
+    }
+  }
+  await page.getByTestId('button-clear-filters').focus();
+  await page.keyboard.press('Tab');
+  await expect(toggle).toBeFocused();
+  expect(await toggle.evaluate(node => getComputedStyle(node).outlineStyle)).toBe('solid');
+  expect(await toggle.locator('svg').last().evaluate(node => getComputedStyle(node).transitionDuration)).toBe('0s');
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('input-min-price')).toBeVisible();
+});
+
 test('allergen import route has two prepared cards, selected tab and a review that saves nothing', async ({ page }) => {
   await open(page, '/admin/masters/import/allergen');
   await expect(page.getByRole('heading', { name: 'Import Allergen data' })).toBeVisible();
@@ -327,6 +437,7 @@ test('allergen combined references: bounded pages, late searches, retry, keyboar
   });
   await open(page);
   const category = page.getByTestId('select-filter-category');
+  await page.getByTestId('button-toggle-allergen-filters').click();
   await expect(page.getByTestId('select-filter-category-search')).toHaveCount(0);
   await category.focus();
   await page.keyboard.press('ArrowDown');

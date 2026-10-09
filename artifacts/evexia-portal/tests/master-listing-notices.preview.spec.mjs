@@ -50,6 +50,8 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844
         await expect(page.locator('section.admin-panel').locator('table:visible, .admin-empty:visible, [role="list"]:visible').first()).toBeVisible();
         if (slug === 'allergens') {
           await expect(page.locator('.admin-filter button[role="combobox"]')).toHaveCount(4);
+          await expect(page.getByTestId('select-filter-status')).toBeHidden();
+          await page.getByTestId('button-toggle-allergen-filters').click();
           await expect(page.getByTestId('select-filter-status')).toBeVisible();
         } else {
           expect(await page.locator('.admin-filter select').count()).toBeGreaterThan(0);
