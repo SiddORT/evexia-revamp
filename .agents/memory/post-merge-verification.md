@@ -9,6 +9,17 @@ After post-merge setup reports success, verify API readiness and inspect workflo
 
 **How to apply:** Treat setup success and application readiness as separate checks. Allow a short bounded startup interval for health probes; investigate persistent failures rather than rerunning otherwise successful setup.
 
+Operational backup-and-migration sequences must fail closed at every step,
+including commands issued outside the maintained setup script.
+
+**Why:** A failed backup subprocess stopped its Python block but not the outer
+shell, allowing a later migration command to run. A post-migration backup is not
+a substitute for a verified pre-migration backup.
+
+**How to apply:** Use a fail-fast shell and explicit success gating before any
+database mutation. Do not call the migration if backup creation or verification
+fails.
+
 After rebasing a shared styling rename, repeat the consumer search against the
 merged tree, even if the original search found no remaining uses.
 

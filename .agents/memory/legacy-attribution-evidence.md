@@ -19,3 +19,14 @@ distinction in future lifecycle work. Shared preflight/migration evidence
 helpers are historical migration logic: evolve new rules through a reviewed
 forward revision, not by changing the meaning of an already accepted migration.
 See the role lifecycle operations document for the operator procedure.
+
+Private reviewed mapping and backup files are not transported by code merges.
+A completion report describing a migrated task database does not prove the
+shared workspace database has that schema or the operator files.
+
+**Why:** A merged lifecycle report described completed attribution, while the
+shared database still required the same reviewed updater mapping.
+
+**How to apply:** Check the live revision and preflight coverage. Require an
+available reviewed map or explicit operator confirmation; never reconstruct an
+approval solely from the report.
