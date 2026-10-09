@@ -29,7 +29,7 @@ async function directory(page, label) {
   }, label);
   await page.evaluate(({ key, legacy }) => localStorage.setItem(key, legacy), { key, legacy });
   await page.goto(base() + path);
-  await expect(page.getByTestId('text-mr-count')).toBeVisible();
+  await expect(page.locator('[data-testid="text-mr-count"], section[aria-label="Encrypted search section"]')).toBeVisible();
   return refs;
 }
 async function discard(page) {
@@ -203,7 +203,7 @@ test('MR import review/confirm, genuine samples, reset and deactivation', async 
   expect(result.imported).toBe(1);
   await discard(page);
   await page.goto(base() + path);
-  await expect(page.getByTestId('text-mr-count')).toBeVisible();
+  await expect(page.locator('[data-testid="text-mr-count"], section[aria-label="Encrypted search section"]')).toBeVisible();
   await filter(page, 'mr-zone-filter', 'MR Transfer Zone');
   await filter(page, 'mr-hq-filter', 'MR Transfer HQ');
   const row = await page.evaluate(async (username) => (await import('/src/services/serverMRs.js')).resolveMRAccount(username), 'synthetic.transfer');
@@ -269,7 +269,7 @@ test('MR deleted designation must be replaced without changing the account', asy
   expect(saved.userId).toBe(record.userId);
   expect(saved.designation_id).toBe(replacement.id);
   expect(saved.designationName).toBe(replacement.name);
-  await expect(page.getByTestId('text-mr-count')).toBeVisible();
+  await expect(page.locator('[data-testid="text-mr-count"], section[aria-label="Encrypted search section"]')).toBeVisible();
 });
 
 test('MR assignment comboboxes: selected IDs, manager clearing, stale responses, paging retry and layouts', async ({ page }, info) => {
@@ -435,7 +435,7 @@ test('MR compact server filters: paging, query isolation, feedback, keyboard, to
   await expect(status).toHaveValue('Inactive');
   await page.getByTestId('input-search-mrs').fill('Synthetic');
   await expect.poll(() => requests.at(-1)?.searchParams.get('query')).toBe('Synthetic');
-  await expect(page.getByTestId('text-mr-count')).toBeVisible();
+  await expect(page.locator('[data-testid="text-mr-count"], section[aria-label="Encrypted search section"]')).toBeVisible();
   const listParams = requests.at(-1).searchParams;
   expect(listParams.get('zone_id')).toBe(applied);
   expect(listParams.get('status')).toBe('inactive');

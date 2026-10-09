@@ -155,7 +155,9 @@ test('Patient PIN late/manual guards, server exports and prepared atomic CSV imp
   await page.getByTestId('input-patient-import').setInputFiles({ name: 'patients.csv', mimeType: 'text/csv', buffer: Buffer.from(headers.join(',') + '\n' + row.join(',')) });
   await page.getByTestId('button-review-patient-import').click();
   await expect(page.getByTestId('button-confirm-patient-import')).toBeEnabled();
-  expect((await list(page, row[1])).filtered).toBe(0);
+  const beforeCommit = await list(page, row[1]);
+  expect(beforeCommit.filtered).toBeNull();
+  expect(beforeCommit.items).toHaveLength(0);
   await page.getByTestId('button-confirm-patient-import').click();
   await expect(page.getByText(/1 patient.*imported/i)).toBeVisible();
   expect((await list(page, row[1])).items[0].dialCountry).toBe('IN');

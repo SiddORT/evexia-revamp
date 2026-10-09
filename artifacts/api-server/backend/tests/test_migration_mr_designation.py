@@ -61,7 +61,9 @@ def test_populated_normalized_backfill_all_lifecycles_and_restrict(migration_db)
                          [("Medical Representative", "active", False),
                           ("Inactive", "inactive", False), ("Deleted", "inactive", True)])
     engine, config, keys, ids, before, history = fixture
-    command.upgrade(config, "head")
+    # This test isolates catalogue reconciliation; later coordinated encryption
+    # requires its own populated-source backfill and retirement approval.
+    command.upgrade(config, "0027_mr_designation_identity")
     with Session(engine) as db:
         after = [dict(row) for row in db.execute(text("SELECT * FROM mr_directory ORDER BY id")).mappings()]
         for old, new in zip(before, after):
@@ -89,7 +91,7 @@ def test_populated_normalized_backfill_all_lifecycles_and_restrict(migration_db)
 def test_unmatched_ambiguous_inactive_deleted_mrs_rollback(migration_db, labels, catalogue):
     engine, config, _, _, before, _ = historical(migration_db, labels, catalogue)
     with pytest.raises(RuntimeError, match="reconciliation required"):
-        command.upgrade(config, "head")
+        command.upgrade(config, "0027_mr_designation_identity")
     with engine.connect() as db:
         assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0026_designation_target"
         assert [dict(row) for row in db.execute(text("SELECT * FROM mr_directory ORDER BY id")).mappings()] == before

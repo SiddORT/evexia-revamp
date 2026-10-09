@@ -39,7 +39,7 @@ async function seed(page, mobile = false) {
     } });
   }, { label, legacyKey, legacy, mobile });
   await page.goto(base() + path);
-  await expect(page.getByTestId('text-opening-balance-count')).toBeVisible();
+  await expect(page.locator('[data-testid="text-opening-balance-count"], section[aria-label="Encrypted search section"]')).toBeVisible();
   return doctor;
 }
 
@@ -56,7 +56,7 @@ async function chooseYear(page, start, year) {
 }
 async function filter(page, query) {
   await page.getByRole('textbox', { name: 'Search opening balances' }).fill(query);
-  await expect(page.getByTestId('text-opening-balance-count')).toBeVisible();
+  await expect(page.locator('[data-testid="text-opening-balance-count"], section[aria-label="Encrypted search section"]')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Export data', exact: true })).toBeEnabled();
 }
 
@@ -162,12 +162,12 @@ for (const mobile of [false, true]) {
     await expect(page.locator(mobile ? 'article[role=listitem]' : 'tbody tr').filter({ hasText: doctor.name })).toContainText('-99,99,99,99,99,999.99');
     const other = await context.newPage();
     await other.goto(base() + path);
-    await expect(other.getByTestId('text-opening-balance-count')).toBeVisible();
+    await expect(other.locator('[data-testid="text-opening-balance-count"], section[aria-label="Encrypted search section"]')).toBeVisible();
     await filter(other, doctor.registrationNumber);
     await expect(other.getByText(doctor.name, { exact: true }).first()).toBeVisible();
     await other.close();
     await page.reload();
-    await expect(page.getByTestId('text-opening-balance-count')).toBeVisible();
+    await expect(page.locator('[data-testid="text-opening-balance-count"], section[aria-label="Encrypted search section"]')).toBeVisible();
     expect(await page.evaluate((key) => localStorage.getItem(key), legacyKey)).toBe(legacy);
     const row = await page.evaluate(async (query) => (await import('/src/services/serverOpeningBalances.js')).listOpeningBalances({ query }), doctor.registrationNumber);
     await page.goto(base() + `${path}/${row.items[0].id}`);
@@ -221,7 +221,7 @@ test('Opening Balance shared import CSV/XLSX review, errors, filtered downloads 
   const record = await create(page, doctor);
   await create(page, doctor, { startYear: 1901, endYear: 1902, amount: '12.25', status: 'inactive' });
   await page.goto(base() + path);
-  await expect(page.getByTestId('text-opening-balance-count')).toBeVisible();
+  await expect(page.locator('[data-testid="text-opening-balance-count"], section[aria-label="Encrypted search section"]')).toBeVisible();
   await filter(page, doctor.registrationNumber);
   await page.getByLabel('Status', { exact: true }).selectOption('active');
   await expect(page.getByRole('button', { name: 'Export data', exact: true })).toBeEnabled();
@@ -309,7 +309,7 @@ for (const mobile of [false, true]) {
     });
     await select.fill(doctor.registrationNumber);
     expect((await matchingResponse).status()).toBe(200);
-    await expect(page.locator('#ob-doctor-help')).toBeEmpty();
+    await expect(page.getByRole('status').filter({ hasText: '1 choices in this section' })).toBeVisible();
     await expect(page.getByRole('option', { name: `${doctor.name} · ${doctor.registrationNumber}`, exact: true })).toBeVisible();
     await page.screenshot({ path: info.outputPath('styled-doctor-overlay.png'), fullPage: true });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
@@ -352,7 +352,7 @@ test('Opening Balance Doctor picker searches beyond bounded results, retries err
     } else await route.continue();
   });
   await page.goto(base() + path);
-  await expect(page.getByTestId('text-opening-balance-count')).toBeVisible();
+  await expect(page.locator('[data-testid="text-opening-balance-count"], section[aria-label="Encrypted search section"]')).toBeVisible();
   await page.getByRole('button', { name: 'Add opening balance', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('unavailable');
   await page.getByRole('button', { name: 'Retry Doctors', exact: true }).click();
@@ -360,26 +360,29 @@ test('Opening Balance Doctor picker searches beyond bounded results, retries err
   // Other release scenarios share this disposable catalogue. Filter to this
   // fixture before asserting counts rather than assuming an empty directory.
   await doctorSelect.fill(label);
-  await expect(page.locator('#ob-doctor-help')).toContainText('Refine by name or registration');
-  await expect(page.getByRole('button', { name: /Previous Doctors|Next Doctors/ })).toHaveCount(0);
-  await expect(page.getByRole('listbox', { name: 'Doctor', exact: true }).getByRole('option')).toHaveCount(50);
-  await expect(page.getByRole('option', { name: `${doctors[50].name} · ${doctors[50].registrationNumber}`, exact: true })).toHaveCount(0);
-  const specificSearch = page.waitForResponse((response) => {
+  await expect(page.getByRole('status').filter({ hasText: '50 choices in this section' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue search', exact: true })).toBeEnabled();
+  await doctorSelect.press('Escape');
+  const secondPage = page.waitForResponse((response) => {
     const url = new URL(response.url());
     return url.pathname.endsWith('/opening-balances/references')
-      && url.searchParams.get('query') === doctors[50].registrationNumber && url.searchParams.get('offset') === '0';
+      && url.searchParams.get('query') === label && Boolean(url.searchParams.get('cursor'));
   });
-  await doctorSelect.fill(doctors[50].registrationNumber);
-  expect((await specificSearch).status()).toBe(200);
-  await page.getByRole('option', { name: `${doctors[50].name} · ${doctors[50].registrationNumber}`, exact: true }).click();
-  await expect(doctorSelect).toHaveValue(new RegExp(doctors[50].registrationNumber));
-  await doctorSelect.fill(doctors[50].name);
-  await expect(page.getByRole('option', { name: `${doctors[50].name} · ${doctors[50].registrationNumber}`, exact: true })).toBeVisible();
-  await expect(page.locator('#ob-doctor-help')).toBeEmpty();
+  await page.getByRole('button', { name: 'Continue search', exact: true }).click();
+  expect((await secondPage).status()).toBe(200);
+  const lastDoctor = [...doctors].sort((a, b) => a.id.localeCompare(b.id))[50];
+  // Paging dismisses the overlay; reopening must retain its query and page,
+  // not issue an unfiltered page-zero search.
+  await doctorSelect.click();
+  await page.getByRole('option', { name: `${lastDoctor.name} · ${lastDoctor.registrationNumber}`, exact: true }).click();
+  await expect(doctorSelect).toHaveValue(new RegExp(lastDoctor.registrationNumber));
+  await doctorSelect.fill(lastDoctor.registrationNumber);
+  await expect(page.getByRole('option', { name: `${lastDoctor.name} · ${lastDoctor.registrationNumber}`, exact: true })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: '1 choices in this section' })).toBeVisible();
   await doctorSelect.fill('no-matching-doctor-ever');
-  await expect(page.locator('#ob-doctor-help')).toContainText('No matching Doctors');
+  await expect(page.getByRole('status').filter({ hasText: '0 choices in this section' })).toBeVisible();
   await doctorSelect.press('Escape');
-  await expect(doctorSelect).toHaveValue(new RegExp(doctors[50].registrationNumber));
+  await expect(doctorSelect).toHaveValue(new RegExp(lastDoctor.registrationNumber));
   let release, arrivedResolve, handledResolve;
   const arrived = new Promise((resolve) => { arrivedResolve = resolve; });
   const handled = new Promise((resolve) => { handledResolve = resolve; });

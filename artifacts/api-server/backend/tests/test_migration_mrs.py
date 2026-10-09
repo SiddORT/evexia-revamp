@@ -198,7 +198,7 @@ def test_maximum_exports_bulk_queries_exact_rows_caps_and_revocation(migration_d
             assert len(exported) == 5001  # Complete, not a silently truncated page.
             # Compare every exported business field, order and optional audit field.
             rows = list(db.scalars(select(MRDirectory).where(MRDirectory.id.in_(ids)).order_by(
-                MRDirectory.created_at.desc(), MRDirectory.id.desc())))
+                MRDirectory.id)))
             for record, cells in zip(rows, exported[1:]):
                 index = int(record.employeeCode.removeprefix("FIX-"))
                 values = {key: getattr(record, key) for key, _ in mr_transfer.COLUMNS if key != "userId"}
@@ -213,7 +213,8 @@ def test_maximum_exports_bulk_queries_exact_rows_caps_and_revocation(migration_d
                     expected = [value if value else None for value in expected]
                 assert list(cells) == expected
             assert "inert-fixture-not-a-password-hash" not in str(exported)
-            assert exported[-1][mr_transfer.HEADERS.index("Reporting Manager")] == "user:fixture.mr.5000"
+            sentinel = next(cells for cells in exported[1:] if cells[0] == "FIX-00000")
+            assert sentinel[mr_transfer.HEADERS.index("Reporting Manager")] == "user:fixture.mr.5000"
     # Make the saved tombstone live: one over the real cap must fail, not truncate.
     with Session(engine) as db:
         db.execute(text("UPDATE mr_directory SET deleted_at=NULL, deleted_by=NULL WHERE deleted_at IS NOT NULL"))
@@ -229,9 +230,10 @@ def test_maximum_exports_bulk_queries_exact_rows_caps_and_revocation(migration_d
             return 5000 if "count(" in str(statement) and "mr_directory" in str(statement) else value
         with monkeypatch.context() as patch:
             patch.setattr(db, "scalar", earlier_count)
-            with pytest.raises(mrs.MRError) as error:
+            from app.services.directory_runtime import ExportLimitError
+            with pytest.raises(ExportLimitError) as error:
                 mr_transfer.export(db, identity(db, actor_id, session_id), "", "all", None, None, "xlsx")
-            assert error.value.code == "mr_export_limit"
+            assert error.value.code == "directory_export_limit"
         actor = identity(db, actor_id, session_id)
         db.execute(text("UPDATE auth_sessions SET status='REVOKED',revoked_at=now() WHERE id=:id"), {"id": session_id})
         db.commit()

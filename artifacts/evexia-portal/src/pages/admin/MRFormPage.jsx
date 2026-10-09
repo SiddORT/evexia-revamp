@@ -75,7 +75,11 @@ export default function MRFormPage({ id }) {
       }
       return { success: true };
     } catch (cause) {
-      if (mounted.current && (cause.ambiguous || cause.status === 409)) setWriteBlocked({ username: values.userId });
+      // These typed assignment rejections occur before mutation and roll back.
+      // A corrected selection can retry with the same expected version; stale
+      // versions and uncertain outcomes still require explicit reconciliation.
+      const rejectedAssignment = cause.status === 409 && ['mr_assignment', 'mr_manager_cycle'].includes(cause.code);
+      if (mounted.current && !rejectedAssignment && (cause.ambiguous || cause.status === 409)) setWriteBlocked({ username: values.userId });
       return { success: false, error: `${cause.message}${cause.ambiguous ? ' Check MR Master before submitting again.' : ''}` };
     } finally { busy.current = false; }
   }

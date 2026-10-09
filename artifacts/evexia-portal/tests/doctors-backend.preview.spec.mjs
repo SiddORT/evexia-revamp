@@ -103,7 +103,9 @@ for (const mobile of [false, true]) {
     await page.getByTestId('button-save-doctor').click();
     await expect(page).toHaveURL(new RegExp(`${listPath}(?:\\?.*)?$`));
     const saved = await page.evaluate(async (query) => (await import('/src/services/serverDoctors.js')).listDoctors({ query }), values.registrationNumber);
-    expect(saved.filtered).toBe(1);
+    expect(saved.filtered).toBeNull();
+    expect(saved.partial).toBe(true);
+    expect(saved.items).toHaveLength(1);
     const doctor = saved.items[0];
     for (const [key, value] of Object.entries(values)) expect(doctor[key], key).toBe(value);
     expect(doctor.zoneName).toBe(refs.zone.name);
@@ -180,10 +182,10 @@ test('Doctor server pagination/filter parity, atomic bulk actions, menus, live M
   const doctors = [];
   for (let index = 0; index < 13; index++) doctors.push(await create(page, { ...values, name: `Doctor ${label} ${index}`, registrationNumber: `REG-${label}-${index}` }));
   await openList(page, label);
-  await expect(page.getByLabel('Next page', { exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Continue search', exact: true })).toBeEnabled();
   await page.getByTestId('checkbox-select-all-doctors').check();
   await expect(page.getByTestId('text-selected-doctors')).toContainText('10');
-  await page.getByLabel('Next page', { exact: true }).click();
+  await page.getByRole('button', { name: 'Continue search', exact: true }).click();
   await expect(page.getByTestId('text-selected-doctors')).toHaveCount(0);
   await page.getByTestId('checkbox-select-all-doctors').check();
   await expect(page.getByTestId('text-selected-doctors')).toContainText('3');
@@ -203,7 +205,9 @@ test('Doctor server pagination/filter parity, atomic bulk actions, menus, live M
   await page.getByTestId('select-shift-doctor-mr').selectOption(refs.mr.id);
   await page.getByTestId('button-confirm-shift-doctors').click();
   await expect(page.getByTestId('status-doctor-feedback')).toContainText('MR assignment updated');
-  const first = doctors[0];
+  // Ciphertext cannot supply a plaintext sort key; use the stable UUID section.
+  const visibleId = (await page.locator('[data-testid^="row-doctor-"]').first().getAttribute('data-testid')).slice('row-doctor-'.length);
+  const first = doctors.find((record) => record.id === visibleId);
   await page.getByTestId(`button-toggle-doctor-${first.id}`).click();
   await page.getByTestId('button-confirm-action').click();
   await expect(page.getByTestId('status-doctor-feedback')).toContainText('Doctor status updated');
@@ -214,7 +218,7 @@ test('Doctor server pagination/filter parity, atomic bulk actions, menus, live M
   expect((await get(page, first.id)).contactRequirement).toBe('optional');
   await page.getByTestId('button-toggle-doctor-filters').click();
   await page.getByTestId('select-filter-doctor-status').selectOption('active');
-  await expect(page.getByLabel('Next page', { exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Continue search', exact: true })).toBeEnabled();
   const trigger = page.getByTestId('button-export-doctors');
   await trigger.focus(); await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('menuitem', { name: 'CSV', exact: true })).toBeVisible();
@@ -284,7 +288,9 @@ test('Doctor prepared CSV/XLSX samples, review-only, file replacement and atomic
   await page.getByTestId('button-review-doctor-import').click();
   await expect(page.getByTestId('doctor-excel-report')).toContainText('valid');
   await expect(page.getByTestId('button-confirm-doctor-import')).toBeEnabled();
-  expect((await page.evaluate(async (query) => (await import('/src/services/serverDoctors.js')).listDoctors({ query }), `IMPORT-${label}`)).filtered).toBe(0);
+  const beforeCommit = await page.evaluate(async (query) => (await import('/src/services/serverDoctors.js')).listDoctors({ query }), `IMPORT-${label}`);
+  expect(beforeCommit.filtered).toBeNull();
+  expect(beforeCommit.items).toHaveLength(0);
   await page.getByTestId('input-doctor-import').setInputFiles({ name: 'invalid.csv', mimeType: 'text/csv', buffer: Buffer.from('Name,MR\nIncomplete,local-only') });
   await expect(page.getByTestId('doctor-excel-report')).toHaveCount(0);
   await page.getByTestId('button-review-doctor-import').click();
@@ -297,7 +303,8 @@ test('Doctor prepared CSV/XLSX samples, review-only, file replacement and atomic
   await expect(page.getByRole('status').filter({ hasText: '1 doctors imported' })).toBeVisible();
   await expect(page.getByTestId('doctor-excel-report')).toHaveCount(0);
   const saved = await page.evaluate(async (query) => (await import('/src/services/serverDoctors.js')).listDoctors({ query }), `IMPORT-${label}`);
-  expect(saved.filtered).toBe(1);
+  expect(saved.filtered).toBeNull();
+  expect(saved.items).toHaveLength(1);
   expect(saved.items[0].mrId).toBe(refs.mr.id);
   expect(saved.items[0].zoneName).toBe(refs.zone.name);
 });

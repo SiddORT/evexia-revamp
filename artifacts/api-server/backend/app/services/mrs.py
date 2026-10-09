@@ -150,8 +150,8 @@ def projection(db, row, context=None):
                 createdAt=row.created_at, updatedAt=row.updated_at)
 
 
-def search_matcher(db, query, rows):
-    context = projection_context(db, rows)
+def search_matcher(db, query, rows, context=None):
+    context = projection_context(db, rows) if context is None else context
     return lambda row: encrypted.match(query, row.name, row.employeeCode, row.email, row.phone,
                                       row.city, context["designations"][row.designation_id].name,
                                       context["accounts"][row.id].username)

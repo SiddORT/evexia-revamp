@@ -332,13 +332,20 @@ def export(db, actor, query, status, zone_id, hq_id, format):
         count = db.scalar(select(func.count()).select_from(MRDirectory).where(*clauses))
         if not query.strip() and count > EXPORT_LIMIT:
             raise mrs.MRError("More than 5,000 MRs match. Narrow the filters; nothing downloaded.", 409, "mr_export_limit")
+        context = None
+        def prepare(rows):
+            nonlocal context
+            # One transient bulk projection serves matching and serialization.
+            # It is never persisted, shared across requests or exposed as a DTO.
+            context = mrs.projection_context(db, rows, manager_accounts=True)
+            return mrs.search_matcher(db, query, rows, context)
         records = mrs.encrypted.complete(db, MRDirectory, clauses, lambda row: True,
-                                        prepare=(lambda rows: mrs.search_matcher(db, query, rows))
-                                        if query.strip() else None)
+                                        prepare=prepare if query.strip() else None)
         if len(records) > EXPORT_LIMIT:
             raise mrs.MRError("More than 5,000 MRs match. Narrow the filters.", 409, "mr_export_limit")
         rows = []
-        context = mrs.projection_context(db, records, manager_accounts=True)
+        if context is None:
+            context = mrs.projection_context(db, records, manager_accounts=True)
         for record in records:
             values = mrs.projection(db, record, context)
             values["hq"], values["zoneId"] = values["hqName"], values["zoneName"]

@@ -45,10 +45,11 @@ test('Opening Balance transport sends exact strings, versions, bounded reference
   await service.statusOpeningBalance(record, 'inactive');
   await service.deleteOpeningBalance(record);
   assert.deepEqual(JSON.parse(calls.at(-1).options.body), { expected_version: 7 });
-  await service.openingBalanceDoctors({ query: 'REG%', limit: 50, offset: 50, balance_id: record.id });
+  await service.openingBalanceDoctors({ query: 'REG%', limit: 50, offset: 50, balance_id: record.id, cursor: null });
   assert.match(calls.at(-1).url, /query=REG%25/);
   assert.match(calls.at(-1).url, /offset=50/);
   assert.match(calls.at(-1).url, /balance_id=/);
+  assert.equal(new URL(calls.at(-1).url, 'https://fixture.invalid').searchParams.has('cursor'), false);
   const blob = await service.exportOpeningBalances({ query: '2026', status: 'inactive' }, 'xlsx');
   assert.equal(calls.at(-1).options.headers['X-Download-Initiation'].length, 36);
   mode = 'unlogged';

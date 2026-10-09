@@ -2,10 +2,12 @@
 
 ## Status and approval boundary
 
-This is a staged implementation, **not an encrypted-directory rollout**. The
-current API still uses legacy plaintext columns. The additive schema and offline
-crypto/backfill support do not authorize a cutover or plaintext retirement.
-Do not deploy this stage as evidence that directory PII is encrypted at rest.
+The coordinated ciphertext-only runtime, bounded search/continuation, transfers,
+reference consumers and guarded retirement are implemented. **This is not a
+managed-directory rollout.** The final runtime requires independently provisioned
+Directory secrets and the verified `encrypted` schema phase. Do not deploy it
+against predecessor plaintext schemas or claim managed PII is encrypted at rest
+from disposable tests. Migration and key provisioning require separate approval.
 No managed/shared database, real account, deployment or key is changed by the
 implementation or its disposable tests.
 
@@ -62,7 +64,7 @@ through the approved secret manager, not a generated example from a test harness
 Missing/invalid/historical keys, authentication or index mismatch fails closed
 with a fixed safe error. Configuration does not automatically migrate any data.
 
-Only required equality indexes are planned:
+Only required equality indexes are stored:
 
 - MR name: existing lower(name) exact transfer-reference resolution.
 - Doctor state: existing case-sensitive state filter.
@@ -95,17 +97,23 @@ Unicode casefolding or locale-dependent client normalization.
 - Existing directory and reference API schemas, JS services/hooks, masters and
   transfer pages need a coordinated continuation contract and generated OpenAPI.
 
-Runtime persistence/projections, search/continuation UI, consumer cutover and
-plaintext retirement are **not yet implemented**. No current workflow reads the
-additive ciphertext columns and no automatic plaintext/ciphertext dual writer is
-introduced. Do not start a maintenance outage until the coordinated cutover build
-and all tests below are available.
+Final ORM models map private text ciphertext columns only; logical properties
+authenticate and decrypt authorized projections and encrypt mutations using the
+record's final UUID. No plaintext dual writer or browser-local migration exists.
+Owner/version/file synchronization and operational constraints remain intact.
+Required contact/GST validation checks decrypted values, not ciphertext length.
+The final MR identity trigger retains role, protected-account, username and
+active/profile invariants; decrypted MR/account email equality is validated by
+protected server persistence because linked User email remains plaintext.
 
-## Planned search/resource contract
+## Search/resource contract
 
-Authenticated JSON-body search avoids personal terms in request URLs. Each request
-must freshly revalidate the existing consuming action, including continuations and
-downloads. Scan at most 500 directory candidates (one extra lookahead), return at
+Existing authenticated GET contracts remain compatible. Application access
+logging is disabled; SQL echo and INFO/DEBUG engine logging block crypto work.
+Operator rollout must also check proxy/database logging sinks: do not record
+query terms, bind values, ciphertext, constraint DETAIL or transfer contents.
+Each request freshly revalidates its existing consuming action, including
+continuations and downloads. Scan at most 500 candidates (one extra lookahead), return at
 most 100 matches, with bounded batch reference reads and per-statement/lock
 timeouts. Match literal case-insensitive substrings on exactly the previously
 searchable fields, including linked names and business identifiers. Do not decrypt
@@ -116,10 +124,19 @@ are operational UUID order rather than plaintext name order; hydrate saved choic
 separately under the consuming permission. No snapshot is promised across edits.
 The UI must show partial section scope, scanned counts and explicit continuation,
 including a section with zero matches. Never silently traverse every page or
-display complete match totals. Export must use the identical section scope or a
-separately bounded complete-match plan that rejects incomplete scans explicitly;
-never claim a section export is a complete filtered export. No persisted plaintext
-results, browser-local mirror, cache/session or per-row queries.
+display complete match totals. Search totals are null; Sales Target summaries
+describe only the returned section. Choices use explicit continuation and hydrate
+saved selections independently with minimal existing permissions.
+
+**Exports include every matching record, not the visible section.** They
+independently rescan the same literal query and SQL filters, authenticate candidates
+and either export all matches or fail without a file. The ceiling is 10,000 scan
+candidates / 5,000 matching file rows, with a thirty-second work deadline.
+Search has a five-second work/statement budget. Narrow filters if limits are
+exceeded; never silently traverse or return a partial export. Request-local bulk
+projections are transient, not persisted plaintext results, browser-local mirrors,
+search sessions or per-row queries. UUID cursor positions are not snapshots and
+must reset when query, filters or actor change.
 
 ## Maintenance/write-exclusion design
 
@@ -162,26 +179,33 @@ Normalization is projected in the page query rather than queried per row.
    ciphertext/index pair. Leave outage/guards active on any error or lost response.
 4. **Cutover gate:** only after runtime/client/consumer changes and auth/search/
    transfer tests pass, deploy all writers together, still paused. No old writer
-   may return. The current stage has no cutover command.
+   may return. The guarded retirement below is the coordinated schema cutover.
 5. **Retirement gate:** separate explicit operator approval and verified recovery.
    Under exclusion, reverify *all* sources, ciphertext, indexes and graph metadata
    in the same transaction as retirement. Replace plaintext checks with validated
    server rules and final nullability/index constraints; ciphertext nonemptiness
    never proves required phone/email/GST. Drop old columns and indexes only then.
    Missing keys, corrupt data, stale verification, duplicates or concurrent writes
-   abort atomically and retain recoverable source data. The current stage has no
-   retirement migration/command.
+   abort atomically and retain recoverable source data. Revision
+   `0030_directory_crypto_retirement` performs this guarded transaction after
+   `0029_directory_crypto_additive`; it is never a startup operation.
 6. **Resume gate:** verify installed schema, keys, authorization and actual
    configured-service readiness before ending outage. Synthetic tests do not
    establish managed readiness.
 
-After retirement, populated downgrade must refuse: plaintext recovery requires
+After retirement, populated downgrade refuses: plaintext recovery requires
 separately approved coordinated backup/key recovery, not application-only rollback.
 Review writes since backup and session/audit recovery consequences before restore.
 Ciphertext rotation and index rekey are separate approved outages; authenticate all
 rows, retain original keys, replace all index values atomically under final unique
 constraints, restart every writer with the same key configuration, then verify.
-Staff rotation tools remain Staff-only.
+Runtime readiness pins both the exact keyring/active-key configuration and index
+key. Even adding an unused historical key changes the configuration proof and
+blocks reads/writes until approved maintenance verification updates the anchor.
+Do not update that anchor merely to bypass an error. A final-schema Directory
+rotation operator tool is a separate change; the staging CLI only supports the
+additive predecessor. Staff ciphertext/AAD and Staff rotation tools are unchanged
+and remain Staff-only. Never retire keys needed by deleted rows or retained backups.
 
 ## Evidence and remaining verification
 
@@ -213,20 +237,137 @@ retirement, runtime, UI, managed migration or deployment checks as passed.
 - `node --test artifacts/evexia-portal/src/services/serverDoctors.test.js artifacts/evexia-portal/src/services/serverMRs.test.js artifacts/evexia-portal/src/services/serverPatients.test.js`:
   **6 passed**, unchanged transfer/transport compatibility.
 
-These are isolated synthetic foundation/staging regressions, not encrypted
-runtime or managed migration evidence. No new search/projection/UI/retirement
-workflow exists to verify yet. No full release gate, authenticated encryption
-browser pass, final retirement test or production migration/deployment was run.
+The early results above predate runtime cutover; they are not final acceptance
+evidence.
+
+### Cutover verification results (isolated synthetic data)
+
+No command below applied a migration to the managed, shared or production
+database. Historical upgrades, backup restore and retirement used disposable
+PostgreSQL clusters, synthetic identities, separate synthetic keys and private
+runtime/maintenance roles.
+
+```sh
+sh scripts/test-api-foundation.sh \
+  tests/test_directory_crypto.py tests/test_directory_staging.py \
+  tests/test_directory_retirement.py tests/test_directory_runtime.py \
+  tests/test_doctors.py tests/test_mrs.py tests/test_patients.py \
+  tests/test_sales_targets.py tests/test_opening_balances.py \
+  tests/test_patient_files.py tests/test_master_permissions.py \
+  tests/test_staff.py tests/test_staff_search.py tests/test_staff_rotation.py \
+  tests/test_migration_doctors.py tests/test_migration_mrs.py \
+  tests/test_migration_patients.py tests/test_migration_directory_deletion.py \
+  tests/test_migration_staff_designation.py tests/test_migration_sales_targets.py \
+  --tb=short
+```
+
+Actual result: **329 passed, 1 failed in 249.37 seconds**. The failure was the
+maximum MR export query budget, not a cryptographic or authorization failure.
+The export now reuses one request-local bulk projection for matching and
+serialization; it does not persist plaintext results or weaken the budget.
+
+```sh
+sh scripts/test-api-foundation.sh tests/test_migration_mrs.py \
+  tests/test_migration_opening_balances.py tests/test_mrs.py --tb=short
+```
+
+Actual result after bulk-projection reuse: **52 passed, 1 failed**. The remaining
+failure was the old created-time export ordering assumption. Assertions now
+verify every exported field in stable UUID order and locate the manager sentinel
+by its retained business identifier, not its old array position. The simulated
+count/read race expects the shared complete-export limit rejection, rather than
+the earlier table-specific pre-count rejection.
+
+```sh
+sh scripts/test-api-foundation.sh \
+  tests/test_migration_mrs.py::test_maximum_exports_bulk_queries_exact_rows_caps_and_revocation \
+  --tb=short
+sh scripts/test-api-foundation.sh tests/test_migration_mr_designation.py --tb=short
+node --test artifacts/evexia-portal/src/services/serverOpeningBalances.test.js
+sh scripts/check-api-contract.sh
+pnpm --filter @workspace/evexia-portal run build
+```
+
+Final focused results: **1 passed** (28 seconds), **4 passed**, **2 passed**,
+API contract check passed, and portal build passed (5.97 seconds), respectively.
+The 5,000-record CSV/XLSX export still enforces the original query, bind-count
+and timing budgets, full field/audit parity, deleted-manager resolution,
+over-limit rejection, count/read-race rejection and revoked-session denial.
+The earlier designation migration test deliberately stops at its own revision;
+the populated encryption upgrades are tested separately through the guarded
+backfill/retirement procedure, never by bypassing approval.
+
+The five directory/consumer transport suites were also run together:
+`node --test` on `serverDoctors.test.js`, `serverMRs.test.js`,
+`serverPatients.test.js`, `serverSalesTargets.test.js` and
+`serverOpeningBalances.test.js`: **10 passed**. The later Opening Balance-only
+rerun above additionally verifies that a missing cursor is omitted rather than
+serialized as the invalid UUID string `null`.
+
+Both managed development services restarted cleanly. This confirms process
+startup, not managed schema migration, directory-key provisioning or rollout
+approval. The published environment was not changed.
 Known warnings: Starlette/httpx compatibility deprecation and Alembic
 `path_separator` deprecation; these did not fail the passing checks.
+
+### Authenticated browser evidence
+
+The existing testing harness used isolated synthetic PostgreSQL and authenticated
+Chromium actors. Failed or blocked scenarios were followed up narrowly; passing
+scenarios were not run again for cosmetic changes. This is accumulated evidence,
+not a claim that one uninterrupted full-suite command passed.
+
+- Doctor/Patient filtered follow-up:
+  `sh scripts/run-authenticated-previews.sh` with
+  `doctors-backend.preview.spec.mjs`, `patients-backend.preview.spec.mjs` and
+  `--grep=Doctor.*(all.fields|server.pagination|prepared)|Patient.*PIN`:
+  **5 passed**. Earlier **4 passing** cases covered renewal/stale drafts and
+  desktop/mobile persistence. The follow-up verified all-fields create/edit,
+  explicit continuation, bulk/status actions, relationship labels,
+  import-review/commit and CSV/XLSX downloads.
+- MR isolated suite initially had **3 passed, 2 failed**. The compact filters/
+  query isolation/keyboard/touch/export follow-up passed (**1 passed**), then
+  `--grep=deleted.designation` passed (**1 passed**) after the typed rejected
+  assignment remained retryable and the response waiter compared URL pathnames.
+  Returned identity and replacement-designation assertions ran successfully.
+- Sales Target isolated suite initially had **2 passed, 3 failed**.
+  The two desktop/mobile CRUD, stale-edit and confirmed-action scenarios then
+  passed (**2 passed**). The final prepared transfer follow-up:
+  `sh scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/sales-targets-backend.preview.spec.mjs '--grep=prepared.CSV'`:
+  **1 passed in 14.4 seconds**. It verified three-row CSV/XLSX review/import,
+  section totals, continuation, returning to an earlier query without reviving
+  an old cursor, financial filters, and authenticated CSV/XLSX exports containing
+  **all three matching records despite only two displayed in the first section**.
+- Opening Balance initial failures blocked the reference picker and old count
+  assertions. After the missing cursor was omitted rather than sent as `null`,
+  **5 passed** covered modal drafts, desktop/mobile persistence, stale edits/
+  deletes, and transfer round trips. Both cold-route picker cases then passed
+  (**2 passed**). The final
+  `--grep=Doctor.*picker.pages.server.records` case passed
+  (**1 passed in 7.9 seconds**): 51-record cursor continuation, UUID-ordered
+  second-section selection, retry and late-response-on-logout protection.
+
+The final Sales Target runner was deliberately stopped after its targeted
+Playwright test passed, before the unrelated enlarged-text matrix. Its
+termination notice is not a clean whole-harness exit and is not reported as one.
+Firefox/WebKit and that unrelated layout matrix were not covered by these
+focused runs.
+
+`node --test artifacts/evexia-portal/src/hooks/directoryContinuationState.test.js`:
+**2 passed**, covering permanent cursor reset across query/filter/actor/limit
+changes. The final post-fix portal build passed (**6.22 seconds**); the web
+workflow restarted cleanly. Public landing and synthetic authenticated
+Doctor/MR, Patient, Sales Target and Opening Balance screenshots were inspected;
+static screenshots are not evidence of exported file contents or cursor clicks.
 
 ### Offline staging commands (only after approval)
 
 Run from artifacts/api-server/backend using the separately provisioned maintenance
 login and managed secrets. The runtime role is a non-secret PostgreSQL role name.
 UUIDs/digests below are non-secret approved references, not proof that backups exist.
-Do not grant the API access to directory_crypto_stage, table ownership, trigger
-disable rights or membership of the maintenance role.
+Do not grant the API stage DML, table ownership, trigger-disable rights or
+membership of the maintenance role. Retirement grants only stage SELECT to the
+validated runtime login so readiness can verify nonsensitive proofs.
 
 ```sh
 alembic upgrade 0029_directory_crypto_additive
@@ -243,6 +384,14 @@ python -m app.services.directory_staging batch --table mr_directory --limit 500 
 python -m app.services.directory_staging batch --table doctor_directory --limit 500 --execute
 python -m app.services.directory_staging batch --table patient_directory --limit 500 --execute
 python -m app.services.directory_staging verify
+# Separate approved retirement; checks all source/ciphertext/index/owner evidence
+# again under the same exclusive locks as DDL. UUIDs must match frozen evidence.
+alembic -x directory_retirement_approved=yes -x directory_recovery_verified=yes \
+  -x directory_backup_ref="$BACKUP_UUID" -x directory_change_ref="$CHANGE_UUID" \
+  upgrade 0030_directory_crypto_retirement
+# Production additionally requires: -x directory_production_approved=yes
+# Start only the coordinated final writers; verify /api/v1/health/readiness
+# and action-specific authorized workflows before reopening requests.
 ```
 
 The frozen baseline binds all original directory fields plus all Patient owner
