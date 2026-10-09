@@ -28,4 +28,6 @@ node --test artifacts/evexia-portal/src/services/serverLocations.test.js
 node --test artifacts/evexia-portal/src/services/serverDesignations.test.js artifacts/evexia-portal/src/services/serverDesignationValidation.test.js
 node --test artifacts/evexia-portal/src/services/serverVendors.test.js artifacts/evexia-portal/src/services/vendors.test.js
 sh scripts/test-api-foundation.sh tests/test_vendors.py tests/test_migration_vendors.py
+node --test artifacts/evexia-portal/src/services/serverSalesTargets.test.js artifacts/evexia-portal/src/services/salesTargets.test.js
+sh scripts/test-api-foundation.sh tests/test_sales_targets.py tests/test_migration_sales_targets.py
 sh scripts/run-authenticated-previews.sh

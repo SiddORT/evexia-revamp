@@ -144,6 +144,7 @@ fi
 if [ "$#" -eq 0 ]; then
   SPECS="$SPECS artifacts/evexia-portal/tests/headquarters-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/vendors-backend.preview.spec.mjs"
+  SPECS="$SPECS artifacts/evexia-portal/tests/sales-targets-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/product-categories-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/allergens-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/mrs-backend.preview.spec.mjs"
@@ -162,6 +163,7 @@ DOWNLOADS=0
 PATIENT_LAYOUT=0
 ROLE_LAYOUT=0
 ISOLATE_MR=0
+ISOLATE_SALES_TARGET=0
 ISOLATE_MASTER_STAFF=0
 SPEC_COUNT=0
 for spec in $SPECS; do
@@ -179,6 +181,10 @@ for spec in $SPECS; do
       # the MR password-reset test's ten-per-hour actor budget with other suites,
       # disable production limits, or erase the protected credential audit.
       if [ "$SPEC_COUNT" -gt 1 ]; then ISOLATE_MR=1; else OTHER_SPECS="$OTHER_SPECS $spec"; fi ;;
+    */sales-targets-backend.preview.spec.mjs)
+      # Targets need real MR identities. Keep their credential-hashing actor
+      # budget and reference rows out of other directory baseline suites.
+      if [ "$SPEC_COUNT" -gt 1 ]; then ISOLATE_SALES_TARGET=1; else OTHER_SPECS="$OTHER_SPECS $spec"; fi ;;
     */master-staff-permissions.preview.spec.mjs)
       # Staff has no deletion workflow; disabling login cannot restore a fresh
       # directory. Keep matrix provisioning out of empty-directory baselines.
@@ -211,6 +217,10 @@ fi
 if [ "$ISOLATE_MR" -eq 1 ]; then
   echo "MR credential flows: separate private database, listeners and audit budget."
   sh "$ROOT/scripts/run-authenticated-previews.sh" artifacts/evexia-portal/tests/mrs-backend.preview.spec.mjs
+fi
+if [ "$ISOLATE_SALES_TARGET" -eq 1 ]; then
+  echo "Sales Target flows: separate private database, listeners and MR credential budget."
+  sh "$ROOT/scripts/run-authenticated-previews.sh" artifacts/evexia-portal/tests/sales-targets-backend.preview.spec.mjs
 fi
 if [ "$ISOLATE_MASTER_STAFF" -eq 1 ]; then
   echo "Staff master matrix: separate private database, listeners and directory."

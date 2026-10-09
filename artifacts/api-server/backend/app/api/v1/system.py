@@ -69,6 +69,10 @@ def readiness(db: Session = Depends(get_db)):
         ))
         db.execute(text("SELECT identifier, user_id FROM account_identifier_reservations LIMIT 0"))
         db.execute(text(
+            'SELECT id, "mrId", "startYear", "endYear", q1, q2, q3, q4, status, version, '
+            'created_by, updated_by, deleted_at, deleted_by FROM sales_targets LIMIT 0'
+        ))
+        db.execute(text(
             'SELECT id, code, name, gender, phone, "dialCountry", email, "dateOfBirth", "doctorId", '
             '"instructionsLanguage", status, "addressLine1", "addressLine2", landmark, pincode, city, state, '
             'country, created_by, updated_by, created_at, updated_at FROM patient_directory LIMIT 0'

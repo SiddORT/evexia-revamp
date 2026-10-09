@@ -7529,6 +7529,618 @@ export const SaveCustomRolePermissionsResponse = zod.object({
 });
 
 /**
+ * @summary Listing
+ */
+export const listSalesTargetsQueryLimitDefault = 10;
+export const listSalesTargetsQueryLimitMax = 100;
+
+export const listSalesTargetsQueryOffsetDefault = 0;
+export const listSalesTargetsQueryOffsetMin = 0;
+export const listSalesTargetsQueryOffsetMax = 1000000;
+
+export const listSalesTargetsQueryQueryDefault = ``;
+export const listSalesTargetsQueryQueryMax = 100;
+
+export const listSalesTargetsQueryStatusDefault = `all`;
+export const listSalesTargetsQueryStartYearOneMax = 9998;
+
+export const listSalesTargetsQueryEndYearOneMin = 2;
+export const listSalesTargetsQueryEndYearOneMax = 9999;
+
+export const ListSalesTargetsQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listSalesTargetsQueryLimitMax)
+    .default(listSalesTargetsQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listSalesTargetsQueryOffsetMin)
+    .max(listSalesTargetsQueryOffsetMax)
+    .default(listSalesTargetsQueryOffsetDefault),
+  query: zod.coerce
+    .string()
+    .max(listSalesTargetsQueryQueryMax)
+    .default(listSalesTargetsQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(listSalesTargetsQueryStatusDefault),
+  zoneId: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  mrId: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  startYear: zod
+    .union([
+      zod.coerce
+        .number()
+        .int()
+        .min(1)
+        .max(listSalesTargetsQueryStartYearOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  endYear: zod
+    .union([
+      zod.coerce
+        .number()
+        .int()
+        .min(listSalesTargetsQueryEndYearOneMin)
+        .max(listSalesTargetsQueryEndYearOneMax),
+      zod.null(),
+    ])
+    .optional(),
+});
+
+export const listSalesTargetsResponseItemsItemEndYearMin = 2;
+export const listSalesTargetsResponseItemsItemEndYearMax = 9999;
+
+export const listSalesTargetsResponseItemsItemStartYearMax = 9998;
+
+export const listSalesTargetsResponseItemsItemStatusDefault = `active`;
+
+export const ListSalesTargetsResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      annualTotal: zod.string(),
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      employeeCode: zod.string(),
+      endYear: zod
+        .number()
+        .int()
+        .min(listSalesTargetsResponseItemsItemEndYearMin)
+        .max(listSalesTargetsResponseItemsItemEndYearMax),
+      headquarterId: zod.string().uuid(),
+      headquarterName: zod.string(),
+      id: zod.string().uuid(),
+      mrId: zod.string().uuid(),
+      mrName: zod.string(),
+      q1: zod.string(),
+      q2: zod.string(),
+      q3: zod.string(),
+      q4: zod.string(),
+      startYear: zod
+        .number()
+        .int()
+        .min(1)
+        .max(listSalesTargetsResponseItemsItemStartYearMax),
+      status: zod
+        .enum(["active", "inactive"])
+        .default(listSalesTargetsResponseItemsItemStatusDefault),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      version: zod.number().int(),
+      zoneId: zod.string().uuid(),
+      zoneName: zod.string(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+  totals: zod.object({
+    q1: zod.string(),
+    q2: zod.string(),
+    q3: zod.string(),
+    q4: zod.string(),
+    total: zod.string(),
+  }),
+});
+
+/**
+ * @summary Create
+ */
+export const createSalesTargetBodyEndYearMin = 2;
+export const createSalesTargetBodyEndYearMax = 9999;
+
+export const createSalesTargetBodyStartYearMax = 9998;
+
+export const createSalesTargetBodyStatusDefault = `active`;
+
+export const CreateSalesTargetBody = zod.object({
+  endYear: zod
+    .number()
+    .int()
+    .min(createSalesTargetBodyEndYearMin)
+    .max(createSalesTargetBodyEndYearMax),
+  mrId: zod.string().uuid(),
+  q1: zod.string(),
+  q2: zod.string(),
+  q3: zod.string(),
+  q4: zod.string(),
+  startYear: zod.number().int().min(1).max(createSalesTargetBodyStartYearMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(createSalesTargetBodyStatusDefault),
+});
+
+export const createSalesTargetResponseEndYearMin = 2;
+export const createSalesTargetResponseEndYearMax = 9999;
+
+export const createSalesTargetResponseStartYearMax = 9998;
+
+export const createSalesTargetResponseStatusDefault = `active`;
+
+export const CreateSalesTargetResponse = zod.object({
+  annualTotal: zod.string(),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  employeeCode: zod.string(),
+  endYear: zod
+    .number()
+    .int()
+    .min(createSalesTargetResponseEndYearMin)
+    .max(createSalesTargetResponseEndYearMax),
+  headquarterId: zod.string().uuid(),
+  headquarterName: zod.string(),
+  id: zod.string().uuid(),
+  mrId: zod.string().uuid(),
+  mrName: zod.string(),
+  q1: zod.string(),
+  q2: zod.string(),
+  q3: zod.string(),
+  q4: zod.string(),
+  startYear: zod
+    .number()
+    .int()
+    .min(1)
+    .max(createSalesTargetResponseStartYearMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(createSalesTargetResponseStatusDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+  zoneId: zod.string().uuid(),
+  zoneName: zod.string(),
+});
+
+/**
+ * @summary Choices
+ */
+export const getSalesTargetChoicesQueryQueryDefault = ``;
+export const getSalesTargetChoicesQueryQueryMax = 100;
+
+export const getSalesTargetChoicesQueryLimitDefault = 100;
+export const getSalesTargetChoicesQueryLimitMax = 100;
+
+export const getSalesTargetChoicesQueryOffsetDefault = 0;
+export const getSalesTargetChoicesQueryOffsetMin = 0;
+export const getSalesTargetChoicesQueryOffsetMax = 1000000;
+
+export const getSalesTargetChoicesQueryZoneQueryDefault = ``;
+export const getSalesTargetChoicesQueryZoneQueryMax = 100;
+
+export const getSalesTargetChoicesQueryZoneOffsetDefault = 0;
+export const getSalesTargetChoicesQueryZoneOffsetMin = 0;
+export const getSalesTargetChoicesQueryZoneOffsetMax = 1000000;
+
+export const GetSalesTargetChoicesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(getSalesTargetChoicesQueryQueryMax)
+    .default(getSalesTargetChoicesQueryQueryDefault),
+  zoneId: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getSalesTargetChoicesQueryLimitMax)
+    .default(getSalesTargetChoicesQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(getSalesTargetChoicesQueryOffsetMin)
+    .max(getSalesTargetChoicesQueryOffsetMax)
+    .default(getSalesTargetChoicesQueryOffsetDefault),
+  zoneQuery: zod.coerce
+    .string()
+    .max(getSalesTargetChoicesQueryZoneQueryMax)
+    .default(getSalesTargetChoicesQueryZoneQueryDefault),
+  zoneOffset: zod.coerce
+    .number()
+    .int()
+    .min(getSalesTargetChoicesQueryZoneOffsetMin)
+    .max(getSalesTargetChoicesQueryZoneOffsetMax)
+    .default(getSalesTargetChoicesQueryZoneOffsetDefault),
+});
+
+export const GetSalesTargetChoicesResponse = zod.object({
+  limit: zod.number().int(),
+  mrs: zod.array(
+    zod.object({
+      employeeCode: zod.string(),
+      headquarterId: zod.string().uuid(),
+      headquarterName: zod.string(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      zoneId: zod.string().uuid(),
+      zoneName: zod.string(),
+    }),
+  ),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+  years: zod.array(zod.number().int()),
+  zoneOffset: zod.number().int(),
+  zones: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+    }),
+  ),
+  zonesTotal: zod.number().int(),
+});
+
+/**
+ * @summary Export
+ */
+export const exportSalesTargetsQueryFormatDefault = `csv`;
+export const exportSalesTargetsQueryQueryDefault = ``;
+export const exportSalesTargetsQueryQueryMax = 100;
+
+export const exportSalesTargetsQueryStatusDefault = `all`;
+export const exportSalesTargetsQueryStartYearOneMax = 9998;
+
+export const exportSalesTargetsQueryEndYearOneMin = 2;
+export const exportSalesTargetsQueryEndYearOneMax = 9999;
+
+export const ExportSalesTargetsQueryParams = zod.object({
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(exportSalesTargetsQueryFormatDefault),
+  query: zod.coerce
+    .string()
+    .max(exportSalesTargetsQueryQueryMax)
+    .default(exportSalesTargetsQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(exportSalesTargetsQueryStatusDefault),
+  zoneId: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  mrId: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  startYear: zod
+    .union([
+      zod.coerce
+        .number()
+        .int()
+        .min(1)
+        .max(exportSalesTargetsQueryStartYearOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  endYear: zod
+    .union([
+      zod.coerce
+        .number()
+        .int()
+        .min(exportSalesTargetsQueryEndYearOneMin)
+        .max(exportSalesTargetsQueryEndYearOneMax),
+      zod.null(),
+    ])
+    .optional(),
+});
+
+export const ExportSalesTargetsHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const ExportSalesTargetsResponse = zod.unknown();
+
+/**
+ * @summary Commit
+ */
+export const commitSalesTargetImportQueryFilenameMax = 200;
+
+export const commitSalesTargetImportQueryDigestRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const CommitSalesTargetImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(commitSalesTargetImportQueryFilenameMax),
+  digest: zod.coerce.string().regex(commitSalesTargetImportQueryDigestRegExp),
+  confirm: zod.coerce.boolean(),
+});
+
+export const CommitSalesTargetImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const CommitSalesTargetImportResponse = zod.object({
+  imported: zod.number().int(),
+});
+
+/**
+ * @summary Review
+ */
+export const reviewSalesTargetImportQueryFilenameMax = 200;
+
+export const ReviewSalesTargetImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(reviewSalesTargetImportQueryFilenameMax),
+});
+
+export const ReviewSalesTargetImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const ReviewSalesTargetImportResponse = zod.object({
+  digest: zod.string(),
+  invalidCount: zod.number().int(),
+  rows: zod.array(
+    zod.object({
+      errors: zod.array(zod.string()),
+      row: zod.number().int(),
+      values: zod.record(zod.string(), zod.string()),
+    }),
+  ),
+  valid: zod.boolean(),
+  validCount: zod.number().int(),
+});
+
+/**
+ * @summary Sample
+ */
+export const downloadSalesTargetSampleQueryFormatDefault = `csv`;
+
+export const DownloadSalesTargetSampleQueryParams = zod.object({
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(downloadSalesTargetSampleQueryFormatDefault),
+});
+
+export const DownloadSalesTargetSampleHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const DownloadSalesTargetSampleResponse = zod.unknown();
+
+/**
+ * @summary Detail
+ */
+export const GetSalesTargetParams = zod.object({
+  target_id: zod.coerce.string().uuid(),
+});
+
+export const getSalesTargetResponseEndYearMin = 2;
+export const getSalesTargetResponseEndYearMax = 9999;
+
+export const getSalesTargetResponseStartYearMax = 9998;
+
+export const getSalesTargetResponseStatusDefault = `active`;
+
+export const GetSalesTargetResponse = zod.object({
+  annualTotal: zod.string(),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  employeeCode: zod.string(),
+  endYear: zod
+    .number()
+    .int()
+    .min(getSalesTargetResponseEndYearMin)
+    .max(getSalesTargetResponseEndYearMax),
+  headquarterId: zod.string().uuid(),
+  headquarterName: zod.string(),
+  id: zod.string().uuid(),
+  mrId: zod.string().uuid(),
+  mrName: zod.string(),
+  q1: zod.string(),
+  q2: zod.string(),
+  q3: zod.string(),
+  q4: zod.string(),
+  startYear: zod.number().int().min(1).max(getSalesTargetResponseStartYearMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(getSalesTargetResponseStatusDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+  zoneId: zod.string().uuid(),
+  zoneName: zod.string(),
+});
+
+/**
+ * @summary Delete
+ */
+export const DeleteSalesTargetParams = zod.object({
+  target_id: zod.coerce.string().uuid(),
+});
+
+export const DeleteSalesTargetBody = zod.object({
+  expected_version: zod.number().int().min(1),
+});
+
+export const deleteSalesTargetResponseEndYearMin = 2;
+export const deleteSalesTargetResponseEndYearMax = 9999;
+
+export const deleteSalesTargetResponseStartYearMax = 9998;
+
+export const deleteSalesTargetResponseStatusDefault = `active`;
+
+export const DeleteSalesTargetResponse = zod.object({
+  annualTotal: zod.string(),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  employeeCode: zod.string(),
+  endYear: zod
+    .number()
+    .int()
+    .min(deleteSalesTargetResponseEndYearMin)
+    .max(deleteSalesTargetResponseEndYearMax),
+  headquarterId: zod.string().uuid(),
+  headquarterName: zod.string(),
+  id: zod.string().uuid(),
+  mrId: zod.string().uuid(),
+  mrName: zod.string(),
+  q1: zod.string(),
+  q2: zod.string(),
+  q3: zod.string(),
+  q4: zod.string(),
+  startYear: zod
+    .number()
+    .int()
+    .min(1)
+    .max(deleteSalesTargetResponseStartYearMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(deleteSalesTargetResponseStatusDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+  zoneId: zod.string().uuid(),
+  zoneName: zod.string(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditSalesTargetParams = zod.object({
+  target_id: zod.coerce.string().uuid(),
+});
+
+export const editSalesTargetBodyEndYearMin = 2;
+export const editSalesTargetBodyEndYearMax = 9999;
+
+export const editSalesTargetBodyStartYearMax = 9998;
+
+export const editSalesTargetBodyStatusDefault = `active`;
+
+export const EditSalesTargetBody = zod.object({
+  endYear: zod
+    .number()
+    .int()
+    .min(editSalesTargetBodyEndYearMin)
+    .max(editSalesTargetBodyEndYearMax),
+  expected_version: zod.number().int().min(1),
+  mrId: zod.string().uuid(),
+  q1: zod.string(),
+  q2: zod.string(),
+  q3: zod.string(),
+  q4: zod.string(),
+  startYear: zod.number().int().min(1).max(editSalesTargetBodyStartYearMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(editSalesTargetBodyStatusDefault),
+});
+
+export const editSalesTargetResponseEndYearMin = 2;
+export const editSalesTargetResponseEndYearMax = 9999;
+
+export const editSalesTargetResponseStartYearMax = 9998;
+
+export const editSalesTargetResponseStatusDefault = `active`;
+
+export const EditSalesTargetResponse = zod.object({
+  annualTotal: zod.string(),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  employeeCode: zod.string(),
+  endYear: zod
+    .number()
+    .int()
+    .min(editSalesTargetResponseEndYearMin)
+    .max(editSalesTargetResponseEndYearMax),
+  headquarterId: zod.string().uuid(),
+  headquarterName: zod.string(),
+  id: zod.string().uuid(),
+  mrId: zod.string().uuid(),
+  mrName: zod.string(),
+  q1: zod.string(),
+  q2: zod.string(),
+  q3: zod.string(),
+  q4: zod.string(),
+  startYear: zod.number().int().min(1).max(editSalesTargetResponseStartYearMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(editSalesTargetResponseStatusDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+  zoneId: zod.string().uuid(),
+  zoneName: zod.string(),
+});
+
+/**
+ * @summary Status
+ */
+export const SetSalesTargetStatusParams = zod.object({
+  target_id: zod.coerce.string().uuid(),
+});
+
+export const SetSalesTargetStatusBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const setSalesTargetStatusResponseEndYearMin = 2;
+export const setSalesTargetStatusResponseEndYearMax = 9999;
+
+export const setSalesTargetStatusResponseStartYearMax = 9998;
+
+export const setSalesTargetStatusResponseStatusDefault = `active`;
+
+export const SetSalesTargetStatusResponse = zod.object({
+  annualTotal: zod.string(),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  employeeCode: zod.string(),
+  endYear: zod
+    .number()
+    .int()
+    .min(setSalesTargetStatusResponseEndYearMin)
+    .max(setSalesTargetStatusResponseEndYearMax),
+  headquarterId: zod.string().uuid(),
+  headquarterName: zod.string(),
+  id: zod.string().uuid(),
+  mrId: zod.string().uuid(),
+  mrName: zod.string(),
+  q1: zod.string(),
+  q2: zod.string(),
+  q3: zod.string(),
+  q4: zod.string(),
+  startYear: zod
+    .number()
+    .int()
+    .min(1)
+    .max(setSalesTargetStatusResponseStartYearMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(setSalesTargetStatusResponseStatusDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+  zoneId: zod.string().uuid(),
+  zoneName: zod.string(),
+});
+
+/**
  * @summary List Staff
  */
 export const listStaffQueryLimitDefault = 20;

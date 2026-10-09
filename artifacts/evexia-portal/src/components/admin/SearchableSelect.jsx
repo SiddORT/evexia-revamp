@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, X } from 'lucide-react';
+import './searchableSelect.css';
 
 export default function SearchableSelect({ id, label, value, options, onChange, placeholder, invalid, describedBy }) {
   const [open, setOpen] = useState(false);

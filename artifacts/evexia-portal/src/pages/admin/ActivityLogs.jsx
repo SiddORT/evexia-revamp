@@ -18,6 +18,8 @@ const browserActions = {
   designation_status: 'Designation status changed', designation_delete: 'Designation deleted',
   vendor_create: 'Vendor created', vendor_edit: 'Vendor updated',
   vendor_status: 'Vendor status changed', vendor_delete: 'Vendor deleted',
+  sales_target_create: 'Sales target created', sales_target_edit: 'Sales target updated',
+  sales_target_status: 'Sales target status changed', sales_target_delete: 'Sales target deleted',
   courier_create: 'Courier partner created', courier_edit: 'Courier partner updated',
   courier_status: 'Courier partner status changed', courier_delete: 'Courier partner deleted',
   staff_create: 'Staff created', staff_update: 'Staff updated', staff_status: 'Staff status changed',

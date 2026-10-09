@@ -194,3 +194,4 @@ from app.db import mr_models as _mr_models  # noqa: E402,F401
 from app.db import doctor_models as _doctor_models  # noqa: E402,F401
 from app.db import patient_models as _patient_models  # noqa: E402,F401
 from app.db import allergen_models as _allergen_models  # noqa: E402,F401
+from app.db import sales_target_models as _sales_target_models  # noqa: E402,F401

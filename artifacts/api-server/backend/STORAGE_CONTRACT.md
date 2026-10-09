@@ -32,6 +32,7 @@ password input; there is no default elevated account.
 | Storage Location list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
 | Designation list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; Zone staff grants do not apply | no |
 | Vendor list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; not assignable in the eight-master staff catalogue | no |
+| Sales Target list/detail/choices/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; not assignable in the eight-master staff catalogue; shared MR/zone/headquarter references and server-owned target audits | no |
 | Headquarter list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; Zone staff grants and business labels do not apply | no |
 | Product Category list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; no Zone/custom-role elevation | no |
 | Allergen catalogue CRUD/status/soft-delete/import/export/sample/reference choices (`admin.access`) | protected singleton only; outside staff master permission domains | no |

@@ -1,5 +1,13 @@
 # EVEXIA backend foundation
 
+Sales Target Master adds protected singleton-only persistence linked to shared
+MR/zone/headquarter records, exact quarterly rupee strings and one consecutive
+financial-year period. Versioned CRUD/status/soft deletion, all-match aggregates
+and authenticated bounded CSV/XLSX review/confirm/downloads are documented in
+[`docs/sales-target-master.md`](../../../docs/sales-target-master.md).
+Empty migration `0023_sales_targets` follows `0022_allergen_catalogue`; it needs
+separate managed rollout approval. No browser-local targets or references migrate.
+
 Vendor Master now has a separately, explicitly migrated shared catalogue:
 protected system Super Admin only, versioned CRUD/soft deletion and authenticated
 CSV/XLSX review/confirm/export/sample operations. Legacy local Vendor and

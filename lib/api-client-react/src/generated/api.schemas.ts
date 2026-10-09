@@ -2568,6 +2568,184 @@ export interface RoleVersion {
   expected_version: number;
 }
 
+export interface SalesTargetMRChoice {
+  employeeCode: string;
+  headquarterId: string;
+  headquarterName: string;
+  id: string;
+  name: string;
+  zoneId: string;
+  zoneName: string;
+}
+
+export interface SalesTargetZoneChoice {
+  id: string;
+  name: string;
+}
+
+export interface SalesTargetChoices {
+  limit: number;
+  mrs: SalesTargetMRChoice[];
+  offset: number;
+  total: number;
+  years: number[];
+  zoneOffset: number;
+  zones: SalesTargetZoneChoice[];
+  zonesTotal: number;
+}
+
+export type SalesTargetEditStatus =
+  (typeof SalesTargetEditStatus)[keyof typeof SalesTargetEditStatus];
+
+export const SalesTargetEditStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface SalesTargetEdit {
+  /**
+   * @minimum 2
+   * @maximum 9999
+   */
+  endYear: number;
+  /** @minimum 1 */
+  expected_version: number;
+  mrId: string;
+  q1: string;
+  q2: string;
+  q3: string;
+  q4: string;
+  /**
+   * @minimum 1
+   * @maximum 9998
+   */
+  startYear: number;
+  status?: SalesTargetEditStatus;
+}
+
+export type SalesTargetFieldsStatus =
+  (typeof SalesTargetFieldsStatus)[keyof typeof SalesTargetFieldsStatus];
+
+export const SalesTargetFieldsStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface SalesTargetFields {
+  /**
+   * @minimum 2
+   * @maximum 9999
+   */
+  endYear: number;
+  mrId: string;
+  q1: string;
+  q2: string;
+  q3: string;
+  q4: string;
+  /**
+   * @minimum 1
+   * @maximum 9998
+   */
+  startYear: number;
+  status?: SalesTargetFieldsStatus;
+}
+
+export interface SalesTargetImportResult {
+  imported: number;
+}
+
+export type SalesTargetImportRowValues = { [key: string]: string };
+
+export interface SalesTargetImportRow {
+  errors: string[];
+  row: number;
+  values: SalesTargetImportRowValues;
+}
+
+export type SalesTargetResponseStatus =
+  (typeof SalesTargetResponseStatus)[keyof typeof SalesTargetResponseStatus];
+
+export const SalesTargetResponseStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface SalesTargetResponse {
+  annualTotal: string;
+  createdAt: string;
+  createdBy: string;
+  employeeCode: string;
+  /**
+   * @minimum 2
+   * @maximum 9999
+   */
+  endYear: number;
+  headquarterId: string;
+  headquarterName: string;
+  id: string;
+  mrId: string;
+  mrName: string;
+  q1: string;
+  q2: string;
+  q3: string;
+  q4: string;
+  /**
+   * @minimum 1
+   * @maximum 9998
+   */
+  startYear: number;
+  status?: SalesTargetResponseStatus;
+  updatedAt: string;
+  updatedBy: string;
+  version: number;
+  zoneId: string;
+  zoneName: string;
+}
+
+export interface SalesTargetTotals {
+  q1: string;
+  q2: string;
+  q3: string;
+  q4: string;
+  total: string;
+}
+
+export interface SalesTargetPage {
+  filtered: number;
+  items: SalesTargetResponse[];
+  limit: number;
+  offset: number;
+  total: number;
+  totals: SalesTargetTotals;
+}
+
+export interface SalesTargetReview {
+  digest: string;
+  invalidCount: number;
+  rows: SalesTargetImportRow[];
+  valid: boolean;
+  validCount: number;
+}
+
+export type SalesTargetStatusStatus =
+  (typeof SalesTargetStatusStatus)[keyof typeof SalesTargetStatusStatus];
+
+export const SalesTargetStatusStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface SalesTargetStatus {
+  /** @minimum 1 */
+  expected_version: number;
+  status: SalesTargetStatusStatus;
+}
+
+export interface SalesTargetVersion {
+  /** @minimum 1 */
+  expected_version: number;
+}
+
 export type SessionResponseStatus =
   (typeof SessionResponseStatus)[keyof typeof SessionResponseStatus];
 
@@ -4248,6 +4426,135 @@ export type ListCustomRolesParams = {
   limit?: number;
   cursor?: string | null;
 };
+
+export type ListSalesTargetsParams = {
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @maxLength 100
+   */
+  query?: string;
+  status?: ListSalesTargetsStatus;
+  zoneId?: string | null;
+  mrId?: string | null;
+  startYear?: number | null;
+  endYear?: number | null;
+};
+
+export type ListSalesTargetsStatus =
+  (typeof ListSalesTargetsStatus)[keyof typeof ListSalesTargetsStatus];
+
+export const ListSalesTargetsStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type GetSalesTargetChoicesParams = {
+  /**
+   * @maxLength 100
+   */
+  query?: string;
+  zoneId?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @maxLength 100
+   */
+  zoneQuery?: string;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  zoneOffset?: number;
+};
+
+export type ExportSalesTargetsParams = {
+  format?: ExportSalesTargetsFormat;
+  /**
+   * @maxLength 100
+   */
+  query?: string;
+  status?: ExportSalesTargetsStatus;
+  zoneId?: string | null;
+  mrId?: string | null;
+  startYear?: number | null;
+  endYear?: number | null;
+};
+
+export type ExportSalesTargetsFormat =
+  (typeof ExportSalesTargetsFormat)[keyof typeof ExportSalesTargetsFormat];
+
+export const ExportSalesTargetsFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type ExportSalesTargetsStatus =
+  (typeof ExportSalesTargetsStatus)[keyof typeof ExportSalesTargetsStatus];
+
+export const ExportSalesTargetsStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type CommitSalesTargetImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+  /**
+   * @pattern ^[0-9a-f]{64}$
+   */
+  digest: string;
+  confirm: boolean;
+};
+
+export type CommitSalesTargetImportBody = {
+  file: Blob | File;
+};
+
+export type ReviewSalesTargetImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+};
+
+export type ReviewSalesTargetImportBody = {
+  file: Blob | File;
+};
+
+export type DownloadSalesTargetSampleParams = {
+  format?: DownloadSalesTargetSampleFormat;
+};
+
+export type DownloadSalesTargetSampleFormat =
+  (typeof DownloadSalesTargetSampleFormat)[keyof typeof DownloadSalesTargetSampleFormat];
+
+export const DownloadSalesTargetSampleFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
 
 export type ListStaffParams = {
   /**

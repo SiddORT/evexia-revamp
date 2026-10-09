@@ -25,6 +25,8 @@ from app.api.v1.designations import router as designations_router
 from app.services.designations import DesignationError
 from app.api.v1.vendors import router as vendors_router
 from app.services.vendors import VendorError
+from app.api.v1.sales_targets import router as sales_targets_router
+from app.services.sales_targets import SalesTargetError
 from app.api.v1.headquarters import router as headquarters_router
 from app.services.headquarters import HeadquarterError
 from app.api.v1.mrs import router as mrs_router
@@ -140,6 +142,15 @@ def create_app() -> FastAPI:
         # Do not echo invalid bodies: they may contain passwords or other sensitive values.
         fields = [{"field": ".".join(str(part) for part in err["loc"] if isinstance(part, (str, int))),
                    "code": err["type"]} for err in exc.errors()[:20]]
+        if request.url.path.startswith("/api/v1/admin/sales-targets"):
+            from app.schemas.sales_targets import SalesTargetFields
+            allowed = set(SalesTargetFields.model_fields) | {
+                "expected_version", "target_id", "query", "limit", "offset", "format",
+                "filename", "digest", "confirm", "zoneId", "zoneQuery", "zoneOffset",
+            }
+            locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
+            fields = [{"field": item["field"] if item["field"] in locations else "body",
+                       "code": item["code"]} for item in fields]
         if request.url.path.startswith("/api/v1/admin/allergens"):
             from app.schemas.allergens import AllergenFields
             allowed = set(AllergenFields.model_fields) | {
@@ -221,6 +232,10 @@ def create_app() -> FastAPI:
     async def vendor_error(request: Request, exc: VendorError):
         return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
 
+    @app.exception_handler(SalesTargetError)
+    async def sales_target_error(request: Request, exc: SalesTargetError):
+        return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
+
     @app.exception_handler(HeadquarterError)
     async def headquarter_error(request: Request, exc: HeadquarterError):
         return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
@@ -257,6 +272,7 @@ def create_app() -> FastAPI:
     app.include_router(locations_router, prefix="/api/v1")
     app.include_router(designations_router, prefix="/api/v1")
     app.include_router(vendors_router, prefix="/api/v1")
+    app.include_router(sales_targets_router, prefix="/api/v1")
     app.include_router(headquarters_router, prefix="/api/v1")
     app.include_router(mrs_router, prefix="/api/v1")
     app.include_router(doctors_router, prefix="/api/v1")
