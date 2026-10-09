@@ -166,6 +166,22 @@ versions, deletion fields or private audit identifiers.
 
 ## Identity and draft safety
 
+Allergen listing filters and the existing Add/Edit form use Allergen-scoped
+searchable dropdowns. Category and Storage Location search lives inside the
+opened menu, with 250 ms debounce, 25-result server pages and explicit in-menu
+load-more/retry. Selected labels survive query/page changes; only the selected
+reference is retained beyond the current results, not an unbounded directory
+cache. Identity changes clear reference state. Listing reference filters include
+unusable references; Add uses active references only, while Edit identifies an
+unchanged saved inactive/deleted reference. Status and listing Mix / No Mix use
+the same appearance. The form's Mix switch is unchanged.
+
+Menus support pointer selection, Arrow keys and Enter, Escape focus return,
+Tab navigation, clear actions and wrapped long option names. They are bounded
+and scrollable, open above a control when needed, and are disabled during saves.
+Field errors are linked to the trigger. The technical draft footer copy is
+removed without changing draft lifetime or the Cancel/Save actions.
+
 The portal retains its memory-only bearer / HttpOnly refresh-cookie transport.
 Requests, JSON/blob decoding and eventual downloads are guarded against identity
 generation changes. Recoverable same-route renewal keeps the mounted editor and

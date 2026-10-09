@@ -53,3 +53,4 @@
 - [Sales Target performance safety](sales-target-performance-safety.md) — benchmark synthetic disposable data only; index changes need separate review and operator approval.
 - [Orders scope](orders-scope.md) — Immunotherapy requirements will come next; do not infer workflows from the navigation-only setup.
 - [Vendor phone compatibility](vendor-phone-compatibility.md) — retain legacy phone acceptance; international metadata updates must not widen other masters’ contracts.
+- [Allergen controls scope](allergen-controls-scope.md) — “one unit” means a combined searchable dropdown, not a new measurement-unit field; avoid incidental global selector changes.

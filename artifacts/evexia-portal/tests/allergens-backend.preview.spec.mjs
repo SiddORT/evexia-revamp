@@ -25,10 +25,14 @@ async function open(page, path = '/admin/masters/allergens') {
   await page.goto(`${base()}${path}`);
   if (path === '/admin/masters/allergens') await expect(page.getByTestId('text-allergen-count')).toBeVisible();
 }
-async function pick(page, testId) {
+async function pick(page, testId, name) {
   const select = page.getByTestId(testId);
-  await expect(select.locator('option')).not.toHaveCount(1);
-  await select.selectOption({ index: 1 });
+  await select.click();
+  const menu = page.getByRole('listbox', { name: await select.getAttribute('aria-label'), exact: true });
+  const option = name ? menu.getByRole('option', { name, exact: true }) : menu.getByRole('option').nth(1);
+  await expect(option).toBeVisible();
+  await option.click();
+  await expect(select).toHaveAttribute('aria-expanded', 'false');
 }
 for (const [label, viewport, scheme] of [['desktop light', { width: 1280, height: 800 }, 'light'], ['mobile dark', { width: 390, height: 844 }, 'dark']]) {
   test(`allergen ${label}: keyboard switch, persistence, concurrency, filters and delete`, async ({ page }) => {
@@ -42,10 +46,14 @@ for (const [label, viewport, scheme] of [['desktop light', { width: 1280, height
     }, scheme);
     await expect(page.getByText('Untouched browser allergen')).toHaveCount(0);
     await page.getByTestId('button-add-allergen').click();
+    await expect(page.getByText('Drafts stay in memory during same-identity renewal. A failed save keeps your draft; use Cancel to discard it.')).toHaveCount(0);
+    await expect(page.locator('.mr-form__footer-note')).toHaveCount(0);
     const name = `Synthetic allergen ${label} ${Date.now()}`;
     await expect(page.getByLabel('HSN', { exact: false })).toHaveCount(0);
     await page.getByTestId('button-save-allergen').click();
     await expect(page.getByRole('alert').first()).toBeVisible();
+    await expect(page.getByTestId('select-allergen-category')).toHaveAttribute('aria-describedby', 'allergen-category_id-error');
+    await expect(page.getByTestId('select-allergen-location')).toHaveAttribute('aria-describedby', 'allergen-storage_location_id-error');
     await page.getByTestId('input-allergen-name').fill(name);
     await pick(page, 'select-allergen-category');
     await pick(page, 'select-allergen-location');
@@ -60,29 +68,49 @@ for (const [label, viewport, scheme] of [['desktop light', { width: 1280, height
     await expect(page.getByTestId('text-allergen-mix-state')).toHaveText('No Mix');
     await page.getByTestId('select-allergen-status').focus();
     await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
     await expect(mix).toBeFocused();
     await page.keyboard.press('Space');
     await expect(mix).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByTestId('text-allergen-mix-state')).toHaveText('Mix');
     const created = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/v1/admin/allergens' && r.request().method() === 'POST');
+    let releaseSave;
+    const heldSave = new Promise(resolve => { releaseSave = resolve; });
+    await page.route('**/api/v1/admin/allergens', async route => {
+      if (route.request().method() === 'POST') await heldSave;
+      await route.continue();
+    });
     await page.getByTestId('button-save-allergen').click();
+    for (const id of ['select-allergen-category', 'select-allergen-location', 'select-allergen-status', 'switch-allergen-mix', 'button-cancel-allergen', 'button-save-allergen']) await expect(page.getByTestId(id)).toBeDisabled();
+    await expect(page.getByRole('listbox')).toHaveCount(0);
+    releaseSave();
     const row = await (await created).json();
+    await page.unroute('**/api/v1/admin/allergens');
     expect(row.mix).toBe(true);
     expect(row.selling_price).toBe('12.345678');
     await expect(visibleId(page, `text-allergen-name-${row.id}`)).toBeVisible();
     // Filters: exact bounds, invalid bounds, clear.
     await page.getByTestId('input-search-allergens').fill(name);
-    await page.getByTestId('select-filter-status').selectOption('active');
-    await page.getByTestId('select-filter-category').selectOption(row.category_id);
-    await page.getByTestId('select-filter-location').selectOption(row.storage_location_id);
-    await page.getByTestId('select-filter-mix').selectOption('no_mix');
+    await pick(page, 'select-filter-status', 'Active');
+    await pick(page, 'select-filter-category', row.category_name);
+    await pick(page, 'select-filter-location', row.storage_location_name);
+    await pick(page, 'select-filter-mix', 'No Mix');
     await expect(page.getByTestId(`text-allergen-name-${row.id}`)).toHaveCount(0);
-    await page.getByTestId('select-filter-mix').selectOption('mix');
+    await pick(page, 'select-filter-mix', 'Mix');
     await page.getByTestId('input-min-price').fill('12.345678');
     await page.getByTestId('input-max-price').fill('12.345677');
     await expect(page.getByRole('alert').filter({ hasText: 'Maximum price' })).toBeVisible();
     await page.getByTestId('input-max-price').fill('12.345678');
     await expect(visibleId(page, `text-allergen-name-${row.id}`)).toBeVisible();
+    for (const format of ['csv', 'xlsx']) {
+      const response = page.waitForResponse(r => r.url().includes('/allergens/export?'));
+      const download = page.waitForEvent('download');
+      await page.getByTestId('button-export-allergens').click();
+      await page.getByRole('menuitem', { name: format === 'csv' ? 'CSV' : 'Excel (.xlsx)', exact: true }).click();
+      const params = new URL((await response).url()).searchParams;
+      expect(Object.fromEntries(params)).toMatchObject({ query: name, status: 'active', category_id: row.category_id, storage_location_id: row.storage_location_id, mix: 'mix', min_price: '12.345678', max_price: '12.345678', format });
+      expect((await readFile(await (await download).path())).length).toBeGreaterThan(0);
+    }
     await page.getByTestId('button-clear-filters').click();
     await expect(page.getByTestId('input-search-allergens')).toHaveValue('');
     // Concurrency: stale edit is blocked and draft kept.
@@ -252,8 +280,13 @@ test('allergen unchanged inactive/deleted references remain identifiable, new se
     return a;
   }, Date.now());
   await page.goto(`${base()}/admin/masters/allergens/${row.id}`);
-  await expect(page.getByTestId('select-allergen-category').locator('option:checked')).toContainText('(inactive)');
-  await expect(page.getByTestId('select-allergen-location').locator('option:checked')).toContainText('(deleted)');
+  await expect(page.getByTestId('select-allergen-category')).toContainText('(inactive)');
+  await expect(page.getByTestId('select-allergen-location')).toContainText('(deleted)');
+  await page.getByTestId('select-allergen-category').click();
+  await page.getByTestId('select-allergen-category-search').fill('no such retained category');
+  await expect(page.getByRole('status').filter({ hasText: 'No matching product category.' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('select-allergen-category')).toContainText('(inactive)');
   await page.getByTestId('input-allergen-concentration').fill('Retained specification');
   await page.getByTestId('switch-allergen-mix').click();
   await page.getByTestId('button-save-allergen').click();
@@ -261,4 +294,131 @@ test('allergen unchanged inactive/deleted references remain identifiable, new se
   await page.getByTestId('input-search-allergens').fill(row.name);
   await expect(visibleId(page, `text-allergen-name-${row.id}`)).toBeVisible();
   await page.screenshot({ path: test.info().outputPath('allergen-retained-references.png'), fullPage: true });
+});
+
+test('allergen combined references: bounded pages, late searches, retry, keyboard, labels and cold layouts', async ({ page }) => {
+  const refs = Array.from({ length: 28 }, (_, index) => ({
+    id: `aaaaaaaa-aaaa-4aaa-aaaa-${String(index + 1).padStart(12, '0')}`,
+    name: index === 27 ? `Last page ${'long readable category name '.repeat(6)}` : `Picker category ${String(index + 1).padStart(2, '0')}`,
+    status: index === 26 ? 'inactive' : 'active',
+  }));
+  const queries = [];
+  let retryFails = true;
+  let releaseOld;
+  const old = new Promise(resolve => { releaseOld = resolve; });
+  let oldStarted;
+  const started = new Promise(resolve => { oldStarted = resolve; });
+  await page.route('**/api/v1/admin/allergens/references/categories?*', async route => {
+    const params = new URL(route.request().url()).searchParams;
+    const query = params.get('query') || '';
+    queries.push(Object.fromEntries(params));
+    expect(params.get('limit')).toBe('25');
+    if (query === 'old') { oldStarted(); await old; }
+    if (query === 'retry' && retryFails) {
+      retryFails = false;
+      await route.fulfill({ status: 503, json: { error: { message: 'Synthetic reference unavailable' } } });
+      return;
+    }
+    let matches = query === 'old' ? [{ ...refs[0], name: 'Stale search response' }]
+      : query === 'retry' ? [refs[1]] : refs.filter(ref => ref.name.toLowerCase().includes(query.toLowerCase()));
+    if (params.get('include_unusable') !== 'true') matches = matches.filter(ref => ref.status === 'active');
+    const offset = Number(params.get('offset'));
+    await route.fulfill({ json: { items: matches.slice(offset, offset + 25), total: matches.length, limit: 25, offset } });
+  });
+  await open(page);
+  const category = page.getByTestId('select-filter-category');
+  await expect(page.getByTestId('select-filter-category-search')).toHaveCount(0);
+  await category.focus();
+  await page.keyboard.press('ArrowDown');
+  const search = page.getByTestId('select-filter-category-search');
+  await expect(search).toBeFocused();
+  await expect(page.getByTestId('select-filter-category-more')).toBeVisible();
+  await page.getByTestId('select-filter-category-more').click();
+  await expect(page.getByRole('option', { name: refs[27].name, exact: true })).toBeVisible();
+  await page.getByRole('option', { name: refs[27].name, exact: true }).click();
+  await expect(category).toContainText(refs[27].name);
+  await category.click();
+  await search.fill('Picker category 02');
+  await expect(page.getByRole('option', { name: refs[1].name, exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(category).toBeFocused();
+  await expect(category).toContainText(refs[27].name);
+  await category.click();
+  await search.fill('old');
+  await started;
+  await search.fill('Picker category 03');
+  await expect(page.getByRole('option', { name: refs[2].name, exact: true })).toBeVisible();
+  releaseOld();
+  await expect(page.getByRole('option', { name: 'Stale search response' })).toHaveCount(0);
+  await search.fill('retry');
+  await expect(page.getByRole('alert').filter({ hasText: 'Allergen service is unavailable' })).toBeVisible();
+  await page.getByRole('button', { name: 'Retry', exact: true }).click();
+  await expect(page.getByRole('option', { name: refs[1].name, exact: true })).toBeVisible();
+  await search.fill('nothing matches');
+  await expect(page.getByRole('status').filter({ hasText: 'No matching product category.' })).toBeVisible();
+  await search.fill('Picker category 03');
+  await expect(page.getByRole('option', { name: refs[2].name, exact: true })).toBeVisible();
+  await page.keyboard.press('ArrowDown'); // first option is the explicit reset choice
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect(category).toContainText(refs[2].name);
+  await page.getByRole('button', { name: 'Clear product category', exact: true }).click();
+  await expect(category).toContainText('All categories');
+  await category.click();
+  await search.fill('Last page');
+  await expect(page.getByRole('option', { name: refs[27].name, exact: true })).toBeVisible();
+  await page.getByRole('option', { name: refs[27].name, exact: true }).click();
+  for (const [width, appearance] of [[1280, 'light'], [390, 'dark']]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.evaluate(async appearance => {
+      const { setAdminPreference } = await import('/src/components/admin/adminPreferences.js');
+      setAdminPreference('appearance', appearance);
+    }, appearance);
+    await category.click();
+    await expect(page.getByRole('option', { name: refs[27].name, exact: true })).toBeVisible();
+    const geometry = await page.locator('.admin-allergen-combobox__menu').evaluate(menu => {
+      const box = menu.getBoundingClientRect();
+      return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, height: box.height, scroll: getComputedStyle(menu).overflowY, width: innerWidth, viewportHeight: innerHeight };
+    });
+    expect(geometry.left).toBeGreaterThanOrEqual(0);
+    expect(geometry.right).toBeLessThanOrEqual(geometry.width);
+    expect(geometry.top).toBeGreaterThanOrEqual(0);
+    expect(geometry.bottom).toBeLessThanOrEqual(geometry.viewportHeight);
+    expect(geometry.height).toBeLessThanOrEqual(302);
+    expect(geometry.scroll).toBe('auto');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    await page.screenshot({ path: test.info().outputPath(`allergen-picker-${width}-${appearance}.png`), fullPage: true });
+    await page.keyboard.press('Escape');
+  }
+  await page.getByTestId('button-clear-filters').click();
+  await expect(category).toContainText('All categories');
+  await expect(page.getByTestId('select-filter-status')).toContainText('All statuses');
+  await expect(page.getByTestId('select-filter-mix')).toContainText('All');
+  expect(queries.some(query => query.offset === '25')).toBe(true);
+  expect(queries.every(query => query.include_unusable === 'true')).toBe(true);
+  // A cold direct Add visit uses active-only search and does not expose the saved filter.
+  await page.goto(`${base()}/admin/masters/allergens/new`);
+  await expect(page.getByTestId('select-allergen-category')).toBeVisible();
+  await page.getByTestId('select-allergen-category').click();
+  await page.getByTestId('select-allergen-category-search').fill('Picker category 27');
+  await expect(page.getByRole('status').filter({ hasText: 'No matching product category.' })).toBeVisible();
+  expect(queries.at(-1).include_unusable).toBe('false');
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('select-allergen-category')).toContainText('Select product category');
+  await page.getByTestId('select-allergen-status').click();
+  await page.getByTestId('select-allergen-status-search').fill('missing');
+  await expect(page.getByRole('status').filter({ hasText: 'No matching status.' })).toBeVisible();
+  await page.getByTestId('select-allergen-status-search').fill('Inactive');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('select-allergen-status')).toContainText('Inactive');
+  for (const [width, appearance] of [[1280, 'light'], [390, 'dark']]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.evaluate(async appearance => {
+      const { setAdminPreference } = await import('/src/components/admin/adminPreferences.js');
+      setAdminPreference('appearance', appearance);
+    }, appearance);
+    await expect(page.getByTestId('button-save-allergen')).toBeVisible();
+    await page.screenshot({ path: test.info().outputPath(`allergen-form-${width}-${appearance}.png`), fullPage: true });
+  }
 });

@@ -1,56 +1,63 @@
 import { useEffect, useRef, useState } from 'react';
 import { listAllergenReferences } from '../../services/serverAllergens.js';
-import { reportingIdentityGuard } from '../../auth/adminSession.js';
+import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
+import AllergenSearchableSelect from './AllergenSearchableSelect.jsx';
 
 const PAGE = 25;
-// Debounced, searchable, paged selector over shared reference masters. The
-// retained option keeps an unchanged saved inactive/deleted reference visible.
-export default function AllergenRefPicker({ id, kind, label, value, onChange, retained = null, includeUnusable = false, allLabel = '', invalid = false, testId, className = 'mr-form__control' }) {
-  const [search, setSearch] = useState('');
+export default function AllergenRefPicker({ id, kind, label, value, onChange, retained = null, includeUnusable = false, allLabel = '', invalid = false, testId, disabled = false, describedBy }) {
+  const [request, setRequest] = useState({ search: '', offset: 0, revision: 0 });
   const [items, setItems] = useState([]);
+  const [selected, setSelected] = useState(null);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [offset, setOffset] = useState(0);
-  const [revision, setRevision] = useState(0);
-  const seen = useRef(new Map());
-  useEffect(() => { setOffset(0); setItems([]); }, [search, kind, includeUnusable]);
+  const generation = useRef(0);
+  const selectedValue = useRef(value);
+  selectedValue.current = value;
+  useEffect(() => {
+    const owner = getSession().user?.id;
+    return subscribeSession(() => {
+      const session = getSession();
+      if (session.user?.id !== owner || !['authenticated', 'renewing', 'renewal-error'].includes(session.status)) {
+        generation.current++; setItems([]); setSelected(null); setTotal(0); setError('');
+      }
+    });
+  }, []);
   useEffect(() => {
     const controller = new AbortController();
+    const current = ++generation.current;
     let guard;
     try { guard = reportingIdentityGuard(); } catch { return undefined; }
-    setLoading(true);
+    setLoading(true); setError('');
     const timer = setTimeout(() => {
-      listAllergenReferences(kind, { query: search.trim(), limit: PAGE, offset, include_unusable: includeUnusable }, controller.signal)
+      listAllergenReferences(kind, { query: request.search.trim(), limit: PAGE, offset: request.offset, include_unusable: includeUnusable }, controller.signal)
         .then((result) => {
           guard();
-          if (controller.signal.aborted) return;
-          result.items.forEach((item) => seen.current.set(item.id, item));
-          setItems((current) => offset ? [...current, ...result.items.filter((item) => !current.some((c) => c.id === item.id))] : result.items);
-          setTotal(result.total); setError('');
+          if (controller.signal.aborted || generation.current !== current) return;
+          const known = result.items.find((item) => item.id === selectedValue.current);
+          if (known) setSelected(known);
+          setItems((previous) => request.offset ? [...previous, ...result.items.filter((item) => !previous.some((old) => old.id === item.id))] : result.items);
+          setTotal(result.total);
         })
-        .catch((cause) => { try { guard(); } catch { return; } if (!controller.signal.aborted) setError(cause.message); })
-        .finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    }, offset ? 0 : 250);
+        .catch((cause) => { try { guard(); } catch { return; } if (!controller.signal.aborted && generation.current === current) setError(cause.message); })
+        .finally(() => { if (!controller.signal.aborted && generation.current === current) setLoading(false); });
+    }, request.offset ? 0 : 250);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [kind, search, offset, includeUnusable, revision]);
-  const options = [...items];
-  if (value && !options.some((item) => item.id === value)) {
-    const known = retained && retained.id === value ? retained : seen.current.get(value);
-    if (known) options.unshift(known);
+  }, [kind, includeUnusable, request]);
+  function search(text) {
+    if (text === request.search) return;
+    // Invalidate synchronously so even a response arriving before effect cleanup is ignored.
+    generation.current++; setItems([]); setTotal(0); setLoading(true); setError('');
+    setRequest((previous) => ({ ...previous, search: text, offset: 0 }));
   }
-  const suffix = (item) => item.status && item.status !== 'active' ? ` (${item.status})` : '';
-  const noun = kind === 'categories' ? 'categories' : 'storage locations';
-  return <div className="admin-allergen-picker">
-    <label className="sr-only" htmlFor={`${id}-search`}>Search {noun} for {label}</label>
-    <input id={`${id}-search`} className={className} maxLength={200} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={`Search ${noun}`} data-testid={`${testId}-search`} />
-    <select id={id} className={className} value={value || ''} onChange={(event) => { const item = options.find((o) => o.id === event.target.value); onChange(event.target.value, item || null); }} aria-invalid={invalid || undefined} aria-busy={loading} data-testid={testId}>
-      <option value="">{allLabel || `Select ${label.toLowerCase()}`}</option>
-      {options.map((item) => <option key={item.id} value={item.id}>{item.name}{suffix(item)}</option>)}
-    </select>
-    {error ? <p className="mr-form__error" role="alert">{error} <button type="button" className="admin-button admin-button--secondary" onClick={() => setRevision((v) => v + 1)}>Retry</button></p>
-      : loading ? <p className="mr-form__hint" role="status">Loading {noun}…</p>
-      : !options.length ? <p className="mr-form__hint" role="status">No matching {noun}.</p>
-      : items.length < total && <button type="button" className="admin-button admin-button--secondary" onClick={() => setOffset(items.length)} data-testid={`${testId}-more`}>Load more ({total - items.length} remaining)</button>}
-  </div>;
+  const options = items.map((item) => ({ value: item.id, label: `${item.name}${item.status !== 'active' ? ` (${item.status})` : ''}`, item }));
+  const known = selected?.id === value ? selected : retained?.id === value ? retained : null;
+  const knownLabel = known ? `${known.name}${known.status !== 'active' ? ` (${known.status})` : ''}` : undefined;
+  if (known && !options.some((option) => option.value === value) && (!request.search || known.name.toLocaleLowerCase().includes(request.search.trim().toLocaleLowerCase()))) options.unshift({ value: known.id, label: knownLabel, item: known });
+  options.unshift({ value: '', label: allLabel || `Select ${label.toLowerCase()}` });
+  return <AllergenSearchableSelect id={id} label={label} value={value} options={options} selectedLabel={knownLabel} empty={!items.length} invalid={invalid} describedBy={describedBy}
+    disabled={disabled} testId={testId} placeholder={allLabel || `Select ${label.toLowerCase()}`} onSearch={search}
+    onChange={(next) => { const item = options.find((option) => option.value === next)?.item || null; setSelected(item); onChange(next, item); }}
+    loading={loading} error={error} onRetry={() => setRequest((previous) => ({ ...previous, revision: previous.revision + 1 }))}
+    remaining={Math.max(0, total - items.length)} onMore={() => { setLoading(true); setRequest((previous) => ({ ...previous, offset: items.length })); }} />;
 }

@@ -48,7 +48,12 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844
         await expect(page.getByRole('button', { name: 'Export data', exact: true })).toBeEnabled();
         await expect(page.locator('.admin-search input')).toBeVisible();
         await expect(page.locator('section.admin-panel').locator('table:visible, .admin-empty:visible, [role="list"]:visible').first()).toBeVisible();
-        expect(await page.locator('.admin-filter select').count()).toBeGreaterThan(0);
+        if (slug === 'allergens') {
+          await expect(page.locator('.admin-filter button[role="combobox"]')).toHaveCount(4);
+          await expect(page.getByTestId('select-filter-status')).toBeVisible();
+        } else {
+          expect(await page.locator('.admin-filter select').count()).toBeGreaterThan(0);
+        }
         await expect(page.getByRole('button', { name: 'Previous page', exact: true })).toBeVisible();
         await expect(page.getByRole('button', { name: 'Next page', exact: true })).toBeVisible();
         const descriptions = page.locator('.admin-page-head__description');
