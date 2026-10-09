@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
-import { CirclePower, Download, FolderOpen, Pencil, Plus, RefreshCw, Trash2, Upload } from 'lucide-react';
+import { ChevronDown, CirclePower, Download, Filter, FolderOpen, Pencil, Plus, RefreshCw, Trash2, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
@@ -144,21 +144,22 @@ function TargetWorkspace() {
     {feedback && <div className="admin-feedback" role="status" data-testid="status-sales-target-feedback">{feedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-sales-target-action-error">{actionError}</div>}
     <section className="admin-panel" aria-label="Sales target list">
-      <div className="admin-target-toolbar"><div className="admin-target-toolbar__fields">
+      <div className="admin-target-toolbar"><div className="admin-target-toolbar__search-row">
         <label className="admin-search"><span className="sr-only">Search MR name</span><input maxLength={100} value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search MR name" data-testid="input-search-sales-targets" /></label>
         <button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={retry} data-testid="button-refresh-sales-targets"><RefreshCw size={15} aria-hidden="true" /> Refresh</button>
-        <span role="status" className="admin-target-filter-feedback" data-testid="text-sales-target-filter-feedback">{active ? `${filtered} matching · ${filterLabels.join(', ')} applied` : `${total} total targets`}{dirty && ' · unapplied changes'}</span>
       </div>
+      {(active || dirty) && <p role="status" className="admin-target-filter-feedback" data-testid="text-sales-target-filter-feedback">{active && `${filtered} matching · ${filterLabels.join(', ')} applied`}{dirty && `${active ? ' · ' : ''}unapplied changes`}</p>}
       <details className="admin-target-filter-disclosure">
-        <summary data-testid="button-toggle-sales-target-filters">Filter records{active ? ' · active' : ''}</summary>
-        <div className="admin-target-toolbar__fields" id="sales-target-filters">
+        <summary data-testid="button-toggle-sales-target-filters"><Filter size={15} aria-hidden="true" /><span>Filter records{active ? ' · active' : ''}</span><ChevronDown size={15} aria-hidden="true" /></summary>
+        <div className="admin-target-toolbar__filter-grid" id="sales-target-filters">
         <RemoteSelect describeSelection id="filter-sales-target-zone" label="Zone" value={draft.zone?.value || ''} selected={draft.zone} fetchPage={fetchZones} placeholder="All zones" onChange={(item) => setDraft((d) => ({ ...d, zone: item, mr: null }))} />
         <RemoteSelect describeSelection id="filter-sales-target-mr" label="MR" value={draft.mr?.value || ''} selected={draft.mr} resetKey={draft.zone?.value || ''} fetchPage={fetchMrs(draft.zone ? { zoneId: draft.zone.value } : {})} placeholder="All MRs" onChange={(item) => setDraft((d) => ({ ...d, mr: item }))} />
         <SearchableSelect id="filter-sales-target-start" label="Financial start year" value={draft.startYear} options={years} placeholder="Any start year" onChange={(v) => setDraft((d) => ({ ...d, startYear: v }))} />
         <SearchableSelect id="filter-sales-target-end" label="Financial end year" value={draft.endYear} options={years} placeholder="Any end year" onChange={(v) => setDraft((d) => ({ ...d, endYear: v }))} />
         <div className="admin-filter"><label htmlFor="filter-sales-target-status">Status</label><select id="filter-sales-target-status" className="admin-select" value={draft.status} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))} data-testid="select-filter-sales-target-status"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
-        <button type="button" className="admin-button" disabled={!dirty} onClick={apply} data-testid="button-apply-sales-target-filters">Apply filters</button>
+        <div className="admin-target-toolbar__filter-actions"><button type="button" className="admin-button" disabled={!dirty} onClick={apply} data-testid="button-apply-sales-target-filters">Apply filters</button>
         {(active || dirty) && <button type="button" className="admin-button admin-button--secondary" onClick={reset} data-testid="button-reset-sales-target-filters">Reset</button>}
+        </div>
       </div></details></div>
       <div className="admin-target-summary" data-testid="summary-sales-target-totals" aria-busy={loading}>{summaryRows.map((k) => <div key={k}><span>{k === 'total' ? 'Total' : `${k.toUpperCase()} target`}</span><strong data-testid={`text-sales-target-total-${k}`}>{loading || error ? '…' : formatAmount(totals[k])}</strong></div>)}</div>
       {loading ? <p className="admin-empty" role="status">Loading shared sales targets…</p> : error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><FolderOpen size={21} aria-hidden="true" /></span><strong>Sales targets could not be loaded</strong><p>{error}</p><button type="button" className="admin-button" style={{ marginTop: 16 }} onClick={retry} data-testid="button-retry-sales-targets">Try again</button></div> : <>

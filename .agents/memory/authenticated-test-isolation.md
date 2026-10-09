@@ -166,3 +166,12 @@ ran the whole spec instead of only the previously blocked journey.
 
 **How to apply:** Use a distinctive single-token filter and check the terminal
 collection count before interpreting the run as a focused continuation.
+
+An isolated browser matrix can still share its synthetic database across
+engines. Never assume unfiltered totals contain only the current engine's seed.
+
+**Why:** A toolbar check passed in Chromium but failed in Firefox because the
+previous engine's valid target remained in the same disposable database.
+
+**How to apply:** Compare reset outcomes to the full-list baseline, and assert
+single-record amounts only after applying the unique synthetic reference.

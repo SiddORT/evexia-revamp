@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
 import { authenticateAdmin } from './authenticateAdmin.mjs';
 import { enlargeTargetText, expectTargetFits, targetKeyboardReach } from './salesTargetLayout.mjs';
+import { registerSalesTargetToolbar } from './salesTargetToolbarSuite.mjs';
 
 const path = '/admin/masters/sales-targets';
 const base = () => process.env.EVEXIA_PREVIEW_BASE_URL;
@@ -29,6 +30,8 @@ export function registerSalesTargetLayout(test, seed) {
         expect(uncaught, 'Reference setup must not throw browser errors').toEqual([]);
       }
     });
+
+    registerSalesTargetToolbar(test, () => ({ refs, record }));
 
     for (const width of [390, 1440]) for (const theme of ['classic', 'modern']) for (const appearance of ['light', 'dark']) {
       test(`200% text ${width}px ${theme}/${appearance}: financial years, paged references, actions, import and export`, async ({ page }, info) => {
