@@ -134,7 +134,13 @@ export function registerSalesTargetLayout(test, seed) {
             data.mrs = offset ? [refs.mr] : [{ ...refs.mr, id: refs.otherZone.id, name: 'Synthetic first page MR', employeeCode: 'FIRST-PAGE' }];
             data.total = 2;
           }
-          await route.fulfill({ response, json: data });
+          try {
+            await route.fulfill({ response, json: data });
+          } catch (error) {
+            // A clearing request can outlive its popup; the browser may
+            // dispose that route while the real response is being fetched.
+            if (!/Route is already handled!/.test(error.message)) throw error;
+          }
         });
         await expect(page.getByTestId('select-filter-sales-target-zone')).toBeHidden();
         await page.getByTestId('button-toggle-sales-target-filters').click();

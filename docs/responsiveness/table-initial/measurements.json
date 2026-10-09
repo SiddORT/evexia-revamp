@@ -1,0 +1,582 @@
+[
+  {
+    "phase": "after",
+    "engine": "responsive-chromium",
+    "status": "failed",
+    "duration": 5083,
+    "errors": [
+      {
+        "location": {
+          "file": "/home/runner/workspace/artifacts/evexia-portal/tests/portal-responsive.preview.spec.mjs",
+          "column": 48,
+          "line": 85
+        },
+        "message": "Error: [{\"surface\":\"/admin/masters/mrs / table diagnosis\",\"engine\":\"responsive-chromium\",\"viewport\":{\"width\":1366,\"height\":768},\"issues\":[\"document overflow 1414 > 1366\"],\"overflowNodes\":[{\"tag\":\"TABLE\",\"class\":\"admin-table\",\"text\":\"Sr No.Employee detailsAddressDesignationReporting managerHQ / zoneStatusCreated \",\"right\":1607},{\"tag\":\"THEAD\",\"class\":\"\",\"text\":\"Sr No.Employee detailsAddressDesignationReporting managerHQ / zoneStatusCreated \",\"right\":1607},{\"tag\":\"TR\",\"class\":\"\",\"text\":\"Sr No.Employee detailsAddressDesignationReporting managerHQ / zoneStatusCreated \",\"right\":1607},{\"tag\":\"TH\",\"class\":\"\",\"text\":\"Updated details\",\"right\":1385.984375},{\"tag\":\"TH\",\"class\":\"\",\"text\":\"Actions\",\"right\":1607},{\"tag\":\"TBODY\",\"class\":\"\",\"text\":\"1Patient MR c5b9ab1bUser ID: patient.mr.c5b9ab1bEmployee code: PAT-c5b9ab1bPhone\",\"right\":1607},{\"tag\":\"TR\",\"class\":\"\",\"text\":\"1Patient MR c5b9ab1bUser ID: patient.mr.c5b9ab1bEmployee code: PAT-c5b9ab1bPhone\",\"right\":1607},{\"tag\":\"TD\",\"class\":\"\",\"text\":\"Super Admin09 Oct 2026, 12:14 PM\",\"right\":1385.984375},{\"tag\":\"SPAN\",\"class\":\"admin-mr-audit\",\"text\":\"Super Admin09 Oct 2026, 12:14 PM\",\"right\":1373.984375},{\"tag\":\"STRONG\",\"class\":\"\",\"text\":\"Super Admin\",\"right\":1373.984375},{\"tag\":\"TIME\",\"class\":\"\",\"text\":\"09 Oct 2026, 12:14 PM\",\"right\":1373.984375},{\"tag\":\"TD\",\"class\":\"\",\"text\":\"Phone & email optional\",\"right\":1607},{\"tag\":\"FIELDSET\",\"class\":\"admin-table__actions\",\"text\":\"Phone & email optional\",\"right\":1595},{\"tag\":\"BUTTON\",\"class\":\"contact-requirement-button contact-requirement-button--optional\",\"text\":\"Phone & email optional\",\"right\":1429.984375},{\"tag\":\"SPAN\",\"class\":\"sr-only\",\"text\":\"Phone & email optional\",\"right\":1414.484375},{\"tag\":\"BUTTON\",\"class\":\"admin-icon-button\",\"text\":\"\",\"right\":1462.984375},{\"tag\":\"BUTTON\",\"class\":\"admin-icon-button\",\"text\":\"\",\"right\":1495.984375},{\"tag\":\"BUTTON\",\"class\":\"admin-icon-button\",\"text\":\"\",\"right\":1528.984375},{\"tag\":\"BUTTON\",\"class\":\"admin-icon-button\",\"text\":\"\",\"right\":1561.984375},{\"tag\":\"BUTTON\",\"class\":\"admin-icon-button\",\"text\":\"\",\"right\":1594.984375}],\"scrolls\":[{\"className\":\"admin-table-scroll\",\"clientWidth\":1076,\"scrollWidth\":1350,\"end\":274}],\"width\":1366,\"height\":768},{\"surface\":\"/admin/masters/doctors / table diagnosis\",\"engine\":\"responsive-chromium\",\"viewport\":{\"width\":1366,\"height\":768},\"issues\":[\"document overflow 1594 > 1366\"],\"overflowNodes\":[{\"tag\":\"TABLE\",\"class\":\"admin-table\",\"text\":\"No.Doctor / ContactProfessionalMR / ZoneAddressVerificationStatusCreated details\",\"right\":1707},{\"tag\":\"THEAD\",\"class\":\"\",\"text\":\"No.Doctor / ContactProfessionalMR / ZoneAddressVerificationStatusCreated details\",\"right\":1707},{\"tag\":\"TR\",\"class\":\"\",\"text\":\"No.Doctor / ContactProfessionalMR / ZoneAddressVerificationStatusCreated details\",\"right\":1707},{\"tag\":\"TH\",\"class\":\"\",\"text\":\"Updated details\",\"right\":1437.828125},{\"tag\":\"TH\",\"class\":\"\",\"text\":\"Actions\",\"right\":1707},{\"tag\":\"TBODY\",\"class\":\"\",\"text\":\"1Patient Doctor c5b9ab1bRegistration number: PATREG-c5b9ab1bPhone: No phoneEmail\",\"right\":1707},{\"tag\":\"TR\",\"class\":\"\",\"text\":\"1Patient Doctor c5b9ab1bRegistration number: PATREG-c5b9ab1bPhone: No phoneEmail\",\"right\":1707},{\"tag\":\"TD\",\"class\":\"\",\"text\":\"Super Admin09 Oct 2026, 12:14 PM\",\"right\":1437.828125},{\"tag\":\"SPAN\",\"class\":\"doctor-master__audit\",\"text\":\"Super Admin09 Oct 2026, 12:14 PM\",\"right\":1425.828125},{\"tag\":\"STRONG\",\"class\":\"\",\"text\":\"Super Admin\",\"right\":1425.828125},{\"tag\":\"TIME\",\"class\":\"\",\"text\":\"09 Oct 2026, 12:14 PM\",\"right\":1425.828125},{\"tag\":\"TD\",\"class\":\"\",\"text\":\"Payment historyPhone & email optional\",\"right\":1707},{\"tag\":\"FIELDSET\",\"class\":\"doctor-master__actions\",\"text\":\"Payment historyPhone & email optional\",\"right\":1695},{\"tag\":\"BUTTON\",\"class\":\"doctor-master__payment-action\",\"text\":\"Payment history\",\"right\":1574.203125},{\"tag\":\"BUTTON\",\"class\":\"contact-requirement-button contact-requirement-button--optional\",\"text\":\"Phone & email optional\",\"right\":1609.203125},{\"tag\":\"SPAN\",\"class\":\"sr-only\",\"text\":\"Phone & email optional\",\"right\":1593.703125},{\"tag\":\"BUTTON\",\"class\":\"admin-icon-button\",\"text\":\"\",\"right\":1642.203125},{\"tag\":\"BUTTON\",\"class\":\"admin-icon-button\",\"text\":\"\",\"right\":1675.203125},{\"tag\":\"BUTTON\",\"class\":\"admin-icon-button\",\"text\":\"\",\"right\":1479.828125}],\"scrolls\":[{\"className\":\"admin-table-scroll\",\"clientWidth\":1076,\"scrollWidth\":1450,\"end\":374}],\"width\":1366,\"height\":768}]\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  -   1\u001b[39m\n\u001b[31m+ Received  + 282\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"engine\": \"responsive-chromium\",\u001b[39m\n\u001b[31m+     \"height\": 768,\u001b[39m\n\u001b[31m+     \"issues\": Array [\u001b[39m\n\u001b[31m+       \"document overflow 1414 > 1366\",\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"overflowNodes\": Array [\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"admin-table\",\u001b[39m\n\u001b[31m+         \"right\": 1607,\u001b[39m\n\u001b[31m+         \"tag\": \"TABLE\",\u001b[39m\n\u001b[31m+         \"text\": \"Sr No.Employee detailsAddressDesignationReporting managerHQ / zoneStatusCreated \",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1607,\u001b[39m\n\u001b[31m+         \"tag\": \"THEAD\",\u001b[39m\n\u001b[31m+         \"text\": \"Sr No.Employee detailsAddressDesignationReporting managerHQ / zoneStatusCreated \",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1607,\u001b[39m\n\u001b[31m+         \"tag\": \"TR\",\u001b[39m\n\u001b[31m+         \"text\": \"Sr No.Employee detailsAddressDesignationReporting managerHQ / zoneStatusCreated \",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1385.984375,\u001b[39m\n\u001b[31m+         \"tag\": \"TH\",\u001b[39m\n\u001b[31m+         \"text\": \"Updated details\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1607,\u001b[39m\n\u001b[31m+         \"tag\": \"TH\",\u001b[39m\n\u001b[31m+         \"text\": \"Actions\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1607,\u001b[39m\n\u001b[31m+         \"tag\": \"TBODY\",\u001b[39m\n\u001b[31m+         \"text\": \"1Patient MR c5b9ab1bUser ID: patient.mr.c5b9ab1bEmployee code: PAT-c5b9ab1bPhone\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1607,\u001b[39m\n\u001b[31m+         \"tag\": \"TR\",\u001b[39m\n\u001b[31m+         \"text\": \"1Patient MR c5b9ab1bUser ID: patient.mr.c5b9ab1bEmployee code: PAT-c5b9ab1bPhone\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1385.984375,\u001b[39m\n\u001b[31m+         \"tag\": \"TD\",\u001b[39m\n\u001b[31m+         \"text\": \"Super Admin09 Oct 2026, 12:14 PM\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"admin-mr-audit\",\u001b[39m\n\u001b[31m+         \"right\": 1373.984375,\u001b[39m\n\u001b[31m+         \"tag\": \"SPAN\",\u001b[39m\n\u001b[31m+         \"text\": \"Super Admin09 Oct 2026, 12:14 PM\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1373.984375,\u001b[39m\n\u001b[31m+         \"tag\": \"STRONG\",\u001b[39m\n\u001b[31m+         \"text\": \"Super Admin\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1373.984375,\u001b[39m\n\u001b[31m+         \"tag\": \"TIME\",\u001b[39m\n\u001b[31m+         \"text\": \"09 Oct 2026, 12:14 PM\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1607,\u001b[39m\n\u001b[31m+         \"tag\": \"TD\",\u001b[39m\n\u001b[31m+         \"text\": \"Phone & email optional\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"admin-table__actions\",\u001b[39m\n\u001b[31m+         \"right\": 1595,\u001b[39m\n\u001b[31m+         \"tag\": \"FIELDSET\",\u001b[39m\n\u001b[31m+         \"text\": \"Phone & email optional\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"contact-requirement-button contact-requirement-button--optional\",\u001b[39m\n\u001b[31m+         \"right\": 1429.984375,\u001b[39m\n\u001b[31m+         \"tag\": \"BUTTON\",\u001b[39m\n\u001b[31m+         \"text\": \"Phone & email optional\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"sr-only\",\u001b[39m\n\u001b[31m+         \"right\": 1414.484375,\u001b[39m\n\u001b[31m+         \"tag\": \"SPAN\",\u001b[39m\n\u001b[31m+         \"text\": \"Phone & email optional\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"admin-icon-button\",\u001b[39m\n\u001b[31m+         \"right\": 1462.984375,\u001b[39m\n\u001b[31m+         \"tag\": \"BUTTON\",\u001b[39m\n\u001b[31m+         \"text\": \"\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"admin-icon-button\",\u001b[39m\n\u001b[31m+         \"right\": 1495.984375,\u001b[39m\n\u001b[31m+         \"tag\": \"BUTTON\",\u001b[39m\n\u001b[31m+         \"text\": \"\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"admin-icon-button\",\u001b[39m\n\u001b[31m+         \"right\": 1528.984375,\u001b[39m\n\u001b[31m+         \"tag\": \"BUTTON\",\u001b[39m\n\u001b[31m+         \"text\": \"\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"admin-icon-button\",\u001b[39m\n\u001b[31m+         \"right\": 1561.984375,\u001b[39m\n\u001b[31m+         \"tag\": \"BUTTON\",\u001b[39m\n\u001b[31m+         \"text\": \"\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"admin-icon-button\",\u001b[39m\n\u001b[31m+         \"right\": 1594.984375,\u001b[39m\n\u001b[31m+         \"tag\": \"BUTTON\",\u001b[39m\n\u001b[31m+         \"text\": \"\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"scrolls\": Array [\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"className\": \"admin-table-scroll\",\u001b[39m\n\u001b[31m+         \"clientWidth\": 1076,\u001b[39m\n\u001b[31m+         \"end\": 274,\u001b[39m\n\u001b[31m+         \"scrollWidth\": 1350,\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"surface\": \"/admin/masters/mrs / table diagnosis\",\u001b[39m\n\u001b[31m+     \"viewport\": Object {\u001b[39m\n\u001b[31m+       \"height\": 768,\u001b[39m\n\u001b[31m+       \"width\": 1366,\u001b[39m\n\u001b[31m+     },\u001b[39m\n\u001b[31m+     \"width\": 1366,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"engine\": \"responsive-chromium\",\u001b[39m\n\u001b[31m+     \"height\": 768,\u001b[39m\n\u001b[31m+     \"issues\": Array [\u001b[39m\n\u001b[31m+       \"document overflow 1594 > 1366\",\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"overflowNodes\": Array [\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"admin-table\",\u001b[39m\n\u001b[31m+         \"right\": 1707,\u001b[39m\n\u001b[31m+         \"tag\": \"TABLE\",\u001b[39m\n\u001b[31m+         \"text\": \"No.Doctor / ContactProfessionalMR / ZoneAddressVerificationStatusCreated details\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1707,\u001b[39m\n\u001b[31m+         \"tag\": \"THEAD\",\u001b[39m\n\u001b[31m+         \"text\": \"No.Doctor / ContactProfessionalMR / ZoneAddressVerificationStatusCreated details\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1707,\u001b[39m\n\u001b[31m+         \"tag\": \"TR\",\u001b[39m\n\u001b[31m+         \"text\": \"No.Doctor / ContactProfessionalMR / ZoneAddressVerificationStatusCreated details\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1437.828125,\u001b[39m\n\u001b[31m+         \"tag\": \"TH\",\u001b[39m\n\u001b[31m+         \"text\": \"Updated details\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1707,\u001b[39m\n\u001b[31m+         \"tag\": \"TH\",\u001b[39m\n\u001b[31m+         \"text\": \"Actions\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1707,\u001b[39m\n\u001b[31m+         \"tag\": \"TBODY\",\u001b[39m\n\u001b[31m+         \"text\": \"1Patient Doctor c5b9ab1bRegistration number: PATREG-c5b9ab1bPhone: No phoneEmail\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1707,\u001b[39m\n\u001b[31m+         \"tag\": \"TR\",\u001b[39m\n\u001b[31m+         \"text\": \"1Patient Doctor c5b9ab1bRegistration number: PATREG-c5b9ab1bPhone: No phoneEmail\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1437.828125,\u001b[39m\n\u001b[31m+         \"tag\": \"TD\",\u001b[39m\n\u001b[31m+         \"text\": \"Super Admin09 Oct 2026, 12:14 PM\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"doctor-master__audit\",\u001b[39m\n\u001b[31m+         \"right\": 1425.828125,\u001b[39m\n\u001b[31m+         \"tag\": \"SPAN\",\u001b[39m\n\u001b[31m+         \"text\": \"Super Admin09 Oct 2026, 12:14 PM\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1425.828125,\u001b[39m\n\u001b[31m+         \"tag\": \"STRONG\",\u001b[39m\n\u001b[31m+         \"text\": \"Super Admin\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1425.828125,\u001b[39m\n\u001b[31m+         \"tag\": \"TIME\",\u001b[39m\n\u001b[31m+         \"text\": \"09 Oct 2026, 12:14 PM\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"\",\u001b[39m\n\u001b[31m+         \"right\": 1707,\u001b[39m\n\u001b[31m+         \"tag\": \"TD\",\u001b[39m\n\u001b[31m+         \"text\": \"Payment historyPhone & email optional\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"doctor-master__actions\",\u001b[39m\n\u001b[31m+         \"right\": 1695,\u001b[39m\n\u001b[31m+         \"tag\": \"FIELDSET\",\u001b[39m\n\u001b[31m+         \"text\": \"Payment historyPhone & email optional\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"doctor-master__payment-action\",\u001b[39m\n\u001b[31m+         \"right\": 1574.203125,\u001b[39m\n\u001b[31m+         \"tag\": \"BUTTON\",\u001b[39m\n\u001b[31m+         \"text\": \"Payment history\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"contact-requirement-button contact-requirement-button--optional\",\u001b[39m\n\u001b[31m+         \"right\": 1609.203125,\u001b[39m\n\u001b[31m+         \"tag\": \"BUTTON\",\u001b[39m\n\u001b[31m+         \"text\": \"Phone & email optional\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"sr-only\",\u001b[39m\n\u001b[31m+         \"right\": 1593.703125,\u001b[39m\n\u001b[31m+         \"tag\": \"SPAN\",\u001b[39m\n\u001b[31m+         \"text\": \"Phone & email optional\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"admin-icon-button\",\u001b[39m\n\u001b[31m+         \"right\": 1642.203125,\u001b[39m\n\u001b[31m+         \"tag\": \"BUTTON\",\u001b[39m\n\u001b[31m+         \"text\": \"\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"admin-icon-button\",\u001b[39m\n\u001b[31m+         \"right\": 1675.203125,\u001b[39m\n\u001b[31m+         \"tag\": \"BUTTON\",\u001b[39m\n\u001b[31m+         \"text\": \"\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"class\": \"admin-icon-button\",\u001b[39m\n\u001b[31m+         \"right\": 1479.828125,\u001b[39m\n\u001b[31m+         \"tag\": \"BUTTON\",\u001b[39m\n\u001b[31m+         \"text\": \"\",\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"scrolls\": Array [\u001b[39m\n\u001b[31m+       Object {\u001b[39m\n\u001b[31m+         \"className\": \"admin-table-scroll\",\u001b[39m\n\u001b[31m+         \"clientWidth\": 1076,\u001b[39m\n\u001b[31m+         \"end\": 374,\u001b[39m\n\u001b[31m+         \"scrollWidth\": 1450,\u001b[39m\n\u001b[31m+       },\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"surface\": \"/admin/masters/doctors / table diagnosis\",\u001b[39m\n\u001b[31m+     \"viewport\": Object {\u001b[39m\n\u001b[31m+       \"height\": 768,\u001b[39m\n\u001b[31m+       \"width\": 1366,\u001b[39m\n\u001b[31m+     },\u001b[39m\n\u001b[31m+     \"width\": 1366,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+ ]\u001b[39m\n\n  83 |       await visit(page, route); await check(page, info, `${route} / table diagnosis`);\n  84 |     }\n> 85 |     expect(failures, JSON.stringify(failures)).toEqual([]);\n     |                                                ^\n  86 |     return;\n  87 |   }\n  88 |   await visit(page, '/admin/inventory/purchase-orders');\n    at /home/runner/workspace/artifacts/evexia-portal/tests/portal-responsive.preview.spec.mjs:85:48"
+      }
+    ],
+    "records": [
+      {
+        "surface": "/admin/masters/mrs / table diagnosis",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [
+          "document overflow 1414 > 1366"
+        ],
+        "overflowNodes": [
+          {
+            "tag": "TABLE",
+            "class": "admin-table",
+            "text": "Sr No.Employee detailsAddressDesignationReporting managerHQ / zoneStatusCreated ",
+            "right": 1607
+          },
+          {
+            "tag": "THEAD",
+            "class": "",
+            "text": "Sr No.Employee detailsAddressDesignationReporting managerHQ / zoneStatusCreated ",
+            "right": 1607
+          },
+          {
+            "tag": "TR",
+            "class": "",
+            "text": "Sr No.Employee detailsAddressDesignationReporting managerHQ / zoneStatusCreated ",
+            "right": 1607
+          },
+          {
+            "tag": "TH",
+            "class": "",
+            "text": "Updated details",
+            "right": 1385.984375
+          },
+          {
+            "tag": "TH",
+            "class": "",
+            "text": "Actions",
+            "right": 1607
+          },
+          {
+            "tag": "TBODY",
+            "class": "",
+            "text": "1Patient MR c5b9ab1bUser ID: patient.mr.c5b9ab1bEmployee code: PAT-c5b9ab1bPhone",
+            "right": 1607
+          },
+          {
+            "tag": "TR",
+            "class": "",
+            "text": "1Patient MR c5b9ab1bUser ID: patient.mr.c5b9ab1bEmployee code: PAT-c5b9ab1bPhone",
+            "right": 1607
+          },
+          {
+            "tag": "TD",
+            "class": "",
+            "text": "Super Admin09 Oct 2026, 12:14 PM",
+            "right": 1385.984375
+          },
+          {
+            "tag": "SPAN",
+            "class": "admin-mr-audit",
+            "text": "Super Admin09 Oct 2026, 12:14 PM",
+            "right": 1373.984375
+          },
+          {
+            "tag": "STRONG",
+            "class": "",
+            "text": "Super Admin",
+            "right": 1373.984375
+          },
+          {
+            "tag": "TIME",
+            "class": "",
+            "text": "09 Oct 2026, 12:14 PM",
+            "right": 1373.984375
+          },
+          {
+            "tag": "TD",
+            "class": "",
+            "text": "Phone & email optional",
+            "right": 1607
+          },
+          {
+            "tag": "FIELDSET",
+            "class": "admin-table__actions",
+            "text": "Phone & email optional",
+            "right": 1595
+          },
+          {
+            "tag": "BUTTON",
+            "class": "contact-requirement-button contact-requirement-button--optional",
+            "text": "Phone & email optional",
+            "right": 1429.984375
+          },
+          {
+            "tag": "SPAN",
+            "class": "sr-only",
+            "text": "Phone & email optional",
+            "right": 1414.484375
+          },
+          {
+            "tag": "BUTTON",
+            "class": "admin-icon-button",
+            "text": "",
+            "right": 1462.984375
+          },
+          {
+            "tag": "BUTTON",
+            "class": "admin-icon-button",
+            "text": "",
+            "right": 1495.984375
+          },
+          {
+            "tag": "BUTTON",
+            "class": "admin-icon-button",
+            "text": "",
+            "right": 1528.984375
+          },
+          {
+            "tag": "BUTTON",
+            "class": "admin-icon-button",
+            "text": "",
+            "right": 1561.984375
+          },
+          {
+            "tag": "BUTTON",
+            "class": "admin-icon-button",
+            "text": "",
+            "right": 1594.984375
+          }
+        ],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 1076,
+            "scrollWidth": 1350,
+            "end": 274
+          }
+        ],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/doctors / table diagnosis",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [
+          "document overflow 1594 > 1366"
+        ],
+        "overflowNodes": [
+          {
+            "tag": "TABLE",
+            "class": "admin-table",
+            "text": "No.Doctor / ContactProfessionalMR / ZoneAddressVerificationStatusCreated details",
+            "right": 1707
+          },
+          {
+            "tag": "THEAD",
+            "class": "",
+            "text": "No.Doctor / ContactProfessionalMR / ZoneAddressVerificationStatusCreated details",
+            "right": 1707
+          },
+          {
+            "tag": "TR",
+            "class": "",
+            "text": "No.Doctor / ContactProfessionalMR / ZoneAddressVerificationStatusCreated details",
+            "right": 1707
+          },
+          {
+            "tag": "TH",
+            "class": "",
+            "text": "Updated details",
+            "right": 1437.828125
+          },
+          {
+            "tag": "TH",
+            "class": "",
+            "text": "Actions",
+            "right": 1707
+          },
+          {
+            "tag": "TBODY",
+            "class": "",
+            "text": "1Patient Doctor c5b9ab1bRegistration number: PATREG-c5b9ab1bPhone: No phoneEmail",
+            "right": 1707
+          },
+          {
+            "tag": "TR",
+            "class": "",
+            "text": "1Patient Doctor c5b9ab1bRegistration number: PATREG-c5b9ab1bPhone: No phoneEmail",
+            "right": 1707
+          },
+          {
+            "tag": "TD",
+            "class": "",
+            "text": "Super Admin09 Oct 2026, 12:14 PM",
+            "right": 1437.828125
+          },
+          {
+            "tag": "SPAN",
+            "class": "doctor-master__audit",
+            "text": "Super Admin09 Oct 2026, 12:14 PM",
+            "right": 1425.828125
+          },
+          {
+            "tag": "STRONG",
+            "class": "",
+            "text": "Super Admin",
+            "right": 1425.828125
+          },
+          {
+            "tag": "TIME",
+            "class": "",
+            "text": "09 Oct 2026, 12:14 PM",
+            "right": 1425.828125
+          },
+          {
+            "tag": "TD",
+            "class": "",
+            "text": "Payment historyPhone & email optional",
+            "right": 1707
+          },
+          {
+            "tag": "FIELDSET",
+            "class": "doctor-master__actions",
+            "text": "Payment historyPhone & email optional",
+            "right": 1695
+          },
+          {
+            "tag": "BUTTON",
+            "class": "doctor-master__payment-action",
+            "text": "Payment history",
+            "right": 1574.203125
+          },
+          {
+            "tag": "BUTTON",
+            "class": "contact-requirement-button contact-requirement-button--optional",
+            "text": "Phone & email optional",
+            "right": 1609.203125
+          },
+          {
+            "tag": "SPAN",
+            "class": "sr-only",
+            "text": "Phone & email optional",
+            "right": 1593.703125
+          },
+          {
+            "tag": "BUTTON",
+            "class": "admin-icon-button",
+            "text": "",
+            "right": 1642.203125
+          },
+          {
+            "tag": "BUTTON",
+            "class": "admin-icon-button",
+            "text": "",
+            "right": 1675.203125
+          },
+          {
+            "tag": "BUTTON",
+            "class": "admin-icon-button",
+            "text": "",
+            "right": 1479.828125
+          }
+        ],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 1076,
+            "scrollWidth": 1450,
+            "end": 374
+          }
+        ],
+        "width": 1366,
+        "height": 768
+      }
+    ],
+    "failures": [
+      {
+        "surface": "/admin/masters/mrs / table diagnosis",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [
+          "document overflow 1414 > 1366"
+        ],
+        "overflowNodes": [
+          {
+            "tag": "TABLE",
+            "class": "admin-table",
+            "text": "Sr No.Employee detailsAddressDesignationReporting managerHQ / zoneStatusCreated ",
+            "right": 1607
+          },
+          {
+            "tag": "THEAD",
+            "class": "",
+            "text": "Sr No.Employee detailsAddressDesignationReporting managerHQ / zoneStatusCreated ",
+            "right": 1607
+          },
+          {
+            "tag": "TR",
+            "class": "",
+            "text": "Sr No.Employee detailsAddressDesignationReporting managerHQ / zoneStatusCreated ",
+            "right": 1607
+          },
+          {
+            "tag": "TH",
+            "class": "",
+            "text": "Updated details",
+            "right": 1385.984375
+          },
+          {
+            "tag": "TH",
+            "class": "",
+            "text": "Actions",
+            "right": 1607
+          },
+          {
+            "tag": "TBODY",
+            "class": "",
+            "text": "1Patient MR c5b9ab1bUser ID: patient.mr.c5b9ab1bEmployee code: PAT-c5b9ab1bPhone",
+            "right": 1607
+          },
+          {
+            "tag": "TR",
+            "class": "",
+            "text": "1Patient MR c5b9ab1bUser ID: patient.mr.c5b9ab1bEmployee code: PAT-c5b9ab1bPhone",
+            "right": 1607
+          },
+          {
+            "tag": "TD",
+            "class": "",
+            "text": "Super Admin09 Oct 2026, 12:14 PM",
+            "right": 1385.984375
+          },
+          {
+            "tag": "SPAN",
+            "class": "admin-mr-audit",
+            "text": "Super Admin09 Oct 2026, 12:14 PM",
+            "right": 1373.984375
+          },
+          {
+            "tag": "STRONG",
+            "class": "",
+            "text": "Super Admin",
+            "right": 1373.984375
+          },
+          {
+            "tag": "TIME",
+            "class": "",
+            "text": "09 Oct 2026, 12:14 PM",
+            "right": 1373.984375
+          },
+          {
+            "tag": "TD",
+            "class": "",
+            "text": "Phone & email optional",
+            "right": 1607
+          },
+          {
+            "tag": "FIELDSET",
+            "class": "admin-table__actions",
+            "text": "Phone & email optional",
+            "right": 1595
+          },
+          {
+            "tag": "BUTTON",
+            "class": "contact-requirement-button contact-requirement-button--optional",
+            "text": "Phone & email optional",
+            "right": 1429.984375
+          },
+          {
+            "tag": "SPAN",
+            "class": "sr-only",
+            "text": "Phone & email optional",
+            "right": 1414.484375
+          },
+          {
+            "tag": "BUTTON",
+            "class": "admin-icon-button",
+            "text": "",
+            "right": 1462.984375
+          },
+          {
+            "tag": "BUTTON",
+            "class": "admin-icon-button",
+            "text": "",
+            "right": 1495.984375
+          },
+          {
+            "tag": "BUTTON",
+            "class": "admin-icon-button",
+            "text": "",
+            "right": 1528.984375
+          },
+          {
+            "tag": "BUTTON",
+            "class": "admin-icon-button",
+            "text": "",
+            "right": 1561.984375
+          },
+          {
+            "tag": "BUTTON",
+            "class": "admin-icon-button",
+            "text": "",
+            "right": 1594.984375
+          }
+        ],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 1076,
+            "scrollWidth": 1350,
+            "end": 274
+          }
+        ],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/doctors / table diagnosis",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [
+          "document overflow 1594 > 1366"
+        ],
+        "overflowNodes": [
+          {
+            "tag": "TABLE",
+            "class": "admin-table",
+            "text": "No.Doctor / ContactProfessionalMR / ZoneAddressVerificationStatusCreated details",
+            "right": 1707
+          },
+          {
+            "tag": "THEAD",
+            "class": "",
+            "text": "No.Doctor / ContactProfessionalMR / ZoneAddressVerificationStatusCreated details",
+            "right": 1707
+          },
+          {
+            "tag": "TR",
+            "class": "",
+            "text": "No.Doctor / ContactProfessionalMR / ZoneAddressVerificationStatusCreated details",
+            "right": 1707
+          },
+          {
+            "tag": "TH",
+            "class": "",
+            "text": "Updated details",
+            "right": 1437.828125
+          },
+          {
+            "tag": "TH",
+            "class": "",
+            "text": "Actions",
+            "right": 1707
+          },
+          {
+            "tag": "TBODY",
+            "class": "",
+            "text": "1Patient Doctor c5b9ab1bRegistration number: PATREG-c5b9ab1bPhone: No phoneEmail",
+            "right": 1707
+          },
+          {
+            "tag": "TR",
+            "class": "",
+            "text": "1Patient Doctor c5b9ab1bRegistration number: PATREG-c5b9ab1bPhone: No phoneEmail",
+            "right": 1707
+          },
+          {
+            "tag": "TD",
+            "class": "",
+            "text": "Super Admin09 Oct 2026, 12:14 PM",
+            "right": 1437.828125
+          },
+          {
+            "tag": "SPAN",
+            "class": "doctor-master__audit",
+            "text": "Super Admin09 Oct 2026, 12:14 PM",
+            "right": 1425.828125
+          },
+          {
+            "tag": "STRONG",
+            "class": "",
+            "text": "Super Admin",
+            "right": 1425.828125
+          },
+          {
+            "tag": "TIME",
+            "class": "",
+            "text": "09 Oct 2026, 12:14 PM",
+            "right": 1425.828125
+          },
+          {
+            "tag": "TD",
+            "class": "",
+            "text": "Payment historyPhone & email optional",
+            "right": 1707
+          },
+          {
+            "tag": "FIELDSET",
+            "class": "doctor-master__actions",
+            "text": "Payment historyPhone & email optional",
+            "right": 1695
+          },
+          {
+            "tag": "BUTTON",
+            "class": "doctor-master__payment-action",
+            "text": "Payment history",
+            "right": 1574.203125
+          },
+          {
+            "tag": "BUTTON",
+            "class": "contact-requirement-button contact-requirement-button--optional",
+            "text": "Phone & email optional",
+            "right": 1609.203125
+          },
+          {
+            "tag": "SPAN",
+            "class": "sr-only",
+            "text": "Phone & email optional",
+            "right": 1593.703125
+          },
+          {
+            "tag": "BUTTON",
+            "class": "admin-icon-button",
+            "text": "",
+            "right": 1642.203125
+          },
+          {
+            "tag": "BUTTON",
+            "class": "admin-icon-button",
+            "text": "",
+            "right": 1675.203125
+          },
+          {
+            "tag": "BUTTON",
+            "class": "admin-icon-button",
+            "text": "",
+            "right": 1479.828125
+          }
+        ],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 1076,
+            "scrollWidth": 1450,
+            "end": 374
+          }
+        ],
+        "width": 1366,
+        "height": 768
+      }
+    ]
+  }
+]

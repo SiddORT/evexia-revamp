@@ -3,14 +3,14 @@
    non-overlay vertical scrollbar occupies part of a 320px viewport. */
 html:has(.admin-settings-layout), body:has(.admin-settings-layout) { min-width: 0; }
 .admin-settings-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
-.admin-settings-nav { display: grid; gap: 10px; min-width: 0; }
-.admin-settings-nav__search { display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 8px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-muted); }
+.admin-settings-nav { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
+.admin-settings-nav__search { display: flex; align-items: center; gap: 6px; min-width: 0; height: 40px; padding: 0 8px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-muted); }
 .admin-settings-nav__search:focus-within { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
 .admin-settings-nav__search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--admin-text); font: inherit; font-size: 12px; }
 .admin-settings-nav__clear { border: 0; background: transparent; color: var(--admin-text-soft); cursor: pointer; border-radius: 6px; padding: 4px; display: grid; place-items: center; }
 .admin-settings-nav__clear:focus-visible, .admin-settings-nav__link:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
-.admin-settings-nav__list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
-.admin-settings-nav__link { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 9px; color: var(--admin-text-soft); text-decoration: none; }
+.admin-settings-nav__list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; margin: 0; padding: 0; list-style: none; }
+.admin-settings-nav__link { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 10px 12px; border-radius: 9px; color: var(--admin-text-soft); text-decoration: none; }
 .admin-settings-nav__link:hover { background: var(--admin-state-hover); color: var(--admin-text); }
 .admin-settings-nav__link[aria-current="page"] { background: var(--admin-sidebar-active-bg); color: var(--admin-sidebar-active); }
 .admin-settings-nav__link svg { flex: none; }

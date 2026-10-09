@@ -86,11 +86,12 @@ test('Opening Balance modal cancel, pending close, renewal, failure and uncertai
   let entered;
   const arrived = new Promise((resolve) => { entered = resolve; });
   const gate = new Promise((resolve) => { release = resolve; });
-  const endpoint = '**/api/v1/admin/opening-balances';
+  // The master transport can append an empty query string to POST URLs.
+  const endpoint = /\/api\/v1\/admin\/opening-balances(?:\?.*)?$/;
   await page.route(endpoint, async (route) => {
     if (route.request().method() !== 'POST') return route.continue();
     entered(); await gate;
-    await route.fulfill({ status: 503, json: { error: { message: 'Synthetic retryable save failure', code: 'unavailable' } } });
+    await route.fulfill({ status: 503, json: { error: { message: 'Synthetic retryable save failure', code: 'opening_balance_unavailable' } } });
   });
   await page.getByTestId('button-save-opening-balance').click();
   await arrived;
@@ -287,7 +288,8 @@ for (const mobile of [false, true]) {
       return { position: style.position, overflow: style.overflowY, maxHeight: style.maxHeight,
         height: node.getBoundingClientRect().height, scrollHeight: node.scrollHeight,
         controlDisplay: getComputedStyle(control).display, controlHeight: control.getBoundingClientRect().height,
-        panelOverflow: getComputedStyle(node.closest('.admin-panel')).overflow };
+        containerKind: node.closest('.admin-dialog') ? 'dialog' : 'panel',
+        panelOverflow: getComputedStyle(node.closest('.admin-dialog, .admin-panel')).overflowY };
     });
     expect(geometry.position).toBe('absolute');
     expect(geometry.overflow).toBe('auto');
@@ -296,7 +298,7 @@ for (const mobile of [false, true]) {
     expect(geometry.scrollHeight).toBeGreaterThan(260);
     expect(geometry.controlDisplay).toBe('flex');
     expect(geometry.controlHeight).toBe(40);
-    expect(geometry.panelOverflow).toBe('visible');
+    expect(geometry.panelOverflow).toBe(geometry.containerKind === 'dialog' ? 'auto' : 'visible');
     await page.screenshot({ path: info.outputPath('styled-year-overlay.png'), fullPage: true });
     await start.press('Escape');
     const select = page.getByRole('combobox', { name: 'Doctor', exact: true });

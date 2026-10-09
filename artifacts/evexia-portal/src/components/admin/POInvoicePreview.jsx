@@ -7,13 +7,23 @@ import '../../poInvoice.css';
 
 export default function POInvoicePreview({ document, onClose }) {
   const dialogRef = useRef(null);
+  const openerRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   useEffect(() => {
     const dialog = dialogRef.current;
+    openerRef.current = window.document.activeElement;
     dialog.showModal();
-    return () => { dialog.close(); };
+    return () => {
+      dialog.close();
+      if (openerRef.current?.isConnected) openerRef.current.focus({ preventScroll: true });
+    };
   }, []);
+  function closePreview() {
+    dialogRef.current?.close();
+    onClose();
+    if (openerRef.current?.isConnected) openerRef.current.focus({ preventScroll: true });
+  }
   async function download() {
     setBusy(true);
     setError('');
@@ -22,12 +32,12 @@ export default function POInvoicePreview({ document, onClose }) {
     } catch (cause) { setError(cause.message || 'Could not download this PO invoice. Please try again.'); }
     finally { setBusy(false); }
   }
-  return <dialog ref={dialogRef} className="po-invoice-dialog" onCancel={(event) => { event.preventDefault(); onClose(); }} aria-labelledby="po-invoice-title">
+  return <dialog ref={dialogRef} className="po-invoice-dialog" onCancel={(event) => { event.preventDefault(); closePreview(); }} aria-labelledby="po-invoice-title">
     <header className="po-invoice-dialog__header">
       <div><h2 id="po-invoice-title">PO invoice · {document.number}</h2>
         <p>{PO_TEMPLATES.find((template) => template.id === document.templateId)?.name} · {document.pages.length} {document.pages.length === 1 ? 'page' : 'pages'}</p></div>
       <div className="po-actions"><button type="button" className="admin-button" onClick={download} disabled={busy} data-testid="button-download-po-invoice"><Download size={16} aria-hidden="true" />{busy ? 'Preparing PDF…' : 'Download PDF'}</button>
-        <button type="button" className="po-action" onClick={onClose} title="Close invoice preview" aria-label="Close invoice preview" data-testid="button-close-po-invoice"><X size={20} aria-hidden="true" /></button></div>
+        <button type="button" className="po-action" onClick={closePreview} title="Close invoice preview" aria-label="Close invoice preview" data-testid="button-close-po-invoice"><X size={20} aria-hidden="true" /></button></div>
     </header>
     <div className="po-invoice-dialog__body">
       <p className="po-invoice-dialog__note">Purchase order document, not a supplier tax invoice. Address, GST number and HSN codes use current saved masters; amounts use this saved PO.</p>

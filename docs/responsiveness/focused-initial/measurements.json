@@ -1,0 +1,1955 @@
+[
+  {
+    "phase": "after",
+    "engine": "responsive-chromium",
+    "status": "failed",
+    "duration": 113510,
+    "errors": [
+      {
+        "location": {
+          "file": "/home/runner/workspace/artifacts/evexia-portal/tests/helpers/portalResponsiveFlows.mjs",
+          "column": 61,
+          "line": 14
+        },
+        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('allergen-excel-report')\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('allergen-excel-report') with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('allergen-excel-report')\u001b[22m\n\n\n   at artifacts/evexia-portal/tests/helpers/portalResponsiveFlows.mjs:14\n\n  12 |     await page.getByTestId('input-allergen-import').setInputFiles({ name: 'synthetic-long-review.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });\n  13 |     await page.getByRole('button', { name: 'Upload & review' }).click();\n> 14 |     await expect(page.getByTestId('allergen-excel-report')).toBeVisible();\n     |                                                             ^\n  15 |     await expect(page.getByTestId('button-confirm-allergen-import')).toBeDisabled();\n  16 |     await check(page, info, 'Allergen import / long invalid review');\n  17 |     for (const item of await page.locator('.excel-import__row summary').all()) {\n    at auditResponsiveFlows (/home/runner/workspace/artifacts/evexia-portal/tests/helpers/portalResponsiveFlows.mjs:14:61)\n    at /home/runner/workspace/artifacts/evexia-portal/tests/portal-responsive.preview.spec.mjs:173:3"
+      }
+    ],
+    "records": [
+      {
+        "surface": "/admin/masters/mrs",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/mrs",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/mrs",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [
+          "document overflow 1414 > 1366"
+        ],
+        "overflowNodes": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 1076,
+            "scrollWidth": 1350,
+            "end": 274
+          }
+        ],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/mrs",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "/admin/masters/doctors",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/doctors",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/doctors",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [
+          "document overflow 1592 > 1366"
+        ],
+        "overflowNodes": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 1076,
+            "scrollWidth": 1450,
+            "end": 374
+          }
+        ],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/doctors",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "/admin/masters/zones / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/zones / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/zones / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/zones / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "/admin/masters/courier-partners / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/courier-partners / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/courier-partners / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/courier-partners / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "/admin/masters/vendors / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/vendors / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/vendors / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/vendors / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "/admin/masters/sales-targets / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/sales-targets / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/sales-targets / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/sales-targets / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "/admin/staff / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/staff / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/staff / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/staff / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "/admin/roles-permissions / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/roles-permissions / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/roles-permissions / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/roles-permissions / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "/admin/settings?tab=communication / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/settings?tab=communication / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/settings?tab=communication / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=communication / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "/admin/settings?tab=message-templates / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/settings?tab=message-templates / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/settings?tab=message-templates / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=message-templates / Add editor",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "profile menu",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "Opening Balance modal",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "Opening Balance modal validation",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "Opening Balance selector",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "profile menu",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "Opening Balance modal",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 798,
+            "scrollWidth": 830,
+            "end": 32
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "Opening Balance modal validation",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 798,
+            "scrollWidth": 830,
+            "end": 32
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "Opening Balance selector",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 798,
+            "scrollWidth": 830,
+            "end": 32
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "profile menu",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "Opening Balance modal",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 830,
+            "end": 55
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "Opening Balance modal validation",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 830,
+            "end": 55
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "Opening Balance selector",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 830,
+            "end": 55
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "profile menu",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "Opening Balance modal",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "Opening Balance modal validation",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "Opening Balance selector",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=basic / classic light",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/settings?tab=basic / classic light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / classic light",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / classic light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / classic light",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / classic light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [
+          "document overflow 407 > 390",
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/settings?tab=basic / classic light",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/settings?tab=basic / classic light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / classic light",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / classic light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / classic light",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / classic light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [
+          "outside viewport: BUTTON.admin-button admin-button--secondary Previous Doctors (-29,203)"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/settings?tab=basic / classic light",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=basic / classic light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / classic light",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / classic light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / classic light",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / classic light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=basic / classic dark",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/settings?tab=basic / classic dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / classic dark",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / classic dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / classic dark",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / classic dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [
+          "document overflow 407 > 390",
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/settings?tab=basic / classic dark",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/settings?tab=basic / classic dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / classic dark",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / classic dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / classic dark",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / classic dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [
+          "outside viewport: BUTTON.admin-button admin-button--secondary Previous Doctors (-29,203)"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/settings?tab=basic / classic dark",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=basic / classic dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / classic dark",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / classic dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / classic dark",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / classic dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=basic / modern light",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/settings?tab=basic / modern light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / modern light",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / modern light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / modern light",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / modern light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [
+          "document overflow 407 > 390",
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/settings?tab=basic / modern light",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/settings?tab=basic / modern light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / modern light",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / modern light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / modern light",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / modern light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [
+          "outside viewport: BUTTON.admin-button admin-button--secondary Previous Doctors (-29,203)"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/settings?tab=basic / modern light",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=basic / modern light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / modern light",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / modern light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / modern light",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / modern light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=basic / modern dark",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/settings?tab=basic / modern dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / modern dark",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / modern dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / modern dark",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / modern dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [
+          "document overflow 407 > 390",
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/settings?tab=basic / modern dark",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/settings?tab=basic / modern dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / modern dark",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / modern dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / modern dark",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / modern dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [
+          "outside viewport: BUTTON.admin-button admin-button--secondary Previous Doctors (-29,203)"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/settings?tab=basic / modern dark",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=basic / modern dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / modern dark",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / modern dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / modern dark",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / modern dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "1366×768 at 200% effective-viewport reflow (not native browser UI zoom)",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 683,
+          "height": 384
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 683,
+        "height": 384
+      }
+    ],
+    "failures": [
+      {
+        "surface": "/admin/masters/mrs",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [
+          "document overflow 1414 > 1366"
+        ],
+        "overflowNodes": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 1076,
+            "scrollWidth": 1350,
+            "end": 274
+          }
+        ],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/doctors",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [
+          "document overflow 1592 > 1366"
+        ],
+        "overflowNodes": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 1076,
+            "scrollWidth": 1450,
+            "end": 374
+          }
+        ],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / classic light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [
+          "document overflow 407 > 390",
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / classic light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [
+          "outside viewport: BUTTON.admin-button admin-button--secondary Previous Doctors (-29,203)"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / classic dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [
+          "document overflow 407 > 390",
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / classic dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [
+          "outside viewport: BUTTON.admin-button admin-button--secondary Previous Doctors (-29,203)"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / modern light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [
+          "document overflow 407 > 390",
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / modern light / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [
+          "outside viewport: BUTTON.admin-button admin-button--secondary Previous Doctors (-29,203)"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / modern dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [
+          "document overflow 407 > 390",
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/opening-balances/new / modern dark / 200% computed text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [
+          "outside viewport: BUTTON.admin-button admin-button--secondary Previous Doctors (-29,203)"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      }
+    ]
+  }
+]

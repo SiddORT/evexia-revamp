@@ -3,6 +3,17 @@ name: Authenticated test isolation
 description: Concurrent portal validation must isolate API listeners and diagnostics as well as databases.
 ---
 
+Run broad browser audits and separate authenticated feature suites serially,
+even when their databases, listeners and accounts are private.
+
+**Why:** A broad Chromium audit stopped with an unexplained browser closure
+while other isolated browser suites ran concurrently; the serial audit
+completed. Fixture isolation does not isolate CPU and browser resource load.
+
+**How to apply:** Keep the application source frozen, queue heavy browser runs
+instead of launching them together, and report interrupted runs as incomplete
+evidence rather than product layout failures.
+
 Give each authenticated browser-test run its own API and portal listeners, and
 its own result directory. Readiness must confirm that the newly launched
 service started, not merely that some listener returns a successful response.

@@ -22,7 +22,7 @@ for tool in initdb pg_ctl createdb python3 curl node pnpm; do
 done
 if [ "${EVEXIA_NIX_DOWNLOAD_ENGINES:-}" = "1" ]; then
   case "$*" in
-    ""|*download-logs.preview.spec.mjs*|*patients-layout.preview.spec.mjs*|*roles-permissions.preview.spec.mjs*|*sales-targets-backend.preview.spec.mjs*)
+    ""|*download-logs.preview.spec.mjs*|*patients-layout.preview.spec.mjs*|*roles-permissions.preview.spec.mjs*|*sales-targets-backend.preview.spec.mjs*|*portal-responsive.preview.spec.mjs*)
       (cd "$ROOT" && node scripts/prepare-nix-download-browsers.mjs) ;;
   esac
 fi
@@ -168,6 +168,7 @@ echo "Running authenticated browser previews against an isolated synthetic Postg
 # release path. Keep unrelated specs in their existing Chromium configuration.
 # Run sequentially: concurrent projects would replace the synthetic session.
 OTHER_SPECS=
+RESPONSIVE=0
 DOWNLOADS=0
 PATIENT_LAYOUT=0
 ROLE_LAYOUT=0
@@ -183,6 +184,7 @@ for spec in $SPECS; do
 done
 for spec in $SPECS; do
   case "$spec" in
+    */portal-responsive.preview.spec.mjs) RESPONSIVE=1 ;;
     */download-logs.preview.spec.mjs) DOWNLOADS=1 ;;
     */patients-layout.preview.spec.mjs) PATIENT_LAYOUT=1 ;;
     */roles-permissions.preview.spec.mjs)
@@ -216,6 +218,9 @@ for spec in $SPECS; do
     *) OTHER_SPECS="$OTHER_SPECS $spec" ;;
   esac
 done
+if [ "$RESPONSIVE" -eq 1 ]; then
+  EVEXIA_RESPONSIVE_RESULT="$RESULTS/responsive-summary.json" pnpm exec playwright test --config=playwright.responsive.config.mjs --workers=1 --output="$RESULTS/portal-responsive"
+fi
 if [ -n "$OTHER_SPECS" ] && [ "${EVEXIA_ROLES_LAYOUT_ONLY:-}" != "1" ] && [ "${EVEXIA_SALES_TARGET_LAYOUT_ONLY:-}" != "1" ]; then
   # shellcheck disable=SC2086
   pnpm exec playwright test $OTHER_SPECS --grep-invert='@roles-layout|@sales-target-layout' --workers=1 --output="$RESULTS/chromium-previews"

@@ -1,4 +1,5 @@
 .contact-requirement-button {
+  position: relative;
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   min-width: 32px; min-height: 32px; padding: 7px;
   border: 1px solid currentColor; border-radius: 7px; background: transparent;

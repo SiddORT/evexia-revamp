@@ -17,7 +17,10 @@ export default defineConfig({
   // provisioning slot. Fail once instead of masking a layout fault with a
   // cascade of synthetic credential-budget errors.
   maxFailures: Number(process.env.EVEXIA_SALES_TARGET_LAYOUT_MAX_FAILURES || 1),
-  projects: engines.projects.map((project) => ({
+  projects: engines.projects
+    .filter((project) => !process.env.EVEXIA_SALES_TARGET_LAYOUT_ENGINES ||
+      process.env.EVEXIA_SALES_TARGET_LAYOUT_ENGINES.split(',').includes(project.use.browserName))
+    .map((project) => ({
     ...project, name: project.name.replace('downloads-', 'sales-targets-'),
     use: { ...project.use, actionTimeout: 15000, navigationTimeout: 30000, trace: 'retain-on-failure' },
   })),

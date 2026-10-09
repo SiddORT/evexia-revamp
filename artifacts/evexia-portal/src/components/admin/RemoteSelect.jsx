@@ -86,7 +86,7 @@ export default function RemoteSelect({ id, label, value, selected, fetchPage, re
       {state === 'loading' && <div className="searchable-select__empty" role="status">Searching…</div>}
       {state === 'ready' && !items.length && <div className="searchable-select__empty" role="status">No matches found</div>}
       {state !== 'loading' && state !== 'ready' && state !== 'idle' && <div className="searchable-select__empty" role="alert">{state} <button type="button" className="admin-button admin-button--secondary" onMouseDown={(e) => e.preventDefault()} onClick={() => load(query.trim(), 0)}>Retry</button></div>}
-      {(state === 'ready' || state === 'loading') && items.length > 0 && more && <button type="button" className="admin-button admin-button--secondary" style={{ margin: 6 }} aria-disabled={state === 'loading' || undefined} onMouseDown={(e) => e.preventDefault()} onClick={() => load(query.trim(), items.length)} data-testid={`button-more-${id}`}>Load more ({items.length} of {total})</button>}
+      {(state === 'ready' || state === 'loading') && items.length > 0 && more && <button type="button" className="admin-button admin-button--secondary" style={{ margin: 6 }} aria-disabled={state === 'loading' || undefined} onFocus={(event) => event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest' })} onMouseDown={(e) => e.preventDefault()} onClick={() => load(query.trim(), items.length)} data-testid={`button-more-${id}`}>Load more ({items.length} of {total})</button>}
     </div>}
   </div>;
 }

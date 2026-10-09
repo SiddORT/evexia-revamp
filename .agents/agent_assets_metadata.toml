@@ -14,3 +14,17 @@ mtime_ms = 1791536135382
 storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0/2eba0cdf-df39-4265-b8b7-c350002b232e/a70401ad-2aec-4cba-80f0-fc4f2d48aa6b"
 storage_version_token = "1791537363237666"
 content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+[[outputs]]
+id = "oqKufegzeAPEe2hRPUXny"
+uri = "file://docs/responsiveness/final/audit.html"
+type = "html"
+title = "EVEXIA Portal — Responsive Audit"
+description = "Coverage, measured failures, fixes and before/after screenshots. 1,270 passing Chromium/Firefox measurements; final WebKit verification omitted as requested."
+logical_id = "130624d0-2821-43b2-8627-71e4ca449b18"
+content_hash = "sha256:c37bdfe4ca3c0392a395b02ec0f49edd72703cf6ac1d9893f50a558ac9ec48f0"
+size = 8529014
+mtime_ms = 1791550999249
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0/130624d0-2821-43b2-8627-71e4ca449b18/3d09e674-d4ec-4ce8-9cf8-8b062720444c"
+storage_version_token = "1791551226173611"
+content_type = "text/html"

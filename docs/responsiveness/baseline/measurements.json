@@ -1,0 +1,3756 @@
+[
+  {
+    "phase": "after",
+    "engine": "responsive-chromium",
+    "status": "failed",
+    "duration": 268572,
+    "errors": [
+      {
+        "location": {
+          "file": "/home/runner/workspace/artifacts/evexia-portal/tests/portal-responsive.preview.spec.mjs",
+          "column": 70,
+          "line": 25
+        },
+        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('main').getByText(/^Loading/).first()\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m1\u001b[39m\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" locator('main').getByText(/^Loading/).first() with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for locator('main').getByText(/^Loading/).first()\u001b[22m\n\u001b[2m    33 × locator resolved to 1 element\u001b[22m\n\u001b[2m       - unexpected value \"1\"\u001b[22m\n\n\n  23 |     await expect(page.getByTestId('button-admin-profile')).toBeVisible();\n  24 |     await expect(page.locator('main h1').first()).toBeVisible();\n> 25 |     await expect(page.locator('main').getByText(/^Loading/).first()).toHaveCount(0);\n     |                                                                      ^\n  26 |   } else await expect(page.locator('main')).toBeVisible();\n  27 | }\n  28 | async function tabs(page, info, route) {\n    at visit (/home/runner/workspace/artifacts/evexia-portal/tests/portal-responsive.preview.spec.mjs:25:70)\n    at /home/runner/workspace/artifacts/evexia-portal/tests/portal-responsive.preview.spec.mjs:68:7"
+      }
+    ],
+    "records": [],
+    "failures": []
+  },
+  {
+    "phase": "after",
+    "engine": "responsive-firefox",
+    "status": "failed",
+    "duration": 50013,
+    "errors": [
+      {
+        "location": {
+          "file": "/home/runner/workspace/artifacts/evexia-portal/tests/portal-responsive.preview.spec.mjs",
+          "column": 118,
+          "line": 110
+        },
+        "message": "Error: [{\"surface\":\"Opening Balance modal\",\"viewport\":{\"width\":320,\"height\":568},\"issues\":[\"clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors\",\"clipped label: BUTTON.admin-button admin-button--secondary Next Doctors\",\"clipped label: BUTTON.admin-button Save opening balance\"]},{\"surface\":\"Opening Balance modal validation\",\"viewport\":{\"width\":320,\"height\":568},\"issues\":[\"clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors\",\"clipped label: BUTTON.admin-button admin-button--secondary Next Doctors\",\"clipped label: BUTTON.admin-button Save opening balance\"]},{\"surface\":\"Opening Balance selector\",\"viewport\":{\"width\":320,\"height\":568},\"issues\":[\"clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors\",\"clipped label: BUTTON.admin-button admin-button--secondary Next Doctors\",\"clipped label: BUTTON.admin-button Save opening balance\"]}]\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  -  1\u001b[39m\n\u001b[31m+ Received  + 50\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"engine\": \"responsive-firefox\",\u001b[39m\n\u001b[31m+     \"height\": 568,\u001b[39m\n\u001b[31m+     \"issues\": Array [\u001b[39m\n\u001b[31m+       \"clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors\",\u001b[39m\n\u001b[31m+       \"clipped label: BUTTON.admin-button admin-button--secondary Next Doctors\",\u001b[39m\n\u001b[31m+       \"clipped label: BUTTON.admin-button Save opening balance\",\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"scrolls\": Array [],\u001b[39m\n\u001b[31m+     \"surface\": \"Opening Balance modal\",\u001b[39m\n\u001b[31m+     \"viewport\": Object {\u001b[39m\n\u001b[31m+       \"height\": 568,\u001b[39m\n\u001b[31m+       \"width\": 320,\u001b[39m\n\u001b[31m+     },\u001b[39m\n\u001b[31m+     \"width\": 320,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"engine\": \"responsive-firefox\",\u001b[39m\n\u001b[31m+     \"height\": 568,\u001b[39m\n\u001b[31m+     \"issues\": Array [\u001b[39m\n\u001b[31m+       \"clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors\",\u001b[39m\n\u001b[31m+       \"clipped label: BUTTON.admin-button admin-button--secondary Next Doctors\",\u001b[39m\n\u001b[31m+       \"clipped label: BUTTON.admin-button Save opening balance\",\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"scrolls\": Array [],\u001b[39m\n\u001b[31m+     \"surface\": \"Opening Balance modal validation\",\u001b[39m\n\u001b[31m+     \"viewport\": Object {\u001b[39m\n\u001b[31m+       \"height\": 568,\u001b[39m\n\u001b[31m+       \"width\": 320,\u001b[39m\n\u001b[31m+     },\u001b[39m\n\u001b[31m+     \"width\": 320,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"engine\": \"responsive-firefox\",\u001b[39m\n\u001b[31m+     \"height\": 568,\u001b[39m\n\u001b[31m+     \"issues\": Array [\u001b[39m\n\u001b[31m+       \"clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors\",\u001b[39m\n\u001b[31m+       \"clipped label: BUTTON.admin-button admin-button--secondary Next Doctors\",\u001b[39m\n\u001b[31m+       \"clipped label: BUTTON.admin-button Save opening balance\",\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"scrolls\": Array [],\u001b[39m\n\u001b[31m+     \"surface\": \"Opening Balance selector\",\u001b[39m\n\u001b[31m+     \"viewport\": Object {\u001b[39m\n\u001b[31m+       \"height\": 568,\u001b[39m\n\u001b[31m+       \"width\": 320,\u001b[39m\n\u001b[31m+     },\u001b[39m\n\u001b[31m+     \"width\": 320,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+ ]\u001b[39m\n\n  108 |   await info.attach('coverage', { body: JSON.stringify({ records, failures }, null, 2), contentType: 'application/json' });\n  109 |   await info.attach('representative-final', { body: await page.screenshot(), contentType: 'image/png' });\n> 110 |   expect(failures, JSON.stringify(failures.map(({ surface, viewport, issues }) => ({ surface, viewport, issues })))).toEqual([]);\n      |                                                                                                                      ^\n  111 | });\n  112 |\n    at /home/runner/workspace/artifacts/evexia-portal/tests/portal-responsive.preview.spec.mjs:110:118"
+      }
+    ],
+    "records": [
+      {
+        "surface": "/",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/login",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/login",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/login",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/allergens",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/allergens",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/allergens",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 1076,
+            "scrollWidth": 1609,
+            "end": 533
+          }
+        ],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/doctors/new",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "doctor-form__tabs",
+            "clientWidth": 364,
+            "scrollWidth": 517,
+            "end": 153
+          }
+        ],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Identity & contact",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "doctor-form__tabs",
+            "clientWidth": 364,
+            "scrollWidth": 517,
+            "end": 153
+          }
+        ],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Clinic & assignment",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "doctor-form__tabs",
+            "clientWidth": 364,
+            "scrollWidth": 517,
+            "end": 153
+          }
+        ],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Commercial details",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "doctor-form__tabs",
+            "clientWidth": 364,
+            "scrollWidth": 517,
+            "end": 153
+          }
+        ],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Address",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "doctor-form__tabs",
+            "clientWidth": 364,
+            "scrollWidth": 517,
+            "end": 153
+          }
+        ],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/doctors/new",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Identity & contact",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Clinic & assignment",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Commercial details",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Address",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/doctors/new",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Identity & contact",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Clinic & assignment",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Commercial details",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Address",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Product Category Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Allergen Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Designation Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Storage Location Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Zone Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Courier Partner Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: MR Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Doctor Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Headquarter Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Patient Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Vendor Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Sales Target Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Opening Balance Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Product Category Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Allergen Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Designation Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Storage Location Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Zone Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Courier Partner Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: MR Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Doctor Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Headquarter Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Patient Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Vendor Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Sales Target Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Opening Balance Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Product Category Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Allergen Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Designation Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Storage Location Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Zone Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Courier Partner Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: MR Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Doctor Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Headquarter Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Patient Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Vendor Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Sales Target Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Opening Balance Master",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/opening-balances",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/opening-balances",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 877,
+            "end": 102
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/opening-balances",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=communication",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/settings?tab=communication / tab: Email",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/settings?tab=communication / tab: SMS",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/settings?tab=communication / tab: WABA (WhatsApp Business API)",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/settings?tab=communication",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/settings?tab=communication / tab: Email",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/settings?tab=communication / tab: SMS",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/settings?tab=communication / tab: WABA (WhatsApp Business API)",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/settings?tab=communication",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=communication / tab: Email",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=communication / tab: SMS",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=communication / tab: WABA (WhatsApp Business API)",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/activity-logs",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 364,
+            "scrollWidth": 1830,
+            "end": 1466
+          }
+        ],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/activity-logs / tab: Sessions",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 364,
+            "scrollWidth": 1830,
+            "end": 1466
+          }
+        ],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/activity-logs / tab: Activity events",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 364,
+            "scrollWidth": 1620,
+            "end": 1256
+          }
+        ],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/activity-logs",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 1829,
+            "end": 1054
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/activity-logs / tab: Sessions",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 1829,
+            "end": 1054
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/activity-logs / tab: Activity events",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 1619,
+            "end": 844
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/activity-logs",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 1076,
+            "scrollWidth": 1830,
+            "end": 754
+          }
+        ],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/activity-logs / tab: Sessions",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 1076,
+            "scrollWidth": 1830,
+            "end": 754
+          }
+        ],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/activity-logs / tab: Activity events",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 1076,
+            "scrollWidth": 1620,
+            "end": 544
+          }
+        ],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/inventory/purchase-orders/new",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "po-items-table",
+            "clientWidth": 326,
+            "scrollWidth": 820,
+            "end": 494
+          }
+        ],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/inventory/purchase-orders/new",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "po-items-table",
+            "clientWidth": 733,
+            "scrollWidth": 819,
+            "end": 86
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/inventory/purchase-orders/new",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/allergens / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "/admin/masters/allergens / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "/admin/masters/allergens / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1024,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1024,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/doctors/new / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "doctor-form__tabs",
+            "clientWidth": 294,
+            "scrollWidth": 517,
+            "end": 223
+          }
+        ],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "/admin/masters/doctors/new / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "/admin/masters/doctors/new / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1024,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1024,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "/admin/masters/import/allergen / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "/admin/masters/import/allergen / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1024,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1024,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/opening-balances / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "/admin/masters/opening-balances / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 798,
+            "scrollWidth": 877,
+            "end": 79
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "/admin/masters/opening-balances / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1024,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 745,
+            "scrollWidth": 878,
+            "end": 133
+          }
+        ],
+        "width": 1024,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=communication / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "/admin/settings?tab=communication / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "/admin/settings?tab=communication / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1024,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1024,
+        "height": 768
+      },
+      {
+        "surface": "/admin/activity-logs / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 294,
+            "scrollWidth": 1830,
+            "end": 1536
+          }
+        ],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "/admin/activity-logs / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 798,
+            "scrollWidth": 1830,
+            "end": 1032
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "/admin/activity-logs / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1024,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 745,
+            "scrollWidth": 1831,
+            "end": 1086
+          }
+        ],
+        "width": 1024,
+        "height": 768
+      },
+      {
+        "surface": "/admin/inventory/purchase-orders/new / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "po-items-table",
+            "clientWidth": 256,
+            "scrollWidth": 820,
+            "end": 564
+          }
+        ],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "/admin/inventory/purchase-orders/new / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "po-items-table",
+            "clientWidth": 756,
+            "scrollWidth": 820,
+            "end": 64
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "/admin/inventory/purchase-orders/new / expanded",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1024,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "po-items-table",
+            "clientWidth": 703,
+            "scrollWidth": 821,
+            "end": 118
+          }
+        ],
+        "width": 1024,
+        "height": 768
+      },
+      {
+        "surface": "profile menu",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "Opening Balance modal",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button admin-button--secondary Next Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "Opening Balance modal validation",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button admin-button--secondary Next Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "Opening Balance selector",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button admin-button--secondary Next Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "profile menu",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "Opening Balance modal",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 798,
+            "scrollWidth": 877,
+            "end": 79
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "Opening Balance modal validation",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 798,
+            "scrollWidth": 877,
+            "end": 79
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "Opening Balance selector",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 798,
+            "scrollWidth": 877,
+            "end": 79
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "profile menu",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "Opening Balance modal",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 877,
+            "end": 102
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "Opening Balance modal validation",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 877,
+            "end": 102
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "Opening Balance selector",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 877,
+            "end": 102
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "profile menu",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "Opening Balance modal",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "Opening Balance modal validation",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "Opening Balance selector",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      }
+    ],
+    "failures": [
+      {
+        "surface": "Opening Balance modal",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button admin-button--secondary Next Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "Opening Balance modal validation",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button admin-button--secondary Next Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "Opening Balance selector",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button admin-button--secondary Next Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      }
+    ]
+  },
+  {
+    "phase": "after",
+    "engine": "responsive-webkit",
+    "status": "failed",
+    "duration": 44346,
+    "errors": [
+      {
+        "location": {
+          "file": "/home/runner/workspace/artifacts/evexia-portal/tests/portal-responsive.preview.spec.mjs",
+          "column": 118,
+          "line": 110
+        },
+        "message": "Error: [{\"surface\":\"Opening Balance modal\",\"viewport\":{\"width\":320,\"height\":568},\"issues\":[\"clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors\",\"clipped label: BUTTON.admin-button Save opening balance\"]},{\"surface\":\"Opening Balance modal validation\",\"viewport\":{\"width\":320,\"height\":568},\"issues\":[\"clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors\",\"clipped label: BUTTON.admin-button Save opening balance\"]},{\"surface\":\"Opening Balance selector\",\"viewport\":{\"width\":320,\"height\":568},\"issues\":[\"clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors\",\"clipped label: BUTTON.admin-button Save opening balance\"]}]\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  -  1\u001b[39m\n\u001b[31m+ Received  + 47\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"engine\": \"responsive-webkit\",\u001b[39m\n\u001b[31m+     \"height\": 568,\u001b[39m\n\u001b[31m+     \"issues\": Array [\u001b[39m\n\u001b[31m+       \"clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors\",\u001b[39m\n\u001b[31m+       \"clipped label: BUTTON.admin-button Save opening balance\",\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"scrolls\": Array [],\u001b[39m\n\u001b[31m+     \"surface\": \"Opening Balance modal\",\u001b[39m\n\u001b[31m+     \"viewport\": Object {\u001b[39m\n\u001b[31m+       \"height\": 568,\u001b[39m\n\u001b[31m+       \"width\": 320,\u001b[39m\n\u001b[31m+     },\u001b[39m\n\u001b[31m+     \"width\": 320,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"engine\": \"responsive-webkit\",\u001b[39m\n\u001b[31m+     \"height\": 568,\u001b[39m\n\u001b[31m+     \"issues\": Array [\u001b[39m\n\u001b[31m+       \"clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors\",\u001b[39m\n\u001b[31m+       \"clipped label: BUTTON.admin-button Save opening balance\",\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"scrolls\": Array [],\u001b[39m\n\u001b[31m+     \"surface\": \"Opening Balance modal validation\",\u001b[39m\n\u001b[31m+     \"viewport\": Object {\u001b[39m\n\u001b[31m+       \"height\": 568,\u001b[39m\n\u001b[31m+       \"width\": 320,\u001b[39m\n\u001b[31m+     },\u001b[39m\n\u001b[31m+     \"width\": 320,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"engine\": \"responsive-webkit\",\u001b[39m\n\u001b[31m+     \"height\": 568,\u001b[39m\n\u001b[31m+     \"issues\": Array [\u001b[39m\n\u001b[31m+       \"clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors\",\u001b[39m\n\u001b[31m+       \"clipped label: BUTTON.admin-button Save opening balance\",\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"scrolls\": Array [],\u001b[39m\n\u001b[31m+     \"surface\": \"Opening Balance selector\",\u001b[39m\n\u001b[31m+     \"viewport\": Object {\u001b[39m\n\u001b[31m+       \"height\": 568,\u001b[39m\n\u001b[31m+       \"width\": 320,\u001b[39m\n\u001b[31m+     },\u001b[39m\n\u001b[31m+     \"width\": 320,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+ ]\u001b[39m\n\n  108 |   await info.attach('coverage', { body: JSON.stringify({ records, failures }, null, 2), contentType: 'application/json' });\n  109 |   await info.attach('representative-final', { body: await page.screenshot(), contentType: 'image/png' });\n> 110 |   expect(failures, JSON.stringify(failures.map(({ surface, viewport, issues }) => ({ surface, viewport, issues })))).toEqual([]);\n      |                                                                                                                      ^\n  111 | });\n  112 |\n    at /home/runner/workspace/artifacts/evexia-portal/tests/portal-responsive.preview.spec.mjs:110:118"
+      }
+    ],
+    "records": [
+      {
+        "surface": "/",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/login",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/login",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/login",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/allergens",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/allergens",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/allergens",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 1076,
+            "scrollWidth": 1736,
+            "end": 660
+          }
+        ],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/doctors/new",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "doctor-form__tabs",
+            "clientWidth": 364,
+            "scrollWidth": 569,
+            "end": 205
+          }
+        ],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Identity & contact",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "doctor-form__tabs",
+            "clientWidth": 364,
+            "scrollWidth": 569,
+            "end": 205
+          }
+        ],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Clinic & assignment",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "doctor-form__tabs",
+            "clientWidth": 364,
+            "scrollWidth": 569,
+            "end": 205
+          }
+        ],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Commercial details",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "doctor-form__tabs",
+            "clientWidth": 364,
+            "scrollWidth": 569,
+            "end": 205
+          }
+        ],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Address",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "doctor-form__tabs",
+            "clientWidth": 364,
+            "scrollWidth": 569,
+            "end": 205
+          }
+        ],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/doctors/new",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Identity & contact",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Clinic & assignment",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Commercial details",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Address",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/doctors/new",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Identity & contact",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Clinic & assignment",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Commercial details",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/doctors/new / tab: Address",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Product Category Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Allergen Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Designation Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Storage Location Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Zone Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Courier Partner Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: MR Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Doctor Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Headquarter Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Patient Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Vendor Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Sales Target Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Opening Balance Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Product Category Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Allergen Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Designation Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Storage Location Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Zone Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Courier Partner Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: MR Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Doctor Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Headquarter Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Patient Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Vendor Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Sales Target Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Opening Balance Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/import/allergen",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Product Category Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Allergen Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Designation Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Storage Location Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Zone Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Courier Partner Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: MR Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Doctor Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Headquarter Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Patient Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Vendor Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Sales Target Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / tab: Opening Balance Master",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/opening-balances",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/opening-balances",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 910,
+            "end": 135
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/masters/opening-balances",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=communication",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/settings?tab=communication / tab: Email",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/settings?tab=communication / tab: SMS",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/settings?tab=communication / tab: WABA (WhatsApp Business API)",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/settings?tab=communication",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/settings?tab=communication / tab: Email",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/settings?tab=communication / tab: SMS",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/settings?tab=communication / tab: WABA (WhatsApp Business API)",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/settings?tab=communication",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=communication / tab: Email",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=communication / tab: SMS",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=communication / tab: WABA (WhatsApp Business API)",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/activity-logs",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 364,
+            "scrollWidth": 1830,
+            "end": 1466
+          }
+        ],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/activity-logs / tab: Sessions",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 364,
+            "scrollWidth": 1830,
+            "end": 1466
+          }
+        ],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/activity-logs / tab: Activity events",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 364,
+            "scrollWidth": 1620,
+            "end": 1256
+          }
+        ],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/activity-logs",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 1830,
+            "end": 1055
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/activity-logs / tab: Sessions",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 1830,
+            "end": 1055
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/activity-logs / tab: Activity events",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 1620,
+            "end": 845
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/activity-logs",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 1076,
+            "scrollWidth": 1830,
+            "end": 754
+          }
+        ],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/activity-logs / tab: Sessions",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 1076,
+            "scrollWidth": 1830,
+            "end": 754
+          }
+        ],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/activity-logs / tab: Activity events",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 1076,
+            "scrollWidth": 1620,
+            "end": 544
+          }
+        ],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/inventory/purchase-orders/new",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "po-items-table",
+            "clientWidth": 326,
+            "scrollWidth": 820,
+            "end": 494
+          }
+        ],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/inventory/purchase-orders/new",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "po-items-table",
+            "clientWidth": 733,
+            "scrollWidth": 820,
+            "end": 87
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "/admin/inventory/purchase-orders/new",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/allergens / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "/admin/masters/allergens / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "/admin/masters/allergens / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1024,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1024,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/doctors/new / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "doctor-form__tabs",
+            "clientWidth": 294,
+            "scrollWidth": 569,
+            "end": 275
+          }
+        ],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "/admin/masters/doctors/new / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "/admin/masters/doctors/new / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1024,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1024,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/import/allergen / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "/admin/masters/import/allergen / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "/admin/masters/import/allergen / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1024,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1024,
+        "height": 768
+      },
+      {
+        "surface": "/admin/masters/opening-balances / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "/admin/masters/opening-balances / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 798,
+            "scrollWidth": 910,
+            "end": 112
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "/admin/masters/opening-balances / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1024,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 745,
+            "scrollWidth": 910,
+            "end": 165
+          }
+        ],
+        "width": 1024,
+        "height": 768
+      },
+      {
+        "surface": "/admin/settings?tab=communication / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "/admin/settings?tab=communication / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "/admin/settings?tab=communication / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1024,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1024,
+        "height": 768
+      },
+      {
+        "surface": "/admin/activity-logs / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 294,
+            "scrollWidth": 1830,
+            "end": 1536
+          }
+        ],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "/admin/activity-logs / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 798,
+            "scrollWidth": 1830,
+            "end": 1032
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "/admin/activity-logs / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1024,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 745,
+            "scrollWidth": 1830,
+            "end": 1085
+          }
+        ],
+        "width": 1024,
+        "height": 768
+      },
+      {
+        "surface": "/admin/inventory/purchase-orders/new / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "po-items-table",
+            "clientWidth": 256,
+            "scrollWidth": 820,
+            "end": 564
+          }
+        ],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "/admin/inventory/purchase-orders/new / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "po-items-table",
+            "clientWidth": 756,
+            "scrollWidth": 820,
+            "end": 64
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "/admin/inventory/purchase-orders/new / expanded",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1024,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "po-items-table",
+            "clientWidth": 703,
+            "scrollWidth": 820,
+            "end": 117
+          }
+        ],
+        "width": 1024,
+        "height": 768
+      },
+      {
+        "surface": "profile menu",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "Opening Balance modal",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "Opening Balance modal validation",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "Opening Balance selector",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "profile menu",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "Opening Balance modal",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 798,
+            "scrollWidth": 910,
+            "end": 112
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "Opening Balance modal validation",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 798,
+            "scrollWidth": 910,
+            "end": 112
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "Opening Balance selector",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 798,
+            "scrollWidth": 910,
+            "end": 112
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "profile menu",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "Opening Balance modal",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 910,
+            "end": 135
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "Opening Balance modal validation",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 910,
+            "end": 135
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "Opening Balance selector",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 910,
+            "end": 135
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "profile menu",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "Opening Balance modal",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "Opening Balance modal validation",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "Opening Balance selector",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      }
+    ],
+    "failures": [
+      {
+        "surface": "Opening Balance modal",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "Opening Balance modal validation",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "Opening Balance selector",
+        "engine": "responsive-webkit",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [
+          "clipped label: BUTTON.admin-button admin-button--secondary Previous Doctors",
+          "clipped label: BUTTON.admin-button Save opening balance"
+        ],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      }
+    ]
+  }
+]

@@ -54,3 +54,4 @@
 - [Orders scope](orders-scope.md) — Immunotherapy requirements will come next; do not infer workflows from the navigation-only setup.
 - [Vendor phone compatibility](vendor-phone-compatibility.md) — retain legacy phone acceptance; international metadata updates must not widen other masters’ contracts.
 - [Allergen controls scope](allergen-controls-scope.md) — “one unit” means a combined searchable dropdown, not a new measurement-unit field; avoid incidental global selector changes.
+- [Scroll-region accessibility labels](responsive-scroll-overflow.md) — absolutely positioned hidden labels can extend page overflow beyond a correctly scrollable table.

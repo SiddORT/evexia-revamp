@@ -1,0 +1,1186 @@
+[
+  {
+    "phase": "after",
+    "engine": "responsive-chromium",
+    "engineEvidence": "chromium 152.0.7977.64 — CSS viewport emulation, not a physical device or native Safari",
+    "status": "failed",
+    "duration": 31043,
+    "errors": [
+      {
+        "location": {
+          "file": "/home/runner/workspace/artifacts/evexia-portal/tests/portal-responsive.preview.spec.mjs",
+          "column": 48,
+          "line": 106
+        },
+        "message": "Error: [{\"surface\":\"Purchase Received document / on-device preview\",\"engine\":\"responsive-chromium\",\"viewport\":{\"width\":390,\"height\":844},\"issues\":[\"outside viewport: BUTTON.admin-button admin-button--secondary  (392,444)\"],\"overflowNodes\":[],\"scrolls\":[],\"width\":390,\"height\":844},{\"surface\":\"Purchase Received document / on-device preview\",\"engine\":\"responsive-chromium\",\"viewport\":{\"width\":320,\"height\":568},\"issues\":[\"outside viewport: BUTTON.admin-button Download PDF (250,382)\",\"outside viewport: BUTTON.admin-button admin-button--secondary  (392,444)\"],\"overflowNodes\":[],\"scrolls\":[],\"width\":320,\"height\":568}]\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  -  1\u001b[39m\n\u001b[31m+ Received  + 33\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"engine\": \"responsive-chromium\",\u001b[39m\n\u001b[31m+     \"height\": 844,\u001b[39m\n\u001b[31m+     \"issues\": Array [\u001b[39m\n\u001b[31m+       \"outside viewport: BUTTON.admin-button admin-button--secondary  (392,444)\",\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"overflowNodes\": Array [],\u001b[39m\n\u001b[31m+     \"scrolls\": Array [],\u001b[39m\n\u001b[31m+     \"surface\": \"Purchase Received document / on-device preview\",\u001b[39m\n\u001b[31m+     \"viewport\": Object {\u001b[39m\n\u001b[31m+       \"height\": 844,\u001b[39m\n\u001b[31m+       \"width\": 390,\u001b[39m\n\u001b[31m+     },\u001b[39m\n\u001b[31m+     \"width\": 390,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"engine\": \"responsive-chromium\",\u001b[39m\n\u001b[31m+     \"height\": 568,\u001b[39m\n\u001b[31m+     \"issues\": Array [\u001b[39m\n\u001b[31m+       \"outside viewport: BUTTON.admin-button Download PDF (250,382)\",\u001b[39m\n\u001b[31m+       \"outside viewport: BUTTON.admin-button admin-button--secondary  (392,444)\",\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"overflowNodes\": Array [],\u001b[39m\n\u001b[31m+     \"scrolls\": Array [],\u001b[39m\n\u001b[31m+     \"surface\": \"Purchase Received document / on-device preview\",\u001b[39m\n\u001b[31m+     \"viewport\": Object {\u001b[39m\n\u001b[31m+       \"height\": 568,\u001b[39m\n\u001b[31m+       \"width\": 320,\u001b[39m\n\u001b[31m+     },\u001b[39m\n\u001b[31m+     \"width\": 320,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+ ]\u001b[39m\n\n  104 |     await auditResponsivePanels(page, info, procurement, check, visit);\n  105 |     await info.attach('representative-final', { body: await page.screenshot(), contentType: 'image/png' });\n> 106 |     expect(failures, JSON.stringify(failures)).toEqual([]);\n      |                                                ^\n  107 |     return;\n  108 |   }\n  109 |   edits.push(`/admin/inventory/purchase-orders/${procurement.po}`, `/admin/inventory/purchase-received/${procurement.pr}`);\n    at /home/runner/workspace/artifacts/evexia-portal/tests/portal-responsive.preview.spec.mjs:106:48"
+      }
+    ],
+    "records": [
+      {
+        "surface": "/admin/settings?tab=basic / repaired 200% text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / repaired 200% text",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "Opening Balance / repaired 320px modal",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "PO invoice / on-device preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "Purchase Received document / on-device preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [
+          "outside viewport: BUTTON.admin-button admin-button--secondary  (392,444)"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "PO invoice / on-device preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 950,
+            "end": 175
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "Purchase Received document / on-device preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 950,
+            "end": 175
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "PO invoice / on-device preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "Purchase Received document / on-device preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "PO invoice / on-device preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "Purchase Received document / on-device preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "PO invoice / on-device preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "Purchase Received document / on-device preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [
+          "outside viewport: BUTTON.admin-button Download PDF (250,382)",
+          "outside viewport: BUTTON.admin-button admin-button--secondary  (392,444)"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "PO invoice / on-device preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 798,
+            "scrollWidth": 950,
+            "end": 152
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "Purchase Received document / on-device preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 798,
+            "scrollWidth": 950,
+            "end": 152
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "email template / offline system preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "email template / authoring and preview panels",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "email template / validation",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "sms template / offline system preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "sms template / authoring and preview panels",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "sms template / validation",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "email template / offline system preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "email template / authoring and preview panels",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "email template / validation",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "sms template / offline system preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "sms template / authoring and preview panels",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "sms template / validation",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "email template / offline system preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "email template / authoring and preview panels",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "email template / validation",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "sms template / offline system preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "sms template / authoring and preview panels",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "sms template / validation",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "email template / offline system preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "email template / authoring and preview panels",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "email template / validation",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "sms template / offline system preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "sms template / authoring and preview panels",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "sms template / validation",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      }
+    ],
+    "failures": [
+      {
+        "surface": "Purchase Received document / on-device preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [
+          "outside viewport: BUTTON.admin-button admin-button--secondary  (392,444)"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "Purchase Received document / on-device preview",
+        "engine": "responsive-chromium",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [
+          "outside viewport: BUTTON.admin-button Download PDF (250,382)",
+          "outside viewport: BUTTON.admin-button admin-button--secondary  (392,444)"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      }
+    ]
+  },
+  {
+    "phase": "after",
+    "engine": "responsive-firefox",
+    "engineEvidence": "firefox 155.0 — CSS viewport emulation, not a physical device or native Safari",
+    "status": "failed",
+    "duration": 28489,
+    "errors": [
+      {
+        "location": {
+          "file": "/home/runner/workspace/artifacts/evexia-portal/tests/portal-responsive.preview.spec.mjs",
+          "column": 48,
+          "line": 106
+        },
+        "message": "Error: [{\"surface\":\"Purchase Received document / on-device preview\",\"engine\":\"responsive-firefox\",\"viewport\":{\"width\":390,\"height\":844},\"issues\":[\"outside viewport: BUTTON.admin-button admin-button--secondary  (389,441)\"],\"overflowNodes\":[],\"scrolls\":[],\"width\":390,\"height\":844},{\"surface\":\"Purchase Received document / on-device preview\",\"engine\":\"responsive-firefox\",\"viewport\":{\"width\":320,\"height\":568},\"issues\":[\"outside viewport: BUTTON.admin-button Download PDF (247,379)\",\"outside viewport: BUTTON.admin-button admin-button--secondary  (389,441)\"],\"overflowNodes\":[],\"scrolls\":[],\"width\":320,\"height\":568}]\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  -  1\u001b[39m\n\u001b[31m+ Received  + 33\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"engine\": \"responsive-firefox\",\u001b[39m\n\u001b[31m+     \"height\": 844,\u001b[39m\n\u001b[31m+     \"issues\": Array [\u001b[39m\n\u001b[31m+       \"outside viewport: BUTTON.admin-button admin-button--secondary  (389,441)\",\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"overflowNodes\": Array [],\u001b[39m\n\u001b[31m+     \"scrolls\": Array [],\u001b[39m\n\u001b[31m+     \"surface\": \"Purchase Received document / on-device preview\",\u001b[39m\n\u001b[31m+     \"viewport\": Object {\u001b[39m\n\u001b[31m+       \"height\": 844,\u001b[39m\n\u001b[31m+       \"width\": 390,\u001b[39m\n\u001b[31m+     },\u001b[39m\n\u001b[31m+     \"width\": 390,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"engine\": \"responsive-firefox\",\u001b[39m\n\u001b[31m+     \"height\": 568,\u001b[39m\n\u001b[31m+     \"issues\": Array [\u001b[39m\n\u001b[31m+       \"outside viewport: BUTTON.admin-button Download PDF (247,379)\",\u001b[39m\n\u001b[31m+       \"outside viewport: BUTTON.admin-button admin-button--secondary  (389,441)\",\u001b[39m\n\u001b[31m+     ],\u001b[39m\n\u001b[31m+     \"overflowNodes\": Array [],\u001b[39m\n\u001b[31m+     \"scrolls\": Array [],\u001b[39m\n\u001b[31m+     \"surface\": \"Purchase Received document / on-device preview\",\u001b[39m\n\u001b[31m+     \"viewport\": Object {\u001b[39m\n\u001b[31m+       \"height\": 568,\u001b[39m\n\u001b[31m+       \"width\": 320,\u001b[39m\n\u001b[31m+     },\u001b[39m\n\u001b[31m+     \"width\": 320,\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+ ]\u001b[39m\n\n  104 |     await auditResponsivePanels(page, info, procurement, check, visit);\n  105 |     await info.attach('representative-final', { body: await page.screenshot(), contentType: 'image/png' });\n> 106 |     expect(failures, JSON.stringify(failures)).toEqual([]);\n      |                                                ^\n  107 |     return;\n  108 |   }\n  109 |   edits.push(`/admin/inventory/purchase-orders/${procurement.po}`, `/admin/inventory/purchase-received/${procurement.pr}`);\n    at /home/runner/workspace/artifacts/evexia-portal/tests/portal-responsive.preview.spec.mjs:106:48"
+      }
+    ],
+    "records": [
+      {
+        "surface": "/admin/settings?tab=basic / repaired 200% text",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "/admin/masters/import/allergen / repaired 200% text",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "Opening Balance / repaired 320px modal",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "PO invoice / on-device preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "Purchase Received document / on-device preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [
+          "outside viewport: BUTTON.admin-button admin-button--secondary  (389,441)"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "PO invoice / on-device preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 949,
+            "end": 174
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "Purchase Received document / on-device preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 775,
+            "scrollWidth": 949,
+            "end": 174
+          }
+        ],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "PO invoice / on-device preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "Purchase Received document / on-device preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "PO invoice / on-device preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "Purchase Received document / on-device preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "PO invoice / on-device preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "Purchase Received document / on-device preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [
+          "outside viewport: BUTTON.admin-button Download PDF (247,379)",
+          "outside viewport: BUTTON.admin-button admin-button--secondary  (389,441)"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      },
+      {
+        "surface": "PO invoice / on-device preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 798,
+            "scrollWidth": 950,
+            "end": 152
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "Purchase Received document / on-device preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 844,
+          "height": 390
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [
+          {
+            "className": "admin-table-scroll",
+            "clientWidth": 798,
+            "scrollWidth": 950,
+            "end": 152
+          }
+        ],
+        "width": 844,
+        "height": 390
+      },
+      {
+        "surface": "email template / offline system preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "email template / authoring and preview panels",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "email template / validation",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "sms template / offline system preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "sms template / authoring and preview panels",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "sms template / validation",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "email template / offline system preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "email template / authoring and preview panels",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "email template / validation",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "sms template / offline system preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "sms template / authoring and preview panels",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "sms template / validation",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 820,
+        "height": 1180
+      },
+      {
+        "surface": "email template / offline system preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "email template / authoring and preview panels",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "email template / validation",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "sms template / offline system preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "sms template / authoring and preview panels",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "sms template / validation",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1366,
+        "height": 768
+      },
+      {
+        "surface": "email template / offline system preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "email template / authoring and preview panels",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "email template / validation",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "sms template / offline system preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "sms template / authoring and preview panels",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "surface": "sms template / validation",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "issues": [],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 1920,
+        "height": 1080
+      }
+    ],
+    "failures": [
+      {
+        "surface": "Purchase Received document / on-device preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "issues": [
+          "outside viewport: BUTTON.admin-button admin-button--secondary  (389,441)"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 390,
+        "height": 844
+      },
+      {
+        "surface": "Purchase Received document / on-device preview",
+        "engine": "responsive-firefox",
+        "viewport": {
+          "width": 320,
+          "height": 568
+        },
+        "issues": [
+          "outside viewport: BUTTON.admin-button Download PDF (247,379)",
+          "outside viewport: BUTTON.admin-button admin-button--secondary  (389,441)"
+        ],
+        "overflowNodes": [],
+        "scrolls": [],
+        "width": 320,
+        "height": 568
+      }
+    ]
+  }
+]

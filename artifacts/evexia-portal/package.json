@@ -26,6 +26,7 @@
     "test:template-preferences:service": "node --test src/services/templatePreferenceEvents.test.js",
     "test:template-preferences:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/template-preferences.preview.spec.mjs",
     "test:template-preferences": "pnpm run test:template-preferences:service && pnpm run test:template-preferences:browser",
+    "test:responsive:browser": "EVEXIA_NIX_DOWNLOAD_ENGINES=1 sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/portal-responsive.preview.spec.mjs",
     "serve": "vite preview --config vite.config.js --host 0.0.0.0"
   },
   "devDependencies": {
