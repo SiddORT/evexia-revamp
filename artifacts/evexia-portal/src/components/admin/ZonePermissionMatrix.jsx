@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Minus, Search } from 'lucide-react';
 import { MASTER_CATALOGUE, MASTER_PERMISSIONS, MASTER_KEYS as ZONE_KEYS } from '../../auth/capabilities.js';
+import InfoDisclosure from './InfoDisclosure.jsx';
 
 export const countLabel = (n) => `${n} permission${n === 1 ? '' : 's'}`;
 
@@ -58,19 +59,27 @@ export default function ZonePermissionMatrix({ selected, saved, disabled, busy, 
             onAll={() => selectGroup(group.keys, true)} onNone={() => selectGroup(group.keys, false)} testId={`checkbox-${group.key}-permissions`} />
           <h4 id={`rp-${group.key}-title`} tabIndex={-1}>{group.label}</h4><span>{group.keys.filter((key) => selected.includes(key)).length}/{group.keys.length}</span>
         </header>
-    <fieldset className="rp-matrix__grid" disabled={locked}>
+    <fieldset className="rp-matrix__grid">
       <legend className="sr-only">{group.label} permissions</legend>
-      {group.visible.map(({ key, label, hint }) => <label key={key} className={`rp-check${selected.includes(key) ? ' rp-check--on' : ''}`}>
-        <input type="checkbox" checked={selected.includes(key)} onChange={() => onToggle(key)} data-testid={`checkbox-permission-${key}`} />
-        <span className="rp-check__box" aria-hidden="true"><Check size={13} /></span>
-        <span className="rp-check__text"><strong>{label}</strong><small>{hint}</small></span>
-        {saved.includes(key) && <em className="rp-check__saved">Saved</em>}
-      </label>)}
+      {group.visible.map(({ key, label, hint }) => <div key={key}
+        className={`rp-action${selected.includes(key) ? ' rp-action--on' : ''}${locked ? ' rp-action--locked' : ''}`}>
+        <label className="rp-check">
+          <input type="checkbox" aria-label={`${group.label} ${label}`} disabled={locked}
+            aria-describedby={saved.includes(key) ? `rp-saved-${key}` : undefined}
+            checked={selected.includes(key)} onChange={() => onToggle(key)} data-testid={`checkbox-permission-${key}`} />
+          <span className="rp-check__box" aria-hidden="true"><Check size={13} /></span>
+          <span className="rp-check__text"><strong>{label}</strong></span>
+          {saved.includes(key) && <span className="rp-check__saved" title="Saved">
+            <span className="sr-only" id={`rp-saved-${key}`}>Saved permission</span>
+          </span>}
+        </label>
+        <InfoDisclosure id={`rp-help-${key}`} title={`${group.label} ${label}`} text={hint} testId={`button-permission-help-${key}`} />
+      </div>)}
     </fieldset>
     </section>)}
       </div>
     </div>
-    <p className="rp-matrix__note">Any one grant permits live, non-deleted list and detail access for that master. Import works without Add. No grant includes trash, restore, password reset or private history. Group selection includes hidden actions; All and Clear apply to all 40 permissions.</p>
+    <p className="rp-matrix__note">A dot marks a saved permission. Any one grant permits live, non-deleted list and detail access for that master. Import works without Add. No grant includes trash, restore, password reset or private history. Group selection includes hidden actions; All and Clear apply to all 40 permissions.</p>
     {children}
     <footer className="rp-matrix__foot">
       <button type="button" className="admin-button admin-button--secondary" disabled={!dirty || busy} onClick={onCancel} data-testid="button-cancel-permissions">Cancel</button>

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { enlargeRoleText, expectRoleLayoutFits, expectRoleFocusVisible, reachRoleControlByKeyboard } from './helpers/rolesPermissionsLayout.mjs';
+import { enlargeRoleText, expectRoleLayoutFits, expectRoleFocusVisible, reachRoleControlByKeyboard, expectCompactPermissionRows } from './helpers/rolesPermissionsLayout.mjs';
+import { MASTER_PERMISSIONS, MASTER_CATALOGUE } from '../src/auth/capabilities.js';
 import { randomUUID } from 'node:crypto';
 
 // Matrix projects own their launch settings. Never apply Chromium's executable
@@ -495,7 +496,114 @@ test.describe('@roles-layout focused engine coverage', () => {
     await expectGroups(false, true);
   });
 
-  for (const width of [1440, 375]) for (const theme of ['classic', 'modern']) for (const appearance of ['light', 'dark']) {
+  test('compact desktop rows, neutral surfaces and separate saved/selected states', async ({ page }, info) => {
+    await page.getByTestId('tab-permissions').click();
+    await page.getByTestId('button-permissions-all').click();
+    await page.getByTestId('button-save-permissions').click();
+    await expect(page.getByTestId('text-saved-permission-count')).toContainText('40 of 40');
+    await expect(page.getByTestId('button-save-permissions')).toBeDisabled();
+    // Every saved marker remains when draft selection is cleared.
+    await page.getByTestId('button-permissions-none').click();
+    await expect(page.locator('.rp-check__saved')).toHaveCount(40);
+    for (const width of [1024, 1201, 1281, 1440]) for (const theme of ['classic', 'modern']) for (const appearance of ['light', 'dark']) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.evaluate(async ({ theme, appearance }) => {
+        const { setAdminPreference } = await import('/src/components/admin/adminPreferences.js');
+        setAdminPreference('theme', theme); setAdminPreference('appearance', appearance);
+      }, { theme, appearance });
+      await expectCompactPermissionRows(page);
+      const colors = await page.evaluate(() => {
+        const color = (selector) => getComputedStyle(document.querySelector(selector)).backgroundColor;
+        return [color('.rp-body'), color('.rp-rail'), color('.rp-main__head'), color('.rp-action')];
+      });
+      expect(new Set(colors).size).toBe(1);
+      await page.getByTestId('checkbox-permission-zone.add').check();
+      await expect(page.locator('.rp-action--on')).toHaveCount(1);
+      expect(await page.locator('.rp-action--on').evaluate((node) => getComputedStyle(node).backgroundColor)).not.toBe(colors[0]);
+      await expectCompactPermissionRows(page);
+      await page.getByTestId('checkbox-permission-zone.add').uncheck();
+      await page.getByTestId('panel-zone-permissions').scrollIntoViewIfNeeded();
+      await page.screenshot({ path: info.outputPath(`compact-${width}-${theme}-${appearance}.png`) });
+    }
+    await page.getByTestId('button-cancel-permissions').click();
+    await expect(page.locator('.rp-action--on')).toHaveCount(40);
+    await expectCompactPermissionRows(page);
+  });
+
+  test.describe('action help', () => {
+    test.use({ hasTouch: true });
+    test('catalogue descriptions, hover/focus/Escape/touch and locked help never mutate permissions', async ({ page }) => {
+      await page.getByTestId('tab-permissions').click();
+      for (const item of MASTER_PERMISSIONS) {
+        const master = MASTER_CATALOGUE.find((master) => master.key === item.master);
+        const checkbox = page.getByTestId(`checkbox-permission-${item.key}`);
+        await expect(checkbox).toHaveAccessibleName(`${master.label} ${item.label}`);
+        const help = page.getByTestId(`button-permission-help-${item.key}`);
+        await help.hover();
+        await expect(page.getByRole('tooltip')).toHaveText(item.hint);
+        await expect(help).toHaveAttribute('aria-describedby', `rp-help-${item.key}`);
+        await page.keyboard.press('Escape');
+        await expect(page.getByRole('tooltip')).toHaveCount(0);
+      }
+      const help = page.getByTestId('button-permission-help-zone.import');
+      const checkbox = page.getByTestId('checkbox-permission-zone.import');
+      await page.mouse.move(0, 0); // End desktop hover before the hybrid touch sequence.
+      await checkbox.focus();
+      await page.keyboard.press('Tab');
+      await expectRoleFocusVisible(help);
+      await expect(page.getByRole('tooltip')).toContainText('review files');
+      await page.keyboard.press('Escape');
+      await expect(help).toBeFocused();
+      await expect(page.getByRole('tooltip')).toHaveCount(0);
+      await help.tap();
+      await expect(page.getByRole('tooltip')).toContainText('review files');
+      await help.tap();
+      await expect(page.getByRole('tooltip')).toHaveCount(0);
+      await help.tap();
+      await page.getByTestId('input-search-permissions').tap();
+      await expect(page.getByRole('tooltip')).toHaveCount(0);
+      await expect(page.getByTestId('text-selected-permission-count')).toContainText('0 of 40');
+      await expect(page.getByTestId('text-draft-permission-count')).toHaveCount(0);
+      await expect(page.getByTestId('button-save-permissions')).toBeDisabled();
+      // Descriptions still participate in search without persistent help text.
+      await page.getByTestId('input-search-permissions').fill('review files');
+      await expect(page.locator('.rp-matrix__grid input')).toHaveCount(8);
+      await page.getByTestId('input-search-permissions').fill('');
+      await checkbox.check();
+      let release;
+      const held = new Promise((resolve) => { release = resolve; });
+      const handler = async (route) => { await held; await route.continue(); };
+      await page.route('**/api/v1/admin/roles/*/permissions', handler);
+      try {
+        await page.getByTestId('button-save-permissions').click();
+        await expect(checkbox).toBeDisabled();
+        await expect(help).toBeEnabled();
+        await help.tap();
+        await expect(page.getByRole('tooltip')).toContainText('review files');
+        await page.keyboard.press('Escape');
+        await expect(page.getByTestId('text-selected-permission-count')).toContainText('1 of 40');
+      } finally {
+        release();
+        await expect(page.getByTestId('button-save-permissions')).toBeDisabled();
+        await expect(page.getByTestId('text-saved-permission-count')).toContainText('1 of 40');
+        await page.unroute('**/api/v1/admin/roles/*/permissions', handler);
+      }
+      // An unavailable authoritative read locks edits, but not help.
+      const outage = (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{"error":{"code":"roles_unavailable"}}' });
+      await page.route('**/api/v1/admin/roles?*', outage);
+      await page.getByTestId('button-refresh-roles').click();
+      await expect(page.getByTestId('status-roles-unavailable')).toBeVisible();
+      await expect(checkbox).toBeDisabled();
+      await help.tap();
+      await expect(page.getByRole('tooltip')).toContainText('review files');
+      await page.keyboard.press('Escape');
+      await expect(checkbox).toBeChecked();
+      await expect(page.getByTestId('text-draft-permission-count')).toHaveCount(0);
+      await page.unroute('**/api/v1/admin/roles?*', outage);
+    });
+  });
+
+  for (const width of [1440, 1024, 375]) for (const theme of ['classic', 'modern']) for (const appearance of ['light', 'dark']) {
     test(`200% text at ${width}px ${theme}/${appearance} in both tabs`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       await page.evaluate(async ({ theme, appearance }) => {
@@ -510,6 +618,14 @@ test.describe('@roles-layout focused engine coverage', () => {
       }
       const font = await page.getByTestId('tab-roles').evaluate((node) => parseFloat(getComputedStyle(node).fontSize));
       const actionFont = await page.getByTestId('button-save-permissions').evaluate((node) => parseFloat(getComputedStyle(node).fontSize));
+      await page.evaluate(async (id) => {
+        const roles = await import('/src/services/rolePermissions.js');
+        const current = await roles.getRole(id);
+        await roles.setRolePermissions(id, ['zone.add'], current.version);
+      }, layoutRole.id);
+      await page.getByTestId('button-refresh-roles').click();
+      await expect(page.getByTestId('button-refresh-roles')).toBeEnabled();
+      await expect(page.locator('.rp-check__saved')).toHaveCount(1);
       await enlargeRoleText(page);
       expect(await page.getByTestId('tab-roles').evaluate((node) => parseFloat(getComputedStyle(node).fontSize))).toBe(font * 2);
       expect(await page.getByTestId('button-save-permissions').evaluate((node) => parseFloat(getComputedStyle(node).fontSize))).toBe(actionFont * 2);

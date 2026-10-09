@@ -47,7 +47,7 @@ export async function expectRoleLayoutFits(page) {
           const range = document.createRange(); range.selectNodeContents(child);
           for (const line of range.getClientRects()) {
             if (line.left < rect.left - 1 || line.right > rect.right + 1 ||
-                line.top < rect.top - 1 || line.bottom > rect.bottom + 1) failures.push(`text outside box: ${label}`);
+                 line.top < rect.top - 1 || line.bottom > rect.bottom + 1) failures.push(`text outside box: ${label} (${child.textContent.trim()}; line ${line.left},${line.top},${line.right},${line.bottom}; box ${rect.left},${rect.top},${rect.right},${rect.bottom})`);
           }
         }
       }
@@ -55,6 +55,32 @@ export async function expectRoleLayoutFits(page) {
     return failures;
   }, roots);
   expect(failures, 'Roles and Permissions text must fit, not merely avoid page overflow').toEqual([]);
+}
+
+export async function expectCompactPermissionRows(page) {
+  const rows = await page.locator('.rp-matrix__grid').evaluateAll((grids) => grids.map((grid) => {
+    const controls = [...grid.querySelectorAll('.rp-action')];
+    const boxes = controls.map((node) => node.getBoundingClientRect());
+    return {
+      count: controls.length,
+      oneRow: boxes.every((box) => Math.abs(box.top - boxes[0].top) < 1),
+      readable: controls.every((node) => {
+        const label = node.querySelector('strong'), box = label.getBoundingClientRect();
+        const range = document.createRange(); range.selectNodeContents(label);
+        const lines = [...range.getClientRects()];
+        return parseFloat(getComputedStyle(label).fontSize) >= 13 &&
+          lines.length === 1 && lines.every((line) => line.width <= box.width + 1);
+      }),
+      targets: controls.every((node) => {
+        const label = node.querySelector('label').getBoundingClientRect();
+        const help = node.querySelector('button').getBoundingClientRect();
+        return label.width >= 44 && label.height >= 40 && help.width >= 28 &&
+          help.height >= 40 && label.right <= help.left + 1;
+      }),
+    };
+  }));
+  expect(rows).toEqual(Array.from({ length: 8 }, () => ({ count: 5, oneRow: true, readable: true, targets: true })));
+  await expectRoleLayoutFits(page);
 }
 
 export async function expectRoleFocusVisible(locator) {
