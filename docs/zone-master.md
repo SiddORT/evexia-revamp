@@ -21,7 +21,7 @@ a **BLOCKED live-preview prerequisite**, not evidence that synthetic tests faile
 Readiness checks include the Zone schema.
 
 Do not manually downgrade a populated Zone database: dropping the table removes
-history. A protected trash view and explicit restore are available; no purging,
+history. Protected trash and explicit restore endpoints remain available; no purging,
 hard-delete API or retention schedule exists.
 Preserve database/audit backups until the operator approves a retention policy.
 
@@ -66,14 +66,16 @@ are projected. Audit events and mutations commit together without record payload
 
 ## Protected deletion history and recovery
 
-Zone Master's **Deleted zones** view shows the retained creator/update details,
-deleter label and deletion time. `GET /trash` accepts the same bounded
+Zone Master shows only the current, non-deleted directory. It has no Current
+zones/Deleted zones buttons or recovery entry point. Backend deletion history
+and restore support remain unchanged. `GET /trash` returns retained creator/update
+details, deleter label and deletion time, and accepts the same bounded
 query/status/pagination inputs as the current list, with counts limited to deleted
 rows and deterministic newest-deleted then UUID ordering. Its response adds
 `deletedBy` and `deletedAt` to each zone. Normal detail, list and exports still
 exclude deleted rows. Trash has no edit, status, export, import or purge action.
 
-Restore requires an explicit confirmation and the displayed `expected_version`.
+Restore requires an explicit request with the deleted record's `expected_version`.
 The service revalidates the live protected system Super Admin identity and
 `admin.access` with user/session locks, then locks and rereads the zone. It
 preserves name, status, original creator and creation timestamp, clears the
@@ -87,8 +89,8 @@ races. Rename or delete the conflicting current zone explicitly before retrying;
 restore never overwrites or renames a record. Stale or already-restored targets
 return `409 zone_stale`; missing IDs return 404. Failed restores roll back both
 the row and audit event. Restoration never changes browser-local assignments.
-On success the trash refreshes and the row returns to Current zones, including
-after reload. Cancel and refresh before retrying stale confirmations or ambiguous
+On success the row is excluded from trash and returns to the current directory
+after refresh or reload. Read authoritative state before retrying stale requests or ambiguous
 network outcomes; writes are never automatically replayed.
 
 ## Transfer bounds and compatibility

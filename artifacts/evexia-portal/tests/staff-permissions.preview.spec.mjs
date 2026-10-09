@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { readFile as readFileBuffer } from 'node:fs/promises';
+import { expectCurrentZoneHeader } from './zone-header.assertions.mjs';
 
 if (process.env.EVEXIA_CHROMIUM_PATH) test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
 test.setTimeout(120000);
@@ -90,7 +91,11 @@ test('staff access: explicit assignment, restricted workspace, import without ad
   await expect(staff).toHaveURL(/\/admin\/masters\/zones$/);
   await expect(staff.getByTestId('button-import-zones')).toBeVisible();
   await expect(staff.getByTestId('button-export-zones')).toBeVisible();
-  for (const hidden of ['button-add-zone', 'button-zone-trash', 'link-admin-settings', 'link-admin-staff', 'link-admin-roles-permissions', 'link-admin-purchase-orders']) await expect(staff.getByTestId(hidden)).toHaveCount(0);
+  await expect(staff.getByTestId('text-zone-count')).toBeVisible();
+  await expectCurrentZoneHeader(staff);
+  await staff.setViewportSize({ width: 390, height: 844 });
+  await expectCurrentZoneHeader(staff);
+  for (const hidden of ['button-add-zone', 'button-zone-trash', 'button-zone-current', 'link-admin-settings', 'link-admin-staff', 'link-admin-roles-permissions', 'link-admin-purchase-orders']) await expect(staff.getByTestId(hidden)).toHaveCount(0);
   await staff.screenshot({ path: testInfo.outputPath('restricted-zone-import-export.png'), fullPage: true });
   for (const path of ['/admin/staff', '/admin/settings', '/admin/masters/mrs', '/admin/inventory/purchase-orders', '/admin/activity-logs']) {
     await staff.goto(`${base()}${path}`);
@@ -169,6 +174,8 @@ test('staff with Add+Edit+Delete performs manual create, edit, status and soft d
   const { context: sc, page } = await staffPage(browser, ids);
   const name = `Staff zone ${Date.now()}`;
   await expect(page.getByTestId('button-add-zone')).toBeVisible();
+  await expect(page.getByTestId('text-zone-count')).toBeVisible();
+  await expectCurrentZoneHeader(page);
   for (const hidden of ['button-import-zones', 'button-export-zones', 'button-zone-trash', 'button-zone-current']) await expect(page.getByTestId(hidden)).toHaveCount(0);
   await page.getByTestId('button-add-zone').click();
   await page.getByLabel('Zone name *').fill(name);
@@ -192,6 +199,7 @@ test('staff with Add+Edit+Delete performs manual create, edit, status and soft d
   expect((await api(page, token, 'GET', '/admin/zones/export?format=csv')).status()).toBe(403);
   expect((await api(page, token, 'POST', '/admin/zones/import/review?filename=a.csv')).status()).toBe(403);
   await page.getByTestId(`button-delete-zone-${record.id}`).click();
+  await expect(page.getByRole('dialog')).not.toContainText('Deleted zones');
   await page.getByTestId('button-confirm-action').click();
   await expect(page.getByTestId(`text-zone-name-${record.id}`)).toHaveCount(0);
   expect((await api(page, token, 'POST', `/admin/zones/${record.id}/restore`, { expected_version: 99 })).status()).toBe(403);

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { expectCurrentZoneHeader } from './zone-header.assertions.mjs';
 if (process.env.EVEXIA_CHROMIUM_PATH) test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
 const base = () => process.env.EVEXIA_PREVIEW_BASE_URL;
 const legacy = '[{"id":"legacy-zone","name":"Untouched local zone","status":"active"}]';
@@ -15,6 +16,9 @@ async function open(page) {
   await page.goto(`${base()}/admin/masters/zones`);
   await expect(page.getByTestId('button-add-zone')).toBeVisible();
   await expect(page.getByRole('status').filter({ hasText: 'Loading shared zones' })).toHaveCount(0);
+  await expectCurrentZoneHeader(page);
+  await expect(page.getByTestId('button-import-zones')).toBeVisible();
+  await expect(page.getByTestId('button-export-zones')).toBeVisible();
 }
 
 async function create(page, name) {
@@ -74,6 +78,7 @@ for (const mobile of [false, true]) {
     await expect(page.getByTestId(`text-zone-name-${row.id}`)).toBeVisible();
     await page.getByTestId(`button-delete-zone-${row.id}`).click();
     await expect(page.getByRole('dialog')).toContainText('Server deletion history is retained');
+    await expect(page.getByRole('dialog')).not.toContainText('Deleted zones');
     await page.getByTestId('button-confirm-action').click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByTestId(`text-zone-name-${row.id}`)).toHaveCount(0);
@@ -83,6 +88,10 @@ for (const mobile of [false, true]) {
       catch (error) { return error.status === 404; }
     }, row.id);
     expect(deleted).toBe(true);
+    await page.getByRole('button', { name: 'Refresh records', exact: true }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Loading shared zones' })).toHaveCount(0);
+    await expect(page.getByTestId(`text-zone-name-${row.id}`)).toHaveCount(0);
+    await page.screenshot({ path: test.info().outputPath('zone-current-directory.png'), fullPage: true });
   });
 }
 
@@ -100,6 +109,9 @@ test('review is inert, duplicate rows block confirmation, CSV/XLSX transfers and
   await page.getByTestId('select-filter-zones').selectOption('active');
   await page.getByLabel('Rows per page').selectOption('2');
   await expect(page.getByTestId('text-zone-count')).toContainText('of 3');
+  await page.getByRole('button', { name: 'Next page', exact: true }).click();
+  await expect(page.getByTestId('text-zone-count')).toContainText('3–3');
+  await page.getByRole('button', { name: 'Previous page', exact: true }).click();
   const downloadCSV = page.waitForEvent('download');
   await page.getByTestId('button-export-zones').click();
   await page.getByRole('menuitem', { name: 'CSV', exact: true }).click();
@@ -424,7 +436,7 @@ test('Zone export menu handles keyboard, dismissal, pending guards, failures and
 
 
 for (const mobile of [false, true]) {
-  test(`deleted zones ${mobile ? 'mobile' : 'desktop'} history, explicit restore and local isolation`, async ({ page }) => {
+  test(`backend zone recovery ${mobile ? 'mobile' : 'desktop'} preserves history without a trash UI`, async ({ page }) => {
     if (mobile) await page.setViewportSize({ width: 390, height: 844 });
     await open(page);
     const name = `${mobile ? 'Mobile' : 'Desktop'} synthetic recovery`;
@@ -436,32 +448,23 @@ for (const mobile of [false, true]) {
     await page.getByTestId('button-confirm-action').click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByTestId(`text-zone-name-${row.id}`)).toHaveCount(0);
-    await page.getByTestId('button-zone-trash').click();
     await page.getByTestId('input-search-zones').fill(name);
     await page.getByTestId('select-filter-zones').selectOption('inactive');
-    await expect(page.getByTestId(`text-zone-name-${row.id}`)).toBeVisible();
-    const record = page.locator(mobile ? `[data-testid="card-zone-${row.id}"]` : 'tr').filter({ has: page.getByTestId(`text-zone-name-${row.id}`) });
-    await expect(record).toContainText('Super Admin');
-    await expect(page.getByText(mobile ? 'Deleted' : 'Deleted details', { exact: true })).toBeVisible();
-    await expect(page.getByTestId(`button-edit-zone-${row.id}`)).toHaveCount(0);
-    await expect(page.getByTestId('button-export-zones')).toHaveCount(0);
-    await page.getByTestId(`button-restore-zone-${row.id}`).click();
-    await expect(page.getByRole('dialog')).toContainText('as inactive, with its original creator');
-    // A cancelled confirmation must not mutate the row.
-    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-    await expect(page.getByTestId(`text-zone-name-${row.id}`)).toBeVisible();
-    await page.getByTestId(`button-restore-zone-${row.id}`).click();
-    const restoredResponse = page.waitForResponse((response) => new URL(response.url()).pathname === `/api/v1/admin/zones/${row.id}/restore`);
-    await page.getByTestId('button-confirm-action').click();
-    const restored = await (await restoredResponse).json();
+    const trash = await page.evaluate(async (name) => (await (await import('/src/services/serverZones.js')).listDeletedZones({ query: name, status: 'inactive', limit: 10, offset: 0 })), name);
+    expect(trash.filtered).toBe(1);
+    const deleted = trash.items.find((zone) => zone.id === row.id);
+    expect(deleted.deletedBy).toBe('Super Admin');
+    expect(deleted.deletedAt).toBeTruthy();
+    await expect(page.getByTestId(`text-zone-name-${row.id}`)).toHaveCount(0);
+    await expect(page.locator('[data-testid^="button-restore-zone-"]')).toHaveCount(0);
+    const restored = await page.evaluate(async (record) => (await import('/src/services/serverZones.js')).restoreZone(record), deleted);
     expect(restored.version).toBe(4);
     expect(restored.createdAt).toBe(row.createdAt);
     expect(restored.createdBy).toBe(row.createdBy);
     expect(restored.status).toBe('inactive');
-    await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page.getByTestId(`text-zone-name-${row.id}`)).toHaveCount(0);
-    await expect(page.getByTestId('status-zone-feedback')).toContainText('Zone restored');
-    await page.getByTestId('button-zone-current').click();
+    const remaining = await page.evaluate(async (name) => (await (await import('/src/services/serverZones.js')).listDeletedZones({ query: name, status: 'all', limit: 10, offset: 0 })), name);
+    expect(remaining.filtered).toBe(0);
+    await page.getByRole('button', { name: 'Refresh records', exact: true }).click();
     await expect(page.getByTestId(`text-zone-name-${row.id}`)).toBeVisible();
     await page.reload();
     await page.getByTestId('input-search-zones').fill(name);
@@ -471,62 +474,61 @@ for (const mobile of [false, true]) {
   });
 }
 
-test('restore conflicts, unavailable storage, stale targets and ambiguous outcomes require explicit recovery', async ({ page }) => {
+test('backend restore transport retains conflicts, unavailable storage, stale targets and ambiguous outcomes', async ({ page }) => {
   await open(page);
   const row = await create(page, 'Synthetic recovery conflict');
   await page.getByTestId(`button-delete-zone-${row.id}`).click();
   await page.getByTestId('button-confirm-action').click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   const replacement = await create(page, 'SYNTHETIC RECOVERY CONFLICT');
-  await page.getByTestId('button-zone-trash').click();
   await page.getByTestId('input-search-zones').fill('Synthetic recovery conflict');
-  await page.getByTestId(`button-restore-zone-${row.id}`).click();
-  await page.getByTestId('button-confirm-action').click();
-  await expect(page.getByRole('dialog')).toContainText('A non-deleted zone already uses this name');
-  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await page.getByTestId('button-zone-current').click();
+  // Test retained recovery endpoints directly, never via removed page controls.
+  const recover = (record) => page.evaluate(async (record) => {
+    try {
+      const zone = await (await import('/src/services/serverZones.js')).restoreZone(record);
+      return { success: true, zone };
+    } catch (error) {
+      return { success: false, code: error.code, message: error.message, ambiguous: Boolean(error.ambiguous) };
+    }
+  }, record);
+  const deleted = { id: row.id, version: 2 };
+  const conflict = await recover(deleted);
+  expect(conflict.code).toBe('zone_duplicate');
+  expect(conflict.message).toContain('A non-deleted zone already uses this name');
   await expect(page.getByTestId(`text-zone-name-${replacement.id}`)).toBeVisible();
   await page.getByTestId(`button-edit-zone-${replacement.id}`).click();
   await page.getByLabel('Zone name *').fill('Synthetic replacement renamed');
   await page.getByTestId('button-save-zone').click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page.getByTestId('button-zone-trash').click();
-  await page.getByTestId(`button-restore-zone-${row.id}`).click();
   await page.route(`**/api/v1/admin/zones/${row.id}/restore?*`, (route) => route.fulfill({
     status: 503, contentType: 'application/json', body: JSON.stringify({ error: { code: 'zone_unavailable', message: 'Persistence temporarily unavailable.' } }),
   }));
-  await page.getByTestId('button-confirm-action').click();
-  await expect(page.getByRole('dialog')).toContainText('Persistence temporarily unavailable');
-  await expect(page.getByTestId('button-confirm-action')).toBeEnabled();
+  const unavailable = await recover(deleted);
+  expect(unavailable.code).toBe('zone_unavailable');
+  expect(unavailable.message).toContain('Persistence temporarily unavailable');
   await page.unroute(`**/api/v1/admin/zones/${row.id}/restore?*`);
-  // Another session's restore after this confirmation was opened makes it stale.
-  await page.evaluate(async (record) => (await import('/src/services/serverZones.js')).restoreZone(record), { id: row.id, version: 2 });
-  await page.getByTestId('button-confirm-action').click();
-  await expect(page.getByRole('dialog')).toContainText('Zone changed or was already restored');
-  await expect(page.getByTestId('button-confirm-action')).toBeDisabled();
-  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await expect(page.getByTestId(`text-zone-name-${row.id}`)).toHaveCount(0);
-  await page.getByTestId('button-zone-current').click();
+  const restored = await recover(deleted);
+  expect(restored.success).toBe(true);
+  const stale = await recover(deleted);
+  expect(stale.code).toBe('zone_stale');
+  expect(stale.message).toContain('Zone changed or was already restored');
+  await page.getByRole('button', { name: 'Refresh records', exact: true }).click();
   await expect(page.getByTestId(`text-zone-name-${row.id}`)).toBeVisible();
   await page.getByTestId(`button-delete-zone-${row.id}`).click();
   await page.getByTestId('button-confirm-action').click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page.getByTestId('button-zone-trash').click();
-  await page.getByTestId(`button-restore-zone-${row.id}`).click();
   let attempts = 0;
   await page.route(`**/api/v1/admin/zones/${row.id}/restore?*`, async (route) => {
     attempts += 1;
     await route.fetch(); // Commit but lose the response; never auto-replay.
     await route.abort('failed');
   });
-  await page.getByTestId('button-confirm-action').click();
-  await expect(page.getByRole('dialog')).toContainText('Save outcome could not be confirmed');
-  await expect(page.getByTestId('button-confirm-action')).toBeDisabled();
+  const uncertain = await recover({ id: row.id, version: restored.zone.version + 1 });
+  expect(uncertain.ambiguous).toBe(true);
+  expect(uncertain.message).toContain('Save outcome could not be confirmed');
   expect(attempts).toBe(1);
   await page.unroute(`**/api/v1/admin/zones/${row.id}/restore?*`);
-  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await expect(page.getByTestId(`text-zone-name-${row.id}`)).toHaveCount(0);
-  await page.getByTestId('button-zone-current').click();
+  await page.getByRole('button', { name: 'Refresh records', exact: true }).click();
   await expect(page.getByTestId(`text-zone-name-${row.id}`)).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('evexia.admin.zones.v1'))).toBe(legacy);
 });
