@@ -6,6 +6,8 @@ BROWSER_ACTIONS = {
     "product_category_status": "Product category status changed", "product_category_delete": "Product category deleted",
     "designation_create": "Designation created", "designation_edit": "Designation updated",
     "designation_status": "Designation status changed", "designation_delete": "Designation deleted",
+    "vendor_create": "Vendor created", "vendor_edit": "Vendor updated",
+    "vendor_status": "Vendor status changed", "vendor_delete": "Vendor deleted",
     "role_create": "Role created", "role_update": "Role updated", "role_delete": "Role deleted",
     "role_permissions": "Role permissions changed", "staff_access": "Staff workspace access changed",
     "courier_create": "Courier partner created", "courier_edit": "Courier partner updated",

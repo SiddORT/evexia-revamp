@@ -36,6 +36,8 @@ import type {
   CommitPatientImportParams,
   CommitProductCategoryImportBody,
   CommitProductCategoryImportParams,
+  CommitVendorImportBody,
+  CommitVendorImportParams,
   CommitZoneImportParams,
   CourierEdit,
   CourierFields,
@@ -77,6 +79,7 @@ import type {
   DownloadPatientSampleParams,
   DownloadProductCategorySampleParams,
   DownloadURLResponse,
+  DownloadVendorSampleParams,
   ErrorEnvelope,
   EventPage,
   ExportCourierPartnersParams,
@@ -89,6 +92,7 @@ import type {
   ExportReportingEventsParams,
   ExportReportingSessionsParams,
   ExportStorageLocationsParams,
+  ExportVendorsParams,
   ExportZonesParams,
   FileResponse,
   HeadquarterEdit,
@@ -120,6 +124,7 @@ import type {
   ListReportingUsersParams,
   ListStaffParams,
   ListStorageLocationsParams,
+  ListVendorsParams,
   ListZonesParams,
   LocationEdit,
   LocationFields,
@@ -186,6 +191,8 @@ import type {
   ReviewPatientImportParams,
   ReviewProductCategoryImportBody,
   ReviewProductCategoryImportParams,
+  ReviewVendorImportBody,
+  ReviewVendorImportParams,
   ReviewZoneImportParams,
   RoleEdit,
   RoleFields,
@@ -208,6 +215,14 @@ import type {
   TokenResponse,
   UploadFileParams,
   UserPage,
+  VendorEdit,
+  VendorFields,
+  VendorImportResult,
+  VendorPage,
+  VendorResponse,
+  VendorReview,
+  VendorStatus,
+  VendorVersion,
   ZoneDeletedPage,
   ZoneEdit,
   ZoneFields,
@@ -12488,6 +12503,1059 @@ export const useSetStorageLocationStatus = <
   TContext
 > => {
   return useMutation(getSetStorageLocationStatusMutationOptions(options));
+};
+
+export const getListVendorsUrl = (params?: ListVendorsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/vendors?${stringifiedParams}`
+    : `/api/v1/admin/vendors`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listVendors = async (
+  params?: ListVendorsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<VendorPage> => {
+  return customFetch<VendorPage>(getListVendorsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListVendorsQueryKey = (params?: ListVendorsParams) => {
+  return [`/api/v1/admin/vendors`, ...(params ? [params] : [])] as const;
+};
+
+export const getListVendorsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listVendors>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListVendorsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listVendors>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListVendorsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listVendors>>> = ({
+    signal,
+  }) => listVendors(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listVendors>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListVendorsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listVendors>>
+>;
+export type ListVendorsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListVendors<
+  TData = Awaited<ReturnType<typeof listVendors>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListVendorsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listVendors>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListVendorsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateVendorUrl = () => {
+  return `/api/v1/admin/vendors`;
+};
+
+/**
+ * @summary Create
+ */
+export const createVendor = async (
+  vendorFields: VendorFields,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<VendorResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<VendorResponse>(getCreateVendorUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(vendorFields),
+  });
+};
+
+export const getCreateVendorMutationKey = () => ["createVendor"] as const;
+
+export const getCreateVendorMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createVendor>>,
+    TError,
+    CreateVendorMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createVendor>>,
+  TError,
+  CreateVendorMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateVendorMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createVendor>>,
+    CreateVendorMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createVendor(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateVendorMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createVendor>>
+>;
+export type CreateVendorMutationBody = BodyType<VendorFields>;
+export type CreateVendorMutationError = ErrorType<ErrorEnvelope>;
+export type CreateVendorMutationVariables = { data: BodyType<VendorFields> };
+
+/**
+ * @summary Create
+ */
+export const useCreateVendor = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createVendor>>,
+    TError,
+    CreateVendorMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createVendor>>,
+  TError,
+  CreateVendorMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateVendorMutationOptions(options));
+};
+
+export const getExportVendorsUrl = (params?: ExportVendorsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/vendors/export?${stringifiedParams}`
+    : `/api/v1/admin/vendors/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportVendors = async (
+  params?: ExportVendorsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getExportVendorsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportVendorsQueryKey = (params?: ExportVendorsParams) => {
+  return [`/api/v1/admin/vendors/export`, ...(params ? [params] : [])] as const;
+};
+
+export const getExportVendorsQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportVendors>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportVendorsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportVendors>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getExportVendorsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof exportVendors>>> = ({
+    signal,
+  }) => exportVendors(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportVendors>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportVendorsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportVendors>>
+>;
+export type ExportVendorsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportVendors<
+  TData = Awaited<ReturnType<typeof exportVendors>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportVendorsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportVendors>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportVendorsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCommitVendorImportUrl = (params: CommitVendorImportParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/vendors/import/commit?${stringifiedParams}`
+    : `/api/v1/admin/vendors/import/commit`;
+};
+
+/**
+ * @summary Commit
+ */
+export const commitVendorImport = async (
+  commitVendorImportBody: CommitVendorImportBody,
+  params: CommitVendorImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<VendorImportResult> => {
+  const formData = new FormData();
+  formData.append(`file`, commitVendorImportBody.file);
+
+  return customFetch<VendorImportResult>(getCommitVendorImportUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getCommitVendorImportMutationKey = () =>
+  ["commitVendorImport"] as const;
+
+export const getCommitVendorImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitVendorImport>>,
+    TError,
+    CommitVendorImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof commitVendorImport>>,
+  TError,
+  CommitVendorImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCommitVendorImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof commitVendorImport>>,
+    CommitVendorImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return commitVendorImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CommitVendorImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof commitVendorImport>>
+>;
+export type CommitVendorImportMutationBody = BodyType<CommitVendorImportBody>;
+export type CommitVendorImportMutationError = ErrorType<ErrorEnvelope>;
+export type CommitVendorImportMutationVariables = {
+  data: BodyType<CommitVendorImportBody>;
+  params: CommitVendorImportParams;
+};
+
+/**
+ * @summary Commit
+ */
+export const useCommitVendorImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitVendorImport>>,
+    TError,
+    CommitVendorImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof commitVendorImport>>,
+  TError,
+  CommitVendorImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getCommitVendorImportMutationOptions(options));
+};
+
+export const getReviewVendorImportUrl = (params: ReviewVendorImportParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/vendors/import/review?${stringifiedParams}`
+    : `/api/v1/admin/vendors/import/review`;
+};
+
+/**
+ * @summary Review
+ */
+export const reviewVendorImport = async (
+  reviewVendorImportBody: ReviewVendorImportBody,
+  params: ReviewVendorImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<VendorReview> => {
+  const formData = new FormData();
+  formData.append(`file`, reviewVendorImportBody.file);
+
+  return customFetch<VendorReview>(getReviewVendorImportUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getReviewVendorImportMutationKey = () =>
+  ["reviewVendorImport"] as const;
+
+export const getReviewVendorImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewVendorImport>>,
+    TError,
+    ReviewVendorImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewVendorImport>>,
+  TError,
+  ReviewVendorImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReviewVendorImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewVendorImport>>,
+    ReviewVendorImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return reviewVendorImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewVendorImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewVendorImport>>
+>;
+export type ReviewVendorImportMutationBody = BodyType<ReviewVendorImportBody>;
+export type ReviewVendorImportMutationError = ErrorType<ErrorEnvelope>;
+export type ReviewVendorImportMutationVariables = {
+  data: BodyType<ReviewVendorImportBody>;
+  params: ReviewVendorImportParams;
+};
+
+/**
+ * @summary Review
+ */
+export const useReviewVendorImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewVendorImport>>,
+    TError,
+    ReviewVendorImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewVendorImport>>,
+  TError,
+  ReviewVendorImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getReviewVendorImportMutationOptions(options));
+};
+
+export const getDownloadVendorSampleUrl = (
+  params?: DownloadVendorSampleParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/vendors/sample?${stringifiedParams}`
+    : `/api/v1/admin/vendors/sample`;
+};
+
+/**
+ * @summary Sample
+ */
+export const downloadVendorSample = async (
+  params?: DownloadVendorSampleParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getDownloadVendorSampleUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getDownloadVendorSampleQueryKey = (
+  params?: DownloadVendorSampleParams,
+) => {
+  return [`/api/v1/admin/vendors/sample`, ...(params ? [params] : [])] as const;
+};
+
+export const getDownloadVendorSampleQueryOptions = <
+  TData = Awaited<ReturnType<typeof downloadVendorSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadVendorSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadVendorSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getDownloadVendorSampleQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof downloadVendorSample>>
+  > = ({ signal }) =>
+    downloadVendorSample(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof downloadVendorSample>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type DownloadVendorSampleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof downloadVendorSample>>
+>;
+export type DownloadVendorSampleQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Sample
+ */
+
+export function useDownloadVendorSample<
+  TData = Awaited<ReturnType<typeof downloadVendorSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadVendorSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadVendorSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getDownloadVendorSampleQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetVendorUrl = (vendorId: string) => {
+  return `/api/v1/admin/vendors/${vendorId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getVendor = async (
+  vendorId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<VendorResponse> => {
+  return customFetch<VendorResponse>(getGetVendorUrl(vendorId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetVendorQueryKey = (vendorId: string) => {
+  return [`/api/v1/admin/vendors/${vendorId}`] as const;
+};
+
+export const getGetVendorQueryOptions = <
+  TData = Awaited<ReturnType<typeof getVendor>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  vendorId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getVendor>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetVendorQueryKey(vendorId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getVendor>>> = ({
+    signal,
+  }) => getVendor(vendorId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: vendorId !== null && vendorId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getVendor>>, TError, TData> & {
+    queryKey: QueryKey;
+  };
+};
+
+export type GetVendorQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getVendor>>
+>;
+export type GetVendorQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetVendor<
+  TData = Awaited<ReturnType<typeof getVendor>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  vendorId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getVendor>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetVendorQueryOptions(vendorId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDeleteVendorUrl = (vendorId: string) => {
+  return `/api/v1/admin/vendors/${vendorId}/delete`;
+};
+
+/**
+ * @summary Delete
+ */
+export const deleteVendor = async (
+  vendorId: string,
+  vendorVersion: VendorVersion,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<VendorResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<VendorResponse>(getDeleteVendorUrl(vendorId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(vendorVersion),
+  });
+};
+
+export const getDeleteVendorMutationKey = () => ["deleteVendor"] as const;
+
+export const getDeleteVendorMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteVendor>>,
+    TError,
+    DeleteVendorMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteVendor>>,
+  TError,
+  DeleteVendorMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteVendorMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteVendor>>,
+    DeleteVendorMutationVariables
+  > = (props) => {
+    const { vendorId, data } = props ?? {};
+
+    return deleteVendor(vendorId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteVendorMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteVendor>>
+>;
+export type DeleteVendorMutationBody = BodyType<VendorVersion>;
+export type DeleteVendorMutationError = ErrorType<ErrorEnvelope>;
+export type DeleteVendorMutationVariables = {
+  vendorId: string;
+  data: BodyType<VendorVersion>;
+};
+
+/**
+ * @summary Delete
+ */
+export const useDeleteVendor = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteVendor>>,
+    TError,
+    DeleteVendorMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteVendor>>,
+  TError,
+  DeleteVendorMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteVendorMutationOptions(options));
+};
+
+export const getEditVendorUrl = (vendorId: string) => {
+  return `/api/v1/admin/vendors/${vendorId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editVendor = async (
+  vendorId: string,
+  vendorEdit: VendorEdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<VendorResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<VendorResponse>(getEditVendorUrl(vendorId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(vendorEdit),
+  });
+};
+
+export const getEditVendorMutationKey = () => ["editVendor"] as const;
+
+export const getEditVendorMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editVendor>>,
+    TError,
+    EditVendorMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editVendor>>,
+  TError,
+  EditVendorMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditVendorMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editVendor>>,
+    EditVendorMutationVariables
+  > = (props) => {
+    const { vendorId, data } = props ?? {};
+
+    return editVendor(vendorId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditVendorMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editVendor>>
+>;
+export type EditVendorMutationBody = BodyType<VendorEdit>;
+export type EditVendorMutationError = ErrorType<ErrorEnvelope>;
+export type EditVendorMutationVariables = {
+  vendorId: string;
+  data: BodyType<VendorEdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditVendor = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editVendor>>,
+    TError,
+    EditVendorMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editVendor>>,
+  TError,
+  EditVendorMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditVendorMutationOptions(options));
+};
+
+export const getSetVendorStatusUrl = (vendorId: string) => {
+  return `/api/v1/admin/vendors/${vendorId}/status`;
+};
+
+/**
+ * @summary Status
+ */
+export const setVendorStatus = async (
+  vendorId: string,
+  vendorStatus: VendorStatus,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<VendorResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<VendorResponse>(getSetVendorStatusUrl(vendorId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(vendorStatus),
+  });
+};
+
+export const getSetVendorStatusMutationKey = () => ["setVendorStatus"] as const;
+
+export const getSetVendorStatusMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setVendorStatus>>,
+    TError,
+    SetVendorStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setVendorStatus>>,
+  TError,
+  SetVendorStatusMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSetVendorStatusMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setVendorStatus>>,
+    SetVendorStatusMutationVariables
+  > = (props) => {
+    const { vendorId, data } = props ?? {};
+
+    return setVendorStatus(vendorId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetVendorStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setVendorStatus>>
+>;
+export type SetVendorStatusMutationBody = BodyType<VendorStatus>;
+export type SetVendorStatusMutationError = ErrorType<ErrorEnvelope>;
+export type SetVendorStatusMutationVariables = {
+  vendorId: string;
+  data: BodyType<VendorStatus>;
+};
+
+/**
+ * @summary Status
+ */
+export const useSetVendorStatus = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setVendorStatus>>,
+    TError,
+    SetVendorStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setVendorStatus>>,
+  TError,
+  SetVendorStatusMutationVariables,
+  TContext
+> => {
+  return useMutation(getSetVendorStatusMutationOptions(options));
 };
 
 export const getListZonesUrl = (params?: ListZonesParams) => {

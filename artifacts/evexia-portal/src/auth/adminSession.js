@@ -453,14 +453,14 @@ function masterAllowed(user, resource, path, writing, params = {}) {
 
 async function masterRequest(resource, path = '', { body, file, params = {}, download = false, signal } = {}) {
   const zone = resource === 'zones';
-  if (!['zones', 'courier-partners', 'storage-locations', 'designations', 'headquarters', 'mrs', 'doctors', 'patients', 'product-categories'].includes(resource)) throw new SessionError('Unsupported master resource.');
-  const label = resource === 'patients' ? 'Patient' : resource === 'doctors' ? 'Doctor' : resource === 'mrs' ? 'MR' : resource === 'product-categories' ? 'Product category' : zone ? 'Zone' : resource === 'headquarters' ? 'Headquarter' : resource === 'designations' ? 'Designation' : resource === 'storage-locations' ? 'Storage location' : 'Courier partner';
-  const unavailable = resource === 'patients' ? 'patient_unavailable' : resource === 'doctors' ? 'doctor_unavailable' : resource === 'mrs' ? 'mr_unavailable' : resource === 'product-categories' ? 'product_category_unavailable' : zone ? 'zone_unavailable' : resource === 'headquarters' ? 'headquarter_unavailable' : resource === 'designations' ? 'designation_unavailable' : resource === 'storage-locations' ? 'location_unavailable' : 'courier_unavailable';
+  if (!['vendors', 'zones', 'courier-partners', 'storage-locations', 'designations', 'headquarters', 'mrs', 'doctors', 'patients', 'product-categories'].includes(resource)) throw new SessionError('Unsupported master resource.');
+  const label = resource === 'vendors' ? 'Vendor' : resource === 'patients' ? 'Patient' : resource === 'doctors' ? 'Doctor' : resource === 'mrs' ? 'MR' : resource === 'product-categories' ? 'Product category' : zone ? 'Zone' : resource === 'headquarters' ? 'Headquarter' : resource === 'designations' ? 'Designation' : resource === 'storage-locations' ? 'Storage location' : 'Courier partner';
+  const unavailable = resource === 'vendors' ? 'vendor_unavailable' : resource === 'patients' ? 'patient_unavailable' : resource === 'doctors' ? 'doctor_unavailable' : resource === 'mrs' ? 'mr_unavailable' : resource === 'product-categories' ? 'product_category_unavailable' : zone ? 'zone_unavailable' : resource === 'headquarters' ? 'headquarter_unavailable' : resource === 'designations' ? 'designation_unavailable' : resource === 'storage-locations' ? 'location_unavailable' : 'courier_unavailable';
   const mrRoute = /^(?:|\/references|\/username|\/account\/[a-z][a-z0-9._-]{2,31}|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|contact|delete|reset|doctors))?)$/;
   const route = resource === 'patients' ? /^(?:|\/references|\/filters|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/ : resource === 'doctors' ? /^(?:|\/references|\/filters|\/bulk|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|contact|delete))?)$/ : resource === 'mrs' ? mrRoute : zone
     ? /^(?:|\/trash|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|restore))?)$/
     : /^(?:|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/;
-  if (!route.test(path) && !(['designations', 'headquarters', 'product-categories'].includes(resource) && path === '/sample')) {
+  if (!route.test(path) && !(['vendors', 'designations', 'headquarters', 'product-categories'].includes(resource) && path === '/sample')) {
     throw new SessionError(`Unsupported ${label} operation.`);
   }
   const epoch = generation;
@@ -524,6 +524,11 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
       ? `${label} service is unavailable. Your draft is preserved. Retry later; inspect records first if a save was pending.`
       : data?.error?.message || `${label} request failed. Review the details and retry.`, response.status);
     error.code = data?.error?.code;
+    if (resource === 'vendors' && response.status === 422 && data?.error?.fields?.length) {
+      error.fields = Object.fromEntries(data.error.fields.filter((item) => /^body\.[A-Za-z]+$/.test(item.field))
+        .map((item) => [item.field.replace(/^body\./, ''), 'Check this required field, format and length.']));
+      error.message = 'Vendor validation failed. Check the marked fields. Your draft is preserved.';
+    }
     if (['doctors', 'patients'].includes(resource) && response.status === 422 && data?.error?.fields?.length) {
       const fields = [...new Set(data.error.fields.map((item) => item.field.replace(/^body\./, '')))];
       error.message = `${label} validation failed: ${fields.join(', ')}. Check required fields, formats and the documented limits. Nothing was saved.`;
@@ -554,6 +559,7 @@ export const zoneRequest = (path, options) => masterRequest('zones', path, optio
 export const courierRequest = (path, options) => masterRequest('courier-partners', path, options);
 export const locationRequest = (path, options) => masterRequest('storage-locations', path, options);
 export const designationRequest = (path, options) => masterRequest('designations', path, options);
+export const vendorRequest = (path, options) => masterRequest('vendors', path, options);
 export const mrRequest = (path, options) => masterRequest('mrs', path, options);
 export const doctorRequest = (path, options) => masterRequest('doctors', path, options);
 export const patientRequest = (path, options) => masterRequest('patients', path, options);

@@ -2609,6 +2609,220 @@ export interface UserPage {
   offset: number;
 }
 
+export type VendorEditDialCountry =
+  (typeof VendorEditDialCountry)[keyof typeof VendorEditDialCountry];
+
+export const VendorEditDialCountry = {
+  IN: "IN",
+  US: "US",
+  GB: "GB",
+  AE: "AE",
+} as const;
+
+export type VendorEditStatus =
+  (typeof VendorEditStatus)[keyof typeof VendorEditStatus];
+
+export const VendorEditStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface VendorEdit {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  contactPersonName: string;
+  dialCountry?: VendorEditDialCountry;
+  /**
+   * @minLength 3
+   * @maxLength 320
+   */
+  emailId: string;
+  /** @minimum 1 */
+  expected_version: number;
+  /**
+   * @minLength 15
+   * @maxLength 15
+   */
+  gstNo: string;
+  /**
+   * @minLength 1
+   * @maxLength 30
+   */
+  phoneNo: string;
+  /**
+   * @minLength 1
+   * @maxLength 2000
+   */
+  registeredAddress: string;
+  status?: VendorEditStatus;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  vendorName: string;
+}
+
+export type VendorFieldsDialCountry =
+  (typeof VendorFieldsDialCountry)[keyof typeof VendorFieldsDialCountry];
+
+export const VendorFieldsDialCountry = {
+  IN: "IN",
+  US: "US",
+  GB: "GB",
+  AE: "AE",
+} as const;
+
+export type VendorFieldsStatus =
+  (typeof VendorFieldsStatus)[keyof typeof VendorFieldsStatus];
+
+export const VendorFieldsStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface VendorFields {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  contactPersonName: string;
+  dialCountry?: VendorFieldsDialCountry;
+  /**
+   * @minLength 3
+   * @maxLength 320
+   */
+  emailId: string;
+  /**
+   * @minLength 15
+   * @maxLength 15
+   */
+  gstNo: string;
+  /**
+   * @minLength 1
+   * @maxLength 30
+   */
+  phoneNo: string;
+  /**
+   * @minLength 1
+   * @maxLength 2000
+   */
+  registeredAddress: string;
+  status?: VendorFieldsStatus;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  vendorName: string;
+}
+
+export interface VendorImportResult {
+  imported: number;
+}
+
+export type VendorImportRowValues = { [key: string]: string };
+
+export interface VendorImportRow {
+  errors: string[];
+  row: number;
+  values: VendorImportRowValues;
+}
+
+export type VendorResponseDialCountry =
+  (typeof VendorResponseDialCountry)[keyof typeof VendorResponseDialCountry];
+
+export const VendorResponseDialCountry = {
+  IN: "IN",
+  US: "US",
+  GB: "GB",
+  AE: "AE",
+} as const;
+
+export type VendorResponseStatus =
+  (typeof VendorResponseStatus)[keyof typeof VendorResponseStatus];
+
+export const VendorResponseStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface VendorResponse {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  contactPersonName: string;
+  createdAt: string;
+  createdBy: string;
+  dialCountry?: VendorResponseDialCountry;
+  /**
+   * @minLength 3
+   * @maxLength 320
+   */
+  emailId: string;
+  /**
+   * @minLength 15
+   * @maxLength 15
+   */
+  gstNo: string;
+  id: string;
+  /**
+   * @minLength 1
+   * @maxLength 30
+   */
+  phoneNo: string;
+  /**
+   * @minLength 1
+   * @maxLength 2000
+   */
+  registeredAddress: string;
+  status?: VendorResponseStatus;
+  updatedAt: string;
+  updatedBy: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  vendorName: string;
+  version: number;
+}
+
+export interface VendorPage {
+  filtered: number;
+  items: VendorResponse[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export interface VendorReview {
+  digest: string;
+  invalidCount: number;
+  rows: VendorImportRow[];
+  valid: boolean;
+  validCount: number;
+}
+
+export type VendorStatusStatus =
+  (typeof VendorStatusStatus)[keyof typeof VendorStatusStatus];
+
+export const VendorStatusStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface VendorStatus {
+  /** @minimum 1 */
+  expected_version: number;
+  status: VendorStatusStatus;
+}
+
+export interface VendorVersion {
+  /** @minimum 1 */
+  expected_version: number;
+}
+
 export type ZoneDeletedResponseStatus =
   (typeof ZoneDeletedResponseStatus)[keyof typeof ZoneDeletedResponseStatus];
 
@@ -3787,6 +4001,100 @@ export type ReviewLocationImportParams = {
 export type ReviewLocationImportBody = {
   file: Blob | File;
 };
+
+export type ListVendorsParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ListVendorsStatus;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
+export type ListVendorsStatus =
+  (typeof ListVendorsStatus)[keyof typeof ListVendorsStatus];
+
+export const ListVendorsStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportVendorsParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ExportVendorsStatus;
+  format?: ExportVendorsFormat;
+};
+
+export type ExportVendorsStatus =
+  (typeof ExportVendorsStatus)[keyof typeof ExportVendorsStatus];
+
+export const ExportVendorsStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportVendorsFormat =
+  (typeof ExportVendorsFormat)[keyof typeof ExportVendorsFormat];
+
+export const ExportVendorsFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type CommitVendorImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+  /**
+   * @pattern ^[0-9a-f]{64}$
+   */
+  digest: string;
+  confirm: boolean;
+};
+
+export type CommitVendorImportBody = {
+  file: Blob | File;
+};
+
+export type ReviewVendorImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+};
+
+export type ReviewVendorImportBody = {
+  file: Blob | File;
+};
+
+export type DownloadVendorSampleParams = {
+  format?: DownloadVendorSampleFormat;
+};
+
+export type DownloadVendorSampleFormat =
+  (typeof DownloadVendorSampleFormat)[keyof typeof DownloadVendorSampleFormat];
+
+export const DownloadVendorSampleFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
 
 export type ListZonesParams = {
   /**

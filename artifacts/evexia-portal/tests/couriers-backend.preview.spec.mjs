@@ -10,7 +10,10 @@ async function open(page) {
   await page.getByLabel('Email or username').fill('crm-admin@allergyevexia.in');
   await page.getByLabel('Password', { exact: true }).fill(process.env.EVEXIA_TEST_ADMIN_PASSWORD);
   await page.getByTestId('button-submit-login').click();
-  await expect(page.getByTestId('button-admin-profile')).toBeVisible();
+  // The full release shares CPU with other private fixtures; completed login
+  // can exceed the default assertion wait while still showing Checking access.
+  // Keep the exact authenticated readiness assertion and a bounded deadline.
+  await expect(page.getByTestId('button-admin-profile')).toBeVisible({ timeout: 45_000 });
   await page.evaluate(({ key, legacy }) => localStorage.setItem(key, legacy), { key, legacy });
   await page.goto(`${base()}/admin/masters/courier-partners`);
   await expect(page.getByTestId('text-courier-partner-count')).toBeVisible();

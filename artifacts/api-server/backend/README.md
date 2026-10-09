@@ -1,5 +1,13 @@
 # EVEXIA backend foundation
 
+Vendor Master now has a separately, explicitly migrated shared catalogue:
+protected system Super Admin only, versioned CRUD/soft deletion and authenticated
+CSV/XLSX review/confirm/export/sample operations. Legacy local Vendor and
+procurement records remain separate and untouched. Operator rollout, schema,
+API contracts and isolated test commands are in [`docs/vendor-master.md`](../../../docs/vendor-master.md).
+Managed migration and deployment need separate approval; startup never creates
+the Vendor table.
+
 This FastAPI modular monolith supplies authoritative authentication for the
 existing EVEXIA Admin and MR login and protected workspaces. Doctor login remains
 mock-only. Staff Management is now an authenticated, encrypted

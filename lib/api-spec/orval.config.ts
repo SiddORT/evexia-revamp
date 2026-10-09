@@ -18,6 +18,7 @@ const titleTransformer: InputTransformerFn = (config) => {
   for (const route of ["/v1/admin/courier-partners/import/review", "/v1/admin/courier-partners/import/commit",
     "/v1/admin/storage-locations/import/review", "/v1/admin/storage-locations/import/commit",
     "/v1/admin/designations/import/review", "/v1/admin/designations/import/commit",
+    "/v1/admin/vendors/import/review", "/v1/admin/vendors/import/commit",
     "/v1/admin/headquarters/import/review", "/v1/admin/headquarters/import/commit",
     "/v1/admin/product-categories/import/review", "/v1/admin/product-categories/import/commit",
     "/v1/admin/mrs/import/review", "/v1/admin/mrs/import/commit",

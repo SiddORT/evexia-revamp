@@ -7638,6 +7638,564 @@ export const SetStorageLocationStatusResponse = zod.object({
 /**
  * @summary Listing
  */
+export const listVendorsQueryQueryDefault = ``;
+export const listVendorsQueryQueryMax = 200;
+
+export const listVendorsQueryStatusDefault = `all`;
+export const listVendorsQueryLimitDefault = 10;
+export const listVendorsQueryLimitMax = 100;
+
+export const listVendorsQueryOffsetDefault = 0;
+export const listVendorsQueryOffsetMin = 0;
+export const listVendorsQueryOffsetMax = 1000000;
+
+export const ListVendorsQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listVendorsQueryQueryMax)
+    .default(listVendorsQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(listVendorsQueryStatusDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listVendorsQueryLimitMax)
+    .default(listVendorsQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listVendorsQueryOffsetMin)
+    .max(listVendorsQueryOffsetMax)
+    .default(listVendorsQueryOffsetDefault),
+});
+
+export const listVendorsResponseItemsItemContactPersonNameMax = 200;
+
+export const listVendorsResponseItemsItemDialCountryDefault = `IN`;
+export const listVendorsResponseItemsItemEmailIdMin = 3;
+export const listVendorsResponseItemsItemEmailIdMax = 320;
+
+export const listVendorsResponseItemsItemGstNoMin = 15;
+export const listVendorsResponseItemsItemGstNoMax = 15;
+
+export const listVendorsResponseItemsItemPhoneNoMax = 30;
+
+export const listVendorsResponseItemsItemRegisteredAddressMax = 2000;
+
+export const listVendorsResponseItemsItemStatusDefault = `active`;
+export const listVendorsResponseItemsItemVendorNameMax = 200;
+
+export const ListVendorsResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      contactPersonName: zod
+        .string()
+        .min(1)
+        .max(listVendorsResponseItemsItemContactPersonNameMax),
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      dialCountry: zod
+        .enum(["IN", "US", "GB", "AE"])
+        .default(listVendorsResponseItemsItemDialCountryDefault),
+      emailId: zod
+        .string()
+        .min(listVendorsResponseItemsItemEmailIdMin)
+        .max(listVendorsResponseItemsItemEmailIdMax),
+      gstNo: zod
+        .string()
+        .min(listVendorsResponseItemsItemGstNoMin)
+        .max(listVendorsResponseItemsItemGstNoMax),
+      id: zod.string().uuid(),
+      phoneNo: zod.string().min(1).max(listVendorsResponseItemsItemPhoneNoMax),
+      registeredAddress: zod
+        .string()
+        .min(1)
+        .max(listVendorsResponseItemsItemRegisteredAddressMax),
+      status: zod
+        .enum(["active", "inactive"])
+        .default(listVendorsResponseItemsItemStatusDefault),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      vendorName: zod
+        .string()
+        .min(1)
+        .max(listVendorsResponseItemsItemVendorNameMax),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+export const createVendorBodyContactPersonNameMax = 200;
+
+export const createVendorBodyDialCountryDefault = `IN`;
+export const createVendorBodyEmailIdMin = 3;
+export const createVendorBodyEmailIdMax = 320;
+
+export const createVendorBodyGstNoMin = 15;
+export const createVendorBodyGstNoMax = 15;
+
+export const createVendorBodyPhoneNoMax = 30;
+
+export const createVendorBodyRegisteredAddressMax = 2000;
+
+export const createVendorBodyStatusDefault = `active`;
+export const createVendorBodyVendorNameMax = 200;
+
+export const CreateVendorBody = zod.object({
+  contactPersonName: zod
+    .string()
+    .min(1)
+    .max(createVendorBodyContactPersonNameMax),
+  dialCountry: zod
+    .enum(["IN", "US", "GB", "AE"])
+    .default(createVendorBodyDialCountryDefault),
+  emailId: zod
+    .string()
+    .min(createVendorBodyEmailIdMin)
+    .max(createVendorBodyEmailIdMax),
+  gstNo: zod
+    .string()
+    .min(createVendorBodyGstNoMin)
+    .max(createVendorBodyGstNoMax),
+  phoneNo: zod.string().min(1).max(createVendorBodyPhoneNoMax),
+  registeredAddress: zod
+    .string()
+    .min(1)
+    .max(createVendorBodyRegisteredAddressMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(createVendorBodyStatusDefault),
+  vendorName: zod.string().min(1).max(createVendorBodyVendorNameMax),
+});
+
+export const createVendorResponseContactPersonNameMax = 200;
+
+export const createVendorResponseDialCountryDefault = `IN`;
+export const createVendorResponseEmailIdMin = 3;
+export const createVendorResponseEmailIdMax = 320;
+
+export const createVendorResponseGstNoMin = 15;
+export const createVendorResponseGstNoMax = 15;
+
+export const createVendorResponsePhoneNoMax = 30;
+
+export const createVendorResponseRegisteredAddressMax = 2000;
+
+export const createVendorResponseStatusDefault = `active`;
+export const createVendorResponseVendorNameMax = 200;
+
+export const CreateVendorResponse = zod.object({
+  contactPersonName: zod
+    .string()
+    .min(1)
+    .max(createVendorResponseContactPersonNameMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dialCountry: zod
+    .enum(["IN", "US", "GB", "AE"])
+    .default(createVendorResponseDialCountryDefault),
+  emailId: zod
+    .string()
+    .min(createVendorResponseEmailIdMin)
+    .max(createVendorResponseEmailIdMax),
+  gstNo: zod
+    .string()
+    .min(createVendorResponseGstNoMin)
+    .max(createVendorResponseGstNoMax),
+  id: zod.string().uuid(),
+  phoneNo: zod.string().min(1).max(createVendorResponsePhoneNoMax),
+  registeredAddress: zod
+    .string()
+    .min(1)
+    .max(createVendorResponseRegisteredAddressMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(createVendorResponseStatusDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  vendorName: zod.string().min(1).max(createVendorResponseVendorNameMax),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Export
+ */
+export const exportVendorsQueryQueryDefault = ``;
+export const exportVendorsQueryQueryMax = 200;
+
+export const exportVendorsQueryStatusDefault = `all`;
+export const exportVendorsQueryFormatDefault = `csv`;
+
+export const ExportVendorsQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(exportVendorsQueryQueryMax)
+    .default(exportVendorsQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(exportVendorsQueryStatusDefault),
+  format: zod.enum(["csv", "xlsx"]).default(exportVendorsQueryFormatDefault),
+});
+
+export const ExportVendorsHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const ExportVendorsResponse = zod.unknown();
+
+/**
+ * @summary Commit
+ */
+export const commitVendorImportQueryFilenameMax = 200;
+
+export const commitVendorImportQueryDigestRegExp = new RegExp("^[0-9a-f]{64}$");
+
+export const CommitVendorImportQueryParams = zod.object({
+  filename: zod.coerce.string().min(1).max(commitVendorImportQueryFilenameMax),
+  digest: zod.coerce.string().regex(commitVendorImportQueryDigestRegExp),
+  confirm: zod.coerce.boolean(),
+});
+
+export const CommitVendorImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const CommitVendorImportResponse = zod.object({
+  imported: zod.number().int(),
+});
+
+/**
+ * @summary Review
+ */
+export const reviewVendorImportQueryFilenameMax = 200;
+
+export const ReviewVendorImportQueryParams = zod.object({
+  filename: zod.coerce.string().min(1).max(reviewVendorImportQueryFilenameMax),
+});
+
+export const ReviewVendorImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const ReviewVendorImportResponse = zod.object({
+  digest: zod.string(),
+  invalidCount: zod.number().int(),
+  rows: zod.array(
+    zod.object({
+      errors: zod.array(zod.string()),
+      row: zod.number().int(),
+      values: zod.record(zod.string(), zod.string()),
+    }),
+  ),
+  valid: zod.boolean(),
+  validCount: zod.number().int(),
+});
+
+/**
+ * @summary Sample
+ */
+export const downloadVendorSampleQueryFormatDefault = `csv`;
+
+export const DownloadVendorSampleQueryParams = zod.object({
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(downloadVendorSampleQueryFormatDefault),
+});
+
+export const DownloadVendorSampleHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const DownloadVendorSampleResponse = zod.unknown();
+
+/**
+ * @summary Detail
+ */
+export const GetVendorParams = zod.object({
+  vendor_id: zod.coerce.string().uuid(),
+});
+
+export const getVendorResponseContactPersonNameMax = 200;
+
+export const getVendorResponseDialCountryDefault = `IN`;
+export const getVendorResponseEmailIdMin = 3;
+export const getVendorResponseEmailIdMax = 320;
+
+export const getVendorResponseGstNoMin = 15;
+export const getVendorResponseGstNoMax = 15;
+
+export const getVendorResponsePhoneNoMax = 30;
+
+export const getVendorResponseRegisteredAddressMax = 2000;
+
+export const getVendorResponseStatusDefault = `active`;
+export const getVendorResponseVendorNameMax = 200;
+
+export const GetVendorResponse = zod.object({
+  contactPersonName: zod
+    .string()
+    .min(1)
+    .max(getVendorResponseContactPersonNameMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dialCountry: zod
+    .enum(["IN", "US", "GB", "AE"])
+    .default(getVendorResponseDialCountryDefault),
+  emailId: zod
+    .string()
+    .min(getVendorResponseEmailIdMin)
+    .max(getVendorResponseEmailIdMax),
+  gstNo: zod
+    .string()
+    .min(getVendorResponseGstNoMin)
+    .max(getVendorResponseGstNoMax),
+  id: zod.string().uuid(),
+  phoneNo: zod.string().min(1).max(getVendorResponsePhoneNoMax),
+  registeredAddress: zod
+    .string()
+    .min(1)
+    .max(getVendorResponseRegisteredAddressMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(getVendorResponseStatusDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  vendorName: zod.string().min(1).max(getVendorResponseVendorNameMax),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Delete
+ */
+export const DeleteVendorParams = zod.object({
+  vendor_id: zod.coerce.string().uuid(),
+});
+
+export const DeleteVendorBody = zod.object({
+  expected_version: zod.number().int().min(1),
+});
+
+export const deleteVendorResponseContactPersonNameMax = 200;
+
+export const deleteVendorResponseDialCountryDefault = `IN`;
+export const deleteVendorResponseEmailIdMin = 3;
+export const deleteVendorResponseEmailIdMax = 320;
+
+export const deleteVendorResponseGstNoMin = 15;
+export const deleteVendorResponseGstNoMax = 15;
+
+export const deleteVendorResponsePhoneNoMax = 30;
+
+export const deleteVendorResponseRegisteredAddressMax = 2000;
+
+export const deleteVendorResponseStatusDefault = `active`;
+export const deleteVendorResponseVendorNameMax = 200;
+
+export const DeleteVendorResponse = zod.object({
+  contactPersonName: zod
+    .string()
+    .min(1)
+    .max(deleteVendorResponseContactPersonNameMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dialCountry: zod
+    .enum(["IN", "US", "GB", "AE"])
+    .default(deleteVendorResponseDialCountryDefault),
+  emailId: zod
+    .string()
+    .min(deleteVendorResponseEmailIdMin)
+    .max(deleteVendorResponseEmailIdMax),
+  gstNo: zod
+    .string()
+    .min(deleteVendorResponseGstNoMin)
+    .max(deleteVendorResponseGstNoMax),
+  id: zod.string().uuid(),
+  phoneNo: zod.string().min(1).max(deleteVendorResponsePhoneNoMax),
+  registeredAddress: zod
+    .string()
+    .min(1)
+    .max(deleteVendorResponseRegisteredAddressMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(deleteVendorResponseStatusDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  vendorName: zod.string().min(1).max(deleteVendorResponseVendorNameMax),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditVendorParams = zod.object({
+  vendor_id: zod.coerce.string().uuid(),
+});
+
+export const editVendorBodyContactPersonNameMax = 200;
+
+export const editVendorBodyDialCountryDefault = `IN`;
+export const editVendorBodyEmailIdMin = 3;
+export const editVendorBodyEmailIdMax = 320;
+
+export const editVendorBodyGstNoMin = 15;
+export const editVendorBodyGstNoMax = 15;
+
+export const editVendorBodyPhoneNoMax = 30;
+
+export const editVendorBodyRegisteredAddressMax = 2000;
+
+export const editVendorBodyStatusDefault = `active`;
+export const editVendorBodyVendorNameMax = 200;
+
+export const EditVendorBody = zod.object({
+  contactPersonName: zod
+    .string()
+    .min(1)
+    .max(editVendorBodyContactPersonNameMax),
+  dialCountry: zod
+    .enum(["IN", "US", "GB", "AE"])
+    .default(editVendorBodyDialCountryDefault),
+  emailId: zod
+    .string()
+    .min(editVendorBodyEmailIdMin)
+    .max(editVendorBodyEmailIdMax),
+  expected_version: zod.number().int().min(1),
+  gstNo: zod.string().min(editVendorBodyGstNoMin).max(editVendorBodyGstNoMax),
+  phoneNo: zod.string().min(1).max(editVendorBodyPhoneNoMax),
+  registeredAddress: zod
+    .string()
+    .min(1)
+    .max(editVendorBodyRegisteredAddressMax),
+  status: zod.enum(["active", "inactive"]).default(editVendorBodyStatusDefault),
+  vendorName: zod.string().min(1).max(editVendorBodyVendorNameMax),
+});
+
+export const editVendorResponseContactPersonNameMax = 200;
+
+export const editVendorResponseDialCountryDefault = `IN`;
+export const editVendorResponseEmailIdMin = 3;
+export const editVendorResponseEmailIdMax = 320;
+
+export const editVendorResponseGstNoMin = 15;
+export const editVendorResponseGstNoMax = 15;
+
+export const editVendorResponsePhoneNoMax = 30;
+
+export const editVendorResponseRegisteredAddressMax = 2000;
+
+export const editVendorResponseStatusDefault = `active`;
+export const editVendorResponseVendorNameMax = 200;
+
+export const EditVendorResponse = zod.object({
+  contactPersonName: zod
+    .string()
+    .min(1)
+    .max(editVendorResponseContactPersonNameMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dialCountry: zod
+    .enum(["IN", "US", "GB", "AE"])
+    .default(editVendorResponseDialCountryDefault),
+  emailId: zod
+    .string()
+    .min(editVendorResponseEmailIdMin)
+    .max(editVendorResponseEmailIdMax),
+  gstNo: zod
+    .string()
+    .min(editVendorResponseGstNoMin)
+    .max(editVendorResponseGstNoMax),
+  id: zod.string().uuid(),
+  phoneNo: zod.string().min(1).max(editVendorResponsePhoneNoMax),
+  registeredAddress: zod
+    .string()
+    .min(1)
+    .max(editVendorResponseRegisteredAddressMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(editVendorResponseStatusDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  vendorName: zod.string().min(1).max(editVendorResponseVendorNameMax),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Status
+ */
+export const SetVendorStatusParams = zod.object({
+  vendor_id: zod.coerce.string().uuid(),
+});
+
+export const SetVendorStatusBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const setVendorStatusResponseContactPersonNameMax = 200;
+
+export const setVendorStatusResponseDialCountryDefault = `IN`;
+export const setVendorStatusResponseEmailIdMin = 3;
+export const setVendorStatusResponseEmailIdMax = 320;
+
+export const setVendorStatusResponseGstNoMin = 15;
+export const setVendorStatusResponseGstNoMax = 15;
+
+export const setVendorStatusResponsePhoneNoMax = 30;
+
+export const setVendorStatusResponseRegisteredAddressMax = 2000;
+
+export const setVendorStatusResponseStatusDefault = `active`;
+export const setVendorStatusResponseVendorNameMax = 200;
+
+export const SetVendorStatusResponse = zod.object({
+  contactPersonName: zod
+    .string()
+    .min(1)
+    .max(setVendorStatusResponseContactPersonNameMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dialCountry: zod
+    .enum(["IN", "US", "GB", "AE"])
+    .default(setVendorStatusResponseDialCountryDefault),
+  emailId: zod
+    .string()
+    .min(setVendorStatusResponseEmailIdMin)
+    .max(setVendorStatusResponseEmailIdMax),
+  gstNo: zod
+    .string()
+    .min(setVendorStatusResponseGstNoMin)
+    .max(setVendorStatusResponseGstNoMax),
+  id: zod.string().uuid(),
+  phoneNo: zod.string().min(1).max(setVendorStatusResponsePhoneNoMax),
+  registeredAddress: zod
+    .string()
+    .min(1)
+    .max(setVendorStatusResponseRegisteredAddressMax),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(setVendorStatusResponseStatusDefault),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  vendorName: zod.string().min(1).max(setVendorStatusResponseVendorNameMax),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Listing
+ */
 export const listZonesQueryQueryDefault = ``;
 export const listZonesQueryQueryMax = 200;
 

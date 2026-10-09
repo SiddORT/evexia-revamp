@@ -143,6 +143,7 @@ else
 fi
 if [ "$#" -eq 0 ]; then
   SPECS="$SPECS artifacts/evexia-portal/tests/headquarters-backend.preview.spec.mjs"
+  SPECS="$SPECS artifacts/evexia-portal/tests/vendors-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/product-categories-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/mrs-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/doctors-backend.preview.spec.mjs"

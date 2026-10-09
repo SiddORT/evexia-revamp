@@ -31,6 +31,7 @@ password input; there is no default elevated account.
 | Courier Partner list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
 | Storage Location list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
 | Designation list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; Zone staff grants do not apply | no |
+| Vendor list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; not assignable in the eight-master staff catalogue | no |
 | Headquarter list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; Zone staff grants and business labels do not apply | no |
 | Product Category list/detail/create/edit/status/soft-delete/import/export/sample (`admin.access`) | protected singleton only; no Zone/custom-role elevation | no |
 | MR business directory list/detail/edit/status/contact/soft-delete/reference/PIN/export/sample (`admin.access`) | protected singleton only | no |
