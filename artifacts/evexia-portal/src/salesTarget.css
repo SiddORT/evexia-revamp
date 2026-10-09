@@ -53,6 +53,42 @@
 .admin-target-import__row ul { margin: 8px 0 0; padding-left: 18px; color: var(--admin-danger); }
 .admin-target-storage-warning { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .admin-target-storage-warning p { margin: 0; }
+.admin-target-page, .admin-target-dialog, .admin-target-summary-dialog { overflow-wrap: anywhere; }
+.admin-target-page .admin-button, .admin-target-dialog .admin-button { white-space: normal; padding-block: 8px; height: auto; }
+.admin-target-field input, .admin-target-field select { height: auto; min-height: 39px; padding-block: 8px; line-height: 1.3; }
+.admin-target-form__quarter { grid-template-columns: minmax(0, 1fr); }
+.admin-target-form__total, .admin-target-card__foot, .admin-target-summary-dialog__rows div { flex-wrap: wrap; }
+.admin-target-summary strong { white-space: normal; overflow-wrap: anywhere; }
+.admin-target-reference { font-weight: 400; color: var(--admin-muted); overflow-wrap: anywhere; }
+.admin-target-page .admin-page-head { flex-wrap: wrap; }
+.admin-target-page .admin-page-head > div { min-width: 0; }
+.admin-target-page h1, .admin-target-page .admin-dialog h2, .admin-target-dialog h2, .admin-target-summary-dialog h2,
+.excel-import--sales-target h1, .excel-import--sales-target h2 { line-height: 1.3; }
+.admin-target-page .admin-search input { height: auto; min-height: 40px; padding: 8px 12px; line-height: 1.3; }
+.admin-target-page .admin-search { grid-column: 1 / -1; max-width: none; }
+.admin-target-page .admin-filter { min-width: 0; }
+.admin-target-toolbar__fields > .admin-filter { grid-column: span 2; }
+.admin-target-page .admin-filter select { width: 100%; min-width: 0; height: auto; min-height: 40px; padding-block: 8px; line-height: 1.3; }
+.admin-target-page .searchable-select__menu .admin-button,
+.admin-target-dialog .searchable-select__menu .admin-button { max-width: calc(100% - 12px); }
+.sales-target-export-menu { width: max-content; min-width: 238px; max-width: calc(100vw - 24px); }
+.sales-target-export-menu .admin-dropdown__item { white-space: normal; overflow-wrap: anywhere; }
+.excel-import--sales-target { min-width: 0; overflow-wrap: anywhere; }
+.excel-import--sales-target :is(.excel-import__card, .excel-import__report, .excel-import__report-head > div, .admin-page-head > div) { min-width: 0; }
+.excel-import--sales-target :is(.admin-button, .excel-import__tab, .excel-import__back) { max-width: 100%; white-space: normal; height: auto; padding-block: 8px; }
+.excel-import--sales-target .excel-import__picker { max-width: 100%; box-sizing: border-box; }
+.excel-import--sales-target .excel-import__picker span { min-width: 0; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+.excel-import--sales-target svg { flex-shrink: 0; }
+.excel-import--sales-target .excel-import__row dl > div { min-width: 0; }
+.excel-import--sales-target .excel-import__row summary span { float: none; display: block; margin-top: 4px; }
+.excel-import--sales-target .excel-import__report-head { flex-wrap: wrap; }
+.excel-import--sales-target .excel-import__report-head > div:first-child { flex: 1 1 20rem; }
+.excel-import--sales-target :is(button, summary):focus-visible,
+.excel-import--sales-target .excel-import__picker:has(input:focus-visible) { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+@media (max-width: 650px) {
+  .admin-target-form__grid, .admin-target-form__quarter { grid-template-columns: minmax(0, 1fr); }
+  .admin-target-toolbar__fields > :is(.admin-target-field, .admin-filter) { grid-column: 1 / -1; }
+}
 @media (max-width: 1150px) {
   .admin-target-toolbar__fields { grid-template-columns: repeat(4, minmax(120px,1fr)); }
   .admin-target-toolbar__search { grid-column: span 3; }
@@ -78,6 +114,6 @@
   .admin-target-apply { grid-column: span 2; }
   .admin-target-summary { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .admin-target-summary > div:last-child { grid-column: span 2; }
-  .admin-target-form__quarter { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .admin-target-form__quarter { grid-template-columns: minmax(0,1fr); }
   .admin-target-storage-warning { align-items: flex-start; flex-direction: column; }
 }

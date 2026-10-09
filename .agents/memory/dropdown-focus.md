@@ -43,3 +43,16 @@ completed selections may reset paging; test selection from the actual later
 page rather than re-searching the target's unique identifier. When paging
 controls sit outside the overlaid menu, dismiss it first; do not force clicks
 through the popup and bypass normal pointer hit testing.
+
+When closing a record dialog also refreshes its list, restore focus by stable
+record/action identity after the refreshed list is ready, not only by keeping
+the original element reference.
+
+**Why:** A dialog's normal cleanup returned focus correctly, but the subsequent
+loading state removed that row and lost the focus again. Enlarged-text keyboard
+tests revealed this even though closing and refreshing both succeeded.
+
+**How to apply:** Treat refresh readiness and focus return as one transition.
+If the original row was deleted or filtered away, return to a stable page
+action instead. Do not retain stale rows or weaken save/version checks just
+to preserve a DOM element.

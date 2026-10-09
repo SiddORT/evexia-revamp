@@ -79,11 +79,11 @@ export default function SalesTargetForm({ record, onSave, onClose }) {
       <fieldset disabled={pending} style={{ border: 0, margin: 0, padding: 0, display: 'grid', gap: 16 }}>
         <div className="admin-target-form__grid">
           <div className="admin-target-field"><span>Medical representative</span>
-            <RemoteSelect id="sales-target-mr" label="Medical representative" value={values.mrId} selected={savedMr ? { label: `${savedMr.name} (${savedMr.employeeCode})` } : null} fetchPage={fetchMrs()} placeholder="Select MR" invalid={errors.mrId}
+            <RemoteSelect describeSelection id="sales-target-mr" label="Medical representative" value={values.mrId} selected={savedMr ? { label: `${savedMr.name} (${savedMr.employeeCode})` } : null} fetchPage={fetchMrs()} placeholder="Select MR" invalid={errors.mrId}
               onChange={(item) => { setMr(item?.raw || null); change('mrId', item?.value || ''); }} />{err('mrId')}</div>
           <label className="admin-target-field">Status<select value={values.status} onChange={(e) => change('status', e.target.value)} data-testid="select-sales-target-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>{err('status')}</label>
-          <label className="admin-target-field">Headquarter<input readOnly value={mr?.headquarterName || (mr ? 'Not assigned' : 'Select an MR first')} data-testid="input-sales-target-headquarter" /></label>
-          <label className="admin-target-field">Assigned zone<input readOnly value={mr?.zoneName || (mr ? 'Not assigned' : 'Select an MR first')} data-testid="input-sales-target-zone" /></label>
+          <label className="admin-target-field">Headquarter<input readOnly value={mr?.headquarterName || (mr ? 'Not assigned' : 'Select an MR first')} aria-describedby="target-headquarter-full" data-testid="input-sales-target-headquarter" /><span id="target-headquarter-full" className="admin-target-reference">{mr?.headquarterName || (mr ? 'Not assigned' : 'Select an MR first')}</span></label>
+          <label className="admin-target-field">Assigned zone<input readOnly value={mr?.zoneName || (mr ? 'Not assigned' : 'Select an MR first')} aria-describedby="target-zone-full" data-testid="input-sales-target-zone" /><span id="target-zone-full" className="admin-target-reference">{mr?.zoneName || (mr ? 'Not assigned' : 'Select an MR first')}</span></label>
           {['startYear', 'endYear'].map((key) => <div className="admin-target-field" key={key}><span>{key === 'startYear' ? 'Financial start year' : 'Financial end year'}</span>
             <SearchableSelect id={`sales-target-${key}`} label={key === 'startYear' ? 'Financial start year' : 'Financial end year'} value={values[key]} options={years} placeholder="Select year" invalid={errors[key]} onChange={(v) => change(key, v)} />{err(key)}</div>)}
         </div>

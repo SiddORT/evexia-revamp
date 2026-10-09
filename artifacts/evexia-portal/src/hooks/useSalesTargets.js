@@ -12,7 +12,7 @@ export default function useSalesTargets(filters, page, pageSize) {
   const [revision, refresh] = useState(0);
   const [pending, setPending] = useState(false);
   const busy = useRef(false);
-  const retry = useCallback(() => refresh((value) => value + 1), []);
+  const retry = useCallback(() => { setLoading(true); refresh((value) => value + 1); }, []);
   const key = JSON.stringify(filters);
   useEffect(() => {
     const controller = new AbortController();

@@ -1,12 +1,34 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { registerSalesTargetLayout } from './helpers/salesTargetLayoutSuite.mjs';
 
-if (process.env.EVEXIA_CHROMIUM_PATH) test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
+if (process.env.EVEXIA_ISOLATED_AUTH_PREVIEW !== '1') throw new Error('Sales Target previews require the isolated synthetic runner.');
+if (process.env.EVEXIA_CHROMIUM_PATH && !process.env.EVEXIA_SALES_TARGET_MATRIX) test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
+// HTTP/console failures are intentionally exercised below. Keep their evidence
+// without treating expected 409/503 responses as uncaught application errors.
+const diagnostics = new WeakMap();
+test.beforeEach(async ({ page, context }) => {
+  const evidence = { uncaught: [], console: [] };
+  diagnostics.set(page, evidence);
+  const subscribe = (actor) => {
+    actor.on('pageerror', (error) => evidence.uncaught.push(error.message));
+    actor.on('console', (message) => { if (message.type() === 'error') evidence.console.push(message.text()); });
+  };
+  subscribe(page);
+  context.on('page', subscribe);
+});
+test.afterEach(async ({ page }, info) => {
+  const evidence = diagnostics.get(page);
+  await info.attach('browser-diagnostics', { body: JSON.stringify(evidence, null, 2), contentType: 'application/json' });
+  expect(evidence.uncaught, 'No uncaught errors, including secondary actor pages').toEqual([]);
+});
 const base = () => process.env.EVEXIA_PREVIEW_BASE_URL;
 const header = 'Employee Code,Start Year,End Year,Q1,Q2,Q3,Q4,Status';
 const storageKey = 'evexia.admin.sales-targets.v1';
 const legacy = '[{"id":"untouched-local-target","mrId":"local-only","q1":999}]';
 const tag = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+registerSalesTargetLayout(test, open);
 
 async function open(page) {
   await page.goto(`${base()}/admin/login`);

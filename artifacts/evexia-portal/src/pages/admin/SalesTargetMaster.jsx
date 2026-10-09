@@ -50,6 +50,17 @@ function TargetWorkspace() {
   const [summary, setSummary] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const dialogTrigger = useRef('');
+  const [returnFocus, setReturnFocus] = useState('');
+  useEffect(() => {
+    if (!returnFocus || loading || editing || confirming) return;
+    // Refresh replaces the row DOM. Restore to the new matching trigger, or a
+    // stable page action when deletion/filter changes removed that row.
+    const target = document.querySelector(`[data-testid="${returnFocus}"]`)
+      || document.querySelector('[data-testid="button-add-sales-target"]');
+    target?.focus();
+    setReturnFocus('');
+  }, [returnFocus, loading, editing, confirming]);
   const exportBusy = useRef(false);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
@@ -63,14 +74,14 @@ function TargetWorkspace() {
 
   async function save(values, record) {
     const result = await (editing === 'new' ? add(values) : edit(record, values));
-    if (result.success) setEditing(null);
+    if (result.success) { setReturnFocus(dialogTrigger.current); setEditing(null); }
     return result;
   }
-  function requestAction(record, type) { clearFeedback(); setActionError(''); setBlocked(false); setConfirming({ record, type }); }
+  function requestAction(record, type, event) { dialogTrigger.current = event.currentTarget.dataset.testid; clearFeedback(); setActionError(''); setBlocked(false); setConfirming({ record, type }); }
   async function confirmAction() {
     const { record, type } = confirming;
     const result = await (type === 'delete' ? remove(record) : changeStatus(record, type === 'activate' ? 'active' : 'inactive'));
-    if (result.success) { setConfirming(null); setActionError(''); }
+    if (result.success) { setReturnFocus(dialogTrigger.current); setConfirming(null); setActionError(''); }
     else { setActionError(result.error); setBlocked(/_stale$/.test(result.code || '') || Boolean(result.ambiguous)); }
   }
   async function exportAll(format) {
@@ -91,9 +102,9 @@ function TargetWorkspace() {
     const who = `${record.mrName} ${period(record)}`;
     const t = mobile ? 'mobile-' : '';
     return <fieldset disabled={loading || pending} style={{ border: 0, margin: 0, padding: 0 }} className={mobile ? 'admin-zone-card__actions' : 'admin-table__actions'}>
-      <button type="button" className={cls} aria-label={`Edit target for ${who}`} title="Edit" onClick={() => { clearFeedback(); setEditing(record); }} data-testid={`button-edit-sales-target-${t}${record.id}`}><Pencil size={16} aria-hidden="true" />{mobile && <span>Edit</span>}</button>
-      <button type="button" className={cls} aria-label={`${toggle} target for ${who}`} title={toggle} onClick={() => requestAction(record, toggle.toLowerCase())} data-testid={`button-toggle-sales-target-${t}${record.id}`}><CirclePower size={16} aria-hidden="true" />{mobile && <span>{toggle}</span>}</button>
-      <button type="button" className={mobile ? `${cls} admin-zone-card__action--danger` : `${cls} admin-icon-button--danger`} aria-label={`Delete target for ${who}`} title="Delete" onClick={() => requestAction(record, 'delete')} data-testid={`button-delete-sales-target-${t}${record.id}`}><Trash2 size={16} aria-hidden="true" />{mobile && <span>Delete</span>}</button>
+      <button type="button" className={cls} aria-label={`Edit target for ${who}`} title="Edit" onClick={(event) => { dialogTrigger.current = event.currentTarget.dataset.testid; clearFeedback(); setEditing(record); }} data-testid={`button-edit-sales-target-${t}${record.id}`}><Pencil size={16} aria-hidden="true" />{mobile && <span>Edit</span>}</button>
+      <button type="button" className={cls} aria-label={`${toggle} target for ${who}`} title={toggle} onClick={(event) => requestAction(record, toggle.toLowerCase(), event)} data-testid={`button-toggle-sales-target-${t}${record.id}`}><CirclePower size={16} aria-hidden="true" />{mobile && <span>{toggle}</span>}</button>
+      <button type="button" className={mobile ? `${cls} admin-zone-card__action--danger` : `${cls} admin-icon-button--danger`} aria-label={`Delete target for ${who}`} title="Delete" onClick={(event) => requestAction(record, 'delete', event)} data-testid={`button-delete-sales-target-${t}${record.id}`}><Trash2 size={16} aria-hidden="true" />{mobile && <span>Delete</span>}</button>
     </fieldset>;
   }
   const columns = [
@@ -119,12 +130,12 @@ function TargetWorkspace() {
         <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/sales-target')} data-testid="button-import-sales-targets"><Upload size={16} aria-hidden="true" /> Import data</button>
         <DropdownMenu.Root open={menuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setMenuOpen(open); }}>
           <DropdownMenu.Trigger asChild><button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-sales-targets"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button></DropdownMenu.Trigger>
-          <DropdownMenu.Portal><DropdownMenu.Content className="admin-dropdown__menu admin-courier-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} aria-label="Sales target export format">
+          <DropdownMenu.Portal><DropdownMenu.Content className="admin-dropdown__menu admin-courier-export__menu sales-target-export-menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} aria-label="Sales target export format">
             <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void exportAll('csv')} data-testid="menu-export-sales-targets-csv">CSV</DropdownMenu.Item>
             <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void exportAll('xlsx')} data-testid="menu-export-sales-targets-xlsx">Excel (.xlsx)</DropdownMenu.Item>
           </DropdownMenu.Content></DropdownMenu.Portal>
         </DropdownMenu.Root>
-        <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); setEditing('new'); }} data-testid="button-add-sales-target"><Plus size={16} aria-hidden="true" /> Add target</button>
+        <button type="button" className="admin-button" disabled={Boolean(error)} onClick={(event) => { dialogTrigger.current = event.currentTarget.dataset.testid; clearFeedback(); setEditing('new'); }} data-testid="button-add-sales-target"><Plus size={16} aria-hidden="true" /> Add target</button>
       </div>
     </div>
     <p className="admin-page-head__description">Exports and the summary cover all matches for the applied filters, up to 5,000 records for exports.</p>
@@ -133,8 +144,8 @@ function TargetWorkspace() {
     <section className="admin-panel" aria-label="Sales target list">
       <div className="admin-target-toolbar"><div className="admin-target-toolbar__fields">
         <label className="admin-search"><span className="sr-only">Search MR name</span><input maxLength={100} value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search MR name" data-testid="input-search-sales-targets" /></label>
-        <RemoteSelect id="filter-sales-target-zone" label="Zone" value={draft.zone?.value || ''} selected={draft.zone} fetchPage={fetchZones} placeholder="All zones" onChange={(item) => setDraft((d) => ({ ...d, zone: item, mr: null }))} />
-        <RemoteSelect id="filter-sales-target-mr" label="MR" value={draft.mr?.value || ''} selected={draft.mr} resetKey={draft.zone?.value || ''} fetchPage={fetchMrs(draft.zone ? { zoneId: draft.zone.value } : {})} placeholder="All MRs" onChange={(item) => setDraft((d) => ({ ...d, mr: item }))} />
+        <RemoteSelect describeSelection id="filter-sales-target-zone" label="Zone" value={draft.zone?.value || ''} selected={draft.zone} fetchPage={fetchZones} placeholder="All zones" onChange={(item) => setDraft((d) => ({ ...d, zone: item, mr: null }))} />
+        <RemoteSelect describeSelection id="filter-sales-target-mr" label="MR" value={draft.mr?.value || ''} selected={draft.mr} resetKey={draft.zone?.value || ''} fetchPage={fetchMrs(draft.zone ? { zoneId: draft.zone.value } : {})} placeholder="All MRs" onChange={(item) => setDraft((d) => ({ ...d, mr: item }))} />
         <SearchableSelect id="filter-sales-target-start" label="Financial start year" value={draft.startYear} options={years} placeholder="Any start year" onChange={(v) => setDraft((d) => ({ ...d, startYear: v }))} />
         <SearchableSelect id="filter-sales-target-end" label="Financial end year" value={draft.endYear} options={years} placeholder="Any end year" onChange={(v) => setDraft((d) => ({ ...d, endYear: v }))} />
         <div className="admin-filter"><label htmlFor="filter-sales-target-status">Status</label><select id="filter-sales-target-status" className="admin-select" value={draft.status} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))} data-testid="select-filter-sales-target-status"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
@@ -157,7 +168,7 @@ function TargetWorkspace() {
     </section>
     {summary && <Dialog className="admin-target-summary-dialog" eyebrow="Sales Target Master" title="Target Summary" description={`Quarterly totals for all ${filtered} ${filtered === 1 ? 'target' : 'targets'} matching the applied filters, not just this page.`} onClose={() => setSummary(false)} footer={<button type="button" className="admin-button admin-button--secondary" onClick={() => setSummary(false)} data-testid="button-close-target-summary">Close</button>}>
       {loading || error ? <p className="admin-empty" role="status" data-testid="status-summary-loading">{error || 'Refreshing totals for the current filters…'}</p> : <div className="admin-target-summary-dialog__rows"><div className="admin-target-summary-dialog__heading"><span>Type</span><span>Amount (in Rs)</span></div>{summaryRows.map((k) => <div key={k}><span>{k === 'total' ? 'Total' : `${k.toUpperCase()} target`}</span><strong data-testid={`text-summary-${k}`}>{formatAmount(totals[k])}</strong></div>)}</div>}</Dialog>}
-    {editing && <SalesTargetForm key={editing === 'new' ? 'new' : editing.id} record={editing === 'new' ? null : editing} onSave={save} onClose={() => { setEditing(null); retry(); }} />}
-    {confirming && <ConfirmationDialog pending={pending} blocked={blocked} title={`${verb} sales target?`} description={`Are you sure you want to ${verb.toLowerCase()} the target for ${confirming.record.mrName} (${period(confirming.record)})?${confirming.type === 'delete' ? ' It will disappear from ordinary lists and exports. Server deletion history is retained; no restore is available here.' : ''}`} actionLabel={`${verb} target`} destructive={confirming.type === 'delete'} onConfirm={confirmAction} onClose={() => { setConfirming(null); retry(); }} error={actionError} />}
+    {editing && <SalesTargetForm key={editing === 'new' ? 'new' : editing.id} record={editing === 'new' ? null : editing} onSave={save} onClose={() => { setReturnFocus(dialogTrigger.current); setEditing(null); retry(); }} />}
+    {confirming && <ConfirmationDialog pending={pending} blocked={blocked} title={`${verb} sales target?`} description={`Are you sure you want to ${verb.toLowerCase()} the target for ${confirming.record.mrName} (${period(confirming.record)})?${confirming.type === 'delete' ? ' It will disappear from ordinary lists and exports. Server deletion history is retained; no restore is available here.' : ''}`} actionLabel={`${verb} target`} destructive={confirming.type === 'delete'} onConfirm={confirmAction} onClose={() => { setReturnFocus(dialogTrigger.current); setConfirming(null); retry(); }} error={actionError} />}
   </div></AdminLayout>;
 }

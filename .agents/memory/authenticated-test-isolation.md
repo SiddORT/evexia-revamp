@@ -76,6 +76,17 @@ mistake that role's empty grants for failed permission persistence.
 selection before asserting persisted state. Do not clear other projects' data
 just to force a predictable first row.
 
+For read-only layout matrices, reuse credential-producing reference identities
+across viewport and appearance cases within each engine.
+
+**Why:** Each independently seeded layout case consumes the real actor/hour
+provisioning budget; changing browser engines does not reset the shared
+disposable database's audit ledger.
+
+**How to apply:** Seed unique valid references per engine and reuse them only
+for non-mutating layout assertions. Keep mutation/credential scenarios isolated
+and never raise production limits merely to expand the visual matrix.
+
 Cold synthetic previews can exceed short browser defaults when the workspace is
 CPU-contended, even with correctly isolated listeners. Wait for authenticated
 content and route data with bounded startup deadlines, without dropping exact

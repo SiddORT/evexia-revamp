@@ -51,6 +51,7 @@ export default function SearchableSelect({ id, label, value, options, onChange, 
   function handleKeyDown(event) {
     if (event.key === 'Escape' && open) {
       event.preventDefault();
+      event.stopPropagation();
       setOpen(false);
       if (!preserveSearch) setQuery('');
       setActive(-1);
@@ -70,7 +71,12 @@ export default function SearchableSelect({ id, label, value, options, onChange, 
     }
   }
 
-  return <div className={`searchable-select${open ? ' searchable-select--open' : ''}`} ref={rootRef}>
+  return <div className={`searchable-select${open ? ' searchable-select--open' : ''}`} ref={rootRef} onKeyDown={(event) => {
+    if (event.key === 'Escape' && open && !event.defaultPrevented) {
+      event.preventDefault(); event.stopPropagation(); inputRef.current?.focus();
+      setOpen(false); setQuery(''); setActive(-1);
+    }
+  }}>
     <div className="searchable-select__control">
       <input
         ref={inputRef}

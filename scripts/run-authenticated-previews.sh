@@ -11,12 +11,18 @@ if [ "${EVEXIA_ROLES_LAYOUT_ONLY:-}" = "1" ]; then
     exit 1
   fi
 fi
+if [ "${EVEXIA_SALES_TARGET_LAYOUT_ONLY:-}" = "1" ]; then
+  if [ "$#" -ne 1 ] || [ "$1" != "artifacts/evexia-portal/tests/sales-targets-backend.preview.spec.mjs" ]; then
+    echo "EVEXIA_SALES_TARGET_LAYOUT_ONLY requires the single Sales Target spec." >&2
+    exit 1
+  fi
+fi
 for tool in initdb pg_ctl createdb python3 curl node pnpm; do
   command -v "$tool" >/dev/null || { echo "Missing authenticated-preview prerequisite: $tool" >&2; exit 1; }
 done
 if [ "${EVEXIA_NIX_DOWNLOAD_ENGINES:-}" = "1" ]; then
   case "$*" in
-    ""|*download-logs.preview.spec.mjs*|*patients-layout.preview.spec.mjs*|*roles-permissions.preview.spec.mjs*)
+    ""|*download-logs.preview.spec.mjs*|*patients-layout.preview.spec.mjs*|*roles-permissions.preview.spec.mjs*|*sales-targets-backend.preview.spec.mjs*)
       (cd "$ROOT" && node scripts/prepare-nix-download-browsers.mjs) ;;
   esac
 fi
@@ -163,6 +169,7 @@ OTHER_SPECS=
 DOWNLOADS=0
 PATIENT_LAYOUT=0
 ROLE_LAYOUT=0
+SALES_TARGET_LAYOUT=0
 ISOLATE_MR=0
 ISOLATE_SALES_TARGET=0
 ISOLATE_OPENING_BALANCE=0
@@ -186,7 +193,10 @@ for spec in $SPECS; do
     */sales-targets-backend.preview.spec.mjs)
       # Targets need real MR identities. Keep their credential-hashing actor
       # budget and reference rows out of other directory baseline suites.
-      if [ "$SPEC_COUNT" -gt 1 ]; then ISOLATE_SALES_TARGET=1; else OTHER_SPECS="$OTHER_SPECS $spec"; fi ;;
+      if [ "$SPEC_COUNT" -gt 1 ]; then ISOLATE_SALES_TARGET=1; else
+        OTHER_SPECS="$OTHER_SPECS $spec"
+        SALES_TARGET_LAYOUT=1
+      fi ;;
     */opening-balances-backend.preview.spec.mjs)
       # This consuming workflow also legitimately creates MR-backed Doctors.
       # Preserve the real credential budget and history; do not combine its
@@ -199,9 +209,13 @@ for spec in $SPECS; do
     *) OTHER_SPECS="$OTHER_SPECS $spec" ;;
   esac
 done
-if [ -n "$OTHER_SPECS" ] && [ "${EVEXIA_ROLES_LAYOUT_ONLY:-}" != "1" ]; then
+if [ -n "$OTHER_SPECS" ] && [ "${EVEXIA_ROLES_LAYOUT_ONLY:-}" != "1" ] && [ "${EVEXIA_SALES_TARGET_LAYOUT_ONLY:-}" != "1" ]; then
   # shellcheck disable=SC2086
-  pnpm exec playwright test $OTHER_SPECS --grep-invert='@roles-layout' --workers=1 --output="$RESULTS/chromium-previews"
+  pnpm exec playwright test $OTHER_SPECS --grep-invert='@roles-layout|@sales-target-layout' --workers=1 --output="$RESULTS/chromium-previews"
+fi
+if [ "$SALES_TARGET_LAYOUT" -eq 1 ]; then
+  echo "Sales Target enlarged-text gate: Chromium, Firefox and WebKit (not native Safari). Missing engines are failures."
+  pnpm exec playwright test --config=playwright.sales-targets.config.mjs --workers=1 --output="$RESULTS/sales-target-matrix"
 fi
 if [ "$ROLE_LAYOUT" -eq 1 ]; then
   echo "Roles and Permissions focused gate: Chromium, Firefox and WebKit (not native Safari). Missing engines are failures."
