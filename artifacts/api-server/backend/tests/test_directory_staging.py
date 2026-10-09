@@ -40,7 +40,9 @@ def seed(fixture):
     from app.schemas.mrs import MRFields
     from test_mrs import fields as mr_fields, DESIGNATION_ID
     engine, config = fixture
-    command.upgrade(config, "0029_directory_crypto_additive")
+    command.upgrade(config, "0029_role_lifecycle")
+    with engine.connect() as connection:
+        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0029_role_lifecycle"
     actor_id, sid, mr_id, zone, hq = (uuid.uuid4() for _ in range(5))
     now = datetime.now(timezone.utc)
     metadata = MetaData()
@@ -78,6 +80,11 @@ def seed(fixture):
                 deleted_at=now if index else None, deleted_by=actor_id if index else None))
         insert("audit_events", dict(id=uuid.uuid4(), actor_id=actor_id, action="synthetic-staging",
                                    resource_type="patient", resource_id=one["id"], outcome="success"))
+    # A populated, already-applied role revision must advance additively without
+    # re-running or rewriting that revision, before the guarded retirement tests.
+    command.upgrade(config, "0029_directory_crypto_additive")
+    with engine.connect() as connection:
+        assert list(connection.scalars(text("SELECT version_num FROM alembic_version"))) == ["0029_directory_crypto_additive"]
     return engine, config, actor_id, sid, mr, doctor, one
 
 

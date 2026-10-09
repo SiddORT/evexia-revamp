@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { mrReferences } from '../../services/serverMRs.js';
 import { getSession, subscribeSession } from '../../auth/adminSession.js';
 import MRFormCombobox from './MRFormCombobox.jsx';
-import '../../pages/admin/mr.css';
+import '../../mr.css';
 
 const choiceLabel = (item) => `${item.name}${item.status === 'inactive' ? ' (inactive)' : ''}${item.deleted ? ' (deleted)' : ''}`;
 

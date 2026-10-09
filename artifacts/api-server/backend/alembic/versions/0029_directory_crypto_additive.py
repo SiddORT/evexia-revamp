@@ -4,7 +4,7 @@ import sqlalchemy as sa
 from app.services.directory_inventory import FIELDS, INDEX_COLUMNS
 
 revision = "0029_directory_crypto_additive"
-down_revision = "0028_staff_designation_lifecycle"
+down_revision = "0029_role_lifecycle"
 branch_labels = depends_on = None
 
 

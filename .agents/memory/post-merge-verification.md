@@ -5,6 +5,19 @@ description: Setup reconciliation success is not proof that restarted services a
 
 After post-merge setup reports success, verify API readiness and inspect workflow logs before declaring recovery complete.
 
+For staged security migrations, also reconcile the accepted migration graph
+after synchronization and before freezing writers. Verify one forward head and
+the exact staging revision, including upgrades from newly accepted operational
+revisions; do not assume pre-merge migration evidence covers the merged graph.
+
+**Why:** An independently accepted role migration created a second head beside
+directory staging during completion synchronization. The individually passing
+branches could not initialize or perform the combined operator rollout.
+
+**How to apply:** Preserve already-applied migrations, place new unapplied stages
+after them, and verify fresh initialization plus populated staged cutover in
+disposable PostgreSQL. Never repair a shared revision graph by blindly stamping.
+
 **Why:** Reconciliation reported success even though the newly merged API crashed on an uninstalled Python dependency. A later successful restart also briefly returned HTTP 502 while starting.
 
 **How to apply:** Treat setup success and application readiness as separate checks. Allow a short bounded startup interval for health probes; investigate persistent failures rather than rerunning otherwise successful setup.

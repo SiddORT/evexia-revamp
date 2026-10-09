@@ -40,7 +40,7 @@ def _lock(db, mode):
     db.execute(text("SET LOCAL statement_timeout = '10s'"))
     db.execute(text(f"LOCK TABLE directory_crypto_stage, mr_directory, doctor_directory, "
                     f"patient_directory, patients IN {mode} MODE NOWAIT"))
-    if db.scalar(text("SELECT version_num FROM alembic_version")) != STAGE_REVISION:
+    if list(db.scalars(text("SELECT version_num FROM alembic_version"))) != [STAGE_REVISION]:
         raise StagingError()
 
 

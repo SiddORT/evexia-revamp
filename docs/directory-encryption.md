@@ -311,6 +311,27 @@ Known warnings: Starlette/httpx compatibility deprecation and Alembic
 `path_separator` deprecation; these did not fail the passing checks.
 
 ### Authenticated browser evidence
+### Post-synchronization migration verification
+
+The first completion validation rejected the merged revision graph: the
+independently added role lifecycle and directory additive revisions both
+descended from the staff revision. The directory additive migration now follows
+the existing role lifecycle revision, without changing the role migration.
+The staging guard checks the entire version-row set, not an arbitrary scalar.
+
+`sh scripts/test-api-foundation.sh tests/test_directory_staging.py tests/test_directory_retirement.py tests/test_migration_roles.py --tb=short`:
+**18 passed in 37.61 seconds**. The harness initializes fresh disposable
+PostgreSQL through ordinary `upgrade head`. The populated staging fixture now
+starts at the already-applied role revision, inserts synthetic inactive/deleted
+directory and owner/audit records there, advances additively, then exercises
+freeze, resumable backfill, verification, guarded retirement and actual backup
+restore. `alembic heads` reports only `0030_directory_crypto_retirement`.
+The merged portal build passed in **6.61 seconds**. Incoming searchable
+comboboxes, saved-selection retention and separated filter-feedback layout were
+preserved while integrating directory continuation; the prior browser evidence
+above predates this synchronization and is not a claim of a new post-merge
+browser pass.
+
 
 The existing testing harness used isolated synthetic PostgreSQL and authenticated
 Chromium actors. Failed or blocked scenarios were followed up narrowly; passing
@@ -361,6 +382,14 @@ Doctor/MR, Patient, Sales Target and Opening Balance screenshots were inspected;
 static screenshots are not evidence of exported file contents or cursor clicks.
 
 ### Offline staging commands (only after approval)
+
+The merged forward chain is `0028_staff_designation_lifecycle` →
+`0029_role_lifecycle` → `0029_directory_crypto_additive` →
+`0030_directory_crypto_retirement` (one head). The already-applied role revision
+is preserved unchanged; the new, not-shared-applied additive directory revision
+depends on it. Do not manually stamp revisions or use `upgrade heads` to bypass
+this chain. Freeze/backfill requires exactly one version row at the additive
+revision; another revision or multiple version rows fail closed.
 
 Run from artifacts/api-server/backend using the separately provisioned maintenance
 login and managed secrets. The runtime role is a non-secret PostgreSQL role name.
