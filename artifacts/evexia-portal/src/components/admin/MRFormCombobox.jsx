@@ -39,6 +39,8 @@ export default function MRFormCombobox({ id, label, value, selectedLabel, choice
       const below = height - rect.bottom - 12, above = rect.top - 12;
       const up = below < 180 && above > below;
       setPosition({ left: Math.max(12, Math.min(rect.left, viewportWidth - width - 12)), width,
+        // The menu is portalled to body, outside its initiating dialog's stack.
+        zIndex: root.current.closest('.admin-dialog') ? 85 : 65,
         maxHeight: Math.max(60, Math.min(320, (up ? above : below) - 6)),
         ...(up ? { bottom: window.innerHeight - rect.top + 6 } : { top: rect.bottom + 6 }) });
     };

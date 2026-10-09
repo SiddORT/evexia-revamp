@@ -77,7 +77,8 @@ for (const mobile of [false, true]) {
     await page.getByTestId('select-doctor-dialCountry').selectOption('IN');
     await page.getByTestId('tab-doctor-clinic').click();
     await page.getByTestId('input-doctor-clinicName').fill(values.clinicName);
-    await page.getByTestId('select-doctor-mrId').selectOption(refs.mr.id);
+    await page.getByTestId('select-doctor-mrId').fill(refs.mr.name);
+    await page.getByRole('option', { name: refs.mr.name, exact: true }).click();
     await expect(page.getByText(`Derived Zone: ${refs.zone.name}. Zone is controlled by MR Master.`)).toBeVisible();
     await page.getByTestId('tab-doctor-commercial').click();
     await page.getByTestId('select-doctor-invoiceType').selectOption('gst');
@@ -202,7 +203,8 @@ test('Doctor server pagination/filter parity, atomic bulk actions, menus, live M
   await expect(onPage.first()).toHaveText('Unverified');
   await page.getByTestId('checkbox-select-all-doctors').check();
   await page.getByTestId('button-shift-doctors').click();
-  await page.getByTestId('select-shift-doctor-mr').selectOption(refs.mr.id);
+  await page.getByTestId('select-shift-doctor-mr').fill(refs.mr.name);
+  await page.getByRole('option', { name: refs.mr.name, exact: true }).click();
   await page.getByTestId('button-confirm-shift-doctors').click();
   await expect(page.getByTestId('status-doctor-feedback')).toContainText('MR assignment updated');
   // Ciphertext cannot supply a plaintext sort key; use the stable UUID section.

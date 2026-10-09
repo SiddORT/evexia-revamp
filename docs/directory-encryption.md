@@ -341,6 +341,18 @@ UUID choice ordering and unknown search counts. Focused disposable checks:
 5,000-row CSV/XLSX parity, explicit export/choice caps, batched-query budgets,
 saved unavailable references and denied-access checks.
 
+The next full `pnpm run validate:release` passed all backend groups and code
+review, then failed three Doctor browser cases: **172 of 175 browser cases
+passed**. The three failures used native-select actions against the merged
+searchable MR control. Corrected the actions and retained the current control.
+The targeted desktop/mobile create/edit cases passed (**2 passed**); the
+remaining bulk-shift case exposed a portalled menu beneath the dialog stack.
+Menus initiated inside dialogs now use a higher stack level, leaving ordinary
+form menu layering unchanged. Targeted isolated bulk-shift/filter/viewer run:
+**1 passed in 12.0 seconds**. Final portal build: **passed in 4.01 seconds**.
+These are accumulated focused results, not a claim that the failed full release
+run passed; task closure remains gated on the configured command.
+
 The remaining legacy Sales Target scale fixture now generates record-bound MR
 envelopes and verifies all explicit search sections. Summary totals are checked
 against their section; exports remain complete across every match. The shared
