@@ -49,7 +49,8 @@ def test_populated_historical_upgrade_only_adds_nullable_metadata(migration_db):
             content_type="application/pdf", uploader_id=actor, state="deleted", version=1, size=0, scanner_status="pending"))
         before = {name: [dict(r) for r in conn.execute(select(table)).mappings()] for name, table in tables.items()}
         indexes = {name: inspect(conn).get_indexes(name) for name in names[:2]}
-    command.upgrade(config, "head")
+    # Test this revision's exact historical contract, not later additive columns.
+    command.upgrade(config, "0028_directory_soft_delete")
     with engine.begin() as conn:
         for name in names:
             table = Table(name, MetaData(), autoload_with=conn)

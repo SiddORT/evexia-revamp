@@ -4,6 +4,8 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a mock Docto
 
 ## Run & operate
 
+- Directory encryption currently has **additive/offline staging only**, not an encrypted runtime or completed rollout. `0029_directory_crypto_additive` follows the accepted Staff lifecycle head; legacy API models remain unchanged so predecessor-schema previews do not need an unapproved migration. Do not arm a maintenance outage until the coordinated runtime/search/transfer/frontend and guarded-retirement work is complete. No managed migration, key change or deployment is authorized by this stage. See `docs/directory-encryption.md` for the field inventory, remaining plaintext identity scope, key custody, write-exclusion gates and actual synthetic test evidence.
+
 - Doctor/Patient directory-only soft deletion uses additive `0028_directory_soft_delete`
   after accepted `0027_mr_designation_identity`. Nullable time/User metadata retains
   records and global uniqueness; deleted records are absent from live masters and

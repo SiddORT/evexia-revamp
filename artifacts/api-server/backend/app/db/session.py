@@ -14,7 +14,8 @@ def session_factory() -> sessionmaker[Session]:
         raise ValueError("DATABASE_URL must be PostgreSQL")
     if url.startswith("postgresql://"):
         url = url.replace("postgresql://", "postgresql+psycopg://", 1)
-    engine = create_engine(url, pool_pre_ping=True, pool_size=5, max_overflow=5)
+    engine = create_engine(url, pool_pre_ping=True, pool_size=5, max_overflow=5,
+                           hide_parameters=True)
     return sessionmaker(engine, expire_on_commit=False)
 
 
