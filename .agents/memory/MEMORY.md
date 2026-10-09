@@ -51,6 +51,7 @@
 - [Monetary rejection boundary](monetary-rejection-boundary.md) — fixed-scale PostgreSQL NUMERIC rounds before CHECK; reject excess input precision before coercion.
 - [Merged schema snapshots](merged-schema-snapshots.md) — completion synchronization can add merged tables after local export validation; regenerate and replace stale downloads.
 - [Listing layout checks](listing-layout-checks.md) — measure changed header/footer surfaces separately from existing record-table scroll metrics.
+- [Fieldset grid measurements](fieldset-grid-measurements.md) — count rendered columns from field geometry; computed fieldset grid tracks may remain unresolved.
 - [Sales Target performance safety](sales-target-performance-safety.md) — benchmark synthetic disposable data only; index changes need separate review and operator approval.
 - [Orders scope](orders-scope.md) — preserve the session-only SPT boundary; keep other Orders workflows driven by separate requirements.
 - [Vendor phone compatibility](vendor-phone-compatibility.md) — retain legacy phone acceptance; international metadata updates must not widen other masters’ contracts.

@@ -34,6 +34,163 @@ async function pick(page, testId, name) {
   await option.click();
   await expect(select).toHaveAttribute('aria-expanded', 'false');
 }
+const productHelp = [
+  ['selling_price', 'Selling price', 'Plain decimal, up to 12 integer and 6 fractional digits. Never rounded.', '(optional)'],
+  ['gst', 'GST (%)', '0 to 100, up to 6 fractional digits.', '*'],
+  ['threshold_limit', 'Threshold limit', 'Plain decimal, up to 12 integer and 6 fractional digits. Never rounded.', '(optional)'],
+];
+async function checkProductHelp(page, interactions = false) {
+  await expect(page.locator('.admin-allergen-form .mr-form__field > p.mr-form__hint')).toHaveCount(1);
+  await expect(page.getByText('Catalogue metadata only. Not a stock mixing operation.')).toBeVisible();
+  for (const [field, label, guidance, marker] of productHelp) {
+    const button = page.getByTestId(`button-allergen-${field}-info`);
+    const input = page.getByTestId(`input-allergen-${field}`);
+    await expect(button).toHaveAccessibleName(`About ${label}`);
+    await expect(input).toHaveAccessibleName(`${label} ${marker}`);
+    await expect(button.locator('..').locator('label')).toHaveAttribute('for', `allergen-${field}`);
+    await expect(button.locator('..').locator('label')).toContainText(marker);
+    await input.click(); // clear previous focus and hover before opening
+    if (interactions) {
+      await button.hover();
+      await expect(page.getByRole('tooltip')).toHaveText(guidance);
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('tooltip')).toHaveCount(0);
+      // Enter via a real Tab, not programmatic focus. Back-tab from the
+      // associated input works even when Edit's preceding picker has a Clear button.
+      await input.focus();
+      await page.mouse.move(0, 0);
+      await page.keyboard.press('Shift+Tab');
+      await expect(button).toBeFocused();
+      await expect(page.getByRole('tooltip')).toHaveText(guidance);
+      expect(await button.evaluate(node => getComputedStyle(node).outlineStyle)).toBe('solid');
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('tooltip')).toHaveCount(0);
+      await expect(button).toBeFocused();
+      await page.keyboard.press('Space');
+      await expect(page.getByRole('tooltip')).toHaveText(guidance);
+      await page.keyboard.press('Space');
+      await expect(page.getByRole('tooltip')).toHaveCount(0);
+      await input.click();
+      await button.tap();
+    } else {
+      await button.click();
+    }
+    const tooltip = page.getByRole('tooltip');
+    await expect(tooltip).toHaveText(guidance);
+    await expect(button).toHaveAttribute('aria-describedby', `allergen-${field}-help`);
+    const geometry = await tooltip.evaluate(node => {
+      const r = node.getBoundingClientRect(), style = getComputedStyle(node);
+      const shell = document.querySelector('.admin-shell');
+      return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: innerWidth, height: innerHeight,
+        background: style.backgroundColor, color: style.color,
+        surface: getComputedStyle(shell).getPropertyValue('--admin-surface').trim() };
+    });
+    expect(geometry.left).toBeGreaterThanOrEqual(0);
+    expect(geometry.right).toBeLessThanOrEqual(geometry.width);
+    expect(geometry.top).toBeGreaterThanOrEqual(0);
+    expect(geometry.bottom).toBeLessThanOrEqual(geometry.height);
+    expect(geometry.background).not.toBe(geometry.color);
+    expect(geometry.surface).not.toBe('');
+    await page.keyboard.press('Escape');
+    await expect(tooltip).toHaveCount(0);
+    await expect(button).toHaveAttribute('aria-expanded', 'false');
+    await expect(button).not.toHaveAttribute('aria-describedby');
+    if (interactions) {
+      await button.click();
+      await expect(tooltip).toBeVisible();
+      await input.click();
+      await expect(tooltip).toHaveCount(0);
+    }
+  }
+}
+test.describe('allergen product form help and responsive layout', () => {
+  test.use({ hasTouch: true });
+  test('Add/Edit cold routes retain label help, equal columns, menus and exact saves in all palettes', async ({ page }) => {
+    test.setTimeout(180_000);
+    await open(page, '/admin/masters/allergens/new');
+    await expect(page.getByTestId('input-allergen-name')).toBeVisible();
+    const row = await page.evaluate(async () => {
+      const { createAllergen, listAllergenReferences } = await import('/src/services/serverAllergens.js');
+      const category = (await listAllergenReferences('categories', {})).items[0];
+      const location = (await listAllergenReferences('locations', {})).items[0];
+      return createAllergen({ name: `Form help ${Date.now()}`, category_id: category.id, storage_location_id: location.id,
+        selling_price: '999999999999.999999', gst: '99.123456', concentration: '1:100',
+        threshold_limit: '0.000001', status: 'active', mix: false });
+    });
+    for (const path of ['/admin/masters/allergens/new', `/admin/masters/allergens/${row.id}`]) {
+      for (const [width, columns] of [[1440, 3], [1024, 2], [390, 1]]) {
+        for (const theme of ['classic', 'modern']) for (const appearance of ['light', 'dark']) {
+          await page.setViewportSize({ width, height: 844 });
+          await page.evaluate(async ({ theme, appearance }) => {
+            const { setAdminPreference } = await import('/src/components/admin/adminPreferences.js');
+            setAdminPreference('theme', theme); setAdminPreference('appearance', appearance);
+          }, { theme, appearance });
+          await page.goto(`${base()}${path}`); // full cold-route document, not client navigation
+          await expect(page.getByTestId('input-allergen-name')).toBeVisible();
+          await expect(page.locator('.admin-shell')).toHaveAttribute('data-admin-theme', theme);
+          await expect(page.locator('.admin-shell')).toHaveAttribute('data-admin-appearance', appearance);
+          const grid = page.locator('.admin-allergen-form .mr-form__grid');
+          const layout = await grid.evaluate(node => ({
+            controls: [...node.querySelectorAll('.mr-form__field')].map(field => {
+              const r = field.getBoundingClientRect();
+              return { left: r.left, right: r.right, top: r.top, width: r.width };
+            }),
+          }));
+          // Fieldset grids can report unresolved repeat()/minmax() tracks;
+          // measure the rendered field columns rather than parsing that CSS.
+          expect(new Set(layout.controls.map(control => Math.round(control.left))).size).toBe(columns);
+          expect(Math.max(...layout.controls.map(control => control.width)) - Math.min(...layout.controls.map(control => control.width))).toBeLessThan(1);
+          for (let index = 1; index < layout.controls.length; index++) {
+            const previous = layout.controls[index - 1], current = layout.controls[index];
+            if (index % columns) {
+              expect(current.top).toBe(previous.top);
+              expect(current.left).toBeGreaterThan(previous.left);
+            } else expect(current.top).toBeGreaterThan(previous.top);
+          }
+          expect(layout.controls).toHaveLength(9);
+          for (const control of layout.controls) {
+            expect(control.left).toBeGreaterThanOrEqual(0);
+            expect(control.right).toBeLessThanOrEqual(width);
+            expect(control.width).toBeGreaterThan(180);
+          }
+          await checkProductHelp(page, width === 390 && theme === 'classic' && appearance === 'light');
+          await page.getByTestId('select-allergen-category').click();
+          await expect(page.getByRole('listbox', { name: 'Product category', exact: true })).toBeVisible();
+          const menu = await page.locator('.admin-allergen-combobox__menu').boundingBox();
+          expect(menu.x).toBeGreaterThanOrEqual(0);
+          expect(menu.x + menu.width).toBeLessThanOrEqual(width);
+          await page.keyboard.press('Escape');
+          await expect(page.getByTestId('button-save-allergen')).toBeVisible();
+          expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+          if (theme === 'modern' && appearance === 'dark') await page.screenshot({
+            path: test.info().outputPath(`product-form-${path.endsWith('new') ? 'add' : 'edit'}-${width}.png`), fullPage: true,
+          });
+        }
+      }
+    }
+    // Edit preserves all six decimals and never silently rounds excessive input.
+    for (const [field] of productHelp) {
+      await page.getByTestId(`input-allergen-${field}`).fill('0.1234567');
+    }
+    await page.getByTestId('button-save-allergen').click();
+    for (const [field] of productHelp) {
+      await expect(page.getByTestId(`input-allergen-${field}`)).toHaveAttribute('aria-invalid', 'true');
+      await expect(page.getByTestId(`input-allergen-${field}`)).toHaveAttribute('aria-describedby', `allergen-${field}-error`);
+      await expect(page.locator(`#allergen-${field}-error`)).toBeVisible();
+    }
+    await page.getByTestId('input-allergen-selling_price').fill(row.selling_price);
+    await page.getByTestId('input-allergen-gst').fill(row.gst);
+    await page.getByTestId('input-allergen-threshold_limit').fill(row.threshold_limit);
+    const saved = page.waitForResponse(r => r.url().includes(`/allergens/${row.id}/edit`) && r.request().method() === 'POST');
+    await page.getByTestId('button-save-allergen').click();
+    expect(await (await saved).json()).toMatchObject({
+      selling_price: row.selling_price, gst: row.gst, threshold_limit: row.threshold_limit,
+    });
+    await expect(page).toHaveURL(/\/admin\/masters\/allergens\?saved=updated$/);
+    await page.goto(`${base()}/admin/masters/allergens/${row.id}`);
+    for (const [field] of productHelp) await expect(page.getByTestId(`input-allergen-${field}`)).toHaveValue(row[field]);
+  });
+});
 for (const [label, viewport, scheme] of [['desktop light', { width: 1280, height: 800 }, 'light'], ['mobile dark', { width: 390, height: 844 }, 'dark']]) {
   test(`allergen ${label}: keyboard switch, persistence, concurrency, filters and delete`, async ({ page }) => {
     await page.setViewportSize(viewport);

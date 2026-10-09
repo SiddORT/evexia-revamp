@@ -4,6 +4,7 @@ import { ArrowLeft, FlaskConical, RefreshCw } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import AllergenRefPicker from '../../components/admin/AllergenRefPicker.jsx';
 import AllergenSearchableSelect from '../../components/admin/AllergenSearchableSelect.jsx';
+import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
 import { allergenPayload, createAllergen, editAllergen, getAllergen, listAllergens, validateAllergen } from '../../services/serverAllergens.js';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
 import '../../mr.css';
@@ -66,11 +67,14 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
     } finally { busy.current = false; if (alive.current) setPending(false); }
   }
   const err = (name) => errors[name] && <p className="mr-form__error" id={`allergen-${name}-error`} role="alert">{errors[name]}</p>;
-  const text = (name, label, { optional = false, hint, numeric = false, max } = {}) => <div className="mr-form__field">
-    <label className="mr-form__label" htmlFor={`allergen-${name}`}>{label} {optional ? <span className="mr-form__hint">(optional)</span> : <span className="mr-form__required">*</span>}</label>
+  const text = (name, label, { optional = false, info, numeric = false, max } = {}) => {
+    const fieldLabel = <label className="mr-form__label" htmlFor={`allergen-${name}`}>{label} {optional ? <span className="mr-form__hint">(optional)</span> : <span className="mr-form__required">*</span>}</label>;
+    return <div className="mr-form__field">
+    {info ? <InfoDisclosure id={`allergen-${name}-help`} title={label} text={info} testId={`button-allergen-${name}-info`}>{fieldLabel}</InfoDisclosure> : fieldLabel}
     <input id={`allergen-${name}`} className="mr-form__control" inputMode={numeric ? 'decimal' : undefined} maxLength={max} value={values[name]} onChange={(e) => update(name, e.target.value)} aria-invalid={Boolean(errors[name])} aria-describedby={errors[name] ? `allergen-${name}-error` : undefined} data-testid={`input-allergen-${name}`} />
-    {hint && <p className="mr-form__hint">{hint}</p>}{err(name)}
+    {err(name)}
   </div>;
+  };
   const decimalHint = 'Plain decimal, up to 12 integer and 6 fractional digits. Never rounded.';
   return <form className="admin-allergen-form" onSubmit={submit} noValidate>
     <div className="admin-allergen-form__intro"><div><h2>Product details</h2><p>Fields marked * are required. Records are shared on the server.</p></div><FlaskConical size={21} aria-hidden="true" /></div>
@@ -86,10 +90,10 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
           <AllergenRefPicker id="allergen-location" kind="locations" label="Storage location" value={values.storage_location_id} disabled={pending} describedBy={errors.storage_location_id ? 'allergen-storage_location_id-error' : undefined} invalid={Boolean(errors.storage_location_id)} testId="select-allergen-location"
             retained={record ? { id: record.storage_location_id, name: record.storage_location_name, status: record.storage_location_status } : null} onChange={(id) => update('storage_location_id', id)} />
           {err('storage_location_id')}</div>
-        {text('selling_price', 'Selling price', { optional: true, numeric: true, hint: decimalHint })}
-        {text('gst', 'GST (%)', { numeric: true, hint: '0 to 100, up to 6 fractional digits.' })}
+        {text('selling_price', 'Selling price', { optional: true, numeric: true, info: decimalHint })}
+        {text('gst', 'GST (%)', { numeric: true, info: '0 to 100, up to 6 fractional digits.' })}
         {text('concentration', 'Concentration', { max: 200 })}
-        {text('threshold_limit', 'Threshold limit', { optional: true, numeric: true, hint: decimalHint })}
+        {text('threshold_limit', 'Threshold limit', { optional: true, numeric: true, info: decimalHint })}
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="allergen-status">Status <span className="mr-form__required">*</span></label><AllergenSearchableSelect id="allergen-status" label="Status" value={values.status} disabled={pending} placeholder="Select status" invalid={Boolean(errors.status)} describedBy={errors.status ? 'allergen-status-error' : undefined} testId="select-allergen-status" options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} onChange={(value) => update('status', value)} />{err('status')}</div>
         <div className="mr-form__field"><span className="mr-form__label" id="allergen-mix-label">Mix / No Mix</span>
           <button type="button" role="switch" aria-checked={values.mix} aria-labelledby="allergen-mix-label allergen-mix-state" className="admin-allergen-switch" onClick={() => update('mix', !values.mix)} data-testid="switch-allergen-mix">

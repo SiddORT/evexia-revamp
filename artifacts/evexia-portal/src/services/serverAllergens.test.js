@@ -41,6 +41,15 @@ test('Allergen authenticated transport, references, transfers and exact decimals
   assert.deepEqual(s.validatePriceBounds('2', '1.999999'), { max: 'Maximum price must not be below minimum price.' });
   assert.deepEqual(s.validatePriceBounds('1.000000', '1'), {});
   assert.deepEqual(s.validateAllergen({ name: 'A', category_id: 'c', storage_location_id: 'l', selling_price: '', gst: '100.000001', concentration: 'x', threshold_limit: '', status: 'active', mix: false }), { gst: 'GST must be between 0 and 100 with up to 6 decimals.' });
+  const exact = { name: 'Exact product', category_id: 'c', storage_location_id: 'l', selling_price: '999999999999.999999', gst: '99.123456', concentration: 'x', threshold_limit: '0.000001', status: 'active', mix: false };
+  assert.deepEqual(s.validateAllergen(exact), {});
+  assert.deepEqual(s.allergenPayload(exact), exact);
+  for (const field of ['selling_price', 'gst', 'threshold_limit']) {
+    assert.ok(s.validateAllergen({ ...exact, [field]: '0.1234567' })[field]);
+  }
+  for (const field of ['selling_price', 'threshold_limit']) {
+    assert.ok(s.validateAllergen({ ...exact, [field]: '1000000000000' })[field]);
+  }
   await assert.rejects(session.allergenRequest('/bogus'));
   await session.logoutAdmin();
 });

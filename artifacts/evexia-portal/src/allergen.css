@@ -14,13 +14,19 @@
 .admin-allergen-audit strong { color: var(--admin-text); font-weight: 600; }
 .admin-allergen-audit time { color: var(--admin-text-soft); white-space: nowrap; }
 .admin-allergen-mobile { display: none; }
-.admin-allergen-form { color: var(--admin-text); }
+.admin-allergen-form { color: var(--admin-text); container-type: inline-size; }
 .admin-allergen-form__intro { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 24px 32px 0; }
 .admin-allergen-form__intro h2 { margin: 0 0 5px; font-size: 16px; font-weight: 700; }
 .admin-allergen-form__intro p { margin: 0; color: var(--admin-text-soft); font-size: 12px; line-height: 1.5; }
 .admin-allergen-form__intro svg { flex: none; color: var(--admin-accent); }
 .admin-allergen-form .mr-form__body { min-height: 0; }
-.admin-allergen-form .mr-form__grid { max-width: 1050px; }
+.admin-allergen-form .mr-form__grid { max-width: 1050px; min-inline-size: 0; grid-template-columns: minmax(0, 1fr); }
+@container (min-width: 600px) {
+  .admin-allergen-form .mr-form__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container (min-width: 900px) {
+  .admin-allergen-form .mr-form__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 .admin-allergen-form .mr-form__footer { justify-content: flex-end; }
 .admin-allergen-form__section { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 12px; padding: 12px 0 3px; border-bottom: 1px solid var(--admin-border); color: var(--admin-text); font-size: 12px; font-weight: 700; }
 .admin-allergen-form__section small { color: var(--admin-text-soft); font-weight: 400; }
