@@ -49,15 +49,3 @@ packages = ["cargo", "freetype", "lcms2", "libiconv", "libimagequant", "libjpeg"
 EVEXIA_NIX_BROWSER_LIBRARY_SOURCE = "/nix/store/q70d15vcgipibv45yxp44hdjfhdmdmg5-playwright-browsers"
 EVEXIA_NIX_BROWSER_LOADER = "/repl/tools/qqiqd3ah10x8hzsif4j1y4xc1miw23nx-glibc-2.42-67/lib/ld-linux-x86-64.so.2"
 EVEXIA_NIX_DOWNLOAD_ENGINES = "1"
-
-[[ports]]
-localPort = 8080
-externalPort = 80
-
-[[ports]]
-localPort = 8081
-externalPort = 8081
-
-[[ports]]
-localPort = 25965
-externalPort = 3000
