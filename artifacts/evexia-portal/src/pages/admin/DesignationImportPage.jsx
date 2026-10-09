@@ -145,7 +145,7 @@ export default function DesignationImportPage() {
           <div className="excel-import__columns"><strong>Expected columns (exact order)</strong><span>{DESIGNATION_COLUMNS.map(([, label]) => label).join(' · ')}</span>
             <strong>Current backup schema (CSV or Excel)</strong><span>The same ten columns, followed by Created By · Created At · Updated By · Updated At</span>
           </div>
-          <p>Incoming audit values are ignored. The authenticated importer becomes the creator; existing records are never updated. Amounts default to zero, range 0–999999999.99 and support two decimal places. Level is a whole number from 1 to 2147483647.</p>
+          <p>Amounts default to zero, range 0–999999999.99 and support two decimal places. Level is a whole number from 1 to 2147483647.</p>
           <div className="excel-import__sample-actions">
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('csv')}>Download CSV sample</button>
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('xlsx')}><Download size={16} aria-hidden="true" /> Download Excel sample</button>

@@ -145,7 +145,7 @@ export default function VendorImportPage() {
           <div className="excel-import__columns"><strong>Expected columns (exact order)</strong><span>{VENDOR_COLUMNS.map(([, label]) => label).join(' · ')} · Dial Country · Status</span>
             <strong>Current backup schema (CSV or Excel)</strong><span>The six contact columns, then Dial Country · Status, followed by Created By · Created At · Updated By · Updated At. Six-column local backups default to IN (+91) and Active.</span>
           </div>
-          <p>Incoming audit values are ignored; ID, version and deletion columns are not accepted. The authenticated importer becomes the creator; existing records are never updated. Countries: IN (10 digits starting 6–9), US and GB (10 digits), AE (9 digits). India accepts an optional +91 prefix.</p>
+          <p>ID, version and deletion columns are not accepted. Countries: IN (10 digits starting 6–9), US and GB (10 digits), AE (9 digits). India accepts an optional +91 prefix.</p>
           <p>Name and contact: 1–200 characters; address: 1–2,000; email: valid address up to 320; GST: valid 15-character uppercase number. Status: Active or Inactive. Unknown countries are never defaulted.</p>
           <div className="excel-import__sample-actions">
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('csv')}>Download CSV sample</button>

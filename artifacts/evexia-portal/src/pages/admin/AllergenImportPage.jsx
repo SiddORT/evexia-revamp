@@ -145,7 +145,7 @@ export default function AllergenImportPage() {
           <div className="excel-import__columns"><strong>Expected columns (exact order)</strong><span>{ALLERGEN_COLUMNS.map(([, label]) => label).join(' · ')}</span>
             <strong>Current backup schema (CSV or Excel)</strong><span>The same nine columns, followed by Created By · Created At · Updated By · Updated At</span>
           </div>
-          <p>Incoming audit values are ignored. The authenticated importer becomes the creator; existing records are never updated. GST is 0 to 100; selling price and threshold are optional exact decimals.</p>
+          <p>GST is 0 to 100; selling price and threshold are optional exact decimals.</p>
           <div className="excel-import__sample-actions">
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('csv')}>Download CSV sample</button>
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('xlsx')}><Download size={16} aria-hidden="true" /> Download Excel sample</button>

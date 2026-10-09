@@ -115,7 +115,6 @@ export default function CourierImportPage() {
           <div className="excel-import__columns"><strong>Expected columns</strong><span>Courier Partner Name · Status</span>
             <strong>Compatible backup schema (CSV or Excel)</strong><span>Courier Partner Name · Status · Created By · Created At · Updated By · Updated At</span>
           </div>
-          <p>Incoming audit values are ignored. The authenticated importer becomes the creator; existing records are never updated.</p>
           <div className="excel-import__sample-actions">
             <button type="button" className="admin-button admin-button--secondary" onClick={() => sample('csv')}>Download CSV sample</button>
             <button type="button" className="admin-button admin-button--secondary" onClick={() => sample('xlsx')}><Download size={16} aria-hidden="true" /> Download Excel sample</button>
