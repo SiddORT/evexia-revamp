@@ -81,17 +81,23 @@ def test_doctor_delete_historical_references_and_import_race(client):
     for filters in ({"mr_id": mr["id"]}, {"zone_id": zone},
                     {"mr_id": mr["id"], "zone_id": zone, "query": patient["name"], "status": "active"}):
         retained_page = api.get(BASE, headers=headers, params={**filters, "limit": 1, "offset": 0}).json()
-        assert retained_page["total"] == retained_page["filtered"] == 1
+        assert retained_page["total"] == 1
+        assert retained_page["filtered"] is None if filters.get("query") else retained_page["filtered"] == 1
         assert retained_page["items"][0]["id"] == patient["id"]
-        empty_page = api.get(BASE, headers=headers, params={**filters, "limit": 1, "offset": 1}).json()
-        assert empty_page["filtered"] == 1 and not empty_page["items"]
+        if filters.get("query"):
+            assert retained_page["partial"] and retained_page["nextCursor"] is None
+        else:
+            empty_page = api.get(BASE, headers=headers, params={**filters, "limit": 1, "offset": 1}).json()
+            assert empty_page["filtered"] == 1 and not empty_page["items"]
         for format in ("csv", "xlsx"):
             result = export(api, headers, BASE, format, **filters)
             assert result.status_code == 200
             exported = (list(csv.reader(io.StringIO(result.content.decode("utf-8-sig")))) if format == "csv" else
                         list(load_workbook(io.BytesIO(result.content), read_only=True).active.values))
             assert len(exported) == 2 and patient["code"] in exported[1]
-        assert api.get(DOCTORS, headers=headers, params=filters).json()["filtered"] == 0
+        absent = api.get(DOCTORS, headers=headers, params=filters).json()
+        assert not absent["items"]
+        assert absent["filtered"] is None if filters.get("query") else absent["filtered"] == 0
     assert edit(api, headers, current, fields(doctor, name="Retained Patient")).status_code == 200
     owner = db.get(Patient, uuid.UUID(patient["id"]))
     assert (owner.assigned_mr_id, owner.is_active) == before[:2]
@@ -187,9 +193,12 @@ def test_live_inactive_records_and_paged_reference_counts_survive(client):
     page = api.get(DOCTORS, headers=headers, params=dict(status="inactive")).json()
     assert page["total"] == 2 and page["filtered"] == 1 and page["items"][0]["id"] == inactive["id"]
     choices = api.get(BASE + "/references", headers=headers, params=dict(limit=1, offset=0, include_saved=doctor["id"])).json()
-    assert choices["total"] == 2 and len(choices["items"]) == 1 and choices["items"][0]["id"] == inactive["id"]
+    ordered = sorted((inactive["id"], live["id"]))
+    assert choices["total"] == 2 and not choices["partial"]
+    assert len(choices["items"]) == 1 and choices["items"][0]["id"] == ordered[0]
     second = api.get(BASE + "/references", headers=headers, params=dict(limit=1, offset=1)).json()
-    assert second["total"] == 2 and len(second["items"]) == 1 and second["items"][0]["id"] == live["id"]
+    assert second["total"] == 2 and len(second["items"]) == 1 and second["items"][0]["id"] == ordered[1]
+    assert second["nextCursor"] is None
 
 
 @pytest.mark.parametrize("resource", ("doctor", "patient"))
