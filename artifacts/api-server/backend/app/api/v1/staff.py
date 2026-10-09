@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import require_permissions
 from app.core.config import Settings, get_settings
 from app.db.session import get_db
-from app.schemas.staff import StaffCreated, StaffEdit, StaffFields, StaffPage, StaffResponse, StaffStatus, StaffSearch, StaffSearchPage, StaffAccess
+from app.schemas.staff import StaffCreated, StaffEdit, StaffFields, StaffPage, StaffResponse, StaffStatus, StaffSearch, StaffSearchPage, StaffAccess, StaffDeletion
 from app.services.auth import Identity
 from app.services import staff as service
 
@@ -56,3 +56,9 @@ def status_staff(staff_id: uuid.UUID, body: StaffStatus, actor: Identity = Depen
 def access_staff(staff_id: uuid.UUID, body: StaffAccess, actor: Identity = Depends(manager),
                  db: Session = Depends(get_db), settings: Settings = Depends(get_settings)):
     return service.access(db, actor, settings, staff_id, body)
+
+
+@router.post("/{staff_id}/delete", response_model=StaffResponse, operation_id="deleteStaff")
+def delete_staff(staff_id: uuid.UUID, body: StaffDeletion, actor: Identity = Depends(manager),
+                 db: Session = Depends(get_db), settings: Settings = Depends(get_settings)):
+    return service.delete(db, actor, settings, staff_id, body)

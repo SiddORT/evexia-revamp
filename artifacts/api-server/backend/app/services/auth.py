@@ -144,7 +144,7 @@ def _load_identity(db: Session, user: User, lock: bool = False) -> Identity:
         if lock:
             query = query.with_for_update()
         staff = db.scalar(query)
-        if (not staff or not staff.workspace_login_enabled or staff.status != "active"
+        if (not staff or staff.deleted_at is not None or not staff.workspace_login_enabled or staff.status != "active"
                 or user.email is not None or not user.username or user.is_protected_system_admin):
             raise AuthError()
         grants = frozenset()

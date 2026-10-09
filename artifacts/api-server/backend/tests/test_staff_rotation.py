@@ -22,7 +22,7 @@ from app.services.staff_crypto import StaffCrypto, StaffError
 from app.services.staff_rotation import RotationError, _columns, rotate
 from test_migration_0006 import migration_db
 from test_migration_staff import identity, prepare
-from test_staff import BODY
+from test_staff import BODY, seed_designation
 
 
 def setup(migration_db):
@@ -35,6 +35,7 @@ def setup(migration_db):
         }))
     })
     with Session(engine) as db:
+        seed_designation(db, admin)
         for number in range(2):
             staff.create(db, identity(db, admin, session),
                          StaffFields(**{**BODY, "email": f"fictional{number}@example.com"}), settings)

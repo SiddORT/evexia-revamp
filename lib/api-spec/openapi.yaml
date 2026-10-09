@@ -7321,6 +7321,21 @@
         "title": "StaffCreated",
         "type": "object"
       },
+      "StaffDeletion": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "StaffDeletion",
+        "type": "object"
+      },
       "StaffEdit": {
         "additionalProperties": false,
         "properties": {
@@ -7329,10 +7344,9 @@
             "title": "Dateofjoining",
             "type": "string"
           },
-          "designation": {
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Designation",
+          "designation_id": {
+            "format": "uuid",
+            "title": "Designation Id",
             "type": "string"
           },
           "dialCountry": {
@@ -7389,7 +7403,7 @@
           "phone",
           "dialCountry",
           "role",
-          "designation",
+          "designation_id",
           "dateOfJoining",
           "status",
           "expected_version"
@@ -7405,10 +7419,9 @@
             "title": "Dateofjoining",
             "type": "string"
           },
-          "designation": {
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Designation",
+          "designation_id": {
+            "format": "uuid",
+            "title": "Designation Id",
             "type": "string"
           },
           "dialCountry": {
@@ -7460,7 +7473,7 @@
           "phone",
           "dialCountry",
           "role",
-          "designation",
+          "designation_id",
           "dateOfJoining",
           "status"
         ],
@@ -7527,10 +7540,37 @@
             "title": "Dateofjoining",
             "type": "string"
           },
-          "designation": {
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Designation",
+          "deleted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted At"
+          },
+          "deleted_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted By"
+          },
+          "designationName": {
+            "title": "Designationname",
+            "type": "string"
+          },
+          "designation_id": {
+            "format": "uuid",
+            "title": "Designation Id",
             "type": "string"
           },
           "dialCountry": {
@@ -7609,9 +7649,10 @@
           "phone",
           "dialCountry",
           "role",
-          "designation",
+          "designation_id",
           "dateOfJoining",
           "status",
+          "designationName",
           "id",
           "userId",
           "version",
@@ -50842,6 +50883,291 @@
           }
         ],
         "summary": "Access Staff",
+        "tags": [
+          "staff management"
+        ]
+      }
+    },
+    "/v1/admin/staff/{staff_id}/delete": {
+      "post": {
+        "operationId": "deleteStaff",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "staff_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Staff Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffDeletion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "408": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request Timeout",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Content Too Large",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unsupported Media Type",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable",
+            "headers": {
+              "X-Request-ID": {
+                "description": "Server-generated request correlation ID.",
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Staff",
         "tags": [
           "staff management"
         ]

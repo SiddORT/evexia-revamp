@@ -197,7 +197,7 @@ def test_zone_only_staff_denied_at_routes_and_commit_export_boundaries(client):
     from app.services.auth import identity_from_token
     from app.schemas.designations import DesignationVersion
     admin, _, _, staff, password = setup(api, db, ("zone.add", "zone.import", "zone.export", "zone.edit", "zone.delete"))
-    row = add(api, admin)
+    row = add(api, admin, name="Protected catalogue boundary", shortName="PCB")
     headers = {"Authorization": "Bearer " + staff_login(api, staff, password).json()["access_token"]}
     for path in ("", "/" + row["id"], "/export", "/sample"):
         assert api.get(BASE + path, headers=headers).status_code == 403

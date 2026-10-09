@@ -43,7 +43,7 @@ export async function auditResponsiveFlows(page, browser, info, references, chec
     let role = await roles.createRole({ name: `Layout staff role ${tag}`, description: 'Synthetic responsive audit' });
     role = await roles.setRolePermissions(role.id, ['zone.add', 'zone.edit', 'zone.delete', 'zone.export', 'zone.import'], role.version);
     const made = await staff.createStaff({ name: `Layout staff ${tag}`, phone: '9876543210', dialCountry: 'IN',
-      email: `layout-${tag}@example.com`, status: 'active', role: 'Staff', designation: 'Executive', dateOfJoining: '2026-01-05' });
+      email: `layout-${tag}@example.com`, status: 'active', role: 'Staff', designation_id: (await (await import('/src/services/serverDesignations.js')).createDesignation({ name: `Layout staff designation ${tag}`, shortName: 'LS', status: 'active' })).id, dateOfJoining: '2026-01-05' });
     await staff.setStaffAccess(made.record, { customRoleId: role.id, loginEnabled: true });
     const reset = await (await import('/src/services/serverMRs.js')).resetMRPassword(mr);
     return { staff: { userId: made.record.userId, password: made.initial_password }, mr: reset.credentials };

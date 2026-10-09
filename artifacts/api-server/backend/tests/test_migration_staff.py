@@ -21,7 +21,7 @@ from app.services.auth import Identity
 from app.services import staff
 from app.services.staff_crypto import StaffError
 from test_migration_0006 import migration_db
-from test_staff import BODY
+from test_staff import BODY, seed_designation
 
 
 def prepare(migration_db):
@@ -54,6 +54,7 @@ def test_forward_staff_migration_preserves_accounts_sessions_history_and_constra
     engine, config, admin_id, session_id, legacy_id = prepare(migration_db)
     command.upgrade(config, "head")
     with Session(engine, expire_on_commit=False) as db:
+        seed_designation(db, admin_id)
         assert db.scalar(select(func.count()).select_from(StaffProfile)) == 0
         assert db.get(User, legacy_id).password_hash == "existing-hash"
         assert db.get(User, admin_id).is_protected_system_admin
@@ -80,13 +81,15 @@ def test_forward_staff_migration_preserves_accounts_sessions_history_and_constra
                 with db.begin_nested():
                     db.execute(text(sql), params)
                     db.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
-    with pytest.raises(RuntimeError, match="forward-only"):
+    with pytest.raises(RuntimeError, match="Populated Staff downgrade"):
         command.downgrade(config, "0008_activity_search")
 
 
 def test_committed_duplicate_create_race_and_stale_status_use_independent_connections(migration_db):
     engine, _config, admin_id, session_id, _legacy_id = prepare(migration_db)
     command.upgrade(_config, "head")
+    with Session(engine) as db:
+        seed_designation(db, admin_id)
     settings = get_settings()
     barrier = Barrier(2)
     def create():

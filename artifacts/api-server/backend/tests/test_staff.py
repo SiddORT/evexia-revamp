@@ -13,11 +13,27 @@ from app.db.models import AuditEvent, User
 from app.db.staff_models import StaffProfile
 from app.services.staff_crypto import StaffCrypto, StaffError
 from test_sessions import client, create_user, login
-from test_reporting import admin_headers
+from test_reporting import admin_headers as reporting_admin_headers
+from app.db.designation_models import Designation
 
 BASE = "/api/v1/admin/staff"
 BODY = dict(name="Fictional Staff", email="fictional@example.com", phone="9876543210",
-            dialCountry="IN", role="Super Admin", designation="Executive", dateOfJoining="2025-01-15", status="active")
+            dialCountry="IN", role="Super Admin", designation_id="31300000-0000-4000-8000-000000000001", dateOfJoining="2025-01-15", status="active")
+
+
+def seed_designation(db, actor_id, name="Executive"):
+    key = uuid.UUID(BODY["designation_id"])
+    if not db.get(Designation, key):
+        db.add(Designation(id=key, name=name, shortName="EX", status="active",
+                           created_by=actor_id, updated_by=actor_id))
+        db.commit()
+    return key
+
+
+def admin_headers(api, db):
+    headers, actor = reporting_admin_headers(api, db)
+    seed_designation(db, actor.id)
+    return headers, actor
 
 
 def test_empty_create_encrypted_credentials_and_reporting(client):

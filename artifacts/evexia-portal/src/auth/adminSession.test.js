@@ -202,6 +202,27 @@ test('staff permission is explicit and delayed responses cannot survive logout',
   await assert.rejects(read, /session changed/i);
 });
 
+test('version-checked staff deletion is an allowed authenticated non-replayed mutation', async () => {
+  let writes = 0;
+  const identity = { ...user, permissions: ['admin.access', 'staff.manage'] };
+  const path = '/31300000-0000-4000-8000-000000000001/delete';
+  const api = await setup(async (url, options) => {
+    if (url.includes('/admin/staff')) {
+      writes++;
+      assert.equal(url, `/api/v1/admin/staff${path}`);
+      assert.equal(options.method, 'POST');
+      assert.deepEqual(JSON.parse(options.body), { expected_version: 7 });
+      assert.equal(options.headers.Authorization, 'Bearer synthetic-memory-token');
+      throw Error('simulated lost delete response');
+    }
+    return reply(url.endsWith('/me') ? identity : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  await assert.rejects(api.staffRequest(path, { expected_version: 7 }), (error) => error.ambiguous === true);
+  assert.equal(writes, 1);
+  await api.logoutAdmin();
+});
+
 for (const replacement of ['none', 'different identity', 'same identity']) {
   test(`staff body decoding rejects the old payload after logout with ${replacement === 'none' ? 'no new sign-in' : `a new sign-in for the ${replacement}`}`, async (t) => {
     const identity = { ...user, permissions: ['admin.access', 'staff.manage'] };

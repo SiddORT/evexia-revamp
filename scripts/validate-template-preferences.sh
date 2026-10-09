@@ -11,6 +11,7 @@ node --test artifacts/evexia-portal/src/services/rolePermissions.test.js
 node --test artifacts/evexia-portal/src/services/reportingCSV.test.js
 node --test artifacts/evexia-portal/src/services/downloads.test.js
 node --test artifacts/evexia-portal/src/services/staff.test.js
+sh scripts/test-api-foundation.sh tests/test_staff.py tests/test_staff_search.py tests/test_staff_rotation.py tests/test_migration_staff.py tests/test_staff_lifecycle.py tests/test_migration_staff_designation.py
 node --test artifacts/evexia-portal/src/services/serverHeadquarters.test.js
 node --test artifacts/evexia-portal/src/services/serverProductCategories.test.js artifacts/evexia-portal/src/services/productCategories.test.js
 node --test artifacts/evexia-portal/src/services/serverAllergens.test.js artifacts/evexia-portal/src/services/allergens.test.js

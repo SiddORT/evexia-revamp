@@ -116,7 +116,8 @@ def test_denied_identities_and_transaction_revalidation(client):
 def test_ordinary_staff_login_and_forged_session_cannot_manage_roles(client):
     api, db, settings = client
     headers, _ = admin_headers(api, db)
-    from test_staff import BODY
+    from test_staff import BODY, seed_designation
+    seed_designation(db, db.scalar(select(User).where(User.is_protected_system_admin)).id)
     from app.db.staff_models import StaffProfile
     from app.db.models import AuthSession
     from app.core.security import access_token, utcnow

@@ -13,11 +13,10 @@ export interface StaffResponse {
   createdBy: string;
   custom_role_id?: string | null;
   dateOfJoining: Date;
-  /**
-   * @minLength 1
-   * @maxLength 200
-   */
-  designation: string;
+  deleted_at?: Date | null;
+  deleted_by?: string | null;
+  designationName: string;
+  designation_id: string;
   dialCountry: string;
   /** @maxLength 320 */
   email: string;

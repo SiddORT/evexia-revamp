@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { readFile as readFileBuffer } from 'node:fs/promises';
 import { expectCurrentZoneHeader } from './zone-header.assertions.mjs';
+import { staffDesignation } from './helpers/staffDesignation.mjs';
 
 if (process.env.EVEXIA_CHROMIUM_PATH) test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
 test.setTimeout(120000);
@@ -17,13 +18,14 @@ async function login(page, identifier, password, path) {
 
 // Provision through the same-origin service layer as the Super Admin.
 async function provision(page, suffix) {
-  return page.evaluate(async (suffix) => {
+  const designation_id = await staffDesignation(page);
+  return page.evaluate(async ({ suffix, designation_id }) => {
     const roles = await import('/src/services/rolePermissions.js');
     const staff = await import('/src/services/staff.js');
     const role = await roles.createRole({ name: `Zone clerk ${suffix}`, description: 'permission spec' });
-    const made = await staff.createStaff({ name: `Clerk ${suffix}`, phone: '9876543210', dialCountry: 'IN', email: `clerk-${suffix}@example.com`, status: 'active', role: 'Staff', designation: 'Executive', dateOfJoining: '2026-01-05' });
+    const made = await staff.createStaff({ name: `Clerk ${suffix}`, phone: '9876543210', dialCountry: 'IN', email: `clerk-${suffix}@example.com`, status: 'active', role: 'Staff', designation_id, dateOfJoining: '2026-01-05' });
     return { roleId: role.id, staffId: made.record.id, userId: made.record.userId, password: made.initial_password };
-  }, suffix);
+  }, { suffix, designation_id });
 }
 
 test('role matrix: All/None, saved count, dirty guard, metadata edit keeps grants', async ({ page }, testInfo) => {
@@ -136,15 +138,16 @@ async function adminPage(browser, path = '/admin/staff') {
 // Creates a role with the exact grants plus a staff member who may sign in.
 async function provisionWith(admin, grants, { login: enabled = true } = {}) {
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
-  return admin.evaluate(async ({ suffix, grants, enabled }) => {
+  const designation_id = await staffDesignation(admin);
+  return admin.evaluate(async ({ suffix, grants, enabled, designation_id }) => {
     const roles = await import('/src/services/rolePermissions.js');
     const staff = await import('/src/services/staff.js');
     let role = await roles.createRole({ name: `Spec role ${suffix}`, description: 'synthetic' });
     if (grants.length) role = await roles.setRolePermissions(role.id, grants, role.version);
-    const made = await staff.createStaff({ name: `Spec ${suffix}`, phone: '9876543210', dialCountry: 'IN', email: `spec-${suffix}@example.com`, status: 'active', role: 'Staff', designation: 'Executive', dateOfJoining: '2026-01-05' });
+    const made = await staff.createStaff({ name: `Spec ${suffix}`, phone: '9876543210', dialCountry: 'IN', email: `spec-${suffix}@example.com`, status: 'active', role: 'Staff', designation_id, dateOfJoining: '2026-01-05' });
     const access = await staff.setStaffAccess(made.record, { customRoleId: role.id, loginEnabled: enabled });
     return { roleId: role.id, staffId: made.record.id, userId: made.record.userId, password: made.initial_password, version: access.version };
-  }, { suffix, grants, enabled });
+  }, { suffix, grants, enabled, designation_id });
 }
 const setAccess = (admin, ids, customRoleId, loginEnabled) => admin.evaluate(async ({ staffId, customRoleId, loginEnabled }) => {
   const staff = await import('/src/services/staff.js');

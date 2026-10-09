@@ -1,7 +1,7 @@
 import uuid
-from datetime import date
+from datetime import date, datetime
 
-from sqlalchemy import CheckConstraint, Date, ForeignKey, Integer, String, Text
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -24,7 +24,9 @@ class StaffProfile(Timestamps, Base):
     email_index: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     dial_country: Mapped[str] = mapped_column(String(2), nullable=False)
     role: Mapped[str] = mapped_column(String(20), nullable=False)
-    designation: Mapped[str] = mapped_column(String(200), nullable=False)
+    designation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("designations.id", ondelete="RESTRICT"), nullable=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deleted_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
     joining_date: Mapped[date] = mapped_column(Date, nullable=False)
     status: Mapped[str] = mapped_column(String(8), nullable=False)
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)

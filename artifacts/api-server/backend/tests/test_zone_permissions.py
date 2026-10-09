@@ -10,7 +10,7 @@ from app.db.staff_models import StaffProfile
 from app.db.download_models import DownloadLog
 from app.services.zone_policy import ZONE_ACTIONS
 from test_sessions import client, create_user, login
-from test_reporting import admin_headers
+from test_staff import admin_headers
 from test_staff import BODY
 
 ROLES = "/api/v1/admin/roles"

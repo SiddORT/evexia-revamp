@@ -77,6 +77,17 @@ explicit migration and unchanged local-demo purchasing relationships.
 
 ## Local development and operations
 
+- Staff migration `0028_staff_designation_lifecycle` follows the merged
+  `0028_directory_soft_delete`, which follows MR `0027_mr_designation_identity`.
+  Required designation UUIDs replace text only after verified complete
+  normalization/reviewed mappings against all catalogue history. Unmatched,
+  ambiguous or invalid overrides abort atomically. Operator read-only preflight,
+  exact-label JSON overrides, coordinated backup/release and populated-downgrade
+  limits are in [Staff operations](../../../docs/staff-security.md). Nullable
+  deletion time/actor preserve records; versioned deletion revokes sessions without
+  clearing status, roles, credentials or relationships. Managed execution needs
+  separate approval.
+
 - Directory-only soft deletion requires additive `0028_directory_soft_delete`
   after accepted `0027_mr_designation_identity`. It adds nullable timezone-aware
   deletion time and non-cascading User attribution to Doctor/Patient directories
@@ -346,7 +357,7 @@ artifact-mounted URLs. The development OpenAPI contract includes:
 | Domain | `POST /api/v1/domain/mrs` | Super-admin provisions a mapped MR identity. |
 | Staff | `GET /api/v1/admin/staff?limit=20&offset=0`, `GET /api/v1/admin/staff/{staff_id}` | Explicit `staff.manage`, protected Super Admin only; no-store decrypted directory responses. |
 | Staff | `POST /api/v1/admin/staff` | Atomically generates User ID/Argon2id password hash and encrypted profile; initial password returned once. |
-| Staff | `POST /api/v1/admin/staff/{staff_id}/edit`, `/status` | Immutable ID, mandatory `expected_version`, stale changes return 409. No credential reset or mail. |
+| Staff | `POST /api/v1/admin/staff/{staff_id}/edit`, `/status`, `/access`, `/delete` | Immutable ID, mandatory `expected_version`, stale changes return 409; retained deletion revokes sessions. No credential reset or mail. |
 | Storage locations | `GET/POST /api/v1/admin/storage-locations`, `GET /{location_id}`, `POST /{location_id}/edit`, `/status`, `/delete` | Protected Super Admin `admin.access`; name/address/status, mandatory mutation versions, soft deletion and authenticated audit metadata. |
 | Storage locations | `POST /api/v1/admin/storage-locations/import/review`, `/import/commit`; `GET /export` | CSV/XLSX create-only review/confirm and full-filter download. Exact schemas and safety bounds in the Storage Location operations document. |
 | Designations | `GET/POST /api/v1/admin/designations`, `GET /{designation_id}`, `POST /{designation_id}/edit`, `/status`, `/delete` | Protected singleton `admin.access`; name, short name, status, expected versions, soft deletion and server audit. |

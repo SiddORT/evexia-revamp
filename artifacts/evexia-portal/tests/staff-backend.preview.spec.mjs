@@ -110,7 +110,7 @@ async function fill(page, suffix, country = 'IN', phone = '9876543210') {
   await page.getByTestId('input-staff-email').fill(`fictional-${suffix}@example.com`);
   await page.getByTestId('input-staff-phone').fill(phone);
   await page.getByLabel('Phone country code').selectOption(country);
-  await page.getByTestId('select-staff-designation').selectOption('Synthetic Executive');
+  await page.getByTestId('select-staff-designation').selectOption({ label: 'Synthetic Executive' });
   await page.getByTestId('input-staff-dateOfJoining').fill('2025-01-15');
 }
 async function create(page, suffix, country, phone) {
@@ -272,7 +272,7 @@ async function delayedStaffSearch(page) {
   const query = 'abandoned-search@example.com';
   const record = (id, name, email) => ({
     id, name, email, userId: `st_${id}`, phone: '9876543210', dialCountry: 'IN',
-    role: 'Staff', designation: 'Synthetic Executive', dateOfJoining: '2025-01-15',
+    role: 'Staff', designation_id: '31300000-0000-4000-8000-000000000001', designationName: 'Synthetic Executive', dateOfJoining: '2025-01-15',
     status: 'active', version: 1,
     createdBy: 'Synthetic Admin', updatedBy: 'Synthetic Admin',
     createdAt: '2025-01-15T00:00:00Z', updatedAt: '2025-01-15T00:00:00Z',
@@ -525,15 +525,19 @@ test('directory search finds beyond the loaded batch, continues empty sections, 
 test('staff preserves unavailable designation and choice outages keep mounted draft with retry', async ({ page }, testInfo) => {
   await open(page);
   const staff = await page.evaluate(async () => {
-    return (await import('/src/services/staff.js')).createStaff({ name: 'Synthetic designation preservation', email: 'designation-preserved@example.com',
-      phone: '9876543210', dialCountry: 'IN', status: 'active', role: 'Staff', designation: 'Unavailable saved designation', dateOfJoining: '2026-01-01' });
+    const designations = await import('/src/services/serverDesignations.js');
+    const designation = await designations.createDesignation({ name: 'Unavailable saved designation', shortName: 'US', status: 'active' });
+    const made = await (await import('/src/services/staff.js')).createStaff({ name: 'Synthetic designation preservation', email: 'designation-preserved@example.com',
+      phone: '9876543210', dialCountry: 'IN', status: 'active', role: 'Staff', designation_id: designation.id, dateOfJoining: '2026-01-01' });
+    await designations.deleteDesignation(designation);
+    return made;
   });
   await page.goto(`${base()}/admin/staff`);
   await expect(page.getByTestId(`button-edit-staff-${staff.record.id}`)).toBeEnabled();
   await expect(page.getByTestId('button-add-staff')).toBeEnabled();
   await page.route('**/api/v1/admin/designations?*', (route) => route.fulfill({ status: 503, json: { error: { code: 'designation_unavailable', message: 'Choices temporarily unavailable.' } } }));
   await page.getByTestId(`button-edit-staff-${staff.record.id}`).click();
-  await expect(page.getByTestId('select-staff-designation')).toHaveValue('Unavailable saved designation');
+  await expect(page.getByTestId('select-staff-designation')).toHaveValue(staff.record.designation_id);
   await page.getByTestId('input-staff-name').fill('Mounted staff draft');
   await expect(page.getByRole('dialog').getByRole('alert')).toContainText('Choices temporarily unavailable');
   await expect(page.getByTestId('button-save-staff')).toBeDisabled();
@@ -541,6 +545,67 @@ test('staff preserves unavailable designation and choice outages keep mounted dr
   await page.getByRole('button', { name: 'Retry designation choices (keep draft)' }).click();
   await expect(page.getByTestId('input-staff-name')).toHaveValue('Mounted staff draft');
   await expect(page.getByTestId('button-save-staff')).toBeEnabled();
-  await expect(page.getByTestId('select-staff-designation')).toHaveValue('Unavailable saved designation');
+  await expect(page.getByTestId('select-staff-designation')).toHaveValue(staff.record.designation_id);
   await page.screenshot({ path: testInfo.outputPath('designation-staff-choices.jpg') });
+});
+
+for (const width of [1440, 390]) test(`staff confirmed deletion revokes login and retains readable UUID choice at ${width}px`, async ({ page, browser }, info) => {
+  await page.setViewportSize({ width, height: 900 });
+  await open(page);
+  const fixture = await page.evaluate(async (width) => {
+    const designations = await import('/src/services/serverDesignations.js');
+    const staff = await import('/src/services/staff.js');
+    const designation = await designations.createDesignation({ name: `Delete lifecycle designation ${width}`, shortName: 'DL', status: 'active' });
+    const made = await staff.createStaff({ name: `Delete lifecycle ${width}`, email: `delete-lifecycle-${width}@example.com`,
+      phone: '9876543210', dialCountry: 'IN', status: 'active', role: 'Staff', designation_id: designation.id, dateOfJoining: '2026-01-01' });
+    const roles = await import('/src/services/rolePermissions.js');
+    let role = await roles.createRole({ name: `Delete lifecycle role ${width}`, description: 'synthetic' });
+    role = await roles.setRolePermissions(role.id, ['zone.add'], role.version);
+    const enabled = await staff.setStaffAccess(made.record, { customRoleId: role.id, loginEnabled: true });
+    await designations.deleteDesignation(designation);
+    return { record: enabled, password: made.initial_password, roleId: role.id };
+  }, width);
+  await page.getByTestId('button-refresh-staff').click();
+  const prefix = width < 600 ? 'mobile-' : '';
+  await page.getByTestId(`button-edit-staff-${prefix}${fixture.record.id}`).click();
+  await expect(page.getByTestId('select-staff-designation')).toHaveValue(fixture.record.designation_id);
+  await expect(page.getByTestId('select-staff-designation')).toContainText(`Delete lifecycle designation ${width}`);
+  await page.getByTestId('input-staff-name').fill(`Delete lifecycle ${width} edited`);
+  await page.getByTestId('button-save-staff').click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const context = await browser.newContext();
+  try {
+    const clerk = await context.newPage();
+    await clerk.goto(`${base()}/admin/login`);
+    await clerk.getByLabel('Email or username').fill(fixture.record.userId);
+    await clerk.getByLabel('Password', { exact: true }).fill(fixture.password);
+    await clerk.getByTestId('button-submit-login').click();
+    await expect(clerk.getByTestId('button-add-zone')).toBeVisible();
+    await page.getByTestId(`button-delete-staff-${prefix}${fixture.record.id}`).click();
+    await expect(page.getByRole('dialog')).toContainText('There is no restore action');
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(page.getByTestId(`button-delete-staff-${prefix}${fixture.record.id}`)).toBeVisible();
+    await page.getByTestId(`button-delete-staff-${prefix}${fixture.record.id}`).click();
+    await page.screenshot({ path: info.outputPath(`staff-delete-confirm-${width}.jpg`) });
+    const response = page.waitForResponse((r) => r.url().endsWith(`/staff/${fixture.record.id}/delete`));
+    await page.getByTestId('button-confirm-delete-staff').click();
+    const deleted = await (await response).json();
+    expect(deleted.deleted_by).toBeTruthy();
+    expect(deleted.deleted_at).toBeTruthy();
+    expect(deleted.status).toBe('active');
+    expect(deleted.custom_role_id).toBe(fixture.roleId);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByTestId(`button-delete-staff-${prefix}${fixture.record.id}`)).toHaveCount(0);
+    await page.getByTestId('input-directory-search-staff').fill(`Delete lifecycle ${width}`);
+    await page.getByTestId('button-directory-search-staff').click();
+    await expect(page.getByTestId('status-staff-empty')).toBeVisible();
+    await clerk.getByRole('button', { name: 'Refresh records' }).click();
+    await expect(clerk.getByTestId('button-submit-login')).toBeVisible();
+    await clerk.getByLabel('Email or username').fill(fixture.record.userId);
+    await clerk.getByLabel('Password', { exact: true }).fill(fixture.password);
+    const rejected = clerk.waitForResponse((r) => r.url().endsWith('/auth/login'));
+    await clerk.getByTestId('button-submit-login').click();
+    expect((await rejected).status()).toBe(401);
+    await page.screenshot({ path: info.outputPath(`staff-delete-complete-${width}.jpg`) });
+  } finally { await context.close(); }
 });

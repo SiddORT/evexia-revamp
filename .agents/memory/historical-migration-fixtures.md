@@ -13,3 +13,15 @@ exist in their intentionally historical schemas.
 **How to apply:** Keep the historical migration being tested explicit. Seed its
 old rows with bounded SQL, upgrade, then assert them using current models; do not
 weaken production queries or skip the preservation assertions.
+
+Raw inserts must supply historical NOT NULL values whose defaults existed only
+in the ORM; do not assume those are SQL defaults. Seed valid historical names
+that satisfy the catalogue's checks when testing normalization or reused names.
+
+**Why:** A synthetic row can fail before reaching the intended migration boundary
+because missing client-side defaults or invalid catalogue labels violate the old
+schema; this is not evidence of a migration defect.
+
+**How to apply:** Read the migration being seeded, include its required flags and
+versions explicitly, and assert fixture creation succeeds before exercising the
+forward migration.

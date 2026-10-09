@@ -8374,8 +8374,6 @@ export const ListStaffQueryParams = zod.object({
     .default(listStaffQueryOffsetDefault),
 });
 
-export const listStaffResponseItemsItemDesignationMax = 200;
-
 export const listStaffResponseItemsItemEmailMax = 320;
 
 export const listStaffResponseItemsItemNameMax = 200;
@@ -8392,10 +8390,10 @@ export const ListStaffResponse = zod.object({
       createdBy: zod.string(),
       custom_role_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
       dateOfJoining: zod.coerce.date(),
-      designation: zod
-        .string()
-        .min(1)
-        .max(listStaffResponseItemsItemDesignationMax),
+      deleted_at: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      deleted_by: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      designationName: zod.string(),
+      designation_id: zod.string().uuid(),
       dialCountry: zod.string(),
       email: zod.string().email().max(listStaffResponseItemsItemEmailMax),
       id: zod.string().uuid(),
@@ -8426,8 +8424,6 @@ export const ListStaffResponse = zod.object({
 /**
  * @summary Create Staff
  */
-export const createStaffBodyDesignationMax = 200;
-
 export const createStaffBodyEmailMax = 320;
 
 export const createStaffBodyNameMax = 200;
@@ -8436,7 +8432,7 @@ export const createStaffBodyPhoneMax = 30;
 
 export const CreateStaffBody = zod.object({
   dateOfJoining: zod.coerce.date(),
-  designation: zod.string().min(1).max(createStaffBodyDesignationMax),
+  designation_id: zod.string().uuid(),
   dialCountry: zod.string(),
   email: zod.string().email().max(createStaffBodyEmailMax),
   name: zod.string().min(1).max(createStaffBodyNameMax),
@@ -8451,8 +8447,6 @@ export const CreateStaffBody = zod.object({
   ]),
   status: zod.enum(["active", "inactive"]),
 });
-
-export const createStaffResponseRecordDesignationMax = 200;
 
 export const createStaffResponseRecordEmailMax = 320;
 
@@ -8469,10 +8463,10 @@ export const CreateStaffResponse = zod.object({
     createdBy: zod.string(),
     custom_role_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
     dateOfJoining: zod.coerce.date(),
-    designation: zod
-      .string()
-      .min(1)
-      .max(createStaffResponseRecordDesignationMax),
+    deleted_at: zod.union([zod.coerce.date(), zod.null()]).optional(),
+    deleted_by: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    designationName: zod.string(),
+    designation_id: zod.string().uuid(),
     dialCountry: zod.string(),
     email: zod.string().email().max(createStaffResponseRecordEmailMax),
     id: zod.string().uuid(),
@@ -8521,8 +8515,6 @@ export const SearchStaffDirectoryBody = zod.object({
     .max(searchStaffDirectoryBodyQueryMax),
 });
 
-export const searchStaffDirectoryResponseItemsItemDesignationMax = 200;
-
 export const searchStaffDirectoryResponseItemsItemEmailMax = 320;
 
 export const searchStaffDirectoryResponseItemsItemNameMax = 200;
@@ -8539,10 +8531,10 @@ export const SearchStaffDirectoryResponse = zod.object({
       createdBy: zod.string(),
       custom_role_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
       dateOfJoining: zod.coerce.date(),
-      designation: zod
-        .string()
-        .min(1)
-        .max(searchStaffDirectoryResponseItemsItemDesignationMax),
+      deleted_at: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      deleted_by: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      designationName: zod.string(),
+      designation_id: zod.string().uuid(),
       dialCountry: zod.string(),
       email: zod
         .string()
@@ -8590,8 +8582,6 @@ export const GetStaffParams = zod.object({
   staff_id: zod.coerce.string().uuid(),
 });
 
-export const getStaffResponseDesignationMax = 200;
-
 export const getStaffResponseEmailMax = 320;
 
 export const getStaffResponseNameMax = 200;
@@ -8605,7 +8595,10 @@ export const GetStaffResponse = zod.object({
   createdBy: zod.string(),
   custom_role_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
   dateOfJoining: zod.coerce.date(),
-  designation: zod.string().min(1).max(getStaffResponseDesignationMax),
+  deleted_at: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  deleted_by: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  designationName: zod.string(),
+  designation_id: zod.string().uuid(),
   dialCountry: zod.string(),
   email: zod.string().email().max(getStaffResponseEmailMax),
   id: zod.string().uuid(),
@@ -8642,8 +8635,6 @@ export const SetStaffWorkspaceAccessBody = zod.object({
   workspace_login_enabled: zod.boolean(),
 });
 
-export const setStaffWorkspaceAccessResponseDesignationMax = 200;
-
 export const setStaffWorkspaceAccessResponseEmailMax = 320;
 
 export const setStaffWorkspaceAccessResponseNameMax = 200;
@@ -8657,10 +8648,10 @@ export const SetStaffWorkspaceAccessResponse = zod.object({
   createdBy: zod.string(),
   custom_role_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
   dateOfJoining: zod.coerce.date(),
-  designation: zod
-    .string()
-    .min(1)
-    .max(setStaffWorkspaceAccessResponseDesignationMax),
+  deleted_at: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  deleted_by: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  designationName: zod.string(),
+  designation_id: zod.string().uuid(),
   dialCountry: zod.string(),
   email: zod.string().email().max(setStaffWorkspaceAccessResponseEmailMax),
   id: zod.string().uuid(),
@@ -8685,13 +8676,62 @@ export const SetStaffWorkspaceAccessResponse = zod.object({
 });
 
 /**
+ * @summary Delete Staff
+ */
+export const DeleteStaffParams = zod.object({
+  staff_id: zod.coerce.string().uuid(),
+});
+
+export const DeleteStaffBody = zod.object({
+  expected_version: zod.number().int().min(1),
+});
+
+export const deleteStaffResponseEmailMax = 320;
+
+export const deleteStaffResponseNameMax = 200;
+
+export const deleteStaffResponsePhoneMax = 30;
+
+export const deleteStaffResponseWorkspaceLoginEnabledDefault = false;
+
+export const DeleteStaffResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  custom_role_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  dateOfJoining: zod.coerce.date(),
+  deleted_at: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  deleted_by: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  designationName: zod.string(),
+  designation_id: zod.string().uuid(),
+  dialCountry: zod.string(),
+  email: zod.string().email().max(deleteStaffResponseEmailMax),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(deleteStaffResponseNameMax),
+  phone: zod.string().min(1).max(deleteStaffResponsePhoneMax),
+  role: zod.enum([
+    "Staff",
+    "Manager",
+    "Accountant",
+    "Back End",
+    "Sub Admin",
+    "Super Admin",
+  ]),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  userId: zod.string(),
+  version: zod.number().int(),
+  workspace_login_enabled: zod
+    .boolean()
+    .default(deleteStaffResponseWorkspaceLoginEnabledDefault),
+});
+
+/**
  * @summary Edit Staff
  */
 export const EditStaffParams = zod.object({
   staff_id: zod.coerce.string().uuid(),
 });
-
-export const editStaffBodyDesignationMax = 200;
 
 export const editStaffBodyEmailMax = 320;
 
@@ -8701,7 +8741,7 @@ export const editStaffBodyPhoneMax = 30;
 
 export const EditStaffBody = zod.object({
   dateOfJoining: zod.coerce.date(),
-  designation: zod.string().min(1).max(editStaffBodyDesignationMax),
+  designation_id: zod.string().uuid(),
   dialCountry: zod.string(),
   email: zod.string().email().max(editStaffBodyEmailMax),
   expected_version: zod.number().int().min(1),
@@ -8718,8 +8758,6 @@ export const EditStaffBody = zod.object({
   status: zod.enum(["active", "inactive"]),
 });
 
-export const editStaffResponseDesignationMax = 200;
-
 export const editStaffResponseEmailMax = 320;
 
 export const editStaffResponseNameMax = 200;
@@ -8733,7 +8771,10 @@ export const EditStaffResponse = zod.object({
   createdBy: zod.string(),
   custom_role_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
   dateOfJoining: zod.coerce.date(),
-  designation: zod.string().min(1).max(editStaffResponseDesignationMax),
+  deleted_at: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  deleted_by: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  designationName: zod.string(),
+  designation_id: zod.string().uuid(),
   dialCountry: zod.string(),
   email: zod.string().email().max(editStaffResponseEmailMax),
   id: zod.string().uuid(),
@@ -8769,8 +8810,6 @@ export const SetStaffStatusBody = zod.object({
   status: zod.enum(["active", "inactive"]),
 });
 
-export const setStaffStatusResponseDesignationMax = 200;
-
 export const setStaffStatusResponseEmailMax = 320;
 
 export const setStaffStatusResponseNameMax = 200;
@@ -8784,7 +8823,10 @@ export const SetStaffStatusResponse = zod.object({
   createdBy: zod.string(),
   custom_role_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
   dateOfJoining: zod.coerce.date(),
-  designation: zod.string().min(1).max(setStaffStatusResponseDesignationMax),
+  deleted_at: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  deleted_by: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  designationName: zod.string(),
+  designation_id: zod.string().uuid(),
   dialCountry: zod.string(),
   email: zod.string().email().max(setStaffStatusResponseEmailMax),
   id: zod.string().uuid(),

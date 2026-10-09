@@ -160,11 +160,12 @@ test('restricted staff never see User Management or designation links and cannot
   const identity = await page.evaluate(async () => {
     const roles = await import('/src/services/rolePermissions.js');
     const staff = await import('/src/services/staff.js');
+    const designation = await (await import('/src/services/serverDesignations.js')).createDesignation({ name: 'Navigation staff designation', shortName: 'NS', status: 'active' });
     let role = await roles.createRole({ name: 'Navigation restricted staff', description: 'Synthetic navigation test' });
     role = await roles.setRolePermissions(role.id, ['zone.import'], role.version);
     const email = 'navigation-restricted@example.com';
     const made = await staff.createStaff({ name: 'Navigation restricted staff', phone: '9876543210', dialCountry: 'IN',
-      email, status: 'active', role: 'Staff', designation: 'Executive', dateOfJoining: '2026-01-05' });
+      email, status: 'active', role: 'Staff', designation_id: designation.id, dateOfJoining: '2026-01-05' });
     await staff.setStaffAccess(made.record, { customRoleId: role.id, loginEnabled: true });
     return { userId: made.record.userId, password: made.initial_password };
   });

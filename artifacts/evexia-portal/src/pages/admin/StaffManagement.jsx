@@ -1,7 +1,7 @@
 import { downloadCSV as loggedCSV } from '../../services/downloads.js';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
-import { Download, Eye, KeyRound, EyeOff, Pencil, Plus, RefreshCw, Search, Upload, UsersRound } from 'lucide-react';
+import { Download, Eye, KeyRound, EyeOff, Pencil, Plus, RefreshCw, Search, Trash2, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { formatAdminDate, formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -13,12 +13,12 @@ import TablePagination from '../../components/admin/TablePagination.jsx';
 import useTablePagination from '../../hooks/useTablePagination.js';
 import { activeDesignationChoices } from '../../services/serverDesignations.js';
 import { getSession, subscribeSession, reportingIdentityGuard } from '../../auth/adminSession.js';
-import { STAFF_COLUMNS, STAFF_ROLES, loadStaff, searchStaff, getStaff, validateStaff, createStaff, updateStaff, setStaffStatus, exportStaffCSV } from '../../services/staff.js';
+import { STAFF_COLUMNS, STAFF_ROLES, loadStaff, searchStaff, getStaff, validateStaff, createStaff, updateStaff, setStaffStatus, deleteStaff, exportStaffCSV } from '../../services/staff.js';
 import '../../staff.css';
 
-const FIELDS = ['name', 'phone', 'dialCountry', 'userId', 'email', 'status', 'role', 'designation', 'dateOfJoining'];
+const FIELDS = ['name', 'phone', 'dialCountry', 'userId', 'email', 'status', 'role', 'designation_id', 'dateOfJoining'];
 const LABELS = Object.fromEntries(STAFF_COLUMNS);
-const INITIAL = { name: '', phone: '', dialCountry: 'IN', userId: '', email: '', status: 'active', role: 'Staff', designation: '', dateOfJoining: '' };
+const INITIAL = { name: '', phone: '', dialCountry: 'IN', userId: '', email: '', status: 'active', role: 'Staff', designation_id: '', dateOfJoining: '' };
 const safeFields = (values) => Object.fromEntries(FIELDS.map((key) => [key, values[key] ?? '']));
 
 function downloadCSV(text) {
@@ -43,8 +43,10 @@ function StaffForm({ record, designations, choiceError, choicesLoading, onRetryC
   const [current, setCurrent] = useState(null);
   const gate = useRef(false);
   const active = designations.filter((item) => item.status === 'active');
-  const selected = record?.designation;
-  const inactiveExisting = selected && !active.some((item) => item.name === selected);
+  const selected = record?.designation_id;
+  // Detail is loaded independently of the first bounded choice batch. Its
+  // server-resolved saved identity remains retainable even after deletion.
+  const inactiveExisting = selected && !active.some((item) => item.id === selected);
   function change(key, value) {
     setValues((previous) => ({ ...previous, [key]: value }));
     setErrors((previous) => ({ ...previous, [key]: undefined }));
@@ -91,7 +93,7 @@ function StaffForm({ record, designations, choiceError, choicesLoading, onRetryC
       })}
       <label className="admin-staff-field"><span>Status <span aria-hidden="true">*</span></span><select value={values.status} onChange={(event) => change('status', event.target.value)} disabled={saving} data-testid="select-staff-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>{errors.status && <span role="alert">{errors.status}</span>}</label>
       <label className="admin-staff-field"><span>Role <span aria-hidden="true">*</span></span><select value={values.role} onChange={(event) => change('role', event.target.value)} disabled={saving} data-testid="select-staff-role">{STAFF_ROLES.map((role) => <option key={role} value={role}>{role}</option>)}</select>{errors.role && <span role="alert">{errors.role}</span>}</label>
-      <label className="admin-staff-field"><span>Designation <span aria-hidden="true">*</span></span><select value={values.designation} onChange={(event) => change('designation', event.target.value)} disabled={saving || choicesLoading || Boolean(choiceError)} data-testid="select-staff-designation"><option value="">Select a designation</option>{inactiveExisting && <option value={selected}>{selected} (inactive or no longer available)</option>}{active.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}</select>{errors.designation && <span className="admin-staff-field__error" role="alert">{errors.designation}</span>}<span className="admin-staff-field__hint">Active server choices (up to 100); existing saved labels can be preserved. The label grants no permission.</span></label>
+      <label className="admin-staff-field"><span>Designation <span aria-hidden="true">*</span></span><select value={values.designation_id} onChange={(event) => change('designation_id', event.target.value)} disabled={saving || choicesLoading || Boolean(choiceError)} aria-invalid={Boolean(errors.designation_id)} data-testid="select-staff-designation"><option value="">Select a designation</option>{inactiveExisting && <option value={selected}>{record.designationName} (saved reference; unavailable in active choices)</option>}{active.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>{errors.designation_id && <span className="admin-staff-field__error" role="alert">{errors.designation_id}</span>}<span className="admin-staff-field__hint">Active server choices (up to 100); the saved reference can be retained even if inactive or deleted. Designations grant no permission.</span></label>
       {choicesLoading && <p role="status">Loading designation choices…</p>}
       {choiceError && <div className="admin-feedback admin-feedback--error" role="alert">{choiceError}<button type="button" className="admin-button admin-button--secondary" onClick={onRetryChoices}>Retry designation choices (keep draft)</button></div>}
       <label className="admin-staff-field"><span>Date of joining <span aria-hidden="true">*</span></span><input type="date" value={values.dateOfJoining} onChange={(event) => change('dateOfJoining', event.target.value)} disabled={saving} data-testid="input-staff-dateOfJoining" />{errors.dateOfJoining && <span className="admin-staff-field__error" role="alert">{errors.dateOfJoining}</span>}</label>
@@ -133,6 +135,9 @@ export default function StaffManagement() {
   const [editing, setEditing] = useState(undefined);
   const [credentials, setCredentials] = useState(null);
   const [accessFor, setAccessFor] = useState(null);
+  const [deleteFor, setDeleteFor] = useState(null);
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteUncertain, setDeleteUncertain] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [offset, setOffset] = useState(0);
@@ -186,7 +191,7 @@ export default function StaffManagement() {
     void refresh(0);
     const unsubscribe = subscribeSession(() => {
       if (getSession().status !== 'authenticated') setCredentials(null);
-      if (!getSession().user) { choiceSequence.current++; setDesignations([]); request.current?.abort(); setRecords([]); setDirectory(null); setDirectoryTerm(''); setEditing(undefined); setAccessFor(null); }
+      if (!getSession().user) { choiceSequence.current++; setDesignations([]); request.current?.abort(); setRecords([]); setDirectory(null); setDirectoryTerm(''); setEditing(undefined); setAccessFor(null); setDeleteFor(null); }
     });
     return () => { alive.current = false; request.current?.abort(); unsubscribe(); };
   }, []);
@@ -241,7 +246,28 @@ export default function StaffManagement() {
     try { reportingIdentityGuard()(); await downloadCSV(exportStaffCSV(records)); }
     catch (cause) { setActionError(cause.message); }
   }
-  const rowActions = (record, mobile = false) => <><button type="button" className="admin-icon-button" title={`Edit ${record.name}`} aria-label={`Edit ${record.name}`} disabled={blocked || Boolean(designationError)} onClick={() => edit(record)} data-testid={`button-edit-staff-${mobile ? 'mobile-' : ''}${record.id}`}><Pencil size={16} aria-hidden="true" /></button><button type="button" className="admin-icon-button" title={`Access for ${record.name}`} aria-label={`Access for ${record.name}`} disabled={blocked} onClick={() => { setFeedback(''); setActionError(''); setAccessFor(record); }} data-testid={`button-access-staff-${mobile ? 'mobile-' : ''}${record.id}`}><KeyRound size={16} aria-hidden="true" /></button></>;
+  async function confirmDelete() {
+    if (mutationGate.current || deleteUncertain) return;
+    mutationGate.current = true;
+    setBusy(true);
+    setDeleteError('');
+    const guard = reportingIdentityGuard();
+    try {
+      await deleteStaff(deleteFor);
+      guard();
+      if (!alive.current) return;
+      setDeleteFor(null);
+      setFeedback('Staff member deleted. Relationships and account history are retained; workspace sessions have been revoked.');
+      void refresh(0, directory ? { query: directory.query, cursor: null, checked: 0 } : null);
+    } catch (cause) {
+      if (alive.current) {
+        setDeleteError(cause.message || 'Delete failed.');
+        // A stale or uncertain action must be reviewed, never retried blindly.
+        setDeleteUncertain(Boolean(cause.ambiguous) || ['staff_stale', 'staff_outcome_unknown', 'not_found'].includes(cause.code));
+      }
+    } finally { mutationGate.current = false; if (alive.current) setBusy(false); }
+  }
+  const rowActions = (record, mobile = false) => <><button type="button" className="admin-icon-button" title={`Edit ${record.name}`} aria-label={`Edit ${record.name}`} disabled={blocked || Boolean(designationError)} onClick={() => edit(record)} data-testid={`button-edit-staff-${mobile ? 'mobile-' : ''}${record.id}`}><Pencil size={16} aria-hidden="true" /></button><button type="button" className="admin-icon-button" title={`Access for ${record.name}`} aria-label={`Access for ${record.name}`} disabled={blocked} onClick={() => { setFeedback(''); setActionError(''); setAccessFor(record); }} data-testid={`button-access-staff-${mobile ? 'mobile-' : ''}${record.id}`}><KeyRound size={16} aria-hidden="true" /></button><button type="button" className="admin-icon-button" title={`Delete ${record.name}`} aria-label={`Delete ${record.name}`} disabled={blocked} onClick={() => { setDeleteError(''); setDeleteUncertain(false); setDeleteFor(record); }} data-testid={`button-delete-staff-${mobile ? 'mobile-' : ''}${record.id}`}><Trash2 size={16} aria-hidden="true" /></button></>;
   const columns = [
     { key: 'serial', label: 'Sr No.', render: (_, index) => <span className="admin-table__serial">{index + 1}</span> },
     { key: 'name', label: 'Name', render: (record) => <span className="admin-staff-identity"><strong data-testid={`text-staff-name-${record.id}`}>{record.name}</strong></span> },
@@ -250,7 +276,7 @@ export default function StaffManagement() {
     { key: 'email', label: 'Email ID', render: (record) => <a href={`mailto:${record.email}`} className="admin-staff-link">{record.email}</a> },
     { key: 'role', label: 'Role', render: (record) => record.role },
     { key: 'dateOfJoining', label: 'Date of joining', render: (record) => formatAdminDate(record.dateOfJoining) },
-    { key: 'designation', label: 'Designation', render: (record) => record.designation },
+    { key: 'designationName', label: 'Designation', render: (record) => record.designationName },
     { key: 'status', label: 'Status', render: (record) => <button type="button" role="switch" aria-checked={record.status === 'active'} aria-label={`${record.name}: ${record.status}. Change status`} className="admin-staff-status" disabled={blocked} onClick={() => toggle(record)} data-testid={`switch-staff-status-${record.id}`}><span className="admin-staff-status__track" aria-hidden="true" />{record.status === 'active' ? 'Active' : 'Inactive'}</button> },
     { key: 'access', label: 'Workspace access', render: (record) => <span data-testid={`text-staff-access-${record.id}`}>{record.custom_role_id ? 'Role assigned' : 'No role'} · login {record.workspace_login_enabled ? 'enabled' : 'disabled'}</span> },
     { key: 'created', label: 'Created details', render: (record) => audit(record.createdBy, record.createdAt) },
@@ -277,7 +303,7 @@ export default function StaffManagement() {
       <p id="staff-directory-search-help" className="admin-feedback">Directory search checks name, local phone digits, user ID, email, country, role, designation, joining date and status (case-insensitive partial match). Each step checks up to 500 records and returns up to 100 matches. Continue until complete. Export covers only the loaded results, not the whole directory.</p>
       {directory && <div className="admin-feedback" role="status" data-testid="status-directory-search-staff">Directory search active: “{directory.query}”. {directory.checked + (directory.scanned || 0)} records checked. {loading ? 'Checking this section…' : error ? 'Search interrupted; retry this section.' : hasMore ? 'More records remain unchecked.' : 'Search complete.'} Results are not a snapshot; restart after directory changes.</div>}
       {loading ? <div className="admin-empty" role="status">Loading staff records…</div> : error ? <div className="admin-empty" role="alert"><strong>Staff records could not be loaded</strong><p>{error}</p><button type="button" className="admin-button" onClick={() => refresh()} data-testid="button-retry-staff">Retry loading</button></div> : <>
-        {records.length ? <><div className="admin-staff-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} label="Staff records" testIdPrefix="staff" /></div><div className="admin-staff-mobile" role="list" aria-label="Staff records">{pagination.pageRows.map((record, index) => <article className="admin-staff-card" role="listitem" key={record.id} data-testid={`card-staff-${record.id}`}><div className="admin-staff-card__head"><div><small>#{pagination.startIndex + index + 1} · {record.userId}</small><h2>{record.name}</h2></div></div><dl className="admin-staff-card__meta">{['phone', 'userId', 'email', 'role', 'dateOfJoining', 'designation', 'status'].map((key) => <div key={key}><dt>{LABELS[key]}</dt><dd>{key === 'phone' ? <StaffPhone record={record} mobile /> : key === 'dateOfJoining' ? formatAdminDate(record.dateOfJoining) : record[key]}</dd></div>)}<div><dt>Created details</dt><dd>{audit(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated details</dt><dd>{audit(record.updatedBy, record.updatedAt)}</dd></div></dl><div className="admin-staff-card__actions">{rowActions(record, true)}<button type="button" role="switch" aria-checked={record.status === 'active'} className="admin-staff-status" disabled={blocked} onClick={() => toggle(record)} data-testid={`switch-staff-mobile-status-${record.id}`}><span className="admin-staff-status__track" aria-hidden="true" />{record.status === 'active' ? 'Active' : 'Inactive'}</button></div></article>)}</div></> : <div className="admin-empty" data-testid="status-staff-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{directory ? (hasMore ? 'No matches in this section' : 'No matches in this final section') : offset ? 'No staff members in this batch' : 'No staff members yet'}</strong><p>{directory ? (hasMore ? 'Continue search to check the remaining directory.' : 'Search complete. Earlier sections may contain matches; restart to review them or try another term.') : offset ? 'Return to a previous batch or search the directory.' : 'Add a staff member to begin the server-backed directory.'}</p></div>}
+        {records.length ? <><div className="admin-staff-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} label="Staff records" testIdPrefix="staff" /></div><div className="admin-staff-mobile" role="list" aria-label="Staff records">{pagination.pageRows.map((record, index) => <article className="admin-staff-card" role="listitem" key={record.id} data-testid={`card-staff-${record.id}`}><div className="admin-staff-card__head"><div><small>#{pagination.startIndex + index + 1} · {record.userId}</small><h2>{record.name}</h2></div></div><dl className="admin-staff-card__meta">{['phone', 'userId', 'email', 'role', 'dateOfJoining', 'designationName', 'status'].map((key) => <div key={key}><dt>{LABELS[key]}</dt><dd>{key === 'phone' ? <StaffPhone record={record} mobile /> : key === 'dateOfJoining' ? formatAdminDate(record.dateOfJoining) : record[key]}</dd></div>)}<div><dt>Created details</dt><dd>{audit(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated details</dt><dd>{audit(record.updatedBy, record.updatedAt)}</dd></div></dl><div className="admin-staff-card__actions">{rowActions(record, true)}<button type="button" role="switch" aria-checked={record.status === 'active'} className="admin-staff-status" disabled={blocked} onClick={() => toggle(record)} data-testid={`switch-staff-mobile-status-${record.id}`}><span className="admin-staff-status__track" aria-hidden="true" />{record.status === 'active' ? 'Active' : 'Inactive'}</button></div></article>)}</div></> : <div className="admin-empty" data-testid="status-staff-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{directory ? (hasMore ? 'No matches in this section' : 'No matches in this final section') : offset ? 'No staff members in this batch' : 'No staff members yet'}</strong><p>{directory ? (hasMore ? 'Continue search to check the remaining directory.' : 'Search complete. Earlier sections may contain matches; restart to review them or try another term.') : offset ? 'Return to a previous batch or search the directory.' : 'Add a staff member to begin the server-backed directory.'}</p></div>}
         <TablePagination {...pagination} filtered={records.length} total={records.length} label={directory ? 'staff matches in loaded section' : 'staff members in loaded batch'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-staff-count" />
         <footer className="admin-staff-batch-footer" data-testid="staff-batch-footer">
           <div className="admin-staff-batch-footer__summary">
@@ -297,5 +323,11 @@ export default function StaffManagement() {
     {editing !== undefined && <StaffForm key={editing?.id || 'new'} record={editing} designations={designations} choiceError={designationError} choicesLoading={choicesLoading} onRetryChoices={refreshDesignations} onSave={save} onClose={() => setEditing(undefined)} />}
     {accessFor && <StaffAccessDialog key={accessFor.id} record={accessFor} onClose={() => setAccessFor(null)} onSaved={(next) => { setAccessFor(null); setFeedback(`Access saved for ${next.name}: ${next.custom_role_id ? 'role assigned' : 'no role'}, workspace login ${next.workspace_login_enabled ? 'enabled' : 'disabled'}.`); setRecords((previous) => previous.map((item) => item.id === next.id ? next : item)); }} />}
     {credentials && <Credentials credentials={credentials} onClose={() => setCredentials(null)} />}
+    {deleteFor && <Dialog title="Delete staff member?" eyebrow="Staff Management" description={`Delete ${deleteFor.name}? This removes them from the directory and immediately revokes workspace sessions. Status, encrypted records, relationships and history are retained. There is no restore action.`}
+      onClose={() => { if (!mutationGate.current) setDeleteFor(null); }}
+      footer={<><button type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={() => setDeleteFor(null)}>Cancel</button><button type="button" className="admin-button" disabled={busy || deleteUncertain} onClick={confirmDelete} data-testid="button-confirm-delete-staff">{busy ? 'Deleting…' : 'Delete staff member'}</button></>}>
+      {deleteError && <p role="alert">{deleteError}</p>}
+      {deleteUncertain && <p role="status">Close this confirmation and refresh the directory to review the current outcome before taking another action.</p>}
+    </Dialog>}
   </AdminLayout>;
 }

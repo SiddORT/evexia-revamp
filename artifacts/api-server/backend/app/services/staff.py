@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.core.security import hash_password, utcnow
 from app.db.models import AuditEvent, User
 from app.db.staff_models import StaffProfile
+from app.db.designation_models import Designation
 from app.services.auth import revalidate_identity
 from app.services.staff_crypto import StaffCrypto, StaffError
 from app.db.role_models import CustomRole
@@ -29,13 +30,15 @@ def authorize(db, actor, settings):
     return current, crypto
 
 
-def projection(db, profile, crypto, username=None):
+def projection(db, profile, crypto, username=None, designation_name=None):
     username = username if username is not None else db.get(User, profile.user_id).username
+    designation_name = designation_name if designation_name is not None else db.get(Designation, profile.designation_id).name
     return dict(
         id=profile.id, userId=username, version=profile.version,
         **{field: crypto.decrypt(profile.id, field, getattr(profile, f"{field}_ciphertext"))
            for field in ("name", "email", "phone")},
-        dialCountry=profile.dial_country, role=profile.role, designation=profile.designation,
+        dialCountry=profile.dial_country, role=profile.role, designation_id=profile.designation_id,
+        designationName=designation_name, deleted_at=profile.deleted_at, deleted_by=profile.deleted_by,
         dateOfJoining=profile.joining_date, status=profile.status,
         createdBy=str(profile.created_by), updatedBy=str(profile.updated_by),
         createdAt=profile.created_at, updatedAt=profile.updated_at,
@@ -48,7 +51,7 @@ def assign(profile, body, crypto):
         setattr(profile, f"{field}_ciphertext", crypto.encrypt(profile.id, field, str(getattr(body, field))))
     profile.email_index = crypto.email_index(str(body.email))
     profile.dial_country = body.dialCountry
-    profile.role, profile.designation = body.role, body.designation
+    profile.role, profile.designation_id = body.role, body.designation_id
     profile.joining_date, profile.status = body.dateOfJoining, body.status
 
 
@@ -74,9 +77,18 @@ def transaction(work, db):
         raise
 
 
+def validate_designation(db, designation_id, saved_id=None):
+    row = db.scalar(select(Designation).where(Designation.id == designation_id)
+                    .execution_options(populate_existing=True).with_for_update(read=True))
+    if not row or (designation_id != saved_id and (row.status != "active" or row.deleted_at is not None)):
+        raise StaffError("Choose an active, non-deleted designation.", 409, "staff_designation_invalid")
+    return row
+
+
 def create(db, actor, body, settings):
     def work():
         current, crypto = authorize(db, actor, settings)
+        validate_designation(db, body.designation_id)
         # 120 random bits in a 32-character username, independent of personal data.
         password = secrets.token_urlsafe(24)
         encoded_password = hash_password(password)
@@ -110,9 +122,12 @@ def create(db, actor, body, settings):
 def listing(db, actor, settings, limit, offset):
     def work():
         _current, crypto = authorize(db, actor, settings)
-        rows = list(db.scalars(select(StaffProfile).order_by(
+        rows = list(db.execute(select(StaffProfile, User.username, Designation.name)
+            .join(User, User.id == StaffProfile.user_id)
+            .join(Designation, Designation.id == StaffProfile.designation_id)
+            .where(StaffProfile.deleted_at.is_(None)).order_by(
             StaffProfile.created_at.desc(), StaffProfile.id.desc()).limit(limit + 1).offset(offset)))
-        result = {"items": [projection(db, row, crypto) for row in rows[:limit]],
+        result = {"items": [projection(db, row, crypto, username, name) for row, username, name in rows[:limit]],
                   "has_more": len(rows) > limit, "limit": limit, "offset": offset}
         db.commit()
         return result
@@ -121,7 +136,7 @@ def listing(db, actor, settings, limit, offset):
 
 SEARCH_SCAN_LIMIT = 500
 SEARCH_FIELDS = ("name", "email", "phone", "userId", "dialCountry", "role",
-                 "designation", "dateOfJoining", "status")
+                 "designationName", "dateOfJoining", "status")
 
 
 def search(db, actor, settings, body):
@@ -132,14 +147,16 @@ def search(db, actor, settings, body):
         _current, crypto = authorize(db, actor, settings)
         # Primary-key keyset scan: no plaintext predicates, new blind indexes,
         # counts, offsets, stored search sessions, or unbounded result buffers.
-        stmt = select(StaffProfile, User.username).join(User, User.id == StaffProfile.user_id)
+        stmt = (select(StaffProfile, User.username, Designation.name).join(User, User.id == StaffProfile.user_id)
+                .join(Designation, Designation.id == StaffProfile.designation_id)
+                .where(StaffProfile.deleted_at.is_(None)))
         if body.cursor is not None:
             stmt = stmt.where(StaffProfile.id > body.cursor)
         rows = list(db.execute(stmt.order_by(StaffProfile.id).limit(SEARCH_SCAN_LIMIT + 1)))
         term = body.query.casefold()
         items, scanned, last_id = [], 0, None
-        for profile, username in rows[:SEARCH_SCAN_LIMIT]:
-            record = projection(db, profile, crypto, username)
+        for profile, username, name in rows[:SEARCH_SCAN_LIMIT]:
+            record = projection(db, profile, crypto, username, name)
             scanned += 1
             last_id = profile.id
             if any(term in str(record[field]).casefold() for field in SEARCH_FIELDS):
@@ -159,7 +176,7 @@ def detail(db, actor, settings, profile_id):
     def work():
         _current, crypto = authorize(db, actor, settings)
         profile = db.get(StaffProfile, profile_id)
-        if not profile:
+        if not profile or profile.deleted_at is not None:
             raise StaffError("Staff member not found", 404, "not_found")
         result = projection(db, profile, crypto)
         db.commit()
@@ -172,12 +189,12 @@ def edit(db, actor, settings, profile_id, body, status_only=False):
         lock_policy(db)
         current, crypto = authorize(db, actor, settings)
         snapshot = db.get(StaffProfile, profile_id)
-        if not snapshot:
+        if not snapshot or snapshot.deleted_at is not None:
             raise StaffError("Staff member not found", 404, "not_found")
         user = session_repository.lock_user(db, snapshot.user_id)
         profile = db.scalar(select(StaffProfile).where(StaffProfile.id == profile_id)
                             .execution_options(populate_existing=True).with_for_update())
-        if not profile:
+        if not profile or profile.deleted_at is not None:
             raise StaffError("Staff member not found", 404, "not_found")
         # Verify stored ciphertext even for status-only writes.
         projection(db, profile, crypto)
@@ -187,6 +204,7 @@ def edit(db, actor, settings, profile_id, body, status_only=False):
         if status_only:
             profile.status = body.status
         else:
+            validate_designation(db, body.designation_id, profile.designation_id)
             assign(profile, body, crypto)
         if profile.status != "active":
             session_repository.revoke_user_sessions(db, user.id, "identity_invalid", db.info.get("request_id"))
@@ -205,12 +223,14 @@ def access(db, actor, settings, profile_id, body):
         lock_policy(db)
         current, crypto = authorize(db, actor, settings)
         snapshot = db.get(StaffProfile, profile_id)
-        if not snapshot:
+        if not snapshot or snapshot.deleted_at is not None:
             raise StaffError("Staff member not found", 404, "not_found")
         user = session_repository.lock_user(db, snapshot.user_id)
         profile = db.scalar(select(StaffProfile).where(StaffProfile.id == profile_id)
                             .execution_options(populate_existing=True).with_for_update())
-        if (not profile or not user or user.system_role is not None
+        if not profile or profile.deleted_at is not None:
+            raise StaffError("Staff member not found", 404, "not_found")
+        if (not user or user.system_role is not None
                 or user.is_protected_system_admin or user.email is not None):
             raise StaffError("This identity cannot be assigned staff access", 403, "access_denied")
         projection(db, profile, crypto)
@@ -235,6 +255,37 @@ def access(db, actor, settings, profile_id, body):
             db.commit()
         except SQLAlchemyError:
             raise StaffError("Access change outcome unknown. Refresh current staff details before submitting again.",
+                             503, "staff_outcome_unknown") from None
+        return result
+    return transaction(work, db)
+
+
+def delete(db, actor, settings, profile_id, body):
+    def work():
+        lock_policy(db)
+        current, crypto = authorize(db, actor, settings)
+        snapshot = db.get(StaffProfile, profile_id)
+        if not snapshot or snapshot.deleted_at is not None:
+            raise StaffError("Staff member not found", 404, "not_found")
+        user = session_repository.lock_user(db, snapshot.user_id)
+        profile = db.scalar(select(StaffProfile).where(StaffProfile.id == profile_id)
+                            .execution_options(populate_existing=True).with_for_update())
+        if not profile or profile.deleted_at is not None:
+            raise StaffError("Staff member not found", 404, "not_found")
+        projection(db, profile, crypto)  # Verify ciphertext before lifecycle writes.
+        if profile.version != body.expected_version:
+            raise StaffError("Staff record changed. Review current details before deleting.", 409, "staff_stale")
+        profile.deleted_at, profile.deleted_by = utcnow(), current.user.id
+        profile.version += 1
+        profile.updated_at, profile.updated_by = profile.deleted_at, current.user.id
+        session_repository.revoke_user_sessions(db, user.id, "identity_invalid", db.info.get("request_id"))
+        audit(db, current, profile, "staff_delete")
+        db.flush()
+        result = projection(db, profile, crypto)
+        try:
+            db.commit()
+        except SQLAlchemyError:
+            raise StaffError("Delete outcome unknown. Refresh the directory before retrying.",
                              503, "staff_outcome_unknown") from None
         return result
     return transaction(work, db)

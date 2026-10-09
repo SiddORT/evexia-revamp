@@ -31,7 +31,7 @@ for (const master of MASTER_CATALOGUE) test(`${master.key}: single-action staff 
     const suffix = crypto.randomUUID().slice(0, 8);
     const role = await roles.createRole({ name: `Matrix ${suffix}`, description: 'Synthetic isolated matrix' });
     const made = await staff.createStaff({ name: `Matrix ${suffix}`, email: `matrix-${suffix}@example.com`,
-      phone: '9876543210', dialCountry: 'IN', status: 'active', role: 'Staff', designation: 'Executive', dateOfJoining: '2026-01-05' });
+      phone: '9876543210', dialCountry: 'IN', status: 'active', role: 'Staff', designation_id: (await (await import('/src/services/serverDesignations.js')).createDesignation({ name: `Master staff designation ${suffix}`, shortName: 'MS', status: 'active' })).id, dateOfJoining: '2026-01-05' });
     await staff.setStaffAccess(made.record, { customRoleId: role.id, loginEnabled: true });
     return { roleId: role.id, staffId: made.record.id, userId: made.record.userId, password: made.initial_password, masters: MASTER_CATALOGUE };
   });

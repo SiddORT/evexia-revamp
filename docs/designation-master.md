@@ -162,9 +162,15 @@ discard private data and invalidate async results/download handoffs.
 Staff Management requests at most 100 active server choices in one bounded
 request on mount/refresh/editor open. More than 100 fails explicitly rather than
 silently accepting an incomplete list. Choice failure provides retry, blocks
-save and keeps mounted drafts. Editing preserves the existing saved label even
-if inactive/deleted/unavailable. Staff records keep labels only; there is no
-catalogue foreign key, migration, staff rewrite, payroll or authorization effect.
+save and keeps mounted drafts. Editing loads Staff detail independently to hydrate
+the saved UUID/name even outside that batch or when inactive/deleted. Staff now
+uses required catalogue UUIDs and derived readable names, with unchanged
+unavailable references retainable. New/changed assignments require active live rows.
+Staff migration `0028_staff_designation_lifecycle` requires complete reviewed
+legacy mapping against all catalogue history; no automatic catalogue creation,
+staff identity rewrite, payroll or authorization effect is introduced.
+See [Staff mapping and lifecycle](staff-security.md) for operator preflight,
+explicit overrides, atomic rollout and populated downgrade refusal.
 
 ## Isolated verification and contracts
 

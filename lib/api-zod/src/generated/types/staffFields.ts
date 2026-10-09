@@ -10,11 +10,7 @@ import type { StaffFieldsStatus } from "./staffFieldsStatus";
 
 export interface StaffFields {
   dateOfJoining: Date;
-  /**
-   * @minLength 1
-   * @maxLength 200
-   */
-  designation: string;
+  designation_id: string;
   dialCountry: string;
   /** @maxLength 320 */
   email: string;

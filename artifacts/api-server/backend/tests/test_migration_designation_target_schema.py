@@ -4,6 +4,7 @@ from decimal import Decimal
 
 import pytest
 from alembic import command
+from alembic.script import ScriptDirectory
 from sqlalchemy import inspect, select, text
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
@@ -79,6 +80,7 @@ def test_populated_previous_schema_preservation_generated_values_and_safe_refusa
     # Failure occurs before any DDL, including for tombstones; nothing is falsified.
     with engine.connect() as connection:
         installed_head = connection.scalar(text("SELECT version_num FROM alembic_version"))
+        assert installed_head == ScriptDirectory.from_config(config).get_current_head()
     with pytest.raises(RuntimeError, match="original labels"):
         command.downgrade(config, "0025_vendor_phone")
     with engine.connect() as connection:

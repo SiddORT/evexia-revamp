@@ -22,7 +22,7 @@ from app.services import auth, roles, staff, zones, downloads
 from app.services.zone_policy import lock_policy
 from test_migration_0006 import migration_db
 from test_migration_staff import prepare, identity
-from test_staff import BODY
+from test_staff import BODY, seed_designation
 
 
 def fixture(migration_db):
@@ -30,6 +30,7 @@ def fixture(migration_db):
     command.upgrade(config, "head")
     settings = get_settings()
     with Session(engine, expire_on_commit=False) as db:
+        seed_designation(db, admin_id)
         actor = identity(db, admin_id, session_id)
         role = roles.mutate(db, actor, RoleFields(name="Restricted role"))
         role = roles.mutate(db, actor, RolePermissions(permissions=["zone.add", "zone.export"],
@@ -63,6 +64,9 @@ def test_forward_existing_role_staff_defaults_preserve_identity(migration_db):
             VALUES (:id,:user,'preserved','preserved','preserved','unique','IN',
             'Super Admin','Director','2025-01-01','active',5,:admin,:admin)"""),
             {"id": staff_id, "user": user_id, "admin": admin_id})
+    command.upgrade(config, "0027_mr_designation_identity")
+    with Session(engine) as db:
+        seed_designation(db, admin_id, "Director")
     command.upgrade(config, "head")
     with Session(engine) as db:
         profile = db.get(StaffProfile, staff_id)

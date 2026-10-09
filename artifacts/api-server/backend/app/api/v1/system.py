@@ -39,7 +39,8 @@ def readiness(db: Session = Depends(get_db)):
         db.execute(text("SELECT id, permissions, version FROM custom_roles LIMIT 0"))
         db.execute(text(
             "SELECT user_id, name_ciphertext, email_ciphertext, phone_ciphertext, "
-            "email_index, version, custom_role_id, workspace_login_enabled FROM staff_profiles LIMIT 0"
+            "email_index, version, custom_role_id, workspace_login_enabled, designation_id, "
+            "deleted_at, deleted_by FROM staff_profiles LIMIT 0"
         ))
         db.execute(text(
             "SELECT id, name, status, version, created_by, updated_by, "

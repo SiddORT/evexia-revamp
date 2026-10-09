@@ -13,8 +13,7 @@ from app.schemas.staff import StaffFields
 from app.services.staff import assign
 from app.services.staff_crypto import StaffCrypto
 from test_sessions import client, create_user, login
-from test_reporting import admin_headers
-from test_staff import BASE, BODY
+from test_staff import BASE, BODY, admin_headers
 
 SEARCH = BASE + "/search"
 

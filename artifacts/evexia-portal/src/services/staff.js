@@ -6,15 +6,15 @@ export const STAFF_KEY = 'evexia.admin.staff.v1';
 export const STAFF_ROLES = ['Staff', 'Manager', 'Accountant', 'Back End', 'Sub Admin', 'Super Admin'];
 export const STAFF_COLUMNS = [
   ['name', 'Name'], ['phone', 'Phone No.'], ['dialCountry', 'Dial Country'], ['userId', 'User ID'],
-  ['email', 'Email ID'], ['role', 'Role'], ['status', 'Status'], ['designation', 'Designation'], ['dateOfJoining', 'Date of Joining'],
+  ['email', 'Email ID'], ['role', 'Role'], ['status', 'Status'], ['designationName', 'Designation'], ['dateOfJoining', 'Date of Joining'],
 ];
-const INPUTS = STAFF_COLUMNS.map(([key]) => key).filter((key) => key !== 'userId');
+const INPUTS = STAFF_COLUMNS.map(([key]) => key === 'designationName' ? 'designation_id' : key).filter((key) => key !== 'userId');
 
 export function validateStaff(values, _records = [], _exceptId = null, designations = []) {
   const fields = Object.fromEntries(INPUTS.map((key) => [key, typeof values[key] === 'string' ? values[key].trim() : '']));
   const errors = {};
   for (const key of INPUTS) {
-    if (!fields[key]) errors[key] = `${STAFF_COLUMNS.find(([field]) => key === field)[1]} is required.`;
+    if (!fields[key]) errors[key] = `${key === 'designation_id' ? 'Designation' : STAFF_COLUMNS.find(([field]) => key === field)[1]} is required.`;
     if (fields[key].length > (key === 'email' ? 320 : 200)) errors[key] = 'Value is too long.';
   }
   const country = dialCountry(fields.dialCountry);
@@ -30,8 +30,9 @@ export function validateStaff(values, _records = [], _exceptId = null, designati
   const day = fields.dateOfJoining;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || Number.isNaN(Date.parse(day)) ||
     new Date(day).toISOString().slice(0, 10) !== day || day < '1900-01-01' || day > new Date().toISOString().slice(0, 10)) errors.dateOfJoining = 'Enter a valid joining date that is not in the future.';
-  if (designations.length && !designations.some((item) => item.name === fields.designation && item.status === 'active') &&
-    !_records.some((record) => record.id === _exceptId && record.designation === fields.designation)) errors.designation = 'Choose an active designation.';
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fields.designation_id) ||
+    (!designations.some((item) => item.id === fields.designation_id && item.status === 'active' && !item.deleted_at) &&
+    !_records.some((record) => record.id === _exceptId && record.designation_id === fields.designation_id))) errors.designation_id = 'Choose an active designation.';
   return { fields, errors };
 }
 
@@ -41,6 +42,7 @@ export const getStaff = (id) => staffRequest(`/${id}`);
 export const createStaff = (values) => staffRequest('', values);
 export const updateStaff = (record, values) => staffRequest(`/${record.id}/edit`, { ...values, expected_version: record.version });
 export const setStaffStatus = (record, status) => staffRequest(`/${record.id}/status`, { status, expected_version: record.version });
+export const deleteStaff = (record) => staffRequest(`/${record.id}/delete`, { expected_version: record.version });
 
 function csvCell(value) {
   const text = String(value ?? '');

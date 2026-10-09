@@ -15,7 +15,7 @@ def eligible():
         MRProfile.user_id == User.id, MRProfile.is_active.is_(True),
     ))
     staff = exists(select(StaffProfile.id).where(
-        StaffProfile.user_id == User.id, StaffProfile.status == "active",
+        StaffProfile.user_id == User.id, StaffProfile.status == "active", StaffProfile.deleted_at.is_(None),
         StaffProfile.workspace_login_enabled.is_(True),
         or_(StaffProfile.custom_role_id.is_(None), exists(select(CustomRole.id).where(
             CustomRole.id == StaffProfile.custom_role_id))),

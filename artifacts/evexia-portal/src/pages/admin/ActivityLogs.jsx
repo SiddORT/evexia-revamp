@@ -24,7 +24,7 @@ const browserActions = {
   sales_target_status: 'Sales target status changed', sales_target_delete: 'Sales target deleted',
   courier_create: 'Courier partner created', courier_edit: 'Courier partner updated',
   courier_status: 'Courier partner status changed', courier_delete: 'Courier partner deleted',
-  staff_create: 'Staff created', staff_update: 'Staff updated', staff_status: 'Staff status changed',
+  staff_create: 'Staff created', staff_update: 'Staff updated', staff_status: 'Staff status changed', staff_delete: 'Staff deleted',
   role_create: 'Role created', role_update: 'Role updated', role_delete: 'Role deleted', role_permissions: 'Role permissions changed', staff_access: 'Staff access changed',
   browser_page_view: 'Page visited', browser_created: 'Record created',
   browser_updated: 'Record updated', browser_deleted: 'Record deleted',

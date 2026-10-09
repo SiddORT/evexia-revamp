@@ -5,7 +5,7 @@ description: SPT is a session-only mock; keep other Orders workflows separate.
 
 SPT order entry is intentionally a frontend-only evaluation workflow using fictional doctors, MRs, patients and orders. Its demo resets on a full reload. Do not connect it to real masters, persistence, or order submission without new requirements.
 
-The user will provide Immunotherapy page requirements next; do not infer treatment workflows or order processing from SPT or the navigation setup.
+Keep Immunotherapy requirements separate; do not infer treatment workflows or order processing from the session-only SPT mock or the navigation setup.
 
 **Why:** The user explicitly requested a session-only SPT mock before backend work and separated Immunotherapy requirements from the sidebar setup.
 

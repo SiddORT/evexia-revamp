@@ -258,6 +258,7 @@ import type {
   SessionResponse,
   StaffAccess,
   StaffCreated,
+  StaffDeletion,
   StaffEdit,
   StaffFields,
   StaffPage,
@@ -15173,6 +15174,123 @@ export const useSetStaffWorkspaceAccess = <
   TContext
 > => {
   return useMutation(getSetStaffWorkspaceAccessMutationOptions(options));
+};
+
+export const getDeleteStaffUrl = (staffId: string) => {
+  return `/api/v1/admin/staff/${staffId}/delete`;
+};
+
+/**
+ * @summary Delete Staff
+ */
+export const deleteStaff = async (
+  staffId: string,
+  staffDeletion: StaffDeletion,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StaffResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<StaffResponse>(getDeleteStaffUrl(staffId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(staffDeletion),
+  });
+};
+
+export const getDeleteStaffMutationKey = () => ["deleteStaff"] as const;
+
+export const getDeleteStaffMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteStaff>>,
+    TError,
+    DeleteStaffMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteStaff>>,
+  TError,
+  DeleteStaffMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteStaffMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteStaff>>,
+    DeleteStaffMutationVariables
+  > = (props) => {
+    const { staffId, data } = props ?? {};
+
+    return deleteStaff(staffId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteStaffMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteStaff>>
+>;
+export type DeleteStaffMutationBody = BodyType<StaffDeletion>;
+export type DeleteStaffMutationError = ErrorType<ErrorEnvelope>;
+export type DeleteStaffMutationVariables = {
+  staffId: string;
+  data: BodyType<StaffDeletion>;
+};
+
+/**
+ * @summary Delete Staff
+ */
+export const useDeleteStaff = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteStaff>>,
+    TError,
+    DeleteStaffMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteStaff>>,
+  TError,
+  DeleteStaffMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteStaffMutationOptions(options));
 };
 
 export const getEditStaffUrl = (staffId: string) => {

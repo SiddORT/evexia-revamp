@@ -20,6 +20,7 @@ from app.core.security import utcnow
 from app.db.models import User
 from app.db.session import session_factory
 from app.db.staff_models import StaffProfile
+from app.db.designation_models import Designation
 from app.schemas.staff import StaffFields
 from app.services.staff import assign
 from app.services.staff_crypto import StaffCrypto
@@ -30,6 +31,14 @@ with session_factory()() as db:
         raise SystemExit("Synthetic protected admin is required.")
     crypto = StaffCrypto(get_settings())
     now = utcnow()
+    designation = db.scalar(select(Designation).where(Designation.name == "Synthetic Executive",
+                                                       Designation.status == "active",
+                                                       Designation.deleted_at.is_(None)))
+    if designation is None:
+        designation = Designation(id=uuid.uuid4(), name="Synthetic Executive", shortName="SE",
+                                  status="active", version=1, created_by=admin.id, updated_by=admin.id)
+        db.add(designation)
+        db.flush()
     for index in range(1, 606):
         user = User(id=uuid.uuid4(), username=f"st_{index:028x}", email=None,
                     password_hash=admin.password_hash, system_role=None)
@@ -39,7 +48,7 @@ with session_factory()() as db:
                                created_at=now - timedelta(seconds=index), updated_at=now)
         assign(profile, StaffFields(name=f"Directory Preview {index}",
                email=f"preview-search-{index}@example.com", phone="9876543210",
-               dialCountry="IN", role="Staff", designation="Synthetic Executive",
+               dialCountry="IN", role="Staff", designation_id=designation.id,
                dateOfJoining="2025-01-15", status="active"), crypto)
         db.add(profile)
     db.commit()

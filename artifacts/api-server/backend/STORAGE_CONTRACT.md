@@ -26,7 +26,7 @@ password input; there is no default elevated account.
 | Action | Super Admin | Active MR |
 |---|---|---|
 | Provision/map login and MR; create patient; assign patient | yes | no |
-| Staff list/detail/create/edit/status (`staff.manage`) | protected singleton only | no |
+| Staff list/detail/create/edit/status/access/soft-delete (`staff.manage`) | protected singleton only | no |
 | Zone list/detail/create/edit/status/soft-delete/import/export | all; opt-in staff limited to five explicit Zone grants | no |
 | Courier Partner list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
 | Storage Location list/detail/create/edit/status/soft-delete/import/export (`admin.access`) | protected singleton only | no |
@@ -56,10 +56,15 @@ record/field/version binding. Business roles/designations never affect
 authorization. Directory status does not enable login.
 All staff mutations are atomic and stale-version checked; passwords are
 generated server-side, Argon2id-hashed and returned once on create only.
-No hard-delete, import, invitation, staff sign-in, password reset or rotation API
+No hard-delete, import, invitation, password reset or rotation API
 exists. Legacy browser-local staff storage is untouched/unused; Designation
-Master offers bounded active server choices, but saved staff labels remain
-business metadata, not foreign-key or authorization relationships.
+Master offers bounded active server UUID choices. Required Staff designation
+references restrict hard deletion and expose derived names; unchanged inactive/
+deleted references are retainable metadata, never authorization. Staff soft deletion
+retains ciphertext/User/role links and status with server-owned time/actor, version
+checks and atomic session revocation. Tombstones are excluded from normal Staff
+operations and authentication, but kept in role-reference checks, history and key
+inventory. Migration `0028` verifies every historical label before removing text.
 See `docs/staff-security.md` for key retention and coordinated backup/recovery.
 
 MR Master is a one-to-one business extension of MRProfile, not an automatic
@@ -77,7 +82,8 @@ assignments are retained and deleted ones require replacement. Forward
 `0027_mr_designation_identity` checks all historical labels with catalogue
 normalization and refuses unmatched/ambiguous mappings atomically; managed rollout
 needs separate approval. Renames prevent reconstructing original text, so
-populated downgrade is refused. Staff designation text remains unchanged.
+populated downgrade is refused. Staff follows its own reviewed `0028` mapping and
+allows unchanged deleted designation references to remain retainable.
 
 Zone Master uses server-owned UTC audit times and User actor references, immutable
 creation metadata, mandatory expected versions and non-deleted lower-name

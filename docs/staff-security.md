@@ -9,7 +9,7 @@ Login is disabled by default. Only an explicit `workspace_login_enabled` change
 admits active staff through the existing workspace login, using their existing
 User ID/password. A separately chosen custom role ID supplies only the forty
 supported master grants, never broad administrator or generic domain/file powers.
-Active status alone never enables login; inactive or disabled accounts cannot
+Active status alone never enables login; deleted, inactive or disabled accounts cannot
 authenticate or retain usable sessions. Business labels never become assignments.
 Existing protected Super Admin/MR policy and session rotation remain unchanged.
 Registered-account counts include staff; eligible enabled staff sessions count
@@ -19,8 +19,13 @@ See [Zone role permissions](zone-role-permissions.md) for opt-in rollout.
 Designation Master uses a separate protected server catalogue. Staff Management
 loads up to 100 active server choices, fails explicitly above that bound and offers
 retry on request failure without discarding drafts. Existing unavailable saved
-labels remain selectable during edit. The server stores a bounded selected label
-only, not a foreign-key or authorization relationship. No staff labels are rewritten.
+references remain selectable during edit, hydrated through independently loaded
+Staff detail, not inferred from the first choice batch. The server stores required
+`designation_id` UUID metadata with a restrictive catalogue foreign key and returns
+derived read-only `designationName`. New or changed assignments require active
+non-deleted catalogue rows under transaction locks. Unchanged inactive/deleted
+references remain displayable and retainable. Neither the ID nor name grants access.
+Old writable designation strings, unknown UUIDs and client deletion metadata are rejected.
 See [Designation Master](designation-master.md). Legacy `evexia.admin.staff.v1` is never
 read, changed, cleared or automatically migrated by Staff Management. Existing
 data there can still be inspected by the browser owner but is not live directory
@@ -54,6 +59,71 @@ persisted encrypted email before proceeding; replacing the index key without
 reindexing existing rows fails closed, rather than allowing duplicates.
 
 ## Migration and recovery
+
+Forward `0028_staff_designation_lifecycle` follows merged
+`0028_directory_soft_delete`, after `0027_mr_designation_identity` and the reduced
+designation catalogue. Its schema changes affect only Staff: required
+`designation_id` replaces text after complete verified mapping; nullable
+timezone-aware `deleted_at` and UUID `deleted_by` reference server time/User.
+No identities, ciphertext, credentials, links, versions, role/login settings,
+joining dates, status or audit metadata are recreated or rewritten by the migration.
+
+**Managed/production execution and live inspection require separate operator
+approval.** Stop writes, verify a coordinated database/audit/key backup, run the
+read-only preflight on the historical schema, review every unresolved label and
+deploy schema/API/frontend together. No old API node may write against the new
+schema. Startup never migrates. Operator commands (from the backend directory;
+the connection configuration belongs in the approved environment, not arguments):
+
+```sh
+PYTHONPATH=. python -m app.staff_designation_preflight --offset 0 --limit 100
+PYTHONPATH=. python -m app.staff_designation_preflight --mapping-file /operator/reviewed.json
+alembic -x staff_designation_map=/operator/reviewed.json upgrade head
+```
+
+Preflight is repeatable-read/read-only, groups exact legacy values and reports
+affected counts, unmatched/ambiguous values and candidate UUID/name/status/deletion
+identities, never staff contact or credential fields. Page all unresolved groups
+with `--offset`/`--limit` and, if needed, candidate lists with `--candidate-offset`
+(100 candidates per group per page). Exit codes: 0 complete, 1 unresolved, 2 invalid
+mapping/unavailable. Automatic matching uses the catalogue's PostgreSQL
+lower/trim/collapsed-whitespace normalization against **all** rows, including
+inactive/deleted history. Reused names are ambiguous, never assigned to the newest
+live row. Missing/blank labels remain blocked for reviewed manual reconciliation.
+
+Reviewed mapping JSON is an object of **exact original legacy strings** to existing
+designation UUIDs, for example `{"Reviewed legacy label":"<existing UUID>"}`.
+Unknown labels, targets, malformed/duplicate keys and incomplete maps abort.
+Overrides never create/rename catalogue records or rewrite original Staff text.
+Migration locks Staff/catalogue writes, rechecks all mappings, backfills only
+designation IDs, validates pending identity constraints, then replaces text in
+one atomic transaction. Any failure leaves original text/records intact.
+
+Populated downgrade is refused: renamed catalogue names cannot reconstruct original
+labels, and removing deletion evidence is unsafe. Only an empty Staff table can
+reverse this migration. Recover through a reviewed forward correction or verified
+coordinated backup restore, not application-only rollback.
+
+## Retained deletion lifecycle
+
+Protected `staff.manage` can confirm `POST /admin/staff/{id}/delete` with strictly
+positive `expected_version` only. Policy→actor→target User→Staff locks serialize
+access/status/delete with sensitive actions and session issuance. The server
+verifies ciphertext, checks the version, assigns its UTC time/actor, increments
+the existing version, updates last-modifier metadata, emits `staff_delete` and
+revokes all target sessions/refresh credentials atomically. Status is not reused
+as deletion. Repeated/deleted requests return 404 without replacing first attribution;
+stale versions return 409. Uncertain responses require directory refresh, not blind retry.
+
+Normal list, bounded search, detail, edit, status and access assignment reject or
+exclude tombstones, including stale direct IDs. Authentication login/refresh/bearer/
+locked revalidation checks deletion. Eligible-session counts exclude deleted staff;
+registered account, activity/audit and role-reference history remain retained.
+Key rotation and encrypted backup inventory still include every tombstone. Emails
+remain reserved; no reuse policy changes. No trash, restore, hard delete, new
+assignment workflow or history table is introduced. CSVs retain human-readable live
+designation names, current-batch scope, formula protection, no UUID/audit/credential
+columns and existing durable download acceptance.
 
 Migration `0009_staff` only adds an empty profile table, permits null User.email
 under explicit deferred profile linkage, and enforces staff identity immutability.

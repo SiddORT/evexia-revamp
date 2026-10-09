@@ -15,11 +15,11 @@ class StaffFields(BaseModel):
     phone: str = Field(min_length=1, max_length=30)
     dialCountry: str
     role: Literal["Staff", "Manager", "Accountant", "Back End", "Sub Admin", "Super Admin"]
-    designation: str = Field(min_length=1, max_length=200)
+    designation_id: uuid.UUID
     dateOfJoining: date
     status: Literal["active", "inactive"]
 
-    @field_validator("name", "designation")
+    @field_validator("name")
     @classmethod
     def safe_text(cls, value):
         if any(ord(c) < 32 or ord(c) == 127 for c in value):
@@ -60,6 +60,11 @@ class StaffStatus(BaseModel):
     expected_version: int = Field(ge=1)
 
 
+class StaffDeletion(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_version: int = Field(ge=1, strict=True)
+
+
 class StaffAccess(BaseModel):
     model_config = ConfigDict(extra="forbid")
     expected_version: int = Field(ge=1, strict=True)
@@ -68,6 +73,9 @@ class StaffAccess(BaseModel):
 
 
 class StaffResponse(StaffFields):
+    designationName: str
+    deleted_at: datetime | None = None
+    deleted_by: uuid.UUID | None = None
     id: uuid.UUID
     userId: str
     version: int

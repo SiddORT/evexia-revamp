@@ -1,4 +1,5 @@
 """Forward preservation and concurrency; never connects to the managed database."""
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 from datetime import timedelta
@@ -17,15 +18,32 @@ from app.services.master_policy import MASTERS, MASTER_ACTIONS, authorize_master
 from app.services.zone_policy import lock_policy
 from test_migration_0006 import migration_db
 from test_migration_zone_permissions import fixture
-from test_migration_staff import identity
+from test_migration_staff import identity, prepare
+from test_staff import seed_designation
 
 
 def test_forward_preserves_grants_versions_assignments_and_empty_defaults(migration_db):
-    engine, config, admin_id, session_id, role, record, user_id, staff_session = fixture(migration_db)
-    command.downgrade(config, "0020_patient_directory")
+    # Seed the historical contract directly; populated lifecycle downgrade is
+    # deliberately unavailable and current ORM fields do not exist at 0020.
+    engine, config, admin_id, session_id, _ = prepare(migration_db)
+    command.upgrade(config, "0020_patient_directory")
+    role_id, user_id, profile_id = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+    role = {"id": role_id}
+    with engine.begin() as conn:
+        conn.execute(text("INSERT INTO custom_roles(id,name,description,permissions,version) VALUES (:id,'Existing','Retained',ARRAY['zone.add'],3)"), dict(id=role_id))
+        conn.execute(text("INSERT INTO users(id,email,username,password_hash,is_active,token_version,identity_version,is_protected_system_admin) VALUES (:id,NULL,'historical_granted_staff','retained-hash',true,0,0,false)"), dict(id=user_id))
+        conn.execute(text("""
+            INSERT INTO staff_profiles(id,user_id,name_ciphertext,email_ciphertext,phone_ciphertext,email_index,
+                dial_country,role,designation,joining_date,status,version,created_by,updated_by,custom_role_id,workspace_login_enabled)
+            VALUES (:id,:user,'retained-name','retained-email','retained-phone','retained-index','IN',
+                'Staff','Director','2020-01-01','active',3,:actor,:actor,:role,true)
+        """), dict(id=profile_id, user=user_id, actor=admin_id, role=role_id))
     with engine.connect() as conn:
         before = conn.execute(text("SELECT id, permissions, version, updated_at FROM custom_roles")).all()
         staff_before = conn.execute(text("SELECT id, custom_role_id, workspace_login_enabled, version FROM staff_profiles")).all()
+    command.upgrade(config, "0027_mr_designation_identity")
+    with Session(engine) as db:
+        seed_designation(db, admin_id, "Director")
     command.upgrade(config, "head")
     with engine.connect() as conn:
         assert conn.execute(text("SELECT id, permissions, version, updated_at FROM custom_roles")).all() == before
@@ -42,7 +60,7 @@ def test_forward_preserves_grants_versions_assignments_and_empty_defaults(migrat
             db.commit()
         db.rollback()
         assert db.get(CustomRole, role["id"]).permissions == sorted(MASTER_ACTIONS)
-    with pytest.raises(Exception, match="Explicitly remove non-Zone grants"):
+    with pytest.raises(Exception, match="Populated Staff downgrade"):
         command.downgrade(config, "0020_patient_directory")
 
 

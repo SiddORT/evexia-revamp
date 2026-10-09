@@ -211,8 +211,8 @@ for spec in $SPECS; do
       # seven reference-producing scenarios with the Doctor/Patient ledger.
       if [ "$SPEC_COUNT" -gt 1 ]; then ISOLATE_OPENING_BALANCE=1; else OTHER_SPECS="$OTHER_SPECS $spec"; fi ;;
     */master-staff-permissions.preview.spec.mjs)
-      # Staff has no deletion workflow; disabling login cannot restore a fresh
-      # directory. Keep matrix provisioning out of empty-directory baselines.
+      # Staff soft deletion retains identities and role references. Keep matrix
+      # provisioning out of empty-directory and role-reference baselines.
       if [ "$SPEC_COUNT" -gt 1 ]; then ISOLATE_MASTER_STAFF=1; else OTHER_SPECS="$OTHER_SPECS $spec"; fi ;;
     */directory-deletion.preview.spec.mjs)
       # Independent credential ledger: deletion preserves identities rather

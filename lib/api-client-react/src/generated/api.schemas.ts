@@ -2922,11 +2922,10 @@ export interface StaffResponse {
   createdBy: string;
   custom_role_id?: string | null;
   dateOfJoining: string;
-  /**
-   * @minLength 1
-   * @maxLength 200
-   */
-  designation: string;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
+  designationName: string;
+  designation_id: string;
   dialCountry: string;
   /** @maxLength 320 */
   email: string;
@@ -2955,6 +2954,11 @@ export interface StaffCreated {
   record: StaffResponse;
 }
 
+export interface StaffDeletion {
+  /** @minimum 1 */
+  expected_version: number;
+}
+
 export type StaffEditRole = (typeof StaffEditRole)[keyof typeof StaffEditRole];
 
 export const StaffEditRole = {
@@ -2976,11 +2980,7 @@ export const StaffEditStatus = {
 
 export interface StaffEdit {
   dateOfJoining: string;
-  /**
-   * @minLength 1
-   * @maxLength 200
-   */
-  designation: string;
+  designation_id: string;
   dialCountry: string;
   /** @maxLength 320 */
   email: string;
@@ -3022,11 +3022,7 @@ export const StaffFieldsStatus = {
 
 export interface StaffFields {
   dateOfJoining: string;
-  /**
-   * @minLength 1
-   * @maxLength 200
-   */
-  designation: string;
+  designation_id: string;
   dialCountry: string;
   /** @maxLength 320 */
   email: string;
