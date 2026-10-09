@@ -28,6 +28,8 @@ async function open(page) {
 async function create(page, name) {
   await page.getByRole('button', { name: 'Add headquarter', exact: true }).click();
   await expect(page.getByTestId('input-headquarter-name')).toHaveValue('');
+  await expect(page.getByRole('button', { name: /Regenerate from HQ name/ })).toHaveCount(0);
+  await expect(page.getByText(/Automatic abbreviation|official geographic state code|Drafts stay in memory/)).toHaveCount(0);
   await page.getByTestId('input-headquarter-name').fill('Mumbai');
   await expect(page.getByTestId('input-headquarter-state-code')).toHaveValue('MU');
   await page.getByTestId('input-headquarter-name').fill('North Mumbai');

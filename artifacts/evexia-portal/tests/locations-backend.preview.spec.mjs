@@ -26,6 +26,7 @@ test('location export menu preserves themed surfaces and keyboard highlights', a
 });
 async function create(page, name, address = 'Building A Ground floor') {
   await page.getByTestId('button-add-storage-location').click();
+  await expect(page.getByText('Shared location directory only. Browser-local Allergen and purchasing locations are separate; no inventory is updated.', { exact: true })).toHaveCount(0);
   await page.getByTestId('input-storage-name').fill(name);
   await page.getByTestId('input-storage-address').fill(address);
   await page.getByTestId('select-storage-status').selectOption('active');

@@ -1,3 +1,6 @@
+.ob-add-dialog { width: min(760px, calc(100vw - 24px)); }
+.ob-add-dialog .ob-form { border: 0; }
+.ob-add-dialog .mr-form__footer { justify-content: flex-end; }
 .ob-head-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 9px; }
 .ob-actions { border: 0; padding: 0; margin: 0; }
 .ob-form fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }

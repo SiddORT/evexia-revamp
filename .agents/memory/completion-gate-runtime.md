@@ -17,3 +17,16 @@ gate or weaken its assertions. Prefer operator-approved splitting into smaller
 named validation steps. If the current completion infrastructure genuinely
 cannot finish the configured gate, preserve scoped test evidence and explicitly
 audit that limitation; never claim the unfinished full gate passed.
+
+The tester's shell command may hit its timeout during slow isolated fixture
+startup, before any Playwright results exist. Detached shell launches there
+are not reliably retained. Use the main agent's supported background shell
+facility with a retained log when setup needs longer than the foreground limit.
+
+**Why:** A timed-out setup and detached-launch attempts produced no test
+results, whereas the supported background task retained the process through
+slow PostgreSQL/browser setup.
+
+**How to apply:** First confirm the earlier harness process ended and no specs
+ran. Continue the same intended test pass through a tracked background task;
+do not start duplicate fixtures or mistake absent output for a passing test.

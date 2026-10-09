@@ -136,6 +136,8 @@ export function registerSalesTargetLayout(test, seed) {
           }
           await route.fulfill({ response, json: data });
         });
+        await expect(page.getByTestId('select-filter-sales-target-zone')).toBeHidden();
+        await page.getByTestId('button-toggle-sales-target-filters').click();
         for (const [id, label, value] of [
           ['filter-sales-target-zone', 'Zone', refs.zone.name],
           ['filter-sales-target-mr', 'MR', `${refs.mr.name} (${refs.mr.employeeCode})`],

@@ -73,13 +73,12 @@ function HeadquarterForm({ record, onSave, onCancel, onRefresh }) {
       <div className="mr-form__grid">
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="headquarter-name">HQ Name *</label><input id="headquarter-name" className="mr-form__control" value={values.name} onChange={(event) => update('name', event.target.value)} placeholder="e.g. North Mumbai" aria-invalid={Boolean(errors.name)} data-testid="input-headquarter-name" />{errors.name && <p className="mr-form__error" role="alert">{errors.name}</p>}</div>
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="headquarter-state-code">State Code *</label><input id="headquarter-state-code" className="mr-form__control admin-hq-code-input" value={values.state_code} onChange={(event) => update('state_code', event.target.value.toUpperCase())} aria-invalid={Boolean(errors.state_code)} data-testid="input-headquarter-state-code" />
-          <button type="button" className="admin-button admin-button--secondary" onClick={() => { setAutomatic(true); setValues((current) => ({ ...current, state_code: abbreviation(current.name) })); }}>Regenerate from HQ name</button>
-          <p className="mr-form__footer-note">{automatic ? 'Automatic abbreviation follows name changes.' : 'Saved/manual code is preserved on name changes.'} This is not an official geographic state code.</p>{errors.state_code && <p className="mr-form__error" role="alert">{errors.state_code}</p>}
+          {errors.state_code && <p className="mr-form__error" role="alert">{errors.state_code}</p>}
         </div>
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="headquarter-status">Status *</label><select id="headquarter-status" className="mr-form__control" value={values.status} onChange={(event) => update('status', event.target.value)} aria-invalid={Boolean(errors.status)} data-testid="select-headquarter-status"><option value="" disabled>Select status</option><option value="active">Active</option><option value="inactive">Inactive</option></select>{errors.status && <p className="mr-form__error" role="alert">{errors.status}</p>}</div>
       </div>
     </div>
-    <div className="mr-form__footer"><span className="mr-form__footer-note">Drafts stay in memory during same-identity renewal. Legacy browser tab drafts are not loaded.</span><div className="mr-form__actions"><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={onCancel}>Cancel</button><button type="submit" disabled={pending || blocked} className="admin-button" data-testid="button-save-headquarter">{pending ? 'Saving…' : record ? 'Save changes' : 'Save headquarter'}</button></div></div>
+    <div className="mr-form__footer"><div className="mr-form__actions"><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={onCancel}>Cancel</button><button type="submit" disabled={pending || blocked} className="admin-button" data-testid="button-save-headquarter">{pending ? 'Saving…' : record ? 'Save changes' : 'Save headquarter'}</button></div></div>
   </form>;
 }
 

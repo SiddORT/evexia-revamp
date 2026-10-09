@@ -73,7 +73,7 @@ function CategoryForm({ record, onSave, onCancel, onRefresh }) {
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="category-status">Status *</label><select id="category-status" className="mr-form__control" value={values.status} onChange={(event) => update('status', event.target.value)} aria-invalid={Boolean(errors.status)} data-testid="select-category-status"><option value="" disabled>Select status</option><option value="active">Active</option><option value="inactive">Inactive</option></select>{errors.status && <p className="mr-form__error" role="alert">{errors.status}</p>}</div>
       </div>
     </div>
-    <div className="mr-form__footer"><span className="mr-form__footer-note">Drafts stay in memory during same-identity renewal. Legacy browser tab drafts are not loaded.</span><div className="mr-form__actions"><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={onCancel}>Cancel</button><button type="submit" disabled={pending || blocked} className="admin-button" data-testid="button-save-category">{pending ? 'Saving…' : record ? 'Save changes' : 'Save category'}</button></div></div>
+    <div className="mr-form__footer"><div className="mr-form__actions"><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={onCancel}>Cancel</button><button type="submit" disabled={pending || blocked} className="admin-button" data-testid="button-save-category">{pending ? 'Saving…' : record ? 'Save changes' : 'Save category'}</button></div></div>
   </form>;
 }
 
@@ -122,7 +122,7 @@ export default function ProductCategoryFormPage({ id }) {
   }
   const title = id ? 'Edit category' : 'Add category';
   return <AdminLayout title={title}>
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Directory / Product Category Master</p><h1>{title}</h1><p className="admin-page-head__description">Manage a shared category’s name, description, exact price and availability. Allergen and procurement remain separate browser-local demos.</p></div><button className="admin-button admin-button--secondary" onClick={() => navigate(LIST)}><ArrowLeft size={16} /> Back to categories</button></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Directory / Product Category Master</p><h1>{title}</h1><p className="admin-page-head__description">Manage a shared category’s name, description, exact price and availability.</p></div><button className="admin-button admin-button--secondary" onClick={() => navigate(LIST)}><ArrowLeft size={16} /> Back to categories</button></div>
     {loading ? <p role="status">Loading category…</p> : error || (id && !record) ? <section className="admin-panel" role="alert"><h2>Product category could not be loaded</h2><p>{error || 'This category may have been deleted.'}</p><button className="admin-button" onClick={() => setRevision((value) => value + 1)}>Retry</button></section> : <section className="admin-panel" aria-label={title}><CategoryForm key={id || 'new'} record={record} onSave={save} onCancel={() => navigate(LIST)} onRefresh={refresh} /></section>}
   </AdminLayout>;
 }

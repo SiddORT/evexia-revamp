@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import Dialog from './Dialog.jsx';
 import PhoneInput from './PhoneInput.jsx';
+import { VENDOR_COUNTRIES } from '../../services/vendorPhone.js';
 import { getVendor } from '../../services/serverVendors.js';
 import { EMPTY_VENDOR, VENDOR_COLUMNS, VENDOR_LENGTHS, vendorDraftErrors } from '../../services/vendorFields.js';
 import '../../vendor.css';
@@ -63,7 +64,7 @@ export default function VendorForm({ vendor, onSave, onClose }) {
         const common = { id, disabled: pending, value: values[key], onChange: (event) => change(key, event.target.value), 'aria-required': 'true', 'aria-invalid': Boolean(errors[key]), 'aria-describedby': errors[key] ? `vendor-error-${key}` : undefined, 'data-testid': `input-vendor-${key}`, maxLength: VENDOR_LENGTHS[key] };
         let input;
         if (key === 'registeredAddress') input = <textarea {...common} autoComplete="off" />;
-        else if (key === 'phoneNo') input = <fieldset disabled={pending} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}><PhoneInput prefix="vendor" country={values.dialCountry} onCountryChange={(value) => change('dialCountry', value)} countryError={errors.dialCountry} inputProps={{ ...common, autoComplete: 'tel' }} /></fieldset>;
+        else if (key === 'phoneNo') input = <fieldset disabled={pending} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}><PhoneInput prefix="vendor" countries={VENDOR_COUNTRIES} country={values.dialCountry} onCountryChange={(value) => change('dialCountry', value)} countryError={errors.dialCountry} inputProps={{ ...common, autoComplete: 'tel' }} /></fieldset>;
         else input = <input {...common} type={key === 'emailId' ? 'email' : 'text'} autoComplete={key === 'emailId' ? 'email' : 'off'} />;
         return <div key={key} className={`admin-vendor-field${key === 'registeredAddress' ? ' admin-vendor-field--wide' : ''}`}>
           <label htmlFor={id}>{label} <span aria-hidden="true">*</span></label>{input}

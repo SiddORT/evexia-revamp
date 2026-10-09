@@ -26,11 +26,9 @@ export default function ProductCategoryMaster() {
   const [, navigate] = useLocation();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const { records, total, filtered, loading, pending, error, feedback, clearFeedback, retry, remove, changeStatus } = useServerProductCategories(search, filter, page, pageSize, minPrice, maxPrice);
+  const { records, total, filtered, loading, pending, error, feedback, clearFeedback, retry, remove, changeStatus } = useServerProductCategories(search, filter, page, pageSize);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const busy = useRef(false);
@@ -67,7 +65,7 @@ export default function ProductCategoryMaster() {
     const guard = reportingIdentityGuard();
     controller.current = new AbortController();
     try {
-      const blob = await exportProductCategories({ query: search, status: filter, min_price: minPrice, max_price: maxPrice }, format, controller.current.signal);
+      const blob = await exportProductCategories({ query: search, status: filter }, format, controller.current.signal);
       guard();
       if (alive.current) downloadProductCategoryFile(blob, format);
     } catch (cause) {
@@ -120,7 +118,7 @@ export default function ProductCategoryMaster() {
       <div className="admin-toolbar"><button className="admin-button admin-button--secondary" disabled={loading} onClick={retry}>Refresh records</button><div className="admin-toolbar__fields">
         <label className="admin-search"><Search size={16} /><span className="sr-only">Search categories by name, description or price</span><input maxLength={200} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search category, description or price" /></label>
         <div className="admin-filter"><label htmlFor="hq-filter">Status</label><select id="hq-filter" className="admin-select" value={filter} onChange={(event) => { setFilter(event.target.value); setPage(1); }}><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
-      </div><label className="admin-filter">Minimum price<input className="admin-select" inputMode="decimal" value={minPrice} onChange={(event) => { setMinPrice(event.target.value); setPage(1); }} /></label><label className="admin-filter">Maximum price<input className="admin-select" inputMode="decimal" value={maxPrice} onChange={(event) => { setMaxPrice(event.target.value); setPage(1); }} /></label></div>
+      </div></div>
       {loading ? <p className="admin-empty" role="status">Loading shared categories…</p> : error ? <div className="admin-empty" role="alert"><strong>ProductCategories could not be loaded</strong><p>{error}</p><button className="admin-button" onClick={retry}>Try again</button></div> : <>
         {records.length ? cardView ? <div className="admin-zone-cards" role="list" aria-label="Product category records">{records.map((record, index) => <article className="admin-zone-card" role="listitem" key={record.id}>
           <div className="admin-zone-card__heading"><div className="admin-zone-card__title"><span className="admin-zone-card__serial">#{(page - 1) * pageSize + index + 1}</span><h2>{record.name}</h2></div><StatusBadge status={record.status} id={record.id} /></div>

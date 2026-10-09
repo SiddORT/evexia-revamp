@@ -4,7 +4,9 @@ import uuid
 from datetime import datetime
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from app.schemas.staff import COUNTRIES
+from app.schemas.vendor_phone import VENDOR_COUNTRIES, normalize_vendor_phone
+
+VendorCountry = Literal[*VENDOR_COUNTRIES]
 
 BUSINESS_FIELDS = ("vendorName", "gstNo", "registeredAddress", "contactPersonName",
                    "emailId", "phoneNo", "dialCountry", "status")
@@ -17,7 +19,7 @@ class VendorFields(BaseModel):
     registeredAddress: str = Field(min_length=1, max_length=2000)
     contactPersonName: str = Field(min_length=1, max_length=200)
     emailId: str = Field(min_length=3, max_length=320)
-    dialCountry: Literal["IN", "US", "GB", "AE"] = "IN"
+    dialCountry: VendorCountry = "IN"
     phoneNo: str = Field(min_length=1, max_length=30)
     status: Literal["active", "inactive"] = "active"
 
@@ -57,15 +59,7 @@ class VendorFields(BaseModel):
     @field_validator("phoneNo")
     @classmethod
     def phone(cls, value, info):
-        country = info.data.get("dialCountry")
-        if country not in COUNTRIES:
-            raise ValueError("Select a supported phone country.")
-        local = re.sub(r"^\+91[\s-]?", "", value) if country == "IN" else value
-        digits = re.sub(r"[\s()-]", "", local)
-        if (not re.fullmatch(r"[0-9\s()-]+", local) or len(digits) != COUNTRIES[country]
-                or (country == "IN" and not re.fullmatch(r"[6-9][0-9]{9}", digits))):
-            raise ValueError("Invalid phone number for the selected country.")
-        return digits
+        return normalize_vendor_phone(value, info.data.get("dialCountry"))
 
 
 class VendorEdit(VendorFields):

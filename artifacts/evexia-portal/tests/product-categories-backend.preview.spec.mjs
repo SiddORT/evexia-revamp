@@ -83,13 +83,10 @@ for (const mobile of [false, true]) {
     await page.reload();
     await expect(page.getByTestId('text-category-count')).toBeVisible();
     await expect(record).toContainText(name + ' Edited');
-    await page.getByLabel('Minimum price', { exact: true }).fill('125.500001');
-    await page.getByLabel('Maximum price', { exact: true }).fill('125.500001');
+    await expect(page.getByLabel('Minimum price', { exact: true })).toHaveCount(0);
+    await expect(page.getByLabel('Maximum price', { exact: true })).toHaveCount(0);
     await page.getByPlaceholder('Search category, description or price').fill(name);
     await expect(page.getByTestId('text-category-count')).toContainText('of 1');
-    await page.getByLabel('Minimum price', { exact: true }).fill('126');
-    await expect(page.getByRole('alert')).toContainText('Minimum price must not exceed maximum price');
-    await page.getByLabel('Minimum price', { exact: true }).fill('125.500001');
     await expect(record).toContainText('125.500001');
     await page.getByRole('button', { name: `Inactivate ${name} Edited`, exact: true }).click();
     await page.getByTestId('button-confirm-action').click();
@@ -178,11 +175,7 @@ test('Category CSV/XLSX review, explicit atomic confirmation, filtered exports a
     { price: '0', status: 'active', name: 'Transfer North' },
     { price: '125.500001', status: 'inactive', name: 'Transfer South' },
   ]) {
-    // Clear the previous bounds first, avoiding an invalid transient range.
-    await page.getByLabel('Minimum price').fill('');
-    await page.getByLabel('Maximum price').fill('');
-    await page.getByLabel('Minimum price').fill(price);
-    await page.getByLabel('Maximum price').fill(price);
+    await page.getByPlaceholder('Search category, description or price').fill(name);
     await page.getByLabel('Status', { exact: true }).selectOption(status);
     await expect(page.getByTestId('text-category-count')).toContainText('of 1');
     for (const format of ['csv', 'xlsx']) {

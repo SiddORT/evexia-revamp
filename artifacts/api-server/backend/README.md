@@ -77,6 +77,15 @@ explicit migration and unchanged local-demo purchasing relationships.
 
 ## Local development and operations
 
+- International Vendor phones require reviewed migration `0025_vendor_phone`
+  after `0024_opening_balances`. It widens the national-number column to 15
+  digits and expands only Vendor country constraints, preserving existing
+  records and audit history. Do not apply to a managed/production database
+  without explicit operator approval. Downgrade refuses to narrow any
+  international history, including deleted records. Phone metadata updates must
+  keep the frontend/backend country catalogues, contract and database country
+  snapshot aligned; new regions require a new migration, not edits to history.
+
 - Workspace Python dependencies are managed by `pyproject.toml` and `uv.lock`
   (Python 3.13). The managed `artifacts/api-server: API Server` workflow serves
   FastAPI under `/api` on port 8080.

@@ -4,9 +4,12 @@ from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, St
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 from app.db.models import Timestamps
+from app.schemas.vendor_phone import VENDOR_COUNTRIES
+
+COUNTRY_SQL = ",".join(f"'{country}'" for country in VENDOR_COUNTRIES)
 
 LENGTHS = {"vendorName": 200, "gstNo": 15, "registeredAddress": 2000,
-           "contactPersonName": 200, "emailId": 320, "phoneNo": 10, "dialCountry": 2}
+           "contactPersonName": 200, "emailId": 320, "phoneNo": 15, "dialCountry": 2}
 CONSTRAINTS = (
     CheckConstraint("version >= 1", name="ck_vendor_version"),
     CheckConstraint("status IN ('active', 'inactive')", name="ck_vendor_status"),
@@ -14,10 +17,12 @@ CONSTRAINTS = (
     *(CheckConstraint(f'length("{field}") BETWEEN 1 AND {length} AND "{field}" = btrim("{field}")',
                       name=f"ck_vendor_{field}_length") for field, length in LENGTHS.items()),
     CheckConstraint('"gstNo" ~ \'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$\'', name="ck_vendor_gst"),
+    CheckConstraint(f'"dialCountry" IN ({COUNTRY_SQL})', name="ck_vendor_country"),
     CheckConstraint(
         '("dialCountry" = \'IN\' AND "phoneNo" ~ \'^[6-9][0-9]{9}$\') OR '
         '("dialCountry" IN (\'US\', \'GB\') AND "phoneNo" ~ \'^[0-9]{10}$\') OR '
-        '("dialCountry" = \'AE\' AND "phoneNo" ~ \'^[0-9]{9}$\')', name="ck_vendor_phone"),
+        '("dialCountry" = \'AE\' AND "phoneNo" ~ \'^[0-9]{9}$\') OR '
+        '("dialCountry" NOT IN (\'IN\',\'US\',\'GB\',\'AE\') AND "phoneNo" ~ \'^[0-9]{4,15}$\')', name="ck_vendor_phone"),
 )
 
 
@@ -30,7 +35,7 @@ class Vendor(Timestamps, Base):
     registeredAddress: Mapped[str] = mapped_column(String(2000), nullable=False)
     contactPersonName: Mapped[str] = mapped_column(String(200), nullable=False)
     emailId: Mapped[str] = mapped_column(String(320), nullable=False)
-    phoneNo: Mapped[str] = mapped_column(String(10), nullable=False)
+    phoneNo: Mapped[str] = mapped_column(String(15), nullable=False)
     dialCountry: Mapped[str] = mapped_column(String(2), nullable=False)
     status: Mapped[str] = mapped_column(String(8), nullable=False)
     version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)

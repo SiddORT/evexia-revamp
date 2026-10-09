@@ -3,7 +3,7 @@ import * as service from '../services/serverProductCategories.js';
 import { getSession, subscribeSession, reportingIdentityGuard } from '../auth/adminSession.js';
 
 const empty = () => ({ items: [], total: 0, filtered: 0 });
-export default function useServerProductCategories(query, status, page, pageSize, minPrice, maxPrice) {
+export default function useServerProductCategories(query, status, page, pageSize) {
   const [data, setData] = useState(empty);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -29,7 +29,7 @@ export default function useServerProductCategories(query, status, page, pageSize
     const guard = reportingIdentityGuard();
     setLoading(true);
     const timer = setTimeout(() => {
-      service.listProductCategories({ query, status, min_price: minPrice, max_price: maxPrice, limit: pageSize, offset: (page - 1) * pageSize }, controller.signal)
+      service.listProductCategories({ query, status, limit: pageSize, offset: (page - 1) * pageSize }, controller.signal)
         .then((result) => { guard(); if (!controller.signal.aborted) { setData(result); setError(''); } })
         .catch((cause) => {
           try { guard(); } catch { return; }
@@ -38,7 +38,7 @@ export default function useServerProductCategories(query, status, page, pageSize
         .finally(() => { if (!controller.signal.aborted && alive.current) setLoading(false); });
     }, 200);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [query, status, page, pageSize, minPrice, maxPrice, revision]);
+  }, [query, status, page, pageSize, revision]);
   useEffect(() => {
     const listener = () => { if (document.visibilityState === 'visible') retry(); };
     window.addEventListener('focus', listener);

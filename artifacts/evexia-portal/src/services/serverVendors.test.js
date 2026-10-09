@@ -1,6 +1,26 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { vendorDraftErrors, vendorPhone, vendorTel, EMPTY_VENDOR } from './vendorFields.js';
+import { VENDOR_COUNTRIES, normalizeVendorPhone } from './vendorPhone.js';
+import { DIAL_COUNTRIES } from './phoneCountries.js';
+
+test('vendor catalogue distinguishes shared calling codes and validates variable national lengths', () => {
+  assert.ok(VENDOR_COUNTRIES.length > 240);
+  assert.deepEqual(DIAL_COUNTRIES.map((c) => c.value), ['IN', 'US', 'GB', 'AE']);
+  const labels = VENDOR_COUNTRIES.filter((c) => c.code === '+1').map((c) => c.label);
+  assert.ok(labels.includes('Canada (CA) +1'));
+  assert.ok(labels.includes('United States (US) +1'));
+  for (const [country, phone, normalized] of [
+    ['CA', '(506) 234-5678', '5062345678'], ['SG', '6123 4567', '61234567'],
+    ['DE', '030 123456', '30123456'], ['BR', '(11) 96123-4567', '11961234567'],
+    ['IT', '02 1234 5678', '0212345678'], ['SH', '22158', '22158'],
+  ]) {
+    assert.equal(normalizeVendorPhone(phone, country), normalized);
+    assert.equal(normalizeVendorPhone(normalized, country), normalized);
+  }
+  assert.equal(normalizeVendorPhone('+1 2025550123', 'CA'), null);
+  assert.equal(normalizeVendorPhone('123', 'SG'), null);
+});
 
 test('vendor phone countries use staff rules without unknown country fallback', () => {
   const valid = { ...EMPTY_VENDOR, vendorName: 'Supply', gstNo: '27DDDDD3333D1Z8',

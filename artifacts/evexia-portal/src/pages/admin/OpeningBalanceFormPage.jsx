@@ -5,6 +5,8 @@ import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { formatAdminTimestamp } from '../../components/admin/adminPreferences.js';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import OpeningBalanceDoctorSelect from '../../components/admin/OpeningBalanceDoctorSelect.jsx';
+import Dialog from '../../components/admin/Dialog.jsx';
+import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
 import { createOpeningBalance, editOpeningBalance, getOpeningBalance } from '../../services/serverOpeningBalances.js';
 import { validateBalance, formatBalance } from '../../services/openingBalanceValidation.js';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
@@ -37,12 +39,11 @@ function YearField({ field, values, errors, onChange, disabled }) {
   const id = `opening-balance-${start ? 'start' : 'end'}-year`;
   return <div className="mr-form__field"><label className="mr-form__label" htmlFor={id}>Financial {start ? 'start' : 'end'} year *</label>
     <SearchableSelect id={id} label={`Financial ${start ? 'start' : 'end'} year`} value={values[field]} options={options} searchOptions={search} onChange={(value) => onChange(field, value)} placeholder="Search numeric year" invalid={Boolean(errors[field])} describedBy={errors[field] ? `${id}-error` : undefined} disabled={disabled} />
-    {!start && <p className="ob-form__hint">Follows start year + 1; a different selection must be corrected before saving.</p>}
     {errors[field] && <p className="mr-form__error" id={`${id}-error`} role="alert">{errors[field]}</p>}
   </div>;
 }
 
-function BalanceForm({ record, onSave, onCancel, onReload }) {
+function BalanceForm({ record, onSave, onCancel, onReload, onPendingChange }) {
   const [values, setValues] = useState(() => record ? fields(record) : empty());
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState('');
@@ -68,42 +69,42 @@ function BalanceForm({ record, onSave, onCancel, onReload }) {
     setErrors(errors);
     if (Object.keys(errors).length) return;
     const guard = reportingIdentityGuard();
-    busy.current = true; setPending(true); setMessage('');
+    busy.current = true; setPending(true); onPendingChange(true); setMessage('');
     try { await onSave({ ...values, startYear: +values.startYear, endYear: +values.endYear, amount: values.amount.trim() }); }
     catch (cause) {
       try { guard(); } catch { return; }
       if (alive.current) { setMessage(cause.message); setBlocked(cause.code === 'opening_balance_stale' || cause.code === 'not_found' || Boolean(cause.ambiguous)); }
-    } finally { busy.current = false; if (alive.current) setPending(false); }
+    } finally { busy.current = false; if (alive.current) { setPending(false); onPendingChange(false); } }
   }
   async function reload() {
     if (busy.current) return;
     if (!window.confirm('Discard this draft and load current server details? If a save outcome was uncertain, inspect the list first.')) return;
     const guard = reportingIdentityGuard();
-    busy.current = true; setPending(true);
+    busy.current = true; setPending(true); onPendingChange(true);
     try {
       const current = await onReload(); guard();
       if (alive.current) { setValues(current ? fields(current) : empty()); setErrors({}); setMessage('Current server details loaded.'); setBlocked(false); }
     } catch (cause) { try { guard(); } catch { return; } if (alive.current) setMessage(cause.message); }
-    finally { busy.current = false; if (alive.current) setPending(false); }
+    finally { busy.current = false; if (alive.current) { setPending(false); onPendingChange(false); } }
   }
   return <form className="admin-category-form ob-form" onSubmit={submit} noValidate>
-    <div className="admin-category-form__intro"><div><h2>Financial year details</h2><p>One balance per Doctor/year. Negative amounts indicate a credit position; zero is allowed.</p></div><Landmark size={21} /></div>
+    <div className="admin-category-form__intro"><h2>Financial year details</h2><Landmark size={21} /></div>
     <div className="mr-form__body">
       {message && <div className="mr-form__notice mr-form__notice--error" role="alert"><p>{message}</p><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={reload}><RefreshCw size={16} /> Reload current details and discard draft</button><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={onCancel}>Inspect shared records</button></div>}
       <fieldset disabled={pending}><div className="ob-form__grid">
         <YearField field="startYear" values={values} errors={errors} onChange={update} disabled={pending} />
         <YearField field="endYear" values={values} errors={errors} onChange={update} disabled={pending} />
         <OpeningBalanceDoctorSelect value={values.doctorId} record={record} disabled={pending} error={errors.doctorId} onChange={(v) => update('doctorId', v)} />
-        <div className="mr-form__field"><label className="mr-form__label" htmlFor="ob-amount">Opening balance *</label><input id="ob-amount" className="mr-form__control" inputMode="decimal" value={values.amount} onChange={(e) => update('amount', e.target.value)} aria-invalid={Boolean(errors.amount)} aria-describedby="ob-amount-help" data-testid="input-opening-balance-amount" /><p id="ob-amount-help" className={errors.amount ? 'mr-form__error' : 'ob-form__hint'} role={errors.amount ? 'alert' : undefined}>{errors.amount || 'Signed plain decimal within ±9999999999999.99; at most two decimal places. Never rounded.'}</p></div>
+        <div className="mr-form__field"><InfoDisclosure id="ob-credit-help" title="Credit balances" text="Negative amounts indicate a credit balance. Zero is allowed."><label className="mr-form__label" htmlFor="ob-amount">Opening balance *</label></InfoDisclosure><input id="ob-amount" className="mr-form__control" inputMode="decimal" value={values.amount} onChange={(e) => update('amount', e.target.value)} aria-invalid={Boolean(errors.amount)} aria-describedby={errors.amount ? 'ob-amount-error' : undefined} data-testid="input-opening-balance-amount" />{errors.amount && <p id="ob-amount-error" className="mr-form__error" role="alert">{errors.amount}</p>}</div>
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="ob-form-status">Status *</label><select id="ob-form-status" className="mr-form__control" value={values.status} onChange={(e) => update('status', e.target.value)}><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
       </div></fieldset>
       {record && <div className="ob-form__audit"><span>Created by <strong>{record.createdBy}</strong> · {formatAdminTimestamp(record.createdAt)}</span><span>Updated by <strong>{record.updatedBy}</strong> · {formatAdminTimestamp(record.updatedAt)}</span><span>Saved amount: {formatBalance(record.amount)}</span></div>}
     </div>
-    <div className="mr-form__footer"><span className="mr-form__footer-note">Saving does not post ledger entries. Same-identity renewal retains this in-memory draft.</span><div className="mr-form__actions"><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={onCancel}>Cancel</button><button type="submit" disabled={pending || blocked} className="admin-button" data-testid="button-save-opening-balance">{pending ? 'Saving…' : record ? 'Save changes' : 'Save opening balance'}</button></div></div>
+    <div className="mr-form__footer"><div className="mr-form__actions"><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={onCancel}>Cancel</button><button type="submit" disabled={pending || blocked} className="admin-button" data-testid="button-save-opening-balance">{pending ? 'Saving…' : record ? 'Save changes' : 'Save opening balance'}</button></div></div>
   </form>;
 }
 
-export default function OpeningBalanceFormPage({ id }) {
+export default function OpeningBalanceFormPage({ id, modal = false, onClose, onSaved }) {
   const [, navigate] = useLocation();
   const [record, setRecord] = useState(null);
   const [loading, setLoading] = useState(Boolean(id));
@@ -111,6 +112,14 @@ export default function OpeningBalanceFormPage({ id }) {
   const [revision, setRevision] = useState(0);
   const snapshot = useRef(null);
   const alive = useRef(true);
+  const pending = useRef(false);
+  const [saving, setSaving] = useState(false);
+  function pendingChange(value) { pending.current = value; setSaving(value); }
+  function cancel() {
+    if (pending.current) return;
+    if (modal) onClose();
+    else navigate(PATH);
+  }
   useEffect(() => {
     alive.current = true;
     const owner = getSession().user?.id;
@@ -130,7 +139,11 @@ export default function OpeningBalanceFormPage({ id }) {
   async function save(values) {
     const guard = reportingIdentityGuard();
     await (id ? editOpeningBalance(snapshot.current, values) : createOpeningBalance(values));
-    guard(); if (alive.current) navigate(`${PATH}?saved=${id ? 'updated' : 'added'}`);
+    guard();
+    if (alive.current) {
+      if (modal) onSaved();
+      else navigate(`${PATH}?saved=${id ? 'updated' : 'added'}`);
+    }
   }
   async function reload() {
     if (!id) throw new Error('For an uncertain create, inspect the shared list before discarding or retrying this draft.');
@@ -140,7 +153,9 @@ export default function OpeningBalanceFormPage({ id }) {
     return row;
   }
   const title = id ? 'Edit opening balance' : 'Add opening balance';
-  return <AdminLayout title={title}><div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Finance / Opening Balance Master</p><h1>{title}</h1><p className="admin-page-head__description">Assign a shared Doctor’s starting position to one financial year.</p></div><button className="admin-button admin-button--secondary" onClick={() => navigate(PATH)}><ArrowLeft size={16} /> Back to balances</button></div>
-    {loading ? <p role="status">Loading opening balance…</p> : error || id && !record ? <section className="admin-panel" role="alert"><h2>Opening balance could not be loaded</h2><p>{error || 'Record unavailable.'}</p><button className="admin-button" onClick={() => setRevision((n) => n + 1)}>Retry</button></section> : <section className="admin-panel ob-form-panel"><BalanceForm key={id || 'new'} record={record} onSave={save} onCancel={() => navigate(PATH)} onReload={reload} /></section>}
+  const form = <BalanceForm key={id || 'new'} record={record} onSave={save} onCancel={cancel} onReload={reload} onPendingChange={pendingChange} />;
+  if (modal) return <Dialog title={title} eyebrow="Opening Balance Master" onClose={cancel} className="ob-add-dialog">{form}</Dialog>;
+  return <AdminLayout title={title}><div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Finance / Opening Balance Master</p><h1>{title}</h1><p className="admin-page-head__description">Assign a shared Doctor’s starting position to one financial year.</p></div><button disabled={saving} className="admin-button admin-button--secondary" onClick={cancel}><ArrowLeft size={16} /> Back to balances</button></div>
+    {loading ? <p role="status">Loading opening balance…</p> : error || id && !record ? <section className="admin-panel" role="alert"><h2>Opening balance could not be loaded</h2><p>{error || 'Record unavailable.'}</p><button className="admin-button" onClick={() => setRevision((n) => n + 1)}>Retry</button></section> : <section className="admin-panel ob-form-panel">{form}</section>}
   </AdminLayout>;
 }

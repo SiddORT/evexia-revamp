@@ -60,12 +60,77 @@ async function filter(page, query) {
   await expect(page.getByRole('button', { name: 'Export data', exact: true })).toBeEnabled();
 }
 
+test('Opening Balance modal cancel, pending close, renewal, failure and uncertain outcome preserve listing and draft', async ({ page }) => {
+  test.setTimeout(90000);
+  const doctor = await seed(page);
+  await filter(page, doctor.registrationNumber);
+  const add = page.getByTestId('button-add-opening-balance');
+  await add.click();
+  const start = page.getByRole('combobox', { name: 'Financial start year' });
+  await start.click(); await start.press('Escape');
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(add).toBeFocused();
+  await expect(page.getByRole('textbox', { name: 'Search opening balances' })).toHaveValue(doctor.registrationNumber);
+  await add.click();
+  const select = page.getByRole('combobox', { name: 'Doctor', exact: true });
+  await select.fill(doctor.registrationNumber);
+  await page.getByRole('option', { name: `${doctor.name} · ${doctor.registrationNumber}`, exact: true }).click();
+  const amount = page.getByTestId('input-opening-balance-amount');
+  await amount.fill('12.34');
+  await page.evaluate(() => { window.__balanceDraftNode = document.getElementById('ob-amount'); });
+  await page.evaluate(async () => (await import('/src/auth/adminSession.js')).verifySession());
+  await expect(amount).toHaveValue('12.34');
+  expect(await page.evaluate(() => window.__balanceDraftNode === document.getElementById('ob-amount'))).toBe(true);
+  let release;
+  let entered;
+  const arrived = new Promise((resolve) => { entered = resolve; });
+  const gate = new Promise((resolve) => { release = resolve; });
+  const endpoint = '**/api/v1/admin/opening-balances';
+  await page.route(endpoint, async (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    entered(); await gate;
+    await route.fulfill({ status: 503, json: { error: { message: 'Synthetic retryable save failure', code: 'unavailable' } } });
+  });
+  await page.getByTestId('button-save-opening-balance').click();
+  await arrived;
+  await expect(page.getByRole('button', { name: 'Cancel', exact: true })).toBeDisabled();
+  await page.getByTestId('button-close-dialog').click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toBeVisible();
+  release();
+  await expect(page.getByRole('alert')).toContainText('Synthetic retryable save failure');
+  await expect(amount).toHaveValue('12.34');
+  await expect(page.getByTestId('button-save-opening-balance')).toBeEnabled();
+  await page.unroute(endpoint);
+  await page.route(endpoint, async (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    await route.fetch(); await route.abort();
+  });
+  await page.getByTestId('button-save-opening-balance').click();
+  await expect(page.getByRole('alert')).toContainText('could not be confirmed');
+  await expect(page.getByTestId('button-save-opening-balance')).toBeDisabled();
+  await expect(amount).toHaveValue('12.34');
+  await page.unroute(endpoint);
+  await page.getByRole('button', { name: 'Inspect shared records' }).click();
+  await expect(add).toBeFocused();
+  await expect(page.getByRole('textbox', { name: 'Search opening balances' })).toHaveValue(doctor.registrationNumber);
+  await page.getByRole('button', { name: 'Refresh records', exact: true }).click();
+  await expect(page.locator('tbody tr').filter({ hasText: doctor.name })).toContainText('12.34');
+  await page.goto(base() + path + '/new');
+  await expect(page.getByTestId('input-opening-balance-amount')).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
 for (const mobile of [false, true]) {
   test(`Opening Balance ${mobile ? 'Modern dark mobile' : 'Classic light desktop'} exact saved form, searchable years, reference and persistence`, async ({ page, context }, info) => {
     test.setTimeout(90000);
     if (mobile) await page.setViewportSize({ width: 390, height: 844 });
     const doctor = await seed(page, mobile);
     await page.getByRole('button', { name: 'Add opening balance', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: 'Add opening balance' })).toBeVisible();
+    await expect(page).toHaveURL(base() + path);
+    await expect(page.getByText(/Same-identity renewal|Saving does not post ledger|Signed plain decimal|Follows start year/)).toHaveCount(0);
     await expect(page.getByRole('combobox', { name: 'Financial start year' })).toHaveValue(String(new Date().getFullYear()));
     await expect(page.getByRole('combobox', { name: 'Financial end year' })).toHaveValue(String(new Date().getFullYear() + 1));
     await chooseYear(page, true, 1900);
@@ -90,6 +155,8 @@ for (const mobile of [false, true]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
     await page.getByTestId('button-save-opening-balance').click();
     await expect(page).toHaveURL(new RegExp(`${path}(?:\\?.*)?$`));
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByTestId('button-add-opening-balance')).toBeFocused();
     await filter(page, doctor.registrationNumber);
     await expect(page.locator(mobile ? 'article[role=listitem]' : 'tbody tr').filter({ hasText: doctor.name })).toContainText('-99,99,99,99,99,999.99');
     const other = await context.newPage();

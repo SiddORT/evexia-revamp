@@ -37,5 +37,8 @@
     "tailwindcss": "catalog:",
     "vite": "catalog:",
     "wouter": "^3.3.5"
+  },
+  "dependencies": {
+    "libphonenumber-js": "^1.13.15"
   }
 }

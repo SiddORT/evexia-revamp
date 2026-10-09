@@ -17,6 +17,30 @@ from test_migration_zones import prepare, identity
 from test_vendors import FIELDS, HEADER
 
 
+def test_international_expansion_preserves_records_and_refuses_lossy_downgrade(migration_db):
+    engine, config, actor_id, session_id = prepare(migration_db)
+    command.downgrade(config, "0024_opening_balances")
+    with Session(engine) as db:
+        actor = identity(db, actor_id, session_id)
+        original = vendors.create(db, actor, VendorFields(**FIELDS))
+    command.upgrade(config, "head")
+    with Session(engine) as db:
+        stored = db.get(Vendor, original["id"])
+        assert stored.phoneNo == "9876543210" and stored.version == 1
+        assert stored.created_by == actor_id
+        actor = identity(db, actor_id, session_id)
+        added = vendors.create(db, actor, VendorFields(**{
+            **FIELDS, "vendorName": "Brazil expansion", "gstNo": "29EEEEE4444E1Z9",
+            "dialCountry": "BR", "phoneNo": "(11) 96123-4567",
+        }))
+        assert added["phoneNo"] == "11961234567"
+        vendors.mutate(db, actor, added["id"], VendorVersion(expected_version=1), "delete")
+    with pytest.raises(RuntimeError, match="international vendor history"):
+        command.downgrade(config, "0024_opening_balances")
+    with Session(engine) as db:
+        assert db.get(Vendor, added["id"]).phoneNo == "11961234567"
+
+
 def test_migration_preserves_prior_masters_accounts_and_constraints(migration_db):
     engine, config, actor_id, session_id = prepare(migration_db)
     command.downgrade(config, "0021_master_permissions")

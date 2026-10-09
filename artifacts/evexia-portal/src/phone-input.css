@@ -1,3 +1,11 @@
 .admin-phone-input { display: flex; align-items: stretch; gap: 8px; min-width: 0; }
 .admin-phone-input > select.admin-phone-input__country { flex: 0 0 104px; width: 104px; padding-inline: 7px; }
 .admin-phone-input > input { flex: 1 1 0; min-width: 0; }
+.admin-phone-input--searchable { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: start; }
+.admin-phone-input--searchable > .searchable-select { min-width: 0; }
+.admin-phone-input--searchable .searchable-select__control,
+.admin-phone-input--searchable > input { height: 44px; box-sizing: border-box; }
+.admin-vendor-field .admin-phone-input--searchable .searchable-select__control input { border: 0; box-shadow: none; min-height: 0; height: 100%; padding: 0 4px 0 11px; }
+@media (max-width: 420px) {
+  .admin-phone-input--searchable { grid-template-columns: minmax(0, 1fr); }
+}

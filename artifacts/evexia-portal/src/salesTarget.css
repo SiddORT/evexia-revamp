@@ -1,3 +1,7 @@
+.admin-target-filter-disclosure { margin-top: 12px; }
+.admin-target-filter-feedback { min-width: 0; overflow-wrap: anywhere; color: var(--admin-text-soft); }
+.admin-target-filter-disclosure > summary { cursor: pointer; padding: 10px 0; font-weight: 600; }
+.admin-target-filter-disclosure > summary:focus-visible { outline: 2px solid var(--admin-accent, #087f8c); outline-offset: 3px; }
 .admin-target-page .admin-page-head { align-items: center; }
 .admin-target-head-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .admin-target-toolbar { padding: 18px 20px; border-bottom: 1px solid var(--line); }

@@ -82,17 +82,38 @@ def test_crud_audit_literal_filters_pagination_and_soft_deletion(client):
 
 @pytest.mark.parametrize("country,phone,expected", [
     ("IN", "+91 (98765) 43210", "9876543210"), ("US", "(202) 555-0123", "2025550123"),
-    ("GB", "7700 900123", "7700900123"), ("AE", "50 123 4567", "501234567")])
+    ("GB", "7700 900123", "7700900123"), ("AE", "50 123 4567", "501234567"),
+    ("CA", "(506) 234-5678", "5062345678"), ("SG", "6123 4567", "61234567"),
+    ("DE", "030 123456", "30123456"), ("BR", "(11) 96123-4567", "11961234567"),
+    ("IT", "02 1234 5678", "0212345678"), ("SH", "22158", "22158")])
 def test_all_phone_countries_round_trip(client, country, phone, expected):
     api, db, _ = client
     headers, _ = admin_headers(api, db)
     row = add(api, headers, dialCountry=country, phoneNo=phone)
     assert row["dialCountry"] == country and row["phoneNo"] == expected
+    assert api.get(f"{BASE}/{row['id']}", headers=headers).json()["phoneNo"] == expected
     for format in ("csv", "xlsx"):
         exported = api.get(BASE + "/export", headers=headers, params={"format": format})
         parsed = vendor_transfer.parse(exported.content, "vendors." + format)
         assert parsed[0]["values"]["dialCountry"] == country and parsed[0]["values"]["phoneNo"] == expected
         assert parsed[0]["errors"] == []
+        api.post(f"{BASE}/{row['id']}/delete", headers=headers, json={"expected_version": 1})
+        checked = review(api, headers, exported.content, "vendors." + format).json()
+        assert checked["valid"], checked
+        result = commit(api, headers, exported.content, checked["digest"], "vendors." + format)
+        assert result.status_code == 200, result.text
+        row = api.get(BASE, headers=headers).json()["items"][0]
+        assert row["dialCountry"] == country and row["phoneNo"] == expected
+
+
+@pytest.mark.parametrize("country,phone", [("CA", "+1 2025550123"), ("SG", "123"),
+                                        ("DE", "123"), ("BR", "123456"), ("CA", "5062345678 ext 2")])
+def test_international_phone_rejection_is_actionable(client, country, phone):
+    api, db, _ = client
+    headers, _ = admin_headers(api, db)
+    response = api.post(BASE, headers=headers, json={**FIELDS, "dialCountry": country, "phoneNo": phone})
+    assert response.status_code == 422
+    assert "phone" in response.text.lower()
 
 
 def test_required_bounds_phone_errors_and_forged_fields(client):

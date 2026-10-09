@@ -52,3 +52,4 @@
 - [Listing layout checks](listing-layout-checks.md) — measure changed header/footer surfaces separately from existing record-table scroll metrics.
 - [Sales Target performance safety](sales-target-performance-safety.md) — benchmark synthetic disposable data only; index changes need separate review and operator approval.
 - [Orders scope](orders-scope.md) — Immunotherapy requirements will come next; do not infer workflows from the navigation-only setup.
+- [Vendor phone compatibility](vendor-phone-compatibility.md) — retain legacy phone acceptance; international metadata updates must not widen other masters’ contracts.

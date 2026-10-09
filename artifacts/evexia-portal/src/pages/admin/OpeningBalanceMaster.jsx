@@ -9,6 +9,7 @@ import DataTable from '../../components/admin/DataTable.jsx';
 import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import useServerOpeningBalances from '../../hooks/useServerOpeningBalances.js';
+import OpeningBalanceFormPage from './OpeningBalanceFormPage.jsx';
 import { exportOpeningBalances, downloadOpeningBalanceFile } from '../../services/serverOpeningBalances.js';
 import { formatBalance } from '../../services/openingBalanceValidation.js';
 import { getSession, subscribeSession, reportingIdentityGuard } from '../../auth/adminSession.js';
@@ -27,6 +28,7 @@ export default function OpeningBalanceMaster() {
   const [pageSize, setPageSize] = useState(10);
   const state = useServerOpeningBalances(query, status, page, pageSize);
   const [confirming, setConfirming] = useState(null);
+  const [adding, setAdding] = useState(false);
   const [error, setError] = useState('');
   const [blocked, setBlocked] = useState(false);
   const [notice, setNotice] = useState(() => new URLSearchParams(window.location.search).has('saved') ? 'Opening balance saved.' : '');
@@ -40,7 +42,7 @@ export default function OpeningBalanceMaster() {
     const owner = getSession().user?.id;
     if (new URLSearchParams(window.location.search).has('saved')) window.history.replaceState(window.history.state, '', PATH);
     const unsubscribe = subscribeSession(() => {
-      if (getSession().user?.id !== owner) { controller.current?.abort(); setConfirming(null); setNotice(''); setError(''); setQuery(''); }
+      if (getSession().user?.id !== owner) { controller.current?.abort(); setAdding(false); setConfirming(null); setNotice(''); setError(''); setQuery(''); }
     });
     return () => { alive.current = false; controller.current?.abort(); unsubscribe(); };
   }, []);
@@ -97,7 +99,7 @@ export default function OpeningBalanceMaster() {
         <DropdownMenu.Root open={menu} onOpenChange={(open) => { if (!open || !busy.current) setMenu(open); }}><DropdownMenu.Trigger asChild><button className="admin-button admin-button--secondary" disabled={state.loading || Boolean(state.error)} aria-disabled={exporting || undefined} data-testid="button-export-opening-balances"><Download size={16} />{exporting ? 'Exporting…' : 'Export data'}</button></DropdownMenu.Trigger>
           <DropdownMenu.Portal><DropdownMenu.Content className="admin-dropdown__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} aria-label="Opening balance export format"><DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void download('csv')}>CSV</DropdownMenu.Item><DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void download('xlsx')}>Excel (.xlsx)</DropdownMenu.Item></DropdownMenu.Content></DropdownMenu.Portal>
         </DropdownMenu.Root>
-        <button className="admin-button" onClick={() => navigate(`${PATH}/new`)}><Plus size={16} /> Add opening balance</button>
+        <button className="admin-button" data-testid="button-add-opening-balance" onClick={(event) => { event.currentTarget.focus(); setNotice(''); setAdding(true); }}><Plus size={16} /> Add opening balance</button>
       </div></div>
     {notice && <div className="admin-feedback" role="status">{notice}</div>}
     {error && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{error}</div>}
@@ -114,5 +116,6 @@ export default function OpeningBalanceMaster() {
       </>}
     </section>
     {confirming && <ConfirmationDialog pending={state.pending} blocked={blocked} title={`${actionName} opening balance?`} description={`${actionName} ${confirming.record.doctorName}’s balance for ${confirming.record.startYear}–${confirming.record.endYear}?${confirming.type === 'delete' ? ' It leaves ordinary lists and exports; versioned server deletion history is retained. No restore is available here.' : ''}`} actionLabel={`${actionName} balance`} destructive={confirming.type === 'delete'} error={error} onConfirm={confirm} onClose={() => { setConfirming(null); setError(''); state.retry(); }} />}
+    {adding && <OpeningBalanceFormPage modal onClose={() => setAdding(false)} onSaved={() => { setAdding(false); setNotice('Opening balance saved.'); state.retry(); }} />}
   </AdminLayout>;
 }

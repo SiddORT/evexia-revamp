@@ -8,6 +8,11 @@ const legacy = '[{"id":"local-only","vendorName":"Untouched local procurement ve
 const headers = 'Vendor Name,GST No.,Registered Address,Contact Person Name,Email ID,Phone No.,Dial Country,Status';
 const tag = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const gst = (number) => `27DDDDD${String(number).padStart(4, '0')}D1Z8`;
+async function chooseCountry(page, label) {
+  const input = page.getByTestId('select-vendor-dialCountry');
+  await input.fill(label);
+  await page.getByRole('option', { name: label, exact: true }).click();
+}
 
 async function open(page) {
   await page.goto(`${base()}/admin/login`);
@@ -22,13 +27,13 @@ async function open(page) {
 
 async function create(page, name, gstNo) {
   await page.getByTestId('button-add-vendor').click();
-  await expect(page.getByTestId('select-vendor-dialCountry')).toHaveValue('IN');
+  await expect(page.getByTestId('select-vendor-dialCountry')).toHaveValue('India (IN) +91');
   await expect(page.getByTestId('select-vendor-status')).toHaveValue('active');
   for (const [field, value] of Object.entries({ vendorName: name, gstNo, registeredAddress: 'Synthetic address\nSecond floor',
     contactPersonName: 'Synthetic Contact', emailId: 'contact@example.test', phoneNo: '501234567' })) {
     await page.getByTestId(`input-vendor-${field}`).fill(value);
   }
-  await page.getByTestId('select-vendor-dialCountry').selectOption('AE');
+  await chooseCountry(page, 'United Arab Emirates (AE) +971');
   const saved = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/v1/admin/vendors' && r.request().method() === 'POST');
   await page.getByTestId('button-save-vendor').click();
   const response = await saved;
@@ -38,6 +43,49 @@ async function create(page, name, gstNo) {
   await expect(page.getByTestId(`link-vendor-${page.viewportSize().width < 1050 ? 'mobile-' : ''}phone-${record.id}`)).toHaveText('+971 501234567');
   return record;
 }
+
+test('vendor cold searchable catalogue supports shared codes, keyboard selection and international numbers', async ({ page }) => {
+  await open(page);
+  await page.getByTestId('button-add-vendor').click();
+  const country = page.getByTestId('select-vendor-dialCountry');
+  await country.fill('+1');
+  await expect(page.getByRole('option', { name: 'Canada (CA) +1', exact: true })).toBeVisible();
+  await expect(page.getByRole('option', { name: 'United States (US) +1', exact: true })).toBeVisible();
+  await country.fill('Canada');
+  await country.press('ArrowDown'); await country.press('Enter');
+  await expect(country).toHaveValue('Canada (CA) +1');
+  await expect(country).toBeFocused();
+  await country.click();
+  const menu = page.getByRole('listbox', { name: 'Phone country code' });
+  await expect(menu).toBeVisible();
+  expect(await menu.evaluate((node) => getComputedStyle(node).overflowY)).toBe('auto');
+  await country.press('Escape');
+  await expect(page.getByRole('dialog')).toBeVisible();
+  const name = `International ${tag()}`;
+  for (const [field, value] of Object.entries({ vendorName: name, gstNo: gst(4901),
+    registeredAddress: 'Synthetic address', contactPersonName: 'Synthetic contact',
+    emailId: 'international@example.test', phoneNo: '123' })) {
+    await page.getByTestId(`input-vendor-${field}`).fill(value);
+  }
+  await page.getByTestId('button-save-vendor').click();
+  await expect(page.getByText('Enter a valid phone number for Canada.')).toBeVisible();
+  await page.getByTestId('input-vendor-phoneNo').fill('(506) 234-5678');
+  await page.getByTestId('button-save-vendor').click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByTestId('input-search-vendors').fill(name);
+  await expect(page.getByTestId('text-vendor-count')).toContainText('of 1');
+  await page.reload();
+  await page.getByTestId('input-search-vendors').fill(name);
+  const edit = page.getByRole('button', { name: `Edit ${name}`, exact: true }).filter({ visible: true });
+  await edit.click();
+  await expect(country).toHaveValue('Canada (CA) +1');
+  await expect(page.getByTestId('input-vendor-phoneNo')).toHaveValue('5062345678');
+  await chooseCountry(page, 'Brazil (BR) +55');
+  await page.getByTestId('input-vendor-phoneNo').fill('(11) 96123-4567');
+  await page.getByTestId('button-save-vendor').click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.locator('tbody tr').filter({ hasText: name })).toContainText('+55 11961234567');
+});
 
 for (const mobile of [false, true]) {
   test(`vendor ${mobile ? 'mobile dark' : 'desktop light'} shared modal, conflicts, status and deletion`, async ({ page, context }) => {
@@ -59,7 +107,7 @@ for (const mobile of [false, true]) {
     await page.reload();
     await expect(row()).toBeVisible();
     await page.getByTestId(`button-edit-vendor-${mobile ? 'mobile-' : ''}${record.id}`).click();
-    await expect(page.getByTestId('select-vendor-dialCountry')).toHaveValue('AE');
+    await expect(page.getByTestId('select-vendor-dialCountry')).toHaveValue('United Arab Emirates (AE) +971');
     await expect(page.getByTestId('input-vendor-phoneNo')).toHaveValue('501234567');
     await page.getByTestId('input-vendor-vendorName').fill(record.vendorName + ' draft');
     await page.evaluate(async (record) => {
@@ -76,7 +124,7 @@ for (const mobile of [false, true]) {
     await expect(page.getByTestId('button-save-vendor')).toBeDisabled();
     await page.getByTestId('button-discard-vendor-draft').click();
     await expect(page.getByTestId('input-vendor-vendorName')).toHaveValue(record.vendorName + ' concurrent');
-    await page.getByTestId('select-vendor-dialCountry').selectOption('US');
+    await chooseCountry(page, 'United States (US) +1');
     await page.getByTestId('input-vendor-phoneNo').fill('(202) 555-0123');
     await page.getByTestId('button-save-vendor').click();
     await expect(page.getByRole('dialog')).toHaveCount(0);

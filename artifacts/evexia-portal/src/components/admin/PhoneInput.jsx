@@ -1,18 +1,19 @@
 import { DIAL_COUNTRIES } from '../../services/phoneCountries.js';
+import SearchableSelect from './SearchableSelect.jsx';
 import '../../phone-input.css';
 
 // The consumer owns labels/errors and validation; both controls have independent
 // accessible names, error associations and stable field names.
-export default function PhoneInput({ prefix, country, onCountryChange, countryError, inputProps, className = '', controlClassName = '' }) {
-  return <div className={`admin-phone-input ${className}`.trim()}>
-    <select id={`${prefix}-dialCountry`} name="dialCountry"
+export default function PhoneInput({ prefix, country, onCountryChange, countryError, inputProps, countries, className = '', controlClassName = '' }) {
+  return <div className={`admin-phone-input ${countries ? 'admin-phone-input--searchable' : ''} ${className}`.trim()}>
+    {countries ? <SearchableSelect id={`${prefix}-dialCountry`} label="Phone country code" value={country} options={countries} onChange={onCountryChange} invalid={Boolean(countryError)} describedBy={countryError ? `${prefix}-dialCountry-error` : undefined} disabled={inputProps.disabled} placeholder="Select country" /> : <select id={`${prefix}-dialCountry`} name="dialCountry"
       className={`admin-phone-input__country ${controlClassName}`.trim()}
       aria-label="Phone country code" aria-required="true" aria-invalid={Boolean(countryError)}
       aria-describedby={countryError ? `${prefix}-dialCountry-error` : undefined}
       value={country} onChange={(event) => onCountryChange(event.target.value)}
       data-testid={`select-${prefix}-dialCountry`}>
        {DIAL_COUNTRIES.map((item) => <option value={item.value} key={item.value} aria-label={`${item.name} ${item.code}`}>{item.label}</option>)}
-    </select>
+    </select>}
     <input {...inputProps} type="tel" inputMode="tel" autoComplete="tel" />
   </div>;
 }

@@ -142,7 +142,14 @@ for (const mobile of [false, true]) {
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByTestId(`status-sales-target-${mobile ? 'mobile-' : ''}${row.id}`)).toHaveText('Inactive');
     await page.getByTestId('input-search-sales-targets').fill(refs.mr.name);
+    await expect(page.getByTestId('select-filter-sales-target-status')).toBeHidden();
+    await page.getByTestId('button-toggle-sales-target-filters').click();
     await page.getByTestId('select-filter-sales-target-status').selectOption('inactive');
+    await page.getByTestId('button-toggle-sales-target-filters').click();
+    await expect(page.getByTestId('select-filter-sales-target-status')).toBeHidden();
+    await expect(page.getByTestId('text-sales-target-filter-feedback')).toContainText('unapplied changes');
+    await page.getByTestId('button-toggle-sales-target-filters').click();
+    await expect(page.getByTestId('select-filter-sales-target-status')).toHaveValue('inactive');
     await page.getByTestId('button-apply-sales-target-filters').click();
     await expect(page.getByTestId('text-sales-target-count')).toContainText('of 1');
     await page.getByTestId('select-filter-sales-target-status').selectOption('active');
@@ -207,6 +214,7 @@ test('sales target prepared CSV/XLSX imports, historical financial filters, all-
   await page.getByTestId('button-sales-target-summary').click();
   await expect(page.getByTestId('text-summary-total')).toHaveText('₹30.75');
   await page.getByTestId('button-close-target-summary').click();
+  await page.getByTestId('button-toggle-sales-target-filters').click();
   await choose(page, 'filter-sales-target-start', '1980', '1980');
   await choose(page, 'filter-sales-target-end', '1981', '1981');
   await page.getByTestId('button-apply-sales-target-filters').click();
