@@ -1,0 +1,25 @@
+Extend the existing staff encryption approach to `doctor_directory`, `mr_directory`, and `patient_directory`, including any related fields stored in the `patients` table.
+
+Encrypt personally identifiable information, including:
+
+- Name
+- Phone and alternate phone numbers
+- Email address
+- Date of birth
+- Full address: address lines, landmark, city, state, country and pincode
+- Other personal contact or identifying information present in these tables
+
+Requirements:
+
+1. Inspect and reuse the existing encryption implementation in `staff_crypto.py`. Use authenticated encryption and secure key management.
+2. Store encrypted values in appropriately named ciphertext columns and update SQLAlchemy models and Alembic migrations.
+3. Use keyed blind indexes for fields that require exact-match searching or uniqueness checks. Do not use plain hashes for sensitive values.
+4. Update backend APIs, frontend forms, search, filtering, imports, exports and validation to work correctly with encrypted fields.
+5. Preserve all existing data. Migrate existing plaintext values safely, verify successful encryption and decryption, and only then retire the old plaintext columns.
+6. Ensure unauthorized users cannot retrieve plaintext PII. Never log sensitive values or encryption keys.
+7. Preserve existing patient, doctor and MR relationships, foreign keys, business identifiers and workflow behaviour.
+8. Include tests for encryption/decryption, searching, migration safety, authorization and existing workflows.
+9. Keep registration numbers, employee codes, patient codes and other operational identifiers usable where required. Assess each field individually rather than encrypting blindly.
+10. Do not change unrelated fields or implement historical versioning in this task; historical data will be handled separately.
+
+Before implementation, inspect all three tables and the related `patients` table to identify where each personal field is actually stored. Provide a migration plan, implement the changes, and run the relevant tests. Do not claim success unless the migrations and tests have actually passed.

@@ -1,0 +1,11 @@
+Review and update the authentication database schema to protect user email addresses and usernames.
+
+1. **Encrypt user identifiers:** Replace plaintext `users.email` and `users.username` storage with encrypted values, following the existing encryption approach used for `staff_profiles` wherever suitable.
+2. **Preserve login and lookup:** Add keyed blind-index columns for email and username so the system can securely find accounts and enforce uniqueness without decrypting every user record. Normalize identifiers consistently before generating indexes.
+3. **Update all dependent code:** Update registration, login, account lookup, password recovery, identifier changes, uniqueness checks, and any other code that reads or writes these fields.
+4. **Migrate existing data safely:** Create a new reversible Alembic migration. Encrypt existing values and populate their indexes without losing accounts or changing user identities. Detect duplicate or invalid identifiers before enforcing uniqueness; do not silently overwrite or discard data.
+5. **Preserve authentication behavior:** Keep password hashing, sessions, refresh-token rotation, revocation, and the existing Super Admin and staff permissions working. Do not log plaintext identifiers or encryption keys.
+6. **Review related tables:** Check `auth_sessions`, `refresh_sessions`, `login_attempts`, and `account_identifier_reservations` for actual code usage. Keep `family_id` and the existing security controls unless the source code proves a field is unused. Ensure login-attempt tracking and identifier reservations remain functional with encrypted identifiers and blind indexes.
+7. **Verify before completion:** Test login, registration, identifier uniqueness, password recovery, session refresh and revocation, and existing accounts. Report the schema changes, migration steps, tests performed, and any remaining risks.
+
+Do not make unrelated schema changes or remove existing authentication protections. Do not delete plaintext identifier columns until the migration is verified and all application code has been updated.
