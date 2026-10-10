@@ -62,3 +62,4 @@
 - [Operator PostgreSQL driver](operator-postgres-driver.md) — test bare managed PostgreSQL URLs; explicit-driver disposable fixtures can hide CLI connection failures.
 - [Browser fixture failure isolation](browser-fixture-failure-isolation.md) — earlier retry scenarios must not consume failures intended for later paging checks.
 - [Directory encryption scope](directory-encryption-scope.md) — retain approved business identifiers; disclose linked plaintext account metadata and equality-index leakage.
+- [Operator prepared plans](operator-schema-prepared-plans.md) — pooled queries can retain predecessor result shapes across schema retirement.

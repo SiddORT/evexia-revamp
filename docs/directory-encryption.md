@@ -202,9 +202,9 @@ constraints, restart every writer with the same key configuration, then verify.
 Runtime readiness pins both the exact keyring/active-key configuration and index
 key. Even adding an unused historical key changes the configuration proof and
 blocks reads/writes until approved maintenance verification updates the anchor.
-Do not update that anchor merely to bypass an error. A final-schema Directory
-rotation operator tool is a separate change; the staging CLI only supports the
-additive predecessor. Staff ciphertext/AAD and Staff rotation tools are unchanged
+Do not update that anchor merely to bypass an error. The offline final-schema
+Directory rotation tool below supports only revision 0030; the staging CLI only
+supports the additive predecessor. Staff ciphertext/AAD and Staff rotation tools are unchanged
 and remain Staff-only. Never retire keys needed by deleted rows or retained backups.
 
 ## Evidence and remaining verification
@@ -471,3 +471,161 @@ populated staged outage, restore the approved coordinated backup and matching
 keys/configuration under the recovery procedure; never manually clear guards
 or discard staged ciphertext. Read-only archive/dry-run output is nonsensitive
 but still belongs in the restricted operator change record.
+
+## Final-schema rotation and verification (separate approval required)
+
+`app.services.directory_rotation` is an offline operator command, not an API,
+startup migration or deployment action. It requires exactly one revision row at
+`0030_directory_crypto_retirement`. It changes no Staff ciphertext, AAD, keys or
+rotation tooling. No command automatically provisions/replaces secrets or runs
+against managed data. Shared/production rehearsal or execution always needs
+separate approval; never use a real database for tests.
+
+Use the separate maintenance login, coordinated request/writer outage, drained
+transactions, validated restricted runtime role, backup and isolated recovery
+rehearsal described above. A brand-new empty final schema without recorded roles
+also needs `--runtime-role` when preparing its first maintenance plan. The runtime
+must not own stage/directory/owner tables, inherit an owning or maintenance role,
+have privileged PostgreSQL role attributes or modify stage evidence.
+
+All preparations default to dry-run. Approval binds schema/database/schema name,
+roles, full stored and logical inventories, stage evidence, operation and exact
+target configuration. Execution additionally requires opaque backup/change UUIDs,
+`--writes-paused`, `--recovery-verified` and matching approval. Production requires
+`--production-approved` on preparation execution. Those flags are operator
+attestations, not automatic proof of a backup or permission to run managed changes.
+
+### Encryption-key rotation
+
+Keep current source secrets unchanged while preparing. Separately provision the
+target ring through the approved secrets manager as operator-only
+`DIRECTORY_ENCRYPTION_NEXT_KEYS`, with **every existing key ID and original key
+bytes retained**, plus the new independently generated key. Never put key material
+in arguments, files, logs or reports. The Directory index key stays unchanged.
+Use the target ID as a non-secret argument:
+
+```sh
+# Run from artifacts/api-server/backend, only after the separate approval gates.
+python -m app.services.directory_rotation encrypt --target-key-id "$TARGET_KEY_ID"
+python -m app.services.directory_rotation encrypt --target-key-id "$TARGET_KEY_ID" \
+  --execute --approval "$PLAN_HASH" --backup-ref "$BACKUP_UUID" \
+  --change-ref "$CHANGE_UUID" --writes-paused --recovery-verified
+```
+
+Execution arms the existing durable `frozen` write guards and records the target
+configuration and keyed logical baseline under exclusive locks. It does not yet
+reencrypt rows. Runtime readiness refuses requests throughout this phase.
+While all writers remain stopped, separately approve and install the exact target
+ring and active ID as ordinary Directory settings for **all** maintenance/runtime
+processes. Clear the operator-only next-ring setting after installing it. Do not
+change the index key. Then run deliberately bounded batches:
+
+```sh
+python -m app.services.directory_rotation batch --table doctor_directory --limit 500 --execute
+python -m app.services.directory_rotation batch --table mr_directory --limit 500 --execute
+python -m app.services.directory_rotation batch --table patient_directory --limit 500 --execute
+# Repeat each table until remaining=0; limit must be between 1 and 500.
+python -m app.services.directory_rotation verify
+python -m app.services.directory_rotation finish --execute \
+  --expected-content-digest "$SAVED_CONTENT_DIGEST"
+python -m app.services.directory_rotation verify \
+  --expected-content-digest "$SAVED_CONTENT_DIGEST"
+```
+
+There is no trusted external checkpoint: pending rows are selected by envelope
+key ID. Each batch authenticates all fields and existing indexes in its selected
+rows, verifies replacements and untouched metadata before commit, and preserves
+nullable dates, encrypted empty text, operational identifiers, versions, timestamps
+and relationships. Restart with the exact target configuration; no key edits are
+allowed to bypass the anchor. A repeated completed batch does no work.
+
+`verify` streams every active/inactive/deleted directory row plus every Patient
+owner, authenticates skipped ciphertext too, checks PostgreSQL-normalized indexes
+and global Patient uniqueness, and checks the frozen logical baseline. `finish`
+repeats that full verification under exclusive locks and also requires every
+non-null envelope to use the target key. Only then does it return to `encrypted`
+and renew both anchors in the same transaction. An incomplete, corrupt or
+metadata-altered inventory leaves writers frozen. A lost response is not success:
+use read-only verification to inspect the state; never manually clear guards.
+After confirmed finish, restart every writer with the same configuration and
+verify readiness and authorized workflows before ending the outage.
+
+### Configuration-only renewal
+
+To add historical keys or change the active key without rewriting existing
+ciphertext, use `configuration` instead of `encrypt`, with the same dry-run and
+execution approval flags and optional target ID/next-ring secret. All original
+keys must remain identical and the index key must remain unchanged. The tool
+fully authenticates records and indexes under locks before renewing the anchor.
+Install the approved target settings and restart all stopped writers afterward.
+Do not use this operation to mask corruption, missing keys or an index mismatch.
+
+### Independent index-key change
+
+Keep current Directory keys/active ID/index key as source settings. Separately
+provision operator-only `DIRECTORY_INDEX_NEXT_KEY` through the secrets manager,
+independent of every encryption, Staff and signing key. Do not provide a next
+encryption ring or target ID to this operation:
+
+```sh
+python -m app.services.directory_rotation index
+python -m app.services.directory_rotation index --execute \
+  --approval "$PLAN_HASH" --backup-ref "$BACKUP_UUID" \
+  --change-ref "$CHANGE_UUID" --writes-paused --recovery-verified
+```
+
+This is one atomic outage transaction, **not resumable partial index commits**:
+read/authenticate in bounded pages, replace all three scoped index types under
+existing final uniqueness constraints, reverify full logical parity and renew
+the anchors. A target/old collision or any failure rolls back everything.
+Ciphertext and operational metadata remain unchanged. After commit, separately
+install the new ordinary `DIRECTORY_INDEX_KEY`, clear the operator-only next key,
+restart every stopped writer, and verify using the saved target content digest.
+Retain prior index settings with matching retained backup/key inventories.
+
+Every command refuses SQL/result INFO/DEBUG logging, uses NOWAIT locks on all
+four scoped tables plus stage evidence, and applies ten-second statement limits.
+Batches have a thirty-second application deadline; full verification/preparation
+has a 120-second inventory deadline, and atomic index rewriting separately has
+a 120-second deadline. Pages contain at most 500 rows; name normalization is
+batched through PostgreSQL, not Python casefolding. Reports contain counts, key
+IDs, schema/operation/status and keyed digests only. Exceptions are fixed safe
+messages, never SQL, parameters, ciphertext or plaintext.
+
+Key removal is deliberately unsupported. Keep historical encryption keys for
+every retained backup even after current key usage is zero. Restored final-schema
+databases must be verified with their matching anchored settings and saved content
+digest before any renewed rotation. If abandoning a frozen outage, use separately
+approved coordinated backup/key recovery; do not thaw by editing stage evidence.
+
+### Final maintenance implementation evidence
+
+```sh
+sh scripts/test-api-foundation.sh tests/test_directory_rotation.py \
+  tests/test_directory_crypto.py tests/test_directory_staging.py \
+  tests/test_directory_retirement.py tests/test_directory_runtime.py \
+  tests/test_staff_rotation.py --tb=short
+```
+
+Actual result: **116 passed in 76.02 seconds**, exclusively in private disposable
+PostgreSQL with synthetic keys/identities. Coverage includes bounded restart and
+incomplete-finish refusal, all-row/tombstone/owner/metadata parity, tampered AAD
+and authenticated-value replacement, stale plans, missing/changed historical
+keys, configuration-only renewal, independent atomic index rekey and failure
+rollback, write/lock/role/logging guards, production/backup/recovery attestations,
+runtime target-anchor readiness, and subprocess CLI checks with bare PostgreSQL
+and explicit Psycopg URLs. Existing staging/retirement/Staff checks passed in
+the same run. These Directory suites are now included in the release command.
+Existing Starlette/httpx and Alembic path-separator deprecation warnings remain.
+The API workflow restarted cleanly and the public portal loaded without console
+errors. No shared/production migration, rotation, secret replacement or deployment
+was performed. This is not a claim that managed directory rollout is approved.
+
+The completion-triggered `pnpm run validate:release` subsequently passed the
+registered Directory group (**96 passed in 61.09 seconds**), all completed
+backend groups, and browser groups of **175**, **45**, and **30** tests. The
+completion runner exhausted its waiting budget and terminated the command with
+Hangup during the later Patient enlarged-text matrix (23 cases had passed).
+No assertion failure was recorded before termination. The unfinished release
+command is **not** reported as passing; task completion records an explicit
+validation-runtime exception rather than rerunning an unchanged oversized gate.
