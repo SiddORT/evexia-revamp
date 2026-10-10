@@ -1,5 +1,6 @@
 """Pure graph/runner tests: no database, Docker, Alembic upgrade or network."""
 from contextlib import redirect_stdout
+import fcntl
 import importlib.util
 import io
 import json
@@ -300,6 +301,185 @@ elif tool == 'docker':
                 self.assertEqual(completed.returncode, expected, completed.stderr)
                 self.assertEqual(release, "previous-release")
                 self.assertFalse(any(call[:2] == ["docker", "compose"] for call in calls))
+
+
+class OperatorSafetyTests(unittest.TestCase):
+    """Real Linux FD/lock checks on temporary files; backend body is stubbed."""
+
+    def exercise(self, mode="exclusive", changes=None, attest=True, restore=True,
+                 restored_digest=None):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            scripts, active = root / "scripts", root / "active"
+            scripts.mkdir()
+            active.mkdir()
+            (root / "artifacts/api-server/backend").mkdir(parents=True)
+            lock, marker = active / ".deploy.lock", active / ".operator-maintenance"
+            lock.touch()
+            marker.touch()
+            backup = root / "synthetic-backup.json"
+            backup.write_text('{"synthetic": true}\n')
+            source = (ROOT / "operator-retirement.sh").read_text()
+            # Relocate ONLY the fixed constant in a disposable script copy.
+            # Production code has no path-override/testing environment escape.
+            source = source.replace(
+                "DEPLOY_LOCK=/var/www/newuat.allergyevexia.in/.deploy.lock",
+                "DEPLOY_LOCK=" + str(lock))
+            script = scripts / "operator-retirement.sh"
+            script.write_text(source)
+            sentinel = root / "backend-entered"
+            interpreter = root / "guard-python"
+            interpreter.write_text(
+                "#!" + sys.executable + "\n"
+                "import os, sys\n"
+                "sys.argv = sys.argv[1:]\n"
+                "body = sys.stdin.read()\n"
+                "if 'import importlib.util' in body:\n"
+                "    open(os.environ['TEST_SENTINEL'], 'w').write('backend body stubbed')\n"
+                "else:\n"
+                "    exec(compile(body, '<operator-lock-check>', 'exec'))\n")
+            interpreter.chmod(0o700)
+            fd = os.open(lock, os.O_RDWR)
+            try:
+                if mode == "exclusive":
+                    fcntl.flock(fd, fcntl.LOCK_EX)
+                elif mode == "shared":
+                    fcntl.flock(fd, fcntl.LOCK_SH)
+                elif mode == "posix":
+                    fcntl.lockf(fd, fcntl.LOCK_EX)
+                env = os.environ.copy()
+                env.update(APP_ENV="production", EVEXIA_DEPLOY_LOCK=str(lock),
+                           EVEXIA_DEPLOY_LOCK_FD=str(fd),
+                           EVEXIA_OPERATOR_PYTHON=str(interpreter),
+                           TEST_SENTINEL=str(sentinel))
+                if changes:
+                    changes(root, lock, marker, env)
+                digest = "a" * 64
+                args = ["bash", str(script), "--backup", str(backup), "--sha256", digest,
+                        "--approve-retirement", "--writers-stopped",
+                        "--external-consumers-reviewed", "--backup-durable",
+                        "--retention-resolved", "--approve-phone-continuation"]
+                if restore:
+                    args += ["--restore-verified", restored_digest or digest]
+                if attest:
+                    args += ["--attest-restoration-rehearsal"]
+                result = subprocess.run(args, env=env, pass_fds=(fd,), text=True,
+                                        capture_output=True, timeout=10)
+                entered = sentinel.exists()
+                # For the valid unchanged path, prove the guard did not release
+                # or silently acquire/upgrade the supervisor's lock.
+                if not changes:
+                    probe = os.open(lock, os.O_RDWR)
+                    try:
+                        if mode == "exclusive":
+                            with self.assertRaises(BlockingIOError):
+                                fcntl.flock(probe, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                        elif mode == "unlocked":
+                            fcntl.flock(probe, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                        elif mode == "shared":
+                            fcntl.flock(probe, fcntl.LOCK_SH | fcntl.LOCK_NB)
+                    finally:
+                        os.close(probe)
+                return result, entered, marker.is_file()
+            finally:
+                os.close(fd)
+
+    def assert_rejected(self, **kwargs):
+        result, entered, _ = self.exercise(**kwargs)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertFalse(entered, "Rejected prerequisites must not reach backend/database code")
+        return result
+
+    def test_fixed_operator_path_matches_unchanged_ci_path(self):
+        operator = (ROOT / "operator-retirement.sh").read_text()
+        ci = (ROOT.parent / ".github/workflows/deploy.yml").read_text()
+        path = "/var/www/newuat.allergyevexia.in"
+        self.assertIn("DEPLOY_LOCK=" + path + "/.deploy.lock", operator)
+        self.assertIn("ACTIVE=" + path, ci)
+        self.assertNotIn('flock -n "$EVEXIA_DEPLOY_LOCK_FD"', operator)
+
+    def test_canonical_already_exclusively_locked_descriptor_accepted(self):
+        result, entered, marker = self.exercise()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(entered)
+        self.assertTrue(marker, "Operator completion must not clear maintenance automatically")
+
+    def test_unlocked_shared_and_posix_descriptors_rejected(self):
+        for mode in ("unlocked", "shared", "posix"):
+            with self.subTest(mode=mode):
+                self.assert_rejected(mode=mode)
+
+    def test_alternate_or_alias_lock_path_rejected(self):
+        for path in ("other", "alias"):
+            def change(root, lock, marker, env):
+                env["EVEXIA_DEPLOY_LOCK"] = (
+                    str(root / ".deploy.lock") if path == "other"
+                    else str(lock.parent / "child") + "/../.deploy.lock")
+                (root / ".operator-maintenance").touch()
+            with self.subTest(path=path):
+                self.assert_rejected(changes=change)
+
+    def test_lock_descriptor_inode_replacement_rejected(self):
+        def change(root, lock, marker, env):
+            lock.unlink()
+            lock.touch()
+        self.assert_rejected(changes=change)
+
+    def test_symlink_lock_and_ancestor_rejected(self):
+        for ancestor in (False, True):
+            def change(root, lock, marker, env):
+                if ancestor:
+                    active = lock.parent
+                    active.rename(root / "real-active")
+                    active.symlink_to(root / "real-active", target_is_directory=True)
+                else:
+                    target = root / "real-lock"
+                    lock.rename(target)
+                    lock.symlink_to(target)
+            with self.subTest(ancestor=ancestor):
+                self.assert_rejected(changes=change)
+
+    def test_missing_symlink_or_directory_marker_rejected(self):
+        for kind in ("missing", "symlink", "dangling", "directory"):
+            def change(root, lock, marker, env):
+                marker.unlink()
+                if kind == "directory":
+                    marker.mkdir()
+                elif kind in ("symlink", "dangling"):
+                    target = root / "other-marker"
+                    if kind == "symlink":
+                        target.touch()
+                    marker.symlink_to(target)
+            with self.subTest(kind=kind):
+                self.assert_rejected(changes=change)
+
+    def test_wrong_missing_or_standard_stream_descriptor_rejected(self):
+        for value in ("999999", "0", "not-a-descriptor", None):
+            def change(root, lock, marker, env):
+                if value is None:
+                    env.pop("EVEXIA_DEPLOY_LOCK_FD")
+                else:
+                    env["EVEXIA_DEPLOY_LOCK_FD"] = value
+            with self.subTest(value=value):
+                self.assert_rejected(changes=change)
+
+    def test_integrity_and_matching_digest_without_separate_attestation_rejected(self):
+        result = self.assert_rejected(attest=False)
+        self.assertIn("backup integrity is not rehearsal evidence", result.stderr)
+
+    def test_restoration_attestation_does_not_replace_matching_backup_digest(self):
+        self.assert_rejected(restore=False)
+        self.assert_rejected(restored_digest="b" * 64)
+
+    def test_attestation_and_legacy_migration_evidence_gates_preserved(self):
+        source = (ROOT / "operator-retirement.sh").read_text()
+        self.assertIn("RESTORATION_ATTESTED=no", source)
+        self.assertIn("organization_retirement.load_backup(backup, digest)", source)
+        self.assertIn("organization_restore_verified={attested_backup_digest}", source)
+        for gate in ("organization_removal_approved", "organization_writers_stopped",
+                     "organization_external_consumers_reviewed", "organization_backup_durable",
+                     "organization_retention_resolved"):
+            self.assertIn(gate + "=yes", source)
 
 
 if __name__ == "__main__":

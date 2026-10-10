@@ -291,6 +291,7 @@ bash scripts/operator-retirement.sh \
   --backup /restricted/operator/retirement/recovery.json \
   --sha256 REVIEWED_SHA256 \
   --restore-verified REVIEWED_SHA256 \
+  --attest-restoration-rehearsal \
   --approve-retirement \
   --writers-stopped \
   --external-consumers-reviewed \
@@ -300,11 +301,22 @@ bash scripts/operator-retirement.sh \
 ```
 
 Placeholders are not real approvals. The script requires all attestations,
-production settings, a regular recovery file, matching rehearsal/backup digest,
-and both the host deployment lock and the automatic runner's DB lock. It validates
-recovery-file integrity and directory key configuration before advancing the
-predecessor. A matching digest is not proof that rehearsal or durable custody
-actually happened; those remain operator responsibilities.
+production settings, a regular recovery file, matching backup/attested-backup
+digests, and both the host deployment lock and the automatic runner's DB lock.
+`--sha256` is used to validate backup file integrity only. `--restore-verified`
+identifies the backup covered by the operator's restoration attestation; it is
+not a digest of a rehearsal result and is not proof that a rehearsal happened.
+Even matching digests are rejected without the separate explicit
+`--attest-restoration-rehearsal` flag.
+
+Supply that flag only after a successful isolated restoration rehearsal and
+review of its separately retained external evidence (procedure, results and
+review tied to the exact backup digest). The script does not perform a rehearsal
+or independently verify the truth of that attestation. Backup integrity and
+directory key configuration are checked before advancing the predecessor;
+complete live recovery compatibility is still checked by the existing
+retirement migration. No checksum is treated as proof of rehearsal success,
+durable custody, or approval, and no existing migration evidence gate is removed.
 
 The fixed reviewed sequence is:
 
@@ -326,8 +338,15 @@ operator rollout must remain in maintenance and follow reviewed recovery or an
 explicitly reviewed continuation; do not automatically restart the old backend.
 The host lock must cover the **whole maintenance window**, including final
 readiness and reopening traffic. A supervising operator shell should hold it
-and pass its descriptor using `EVEXIA_DEPLOY_LOCK_FD=9`. The script requires that
-inherited descriptor to identify the same shared lock file.
+and pass its descriptor using `EVEXIA_DEPLOY_LOCK_FD=9`. The script accepts only
+CI's exact `/var/www/newuat.allergyevexia.in/.deploy.lock` path, rejects symlink
+aliases, and requires a regular lock file and an inherited descriptor for its
+current inode. Linux `/proc/self/fdinfo` must show an already-held exclusive
+`flock` on that descriptor; an unlocked or shared-lock descriptor is rejected.
+The script never acquires an unlocked descriptor to make this check pass.
+Unavailable kernel lock evidence fails closed. The canonical regular maintenance
+marker at CI's exact location is also required; another directory's marker
+cannot substitute for it.
 
 Before stopping writers, the supervisor must also create the shared
 `.operator-maintenance` marker alongside `.deploy.lock`. Normal CI refuses
