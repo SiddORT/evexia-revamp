@@ -6,6 +6,7 @@ Alembic upgrade functions are NOT run: selected declarative DDL expressions are
 recorded in memory. Connection/data operations and raw SQL are never executed.
 """
 import ast
+import argparse
 import hashlib
 import importlib.util
 import json
@@ -29,7 +30,7 @@ from purposes import TABLES, LOGICAL, column_purpose
 
 ROOT = Path(__file__).resolve().parents[2]
 BACKEND = ROOT / "artifacts/api-server/backend"
-OUTPUT = ROOT / "exports/EVEXIA_Database_Data_Dictionary.xlsx"
+OUTPUT = ROOT / "generated-artifacts/schema/EVEXIA_Database_Data_Dictionary.xlsx"
 DIALECT = postgresql.dialect()
 sys.path.insert(0, str(BACKEND))
 from app.db import models  # noqa: E402,F401 — metadata registration only
@@ -71,7 +72,8 @@ class DDLRecorder:
         self.indexes = {}
         self.allowed = {
             "create_table", "add_column", "alter_column", "create_foreign_key",
-            "create_check_constraint", "create_index", "drop_constraint", "drop_column", "execute",
+            "create_check_constraint", "create_unique_constraint", "create_index",
+            "drop_constraint", "drop_column", "drop_index", "drop_table", "execute",
         }
 
     def create_table(self, name, *elements, **kwargs):
@@ -86,6 +88,20 @@ class DDLRecorder:
         # Retired constraints must have been explicitly dropped by the migration.
         target = self.metadata.tables[table]
         target._columns.remove(target.c[column])
+
+    def drop_table(self, table):
+        self.metadata.remove(self.metadata.tables[table])
+        self.indexes.pop(table, None)
+        self.origins.pop(table, None)
+
+    def drop_index(self, name, table_name=None):
+        tables = [table_name] if table_name else list(self.indexes)
+        for table in tables:
+            self.indexes[table] = [i for i in self.indexes.get(table, [])
+                                   if not i.startswith(name + ":") and not i.startswith("UNIQUE " + name + ":")]
+
+    def create_unique_constraint(self, name, table, columns):
+        self.metadata.tables[table].append_constraint(sa.UniqueConstraint(*columns, name=name))
 
     def alter_column(self, table, column, **kwargs):
         col = self.metadata.tables[table].c[column]
@@ -120,9 +136,20 @@ class DDLRecorder:
     def drop_constraint(self, name, table, **kwargs):
         target = self.metadata.tables[table]
         found = [c for c in target.constraints if c.name == name]
+        if not found and kwargs.get("type_") == "foreignkey":
+            # PostgreSQL assigned the original unnamed single-column FK its
+            # baseline name. Recognize that one reviewed removal, not arbitrary
+            # guessed constraints throughout the dictionary.
+            if (table, name) == ("refresh_sessions", "refresh_sessions_organization_id_fkey"):
+                found = [c for c in target.foreign_key_constraints
+                         if c.name is None and list(c.column_keys) == ["organization_id"]]
         if len(found) != 1:
             raise ValueError(f"Constraint not found: {table}.{name}")
         target.constraints.remove(found[0])
+        if isinstance(found[0], sa.ForeignKeyConstraint):
+            for element in found[0].elements:
+                target.foreign_keys.discard(element)
+                element.parent.foreign_keys.discard(element)
 
     def execute(self, statement):
         sql = str(statement)
@@ -155,41 +182,60 @@ def migration_metadata():
             upgrade = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "upgrade")
             module.op = recorder
             recorder.revision = revision
-            for node in upgrade.body:
-                if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
-                    call = node.value
-                    if isinstance(call.func, ast.Attribute) and isinstance(call.func.value, ast.Name):
-                        if call.func.value.id == "op" and call.func.attr in recorder.allowed:
-                            exec(compile(ast.Module(body=[node], type_ignores=[]), str(path), "exec"), module.__dict__)
-                            continue
-                        if call.func.value.id == "connection" and call.func.attr == "execute":
-                            continue  # Data migration SQL: never execute.
-                if isinstance(node, ast.Assign):
-                    calls = [n for n in ast.walk(node) if isinstance(n, ast.Call)]
-                    if any(isinstance(c.func, ast.Attribute) and c.func.attr in ("execute", "get_bind", "mappings", "all", "scalar_one", "scalar_one_or_none") for c in calls):
-                        continue
-                    exec(compile(ast.Module(body=[node], type_ignores=[]), str(path), "exec"), module.__dict__)
-                    continue
-                if isinstance(node, ast.For):
-                    # Allow only explicit structural DDL loops, never data writes.
-                    if all(isinstance(n, ast.Expr) and isinstance(n.value, ast.Call)
-                           and isinstance(n.value.func, ast.Attribute)
-                           and isinstance(n.value.func.value, ast.Name)
-                           and n.value.func.value.id == "op"
-                           and n.value.func.attr in ("create_index", "drop_constraint", "drop_column")
-                           for n in node.body):
-                        exec(compile(ast.Module(body=[node], type_ignores=[]), str(path), "exec"), module.__dict__)
-                        continue
-                    if isinstance(node.target, ast.Name) and node.target.id == "family":
-                        continue  # Historical row backfill: no schema definitions.
-                if isinstance(node, ast.If) and all(isinstance(n, ast.Raise) for n in node.body):
-                    continue  # Data-dependent rollout guard: cannot evaluate offline.
-                raise ValueError(f"Unreviewed migration statement in {path.name}: {ast.unparse(node)[:100]}")
+            record_structural_ddl(upgrade.body, module.__dict__, path, recorder)
             ordered.append(revision)
             applied.add(revision)
             remaining.remove(revision)
     heads = sorted(applied - {m.down_revision for m, _ in revisions.values()})
     return recorder, ordered, heads
+
+
+def record_structural_ddl(nodes, namespace, path, recorder):
+    """Record static op DDL only, including reviewed nested crypto-field loops.
+
+    Never evaluate connection/session setup, data assignments or service calls.
+    A DDL-bearing dynamic condition/loop fails explicitly rather than guessing.
+    """
+    def has_ddl(node):
+        return any(isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                   and isinstance(n.func.value, ast.Name) and n.func.value.id == "op"
+                   and n.func.attr != "get_bind" for n in ast.walk(node))
+
+    for node in nodes:
+        if isinstance(node, ast.Assign):
+            calls = [n for n in ast.walk(node.value) if isinstance(n, ast.Call)]
+            # Only literal assignments and the historical permission catalogue's
+            # string join are needed by structural DDL. Never run service calls.
+            if not calls or all(isinstance(c.func, ast.Attribute) and c.func.attr == "join"
+                                and isinstance(c.func.value, ast.Constant)
+                                and isinstance(c.func.value.value, str) for c in calls):
+                exec(compile(ast.Module(body=[node], type_ignores=[]), str(path), "exec"), namespace)
+            continue
+        if not has_ddl(node):
+            continue
+        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+            call = node.value
+            if (isinstance(call.func, ast.Attribute) and isinstance(call.func.value, ast.Name)
+                    and call.func.value.id == "op" and call.func.attr in recorder.allowed):
+                exec(compile(ast.Module(body=[node], type_ignores=[]), str(path), "exec"), namespace)
+                continue
+        if isinstance(node, ast.With):
+            record_structural_ddl(node.body, namespace, path, recorder)
+            continue
+        if isinstance(node, ast.For):
+            iterable = eval(compile(ast.Expression(node.iter), str(path), "eval"), namespace)
+            for value in iterable:
+                assignment = ast.Assign(targets=[node.target], value=ast.Name(id="_dictionary_value", ctx=ast.Load()))
+                namespace["_dictionary_value"] = value
+                exec(compile(ast.fix_missing_locations(ast.Module(body=[assignment], type_ignores=[])),
+                             str(path), "exec"), namespace)
+                record_structural_ddl(node.body, namespace, path, recorder)
+            continue
+        if isinstance(node, ast.If):
+            condition = eval(compile(ast.Expression(node.test), str(path), "eval"), namespace)
+            record_structural_ddl(node.body if condition else node.orelse, namespace, path, recorder)
+            continue
+        raise ValueError(f"Unreviewed structural DDL in {path.name}: {ast.unparse(node)[:100]}")
 
 
 def fk_signature(fk):
@@ -198,7 +244,7 @@ def fk_signature(fk):
 
 
 def reconcile(metadata):
-    assert set(metadata.tables) == set(Base.metadata.tables), "Migration/model table mismatch"
+    assert set(metadata.tables) == set(Base.metadata.tables) | {"directory_crypto_stage"}, "Migration/model table mismatch"
     for name, model in Base.metadata.tables.items():
         migrated = metadata.tables[name]
         assert set(model.c.keys()) == set(migrated.c.keys()), f"{name}: column mismatch"
@@ -226,7 +272,7 @@ def build_rows(recorder, ordered, heads, commit, source_hash, snapshot):
         ("Snapshot date (UTC)", snapshot),
         ("Merged source commit", commit),
         ("Schema source SHA-256", source_hash),
-        ("Coverage", f"{len(metadata.tables)} application tables; {application_columns} application columns; {constraint_count} foreign-key constraints. alembic_version is infrastructure and excluded from these counts."),
+        ("Coverage", f"{len(Base.metadata.tables)} application tables; {application_columns} application columns; {constraint_count} foreign-key constraints. alembic_version and directory_crypto_stage are infrastructure and excluded from these counts."),
         ("Sources", "Committed SQLAlchemy Base.metadata via app.db.models and all registered extension models; committed Alembic revisions in dependency order; backend README.md, STORAGE_CONTRACT.md and relevant domain documentation/services."),
         ("Migration head(s)", ", ".join(heads)),
         ("Migration chain", " → ".join(ordered)),
@@ -239,7 +285,7 @@ def build_rows(recorder, ordered, heads, commit, source_hash, snapshot):
         ("Primary key", "Uniquely identifies a row. A primary key can also be a foreign key, as in MR/patient directory extensions."),
         ("Foreign key", "An actual constraint linking source and target columns. A composite constraint enforces its ordered column tuple together, not independent column references. Names omitted in migrations are labeled unnamed rather than guessing PostgreSQL-generated names."),
         ("Relationships", "One row per foreign-key column pair, with shared relationship ID/name and ordered position for composite constraints. Logical and derived associations are labeled Not enforced and are not included in foreign-key counts."),
-        ("Legacy organizations/memberships", "Retained historical organization/account structures are not current tenant authorization or system privileges. Legacy refresh organization references remain historical; audit organization identifiers are logical, not foreign keys."),
+        ("Retired organization schema", "The current head removes the legacy organization and membership tables and both scope columns. Immutable historical migrations, restricted external recovery and credential-bound rejection evidence preserve history without a replacement tenant system."),
         ("Core identities versus directory extensions", "users stores credentials. mr_profiles and patients support ownership/authorization. mr_directory and patient_directory are optional one-to-one business extensions with shared PK/FK IDs; identity-only rows need not have directory details. doctor_directory is a business directory, not a login account."),
         ("Staff roles and permissions", "Staff contacts are ciphertext with a keyed blind email index. Business roles/designations grant no privileges by label. Workspace sign-in is explicit opt-in, and custom_roles stores allowlisted action keys for eight masters; system identity is distinct."),
         ("Files and downloads", "files contains metadata and logical object keys, not binary contents, physical paths or public links. download_grants contains digests. download_logs records initiation/issuance metadata, not proof of delivery."),
@@ -249,20 +295,21 @@ def build_rows(recorder, ordered, heads, commit, source_hash, snapshot):
         ("Infrastructure separately documented", f"alembic_version: Alembic migration tracking table, one column version_num ({compiled(infrastructure.c.version_num.type)}), NOT NULL primary key; no default or foreign key. Excluded from application counts; infrastructure rows are explicitly marked in Tables and Columns."),
         ("Scope exclusions", "No unmerged implementation, browser-local/demo stores, data rows, patient/staff details, credentials, secrets, database URLs or live connection configuration. Browser-reporting module names do not establish corresponding backend tables."),
         ("Constraints beyond foreign keys", "Tables includes migration-declared unique/check constraints. Migration-only trigger/functions and expression-index support also exist (identity protection, account namespace, append-only downloads and activity search); this workbook is a dictionary, not a full executable schema dump."),
-        ("Known ORM/migration distinctions", "custom_roles.normalized_name is nullable in its migration, but mapped str infers NOT NULL in the ORM; its generated expression derives from required name. Membership's legacy role check and some MR validation checks exist only in migrations. Many migration-defined version defaults are absent from ORM server_default while ORM insert defaults are present. This export changes none of these definitions."),
+        ("Known ORM/migration distinctions", "custom_roles.normalized_name is nullable in its migration, but mapped str infers NOT NULL in the ORM; its generated expression derives from required name. The encryption phase registry is migration-only infrastructure. Some MR validation checks exist only in migrations. Many migration-defined version defaults are absent from ORM server_default while ORM insert defaults are present. This export changes none of these definitions."),
     ]
     tables = []
     columns = []
     relationships = []
     for name in sorted(metadata.tables):
         table = metadata.tables[name]
-        model = Base.metadata.tables[name]
+        model = Base.metadata.tables.get(name, table)
+        category = "Infrastructure (excluded)" if name == "directory_crypto_stage" else "Application"
         refs = sorted({e.column.table.name for fk in table.foreign_key_constraints for e in fk.elements})
         checks = sorted(f"{c.name or '(unnamed)'}: {c.sqltext}" for c in table.constraints if isinstance(c, sa.CheckConstraint))
         uniques = sorted(f"{c.name or '(unnamed)'}: ({', '.join(c.columns.keys())})" for c in table.constraints if isinstance(c, sa.UniqueConstraint))
         # Avoid publishing the hard-coded protected identity contact in a schema rule.
         checks = [re.sub(r"'[^']+@[^']+'", "'[reserved protected-admin identity]'", s) for s in checks]
-        tables.append([name, "Application", TABLES[name], len(table.c), ", ".join(refs) or "None",
+        tables.append([name, category, TABLES[name], len(table.c), ", ".join(refs) or "None",
                        recorder.origins[name], "\n".join(uniques) or "None declared",
                        "\n".join(checks) or "None declared",
                        "\n".join(recorder.indexes.get(name, [])) or "None declared via op.create_index"])
@@ -270,7 +317,7 @@ def build_rows(recorder, ordered, heads, commit, source_hash, snapshot):
             migrated = table.c[col.name]
             targets = sorted(col.foreign_keys, key=lambda fk: fk.target_fullname)
             columns.append([
-                name, "Application", col.name, compiled(col.type), "Yes" if migrated.nullable else "No",
+                name, category, col.name, compiled(col.type), "Yes" if migrated.nullable else "No",
                 "Yes" if col.primary_key else "No", column_purpose(name, col.name),
                 default_text(col.default), default_text(migrated.server_default),
                 default_text(col.server_default), default_text(col.onupdate),
@@ -359,7 +406,7 @@ def validate(path, expected, metadata, constraint_count):
     rows = list(wb["Columns"].iter_rows(min_row=2, values_only=True))
     app = [r for r in rows if r[1] == "Application"]
     assert {(r[0], r[2]) for r in app} == {(t.name, c.name) for t in Base.metadata.tables.values() for c in t.c}
-    assert len(app) == sum(len(t.c) for t in metadata.tables.values())
+    assert len(app) == sum(len(t.c) for t in Base.metadata.tables.values())
     fks = [r for r in wb["Relationships"].iter_rows(min_row=2, values_only=True) if r[2] == "Yes"]
     assert len({r[0] for r in fks}) == constraint_count
     assert len(fks) == sum(len(fk.elements) for t in metadata.tables.values() for fk in t.foreign_key_constraints)
@@ -374,29 +421,39 @@ def validate(path, expected, metadata, constraint_count):
     with ZipFile(path) as archive:
         assert archive.testzip() is None
         assert not any("vba" in n.lower() or "externallink" in n.lower() or "connections" in n.lower() for n in archive.namelist())
-    return {"application_tables": len(metadata.tables), "application_columns": len(app),
+    return {"application_tables": len(Base.metadata.tables), "application_columns": len(app),
             "foreign_key_constraints": constraint_count, "foreign_key_column_pairs": len(fks),
-            "logical_or_derived_rows": len(LOGICAL), "infrastructure_tables": 1,
+            "logical_or_derived_rows": len(LOGICAL), "infrastructure_tables": 2,
             "sheets": wb.sheetnames, "validation": "PASS"}
 
 
 def main():
+    global OUTPUT
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--working-tree", action="store_true",
+                        help="Explicitly labeled unmerged snapshot for synthetic verification, never a merged/release export.")
+    parser.add_argument("--output", type=Path, default=OUTPUT)
+    args = parser.parse_args()
+    OUTPUT = args.output.resolve()
     sources = sorted((BACKEND / "app/db").glob("*.py")) + sorted((BACKEND / "alembic/versions").glob("*.py"))
     # Session/config modules are not imported or inspected for live settings.
     sources = [p for p in sources if p.name != "session.py"]
     committed = set(git("ls-files").splitlines())
     for path in sources:
         relative = path.relative_to(ROOT).as_posix()
-        assert relative in committed, f"Unmerged/untracked schema source: {relative}"
-        assert subprocess.check_output(["git", "-C", str(ROOT), "show", f"HEAD:{relative}"]) == path.read_bytes(), f"Unmerged schema change: {relative}"
+        if not args.working_tree:
+            assert relative in committed, f"Unmerged/untracked schema source: {relative}"
+            assert subprocess.check_output(["git", "-C", str(ROOT), "show", f"HEAD:{relative}"]) == path.read_bytes(), f"Unmerged schema change: {relative}"
     commit = git("rev-parse", "HEAD")
     source_hash = hashlib.sha256(b"".join(
         p.relative_to(ROOT).as_posix().encode() + b"\0" + p.read_bytes() for p in sources)).hexdigest()
-    assert set(TABLES) == set(Base.metadata.tables), "Business descriptions must cover every current table"
+    assert set(TABLES) == set(Base.metadata.tables) | {"directory_crypto_stage"}, "Business descriptions must cover every current table"
     recorder, ordered, heads = migration_metadata()
     reconcile(recorder.metadata)
     snapshot = datetime.now(timezone.utc).isoformat(timespec="seconds")
     readme, tables, columns, relationships, count = build_rows(recorder, ordered, heads, commit, source_hash, snapshot)
+    if args.working_tree:
+        readme[0] = ("Document", "EVEXIA Database Data Dictionary — UNMERGED WORKING TREE verification snapshot, not a release or live database export.")
     wb = Workbook()
     wb.remove(wb.active)
     wb.properties.title = "EVEXIA Database Data Dictionary"
@@ -406,13 +463,14 @@ def main():
     sheet(wb, "Tables", ["Table", "Scope", "Purpose", "Column count", "Referenced tables (FK only)", "Created by revision", "Unique constraints (migration)", "Check constraints (migration)", "Indexes declared through migration operations"], tables, [34, 26, 80, 14, 45, 32, 65, 95, 85])
     sheet(wb, "Columns", ["Table", "Scope", "Column", "PostgreSQL data type", "Nullable (migrations)", "Primary key", "Column purpose", "Application / ORM insert default", "Database default / generated (migrations)", "ORM server_default / generated", "ORM on-update", "FK target table(s)", "FK target column(s)", "ORM nullable"], columns, [34, 26, 29, 34, 16, 12, 80, 38, 48, 48, 28, 35, 28, 14])
     sheet(wb, "Relationships", ["Relationship ID", "Relationship kind", "Enforced FK", "Constraint name", "Source table", "Source column", "Target table", "Target column", "Pair position", "Pairs in constraint", "On delete", "On update", "Explanation"], relationships, [42, 37, 14, 58, 34, 35, 34, 27, 14, 18, 38, 38, 80])
-    OUTPUT.parent.mkdir(exist_ok=True)
+    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     wb.save(OUTPUT)
     summary = validate(OUTPUT, [readme, tables, columns, relationships], recorder.metadata, count)
     # Detect a merge arriving while the workbook was being built.
     assert git("rev-parse", "HEAD") == commit, "Merged source changed during generation; regenerate"
     summary.update(snapshot_utc=snapshot, source_commit=commit, schema_sha256=source_hash,
-                   migration_heads=heads, file=OUTPUT.relative_to(ROOT).as_posix())
+                   migration_heads=heads, working_tree=args.working_tree,
+                   file=str(OUTPUT.relative_to(ROOT)) if OUTPUT.is_relative_to(ROOT) else OUTPUT.name)
     OUTPUT.with_suffix(".validation.json").write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary, indent=2))
 

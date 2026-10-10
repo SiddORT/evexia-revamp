@@ -19,9 +19,8 @@ from app.services.directory_inventory import FIELDS, INDEX_COLUMNS
 from app.services import directory_staging as staging
 
 REVISION = "0030_directory_crypto_retirement"
-# Explicitly reviewed additive schemas; never assume arbitrary future heads
-# preserve the encrypted-directory maintenance contract.
-COMPATIBLE_REVISIONS = frozenset({REVISION, "0031_role_hostnames"})
+SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0032_remove_organizations"})
+COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS
 
 
 class RotationError(Exception):
@@ -43,8 +42,18 @@ def _lock(db, exclusive=False):
     db.execute(text(f"LOCK TABLE directory_crypto_stage, doctor_directory, mr_directory, "
                     f"patient_directory, patients IN {mode} MODE NOWAIT"))
     revisions = list(db.scalars(text("SELECT version_num FROM alembic_version")))
-    if len(revisions) != 1 or revisions[0] not in COMPATIBLE_REVISIONS:
+    if len(revisions) != 1 or revisions[0] not in SUPPORTED_REVISIONS:
         raise RotationError()
+    # Organization retirement changes no encrypted directory storage. Verify
+    # that required final projections still exist and plaintext did not return;
+    # never accept an arbitrary newer head merely because it is newer.
+    for name, fields in FIELDS.items():
+        actual = set(db.scalars(text("""SELECT attname FROM pg_catalog.pg_attribute
+          WHERE attrelid=to_regclass(:name) AND attnum>0 AND NOT attisdropped"""), {"name": name}))
+        if (not {f + "_ciphertext" for f in fields}.issubset(actual)
+                or not set(INDEX_COLUMNS[name]).issubset(actual)
+                or set(fields) & actual):
+            raise RotationError()
 
 
 def _equal(a, b):
@@ -186,7 +195,7 @@ def prepare(db, settings, *, operation="encrypt", target_key_id=None, next_keys=
             runtime_role, inventory, staging._configuration_digest(target)]
         plan = hmac.new(target.index_key, b"directory-final-plan-v1\0" +
                         canonical(_encoded(config)), hashlib.sha256).hexdigest()
-        result = {**inventory, "approval": plan, "schema": REVISION,
+        result = {**inventory, "approval": plan, "schema": db.scalar(text("SELECT version_num FROM alembic_version")),
                   "target_key_id": target.active, "operation": operation, "status": "dry-run"}
         if not execute:
             db.rollback()
@@ -277,6 +286,7 @@ def verify(db, settings, *, finish=False, expected_content_digest=None):
     try:
         current = DirectoryCrypto(settings)
         _lock(db, finish)
+        schema_revision = db.scalar(text("SELECT version_num FROM alembic_version"))
         phase = _state(db)["phase"]
         if phase not in ("encrypted", "frozen") or (finish and phase != "frozen"):
             raise RotationError()
@@ -297,7 +307,7 @@ def verify(db, settings, *, finish=False, expected_content_digest=None):
             db.commit()
         else:
             db.rollback()
-        return {**result, "schema": REVISION,
+        return {**result, "schema": schema_revision,
                 "status": "committed" if finish else "verified-current-transaction-only"}
     except Exception:
         db.rollback()

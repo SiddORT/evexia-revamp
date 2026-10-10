@@ -16,7 +16,7 @@ from app.services import auth, roles, downloads
 from app.schemas.roles import RolePermissions, RoleFields
 from app.services.master_policy import MASTERS, MASTER_ACTIONS, authorize_master
 from app.services.zone_policy import lock_policy
-from test_migration_0006 import migration_db
+from test_migration_0006 import migration_db, upgrade_with_retirement_recovery
 from test_migration_zone_permissions import fixture
 from test_migration_staff import identity, prepare
 from test_staff import seed_designation
@@ -46,7 +46,7 @@ def test_forward_preserves_grants_versions_assignments_and_empty_defaults(migrat
         seed_designation(db, admin_id, "Director")
     from test_migration_role_lifecycle import reviewed_fixture_mapping
     reviewed_fixture_mapping(config, tmp_path, role_id, admin_id)
-    command.upgrade(config, "head")
+    upgrade_with_retirement_recovery(engine, config)
     with engine.connect() as conn:
         assert conn.execute(text("SELECT id, permissions, version, updated_at FROM custom_roles")).all() == before
         assert conn.execute(text("SELECT id, custom_role_id, workspace_login_enabled, version FROM staff_profiles")).all() == staff_before

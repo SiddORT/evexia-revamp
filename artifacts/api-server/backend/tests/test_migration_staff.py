@@ -20,7 +20,7 @@ from app.schemas.staff import StaffFields, StaffStatus
 from app.services.auth import Identity
 from app.services import staff
 from app.services.staff_crypto import StaffError
-from test_migration_0006 import migration_db
+from test_migration_0006 import migration_db, upgrade_with_retirement_recovery
 from test_staff import BODY, seed_designation
 
 
@@ -52,7 +52,7 @@ def identity(db, user_id, session_id):
 
 def test_forward_staff_migration_preserves_accounts_sessions_history_and_constraints(migration_db):
     engine, config, admin_id, session_id, legacy_id = prepare(migration_db)
-    command.upgrade(config, "head")
+    upgrade_with_retirement_recovery(engine, config)
     with Session(engine, expire_on_commit=False) as db:
         seed_designation(db, admin_id)
         assert db.scalar(select(func.count()).select_from(StaffProfile)) == 0

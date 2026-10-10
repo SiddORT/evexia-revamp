@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "export": "python3 ../../scripts/export-api-contract.py",
-    "codegen": "orval --config ./orval.config.ts && pnpm -w exec prettier --write lib/api-client-react/src/generated lib/api-zod/src/generated && pnpm -w run typecheck:libs"
+    "codegen": "orval --config ./orval.config.ts && node ../../scripts/hoist-generated-zod-constants.mjs && pnpm -w exec prettier --write lib/api-client-react/src/generated lib/api-zod/src/generated && pnpm -w run typecheck:libs"
   },
   "devDependencies": {
     "orval": "^8.30.0"

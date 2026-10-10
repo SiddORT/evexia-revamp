@@ -18,7 +18,7 @@ from app.db.zone_models import Zone
 from app.schemas.zones import ZoneFields, ZoneStatus, ZoneVersion
 from app.services.auth import Identity
 from app.services import zones, zone_transfer
-from test_migration_0006 import migration_db
+from test_migration_0006 import migration_db, upgrade_with_retirement_recovery
 
 
 def prepare(fixture):
@@ -33,7 +33,7 @@ def prepare(fixture):
         db.add(AuditEvent(actor_id=actor_id, action="before_zone_migration", outcome="success"))
         db.commit()
         session_id = session.id
-    command.upgrade(config, "head")
+    upgrade_with_retirement_recovery(engine, config)
     return engine, config, actor_id, session_id
 
 

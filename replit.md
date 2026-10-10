@@ -4,6 +4,18 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a mock Docto
 
 ## Run & operate
 
+- Legacy organization retirement uses `0031_remove_organizations` after the
+  reconciled directory-encrypted head. No tenants, account promotions or
+  substitute archive tables are introduced. Managed rollout needs separate
+  approval, read-only preflight, resolved retention, stopped writers, restricted
+  durable external recovery and verified restoration. Downgrade always requires
+  original recovery evidence, even for previously empty retired data; scoped
+  credential rejection markers remain in audit history. Post-merge no longer
+  applies pending migrations automatically at this coordinated boundary.
+  Readiness requires the release revision. See `docs/organization-retirement.md`.
+  The approved development inventory found zero retired rows/correlations at
+  `0029_role_lifecycle`; no managed migration or production inspection occurred.
+
 - Directory encryption has a coordinated ciphertext-only runtime and explicit bounded search/continuation. `0029_directory_crypto_additive` precedes separately approved `0030_directory_crypto_retirement`; final writers require verified encrypted phase and independent Directory keys. Never run final writers against predecessor plaintext schemas or infer managed rollout from synthetic tests. Exports include every match or reject the finite limits, never only the visible section. No shared migration, key change or deployment is authorized by this code. See `docs/directory-encryption.md` for field/account exceptions, key custody, approval/write-exclusion gates, recovery and actual test evidence.
 
 - Doctor/Patient directory-only soft deletion uses additive `0028_directory_soft_delete`

@@ -8,7 +8,11 @@ history if a later stream/handoff fails. See `docs/download-logs.md` for privacy
 retry keys, rollout and release coverage.
 
 This contract supersedes organizational authorization for the new foundation.
-Historical organizations/memberships are retained, not migrated to privileges.
+Historical organization/membership rows and scope correlations are removed at
+`0031_remove_organizations` only after approved inventory/recovery gates.
+Unmapped accounts remain unmapped, and retired credentials stay rejected through
+credential-bound audit evidence. No membership is converted to a privilege.
+See `docs/organization-retirement.md` for external recovery and rollout limits.
 No tenant identifiers, folder scope, or portal/demo import is introduced.
 
 ## Identity and permissions

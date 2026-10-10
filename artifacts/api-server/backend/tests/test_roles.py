@@ -41,7 +41,9 @@ def test_crud_zero_permissions_audit_and_identity_separation(client):
     current = api.get("/api/v1/auth/me", headers=headers).json()
     assert current["system_role"] == "super_admin" and "admin.access" in current["permissions"]
     events = list(db.scalars(select(AuditEvent).where(AuditEvent.resource_type == "custom_role")))
-    assert [e.action for e in events] == ["role_create", "role_update", "role_delete", "role_create"]
+    # An unordered SQL query has no insertion-order guarantee; removing the
+    # obsolete audit index can legitimately select a different access plan.
+    assert sorted(e.action for e in events) == sorted(["role_create", "role_update", "role_delete", "role_create"])
     for event in events:
         assert event.actor_id == admin.id and event.session_id and event.request_id
         assert event.outcome == "success" and event.reason is None and event.resource_id

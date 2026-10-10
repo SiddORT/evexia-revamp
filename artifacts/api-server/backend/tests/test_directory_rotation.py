@@ -59,15 +59,28 @@ def logical(data, crypto):
     return data
 
 
-@pytest.mark.parametrize("revision", [rotation.REVISION, "head"])
-def test_resumable_final_rotation_preserves_tombstones_graph_and_metadata(migration_db, monkeypatch, revision):
+@pytest.mark.parametrize("release_revision,final_revision", [
+    (rotation.REVISION, "0032_remove_organizations"),
+    ("0031_role_hostnames", "0031_role_hostnames"),
+    ("0032_remove_organizations", "0032_remove_organizations"),
+])
+def test_resumable_final_rotation_preserves_tombstones_graph_and_metadata(migration_db, monkeypatch, release_revision, final_revision):
     engine, config, *_ = seed(migration_db)
     with runtime(engine) as (role, api):
         source = stage(engine, config, role)
-        command.upgrade(config, revision)
+        command.upgrade(config, release_revision)
         destination = target(source)
         before = logical(snapshot(engine), DirectoryCrypto(source))
         plan = arm(engine, source, destination)
+        assert plan["schema"] == release_revision
+        # An approved schema cleanup must not strand an already frozen rotation.
+        if release_revision != final_revision:
+            command.upgrade(config, final_revision)
+            # This cleanup removes only the historical nullable audit
+            # correlation; compare all actual retained values without mistaking
+            # the intentionally retired empty column for an encryption change.
+            for event in before["audit_events"]:
+                assert event.pop("organization_id") is None
         assert plan["status"] == "frozen"
         with Session(api) as db, pytest.raises(Exception):
             ready(db)
@@ -86,6 +99,7 @@ def test_resumable_final_rotation_preserves_tombstones_graph_and_metadata(migrat
         with Session(engine) as db:
             done = rotation.verify(db, destination, finish=True, expected_content_digest=plan["content_digest"])
         assert done["key_usage"] and set(done["key_usage"]) == {"next"}
+        assert done["schema"] == final_revision
         assert before == logical(snapshot(engine), DirectoryCrypto(destination))
         from app.services import directory_runtime
         monkeypatch.setattr(directory_runtime, "get_settings", lambda: destination)
@@ -95,10 +109,10 @@ def test_resumable_final_rotation_preserves_tombstones_graph_and_metadata(migrat
             rotation.verify(db, source)
         with Session(engine) as db:
             assert rotation.verify(db, destination)["content_digest"] == plan["content_digest"]
+            assert not db.in_transaction()
+            assert rotation.verify(db, destination)["schema"] == final_revision
         with engine.connect() as conn:
             assert conn.scalar(text("SELECT phase FROM directory_crypto_stage")) == "encrypted"
-            if revision == "head":
-                assert conn.scalar(text("SELECT to_regclass('role_hostnames')")) is not None
 
 
 @pytest.mark.parametrize("failure", ["ciphertext", "aad", "index", "metadata", "owner", "authenticated_value"])

@@ -250,13 +250,18 @@ test('MR deleted designation must be replaced without changing the account', asy
   await expect(page.getByRole('option', { name: 'MR Replacement Designation (deleted)', exact: true })).toHaveAttribute('aria-disabled', 'true');
   await control.press('Escape');
   await expect(page.getByText('Designation was deleted. Explicitly replace it before saving.')).toBeVisible();
+  const rejectedSave = page.waitForResponse((r) => new URL(r.url()).pathname.endsWith(`/mrs/${record.id}/edit`));
   await page.getByTestId('button-save-mr').click();
+  expect((await rejectedSave).status()).toBe(409);
   await expect(page.getByText('Designation is missing or deleted. Explicitly select an active catalogue designation.')).toBeVisible();
-  // Keep the existing conflict/reconciliation boundary; rejection is not
-  // permission to silently replay a later write from the same stale form.
-  await page.getByTestId('button-reconcile-mr').click();
-  await expect(page.getByText('Latest saved version loaded. Review it before saving again.')).toBeVisible();
-  await page.getByTestId('tab-mr-assignment').click();
+  // Typed assignment conflicts are rejected before mutation, unlike a stale
+  // version or ambiguous save. An explicit corrected reference can use the
+  // unchanged saved version; stale recovery is exercised separately and still
+  // requires explicit reconciliation.
+  const unchanged = await page.evaluate(async (id) => (await import('/src/auth/adminSession.js')).mrRequest('/' + id), record.id);
+  expect(unchanged.version).toBe(record.version);
+  expect(unchanged.userId).toBe(record.userId);
+  expect(unchanged.designation_id).toBe(refs.designation);
   const replacement = await page.evaluate(async () => (await import('/src/auth/adminSession.js')).designationRequest('', {
     body: { name: 'ZZ Replacement designation', shortName: 'MR', status: 'active' },
   }));
@@ -304,7 +309,10 @@ test('MR assignment comboboxes: selected IDs, manager clearing, stale responses,
   await expect(manager).not.toHaveAttribute('aria-busy', 'true');
   await expect(page.getByRole('option', { name: 'Assignment worker', exact: true })).toHaveCount(0);
   await manager.fill('missing manager');
-  await expect(page.getByText('No matches found.', { exact: true })).toBeVisible();
+  // The explicit clear option is intentionally available even when the
+  // directory returns no matches; it is not an empty listbox.
+  await expect(page.getByRole('option', { name: 'No reporting manager', exact: true })).toBeVisible();
+  await expect(page.getByRole('option', { name: 'Assignment manager', exact: true })).toHaveCount(0);
   await manager.press('Escape');
   await expect(manager).toHaveValue('Assignment manager');
   await filter(page, 'mr-managers', 'No reporting manager');

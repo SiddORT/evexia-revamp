@@ -476,10 +476,13 @@ but still belongs in the restricted operator change record.
 
 `app.services.directory_rotation` is an offline operator command, not an API,
 startup migration or deployment action. It requires exactly one revision row at
-`0030_directory_crypto_retirement` or the reviewed additive
-`0031_role_hostnames` revision (exactly one installed head). Unknown later
-revisions still require an explicit compatibility review; all phase, role,
-keyring, configuration and approval checks remain required. It changes no Staff ciphertext, AAD, keys or
+`0030_directory_crypto_retirement`, `0031_role_hostnames` or
+`0032_remove_organizations`. Required
+encrypted/index projections and absence of retired plaintext are checked before
+operation; other revisions remain fail-closed. Reports show the actual applied
+revision. Frozen rotations begun on 0030 can be batched, verified and finished
+on 0032 without replacing the existing approval/evidence protocol.
+It changes no Staff ciphertext, AAD, keys or
 rotation tooling. No command automatically provisions/replaces secrets or runs
 against managed data. Shared/production rehearsal or execution always needs
 separate approval; never use a real database for tests.

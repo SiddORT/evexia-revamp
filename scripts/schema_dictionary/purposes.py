@@ -14,10 +14,9 @@ TABLES = {
     "files": "Private patient/MR file ownership, logical object keys, verification and replacement metadata. Binary contents live outside the database.",
     "headquarters": "Shared headquarter names and state codes used by the MR directory; not organization tenants.",
     "login_attempts": "Hashed login-identifier attempt timestamps used for authentication throttling; no plaintext login identifier.",
-    "memberships": "Retained legacy organization-to-user membership roles. These do not grant current system identities or master permissions.",
     "mr_directory": "One-to-one business extension of an MR identity profile: contacts, geography, employee code, manager and commercial limits.",
     "mr_profiles": "Core medical-representative ownership identity linked one-to-one to a login account. Directory details are a separate optional extension.",
-    "organizations": "Retained legacy organization records; not the authorization or tenant boundary for the current shared backend.",
+    "directory_crypto_stage": "Migration-managed encryption phase and reviewed operator recovery/configuration evidence; not a directory, organization archive or identity grant.",
     "opening_balances": "Shared doctor financial-year starting-balance register with signed exact amounts and retained soft deletion. Not payment processing, account settlement or a transaction ledger.",
     "opening_balance_import_reviews": "One current short-lived, single-use opening-balance import review per authenticated session; only digest, owner and expiry metadata, never uploaded file bytes.",
     "patient_directory": "One-to-one clinical/contact extension of a core patient, including linked doctor, demographics and instruction language.",
@@ -45,7 +44,6 @@ COMMON = {
     "is_active": "Activation flag; current authorization also checks the linked identity and domain rules.",
     "status": "Business availability: active or inactive; not itself an authorization grant.",
     "user_id": "Core login account linked to this record.",
-    "organization_id": "Legacy organization identifier; not a current tenant or privilege grant.",
     "description": "Business description.",
     "email": "Contact email address.",
     "phone": "Contact telephone number.",
@@ -79,7 +77,6 @@ SPECIFIC = {
     "users.password_hash": "Argon2id password hash, never a plaintext password.",
     "users.system_role": "Explicit system identity: super_admin, mr or NULL. Business/custom role labels do not populate this field.",
     "users.is_protected_system_admin": "Marks the protected singleton system administrator; migration checks, index and trigger preserve that boundary.",
-    "memberships.role": "Legacy organization-scoped membership label; migration restricts it to owner, admin or viewer. Not a current system role.",
     "auth_sessions.id": "Opaque stable session identifier generated in application code; not a raw bearer credential.",
     "auth_sessions.status": "Session lifecycle: ACTIVE, EXPIRED or REVOKED.",
     "auth_sessions.last_refreshed_at": "UTC timestamp of the most recent accepted session refresh, if any.",
@@ -90,7 +87,6 @@ SPECIFIC = {
     "login_attempts.identifier_hash": "Digest of the attempted login identifier, rather than plaintext contact information.",
     "login_attempts.attempted_at": "UTC timestamp of the login attempt.",
     "audit_events.actor_id": "Logical actor account identifier, normally users.id; no foreign key enforces it.",
-    "audit_events.organization_id": "Logical historical organization reference; no foreign key and no current tenant authorization.",
     "audit_events.action": "Allowlisted operation/action code; browser-reported actions remain distinct from authoritative server operations.",
     "audit_events.resource_type": "Kind of affected resource, if applicable; determines how resource_id is interpreted.",
     "audit_events.resource_id": "Logical affected-record UUID; polymorphic by resource_type, with no single enforced target table.",
@@ -189,6 +185,22 @@ SPECIFIC = {
 
 
 def column_purpose(table, column):
+    if column.endswith("_ciphertext"):
+        return "Authenticated encrypted value: " + column_purpose(table, column.removesuffix("_ciphertext"))
+    if table == "directory_crypto_stage":
+        return {
+            "id": "Singleton phase registry primary key, constrained to 1.",
+            "phase": "Verified encryption phase, not authentication eligibility.",
+            "maintenance_role": "Reviewed database maintenance role identifier; not a login secret.",
+            "runtime_role": "Reviewed runtime database role identifier; not a login secret.",
+            "backup_ref": "Operator's reviewed recovery reference.",
+            "change_ref": "Operator's reviewed coordinated change reference.",
+            "configuration_digest": "Keyed configuration verification evidence, not encryption keys.",
+            "source_digest": "Verified directory source integrity evidence, not record payloads.",
+            "index_key_check": "Keyed index-key verification evidence, not the secret key.",
+        }[column]
+    if column.endswith("_index"):
+        return "Keyed equality lookup evidence for the encrypted directory; discloses equality/frequency, not plaintext or substring search."
     key = f"{table}.{column}"
     if key in SPECIFIC:
         return SPECIFIC[key]
@@ -199,9 +211,7 @@ def column_purpose(table, column):
 
 LOGICAL = [
     ("audit_events", "actor_id", "users", "id", "Logical only — no foreign key", "Actor correlation; the migration intentionally does not enforce this reference."),
-    ("audit_events", "organization_id", "organizations", "id", "Logical only — no foreign key", "Retained legacy organization correlation; not a current tenant grant."),
     ("audit_events", "resource_id", "(varies by resource_type)", "(resource identifier)", "Logical only — polymorphic", "Resource type selects the meaning; no single target table or enforced constraint."),
-    ("mr_directory", "designation", "designations", "name", "Logical only — saved label", "Business designation label, not enforced linkage or authentication authority."),
     ("refresh_sessions", "family_id", "auth_sessions", "family_id", "Logical only — correlation", "Refresh lifecycle grouping; the enforced owner link is (session_id, user_id), not family_id."),
     ("sales_targets", "mrId → mr_directory.zoneId", "zones", "id", "Derived only — via MR", "No zone column in sales_targets; two separately enforced references supply the current zone."),
     ("sales_targets", "mrId → mr_directory.hq", "headquarters", "id", "Derived only — via MR", "No headquarter column in sales_targets; current headquarter is derived through the MR directory."),

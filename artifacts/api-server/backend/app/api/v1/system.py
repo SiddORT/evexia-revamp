@@ -21,6 +21,11 @@ def version():
 def readiness(db: Session = Depends(get_db)):
     try:
         # Deployment health must verify the identity schema, not just a live socket.
+        # Reject predecessor releases even where obsolete nullable fields would
+        # let a subset of requests appear to work during an unsafe mixed rollout.
+        from app.services.organization_retirement import REVISION
+        if db.execute(text("SELECT version_num FROM alembic_version")).scalars().all() != [REVISION]:
+            raise RuntimeError("Coordinated schema release required")
         from app.services.directory_runtime import ready
         ready(db)
         db.execute(text(

@@ -1,5 +1,6 @@
 """Migration 0006 preserves legacy refresh history while disabling old credentials."""
 import os
+import tempfile
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -37,11 +38,36 @@ def migration_db(monkeypatch):
         command.upgrade(config, "0005_protected_admin")
         yield engine, config
     finally:
+        if hasattr(config, "_retirement_recovery"):
+            config._retirement_recovery.cleanup()
         engine.dispose()
         get_settings.cache_clear()
         with admin_engine.begin() as connection:
             connection.execute(text(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))
         admin_engine.dispose()
+
+
+def upgrade_with_retirement_recovery(engine, config):
+    """Historical round-trips need original empty-scope recovery too.
+
+    This helper is confined to the already-isolated migration fixture. It
+    captures the predecessor's complete recovery evidence rather than weakening
+    the current migration's mandatory downgrade gate.
+    """
+    from types import SimpleNamespace
+    from app.services import organization_retirement as retirement
+    command.upgrade(config, retirement.PREVIOUS)
+    config._retirement_recovery = tempfile.TemporaryDirectory(prefix="evexia-test-recovery-")
+    path = Path(config._retirement_recovery.name) / "recovery.json"
+    with engine.connect() as db, db.begin():
+        db.execute(text("SET TRANSACTION READ ONLY"))
+        sha = retirement.save_backup(db, path)
+        assert retirement.load_backup(path, sha) == retirement.snapshot(db)
+    config.cmd_opts = SimpleNamespace(x=[
+        f"organization_backup={path}", f"organization_backup_sha256={sha}",
+        f"organization_restore_verified={sha}", "organization_retention_resolved=yes",
+    ])
+    command.upgrade(config, "head")
 
 
 def test_0006_retires_existing_families_and_keeps_refresh_history(migration_db):

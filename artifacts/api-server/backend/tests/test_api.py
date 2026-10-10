@@ -117,7 +117,7 @@ def test_auth_lifecycle_refresh_reuse_and_password_revocation(client):
     assert password.status_code == 204
     assert api.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {access}"}).status_code == 401
     assert login(api, "sample@example.com", "another long secure password").status_code == 200
-    assert db.scalar(select(RefreshSession).where(RefreshSession.organization_id.is_not(None))) is None
+    assert "organization_id" not in RefreshSession.__table__.columns
 
 
 def test_remember_me_expiry_rotation_logout_family_and_access_boundary(client):

@@ -122,6 +122,7 @@ def test_total_and_page_share_snapshot_even_when_append_commits_mid_statement(mi
 
 
 def test_reporting_index_migration_preserves_append_only_history(migration_db):
+    from test_migration_0006 import upgrade_with_retirement_recovery
     engine, config = migration_db
     command.upgrade(config, "0013_download_logs")
     at = datetime(2030, 1, 1, tzinfo=timezone.utc)
@@ -139,6 +140,7 @@ def test_reporting_index_migration_preserves_append_only_history(migration_db):
         db.flush()
         id = row.id
         db.commit()
+    upgrade_with_retirement_recovery(engine, config)
     for revision in ("head", "0013_download_logs", "head"):
         command.upgrade(config, revision) if revision == "head" else command.downgrade(config, revision)
         with engine.connect() as conn:

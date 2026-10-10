@@ -7,7 +7,9 @@ pnpm install --frozen-lockfile
 UV_PROJECT_ENVIRONMENT="$ROOT/.pythonlibs" uv sync --frozen
 # FastAPI owns the database schema. The template Drizzle schema is empty:
 # never push it against the backend database.
-# Apply reviewed forward migrations only; do not bootstrap or reset accounts.
+# Do not automatically cross the separately approved organization-retirement
+# boundary (or its directory-encryption predecessors). Operator evidence and
+# coordinated write exclusion cannot be supplied by unattended post-merge.
 cd "$ROOT/artifacts/api-server/backend"
 export PYTHONPATH="$ROOT/artifacts/api-server/backend${PYTHONPATH:+:$PYTHONPATH}"
 # Fail before schema changes when the encrypted directory runtime cannot load
@@ -32,4 +34,18 @@ except Exception:
     )
     sys.exit(1)
 PY
-python3 -m alembic upgrade head
+python3 - <<'PY'
+from sqlalchemy import create_engine, text
+from app.core.config import get_settings
+from app.services.organization_retirement import REVISION, connection_url
+try:
+    with create_engine(connection_url(get_settings().database_url), hide_parameters=True).connect() as db, db.begin():
+        db.execute(text("SET TRANSACTION READ ONLY"))
+        current = db.execute(text("SELECT version_num FROM alembic_version")).scalars().all()
+    if current != [REVISION]:
+        print("SCHEMA ROLLOUT BLOCKED: no database migration applied by post-merge. Follow docs/organization-retirement.md after separate operator approval; readiness stays unavailable.")
+    else:
+        print("Coordinated schema revision already applied; no migration needed.")
+except Exception:
+    print("SCHEMA STATUS UNVERIFIED: no database migration applied. Approved operator inspection is required.")
+PY

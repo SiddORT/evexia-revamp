@@ -100,7 +100,6 @@ class Identity:
 
 
 def audit(db: Session, action: str, request_id: str, outcome: str, identity: Identity | None = None) -> None:
-    # organization_id is intentionally unset for all new system-identity events.
     db.add(AuditEvent(
         action=action, outcome=outcome, request_id=request_id,
         actor_id=identity.user.id if identity else None,
@@ -261,7 +260,7 @@ def create_refresh(db: Session, identity: Identity, settings: Settings,
     absolute_expiry = session.expires_at
     db.add(RefreshSession(
         token_hash=token_digest(value), user_id=identity.user.id,
-        organization_id=None, identity_version=identity.user.identity_version,
+        identity_version=identity.user.identity_version,
         family_id=session.family_id, session_id=session.id,
         expires_at=absolute_expiry, family_expires_at=absolute_expiry,
         persistent=session.persistent,
@@ -329,6 +328,17 @@ def revalidate_identity(db: Session, identity: Identity, lock: bool = False) -> 
 
 
 def rotate_refresh(db: Session, value: str, settings: Settings, request_id: str) -> tuple[Identity, str]:
+    # Deployment skew must not silently ignore an extra historical scope
+    # column before migration rejection evidence exists. Hold the ordinary
+    # relation lock through rotation so DDL cannot race this check. Compare
+    # current mappings, not legacy entities or membership-derived privileges.
+    db.execute(text("LOCK TABLE refresh_sessions IN ACCESS SHARE MODE"))
+    actual_columns = set(db.scalars(text("""
+      SELECT attname FROM pg_catalog.pg_attribute
+      WHERE attrelid='refresh_sessions'::regclass AND attnum>0 AND NOT attisdropped
+    """)))
+    if actual_columns != set(RefreshSession.__table__.columns.keys()):
+        _reject(db, "refresh_rejected", "schema_unavailable", request_id)
     digest = token_digest(value)
     # Unlocked lookup only obtains the trustworthy persisted owner. After
     # locking User -> Session -> credential, re-read all state under the locks.
@@ -340,9 +350,18 @@ def rotate_refresh(db: Session, value: str, settings: Settings, request_id: str)
     row = repository.get_credential(db, digest, lock=True)
     if row is None or row.session_id != snapshot.session_id or not user or not session:
         _reject(db, "refresh_rejected", "invalid", request_id)
+    # Immutable migration rejection evidence replaces the retired scope guard.
+    # Check before replay/replacement classification, including revoked rows.
+    retired = db.scalar(select(AuditEvent.id).where(
+        AuditEvent.resource_id == row.id, AuditEvent.actor_id == row.user_id,
+        AuditEvent.action == "refresh_rejected", AuditEvent.outcome == "failure",
+        AuditEvent.resource_type == "refresh_credential",
+        AuditEvent.reason == "legacy_scope_retired",
+    ).limit(1))
+    if retired:
+        _reject(db, "refresh_rejected", "legacy_scope_retired", request_id, user.id, session.id)
     if row.consumed_at or row.revoked_at:
         replaced = (row.user_id == user.id and row.family_id == session.family_id
-                    and row.organization_id is None
                     and row.identity_version == user.identity_version
                     and row.expires_at > utcnow() and row.family_expires_at > utcnow()
                     and _was_replaced(db, session, user))
@@ -355,7 +374,7 @@ def rotate_refresh(db: Session, value: str, settings: Settings, request_id: str)
     if (not user.is_active or row.identity_version != user.identity_version
             or not _effective_session(db, session, user, request_id)):
         _reject(db, "refresh_rejected", "session_invalid", request_id, user.id, session.id)
-    if (row.organization_id is not None or row.user_id != user.id
+    if (row.user_id != user.id
             or row.family_id != session.family_id or row.expires_at <= utcnow()
             or row.family_expires_at <= utcnow()):
         _reject(db, "refresh_rejected", "expired_or_invalid", request_id, user.id, session.id)

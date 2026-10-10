@@ -120,7 +120,7 @@ def test_full_fields_identity_only_and_duplicates(client):
     assert {event.action for event in events} >= {"patient_directory_create", "patient_directory_edit"}
     assert all(event.reason is None and event.resource_type == "patient" for event in events)
     assert set(AuditEvent.__table__.columns.keys()) == {
-        "id", "actor_id", "organization_id", "action", "resource_type", "resource_id",
+        "id", "actor_id", "action", "resource_type", "resource_id",
         "request_id", "session_id", "reason", "outcome", "created_at",
     }, "Audit schema must remain metadata-only, with no patient business payload"
 

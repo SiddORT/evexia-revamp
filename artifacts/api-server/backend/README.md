@@ -249,7 +249,9 @@ The command prompts for new passwords without echoing them. For an existing
 non-protected account, omit `--create`; mapping it to `none` disables its system
 role. This is a privileged, audited operator action—not a public API or bootstrap
 secret. Role/activation changes increment identity/token versions and revoke
-refresh sessions. Legacy organization memberships are retained; they are not
+refresh sessions. Legacy organization memberships were retained through the
+predecessor revisions; `0031_remove_organizations` retires them under verified
+external-recovery gates (see `docs/organization-retirement.md`). They are not
 automatically converted into system roles, domain ownership, or access.
 Unmapped legacy accounts cannot authenticate to the new system operations.
 

@@ -13,13 +13,13 @@ from app.db.models import User, AuthSession, AuditEvent
 from app.db.role_models import CustomRole
 from app.schemas.roles import RoleFields, RoleEdit, RoleVersion
 from app.services import roles
-from test_migration_0006 import migration_db
+from test_migration_0006 import migration_db, upgrade_with_retirement_recovery
 from test_migration_staff import prepare, identity
 
 
 def test_migration_empty_preserves_identity_and_db_normalization(migration_db):
     engine, config, admin_id, session_id, legacy_id = prepare(migration_db)
-    command.upgrade(config, "head")
+    upgrade_with_retirement_recovery(engine, config)
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(CustomRole)) == 0
         assert db.get(User, admin_id).is_protected_system_admin

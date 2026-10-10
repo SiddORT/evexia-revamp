@@ -115,7 +115,7 @@ def test_mapping_legacy_user_is_explicit_and_revokes_old_credentials(domain_db):
     db.add(auth_session)
     db.flush()
     db.add(RefreshSession(
-        token_hash="a" * 64, user_id=legacy_user.id, organization_id=None,
+        token_hash="a" * 64, user_id=legacy_user.id,
         identity_version=0, family_id=uuid.uuid4(), session_id=auth_session.id,
         family_expires_at=expiry,
         expires_at=expiry,
