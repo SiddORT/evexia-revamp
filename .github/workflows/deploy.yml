@@ -16,6 +16,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    outputs:
+      deployment_status: ${{ steps.deployment_result.outputs.status }}
 
     steps:
       - uses: actions/checkout@v4
@@ -28,6 +30,7 @@ jobs:
           bash -n scripts/operator-retirement.sh
 
       - name: Stage, check policy, then promote exact release
+        id: remote_deploy
         uses: appleboy/ssh-action@v1.2.2
         env:
           DEPLOY_SHA: ${{ github.sha }}
@@ -37,7 +40,10 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           envs: DEPLOY_SHA
           command_timeout: 35m
+          capture_stdout: true
           script: |
+            # Preserve the deployment's exit code separately from SSH transport.
+            set +e
             bash -se <<'DEPLOY'
             set -euo pipefail
             ACTIVE=/var/www/newuat.allergyevexia.in
@@ -47,6 +53,7 @@ jobs:
             exec 9>"$ACTIVE/.deploy.lock"
             flock -x 9
             test ! -e "$ACTIVE/.operator-maintenance" || {
+              echo "EVEXIA_DEPLOY_STATUS=blocked"
               echo "OPERATOR_MAINTENANCE_ACTIVE: release not promoted; active application unchanged"; exit 42;
             }
             test -r "$ACTIVE/.env"
@@ -87,6 +94,7 @@ jobs:
             else
               CODE=$?
               if [[ "$CODE" -eq 42 ]]; then
+                echo "EVEXIA_DEPLOY_STATUS=blocked"
                 echo "OPERATOR_MIGRATION_REQUIRED: release not promoted; active application unchanged"
               else
                 echo "DEPLOYMENT_ERROR: policy inspection failed; active application unchanged"
@@ -100,6 +108,9 @@ jobs:
               :
             else
               CODE=$?
+              if [[ "$CODE" -eq 42 ]]; then
+                echo "EVEXIA_DEPLOY_STATUS=blocked"
+              fi
               echo "DEPLOYMENT_NOT_PROMOTED: migration runner returned $CODE"
               exit "$CODE"
             fi
@@ -133,4 +144,49 @@ jobs:
             docker exec evexia-frontend wget -q -O /dev/null http://127.0.0.1/
             printf '%s\n' "$DEPLOY_SHA" > "$ACTIVE/.deployed-release"
             echo "DEPLOYMENT_READY: $DEPLOY_SHA"
+            echo "EVEXIA_DEPLOY_STATUS=promoted"
             DEPLOY
+            DEPLOY_EXIT=$?
+            printf 'EVEXIA_DEPLOY_EXIT_CODE=%s\n' "$DEPLOY_EXIT"
+            # Only the expected policy boundary is non-fatal to SSH transport.
+            # The next step must classify it explicitly as blocked, not promoted.
+            if [ "$DEPLOY_EXIT" -eq 42 ]; then exit 0; fi
+            exit "$DEPLOY_EXIT"
+
+      - name: Report deployment outcome
+        id: deployment_result
+        if: ${{ always() && steps.remote_deploy.outcome != 'skipped' }}
+        env:
+          DEPLOY_STDOUT: ${{ steps.remote_deploy.outputs.stdout }}
+          SSH_OUTCOME: ${{ steps.remote_deploy.outcome }}
+        run: |
+          set -euo pipefail
+          mapfile -t CODES < <(printf '%s\n' "$DEPLOY_STDOUT" | sed -n 's/^EVEXIA_DEPLOY_EXIT_CODE=\([0-9][0-9]*\)$/\1/p')
+          mapfile -t STATES < <(printf '%s\n' "$DEPLOY_STDOUT" | sed -n 's/^EVEXIA_DEPLOY_STATUS=\(blocked\|promoted\)$/\1/p')
+          STATUS=failed
+          if [[ "$SSH_OUTCOME" == success && "${#CODES[@]}" -eq 1 && "${#STATES[@]}" -eq 1 ]]; then
+            case "${CODES[0]}:${STATES[0]}" in
+              0:promoted) STATUS=promoted ;;
+              42:blocked) STATUS=blocked ;;
+            esac
+          fi
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          case "$STATUS" in
+            promoted)
+              echo "## DEPLOYMENT PROMOTED" >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            blocked)
+              {
+                echo "## DEPLOYMENT BLOCKED — OPERATOR MIGRATION REQUIRED"
+                echo
+                echo "Deployment exit code: 42. Candidate not promoted; active application unchanged."
+              } >> "$GITHUB_STEP_SUMMARY"
+              echo "::warning::DEPLOYMENT BLOCKED — OPERATOR MIGRATION REQUIRED"
+              ;;
+            *)
+              echo "## DEPLOYMENT FAILED" >> "$GITHUB_STEP_SUMMARY"
+              echo "A deployment/SSH failure or invalid result occurred. This is not a safe operator-migration block." >> "$GITHUB_STEP_SUMMARY"
+              echo "::error::Deployment failed or returned an invalid result."
+              exit 1
+              ;;
+          esac

@@ -220,7 +220,9 @@ class DeploymentShellTests(unittest.TestCase):
 
     def run_workflow(self, plan_exit=0, execute_exit=0, maintenance=False):
         workflow = (ROOT.parent / ".github/workflows/deploy.yml").read_text()
-        script = textwrap.dedent(workflow.split("          script: |\n", 1)[1])
+        script = textwrap.dedent(
+            workflow.split("          script: |\n", 1)[1]
+            .split("\n      - name: Report deployment outcome", 1)[0])
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             active, source, tools = root / "active", root / "source", root / "tools"
@@ -273,7 +275,9 @@ elif tool == 'docker':
 
     def test_protected_barrier_keeps_active_release_and_never_executes_migrations(self):
         completed, calls, release = self.run_workflow(plan_exit=42)
-        self.assertEqual(completed.returncode, 42, completed.stderr)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("EVEXIA_DEPLOY_EXIT_CODE=42", completed.stdout)
+        self.assertIn("EVEXIA_DEPLOY_STATUS=blocked", completed.stdout)
         self.assertEqual(release, "previous-release")
         self.assertIn("active application unchanged", completed.stdout)
         self.assertFalse(any(call[0] == "docker" and "--execute" in call for call in calls))
@@ -281,13 +285,17 @@ elif tool == 'docker':
 
     def test_execute_recheck_barrier_also_prevents_promotion(self):
         completed, calls, release = self.run_workflow(execute_exit=42)
-        self.assertEqual(completed.returncode, 42, completed.stderr)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("EVEXIA_DEPLOY_EXIT_CODE=42", completed.stdout)
+        self.assertIn("EVEXIA_DEPLOY_STATUS=blocked", completed.stdout)
         self.assertEqual(release, "previous-release")
         self.assertFalse(any(call[:2] == ["docker", "compose"] for call in calls))
 
     def test_automatic_path_promotes_only_after_execution_check(self):
         completed, calls, release = self.run_workflow()
         self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("EVEXIA_DEPLOY_EXIT_CODE=0", completed.stdout)
+        self.assertIn("EVEXIA_DEPLOY_STATUS=promoted", completed.stdout)
         self.assertEqual(release, "a" * 40)
         execute = next(i for i, call in enumerate(calls) if call[:2] == ["docker", "run"] and "--execute" in call)
         promote = next(i for i, call in enumerate(calls) if call[:2] == ["docker", "compose"])
@@ -295,12 +303,80 @@ elif tool == 'docker':
         self.assertIn("--no-deps", calls[promote])
 
     def test_maintenance_and_policy_errors_do_not_touch_release(self):
-        for kwargs, expected in (({"maintenance": True}, 42), ({"plan_exit": 1}, 1)):
+        for kwargs, expected in (({"maintenance": True}, 0), ({"plan_exit": 1}, 1)):
             with self.subTest(kwargs=kwargs):
                 completed, calls, release = self.run_workflow(**kwargs)
                 self.assertEqual(completed.returncode, expected, completed.stderr)
                 self.assertEqual(release, "previous-release")
                 self.assertFalse(any(call[:2] == ["docker", "compose"] for call in calls))
+
+
+class GitHubDeploymentResultTests(unittest.TestCase):
+    def report(self, stdout, outcome="success"):
+        workflow = (ROOT.parent / ".github/workflows/deploy.yml").read_text()
+        step = workflow.split("      - name: Report deployment outcome\n", 1)[1]
+        script = textwrap.dedent(step.split("        run: |\n", 1)[1])
+        with tempfile.TemporaryDirectory() as directory:
+            output, summary = Path(directory) / "output", Path(directory) / "summary"
+            env = os.environ.copy()
+            env.update(DEPLOY_STDOUT=stdout, SSH_OUTCOME=outcome,
+                       GITHUB_OUTPUT=str(output), GITHUB_STEP_SUMMARY=str(summary))
+            result = subprocess.run(["bash"], input=script, text=True, env=env,
+                                    capture_output=True, timeout=10)
+            return result, output.read_text(), summary.read_text()
+
+    def test_exit_42_is_explicitly_blocked_not_promoted(self):
+        remote, calls, release = DeploymentShellTests().run_workflow(plan_exit=42)
+        result, output, summary = self.report(remote.stdout)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(output, "status=blocked\n")
+        self.assertIn("DEPLOYMENT BLOCKED — OPERATOR MIGRATION REQUIRED", summary)
+        self.assertIn("Candidate not promoted; active application unchanged", summary)
+        self.assertIn("::warning::", result.stdout)
+        self.assertNotIn("DEPLOYMENT PROMOTED", summary)
+        self.assertEqual(release, "previous-release")
+        self.assertFalse(any(call[:2] == ["docker", "compose"] for call in calls))
+
+    def test_zero_is_promoted_only_with_matching_success_marker(self):
+        remote, _, _ = DeploymentShellTests().run_workflow()
+        result, output, summary = self.report(remote.stdout)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(output, "status=promoted\n")
+        self.assertIn("DEPLOYMENT PROMOTED", summary)
+
+    def test_other_nonzero_and_ssh_failures_remain_failures(self):
+        for code in (1, 2, 125, 255):
+            with self.subTest(code=code):
+                result, output, summary = self.report(
+                    f"EVEXIA_DEPLOY_EXIT_CODE={code}\n", outcome="failure")
+                self.assertEqual(result.returncode, 1)
+                self.assertEqual(output, "status=failed\n")
+                self.assertIn("DEPLOYMENT FAILED", summary)
+        result, output, _ = self.report(
+            "EVEXIA_DEPLOY_EXIT_CODE=42\nEVEXIA_DEPLOY_STATUS=blocked\n",
+            outcome="failure")
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(output, "status=failed\n")
+
+    def test_missing_mismatched_duplicate_or_unclassified_results_fail_closed(self):
+        for stdout in (
+                "",
+                "EVEXIA_DEPLOY_EXIT_CODE=0\n",
+                "EVEXIA_DEPLOY_EXIT_CODE=42\n",
+                "EVEXIA_DEPLOY_EXIT_CODE=0\nEVEXIA_DEPLOY_STATUS=blocked\n",
+                "EVEXIA_DEPLOY_EXIT_CODE=42\nEVEXIA_DEPLOY_STATUS=promoted\n",
+                "EVEXIA_DEPLOY_EXIT_CODE=42\nEVEXIA_DEPLOY_EXIT_CODE=42\nEVEXIA_DEPLOY_STATUS=blocked\n"):
+            with self.subTest(stdout=stdout):
+                result, output, _ = self.report(stdout)
+                self.assertEqual(result.returncode, 1)
+                self.assertEqual(output, "status=failed\n")
+
+    def test_workflow_does_not_blanket_ignore_errors(self):
+        workflow = (ROOT.parent / ".github/workflows/deploy.yml").read_text()
+        self.assertNotIn("continue-on-error", workflow)
+        self.assertIn("capture_stdout: true", workflow)
+        self.assertIn("deployment_status: ${{ steps.deployment_result.outputs.status }}", workflow)
+        self.assertIn("cancel-in-progress: false", workflow)
 
 
 class OperatorSafetyTests(unittest.TestCase):
