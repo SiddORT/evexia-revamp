@@ -135,6 +135,60 @@ existing files, permissive directories, unknown dependencies or recovery over
 64 MiB. It returns only the file SHA-256, not its content. Empty retired data
 should also be backed up: empty counts are needed to prove safe empty rollback.
 
+### Docker Compose recovery export
+
+Do not run the host-path export with `docker compose exec backend`: the normal
+backend does not mount the recovery directory, and its shallow `/app` layout
+does not satisfy the existing repository-depth assumption in `restricted_path()`.
+The security checks remain unchanged. Use `scripts/operator-recovery.py` from
+the pinned reviewed checkout. It runs only `app.organization_preflight --backup`
+in a separate container, mounts that checkout read-only at `/operator-release`,
+and mounts the explicitly supplied external recovery directory read-write at
+its **original absolute path**. The container runs as the calling host UID/GID,
+so the private directory and resulting file retain the required operator owner.
+It does not start the application, stop services, migrate, acquire retirement
+approval, or supply any retirement flags.
+
+After separate export approval, under the existing supervised maintenance window
+and writer exclusion, the operator may use:
+
+```sh
+# Run from the pinned checkout. Use the same reviewed backend image/release
+# and existing single backend network as the deployment candidate.
+: "${PINNED_BACKEND_IMAGE:?Reviewed backend image required}"
+NETWORKS=$(docker inspect --format \
+  '{{ range $name, $_ := .NetworkSettings.Networks }}{{ println $name }}{{ end }}' evexia-backend)
+test "$(printf '%s\n' "$NETWORKS" | sed '/^$/d' | wc -l)" -eq 1 || exit 1
+NETWORK=$(printf '%s\n' "$NETWORKS" | sed '/^$/d')
+
+# Only on an approved durable external volume, outside all release directories.
+# Run as the same operator who will own/export/read the recovery file.
+install -d -m 0700 /restricted/operator/retirement
+
+python3 -B scripts/operator-recovery.py \
+  --image "$PINNED_BACKEND_IMAGE" \
+  --network "$NETWORK" \
+  --env-file /var/www/newuat.allergyevexia.in/.env \
+  --recovery-dir /restricted/operator/retirement \
+  --backup-name recovery.json
+
+stat -c '%a %u %F %n' /restricted/operator/retirement \
+  /restricted/operator/retirement/recovery.json
+sha256sum /restricted/operator/retirement/recovery.json
+```
+
+The directory must already be mounted on approved durable storage; `install -d`
+does not establish durability. Do not use sudo to export as a different owner:
+use the approved operator identity with Docker access and a matching directory
+owner. The helper refuses symlink aliases, workspace/deployment directories,
+foreign/permissive directory ownership, and existing backup filenames. Docker
+`--mount` also refuses nonexistent sources rather than creating them silently.
+The pinned backend image must supply `/workspace/.venv/bin/python` and its
+installed dependencies, as the current Dockerfile does. Secrets remain in the
+existing environment file and are not printed by the helper. Retain the export
+report privately. A successful export still reports `restoration_verified=false`;
+SHA-256 is not restoration rehearsal evidence or retirement approval.
+
 The restricted file contains exact retired rows, scope correlations and
 credential/audit retained-row integrity fingerprints, plus membership-linked
 identity snapshots and database/schema identifiers. No password or token hash
