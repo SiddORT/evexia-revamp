@@ -5,6 +5,7 @@ set -eu
 # preview suite once against isolated PostgreSQL/API/Vite and fresh contexts.
 pnpm --filter @workspace/evexia-portal run test:admin-session
 node --test artifacts/evexia-portal/src/config/portalHost.test.js
+node --test scripts/check-portal-hostname.test.mjs
 sh scripts/test-api-foundation.sh tests/test_role_urls.py
 pnpm --filter @workspace/evexia-portal run test:spt-orders
 pnpm --filter @workspace/evexia-portal run test:immunotherapy

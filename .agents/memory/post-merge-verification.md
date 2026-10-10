@@ -22,6 +22,17 @@ disposable PostgreSQL. Never repair a shared revision graph by blindly stamping.
 
 **How to apply:** Treat setup success and application readiness as separate checks. Allow a short bounded startup interval for health probes; investigate persistent failures rather than rerunning otherwise successful setup.
 
+Verify browser-facing API recovery through the normal workspace ingress, not
+only the standalone frontend server port.
+
+**Why:** The workspace ingress can correctly mount the API while direct Vite
+returns SPA HTML for the same request. A direct-port probe alone would
+misdiagnose a routing failure and encourage an unnecessary proxy workaround.
+
+**How to apply:** Probe the actual same-origin route and validate status,
+content type and response shape. Preserve isolated test proxy overrides; do
+not add a normal-development proxy when managed ingress already routes correctly.
+
 Operational backup-and-migration sequences must fail closed at every step,
 including commands issued outside the maintained setup script.
 

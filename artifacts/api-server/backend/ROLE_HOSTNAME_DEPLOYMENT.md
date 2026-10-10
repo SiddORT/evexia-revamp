@@ -68,3 +68,72 @@ PostgreSQL. The role-host browser spec uses isolated loopback hostnames and
 same-origin Vite `/api` proxying; production-cookie tests additionally inspect
 the unchanged Secure/HttpOnly/SameSite/host-only semantics. This is not proof
 that any real DNS, certificate, domain binding or ingress is ready.
+
+## Workspace recovery and smoke check
+
+Start the existing managed `artifacts/api-server: API Server` and
+`artifacts/evexia-portal: web` workflows. If a port is occupied, identify its
+listener and owner before stopping anything; never broadly kill Node/Python
+processes or create a replacement workflow. A running health socket does not
+prove that the API has the latest resolver route.
+
+Run `pnpm run check:portal-hostname` after startup. It uses the workspace
+development origin (or loopback ingress at port 80), not the standalone Vite
+port. To inspect another ingress, pass its URL with
+`node scripts/check-portal-hostname.mjs https://preview.example.com`.
+The check requires HTTP 200, JSON containing only a valid `role`, and
+`Cache-Control: no-store`. It probes both the current origin's hostname and a
+DNS hostname so localhost's deliberate DB-free resolution cannot hide missing
+schema. It sends no credentials and never changes mappings. A mapped result
+is allowed; the probe does not assume that arbitrary hostnames are unmapped.
+
+The workspace ingress mounts `/api` separately from the portal. Direct Vite
+requests can return SPA HTML unless the **isolated-test-only**
+`EVEXIA_TEST_API_PROXY_TARGET` override is set. Keep that override limited to
+disposable fixtures; do not change browser origins or cookie/CORS rules to
+work around ingress failures. The isolated browser harness also runs this
+smoke through its same-origin proxy before exercising role entry.
+
+Check `/api/v1/health/readiness` separately. Resolver success does not authorize
+a schema rollout: at `0031_role_hostnames` its table is present, but the current
+runtime requires `0032_remove_organizations` for full readiness. Follow
+`docs/organization-retirement.md` only after separate operator approval and
+the documented recovery/retention/write-exclusion evidence. Never migrate,
+stamp or reset the shared database as part of portal recovery.
+
+### Recovery evidence (2026-10-10)
+
+- At the start of this recovery session, neither intended service was listening
+  and both managed workflows were `not_started`; the normal ingress returned
+  502. The earlier reported stale listener/404 could not be reproduced in this
+  session. No unrelated process was terminated.
+- Starting the intended workflows produced one Uvicorn listener on 8080 and
+  one portal Vite listener on 25965, with no bind conflicts.
+- Direct API, loopback workspace ingress and HTTPS workspace preview all
+  returned HTTP 200 `application/json`, `{"role":null}`, `no-store` for
+  localhost and a valid unmapped DNS hostname. Direct Vite returned HTML,
+  confirming why the normal ingress, rather than its standalone port, matters.
+- A fresh browser visit through the HTTPS preview resolved the actual preview
+  hostname with HTTP 200 `application/json`, `{"role":null}` and displayed the
+  chooser. A visitor-only intercepted 503 displayed explicit retry with no
+  chooser/login. Removing that interception and clicking Retry obtained actual
+  HTTP 200 JSON and restored the chooser.
+- Read-only diagnostics found revision `0031_role_hostnames` and the resolver
+  schema present. Readiness remained HTTP 503; no managed migration, schema
+  stamp, mapping edit, data reset or encryption-key change was performed.
+- Normal disposable harness initialization is independently blocked by two
+  Alembic heads: `0031_role_hostnames` and `0031_remove_organizations`.
+  The retirement migration file is named `0032_remove_organizations.py` but
+  declares the latter revision; runtime readiness requires
+  `0032_remove_organizations`. This graph/runtime mismatch needs separately
+  reviewed reconciliation before any approved shared-database rollout.
+- The 16 smoke-check unit tests passed. The 31 backend hostname tests passed
+  on a disposable PostgreSQL instance using explicit ordered upgrades to the
+  two declared revisions (hostname first, retirement second), without source
+  changes or stamping. This diagnostic does **not** establish that normal
+  `upgrade head`, full readiness or the release suite succeeds.
+- All three `role-urls.preview.spec.mjs` cases passed with the same explicit
+  ordered upgrades in the existing disposable browser harness. This covered
+  mapped Admin/MR/Doctor entry, incompatible paths, unknown-host chooser,
+  retry, protected mapping management, Admin/MR sign-in/renewal/logout and
+  host-only cookie/identity boundaries. No shared mapping was modified.

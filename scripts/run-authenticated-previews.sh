@@ -139,6 +139,7 @@ if ! curl -fsS "$EVEXIA_PREVIEW_BASE_URL/api/healthz" >/dev/null; then
   tail -n 80 "$PGROOT/vite.log" >&2 || true
   exit 1
 fi
+node "$ROOT/scripts/check-portal-hostname.mjs" "$EVEXIA_PREVIEW_BASE_URL"
 
 if [ -z "${EVEXIA_CHROMIUM_PATH:-}" ]; then
   EVEXIA_CHROMIUM_PATH=$(command -v chromium || command -v chromium-browser || true)

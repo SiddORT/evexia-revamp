@@ -8,6 +8,8 @@
     "validate:release": "sh scripts/validate-template-preferences.sh",
     "test:template-preferences": "pnpm --filter @workspace/evexia-portal run test:template-preferences",
     "test:api-foundation": "sh scripts/test-api-foundation.sh",
+    "check:portal-hostname": "node scripts/check-portal-hostname.mjs",
+    "test:portal-hostname-smoke": "node --test scripts/check-portal-hostname.test.mjs",
     "test:authenticated-previews": "sh scripts/run-authenticated-previews.sh",
     "check:api-contract": "sh scripts/check-api-contract.sh",
     "typecheck:libs": "tsc --build",
