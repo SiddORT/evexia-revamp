@@ -45,7 +45,7 @@
 - [API schema name stability](api-schema-name-stability.md) — unique extension schema names avoid renaming unchanged domain components and breaking handwritten client exports.
 - [Master permission scope](master-permission-scope.md) — eight requested masters only; workflow provisioning is not generic identity administration.
 - [Browser cleanup evidence](browser-test-cleanup-evidence.md) — preserve primary failures and capture the actual actor page, not the default administrator page.
-- [Enlarged text whitespace](enlarged-text-whitespace.md) — WebKit can expose hanging preserved spaces that page-overflow checks miss.
+- [Enlarged text checks](enlarged-text-whitespace.md) — verify actual computed font-size doubling; WebKit text bounds can reveal hanging spaces beyond page-overflow checks.
 - [Completion gate runtime](completion-gate-runtime.md) — long release suites can exhaust the completion polling budget and be terminated despite passing interim tests.
 - [Document navigation and renewal](document-navigation-renewal.md) — wait for authenticated redirect destinations before another full reload; destroyed Web Locks cannot protect late cookie rotation.
 - [Monetary rejection boundary](monetary-rejection-boundary.md) — fixed-scale PostgreSQL NUMERIC rounds before CHECK; reject excess input precision before coercion.

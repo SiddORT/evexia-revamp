@@ -262,7 +262,7 @@ export default function AdminLayout({ title, children }) {
           <div id="admin-orders-subnav" className="admin-nav__sub admin-nav__sub--orders" hidden={!showOrdersSubnav}>
             {visibleOrders.map(({ slug, label }) => {
               const href = `/admin/orders/${slug}`;
-              const active = slug === 'spt' ? (location === href || location.startsWith(`${href}/`)) : location === href;
+              const active = slug === 'spt' || slug === 'immunotherapy' ? (location === href || location.startsWith(`${href}/`)) : location === href;
               return <Link key={slug} href={href} className={`admin-nav__item${active ? ' admin-nav__item--active' : ''}`} aria-label={label} aria-current={active ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid={`link-admin-orders-${slug}`}><ClipboardList size={16} aria-hidden="true" /><span className="admin-nav__label">{label}</span></Link>;
             })}
           </div>

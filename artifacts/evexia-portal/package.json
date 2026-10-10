@@ -13,6 +13,8 @@
     "test:masters-directory-import:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/masters-directory-import.preview.spec.mjs",
     "test:orders-navigation:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/orders-navigation.preview.spec.mjs",
     "test:spt-orders": "node --test src/services/sptOrdersDemo.test.js",
+    "test:immunotherapy": "node --test src/services/immunotherapyDemo.test.js",
+    "test:immunotherapy:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/immunotherapy.preview.spec.mjs",
     "test:spt-orders:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/spt-orders.preview.spec.mjs",
     "test:master-listing-notices:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/master-listing-notices.preview.spec.mjs",
     "test:move-stocks": "node --test src/services/moveStocksDemo.test.js",

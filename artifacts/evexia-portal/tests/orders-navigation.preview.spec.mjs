@@ -30,8 +30,12 @@ async function tabTo(page, target) {
 }
 
 async function selected(page, slug, label) {
-  await expect(page.getByRole('heading', { name: label, exact: true })).toBeVisible();
-  if (slug === 'spt') {
+  await expect(page.getByRole('heading', { name: slug === 'immunotherapy' ? 'Immunotherapy' : label, exact: true })).toBeVisible();
+  if (slug === 'immunotherapy') {
+    await expect(page.getByTestId('status-imm-demo')).toContainText('demo');
+    await expect(page.getByRole('link', { name: 'Add Order', exact: true })).toBeVisible();
+    await expect(page.getByTestId('status-order-placeholder')).toHaveCount(0);
+  } else if (slug === 'spt') {
     await expect(page.getByTestId('status-spt-demo')).toContainText('demo');
     await expect(page.getByRole('link', { name: 'Add Order', exact: true })).toBeVisible();
     await expect(page.getByTestId('status-order-placeholder')).toHaveCount(0);
@@ -103,7 +107,7 @@ for (const mobile of [false, true]) {
     await page.setViewportSize(mobile ? { width: 390, height: 844 } : { width: 1440, height: 1000 });
     await login(page);
     await page.goto(`${base()}${route('immunotherapy')}`);
-    await expect(page.getByRole('heading', { name: 'IMMUNOTHERAPY', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Immunotherapy', exact: true })).toBeVisible();
     if (mobile) {
       await tabTo(page, page.getByTestId('button-open-navigation'));
       await page.keyboard.press('Enter');

@@ -1,5 +1,5 @@
-// SPT is replaced by a frontend-only mock UI (see pages/admin/SptOrders.jsx); the rest are navigation-only.
-// Navigation-only destinations. No order data or processing is implemented.
+// Immunotherapy and SPT are separate session-only demos; other destinations
+// remain navigation-only. None implements real order processing.
 export const ORDER_DESTINATIONS = [
   { slug: 'immunotherapy', label: 'IMMUNOTHERAPY' },
   { slug: 'kits-consumables', label: 'KITS & CONSUMABLES', keywords: 'kits consumables lancets applicators', description: 'Covers kits, lancets and applicators.' },
