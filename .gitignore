@@ -38,6 +38,7 @@ __pycache__/
 /connect.lock
 /coverage
 test-results/
+/generated-artifacts/
 playwright-report/
 /libpeerconnection.log
 npm-debug.log
