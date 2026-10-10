@@ -53,6 +53,8 @@ def logical(data, crypto):
     for table, fields in FIELDS.items():
         for row in data[table]:
             for field in fields:
+                if field + "_ciphertext" not in row:
+                    continue  # Explicit predecessor fixtures predate MR country.
                 row[field] = crypto.decrypt(table, row["id"], field, row.pop(field + "_ciphertext"))
             for column in INDEX_COLUMNS[table]:
                 row.pop(column)
@@ -60,9 +62,10 @@ def logical(data, crypto):
 
 
 @pytest.mark.parametrize("release_revision,final_revision", [
-    (rotation.REVISION, "0032_remove_organizations"),
+    (rotation.REVISION, "0033_merge_directory_branches"),
     ("0031_role_hostnames", "0031_role_hostnames"),
-    ("0032_remove_organizations", "0032_remove_organizations"),
+    ("0033_merge_directory_branches", "0033_merge_directory_branches"),
+    (rotation.PHONE_REVISION, rotation.PHONE_REVISION),
 ])
 def test_resumable_final_rotation_preserves_tombstones_graph_and_metadata(migration_db, monkeypatch, release_revision, final_revision):
     engine, config, *_ = seed(migration_db)

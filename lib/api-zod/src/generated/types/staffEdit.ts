@@ -5,13 +5,14 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { StaffEditDialCountry } from "./staffEditDialCountry";
 import type { StaffEditRole } from "./staffEditRole";
 import type { StaffEditStatus } from "./staffEditStatus";
 
 export interface StaffEdit {
   dateOfJoining: Date;
   designation_id: string;
-  dialCountry: string;
+  dialCountry?: StaffEditDialCountry;
   /** @maxLength 320 */
   email: string;
   /** @minimum 1 */

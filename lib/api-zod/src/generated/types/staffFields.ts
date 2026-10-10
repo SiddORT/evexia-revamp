@@ -5,13 +5,14 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { StaffFieldsDialCountry } from "./staffFieldsDialCountry";
 import type { StaffFieldsRole } from "./staffFieldsRole";
 import type { StaffFieldsStatus } from "./staffFieldsStatus";
 
 export interface StaffFields {
   dateOfJoining: Date;
   designation_id: string;
-  dialCountry: string;
+  dialCountry?: StaffFieldsDialCountry;
   /** @maxLength 320 */
   email: string;
   /**

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import PhoneInput from './PhoneInput.jsx';
 import PatientDoctorSelect from './PatientDoctorSelect.jsx';
-import { dialCountry } from '../../services/phoneCountries.js';
+import { dialCountry, normalizePhone } from '../../services/phoneCountries.js';
 import { businessToday, patientAge } from '../../services/serverPatients.js';
 import { lookupPatientPIN } from '../../services/serverPatients.js';
 import '../../mr.css';
@@ -52,10 +52,10 @@ function validate(values) {
   FIELDS.forEach((key) => {
     if (!OPTIONAL.has(key) && !values[key].trim()) errors[key] = 'This field is required.';
   });
-  const digits = dialCountry(values.dialCountry)?.digits;
-  if (!digits) errors.dialCountry = 'Choose a supported dialing country.';
-  if (values.phone && (!/^[0-9 ()-]+$/.test(values.phone) || values.phone.replace(/[\s()-]/g, '').length !== digits)) {
-    errors.phone = `Enter a ${digits || 'valid'}-digit national phone number.`;
+  const dial = dialCountry(values.dialCountry);
+  if (!dial) errors.dialCountry = 'Choose a supported dialing country.';
+  if (values.phone && normalizePhone(values.phone, values.dialCountry, 'patient') === null) {
+    errors.phone = `Enter a valid national phone number for ${dial?.name || 'the selected country'}.`;
   }
   if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
     errors.email = 'Enter a valid email address.';
@@ -170,7 +170,7 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
           </select>
         ) : key === 'phone' ? (
           <PhoneInput prefix="patient" country={values.dialCountry} onCountryChange={(value) => change('dialCountry', value)}
-            countryError={errors.dialCountry} controlClassName="mr-form__control" inputProps={{ ...shared, placeholder: 'National phone number', 'data-testid': 'input-patient-phone' }} />
+             countryError={errors.dialCountry} controlClassName="mr-form__control" inputProps={{ ...shared, disabled: saving || blocked, placeholder: 'National phone number', 'data-testid': 'input-patient-phone' }} />
         ) : (
           <input {...shared} type={type} placeholder={placeholder} autoComplete={autoComplete || 'off'}
             inputMode={inputMode} max={type === 'date' ? todayLocal() : undefined}
@@ -200,7 +200,7 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
     pinRequest.current++;
     setSaving(true);
     try {
-      const result = await onSave({ ...cleaned, phone: cleaned.phone.replace(/[\s()-]/g, '') });
+      const result = await onSave({ ...cleaned, phone: normalizePhone(cleaned.phone, cleaned.dialCountry, 'patient') });
       if (!result?.success) setSaveError(result?.error || 'This patient could not be saved. Please try again.');
     } catch (error) {
       setSaveError(error?.message || 'This patient could not be saved. Please try again.');

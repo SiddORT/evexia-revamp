@@ -10,6 +10,7 @@ import pytest
 import sqlalchemy as sa
 from alembic import command
 from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
@@ -236,7 +237,7 @@ def test_populated_downgrade_refuses_unsafe_recovery(retired_db, tmp_path, probl
     assert retained(engine) == before
     with engine.connect() as db:
         assert not set(retirement.TABLES) & set(sa.inspect(db).get_table_names())
-        assert db.scalar(sa.text("SELECT version_num FROM alembic_version")) == retirement.REVISION
+        assert db.scalar(sa.text("SELECT version_num FROM alembic_version")) == ScriptDirectory.from_config(config).get_current_head()
 
 
 def test_ddl_failure_is_atomic(retired_db, tmp_path, monkeypatch):
@@ -332,5 +333,5 @@ def test_no_retained_rows_cannot_prove_organization_only_recovery_is_empty(retir
     with pytest.raises(retirement.RetirementBlocked):
         command.downgrade(config, retirement.PREVIOUS)
     with engine.connect() as db:
-        assert db.scalar(sa.text("SELECT version_num FROM alembic_version")) == retirement.REVISION
+        assert db.scalar(sa.text("SELECT version_num FROM alembic_version")) == ScriptDirectory.from_config(config).get_current_head()
         assert "organizations" not in sa.inspect(db).get_table_names()

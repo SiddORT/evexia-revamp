@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
-COUNTRIES = {"IN": 10, "US": 10, "GB": 10, "AE": 9}
+from app.schemas.phone import DialCountry, normalize_phone
 
 
 class StaffFields(BaseModel):
@@ -13,7 +13,7 @@ class StaffFields(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     email: EmailStr = Field(max_length=320)
     phone: str = Field(min_length=1, max_length=30)
-    dialCountry: str
+    dialCountry: DialCountry = "IN"
     role: Literal["Staff", "Manager", "Accountant", "Back End", "Sub Admin", "Super Admin"]
     designation_id: uuid.UUID
     dateOfJoining: date
@@ -40,13 +40,7 @@ class StaffFields(BaseModel):
 
     @model_validator(mode="after")
     def phone_country(self):
-        local = re.sub(r"^\+91[\s-]?", "", self.phone) if self.dialCountry == "IN" else self.phone
-        digits = re.sub(r"[\s()-]", "", local)
-        if (self.dialCountry not in COUNTRIES or not re.fullmatch(r"[0-9\s()-]+", local)
-                or len(digits) != COUNTRIES[self.dialCountry]
-                or (self.dialCountry == "IN" and not re.fullmatch(r"[6-9][0-9]{9}", digits))):
-            raise ValueError("Invalid phone")
-        self.phone = digits
+        self.phone = normalize_phone(self.phone, self.dialCountry, "staff")
         return self
 
 

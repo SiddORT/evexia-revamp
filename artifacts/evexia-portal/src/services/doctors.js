@@ -1,7 +1,7 @@
 import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { loadMRs } from './mrs.js';
 import { loadZones } from './zones.js';
-import { DIAL_COUNTRIES, dialCountry } from './phoneCountries.js';
+import { dialCountry, normalizePhone } from './phoneCountries.js';
 
 const STORAGE_KEY = 'evexia.admin.doctors.v1';
 export const DOCTOR_STORAGE_KEY = STORAGE_KEY;
@@ -54,11 +54,10 @@ function validateDoctor(values, records = [], exceptId = null) {
       errors[key] = `${key === 'daysLimit' ? 'Days limit' : key === 'paymentLimit' ? 'Payment limit' : 'Order discount'} must be ${key === 'daysLimit' ? 'a whole ' : 'a '}nonnegative number.`;
     }
   }
-  const phoneDigits = Object.fromEntries(DIAL_COUNTRIES.map((item) => [item.value, item.digits]));
-  if (!own(phoneDigits, fields.dialCountry)) errors.dialCountry = 'Choose a valid dialing country.';
+  if (!dialCountry(fields.dialCountry)) errors.dialCountry = 'Choose a valid dialing country.';
   for (const key of ['phone', 'alternatePhone']) {
-    if (fields[key] && (!/^[0-9 ()-]+$/.test(fields[key]) || fields[key].replace(/\D/g, '').length !== phoneDigits[fields.dialCountry])) {
-      errors[key] = `Enter a valid ${phoneDigits[fields.dialCountry] || ''}-digit ${key === 'phone' ? 'phone' : 'alternate phone'} number.`;
+    if (fields[key] && normalizePhone(fields[key], fields.dialCountry) === null) {
+      errors[key] = `Enter a valid ${key === 'phone' ? 'phone' : 'alternate phone'} number for the selected country.`;
     }
   }
   if (fields.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) errors.email = 'Enter a valid email address.';

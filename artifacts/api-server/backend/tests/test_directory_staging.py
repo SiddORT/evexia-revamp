@@ -22,7 +22,7 @@ from app.schemas.doctors import DoctorFields, DoctorDeletion
 from app.schemas.patients import PatientFields, PatientDeletion
 from app.services import doctors, patients
 from app.services.directory_crypto import DirectoryCrypto
-from app.services.directory_inventory import FIELDS, INDEX_COLUMNS
+from app.services.directory_inventory import LEGACY_FIELDS as FIELDS, INDEX_COLUMNS
 from app.services.directory_staging import batch, freeze, verify, StagingError
 from app.services import directory_staging
 from test_directory_crypto import settings, b64

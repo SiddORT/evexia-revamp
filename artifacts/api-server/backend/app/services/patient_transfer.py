@@ -31,7 +31,7 @@ HEADERS = [title for _, title in COLUMNS]
 READABLE = [("doctorName", "Doctor Name"), ("mrName", "MR Name"), ("zoneName", "Zone"),
             ("createdBy", "Created By"), ("createdAt", "Created At"), ("updatedBy", "Updated By"), ("updatedAt", "Updated At")]
 CURRENT = HEADERS + [title for _, title in READABLE]
-DIAL = {"IN": "+91", "US": "+1", "GB": "+44", "AE": "+971"}
+from app.schemas.phone import DIAL
 
 
 def invalid(message):

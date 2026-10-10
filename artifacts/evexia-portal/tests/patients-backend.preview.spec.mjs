@@ -189,14 +189,14 @@ test('Patient care combobox keeps IDs, real later pages, retained assignments an
   expect(Math.max(...fields) - Math.min(...fields)).toBeLessThan(1);
   await control.click(); await control.fill(prefix);
   await expect(page.getByRole('option', { name: doctors[0].name, exact: false })).toBeVisible();
-  await page.getByRole('button', { name: 'Next Doctors' }).click();
+  await page.getByRole('button', { name: /Next Doctors|Continue search/ }).click();
   await expect(page.getByRole('option', { name: doctors[50].name, exact: false })).toBeVisible();
   await expect(control).toBeFocused();
   await control.press('ArrowDown'); await control.press('Enter');
   await expect(control).toHaveValue(doctors[50].name);
   await control.click(); await control.fill('No such synthetic Doctor');
   // include_saved can return the assigned Doctor even when the query has no matches.
-  await expect(page.getByRole('status').filter({ hasText: '0 matching Doctors' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: /0 matching Doctors|0 choices in this section/ })).toBeVisible();
   await control.press('Escape');
   await expect(control).toHaveValue(doctors[50].name);
   await expect(page.getByRole('button', { name: 'Next Doctors' })).toHaveCount(0);

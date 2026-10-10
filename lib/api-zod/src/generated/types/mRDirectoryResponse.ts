@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { MRDirectoryResponseContactRequirement } from "./mRDirectoryResponseContactRequirement";
+import type { MRDirectoryResponseDialCountry } from "./mRDirectoryResponseDialCountry";
 import type { MRDirectoryResponseStatus } from "./mRDirectoryResponseStatus";
 
 export interface MRDirectoryResponse {
@@ -33,6 +34,7 @@ export interface MRDirectoryResponse {
   dateOfJoining: Date;
   readonly designationName: string;
   designation_id: string;
+  dialCountry?: MRDirectoryResponseDialCountry;
   /**
    * @minimum 0
    * @maximum 3650

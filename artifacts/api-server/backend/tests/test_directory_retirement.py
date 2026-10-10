@@ -4,7 +4,7 @@ import uuid
 
 from alembic import command
 from app.core.config import Settings
-from app.services.directory_inventory import FIELDS, INDEX_COLUMNS
+from app.services.directory_inventory import LEGACY_FIELDS as FIELDS, INDEX_COLUMNS
 from app.services.directory_runtime import ready
 from app.services.directory_crypto import DirectoryCrypto
 from app.services.directory_staging import batch, freeze

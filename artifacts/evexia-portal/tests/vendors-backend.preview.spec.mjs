@@ -10,8 +10,7 @@ const tag = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const gst = (number) => `27DDDDD${String(number).padStart(4, '0')}D1Z8`;
 async function chooseCountry(page, label) {
   const input = page.getByTestId('select-vendor-dialCountry');
-  await input.fill(label);
-  await page.getByRole('option', { name: label, exact: true }).click();
+  await input.selectOption({ label });
 }
 
 async function open(page) {
@@ -27,7 +26,7 @@ async function open(page) {
 
 async function create(page, name, gstNo) {
   await page.getByTestId('button-add-vendor').click();
-  await expect(page.getByTestId('select-vendor-dialCountry')).toHaveValue('India (IN) +91');
+  await expect(page.getByTestId('select-vendor-dialCountry')).toHaveValue('IN');
   await expect(page.getByTestId('select-vendor-status')).toHaveValue('active');
   for (const [field, value] of Object.entries({ vendorName: name, gstNo, registeredAddress: 'Synthetic address\nSecond floor',
     contactPersonName: 'Synthetic Contact', emailId: 'contact@example.test', phoneNo: '501234567' })) {
@@ -44,22 +43,19 @@ async function create(page, name, gstNo) {
   return record;
 }
 
-test('vendor cold searchable catalogue supports shared codes, keyboard selection and international numbers', async ({ page }) => {
+test('vendor cold shared native catalogue supports shared codes, keyboard selection and international numbers', async ({ page }) => {
   await open(page);
   await page.getByTestId('button-add-vendor').click();
   const country = page.getByTestId('select-vendor-dialCountry');
-  await country.fill('+1');
-  await expect(page.getByRole('option', { name: 'Canada (CA) +1', exact: true })).toBeVisible();
-  await expect(page.getByRole('option', { name: 'United States (US) +1', exact: true })).toBeVisible();
-  await country.fill('Canada');
-  await country.press('ArrowDown'); await country.press('Enter');
-  await expect(country).toHaveValue('Canada (CA) +1');
+  await expect(country.locator('option[value="CA"]')).toHaveText('Canada (CA) +1');
+  await expect(country.locator('option[value="US"]')).toHaveText('United States (US) +1');
+  await country.focus();
+  await country.press('Home');
+  await country.press('c');
+  await country.selectOption('CA');
+  await expect(country).toHaveValue('CA');
   await expect(country).toBeFocused();
-  await country.click();
-  const menu = page.getByRole('listbox', { name: 'Phone country code' });
-  await expect(menu).toBeVisible();
-  expect(await menu.evaluate((node) => getComputedStyle(node).overflowY)).toBe('auto');
-  await country.press('Escape');
+  expect(await country.locator('option').count()).toBeGreaterThan(240);
   await expect(page.getByRole('dialog')).toBeVisible();
   const name = `International ${tag()}`;
   for (const [field, value] of Object.entries({ vendorName: name, gstNo: gst(4901),
@@ -78,7 +74,7 @@ test('vendor cold searchable catalogue supports shared codes, keyboard selection
   await page.getByTestId('input-search-vendors').fill(name);
   const edit = page.getByRole('button', { name: `Edit ${name}`, exact: true }).filter({ visible: true });
   await edit.click();
-  await expect(country).toHaveValue('Canada (CA) +1');
+  await expect(country).toHaveValue('CA');
   await expect(page.getByTestId('input-vendor-phoneNo')).toHaveValue('5062345678');
   await chooseCountry(page, 'Brazil (BR) +55');
   await page.getByTestId('input-vendor-phoneNo').fill('(11) 96123-4567');
@@ -107,7 +103,7 @@ for (const mobile of [false, true]) {
     await page.reload();
     await expect(row()).toBeVisible();
     await page.getByTestId(`button-edit-vendor-${mobile ? 'mobile-' : ''}${record.id}`).click();
-    await expect(page.getByTestId('select-vendor-dialCountry')).toHaveValue('United Arab Emirates (AE) +971');
+    await expect(page.getByTestId('select-vendor-dialCountry')).toHaveValue('AE');
     await expect(page.getByTestId('input-vendor-phoneNo')).toHaveValue('501234567');
     await page.getByTestId('input-vendor-vendorName').fill(record.vendorName + ' draft');
     await page.evaluate(async (record) => {

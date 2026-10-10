@@ -1,7 +1,7 @@
 """Additive ciphertext staging only: no automatic backfill, cutover or retirement."""
 from alembic import op
 import sqlalchemy as sa
-from app.services.directory_inventory import FIELDS, INDEX_COLUMNS
+from app.services.directory_inventory import LEGACY_FIELDS as FIELDS, INDEX_COLUMNS
 
 revision = "0029_directory_crypto_additive"
 down_revision = "0029_role_lifecycle"

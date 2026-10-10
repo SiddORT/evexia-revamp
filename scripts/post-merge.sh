@@ -37,13 +37,14 @@ PY
 python3 - <<'PY'
 from sqlalchemy import create_engine, text
 from app.core.config import get_settings
-from app.services.organization_retirement import REVISION, connection_url
+from app.services.organization_retirement import connection_url
+from app.core.schema import SCHEMA_REVISION
 try:
     with create_engine(connection_url(get_settings().database_url), hide_parameters=True).connect() as db, db.begin():
         db.execute(text("SET TRANSACTION READ ONLY"))
         current = db.execute(text("SELECT version_num FROM alembic_version")).scalars().all()
-    if current != [REVISION]:
-        print("SCHEMA ROLLOUT BLOCKED: no database migration applied by post-merge. Follow docs/organization-retirement.md after separate operator approval; readiness stays unavailable.")
+    if current != [SCHEMA_REVISION]:
+        print("SCHEMA ROLLOUT BLOCKED: no database migration applied by post-merge. Follow docs/organization-retirement.md and docs/directory-encryption.md after separate operator approval; readiness stays unavailable.")
     else:
         print("Coordinated schema revision already applied; no migration needed.")
 except Exception:

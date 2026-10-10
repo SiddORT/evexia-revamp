@@ -21,7 +21,7 @@ import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth
 import { useMasterActions } from '../../auth/useMasterActions.js';
 import '../../mr.css';
 
-const cleanPhone = (phone) => String(phone || '').replace(/[^+\d]/g, '');
+import { internationalPhone } from '../../services/phoneCountries.js';
 const STATUS_OPTIONS = [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }];
 function auditDetails(name, value) {
   return <span className="admin-mr-audit"><strong>{name}</strong><time dateTime={value}>{formatAdminTimestamp(value)}</time></span>;
@@ -140,7 +140,7 @@ export default function MRMaster() {
     return <RecordDetails name={record.name} showName={showName} testId={`text-mr-details-${record.id}`} rows={[
       { label: 'User ID', icon: 'id', value: record.userId },
       { label: 'Employee code', icon: 'id', value: record.employeeCode },
-      { label: 'Phone', icon: 'phone', value: record.phone, href: record.phone ? `tel:${cleanPhone(record.phone)}` : undefined, testId: `link-phone-mr-${record.id}` },
+      { label: 'Phone', icon: 'phone', value: internationalPhone(record), href: record.phone ? `tel:${internationalPhone(record)}` : undefined, testId: `link-phone-mr-${record.id}` },
       { label: 'Email', icon: 'email', value: record.email, href: record.email ? `mailto:${record.email}` : undefined, testId: `link-email-mr-${record.id}` },
       { label: 'Date of joining', icon: 'date', value: formatAdminDate(record.dateOfJoining) },
     ]} />;

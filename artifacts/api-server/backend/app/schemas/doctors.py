@@ -9,13 +9,14 @@ from typing import Literal
 from zoneinfo import ZoneInfo
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from email_validator import validate_email, EmailNotValidError
+from app.schemas.phone import DialCountry, normalize_phone
 
 
 class DoctorFields(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
     phone: str = Field(default="", max_length=20)
-    dialCountry: Literal["IN", "US", "GB", "AE"] = "IN"
+    dialCountry: DialCountry = "IN"
     alternatePhone: str = Field(default="", max_length=20)
     email: str = Field(default="", max_length=320)
     contactRequirement: Literal["required", "optional"] = "optional"
@@ -86,12 +87,10 @@ class DoctorFields(BaseModel):
 
     @model_validator(mode="after")
     def business(self):
-        digits = {"IN": 10, "US": 10, "GB": 10, "AE": 9}[self.dialCountry]
         for key in ("phone", "alternatePhone"):
             value = getattr(self, key)
-            if value and (not re.fullmatch(r"[0-9 ()-]+", value) or len(re.sub(r"\D", "", value)) != digits):
-                raise ValueError(f"{key} requires {digits} digits")
-            setattr(self, key, re.sub(r"[\s()-]", "", value))
+            if value:
+                setattr(self, key, normalize_phone(value, self.dialCountry))
         if self.contactRequirement == "required" and (not self.phone or not self.email):
             raise ValueError("Both phone and email are required")
         indian = self.country.lower() == "india"

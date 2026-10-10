@@ -23,8 +23,8 @@ def readiness(db: Session = Depends(get_db)):
         # Deployment health must verify the identity schema, not just a live socket.
         # Reject predecessor releases even where obsolete nullable fields would
         # let a subset of requests appear to work during an unsafe mixed rollout.
-        from app.services.organization_retirement import REVISION
-        if db.execute(text("SELECT version_num FROM alembic_version")).scalars().all() != [REVISION]:
+        from app.core.schema import SCHEMA_REVISION
+        if db.execute(text("SELECT version_num FROM alembic_version")).scalars().all() != [SCHEMA_REVISION]:
             raise RuntimeError("Coordinated schema release required")
         from app.services.directory_runtime import ready
         ready(db)
@@ -69,7 +69,7 @@ def readiness(db: Session = Depends(get_db)):
             "SELECT id, name, state_code, status, version, created_by, updated_by, "
             "created_at, updated_at, deleted_at, deleted_by FROM headquarters LIMIT 0"
         ))
-        db.execute(text('SELECT id, hq, "zoneId", designation_id, "reportingManagerId", version, deleted_at FROM mr_directory LIMIT 0'))
+        db.execute(text('SELECT id, hq, "zoneId", designation_id, "reportingManagerId", "dialCountry_ciphertext", version, deleted_at FROM mr_directory LIMIT 0'))
         db.execute(text(
             'SELECT id, "mrId", "registrationNumber", "contactRequirement", "orderDiscount", '
             '"daysLimit", "paymentLimit", verification, version, created_by, updated_by, deleted_at, deleted_by FROM doctor_directory LIMIT 0'

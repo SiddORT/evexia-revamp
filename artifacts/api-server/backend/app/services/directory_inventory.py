@@ -1,5 +1,5 @@
 """Reviewed immutable field classification shared by crypto and offline staging."""
-FIELDS = {
+LEGACY_FIELDS = {
     "doctor_directory": (
         "name", "phone", "alternatePhone", "email", "dialCountry", "dateOfJoining",
         "qualification", "clinicName", "gstNumber", "drugLicenceNumber",
@@ -15,6 +15,7 @@ FIELDS = {
         "pincode", "city", "state", "country",
     ),
 }
+FIELDS = {**LEGACY_FIELDS, "mr_directory": (*LEGACY_FIELDS["mr_directory"], "dialCountry")}
 DATE_FIELDS = {("doctor_directory", "dateOfJoining"), ("mr_directory", "dateOfJoining"),
                ("patient_directory", "dateOfBirth")}
 NULLABLE_FIELDS = {("doctor_directory", "dateOfJoining")}

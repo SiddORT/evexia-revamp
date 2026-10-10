@@ -51,7 +51,7 @@ def seed(db, actor_id, historical=False):
                      addressLine2="", landmark="", city="Delhi", state="Delhi", country="India",
                      created_by=actor_id, updated_by=actor_id)
     if historical:
-        from app.services.directory_inventory import FIELDS
+        from app.services.directory_inventory import LEGACY_FIELDS as FIELDS
         values = {column.name: getattr(mr, column.name) for column in MRDirectory.__table__.columns
                   if column.name not in ("designation_id", "name_index", "created_at", "updated_at", "version")
                   and not column.name.endswith("_ciphertext")}
@@ -89,7 +89,7 @@ def test_empty_migration_preserves_prior_records_rejects_rounding_and_keeps_hist
                 with db.begin_nested():
                     db.execute(text(sql))
         sales_targets.mutate(db, actor, row["id"], SalesTargetVersion(expected_version=1), "delete")
-    with pytest.raises(RuntimeError, match="Populated directory retirement"):
+    with pytest.raises(RuntimeError, match="Populated directory retirement|encrypted MR country"):
         command.downgrade(config, "0022_allergen_catalogue")
     with Session(engine) as db:
         assert db.get(SalesTarget, row["id"]).deleted_by == actor_id

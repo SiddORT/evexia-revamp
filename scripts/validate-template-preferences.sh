@@ -7,6 +7,8 @@ pnpm --filter @workspace/evexia-portal run test:admin-session
 node --test artifacts/evexia-portal/src/config/portalHost.test.js
 node --test scripts/check-portal-hostname.test.mjs
 sh scripts/test-api-foundation.sh tests/test_role_urls.py
+node --test artifacts/evexia-portal/src/services/phoneCountries.test.js
+sh scripts/test-api-foundation.sh tests/test_shared_phone.py tests/test_shared_phone_migration.py
 pnpm --filter @workspace/evexia-portal run test:spt-orders
 pnpm --filter @workspace/evexia-portal run test:immunotherapy
 node --test artifacts/evexia-portal/src/auth/staffPermissions.test.js artifacts/evexia-portal/src/auth/navigationGuard.test.js

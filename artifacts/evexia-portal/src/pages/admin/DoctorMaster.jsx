@@ -17,10 +17,9 @@ import useDoctors from '../../hooks/useDoctors.js';
 import { downloadDoctorFile, exportDoctors } from '../../services/serverDoctors.js';
 import { reportingIdentityGuard } from '../../auth/adminSession.js';
 import { useMasterActions } from '../../auth/useMasterActions.js';
+import { internationalPhone } from '../../services/phoneCountries.js';
 import '../../doctor-list.css';
 
-const cleanPhone = (value) => String(value || '').replace(/[^\d+]/g, '');
-const dialCodes = { IN: '+91', US: '+1', GB: '+44', AE: '+971' };
 const text = (value) => String(value ?? '').trim() || '—';
 function auditDetails(actor, at) {
   return <span className="doctor-master__audit"><strong>{text(actor)}</strong><time dateTime={at}>{formatAdminTimestamp(at)}</time></span>;
@@ -151,7 +150,7 @@ export default function DoctorMaster() {
     const suffix = `${mobile ? 'mobile-' : ''}${record.id}`;
     return <RecordDetails name={record.name} showName={!mobile} testId={`text-doctor-details-${suffix}`} rows={[
       { label: 'Registration number', icon: 'id', value: record.registrationNumber },
-      { label: 'Phone', icon: 'phone', value: record.phone ? `${dialCodes[record.dialCountry] || ''} ${record.phone}`.trim() : '', href: record.phone ? `tel:${dialCodes[record.dialCountry] || ''}${cleanPhone(record.phone)}` : undefined, testId: `link-phone-doctor-${suffix}` },
+      { label: 'Phone', icon: 'phone', value: internationalPhone(record), href: record.phone ? `tel:${internationalPhone(record)}` : undefined, testId: `link-phone-doctor-${suffix}` },
       { label: 'Email', icon: 'email', value: record.email, href: record.email ? `mailto:${record.email}` : undefined, testId: `link-email-doctor-${suffix}` },
       { label: 'Date of joining', icon: 'date', value: formatAdminDate(record.dateOfJoining) },
     ]} />;

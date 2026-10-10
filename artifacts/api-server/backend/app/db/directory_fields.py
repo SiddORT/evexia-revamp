@@ -12,6 +12,8 @@ def install(model):
     original_init = model.__init__
     def initialize(self, **values):
         record_id = values.pop("id", None) or uuid.uuid4()
+        if model.__tablename__ == "mr_directory":
+            values.setdefault("dialCountry", "IN")
         original_init(self, id=record_id, **values)
     model.__init__ = initialize
     table = model.__tablename__

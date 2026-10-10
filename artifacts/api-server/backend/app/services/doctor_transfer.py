@@ -41,7 +41,7 @@ CURRENT_COLUMNS = COLUMNS + [("mrName", "MR Name")]
 CURRENT_HEADERS = HEADERS + ["MR Name"]
 AUDIT = ["Created By", "Created At", "Updated By", "Updated At"]
 LEGACY = [title for title in HEADERS if title != "Contact Requirement"]
-DIAL = {"IN": "+91", "US": "+1", "GB": "+44", "AE": "+971"}
+from app.schemas.phone import DIAL
 
 
 def invalid(message):

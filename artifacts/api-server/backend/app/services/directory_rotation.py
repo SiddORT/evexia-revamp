@@ -15,17 +15,27 @@ from sqlalchemy import MetaData, String, Table, Uuid, column, func, or_, select,
 from app.core.config import Settings
 from app.db.session import session_factory
 from app.services.directory_crypto import DirectoryCrypto, canonical
-from app.services.directory_inventory import FIELDS, INDEX_COLUMNS
+from app.services.directory_inventory import FIELDS, LEGACY_FIELDS, INDEX_COLUMNS
 from app.services import directory_staging as staging
 
 REVISION = "0030_directory_crypto_retirement"
-SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0032_remove_organizations"})
+PHONE_REVISION = "0034_shared_phone_countries"
+SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations", "0033_merge_directory_branches", PHONE_REVISION})
 COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS
 
 
 class RotationError(Exception):
     def __init__(self):
         super().__init__("Directory rotation failed; leave writers paused and verify state.")
+
+
+def _fields(db):
+    # Reviewed predecessors retain their exact old inventory so paused
+    # maintenance can finish before the separately approved phone migration.
+    revision = db.scalar(text("SELECT version_num FROM alembic_version"))
+    if revision not in SUPPORTED_REVISIONS:
+        raise RotationError()
+    return FIELDS if revision == PHONE_REVISION else LEGACY_FIELDS
 
 
 def _lock(db, exclusive=False):
@@ -47,12 +57,12 @@ def _lock(db, exclusive=False):
     # Organization retirement changes no encrypted directory storage. Verify
     # that required final projections still exist and plaintext did not return;
     # never accept an arbitrary newer head merely because it is newer.
-    for name, fields in FIELDS.items():
+    for name, fields in _fields(db).items():
         actual = set(db.scalars(text("""SELECT attname FROM pg_catalog.pg_attribute
           WHERE attrelid=to_regclass(:name) AND attnum>0 AND NOT attisdropped"""), {"name": name}))
         if (not {f + "_ciphertext" for f in fields}.issubset(actual)
                 or not set(INDEX_COLUMNS[name]).issubset(actual)
-                or set(fields) & actual):
+                or set(FIELDS[name]) & actual):
             raise RotationError()
 
 
@@ -114,8 +124,8 @@ def _normalizations(db, crypto, name, rows):
     return dict(db.execute(select(page.c.id, expression)).all())
 
 
-def _values(crypto, name, row, normalized):
-    values = {f: crypto.decrypt(name, row["id"], f, row[f + "_ciphertext"]) for f in FIELDS[name]}
+def _values(crypto, name, row, normalized, fields):
+    values = {f: crypto.decrypt(name, row["id"], f, row[f + "_ciphertext"]) for f in fields}
     if name != "doctor_directory":
         values["_normalized_name"] = normalized[row["id"]]
     indexes = staging._indexes(crypto, name, values)
@@ -141,6 +151,7 @@ def _inventory(db, crypto, digest_key):
     mac = hmac.new(digest_key, b"directory-final-content-v1\0", hashlib.sha256)
     raw = hmac.new(digest_key, b"directory-final-storage-v1\0", hashlib.sha256)
     tables = staging._tables(db)
+    fields = _fields(db)
     tables["patients"] = Table("patients", MetaData(), autoload_with=db.connection(), resolve_fks=False)
     for name, table in tables.items():
         count, cursor = 0, None
@@ -157,8 +168,8 @@ def _inventory(db, crypto, digest_key):
                 staging._deadline(start, 120)
                 logical = dict(row)
                 if name in FIELDS:
-                    values = _values(crypto, name, row, normalized)
-                    for field in FIELDS[name]:
+                    values = _values(crypto, name, row, normalized, fields[name])
+                    for field in fields[name]:
                         stored = logical.pop(field + "_ciphertext")
                         if stored is not None:
                             usage[stored.split(":")[1]] += 1
@@ -220,7 +231,7 @@ def prepare(db, settings, *, operation="encrypt", target_key_id=None, next_keys=
                     normalized = _normalizations(db, source, name, rows)
                     for row in rows:
                         staging._deadline(start, 120)
-                        values = _values(source, name, row, normalized)
+                        values = _values(source, name, row, normalized, _fields(db)[name])
                         db.execute(table.update().where(table.c.id == row["id"]).values(
                             **staging._indexes(target, name, values)))
                     cursor = rows[-1]["id"]
@@ -250,26 +261,27 @@ def batch(db, settings, *, table, limit=staging.BATCH_LIMIT):
             raise RotationError()
         current = DirectoryCrypto(settings)
         _lock(db, True)
+        fields = _fields(db)[table]
         _stage(db, current, "frozen")
         model = staging._tables(db)[table]
         # Envelope key IDs identify pending rows. Full verification authenticates
         # every skipped envelope before writers can resume.
         pending = or_(*[func.split_part(model.c[f + "_ciphertext"], ":", 2) != current.active
-                        for f in FIELDS[table]])
+                        for f in fields])
         rows = list(db.execute(select(model).where(pending).order_by(model.c.id).limit(limit)).mappings())
         start = time.monotonic()
         normalized = _normalizations(db, current, table, rows)
         for row in rows:
             staging._deadline(start, 30)
-            values = _values(current, table, row, normalized)
+            values = _values(current, table, row, normalized, fields)
             replacements = {}
-            for field in FIELDS[table]:
+            for field in fields:
                 old = row[field + "_ciphertext"]
                 if old is not None and old.split(":")[1] != current.active:
                     replacements[field + "_ciphertext"] = current.encrypt(table, row["id"], field, values[field])
             db.execute(model.update().where(model.c.id == row["id"]).values(**replacements))
             saved = db.execute(select(model).where(model.c.id == row["id"])).mappings().one()
-            if _values(current, table, saved, normalized) != values or any(
+            if _values(current, table, saved, normalized, fields) != values or any(
                     saved[k] != v for k, v in row.items() if k not in replacements):
                 raise RotationError()
         remaining = db.scalar(select(func.count()).select_from(model).where(pending))

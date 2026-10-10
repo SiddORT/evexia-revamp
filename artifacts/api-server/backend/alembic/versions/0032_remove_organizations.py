@@ -10,7 +10,10 @@ from app.services import organization_retirement as retirement
 
 revision = "0031_remove_organizations"
 down_revision = "0030_directory_crypto_retirement"
-branch_labels = depends_on = None
+branch_labels = None
+# The retirement preflight requires the role-hostname predecessor. Preserve
+# both historical branch identities while ordering that prerequisite explicitly.
+depends_on = "0031_role_hostnames"
 
 
 def upgrade():

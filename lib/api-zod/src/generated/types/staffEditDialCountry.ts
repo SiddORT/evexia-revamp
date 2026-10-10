@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type DoctorEditDialCountry =
-  (typeof DoctorEditDialCountry)[keyof typeof DoctorEditDialCountry];
+export type StaffEditDialCountry =
+  (typeof StaffEditDialCountry)[keyof typeof StaffEditDialCountry];
 
-export const DoctorEditDialCountry = {
+export const StaffEditDialCountry = {
   AC: "AC",
   AD: "AD",
   AE: "AE",

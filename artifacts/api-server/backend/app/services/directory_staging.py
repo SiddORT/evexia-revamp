@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 from app.core.config import Settings
 from app.db.session import session_factory
 from app.services.directory_crypto import DirectoryCrypto, canonical
-from app.services.directory_inventory import FIELDS, INDEX_COLUMNS, NULLABLE_FIELDS
+from app.services.directory_inventory import LEGACY_FIELDS as FIELDS, INDEX_COLUMNS, NULLABLE_FIELDS
 
 BATCH_LIMIT = 500
 STAGE_REVISION = "0029_directory_crypto_additive"

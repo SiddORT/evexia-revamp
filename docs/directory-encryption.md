@@ -417,11 +417,26 @@ static screenshots are not evidence of exported file contents or cursor clicks.
 
 The merged forward chain is `0028_staff_designation_lifecycle` →
 `0029_role_lifecycle` → `0029_directory_crypto_additive` →
-`0030_directory_crypto_retirement` (one head). The already-applied role revision
+`0030_directory_crypto_retirement` → the parallel `0031_role_hostnames` and
+`0031_remove_organizations` branches → `0033_merge_directory_branches` →
+`0034_shared_phone_countries` (one head). The already-applied role revision
 is preserved unchanged; the new, not-shared-applied additive directory revision
 depends on it. Do not manually stamp revisions or use `upgrade heads` to bypass
 this chain. Freeze/backfill requires exactly one version row at the additive
 revision; another revision or multiple version rows fail closed.
+
+The shared-phone revision adds only encrypted MR phone-country storage. After
+retirement, and only with separate operator approval, it backfills historical
+MRs (including deleted records) to India using row-bound ciphertext, without
+changing their other ciphertext, account links, versions or audit attribution.
+It requires the configured directory encryption keys and preserves atomic
+identity guards. No managed or production migration has been applied as part of
+the phone-control change. Historical staging/retirement retain their original
+field inventory; current runtime encryption and key rotation include MR country.
+Key rotation accepts only explicitly reviewed schema revisions. Predecessor
+maintenance retains its historical inventory, while the shared-phone revision
+includes encrypted MR country. New encrypted content invalidates old content
+approvals; do not bypass that verification or resume paused writers blindly.
 
 Run from artifacts/api-server/backend using the separately provisioned maintenance
 login and managed secrets. The runtime role is a non-secret PostgreSQL role name.
@@ -476,12 +491,15 @@ but still belongs in the restricted operator change record.
 
 `app.services.directory_rotation` is an offline operator command, not an API,
 startup migration or deployment action. It requires exactly one revision row at
-`0030_directory_crypto_retirement`, `0031_role_hostnames` or
-`0032_remove_organizations`. Required
+`0030_directory_crypto_retirement`, `0031_role_hostnames`,
+`0031_remove_organizations`, `0033_merge_directory_branches` or
+`0034_shared_phone_countries`. Required
 encrypted/index projections and absence of retired plaintext are checked before
 operation; other revisions remain fail-closed. Reports show the actual applied
 revision. Frozen rotations begun on 0030 can be batched, verified and finished
-on 0032 without replacing the existing approval/evidence protocol.
+on the reviewed branch-merge revision without replacing the existing
+approval/evidence protocol. The shared-phone revision adds encrypted MR country
+to the inventory; earlier revisions retain the historical inventory.
 It changes no Staff ciphertext, AAD, keys or
 rotation tooling. No command automatically provisions/replaces secrets or runs
 against managed data. Shared/production rehearsal or execution always needs

@@ -42,6 +42,7 @@ function StaffForm({ record, designations, choiceError, choicesLoading, onRetryC
   const [conflicted, setConflicted] = useState(false);
   const [current, setCurrent] = useState(null);
   const gate = useRef(false);
+  const formRef = useRef(null);
   const active = designations.filter((item) => item.status === 'active');
   const selected = record?.designation_id;
   // Detail is loaded independently of the first bounded choice batch. Its
@@ -56,7 +57,11 @@ function StaffForm({ record, designations, choiceError, choicesLoading, onRetryC
     if (gate.current || uncertain || conflicted || choiceError || choicesLoading) return;
     const result = validateStaff(values, record ? [record] : [], record?.id, designations);
     setErrors(result.errors);
-    if (Object.keys(result.errors).length) return;
+    if (Object.keys(result.errors).length) {
+      const first = Object.keys(result.errors)[0];
+      formRef.current?.querySelector(`[id="staff-${first}"]`)?.focus();
+      return;
+    }
     gate.current = true;
     setSaving(true);
     setMessage('');
@@ -76,7 +81,7 @@ function StaffForm({ record, designations, choiceError, choicesLoading, onRetryC
     description="Saved securely on the server. Business roles and designations do not grant access. Use Access in the directory to assign a role and enable workspace login."
     onClose={() => { if (!gate.current) onClose(); }} className="admin-import-dialog"
     footer={<><button type="button" className="admin-button admin-button--secondary" onClick={onClose} disabled={saving} data-testid="button-cancel-staff">Cancel</button><button type="submit" form="staff-management-form" className="admin-button" disabled={saving || uncertain || conflicted || choicesLoading || Boolean(choiceError)} data-testid="button-save-staff">{saving ? 'Saving…' : record ? 'Save changes' : 'Add staff member'}</button></>}>
-    <form id="staff-management-form" className="admin-staff-form" onSubmit={save} noValidate>
+    <form ref={formRef} id="staff-management-form" className="admin-staff-form" onSubmit={save} noValidate>
       {['name', 'phone', 'userId', 'email'].map((key) => {
         const inputProps = { id: `staff-${key}`, name: key, value: values[key], onChange: (event) => change(key, event.target.value),
           disabled: saving, 'aria-required': key !== 'userId', 'aria-invalid': Boolean(errors[key]),

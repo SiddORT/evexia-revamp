@@ -7,7 +7,11 @@ from app.services.directory_inventory import FIELDS
 
 def encrypted_values(db, table, values):
     record = dict(values)
+    if table == "mr_directory":
+        record.setdefault("dialCountry", "IN")
     record.setdefault("id", uuid.uuid4())
+    if table == "mr_directory":
+        record.setdefault("dialCountry", "IN")
     current = crypto()
     for field in FIELDS[table]:
         record[field + "_ciphertext"] = current.encrypt(table, record["id"], field, record.pop(field))

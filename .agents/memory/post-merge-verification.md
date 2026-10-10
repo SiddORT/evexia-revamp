@@ -54,4 +54,3 @@ can then leave portalled menus without their palette or item styling.
 **How to apply:** Search the full frontend for retired class names after the
 merge, update newly introduced consumers while preserving their sizes and
 behavior, and check affected surfaces rather than only the original page.
-

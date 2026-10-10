@@ -47,12 +47,12 @@ test('shared Doctor phone control preserves all country options, alternate phone
   await page.goto(`${base()}/admin/masters/doctors`);
   // Navigation may resolve before session restoration and the shared Doctor load.
   await expect(page.getByTestId(`checkbox-doctor-${doctorId}`)).toBeVisible();
-  for (const [country, phone] of [['IN', '9876543210'], ['US', '2025550123'], ['GB', '7700900123'], ['AE', '501234567']]) {
+  for (const [country, phone] of [['IN', '9876543210'], ['US', '2025550123'], ['GB', '7700900123'], ['AE', '501234567'], ['SG', '81234567'], ['EH', '528812345'], ['MF', '590271234']]) {
     await page.goto(`${base()}/admin/masters/doctors/${doctorId}`);
     await page.getByLabel('Phone country code').selectOption(country);
     await page.getByTestId('input-doctor-phone').fill('123');
     await page.getByTestId('button-save-doctor').click();
-    await expect(page.getByTestId('error-doctor-phone')).toContainText(`${country === 'AE' ? 9 : 10}-digit`);
+    await expect(page.getByTestId('error-doctor-phone')).toContainText('Enter a valid phone number for');
     await page.getByTestId('input-doctor-phone').fill(phone);
     await page.getByTestId('input-doctor-alternatePhone').fill(phone);
     await page.getByTestId('button-save-doctor').click();

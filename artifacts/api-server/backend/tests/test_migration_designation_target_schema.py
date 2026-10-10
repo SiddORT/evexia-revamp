@@ -62,6 +62,19 @@ def test_populated_previous_schema_preservation_generated_values_and_safe_refusa
         assert all(row["annual_target"] == Decimal("0.31") for row in targets)
         assert db.get(Designation, db.get(MRDirectory, uuid.UUID(mr["id"])).designation_id).name == "MR"
         assert readiness(db) == {"status": "ready"}
+    # The real, populated forward upgrade must match the application release,
+    # not merely an older operator's compatible maintenance revision.
+    from app.core.schema import SCHEMA_REVISION
+    from fastapi import HTTPException
+    with Session(engine) as db:
+        assert db.scalar(text("SELECT version_num FROM alembic_version")) == SCHEMA_REVISION
+    for predecessor in ("0030_directory_crypto_retirement", "0031_role_hostnames", "0031_remove_organizations", "0033_merge_directory_branches"):
+        with Session(engine) as db:
+            db.execute(text("UPDATE alembic_version SET version_num=:revision"), {"revision": predecessor})
+            with pytest.raises(HTTPException) as failure:
+                readiness(db)
+            assert failure.value.status_code == 503
+            db.rollback()
     for model in (Designation, SalesTarget):
         columns = inspect(engine).get_columns(model.__tablename__)
         assert {c["name"] for c in columns} == set(model.__table__.columns.keys())
@@ -82,7 +95,7 @@ def test_populated_previous_schema_preservation_generated_values_and_safe_refusa
     with engine.connect() as connection:
         installed_head = connection.scalar(text("SELECT version_num FROM alembic_version"))
         assert installed_head == ScriptDirectory.from_config(config).get_current_head()
-    with pytest.raises(RuntimeError, match="original labels|retirement|backup|plaintext"):
+    with pytest.raises(RuntimeError, match="original labels|retirement|backup|plaintext|encrypted MR country"):
         command.downgrade(config, "0025_vendor_phone")
     with engine.connect() as connection:
         assert connection.scalar(text("SELECT version_num FROM alembic_version")) == installed_head

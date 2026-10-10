@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import Dialog from './Dialog.jsx';
 import PhoneInput from './PhoneInput.jsx';
-import { VENDOR_COUNTRIES } from '../../services/vendorPhone.js';
 import { getVendor } from '../../services/serverVendors.js';
 import { EMPTY_VENDOR, VENDOR_COLUMNS, VENDOR_LENGTHS, vendorDraftErrors } from '../../services/vendorFields.js';
 import '../../vendor.css';
@@ -18,6 +17,7 @@ export default function VendorForm({ vendor, onSave, onClose }) {
   const [ambiguous, setAmbiguous] = useState(false);
   const [current, setCurrent] = useState(null);
   const busy = useRef(false);
+  const formRef = useRef(null);
   function change(key, value) {
     const next = { ...values, [key]: value };
     setValues(next);
@@ -30,7 +30,11 @@ export default function VendorForm({ vendor, onSave, onClose }) {
     setAttempted(true);
     const found = vendorDraftErrors(values);
     setErrors(found);
-    if (Object.keys(found).length) return;
+    if (Object.keys(found).length) {
+      const first = Object.keys(found)[0];
+      formRef.current?.querySelector(`[id="vendor-${first}"]`)?.focus();
+      return;
+    }
     const body = { ...Object.fromEntries(VENDOR_COLUMNS.map(([key]) => [key, values[key].trim()])), gstNo: values.gstNo.trim().toUpperCase(), dialCountry: values.dialCountry, status: values.status };
     busy.current = true;
     setPending(true);
@@ -58,13 +62,13 @@ export default function VendorForm({ vendor, onSave, onClose }) {
   function discard() { setValues(pick(current || vendor)); setErrors({}); setMessage('Current server details loaded.'); setAttempted(false); setBlocked(false); }
   return <Dialog title={vendor ? 'Edit vendor' : 'Add vendor'} eyebrow="Vendor Master" description="All six contact fields are required. Changes are saved to shared server records." onClose={pending ? () => {} : onClose} className="admin-import-dialog"
     footer={<><button type="button" className="admin-button admin-button--secondary" disabled={pending} onClick={onClose} data-testid="button-cancel-vendor">Cancel</button><button type="submit" form="vendor-master-form" className="admin-button" disabled={pending || blocked} data-testid="button-save-vendor">{pending ? 'Saving…' : vendor ? 'Save changes' : 'Add vendor'}</button></>}>
-    <form id="vendor-master-form" className="admin-vendor-form" onSubmit={submit} noValidate>
+    <form ref={formRef} id="vendor-master-form" className="admin-vendor-form" onSubmit={submit} noValidate>
       {VENDOR_COLUMNS.map(([key, label]) => {
         const id = `vendor-${key}`;
         const common = { id, disabled: pending, value: values[key], onChange: (event) => change(key, event.target.value), 'aria-required': 'true', 'aria-invalid': Boolean(errors[key]), 'aria-describedby': errors[key] ? `vendor-error-${key}` : undefined, 'data-testid': `input-vendor-${key}`, maxLength: VENDOR_LENGTHS[key] };
         let input;
         if (key === 'registeredAddress') input = <textarea {...common} autoComplete="off" />;
-        else if (key === 'phoneNo') input = <fieldset disabled={pending} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}><PhoneInput prefix="vendor" countries={VENDOR_COUNTRIES} country={values.dialCountry} onCountryChange={(value) => change('dialCountry', value)} countryError={errors.dialCountry} inputProps={{ ...common, autoComplete: 'tel' }} /></fieldset>;
+        else if (key === 'phoneNo') input = <PhoneInput prefix="vendor" country={values.dialCountry} onCountryChange={(value) => change('dialCountry', value)} countryError={errors.dialCountry} inputProps={{ ...common, name: key, autoComplete: 'tel' }} />;
         else input = <input {...common} type={key === 'emailId' ? 'email' : 'text'} autoComplete={key === 'emailId' ? 'email' : 'off'} />;
         return <div key={key} className={`admin-vendor-field${key === 'registeredAddress' ? ' admin-vendor-field--wide' : ''}`}>
           <label htmlFor={id}>{label} <span aria-hidden="true">*</span></label>{input}

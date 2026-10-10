@@ -14,3 +14,9 @@ encrypted directory storage.
 **How to apply:** Accept only explicitly reviewed compatible revisions, verify
 the required physical storage projections, retain existing approval/recovery
 evidence, and preserve fail-closed behavior for unknown future schemas.
+
+Application readiness and unattended post-merge schema checks must share the
+current coordinated release head, not a historical operator revision.
+
+**Why:** Maintenance compatibility across approved older schemas does not mean
+the current application can safely serve them after adding encrypted fields.

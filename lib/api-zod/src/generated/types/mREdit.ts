@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { MREditContactRequirement } from "./mREditContactRequirement";
+import type { MREditDialCountry } from "./mREditDialCountry";
 import type { MREditStatus } from "./mREditStatus";
 
 export interface MREdit {
@@ -29,6 +30,7 @@ export interface MREdit {
   country: string;
   dateOfJoining: Date;
   designation_id: string;
+  dialCountry?: MREditDialCountry;
   /**
    * @minimum 0
    * @maximum 3650

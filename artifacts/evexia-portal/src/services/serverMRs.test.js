@@ -16,7 +16,7 @@ test('MR bounded frontend/business validation agrees with authoritative Python d
   const headers = execFileSync('python3', ['-c',
     'import sys,json;sys.path.insert(0,"artifacts/api-server/backend");from app.services.mr_transfer import HEADERS;print(json.dumps(HEADERS))'],
     pythonOptions);
-  assert.deepEqual(LEGACY_COLUMNS.map(([, label]) => label), JSON.parse(headers), 'Preserve the exact shipped legacy CSV header');
+  assert.deepEqual(LEGACY_COLUMNS.map(([, label]) => label), JSON.parse(headers).filter((title) => title !== 'Dial Country'), 'Preserve the exact shipped legacy CSV header');
   const cases = [values, ...[
     ['name', ''], ['name', 'x'.repeat(201)], ['userId', 'a@b.com'], ['email', 'bad'], ['phone', '123'],
     ['dateOfJoining', '2020-02-30'], ['pincode', '012345'], ['paymentLimit', '-1'], ['paymentLimit', '1.001'],

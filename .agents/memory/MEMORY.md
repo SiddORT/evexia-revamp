@@ -54,7 +54,7 @@
 - [Fieldset grid measurements](fieldset-grid-measurements.md) — count rendered columns from field geometry; computed fieldset grid tracks may remain unresolved.
 - [Sales Target performance safety](sales-target-performance-safety.md) — benchmark synthetic disposable data only; index changes need separate review and operator approval.
 - [Orders scope](orders-scope.md) — preserve the session-only SPT boundary; keep other Orders workflows driven by separate requirements.
-- [Vendor phone compatibility](vendor-phone-compatibility.md) — retain legacy phone acceptance; international metadata updates must not widen other masters’ contracts.
+- [Phone legacy compatibility](vendor-phone-compatibility.md) — shared international metadata must retain each master’s distinct historical number acceptance.
 - [Allergen controls scope](allergen-controls-scope.md) — “one unit” means a combined searchable dropdown, not a new measurement-unit field; avoid incidental global selector changes.
 - [Scroll-region accessibility labels](responsive-scroll-overflow.md) — absolutely positioned hidden labels can extend page overflow beyond a correctly scrollable table.
 - [Browser label locators](browser-label-locators.md) — select controls by role when section and input share an accessible caption.
@@ -62,6 +62,8 @@
 - [Operator PostgreSQL driver](operator-postgres-driver.md) — test bare managed PostgreSQL URLs; explicit-driver disposable fixtures can hide CLI connection failures.
 - [Browser fixture failure isolation](browser-fixture-failure-isolation.md) — earlier retry scenarios must not consume failures intended for later paging checks.
 - [Directory encryption scope](directory-encryption-scope.md) — retain approved business identifiers; disclose linked plaintext account metadata and equality-index leakage.
+- [Historical encryption inventories](historical-encryption-inventories.md) — new encrypted fields must not rewrite the field contracts used by historical staging and retirement.
 - [Operator prepared plans](operator-schema-prepared-plans.md) — pooled queries can retain predecessor result shapes across schema retirement.
 - [Generated validator literal order](codegen-literal-order.md) — fix generator initialization order without weakening API validation or changing valid contracts.
 - [Operator revision boundaries](operator-revision-boundaries.md) — head changes must preserve compatible paused maintenance without accepting arbitrary future schemas.
+- [Historical encryption inventories](historical-encryption-inventories.md) — new encrypted fields must not rewrite the field contracts used by historical staging and retirement.

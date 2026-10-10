@@ -7,6 +7,7 @@ from typing import Literal
 from zoneinfo import ZoneInfo
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from app.schemas.doctors import DoctorFields, DoctorVersion
+from app.schemas.phone import DialCountry, normalize_phone
 
 
 class PatientFields(BaseModel):
@@ -14,7 +15,7 @@ class PatientFields(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     gender: Literal["male", "female", "other", "prefer not to say"]
     phone: str = Field(min_length=1, max_length=20)
-    dialCountry: Literal["IN", "US", "GB", "AE"] = "IN"
+    dialCountry: DialCountry = "IN"
     email: str = Field(default="", max_length=320)
     dateOfBirth: date
     doctorId: uuid.UUID
@@ -49,10 +50,7 @@ class PatientFields(BaseModel):
 
     @model_validator(mode="after")
     def business(self):
-        digits = {"IN": 10, "US": 10, "GB": 10, "AE": 9}[self.dialCountry]
-        if not re.fullmatch(r"[0-9 ()-]+", self.phone) or len(re.sub(r"\D", "", self.phone)) != digits:
-            raise ValueError(f"Phone requires {digits} national digits")
-        self.phone = re.sub(r"[\s()-]", "", self.phone)
+        self.phone = normalize_phone(self.phone, self.dialCountry, "patient")
         if not re.fullmatch(r"\d{6}" if self.country.lower() == "india" else r"[a-zA-Z0-9][a-zA-Z0-9 -]{1,11}", self.pincode):
             raise ValueError("Invalid postal code")
         return self

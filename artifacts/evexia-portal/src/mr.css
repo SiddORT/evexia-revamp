@@ -69,8 +69,7 @@
 }
 .mr-form__control[aria-invalid="true"] { border-color: var(--admin-danger); }
 .mr-form__input-row { display: flex; align-items: stretch; gap: 8px; min-width: 0; }
-.mr-form__input-row > .mr-form__control:not(.mr-form__dial-code) { flex: 1 1 0; min-width: 0; }
-.mr-form__dial-code { flex: 0 0 108px; padding-inline: 7px; }
+.mr-form__input-row > .mr-form__control { flex: 1 1 0; min-width: 0; }
 .mr-form__preview-action {
   flex: 0 0 auto;
   min-height: 42px;

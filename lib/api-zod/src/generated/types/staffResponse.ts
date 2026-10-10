@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { StaffResponseDialCountry } from "./staffResponseDialCountry";
 import type { StaffResponseRole } from "./staffResponseRole";
 import type { StaffResponseStatus } from "./staffResponseStatus";
 
@@ -17,7 +18,7 @@ export interface StaffResponse {
   deleted_by?: string | null;
   designationName: string;
   designation_id: string;
-  dialCountry: string;
+  dialCountry?: StaffResponseDialCountry;
   /** @maxLength 320 */
   email: string;
   id: string;

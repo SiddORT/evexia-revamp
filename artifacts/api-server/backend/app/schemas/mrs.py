@@ -10,12 +10,14 @@ from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from email_validator import validate_email, EmailNotValidError
+from app.schemas.phone import DialCountry, normalize_phone
 
 
 class MRFields(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
     phone: str = Field(default="", max_length=20)
+    dialCountry: DialCountry = "IN"
     userId: str = Field(min_length=3, max_length=32, pattern=r"^[a-z][a-z0-9._-]{2,31}$")
     email: str = Field(default="", max_length=320)
     contactRequirement: Literal["required", "optional"] = "required"
@@ -51,18 +53,6 @@ class MRFields(BaseModel):
     @classmethod
     def identifier(cls, value):
         return value.strip().lower() if isinstance(value, str) else value
-
-    @field_validator("phone", mode="before")
-    @classmethod
-    def telephone(cls, value):
-        if not isinstance(value, str):
-            return value
-        value = re.sub(r"[\s()-]", "", value)
-        if value.startswith("+91"):
-            value = value[3:]
-        if value and not re.fullmatch(r"[0-9]{10}", value):
-            raise ValueError("Use a ten-digit Indian phone")
-        return value
 
     @field_validator("email")
     @classmethod
@@ -104,6 +94,8 @@ class MRFields(BaseModel):
 
     @model_validator(mode="after")
     def contact_rule(self):
+        if self.phone:
+            self.phone = normalize_phone(self.phone, self.dialCountry, "mr")
         if self.contactRequirement == "required" and (not self.phone or not self.email):
             raise ValueError("Both phone and email are required")
         return self

@@ -6,7 +6,7 @@ import sqlalchemy as sa
 from sqlalchemy.orm import Session
 from app.core.config import Settings
 from app.services.directory_crypto import DirectoryCrypto
-from app.services.directory_inventory import FIELDS, INDEX_COLUMNS, NULLABLE_FIELDS
+from app.services.directory_inventory import LEGACY_FIELDS as FIELDS, INDEX_COLUMNS, NULLABLE_FIELDS
 from app.services import directory_staging as staging
 
 revision = "0030_directory_crypto_retirement"

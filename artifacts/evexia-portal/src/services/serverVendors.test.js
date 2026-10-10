@@ -6,7 +6,7 @@ import { DIAL_COUNTRIES } from './phoneCountries.js';
 
 test('vendor catalogue distinguishes shared calling codes and validates variable national lengths', () => {
   assert.ok(VENDOR_COUNTRIES.length > 240);
-  assert.deepEqual(DIAL_COUNTRIES.map((c) => c.value), ['IN', 'US', 'GB', 'AE']);
+  assert.equal(VENDOR_COUNTRIES, DIAL_COUNTRIES, 'All masters reuse exactly one maintained catalogue');
   const labels = VENDOR_COUNTRIES.filter((c) => c.code === '+1').map((c) => c.label);
   assert.ok(labels.includes('Canada (CA) +1'));
   assert.ok(labels.includes('United States (US) +1'));

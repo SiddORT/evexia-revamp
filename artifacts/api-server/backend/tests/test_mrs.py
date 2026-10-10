@@ -131,7 +131,7 @@ def setup(api, db):
 
 
 def fields(hq, zone, name="Synthetic MR", code="MR-01", username="synthetic.mr", **changes):
-    return dict(name=name, employeeCode=code, userId=username, phone="", email="", contactRequirement="optional",
+    return dict(name=name, employeeCode=code, userId=username, phone="", dialCountry="IN", email="", contactRequirement="optional",
                 hq=hq, zoneId=zone, dateOfJoining="2020-01-01", designation_id=str(DESIGNATION_ID),
                 reportingManagerId=None, paymentLimit="", doctorDaysLimit="", status="active",
                 pincode="110001", addressLine1="Synthetic address", addressLine2="", landmark="Synthetic landmark",
@@ -333,7 +333,7 @@ def test_server_combined_filters_full_export_and_ledger(client):
             assert exported[0] == mr_transfer.HEADERS and len(exported) == 3
         else:
             book = load_workbook(io.BytesIO(response.content))
-            assert book.active.max_row == 3 and book.active.max_column == 25
+            assert book.active.max_row == 3 and book.active.max_column == len(mr_transfer.HEADERS + mr_transfer.AUDIT)
             book.close()
     for format in ("csv", "xlsx"):
         sample = api.get(BASE + "/sample", headers=headers, params={"format": format})

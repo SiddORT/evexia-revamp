@@ -1,12 +1,13 @@
 import { mrRequest } from '../auth/adminSession.js';
 import { downloadServerBlob } from './downloads.js';
+import { dialCountry, normalizePhone } from './phoneCountries.js';
 
 // Server-backed MR Master. Separate from services/mrs.js, which serves the
 // browser-local demo consumers and must stay untouched.
 const clean = (params = {}) => Object.fromEntries(Object.entries(params)
   .filter(([, value]) => value !== undefined && value !== null && value !== '' && value !== 'all'));
 
-export const MR_FIELDS = ['name', 'phone', 'userId', 'email', 'contactRequirement', 'hq', 'zoneId', 'employeeCode',
+export const MR_FIELDS = ['name', 'phone', 'dialCountry', 'userId', 'email', 'contactRequirement', 'hq', 'zoneId', 'employeeCode',
   'dateOfJoining', 'designation_id', 'reportingManagerId', 'paymentLimit', 'doctorDaysLimit', 'status', 'pincode',
   'addressLine1', 'addressLine2', 'landmark', 'city', 'state', 'country'];
 export const MAX_LENGTH = { name: 200, employeeCode: 64, addressLine1: 300, addressLine2: 300, landmark: 200, city: 100, state: 100, country: 100, phone: 20, email: 320 };
@@ -38,7 +39,8 @@ export function downloadMRFile(blob, format, sample = false) {
 
 export function emptyMRValues(mr) {
   return Object.fromEntries(MR_FIELDS.map((key) => [key,
-    key === 'contactRequirement' ? (mr?.contactRequirement || 'required')
+    key === 'dialCountry' ? (mr?.dialCountry || 'IN')
+      : key === 'contactRequirement' ? (mr?.contactRequirement || 'required')
       : key === 'status' ? (mr?.status || 'active')
       : key === 'country' ? (mr ? (mr.country ?? '') : 'India')
       : key === 'paymentLimit' ? (mr ? String(mr.paymentLimit ?? '0.00') : '')
@@ -61,8 +63,8 @@ export function validateMRValues(values, { creating, password = '', confirm = ''
   for (const [key, max] of Object.entries(MAX_LENGTH)) if (values[key].length > max) errors[key] = `Use at most ${max} characters.`;
   for (const key of MR_FIELDS) if (/\p{C}/u.test(values[key])) errors[key] = 'Control and invisible characters are not permitted.';
   if (!['required', 'optional'].includes(values.contactRequirement)) errors.contactRequirement = 'Choose a contact requirement.';
-  const phone = values.phone.replace(/[\s()-]/g, '');
-  if (phone && !/^[0-9]{10}$/.test(phone)) errors.phone = 'Enter a 10-digit phone number.';
+   if (!dialCountry(values.dialCountry)) errors.dialCountry = 'Choose a supported phone country.';
+   if (values.phone && normalizePhone(values.phone, values.dialCountry, 'mr') === null) errors.phone = 'Enter a valid phone number for the selected country.';
   if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) errors.email = 'Enter a valid email address.';
   if (values.userId && !USERNAME_PATTERN.test(values.userId)) errors.userId = 'Use 3-32 characters: lowercase letter first, then lowercase letters, digits, dot, underscore or hyphen.';
   if (values.dateOfJoining) {
@@ -87,7 +89,7 @@ export function payloadFromValues(values) {
   const trimmed = normalizedValues(values);
   return {
     ...trimmed,
-    phone: trimmed.phone.replace(/[\s()-]/g, ''),
+    phone: trimmed.phone ? normalizePhone(trimmed.phone, trimmed.dialCountry, 'mr') : '',
     email: trimmed.email,
     reportingManagerId: trimmed.reportingManagerId || null,
     paymentLimit: trimmed.paymentLimit === '' ? '0.00' : trimmed.paymentLimit,
@@ -99,6 +101,6 @@ function normalizedValues(values) {
   const normalized = Object.fromEntries(MR_FIELDS.map((key) => [key, String(values[key] ?? '').trim()]));
   normalized.userId = normalized.userId.toLowerCase();
   normalized.email = normalized.email.toLowerCase();
-  normalized.phone = normalized.phone.replace(/[\s()-]/g, '').replace(/^\+91(?=\d{10}$)/, '');
+  normalized.dialCountry = String(values.dialCountry || 'IN');
   return normalized;
 }

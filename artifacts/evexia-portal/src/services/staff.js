@@ -1,5 +1,5 @@
 import { staffRequest } from '../auth/adminSession.js';
-import { dialCountry } from './phoneCountries.js';
+import { dialCountry, normalizePhone } from './phoneCountries.js';
 
 // Retained only as a legacy identifier. This module never reads or mutates it.
 export const STAFF_KEY = 'evexia.admin.staff.v1';
@@ -18,11 +18,9 @@ export function validateStaff(values, _records = [], _exceptId = null, designati
     if (fields[key].length > (key === 'email' ? 320 : 200)) errors[key] = 'Value is too long.';
   }
   const country = dialCountry(fields.dialCountry);
-  const local = fields.dialCountry === 'IN' ? fields.phone.replace(/^\+91[\s-]?/, '') : fields.phone;
-  const digits = local.replace(/[\s()-]/g, '');
+  const digits = normalizePhone(fields.phone, fields.dialCountry, 'staff');
   if (!country) errors.dialCountry = 'Choose a supported country.';
-  if (country && (!/^[0-9\s()-]+$/.test(local) || digits.length !== country.digits ||
-    (country.value === 'IN' && !/^[6-9]\d{9}$/.test(digits)))) errors.phone = 'Enter a valid phone number for the selected country.';
+  if (country && digits === null) errors.phone = 'Enter a valid phone number for the selected country.';
   if (!errors.phone) fields.phone = digits;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) errors.email = 'Enter a valid email address.';
   if (!STAFF_ROLES.includes(fields.role)) errors.role = 'Choose a valid role.';

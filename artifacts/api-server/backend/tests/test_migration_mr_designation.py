@@ -38,6 +38,8 @@ def historical(fixture, labels, catalogue):
             profile = MRProfile(user_id=user.id, is_active=n == 0)
             db.add(profile); db.flush()
             values = fields(hq.id, zone.id, code=f"HIST-{n}", username=user.username)
+            # This fixture predates persisted MR phone countries.
+            values.pop("dialCountry")
             values.pop("userId"); values.pop("designation_id")
             values.update(id=profile.id, designation=label, created_by=actor, updated_by=actor,
                           version=n + 7, paymentLimit="123.45", doctorDaysLimit=42,

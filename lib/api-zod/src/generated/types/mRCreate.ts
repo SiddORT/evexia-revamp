@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { MRCreateContactRequirement } from "./mRCreateContactRequirement";
+import type { MRCreateDialCountry } from "./mRCreateDialCountry";
 import type { MRCreateStatus } from "./mRCreateStatus";
 
 export interface MRCreate {
@@ -29,6 +30,7 @@ export interface MRCreate {
   country: string;
   dateOfJoining: Date;
   designation_id: string;
+  dialCountry?: MRCreateDialCountry;
   /**
    * @minimum 0
    * @maximum 3650

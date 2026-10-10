@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import DoctorMRSelect from './DoctorMRSelect.jsx';
 import InfoDisclosure from './InfoDisclosure.jsx';
 import PhoneInput from './PhoneInput.jsx';
-import { DIAL_COUNTRIES } from '../../services/phoneCountries.js';
+import { dialCountry, normalizePhone } from '../../services/phoneCountries.js';
 import { lookupDoctorPIN } from '../../services/serverDoctors.js';
 import '../../doctor-form.css';
 
@@ -23,7 +23,7 @@ const TABS = [
   { id: 'address', label: 'Address', fields: ['pincode', 'addressLine1', 'addressLine2', 'landmark', 'country', 'state', 'city'] },
 ];
 const FIELD_INFO = {
-  phone: 'Country selection determines the expected number of digits and is saved with this record.',
+  phone: 'Select the phone country and enter its national number. The selection is saved and also applies to the alternate phone.',
   daysLimit: 'Saved business setting only. No payment ledger, order placement or overdue-payment blocking engine is connected.',
   gstNumber: 'GST Number is required for GST invoices. For Indian addresses, enter a 15-character GSTIN.',
   pincode: 'Entering a six-digit Indian PIN automatically fills country, state and city. District is used as city when no city is returned. Other postal codes use manual entry.',
@@ -57,14 +57,13 @@ function validate(values) {
   if (values.contactRequirement === 'required') {
     for (const key of ['phone', 'email']) if (!values[key].trim()) errors[key] = 'This field is required.';
   }
-  const dial = DIAL_COUNTRIES.find((country) => country.value === values.dialCountry);
-  const digits = values.phone.replace(/\D/g, '');
+  const dial = dialCountry(values.dialCountry);
   if (!dial) errors.dialCountry = 'Choose a supported country code.';
-  if (values.phone && dial && (!/^[0-9\s()-]+$/.test(values.phone) || digits.length !== dial.digits)) {
-    errors.phone = `Enter a valid ${dial.digits}-digit ${dial.value} phone number.`;
+  if (values.phone && dial && normalizePhone(values.phone, values.dialCountry) === null) {
+    errors.phone = `Enter a valid phone number for ${dial.name}.`;
   }
-  if (values.alternatePhone && dial && (!/^[0-9\s()-]+$/.test(values.alternatePhone) || values.alternatePhone.replace(/\D/g, '').length !== dial.digits)) {
-    errors.alternatePhone = `Enter a valid ${dial.digits}-digit phone number.`;
+  if (values.alternatePhone && dial && normalizePhone(values.alternatePhone, values.dialCountry) === null) {
+    errors.alternatePhone = `Enter a valid alternate phone number for ${dial.name}.`;
   }
   if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) errors.email = 'Enter a valid email address.';
   if (values.dateOfJoining && (!validDate(values.dateOfJoining) || new Date(`${values.dateOfJoining}T00:00:00`).getTime() > Date.now())) {
@@ -212,7 +211,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
     } else if (key === 'phone') {
       input = <PhoneInput prefix="doctor" country={values.dialCountry} onCountryChange={(value) => change('dialCountry', value)}
         countryError={errors.dialCountry} controlClassName="doctor-form__control"
-        inputProps={{ ...common, placeholder }} />;
+         inputProps={{ ...common, placeholder, disabled: saving || blocked }} />;
     } else if (key === 'alternatePhone') {
       input = <div className="doctor-form__input-row">
         <input {...common} type="tel" placeholder={placeholder} inputMode="tel" autoComplete="tel" />
@@ -250,8 +249,8 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
     try {
       const result = await onSave({
         ...cleaned,
-        phone: cleaned.phone.replace(/[\s()-]/g, ''),
-        alternatePhone: cleaned.alternatePhone.replace(/[\s()-]/g, ''),
+        phone: cleaned.phone ? normalizePhone(cleaned.phone, cleaned.dialCountry) : '',
+        alternatePhone: cleaned.alternatePhone ? normalizePhone(cleaned.alternatePhone, cleaned.dialCountry) : '',
         orderDiscount: cleaned.orderDiscount === '' ? '0.00' : cleaned.orderDiscount,
         daysLimit: cleaned.daysLimit === '' ? 0 : Number(cleaned.daysLimit),
         paymentLimit: cleaned.paymentLimit === '' ? '0.00' : cleaned.paymentLimit,

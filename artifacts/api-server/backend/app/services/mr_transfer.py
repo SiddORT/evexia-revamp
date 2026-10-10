@@ -39,9 +39,11 @@ COLUMNS = [
     ("landmark", "Landmark"), ("pincode", "Pincode"), ("city", "City"), ("state", "State"),
     ("country", "Country"),
 ]
+OLD_HEADERS = [title for _, title in COLUMNS]
+COLUMNS = COLUMNS + [("dialCountry", "Dial Country")]
 HEADERS = [title for _, title in COLUMNS]
 AUDIT = ["Created By", "Created At", "Updated By", "Updated At"]
-LEGACY = [title for title in HEADERS if title != "Contact Requirement"]
+LEGACY = [title for title in OLD_HEADERS if title != "Contact Requirement"]
 
 
 def invalid(message):
@@ -50,7 +52,7 @@ def invalid(message):
 
 def exact_workbook_rows(data):
     """Preserve monetary XML precision after the shared inert-workbook checks."""
-    rows = workbook_rows(data, max_columns=25)
+    rows = workbook_rows(data, max_columns=len(HEADERS + AUDIT))
     if not rows or "Payment Limit" not in rows[0]:
         return rows
     column = rows[0].index("Payment Limit")
@@ -91,8 +93,8 @@ def parse(data, filename):
         try:
             rows = []
             for cells in csv.reader(io.StringIO(data.decode("utf-8-sig")), strict=True):
-                if len(rows) >= MAX_ROWS + 1 or len(cells) > 25 or any(len(cell) > 10000 for cell in cells):
-                    invalid("CSV exceeds 1,000 rows, 25 columns or 10,000 characters per cell.")
+                if len(rows) >= MAX_ROWS + 1 or len(cells) > len(HEADERS + AUDIT) or any(len(cell) > 10000 for cell in cells):
+                    invalid(f"CSV exceeds 1,000 rows, {len(HEADERS + AUDIT)} columns or 10,000 characters per cell.")
                 rows.append(cells)
         except (UnicodeError, csv.Error):
             invalid("Use well-formed UTF-8 CSV.")
@@ -103,8 +105,8 @@ def parse(data, filename):
             invalid(exc.message)
     else:
         invalid("Only CSV and genuine XLSX are supported; no XLS/macros.")
-    if not rows or rows[0] not in (HEADERS, LEGACY, HEADERS + AUDIT):
-        invalid("Use the full 21-column MR schema, its 20-column legacy backup without Contact Requirement, or the current 25-column audit schema. Password, identity-link, version, deletion and unknown columns are forbidden. The reduced six-column mock template is not a backup.")
+    if not rows or rows[0] not in (HEADERS, LEGACY, HEADERS + AUDIT, OLD_HEADERS, OLD_HEADERS + AUDIT):
+        invalid("Use the current MR schema or a previously exported MR backup. Password, identity-link, version, deletion and unknown columns are forbidden. The reduced six-column mock template is not a backup.")
     header = rows[0]
     if len(rows) < 2:
         invalid("At least one MR is required.")
@@ -118,6 +120,7 @@ def parse(data, filename):
                 value = value[1:]
             values[key] = value
         values["contactRequirement"] = (values["contactRequirement"] or "required").lower()
+        values["dialCountry"] = (values["dialCountry"] or "IN").upper()
         values["status"] = values["status"].lower()
         if values["doctorDaysLimit"]:
             if values["doctorDaysLimit"].isdigit() and len(values["doctorDaysLimit"]) <= 4:
@@ -316,7 +319,7 @@ def encode(rows, format, audit=False):
 
 def sample(format):
     # Explicit fictional labels are not silently created: operators replace them.
-    values = dict(employeeCode="MR-001", name="Example MR", phone="", userId="example.mr",
+    values = dict(employeeCode="MR-001", name="Example MR", phone="", dialCountry="IN", userId="example.mr",
                   email="", contactRequirement="optional", hq="Replace with active HQ",
                   zoneId="Replace with active Zone", dateOfJoining=date.today().isoformat(),
                   designation_id="Replace with active catalogue Designation name or UUID", reportingManagerId="", paymentLimit="0.00",

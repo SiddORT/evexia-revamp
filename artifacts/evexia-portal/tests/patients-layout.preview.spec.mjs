@@ -85,7 +85,7 @@ for (const width of [390, 768]) for (const theme of ['classic', 'modern']) for (
     await expect(phone).toBeFocused();
     await expect(phone).toHaveAttribute('aria-invalid', 'true');
     await expect(phone).toHaveAttribute('aria-describedby', /patient-phone-error/);
-    await expect(page.locator('#patient-phone-error')).toHaveText('Enter a 9-digit national phone number.');
+    await expect(page.locator('#patient-phone-error')).toHaveText('Enter a valid national phone number for United Arab Emirates.');
     await enlargePatientText(page, root);
     await expectPatientFits(page, root);
     await page.screenshot({ path: info.outputPath('identity-200-percent.png'), fullPage: true });

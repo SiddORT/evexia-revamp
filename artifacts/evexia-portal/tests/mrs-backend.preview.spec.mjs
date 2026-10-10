@@ -313,6 +313,7 @@ test('MR assignment comboboxes: selected IDs, manager clearing, stale responses,
   // directory returns no matches; it is not an empty listbox.
   await expect(page.getByRole('option', { name: 'No reporting manager', exact: true })).toBeVisible();
   await expect(page.getByRole('option', { name: 'Assignment manager', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('status').filter({ hasText: 'Showing 0 choices' })).toBeVisible();
   await manager.press('Escape');
   await expect(manager).toHaveValue('Assignment manager');
   await filter(page, 'mr-managers', 'No reporting manager');

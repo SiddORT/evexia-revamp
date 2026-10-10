@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import InfoDisclosure from './InfoDisclosure.jsx';
 import MRReferenceSelect from './MRReferenceSelect.jsx';
 import MRFormCombobox from './MRFormCombobox.jsx';
+import PhoneInput from './PhoneInput.jsx';
 import { emptyMRValues, generateMRUsername, lookupPincode, MR_FIELDS as FIELDS, payloadFromValues, validateMRValues } from '../../services/serverMRs.js';
 import { getSession, subscribeSession } from '../../auth/adminSession.js';
 import '../../mr.css';
 
 const OPTIONAL = new Set(['reportingManagerId', 'addressLine2', 'paymentLimit', 'doctorDaysLimit']);
 const TABS = [
-  { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'userId', 'email', 'contactRequirement', 'password', 'confirmPassword'] },
+  { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'dialCountry', 'userId', 'email', 'contactRequirement', 'password', 'confirmPassword'] },
   { id: 'assignment', label: 'Assignment & work', fields: ['hq', 'zoneId', 'employeeCode', 'dateOfJoining', 'designation_id', 'reportingManagerId', 'paymentLimit', 'doctorDaysLimit', 'status'] },
   { id: 'address', label: 'Address', fields: ['pincode', 'addressLine1', 'addressLine2', 'landmark', 'city', 'state', 'country'] },
 ];
@@ -29,7 +30,6 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
   const [saving, setSaving] = useState(false);
   const warnings = { deleted: [] };
   const [activeTab, setActiveTab] = useState('identity');
-  const [dialCode, setDialCode] = useState('IN');
   const formRef = useRef(null);
   const tabRefs = useRef([]);
   const pendingFocus = useRef(null);
@@ -148,16 +148,9 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
             {selectOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
         ) : key === 'phone' ? (
-          <div className="mr-form__input-row">
-            <select id="mr-dial-code" className="mr-form__control mr-form__dial-code"
-               aria-label="Dial code (India numbers only)"
-              value={dialCode} onChange={(event) => setDialCode(event.target.value)}
-              data-testid="select-mr-dial-code">
-              <option value="IN">+91</option>
-
-            </select>
-            {input}
-          </div>
+          <PhoneInput prefix="mr" country={values.dialCountry} onCountryChange={(value) => change('dialCountry', value)}
+            countryError={errors.dialCountry} controlClassName="mr-form__control"
+            inputProps={{ ...input.props, disabled: saving }} />
         ) : key === 'userId' ? (
           <div className="mr-form__input-row">
             {input}
@@ -166,6 +159,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
           </div>
         ) : input}
         {errors[key] && <p id={errorId} className="mr-form__error" role="alert" data-testid={`error-mr-${key}`}>{errors[key]}</p>}
+        {key === 'phone' && errors.dialCountry && <p id="mr-dialCountry-error" className="mr-form__error" role="alert">{errors.dialCountry}</p>}
       </div>
     );
   }
@@ -217,7 +211,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
             <div className="mr-form__grid">
                {renderField('contactRequirement', 'Phone and email', { selectOptions: [{ value: 'required', label: 'Both required' }, { value: 'optional', label: 'Both optional' }] })}
                {renderField('name', 'MR Name', { placeholder: 'MR Name', autoComplete: 'name' })}
-                {renderField('phone', 'Phone No.', { placeholder: '10-digit number', autoComplete: 'tel', inputMode: 'tel', info: 'Indian 10-digit mobile number. The dial code selector is for display only.' })}
+                {renderField('phone', 'Phone No.', { placeholder: 'National phone number', autoComplete: 'tel', inputMode: 'tel', info: 'Select the phone country and enter its national number. The country selection is saved with this MR.' })}
                {renderField('userId', 'User ID', { placeholder: 'User ID', info: mr ? 'User ID is the MR login name. Changing it signs that MR out of existing sessions.' : 'This is the MR login name: lowercase letters, digits, dot, underscore or hyphen. Auto-generate suggests an available one.' })}
                {renderField('email', 'Email ID', { type: 'email', placeholder: 'name@company.com', autoComplete: 'email' })}
               {!mr ? <>
