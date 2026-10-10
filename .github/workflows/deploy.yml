@@ -5,16 +5,132 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
+concurrency:
+  group: evexia-production-deployment
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
 
     steps:
-      - name: Deploy to VPS
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Test deployment policy without database access
+        run: |
+          python -B -m unittest discover -s scripts/tests -p 'test_deploy_migrations.py' -v
+          bash -n scripts/operator-retirement.sh
+
+      - name: Stage, check policy, then promote exact release
         uses: appleboy/ssh-action@v1.2.2
+        env:
+          DEPLOY_SHA: ${{ github.sha }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: DEPLOY_SHA
+          command_timeout: 35m
           script: |
-            /var/www/newuat.allergyevexia.in/deploy-scripts/deploy.sh
+            bash -se <<'DEPLOY'
+            set -euo pipefail
+            ACTIVE=/var/www/newuat.allergyevexia.in
+            [[ "$DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+            # Operator rollout must take this same host lock. Never invoke the
+            # old VPS deploy.sh: it still performs an unconditional upgrade.
+            exec 9>"$ACTIVE/.deploy.lock"
+            flock -x 9
+            test ! -e "$ACTIVE/.operator-maintenance" || {
+              echo "OPERATOR_MAINTENANCE_ACTIVE: release not promoted; active application unchanged"; exit 42;
+            }
+            test -r "$ACTIVE/.env"
+            test -f "$ACTIVE/docker-compose.yml"
+            PROJECT=$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.project" }}' evexia-backend)
+            [[ "$PROJECT" =~ ^[a-zA-Z0-9_-]+$ ]] || exit 1
+            NETWORKS=$(docker inspect --format '{{ range $name, $_ := .NetworkSettings.Networks }}{{ println $name }}{{ end }}' evexia-backend)
+            [[ $(printf '%s\n' "$NETWORKS" | sed '/^$/d' | wc -l) -eq 1 ]] || {
+              echo "DEPLOYMENT_ERROR: review multiple/missing backend networks"; exit 1;
+            }
+            NETWORK=$(printf '%s\n' "$NETWORKS" | sed '/^$/d')
+            # Fetch objects only; never reset or overwrite the active checkout.
+            git -C "$ACTIVE" fetch origin "$DEPLOY_SHA"
+            test "$(git -C "$ACTIVE" rev-parse FETCH_HEAD)" = "$DEPLOY_SHA"
+            RELEASE=$(mktemp -d "$ACTIVE/../evexia-release.${DEPLOY_SHA}.XXXXXX")
+            chmod 700 "$RELEASE"
+            git -C "$ACTIVE" archive "$DEPLOY_SHA" | tar -x -C "$RELEASE"
+            # Infrastructure/Compose changes need separate review; this workflow
+            # only promotes application images on the existing topology.
+            cmp -s "$ACTIVE/docker-compose.yml" "$RELEASE/docker-compose.yml" || {
+              echo "DEPLOYMENT_ERROR: Compose topology changed; operator review required"; exit 1;
+            }
+            BACKEND_IMAGE="evexia-backend:$DEPLOY_SHA"
+            FRONTEND_IMAGE="evexia-frontend:$DEPLOY_SHA"
+            docker build -f "$RELEASE/artifacts/api-server/backend/Dockerfile" -t "$BACKEND_IMAGE" "$RELEASE"
+            # The one-off image has candidate code, no app startup, no ports and
+            # no service replacement. Secrets stay in the existing env file.
+            run_policy() {
+              docker run --rm --network "$NETWORK" \
+                --env-file "$ACTIVE/.env" -e APP_ENV=production \
+                -v "$RELEASE/scripts:/release-scripts:ro" \
+                --entrypoint uv "$BACKEND_IMAGE" run --project /workspace \
+                python /release-scripts/deploy-migrations.py \
+                --backend-dir /app --policy /release-scripts/migration-policy.json "$@"
+            }
+            if run_policy; then
+              :
+            else
+              CODE=$?
+              if [[ "$CODE" -eq 42 ]]; then
+                echo "OPERATOR_MIGRATION_REQUIRED: release not promoted; active application unchanged"
+              else
+                echo "DEPLOYMENT_ERROR: policy inspection failed; active application unchanged"
+              fi
+              exit "$CODE"
+            fi
+            # Finish builds before changing the schema. Recheck the complete
+            # path under the runner's DB lock immediately before any upgrade.
+            docker build -f "$RELEASE/artifacts/evexia-portal/Dockerfile" -t "$FRONTEND_IMAGE" "$RELEASE"
+            if run_policy --execute; then
+              :
+            else
+              CODE=$?
+              echo "DEPLOYMENT_NOT_PROMOTED: migration runner returned $CODE"
+              exit "$CODE"
+            fi
+            # Preserve exact previous image references for reviewed recovery.
+            docker inspect --format '{{.Image}}' evexia-backend > "$RELEASE/previous-backend-image"
+            docker inspect --format '{{.Image}}' evexia-frontend > "$RELEASE/previous-frontend-image"
+            cat > "$RELEASE/promote.yml" <<IMAGES
+            services:
+              backend:
+                image: $BACKEND_IMAGE
+                environment:
+                  APP_ENV: production
+              frontend:
+                image: $FRONTEND_IMAGE
+            IMAGES
+            # Only now may active application services be replaced. PostgreSQL
+            # is neither recreated nor restarted by this command.
+            docker compose --project-name "$PROJECT" --project-directory "$ACTIVE" \
+              --env-file "$ACTIVE/.env" -f "$ACTIVE/docker-compose.yml" \
+              -f "$RELEASE/promote.yml" up -d --no-build --no-deps backend frontend
+            READY=no
+            for ATTEMPT in $(seq 1 30); do
+              if docker exec evexia-backend uv run --project /workspace python -c \
+                'import urllib.request; urllib.request.urlopen("http://127.0.0.1:8080/api/v1/health/readiness", timeout=3).read()' \
+                >/dev/null 2>&1; then READY=yes; break; fi
+              sleep 2
+            done
+            [[ "$READY" == yes ]] || {
+              echo "DEPLOYMENT_ERROR: candidate readiness failed; do not infer schema rollback safety"; exit 1;
+            }
+            docker exec evexia-frontend wget -q -O /dev/null http://127.0.0.1/
+            printf '%s\n' "$DEPLOY_SHA" > "$ACTIVE/.deployed-release"
+            echo "DEPLOYMENT_READY: $DEPLOY_SHA"
+            DEPLOY

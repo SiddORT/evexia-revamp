@@ -197,6 +197,181 @@ and this organization-free revision, verifies required encrypted/index columns
 and absence of retired plaintext, and reports the actual applied revision.
 Its stable encryption approval protocol remains unchanged.
 
+## VPS deployment policy and deliberate operator continuation
+
+The push-triggered workflow uses `scripts/migration-policy.json` and
+`scripts/deploy-migrations.py`. It no longer invokes the VPS-local legacy
+`deploy-scripts/deploy.sh`, whose unconditional upgrade must not be used as a
+normal deployment entry point. No historical Alembic file is changed.
+
+### Policy and results
+
+The policy names exact **revision IDs**, not filenames. All existing historical
+initialization/security/data revisions are conservatively operator-only.
+`0031_role_hostnames` and the metadata-only `0033_merge_directory_branches` are
+automatic. `0031_remove_organizations` and the encrypted backfill
+`0034_shared_phone_countries` are operator-only. Future revisions must be
+explicitly reviewed and classified; unknown classifications fail closed.
+
+The planner traverses both `down_revision` and `depends_on`, validates a single
+source head and one recognized database revision, and requires the candidate's
+application requirement to equal the source head. It inspects the **whole**
+pending path before executing anything. A protected revision blocks every
+migration in that candidate, including otherwise automatic predecessors.
+
+| Exit | Result | Deployment behavior |
+| --- | --- | --- |
+| 0 | `READY` | Plan permitted, already satisfied, or automatic execution verified. Plan-only is not promotion. |
+| 42 | `OPERATOR_MIGRATION_REQUIRED` | Zero migrations applied; candidate not promoted; active application unchanged. |
+| 1 | `ERROR` | Stop and investigate. A failed execution is not evidence of rollback or an unchanged database. |
+
+Offline examples/tests use `--offline-current REVISION`; they never open a
+database connection and cannot be combined with `--execute`. Live invocations
+require production settings and take a shared PostgreSQL advisory lock.
+The automatic runner never supplies retirement approval/recovery arguments.
+
+### Normal VPS deployment
+
+`.github/workflows/deploy.yml` serializes push deployments without cancelling
+an in-flight deployment. Its VPS phase takes
+`/var/www/newuat.allergyevexia.in/.deploy.lock`, fetches the exact event commit,
+and extracts it into a private sibling release directory. It does not reset
+the active checkout. The candidate backend is built and inspected through a
+one-off container on the existing backend network, with the existing restricted
+production env file. No application command, published port, or service
+replacement is started for this check.
+
+If blocked, the workflow exits 42 with an explicit message. GitHub records a
+non-successful deployment, not a silently successful skipped promotion.
+Only after the entire path is permitted does CI build the frontend, recheck and
+execute the approved automatic path, and replace backend/frontend using pinned
+images. PostgreSQL is not restarted. API readiness and the frontend must pass
+before `.deployed-release` is recorded. Previous image IDs are retained in the
+private candidate directory for reviewed recovery, not automatically restored
+against a potentially changed schema.
+
+The existing Compose topology must match the candidate, and the current
+backend must have exactly one network. Infrastructure changes, missing active
+services, or an unexpectedly missing env file stop deployment rather than
+guessing configuration. The current workflow assumes the repository's
+`evexia-backend`/`evexia-frontend` container names and VPS path. Validate those
+host prerequisites before enabling it. Candidate images/directories are
+retained; clean them up separately without removing active/recovery images.
+
+An application requiring 0034 is **not** compatible with a database at 0030.
+Keep the known-good release serving while preparing the operator maintenance
+window; do not weaken readiness or treat policy inspection as migration success.
+
+### Separate operator entry point
+
+`scripts/operator-retirement.sh` is deliberately not called by normal CI.
+Use a pinned, reviewed checkout and its installed Python environment on the
+VPS, with production database/key settings supplied securely. For the existing
+container layout, the operator may execute this tooling in a separately
+prepared candidate tooling container, mounting the pinned release, the same
+host lock file, and the restricted recovery location. All paths must remain
+consistent for the subprocesses. Do not run it in the active application's
+container as a substitute for stopping that application's writers.
+
+The operator must first stop and verify **all** application/external writers.
+The script does not perform or infer external writer stoppage, consumer review,
+retention approval, durable backup custody, or a restoration rehearsal.
+Its flags are explicit attestations of completed prerequisites. Retain the
+reviewer's evidence outside the source checkout.
+
+After the separately approved recovery/export and isolated restoration rehearsal
+described above, invoke through the pinned installed interpreter:
+
+```sh
+# Settings/keys are supplied securely, never copied into this command or Git.
+# EVEXIA_OPERATOR_PYTHON selects the pinned release's installed interpreter.
+# APP_ENV must already identify production.
+# EVEXIA_DEPLOY_LOCK must identify the shared host lock, not a private copy.
+bash scripts/operator-retirement.sh \
+  --backup /restricted/operator/retirement/recovery.json \
+  --sha256 REVIEWED_SHA256 \
+  --restore-verified REVIEWED_SHA256 \
+  --approve-retirement \
+  --writers-stopped \
+  --external-consumers-reviewed \
+  --backup-durable \
+  --retention-resolved \
+  --approve-phone-continuation
+```
+
+Placeholders are not real approvals. The script requires all attestations,
+production settings, a regular recovery file, matching rehearsal/backup digest,
+and both the host deployment lock and the automatic runner's DB lock. It validates
+recovery-file integrity and directory key configuration before advancing the
+predecessor. A matching digest is not proof that rehearsal or durable custody
+actually happened; those remain operator responsibilities.
+
+The fixed reviewed sequence is:
+
+1. Accept only `0030_directory_crypto_retirement` or `0031_role_hostnames`
+   as the starting state (or no-op if already at 0034).
+2. Apply `0031_role_hostnames` if needed.
+3. Run the existing read-only retirement preflight.
+4. Apply **only** `0031_remove_organizations`, supplying the existing explicit
+   evidence/approval arguments; all original migration checks remain enforced.
+5. Apply `0033_merge_directory_branches`.
+6. Apply the separately approved `0034_shared_phone_countries`.
+7. Verify the final revision. While writers remain stopped, verify encryption
+   readiness and start the matching candidate release through the reviewed
+   maintenance procedure. Check authenticated application behavior before
+   reopening traffic.
+
+The script refuses an unreviewed new application head. A partially completed
+operator rollout must remain in maintenance and follow reviewed recovery or an
+explicitly reviewed continuation; do not automatically restart the old backend.
+The host lock must cover the **whole maintenance window**, including final
+readiness and reopening traffic. A supervising operator shell should hold it
+and pass its descriptor using `EVEXIA_DEPLOY_LOCK_FD=9`. The script requires that
+inherited descriptor to identify the same shared lock file.
+
+Before stopping writers, the supervisor must also create the shared
+`.operator-maintenance` marker alongside `.deploy.lock`. Normal CI refuses
+promotion while that marker exists, even if the operator shell disconnects.
+It is a temporary maintenance interlock, not permission to bypass policy:
+
+```sh
+# Outline only: execute within the separately approved maintenance procedure.
+export EVEXIA_DEPLOY_LOCK=/var/www/newuat.allergyevexia.in/.deploy.lock
+exec 9>"$EVEXIA_DEPLOY_LOCK"
+flock -x 9
+export EVEXIA_DEPLOY_LOCK_FD=9
+umask 077
+touch /var/www/newuat.allergyevexia.in/.operator-maintenance
+# Stop/verify writers; complete evidence; invoke the operator script above.
+# Start the matching release; verify readiness and approved user flows.
+# ONLY after successful verification and reopening traffic:
+rm /var/www/newuat.allergyevexia.in/.operator-maintenance
+flock -u 9
+```
+
+On any failure, leave the marker in place; do not put its removal in an EXIT
+trap. In container tooling, mount the lock and marker at the same absolute
+host paths, and acquire/inherit the lock descriptor inside the supervisor
+that launches the script. Mount recovery read-only at its original private
+path; never copy it into an application image or release directory.
+
+Once protected revisions are genuinely applied, they leave the pending path.
+Normal CI can promote the matching release and later apply reviewed automatic
+migrations. There is no permanent authorization flag and no automatic bypass
+for future operator-only revisions.
+
+### Local verification (no database operations)
+
+```sh
+python3 -B -m unittest discover -s scripts/tests -p 'test_deploy_migrations.py' -v
+bash -n scripts/operator-retirement.sh
+python3 -B scripts/deploy-migrations.py \
+  --offline-current 0030_directory_crypto_retirement
+```
+
+The last command is a source-only barrier example and intentionally exits 42.
+It neither verifies the VPS revision nor applies any migration.
+
 ## Downgrade and limitations
 
 Always provide the original file/digest and matching successful rehearsal and
