@@ -67,6 +67,7 @@ docker-compose.override.yml
 # Runtime data
 data/
 storage/
+/generated-artifacts/
 
 # Deployment runtime files
 deploy-scripts/*.log
