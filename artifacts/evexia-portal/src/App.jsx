@@ -1,5 +1,6 @@
 import { Route, Switch } from 'wouter';
 import AdminBoundary from './auth/AdminBoundary.jsx';
+import PortalHostBoundary from './components/PortalHostBoundary.jsx';
 import RouteLoadingBoundary, { lazyRoute } from './components/RouteLoadingBoundary.jsx';
 import { roleConfig } from './config/roles.js';
 import PortalSelection from './pages/PortalSelection.jsx';
@@ -55,7 +56,7 @@ const DownloadLogs = lazyRoute(() => import('./pages/admin/DownloadLogs.jsx'));
 
 function App() {
   return (
-    <AdminBoundary><RouteLoadingBoundary><Switch>
+    <PortalHostBoundary><AdminBoundary><RouteLoadingBoundary><Switch>
       <Route path="/" component={PortalSelection} />
       <Route path="/admin" component={Dashboard} />
       <Route path="/admin/settings" component={AdminSettings} />
@@ -125,7 +126,7 @@ function App() {
       <Route path="/mr">{() => <AuthPage role={roleConfig.mr} />}</Route>
       <Route path="/doctor">{() => <AuthPage role={roleConfig.doctor} />}</Route>
       <Route component={NotFound} />
-    </Switch></RouteLoadingBoundary></AdminBoundary>
+    </Switch></RouteLoadingBoundary></AdminBoundary></PortalHostBoundary>
   );
 }
 

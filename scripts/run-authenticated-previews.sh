@@ -151,6 +151,7 @@ else
   SPECS="artifacts/evexia-portal/tests/entry-theme.preview.spec.mjs artifacts/evexia-portal/tests/settings-layout.preview.spec.mjs artifacts/evexia-portal/tests/template-preferences.preview.spec.mjs artifacts/evexia-portal/tests/communication.preview.spec.mjs artifacts/evexia-portal/tests/message-templates.preview.spec.mjs artifacts/evexia-portal/tests/admin-auth.preview.spec.mjs artifacts/evexia-portal/tests/roles-permissions.preview.spec.mjs artifacts/evexia-portal/tests/activity-logs.preview.spec.mjs artifacts/evexia-portal/tests/staff-backend.preview.spec.mjs artifacts/evexia-portal/tests/zones-backend.preview.spec.mjs artifacts/evexia-portal/tests/couriers-backend.preview.spec.mjs artifacts/evexia-portal/tests/locations-backend.preview.spec.mjs artifacts/evexia-portal/tests/designations-backend.preview.spec.mjs artifacts/evexia-portal/tests/courier-transfers.preview.spec.mjs artifacts/evexia-portal/tests/role-lifecycle.preview.spec.mjs"
 fi
 if [ "$#" -eq 0 ]; then
+  SPECS="$SPECS artifacts/evexia-portal/tests/role-urls.preview.spec.mjs"
    SPECS="$SPECS artifacts/evexia-portal/tests/masters-directory-import.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/orders-navigation.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/spt-orders.preview.spec.mjs"

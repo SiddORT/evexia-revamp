@@ -1,14 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearch } from 'wouter';
 import { Search, X } from 'lucide-react';
 import '../../adminSettings.css';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
-import { SETTINGS_SECTIONS } from '../../components/admin/settingsSections.jsx';
+import { SETTINGS_SECTIONS as ALL_SECTIONS } from '../../components/admin/settingsSections.jsx';
 import { resolveSettingsSection, searchSettingsSections, settingsSectionUrl } from '../../components/admin/settingsNavigation.js';
+import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import useSettingsDraftGuard from '../../hooks/useSettingsDraftGuard.js';
 
 export default function AdminSettings() {
   const search = useSearch();
+  const session = useAdminSession();
+  const isSuper = session?.user?.identity_kind === 'super_admin';
+  const SETTINGS_SECTIONS = useMemo(() => ALL_SECTIONS.filter((s) => !s.superAdminOnly || isSuper), [isSuper]);
   const [query, setQuery] = useState('');
   const searchRef = useRef(null);
   const panelRef = useRef(null);
@@ -27,7 +31,7 @@ export default function AdminSettings() {
       const url = settingsSectionUrl(window.location.href, 'basic', SETTINGS_SECTIONS);
       window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
     }
-  }, [search]);
+  }, [search, SETTINGS_SECTIONS]);
   const go = (e, id) => {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
@@ -36,7 +40,7 @@ export default function AdminSettings() {
   };
   const Active = active.Component;
   return <AdminLayout title="Settings">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Admin / Browser Preferences</p><h1>Settings</h1><p className="admin-page-head__description">Personalize this browser’s Admin preview. These choices are not synced to an account or other devices.</p></div></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Admin / {isSuper ? 'Shared Settings and Browser Preferences' : 'Browser Preferences'}</p><h1>Settings</h1><p className="admin-page-head__description">Most choices personalize this browser’s Admin preview and are not synced to an account or other devices.{isSuper ? ' Role URLs are the exception: they are shared settings that apply to every user.' : ''}</p></div></div>
     <div className="admin-settings-layout">
       <nav className="admin-settings-nav" aria-label="Settings categories">
         <div className="admin-settings-nav__search">

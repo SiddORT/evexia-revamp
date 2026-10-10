@@ -19,6 +19,61 @@ async function setup(handler) {
 const reply = (body, status = 200) => new Response(status === 204 ? null : JSON.stringify(body), { status });
 const payload = { access_token: 'synthetic-memory-token', expires_in: 900, user };
 
+test('Role URL transport is Super Admin only, versioned and never replays uncertain writes', async () => {
+  const calls = [];
+  const id = 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa';
+  const api = await setup(async (url, options) => {
+    if (url.includes('/admin/role-urls')) {
+      calls.push({ url, options });
+      assert.equal(options.credentials, 'same-origin');
+      assert.equal(options.cache, 'no-store');
+      assert.equal(options.headers.Authorization, 'Bearer synthetic-memory-token');
+      if (url.endsWith('/edit')) return reply({ error: {} }, 409);
+      if (url.endsWith('/delete')) throw new Error('private transport details');
+      return reply(options.method === 'GET' ? { items: [] } : { id, version: 1 });
+    }
+    return reply(url.endsWith('/me') ? user : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  await api.roleUrlRequest();
+  await api.roleUrlRequest('', { hostname: 'mr.allergyevexia.com', role: 'mr', enabled: true });
+  await assert.rejects(api.roleUrlRequest(`/${id}/edit`, { hostname: 'mr.allergyevexia.com', role: 'doctor', enabled: true, version: 1 }), (e) => e.status === 409 && e.code === 'role_url_stale');
+  await assert.rejects(api.roleUrlRequest(`/${id}/delete`, { version: 1 }), (e) => e.ambiguous === true && !e.message.includes('private'));
+  assert.equal(calls.length, 4);
+  assert.equal(JSON.parse(calls[2].options.body).version, 1);
+  await assert.rejects(api.roleUrlRequest('/external-url'), /Unsupported/);
+  await api.logoutAdmin();
+  await assert.rejects(api.roleUrlRequest(), /session changed/);
+});
+
+test('Role URL response decoding cannot expose a directory after identity changes; staff is denied', async () => {
+  let release;
+  let reading;
+  const started = new Promise((resolve) => { reading = resolve; });
+  const decoded = new Promise((resolve) => { release = resolve; });
+  let identity = user;
+  let reached = 0;
+  const api = await setup(async (url) => {
+    if (url.includes('/admin/role-urls')) {
+      reached += 1;
+      reading();
+      return { ok: true, json: () => decoded };
+    }
+    return reply(url.endsWith('/me') ? identity : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  const directory = api.roleUrlRequest();
+  await started;
+  await api.logoutAdmin();
+  release({ items: [{ hostname: 'private.allergyevexia.com' }] });
+  await assert.rejects(directory, /session changed/);
+  identity = { id: 'synthetic-staff', identity_kind: 'staff', system_role: null, email: null, permissions: ['workspace.access'] };
+  await api.loginAdmin('synthetic-staff', 'synthetic-password', false);
+  await assert.rejects(api.roleUrlRequest(), (e) => e.status === 403);
+  assert.equal(reached, 1);
+  await api.logoutAdmin();
+});
+
 test('courier transport sends versions, raw review and filtered downloads without exposing credentials', async () => {
   const requests = [];
   const api = await setup(async (url, options) => {

@@ -46,3 +46,6 @@ def approved_historical_upgrade(engine, config):
     with runtime(engine) as (role, _):
         stage(engine, config, role)
         command.upgrade(config, "0030_directory_crypto_retirement")
+    # The gated retirement is explicit above; subsequent ordinary migrations
+    # must also run so historical fixtures represent today's installed schema.
+    command.upgrade(config, "head")

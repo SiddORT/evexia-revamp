@@ -1,3 +1,8 @@
+# Role portal hostname deployment
+
+See [ROLE_HOSTNAME_DEPLOYMENT.md](ROLE_HOSTNAME_DEPLOYMENT.md) before connecting
+any configured Role URL. Saving a mapping does not change infrastructure.
+
 # EVEXIA backend foundation
 
 Sales Target Master adds protected singleton-only persistence linked to shared

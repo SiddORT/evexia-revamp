@@ -4,6 +4,8 @@ set -eu
 # Run auth and preference service checks, then the complete authenticated
 # preview suite once against isolated PostgreSQL/API/Vite and fresh contexts.
 pnpm --filter @workspace/evexia-portal run test:admin-session
+node --test artifacts/evexia-portal/src/config/portalHost.test.js
+sh scripts/test-api-foundation.sh tests/test_role_urls.py
 pnpm --filter @workspace/evexia-portal run test:spt-orders
 pnpm --filter @workspace/evexia-portal run test:immunotherapy
 node --test artifacts/evexia-portal/src/auth/staffPermissions.test.js artifacts/evexia-portal/src/auth/navigationGuard.test.js

@@ -1344,8 +1344,11 @@ export const listDoctorDirectoryResponseItemsItemRegistrationNumberMax = 100;
 export const listDoctorDirectoryResponseItemsItemStateMax = 100;
 
 export const listDoctorDirectoryResponseItemsItemStatusDefault = `active`;
-
 export const listDoctorDirectoryResponsePartialDefault = false;
+export const listDoctorDirectoryResponseScannedDefault = 0;
+export const listDoctorDirectoryResponseScannedMin = 0;
+export const listDoctorDirectoryResponseScannedMax = 500;
+
 export const ListDoctorDirectoryResponse = zod.object({
   filtered: zod.union([zod.number().int(), zod.null()]),
   items: zod.array(
@@ -2092,6 +2095,10 @@ export const ListDoctorMRChoicesQueryParams = zod.object({
 });
 
 export const listDoctorMRChoicesResponsePartialDefault = false;
+export const listDoctorMRChoicesResponseScannedDefault = 0;
+export const listDoctorMRChoicesResponseScannedMin = 0;
+export const listDoctorMRChoicesResponseScannedMax = 500;
+
 export const ListDoctorMRChoicesResponse = zod.object({
   items: zod.array(
     zod.object({
@@ -3447,8 +3454,11 @@ export const listMRDirectoryResponseItemsItemUserIdMax = 32;
 export const listMRDirectoryResponseItemsItemUserIdRegExp = new RegExp(
   "^[a-z][a-z0-9._-]{2,31}$",
 );
-
 export const listMRDirectoryResponsePartialDefault = false;
+export const listMRDirectoryResponseScannedDefault = 0;
+export const listMRDirectoryResponseScannedMin = 0;
+export const listMRDirectoryResponseScannedMax = 500;
+
 export const ListMRDirectoryResponse = zod.object({
   filtered: zod.union([zod.number().int(), zod.null()]),
   items: zod.array(
@@ -4027,8 +4037,11 @@ export const ListMRReferenceChoicesQueryParams = zod.object({
 });
 
 export const listMRReferenceChoicesResponseItemsItemDeletedDefault = false;
-
 export const listMRReferenceChoicesResponsePartialDefault = false;
+export const listMRReferenceChoicesResponseScannedDefault = 0;
+export const listMRReferenceChoicesResponseScannedMin = 0;
+export const listMRReferenceChoicesResponseScannedMax = 500;
+
 export const ListMRReferenceChoicesResponse = zod.object({
   items: zod.array(
     zod.object({
@@ -4952,6 +4965,10 @@ export const listOpeningBalancesResponseItemsItemStartYearMin = 1900;
 export const listOpeningBalancesResponseItemsItemStartYearMax = 9998;
 
 export const listOpeningBalancesResponsePartialDefault = false;
+export const listOpeningBalancesResponseScannedDefault = 0;
+export const listOpeningBalancesResponseScannedMin = 0;
+export const listOpeningBalancesResponseScannedMax = 500;
+
 export const ListOpeningBalancesResponse = zod.object({
   filtered: zod.union([zod.number().int(), zod.null()]),
   items: zod.array(
@@ -5186,6 +5203,10 @@ export const OpeningBalanceDoctorChoicesQueryParams = zod.object({
 });
 
 export const openingBalanceDoctorChoicesResponsePartialDefault = false;
+export const openingBalanceDoctorChoicesResponseScannedDefault = 0;
+export const openingBalanceDoctorChoicesResponseScannedMin = 0;
+export const openingBalanceDoctorChoicesResponseScannedMax = 500;
+
 export const OpeningBalanceDoctorChoicesResponse = zod.object({
   items: zod.array(
     zod.object({
@@ -5511,8 +5532,11 @@ export const listPatientDirectoryResponseItemsItemPincodeMax = 12;
 export const listPatientDirectoryResponseItemsItemStateMax = 100;
 
 export const listPatientDirectoryResponseItemsItemStatusDefault = `active`;
-
 export const listPatientDirectoryResponsePartialDefault = false;
+export const listPatientDirectoryResponseScannedDefault = 0;
+export const listPatientDirectoryResponseScannedMin = 0;
+export const listPatientDirectoryResponseScannedMax = 500;
+
 export const ListPatientDirectoryResponse = zod.object({
   filtered: zod.union([zod.number().int(), zod.null()]),
   items: zod.array(
@@ -5919,6 +5943,10 @@ export const ListPatientDoctorChoicesQueryParams = zod.object({
 });
 
 export const listPatientDoctorChoicesResponsePartialDefault = false;
+export const listPatientDoctorChoicesResponseScannedDefault = 0;
+export const listPatientDoctorChoicesResponseScannedMin = 0;
+export const listPatientDoctorChoicesResponseScannedMax = 500;
+
 export const ListPatientDoctorChoicesResponse = zod.object({
   items: zod.array(
     zod.object({
@@ -7289,6 +7317,115 @@ export const ListReportingUsersResponse = zod.object({
 });
 
 /**
+ * @summary Listing
+ */
+export const listRoleHostnamesResponseItemsItemEnabledDefault = true;
+export const listRoleHostnamesResponseItemsItemHostnameMax = 270;
+
+export const ListRoleHostnamesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      created_at: zod.coerce.date(),
+      created_by: zod.string().uuid(),
+      enabled: zod
+        .boolean()
+        .default(listRoleHostnamesResponseItemsItemEnabledDefault),
+      hostname: zod.string().max(listRoleHostnamesResponseItemsItemHostnameMax),
+      id: zod.string().uuid(),
+      role: zod.enum(["admin", "mr", "doctor"]),
+      updated_at: zod.coerce.date(),
+      updated_by: zod.string().uuid(),
+      version: zod.number().int(),
+    }),
+  ),
+});
+
+/**
+ * @summary Create
+ */
+export const createRoleHostnameBodyEnabledDefault = true;
+export const createRoleHostnameBodyHostnameMax = 270;
+
+export const CreateRoleHostnameBody = zod.object({
+  enabled: zod.boolean().default(createRoleHostnameBodyEnabledDefault),
+  hostname: zod.string().max(createRoleHostnameBodyHostnameMax),
+  role: zod.enum(["admin", "mr", "doctor"]),
+});
+
+export const createRoleHostnameResponseEnabledDefault = true;
+export const createRoleHostnameResponseHostnameMax = 270;
+
+export const CreateRoleHostnameResponse = zod.object({
+  created_at: zod.coerce.date(),
+  created_by: zod.string().uuid(),
+  enabled: zod.boolean().default(createRoleHostnameResponseEnabledDefault),
+  hostname: zod.string().max(createRoleHostnameResponseHostnameMax),
+  id: zod.string().uuid(),
+  role: zod.enum(["admin", "mr", "doctor"]),
+  updated_at: zod.coerce.date(),
+  updated_by: zod.string().uuid(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Remove
+ */
+export const DeleteRoleHostnameParams = zod.object({
+  row_id: zod.coerce.string().uuid(),
+});
+
+export const DeleteRoleHostnameBody = zod.object({
+  version: zod.number().int().min(1),
+});
+
+export const deleteRoleHostnameResponseEnabledDefault = true;
+export const deleteRoleHostnameResponseHostnameMax = 270;
+
+export const DeleteRoleHostnameResponse = zod.object({
+  created_at: zod.coerce.date(),
+  created_by: zod.string().uuid(),
+  enabled: zod.boolean().default(deleteRoleHostnameResponseEnabledDefault),
+  hostname: zod.string().max(deleteRoleHostnameResponseHostnameMax),
+  id: zod.string().uuid(),
+  role: zod.enum(["admin", "mr", "doctor"]),
+  updated_at: zod.coerce.date(),
+  updated_by: zod.string().uuid(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditRoleHostnameParams = zod.object({
+  row_id: zod.coerce.string().uuid(),
+});
+
+export const editRoleHostnameBodyEnabledDefault = true;
+export const editRoleHostnameBodyHostnameMax = 270;
+
+export const EditRoleHostnameBody = zod.object({
+  enabled: zod.boolean().default(editRoleHostnameBodyEnabledDefault),
+  hostname: zod.string().max(editRoleHostnameBodyHostnameMax),
+  role: zod.enum(["admin", "mr", "doctor"]),
+  version: zod.number().int().min(1),
+});
+
+export const editRoleHostnameResponseEnabledDefault = true;
+export const editRoleHostnameResponseHostnameMax = 270;
+
+export const EditRoleHostnameResponse = zod.object({
+  created_at: zod.coerce.date(),
+  created_by: zod.string().uuid(),
+  enabled: zod.boolean().default(editRoleHostnameResponseEnabledDefault),
+  hostname: zod.string().max(editRoleHostnameResponseHostnameMax),
+  id: zod.string().uuid(),
+  role: zod.enum(["admin", "mr", "doctor"]),
+  updated_at: zod.coerce.date(),
+  updated_by: zod.string().uuid(),
+  version: zod.number().int(),
+});
+
+/**
  * @summary List Roles
  */
 export const listCustomRolesQueryLimitDefault = 50;
@@ -7916,8 +8053,11 @@ export const listSalesTargetsResponseItemsItemEndYearMax = 9999;
 export const listSalesTargetsResponseItemsItemStartYearMax = 9998;
 
 export const listSalesTargetsResponseItemsItemStatusDefault = `active`;
-
 export const listSalesTargetsResponsePartialDefault = false;
+export const listSalesTargetsResponseScannedDefault = 0;
+export const listSalesTargetsResponseScannedMin = 0;
+export const listSalesTargetsResponseScannedMax = 500;
+
 export const ListSalesTargetsResponse = zod.object({
   filtered: zod.union([zod.number().int(), zod.null()]),
   items: zod.array(
@@ -8095,6 +8235,10 @@ export const GetSalesTargetChoicesQueryParams = zod.object({
 });
 
 export const getSalesTargetChoicesResponsePartialDefault = false;
+export const getSalesTargetChoicesResponseScannedDefault = 0;
+export const getSalesTargetChoicesResponseScannedMin = 0;
+export const getSalesTargetChoicesResponseScannedMax = 500;
+
 export const GetSalesTargetChoicesResponse = zod.object({
   limit: zod.number().int(),
   mrs: zod.array(
@@ -12622,66 +12766,19 @@ export const GetHealthStatusResponse = zod.unknown();
 export const GetReadinessResponse = zod.unknown();
 
 /**
+ * @summary Resolve
+ */
+export const resolvePortalHostnameQueryHostnameMax = 253;
+
+export const ResolvePortalHostnameQueryParams = zod.object({
+  hostname: zod.coerce.string().max(resolvePortalHostnameQueryHostnameMax),
+});
+
+export const ResolvePortalHostnameResponse = zod.object({
+  role: zod.union([zod.enum(["admin", "mr", "doctor"]), zod.null()]),
+});
+
+/**
  * @summary Version
  */
 export const GetVersionResponse = zod.unknown();
-
-export const listOpeningBalancesResponseScannedMin = 0;
-
-export const getSalesTargetChoicesResponseScannedDefault = 0;
-
-export const listDoctorDirectoryResponseScannedMax = 500;
-
-export const openingBalanceDoctorChoicesResponseScannedDefault = 0;
-
-export const openingBalanceDoctorChoicesResponseScannedMin = 0;
-
-export const listDoctorMRChoicesResponseScannedMax = 500;
-
-export const listMRDirectoryResponseScannedMin = 0;
-
-export const listPatientDoctorChoicesResponseScannedMin = 0;
-
-export const listPatientDirectoryResponseScannedDefault = 0;
-
-export const listOpeningBalancesResponseScannedMax = 500;
-
-export const getSalesTargetChoicesResponseScannedMin = 0;
-
-export const listMRReferenceChoicesResponseScannedMax = 500;
-
-export const listSalesTargetsResponseScannedDefault = 0;
-
-export const listSalesTargetsResponseScannedMax = 500;
-
-export const getSalesTargetChoicesResponseScannedMax = 500;
-
-export const listDoctorMRChoicesResponseScannedDefault = 0;
-
-export const listOpeningBalancesResponseScannedDefault = 0;
-
-export const listPatientDirectoryResponseScannedMin = 0;
-
-export const listDoctorDirectoryResponseScannedDefault = 0;
-
-export const listMRDirectoryResponseScannedDefault = 0;
-
-export const listMRReferenceChoicesResponseScannedDefault = 0;
-
-export const listMRReferenceChoicesResponseScannedMin = 0;
-
-export const openingBalanceDoctorChoicesResponseScannedMax = 500;
-
-export const listPatientDirectoryResponseScannedMax = 500;
-
-export const listSalesTargetsResponseScannedMin = 0;
-
-export const listDoctorMRChoicesResponseScannedMin = 0;
-
-export const listPatientDoctorChoicesResponseScannedDefault = 0;
-
-export const listMRDirectoryResponseScannedMax = 500;
-
-export const listDoctorDirectoryResponseScannedMin = 0;
-
-export const listPatientDoctorChoicesResponseScannedMax = 500;

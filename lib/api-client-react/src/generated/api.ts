@@ -200,6 +200,7 @@ import type {
   PatientResponse,
   PatientReview,
   PatientStatus,
+  PortalResolution,
   PostalResponse,
   ProductCategoryEdit,
   ProductCategoryFields,
@@ -213,6 +214,7 @@ import type {
   ReplaceFileParams,
   ReportExport,
   ReportSummary,
+  ResolvePortalHostnameParams,
   ReviewAllergenImportBody,
   ReviewAllergenImportParams,
   ReviewCourierImportBody,
@@ -243,6 +245,11 @@ import type {
   RolePage,
   RolePermissions,
   RoleResponse,
+  RoleUrlEdit,
+  RoleUrlFields,
+  RoleUrlPage,
+  RoleUrlResponse,
+  RoleUrlVersion,
   RoleVersion,
   SalesTargetChoices,
   SalesTargetEdit,
@@ -12809,6 +12816,433 @@ export function useListReportingUsers<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
+export const getListRoleHostnamesUrl = () => {
+  return `/api/v1/admin/role-urls`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listRoleHostnames = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<RoleUrlPage> => {
+  return customFetch<RoleUrlPage>(getListRoleHostnamesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListRoleHostnamesQueryKey = () => {
+  return [`/api/v1/admin/role-urls`] as const;
+};
+
+export const getListRoleHostnamesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listRoleHostnames>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listRoleHostnames>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListRoleHostnamesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listRoleHostnames>>
+  > = ({ signal }) => listRoleHostnames({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listRoleHostnames>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListRoleHostnamesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listRoleHostnames>>
+>;
+export type ListRoleHostnamesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListRoleHostnames<
+  TData = Awaited<ReturnType<typeof listRoleHostnames>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listRoleHostnames>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListRoleHostnamesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateRoleHostnameUrl = () => {
+  return `/api/v1/admin/role-urls`;
+};
+
+/**
+ * @summary Create
+ */
+export const createRoleHostname = async (
+  roleUrlFields: RoleUrlFields,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<RoleUrlResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<RoleUrlResponse>(getCreateRoleHostnameUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(roleUrlFields),
+  });
+};
+
+export const getCreateRoleHostnameMutationKey = () =>
+  ["createRoleHostname"] as const;
+
+export const getCreateRoleHostnameMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createRoleHostname>>,
+    TError,
+    CreateRoleHostnameMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createRoleHostname>>,
+  TError,
+  CreateRoleHostnameMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateRoleHostnameMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createRoleHostname>>,
+    CreateRoleHostnameMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createRoleHostname(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateRoleHostnameMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createRoleHostname>>
+>;
+export type CreateRoleHostnameMutationBody = BodyType<RoleUrlFields>;
+export type CreateRoleHostnameMutationError = ErrorType<ErrorEnvelope>;
+export type CreateRoleHostnameMutationVariables = {
+  data: BodyType<RoleUrlFields>;
+};
+
+/**
+ * @summary Create
+ */
+export const useCreateRoleHostname = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createRoleHostname>>,
+    TError,
+    CreateRoleHostnameMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createRoleHostname>>,
+  TError,
+  CreateRoleHostnameMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateRoleHostnameMutationOptions(options));
+};
+
+export const getDeleteRoleHostnameUrl = (rowId: string) => {
+  return `/api/v1/admin/role-urls/${rowId}/delete`;
+};
+
+/**
+ * @summary Remove
+ */
+export const deleteRoleHostname = async (
+  rowId: string,
+  roleUrlVersion: RoleUrlVersion,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<RoleUrlResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<RoleUrlResponse>(getDeleteRoleHostnameUrl(rowId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(roleUrlVersion),
+  });
+};
+
+export const getDeleteRoleHostnameMutationKey = () =>
+  ["deleteRoleHostname"] as const;
+
+export const getDeleteRoleHostnameMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteRoleHostname>>,
+    TError,
+    DeleteRoleHostnameMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteRoleHostname>>,
+  TError,
+  DeleteRoleHostnameMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteRoleHostnameMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteRoleHostname>>,
+    DeleteRoleHostnameMutationVariables
+  > = (props) => {
+    const { rowId, data } = props ?? {};
+
+    return deleteRoleHostname(rowId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteRoleHostnameMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteRoleHostname>>
+>;
+export type DeleteRoleHostnameMutationBody = BodyType<RoleUrlVersion>;
+export type DeleteRoleHostnameMutationError = ErrorType<ErrorEnvelope>;
+export type DeleteRoleHostnameMutationVariables = {
+  rowId: string;
+  data: BodyType<RoleUrlVersion>;
+};
+
+/**
+ * @summary Remove
+ */
+export const useDeleteRoleHostname = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteRoleHostname>>,
+    TError,
+    DeleteRoleHostnameMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteRoleHostname>>,
+  TError,
+  DeleteRoleHostnameMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteRoleHostnameMutationOptions(options));
+};
+
+export const getEditRoleHostnameUrl = (rowId: string) => {
+  return `/api/v1/admin/role-urls/${rowId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editRoleHostname = async (
+  rowId: string,
+  roleUrlEdit: RoleUrlEdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<RoleUrlResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<RoleUrlResponse>(getEditRoleHostnameUrl(rowId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(roleUrlEdit),
+  });
+};
+
+export const getEditRoleHostnameMutationKey = () =>
+  ["editRoleHostname"] as const;
+
+export const getEditRoleHostnameMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editRoleHostname>>,
+    TError,
+    EditRoleHostnameMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editRoleHostname>>,
+  TError,
+  EditRoleHostnameMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditRoleHostnameMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editRoleHostname>>,
+    EditRoleHostnameMutationVariables
+  > = (props) => {
+    const { rowId, data } = props ?? {};
+
+    return editRoleHostname(rowId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditRoleHostnameMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editRoleHostname>>
+>;
+export type EditRoleHostnameMutationBody = BodyType<RoleUrlEdit>;
+export type EditRoleHostnameMutationError = ErrorType<ErrorEnvelope>;
+export type EditRoleHostnameMutationVariables = {
+  rowId: string;
+  data: BodyType<RoleUrlEdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditRoleHostname = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editRoleHostname>>,
+    TError,
+    EditRoleHostnameMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editRoleHostname>>,
+  TError,
+  EditRoleHostnameMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditRoleHostnameMutationOptions(options));
+};
+
 export const getListCustomRolesUrl = (params?: ListCustomRolesParams) => {
   const normalizedParams = new URLSearchParams();
 
@@ -20876,6 +21310,106 @@ export function useGetReadiness<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetReadinessQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getResolvePortalHostnameUrl = (
+  params: ResolvePortalHostnameParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/portal/resolve?${stringifiedParams}`
+    : `/api/v1/portal/resolve`;
+};
+
+/**
+ * @summary Resolve
+ */
+export const resolvePortalHostname = async (
+  params: ResolvePortalHostnameParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PortalResolution> => {
+  return customFetch<PortalResolution>(getResolvePortalHostnameUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getResolvePortalHostnameQueryKey = (
+  params?: ResolvePortalHostnameParams,
+) => {
+  return [`/api/v1/portal/resolve`, ...(params ? [params] : [])] as const;
+};
+
+export const getResolvePortalHostnameQueryOptions = <
+  TData = Awaited<ReturnType<typeof resolvePortalHostname>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params: ResolvePortalHostnameParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof resolvePortalHostname>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getResolvePortalHostnameQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof resolvePortalHostname>>
+  > = ({ signal }) =>
+    resolvePortalHostname(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof resolvePortalHostname>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ResolvePortalHostnameQueryResult = NonNullable<
+  Awaited<ReturnType<typeof resolvePortalHostname>>
+>;
+export type ResolvePortalHostnameQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Resolve
+ */
+
+export function useResolvePortalHostname<
+  TData = Awaited<ReturnType<typeof resolvePortalHostname>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params: ResolvePortalHostnameParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof resolvePortalHostname>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getResolvePortalHostnameQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

@@ -426,6 +426,60 @@ export async function roleRequest(path = '', body, { signal } = {}) {
   }
   return data;
 }
+
+// Exact portal-host settings, Super Admin only. Never replay an uncertain write.
+export async function roleUrlRequest(path = '', body, { signal } = {}) {
+  if (!/^(?:|\/[0-9a-f-]{36}\/(?:edit|delete))$/i.test(path)
+      || (path && body === undefined)) throw new SessionError('Unsupported Role URL operation.');
+  const mutation = body !== undefined;
+  const epoch = generation;
+  const owner = state.user?.id;
+  const check = () => {
+    signal?.throwIfAborted();
+    if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
+      throw new SessionError('Your session changed. Sign in again before retrying.', 401);
+    }
+    if (state.user.identity_kind !== 'super_admin') throw new SessionError('Role URLs are restricted to Super Admin.', 403);
+  };
+  if (pending) await pending;
+  else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true, 'admin');
+  check();
+  const uncertain = () => {
+    const error = new SessionError(mutation
+      ? 'Save outcome could not be confirmed. Reload mappings and review before retrying; the server may have saved the change.'
+      : 'Unable to load Role URLs. Check your connection and retry.');
+    error.ambiguous = mutation;
+    return error;
+  };
+  let response, data;
+  try {
+    response = await fetch(`/api/v1/admin/role-urls${path}`, {
+      method: mutation ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
+      headers: { Authorization: `Bearer ${token}`, ...(mutation ? { 'Content-Type': 'application/json' } : {}) },
+      ...(mutation ? { body: JSON.stringify(body) } : {}),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
+    });
+    data = await response.json();
+  } catch { throw uncertain(); }
+  if (pending) await pending;
+  try { check(); } catch (error) { error.ambiguous = mutation; throw error; }
+  if (!response.ok) {
+    if (response.status === 401) {
+      await verifySession(true, 'admin');
+      throw new SessionError('Session checked. Your draft is preserved; retry explicitly.', 401);
+    }
+    const error = new SessionError(response.status === 409
+      ? 'Hostname already exists, changed or was removed. Your draft is preserved. Reload mappings and review before retrying.'
+      : response.status === 422 ? 'Use a bare production hostname or HTTPS origin, without credentials, ports, paths, queries, fragments or wildcards.'
+      : response.status === 403 ? 'Role URLs are restricted to Super Admin.'
+      : uncertain().message, response.status);
+    error.code = response.status === 409 ? 'role_url_stale' : data?.error?.code;
+    error.ambiguous = mutation && response.status >= 500;
+    throw error;
+  }
+  if ((mutation && (!data?.id || !Number.isInteger(data.version))) || (!mutation && !Array.isArray(data?.items))) throw uncertain();
+  return data;
+}
 // Narrow reporting facility: credentials never leave this module.
 // Shared master transport. No automatic replay of a potentially committed write.
 // Per-operation Zone authorization. Staff never reach other master services;

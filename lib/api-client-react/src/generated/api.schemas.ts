@@ -846,6 +846,7 @@ export interface DoctorFields {
 }
 
 export type DoctorFiltersZonesItem = { [key: string]: string };
+
 export interface DoctorFilters {
   missingMR: boolean;
   missingZone: boolean;
@@ -2389,6 +2390,19 @@ export interface PatientStatus {
   status: PatientStatusStatus;
 }
 
+export type PortalResolutionRole =
+  (typeof PortalResolutionRole)[keyof typeof PortalResolutionRole] | null;
+
+export const PortalResolutionRole = {
+  admin: "admin",
+  mr: "mr",
+  doctor: "doctor",
+} as const;
+
+export interface PortalResolution {
+  role: PortalResolutionRole;
+}
+
 export interface PostalChoice {
   city: string;
   country: string;
@@ -2736,6 +2750,71 @@ export interface RolePermissions {
   expected_version: number;
   /** @maxItems 40 */
   permissions: RolePermissionsPermissionsItem[];
+}
+
+export type RoleUrlEditRole =
+  (typeof RoleUrlEditRole)[keyof typeof RoleUrlEditRole];
+
+export const RoleUrlEditRole = {
+  admin: "admin",
+  mr: "mr",
+  doctor: "doctor",
+} as const;
+
+export interface RoleUrlEdit {
+  enabled?: boolean;
+  /** @maxLength 270 */
+  hostname: string;
+  role: RoleUrlEditRole;
+  /** @minimum 1 */
+  version: number;
+}
+
+export type RoleUrlFieldsRole =
+  (typeof RoleUrlFieldsRole)[keyof typeof RoleUrlFieldsRole];
+
+export const RoleUrlFieldsRole = {
+  admin: "admin",
+  mr: "mr",
+  doctor: "doctor",
+} as const;
+
+export interface RoleUrlFields {
+  enabled?: boolean;
+  /** @maxLength 270 */
+  hostname: string;
+  role: RoleUrlFieldsRole;
+}
+
+export type RoleUrlResponseRole =
+  (typeof RoleUrlResponseRole)[keyof typeof RoleUrlResponseRole];
+
+export const RoleUrlResponseRole = {
+  admin: "admin",
+  mr: "mr",
+  doctor: "doctor",
+} as const;
+
+export interface RoleUrlResponse {
+  created_at: string;
+  created_by: string;
+  enabled?: boolean;
+  /** @maxLength 270 */
+  hostname: string;
+  id: string;
+  role: RoleUrlResponseRole;
+  updated_at: string;
+  updated_by: string;
+  version: number;
+}
+
+export interface RoleUrlPage {
+  items: RoleUrlResponse[];
+}
+
+export interface RoleUrlVersion {
+  /** @minimum 1 */
+  version: number;
 }
 
 export interface RoleVersion {
@@ -5922,4 +6001,11 @@ export type ReplaceFileParams = {
    * @minimum 1
    */
   expected_version: number;
+};
+
+export type ResolvePortalHostnameParams = {
+  /**
+   * @maxLength 253
+   */
+  hostname: string;
 };

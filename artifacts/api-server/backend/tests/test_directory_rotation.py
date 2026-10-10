@@ -59,11 +59,12 @@ def logical(data, crypto):
     return data
 
 
-def test_resumable_final_rotation_preserves_tombstones_graph_and_metadata(migration_db, monkeypatch):
+@pytest.mark.parametrize("revision", [rotation.REVISION, "head"])
+def test_resumable_final_rotation_preserves_tombstones_graph_and_metadata(migration_db, monkeypatch, revision):
     engine, config, *_ = seed(migration_db)
     with runtime(engine) as (role, api):
         source = stage(engine, config, role)
-        command.upgrade(config, rotation.REVISION)
+        command.upgrade(config, revision)
         destination = target(source)
         before = logical(snapshot(engine), DirectoryCrypto(source))
         plan = arm(engine, source, destination)
@@ -96,6 +97,8 @@ def test_resumable_final_rotation_preserves_tombstones_graph_and_metadata(migrat
             assert rotation.verify(db, destination)["content_digest"] == plan["content_digest"]
         with engine.connect() as conn:
             assert conn.scalar(text("SELECT phase FROM directory_crypto_stage")) == "encrypted"
+            if revision == "head":
+                assert conn.scalar(text("SELECT to_regclass('role_hostnames')")) is not None
 
 
 @pytest.mark.parametrize("failure", ["ciphertext", "aad", "index", "metadata", "owner", "authenticated_value"])

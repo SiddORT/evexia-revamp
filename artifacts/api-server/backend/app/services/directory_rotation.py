@@ -19,6 +19,9 @@ from app.services.directory_inventory import FIELDS, INDEX_COLUMNS
 from app.services import directory_staging as staging
 
 REVISION = "0030_directory_crypto_retirement"
+# Explicitly reviewed additive schemas; never assume arbitrary future heads
+# preserve the encrypted-directory maintenance contract.
+COMPATIBLE_REVISIONS = frozenset({REVISION, "0031_role_hostnames"})
 
 
 class RotationError(Exception):
@@ -39,7 +42,8 @@ def _lock(db, exclusive=False):
     mode = "ACCESS EXCLUSIVE" if exclusive else "SHARE"
     db.execute(text(f"LOCK TABLE directory_crypto_stage, doctor_directory, mr_directory, "
                     f"patient_directory, patients IN {mode} MODE NOWAIT"))
-    if list(db.scalars(text("SELECT version_num FROM alembic_version"))) != [REVISION]:
+    revisions = list(db.scalars(text("SELECT version_num FROM alembic_version")))
+    if len(revisions) != 1 or revisions[0] not in COMPATIBLE_REVISIONS:
         raise RotationError()
 
 

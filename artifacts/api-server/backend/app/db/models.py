@@ -196,3 +196,4 @@ from app.db import patient_models as _patient_models  # noqa: E402,F401
 from app.db import allergen_models as _allergen_models  # noqa: E402,F401
 from app.db import sales_target_models as _sales_target_models  # noqa: E402,F401
 from app.db import opening_balance_models as _opening_balance_models  # noqa: E402,F401
+from app.db import role_url_models as _role_url_models  # noqa: E402,F401

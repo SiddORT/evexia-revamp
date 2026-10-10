@@ -1,0 +1,21 @@
+.role-urls__tag{font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid currentColor;vertical-align:middle;margin-left:6px}
+.role-urls__bar,.role-urls__actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.role-urls__bar{margin:12px 0}
+.role-urls__search{flex:1 1 220px}.role-urls__search input{width:100%}
+.role-urls__sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.role-urls__form{display:grid;gap:10px;max-width:520px;padding:12px;border:1px solid rgba(128,128,128,.35);border-radius:8px;margin:12px 0}
+.role-urls__form label{display:grid;gap:4px}.role-urls__check{display:flex!important;align-items:center;gap:8px}
+.role-urls__list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.role-urls__list li{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;padding:10px 12px;border:1px solid rgba(128,128,128,.3);border-radius:8px}
+.role-urls__list small{display:block;opacity:.75;overflow-wrap:anywhere}.role-urls__list strong{overflow-wrap:anywhere}
+.role-urls__error{color:#b3261e}
+.role-urls__confirm{margin-top:12px;padding:12px;border:2px solid #b3261e;border-radius:8px}
+.role-urls button{min-height:40px}
+.role-urls input:not([type=checkbox]),.role-urls select{min-width:0;width:100%;min-height:44px;border:1px solid var(--admin-border);border-radius:8px;background:var(--admin-surface);color:var(--admin-text);padding:8px 12px}
+.role-urls button{border:1px solid var(--admin-border);border-radius:8px;background:var(--admin-surface);color:var(--admin-text);padding:8px 12px;cursor:pointer}
+.role-urls button:disabled{opacity:.55;cursor:not-allowed}
+.role-urls :is(button,input,select):focus-visible{outline:3px solid var(--admin-accent,#28706a);outline-offset:3px}
+.role-urls__confirm{max-width:min(520px,90vw);background:var(--admin-surface);color:var(--admin-text)}
+.role-urls__confirm::backdrop{background:rgba(0,0,0,.5)}
+.role-urls__skeleton,.role-urls__empty{padding:16px;opacity:.75}
+@media(max-width:600px){.role-urls__list li{flex-direction:column}.role-urls__bar button{flex:1}}

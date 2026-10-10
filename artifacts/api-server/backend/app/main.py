@@ -4,6 +4,7 @@ import uuid
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from app.api.v1.role_urls import router as role_urls_router
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -294,6 +295,7 @@ def create_app() -> FastAPI:
     app.include_router(opening_balances_router, prefix="/api/v1")
     app.include_router(allergens_router, prefix="/api/v1")
     app.include_router(roles_router, prefix="/api/v1")
+    app.include_router(role_urls_router, prefix="/api/v1")
     app.add_api_route("/api/healthz", lambda: {"status": "ok"}, methods=["GET"],
                       response_model=HealthStatus, operation_id="getHealthCheck", tags=["health"])
     original_openapi = app.openapi
