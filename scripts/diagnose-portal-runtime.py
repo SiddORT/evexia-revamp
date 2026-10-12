@@ -75,11 +75,22 @@ def diagnose(hostname, progress=None):
     progress["stage"] = "import_runtime_hostname_validator"
     from app.schemas.role_urls import canonical_hostname
     progress["stage"] = "import_runtime_schema_revision"
-    from app.core.schema import SCHEMA_REVISION
+    try:
+        from app.core.schema import SCHEMA_REVISION
+        schema_contract = {"ok": True}
+    except ModuleNotFoundError as exc:
+        # Older running releases may lack this diagnostic-only dependency.
+        # Preserve the failure and unknown expected revision; do not infer
+        # readiness or import candidate application code into the runtime.
+        if exc.name != "app.core.schema":
+            raise
+        SCHEMA_REVISION = None
+        schema_contract = failure_details(exc, progress["stage"])
 
     progress["stage"] = "validate_hostname"
     host = canonical_hostname(hostname)
-    report = {"expected_revision": SCHEMA_REVISION, "checks": {}}
+    report = {"expected_revision": SCHEMA_REVISION,
+              "checks": {"runtime_schema_contract": schema_contract}}
     queries = {
         "identity": """
             SELECT current_database() AS database_name, current_user AS database_user,
