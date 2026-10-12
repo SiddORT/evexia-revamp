@@ -37,13 +37,47 @@ def fingerprint(value):
     return hashlib.sha256(str(value).encode()).hexdigest()[:16]
 
 
-def diagnose(hostname):
+def failure_details(exc, stage):
+    result = {"ok": False, "category": failure_category(exc), "stage": stage}
+    # Fixed labels only, never exception text, repr, SQL, paths or parameters.
+    for error_type, label in (
+        (DiagnosticTimeout, "diagnostic_timeout"),
+        (ModuleNotFoundError, "module_not_found"),
+        (ImportError, "import_error"),
+        (AttributeError, "missing_runtime_attribute"),
+        (ValueError, "invalid_configuration_or_input"),
+        (TypeError, "incompatible_runtime_interface"),
+    ):
+        if isinstance(exc, error_type):
+            result["failure_kind"] = label
+            break
+    else:
+        result["failure_kind"] = "other_runtime_or_database_error"
+    if isinstance(exc, ImportError):
+        allowed_modules = {
+            "sqlalchemy", "psycopg", "psycopg2", "app", "app.db",
+            "app.db.session", "app.db.role_url_models", "app.schemas",
+            "app.schemas.role_urls", "app.core", "app.core.schema",
+        }
+        module = getattr(exc, "name", None)
+        result["module"] = module if module in allowed_modules else "other_dependency"
+    return result
+
+
+def diagnose(hostname, progress=None):
+    progress = progress if progress is not None else {}
+    progress["stage"] = "import_sqlalchemy"
     from sqlalchemy import select, text
+    progress["stage"] = "import_runtime_session"
     from app.db.session import session_factory
+    progress["stage"] = "import_runtime_mapping_model"
     from app.db.role_url_models import RoleHostname
+    progress["stage"] = "import_runtime_hostname_validator"
     from app.schemas.role_urls import canonical_hostname
+    progress["stage"] = "import_runtime_schema_revision"
     from app.core.schema import SCHEMA_REVISION
 
+    progress["stage"] = "validate_hostname"
     host = canonical_hostname(hostname)
     report = {"expected_revision": SCHEMA_REVISION, "checks": {}}
     queries = {
@@ -69,8 +103,10 @@ def diagnose(hostname):
                    has_table_privilege(current_user, to_regclass('role_hostnames'), 'SELECT') AS can_select
         """,
     }
+    progress["stage"] = "initialize_runtime_session_factory"
     factory = session_factory()
     for label, query in queries.items():
+        progress["stage"] = "database_check_" + label
         try:
             with factory() as db:
                 db.execute(text("SET TRANSACTION READ ONLY"))
@@ -83,7 +119,8 @@ def diagnose(hostname):
                     rows = [{key + "_fingerprint": fingerprint(value) for key, value in rows[0].items()}]
                 report["checks"][label] = {"ok": True, "metadata": rows}
         except Exception as exc:
-            report["checks"][label] = {"ok": False, "category": failure_category(exc)}
+            report["checks"][label] = failure_details(exc, progress["stage"])
+    progress["stage"] = "database_check_dns_lookup"
     try:
         with factory() as db:
             db.execute(text("SET TRANSACTION READ ONLY"))
@@ -94,19 +131,21 @@ def diagnose(hostname):
             # Do not print the hostname, mapping record or configured role.
             report["checks"]["dns_lookup"] = {"ok": True, "valid_role": role in (None, "admin", "mr", "doctor")}
     except Exception as exc:
-        report["checks"]["dns_lookup"] = {"ok": False, "category": failure_category(exc)}
+        report["checks"]["dns_lookup"] = failure_details(exc, progress["stage"])
     return report
 
 
 if __name__ == "__main__":
+    progress = {"stage": "initialize_diagnostic"}
     try:
         signal.signal(signal.SIGALRM, deadline)
         signal.alarm(45)
+        progress["stage"] = "validate_arguments"
         if len(sys.argv) != 2 or not re.fullmatch(r"[a-zA-Z0-9.-]{1,253}", sys.argv[1]):
             raise ValueError()
-        result = diagnose(sys.argv[1])
+        result = diagnose(sys.argv[1], progress)
         print(json.dumps(result))
         sys.exit(0 if all(item["ok"] for item in result["checks"].values()) else 1)
     except (Exception, DiagnosticTimeout) as exc:
-        print(json.dumps({"ok": False, "category": failure_category(exc)}))
+        print(json.dumps(failure_details(exc, progress["stage"])))
         sys.exit(1)
