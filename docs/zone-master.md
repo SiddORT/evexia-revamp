@@ -11,7 +11,7 @@ See [Zone role permissions](zone-role-permissions.md) for the action map and rol
 ## Operations
 
 Apply explicit Alembic migrations through the existing reviewed initialization
-procedure (`sh scripts/initialize-api.sh`); the API never creates tables at
+procedure (see [staged production initialization](fresh-install.md)); the API never creates tables at
 startup. Migration `0010_zones` follows `0009_staff`, creates an empty table and
 does not modify accounts, sessions, staff or other master records. Take backups
 before operator-approved schema changes. The singleton must already exist or be

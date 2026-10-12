@@ -48,13 +48,12 @@ for first creation, uses existing Argon2id, and audits safe created/existing
 outcomes. Repeated and concurrent runs preserve ID, hash and security settings.
 Missing or invalid first-creation configuration fails with no fallback account.
 
-Explicit initialization from the workspace root:
-
-```sh
-sh scripts/initialize-api.sh
-```
-
-This runs Alembic first and bootstrap second. It is not invoked by API startup.
+Explicit production initialization now follows the
+[staged fresh-install procedure](fresh-install.md). A bare
+`sh scripts/initialize-api.sh` is intentionally refused. Preparation stops at
+the recovery predecessor; existing protected retirement and its independent
+restoration evidence must complete before separate finalization/bootstrap.
+It is not invoked by API startup or normal CI.
 Supply the initial secret through the backend managed secret store, never as a
 command argument. No shared/production migration or bootstrap was executed here.
 The trigger is an accidental-mutation safeguard, not a boundary against a DB owner

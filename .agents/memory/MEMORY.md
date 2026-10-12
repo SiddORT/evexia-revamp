@@ -1,3 +1,4 @@
+- [Restored catalog fidelity](restored-catalog-fidelity.md) — pg_restore can reserialize CHECK expressions; rerun strict retirement preflight on the actual restored catalog.
 - [Browser-local record conflicts](browser-local-zone-conflicts.md) — reject stale or unreadable zone and MR writes rather than overwrite newer browser data.
 - [Filtered pnpm installs](filtered-pnpm-installs.md) — language-package installer targets workspace root and rejects filter flags; do not rely on it for leaf packages.
 - [Offline pnpm lock updates](offline-pnpm-lock-updates.md) — workspace lockfile-only updates can need metadata for unrelated packages unavailable offline.

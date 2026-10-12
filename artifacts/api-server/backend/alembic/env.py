@@ -26,11 +26,24 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+def migrate_connection(connection) -> None:
+    context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
+    with context.begin_transaction():
+        context.run_migrations()
+
+
 def run_migrations_online() -> None:
+    # The fresh-install operator checks the pristine catalog and replays the
+    # historical migrations in ONE caller-owned PostgreSQL transaction.
+    # Normal Alembic/CI invocations retain their existing connection behavior.
+    supplied = config.attributes.get("connection")
+    if supplied is not None:
+        if supplied.dialect.name != "postgresql" or not supplied.in_transaction():
+            raise ValueError("Operator connection requires an active PostgreSQL transaction")
+        migrate_connection(supplied)
+        return
     with create_engine(url, poolclass=pool.NullPool, hide_parameters=True).connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
-        with context.begin_transaction():
-            context.run_migrations()
+        migrate_connection(connection)
 
 
 if context.is_offline_mode():

@@ -1,9 +1,8 @@
 #!/bin/sh
-# Explicit operator initialization. Never called by application startup.
-# DATABASE_URL and SUPER_ADMIN_INITIAL_PASSWORD must be supplied backend-only.
+# Explicit staged production initialization. Never called by CI or startup.
+# Requires the existing maintenance supervisor; see docs/fresh-install.md.
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$ROOT/artifacts/api-server/backend"
 export PYTHONPATH="$ROOT/artifacts/api-server/backend${PYTHONPATH:+:$PYTHONPATH}"
-python3 -m alembic upgrade head
-python3 -m app.bootstrap
+exec "${EVEXIA_OPERATOR_PYTHON:-python3}" -B -m app.fresh_install "$@"

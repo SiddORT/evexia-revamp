@@ -114,6 +114,12 @@ assigned). A legacy membership label contributes nothing to eligibility.
 
 ## External recovery and retention gates
 
+For a deliberately reset, dedicated **empty** production database, use the
+staged [fresh-install procedure](fresh-install.md). It replays reviewed history
+only through `0031_role_hostnames`, then requires this same external recovery,
+independent restoration attestation and protected continuation. Empty data is
+not an exemption from these gates; normal CI/policy is unchanged.
+
 Before any managed removal, stop all old application nodes and external writers.
 Resolve audit/identity retention and unknown logical correlations explicitly.
 Obtain separate approval for the target database and for durable recovery
