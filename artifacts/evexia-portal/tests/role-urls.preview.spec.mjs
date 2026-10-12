@@ -5,6 +5,51 @@ const base = () => process.env.EVEXIA_PREVIEW_BASE_URL;
 const password = () => process.env.EVEXIA_TEST_ADMIN_PASSWORD;
 const adminName = 'crm-admin@allergyevexia.in';
 
+test('cookie-protected exact development preview ingress; other origins omit cookies; redirects fail closed', async ({ browser }) => {
+  // The Vite server embeds its exact REPLIT_DEV_DOMAIN only in development.
+  const previewHost = process.env.REPLIT_DEV_DOMAIN;
+  expect(previewHost).toMatch(/\.replit\.dev$/);
+  const context = await browser.newContext({ ignoreHTTPSErrors: true });
+  const origins = [previewHost, 'untrusted-preview.replit.dev', 'newuat.allergyevexia.in'];
+  for (const host of origins) await context.addCookies([{
+    name: 'synthetic_preview_access', value: 'fixture-only', url: `https://${host}`, secure: true, sameSite: 'Lax',
+  }]);
+  let redirected = false;
+  const observed = [];
+  await context.route(/^https:\/\//, async (route) => {
+    const url = new URL(route.request().url());
+    if (!origins.includes(url.hostname)) return route.abort();
+    if (url.pathname === '/api/v1/portal/resolve') {
+      const headers = await route.request().allHeaders();
+      const hasCookie = (headers.cookie || '').includes('synthetic_preview_access=fixture-only');
+      observed.push({ host: url.hostname, hasCookie, hasBearer: !!headers.authorization });
+      // Simulated private ingress, not the real Replit gate. Cookie contents
+      // are synthetic; never capture real access cookies in test artifacts.
+      if (url.hostname === previewHost && (!hasCookie || redirected)) return route.fulfill({
+        status: 307, headers: { location: `https://${previewHost}/__replshield` },
+      });
+      return route.fulfill({ status: 200, contentType: 'application/json',
+        headers: { 'cache-control': 'no-store' }, body: '{"role":null}' });
+    }
+    const response = await route.fetch({ url: base() + url.pathname + url.search, maxRedirects: 0 });
+    return route.fulfill({ response });
+  });
+  const visitor = await context.newPage();
+  for (const host of origins) {
+    await visitor.goto(`https://${host}/`);
+    await expect(visitor.getByText('Select your portal to continue.', { exact: false })).toBeVisible();
+    expect(observed.at(-1)).toEqual({ host, hasCookie: host === previewHost, hasBearer: false });
+  }
+  redirected = true;
+  await visitor.goto(`https://${previewHost}/`);
+  await expect(visitor.getByRole('button', { name: 'Retry portal lookup' })).toBeVisible();
+  await expect(visitor.getByText('Select your portal to continue.', { exact: false })).toHaveCount(0);
+  redirected = false;
+  await visitor.getByRole('button', { name: 'Retry portal lookup' }).click();
+  await expect(visitor.getByText('Select your portal to continue.', { exact: false })).toBeVisible();
+  await context.close();
+});
+
 async function signIn(page, url = `${base()}/admin/login`, username = adminName, pass = password(), role = 'admin') {
   await page.goto(url);
   await page.getByLabel('Email or username').fill(username);

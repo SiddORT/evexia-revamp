@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { PortalHostContext, compatiblePortalPath, portalEntry } from '../config/portalHost.js';
 import PortalLoader from './PortalLoader.jsx';
+import { resolvePortalHostname } from '../config/portalResolver.js';
 
 export default function PortalHostBoundary({ children }) {
   const [path, navigate] = useLocation();
@@ -12,14 +13,13 @@ export default function PortalHostBoundary({ children }) {
     setResolution({ status: 'loading', role: null });
     async function resolve() {
       try {
-        const response = await fetch(`/api/v1/portal/resolve?${new URLSearchParams({ hostname: window.location.hostname })}`, {
-          credentials: 'omit', cache: 'no-store',
+        const role = await resolvePortalHostname({
+          origin: window.location.origin, hostname: window.location.hostname,
+          development: import.meta.env.DEV,
+          previewHostname: import.meta.env.EVEXIA_PREVIEW_HOSTNAME,
           signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
         });
-        if (!response.ok) throw new Error();
-        const data = await response.json();
-        if (!data || !Object.hasOwn(data, 'role') || ![null, 'admin', 'mr', 'doctor'].includes(data.role)) throw new Error();
-        if (!controller.signal.aborted) setResolution({ status: 'ready', role: data.role });
+        if (!controller.signal.aborted) setResolution({ status: 'ready', role });
       } catch {
         if (!controller.signal.aborted) setResolution({ status: 'error', role: null });
       }

@@ -11,8 +11,13 @@ const port = Number(rawPort || 5173);
 const basePath = process.env.BASE_PATH || '/';
 const apiProxyTarget = process.env.EVEXIA_TEST_API_PROXY_TARGET;
 
-export default defineConfig({
+export default defineConfig(({ command, isPreview }) => ({
   base: basePath,
+  define: {
+    // Public host metadata only. Build/production preview never enable cookies.
+    'import.meta.env.EVEXIA_PREVIEW_HOSTNAME': JSON.stringify(
+      command === 'serve' && !isPreview ? process.env.REPLIT_DEV_DOMAIN || '' : ''),
+  },
   plugins: [react(), tailwindcss(), runtimeErrorOverlay()],
   resolve: {
     alias: { '@': path.resolve(dirname, 'src') },
@@ -27,4 +32,4 @@ export default defineConfig({
     } : {}),
   },
   preview: { port, host: '0.0.0.0', allowedHosts: true },
-});
+}));
