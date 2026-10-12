@@ -16,3 +16,14 @@ approvals or weakening the existing full procedure.
 postconditions separately. Preserve the existing full procedure, global migration
 policy and application readiness boundary; report narrow success separately from
 full-release or live-service recovery.
+
+Pristine-catalog proof is not authorization of the target database. Never
+auto-populate target-confirmation arguments from the connection being initialized
+or its environment; that only confirms its own possibly incorrect configuration.
+
+**Why:** Another empty database can satisfy every fresh-install catalog check.
+Physical PostgreSQL replicas/clones can also share a cluster system identifier.
+
+**How to apply:** Bind approval to independently reviewed server/network and
+database identity. Keep target confirmation distinct from content checks and
+recovery evidence; do not claim that an identifier alone verifies the host.

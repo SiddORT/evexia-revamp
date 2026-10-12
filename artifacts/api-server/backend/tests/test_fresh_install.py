@@ -75,12 +75,29 @@ def test_review_rejects_changed_or_unknown_migration(tmp_path):
         fresh.reviewed_graph(tmp_path)
 
 
+def identity_arguments(engine):
+    with engine.connect() as db:
+        name, identifier = db.execute(text(
+            "SELECT current_database(), system_identifier FROM pg_catalog.pg_control_system()"
+        )).one()
+    return ["--expected-database", name, "--expected-system-identifier", str(identifier)]
+
+
+def test_missing_identity_refused_before_connection():
+    with patch.object(fresh, "create_engine") as connect:
+        with pytest.raises(SystemExit) as error:
+            fresh.main(["prepare", "--approve-fresh-install", "--writers-stopped"])
+        assert error.value.code == 2
+        connect.assert_not_called()
+
+
 def test_explicit_phase_approvals_cannot_be_reused():
+    identity = ["--expected-database", "fixture", "--expected-system-identifier", "123"]
     with patch.object(fresh, "verify_supervisor") as supervisor:
-        assert fresh.main(["prepare", "--writers-stopped"]) == 1
-        assert fresh.main(["finalize", "--approve-fresh-install", "--writers-stopped"]) == 1
-        assert fresh.main(["prepare", "--approve-fresh-install", "--approve-bootstrap", "--writers-stopped"]) == 1
-        assert fresh.main(["prepare", "--approve-fresh-install"]) == 1
+        assert fresh.main(["prepare", "--writers-stopped", *identity]) == 1
+        assert fresh.main(["finalize", "--approve-fresh-install", "--writers-stopped", *identity]) == 1
+        assert fresh.main(["prepare", "--approve-fresh-install", "--approve-bootstrap", "--writers-stopped", *identity]) == 1
+        assert fresh.main(["prepare", "--approve-fresh-install", *identity]) == 1
         supervisor.assert_not_called()
 
 
@@ -106,6 +123,7 @@ def test_existing_extension_membership_cannot_hide_a_table(databases):
 
 def test_cli_preparation_and_normal_policy_barrier(databases, tmp_path, monkeypatch):
     source, _, _ = databases
+    identity = identity_arguments(source)
     lock = tmp_path / ".deploy.lock"
     (tmp_path / ".operator-maintenance").touch()
     monkeypatch.setattr(fresh, "LOCK_PATH", lock)
@@ -113,8 +131,8 @@ def test_cli_preparation_and_normal_policy_barrier(databases, tmp_path, monkeypa
     with lock.open("w") as handle:
         fcntl.flock(handle, fcntl.LOCK_EX)
         monkeypatch.setenv("EVEXIA_DEPLOY_LOCK_FD", str(handle.fileno()))
-        assert fresh.main(["prepare", "--approve-fresh-install", "--writers-stopped"]) == 0
-        assert fresh.main(["prepare", "--approve-fresh-install", "--writers-stopped"]) == 1
+        assert fresh.main(["prepare", "--approve-fresh-install", "--writers-stopped", *identity]) == 0
+        assert fresh.main(["prepare", "--approve-fresh-install", "--writers-stopped", *identity]) == 1
     result = subprocess.run([sys.executable, "-B",
                              str(fresh.ROOT / "scripts/deploy-migrations.py"),
                              "--backend-dir", str(fresh.BACKEND)], capture_output=True, text=True)
@@ -122,6 +140,35 @@ def test_cli_preparation_and_normal_policy_barrier(databases, tmp_path, monkeypa
     assert "OPERATOR_MIGRATION_REQUIRED" in result.stdout
     with source.connect() as db:
         assert db.scalar(text("SELECT version_num FROM alembic_version")) == fresh.PREPARE_TARGET
+
+
+@pytest.mark.parametrize("phase", ["prepare", "finalize"])
+@pytest.mark.parametrize("mismatch", ["name", "identifier", "other_cluster"])
+def test_wrong_database_or_cluster_refused_before_any_mutation(databases, tmp_path, monkeypatch, phase, mismatch):
+    source, rehearsal, _ = databases
+    identity = identity_arguments(source)
+    assert identity_arguments(rehearsal)[-1] != identity[-1]
+    if mismatch == "name":
+        identity[1] = "another_database"
+    elif mismatch == "identifier":
+        identity[-1] = str(int(identity[-1]) + 1)
+    else:
+        settings = get_settings().model_copy(update={"database_url": str(rehearsal.url)})
+        monkeypatch.setattr(fresh, "get_settings", lambda: settings)
+    lock = tmp_path / ".deploy.lock"
+    (tmp_path / ".operator-maintenance").touch()
+    monkeypatch.setattr(fresh, "LOCK_PATH", lock)
+    monkeypatch.setenv("EVEXIA_DEPLOY_LOCK", str(lock))
+    approval = "--approve-fresh-install" if phase == "prepare" else "--approve-bootstrap"
+    with lock.open("w") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        monkeypatch.setenv("EVEXIA_DEPLOY_LOCK_FD", str(handle.fileno()))
+        with patch.object(fresh, "prepare") as prepare, patch.object(fresh, "finalize") as finalize:
+            assert fresh.main([phase, approval, "--writers-stopped", *identity]) == 1
+            prepare.assert_not_called()
+            finalize.assert_not_called()
+    assert inspect(source).get_table_names() == []
+    assert inspect(rehearsal).get_table_names() == []
 
 
 def test_supervisor_requires_already_held_canonical_exclusive_flock(tmp_path, monkeypatch):
@@ -256,7 +303,7 @@ def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap
         fcntl.flock(handle, fcntl.LOCK_EX)
         monkeypatch.setenv("EVEXIA_DEPLOY_LOCK_FD", str(handle.fileno()))
         assert fresh.main(["finalize", "--approve-bootstrap", "--writers-stopped",
-                           "--admin-hostname", "fresh.allergyevexia.in"]) == 0
+                           "--admin-hostname", "fresh.allergyevexia.in", *identity_arguments(source)]) == 0
     with Session(source) as db:
         user = db.query(User).one()
         assert user.is_protected_system_admin and user.system_role == "super_admin"

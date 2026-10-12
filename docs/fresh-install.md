@@ -35,11 +35,34 @@ all original migrations through `0031_role_hostnames`, and the final revision
 check share **one transaction/connection**. The Alembic environment now supports
 this supplied transaction; ordinary Alembic/CI connection behavior is unchanged.
 
+Both phases also require an independently approved **database name and
+PostgreSQL cluster system identifier**. They compare these with the actual
+connected server before taking the database advisory lock or changing schema/accounts.
+An empty database on the wrong cluster is not authorized just because it is
+empty. Missing identity arguments, mismatches, or inability to read
+`pg_catalog.pg_control_system()` fail closed.
+
 ## Prerequisites: human approval/evidence, not defaults
 
 Retain an approved change record identifying the production server/database,
 reviewed source SHA/image, empty-install authorization and separate retirement,
 phone-continuation, recovery-export and optional Admin-hostname authorization.
+Record the intended database name, server/network identity and PostgreSQL
+cluster system identifier independently of the tool's `DATABASE_URL`.
+On an already approved operator client connection (private service/password
+configuration), the read-only evidence query is:
+
+```sh
+psql -X -v ON_ERROR_STOP=1 -c \
+  'SELECT current_database(), system_identifier, inet_server_addr(), inet_server_port() FROM pg_catalog.pg_control_system();'
+```
+
+Have the operator reconcile the result with the approved infrastructure target;
+do not automatically derive the confirmation arguments from the same connection
+being initialized. Physical replicas/clones can share a system identifier:
+it does not replace human server/network verification. The DB role needs
+preapproved permission to read `pg_control_system()` as well as historical DDL.
+If that permission is absent, stop for DBA review; the tool never grants it.
 Inventory and drain **every** application/background/import/external SQL writer.
 The marker/lock does not stop writers or close public traffic.
 
@@ -162,8 +185,12 @@ os.execvpe("/bin/bash", ["bash", "--noprofile", "--norc"], os.environ)
 Inside that supervisor, after explicitly approving the pristine-install scope:
 
 ```sh
+: "${APPROVED_DB_NAME:?Database name from independently approved target evidence}"
+: "${APPROVED_CLUSTER_ID:?PostgreSQL system identifier from independently approved target evidence}"
 sh /operator-release/scripts/initialize-api.sh \
-  prepare --approve-fresh-install --writers-stopped
+  prepare --approve-fresh-install --writers-stopped \
+  --expected-database "$APPROVED_DB_NAME" \
+  --expected-system-identifier "$APPROVED_CLUSTER_ID"
 # Expected: FRESH_INSTALL_PREPARED ... 0031_role_hostnames ... NOT READY
 /workspace/.venv/bin/python -B -m app.organization_preflight \
   --backup /restricted/operator/retirement/recovery.json
@@ -217,8 +244,13 @@ Human-approved separate operation, while the production supervisor remains open:
    sys.exit(code)
    PY
    }
+   : "${APPROVED_REHEARSAL_DB_NAME:?Independently approved isolated clone database name}"
+   : "${APPROVED_REHEARSAL_CLUSTER_ID:?Independently approved clone system identifier}"
+   test "$APPROVED_REHEARSAL_CLUSTER_ID" != "$APPROVED_CLUSTER_ID" || exit 1
    clone_run /workspace/.venv/bin/python -B -m app.fresh_install \
-     prepare --approve-fresh-install --writers-stopped
+     prepare --approve-fresh-install --writers-stopped \
+     --expected-database "$APPROVED_REHEARSAL_DB_NAME" \
+     --expected-system-identifier "$APPROVED_REHEARSAL_CLUSTER_ID"
    ```
 3. Restore business data using the real PostgreSQL client:
    ```sh
@@ -287,6 +319,8 @@ bash /operator-release/scripts/operator-retirement.sh \
 # then /portal/resolve returns 200 with role:null until a hostname is configured.
 sh /operator-release/scripts/initialize-api.sh \
   finalize --approve-bootstrap --writers-stopped \
+  --expected-database "$APPROVED_DB_NAME" \
+  --expected-system-identifier "$APPROVED_CLUSTER_ID" \
   --admin-hostname newuat.allergyevexia.in
 # Expected: FRESH_INSTALL_READY ... 0034_shared_phone_countries
 /workspace/.venv/bin/python -B -m alembic current
@@ -330,7 +364,7 @@ are part of initialization.
 
 ## Failure/recovery
 
-- Validation/pristine failure: no migrations/accounts applied. Existing/nonempty
+- Validation/target-identity/pristine failure: no migrations/accounts applied. Existing/nonempty
   databases must use the existing guarded policy/operator workflow.
 - Preparation errors before commit: the entire supplied transaction rolls back,
   including historical DDL. After connection loss/ambiguous acknowledgement,
@@ -366,3 +400,6 @@ git diff --check
 The fresh tests clear inherited credentials, run `APP_ENV=production` with
 synthetic keys, and use socket-only disposable clusters under private `/tmp`.
 They cannot fall back to the configured workspace or VPS database.
+Coverage includes missing target confirmation and mismatched database/cluster
+identities in both phases, including another pristine same-named database on
+the independent server. No migration/bootstrap function executes on a mismatch.

@@ -102,6 +102,16 @@ def configuration(settings):
         raise FreshInstallBlocked("A valid SUPER_ADMIN_INITIAL_PASSWORD is required before initialization.")
 
 
+def verify_database_target(connection, expected_database, expected_system_identifier):
+    """Bind approval to the reviewed database AND cluster, not a URL string."""
+    actual = connection.execute(text("""
+        SELECT current_database(), system_identifier
+        FROM pg_catalog.pg_control_system()
+    """)).one()
+    if actual[0] != expected_database or actual[1] != expected_system_identifier:
+        raise FreshInstallBlocked("Database/cluster identity does not match the independently approved target; zero changes applied.")
+
+
 def dedicated_database(connection):
     if connection.scalar(text("SELECT current_schema()")) != "public":
         raise FreshInstallBlocked("A dedicated pristine public-schema database is required.")
@@ -213,8 +223,14 @@ def main(argv=None):
     parser.add_argument("--approve-bootstrap", action="store_true")
     parser.add_argument("--writers-stopped", action="store_true")
     parser.add_argument("--admin-hostname", help="Explicit optional initial Admin hostname; never inferred.")
+    parser.add_argument("--expected-database", required=True,
+                        help="Database name from independently verified target evidence, not inferred from DATABASE_URL.")
+    parser.add_argument("--expected-system-identifier", required=True, type=int,
+                        help="PostgreSQL cluster system identifier from independently verified target evidence.")
     args = parser.parse_args(argv)
     try:
+        if not args.expected_database or not 0 < args.expected_system_identifier < 2**64:
+            raise FreshInstallBlocked("Explicit valid approved database/cluster identity required.")
         if not args.writers_stopped or (
             args.phase == "prepare" and (not args.approve_fresh_install or args.approve_bootstrap or args.admin_hostname)
         ) or (args.phase == "finalize" and (not args.approve_bootstrap or args.approve_fresh_install)):
@@ -235,6 +251,7 @@ def main(argv=None):
         engine = create_engine(url, hide_parameters=True)
         try:
             with engine.begin() as connection:
+                verify_database_target(connection, args.expected_database, args.expected_system_identifier)
                 connection.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": LOCK_ID})
                 if args.phase == "prepare":
                     prepare(connection)

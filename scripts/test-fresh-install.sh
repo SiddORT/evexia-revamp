@@ -3,7 +3,7 @@
 # Production-mode guard coverage, with independent pg_dump/pg_restore rehearsal.
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-for tool in initdb pg_ctl createdb pg_dump pg_restore python3; do
+for tool in initdb pg_ctl createdb dropdb pg_dump pg_restore python3; do
   command -v "$tool" >/dev/null || { echo "Missing test prerequisite: $tool" >&2; exit 1; }
 done
 PGROOT=$(mktemp -d /tmp/evexia-fresh-install.XXXXXX)
