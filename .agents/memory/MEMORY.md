@@ -66,4 +66,5 @@
 - [Operator prepared plans](operator-schema-prepared-plans.md) — pooled queries can retain predecessor result shapes across schema retirement.
 - [Generated validator literal order](codegen-literal-order.md) — fix generator initialization order without weakening API validation or changing valid contracts.
 - [Operator revision boundaries](operator-revision-boundaries.md) — head changes must preserve compatible paused maintenance without accepting arbitrary future schemas.
+- [Scoped operator approval](scoped-operator-approval.md) — recovery evidence never expands approval to a broader runner’s later migrations.
 - [Historical encryption inventories](historical-encryption-inventories.md) — new encrypted fields must not rewrite the field contracts used by historical staging and retirement.

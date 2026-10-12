@@ -7,7 +7,8 @@ pnpm --filter @workspace/evexia-portal run test:admin-session
 node --test artifacts/evexia-portal/src/config/portalHost.test.js
 node --test artifacts/evexia-portal/src/config/portalResolver.test.js
 node --test scripts/check-portal-hostname.test.mjs
-sh scripts/test-api-foundation.sh tests/test_role_urls.py
+python -B -m unittest discover -s scripts/tests -p 'test_operator_hostnames.py'
+sh scripts/test-api-foundation.sh tests/test_role_urls.py tests/test_operator_hostnames.py
 node --test artifacts/evexia-portal/src/services/phoneCountries.test.js
 sh scripts/test-api-foundation.sh tests/test_shared_phone.py tests/test_shared_phone_migration.py
 pnpm --filter @workspace/evexia-portal run test:spt-orders

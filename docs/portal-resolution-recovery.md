@@ -1,5 +1,12 @@
 # Portal resolution recovery
 
+## Hostname-only operator handoff
+
+The separately scoped procedure and its exact conditional operator sequence are
+in [hostname-only-operator.md](hostname-only-operator.md). It targets only
+`0031_role_hostnames`; it does not authorize deployment, service stops/resumption,
+organization retirement, merge, phone migration or any live execution by the agent.
+
 ## Separate environments and approval boundaries
 
 Private Replit preview access and UAT database lookup failures are independent.
