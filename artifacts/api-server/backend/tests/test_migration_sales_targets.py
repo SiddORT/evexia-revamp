@@ -26,10 +26,21 @@ def seed(db, actor_id, historical=False):
     zone = Zone(name="Migration zone", status="active", created_by=actor_id, updated_by=actor_id)
     hq = Headquarter(name="Migration HQ", state_code="MH", status="active", created_by=actor_id, updated_by=actor_id)
     db.add_all([zone, hq])
-    user = User(username="migration.mr", email=None, password_hash="not-a-login", system_role="mr")
-    db.add(user)
-    db.flush()
-    profile = MRProfile(user_id=user.id, is_active=True)
+    if historical:
+        # Revision 0022 has only plaintext identifiers; current User writes
+        # require the later account-encryption schema.
+        user_id = uuid.uuid4()
+        db.execute(text("""INSERT INTO users
+            (id,username,password_hash,is_active,token_version,system_role,
+             identity_version,is_protected_system_admin)
+            VALUES (:id,'migration.mr','not-a-login',true,0,'mr',1,false)"""),
+            {"id": user_id})
+    else:
+        user = User(username="migration.mr", email=None, password_hash="not-a-login", system_role="mr")
+        db.add(user)
+        db.flush()
+        user_id = user.id
+    profile = MRProfile(user_id=user_id, is_active=True)
     db.add(profile)
     db.flush()
     designation_id = uuid.uuid4()
@@ -67,7 +78,7 @@ def seed(db, actor_id, historical=False):
 
 
 def test_empty_migration_preserves_prior_records_rejects_rounding_and_keeps_history(migration_db):
-    engine, config, actor_id, session_id = prepare(migration_db)
+    engine, config, actor_id, session_id = prepare(migration_db, target_revision="0022_allergen_catalogue")
     command.downgrade(config, "0022_allergen_catalogue")
     with Session(engine) as db:
         mr = seed(db, actor_id, historical=True)
@@ -89,7 +100,7 @@ def test_empty_migration_preserves_prior_records_rejects_rounding_and_keeps_hist
                 with db.begin_nested():
                     db.execute(text(sql))
         sales_targets.mutate(db, actor, row["id"], SalesTargetVersion(expected_version=1), "delete")
-    with pytest.raises(RuntimeError, match="Populated directory retirement|encrypted MR country"):
+    with pytest.raises(RuntimeError, match="Ciphertext account downgrade is refused"):
         command.downgrade(config, "0022_allergen_catalogue")
     with Session(engine) as db:
         assert db.get(SalesTarget, row["id"]).deleted_by == actor_id

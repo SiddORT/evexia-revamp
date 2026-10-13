@@ -21,7 +21,7 @@ from test_migration_zones import prepare, identity
 
 
 def test_forward_empty_migration_preserves_foundations(migration_db):
-    engine, config, actor_id, session_id = prepare(migration_db)
+    engine, config, actor_id, session_id = prepare(migration_db, target_revision="0017_headquarters")
     command.downgrade(config, "0017_headquarters")
     with Session(engine) as db:
         # Seed through the historical SQL contract, not today's reduced model.
@@ -34,8 +34,12 @@ def test_forward_empty_migration_preserves_foundations(migration_db):
             '0,0,0,0,0,0,1,:actor,:actor)'), {"id": existing["id"], "actor": actor_id})
         db.add(AuditEvent(actor_id=actor_id, session_id=session_id, action="designation_create", outcome="success"))
         db.commit()
-        hq = headquarters.create(db, identity(db, actor_id, session_id), HeadquarterFields(name="Preserved HQ", status="active"))
-    command.upgrade(config, "head")
+        hq = Headquarter(name="Preserved HQ", state_code="DL", status="active",
+                         created_by=actor_id, updated_by=actor_id)
+        db.add(hq); db.commit()
+        hq = {"id": hq.id}
+    from directory_test_data import approved_historical_upgrade
+    approved_historical_upgrade(engine, config)
     with Session(engine) as db:
         assert db.get(Designation, existing["id"]).name == "Preserved"
         assert db.get(Headquarter, hq["id"]).name == "Preserved HQ"

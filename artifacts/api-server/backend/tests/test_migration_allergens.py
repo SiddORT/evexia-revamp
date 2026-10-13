@@ -36,10 +36,11 @@ def fields(c, l, name="Reagent"):
 
 
 def test_forward_empty_rollout_preserves_categories_locations_and_accounts(migration_db):
-    engine, config, actor_id, sid = prepare(migration_db)
+    engine, config, actor_id, sid = prepare(migration_db, target_revision="0021_master_permissions")
     command.downgrade(config, "0021_master_permissions")
     c, l = setup_refs(engine, actor_id)
-    command.upgrade(config, "head")
+    from directory_test_data import approved_historical_upgrade
+    approved_historical_upgrade(engine, config)
     with Session(engine) as db:
         assert db.get(User, actor_id).is_protected_system_admin and db.get(AuthSession, sid).status == "ACTIVE"
         assert db.get(ProductCategory, c).name == "Shared category" and db.get(StorageLocation, l).name == "Shared location"

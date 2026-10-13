@@ -56,7 +56,7 @@ def test_complete_evidence_preserves_every_legacy_value_and_restricts_users(migr
             event(db, role, actor, "role_permissions", updated)
         report = reconcile(db)
         assert coverage(report) == dict(roles=1, automatic_fields=2, reviewed_fields=0, unresolved_fields=0, assignment_blockers=0)
-    command.upgrade(config, "head")
+    command.upgrade(config, "0029_role_lifecycle")
     with engine.begin() as db:
         after = dict(db.execute(text("SELECT * FROM custom_roles WHERE id=:id"), dict(id=role)).mappings().one())
         assert after.pop("created_by") == actor and after.pop("updated_by") == actor
@@ -88,7 +88,7 @@ def test_unresolved_history_aborts_atomically_and_field_specific_review_repairs(
         assert report[0]["fields"]["updated_by"]["source"] == "unresolved"
         missing = {field: actor for field, entry in report[0]["fields"].items() if entry["source"] == "unresolved"}
     with pytest.raises(RuntimeError, match=str(role)):
-        command.upgrade(config, "head")
+        command.upgrade(config, "0029_role_lifecycle")
     with engine.connect() as db:
         assert dict(db.execute(text("SELECT * FROM custom_roles")).mappings().one()) == before
         assert "created_by" not in {c["name"] for c in inspect(db).get_columns("custom_roles")}
@@ -99,7 +99,7 @@ def test_unresolved_history_aborts_atomically_and_field_specific_review_repairs(
     mapping = tmp_path / "reviewed.json"
     mapping.write_text(json.dumps({str(role): {f: str(v) for f, v in missing.items()}}))
     config.cmd_opts = SimpleNamespace(x=[f"role_attribution_map={mapping}"])
-    command.upgrade(config, "head")
+    command.upgrade(config, "0029_role_lifecycle")
     with engine.connect() as db:
         after = dict(db.execute(text("SELECT * FROM custom_roles")).mappings().one())
         for field in ("created_by", "updated_by", "deleted_at", "deleted_by"):
@@ -119,7 +119,7 @@ def test_invalid_review_and_read_only_preflight(migration_db, tmp_path):
     ):
         path.write_text(json.dumps(mapping))
         with pytest.raises(AttributionError):
-            command.upgrade(config, "head")
+            command.upgrade(config, "0029_role_lifecycle")
     path.write_text('{"%s":{"created_by":"%s","created_by":"%s"}}' % (role, actor, actor))
     with pytest.raises(AttributionError):
         load_mapping(path)
@@ -179,7 +179,20 @@ def test_preflight_inventories_all_staff_states_and_bounded_authorized_reference
     assert len(page["items"][0]["assignments"]) == 2 and not page["items"][0]["has_more_assignments"]
     assert not any(word in result.stdout for word in ("private-name", "cipher", "email", "password", "phone"))
     reviewed_fixture_mapping(config, tmp_path, role, actor)
-    command.upgrade(config, "head")
+    command.upgrade(config, "0029_role_lifecycle")
     with engine.connect() as db:
         assert db.execute(text("SELECT * FROM staff_profiles ORDER BY id")).all() == staff_before
         assert db.execute(text("SELECT * FROM users ORDER BY id")).all() == users_before
+
+
+def test_populated_historical_downgrade_preserves_lifecycle_evidence(migration_db, tmp_path):
+    engine, config, actor, role, _ = historical(migration_db)
+    reviewed_fixture_mapping(config, tmp_path, role, actor)
+    command.upgrade(config, "0029_role_lifecycle")
+    with engine.connect() as db:
+        before = db.execute(text("SELECT * FROM custom_roles ORDER BY id")).all()
+    with pytest.raises(RuntimeError, match="Populated role downgrade"):
+        command.downgrade(config, "0028_staff_designation_lifecycle")
+    with engine.connect() as db:
+        assert db.execute(text("SELECT * FROM custom_roles ORDER BY id")).all() == before
+        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0029_role_lifecycle"

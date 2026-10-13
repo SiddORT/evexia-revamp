@@ -32,13 +32,13 @@ def test_migration_empty_preserves_identity_and_db_normalization(migration_db):
         with pytest.raises(IntegrityError):
             with db.begin_nested():
                 db.execute(text("INSERT INTO custom_roles(id,name,description,version,created_by,updated_by) VALUES (:id,'mixed case','',1,:actor,:actor)"), {"id": uuid.uuid4(), "actor": admin_id})
-    with pytest.raises(RuntimeError, match="Populated role downgrade"):
+    with pytest.raises(RuntimeError, match="Ciphertext account downgrade is refused"):
         command.downgrade(config, "0009_staff")
 
 
 def test_concurrent_duplicate_edits_and_deletes_commit_atomically(migration_db):
     engine, config, admin_id, session_id, _ = prepare(migration_db)
-    command.upgrade(config, "head")
+    upgrade_with_retirement_recovery(engine, config)
     def race(operation):
         barrier = Barrier(2)
         def run(index):

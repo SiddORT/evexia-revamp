@@ -16,7 +16,9 @@ from test_mrs import fields
 
 
 def historical(fixture, labels, catalogue):
-    engine, config, actor, sid = prepare(fixture)
+    engine, config, actor, sid = prepare(
+        fixture, target_revision="0027_mr_designation_identity",
+    )
     command.downgrade(config, "0026_designation_target")
     with Session(engine) as db:
         hq = Headquarter(name="Historical HQ", state_code="HH", status="active", created_by=actor, updated_by=actor)
@@ -32,12 +34,15 @@ def historical(fixture, labels, catalogue):
         db.flush()
         ids = []
         for n, label in enumerate(labels):
-            user = User(username=f"history.mr.{n}", email=None, password_hash="inert-historical-fixture",
-                        system_role="mr", is_active=n == 0)
-            db.add(user); db.flush()
-            profile = MRProfile(user_id=user.id, is_active=n == 0)
+            user_id, username = uuid.uuid4(), f"history.mr.{n}"
+            db.execute(text("""INSERT INTO users
+                (id,username,password_hash,is_active,token_version,system_role,
+                 identity_version,is_protected_system_admin)
+                VALUES (:id,:username,'inert-historical-fixture',:active,0,'mr',1,false)"""),
+                {"id": user_id, "username": username, "active": n == 0})
+            profile = MRProfile(user_id=user_id, is_active=n == 0)
             db.add(profile); db.flush()
-            values = fields(hq.id, zone.id, code=f"HIST-{n}", username=user.username)
+            values = fields(hq.id, zone.id, code=f"HIST-{n}", username=username)
             # This fixture predates persisted MR phone countries.
             values.pop("dialCountry")
             values.pop("userId"); values.pop("designation_id")

@@ -18,7 +18,7 @@ from app.services import staff
 from app.services.staff_crypto import StaffError
 from test_sessions import client
 from test_staff import BASE, BODY, admin_headers, seed_designation
-from test_migration_0006 import migration_db
+from test_migration_0006 import migration_db, upgrade_with_retirement_recovery
 from test_migration_staff import prepare, identity
 
 
@@ -104,7 +104,7 @@ def test_soft_deletion_retains_account_ciphertext_access_history_and_revokes_aut
 
 def test_concurrent_delete_preserves_first_attribution_and_single_audit(migration_db):
     engine, config, admin, sid, _ = prepare(migration_db)
-    command.upgrade(config, "head")
+    upgrade_with_retirement_recovery(engine, config)
     settings = get_settings()
     with Session(engine) as db:
         seed_designation(db, admin)

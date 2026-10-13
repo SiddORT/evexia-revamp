@@ -1,6 +1,7 @@
 """Actual migrations and separate committed-connection concurrency."""
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
+import uuid
 import pytest
 from alembic import command
 from sqlalchemy import func, select, text
@@ -13,17 +14,42 @@ from app.schemas.vendors import VendorFields, VendorStatus, VendorVersion
 from app.schemas.zones import ZoneFields
 from app.services import vendors, vendor_transfer, zones
 from test_migration_0006 import migration_db
-from test_migration_zones import prepare, identity
+from test_migration_zones import prepare, identity, historical_zone
 from test_vendors import FIELDS, HEADER
 
 
+def test_historical_international_phone_downgrade_preserves_records(migration_db):
+    engine, config, actor_id, _ = prepare(migration_db, target_revision="0025_vendor_phone")
+    from sqlalchemy import Table, MetaData
+    record_id = uuid.uuid4()
+    with engine.begin() as db:
+        historical = Table("vendors", MetaData(), autoload_with=db)
+        db.execute(historical.insert().values(
+            **VendorFields(**{**FIELDS, "vendorName": "Historical foreign vendor",
+                            "dialCountry": "BR", "phoneNo": "11961234567"}).model_dump(),
+            id=record_id, version=1, created_by=actor_id, updated_by=actor_id,
+        ))
+    with pytest.raises(RuntimeError, match="international vendor history"):
+        command.downgrade(config, "0024_opening_balances")
+    with engine.connect() as db:
+        assert db.execute(text('SELECT "dialCountry", "phoneNo" FROM vendors WHERE id=:id'),
+                          {"id": record_id}).one() == ("BR", "11961234567")
+        assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0025_vendor_phone"
+
+
 def test_international_expansion_preserves_records_and_refuses_lossy_downgrade(migration_db):
-    engine, config, actor_id, session_id = prepare(migration_db)
+    engine, config, actor_id, session_id = prepare(migration_db, target_revision="0024_opening_balances")
     command.downgrade(config, "0024_opening_balances")
     with Session(engine) as db:
-        actor = identity(db, actor_id, session_id)
-        original = vendors.create(db, actor, VendorFields(**FIELDS))
-    command.upgrade(config, "head")
+        from sqlalchemy import Table, MetaData
+        historical = Table("vendors", MetaData(), autoload_with=engine)
+        record_id = uuid.uuid4()
+        db.execute(historical.insert().values(**VendorFields(**FIELDS).model_dump(),
+            id=record_id, version=1, created_by=actor_id, updated_by=actor_id))
+        db.commit()
+        original = {"id": record_id}
+    from directory_test_data import approved_historical_upgrade
+    approved_historical_upgrade(engine, config)
     with Session(engine) as db:
         stored = db.get(Vendor, original["id"])
         assert stored.phoneNo == "9876543210" and stored.version == 1
@@ -35,18 +61,19 @@ def test_international_expansion_preserves_records_and_refuses_lossy_downgrade(m
         }))
         assert added["phoneNo"] == "11961234567"
         vendors.mutate(db, actor, added["id"], VendorVersion(expected_version=1), "delete")
-    with pytest.raises(RuntimeError, match="international vendor history"):
+    with pytest.raises(RuntimeError, match="Ciphertext account downgrade is refused"):
         command.downgrade(config, "0024_opening_balances")
     with Session(engine) as db:
         assert db.get(Vendor, added["id"]).phoneNo == "11961234567"
 
 
 def test_migration_preserves_prior_masters_accounts_and_constraints(migration_db):
-    engine, config, actor_id, session_id = prepare(migration_db)
+    engine, config, actor_id, session_id = prepare(migration_db, target_revision="0021_master_permissions")
     command.downgrade(config, "0021_master_permissions")
     with Session(engine) as db:
-        row = zones.create(db, identity(db, actor_id, session_id), ZoneFields(name="Preserved", status="active"))
-    command.upgrade(config, "head")
+        row = historical_zone(db, actor_id, session_id, "Preserved")
+    from directory_test_data import approved_historical_upgrade
+    approved_historical_upgrade(engine, config)
     with Session(engine) as db:
         assert db.get(Zone, row["id"]).name == "Preserved"
         assert db.get(User, actor_id).is_protected_system_admin
@@ -63,7 +90,7 @@ def test_migration_preserves_prior_masters_accounts_and_constraints(migration_db
                 with db.begin_nested():
                     db.execute(text(sql))
         vendors.mutate(db, actor, created["id"], VendorVersion(expected_version=1), "delete")
-    with pytest.raises(RuntimeError, match="vendor history"):
+    with pytest.raises(RuntimeError, match="Ciphertext account downgrade is refused"):
         command.downgrade(config, "0021_master_permissions")
     with Session(engine) as db:
         assert db.get(Vendor, created["id"]).deleted_by == actor_id

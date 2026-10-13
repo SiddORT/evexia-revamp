@@ -62,7 +62,7 @@ def test_forward_preserves_grants_versions_assignments_and_empty_defaults(migrat
             db.commit()
         db.rollback()
         assert db.get(CustomRole, role["id"]).permissions == sorted(MASTER_ACTIONS)
-    with pytest.raises(Exception, match="Populated role downgrade"):
+    with pytest.raises(RuntimeError, match="Ciphertext account downgrade is refused"):
         command.downgrade(config, "0020_patient_directory")
 
 

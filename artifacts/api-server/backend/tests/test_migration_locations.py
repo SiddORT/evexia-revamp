@@ -16,14 +16,14 @@ from app.schemas.locations import LocationFields, LocationStatus, LocationVersio
 from app.schemas.zones import ZoneFields
 from app.services import locations, location_transfer, zones
 from test_migration_0006 import migration_db
-from test_migration_zones import prepare, identity
+from test_migration_zones import prepare, identity, historical_zone
 
 
 def test_actual_location_migration_preserves_zone_identity_history(migration_db, tmp_path):
-    engine, config, actor_id, session_id = prepare(migration_db)
+    engine, config, actor_id, session_id = prepare(migration_db, target_revision="0011_courier_partners")
     command.downgrade(config, "0011_courier_partners")
     with Session(engine) as db:
-        zone = zones.create(db, identity(db, actor_id, session_id), ZoneFields(name="Preserved Zone", status="active"))
+        zone = historical_zone(db, actor_id, session_id, "Preserved Zone")
         role_id = uuid.uuid4()
         db.execute(text("INSERT INTO custom_roles(id,name,description,version) VALUES (:id,'Preserved Role','Existing business metadata',1)"),
                    {"id": role_id})
@@ -34,7 +34,8 @@ def test_actual_location_migration_preserves_zone_identity_history(migration_db,
         courier_id = courier.id
     from test_migration_role_lifecycle import reviewed_fixture_mapping
     reviewed_fixture_mapping(config, tmp_path, role_id, actor_id)
-    command.upgrade(config, "head")
+    from directory_test_data import approved_historical_upgrade
+    approved_historical_upgrade(engine, config)
     with Session(engine) as db:
         assert db.get(CustomRole, role_id).description == "Existing business metadata"
         assert db.get(CourierPartner, courier_id).name == "Preserved courier"

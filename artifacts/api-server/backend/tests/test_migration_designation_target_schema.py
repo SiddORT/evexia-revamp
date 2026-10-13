@@ -22,7 +22,7 @@ RETIRED = {"level", "basicDa", "hra", "medicalAllowance", "travellingAllowance",
 
 
 def test_populated_previous_schema_preservation_generated_values_and_safe_refusal(migration_db):
-    engine, config, actor_id, _ = prepare(migration_db)
+    engine, config, actor_id, _ = prepare(migration_db, target_revision="0025_vendor_phone")
     command.downgrade(config, "0025_vendor_phone")
     ids = [uuid.uuid4() for _ in range(3)]
     with Session(engine) as db:
@@ -95,7 +95,7 @@ def test_populated_previous_schema_preservation_generated_values_and_safe_refusa
     with engine.connect() as connection:
         installed_head = connection.scalar(text("SELECT version_num FROM alembic_version"))
         assert installed_head == ScriptDirectory.from_config(config).get_current_head()
-    with pytest.raises(RuntimeError, match="original labels|retirement|backup|plaintext|encrypted MR country"):
+    with pytest.raises(RuntimeError, match="Ciphertext account downgrade is refused"):
         command.downgrade(config, "0025_vendor_phone")
     with engine.connect() as connection:
         assert connection.scalar(text("SELECT version_num FROM alembic_version")) == installed_head
@@ -110,9 +110,10 @@ def test_populated_previous_schema_preservation_generated_values_and_safe_refusa
 
 
 def test_empty_downgrade_restores_contract_without_fabricating_history(migration_db):
-    engine, config, _, _ = prepare(migration_db)
+    engine, config, _, _ = prepare(migration_db, target_revision="0026_designation_target")
     command.downgrade(config, "0025_vendor_phone")
     assert RETIRED.issubset(c["name"] for c in inspect(engine).get_columns("designations"))
-    command.upgrade(config, "head")
+    from directory_test_data import approved_historical_upgrade
+    approved_historical_upgrade(engine, config)
     with Session(engine) as db:
         assert list(db.scalars(select(Designation))) == []

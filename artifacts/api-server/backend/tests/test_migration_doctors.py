@@ -31,7 +31,7 @@ def prepare(fixture):
 def test_empty_forward_migration_retains_mr_profile_and_audit(migration_db):
     from test_migration_zones import prepare as prepare_identity
     from test_migration_sales_targets import seed
-    engine, config, actor_id, sid = prepare_identity(migration_db)
+    engine, config, actor_id, sid = prepare_identity(migration_db, target_revision="0018_mr_directory")
     command.downgrade(config, "0018_mr_directory")
     with Session(engine) as db:
         mr = seed(db, actor_id, historical=True)

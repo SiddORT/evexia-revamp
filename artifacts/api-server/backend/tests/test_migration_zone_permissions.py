@@ -20,14 +20,14 @@ from app.schemas.staff import StaffAccess, StaffFields
 from app.schemas.zones import ZoneFields
 from app.services import auth, roles, staff, zones, downloads
 from app.services.zone_policy import lock_policy
-from test_migration_0006 import migration_db
+from test_migration_0006 import migration_db, upgrade_with_retirement_recovery
 from test_migration_staff import prepare, identity
 from test_staff import BODY, seed_designation
 
 
 def fixture(migration_db):
     engine, config, admin_id, session_id, _ = prepare(migration_db)
-    command.upgrade(config, "head")
+    upgrade_with_retirement_recovery(engine, config)
     settings = get_settings()
     with Session(engine, expire_on_commit=False) as db:
         seed_designation(db, admin_id)
@@ -69,7 +69,7 @@ def test_forward_existing_role_staff_defaults_preserve_identity(migration_db, tm
         seed_designation(db, admin_id, "Director")
     from test_migration_role_lifecycle import reviewed_fixture_mapping
     reviewed_fixture_mapping(config, tmp_path, role_id, admin_id)
-    command.upgrade(config, "head")
+    upgrade_with_retirement_recovery(engine, config)
     with Session(engine) as db:
         profile = db.get(StaffProfile, staff_id)
         assert profile.custom_role_id is None and profile.workspace_login_enabled is False

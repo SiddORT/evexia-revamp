@@ -27,9 +27,10 @@ from test_opening_balances import file as balance_file
 def test_populated_historical_upgrade_only_adds_nullable_metadata(migration_db):
     from test_migration_zones import prepare as prepare_identity
     from test_migration_sales_targets import seed
-    engine, config, actor, sid = prepare_identity(migration_db)
+    engine, config, actor, sid = prepare_identity(
+        migration_db, target_revision="0022_allergen_catalogue",
+    )
     # Never downgrade retired populated data to create a historical fixture.
-    command.downgrade(config, "0022_allergen_catalogue")
     with Session(engine) as db:
         mr = seed(db, actor, historical=True)
     command.upgrade(config, "0027_mr_designation_identity")

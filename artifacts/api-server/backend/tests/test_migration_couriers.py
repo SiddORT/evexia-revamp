@@ -15,14 +15,14 @@ from app.schemas.couriers import CourierFields, CourierStatus, CourierVersion
 from app.schemas.zones import ZoneFields
 from app.services import couriers, courier_transfer, zones
 from test_migration_0006 import migration_db
-from test_migration_zones import prepare, identity
+from test_migration_zones import prepare, identity, historical_zone
 
 
 def test_actual_courier_migration_preserves_zone_identity_history(migration_db, tmp_path):
-    engine, config, actor_id, session_id = prepare(migration_db)
+    engine, config, actor_id, session_id = prepare(migration_db, target_revision="0010_custom_roles")
     command.downgrade(config, "0010_custom_roles")
     with Session(engine) as db:
-        zone = zones.create(db, identity(db, actor_id, session_id), ZoneFields(name="Preserved Zone", status="active"))
+        zone = historical_zone(db, actor_id, session_id, "Preserved Zone")
         # Historical schemas predate current ORM fields; preserve the old row
         # using its actual contract before upgrading to the current model.
         role_id = uuid.uuid4()
@@ -31,7 +31,8 @@ def test_actual_courier_migration_preserves_zone_identity_history(migration_db, 
         db.commit()
     from test_migration_role_lifecycle import reviewed_fixture_mapping
     reviewed_fixture_mapping(config, tmp_path, role_id, actor_id)
-    command.upgrade(config, "head")
+    from directory_test_data import approved_historical_upgrade
+    approved_historical_upgrade(engine, config)
     with Session(engine) as db:
         assert db.get(CustomRole, role_id).description == "Existing business metadata"
         assert db.get(Zone, zone["id"]).name == "Preserved Zone"

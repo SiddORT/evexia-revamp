@@ -32,21 +32,24 @@ def setup(fixture):
 
 
 def test_empty_migration_preserves_identity_patient_and_session_history(migration_db):
-    engine, config, actor_id, session_id = prepare(migration_db)
+    engine, config, actor_id, session_id = prepare(migration_db, target_revision="0017_headquarters")
     command.downgrade(config, "0017_headquarters")
     with Session(engine) as db:
-        user = User(email="identity-only@example.com", username="identity.only", password_hash=hash_password("Synthetic previous password"),
-                    system_role="mr", identity_version=1)
-        db.add(user)
-        db.flush()
-        profile = MRProfile(user_id=user.id, is_active=True)
+        user_id = uuid.uuid4()
+        db.execute(text("""INSERT INTO users
+            (id,email,username,password_hash,is_active,token_version,system_role,
+             identity_version,is_protected_system_admin)
+            VALUES (:id,'identity-only@example.com','identity.only',:password,true,0,'mr',1,false)"""),
+            {"id": user_id, "password": hash_password("Synthetic previous password")})
+        profile = MRProfile(user_id=user_id, is_active=True)
         db.add(profile)
         db.flush()
         patient = Patient(assigned_mr_id=profile.id, is_active=True)
         db.add(patient)
         db.commit()
-        ids = user.id, profile.id, patient.id
-    command.upgrade(config, "head")
+        ids = user_id, profile.id, patient.id
+    from directory_test_data import approved_historical_upgrade
+    approved_historical_upgrade(engine, config)
     with Session(engine) as db:
         assert db.get(User, ids[0]).username == "identity.only"
         assert db.get(MRProfile, ids[1]).is_active

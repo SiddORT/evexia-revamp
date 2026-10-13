@@ -20,14 +20,14 @@ from app.services import staff
 from app.services import staff_rotation
 from app.services.staff_crypto import StaffCrypto, StaffError
 from app.services.staff_rotation import RotationError, _columns, rotate
-from test_migration_0006 import migration_db
+from test_migration_0006 import migration_db, upgrade_with_retirement_recovery
 from test_migration_staff import identity, prepare
 from test_staff import BODY, seed_designation
 
 
 def setup(migration_db):
     engine, config, admin, session, _ = prepare(migration_db)
-    command.upgrade(config, "head")
+    upgrade_with_retirement_recovery(engine, config)
     settings = get_settings().model_copy(update={
         "staff_encryption_keys": SecretStr(json.dumps({
             "primary": base64.b64encode(b"A" * 32).decode(),

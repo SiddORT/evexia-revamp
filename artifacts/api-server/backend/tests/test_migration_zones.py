@@ -12,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.bootstrap import bootstrap_super_admin
-from app.core.security import utcnow
+from app.core.security import utcnow, hash_password
 from app.db.models import AuditEvent, AuthSession, User
 from app.db.zone_models import Zone
 from app.schemas.zones import ZoneFields, ZoneStatus, ZoneVersion
@@ -21,24 +21,51 @@ from app.services import zones, zone_transfer
 from test_migration_0006 import migration_db, upgrade_with_retirement_recovery
 
 
-def prepare(fixture):
+def prepare(fixture, *, target_revision="0035_account_identifiers"):
     engine, config = fixture
     command.upgrade(config, "0009_staff")
     with Session(engine) as db:
-        actor_id = bootstrap_super_admin(db, SecretStr("Synthetic isolated zone migration password")).user_id
-        actor = db.get(User, actor_id)
+        # Freeze the historical account contract. Current bootstrap/User reads
+        # require ciphertext columns that did not exist at revision 0009.
+        actor_id = uuid.uuid4()
+        db.execute(text("SET LOCAL evexia.bootstrap_super_admin='on'"))
+        db.execute(text("""INSERT INTO users
+            (id,email,password_hash,is_active,token_version,system_role,
+             identity_version,is_protected_system_admin)
+            VALUES (:id,'crm-admin@allergyevexia.in',:password,true,0,'super_admin',0,true)"""),
+            {"id": actor_id, "password": hash_password("Synthetic isolated zone migration password")})
         session = AuthSession(user_id=actor_id, expires_at=utcnow() + timedelta(hours=1),
-                              token_version=actor.token_version, identity_version=actor.identity_version)
+                              token_version=0, identity_version=0)
         db.add(session)
         db.add(AuditEvent(actor_id=actor_id, action="before_zone_migration", outcome="success"))
         db.commit()
         session_id = session.id
-    upgrade_with_retirement_recovery(engine, config)
+    if target_revision in ("0034_shared_phone_countries", "0035_account_identifiers"):
+        upgrade_with_retirement_recovery(engine, config, target_revision=target_revision)
+    else:
+        # Only explicitly named pre-retirement boundaries are accepted here.
+        from alembic.script import ScriptDirectory
+        graph = ScriptDirectory.from_config(config)
+        allowed = {revision.revision for revision in graph.walk_revisions(
+            "0009_staff", "0029_directory_crypto_additive")}
+        if target_revision not in allowed | {"0009_staff"}:
+            raise ValueError("Unsupported historical identity target")
+        command.upgrade(config, target_revision)
     return engine, config, actor_id, session_id
 
 
 def identity(db, actor_id, session_id):
     return Identity(db.get(User, actor_id), session_id=session_id)
+
+
+def historical_zone(db, actor_id, session_id, name):
+    """Seed the original zone/audit contract without current auth queries."""
+    row = Zone(name=name, status="active", version=1, created_by=actor_id, updated_by=actor_id)
+    db.add(row); db.flush()
+    db.add(AuditEvent(actor_id=actor_id, session_id=session_id, action="zone_create",
+                      outcome="success", resource_type="zone", resource_id=str(row.id)))
+    db.commit()
+    return {"id": row.id}
 
 
 def test_migration_preserves_identity_and_enforces_constraints(migration_db):

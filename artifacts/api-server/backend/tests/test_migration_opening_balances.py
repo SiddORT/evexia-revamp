@@ -32,7 +32,7 @@ def prepare(fixture):
 def test_empty_forward_migration_preserves_doctors_identity_and_audit(migration_db):
     from test_migration_zones import prepare as prepare_identity
     from test_migration_sales_targets import seed
-    engine, config, actor_id, sid = prepare_identity(migration_db)
+    engine, config, actor_id, sid = prepare_identity(migration_db, target_revision="0023_sales_targets")
     command.downgrade(config, "0023_sales_targets")
     # Seed through the historical table contract, not the current ORM: newer
     # nullable deletion metadata does not exist at this migration point.
