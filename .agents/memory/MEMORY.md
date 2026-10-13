@@ -69,4 +69,5 @@
 - [Operator revision boundaries](operator-revision-boundaries.md) — head changes must preserve compatible paused maintenance without accepting arbitrary future schemas.
 - [Scoped operator approval](scoped-operator-approval.md) — recovery evidence never expands approval to a broader runner’s later migrations.
 - [Account encryption boundary](account-encryption-boundary.md) — ciphertext-only users/history are coupled; bulk identifier writes must fail explicitly and old account decryption keys remain needed.
+- [Password recovery rollout](password-recovery-rollout.md) — use the selected SMTP server; Git push permission does not implicitly authorize production activation.
 - [Historical encryption inventories](historical-encryption-inventories.md) — new encrypted fields must not rewrite the field contracts used by historical staging and retirement.

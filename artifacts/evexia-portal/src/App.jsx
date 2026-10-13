@@ -1,10 +1,11 @@
-import { Route, Switch } from 'wouter';
+import { Route, Switch, useLocation } from 'wouter';
 import AdminBoundary from './auth/AdminBoundary.jsx';
 import PortalHostBoundary from './components/PortalHostBoundary.jsx';
 import RouteLoadingBoundary, { lazyRoute } from './components/RouteLoadingBoundary.jsx';
 import { roleConfig } from './config/roles.js';
 import PortalSelection from './pages/PortalSelection.jsx';
 import AuthPage from './pages/AuthPage.jsx';
+const PasswordRecoveryPage = lazyRoute(() => import('./pages/PasswordRecoveryPage.jsx'));
 import MRHome from './pages/MRHome.jsx';
 import NotFound from './pages/NotFound.jsx';
 import Dashboard from './pages/admin/Dashboard.jsx';
@@ -55,6 +56,12 @@ const ActivityLogs = lazyRoute(() => import('./pages/admin/ActivityLogs.jsx'));
 const DownloadLogs = lazyRoute(() => import('./pages/admin/DownloadLogs.jsx'));
 
 function App() {
+  const [path] = useLocation();
+  // Recovery never grants access; it must not depend on a signed-in session or
+  // portal-host lookup. The backend authenticates the purpose-bound token.
+  if (path === '/forgot-password' || path === '/reset-password') {
+    return <RouteLoadingBoundary><PasswordRecoveryPage key={path} reset={path === '/reset-password'} /></RouteLoadingBoundary>;
+  }
   return (
     <PortalHostBoundary><AdminBoundary><RouteLoadingBoundary><Switch>
       <Route path="/" component={PortalSelection} />

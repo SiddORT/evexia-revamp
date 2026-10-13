@@ -54,7 +54,11 @@ export default function LoginForm({ role }) {
   }
 
   function handleForgot() {
-    setMessage('Password recovery is not connected in this preview. Please contact your EVEXIA administrator.');
+    if (role.short === 'ADMIN' || role.short === 'MR') {
+      navigate(`/forgot-password?portal=${role.short === 'MR' ? 'mr' : 'admin'}`);
+    } else {
+      setMessage('This preview portal has no connected account. Contact your EVEXIA administrator.');
+    }
   }
 
   return (

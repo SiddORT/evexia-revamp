@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -11,8 +11,49 @@ from app.schemas.auth import ChangePasswordRequest, CurrentUser, LoginRequest, T
 from app.repositories import sessions as repository
 from app.services import auth as service
 from app.services.auth import Identity
+from app.services import password_recovery, recovery_mail
+from app.schemas.auth import RecoveryRequest, RecoveryResponse, ResetPasswordRequest, ResetPasswordResponse
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
+
+
+@router.post("/forgot-password", status_code=202, response_model=RecoveryResponse,
+             dependencies=[Depends(require_cookie_origin)])
+def forgot_password(body: RecoveryRequest, request: Request, response: Response,
+                    tasks: BackgroundTasks, db: Session = Depends(get_db),
+                    settings: Settings = Depends(get_settings)):
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        recovery_mail.validate_configuration(settings)
+    except recovery_mail.RecoveryUnavailable:
+        raise HTTPException(503, "Password recovery is unavailable. Contact your administrator.") from None
+    ip = request.client.host if request.client else "unknown"
+    ip_allowed = password_recovery.rate_limit(db, settings, "request-ip", [ip], 30)
+    identifier_allowed = password_recovery.rate_limit(
+        db, settings, "request-identifier", [body.identifier], 5)
+    if ip_allowed and identifier_allowed:
+        tasks.add_task(password_recovery.deliver, db.get_bind(), settings,
+                       body.identifier, body.identity_kind)
+    return {"message": password_recovery.MESSAGE}
+
+
+@router.post("/reset-password", response_model=ResetPasswordResponse,
+             dependencies=[Depends(require_cookie_origin)])
+def reset_password(body: ResetPasswordRequest, request: Request, response: Response,
+                   db: Session = Depends(get_db), settings: Settings = Depends(get_settings)):
+    response.headers["Cache-Control"] = "no-store"
+    ip = request.client.host if request.client else "unknown"
+    if not password_recovery.rate_limit(db, settings, "reset-ip", [ip], 30):
+        raise HTTPException(429, "Too many attempts. Try again later.")
+    try:
+        kind = password_recovery.reset(db, settings, body.token, body.new_password,
+                                       request.state.request_id)
+    except service.AuthError as error:
+        db.rollback()
+        raise HTTPException(400, str(error) or password_recovery.INVALID) from None
+    clear_refresh_cookie(response, settings)
+    return {"message": "Password reset. Sign in with your new password.",
+            "identity_kind": kind}
 
 
 def set_refresh_cookie(response: Response, token: str, settings: Settings,

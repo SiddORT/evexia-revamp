@@ -4756,6 +4756,27 @@ export interface ProvisionMRRequest {
   username?: string | null;
 }
 
+export type RecoveryRequestIdentityKind =
+  (typeof RecoveryRequestIdentityKind)[keyof typeof RecoveryRequestIdentityKind];
+
+export const RecoveryRequestIdentityKind = {
+  admin: "admin",
+  mr: "mr",
+} as const;
+
+export interface RecoveryRequest {
+  /**
+   * @minLength 3
+   * @maxLength 320
+   */
+  identifier: string;
+  identity_kind?: RecoveryRequestIdentityKind;
+}
+
+export interface RecoveryResponse {
+  message: string;
+}
+
 export interface ReportExport {
   columns: string[];
   limit: number;
@@ -4804,6 +4825,32 @@ export interface ReportSummary {
   current_session: ReportSession;
   refreshed_at: string;
   total_users: number;
+}
+
+export interface ResetPasswordRequest {
+  /**
+   * @minLength 12
+   * @maxLength 128
+   */
+  new_password: string;
+  /**
+   * @minLength 1
+   * @maxLength 2048
+   */
+  token: string;
+}
+
+export type ResetPasswordResponseIdentityKind =
+  (typeof ResetPasswordResponseIdentityKind)[keyof typeof ResetPasswordResponseIdentityKind];
+
+export const ResetPasswordResponseIdentityKind = {
+  admin: "admin",
+  mr: "mr",
+} as const;
+
+export interface ResetPasswordResponse {
+  identity_kind: ResetPasswordResponseIdentityKind;
+  message: string;
 }
 
 export interface RoleEdit {

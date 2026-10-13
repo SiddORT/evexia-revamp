@@ -27,6 +27,12 @@ function publish(next) {
 export const getSession = () => state;
 export const subscribeSession = (listener) => { listeners.add(listener); return () => listeners.delete(listener); };
 
+export function forgetSessionAfterPasswordReset() {
+  restorationAllowed = false;
+  clear('Your password was reset. Please sign in again.');
+  channel?.postMessage({ type: 'identity-changed' });
+}
+
 function clear(message = '') {
   generation += 1;
   serverInitiations.clear();

@@ -3,7 +3,7 @@
   "prepare_target": "0031_role_hostnames",
   "policy_sha256": "b00afb18e2b9f191ccb022cf59699aeee3e2eac2f8cab1ebe5415043ca56abbd",
   "guard_sources": {
-    "app/core/config.py": "5716f497dd9cdc3f76d345496407ef488ca4467ca6f2dacf8ef9149f5fdfa9b6",
+    "app/core/config.py": "39d83a4a50a127d0013b291314ba01f25da25215012c18483cb8fcde8316f5b4",
     "app/services/directory_crypto.py": "cf302f2f244653a3a445d7f8684e80035c76c4b05ac43b605601f40586f1521b",
     "app/services/directory_inventory.py": "69d456e55cc5b202d79a94ecbc849bad1690e72dff4c80d263962072cb1f3f62",
     "app/services/directory_staging.py": "ea3c67715559b39990bbeac077f6319db18a3fc49bb2800c504a71ed13f93c48",

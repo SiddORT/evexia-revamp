@@ -211,9 +211,13 @@ import type {
   ProductCategoryStatus,
   ProductCategoryVersion,
   ProvisionMRRequest,
+  RecoveryRequest,
+  RecoveryResponse,
   ReplaceFileParams,
   ReportExport,
   ReportSummary,
+  ResetPasswordRequest,
+  ResetPasswordResponse,
   ResolvePortalHostnameParams,
   ReviewAllergenImportBody,
   ReviewAllergenImportParams,
@@ -19325,6 +19329,130 @@ export const useChangePassword = <
   return useMutation(getChangePasswordMutationOptions(options));
 };
 
+export const getForgotPasswordApiV1AuthForgotPasswordPostUrl = () => {
+  return `/api/v1/auth/forgot-password`;
+};
+
+/**
+ * @summary Forgot Password
+ */
+export const forgotPasswordApiV1AuthForgotPasswordPost = async (
+  recoveryRequest: RecoveryRequest,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<RecoveryResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<RecoveryResponse>(
+    getForgotPasswordApiV1AuthForgotPasswordPostUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(recoveryRequest),
+    },
+  );
+};
+
+export const getForgotPasswordApiV1AuthForgotPasswordPostMutationKey = () =>
+  ["forgotPasswordApiV1AuthForgotPasswordPost"] as const;
+
+export const getForgotPasswordApiV1AuthForgotPasswordPostMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof forgotPasswordApiV1AuthForgotPasswordPost>>,
+    TError,
+    ForgotPasswordApiV1AuthForgotPasswordPostMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof forgotPasswordApiV1AuthForgotPasswordPost>>,
+  TError,
+  ForgotPasswordApiV1AuthForgotPasswordPostMutationVariables,
+  TContext
+> => {
+  const mutationKey = getForgotPasswordApiV1AuthForgotPasswordPostMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof forgotPasswordApiV1AuthForgotPasswordPost>>,
+    ForgotPasswordApiV1AuthForgotPasswordPostMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return forgotPasswordApiV1AuthForgotPasswordPost(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ForgotPasswordApiV1AuthForgotPasswordPostMutationResult =
+  NonNullable<
+    Awaited<ReturnType<typeof forgotPasswordApiV1AuthForgotPasswordPost>>
+  >;
+export type ForgotPasswordApiV1AuthForgotPasswordPostMutationBody =
+  BodyType<RecoveryRequest>;
+export type ForgotPasswordApiV1AuthForgotPasswordPostMutationError =
+  ErrorType<ErrorEnvelope>;
+export type ForgotPasswordApiV1AuthForgotPasswordPostMutationVariables = {
+  data: BodyType<RecoveryRequest>;
+};
+
+/**
+ * @summary Forgot Password
+ */
+export const useForgotPasswordApiV1AuthForgotPasswordPost = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof forgotPasswordApiV1AuthForgotPasswordPost>>,
+    TError,
+    ForgotPasswordApiV1AuthForgotPasswordPostMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof forgotPasswordApiV1AuthForgotPasswordPost>>,
+  TError,
+  ForgotPasswordApiV1AuthForgotPasswordPostMutationVariables,
+  TContext
+> => {
+  return useMutation(
+    getForgotPasswordApiV1AuthForgotPasswordPostMutationOptions(options),
+  );
+};
+
 export const getLoginUrl = () => {
   return `/api/v1/auth/login`;
 };
@@ -19760,6 +19888,129 @@ export const useRegister = <
   TContext
 > => {
   return useMutation(getRegisterMutationOptions(options));
+};
+
+export const getResetPasswordApiV1AuthResetPasswordPostUrl = () => {
+  return `/api/v1/auth/reset-password`;
+};
+
+/**
+ * @summary Reset Password
+ */
+export const resetPasswordApiV1AuthResetPasswordPost = async (
+  resetPasswordRequest: ResetPasswordRequest,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ResetPasswordResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ResetPasswordResponse>(
+    getResetPasswordApiV1AuthResetPasswordPostUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(resetPasswordRequest),
+    },
+  );
+};
+
+export const getResetPasswordApiV1AuthResetPasswordPostMutationKey = () =>
+  ["resetPasswordApiV1AuthResetPasswordPost"] as const;
+
+export const getResetPasswordApiV1AuthResetPasswordPostMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resetPasswordApiV1AuthResetPasswordPost>>,
+    TError,
+    ResetPasswordApiV1AuthResetPasswordPostMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resetPasswordApiV1AuthResetPasswordPost>>,
+  TError,
+  ResetPasswordApiV1AuthResetPasswordPostMutationVariables,
+  TContext
+> => {
+  const mutationKey = getResetPasswordApiV1AuthResetPasswordPostMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resetPasswordApiV1AuthResetPasswordPost>>,
+    ResetPasswordApiV1AuthResetPasswordPostMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return resetPasswordApiV1AuthResetPasswordPost(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResetPasswordApiV1AuthResetPasswordPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resetPasswordApiV1AuthResetPasswordPost>>
+>;
+export type ResetPasswordApiV1AuthResetPasswordPostMutationBody =
+  BodyType<ResetPasswordRequest>;
+export type ResetPasswordApiV1AuthResetPasswordPostMutationError =
+  ErrorType<ErrorEnvelope>;
+export type ResetPasswordApiV1AuthResetPasswordPostMutationVariables = {
+  data: BodyType<ResetPasswordRequest>;
+};
+
+/**
+ * @summary Reset Password
+ */
+export const useResetPasswordApiV1AuthResetPasswordPost = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resetPasswordApiV1AuthResetPasswordPost>>,
+    TError,
+    ResetPasswordApiV1AuthResetPasswordPostMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof resetPasswordApiV1AuthResetPasswordPost>>,
+  TError,
+  ResetPasswordApiV1AuthResetPasswordPostMutationVariables,
+  TContext
+> => {
+  return useMutation(
+    getResetPasswordApiV1AuthResetPasswordPostMutationOptions(options),
+  );
 };
 
 export const getGetCurrentSessionUrl = () => {

@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     directory_index_key: SecretStr | None = None
     cors_origins: str = ""
     allow_public_registration: bool = False
+    # Optional until recovery is enabled. Never infer the link origin from Host.
+    password_recovery_url: str | None = None
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: SecretStr | None = None
+    smtp_from: str | None = None
+    smtp_implicit_tls: bool = False
     s3_bucket: str | None = None
     s3_endpoint_url: str | None = None
     s3_region: str | None = None

@@ -1069,10 +1069,15 @@ export const setZoneStatusResponseNameMax = 200;
 export const changePasswordBodyCurrentPasswordMax = 128;
 export const changePasswordBodyNewPasswordMin = 12;
 export const changePasswordBodyNewPasswordMax = 128;
+export const forgotPasswordApiV1AuthForgotPasswordPostBodyIdentifierMin = 3;
+export const forgotPasswordApiV1AuthForgotPasswordPostBodyIdentifierMax = 320;
 export const loginBodyIdentifierMin = 3;
 export const loginBodyIdentifierMax = 320;
 export const loginBodyPasswordMax = 128;
 export const loginBodyRememberMeDefault = false;
+export const resetPasswordApiV1AuthResetPasswordPostBodyNewPasswordMin = 12;
+export const resetPasswordApiV1AuthResetPasswordPostBodyNewPasswordMax = 128;
+export const resetPasswordApiV1AuthResetPasswordPostBodyTokenMax = 2048;
 export const listOwnSessionsQueryLimitDefault = 20;
 export const listOwnSessionsQueryLimitMax = 100;
 export const listOwnSessionsQueryOffsetDefault = 0;
@@ -21482,6 +21487,26 @@ export const ChangePasswordBody = zod.object({
 export const ChangePasswordResponse = zod.void();
 
 /**
+ * @summary Forgot Password
+ */
+
+export const forgotPasswordApiV1AuthForgotPasswordPostBodyIdentityKindDefault = `admin`;
+
+export const ForgotPasswordApiV1AuthForgotPasswordPostBody = zod.object({
+  identifier: zod
+    .string()
+    .min(forgotPasswordApiV1AuthForgotPasswordPostBodyIdentifierMin)
+    .max(forgotPasswordApiV1AuthForgotPasswordPostBodyIdentifierMax),
+  identity_kind: zod
+    .enum(["admin", "mr"])
+    .default(forgotPasswordApiV1AuthForgotPasswordPostBodyIdentityKindDefault),
+});
+
+export const ForgotPasswordApiV1AuthForgotPasswordPostResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
  * @summary Login
  */
 
@@ -21554,6 +21579,26 @@ export const RefreshResponse = zod.object({
  * @summary Register
  */
 export const RegisterResponse = zod.void();
+
+/**
+ * @summary Reset Password
+ */
+
+export const ResetPasswordApiV1AuthResetPasswordPostBody = zod.object({
+  new_password: zod
+    .string()
+    .min(resetPasswordApiV1AuthResetPasswordPostBodyNewPasswordMin)
+    .max(resetPasswordApiV1AuthResetPasswordPostBodyNewPasswordMax),
+  token: zod
+    .string()
+    .min(1)
+    .max(resetPasswordApiV1AuthResetPasswordPostBodyTokenMax),
+});
+
+export const ResetPasswordApiV1AuthResetPasswordPostResponse = zod.object({
+  identity_kind: zod.enum(["admin", "mr"]),
+  message: zod.string(),
+});
 
 /**
  * @summary Current Session

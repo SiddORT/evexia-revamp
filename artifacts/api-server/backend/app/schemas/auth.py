@@ -30,6 +30,30 @@ class ChangePasswordRequest(StrictModel):
     new_password: str = Field(min_length=12, max_length=128)
 
 
+class RecoveryRequest(StrictModel):
+    identifier: str = Field(min_length=3, max_length=320)
+    identity_kind: Literal["admin", "mr"] = "admin"
+
+    @field_validator("identifier")
+    @classmethod
+    def normalized_identifier(cls, value: str) -> str:
+        return LoginRequest.normalized_identifier(value)
+
+
+class ResetPasswordRequest(StrictModel):
+    token: str = Field(min_length=1, max_length=2048)
+    new_password: str = Field(min_length=12, max_length=128)
+
+
+class RecoveryResponse(BaseModel):
+    message: str
+
+
+class ResetPasswordResponse(BaseModel):
+    message: str
+    identity_kind: Literal["admin", "mr"]
+
+
 class CurrentUser(BaseModel):
     id: uuid.UUID
     email: EmailStr | None
