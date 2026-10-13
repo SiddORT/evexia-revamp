@@ -114,6 +114,19 @@ assigned). A legacy membership label contributes nothing to eligibility.
 
 ## External recovery and retention gates
 
+### Recovery-test target versus backup predecessor
+
+Recovery files identify the preparation predecessor `0031_role_hostnames`.
+That sibling revision is **not** the retirement rollback target: a downgrade
+from the current merged head to it leaves organization retirement applied.
+The isolated restoration/protection tests instead target
+`0030_directory_crypto_retirement`, crossing the actual
+`0031_remove_organizations` downgrade while keeping directory encryption
+retirement applied. They assert the graph includes that restoration step.
+This distinction does not change recovery-file compatibility, migration guards,
+or production approval requirements; it is not an instruction to run a
+production downgrade.
+
 For a deliberately reset, dedicated **empty** production database, use the
 staged [fresh-install procedure](fresh-install.md). It replays reviewed history
 only through `0031_role_hostnames`, then requires this same external recovery,

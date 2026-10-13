@@ -21,6 +21,38 @@ from app.services import auth
 from app.services import organization_retirement as retirement
 
 
+# PREVIOUS is the recovery-file/preparation revision, not a rollback target.
+# Its sibling retirement branch survives a downgrade to 0031_role_hostnames.
+# Cross the actual retirement boundary without reversing directory encryption.
+RESTORE_TARGET = "0030_directory_crypto_retirement"
+RETIREMENT_REVISION = "0031_remove_organizations"
+
+
+def restore_retirement(config):
+    scripts = ScriptDirectory.from_config(config)
+    steps = scripts._downgrade_revs(RESTORE_TARGET, scripts.get_current_head())
+    revisions = [step.revision.revision for step in steps]
+    assert scripts.get_revision(RETIREMENT_REVISION).down_revision == RESTORE_TARGET
+    assert RETIREMENT_REVISION in revisions
+    assert RESTORE_TARGET not in revisions
+    command.downgrade(config, RESTORE_TARGET)
+
+
+def test_restoration_target_crosses_retirement_not_the_sibling():
+    root = Path(__file__).resolve().parents[1]
+    config = Config(str(root / "alembic.ini"))
+    config.set_main_option("script_location", str(root / "alembic"))
+    scripts = ScriptDirectory.from_config(config)
+    head = scripts.get_current_head()
+    sibling_steps = scripts._downgrade_revs(retirement.PREVIOUS, head)
+    assert RETIREMENT_REVISION not in [step.revision.revision for step in sibling_steps]
+    restore_steps = scripts._downgrade_revs(RESTORE_TARGET, head)
+    assert [step.revision.revision for step in restore_steps] == [
+        "0034_shared_phone_countries", "0033_merge_directory_branches",
+        RETIREMENT_REVISION, "0031_role_hostnames",
+    ]
+
+
 @pytest.fixture
 def retired_db(monkeypatch):
     url = make_url(os.environ["TEST_DATABASE_URL"])
@@ -120,8 +152,9 @@ def test_fresh_upgrade_downgrade_reupgrade_and_head_schema(retired_db, tmp_path)
         assert set(inspector.get_table_names()) - {"alembic_version", "directory_crypto_stage"} == set(Base.metadata.tables)
         for name, model in Base.metadata.tables.items():
             assert {c["name"] for c in inspector.get_columns(name)} == set(model.c.keys())
-    command.downgrade(config, retirement.PREVIOUS)
+    restore_retirement(config)
     with engine.connect() as db:
+        assert db.scalar(sa.text("SELECT version_num FROM alembic_version")) == RESTORE_TARGET
         assert retirement.catalog(db) == []
     command.upgrade(config, "head")
 
@@ -152,8 +185,9 @@ def test_populated_upgrade_exact_recovery_and_security_markers(retired_db, tmp_p
         with pytest.raises(auth.AuthError) as failure:
             auth.rotate_refresh(db, "synthetic-legacy-refresh", get_settings(), "retired-check")
         assert not isinstance(failure.value, auth.SessionReplaced)
-    command.downgrade(config, retirement.PREVIOUS)
+    restore_retirement(config)
     with engine.connect() as db:
+        assert db.scalar(sa.text("SELECT version_num FROM alembic_version")) == RESTORE_TARGET
         assert retirement.snapshot(db) == source
         assert retirement.catalog(db) == []
         assert db.scalar(sa.text("SELECT count(*) FROM audit_events WHERE reason='legacy_scope_retired'")) == 2
@@ -233,7 +267,7 @@ def test_populated_downgrade_refuses_unsafe_recovery(retired_db, tmp_path, probl
             db.execute(sa.text(sql), ids)
     before = retained(engine)
     with pytest.raises(retirement.RetirementBlocked):
-        command.downgrade(config, retirement.PREVIOUS)
+        restore_retirement(config)
     assert retained(engine) == before
     with engine.connect() as db:
         assert not set(retirement.TABLES) & set(sa.inspect(db).get_table_names())
@@ -331,7 +365,7 @@ def test_no_retained_rows_cannot_prove_organization_only_recovery_is_empty(retir
     command.upgrade(config, "head")
     config.cmd_opts = SimpleNamespace(x=[])
     with pytest.raises(retirement.RetirementBlocked):
-        command.downgrade(config, retirement.PREVIOUS)
+        restore_retirement(config)
     with engine.connect() as db:
         assert db.scalar(sa.text("SELECT version_num FROM alembic_version")) == ScriptDirectory.from_config(config).get_current_head()
         assert "organizations" not in sa.inspect(db).get_table_names()
