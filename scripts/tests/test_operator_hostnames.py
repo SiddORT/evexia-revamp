@@ -48,10 +48,37 @@ class FixedScopeTests(unittest.TestCase):
                                     backup="private-backup", recovery_evidence="private-evidence")
 
     def test_full_policy_is_still_blocked_but_scoped_validation_is_additive_only(self):
-        protected = scope.verify_scope(self.runner, [scope.PREDECESSOR])
+        with self.reviewed_snapshot():
+            protected = scope.verify_scope(self.runner, [scope.PREDECESSOR])
         self.assertEqual(protected, ["0031_remove_organizations", "0034_shared_phone_countries"])
         self.assertEqual(scope.migration_command()[-2:], ["upgrade", "0031_role_hostnames"])
         self.assertNotIn("head", scope.migration_command())
+
+    @contextmanager
+    def reviewed_snapshot(self):
+        """Historical unit fixture only; never approve the live post-review head."""
+        graph = self.runner.load_graph(scope.BACKEND / "alembic/versions")
+        policy = self.runner.load_policy(scope.ROOT / "scripts/migration-policy.json")
+        retained, pending = set(), [scope.REVIEWED_HEAD]
+        while pending:
+            revision = pending.pop()
+            if revision not in retained:
+                retained.add(revision)
+                pending.extend(graph[revision].down_revision + graph[revision].depends_on)
+        with patch.object(self.runner, "load_graph",
+                          return_value={key: graph[key] for key in retained}), \
+                patch.object(self.runner, "load_policy",
+                             return_value={key: policy[key] for key in retained}), \
+                patch.object(self.runner, "literal_assignments",
+                             return_value={"SCHEMA_REVISION": scope.REVIEWED_HEAD}):
+            yield
+
+    def test_actual_current_release_requires_new_operator_review(self):
+        current = self.runner.literal_assignments(
+            scope.BACKEND / "app/core/schema.py", {"SCHEMA_REVISION"})["SCHEMA_REVISION"]
+        self.assertNotEqual(current, scope.REVIEWED_HEAD)
+        with self.assertRaisesRegex(recovery.ScopeError, "CHANGED_RELEASE_REQUIRES_NEW_OPERATOR_REVIEW"):
+            scope.verify_scope(self.runner, [scope.PREDECESSOR])
 
     def test_all_other_revisions_multiple_heads_and_replays_are_rejected(self):
         for current in ([], [scope.TARGET], ["0031_remove_organizations"],
@@ -61,20 +88,21 @@ class FixedScopeTests(unittest.TestCase):
                 scope.verify_scope(self.runner, current)
 
     def test_dependency_or_policy_changes_never_enable_a_later_migration(self):
-        graph = self.runner.load_graph(scope.BACKEND / "alembic/versions")
-        policy = self.runner.load_policy(scope.ROOT / "scripts/migration-policy.json")
-        original = graph[scope.TARGET]
-        for node in (
-            self.runner.Revision(scope.TARGET, ("0031_remove_organizations",)),
-            self.runner.Revision(scope.TARGET, (scope.PREDECESSOR,), ("0034_shared_phone_countries",)),
-        ):
-            altered = {**graph, scope.TARGET: node}
-            with patch.object(self.runner, "load_graph", return_value=altered):
-                with self.assertRaises(Exception):
+        with self.reviewed_snapshot():
+            graph = self.runner.load_graph(scope.BACKEND / "alembic/versions")
+            policy = self.runner.load_policy(scope.ROOT / "scripts/migration-policy.json")
+            original = graph[scope.TARGET]
+            for node in (
+                self.runner.Revision(scope.TARGET, ("0031_remove_organizations",)),
+                self.runner.Revision(scope.TARGET, (scope.PREDECESSOR,), ("0034_shared_phone_countries",)),
+            ):
+                altered = {**graph, scope.TARGET: node}
+                with patch.object(self.runner, "load_graph", return_value=altered):
+                    with self.assertRaises(Exception):
+                        scope.verify_scope(self.runner, [scope.PREDECESSOR])
+            with patch.object(self.runner, "load_policy", return_value={**policy, scope.TARGET: "operator_only"}):
+                with self.assertRaises(recovery.ScopeError):
                     scope.verify_scope(self.runner, [scope.PREDECESSOR])
-        with patch.object(self.runner, "load_policy", return_value={**policy, scope.TARGET: "operator_only"}):
-            with self.assertRaises(recovery.ScopeError):
-                scope.verify_scope(self.runner, [scope.PREDECESSOR])
         self.assertEqual(graph[scope.TARGET], original)
 
     def test_cli_has_no_target_head_retirement_or_shortcut_arguments(self):

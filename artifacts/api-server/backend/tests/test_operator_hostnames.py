@@ -60,8 +60,27 @@ def projection(db, schema):
         "ORDER BY table_name,ordinal_position"
     ), {"schema": schema}).all()
 
+@pytest.fixture
+def reviewed_runner(monkeypatch):
+    """Frozen reviewed release metadata; real migrations still run on private PG."""
+    runner = scope.runner_module()
+    graph = runner.load_graph(scope.BACKEND / "alembic/versions")
+    policy = runner.load_policy(scope.ROOT / "scripts/migration-policy.json")
+    retained, pending = set(), [scope.REVIEWED_HEAD]
+    while pending:
+        revision = pending.pop()
+        if revision not in retained:
+            retained.add(revision)
+            pending.extend(graph[revision].down_revision + graph[revision].depends_on)
+    monkeypatch.setattr(runner, "load_graph", lambda _: {key: graph[key] for key in retained})
+    monkeypatch.setattr(runner, "load_policy", lambda _: {key: policy[key] for key in retained})
+    monkeypatch.setattr(runner, "literal_assignments",
+                        lambda *_: {"SCHEMA_REVISION": scope.REVIEWED_HEAD})
+    monkeypatch.setattr(scope, "runner_module", lambda: runner)
+    return runner
 
-def test_real_scoped_upgrade_changes_only_hostname_schema(predecessor):
+
+def test_real_scoped_upgrade_changes_only_hostname_schema(predecessor, reviewed_runner):
     engine, schema = predecessor
     runner = scope.runner_module()
     @contextmanager
@@ -98,7 +117,7 @@ def test_real_scoped_upgrade_changes_only_hostname_schema(predecessor):
     "0031_role_hostnames", "0031_remove_organizations", "0033_merge_directory_branches",
     "0034_shared_phone_countries", "unknown_future",
 ])
-def test_real_inspection_rejects_later_or_inconsistent_revision_without_migration(predecessor, revision):
+def test_real_inspection_rejects_later_or_inconsistent_revision_without_migration(predecessor, reviewed_runner, revision):
     engine, _ = predecessor
     with engine.begin() as db:
         db.execute(sa.text("UPDATE alembic_version SET version_num=:revision"), {"revision": revision})
@@ -108,11 +127,19 @@ def test_real_inspection_rejects_later_or_inconsistent_revision_without_migratio
         run.assert_not_called()
 
 
-def test_conflicting_hostname_relation_stops_before_migration(predecessor):
+def test_conflicting_hostname_relation_stops_before_migration(predecessor, reviewed_runner):
     engine, schema = predecessor
     with engine.begin() as db:
         db.execute(sa.text('CREATE TABLE role_hostnames(id integer)'))
     with engine.connect() as db, patch.object(scope.subprocess, "run") as run:
         with pytest.raises(scope.ScopeError, match="HOSTNAME_RELATION"):
+            scope.inspect_database(db, scope.runner_module(), "a" * 40)
+        run.assert_not_called()
+
+
+def test_current_unreviewed_release_is_rejected_before_migration(predecessor):
+    engine, _ = predecessor
+    with engine.connect() as db, patch.object(scope.subprocess, "run") as run:
+        with pytest.raises(scope.ScopeError, match="CHANGED_RELEASE_REQUIRES_NEW_OPERATOR_REVIEW"):
             scope.inspect_database(db, scope.runner_module(), "a" * 40)
         run.assert_not_called()

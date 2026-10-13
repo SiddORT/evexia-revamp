@@ -31,6 +31,20 @@ path, and independently restored connections must retain that schema selection.
 Current authentication must be exercised on a separately upgraded restored copy
 when a historical recovery suite must remain at a reversible predecessor.
 
+Migration-test helpers must stop at the revision whose behavior the test is
+exercising, rather than silently advancing every historical fixture to the
+current application head. Operator-scope success tests need the original
+reviewed graph; separately assert that the real newer release is rejected.
+
+**Why:** Later identifier-encryption guards can correctly reject synthetic
+historical identifiers before an earlier phone or recovery test reaches its
+assertions. An unchanged operator review must also reject a newer application
+revision, even if a legacy test previously expected success.
+
+**How to apply:** Use explicit historical targets and isolated historical
+metadata fixtures. Do not weaken migration validation or expand production
+operator review boundaries to make old tests pass.
+
 **Why:** Falling back to public can select a current encryption anchor/table
 instead of the intended historical schema and make a rehearsal appear valid.
 

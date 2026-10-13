@@ -5,6 +5,7 @@ set -eu
 [ "${1:-}" != "--" ] || shift
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+node --test "$ROOT/scripts/test-auth-preview-bootstrap.mjs"
 if [ "${EVEXIA_ROLES_LAYOUT_ONLY:-}" = "1" ]; then
   if [ "$#" -ne 1 ] || [ "$1" != "artifacts/evexia-portal/tests/roles-permissions.preview.spec.mjs" ]; then
     echo "EVEXIA_ROLES_LAYOUT_ONLY is diagnostic-only and requires the single Roles and Permissions spec." >&2
@@ -92,15 +93,51 @@ export CORS_ORIGINS=
 export SCANNER_BACKEND=unavailable
 export STORAGE_BACKEND=local
 export LOCAL_STORAGE_ROOT="$PGROOT/storage"
-export PYTHONPATH="$ROOT/artifacts/api-server/backend"
+export PYTHONPATH="$ROOT/artifacts/api-server/backend${PYTHONPATH:+:$PYTHONPATH}"
+# A preview must never inherit an operator's live email-delivery configuration.
+export PASSWORD_RECOVERY_URL= SMTP_HOST= SMTP_USERNAME= SMTP_PASSWORD= SMTP_FROM=
+export SMTP_PORT=587 SMTP_IMPLICIT_TLS=false
 
 export EVEXIA_TEST_ADMIN_PASSWORD="$SUPER_ADMIN_INITIAL_PASSWORD"
 export EVEXIA_ISOLATED_AUTH_PREVIEW=1
 export EVEXIA_PREVIEW_BASE_URL="http://127.0.0.1:$PORT"
 export EVEXIA_TEST_API_PROXY_TARGET="http://127.0.0.1:$API_PORT"
 
-sh "$ROOT/scripts/initialize-api.sh"
 cd "$ROOT/artifacts/api-server/backend"
+# Production initialization deliberately requires operator evidence. This is a
+# newly created private test database, not a production/operator invocation.
+python3 -B - "$PGROOT/socket" <<'PY_PREVIEW_INITIALIZE'
+import os
+import sys
+from pathlib import Path
+from alembic import command
+from alembic.config import Config
+from alembic.script import ScriptDirectory
+from sqlalchemy import create_engine, inspect
+from sqlalchemy.engine import make_url
+from app.core.schema import SCHEMA_REVISION
+
+url = make_url(os.environ["DATABASE_URL"])
+socket = Path(sys.argv[1])
+if (os.environ.get("APP_ENV") != "test"
+        or url.drivername != "postgresql+psycopg"
+        or url.database != "evexia_auth_preview_test"
+        or url.host not in (None, "")
+        or url.query.get("host") != str(socket)
+        or not str(socket).startswith("/tmp/evexia-auth-preview.")
+        or not socket.is_dir()
+        or socket.is_symlink()):
+    raise RuntimeError("Preview initialization requires its private socket-only fixture.")
+config = Config("alembic.ini")
+if ScriptDirectory.from_config(config).get_heads() != [SCHEMA_REVISION]:
+    raise RuntimeError("Preview application revision must match the single repository head.")
+with create_engine(url, hide_parameters=True).connect() as connection:
+    if inspect(connection).get_table_names():
+        raise RuntimeError("Preview initialization requires a newly created empty database.")
+# Exact application revision; no stamp, recovery/approval arguments or bypasses.
+command.upgrade(config, SCHEMA_REVISION)
+PY_PREVIEW_INITIALIZE
+python3 -B -m app.bootstrap
 python3 -m uvicorn app.main:app --host 127.0.0.1 --port "$API_PORT" --no-access-log \
   >"$PGROOT/api.log" 2>&1 &
 API_PID=$!
