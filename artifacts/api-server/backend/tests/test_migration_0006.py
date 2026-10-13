@@ -47,13 +47,18 @@ def migration_db(monkeypatch):
         admin_engine.dispose()
 
 
-def upgrade_with_retirement_recovery(engine, config):
+def upgrade_with_retirement_recovery(engine, config, *, target_revision="0035_account_identifiers"):
     """Historical round-trips need original empty-scope recovery too.
 
     This helper is confined to the already-isolated migration fixture. It
     captures the predecessor's complete recovery evidence rather than weakening
     the current migration's mandatory downgrade gate.
+
+    Current-model consumers retain the account-encryption target by default.
+    Historical phone tests can explicitly stop at their reviewed boundary.
     """
+    if target_revision not in ("0034_shared_phone_countries", "0035_account_identifiers"):
+        raise ValueError("Unsupported historical recovery target")
     from types import SimpleNamespace
     from app.services import organization_retirement as retirement
     command.upgrade(config, retirement.PREVIOUS)
@@ -68,6 +73,8 @@ def upgrade_with_retirement_recovery(engine, config):
         f"organization_restore_verified={sha}", "organization_retention_resolved=yes",
     ])
     command.upgrade(config, "0034_shared_phone_countries")
+    if target_revision == "0034_shared_phone_countries":
+        return
     # This shared helper exercises the full current release only with genuine
     # isolated dump/restore evidence for the separate account migration.
     from account_migration_fixture import rehearsed_account_approval

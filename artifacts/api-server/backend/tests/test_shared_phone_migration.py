@@ -18,9 +18,14 @@ def test_historical_encrypted_mr_backfill_preserves_ciphertext_and_tombstones(mi
         with engine.connect() as connection:
             before = connection.execute(text('SELECT id, name_ciphertext, phone_ciphertext, deleted_at, version FROM mr_directory ORDER BY id')).all()
         from test_migration_0006 import upgrade_with_retirement_recovery
-        upgrade_with_retirement_recovery(engine, config)
+        # This fixture deliberately retains historical account identifiers.
+        # Exercise the phone backfill, not the later account reconciliation.
+        upgrade_with_retirement_recovery(
+            engine, config, target_revision="0034_shared_phone_countries",
+        )
         crypto = DirectoryCrypto(Settings())
         with engine.connect() as connection:
+            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0034_shared_phone_countries"
             after = connection.execute(text('SELECT id, name_ciphertext, phone_ciphertext, deleted_at, version FROM mr_directory ORDER BY id')).all()
             regions = connection.execute(text('SELECT id, "dialCountry_ciphertext" FROM mr_directory')).all()
             assert not connection.scalar(text("SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema=current_schema() AND table_name='mr_directory' AND column_name='dialCountry')"))
