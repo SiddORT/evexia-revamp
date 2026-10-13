@@ -41,7 +41,8 @@ def provision_mr(
     username = username.strip().lower() if username else None
     if username and not re.fullmatch(r"[a-z][a-z0-9._-]{2,31}", username):
         raise DomainError("Invalid username")
-    if db.scalar(select(User.id).where(User.email == email)):
+    from app.services.account_crypto import lookup
+    if db.scalar(select(User.id).where(lookup(db, email))):
         raise DomainError("Account already exists", 409)
     try:
         user = User(

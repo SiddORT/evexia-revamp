@@ -178,11 +178,13 @@ def resolve_manager(db, value, batch):
             choices.add(record_id)
     query = select(MRDirectory.id).join(MRProfile, MRProfile.id == MRDirectory.id).join(User, User.id == MRProfile.user_id).where(MRDirectory.deleted_at.is_(None))
     if prefix == "user":
-        query = query.where(func.lower(User.username) == term)
+        from app.services.account_crypto import index
+        query = query.where(User.username_index == index(db, term))
     elif prefix == "employee":
         query = query.where(func.lower(MRDirectory.employeeCode) == term)
     else:
-        query = query.where(or_(func.lower(User.username) == term, func.lower(MRDirectory.employeeCode) == term,
+        from app.services.account_crypto import index
+        query = query.where(or_(User.username_index == index(db, term), func.lower(MRDirectory.employeeCode) == term,
                                MRDirectory.name_index == mrs.encrypted.crypto().mr_name_index(
                                    db.scalar(select(func.lower(term))))))
         try:

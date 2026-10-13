@@ -36,7 +36,8 @@ def main() -> None:
             parser.error("Passwords must match and be 12 to 128 characters")
 
     with session_factory()() as db:
-        user = db.scalar(select(User).where(User.email == email).with_for_update())
+        from app.services.account_crypto import index
+        user = db.scalar(select(User).where(User.email_index == index(db, email)).with_for_update())
         if user is None:
             if not args.create:
                 parser.error("Account does not exist; use --create to provision it")

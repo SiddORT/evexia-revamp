@@ -105,8 +105,11 @@ try:
     graph = runner.load_graph(backend / "alembic/versions")
     policy = runner.load_policy(Path(root) / "scripts/migration-policy.json")
     target = runner.literal_assignments(backend / "app/core/schema.py", {"SCHEMA_REVISION"})["SCHEMA_REVISION"]
-    if target != "0034_shared_phone_countries":
+    if target not in ("0034_shared_phone_countries", "0035_account_identifiers"):
         raise runner.PolicyError("OPERATOR_WORKFLOW_REQUIRES_REVIEW_FOR_CHANGED_RELEASE")
+    # Retirement approval remains bounded to its original phone continuation.
+    # Account encryption requires its own gate, never these recovery arguments.
+    target = "0034_shared_phone_countries"
     with runner.production_connection(backend) as connection:
         current = runner.applied_revisions(connection)
         runner.plan(graph, policy, current, target)
@@ -144,7 +147,7 @@ try:
             upgrade("0034_shared_phone_countries")
             if runner.applied_revisions(connection) != [target]:
                 raise runner.PolicyError("OPERATOR_FINAL_REVISION_MISMATCH")
-            print("Operator migration continuation complete. Verify encryption readiness before starting matching application.")
+            print("Operator retirement continuation complete at 0034. Account encryption requires separate approval or proven-empty fresh finalization before release readiness.")
 except Exception:
     # Never expose restricted recovery content or raw database exception text.
     print("OPERATOR_ROLLOUT_FAILED: keep writers stopped; use restricted evidence and reviewed recovery.", file=sys.stderr)

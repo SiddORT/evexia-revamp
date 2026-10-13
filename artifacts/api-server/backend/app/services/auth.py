@@ -134,6 +134,8 @@ def register(*_args, **_kwargs):
 
 
 def _load_identity(db: Session, user: User, lock: bool = False) -> Identity:
+    from app.services.account_crypto import ready
+    ready(db)
     if not user.is_active:
         raise AuthError()
     if (user.system_role == "super_admin") != user.is_protected_system_admin:
@@ -197,7 +199,8 @@ def login(db: Session, identifier: str, password: str, settings: Settings,
     identifier = identifier.lower()
     identifier_key, identifier_blocked = limit_state(db, settings, "login-identifier", identifier, 5)
     ip_key, ip_blocked = limit_state(db, settings, "login-ip", ip, 30)
-    user = db.scalar(select(User).where(or_(func.lower(User.email) == identifier, func.lower(User.username) == identifier)))
+    from app.services.account_crypto import lookup
+    user = db.scalar(select(User).where(lookup(db, identifier)))
     valid = verify_password(password, user.password_hash) if user else verify_password(
         password, _DUMMY_HASH,
     )

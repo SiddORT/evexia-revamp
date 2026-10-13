@@ -7,6 +7,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from contextlib import contextmanager
+from types import SimpleNamespace
 import sqlalchemy as sa
 from alembic import command
 from alembic.config import Config
@@ -26,11 +28,12 @@ from app.services import organization_retirement as retirement
 # Cross the actual retirement boundary without reversing directory encryption.
 RESTORE_TARGET = "0030_directory_crypto_retirement"
 RETIREMENT_REVISION = "0031_remove_organizations"
+RETIREMENT_RELEASE = "0034_shared_phone_countries"
 
 
 def restore_retirement(config):
     scripts = ScriptDirectory.from_config(config)
-    steps = scripts._downgrade_revs(RESTORE_TARGET, scripts.get_current_head())
+    steps = scripts._downgrade_revs(RESTORE_TARGET, RETIREMENT_RELEASE)
     revisions = [step.revision.revision for step in steps]
     assert scripts.get_revision(RETIREMENT_REVISION).down_revision == RESTORE_TARGET
     assert RETIREMENT_REVISION in revisions
@@ -43,7 +46,9 @@ def test_restoration_target_crosses_retirement_not_the_sibling():
     config = Config(str(root / "alembic.ini"))
     config.set_main_option("script_location", str(root / "alembic"))
     scripts = ScriptDirectory.from_config(config)
-    head = scripts.get_current_head()
+    # This suite verifies retirement recovery, not a later irreversible
+    # account-encryption release with its own backup/approval requirements.
+    head = RETIREMENT_RELEASE
     sibling_steps = scripts._downgrade_revs(retirement.PREVIOUS, head)
     assert RETIREMENT_REVISION not in [step.revision.revision for step in sibling_steps]
     restore_steps = scripts._downgrade_revs(RESTORE_TARGET, head)
@@ -86,7 +91,7 @@ def seed(engine):
         db.execute(sa.text("""
           INSERT INTO users(id,email,password_hash,is_active,token_version,system_role,
             identity_version,is_protected_system_admin)
-          VALUES (:user,'retired@example.test','synthetic-unusable-hash',true,0,NULL,0,false)
+          VALUES (:user,'retired@example.com','synthetic-unusable-hash',true,0,NULL,0,false)
         """), ids)
         db.execute(sa.text("INSERT INTO organizations(id,name) VALUES (:org,'Synthetic legacy')"), ids)
         db.execute(sa.text("""
@@ -142,21 +147,54 @@ def test_fresh_upgrade_downgrade_reupgrade_and_head_schema(retired_db, tmp_path)
         assert report["unexpected_dependencies"] == []
         assert report["counts"]["organizations"] == 0
     backup(engine, config, tmp_path)
-    command.upgrade(config, "head")
+    command.upgrade(config, RETIREMENT_RELEASE)
     with engine.connect() as db:
         inspector = sa.inspect(db)
         assert not set(retirement.TABLES) & set(inspector.get_table_names())
         for table in ("refresh_sessions", "audit_events"):
             assert "organization_id" not in {c["name"] for c in inspector.get_columns(table)}
         # The pre-existing crypto phase registry is migration-only infrastructure.
-        assert set(inspector.get_table_names()) - {"alembic_version", "directory_crypto_stage"} == set(Base.metadata.tables)
-        for name, model in Base.metadata.tables.items():
-            assert {c["name"] for c in inspector.get_columns(name)} == set(model.c.keys())
+        expected_models = set(Base.metadata.tables) - {"account_crypto_state"}
+        assert set(inspector.get_table_names()) - {"alembic_version", "directory_crypto_stage"} == expected_models
+        for name in expected_models:
+            columns = set(Base.metadata.tables[name].c.keys())
+            if name == "users":
+                columns -= {"email_index", "username_index"}
+            if name == "account_identifier_reservations":
+                columns = {"identifier", "user_id"}
+            assert {c["name"] for c in inspector.get_columns(name)} == columns
     restore_retirement(config)
     with engine.connect() as db:
         assert db.scalar(sa.text("SELECT version_num FROM alembic_version")) == RESTORE_TARGET
         assert retirement.catalog(db) == []
-    command.upgrade(config, "head")
+    command.upgrade(config, RETIREMENT_RELEASE)
+
+
+@contextmanager
+def current_auth_copy(engine, config):
+    """Current auth runs only on a genuinely restored, separately upgraded copy.
+
+    Leave the source at the historical retirement release so its independent
+    restoration/downgrade protections are still actually exercised.
+    """
+    from account_migration_fixture import rehearsed_account_approval
+    from unittest.mock import patch
+    with rehearsed_account_approval(engine, expose_restore=True) as (arguments, restored):
+        cloned = Config(config.config_file_name)
+        cloned.set_main_option("sqlalchemy.url", restored.url.render_as_string(hide_password=False).replace("%", "%%"))
+        arguments = [value for value in arguments if not value.startswith("account_expected_database=")]
+        arguments.append("account_expected_database=" + restored.url.database)
+        cloned.cmd_opts = SimpleNamespace(x=arguments)
+        # env.py intentionally takes DATABASE_URL from Settings rather than
+        # sqlalchemy.url; bind both to the restored copy, never the source.
+        with patch.dict(os.environ, {"DATABASE_URL": restored.url.render_as_string(hide_password=False)}):
+            get_settings.cache_clear()
+            try:
+                command.upgrade(cloned, "0035_account_identifiers")
+                with Session(restored) as db:
+                    yield db
+            finally:
+                get_settings.cache_clear()
 
 
 def test_populated_upgrade_exact_recovery_and_security_markers(retired_db, tmp_path):
@@ -168,33 +206,36 @@ def test_populated_upgrade_exact_recovery_and_security_markers(retired_db, tmp_p
         assert report["counts"]["organizations"] == report["counts"]["memberships"] == 1
         assert report["counts"]["dangling_audit_correlations"] == 1
         assert report["eligibility_counts"] == {"unmapped": 1}
-        assert "password_hash" not in str(report) and "example.test" not in str(report)
+        assert "password_hash" not in str(report) and "example.com" not in str(report)
         source = retirement.snapshot(db)
     path, sha = backup(engine, config, tmp_path)
     assert stat_private(path)
     assert "token_hash" not in path.read_text() and "password_hash" not in path.read_text()
-    command.upgrade(config, "head")
+    command.upgrade(config, RETIREMENT_RELEASE)
     after = retained(engine)
     for table in ("users", "auth_sessions", "refresh_sessions"):
         assert before[table] == after[table]
     assert all(row in after["audit_events"] for row in before["audit_events"])
     assert len(after["audit_events"]) == len(before["audit_events"]) + 1
-    with Session(engine) as db:
+    with current_auth_copy(engine, config) as db:
         # Previously scope-invalid credentials remain rejected even for an
         # otherwise eligible account, and cannot be called "session replaced".
         with pytest.raises(auth.AuthError) as failure:
             auth.rotate_refresh(db, "synthetic-legacy-refresh", get_settings(), "retired-check")
         assert not isinstance(failure.value, auth.SessionReplaced)
+        # Rejection is independently attributable on the upgraded copy;
+        # do not invent that event on the historical recovery source.
+        assert db.scalar(sa.text("SELECT count(*) FROM audit_events WHERE reason='legacy_scope_retired'")) == 2
     restore_retirement(config)
     with engine.connect() as db:
         assert db.scalar(sa.text("SELECT version_num FROM alembic_version")) == RESTORE_TARGET
         assert retirement.snapshot(db) == source
         assert retirement.catalog(db) == []
-        assert db.scalar(sa.text("SELECT count(*) FROM audit_events WHERE reason='legacy_scope_retired'")) == 2
-    command.upgrade(config, "head")
+        assert db.scalar(sa.text("SELECT count(*) FROM audit_events WHERE reason='legacy_scope_retired'")) == 1
+    command.upgrade(config, RETIREMENT_RELEASE)
     with engine.connect() as db:
-        # Migration marker does not duplicate on re-upgrade; rejected attempts
-        # remain separately attributable audit events.
+        # Migration marker does not duplicate on re-upgrade. Rejected attempts
+        # were independently verified on the upgraded restored copy above.
         assert db.scalar(sa.text("""
           SELECT count(*) FROM audit_events WHERE resource_type='refresh_credential'
             AND resource_id=:id AND reason='legacy_scope_retired'
@@ -242,7 +283,7 @@ def test_upgrade_blocks_and_rolls_back_everything(retired_db, tmp_path, problem)
             db.execute(sa.text(sql))
     before = retained(engine)
     with pytest.raises(retirement.RetirementBlocked):
-        command.upgrade(config, "head")
+        command.upgrade(config, RETIREMENT_RELEASE)
     assert retained(engine) == before
     with engine.connect() as db:
         assert db.scalar(sa.text("SELECT version_num FROM alembic_version")) == retirement.PREVIOUS
@@ -254,7 +295,7 @@ def test_populated_downgrade_refuses_unsafe_recovery(retired_db, tmp_path, probl
     engine, config = retired_db
     ids = seed(engine)
     backup(engine, config, tmp_path)
-    command.upgrade(config, "head")
+    command.upgrade(config, RETIREMENT_RELEASE)
     if problem == "missing":
         config.cmd_opts.x = []
     else:
@@ -271,7 +312,7 @@ def test_populated_downgrade_refuses_unsafe_recovery(retired_db, tmp_path, probl
     assert retained(engine) == before
     with engine.connect() as db:
         assert not set(retirement.TABLES) & set(sa.inspect(db).get_table_names())
-        assert db.scalar(sa.text("SELECT version_num FROM alembic_version")) == ScriptDirectory.from_config(config).get_current_head()
+        assert db.scalar(sa.text("SELECT version_num FROM alembic_version")) == RETIREMENT_RELEASE
 
 
 def test_ddl_failure_is_atomic(retired_db, tmp_path, monkeypatch):
@@ -289,7 +330,7 @@ def test_ddl_failure_is_atomic(retired_db, tmp_path, monkeypatch):
 
     monkeypatch.setattr(Operations, "drop_table", fail_second_drop)
     with pytest.raises(RuntimeError, match="synthetic injected"):
-        command.upgrade(config, "head")
+        command.upgrade(config, RETIREMENT_RELEASE)
     assert retained(engine) == before
     with engine.connect() as db:
         assert retirement.catalog(db) == []
@@ -309,8 +350,8 @@ def test_scope_rejection_suppresses_false_replacement_for_eligible_mr(retired_db
           VALUES (:id,:user,:session,'session_revoked','new_login','success')
         """), {**ids, "id": uuid.uuid4()})
     backup(engine, config, tmp_path)
-    command.upgrade(config, "head")
-    with Session(engine) as db:
+    command.upgrade(config, RETIREMENT_RELEASE)
+    with current_auth_copy(engine, config) as db:
         with pytest.raises(auth.AuthError) as failure:
             auth.rotate_refresh(db, "synthetic-legacy-refresh", get_settings(), "retired-check")
         assert not isinstance(failure.value, auth.SessionReplaced)
@@ -333,7 +374,7 @@ def test_writer_lock_contention_blocks_without_changes(retired_db):
     with engine.connect() as writer, writer.begin():
         writer.execute(sa.text("LOCK TABLE organizations IN ROW EXCLUSIVE MODE"))
         with pytest.raises(sa.exc.DBAPIError) as failure:
-            command.upgrade(config, "head")
+            command.upgrade(config, RETIREMENT_RELEASE)
         assert failure.value.orig.sqlstate == "55P03"
     with engine.connect() as db:
         assert db.scalar(sa.text("SELECT version_num FROM alembic_version")) == retirement.PREVIOUS
@@ -362,10 +403,10 @@ def test_no_retained_rows_cannot_prove_organization_only_recovery_is_empty(retir
         db.execute(sa.text("INSERT INTO organizations (id,name) VALUES (:id,'Synthetic scope')"),
                    {"id": uuid.uuid4()})
     backup(engine, config, tmp_path)
-    command.upgrade(config, "head")
+    command.upgrade(config, RETIREMENT_RELEASE)
     config.cmd_opts = SimpleNamespace(x=[])
     with pytest.raises(retirement.RetirementBlocked):
         restore_retirement(config)
     with engine.connect() as db:
-        assert db.scalar(sa.text("SELECT version_num FROM alembic_version")) == ScriptDirectory.from_config(config).get_current_head()
+        assert db.scalar(sa.text("SELECT version_num FROM alembic_version")) == RETIREMENT_RELEASE
         assert "organizations" not in sa.inspect(db).get_table_names()

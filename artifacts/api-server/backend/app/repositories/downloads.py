@@ -2,6 +2,7 @@ from sqlalchemy import String, and_, case, column, func, literal, or_, select, v
 from app.db.download_models import DownloadLog as D
 from app.db.models import User
 from app.repositories.reporting import public_user, user_columns
+from app.services.account_crypto import matching_user_ids
 from app.services.downloads import MODULES, BROWSER, SERVER, label
 
 
@@ -39,7 +40,7 @@ def listing(db, limit, offset, user_id, start, end, q, format):
     if format:
         query = query.where(D.format == format)
     if q:
-        actors = select(User.id).where(func.coalesce(User.username, User.email).icontains(q, autoescape=True))
+        actors = matching_user_ids(db, q, label_only=True)
         query = query.where(or_(
             alias_search(download_labels(), D.source + literal("/") + D.kind, "Download", q, "report_aliases"),
             alias_search(MODULES, D.source, "System", q, "module_aliases"),

@@ -28,6 +28,8 @@ def readiness(db: Session = Depends(get_db)):
             raise RuntimeError("Coordinated schema release required")
         from app.services.directory_runtime import ready
         ready(db)
+        from app.services.account_crypto import ready as accounts_ready
+        accounts_ready(db)
         db.execute(text(
             "SELECT username, system_role, identity_version, is_protected_system_admin FROM users LIMIT 0"
         ))

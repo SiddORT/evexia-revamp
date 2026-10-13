@@ -1,0 +1,142 @@
+"""Real PostgreSQL ciphertext, lookup and immutable-history verification."""
+import uuid
+import pytest
+import sqlalchemy as sa
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+
+from app.core.config import get_settings
+from app.core.security import hash_password
+from app.db.models import User, MRProfile
+from app.db.mr_models import AccountIdentifierReservation
+from app.services import account_crypto as encrypted
+from app.services import auth
+
+
+@pytest.fixture
+def db():
+    engine = sa.create_engine(get_settings().database_url, hide_parameters=True)
+    with engine.begin() as connection:
+        connection.execute(sa.text("TRUNCATE users CASCADE"))
+    with Session(engine, expire_on_commit=False) as session:
+        yield session
+        session.rollback()
+    with engine.begin() as connection:
+        connection.execute(sa.text("TRUNCATE users CASCADE"))
+    engine.dispose()
+
+
+def account(db, email="Case.Person@example.test", username="case.person", password="synthetic-password-123"):
+    user = User(email=email, username=username, system_role="mr",
+                password_hash=hash_password(password), is_active=True)
+    db.add(user)
+    db.flush()
+    db.add(MRProfile(user_id=user.id, is_active=True))
+    db.commit()
+    return user
+
+
+def test_randomized_authenticated_ciphertext():
+    current = encrypted.crypto()
+    owner = uuid.uuid4()
+    a = current.encrypt(owner, "email", "Alice@example.test")
+    b = current.encrypt(owner, "email", "Alice@example.test")
+    assert a != b and "Alice" not in a
+    assert current.decrypt(owner, "email", a) == "Alice@example.test"
+    for record, field, value in [(uuid.uuid4(), "email", a), (owner, "username", a),
+                                  (owner, "email", a[:-3] + "bad")]:
+        with pytest.raises(encrypted.AccountCryptoError):
+            current.decrypt(record, field, value)
+    with pytest.raises(encrypted.AccountCryptoError):
+        encrypted.read(owner, "email", a, None)
+
+
+def test_users_and_history_have_no_plaintext_copies(db):
+    user = account(db)
+    row = db.execute(sa.text("SELECT * FROM users WHERE id=:id"), {"id": user.id}).mappings().one()
+    assert row["email"].startswith("v1:") and row["username"].startswith("v1:")
+    assert user.email == "Case.Person@example.test" and user.username == "case.person"
+    assert encrypted.read(user.id, "email", row["email"], row["email_index"]) == user.email
+    assert row["email_index"] == encrypted.index(db, user.email.lower())
+    assert db.scalar(sa.select(User.id).where(encrypted.lookup(db, "CASE.PERSON"))) == user.id
+    assert db.scalar(sa.select(User.id).where(encrypted.lookup(db, user.email.lower()))) == user.id
+    history = db.execute(sa.text("SELECT * FROM account_identifier_reservations")).mappings().all()
+    assert len(history) == 2
+    assert all(item["identifier"].startswith("v1:") for item in history)
+    assert {record.identifier for record in db.scalars(sa.select(AccountIdentifierReservation))} == {
+        user.email, user.username,
+    }
+    assert not any(name.endswith(("_plaintext", "_encrypted"))
+                   for name in sa.inspect(db.get_bind()).get_columns("users") for name in [name["name"]])
+
+
+@pytest.mark.parametrize("email,username", [
+    ("CASE.PERSON@example.test", "different"),
+    ("different@example.test", "CASE.PERSON"),
+    ("case.person", "different"),
+    ("different@example.test", "case.person@example.test"),
+])
+def test_normalized_cross_column_uniqueness(db, email, username):
+    account(db)
+    with pytest.raises(IntegrityError):
+        account(db, email, username)
+    db.rollback()
+
+
+def test_identifier_edits_preserve_historical_reservations(db):
+    user = account(db)
+    user.username = "changed.person"
+    db.commit()
+    assert db.scalar(sa.select(User.id).where(encrypted.lookup(db, "case.person"))) is None
+    assert db.scalar(sa.select(User.id).where(encrypted.lookup(db, "changed.person"))) == user.id
+    with pytest.raises(IntegrityError):
+        account(db, "other@example.test", "case.person")
+    db.rollback()
+    assert db.get(AccountIdentifierReservation, encrypted.index(db, "case.person")).user_id == user.id
+
+
+def test_email_and_username_login_keep_password_and_refresh_behavior(db):
+    user = account(db)
+    stored_hash = user.password_hash
+    settings = get_settings()
+    for identifier in ("CASE.PERSON", "CASE.PERSON@EXAMPLE.TEST"):
+        identity, refresh = auth.login(db, identifier, "synthetic-password-123", settings,
+                                      False, "synthetic-request", "127.0.0.1")
+        assert identity.user.id == user.id
+        renewed, replacement = auth.rotate_refresh(db, refresh, settings, "synthetic-renewal")
+        assert renewed.user.id == user.id and replacement != refresh
+    assert db.get(User, user.id).password_hash == stored_hash
+
+
+def test_wrong_index_key_and_bad_ciphertext_fail_closed(db, monkeypatch):
+    user = account(db)
+    monkeypatch.setenv("DIRECTORY_INDEX_KEY", "RkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkY=")
+    get_settings.cache_clear()
+    with pytest.raises(encrypted.AccountCryptoError):
+        encrypted.lookup(db, user.username)
+    get_settings.cache_clear()
+
+
+def test_no_raw_user_identifier_predicate_in_login(db):
+    account(db)
+    statements = []
+    def capture(conn, cursor, statement, parameters, context, executemany):
+        statements.append(statement)
+    sa.event.listen(db.get_bind(), "before_cursor_execute", capture)
+    try:
+        auth.login(db, "case.person", "synthetic-password-123", get_settings(),
+                   False, "synthetic-request", "127.0.0.1")
+    finally:
+        sa.event.remove(db.get_bind(), "before_cursor_execute", capture)
+    assert any("users.email_index" in statement and "users.username_index" in statement for statement in statements)
+    assert not any("lower(users.email)" in statement or "lower(users.username)" in statement for statement in statements)
+
+
+def test_bulk_plaintext_writes_are_rejected_not_silently_discarded(db):
+    with pytest.raises(encrypted.AccountCryptoError, match="Bulk plaintext"):
+        db.execute(sa.insert(User), [{
+            "id": uuid.uuid4(), "email": "bulk@example.test", "username": "bulk.person",
+            "password_hash": "inert", "is_active": True,
+        }])
+    db.rollback()
+    assert db.scalar(sa.select(sa.func.count(User.id))) == 0

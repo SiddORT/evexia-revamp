@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, func
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 from app.db.models import Timestamps
@@ -43,5 +43,17 @@ install(MRDirectory)
 
 class AccountIdentifierReservation(Base):
     __tablename__ = "account_identifier_reservations"
-    identifier: Mapped[str] = mapped_column(String(320), primary_key=True)
+    __table_args__ = (
+        CheckConstraint("field IN ('email','username')", name="ck_account_reservation_field"),
+        CheckConstraint("identifier LIKE 'v1:%' AND identifier_index ~ '^[0-9a-f]{64}$'",
+                        name="ck_account_reservation_encrypted"),
+    )
+    identifier_index: Mapped[str] = mapped_column(String(64), primary_key=True)
+    identifier_ciphertext: Mapped[str] = mapped_column("identifier", Text, nullable=False)
+    field: Mapped[str] = mapped_column(String(8), nullable=False)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+
+    @property
+    def identifier(self):
+        from app.services.account_crypto import read
+        return read(self.user_id, self.field, self.identifier_ciphertext, self.identifier_index)

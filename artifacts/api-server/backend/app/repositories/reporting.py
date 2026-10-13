@@ -6,6 +6,7 @@ from app.db.staff_models import StaffProfile
 from app.db.role_models import CustomRole
 from app.repositories.report_labels import BROWSER_ACTIONS, RESOURCE_NAMES
 from app.repositories.sessions import revocation_reason_projection
+from app.services.account_crypto import read, matching_user_ids
 from sqlalchemy import String, and_, case, cast, exists, func, literal, or_, select, union
 
 
@@ -23,7 +24,7 @@ def eligible():
     return and_(User.is_active.is_(True), or_(
         and_(User.system_role == "super_admin", User.is_protected_system_admin.is_(True)),
         and_(User.system_role == "mr", User.is_protected_system_admin.is_(False), mr),
-        and_(User.system_role.is_(None), User.email.is_(None), User.username.is_not(None),
+        and_(User.system_role.is_(None), User.email_index.is_(None), User.username_index.is_not(None),
              User.is_protected_system_admin.is_(False), staff),
     ))
 
@@ -39,7 +40,10 @@ def valid_session(now):
 def user_columns():
     return [
         User.id.label("user_id"),
-        func.coalesce(User.username, User.email).label("label"),
+        User.username_ciphertext.label("user_username_ciphertext"),
+        User.email_ciphertext.label("user_email_ciphertext"),
+        User.username_index.label("user_username_index"),
+        User.email_index.label("user_email_index"),
         User.system_role.label("role"),
         case(
             (User.is_active.is_(False), "disabled"),
@@ -53,7 +57,9 @@ def public_user(row):
     if row["user_id"] is None:
         return None
     # Identity text is rendered only as text, never as markup.
-    return dict(id=row["user_id"], label=row["label"], role=row["role"],
+    username = read(row["user_id"], "username", row["user_username_ciphertext"], row["user_username_index"])
+    email = read(row["user_id"], "email", row["user_email_ciphertext"], row["user_email_index"])
+    return dict(id=row["user_id"], label=username or email, role=row["role"],
                 account_state=row["account_state"])
 
 
@@ -104,9 +110,7 @@ def bounded_page(db, query, limit, offset, convert):
 def users(db, limit, offset, q):
     query = select(*user_columns()).select_from(User)
     if q:
-        query = query.where(or_(
-            User.username.icontains(q, autoescape=True), User.email.icontains(q, autoescape=True),
-        ))
+        query = query.where(User.id.in_(matching_user_ids(db, q)))
     return bounded_page(db, query.order_by(User.created_at.desc(), User.id.desc()),
                         limit, offset, public_user)
 
@@ -126,8 +130,7 @@ def sessions(db, now, current_id, limit, offset, user_id, start, end, q="", stat
                      user_id, start, end).order_by(AuthSession.id.desc())
     if q:
         query = query.where(or_(
-            User.username.icontains(q, autoescape=True),
-            User.email.icontains(q, autoescape=True),
+            User.id.in_(matching_user_ids(db, q)),
             and_(AuthSession.id.op("~")(r"^[A-Za-z0-9_-]{1,64}$"),
                  AuthSession.id.icontains(q, autoescape=True)),
         ))
@@ -183,17 +186,15 @@ def event_text_fields():
         case(RESOURCE_NAMES, value=resource, else_=resource),
         case((reason == "browser_reported", "Browser-reported"), else_="Server-recorded"),
     ]
-def event_search(q):
+def event_search(q, actor_ids=()):
     # Match the public projection, never hidden/unsafe legacy values. NULL actors
     # remain searchable and are not removed by an inner join.
     fields = [
-        case((User.id.is_(None), "Unknown/System"),
-             else_=func.coalesce(User.username, User.email)),
-        User.email, *event_text_fields(),
+        case((User.id.is_(None), "Unknown/System")), *event_text_fields(),
     ]
-    return or_(*(field.icontains(q, autoescape=True) for field in fields))
+    return or_(User.id.in_(actor_ids), *(field.icontains(q, autoescape=True) for field in fields))
 
-def event_candidates(q, count, user_id, start, end):
+def event_candidates(q, count, user_id, start, end, actor_ids=()):
     """Union each source's top K; their union contains the global top K.
 
     The indexed projection contains only ASCII-safe fields, none allowing '|'.
@@ -226,10 +227,7 @@ def event_candidates(q, count, user_id, start, end):
     friendly = select(AuditEvent.id, AuditEvent.created_at).where(or_(*aliases))
     actors = select(AuditEvent.id, AuditEvent.created_at).join(
         User, User.id == AuditEvent.actor_id,
-    ).where(or_(
-        func.coalesce(User.username, User.email).icontains(q, autoescape=True),
-        User.email.icontains(q, autoescape=True),
-    ))
+    ).where(User.id.in_(actor_ids))
     unknown = select(AuditEvent.id, AuditEvent.created_at).where(
         literal("Unknown/System").icontains(q, autoescape=True),
         ~exists(select(User.id).where(User.id == AuditEvent.actor_id)),
@@ -247,13 +245,14 @@ def events(db, limit, offset, user_id, start, end, q=""):
         AuditEvent.session_id, AuditEvent.request_id, AuditEvent.created_at, *user_columns(),
     ).select_from(AuditEvent).outerjoin(User, User.id == AuditEvent.actor_id)
     query = filtered(query, AuditEvent.actor_id, AuditEvent.created_at, user_id, start, end)
+    actor_ids = matching_user_ids(db, q) if q else []
     # No extractable trigrams: retain the ordered original path rather than
     # walking an entire GIN index for punctuation or very short searches.
     if q and (re.search(r"[A-Za-z0-9]{3}", q) or impossible_raw_search(q)):
-        candidates = event_candidates(q, offset + limit + 1, user_id, start, end)
+        candidates = event_candidates(q, offset + limit + 1, user_id, start, end, actor_ids)
         query = query.join(candidates, candidates.c.id == AuditEvent.id)
     elif q:
-        query = query.where(event_search(q))
+        query = query.where(event_search(q, actor_ids))
     return bounded_page(db, query.order_by(AuditEvent.id.desc()), limit, offset, public_event)
 
 def impossible_raw_search(q):

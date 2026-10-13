@@ -4,7 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Index, Integer, String,
-    UniqueConstraint, func, text,
+    UniqueConstraint, func, text, Text,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -20,12 +20,18 @@ class User(Timestamps, Base):
     __table_args__ = (
         CheckConstraint("system_role IS NULL OR system_role IN ('super_admin', 'mr')", name="ck_users_system_role"),
         CheckConstraint("identity_version >= 0", name="ck_users_identity_version"),
+        CheckConstraint("(email IS NULL) = (email_index IS NULL) AND (email IS NULL OR email LIKE 'v1:%') "
+                        "AND (email_index IS NULL OR email_index ~ '^[0-9a-f]{64}$')",
+                        name="ck_users_email_encrypted"),
+        CheckConstraint("(username IS NULL) = (username_index IS NULL) AND (username IS NULL OR username LIKE 'v1:%') "
+                        "AND (username_index IS NULL OR username_index ~ '^[0-9a-f]{64}$')",
+                        name="ck_users_username_encrypted"),
         CheckConstraint(
             "coalesce(system_role = 'super_admin', false) = is_protected_system_admin",
             name="ck_users_protected_super_admin",
         ),
         CheckConstraint(
-            "NOT is_protected_system_admin OR (email = 'crm-admin@allergyevexia.in' AND is_active)",
+            "NOT is_protected_system_admin OR (email_index IS NOT NULL AND is_active)",
             name="ck_users_protected_super_admin_identity",
         ),
         Index(
@@ -34,8 +40,10 @@ class User(Timestamps, Base):
         ),
     )
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    email: Mapped[str | None] = mapped_column(String(320), unique=True, index=True, nullable=True)
-    username: Mapped[str | None] = mapped_column(String(32), unique=True, index=True)
+    email_ciphertext: Mapped[str | None] = mapped_column("email", Text, nullable=True)
+    username_ciphertext: Mapped[str | None] = mapped_column("username", Text, nullable=True)
+    email_index: Mapped[str | None] = mapped_column(String(64), unique=True)
+    username_index: Mapped[str | None] = mapped_column(String(64), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     token_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -44,6 +52,20 @@ class User(Timestamps, Base):
     system_role: Mapped[str | None] = mapped_column(String(20))
     identity_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     is_protected_system_admin: Mapped[bool] = mapped_column(default=False, nullable=False)
+
+
+class AccountCryptoState(Base):
+    __tablename__ = "account_crypto_state"
+    __table_args__ = (CheckConstraint("id = 1", name="ck_account_crypto_singleton"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    configuration_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    protected_email_index: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
+from app.db.account_fields import install
+install(User)
+
+
 class AuthSession(Base):
     __tablename__ = "auth_sessions"
     __table_args__ = (

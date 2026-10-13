@@ -67,7 +67,13 @@ def upgrade_with_retirement_recovery(engine, config):
         f"organization_backup={path}", f"organization_backup_sha256={sha}",
         f"organization_restore_verified={sha}", "organization_retention_resolved=yes",
     ])
-    command.upgrade(config, "head")
+    command.upgrade(config, "0034_shared_phone_countries")
+    # This shared helper exercises the full current release only with genuine
+    # isolated dump/restore evidence for the separate account migration.
+    from account_migration_fixture import rehearsed_account_approval
+    with rehearsed_account_approval(engine) as account_arguments:
+        config.cmd_opts.x.extend(account_arguments)
+        command.upgrade(config, "0035_account_identifiers")
 
 
 def test_0006_retires_existing_families_and_keeps_refresh_history(migration_db):
@@ -82,7 +88,7 @@ def test_0006_retires_existing_families_and_keeps_refresh_history(migration_db):
             "(id,email,password_hash,is_active,token_version,system_role,identity_version,"
             "is_protected_system_admin) "
             "VALUES (:id,:email,'legacy-hash',true,0,'mr',1,false)"
-        ), {"id": user_id, "email": f"legacy-{user_id.hex}@example.test"})
+        ), {"id": user_id, "email": f"legacy-{user_id.hex}@example.com"})
         connection.execute(text(
             "INSERT INTO mr_profiles (id,user_id,is_active) VALUES (:id,:user,true)"
         ), {"id": uuid.uuid4(), "user": user_id})
@@ -108,7 +114,7 @@ def test_0006_retires_existing_families_and_keeps_refresh_history(migration_db):
             "revoked": already_revoked_at,
         })
 
-    command.upgrade(config, "head")
+    upgrade_with_retirement_recovery(engine, config)
     with engine.begin() as connection:
         rows = connection.execute(text(
             "SELECT id,token_hash,user_id,family_id,revoked_at,session_id "

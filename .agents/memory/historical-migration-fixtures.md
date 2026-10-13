@@ -25,3 +25,15 @@ schema; this is not evidence of a migration defect.
 **How to apply:** Read the migration being seeded, include its required flags and
 versions explicitly, and assert fixture creation succeeds before exercising the
 forward migration.
+
+Isolated historical schemas must not fall back to `public` in their search
+path, and independently restored connections must retain that schema selection.
+Current authentication must be exercised on a separately upgraded restored copy
+when a historical recovery suite must remain at a reversible predecessor.
+
+**Why:** Falling back to public can select a current encryption anchor/table
+instead of the intended historical schema and make a rehearsal appear valid.
+
+**How to apply:** Preserve namespace options when cloning test connections;
+escape URL percent signs for Alembic ConfigParser. Keep the historical source
+unchanged for its recovery tests rather than weakening later forward-only guards.

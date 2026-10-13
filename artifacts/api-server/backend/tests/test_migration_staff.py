@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.bootstrap import bootstrap_super_admin
 from app.core.config import get_settings
 from app.core.security import utcnow
+from app.services.account_crypto import index
 from app.db.models import AuditEvent, AuthSession, MRProfile, User
 from app.db.staff_models import StaffProfile
 from app.schemas.staff import StaffFields, StaffStatus
@@ -28,18 +29,27 @@ def prepare(migration_db):
     engine, config = migration_db
     command.upgrade(config, "0008_activity_search")
     with Session(engine, expire_on_commit=False) as db:
-        admin_id = bootstrap_super_admin(db, SecretStr("Synthetic disposable staff migration password")).user_id
-        user = db.get(User, admin_id)
-        session = AuthSession(user_id=user.id, expires_at=utcnow() + timedelta(hours=1),
-                              token_version=user.token_version, identity_version=user.identity_version)
+        # Frozen historical contract: the current User model requires account
+        # encryption and must never be flushed against revision 0008.
+        admin_id, legacy_id, mr_id = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+        db.execute(text("SET LOCAL evexia.bootstrap_super_admin='on'"))
+        db.execute(text("""
+          INSERT INTO users(id,email,password_hash,is_active,token_version,system_role,
+                            identity_version,is_protected_system_admin)
+          VALUES (:id,'crm-admin@allergyevexia.in','synthetic-protected-hash',true,0,'super_admin',0,true)
+        """), {"id": admin_id})
+        session = AuthSession(user_id=admin_id, expires_at=utcnow() + timedelta(hours=1),
+                              token_version=0, identity_version=0)
         db.add(session)
         db.add(AuditEvent(actor_id=admin_id, action="legacy_history", outcome="success"))
-        legacy_id = uuid.uuid4()
-        db.add(User(id=legacy_id, email="legacy@example.com", password_hash="existing-hash", system_role=None))
-        mr_user = User(id=uuid.uuid4(), email="existing-mr@example.com", password_hash="existing-mr-hash", system_role="mr")
-        db.add(mr_user)
+        db.execute(text("""
+          INSERT INTO users(id,email,password_hash,is_active,token_version,system_role,
+                            identity_version,is_protected_system_admin)
+          VALUES (:id,:email,:password,true,0,:role,0,false)
+        """), [{"id": legacy_id, "email": "legacy@example.com", "password": "existing-hash", "role": None},
+              {"id": mr_id, "email": "existing-mr@example.com", "password": "existing-mr-hash", "role": "mr"}])
         db.flush()
-        db.add(MRProfile(id=uuid.uuid4(), user_id=mr_user.id, is_active=True))
+        db.add(MRProfile(id=uuid.uuid4(), user_id=mr_id, is_active=True))
         db.commit()
         session_id = session.id
     command.upgrade(config, "0009_staff")
@@ -59,7 +69,7 @@ def test_forward_staff_migration_preserves_accounts_sessions_history_and_constra
         assert db.get(User, legacy_id).password_hash == "existing-hash"
         assert db.get(User, admin_id).is_protected_system_admin
         assert db.get(AuthSession, session_id).status == "ACTIVE"
-        existing_mr = db.scalar(select(User).where(User.email == "existing-mr@example.com"))
+        existing_mr = db.scalar(select(User).where(User.email_index == index(db, "existing-mr@example.com")))
         assert existing_mr.password_hash == "existing-mr-hash" and existing_mr.system_role == "mr"
         assert db.scalar(select(MRProfile).where(MRProfile.user_id == existing_mr.id)).is_active
         assert db.scalar(select(func.count()).select_from(AuditEvent).where(AuditEvent.action == "legacy_history")) == 1
@@ -81,13 +91,13 @@ def test_forward_staff_migration_preserves_accounts_sessions_history_and_constra
                 with db.begin_nested():
                     db.execute(text(sql), params)
                     db.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
-    with pytest.raises(RuntimeError, match="Populated Staff downgrade"):
+    with pytest.raises(RuntimeError, match="Ciphertext account downgrade is refused"):
         command.downgrade(config, "0008_activity_search")
 
 
 def test_committed_duplicate_create_race_and_stale_status_use_independent_connections(migration_db):
     engine, _config, admin_id, session_id, _legacy_id = prepare(migration_db)
-    command.upgrade(_config, "head")
+    upgrade_with_retirement_recovery(engine, _config)
     with Session(engine) as db:
         seed_designation(db, admin_id)
     settings = get_settings()

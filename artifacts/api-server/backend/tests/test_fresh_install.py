@@ -53,7 +53,7 @@ def databases():
 
 
 def test_review_covers_every_revision_and_policy():
-    assert len(fresh.reviewed_graph()) == 39
+    assert len(fresh.reviewed_graph()) == 40
 
 
 def test_review_rejects_changed_or_unknown_migration(tmp_path):

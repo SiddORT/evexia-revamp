@@ -8,7 +8,7 @@ claimed retirement/recovery approval is used.
 
 ## Reviewed history and scope
 
-All **39** migration files and their upgrade/downgrade guards were reviewed.
+All **40** migration files and their upgrade/downgrade guards were reviewed.
 `scripts/fresh-install-review.json` pins their bytes by **revision ID**, the
 direct guard-module bytes, unchanged policy, preparation target and final head.
 Any changed/unclassified revision or changed reviewed guard requires a new
@@ -25,6 +25,7 @@ review, not a runtime override.
 | 0031_role_hostnames | Empty hostname table; preparation stops here. No account is bootstrapped yet. |
 | 0031_remove_organizations | **Still protected even when empty.** Requires real external recovery, independent successful restoration rehearsal, stopped writers, retention/external-consumer review and explicit scoped approval. |
 | 0033_merge_directory_branches; 0034_shared_phone_countries | Existing operator continuation, including separate phone approval and crypto validation. |
+| 0035_account_identifiers | Operator-only account/reservation encryption. Fresh finalization may apply it only after proving every business table empty under locks; populated installs require separate approval and genuine backup/rehearsal evidence. |
 
 Preparation proves a dedicated `public` database has **no application objects**,
 including an empty `alembic_version`, tables/views/sequences/functions/types or
@@ -322,11 +323,11 @@ sh /operator-release/scripts/initialize-api.sh \
   --expected-database "$APPROVED_DB_NAME" \
   --expected-system-identifier "$APPROVED_CLUSTER_ID" \
   --admin-hostname newuat.allergyevexia.in
-# Expected: FRESH_INSTALL_READY ... 0034_shared_phone_countries
+# Expected: FRESH_INSTALL_READY ... 0035_account_identifiers
 /workspace/.venv/bin/python -B -m alembic current
 /workspace/.venv/bin/python -B /operator-release/scripts/deploy-migrations.py \
   --backend-dir /operator-release/artifacts/api-server/backend
-# Expected: exact single 0034 revision, policy READY, no migrations applied.
+# Expected: exact single 0035 revision, policy READY, no migrations applied.
 ```
 
 Finalization refuses other revisions, unexpected tables/views and **any existing
@@ -337,7 +338,7 @@ The reserved login is `crm-admin@allergyevexia.in`, using the already-configured
 initial password. No password is printed.
 
 From a second host terminal, with the supervisor still holding FD9, verify the
-existing backend is the reviewed matching `0034` release before restarting it:
+existing backend is the reviewed matching `0035` release before restarting it:
 
 ```sh
 docker start evexia-backend

@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from app.bootstrap import bootstrap_super_admin
 from app.core.security import utcnow
 from app.db.models import AuditEvent, AuthSession, MRProfile, User
+from app.services.account_crypto import index, matching_user_ids
 from test_sessions import client, create_user, login, PASSWORD
 
 BASE = "/api/v1/admin/reporting"
@@ -154,7 +155,8 @@ def test_global_counts_match_effective_auth_rules_without_mutations(client):
         assert states[f"{case}-report"] == "INVALIDATED"
     assert db.scalar(select(func.count(AuditEvent.id))) == before_events
     assert db.scalar(select(AuthSession.status).where(
-        AuthSession.user_id == db.scalar(select(User.id).where(User.username == "expired-report")),
+        AuthSession.user_id == db.scalar(select(User.id).where(User.username_index ==
+            index(db, "expired-report"))),
     )) == "ACTIVE"  # reporting does not materialize expiry transitions
     for forbidden in ["password_hash", "token_hash", "family_id", "token_version",
                       "identity_version", "access_token", "replaced_by_id", "consumed_at"]:
@@ -517,7 +519,7 @@ def test_index_candidates_match_original_projection_and_do_not_match_across_fiel
             base = select(AuditEvent.id).outerjoin(User, User.id == AuditEvent.actor_id)
             oracle = reporting.filtered(
                 base, AuditEvent.actor_id, AuditEvent.created_at, actor_id, start, end,
-            ).where(reporting.event_search(q)).order_by(AuditEvent.id.desc())
+            ).where(reporting.event_search(q, matching_user_ids(db, q))).order_by(AuditEvent.id.desc())
             expected = list(db.scalars(oracle))
             for offset in [0, 7, 25]:
                 result = reporting.events(db, 7, offset, actor_id, start, end, q)

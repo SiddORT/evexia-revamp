@@ -102,7 +102,7 @@ def create(db, actor, body, settings):
                 break
             except IntegrityError as error:
                 if getattr(getattr(error.orig, "diag", None), "constraint_name", None) not in {
-                    "ix_users_username", "uq_users_lower_username", "uq_users_login_namespace",
+                    "ix_users_username", "uq_users_lower_username", "uq_users_login_namespace", "uq_users_username_index",
                 }:
                     raise
                 if attempt == 4:
@@ -122,12 +122,14 @@ def create(db, actor, body, settings):
 def listing(db, actor, settings, limit, offset):
     def work():
         _current, crypto = authorize(db, actor, settings)
-        rows = list(db.execute(select(StaffProfile, User.username, Designation.name)
+        rows = list(db.execute(select(StaffProfile, User.id, User.username_ciphertext, User.username_index, Designation.name)
             .join(User, User.id == StaffProfile.user_id)
             .join(Designation, Designation.id == StaffProfile.designation_id)
             .where(StaffProfile.deleted_at.is_(None)).order_by(
             StaffProfile.created_at.desc(), StaffProfile.id.desc()).limit(limit + 1).offset(offset)))
-        result = {"items": [projection(db, row, crypto, username, name) for row, username, name in rows[:limit]],
+        from app.services.account_crypto import read
+        result = {"items": [projection(db, row, crypto, read(owner, "username", ciphertext, digest), name)
+                            for row, owner, ciphertext, digest, name in rows[:limit]],
                   "has_more": len(rows) > limit, "limit": limit, "offset": offset}
         db.commit()
         return result
@@ -147,7 +149,7 @@ def search(db, actor, settings, body):
         _current, crypto = authorize(db, actor, settings)
         # Primary-key keyset scan: no plaintext predicates, new blind indexes,
         # counts, offsets, stored search sessions, or unbounded result buffers.
-        stmt = (select(StaffProfile, User.username, Designation.name).join(User, User.id == StaffProfile.user_id)
+        stmt = (select(StaffProfile, User.id, User.username_ciphertext, User.username_index, Designation.name).join(User, User.id == StaffProfile.user_id)
                 .join(Designation, Designation.id == StaffProfile.designation_id)
                 .where(StaffProfile.deleted_at.is_(None)))
         if body.cursor is not None:
@@ -155,7 +157,9 @@ def search(db, actor, settings, body):
         rows = list(db.execute(stmt.order_by(StaffProfile.id).limit(SEARCH_SCAN_LIMIT + 1)))
         term = body.query.casefold()
         items, scanned, last_id = [], 0, None
-        for profile, username, name in rows[:SEARCH_SCAN_LIMIT]:
+        from app.services.account_crypto import read
+        for profile, owner, ciphertext, digest, name in rows[:SEARCH_SCAN_LIMIT]:
+            username = read(owner, "username", ciphertext, digest)
             record = projection(db, profile, crypto, username, name)
             scanned += 1
             last_id = profile.id

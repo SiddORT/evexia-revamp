@@ -34,7 +34,12 @@ def seed_directory(db, actor_id, size):
                 value["shortName"] = "MR"
         db.execute(insert(model), values)
     ids, users = [uuid.uuid4() for _ in range(size + 1)], [uuid.uuid4() for _ in range(size + 1)]
-    db.execute(insert(User), [dict(id=key, username=f"fixture.mr.{i}", email=None,
+    from app.services.account_crypto import crypto
+    cipher = crypto()
+    db.execute(insert(User), [dict(id=key,
+                                  username_ciphertext=cipher.encrypt(key, "username", f"fixture.mr.{i}"),
+                                  username_index=cipher.lookup_index(f"fixture.mr.{i}"),
+                                  email_ciphertext=None, email_index=None,
                                   password_hash="inert-fixture-not-a-password-hash", system_role="mr",
                                   is_active=i % 2 == 0 and i < size, identity_version=1, token_version=0)
                              for i, key in enumerate(users)])

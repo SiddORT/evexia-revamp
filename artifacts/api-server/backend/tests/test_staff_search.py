@@ -65,8 +65,9 @@ def test_find_beyond_first_hundred_and_bounded_empty_sections(client, monkeypatc
     assert [row["id"] for row in page["items"]] == [target]
     assert page["scanned"] == page["scan_limit"] == 500 and page["has_more"]
     assert page["next_cursor"] == str(uuid.UUID(int=500))
-    assert len(calls) == 1501  # three fields per row + authorization email/key check
-    assert len(sql) < 12  # not one User SELECT per scanned staff row
+    assert len(calls) == 2001  # three Staff fields + encrypted account username per row; actor email
+    assert calls.count("username") == 500
+    assert len(sql) < 16  # constant account revision/key gates, never per scanned staff row
     assert elapsed < 5
     assert not any("OFFSET" in statement or "count(" in statement.lower() for statement in sql)
     print(f"500-row encrypted search: {elapsed:.3f}s, {len(sql)} SQL statements, {len(calls)} decryptions")

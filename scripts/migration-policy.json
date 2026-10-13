@@ -39,6 +39,7 @@
     "0031_role_hostnames": "automatic",
     "0031_remove_organizations": "operator_only",
     "0033_merge_directory_branches": "automatic",
-    "0034_shared_phone_countries": "operator_only"
+    "0034_shared_phone_countries": "operator_only",
+    "0035_account_identifiers": "operator_only"
   }
 }

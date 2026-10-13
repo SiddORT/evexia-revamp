@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[4]
 BACKEND = ROOT / "artifacts/api-server/backend"
 LOCK_PATH = Path("/var/www/newuat.allergyevexia.in/.deploy.lock")
 PREPARE_TARGET = "0031_role_hostnames"
-FINAL_TARGET = "0034_shared_phone_countries"
+FINAL_TARGET = "0035_account_identifiers"
 LOCK_ID = 145002  # Same database interlock as normal CI/operator continuation.
 
 
@@ -180,9 +180,12 @@ def finalize(connection, settings, hostname=None):
     from app.bootstrap import bootstrap_super_admin
     from app.api.v1.system import readiness
     dedicated_database(connection)
-    if connection.execute(text("SELECT version_num FROM alembic_version")).scalars().all() != [FINAL_TARGET]:
+    revisions = connection.execute(text("SELECT version_num FROM alembic_version")).scalars().all()
+    if revisions not in (["0034_shared_phone_countries"], [FINAL_TARGET]):
         raise FreshInstallBlocked("Complete the existing protected operator continuation first.")
     expected = set(Base.metadata.tables) | {"alembic_version", "directory_crypto_stage"}
+    if revisions == ["0034_shared_phone_countries"]:
+        expected.remove("account_crypto_state")
     if set(inspect(connection).get_table_names(schema="public")) != expected:
         raise FreshInstallBlocked("Unexpected installation tables; operator review required.")
     if connection.scalar(text("""
@@ -191,12 +194,17 @@ def finalize(connection, settings, hostname=None):
     """)):
         raise FreshInstallBlocked("Unexpected installation views/foreign tables; operator review required.")
     quote = connection.dialect.identifier_preparer.quote
-    tables = sorted(expected - {"alembic_version", "directory_crypto_stage"})
+    tables = sorted(expected - {"alembic_version", "directory_crypto_stage", "account_crypto_state"})
     connection.execute(text("LOCK TABLE " + ", ".join('public.' + quote(t) for t in sorted(expected)) +
                             " IN ACCESS EXCLUSIVE MODE NOWAIT"))
     for table in tables:
         if connection.scalar(text(f"SELECT EXISTS(SELECT 1 FROM public.{quote(table)})")):
             raise FreshInstallBlocked("Installation already contains records; no accounts or credentials changed.")
+    if revisions == ["0034_shared_phone_countries"]:
+        # Explicit fresh-finalize approval already binds the independently
+        # verified target and proves ALL business tables empty under locks.
+        # This is not permission to migrate a populated account database.
+        command.upgrade(alembic_config(connection), FINAL_TARGET)
     with Session(bind=connection) as db:
         result = bootstrap_super_admin(db, settings.super_admin_initial_password)
         if hostname is not None:
@@ -260,7 +268,7 @@ def main(argv=None):
         finally:
             engine.dispose()
         print("FRESH_INSTALL_PREPARED: 0031_role_hostnames; protected recovery/retirement required; NOT READY."
-              if args.phase == "prepare" else "FRESH_INSTALL_READY: 0034_shared_phone_countries; Super Admin initialized.")
+              if args.phase == "prepare" else "FRESH_INSTALL_READY: 0035_account_identifiers; Super Admin initialized.")
         return 0
     except FreshInstallBlocked as exc:
         print(f"FRESH_INSTALL_BLOCKED: {exc}", file=sys.stderr)

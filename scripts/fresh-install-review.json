@@ -1,7 +1,7 @@
 {
-  "target": "0034_shared_phone_countries",
+  "target": "0035_account_identifiers",
   "prepare_target": "0031_role_hostnames",
-  "policy_sha256": "21d36e45c917001b5f0aaef026ff1d48d1aab612f5a32442d9aa3221897bfeb0",
+  "policy_sha256": "b00afb18e2b9f191ccb022cf59699aeee3e2eac2f8cab1ebe5415043ca56abbd",
   "guard_sources": {
     "app/core/config.py": "5716f497dd9cdc3f76d345496407ef488ca4467ca6f2dacf8ef9149f5fdfa9b6",
     "app/services/directory_crypto.py": "cf302f2f244653a3a445d7f8684e80035c76c4b05ac43b605601f40586f1521b",
@@ -9,7 +9,9 @@
     "app/services/directory_staging.py": "ea3c67715559b39990bbeac077f6319db18a3fc49bb2800c504a71ed13f93c48",
     "app/services/organization_retirement.py": "a0c0403227226e6f0599fe0e649a13e2f923a50c6a0df1d60f8ae5d06130305c",
     "app/services/role_attribution.py": "ba3fc9fe0d0c51389e73fce573b74492ce9f2c47d649deab7bd9aab3ec9268e2",
-    "app/services/staff_designation_mapping.py": "453a8e3e5a233e4bd1fd1f5e434f4534842ce144a8ce9a43209904f4b01bac56"
+    "app/services/staff_designation_mapping.py": "453a8e3e5a233e4bd1fd1f5e434f4534842ce144a8ce9a43209904f4b01bac56",
+    "app/services/account_crypto.py": "117f9d32b2c571a3c088f8ed98659cb2ac28310d5072de6697a0f84c0dcd318f",
+    "app/services/account_migration.py": "fedc3b2a121e207be409bac87e05aa184e45aca61a5325ad87ebb11b25848904"
   },
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
@@ -50,6 +52,7 @@
     "0031_role_hostnames": "bdfac90ccb49b74fde49efabaa71bd51a9ff49cd85dbd05dcf292d52a9540b78",
     "0031_remove_organizations": "58741ebe679c67c8f27c7423ab7897169fb5fc846e63dcd5dab8e249e1ed0f1e",
     "0033_merge_directory_branches": "45b0fddfe857865c98db387913686d74a4cb73fcf9bfbeea453b8335c9166c66",
-    "0034_shared_phone_countries": "a1ef0f95ca2b5531c6bb2e25d4344614d98a6d38ee01ce360de09864c14eb749"
+    "0034_shared_phone_countries": "a1ef0f95ca2b5531c6bb2e25d4344614d98a6d38ee01ce360de09864c14eb749",
+    "0035_account_identifiers": "383a7d5936ba4795d1368f156fcaea3081e010d1ad236f7a45750559fa230df4"
   }
 }

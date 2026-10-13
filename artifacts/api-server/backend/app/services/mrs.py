@@ -1,5 +1,6 @@
 """MR business directory. All mutations preserve User -> MRProfile lock order."""
 import secrets
+from types import SimpleNamespace
 import time
 import uuid
 from contextlib import contextmanager
@@ -10,6 +11,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.core.security import hash_password, utcnow
 from app.bootstrap import SUPER_ADMIN_EMAIL
 from app.db.models import User, MRProfile, AuditEvent
+from app.services import account_crypto as account_encryption
 from app.db.mr_models import MRDirectory, AccountIdentifierReservation
 from app.db.headquarter_models import Headquarter
 from app.db.zone_models import Zone
@@ -101,7 +103,11 @@ def projection_context(db, rows, manager_accounts=False):
     if manager_accounts:
         account_ids.update(row.reportingManagerId for row in rows if row.reportingManagerId)
     accounts = _bulk(db, account_ids, lambda ids: select(
-        MRProfile.id, User.username).join(User, User.id == MRProfile.user_id).where(MRProfile.id.in_(ids)))
+        MRProfile.id, User.id.label("account_id"), User.username_ciphertext, User.username_index
+    ).join(User, User.id == MRProfile.user_id).where(MRProfile.id.in_(ids)))
+    accounts = {key: SimpleNamespace(username=account_encryption.read(
+        value.account_id, "username", value.username_ciphertext, value.username_index))
+        for key, value in accounts.items()}
     headquarters = _bulk(db, (row.hq for row in rows), lambda ids: select(
         Headquarter.id, Headquarter.name, Headquarter.status, Headquarter.deleted_at).where(Headquarter.id.in_(ids)))
     zones = _bulk(db, (row.zoneId for row in rows), lambda ids: select(
@@ -201,7 +207,7 @@ def resolve_account(db, actor, username):
         current = authorize(db, actor, action="add", lock=False)
         row = db.scalar(select(MRDirectory).join(MRProfile, MRProfile.id == MRDirectory.id)
                         .join(User, User.id == MRProfile.user_id).where(
-                            func.lower(User.username) == username.strip().lower(), MRDirectory.deleted_at.is_(None)))
+                            User.username_index == account_encryption.index(db, username.strip().lower()), MRDirectory.deleted_at.is_(None)))
         if row is None:
             raise MRError("No live MR directory account has this username.", 404, "not_found")
         if current.staff is not None and not db.scalar(select(AuditEvent.id).where(
@@ -266,7 +272,7 @@ def username(db, actor):
         authorize(db, actor, provision=True, lock=False)
         for _ in range(8):
             candidate = "mr." + secrets.token_hex(8)
-            if not db.get(AccountIdentifierReservation, candidate):
+            if not db.get(AccountIdentifierReservation, account_encryption.index(db, candidate)):
                 break
         else:
             raise MRError("No available username could be generated. Try again.", 503, "mr_unavailable")
@@ -315,15 +321,16 @@ def identifiers_available(db, body, exclude_user=None, exclude_record=None):
     values = [body.userId, body.email] if body.email else [body.userId]
     if SUPER_ADMIN_EMAIL in values or body.userId in ("admin", "superadmin", "super-admin", "administrator", "root"):
         raise MRError("This identifier is reserved.", 409, "mr_identifier_reserved")
-    clauses = [or_(func.lower(User.username).in_(values), func.lower(User.email).in_(values))]
+    digests = [account_encryption.index(db, value) for value in values]
+    clauses = [or_(User.username_index.in_(digests), User.email_index.in_(digests))]
     if exclude_user:
         clauses.append(User.id != exclude_user)
     if db.scalar(select(User.id).where(*clauses)):
         raise MRError("Username or email is reserved by another account, including deleted identities.", 409, "mr_identifier_reserved")
     reserved = db.execute(text(
-        "SELECT 1 FROM account_identifier_reservations WHERE identifier = ANY(:identifiers) "
+        "SELECT 1 FROM account_identifier_reservations WHERE identifier_index = ANY(:identifiers) "
         "AND (CAST(:owner AS uuid) IS NULL OR user_id <> CAST(:owner AS uuid)) LIMIT 1"
-    ), {"identifiers": values, "owner": str(exclude_user) if exclude_user else None}).first()
+    ), {"identifiers": digests, "owner": str(exclude_user) if exclude_user else None}).first()
     if reserved:
         raise MRError("This identifier belongs to protected account history. Choose another identifier.",
                       409, "mr_identifier_reserved")

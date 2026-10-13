@@ -1,5 +1,13 @@
 # Legacy organization retirement
 
+Current account-encryption release note: retirement approval still ends at
+`0034_shared_phone_countries`. The wrapper does **not** automatically cross
+`0035_account_identifiers`. Populated databases need the separate account
+encryption approval/recovery procedure in `account-identifier-encryption.md`;
+proven-unused installs can use the guarded fresh-finalization procedure. Do
+not remove maintenance or start the new release merely because retirement
+completed at 0034.
+
 ## Scope and current evidence
 
 EVEXIA remains non-tenant. No replacement organization entity, organization

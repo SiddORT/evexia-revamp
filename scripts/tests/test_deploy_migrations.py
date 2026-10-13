@@ -200,7 +200,10 @@ class MigrationPolicyTests(unittest.TestCase):
         target = runner.literal_assignments(backend / "app/core/schema.py", {"SCHEMA_REVISION"})["SCHEMA_REVISION"]
         blocked = runner.plan(graph, policy, ["0030_directory_crypto_retirement"], target)
         self.assertEqual(blocked["operator_only"],
-                         ["0031_remove_organizations", "0034_shared_phone_countries"])
+                         ["0031_remove_organizations", "0034_shared_phone_countries", "0035_account_identifiers"])
+        account_blocked = runner.plan(graph, policy, ["0034_shared_phone_countries"], target)
+        self.assertEqual(account_blocked["result"], "OPERATOR_MIGRATION_REQUIRED")
+        self.assertEqual(account_blocked["operator_only"], ["0035_account_identifiers"])
         ready = runner.plan(graph, policy, [target], target)
         self.assertEqual(ready["pending"], [])
 

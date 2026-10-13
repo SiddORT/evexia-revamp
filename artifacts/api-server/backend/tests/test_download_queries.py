@@ -122,34 +122,37 @@ def test_total_and_page_share_snapshot_even_when_append_commits_mid_statement(mi
 
 
 def test_reporting_index_migration_preserves_append_only_history(migration_db):
-    from test_migration_0006 import upgrade_with_retirement_recovery
     engine, config = migration_db
     command.upgrade(config, "0013_download_logs")
     at = datetime(2030, 1, 1, tzinfo=timezone.utc)
     with Session(engine) as db:
-        user = User(email="synthetic-index@example.test", password_hash="not-a-credential")
-        db.add(user)
-        db.flush()
-        session = AuthSession(user_id=user.id, status="EXPIRED",
+        # Historical fixture: replay its original plaintext contract, not the
+        # current ciphertext model against a pre-account-encryption schema.
+        user_id = uuid.uuid4()
+        db.execute(text("INSERT INTO users(id,email,password_hash,is_active,token_version,identity_version,"
+                        "is_protected_system_admin) VALUES "
+                        "(:id,'synthetic-index@example.test','not-a-credential',true,0,0,false)"), {"id": user_id})
+        session = AuthSession(user_id=user_id, status="EXPIRED",
                               created_at=at, expires_at=at + timedelta(days=1))
         db.add(session)
         db.flush()
-        row = DownloadLog(actor_id=user.id, session_id=session.id, initiation_id=uuid.uuid4(),
+        row = DownloadLog(actor_id=user_id, session_id=session.id, initiation_id=uuid.uuid4(),
                           source="patient", kind="export", format="CSV", provenance="browser_reported")
         db.add(row)
         db.flush()
         id = row.id
         db.commit()
-    upgrade_with_retirement_recovery(engine, config)
-    for revision in ("head", "0013_download_logs", "head"):
-        command.upgrade(config, revision) if revision == "head" else command.downgrade(config, revision)
+    # The behavior under test is the reporting index migration, not unrelated
+    # later irreversible account storage or organization-retirement changes.
+    for revision in ("0014_download_reporting_index", "0013_download_logs", "0014_download_reporting_index"):
+        command.downgrade(config, revision) if revision == "0013_download_logs" else command.upgrade(config, revision)
         with engine.connect() as conn:
             assert conn.scalar(select(DownloadLog.id)) == id
             definition = conn.scalar(text("""
                 SELECT indexdef FROM pg_indexes WHERE schemaname=current_schema()
                 AND indexname='ix_download_format_created_id'
             """))
-            assert (definition is not None) == (revision == "head")
+            assert (definition is not None) == (revision == "0014_download_reporting_index")
             if definition:
                 assert "(format, created_at, id)" in definition
             assert conn.scalar(text("""

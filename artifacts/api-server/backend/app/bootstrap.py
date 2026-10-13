@@ -34,11 +34,9 @@ def bootstrap_super_admin(db: Session, initial_password: SecretStr | None) -> Bo
         protected = db.scalar(
             select(User).where(User.is_protected_system_admin).with_for_update()
         )
+        from app.services.account_crypto import lookup
         reserved_matches = list(db.scalars(
-            select(User).where(or_(
-                func.lower(User.email) == SUPER_ADMIN_EMAIL,
-                func.lower(User.username) == SUPER_ADMIN_EMAIL,
-            )).with_for_update()
+            select(User).where(lookup(db, SUPER_ADMIN_EMAIL)).with_for_update()
         ))
         reserved = next((item for item in reserved_matches if item.email == SUPER_ADMIN_EMAIL), None)
         if protected is not None:
