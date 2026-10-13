@@ -1,0 +1,18 @@
+Complete and close the `0035_account_identifiers` UAT rollout task.
+
+Do not stop at documenting the blockers. Work through the approved steps in order:
+
+1. Resolve UAT access using available authorized infrastructure tooling. Retrieve and verify the actual UAT database revision, database/cluster identity, and migration status.
+2. Establish backup integrity, independent restoration-rehearsal evidence, encryption-key recoverability, deployment lock, writer-drain readiness, and external-consumer compatibility. Coordinate with the authorized operator if any prerequisite requires their access or approval.
+3. Review migration `0035_account_identifiers` and its safeguards. Preserve existing accounts, passwords, sessions, permissions, and Super Admin protections. Do not delete user records or weaken security checks.
+4. If the migration is already applied, verify its outcome without rerunning it. If it is not applied, apply it to UAT only after all required safety prerequisites are verified and the authorized deployment process permits it.
+5. Run the relevant UAT regression tests and verify encrypted storage, blind-index lookups and uniqueness, existing-account login, account provisioning, sessions, and permissions.
+6. Fix any defects directly related to this rollout, then rerun the affected checks. Do not start unrelated features or resume the separate test-fixture repair task.
+7. Commit and push relevant code changes only when appropriate and the applicable checks pass. Do not commit unrelated changes.
+8. Close the task only with an evidence-based final report: actual UAT revision before/after, migration status, backup and key-recovery evidence, tests and results, data changes, and Git commit/push status.
+
+Important:
+- Never claim a prerequisite, migration, test, or deployment succeeded without evidence.
+- Do not bypass missing access, backup, recovery, or authorization requirements. If a required dependency genuinely cannot be resolved with available authorized access, complete all safe preparatory work and report the exact outstanding dependency and the person/action needed to unblock it.
+- Do not apply this migration to production.
+- The goal is a verified UAT rollout and task closure, not merely a preflight report.
