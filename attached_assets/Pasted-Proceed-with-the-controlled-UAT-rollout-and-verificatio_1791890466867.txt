@@ -1,0 +1,21 @@
+Proceed with the controlled UAT rollout and verification of Alembic migration `0035_account_identifiers`.
+
+The migration encrypts `users.email`, `users.username`, and historical `account_identifier_reservations` identifiers, using AES-GCM encryption and keyed blind indexes.
+
+1. **Inspect the current UAT state first.** Check the applied Alembic revision, database schema, migration status, encryption-key configuration, and whether the migration has already been applied. Do not assume UAT matches the development database.
+
+2. **Verify recovery readiness.** Confirm that a valid backup exists and its integrity and restoration readiness have been verified. Confirm that the required encryption keys are available and recoverable. If any prerequisite is missing or uncertain, stop and report exactly what is needed.
+
+3. **Review migration safety.** Confirm that the migration preserves existing accounts, password hashes, sessions, permissions, account identifiers, and Super Admin protections. Verify that conflicting or invalid identifiers are handled safely, plaintext is not retired before ciphertext and blind indexes are verified, and a failed migration can roll back without leaving partially migrated data.
+
+4. **Apply the migration to UAT only if all prerequisites pass.** Do not delete existing users or account records. Do not run destructive cleanup, alter production data, or weaken any security safeguards. Do not modify previously applied migrations.
+
+5. **Verify the migrated UAT database.** Confirm the expected Alembic revision and schema, ciphertext-only storage for the targeted identifiers, correct blind-index uniqueness and case-insensitive lookup, and absence of unintended plaintext copies in the migrated tables.
+
+6. **Run focused UAT regression tests.** Verify login using existing accounts, email/username lookup, identifier changes, reservation uniqueness, account provisioning, session handling, permissions, and Super Admin protections. Confirm that existing accounts remain usable.
+
+7. **Report the outcome.** List the migration revision before and after, backup/key readiness, exact checks and test results, any failures or remaining risks, and whether UAT was successfully migrated. If any step fails, stop safely and report the issue rather than improvising a workaround.
+
+8. **Git:** Commit and push the relevant changes only if required changes were made and all applicable checks pass. Report the commit hash and push status. Do not include unrelated feature work.
+
+Do not start historical-data tracking, password recovery, or any other unrelated task. This task is limited to the account-encryption migration and its UAT verification.
