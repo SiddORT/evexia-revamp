@@ -330,10 +330,10 @@ def test_server_combined_filters_full_export_and_ledger(client):
         assert response.status_code == 200 and response.headers["X-Download-Log"]
         if format == "csv":
             exported = list(csv.reader(io.StringIO(response.content.decode("utf-8-sig"))))
-            assert exported[0] == mr_transfer.HEADERS and len(exported) == 3
+            assert exported[0] == mr_transfer.EXPORT_HEADERS and len(exported) == 3
         else:
             book = load_workbook(io.BytesIO(response.content))
-            assert book.active.max_row == 3 and book.active.max_column == len(mr_transfer.HEADERS + mr_transfer.AUDIT)
+            assert book.active.max_row == 3 and book.active.max_column == len(mr_transfer.EXPORT_HEADERS + mr_transfer.AUDIT)
             book.close()
     for format in ("csv", "xlsx"):
         sample = api.get(BASE + "/sample", headers=headers, params={"format": format})

@@ -155,8 +155,9 @@ def sample(format):
 def export(db, actor, query, status, format):
     def work():
         vendors.authorize(db, actor)
-        records = list(db.scalars(select(Vendor).where(*vendors.predicates(query, status))
-                                  .order_by(Vendor.created_at.desc(), Vendor.id.desc()).limit(EXPORT_LIMIT + 1)))
+        records = (vendors.search_records(db, query, status) if query.strip() else
+                   list(db.scalars(select(Vendor).where(*vendors.predicates("", status))
+                        .order_by(Vendor.created_at.desc(), Vendor.id.desc()).limit(EXPORT_LIMIT + 1))))
         if len(records) > EXPORT_LIMIT:
             raise vendors.VendorError("Export exceeds 5,000 matching vendors. Narrow search/status filters.",
                                       422, "vendor_export_limit")

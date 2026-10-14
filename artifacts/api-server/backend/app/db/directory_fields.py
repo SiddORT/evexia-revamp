@@ -2,7 +2,7 @@
 import uuid
 from sqlalchemy import String, Text, event, func, select
 from sqlalchemy.orm import mapped_column, Session
-from app.services.directory_inventory import FIELDS, INDEX_COLUMNS, NULLABLE_FIELDS
+from app.services.directory_inventory import RUNTIME_FIELDS as FIELDS, INDEX_COLUMNS, RUNTIME_NULLABLE_FIELDS as NULLABLE_FIELDS, DirectoryCryptoError
 from app.services.directory_runtime import crypto
 
 
@@ -14,6 +14,7 @@ def install(model):
         record_id = values.pop("id", None) or uuid.uuid4()
         if model.__tablename__ == "mr_directory":
             values.setdefault("dialCountry", "IN")
+            values.setdefault("reporting_manager_name", None)
         original_init(self, id=record_id, **values)
     model.__init__ = initialize
     table = model.__tablename__
@@ -51,10 +52,21 @@ def indexes(db, flush_context, instances):
             try:
                 DoctorFields(**{f: getattr(row, f) for f in DoctorFields.model_fields})
             except ValueError:
-                from app.services.directory_inventory import DirectoryCryptoError
                 raise DirectoryCryptoError() from None
             row.state_index = current.doctor_state_index(values["state"])
+        elif table == "vendors":
+            from app.schemas.vendors import BUSINESS_FIELDS, VendorFields
+            try:
+                supplied = {f: getattr(row, f) for f in BUSINESS_FIELDS}
+                validated = VendorFields(**supplied).model_dump()
+                if validated != supplied:
+                    raise ValueError()
+            except ValueError:
+                raise DirectoryCryptoError() from None
         elif table == "mr_directory":
+            if row in db.new:
+                from app.services.reference_snapshots import capture_mr
+                capture_mr(db, row)
             from app.db.models import MRProfile, User
             profile = db.get(MRProfile, row.id)
             account = db.get(User, profile.user_id) if profile else None

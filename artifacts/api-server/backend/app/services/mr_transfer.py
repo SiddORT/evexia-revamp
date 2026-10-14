@@ -42,6 +42,7 @@ COLUMNS = [
 OLD_HEADERS = [title for _, title in COLUMNS]
 COLUMNS = COLUMNS + [("dialCountry", "Dial Country")]
 HEADERS = [title for _, title in COLUMNS]
+EXPORT_HEADERS = HEADERS + ["Reporting Manager Name"]
 AUDIT = ["Created By", "Created At", "Updated By", "Updated At"]
 LEGACY = [title for title in OLD_HEADERS if title != "Contact Requirement"]
 
@@ -52,7 +53,7 @@ def invalid(message):
 
 def exact_workbook_rows(data):
     """Preserve monetary XML precision after the shared inert-workbook checks."""
-    rows = workbook_rows(data, max_columns=len(HEADERS + AUDIT))
+    rows = workbook_rows(data, max_columns=len(EXPORT_HEADERS + AUDIT))
     if not rows or "Payment Limit" not in rows[0]:
         return rows
     column = rows[0].index("Payment Limit")
@@ -93,8 +94,8 @@ def parse(data, filename):
         try:
             rows = []
             for cells in csv.reader(io.StringIO(data.decode("utf-8-sig")), strict=True):
-                if len(rows) >= MAX_ROWS + 1 or len(cells) > len(HEADERS + AUDIT) or any(len(cell) > 10000 for cell in cells):
-                    invalid(f"CSV exceeds 1,000 rows, {len(HEADERS + AUDIT)} columns or 10,000 characters per cell.")
+                if len(rows) >= MAX_ROWS + 1 or len(cells) > len(EXPORT_HEADERS + AUDIT) or any(len(cell) > 10000 for cell in cells):
+                    invalid(f"CSV exceeds 1,000 rows, {len(EXPORT_HEADERS + AUDIT)} columns or 10,000 characters per cell.")
                 rows.append(cells)
         except (UnicodeError, csv.Error):
             invalid("Use well-formed UTF-8 CSV.")
@@ -105,7 +106,8 @@ def parse(data, filename):
             invalid(exc.message)
     else:
         invalid("Only CSV and genuine XLSX are supported; no XLS/macros.")
-    if not rows or rows[0] not in (HEADERS, LEGACY, HEADERS + AUDIT, OLD_HEADERS, OLD_HEADERS + AUDIT):
+    if not rows or rows[0] not in (HEADERS, LEGACY, HEADERS + AUDIT, OLD_HEADERS, OLD_HEADERS + AUDIT,
+                                  EXPORT_HEADERS, EXPORT_HEADERS + AUDIT):
         invalid("Use the current MR schema or a previously exported MR backup. Password, identity-link, version, deletion and unknown columns are forbidden. The reduced six-column mock template is not a backup.")
     header = rows[0]
     if len(rows) < 2:
@@ -293,14 +295,16 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
             credentials.append(dict(userId=body.userId, password=password[0]))
         for row, parent in links:
             row.reportingManagerId = parent
+            from app.services.reference_snapshots import capture_mr
+            capture_mr(db, row, {"hq": row.hq, "zoneId": row.zoneId, "reportingManagerId": None})
         db.flush()
         db.commit()
         return dict(imported=len(credentials), credentials=credentials)
     return mrs.transaction(db, commit)
 
 
-def encode(rows, format, audit=False):
-    header = HEADERS + (AUDIT if audit else [])
+def encode(rows, format, audit=False, snapshots=False):
+    header = (EXPORT_HEADERS if snapshots else HEADERS) + (AUDIT if audit else [])
     if format == "csv":
         stream = io.StringIO()
         writer = csv.writer(stream, lineterminator="\r\n")
@@ -359,8 +363,10 @@ def export(db, actor, query, status, zone_id, hq_id, format):
                 values["reportingManagerId"] = "user:" + context["accounts"][record.reportingManagerId].username
             else:
                 values["reportingManagerId"] = ""
-            rows.append([str(values[key]) for key, _ in COLUMNS] +
+            # Saved human label is informational on import, never trusted as
+            # an assignment. Existing manager account references remain intact.
+            rows.append([str(values[key]) for key, _ in COLUMNS] + [values["reportingManagerName"]] +
                         ([str(values[key]) for key in ("createdBy", "createdAt", "updatedBy", "updatedAt")] if format == "xlsx" else []))
         db.commit()
-        return encode(rows, format, audit=format == "xlsx")
+        return encode(rows, format, audit=format == "xlsx", snapshots=True)
     return mrs.transaction(db, work)

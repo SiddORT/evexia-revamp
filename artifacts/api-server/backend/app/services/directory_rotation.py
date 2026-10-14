@@ -15,12 +15,12 @@ from sqlalchemy import MetaData, String, Table, Uuid, column, func, or_, select,
 from app.core.config import Settings
 from app.db.session import session_factory
 from app.services.directory_crypto import DirectoryCrypto, canonical
-from app.services.directory_inventory import FIELDS, LEGACY_FIELDS, INDEX_COLUMNS
+from app.services.directory_inventory import FIELDS as PHONE_FIELDS, RUNTIME_FIELDS as FIELDS, LEGACY_FIELDS, INDEX_COLUMNS, PRIVACY_REVISION
 from app.services import directory_staging as staging
 
 REVISION = "0030_directory_crypto_retirement"
 PHONE_REVISION = "0034_shared_phone_countries"
-SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations", "0033_merge_directory_branches", PHONE_REVISION, "0035_account_identifiers"})
+SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations", "0033_merge_directory_branches", PHONE_REVISION, "0035_account_identifiers", PRIVACY_REVISION})
 COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS
 
 
@@ -35,7 +35,9 @@ def _fields(db):
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
     if revision not in SUPPORTED_REVISIONS:
         raise RotationError()
-    return FIELDS if revision in (PHONE_REVISION, "0035_account_identifiers") else LEGACY_FIELDS
+    if revision == PRIVACY_REVISION:
+        return FIELDS
+    return PHONE_FIELDS if revision in (PHONE_REVISION, "0035_account_identifiers") else LEGACY_FIELDS
 
 
 def _lock(db, exclusive=False):
@@ -54,6 +56,8 @@ def _lock(db, exclusive=False):
     revisions = list(db.scalars(text("SELECT version_num FROM alembic_version")))
     if len(revisions) != 1 or revisions[0] not in SUPPORTED_REVISIONS:
         raise RotationError()
+    if revisions == [PRIVACY_REVISION]:
+        db.execute(text(f"LOCK TABLE vendors IN {mode} MODE NOWAIT"))
     # Organization retirement changes no encrypted directory storage. Verify
     # that required final projections still exist and plaintext did not return;
     # never accept an arbitrary newer head merely because it is newer.
@@ -62,12 +66,19 @@ def _lock(db, exclusive=False):
           WHERE attrelid=to_regclass(:name) AND attnum>0 AND NOT attisdropped"""), {"name": name}))
         if (not {f + "_ciphertext" for f in fields}.issubset(actual)
                 or not set(INDEX_COLUMNS[name]).issubset(actual)
-                or set(FIELDS[name]) & actual):
+                or set(fields) & actual):
             raise RotationError()
 
 
 def _equal(a, b):
     return isinstance(a, str) and isinstance(b, str) and hmac.compare_digest(a, b)
+
+
+def _tables(db):
+    tables = staging._tables(db)
+    if "vendors" in _fields(db):
+        tables["vendors"] = Table("vendors", MetaData(), autoload_with=db.connection(), resolve_fks=False)
+    return tables
 
 
 def _state(db):
@@ -126,9 +137,9 @@ def _normalizations(db, crypto, name, rows):
 
 def _values(crypto, name, row, normalized, fields):
     values = {f: crypto.decrypt(name, row["id"], f, row[f + "_ciphertext"]) for f in fields}
-    if name != "doctor_directory":
+    if name in ("mr_directory", "patient_directory"):
         values["_normalized_name"] = normalized[row["id"]]
-    indexes = staging._indexes(crypto, name, values)
+    indexes = staging._indexes(crypto, name, values) if name != "vendors" else {}
     if any(not _equal(row[column], expected) for column, expected in indexes.items()):
         raise RotationError()
     return values
@@ -150,7 +161,7 @@ def _inventory(db, crypto, digest_key):
     counts, usage = {}, Counter()
     mac = hmac.new(digest_key, b"directory-final-content-v1\0", hashlib.sha256)
     raw = hmac.new(digest_key, b"directory-final-storage-v1\0", hashlib.sha256)
-    tables = staging._tables(db)
+    tables = _tables(db)
     fields = _fields(db)
     tables["patients"] = Table("patients", MetaData(), autoload_with=db.connection(), resolve_fks=False)
     for name, table in tables.items():
@@ -218,7 +229,9 @@ def prepare(db, settings, *, operation="encrypt", target_key_id=None, next_keys=
         backup, change = uuid.UUID(str(backup_ref)), uuid.UUID(str(change_ref))
         if operation == "index":
             start = time.monotonic()
-            for name, table in staging._tables(db).items():
+            for name, table in _tables(db).items():
+                if name == "vendors":
+                    continue  # No sensitive Vendor equality indexes to rekey.
                 cursor = None
                 while True:
                     staging._deadline(start, 120)
@@ -263,7 +276,7 @@ def batch(db, settings, *, table, limit=staging.BATCH_LIMIT):
         _lock(db, True)
         fields = _fields(db)[table]
         _stage(db, current, "frozen")
-        model = staging._tables(db)[table]
+        model = _tables(db)[table]
         # Envelope key IDs identify pending rows. Full verification authenticates
         # every skipped envelope before writers can resume.
         pending = or_(*[func.split_part(model.c[f + "_ciphertext"], ":", 2) != current.active

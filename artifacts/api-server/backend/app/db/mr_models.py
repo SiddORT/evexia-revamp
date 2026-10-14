@@ -16,12 +16,16 @@ class MRDirectory(Timestamps, Base):
         CheckConstraint('"contactRequirement" IN (\'required\',\'optional\')', name="ck_mr_directory_contact"),
         CheckConstraint('"paymentLimit" >= 0 AND "doctorDaysLimit" BETWEEN 0 AND 3650', name="ck_mr_directory_limits"),
         CheckConstraint('"reportingManagerId" IS NULL OR "reportingManagerId" <> id', name="ck_mr_directory_self_manager"),
+        CheckConstraint('("reportingManagerId" IS NULL) = (reporting_manager_name_ciphertext IS NULL)',
+                        name="ck_mr_manager_snapshot"),
         CheckConstraint("(deleted_at IS NULL) = (deleted_by IS NULL)", name="ck_mr_directory_deletion"),
     )
     id: Mapped[uuid.UUID] = mapped_column(ForeignKey("mr_profiles.id"), primary_key=True)
     contactRequirement: Mapped[str] = mapped_column(String(8))
     hq: Mapped[uuid.UUID] = mapped_column(ForeignKey("headquarters.id"), index=True)
     zoneId: Mapped[uuid.UUID] = mapped_column(ForeignKey("zones.id"), index=True)
+    hq_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    zone_name: Mapped[str] = mapped_column(String(200), nullable=False)
     employeeCode: Mapped[str] = mapped_column(String(64))
     designation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("designations.id", ondelete="RESTRICT"), nullable=False)
     reportingManagerId: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mr_directory.id"), index=True)

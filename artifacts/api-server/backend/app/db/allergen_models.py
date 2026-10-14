@@ -25,6 +25,8 @@ class AllergenProduct(Timestamps, Base):
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     category_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("product_categories.id"), nullable=False, index=True)
     storage_location_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("storage_locations.id"), nullable=False, index=True)
+    category_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    storage_location_name: Mapped[str] = mapped_column(String(200), nullable=False)
     selling_price: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
     gst: Mapped[Decimal] = mapped_column(Numeric(9, 6), nullable=False)
     concentration: Mapped[str] = mapped_column(String(200), nullable=False)

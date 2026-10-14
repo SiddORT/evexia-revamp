@@ -7,7 +7,7 @@ import logging
 from sqlalchemy import func, select, text
 from app.core.config import get_settings
 from app.services.directory_crypto import DirectoryCrypto
-from app.services.directory_inventory import FIELDS, NULLABLE_FIELDS, DirectoryCryptoError
+from app.services.directory_inventory import RUNTIME_FIELDS as FIELDS, RUNTIME_NULLABLE_FIELDS as NULLABLE_FIELDS, DirectoryCryptoError
 from app.services.directory_staging import _configuration_digest
 
 SCAN_LIMIT = 500

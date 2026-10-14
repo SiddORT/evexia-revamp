@@ -6,6 +6,8 @@ from app.db.vendor_models import Vendor
 from app.services.zones import label
 from app.services.auth import revalidate_identity
 from app.schemas.vendors import BUSINESS_FIELDS
+from app.services import directory_runtime as encrypted
+from app.services.directory_inventory import DirectoryCryptoError
 
 
 class VendorError(Exception):
@@ -25,6 +27,9 @@ def transaction(db, work):
             raise VendorError(f"A non-deleted vendor already uses this {field}. Review current records.",
                               409, "vendor_duplicate") from None
         raise VendorError() from None
+    except DirectoryCryptoError:
+        db.rollback()
+        raise VendorError() from None
     except SQLAlchemyError:
         db.rollback()
         raise VendorError() from None
@@ -37,6 +42,7 @@ def authorize(db, actor):
     current = revalidate_identity(db, actor, lock=True)
     if not current.user.is_protected_system_admin or current.role != "super_admin" or "admin.access" not in current.permissions:
         raise VendorError("Access denied", 403, "access_denied")
+    encrypted.ready(db)
     return current
 
 
@@ -48,24 +54,37 @@ def projection(db, row):
 
 def predicates(query="", status="all"):
     result = [Vendor.deleted_at.is_(None)]
-    term = " ".join(query.split())
-    if term:
-        term = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-        result.append(or_(*(getattr(Vendor, field).ilike("%" + term + "%", escape="\\")
-                            for field in BUSINESS_FIELDS[:6])))
+    if query.strip():
+        raise VendorError("Encrypted searches must use the bounded authorized scan.", 503)
     if status != "all":
         result.append(Vendor.status == status)
     return result
+
+
+def search_records(db, query, status):
+    try:
+        rows = encrypted.complete(db, Vendor, predicates("", status),
+            lambda row: encrypted.match(" ".join(query.split()),
+                                        *(getattr(row, field) for field in BUSINESS_FIELDS[:6])),
+            result_limit=encrypted.EXPORT_SCAN_LIMIT)
+    except encrypted.ExportLimitError:
+        raise VendorError("Search exceeds the secure scan limit. Narrow status filters; no partial results returned.",
+                          409, "vendor_search_limit") from None
+    return sorted(rows, key=lambda row: (row.created_at, row.id), reverse=True)
 
 
 def listing(db, actor, query, status, limit, offset):
     def work():
         authorize(db, actor)
         total = db.scalar(select(func.count()).select_from(Vendor).where(Vendor.deleted_at.is_(None)))
-        filters = predicates(query, status)
-        filtered = db.scalar(select(func.count()).select_from(Vendor).where(*filters))
-        rows = db.scalars(select(Vendor).where(*filters).order_by(
-            Vendor.created_at.desc(), Vendor.id.desc()).limit(limit).offset(offset))
+        if query.strip():
+            matches = search_records(db, query, status)
+            filtered, rows = len(matches), matches[offset:offset + limit]
+        else:
+            filters = predicates("", status)
+            filtered = db.scalar(select(func.count()).select_from(Vendor).where(*filters))
+            rows = db.scalars(select(Vendor).where(*filters).order_by(
+                Vendor.created_at.desc(), Vendor.id.desc()).limit(limit).offset(offset))
         result = dict(items=[projection(db, row) for row in rows], total=total, filtered=filtered,
                       limit=limit, offset=offset)
         db.commit()

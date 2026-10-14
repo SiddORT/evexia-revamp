@@ -51,6 +51,7 @@ def seed_directory(db, actor_id, size):
             id=key, name=f"Bulk MR {i:05}" if i < size else "Deleted manager",
             employeeCode=f"FIX-{i:05}", phone="", email="", contactRequirement="optional",
             hq=hqs[i % refs], zoneId=zones[i % refs], dateOfJoining=date(2020, 1, 1),
+            hq_name=f"Fixture headquarters {i % refs}", zone_name=f"Fixture zones {i % refs}",
             designation_id=designations[i % refs], reportingManagerId=None,
             paymentLimit=Decimal("123456789.12"), doctorDaysLimit=3650,
             status="active" if i % 2 == 0 and i < size else "inactive",
@@ -63,9 +64,13 @@ def seed_directory(db, actor_id, size):
     db.execute(insert(MRDirectory), [encrypted_values(db, "mr_directory", row) for row in records])
     # First row retains a deleted manager; all others form an acyclic chain.
     # Saved references are intentionally inactive/deleted, not new assignments.
+    from app.services.directory_runtime import crypto as directory_cipher
     for start in range(0, size, 500):
-        db.execute(text('UPDATE mr_directory SET "reportingManagerId"=:manager WHERE id=:id'),
-                   [dict(id=ids[i], manager=ids[i - 1] if i else ids[-1])
+        db.execute(text('UPDATE mr_directory SET "reportingManagerId"=:manager, '
+                        'reporting_manager_name_ciphertext=:snapshot WHERE id=:id'),
+                   [dict(id=ids[i], manager=ids[i - 1] if i else ids[-1],
+                         snapshot=directory_cipher().encrypt("mr_directory", ids[i], "reporting_manager_name",
+                             f"Bulk MR {i - 1:05}" if i else "Deleted manager"))
                     for i in range(start, min(size, start + 500))])
     db.commit()
     return ids[:size]

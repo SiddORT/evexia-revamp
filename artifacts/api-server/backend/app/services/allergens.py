@@ -55,7 +55,7 @@ def projection(db, row):
     for field in ("selling_price", "gst", "threshold_limit"):
         values[field] = format(values[field], ".6f") if values[field] is not None else None
     return dict(id=row.id, **values, version=row.version,
-                category_name=category.name, storage_location_name=location.name,
+                category_name=row.category_name, storage_location_name=row.storage_location_name,
                 category_status=reference_status(category), storage_location_status=reference_status(location),
                 createdBy=label(db, row.created_by), updatedBy=label(db, row.updated_by),
                 createdAt=row.created_at, updatedAt=row.updated_at)
@@ -79,8 +79,8 @@ def predicates(query="", status="all", min_price=None, max_price=None, category_
         pattern = "%" + term + "%"
         result.append(or_(AllergenProduct.name.ilike(pattern, escape="\\"),
                           AllergenProduct.concentration.ilike(pattern, escape="\\"),
-                          AllergenProduct.category_id.in_(select(ProductCategory.id).where(ProductCategory.name.ilike(pattern, escape="\\"))),
-                          AllergenProduct.storage_location_id.in_(select(StorageLocation.id).where(StorageLocation.name.ilike(pattern, escape="\\")))))
+                          AllergenProduct.category_name.ilike(pattern, escape="\\"),
+                          AllergenProduct.storage_location_name.ilike(pattern, escape="\\")))
     if status != "all":
         result.append(AllergenProduct.status == status)
     if category_id:
@@ -130,6 +130,7 @@ def references(db, actor, kind, query="", limit=20, offset=0, include_unusable=F
 def validate_references(db, body, existing=None):
     # SHARE locks serialize against reference edit/status/delete, held until the
     # catalogue commit. Never trust preflight choices or a prior import review.
+    snapshots = {}
     for model, field, title in ((ProductCategory, "category_id", "Category"),
                                 (StorageLocation, "storage_location_id", "Storage Location")):
         record_id = getattr(body, field)
@@ -138,6 +139,9 @@ def validate_references(db, body, existing=None):
         if row is None or (not retained and reference_status(row) != "active"):
             raise AllergenError(f"{title} must be an active, non-deleted shared record. An unchanged saved reference may be retained.",
                                409, "allergen_reference_changed")
+        if not retained:
+            snapshots["category_name" if field == "category_id" else "storage_location_name"] = row.name
+    return snapshots
 
 
 def audit(db, actor, row, operation):
@@ -153,9 +157,9 @@ def assignments(body):
 
 
 def insert(db, actor, body):
-    validate_references(db, body)
+    snapshots = validate_references(db, body)
     now = utcnow()
-    row = AllergenProduct(**assignments(body), created_by=actor.user.id, updated_by=actor.user.id,
+    row = AllergenProduct(**assignments(body), **snapshots, created_by=actor.user.id, updated_by=actor.user.id,
                           created_at=now, updated_at=now)
     db.add(row)
     db.flush()
@@ -201,8 +205,10 @@ def mutate(db, actor, record_id, body, operation):
         else:
             row.status = body.status
             if operation == "edit":
-                validate_references(db, body, row)
+                snapshots = validate_references(db, body, row)
                 for field, value in assignments(body).items():
+                    setattr(row, field, value)
+                for field, value in snapshots.items():
                     setattr(row, field, value)
         row.version += 1
         row.updated_at, row.updated_by = now, current.user.id

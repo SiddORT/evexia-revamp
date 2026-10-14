@@ -386,6 +386,7 @@ def test_export_match_bound_does_not_log_failed_release_and_filter_can_narrow(cl
     actor = db.scalar(select(User).where(User.is_protected_system_admin.is_(True)))
     db.execute(AllergenProduct.__table__.insert(), [
         dict(id=uuid.uuid4(), name=f"Bound product {index}", category_id=c["id"], storage_location_id=l["id"],
+             category_name=c["name"], storage_location_name=l["name"],
              selling_price=None, gst=Decimal(0), concentration="1:10", threshold_limit=None, mix=False,
              status="active", version=1, created_by=actor.id, updated_by=actor.id)
         for index in range(5001)])

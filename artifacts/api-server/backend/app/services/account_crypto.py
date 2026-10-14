@@ -93,8 +93,9 @@ def ready(db):
     if (engine.echo or logging.getLogger("sqlalchemy.engine").isEnabledFor(logging.INFO)
             or logging.getLogger("sqlalchemy.engine.Engine").isEnabledFor(logging.INFO)):
         raise AccountCryptoError()
-    if db.execute(text("SELECT version_num FROM alembic_version")).scalars().all() != [
-            "0035_account_identifiers"]:
+    revisions = db.execute(text("SELECT version_num FROM alembic_version")).scalars().all()
+    # This reviewed successor does not alter account storage or its anchors.
+    if revisions not in (["0035_account_identifiers"], ["0036_reference_privacy"]):
         raise AccountCryptoError()
     current = crypto()
     row = db.execute(text(

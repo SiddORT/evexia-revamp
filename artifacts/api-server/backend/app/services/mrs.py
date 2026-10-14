@@ -116,8 +116,7 @@ def projection_context(db, rows, manager_accounts=False):
         Designation.id, Designation.name, Designation.status, Designation.deleted_at).where(Designation.id.in_(ids)))
     managers = _bulk(db, (row.reportingManagerId for row in rows), lambda ids: select(
         MRDirectory.id, MRDirectory.name_ciphertext, MRDirectory.status, MRDirectory.deleted_at).where(MRDirectory.id.in_(ids)))
-    managers = {key: SimpleNamespace(**dict(value._mapping), name=encrypted.read_name(value, "mr_directory"))
-                for key, value in managers.items()}
+    managers = {key: SimpleNamespace(**dict(value._mapping)) for key, value in managers.items()}
     authors = _bulk(db, (key for row in rows for key in (row.created_by, row.updated_by)),
                     lambda ids: select(User.id, User.is_protected_system_admin).where(User.id.in_(ids)))
     return dict(accounts=accounts, headquarters=headquarters, zones=zones, managers=managers, designations=designations,
@@ -150,8 +149,8 @@ def projection(db, row, context=None):
             warnings.append(f"{title} is inactive. You may retain the saved assignment.")
     values = {key: getattr(row, key) for key in MRFields.model_fields if key != "userId"}
     return dict(**values, userId=username, id=row.id, version=row.version,
-                hqName=hq.name, zoneName=zone.name, designationName=designation.name,
-                reportingManagerName=manager.name if manager else "", assignmentWarnings=warnings,
+                hqName=row.hq_name, zoneName=row.zone_name, designationName=designation.name,
+                reportingManagerName=row.reporting_manager_name or "", assignmentWarnings=warnings,
                 createdBy=created_by, updatedBy=updated_by,
                 createdAt=row.created_at, updatedAt=row.updated_at)
 
@@ -160,7 +159,8 @@ def search_matcher(db, query, rows, context=None):
     context = projection_context(db, rows) if context is None else context
     return lambda row: encrypted.match(query, row.name, row.employeeCode, row.email, row.phone,
                                       row.city, context["designations"][row.designation_id].name,
-                                      context["accounts"][row.id].username)
+                                      context["accounts"][row.id].username,
+                                      row.hq_name, row.zone_name, row.reporting_manager_name)
 
 
 def listing(db, actor, query="", status="all", zone_id=None, hq_id=None, limit=10, offset=0, cursor=None):
@@ -450,11 +450,14 @@ def mutate(db, actor, record_id, body, operation):
         revoke = False
         now = utcnow()
         if operation == "edit":
+            previous = {field: getattr(row, field) for field in ("hq", "zoneId", "reportingManagerId")}
             validate_assignments(db, body, row)
             identifiers_available(db, body, user.id, row.id)
             revoke = user.username != body.userId or (user.email or "") != body.email or row.status != body.status
             for key, value in body.model_dump(exclude={"expected_version", "userId"}).items():
                 setattr(row, key, value)
+            from app.services.reference_snapshots import capture_mr
+            capture_mr(db, row, previous)
             user.username, user.email = body.userId, body.email or None
         elif operation == "status":
             revoke = row.status != body.status

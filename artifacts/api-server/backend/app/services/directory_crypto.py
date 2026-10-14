@@ -7,7 +7,7 @@ import json
 from types import SimpleNamespace
 import uuid
 
-from app.services.directory_inventory import DATE_FIELDS, FIELDS, NULLABLE_FIELDS, DirectoryCryptoError
+from app.services.directory_inventory import DATE_FIELDS, RUNTIME_FIELDS as FIELDS, RUNTIME_NULLABLE_FIELDS as NULLABLE_FIELDS, DirectoryCryptoError
 from app.services.staff_crypto import StaffCrypto
 
 
