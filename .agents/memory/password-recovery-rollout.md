@@ -22,6 +22,16 @@ recovery, including refusal of previously issued public links.
 do not treat an Admin portal selection or a staff display-role label as an
 authoritative identity type.
 
+On the shared Admin sign-in page, show recovery guidance only after clicking
+Forgot password, without leaving the page. Use exactly “Super Admin: Contact
+the tech team to reset your password.” and a separate staff recovery link.
+
+**Why:** The user confirmed that interaction; the entered identifier must not
+determine the recovery guidance or disclose account type.
+
+**How to apply:** Keep guidance independent from login errors and preserve the
+existing MR recovery navigation.
+
 For this recovery rollout, UAT access is permitted when needed, but database
 migrations and production-impacting actions require reporting the exact action
 and its risks first. A code push must not implicitly authorize deployment.

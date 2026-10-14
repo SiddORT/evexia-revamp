@@ -100,9 +100,12 @@ test('staff recovery: real request, constructed delivery, reset and revoked cred
     expect(oldLogin.status()).toBe(200);
     const oldAccess = (await oldLogin.json()).access_token;
     await page.goto(`${base()}/admin/login`);
+    await expect(page.getByTestId('text-super-admin-recovery')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Forgot password?' }).click();
+    await expect(page).toHaveURL(`${base()}/admin/login`);
     await expect(page.getByTestId('text-super-admin-recovery')).toHaveText(
       'Super Admin: Contact the tech team to reset your password.');
-    await page.getByRole('button', { name: 'Forgot password?' }).click();
+    await page.getByRole('link', { name: 'Staff password recovery', exact: true }).click();
     await expect(page.getByLabel('Email or User ID')).toBeVisible();
     await presentation(page);
     // Request can be submitted from the keyboard; hold response to prove loading.

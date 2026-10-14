@@ -63,6 +63,10 @@
 .recovery-links .auth-back:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .admin-recovery-callout { margin: 18px 0 0; padding: 13px 14px; border-radius: 8px; background: var(--orange-soft); border: 1px solid var(--orange); border-left: 4px solid var(--accent); color: var(--ink); font-size: 0.9rem; font-weight: 600; line-height: 1.5; }
 .auth-form .admin-recovery-callout { margin: 0; }
+.auth-form #admin-recovery-guidance:empty { position: absolute; }
+.admin-recovery-callout p { margin: 0; overflow-wrap: anywhere; }
+.admin-staff-recovery-link { display: inline-flex; align-items: center; min-height: 44px; margin-top: 4px; color: inherit; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.admin-staff-recovery-link:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .recovery-card .submit-button:focus-visible, .recovery-card .field input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
   .recovery-card *, .auth-form .submit-button, .auth-form .forgot-button { transition: none !important; animation: none !important; transform: none !important; }

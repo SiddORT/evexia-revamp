@@ -234,6 +234,10 @@ explicit migration and unchanged local-demo purchasing relationships.
 
 ## Authentication and explicit identity operations
 
+For sanitized sign-in failure evidence, the current workspace diagnosis, and
+the separate approval needed for affected-environment checks, see
+[Admin sign-in diagnosis](../../evexia-portal/tests/admin-login-diagnostics.md).
+
 Registration (`POST /api/v1/auth/register`) is always unavailable in the current
 implementation and returns 403; `ALLOW_PUBLIC_REGISTRATION` is retained as a
 configuration field but does not enable account creation. Bootstrap initializes

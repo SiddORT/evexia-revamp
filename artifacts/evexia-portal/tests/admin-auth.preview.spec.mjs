@@ -65,10 +65,66 @@ test('shared Doctor phone control preserves all country options, alternate phone
 });
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 }]) {
+  test(`admin-feedback inline recovery is keyboard accessible and independent at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto(`${base()}/admin/login`);
+    const forgot = page.getByRole('button', { name: 'Forgot password?' });
+    const guidance = page.getByTestId('text-super-admin-recovery');
+    const staff = page.getByRole('link', { name: 'Staff password recovery', exact: true });
+    await expect(guidance).toHaveCount(0);
+    await expect(staff).toHaveCount(0);
+    await expect(forgot).toHaveAttribute('aria-expanded', 'false');
+    await page.getByLabel('Email or username').fill('synthetic-recovery-user');
+    await page.getByLabel('Password', { exact: true }).fill('Synthetic retained draft');
+    await page.getByTestId('checkbox-remember').check();
+    let logins = 0;
+    const observe = request => { if (request.url().endsWith('/auth/login')) logins++; };
+    page.on('request', observe);
+    // Real keyboard entry (not programmatic focus) proves activation and order.
+    await page.getByTestId('link-form-home').focus();
+    for (let i = 0; i < 5; i++) await page.keyboard.press('Tab');
+    await expect(forgot).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(forgot).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('#admin-recovery-guidance')).toHaveAttribute('aria-live', 'polite');
+    await expect(guidance).toHaveText('Super Admin: Contact the tech team to reset your password.');
+    await page.keyboard.press('Space');
+    await forgot.click();
+    await expect(guidance).toHaveCount(1);
+    await expect(page).toHaveURL(`${base()}/admin/login`);
+    await expect(page.getByLabel('Email or username')).toHaveValue('synthetic-recovery-user');
+    await expect(page.getByLabel('Password', { exact: true })).toHaveValue('Synthetic retained draft');
+    await expect(page.getByTestId('checkbox-remember')).toBeChecked();
+    expect(logins).toBe(0);
+    await expect(page.getByTestId('status-auth-message')).toHaveCount(0);
+
+    await page.route('**/api/v1/auth/login', route => route.fulfill({ status: 503, json: {} }));
+    await page.getByTestId('button-submit-login').click();
+    await expect(page.getByTestId('status-auth-message')).toHaveText('The sign-in service is unavailable. Try again later.');
+    await expect(guidance).toHaveCount(1);
+    await expect(staff).toBeVisible();
+    for (const control of [guidance, staff, page.getByTestId('status-auth-message'), page.getByTestId('button-submit-login')]) {
+      const box = await control.boundingBox();
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
+    await page.unroute('**/api/v1/auth/login');
+    await forgot.focus();
+    await page.keyboard.press('Tab');
+    await expect(staff).toBeFocused();
+    await expect(staff).toHaveAttribute('href', '/forgot-password?portal=admin');
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(`${base()}/forgot-password?portal=admin`);
+    await expect(page.getByLabel('Email or User ID')).toBeVisible();
+    page.off('request', observe);
+  });
+
   test(`Admin login has no workspace shortcut and retains controls at ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto(`${base()}/admin/login`);
     await expect(page.getByTestId('text-login-title')).toHaveText('Admin Portal');
+    await expect(page.getByTestId('text-super-admin-recovery')).toHaveCount(0);
     // Count DOM matches, not just visible matches: a hidden shortcut must not remain.
     await expect(page.getByText(/Open Admin workspace/i)).toHaveCount(0);
     await expect(page.getByRole('link', { name: /Open Admin workspace/i, includeHidden: true })).toHaveCount(0);
@@ -113,6 +169,34 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 
   });
 }
 
+test('admin-feedback service failures at refresh and me fail closed and allow an explicit retry', async ({ page }) => {
+  await page.route('**/api/v1/auth/refresh', route => route.fulfill({ status: 503, json: {} }));
+  // Refresh is requested by protected routes, not by the public login page.
+  await page.goto(`${base()}/admin`);
+  await expect(page.getByRole('alert')).toHaveText('The sign-in service is unavailable. Try again later.');
+  await expect(page.getByTestId('button-admin-profile')).toHaveCount(0);
+  await page.unroute('**/api/v1/auth/refresh');
+  await page.getByRole('button', { name: 'Retry session verification' }).click();
+  await expect(page).toHaveURL(/\/admin\/login\?returnTo=/);
+  await expect(page.getByTestId('status-auth-message')).toHaveCount(0);
+  await expect(page.getByTestId('text-super-admin-recovery')).toHaveCount(0);
+  await page.getByTestId('button-forgot-password').click();
+  await expect(page.getByTestId('text-super-admin-recovery')).toBeVisible();
+  await page.route('**/api/v1/auth/me', route => route.fulfill({ status: 503, json: {} }));
+  await page.getByLabel('Email or username').fill('crm-admin@allergyevexia.in');
+  await page.getByLabel('Password', { exact: true }).fill(password());
+  await page.getByTestId('button-submit-login').click();
+  await expect(page.getByTestId('status-auth-message')).toContainText('service is unavailable');
+  await expect(page.getByTestId('button-admin-profile')).toHaveCount(0);
+  await expect(page).toHaveURL(/\/admin\/login\?returnTo=/);
+  await expect(page.getByTestId('text-super-admin-recovery')).toBeVisible();
+  await page.unroute('**/api/v1/auth/me');
+  await page.getByLabel('Password', { exact: true }).fill(password());
+  await page.getByTestId('button-submit-login').click();
+  await expect(page.getByTestId('button-admin-profile')).toBeVisible();
+  await expect(page).toHaveURL(`${base()}/admin`);
+});
+
 test('deep links wait for verification; login controls show safe failures, real MR login and Doctor mock', async ({ page }) => {
   await page.goto(`${base()}/admin/masters/zones`);
   await expect(page).toHaveURL(/\/admin\/login/);
@@ -136,6 +220,9 @@ test('deep links wait for verification; login controls show safe failures, real 
   await expect(page.getByTestId('status-auth-message')).toContainText('Unable to reach');
   await page.unroute('**/api/v1/auth/login');
   await page.getByTestId('button-forgot-password').click();
+  await expect(page).toHaveURL(/\/admin\/login/);
+  await expect(page.getByTestId('text-super-admin-recovery')).toHaveText('Super Admin: Contact the tech team to reset your password.');
+  await page.getByRole('link', { name: 'Staff password recovery', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Forgot password' })).toBeVisible();
   await expect(page.getByTestId('text-super-admin-recovery')).toHaveText('Super Admin: Contact the tech team to reset your password.');
   await expect(page.getByLabel('Email or User ID')).toBeVisible();
