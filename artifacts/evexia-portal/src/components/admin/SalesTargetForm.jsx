@@ -77,6 +77,8 @@ export default function SalesTargetForm({ record, onSave, onClose }) {
   return <Dialog className="admin-target-dialog" eyebrow="Sales Target Master" title={record ? 'Edit sales target' : 'Add sales target'} description="Set the quarterly budget for one MR and financial year. Amounts are in Indian rupees; totals are computed by the server on save." onClose={pending ? () => {} : onClose}>
     <form className="admin-target-form" onSubmit={submit} noValidate>
       <fieldset disabled={pending} style={{ border: 0, margin: 0, padding: 0, display: 'grid', gap: 16 }}>
+        {yearError && <div className="admin-feedback admin-feedback--error" role="alert">{yearError} Existing years stay selectable.</div>}
+        <div className="admin-target-form__fields">
         <div className="admin-target-form__grid">
           <div className="admin-target-field"><span>Medical representative</span>
             <RemoteSelect describeSelection id="sales-target-mr" label="Medical representative" value={values.mrId} selected={savedMr ? { label: `${savedMr.name} (${savedMr.employeeCode})` } : null} fetchPage={fetchMrs()} placeholder="Select MR" invalid={errors.mrId}
@@ -87,9 +89,9 @@ export default function SalesTargetForm({ record, onSave, onClose }) {
           {['startYear', 'endYear'].map((key) => <div className="admin-target-field" key={key}><span>{key === 'startYear' ? 'Financial start year' : 'Financial end year'}</span>
             <SearchableSelect id={`sales-target-${key}`} label={key === 'startYear' ? 'Financial start year' : 'Financial end year'} value={values[key]} options={years} placeholder="Select year" invalid={errors[key]} onChange={(v) => change(key, v)} />{err(key)}</div>)}
         </div>
-        {yearError && <div className="admin-feedback admin-feedback--error" role="alert">{yearError} Existing years stay selectable.</div>}
         <div className="admin-target-form__quarter">{QUARTERS.map((key) => <label className="admin-target-field" key={key}>{key.toUpperCase()} target
           <input inputMode="decimal" value={values[key]} onChange={(e) => change(key, e.target.value)} aria-invalid={Boolean(errors[key])} aria-describedby={errors[key] ? `target-error-${key}` : undefined} data-testid={`input-sales-target-${key}`} />{err(key)}</label>)}</div>
+        </div>
         <div className="admin-target-form__total"><span>Annual target {record && !current ? '' : '(preview; server confirms)'}</span><strong data-testid="text-sales-target-annual">{total === null ? '—' : formatCents(total)}</strong></div>
         {record && <p className="admin-target-import__guide">Saved annual total: {formatAmount(record.annualTotal)}</p>}
         {staleRecord && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-sales-target-stale">

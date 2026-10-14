@@ -146,8 +146,8 @@ function TargetWorkspace() {
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-sales-target-action-error">{actionError}</div>}
     <section className="admin-panel" aria-label="Sales target list">
       <div className="admin-target-toolbar"><div className="admin-target-toolbar__search-row">
-        <label className="admin-search"><span className="sr-only">Search MR name</span><input maxLength={100} value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search MR name" data-testid="input-search-sales-targets" /></label>
         <button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={retry} data-testid="button-refresh-sales-targets"><RefreshCw size={15} aria-hidden="true" /> Refresh</button>
+        <label className="admin-search"><span className="sr-only">Search MR name</span><input maxLength={100} value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search MR name" data-testid="input-search-sales-targets" /></label>
       </div>
       {(active || dirty) && <p role="status" className="admin-target-filter-feedback" data-testid="text-sales-target-filter-feedback">{active && `${partial ? 'Search section' : `${filtered} matching`} · ${filterLabels.join(', ')} applied`}{dirty && `${active ? ' · ' : ''}unapplied changes`}</p>}
       <details className="admin-target-filter-disclosure">

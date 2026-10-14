@@ -92,3 +92,15 @@
   .ob-form__grid { grid-template-columns: minmax(0, 1fr); }
   .ob-form-panel { padding: 20px 18px; }
 }
+.ob-search-group { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; min-width: 0; flex: 1 1 22rem; }
+.ob-search-group .admin-search { flex: 1 1 14rem; min-width: 0; }
+.ob-search-group > .admin-button { flex: 0 0 auto; }
+.ob-doctor .searchable-select__control { min-height: 40px; }
+.ob-doctor .searchable-select__control input { min-height: 38px; box-sizing: border-box; }
+.ob-doctor .ob-doctor__menu { position: fixed; right: auto; z-index: 90; margin: 0; box-sizing: border-box; overscroll-behavior: contain; }
+.ob-doctor .ob-form__hint { overflow-wrap: anywhere; }
+.ob-doctor__menu .admin-button { min-width: 0; max-width: 100%; }
+.ob-doctor__paging { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px; }
+.ob-doctor__paging .admin-button { flex: 1 1 8em; min-width: 0; }
+.ob-doctor__menu [aria-disabled="true"] { opacity: .65; }
+.ob-doctor .searchable-select__control:has(input:disabled) { background: var(--admin-canvas); opacity: .7; }
