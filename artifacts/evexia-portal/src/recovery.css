@@ -1,4 +1,5 @@
 .app-shell.recovery-page {
+  position: relative;
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) !important;
   place-items: center;
@@ -13,6 +14,30 @@
     radial-gradient(ellipse at 90% 0%, rgba(232, 217, 186, 0.22), transparent 44%),
     #f8f6ef;
 }
+.recovery-background {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  opacity: 0.28;
+  pointer-events: none;
+}
+.app-shell.recovery-page[data-admin-theme="modern"] { background: var(--admin-surface); }
+.recovery-page[data-admin-theme="modern"] .recovery-card {
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  border-color: var(--admin-border);
+  border-top-color: var(--admin-primary);
+}
+.recovery-page[data-admin-theme="modern"] .recovery-card h1 { font-family: inherit; }
+.recovery-page[data-admin-theme="modern"] .auth-form-wrap__intro,
+.recovery-page[data-admin-theme="modern"] .recovery-hint,
+.recovery-page[data-admin-theme="modern"] .recovery-note { color: var(--admin-muted); }
+.recovery-page[data-admin-theme="modern"] .recovery-links { border-color: var(--admin-border); }
+.recovery-page[data-admin-theme="modern"] .recovery-links .auth-back { color: var(--admin-primary); }
 
 /* Empty CSS shapes replace the shared corner rings only on recovery pages.
    They have no accessible content, cannot receive focus, and ignore pointers. */

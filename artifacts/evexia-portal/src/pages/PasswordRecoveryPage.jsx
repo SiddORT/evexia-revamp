@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
 import BrandMark from '../components/BrandMark.jsx';
 import Field from '../components/auth/Field.jsx';
+import { useAdminPreferences } from '../components/admin/adminPreferences.js';
 import { forgetSessionAfterPasswordReset } from '../auth/adminSession.js';
 import { recoveryToken, requestRecovery, resetPassword, validateReset } from '../services/passwordRecovery.js';
 import '../entryTheme.css';
@@ -12,6 +13,7 @@ function scrubFragment() {
 }
 
 export default function PasswordRecoveryPage({ reset = false }) {
+  const { theme } = useAdminPreferences();
   const [token, setToken] = useState(() => reset ? recoveryToken(window.location.hash) : '');
   const generation = useRef(0);
   const [kind, setKind] = useState(() =>
@@ -23,6 +25,8 @@ export default function PasswordRecoveryPage({ reset = false }) {
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const isSuperAdminRecovery = !reset && kind === 'admin'
+    && identifier.trim().toLowerCase() === 'crm-admin@allergyevexia.in';
   useEffect(() => {
     document.title = `${reset ? 'Reset password' : 'Forgot password'} — EVEXIA`;
     function acceptLink() {
@@ -55,6 +59,7 @@ export default function PasswordRecoveryPage({ reset = false }) {
   async function submit(event) {
     event.preventDefault();
     if (busy || done) return;
+    if (isSuperAdminRecovery) { setMessage(''); setFailed(false); return; }
     const error = reset ? validateReset(password, confirmation)
       : !identifier.trim() ? 'Enter your email or User ID.' : '';
     if (error) { setMessage(error); setFailed(true); return; }
@@ -80,7 +85,10 @@ export default function PasswordRecoveryPage({ reset = false }) {
   const invalidLink = reset && !token;
 
   return (
-    <main className="auth-page app-shell entry-theme recovery-page" data-admin-theme="light">
+    <main className="auth-page app-shell entry-theme recovery-page" data-admin-theme={theme}>
+      <img className="recovery-background"
+        src={`${import.meta.env.BASE_URL}images/${kind === 'mr' ? 'mr' : 'admin'}-role.jpg`}
+        alt="" aria-hidden="true" />
       <section className="recovery-card" aria-labelledby="recovery-title">
         <BrandMark />
         <h1 id="recovery-title">{reset ? 'Reset password' : 'Forgot password'}</h1>
@@ -88,7 +96,7 @@ export default function PasswordRecoveryPage({ reset = false }) {
           {reset ? 'Choose a new password. All existing sessions will be signed out.'
             : 'Enter your current account email or User ID. Staff should use their issued User ID.'}
         </p>
-        {!reset && kind === 'admin' && identifier.trim().toLowerCase() === 'crm-admin@allergyevexia.in' && (
+        {isSuperAdminRecovery && (
           <p className="admin-recovery-callout" style={{ marginTop: -8, marginBottom: 20 }} data-testid="text-super-admin-recovery">
             Super Admin: Contact the tech team to reset your password.
           </p>

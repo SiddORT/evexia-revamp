@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import Field from './Field.jsx';
 import '../../recovery.css';
-import { Link, useLocation } from 'wouter';
+import { useLocation } from 'wouter';
 import { getSession, loginAdmin, loginMr, logoutAdmin, safeAdminReturn } from '../../auth/adminSession.js';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 
@@ -16,7 +16,6 @@ export default function LoginForm({ role }) {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState('');
-  const [showAdminRecovery, setShowAdminRecovery] = useState(false);
 
   function validate() {
     const nextErrors = {};
@@ -57,7 +56,7 @@ export default function LoginForm({ role }) {
 
   function handleForgot() {
     if (role.short === 'ADMIN') {
-      setShowAdminRecovery(true);
+      navigate('/forgot-password?portal=admin');
     } else if (role.short === 'MR') {
       navigate('/forgot-password?portal=mr');
     } else {
@@ -106,18 +105,10 @@ export default function LoginForm({ role }) {
           />
           Remember me
         </label>
-        <button type="button" className="forgot-button" onClick={handleForgot} data-testid="button-forgot-password"
-          aria-expanded={role.short === 'ADMIN' ? showAdminRecovery : undefined}
-          aria-controls={role.short === 'ADMIN' ? 'admin-recovery-guidance' : undefined}>
+        <button type="button" className="forgot-button" onClick={handleForgot} data-testid="button-forgot-password">
           Forgot password?
         </button>
       </div>
-      {role.short === 'ADMIN' && <div id="admin-recovery-guidance" aria-live="polite" aria-atomic="true">
-        {showAdminRecovery && <div className="admin-recovery-callout">
-          <p data-testid="text-super-admin-recovery">Super Admin: Contact the tech team to reset your password.</p>
-          <Link href="/forgot-password?portal=admin" className="admin-staff-recovery-link">Staff password recovery</Link>
-        </div>}
-      </div>}
       {(message || (role.short !== 'DOCTOR' && session.message)) && <div className="form-message" role="status" data-testid="status-auth-message">{message || session.message}
         {role.short === 'ADMIN' && session.message.includes('revocation') && <button type="button" onClick={() => void logoutAdmin()}>Retry Sign Out</button>}
       </div>}
