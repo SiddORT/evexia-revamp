@@ -183,7 +183,6 @@ export default function DoctorMaster() {
       <div className="admin-page-head">
         <div><p className="admin-page-head__eyebrow">Masters / Care network</p><h1>Doctor Master</h1><p className="admin-page-head__description">Shared server profiles, MR assignments and verification. No doctor login or payment ledger is created.</p></div>
         <div className="doctor-master__head-actions">
-          <button ref={refreshButton} type="button" className="admin-button admin-button--secondary" disabled={loading || pending} onClick={() => { retry(); setSelected([]); closeConfirmation(); }} data-testid="button-refresh-doctors">Refresh records</button>
           {can.import && <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/doctor')} data-testid="button-import-doctors"><Upload size={16} aria-hidden="true" /> Import data</button>}
           {can.export && <DropdownMenu.Root><DropdownMenu.Trigger asChild><button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-doctors"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button></DropdownMenu.Trigger>
             <DropdownMenu.Portal><DropdownMenu.Content className="admin-profile__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} aria-label="Doctor export format">
@@ -198,7 +197,10 @@ export default function DoctorMaster() {
       <section className="admin-panel" aria-label="Doctor list">
         <div className="doctor-master__toolbar">
           <div className="doctor-master__toolbar-top">
-            <label className="admin-search doctor-master__search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search doctors by name, registration, clinic or contact</span><input maxLength={200} value={search} onChange={(event) => filterWith(setSearch, event.target.value)} placeholder="Search name, registration, clinic or contact" data-testid="input-search-doctors" /></label>
+            <div className="doctor-master__search-actions">
+              <button ref={refreshButton} type="button" className="admin-button admin-button--secondary" disabled={loading || pending} onClick={() => { retry(); setSelected([]); closeConfirmation(); }} data-testid="button-refresh-doctors">Refresh records</button>
+              <label className="admin-search doctor-master__search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search doctors by name, registration, clinic or contact</span><input maxLength={200} value={search} onChange={(event) => filterWith(setSearch, event.target.value)} placeholder="Search name, registration, clinic or contact" data-testid="input-search-doctors" /></label>
+            </div>
             <span className="doctor-master__filter-feedback" data-testid="text-doctor-filter-feedback">{hasFilters ? `${partial ? 'Search section' : `${filtered} matching`} · ${activeFilters.join(', ')} applied` : `${total} total doctors`}{hasFilters && <button type="button" className="doctor-master__text-button" onClick={resetFilters} data-testid="button-reset-doctor-filters">Reset filters</button>}</span>
           </div>
           <details className="doctor-master__filters">

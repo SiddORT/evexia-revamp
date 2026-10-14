@@ -38,6 +38,7 @@
 .doctor-form__preview-action { box-sizing: border-box; flex: 0 0 auto; height: 42px; padding: 0 9px; border: 1px dashed var(--admin-border); border-radius: 8px; background: var(--admin-canvas); color: var(--admin-text-soft); font: inherit; font-size: 11px; font-weight: 700; cursor: not-allowed; }
 .doctor-form__hint, .doctor-form__error { margin: 0; font-size: 11px; line-height: 1.4; }
 .doctor-form__hint { color: var(--admin-muted); }
+.doctor-form__field--assignment .doctor-form__hint { overflow-wrap: anywhere; }
 .doctor-form__error { color: var(--admin-danger); }
 .doctor-form__notice { margin: 0 0 16px; padding: 10px 12px; border-left: 3px solid var(--admin-warning); background: var(--admin-state-warm); color: var(--admin-text); font-size: 12px; line-height: 1.5; }
 .doctor-form__notice--error { border-color: var(--admin-danger); background: var(--admin-state-soft); }
