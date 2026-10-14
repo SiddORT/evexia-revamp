@@ -68,6 +68,47 @@ def lock(db):
     """))
 
 
+def _baseline_role_check(checks):
+    """Recognize only the two deparsed forms of the original typed role CHECK.
+
+    Dump/restore can distribute the varchar-array-to-text-array conversion onto
+    each element. Both forms have the identical operator, types and three values.
+    This is not a general expression/cast simplifier.
+    """
+    if len(checks) != 1:
+        return False
+    expression = checks[0].get("sqltext")
+    if not isinstance(expression, str):
+        return False
+    # Ignore grouping parentheses only OUTSIDE quoted strings/identifiers.
+    # Blind replacement would incorrectly accept a role such as 'own(er)'.
+    normalized = []
+    quote = None
+    offset = 0
+    while offset < len(expression):
+        character = expression[offset]
+        if quote:
+            normalized.append(character)
+            if character == quote:
+                if offset + 1 < len(expression) and expression[offset + 1] == quote:
+                    normalized.append(quote)
+                    offset += 1
+                else:
+                    quote = None
+        elif character in ("'", '"'):
+            quote = character
+            normalized.append(character)
+        elif character not in ("(", ")"):
+            normalized.append(character)
+        offset += 1
+    if quote:
+        return False
+    return "".join(normalized) in {
+        "role::text = ANY ARRAY['owner'::character varying, 'admin'::character varying, 'viewer'::character varying]::text[]",
+        "role::text = ANY ARRAY['owner'::character varying::text, 'admin'::character varying::text, 'viewer'::character varying::text]",
+    }
+
+
 def catalog(db):
     """Reject both catalog dependencies and discoverable logical SQL references."""
     inspector = sa.inspect(db)
@@ -96,11 +137,7 @@ def catalog(db):
                 != expected_foreign or any(f["options"] or f["referred_schema"] not in (None, schema) for f in foreign)):
             problems.append(f"{table}: unexpected foreign-key definition")
         checks = inspector.get_check_constraints(table, schema=schema)
-        # PostgreSQL versions vary in deparser parentheses around this single
-        # ANY expression; remove only parentheses, not operators or literals.
-        normalized_checks = [c["sqltext"].replace("(", "").replace(")", "") for c in checks]
-        if table == "memberships" and normalized_checks != [
-                "role::text = ANY ARRAY['owner'::character varying, 'admin'::character varying, 'viewer'::character varying]::text[]"]:
+        if table == "memberships" and not _baseline_role_check(checks):
             problems.append("memberships: unexpected role check")
         actual = db.execute(sa.text("""
           SELECT conname FROM pg_constraint WHERE conrelid=to_regclass(:table)

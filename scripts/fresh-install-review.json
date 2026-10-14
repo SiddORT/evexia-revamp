@@ -7,7 +7,7 @@
     "app/services/directory_crypto.py": "cf302f2f244653a3a445d7f8684e80035c76c4b05ac43b605601f40586f1521b",
     "app/services/directory_inventory.py": "69d456e55cc5b202d79a94ecbc849bad1690e72dff4c80d263962072cb1f3f62",
     "app/services/directory_staging.py": "ea3c67715559b39990bbeac077f6319db18a3fc49bb2800c504a71ed13f93c48",
-    "app/services/organization_retirement.py": "a0c0403227226e6f0599fe0e649a13e2f923a50c6a0df1d60f8ae5d06130305c",
+    "app/services/organization_retirement.py": "d4a45ffdd20d754da002943b0b877e08c275b41ed9418034a4e132345789732c",
     "app/services/role_attribution.py": "ba3fc9fe0d0c51389e73fce573b74492ce9f2c47d649deab7bd9aab3ec9268e2",
     "app/services/staff_designation_mapping.py": "453a8e3e5a233e4bd1fd1f5e434f4534842ce144a8ce9a43209904f4b01bac56",
     "app/services/account_crypto.py": "117f9d32b2c571a3c088f8ed98659cb2ac28310d5072de6697a0f84c0dcd318f",

@@ -59,6 +59,25 @@ Non-baseline comments, explicit grants/column ACLs, security labels and a retire
 table owner different from the executing role also block removal. They require
 reviewed recovery support, not silent deletion and incomplete ownership/grant
 recreation. Baseline recovery is bound to the original executing owner role.
+
+The membership role CHECK comparison accepts only the two reviewed PostgreSQL
+deparser forms of the original `owner`/`admin`/`viewer` predicate: a varchar array
+cast to `text[]`, or that same conversion applied individually to its elements.
+Logical dump/restore can change between these forms even within PostgreSQL 16.
+This does not accept other role values, types, operators, functions, extra
+conditions or additional CHECKs. Grouping parentheses are ignored only outside
+quoted literals/identifiers. All type, nullability, constraint validity, index,
+ownership, dependency, backup, restoration, retention, approval and writer-lock
+checks remain mandatory.
+
+For a development restoration rehearsal, use a matching PostgreSQL major
+version, encoding and locale, but do not assume these guarantee identical
+deparser output. Compare logical column definitions and relative ordering,
+not absolute attribute-number gaps left by dropped columns. Run the complete
+unchanged operator approval/recovery workflow after the catalog comparison;
+matching rows or a SHA-256 alone is not restoration evidence. A temporary
+rehearsal dump does not satisfy durable backup or independent key-custody gates.
+
 Dynamic external SQL, application integrations outside this repository, other
 connections and encoded SQL cannot be proved absent by PostgreSQL catalog
 inspection. Operator review and stopped old writers remain mandatory.

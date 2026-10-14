@@ -4,8 +4,8 @@ description: PostgreSQL dump/restore can change serialized constraint expression
 ---
 
 Treat successful pg_restore and matching rows as insufficient evidence that a
-restored catalog passes the operator retirement preflight. Schema reserialization
-can change cast/expression representation without changing intended semantics.
+restored catalog passes the operator retirement preflight. Even same-major
+restoration can change cast/expression representation without changing semantics.
 
 **Why:** An independent PostgreSQL 17 rehearsal restored the membership role CHECK
 with different casts; the unchanged strict retirement guard correctly rejected
@@ -18,6 +18,17 @@ Alembic/directory-stage metadata. Verify restored data against external recovery
 Do not generalize that fresh-only procedure to populated recoveries, edit restored
 constraints to force acceptance, or relax the production guard.
 
+The reviewed membership predicate permits only its two exact equivalent typed
+array-cast forms, never arbitrary cast removal or expression simplification.
+Grouping normalization must preserve characters inside quoted literals.
+
+**Why:** Logical restore distributes a varchar-array-to-text-array cast over its
+elements. Blind parenthesis removal also incorrectly matches altered role literals.
+
+**How to apply:** Treat any new serialization form as a separate compatibility
+review with strict negative tests. Preserve all operator gates and update the
+pinned fresh-install guard review when its source changes.
+
 Rehearsal databases must preserve the source encoding and locale settings.
 
 **Why:** An isolated cluster initialized with `--no-locale` can default to
@@ -27,3 +38,11 @@ before the actual restoration safeguards are evaluated.
 **How to apply:** Explicitly select the source encoding when creating the
 rehearsal database. Compare data and catalog contracts separately, and never
 treat matching rows as proof that the unchanged operator preflight passes.
+
+SQL superuser/replication role flags do not establish physical-backup access.
+
+**Why:** The managed development connection denied replication through its HBA
+rules despite those role flags and an enabled WAL sender configuration.
+
+**How to apply:** Verify provider/protocol permission before promising physical
+recovery; do not change managed-server access controls to work around that denial.
