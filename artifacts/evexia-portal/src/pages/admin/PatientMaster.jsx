@@ -98,7 +98,6 @@ export default function PatientMaster() {
   return <AdminLayout title="Patient Master">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Patients</p><h1>Patient Master</h1><p className="admin-page-head__description">Protected shared records. Doctor, MR and Zone references come from the server. No dosage history is recorded here.</p></div>
       <div className="admin-mr-head-actions">
-        <button ref={refreshButton} className="admin-button admin-button--secondary" type="button" onClick={refresh}>Refresh records</button>
         {can.import && <button className="admin-button admin-button--secondary" type="button" disabled={Boolean(error)} onClick={() => navigate(`${base}/import`)} data-testid="button-import-patients"><Upload size={16} /> Import data</button>}
         {can.export && <DropdownMenu.Root><DropdownMenu.Trigger asChild><button className="admin-button admin-button--secondary" type="button" aria-busy={exporting} disabled={Boolean(error) || loading || search !== debouncedSearch || (!partial && !filtered)} data-testid="button-export-patients"><Download size={16} />{exporting ? 'Preparing export…' : 'Export data'}</button></DropdownMenu.Trigger>
           <DropdownMenu.Portal><DropdownMenu.Content className="admin-export-menu" sideOffset={6}>
@@ -112,7 +111,10 @@ export default function PatientMaster() {
     {actionError && !confirming && !deleting && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     <section className="admin-panel" aria-label="Patient list">
       <div className="admin-toolbar"><div className="admin-toolbar__fields">
+        <div className="patient-master__search-actions">
+          <button ref={refreshButton} className="admin-button admin-button--secondary" type="button" onClick={refresh}>Refresh records</button>
         <label className="admin-search"><Search size={16} /><span className="sr-only">Search patient name or ID</span><input placeholder="Search name or patient ID" value={search} onChange={(e) => { setSearch(e.target.value); pagination.resetPage(); }} data-testid="input-search-patients" /></label>
+        </div>
         <div className="admin-filter"><label htmlFor="patient-zone">Zone</label><select className="admin-select" id="patient-zone" value={zone} onChange={(e) => { setZone(e.target.value); pagination.resetPage(); }}><option value="all">All zones</option>{zones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}<option value="missing">Missing zone</option></select></div>
         <div className="admin-filter"><label htmlFor="patient-mr">MR</label><select className="admin-select" id="patient-mr" value={mr} onChange={(e) => { setMR(e.target.value); pagination.resetPage(); }}><option value="all">All MRs</option>{mrs.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}<option value="missing">Missing MR</option></select></div>
         <div className="admin-filter"><label htmlFor="patient-status">Status</label><select className="admin-select" id="patient-status" value={status} onChange={(e) => { setStatus(e.target.value); pagination.resetPage(); }}><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>

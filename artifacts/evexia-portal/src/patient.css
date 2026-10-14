@@ -1,4 +1,21 @@
 /* Patient Master follows MR Master's spacing and Admin semantic theme tokens. */
+.patient-master__search-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; flex: 1 1 375px; min-width: 0; max-width: 500px; }
+.patient-master__search-actions > .admin-button { flex: 0 0 auto; max-width: 100%; white-space: normal; }
+.patient-master__search-actions > .admin-search { flex: 1 1 235px; min-width: 0; }
+.patient-form .patient-form__address-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px 16px; align-items: start; }
+.patient-form__address-grid > :is(.patient-form__pincode-row, .patient-form__pin-feedback, .patient-form__pin-choices) { grid-column: 1 / -1; }
+.patient-form__pincode-row > .mr-form__field { max-width: 250px; }
+.patient-form__address-grid > .mr-form__field--wide { grid-column: 1 / -1; width: calc((100% - 16px) / 2); }
+@media (max-width: 1050px) {
+  .patient-form .patient-form__address-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .patient-form__address-grid > .mr-form__field--wide { width: 100%; }
+}
+@media (max-width: 600px) {
+  .patient-master__search-actions { flex: none; max-width: none; }
+  .patient-master__search-actions > .admin-search { flex: 1 1 100%; }
+  .patient-form .patient-form__address-grid { grid-template-columns: minmax(0, 1fr); gap: 15px; }
+  .patient-form__pincode-row > .mr-form__field { max-width: none; }
+}
 .patient-form .mr-form__body { min-height: 310px; }
 .patient-form .patient-form__care-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 14em), 1fr)); align-items: start; }
 .patient-doctor .searchable-select__control { min-height: 42px; }

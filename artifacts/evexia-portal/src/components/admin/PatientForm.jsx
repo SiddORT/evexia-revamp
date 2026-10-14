@@ -273,21 +273,23 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
         </section>
         <section className="mr-form__section" id="patient-panel-address" role="tabpanel" aria-labelledby="patient-tab-address" tabIndex={0} hidden={activeTab !== 'address'}>
           <div className="mr-form__section-head"><h3 className="mr-form__section-title">Address</h3></div>
-          <div className="mr-form__grid">
-            {renderField('addressLine1', 'Address line 1', { placeholder: 'Street address', span: true, autoComplete: 'address-line1' })}
-            {renderField('addressLine2', 'Address line 2', { placeholder: 'Apartment, suite or area', span: true, autoComplete: 'address-line2' })}
-            {renderField('landmark', 'Landmark', { placeholder: 'Nearby landmark' })}
-            {renderField('pincode', 'Pincode', { placeholder: '6-digit pincode for India', inputMode: 'numeric', autoComplete: 'postal-code' })}
-            {renderField('city', 'City', { placeholder: 'City', autoComplete: 'address-level2' })}
-            {renderField('state', 'State', { placeholder: 'State', autoComplete: 'address-level1' })}
-            {renderField('country', 'Country', { placeholder: 'Country', autoComplete: 'country-name' })}
-            {pinState.message && <p role="status">{pinState.message}</p>}
-            {pinState.choices.length > 1 && <div className="mr-form__field mr-form__field--wide"><label htmlFor="patient-pin-location">PIN locations</label><select id="patient-pin-location" className="mr-form__control" aria-describedby={selectedPin ? 'patient-pin-selection' : undefined} defaultValue="" onChange={(event) => {
+          <div className="mr-form__grid patient-form__address-grid">
+            <div className="patient-form__pincode-row">
+              {renderField('pincode', 'Pincode', { placeholder: '6-digit pincode for India', inputMode: 'numeric', autoComplete: 'postal-code' })}
+            </div>
+            {pinState.message && <p className="patient-form__pin-feedback" role="status">{pinState.message}</p>}
+            {pinState.choices.length > 1 && <div className="mr-form__field patient-form__pin-choices"><label htmlFor="patient-pin-location">PIN locations</label><select id="patient-pin-location" className="mr-form__control" aria-describedby={selectedPin ? 'patient-pin-selection' : undefined} defaultValue="" onChange={(event) => {
               const item = pinState.choices[Number(event.target.value)];
               if (item) { addressRevision.current++; pinRequest.current++; setValues((old) => ({ ...old, city: item.city, state: item.state, country: item.country })); }
             }}><option value="">Select a location</option>{pinState.choices.map((item, index) => <option value={index} key={index}>{item.city}, {item.state}, {item.country}</option>)}</select>
               {selectedPin && <p id="patient-pin-selection" className="mr-form__hint">{selectedPin.city}, {selectedPin.state}, {selectedPin.country}</p>}
             </div>}
+            {renderField('addressLine1', 'Address line 1', { placeholder: 'Street address', span: true, autoComplete: 'address-line1' })}
+            {renderField('addressLine2', 'Address line 2', { placeholder: 'Apartment, suite or area', span: true, autoComplete: 'address-line2' })}
+            {renderField('landmark', 'Landmark', { placeholder: 'Nearby landmark' })}
+            {renderField('country', 'Country', { placeholder: 'Country', autoComplete: 'country-name' })}
+            {renderField('state', 'State', { placeholder: 'State', autoComplete: 'address-level1' })}
+            {renderField('city', 'City', { placeholder: 'City', autoComplete: 'address-level2' })}
           </div>
         </section>
       </div>
