@@ -128,7 +128,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
       />
     );
     return (
-      <div className={`mr-form__field${span ? ' mr-form__field--wide' : ''}`} key={key}>
+      <div className={`mr-form__field${span ? ' mr-form__field--wide' : ''}${key === 'pincode' ? ' mr-form__field--pincode' : ''}`} key={key}>
          {info ? <InfoDisclosure id={hintId} title={label} text={info} testId={`button-mr-${key}-info`}>
             <label className="mr-form__label" htmlFor={id}>{label} {required && <span className="mr-form__required" aria-hidden="true">*</span>}</label>
           </InfoDisclosure> : <label className="mr-form__label" htmlFor={id}>{label} {required && <span className="mr-form__required" aria-hidden="true">*</span>}</label>}
@@ -250,15 +250,15 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
 
           <section className="mr-form__section" id="mr-panel-address" role="tabpanel" aria-labelledby="mr-tab-address" tabIndex={0} hidden={activeTab !== 'address'}>
             <div className="mr-form__section-head"><h3 id="mr-address-title" className="mr-form__section-title">Address</h3></div>
-            <div className="mr-form__grid">
+            <div className="mr-form__grid mr-form__grid--address">
                 {renderField('pincode', 'Pincode', { placeholder: '6-digit pincode', inputMode: 'numeric', autoComplete: 'postal-code', info: 'A complete pincode fills City, State and Country automatically. Anything you type yourself is kept.' })}
               {(postal.status || postal.choices.length > 0) && <div className="mr-form__field mr-form__field--wide" role="status" data-testid="status-mr-postal"><p className="mr-form__section-note">{postal.status}</p>{postal.choices.length > 0 && <div className="mr-form__postal-choices">{postal.choices.map((choice, index) => <button type="button" key={index} className="admin-button admin-button--secondary" onClick={() => { applyChoice(choice); setPostal({ status: 'Place applied. You can still edit it.', choices: [] }); }} data-testid={`button-postal-choice-${index}`}>{[choice.city, choice.state, choice.country].filter(Boolean).join(', ')}</button>)}</div>}</div>}
               {renderField('addressLine1', 'Address line 1', { placeholder: 'Street address', span: true, autoComplete: 'address-line1' })}
               {renderField('addressLine2', 'Address line 2', { placeholder: 'Apartment, suite or area', span: true, autoComplete: 'address-line2' })}
               {renderField('landmark', 'Landmark', { placeholder: 'Nearby landmark' })}
-              {renderField('city', 'City', { placeholder: 'City', autoComplete: 'address-level2' })}
-              {renderField('state', 'State', { placeholder: 'State', autoComplete: 'address-level1' })}
               {renderField('country', 'Country', { placeholder: 'Country', autoComplete: 'country-name' })}
+              {renderField('state', 'State', { placeholder: 'State', autoComplete: 'address-level1' })}
+              {renderField('city', 'City', { placeholder: 'City', autoComplete: 'address-level2' })}
             </div>
           </section>
         </div>

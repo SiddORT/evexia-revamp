@@ -34,12 +34,14 @@
   letter-spacing: .035em;
 }
 .mr-form__section-note { margin: 0; color: var(--admin-muted); font-size: 11px; }
-.mr-form__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 24px; }
+.mr-form__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px 16px; align-items: start; }
 .mr-form__field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .mr-form__field > .mr-form__label,
 .mr-form__field > .admin-info > .admin-info__row { min-height: 28px; }
 .mr-form__field > .mr-form__label { display: flex; align-items: center; }
-.mr-form__field--wide { grid-column: span 2; }
+.mr-form__field--wide { grid-column: 1 / -1; }
+.mr-form__grid--address .mr-form__field--wide:not([role="status"]) { width: calc((100% - 16px) / 2); }
+.mr-form__grid--address .mr-form__field--pincode { grid-column: 1 / -1; max-width: 250px; }
 .mr-form__label { color: var(--admin-text-soft); font-size: 11px; font-weight: 700; line-height: 1.4; }
 .mr-form__required { color: var(--admin-accent); }
 .mr-form__control {
@@ -68,11 +70,15 @@
   cursor: not-allowed;
 }
 .mr-form__control[aria-invalid="true"] { border-color: var(--admin-danger); }
-.mr-form__input-row { display: flex; align-items: stretch; gap: 8px; min-width: 0; }
-.mr-form__input-row > .mr-form__control { flex: 1 1 0; min-width: 0; }
+.mr-form__input-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; min-width: 0; }
+.mr-form__input-row > .mr-form__control { flex: 1 1 7em; min-width: 0; }
+.mr-form .admin-phone-input { flex-wrap: wrap; }
+.mr-form .admin-phone-input > select.admin-phone-input__country { flex: 1 1 7em; width: auto; }
+.mr-form .admin-phone-input > input { flex: 2 1 8em; }
 .mr-form__preview-action {
   flex: 0 0 auto;
   min-height: 42px;
+  max-width: 100%;
   padding: 0 9px;
   border: 1px dashed var(--admin-border);
   border-radius: 8px;
@@ -83,7 +89,7 @@
   font-weight: 700;
   cursor: not-allowed;
 }
-.mr-form__hint, .mr-form__error { margin: 0; font-size: 11px; line-height: 1.4; }
+.mr-form__hint, .mr-form__error { margin: 0; font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
 .mr-form__hint { color: var(--admin-muted); }
 .mr-form__error { color: var(--admin-danger); }
 .mr-form__notice {
@@ -197,6 +203,8 @@
 .admin-mr-doctors-table__doctor small { color: var(--admin-text-soft); }
 
 @media (max-width: 1050px) {
+  .mr-form__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mr-form__grid--address .mr-form__field--wide:not([role="status"]) { width: 100%; }
   .admin-mr-desktop { display: none; }
   .admin-mr-mobile { display: grid; gap: 10px; padding: 12px; }
 }
@@ -209,6 +217,7 @@
    .mr-form__body { padding: 22px 18px 28px; }
   .mr-form__grid { grid-template-columns: minmax(0, 1fr); gap: 15px; }
   .mr-form__field--wide { grid-column: auto; }
+  .mr-form__grid--address .mr-form__field--pincode { grid-column: auto; max-width: none; }
    .mr-form__footer { align-items: stretch; flex-direction: column; padding: 14px 18px; }
   .mr-form__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mr-form__actions .admin-button { min-width: 0; }
