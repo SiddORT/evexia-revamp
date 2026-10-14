@@ -17,3 +17,13 @@ to the recovery predecessor, then restore business data without overwriting
 Alembic/directory-stage metadata. Verify restored data against external recovery.
 Do not generalize that fresh-only procedure to populated recoveries, edit restored
 constraints to force acceptance, or relax the production guard.
+
+Rehearsal databases must preserve the source encoding and locale settings.
+
+**Why:** An isolated cluster initialized with `--no-locale` can default to
+SQL_ASCII; Psycopg then returns text as bytes and catalog comparisons can fail
+before the actual restoration safeguards are evaluated.
+
+**How to apply:** Explicitly select the source encoding when creating the
+rehearsal database. Compare data and catalog contracts separately, and never
+treat matching rows as proof that the unchanged operator preflight passes.
