@@ -566,3 +566,22 @@ def test_large_page_bulk_queries_exact_projection_pagination_and_ledger(client, 
     exported = list(csv.reader(io.StringIO(response.content.decode("utf-8-sig"))))
     assert len(exported) == 121
     assert all(row[mr_transfer.HEADERS.index("Status")] == "inactive" for row in exported[1:])
+
+
+def test_export_scope_rejects_tampered_nonmatching_fields_and_releases_keyring(client):
+    from sqlalchemy import text
+    from app.services import directory_runtime
+    api, db, _ = client
+    headers, _, hq, zone = setup(api, db)
+    row = add(api, headers, fields(hq, zone))["record"]
+    before = directory_runtime.crypto()
+    db.execute(text('UPDATE mr_directory SET phone_ciphertext=:value WHERE id=:id'),
+               {"id": row["id"], "value": "broken"})
+    db.commit()
+    for query in ("", "no synthetic match"):
+        result = api.get(BASE + "/export", headers=headers, params={"format": "csv", "query": query})
+        assert result.status_code == 503
+        assert result.headers["cache-control"] == "no-store"
+        assert "broken" not in result.text
+        assert directory_runtime._operation_crypto.get() is None
+    assert directory_runtime.crypto() is not before

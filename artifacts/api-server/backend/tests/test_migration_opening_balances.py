@@ -48,7 +48,7 @@ def test_empty_forward_migration_preserves_doctors_identity_and_audit(migration_
         count = db.scalar(select(func.count()).select_from(AuditEvent))
         assert original["registrationNumber"] == doctor["registrationNumber"]
     from directory_test_data import approved_historical_upgrade
-    approved_historical_upgrade(engine, config)
+    approved_historical_upgrade(engine, config, target_revision="0036_reference_privacy")
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(OpeningBalance)) == 0
         assert db.scalar(select(func.count()).select_from(OpeningBalanceImportReview)) == 0

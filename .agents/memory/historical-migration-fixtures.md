@@ -45,6 +45,19 @@ revision, even if a legacy test previously expected success.
 metadata fixtures. Do not weaken migration validation or expand production
 operator review boundaries to make old tests pass.
 
+Current-model migration consumers must explicitly opt into later protected
+conversions, with separate recovery evidence for each populated scope. Keep
+older shared helpers' historical defaults unchanged.
+
+**Why:** Metadata-created service fixtures can pass while migration fixtures
+silently stop before new reference-snapshot or encrypted-contact contracts.
+Reusing an earlier migration's approval would conceal that mismatch and widen
+the approved scope.
+
+**How to apply:** Compare the service's model contract with the fixture's actual
+revision. Upgrade only the operational consumer, rehearse populated recovery
+separately, and retain legacy constraint assertions at their original schema.
+
 **Why:** Falling back to public can select a current encryption anchor/table
 instead of the intended historical schema and make a rehearsal appear valid.
 

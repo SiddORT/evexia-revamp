@@ -18,7 +18,8 @@ from app.db.designation_models import Designation
 from app.schemas.sales_targets import SalesTargetFields, SalesTargetStatus, SalesTargetVersion
 from app.services import sales_targets, sales_target_transfer
 from test_migration_0006 import migration_db
-from test_migration_zones import prepare, identity
+from test_migration_zones import identity
+from directory_test_data import prepare_current_directory as prepare
 from test_sales_targets import fields, HEADER
 
 
@@ -64,7 +65,8 @@ def seed(db, actor_id, historical=False):
     if historical:
         from app.services.directory_inventory import LEGACY_FIELDS as FIELDS
         values = {column.name: getattr(mr, column.name) for column in MRDirectory.__table__.columns
-                  if column.name not in ("designation_id", "name_index", "created_at", "updated_at", "version")
+                  if column.name not in ("designation_id", "name_index", "created_at", "updated_at", "version",
+                                         "hq_name", "zone_name")
                   and not column.name.endswith("_ciphertext")}
         values.update({field: getattr(mr, field) for field in FIELDS["mr_directory"]})
         values["designation"], values["version"] = "MR", 1
@@ -83,7 +85,7 @@ def test_empty_migration_preserves_prior_records_rejects_rounding_and_keeps_hist
     with Session(engine) as db:
         mr = seed(db, actor_id, historical=True)
     from directory_test_data import approved_historical_upgrade
-    approved_historical_upgrade(engine, config)
+    approved_historical_upgrade(engine, config, target_revision="0036_reference_privacy")
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(SalesTarget)) == 0
         assert db.get(User, actor_id).is_protected_system_admin
@@ -100,7 +102,7 @@ def test_empty_migration_preserves_prior_records_rejects_rounding_and_keeps_hist
                 with db.begin_nested():
                     db.execute(text(sql))
         sales_targets.mutate(db, actor, row["id"], SalesTargetVersion(expected_version=1), "delete")
-    with pytest.raises(RuntimeError, match="Ciphertext account downgrade is refused"):
+    with pytest.raises(RuntimeError, match="Populated privacy downgrade refused"):
         command.downgrade(config, "0022_allergen_catalogue")
     with Session(engine) as db:
         assert db.get(SalesTarget, row["id"]).deleted_by == actor_id

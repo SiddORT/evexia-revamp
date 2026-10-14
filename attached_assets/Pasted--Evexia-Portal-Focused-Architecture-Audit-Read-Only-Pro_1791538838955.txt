@@ -1,0 +1,83 @@
+# Evexia Portal — Focused Architecture Audit (Read-Only)
+
+## Project context
+- Backend: FastAPI
+- Frontend: React.js
+- Current status: Super Admin structure and master modules are developed.
+- Not yet developed: Admin operations, MR portal, doctor portal, patients, orders, procurement, inventory, accounts, settlements, and incentives.
+
+## Objective
+Audit the existing implementation before we make architectural changes or develop operational modules.
+
+**STRICT RULE: Audit only. Do not modify files, generate migrations, install dependencies, change environment variables, or modify the database.**
+
+### 1. Project structure
+Identify:
+- Backend and frontend entry points.
+- FastAPI routers, services, models, schemas, middleware, and configuration.
+- React routing, layouts, components, API clients, and authentication state.
+- Database technology, ORM, migration tool, and current migration status.
+- Existing deployment configuration and environment-variable usage.
+
+Provide relevant file paths.
+
+### 2. Database and master conventions
+Inspect existing master tables and relationships. Report:
+- Primary keys and foreign keys.
+- Naming and timestamp conventions.
+- Soft deletion and audit logging.
+- Versioning and transaction handling.
+- How master data is fetched and displayed.
+- Any existing historical snapshots or immutable-record patterns.
+
+Do not treat missing future transaction tables as defects.
+
+### 3. Authentication and permissions
+Determine:
+- How users authenticate and how sessions or tokens are managed.
+- How Super Admin access is enforced.
+- Whether permissions are checked server-side.
+- How new roles and role-specific navigation could fit the existing design.
+- Whether organization-level or tenant-level isolation exists.
+
+### 4. Security foundation
+Inspect the actual implementation of:
+- Password hashing and authentication security.
+- Encryption of sensitive fields and key management.
+- HTTPS and deployment security configuration.
+- CORS, CSRF where applicable, input validation, and rate limiting.
+- Audit logs, file access controls, and secrets management.
+- Existing privacy and notification infrastructure, if any.
+
+Distinguish implemented controls from configuration-only or undocumented controls.
+
+### 5. React and FastAPI routing
+Determine how the current React routes and FastAPI endpoints are structured.
+
+Assess the safest way to support:
+- `/admin`, `/mr`, and `/doctor` paths.
+- Subdomains such as `mr.example.com` and `doctor.example.com`.
+- Verified custom domains.
+- Secure domain-to-portal and, if applicable, domain-to-organization mapping.
+
+Identify required backend middleware, frontend routing changes, DNS/SSL prerequisites, and hosting limitations.
+
+### 6. Historical data integrity design
+No operational modules have been built yet. Recommend conventions for future transaction models so that:
+- Stable master references are retained.
+- Relevant master values are snapshotted when a transaction is created.
+- Product prices and financial amounts are stored on transaction lines.
+- Historical transactions are not silently changed by master edits.
+- Finalized financial records use controlled correction or reversal workflows.
+- Auditability and concurrency controls are implemented where appropriate.
+
+### 7. Required output
+Return:
+1. A concise existing-architecture diagram or description.
+2. A file-path inventory of relevant components.
+3. Findings classified as Implemented, Partially Implemented, Missing, or Not Verifiable.
+4. Recommended minimal changes for historical data integrity and domain mapping.
+5. Risks, dependencies, and acceptance tests.
+6. A phased implementation plan that preserves the existing Super Admin functionality.
+
+**Do not implement anything. Do not claim a feature is working just because a file, prompt, database column, or configuration setting exists. Wait for explicit approval before making changes.**

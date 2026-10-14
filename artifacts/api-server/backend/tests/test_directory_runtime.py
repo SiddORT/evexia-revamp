@@ -83,3 +83,47 @@ def test_cross_record_tamper_never_falls_back_to_unavailable_plaintext(client):
     for path, params in (("/" + str(rows[1]["id"]), {}), ("", {"query": "unmatched"}), ("/export", {"query": "unmatched"})):
         response = api.get(BASE + path, headers=headers, params=params)
         assert response.status_code == 503 and "v1:primary:" not in response.text
+
+
+def test_operation_keyring_scope_resets_and_still_authenticates_every_read(client, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    from app.services.directory_inventory import DirectoryCryptoError
+    _, db, _ = client
+    created = []
+    original = directory_runtime.DirectoryCrypto
+
+    def tracked(settings):
+        current = original(settings)
+        created.append(current)
+        return current
+
+    monkeypatch.setattr(directory_runtime, "DirectoryCrypto", tracked)
+    owner = uuid.uuid4()
+    with pytest.raises(RuntimeError, match="synthetic export failure"):
+        with directory_runtime.crypto_scope(db) as outer:
+            ciphertext = outer.encrypt("mr_directory", owner, "name", "Synthetic MR")
+            for _ in range(3):
+                assert directory_runtime.crypto() is outer
+                assert directory_runtime.crypto().decrypt("mr_directory", owner, "name", ciphertext) == "Synthetic MR"
+            assert len(created) == 1
+            # Reusing a keyring never caches a plaintext result or ignores AAD.
+            with pytest.raises(DirectoryCryptoError):
+                directory_runtime.crypto().decrypt("mr_directory", uuid.uuid4(), "name", ciphertext)
+            with pytest.raises(DirectoryCryptoError):
+                directory_runtime.crypto().decrypt("mr_directory", owner, "name", "broken")
+            with directory_runtime.crypto_scope(db) as inner:
+                assert inner is not outer
+                assert directory_runtime.crypto() is inner
+            assert directory_runtime.crypto() is outer
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                assert pool.submit(directory_runtime.crypto).result() is not outer
+            raise RuntimeError("synthetic export failure")
+    assert directory_runtime._operation_crypto.get() is None
+    assert directory_runtime.crypto() is not outer
+    # A later operation must validate a changed key/index configuration again.
+    settings = directory_runtime.get_settings().model_copy(update={
+        "directory_index_key": SecretStr(b64(b"R" * 32))})
+    monkeypatch.setattr(directory_runtime, "get_settings", lambda: settings)
+    with pytest.raises(DirectoryCryptoError):
+        with directory_runtime.crypto_scope(db):
+            pytest.fail("Mismatched configuration must not enter the operation")

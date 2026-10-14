@@ -27,8 +27,9 @@ async function resetLink(page, token) {
   await expect(page.getByRole('heading', { name: 'Reset password' })).toBeVisible();
   expect(await page.evaluate(() => location.hash === '')).toBe(true);
 }
-async function layout(page, width) {
-  await page.setViewportSize({ width, height: 900 });
+async function layout(page, width, height = 900) {
+  await page.setViewportSize({ width, height });
+  await page.evaluate(() => scrollTo(0, 0));
   const bounds = await page.locator('.recovery-card').evaluate(card => {
     const rect = card.getBoundingClientRect();
     return { x: rect.x, right: rect.right, center: rect.x + rect.width / 2,
@@ -40,6 +41,53 @@ async function layout(page, width) {
   expect(bounds.right).toBeLessThanOrEqual(width);
   expect(Math.abs(bounds.center - width / 2)).toBeLessThan(2);
   expect(bounds.width).toBeLessThanOrEqual(464);
+  expect(await page.locator('.recovery-card').evaluate(card => card.getBoundingClientRect().top)).toBeGreaterThanOrEqual(16);
+  const treatment = await page.locator('.recovery-page').evaluate(main => ({
+    background: getComputedStyle(main).backgroundImage,
+    decoration: ['::before', '::after'].map(pseudo => {
+      const style = getComputedStyle(main, pseudo);
+      return [style.position, style.pointerEvents, style.content];
+    }),
+    card: getComputedStyle(main.querySelector('.recovery-card')).backgroundColor,
+  }));
+  expect(treatment.background).toContain('radial-gradient');
+  expect(treatment.decoration).toEqual([['absolute', 'none', '""'], ['absolute', 'none', '""']]);
+  expect(treatment.card).toBe('rgb(255, 255, 255)');
+  const back = page.getByRole('link', { name: 'Back to sign in' });
+  await back.scrollIntoViewIfNeeded();
+  await expect(back).toBeInViewport();
+  expect(await back.evaluate(link => {
+    const rect = link.getBoundingClientRect();
+    return link.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2));
+  })).toBe(true);
+}
+
+async function presentation(page) {
+  for (const [width, height] of [[1440, 900], [768, 1024], [375, 812], [320, 568], [844, 390]]) {
+    await layout(page, width, height);
+  }
+  // Double actual computed text sizes, including rem and clamped headings.
+  await page.locator('.recovery-card').evaluate(card => {
+    const elements = [card, ...card.querySelectorAll('*')];
+    const sizes = elements.map(element => getComputedStyle(element).fontSize);
+    elements.forEach((element, index) => {
+      element.dataset.originalStyle = element.getAttribute('style') ?? '';
+      element.style.setProperty('font-size', `${parseFloat(sizes[index]) * 2}px`, 'important');
+    });
+  });
+  try {
+    expect(await page.locator('#recovery-title').evaluate(title => parseFloat(getComputedStyle(title).fontSize)))
+      .toBeGreaterThan(50);
+    await layout(page, 320, 480);
+  } finally {
+    await page.locator('.recovery-card').evaluate(card => {
+      for (const element of [card, ...card.querySelectorAll('*')]) {
+        element.setAttribute('style', element.dataset.originalStyle);
+        delete element.dataset.originalStyle;
+      }
+    });
+    await page.setViewportSize({ width: 375, height: 812 });
+  }
 }
 
 test('staff recovery: real request, constructed delivery, reset and revoked credentials', async ({ page, playwright }) => {
@@ -56,7 +104,7 @@ test('staff recovery: real request, constructed delivery, reset and revoked cred
       'Super Admin: Contact the tech team to reset your password.');
     await page.getByRole('button', { name: 'Forgot password?' }).click();
     await expect(page.getByLabel('Email or User ID')).toBeVisible();
-    for (const width of [1440, 768, 375, 320]) await layout(page, width);
+    await presentation(page);
     // Request can be submitted from the keyboard; hold response to prove loading.
     let release;
     const held = new Promise(resolve => { release = resolve; });
@@ -70,6 +118,7 @@ test('staff recovery: real request, constructed delivery, reset and revoked cred
     await expect(page.getByRole('status')).toContainText('Request received');
     await page.unroute('**/api/v1/auth/forgot-password');
     await expect(page.getByText(/Request accepted does not mean delivered/)).toBeVisible();
+    await presentation(page);
     await expect.poll(() => outbox().length).toBe(1);
     const delivered = outbox()[0];
     expect(delivered.recipient === 'staff-recovery@example.com').toBe(true);
@@ -78,10 +127,11 @@ test('staff recovery: real request, constructed delivery, reset and revoked cred
     expect(trusted.pathname).toBe('/reset-password');
     const token = new URLSearchParams(trusted.hash.slice(1)).get('token');
     await resetLink(page, token);
-    for (const width of [1440, 375, 320]) await layout(page, width);
+    await presentation(page);
     await fillReset(page, nextPassword, 'different synthetic password');
     await page.getByRole('button', { name: 'Reset password', exact: true }).click();
     await expect(page.getByRole('alert')).toContainText('do not match');
+    await presentation(page);
     await fillReset(page, seed.password);
     await page.getByRole('button', { name: 'Reset password', exact: true }).click();
     await expect(page.getByRole('alert')).toContainText('different from your current password');
@@ -89,7 +139,7 @@ test('staff recovery: real request, constructed delivery, reset and revoked cred
     await page.getByLabel('Confirm new password', { exact: true }).press('Tab');
     await page.keyboard.press('Enter');
     await expect(page.getByRole('status')).toContainText('Password updated');
-    await layout(page, 320);
+    await presentation(page);
     const storageContainsToken = await page.evaluate(value =>
       JSON.stringify([localStorage, sessionStorage]).includes(value), token);
     expect(storageContainsToken).toBe(false);
@@ -114,6 +164,7 @@ test('recovery missing, malformed, expired, temporary error, retry and stale res
   const seed = fixture();
   await page.goto(`${base()}/reset-password`);
   await expect(page.getByRole('alert')).toContainText('missing or invalid');
+  await presentation(page);
   await expect(page.getByRole('button', { name: 'Reset password', exact: true })).toHaveCount(0);
   await page.goto(`${base()}/reset-password#token=one&token=two`);
   await expect(page.getByRole('alert')).toContainText('missing or invalid');
@@ -132,7 +183,7 @@ test('recovery missing, malformed, expired, temporary error, retry and stale res
   await page.getByLabel('Email or User ID').fill('unknown@example.com');
   await page.getByRole('button', { name: 'Send recovery link' }).click();
   await expect(page.getByRole('alert')).toContainText('temporarily unavailable');
-  await layout(page, 320);
+  await presentation(page);
   await page.unroute('**/api/v1/auth/forgot-password');
   await page.getByRole('button', { name: 'Send recovery link' }).click();
   await expect(page.getByRole('status')).toContainText('Request received');
@@ -169,4 +220,31 @@ test('recovery missing, malformed, expired, temporary error, retry and stale res
   await page.goto(`${base()}/forgot-password?portal=mr`);
   await expect(page.getByTestId('text-super-admin-recovery')).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Back to sign in' })).toHaveAttribute('href', '/mr');
+});
+
+test('recovery decoration does not restyle other entry screens after navigation', async ({ page }) => {
+  async function appearance(path) {
+    await page.goto(`${base()}${path}`);
+    await expect(page.locator('main')).toBeVisible();
+    return page.locator('main').evaluate(main => {
+      const style = getComputedStyle(main);
+      const before = getComputedStyle(main, '::before');
+      return [style.backgroundColor, style.backgroundImage, style.display,
+        before.position, before.borderColor, before.borderRadius];
+    });
+  }
+  for (const path of ['/', '/admin/login', '/mr']) {
+    const initial = await appearance(path);
+    await page.goto(`${base()}/forgot-password`);
+    await expect(page.locator('.recovery-card')).toBeVisible();
+    // SPA navigation leaves the recovery stylesheet loaded, unlike page.goto.
+    await page.evaluate(path => { history.pushState(null, '', path); dispatchEvent(new PopStateEvent('popstate')); }, path);
+    await expect(page.locator('.recovery-page')).toHaveCount(0);
+    await expect.poll(() => page.locator('main').evaluate(main => {
+      const style = getComputedStyle(main);
+      const before = getComputedStyle(main, '::before');
+      return [style.backgroundColor, style.backgroundImage, style.display,
+        before.position, before.borderColor, before.borderRadius];
+    })).toEqual(initial);
+  }
 });

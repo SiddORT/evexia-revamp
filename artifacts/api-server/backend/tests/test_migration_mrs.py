@@ -23,6 +23,9 @@ from test_mrs import fields, csv_data, seed_designation
 
 def setup(fixture):
     engine, config, actor_id, session_id = prepare(fixture)
+    # Operational MR tests use today's saved-reference schema. Explicitly
+    # historical tests below still stop at their named predecessor revisions.
+    command.upgrade(config, "0036_reference_privacy")
     with Session(engine) as db:
         actor = identity(db, actor_id, session_id)
         seed_designation(db, actor_id)
@@ -192,12 +195,12 @@ def test_maximum_exports_bulk_queries_exact_rows_caps_and_revocation(migration_d
             assert metric["seconds"] < (6 if format == "csv" else 12)
             if format == "csv":
                 exported = list(csv.reader(io.StringIO(data.decode("utf-8-sig"))))
-                assert exported[0] == mr_transfer.HEADERS
+                assert exported[0] == mr_transfer.EXPORT_HEADERS
             else:
                 book = load_workbook(io.BytesIO(data), read_only=True)
                 exported = list(book.active.values)
                 book.close()
-                assert list(exported[0]) == mr_transfer.HEADERS + mr_transfer.AUDIT
+                assert list(exported[0]) == mr_transfer.EXPORT_HEADERS + mr_transfer.AUDIT
             assert len(exported) == 5001  # Complete, not a silently truncated page.
             # Compare every exported business field, order and optional audit field.
             rows = list(db.scalars(select(MRDirectory).where(MRDirectory.id.in_(ids)).order_by(
@@ -210,7 +213,8 @@ def test_maximum_exports_bulk_queries_exact_rows_caps_and_revocation(migration_d
                               reportingManagerId=f"user:fixture.mr.{index - 1 if index else 5000}",
                               createdBy="Super Admin", updatedBy="Backend user",
                               createdAt=record.created_at, updatedAt=record.updated_at)
-                expected = [str(values[key]) for key, _ in mr_transfer.COLUMNS]
+                expected = [str(values[key]) for key, _ in mr_transfer.COLUMNS] + [
+                    f"Bulk MR {index - 1:05}" if index else "Deleted manager"]
                 if format == "xlsx":
                     expected += [str(values[key]) for key in ("createdBy", "createdAt", "updatedBy", "updatedAt")]
                     expected = [value if value else None for value in expected]

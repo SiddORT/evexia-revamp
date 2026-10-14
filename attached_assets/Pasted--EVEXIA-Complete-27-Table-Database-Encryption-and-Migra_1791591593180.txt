@@ -1,0 +1,144 @@
+# EVEXIA — Complete 27-Table Database, Encryption and Migration Verification
+
+Review the current EVEXIA codebase and verify every requirement below against the actual implementation. This is a comprehensive audit of our previously requested changes, not a database redesign.
+
+**Important:** Do not assume a change is complete because a prompt was submitted or a migration file exists. Inspect the SQLAlchemy models, Alembic migrations, live database schema where accessible, foreign keys, indexes, constraints, backend services, API schemas, frontend references, and tests.
+
+Do not make unrelated changes, introduce multi-tenancy, delete existing records to make tests pass, or remove authentication protections.
+
+## 1. Verify all 27 database tables
+
+For each table, report its actual status and supporting evidence.
+
+1. **`account_identifier_reservations`** — Verify reservations work with encrypted email/username and blind indexes, preserving intended identifier-reuse protection.
+
+2. **`allergen_products`** — No new schema change requested. Check for regressions.
+
+3. **`audit_events`** — Remove `organization_id` from the database, model, and dependent code. Preserve existing audit records, actor information, action details, timestamps, and audit functionality.
+
+4. **`auth_sessions`** — Preserve and verify session creation, expiry, refresh, revocation, and `family_id` behavior.
+
+5. **`courier_partners`** — No new schema change requested. Check for regressions.
+
+6. **`custom_roles`** — Add `created_by` and `updated_by` foreign keys to `users.id`, plus nullable `deleted_at` and `deleted_by` referencing `users.id`. Safely handle existing attribution without inventing user IDs. Implement soft deletion and prevent deleted roles from being newly assigned or used to grant permissions. Preserve existing assignments safely.
+
+7. **`designations`** — Remove `level`, `basicDa`, `hra`, `medicalAllowance`, `travellingAllowance`, `specialAllowance`, and `professionalTax`. Update all dependent references.
+
+8. **`doctor_directory`** — Add nullable `deleted_at` and `deleted_by` referencing `users.id`. Exclude deleted doctors from normal listings and selection options while preserving existing records and relationships.
+
+9. **`download_grants`** — No new schema change requested. Verify existing download-grant functionality.
+
+10. **`download_logs`** — No new schema change requested. Preserve download history and existing append-only protection against updates and deletes.
+
+11. **`files`** — No new schema change requested. Preserve file metadata, ownership, references, and download workflows.
+
+12. **`headquarters`** — No new schema change requested. Check for regressions.
+
+13. **`login_attempts`** — Verify login-attempt tracking and applicable rate-limiting or abuse-prevention controls work with encrypted identifiers.
+
+14. **`memberships`** — Verify removal of the legacy table and dependencies used solely by it. Preserve current single-organization authentication, authorization, staff permissions, and existing workflows. Report remaining references.
+
+15. **`mr_directory`** — Replace text `designation` with `designation_id` referencing `designations.id`. Safely map existing values and update backend, API, and frontend references.
+
+16. **`mr_profiles`** — No new schema change requested. Check for regressions.
+
+17. **`organizations`** — Verify removal of the legacy table and dependencies used solely by it. Preserve current single-organization operation and existing access controls. Report remaining references.
+
+18. **`patient_directory`** — Add nullable `deleted_at` and `deleted_by` referencing `users.id`. Exclude deleted patients from normal listings and inappropriate new transactions. Preserve existing records and relationships.
+
+19. **`patients`** — No new schema change requested. Check for regressions.
+
+20. **`product_categories`** — No new schema change requested. Check for regressions.
+
+21. **`refresh_sessions`** — Remove the legacy `organization_id` dependency consistently with the removal of organizations. Preserve token hashing, rotation, replacement, expiry, revocation, and session-family protections.
+
+22. **`sales_targets`** — Add/store an annual target total equal to Q1 + Q2 + Q3 + Q4, and ensure it stays consistent when quarterly targets change. Verify handling of existing records.
+
+23. **`staff_profiles`** — Add nullable `deleted_at` and `deleted_by` referencing `users.id`. Replace text `designation` with `designation_id` referencing `designations.id`. Safely map existing values and preserve existing encryption behavior.
+
+24. **`storage_locations`** — No new schema change requested. Check for regressions.
+
+25. **`users`** — Encrypt email and username, and add keyed blind indexes for normalized account lookup and uniqueness. Safely migrate existing accounts and update registration, login, account lookup, identifier changes, password recovery, and all dependent flows. Report whether plaintext values remain in the database or other storage locations.
+
+26. **`vendors`** — No new schema change requested. Check for regressions.
+
+27. **`zones`** — No new schema change requested. Check for regressions.
+
+## 2. Verify all encryption and personal-data protection
+
+Audit encryption across all relevant tables, not just `users`.
+
+**`users`**
+- Verify email and username encryption and keyed blind indexes.
+- Verify normalization, uniqueness, registration, login, password recovery, and identifier updates.
+- Check safe migration of existing accounts and identify any remaining plaintext storage.
+
+**`staff_profiles`**
+- Verify existing encryption of staff names, email addresses, and phone numbers.
+- Verify email blind-index lookups, encryption/decryption, updates, and compatibility with migrations.
+
+**`mr_directory`, `doctor_directory`, and `patient_directory`**
+- Inspect names, phone numbers, email addresses, dates of birth, addresses, and other personal information.
+- Report which fields are encrypted, which remain plaintext, and whether encryption was previously requested or is additional recommended work. Do not misrepresent recommendations as completed requirements.
+
+**Encryption implementation**
+- Verify authenticated encryption, nonce/IV handling, key configuration, and safe key-rotation considerations.
+- Confirm encryption keys are not hardcoded or stored alongside ciphertext in the database.
+- Verify search and uniqueness still work through appropriate blind indexes or other safe lookup mechanisms.
+- Check API responses, logs, exports, and error messages for accidental exposure of sensitive data.
+- Never reveal encryption keys or plaintext personal information in the report.
+- Do not remove plaintext columns until migration and dependent workflows are verified.
+- Verify that existing records can be decrypted correctly by the application and that blind indexes identify the correct accounts.
+
+## 3. Verify migration and data safety
+
+- Inspect all relevant Alembic revisions, their dependencies, and the current migration head.
+- Do not edit previously applied migrations. Use new migrations for required changes.
+- Verify migrations are reversible where appropriate and do not silently discard data.
+- Check whether the live database has actually applied the migrations; do not infer this from source files alone.
+- Identify duplicate identifiers, unmapped designations, orphaned foreign keys, invalid attribution values, and migration risks.
+- Verify foreign keys, uniqueness constraints, indexes, nullability, and column types match the intended design.
+- Search the entire codebase for remaining references to removed columns and tables.
+- If live database access is unavailable, explicitly state that live schema application and data preservation have not been verified.
+
+## 4. Verify authentication, permissions, and application behavior
+
+Ensure all changes preserve:
+- Password hashing, registration, login, and recovery.
+- Session creation, refresh-token rotation, expiry, and revocation.
+- Super Admin protections and current staff/MR permissions.
+- Correct foreign-key relationships and uniqueness enforcement.
+- Soft deletion and exclusion of deleted records from appropriate workflows.
+- Audit logging, file access, download grants, and download history.
+- Existing encryption and safe handling of sensitive identifiers.
+
+## 5. Run relevant checks
+
+Run all relevant checks supported by the environment:
+- Database migration checks.
+- Backend/API tests.
+- Frontend build.
+- Browser checks.
+- Authentication and authorization tests.
+- Relevant CRUD and soft-delete workflows.
+- Encryption, decryption, blind-index lookup, and existing-account migration checks.
+
+Fix clear regressions caused by these changes when safe. If a failure requires a risky or unrelated change, report it instead of making an unapproved change.
+
+Never report a check as passed if it was not actually run. Distinguish passed, failed, skipped, blocked, and unverified checks.
+
+## 6. Return one comprehensive verification report
+
+**A. Table-by-table results:** Include all 27 tables, each marked with one of these statuses:
+- DONE AND VERIFIED
+- IMPLEMENTED BUT NOT FULLY VERIFIED
+- IN PROGRESS
+- NOT IMPLEMENTED
+- FAILED / NEEDS FIX
+- NO CHANGE REQUESTED — REGRESSION CHECKED
+
+For each table, provide brief evidence: relevant model, migration revision, code location, and test result.
+
+**B. Encryption report:** List every relevant table and sensitive field, its actual storage status (encrypted, plaintext, or unknown), the lookup mechanism, and any remaining work.
+
+**C. Migration report:** List relevant migration revisions, actual database

@@ -337,6 +337,10 @@ def sample(format):
 def export(db, actor, query, status, zone_id, hq_id, format):
     def work():
         mrs.authorize(db, actor, action="export", lock=False)
+        with mrs.encrypted.crypto_scope(db):
+            return build_export()
+
+    def build_export():
         clauses = mrs.predicates("", status, zone_id, hq_id)
         count = db.scalar(select(func.count()).select_from(MRDirectory).where(*clauses))
         if not query.strip() and count > EXPORT_LIMIT:

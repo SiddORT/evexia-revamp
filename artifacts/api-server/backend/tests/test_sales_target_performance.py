@@ -59,7 +59,8 @@ def directory(client):
     db.execute(insert(MRDirectory), [
         encrypted_values(db, "mr_directory", {**{k: v for k, v in mr_fields(hqs[i], zones[i], name=f"Scale MR {i:04}",
                                       code=f"SCALE-{i:04}").items() if k != "userId"},
-         "id": m, "dateOfJoining": date(2020, 1, 1), "paymentLimit": Decimal("0.00"),
+         "id": m, "hq_name": f"Scale Headquarter {i}", "zone_name": f"Scale Zone {i}",
+         "dateOfJoining": date(2020, 1, 1), "paymentLimit": Decimal("0.00"),
          "doctorDaysLimit": 0, "created_by": admin_id, "updated_by": admin_id,
          **(history if i == 0 else {})}) for i, m in enumerate(mrs)])
     records = [

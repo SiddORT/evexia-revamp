@@ -1,9 +1,55 @@
-.recovery-page { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; place-items: center; min-height: 100dvh; padding: clamp(16px, 4vw, 48px); background: var(--canvas); }
+.app-shell.recovery-page {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  place-items: center;
+  min-height: 100dvh;
+  padding: clamp(16px, 4vw, 48px);
+  isolation: isolate;
+  /* Clip only the decorative edges, not the document's vertical scrolling. */
+  overflow: clip;
+  background:
+    radial-gradient(ellipse at 5% 12%, rgba(237, 194, 169, 0.46), transparent 52%),
+    radial-gradient(ellipse at 96% 87%, rgba(174, 194, 164, 0.42), transparent 52%),
+    radial-gradient(ellipse at 90% 0%, rgba(232, 217, 186, 0.22), transparent 44%),
+    #f8f6ef;
+}
+
+/* Empty CSS shapes replace the shared corner rings only on recovery pages.
+   They have no accessible content, cannot receive focus, and ignore pointers. */
+.app-shell.recovery-page::before,
+.app-shell.recovery-page::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  width: clamp(180px, 25vw, 390px);
+  height: clamp(280px, 36vw, 540px);
+  border: 1px solid rgba(111, 137, 99, 0.19);
+  border-radius: 85% 12% 82% 16%;
+  outline: 1px solid rgba(111, 137, 99, 0.09);
+  outline-offset: 22px;
+  background: none;
+}
+.app-shell.recovery-page::before {
+  inset: -100px auto auto -85px;
+  transform: rotate(-28deg);
+}
+.app-shell.recovery-page::after {
+  inset: auto -90px -130px auto;
+  transform: rotate(24deg);
+  border-color: rgba(171, 114, 85, 0.18);
+  outline-color: rgba(171, 114, 85, 0.09);
+}
+@media (max-width: 600px) {
+  .app-shell.recovery-page::before { top: -155px; left: -115px; }
+  .app-shell.recovery-page::after { right: -120px; bottom: -180px; }
+}
 .recovery-card { position: relative; z-index: 1; width: min(100%, 464px); background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 14px; box-shadow: var(--shadow); padding: clamp(24px, 5vw, 40px); }
 .recovery-card .brand-mark { width: 148px; margin-bottom: 22px; }
 .recovery-card h1 { margin: 0 0 10px; font-family: var(--font-display); font-weight: 600; font-size: clamp(1.7rem, 5vw, 2.1rem); letter-spacing: -0.03em; line-height: 1.12; overflow-wrap: anywhere; }
 .recovery-card .auth-form-wrap__intro { font-size: 0.95rem; margin-bottom: 24px; }
-.recovery-card .submit-button { min-height: 52px; font-size: 0.9rem; width: 100%; }
+.recovery-card .submit-button { min-height: 52px; height: auto; padding: 14px 12px; font-size: 0.9rem; width: 100%; }
+.recovery-card { min-width: 0; overflow-wrap: anywhere; }
 .recovery-hint { margin: -8px 0 0; color: var(--ink-soft); font-size: 0.84rem; line-height: 1.55; }
 .recovery-note { margin: 18px 0 0; color: var(--ink-soft); font-size: 0.84rem; line-height: 1.55; }
 .recovery-alert, .recovery-success { margin: 18px 0 0; padding: 13px 14px; border-radius: 8px; border: 1px solid; border-left-width: 4px; font-size: 0.9rem; line-height: 1.55; overflow-wrap: anywhere; }

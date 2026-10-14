@@ -3,6 +3,8 @@ import hmac
 import time
 import uuid
 import logging
+from contextlib import contextmanager
+from contextvars import ContextVar
 
 from sqlalchemy import func, select, text
 from app.core.config import get_settings
@@ -12,10 +14,29 @@ from app.services.directory_staging import _configuration_digest
 
 SCAN_LIMIT = 500
 EXPORT_SCAN_LIMIT = 10000
+_operation_crypto = ContextVar("directory_operation_crypto", default=None)
 
 
 def crypto():
-    return DirectoryCrypto(get_settings())
+    current = _operation_crypto.get()
+    return current if current is not None else DirectoryCrypto(get_settings())
+
+
+@contextmanager
+def crypto_scope(db):
+    """Reuse a validated keyring only inside one authorized synchronous export.
+
+    This stores no decrypted fields. Every read still authenticates its own
+    ciphertext/AAD. Readiness is checked afresh even for nested scopes, and the
+    previous context is restored on success or failure; no process-wide cache.
+    The caller must authorize its operation before entering this scope.
+    """
+    current = ready(db)
+    token = _operation_crypto.set(current)
+    try:
+        yield current
+    finally:
+        _operation_crypto.reset(token)
 
 
 def ready(db):
@@ -26,7 +47,8 @@ def ready(db):
             or logging.getLogger("sqlalchemy.engine").isEnabledFor(logging.INFO)
             or (logger is not None and logger.isEnabledFor(logging.INFO))):
         raise DirectoryCryptoError()
-    current = crypto()
+    # Never let an outer operation bypass fresh configuration validation.
+    current = DirectoryCrypto(get_settings())
     db.execute(text("SET LOCAL statement_timeout='5000ms'"))
     state = db.execute(text("SELECT phase,index_key_check,configuration_digest FROM directory_crypto_stage WHERE id=1")).one()
     if (not state.configuration_digest

@@ -35,12 +35,21 @@ def fields(c, l, name="Reagent"):
                           gst="0", concentration="1:10", threshold_limit=None, mix=True, status="active")
 
 
+def prepare_catalogue(fixture):
+    engine, config, actor_id, sid = prepare(fixture)
+    # Current catalogue services require the saved-reference columns. Keep the
+    # shared historical identity helper at its explicitly reviewed boundary.
+    command.upgrade(config, "0036_reference_privacy")
+    return engine, config, actor_id, sid
+
+
 def test_forward_empty_rollout_preserves_categories_locations_and_accounts(migration_db):
     engine, config, actor_id, sid = prepare(migration_db, target_revision="0021_master_permissions")
     command.downgrade(config, "0021_master_permissions")
     c, l = setup_refs(engine, actor_id)
     from directory_test_data import approved_historical_upgrade
     approved_historical_upgrade(engine, config)
+    command.upgrade(config, "0036_reference_privacy")
     with Session(engine) as db:
         assert db.get(User, actor_id).is_protected_system_admin and db.get(AuthSession, sid).status == "ACTIVE"
         assert db.get(ProductCategory, c).name == "Shared category" and db.get(StorageLocation, l).name == "Shared location"
@@ -61,7 +70,7 @@ def test_forward_empty_rollout_preserves_categories_locations_and_accounts(migra
 
 
 def test_concurrent_duplicate_and_stale_status_delete(migration_db):
-    engine, _, actor_id, sid = prepare(migration_db)
+    engine, _, actor_id, sid = prepare_catalogue(migration_db)
     c, l = setup_refs(engine, actor_id)
     barrier = Barrier(2)
     def create(index):
@@ -94,7 +103,7 @@ def test_concurrent_duplicate_and_stale_status_delete(migration_db):
 
 
 def test_concurrent_imports_and_revoked_session(migration_db):
-    engine, _, actor_id, sid = prepare(migration_db)
+    engine, _, actor_id, sid = prepare_catalogue(migration_db)
     setup_refs(engine, actor_id)
     data = allergen_transfer.encode([allergen_transfer.HEADERS[:9],
         ["Batch", "Shared category", "", "0", "Shared location", "1:10", "", "active", "Mix"]], "csv")
@@ -126,14 +135,15 @@ def test_concurrent_imports_and_revoked_session(migration_db):
 
 
 def test_reference_change_waits_for_catalogue_transaction(migration_db, monkeypatch):
-    engine, _, actor_id, sid = prepare(migration_db)
+    engine, _, actor_id, sid = prepare_catalogue(migration_db)
     c, l = setup_refs(engine, actor_id)
     locked, release, started, changed = Event(), Event(), Event(), Event()
     original = allergens.validate_references
     def hold(db, body, existing=None):
-        original(db, body, existing)
+        snapshots = original(db, body, existing)
         locked.set()
         assert release.wait(10)
+        return snapshots
     monkeypatch.setattr(allergens, "validate_references", hold)
     def save():
         with Session(engine) as db:

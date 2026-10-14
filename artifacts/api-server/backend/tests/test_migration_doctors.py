@@ -40,7 +40,7 @@ def test_empty_forward_migration_retains_mr_profile_and_audit(migration_db):
         mr_version = db.scalar(text("SELECT version FROM mr_directory WHERE id=:id"), {"id": mr["id"]})
         audit_count = db.scalar(select(func.count()).select_from(AuditEvent))
     from directory_test_data import approved_historical_upgrade
-    approved_historical_upgrade(engine, config)
+    approved_historical_upgrade(engine, config, target_revision="0036_reference_privacy")
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(DoctorDirectory)) == 0
         assert db.get(MRProfile, mr["id"]).user_id == user_id

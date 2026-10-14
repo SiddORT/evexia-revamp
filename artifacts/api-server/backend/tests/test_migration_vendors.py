@@ -14,7 +14,8 @@ from app.schemas.vendors import VendorFields, VendorStatus, VendorVersion
 from app.schemas.zones import ZoneFields
 from app.services import vendors, vendor_transfer, zones
 from test_migration_0006 import migration_db
-from test_migration_zones import prepare, identity, historical_zone
+from test_migration_zones import identity, historical_zone
+from directory_test_data import prepare_current_directory as prepare
 from test_vendors import FIELDS, HEADER
 
 
@@ -29,6 +30,12 @@ def test_historical_international_phone_downgrade_preserves_records(migration_db
                             "dialCountry": "BR", "phoneNo": "11961234567"}).model_dump(),
             id=record_id, version=1, created_by=actor_id, updated_by=actor_id,
         ))
+    # Plaintext phone checks belong to this legacy schema, not the current
+    # ciphertext-only table. Preserve their original rejection assertions here.
+    with Session(engine) as db:
+        for sql in ('UPDATE vendors SET "dialCountry"=\'ZZ\'', 'UPDATE vendors SET "phoneNo"=\'123\''):
+            with pytest.raises(IntegrityError), db.begin_nested():
+                db.execute(text(sql))
     with pytest.raises(RuntimeError, match="international vendor history"):
         command.downgrade(config, "0024_opening_balances")
     with engine.connect() as db:
@@ -49,7 +56,7 @@ def test_international_expansion_preserves_records_and_refuses_lossy_downgrade(m
         db.commit()
         original = {"id": record_id}
     from directory_test_data import approved_historical_upgrade
-    approved_historical_upgrade(engine, config)
+    approved_historical_upgrade(engine, config, target_revision="0036_reference_privacy")
     with Session(engine) as db:
         stored = db.get(Vendor, original["id"])
         assert stored.phoneNo == "9876543210" and stored.version == 1
@@ -61,7 +68,7 @@ def test_international_expansion_preserves_records_and_refuses_lossy_downgrade(m
         }))
         assert added["phoneNo"] == "11961234567"
         vendors.mutate(db, actor, added["id"], VendorVersion(expected_version=1), "delete")
-    with pytest.raises(RuntimeError, match="Ciphertext account downgrade is refused"):
+    with pytest.raises(RuntimeError, match="Populated privacy downgrade refused"):
         command.downgrade(config, "0024_opening_balances")
     with Session(engine) as db:
         assert db.get(Vendor, added["id"]).phoneNo == "11961234567"
@@ -73,7 +80,7 @@ def test_migration_preserves_prior_masters_accounts_and_constraints(migration_db
     with Session(engine) as db:
         row = historical_zone(db, actor_id, session_id, "Preserved")
     from directory_test_data import approved_historical_upgrade
-    approved_historical_upgrade(engine, config)
+    approved_historical_upgrade(engine, config, target_revision="0036_reference_privacy")
     with Session(engine) as db:
         assert db.get(Zone, row["id"]).name == "Preserved"
         assert db.get(User, actor_id).is_protected_system_admin
@@ -84,13 +91,13 @@ def test_migration_preserves_prior_masters_accounts_and_constraints(migration_db
         created = vendors.create(db, actor, VendorFields(**FIELDS))
         for sql in ('UPDATE vendors SET version=0', "UPDATE vendors SET status='unknown'",
                     'UPDATE vendors SET "vendorName"=\' \'', 'UPDATE vendors SET "gstNo"=\'27ddddd3333d1z8\'',
-                    'UPDATE vendors SET "dialCountry"=\'ZZ\'', 'UPDATE vendors SET "phoneNo"=\'123\'',
+                    'UPDATE vendors SET "dialCountry_ciphertext"=NULL', 'UPDATE vendors SET "phoneNo_ciphertext"=NULL',
                     "UPDATE vendors SET deleted_at=now()"):
             with pytest.raises(IntegrityError):
                 with db.begin_nested():
                     db.execute(text(sql))
         vendors.mutate(db, actor, created["id"], VendorVersion(expected_version=1), "delete")
-    with pytest.raises(RuntimeError, match="Ciphertext account downgrade is refused"):
+    with pytest.raises(RuntimeError, match="Populated privacy downgrade refused"):
         command.downgrade(config, "0021_master_permissions")
     with Session(engine) as db:
         assert db.get(Vendor, created["id"]).deleted_by == actor_id

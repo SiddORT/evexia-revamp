@@ -1,4 +1,5 @@
 - [Restored catalog fidelity](restored-catalog-fidelity.md) — pg_restore can reserialize CHECK expressions; rerun strict retirement preflight on the actual restored catalog.
+- [Export keyring lifetime](export-keyring-lifetime.md) — reuse validated keys only within one authorized export; never cache plaintext or reuse operation state across requests.
 - [Self-contained recovery](self-contained-postgres-recovery.md) — schema-filtered archives can omit shared extension dependencies; verify a complete database restoration.
 - [Development recovery custody](development-recovery-custody.md) — private App Storage approved for original-development backups; restoration and key recovery remain separate checks.
 - [Operator HTTPS trust](operator-http-trust.md) — use a verified system-CA SSL context for live HTTPX checks when the bundled trust store fails.
