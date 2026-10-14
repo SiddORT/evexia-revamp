@@ -808,6 +808,10 @@ export const createRoleHostnameBodyEnabledDefault = true;
 export const createRoleHostnameBodyHostnameMax = 270;
 export const createRoleHostnameResponseEnabledDefault = true;
 export const createRoleHostnameResponseHostnameMax = 270;
+export const manageDomainAdmissionBodyHostnameMax = 253;
+export const manageDomainAdmissionBodyVersionMin = 0;
+export const savePrimaryDomainBodyHostnameMax = 270;
+export const savePrimaryDomainBodyVersionMin = 0;
 export const deleteRoleHostnameResponseEnabledDefault = true;
 export const deleteRoleHostnameResponseHostnameMax = 270;
 export const editRoleHostnameBodyEnabledDefault = true;
@@ -14423,8 +14427,30 @@ export const ListReportingUsersResponse = zod.object({
 /**
  * @summary Listing
  */
+export const listRoleHostnamesResponseBootstrapHostsDefault = [];
+export const listRoleHostnamesResponseDomainsDefault = [];
 
 export const ListRoleHostnamesResponse = zod.object({
+  bootstrap_hosts: zod
+    .array(zod.string())
+    .default(listRoleHostnamesResponseBootstrapHostsDefault),
+  domains: zod
+    .array(
+      zod.object({
+        active: zod.boolean(),
+        challenge_expires_at: zod.union([zod.coerce.date(), zod.null()]),
+        challenge_name: zod.string(),
+        challenge_value: zod.union([zod.string(), zod.null()]),
+        hostname: zod.string(),
+        kind: zod.enum(["primary", "role"]),
+        last_checked_at: zod.union([zod.coerce.date(), zod.null()]),
+        status: zod.string(),
+        verification_expires_at: zod.union([zod.coerce.date(), zod.null()]),
+        verified_at: zod.union([zod.coerce.date(), zod.null()]),
+        version: zod.number().int(),
+      }),
+    )
+    .default(listRoleHostnamesResponseDomainsDefault),
   items: zod.array(
     zod.object({
       created_at: zod.coerce.date(),
@@ -14461,6 +14487,54 @@ export const CreateRoleHostnameResponse = zod.object({
   role: zod.enum(["admin", "mr", "doctor"]),
   updated_at: zod.coerce.date(),
   updated_by: zod.string().uuid(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Domain Action
+ */
+
+export const ManageDomainAdmissionBody = zod.object({
+  action: zod.enum(["challenge", "verify", "activate", "revoke"]),
+  hostname: zod.string().max(manageDomainAdmissionBodyHostnameMax),
+  version: zod.number().int().min(manageDomainAdmissionBodyVersionMin),
+});
+
+export const ManageDomainAdmissionResponse = zod.object({
+  active: zod.boolean(),
+  challenge_expires_at: zod.union([zod.coerce.date(), zod.null()]),
+  challenge_name: zod.string(),
+  challenge_value: zod.union([zod.string(), zod.null()]),
+  hostname: zod.string(),
+  kind: zod.enum(["primary", "role"]),
+  last_checked_at: zod.union([zod.coerce.date(), zod.null()]),
+  status: zod.string(),
+  verification_expires_at: zod.union([zod.coerce.date(), zod.null()]),
+  verified_at: zod.union([zod.coerce.date(), zod.null()]),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Primary
+ */
+
+export const SavePrimaryDomainBody = zod.object({
+  hostname: zod.string().max(savePrimaryDomainBodyHostnameMax),
+  previous_hostname: zod.union([zod.string(), zod.null()]).optional(),
+  version: zod.number().int().min(savePrimaryDomainBodyVersionMin),
+});
+
+export const SavePrimaryDomainResponse = zod.object({
+  active: zod.boolean(),
+  challenge_expires_at: zod.union([zod.coerce.date(), zod.null()]),
+  challenge_name: zod.string(),
+  challenge_value: zod.union([zod.string(), zod.null()]),
+  hostname: zod.string(),
+  kind: zod.enum(["primary", "role"]),
+  last_checked_at: zod.union([zod.coerce.date(), zod.null()]),
+  status: zod.string(),
+  verification_expires_at: zod.union([zod.coerce.date(), zod.null()]),
+  verified_at: zod.union([zod.coerce.date(), zod.null()]),
   version: zod.number().int(),
 });
 

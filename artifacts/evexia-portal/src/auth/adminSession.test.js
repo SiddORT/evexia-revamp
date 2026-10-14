@@ -30,7 +30,7 @@ test('Role URL transport is Super Admin only, versioned and never replays uncert
       assert.equal(options.headers.Authorization, 'Bearer synthetic-memory-token');
       if (url.endsWith('/edit')) return reply({ error: {} }, 409);
       if (url.endsWith('/delete')) throw new Error('private transport details');
-      return reply(options.method === 'GET' ? { items: [] } : { id, version: 1 });
+      return reply(options.method === 'GET' ? { items: [], domains: [], bootstrap_hosts: [] } : { id, version: 1 });
     }
     return reply(url.endsWith('/me') ? user : payload);
   });
@@ -44,6 +44,31 @@ test('Role URL transport is Super Admin only, versioned and never replays uncert
   await assert.rejects(api.roleUrlRequest('/external-url'), /Unsupported/);
   await api.logoutAdmin();
   await assert.rejects(api.roleUrlRequest(), /session changed/);
+});
+
+test('domain transport accepts domain responses without a mapping ID and rejects malformed or old-server envelopes', async () => {
+  const domain = { hostname: 'portal.allergyevexia.com', kind: 'primary', version: 1, active: false, status: 'unverified' };
+  let mode = 'valid';
+  const api = await setup(async (url, options) => {
+    if (url.includes('/admin/role-urls')) {
+      if (mode === 'limited') return reply({ error: { message: 'Wait 30 seconds before another DNS action' } }, 429);
+      if (options.method === 'GET') return reply(mode === 'old' ? { items: [] } : { items: [], domains: [domain], bootstrap_hosts: ['recovery.allergyevexia.com'] });
+      return reply(mode === 'bad' ? { hostname: domain.hostname, version: 1 } : domain);
+    }
+    return reply(url.endsWith('/me') ? user : payload);
+  });
+  await api.loginAdmin(user.email, 'synthetic-password', false);
+  assert.deepEqual(await api.roleUrlRequest('/primary', { hostname: domain.hostname, previous_hostname: null, version: 0 }), domain);
+  assert.deepEqual(await api.roleUrlRequest('/domain-action', { hostname: domain.hostname, version: 1, action: 'challenge' }), domain);
+  assert.equal((await api.roleUrlRequest()).domains[0].hostname, domain.hostname);
+  mode = 'bad';
+  await assert.rejects(api.roleUrlRequest('/primary', { hostname: domain.hostname, version: 0 }), (e) => e.ambiguous);
+  mode = 'old';
+  await assert.rejects(api.roleUrlRequest(), /Unable to load Role URLs/);
+  mode = 'limited';
+  await assert.rejects(api.roleUrlRequest('/domain-action', { hostname: domain.hostname, version: 1, action: 'verify' }),
+    (e) => e.status === 429 && e.message.includes('Wait 30 seconds') && !e.ambiguous);
+  await api.logoutAdmin();
 });
 
 test('Role URL response decoding cannot expose a directory after identity changes; staff is denied', async () => {

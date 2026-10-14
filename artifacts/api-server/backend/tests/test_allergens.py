@@ -1,6 +1,7 @@
 """Synthetic Allergen API/transfer fixtures; never managed data or credentials."""
 import csv
 import io
+import json
 import uuid
 from datetime import timedelta
 from decimal import Decimal
@@ -112,7 +113,15 @@ def test_invalid_fields_no_rounding_or_forged_attribution(client, key, value):
     result = api.post(BASE, headers=headers, json=fields(c, l, **{key: value}))
     assert result.status_code == 422, result.text
     assert db.scalar(select(func.count()).select_from(AllergenProduct)) == 0
-    assert "3822" not in result.text and "forged" not in result.text
+    error = result.json()["error"]
+    request_id = error.pop("request_id")
+    assert str(uuid.UUID(request_id)) == request_id
+    assert request_id == result.headers["X-Request-ID"]
+    # A random UUID can contain the numeric sentinel by chance. Still inspect
+    # every actual error field for echoed values, without mistaking correlation
+    # metadata for rejected input.
+    payload = json.dumps(error)
+    assert "3822" not in payload and "forged" not in payload
 
 
 def test_reference_choices_retention_and_save_time_changes(client):

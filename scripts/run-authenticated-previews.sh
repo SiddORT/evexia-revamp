@@ -80,6 +80,7 @@ createdb -h "$PGROOT/socket" -p 5432 -U "$(id -un)" evexia_auth_preview_test
 export DATABASE_URL="postgresql+psycopg://$(id -un)@/evexia_auth_preview_test?host=$PGROOT/socket&port=5432"
 export TEST_DATABASE_URL="$DATABASE_URL"
 export APP_ENV=test
+export PORTAL_BOOTSTRAP_HOSTS= TRUSTED_PROXY_PEERS=
 export STAFF_ENCRYPTION_KEYS='{"primary":"QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="}'
 export STAFF_ENCRYPTION_KEY_ID=primary
 export STAFF_EMAIL_INDEX_KEY=QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI=
@@ -139,6 +140,14 @@ command.upgrade(config, SCHEMA_REVISION)
 PY_PREVIEW_INITIALIZE
 python3 -B -m app.bootstrap
 API_APP=app.main:app
+case "$*" in
+""|*role-urls.preview.spec.mjs*)
+  export PYTHONPATH="$ROOT/artifacts/api-server/backend/tests:$PYTHONPATH"
+  export TRUSTED_PROXY_PEERS=127.0.0.1
+  export EVEXIA_DEV_HOSTS=admin-browser.allergyevexia.com,mr-browser.allergyevexia.com,doctor-browser.allergyevexia.com,unknown-browser.allergyevexia.com,auth-admin-browser.allergyevexia.com,auth-mr-browser.allergyevexia.com
+  API_APP=domain_preview_app:app
+  ;;
+esac
 # Explicit single-spec fixture only; no test route or delivery sink in the real app.
 if [ "$#" -eq 1 ] && [ "$1" = "artifacts/evexia-portal/tests/password-recovery.preview.spec.mjs" ]; then
   export PASSWORD_RECOVERY_URL=https://portal.example.com/reset-password
@@ -149,7 +158,7 @@ if [ "$#" -eq 1 ] && [ "$1" = "artifacts/evexia-portal/tests/password-recovery.p
   python3 -B -m recovery_preview_app
   API_APP=recovery_preview_app:app
 fi
-python3 -m uvicorn "$API_APP" --host 127.0.0.1 --port "$API_PORT" --no-access-log \
+python3 -m uvicorn "$API_APP" --host 127.0.0.1 --port "$API_PORT" --no-access-log --no-proxy-headers \
   >"$PGROOT/api.log" 2>&1 &
 API_PID=$!
 
@@ -158,7 +167,7 @@ for _ in $(seq 1 60); do
   if ! kill -0 "$API_PID" 2>/dev/null; then break; fi
   # curl alone may succeed against another process that won a bind race.
   if grep -q "Uvicorn running on http://127.0.0.1:$API_PORT " "$PGROOT/api.log" &&
-    curl -fsS "http://127.0.0.1:$API_PORT/api/healthz" >/dev/null; then ready=1; break; fi
+    curl -fsS -H "X-Forwarded-For: 127.0.0.1" "http://127.0.0.1:$API_PORT/api/healthz" >/dev/null; then ready=1; break; fi
   sleep 1
 done
 if [ "$ready" -ne 1 ]; then

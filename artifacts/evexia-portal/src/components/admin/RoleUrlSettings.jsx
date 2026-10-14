@@ -3,6 +3,7 @@ import '../../roleUrlSettings.css';
 import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { roleUrlRequest } from '../../auth/adminSession.js';
+import PrimaryDomainPanel from './PrimaryDomainPanel.jsx';
 
 const EMPTY = { hostname: '', role: 'admin', enabled: true };
 const same = (a, b) => a.hostname === b.hostname && a.role === b.role && a.enabled === b.enabled;
@@ -15,24 +16,33 @@ export default function RoleUrlSettings({ onGuardChange }) {
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState(null); // {id|null, version, base}
   const [draft, setDraft] = useState(EMPTY);
-  const [busy, setBusy] = useState(false);
+  const [roleBusy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [blocked, setBlocked] = useState(false); // conflict / uncertain: reload required
   const [removing, setRemoving] = useState(null);
   const [notice, setNotice] = useState('');
   const headRef = useRef(null);
+  const loadedOnce = useRef(false);
   const dialogRef = useRef(null);
   const removeTrigger = useRef(null);
   const dirty = Boolean(editing) && !same(draft, editing.base);
+  const [domains, setDomains] = useState([]);
+  const [bootstrapHosts, setBootstrapHosts] = useState([]);
+  const [primaryDirty, setPrimaryDirty] = useState(false);
+  const [domainBusy, setDomainBusy] = useState(false);
+  const busy = roleBusy || domainBusy;
   const dirtyRef = useRef(false);
-  dirtyRef.current = dirty;
+  dirtyRef.current = dirty || primaryDirty;
+  const patchDomain = useCallback((d) => setDomains((list) => [...list.filter((x) => x.hostname !== d.hostname && !(d.kind === 'primary' && x.kind === 'primary')), d]), []);
 
   const load = useCallback(async () => {
     setStatus('loading');
     try {
       const res = await roleUrlRequest();
       setItems(Array.isArray(res?.items) ? res.items : []);
-      setStatus('ready');
+      setDomains(Array.isArray(res?.domains) ? res.domains : []);
+      setBootstrapHosts(Array.isArray(res?.bootstrap_hosts) ? res.bootstrap_hosts : []);
+      loadedOnce.current = true; setStatus('ready');
       return true;
     } catch (e) { setStatus('error'); setError(e?.message || 'Role URLs could not be loaded.'); return false; }
   }, []);
@@ -156,6 +166,7 @@ export default function RoleUrlSettings({ onGuardChange }) {
         <button type="button" autoFocus onClick={closeRemoval} disabled={busy}>Keep</button>
         <button type="button" onClick={remove} disabled={busy || blocked} data-testid="button-role-url-confirm-remove">{busy ? 'Removing...' : 'Remove'}</button>
       </div></dialog>}
+    {(status === 'ready' || loadedOnce.current) && <PrimaryDomainPanel items={items} domains={domains} bootstrapHosts={bootstrapHosts} listReady={status === 'ready'} parentBusy={roleBusy || status !== 'ready' || Boolean(editing)} onReload={load} onSaved={load} onDomainUpdate={patchDomain} onDirtyChange={setPrimaryDirty} onBusyChange={setDomainBusy} />}
     <h3>Connect each hostname separately</h3>
     <p>Your deployment operator must bind the domain, configure DNS, enable HTTPS, serve portal deep links with an SPA fallback, and reverse-proxy <code>/api</code> on the same origin. Saving here performs none of those steps. Keep an unchanged, unmapped main-domain Admin URL available for recovery. There is no cross-domain sign-in.</p>
   </section>;

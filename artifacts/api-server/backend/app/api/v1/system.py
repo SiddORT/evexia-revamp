@@ -45,6 +45,7 @@ def readiness(db: Session = Depends(get_db)):
             "FROM auth_sessions LIMIT 0"
         ))
         db.execute(text("SELECT session_id, reason FROM audit_events LIMIT 0"))
+        db.execute(text("SELECT hostname, kind, version, active, challenge, verification_expires_at FROM domain_policies LIMIT 0"))
         db.execute(text("SELECT id, permissions, version, created_by, updated_by, deleted_at, deleted_by FROM custom_roles LIMIT 0"))
         db.execute(text(
             "SELECT user_id, name_ciphertext, email_ciphertext, phone_ciphertext, "

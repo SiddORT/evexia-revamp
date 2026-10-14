@@ -64,7 +64,39 @@ class RoleUrlResponse(RoleUrlFields):
 
 class RoleUrlPage(BaseModel):
     items: list[RoleUrlResponse]
+    domains: list["DomainResponse"] = []
+    bootstrap_hosts: list[str] = []
 
 
 class PortalResolution(BaseModel):
     role: Literal["admin", "mr", "doctor"] | None
+
+
+class DomainResponse(BaseModel):
+    hostname: str
+    kind: Literal["primary", "role"]
+    version: int
+    active: bool
+    status: str
+    verified_at: datetime | None
+    verification_expires_at: datetime | None
+    last_checked_at: datetime | None
+    challenge_name: str
+    challenge_value: str | None
+    challenge_expires_at: datetime | None
+
+
+class PrimaryDomainFields(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    hostname: str = Field(max_length=270)
+    previous_hostname: str | None = None
+    version: int = Field(ge=0, strict=True)
+    _hostname = field_validator("hostname")(canonical_hostname)
+
+
+class DomainAction(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    hostname: str = Field(max_length=253)
+    version: int = Field(ge=0, strict=True)
+    action: Literal["challenge", "verify", "activate", "revoke"]
+    _hostname = field_validator("hostname")(canonical_hostname)

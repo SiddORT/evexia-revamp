@@ -23,8 +23,8 @@ from test_mrs import fields, csv_data, seed_designation
 
 def setup(fixture):
     engine, config, actor_id, session_id = prepare(fixture)
-    # Operational MR tests use today's saved-reference schema. Explicitly
-    # historical tests below still stop at their named predecessor revisions.
+    # Operational MR fixtures require saved reference/manager snapshots.
+    # Do not advance the shared historical migration helper for other suites.
     command.upgrade(config, "0036_reference_privacy")
     with Session(engine) as db:
         actor = identity(db, actor_id, session_id)
@@ -213,6 +213,8 @@ def test_maximum_exports_bulk_queries_exact_rows_caps_and_revocation(migration_d
                               reportingManagerId=f"user:fixture.mr.{index - 1 if index else 5000}",
                               createdBy="Super Admin", updatedBy="Backend user",
                               createdAt=record.created_at, updatedAt=record.updated_at)
+                # The privacy release appends the saved human label without
+                # replacing the original manager-account import reference.
                 expected = [str(values[key]) for key, _ in mr_transfer.COLUMNS] + [
                     f"Bulk MR {index - 1:05}" if index else "Deleted manager"]
                 if format == "xlsx":
@@ -222,6 +224,7 @@ def test_maximum_exports_bulk_queries_exact_rows_caps_and_revocation(migration_d
             assert "inert-fixture-not-a-password-hash" not in str(exported)
             sentinel = next(cells for cells in exported[1:] if cells[0] == "FIX-00000")
             assert sentinel[mr_transfer.HEADERS.index("Reporting Manager")] == "user:fixture.mr.5000"
+            assert sentinel[mr_transfer.EXPORT_HEADERS.index("Reporting Manager Name")] == "Deleted manager"
     # Make the saved tombstone live: one over the real cap must fail, not truncate.
     with Session(engine) as db:
         db.execute(text("UPDATE mr_directory SET deleted_at=NULL, deleted_by=NULL WHERE deleted_at IS NOT NULL"))

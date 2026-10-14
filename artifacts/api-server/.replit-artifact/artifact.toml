@@ -10,7 +10,7 @@ name = "API Server"
 paths = ["/api"]
 
 [services.development]
-run = "python -m uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port ${PORT:-8080}"
+run = "python -m uvicorn app.main:app --no-proxy-headers --app-dir backend --host 0.0.0.0 --port ${PORT:-8080}"
 
 [services.production]
 
@@ -18,7 +18,7 @@ run = "python -m uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port ${
 args = ["uv", "sync", "--frozen", "--no-dev"]
 
 [services.production.run]
-args = ["uv", "run", "--frozen", "--no-sync", "python", "-m", "uvicorn", "app.main:app", "--app-dir", "artifacts/api-server/backend", "--host", "0.0.0.0", "--port", "8080"]
+args = ["uv", "run", "--frozen", "--no-sync", "python", "-m", "uvicorn", "app.main:app", "--no-proxy-headers", "--app-dir", "artifacts/api-server/backend", "--host", "0.0.0.0", "--port", "8080"]
 
 [services.production.run.env]
 PORT = "8080"

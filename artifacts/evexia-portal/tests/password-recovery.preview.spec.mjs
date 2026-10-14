@@ -163,6 +163,23 @@ test('staff recovery: real request, constructed delivery, reset and revoked cred
   } finally { await api.dispose(); }
 });
 
+test('Admin recovery submits every identifier and shows the generic response', async ({ page }) => {
+  const submitted = [];
+  const message = 'If this account is eligible, recovery instructions will be sent.';
+  await page.route('**/api/v1/auth/forgot-password', async route => {
+    submitted.push(route.request().postDataJSON().identifier);
+    await route.fulfill({ status: 202, json: { message } });
+  });
+  for (const identifier of ['crm-admin@allergyevexia.in', 'synthetic-staff@example.test']) {
+    await page.goto(`${base()}/forgot-password?portal=admin`);
+    await page.getByLabel('Email or User ID').fill(identifier);
+    await page.getByRole('button', { name: 'Send recovery link', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText(message);
+    expect(submitted.at(-1)).toBe(identifier);
+  }
+  expect(submitted).toHaveLength(2);
+});
+
 test('recovery missing, malformed, expired, temporary error, retry and stale responses', async ({ page }) => {
   const seed = fixture();
   await page.goto(`${base()}/reset-password`);

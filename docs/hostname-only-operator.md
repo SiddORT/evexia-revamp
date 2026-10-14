@@ -1,3 +1,10 @@
+# Historical scope notice
+
+This procedure remains limited to `0031_role_hostnames`. It does not authorize
+the secure-domain release `0037_domain_admission`, its predecessor migrations,
+or any infrastructure action. Current code requires separately reviewed rollout
+and exact recovery-host configuration; see [domain-admission.md](domain-admission.md).
+
 # Reviewed additive hostname-only operator procedure
 
 This is a separate recovery path for the confirmed UAT predecessor

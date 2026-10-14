@@ -18,6 +18,14 @@ from test_migration_0006 import migration_db
 from test_migration_zones import prepare, identity
 
 
+def prepare_catalogue(fixture):
+    engine, config, actor_id, sid = prepare(fixture)
+    # Current Allergen writes include the saved reference names introduced here.
+    # Keep the shared historical identity fixture at its reviewed boundary.
+    command.upgrade(config, "0036_reference_privacy")
+    return engine, config, actor_id, sid
+
+
 def setup_refs(engine, actor_id):
     with Session(engine) as db:
         c = ProductCategory(name="Shared category", unit_price=Decimal("0"), status="active",

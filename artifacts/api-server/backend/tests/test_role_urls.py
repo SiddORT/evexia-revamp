@@ -13,11 +13,23 @@ from app.services.auth import identity_from_token
 from app.db.session import session_factory
 from app.core.config import get_settings
 from app.core.security import hash_password
+from app.core.security import utcnow
+from app.db.domain_models import DomainPolicy
+from datetime import timedelta
 from test_sessions import client, create_user, login, PASSWORD
 from test_reporting import admin_headers
 
 BASE = "/api/v1/admin/role-urls"
 RESOLVE = "/api/v1/portal/resolve"
+
+
+def admit_fixture(db, host, actor):
+    """Synthetic DNS evidence; never a live DNS lookup."""
+    row = DomainPolicy(hostname=host, kind="role", status="verified", active=True,
+                       verified_at=utcnow(), verification_expires_at=utcnow() + timedelta(days=1),
+                       created_by=actor.id, updated_by=actor.id)
+    db.add(row)
+    db.commit()
 
 
 @pytest.mark.parametrize("raw,expected", [
@@ -46,28 +58,32 @@ def test_invalid_production_hosts(host):
 def test_crud_persistence_minimal_resolver_and_attribution(client):
     api, db, _ = client
     headers, admin = admin_headers(api, db)
-    assert api.get(BASE, headers=headers).json() == {"items": []}
+    assert api.get(BASE, headers=headers).json()["items"] == []
     row = api.post(BASE, headers=headers, json={"hostname": "https://MR.AllergyEvexia.com/", "role": "mr"}).json()
     assert row["hostname"] == "mr.allergyevexia.com" and row["version"] == 1
     assert row["created_by"] == str(admin.id) == row["updated_by"]
     assert api.get(BASE, headers=headers).json()["items"] == [row]
+    # Saving legacy/configuration syntax is NOT evidence or admission.
+    assert api.get(RESOLVE, params={"hostname": row["hostname"]},
+                   headers={"Host": row["hostname"]}).status_code == 421
+    admit_fixture(db, row["hostname"], admin)
     for params in ({"hostname": row["hostname"]}, {"hostname": row["hostname"].upper()}):
-        resolved = api.get(RESOLVE, params=params, headers={"X-Forwarded-Host": "doctor.allergyevexia.com"})
+        resolved = api.get(RESOLVE, params=params, headers={"Host": row["hostname"], "X-Forwarded-Host": "doctor.allergyevexia.com"})
         assert resolved.json() == {"role": "mr"}
         assert resolved.headers["cache-control"] == "no-store"
     for host in ("other.allergyevexia.com", "localhost", "127.0.0.1"):
-        assert api.get(RESOLVE, params={"hostname": host}).json() == {"role": None}
+        assert api.get(RESOLVE, params={"hostname": host}, headers={"Host": host}).json() == {"role": None}
     assert api.get(RESOLVE, params={"hostname": "https://mr.allergyevexia.com"}).status_code == 422
     assert api.post(BASE, headers=headers, json={"hostname": row["hostname"], "role": "doctor"}).status_code == 409
     edited = api.post(f"{BASE}/{row['id']}/edit", headers=headers,
                       json={"hostname": row["hostname"], "role": "doctor", "enabled": False, "version": 1})
     assert edited.status_code == 200 and edited.json()["version"] == 2
-    assert api.get(RESOLVE, params={"hostname": row["hostname"]}).json() == {"role": None}
+    assert api.get(RESOLVE, params={"hostname": row["hostname"]}, headers={"Host": row["hostname"]}).status_code == 421
     assert api.post(f"{BASE}/{row['id']}/delete", headers=headers, json={"version": 1}).status_code == 409
     assert api.post(f"{BASE}/{row['id']}/edit", headers=headers,
                     json={"hostname": row["hostname"], "role": "admin", "version": 1}).status_code == 409
     assert api.post(f"{BASE}/{row['id']}/delete", headers=headers, json={"version": 2}).status_code == 200
-    assert api.get(BASE, headers=headers).json() == {"items": []}
+    assert api.get(BASE, headers=headers).json()["items"] == []
     events = list(db.scalars(select(AuditEvent).where(AuditEvent.resource_type == "role_hostname").order_by(AuditEvent.created_at)))
     assert len(events) == 3
     assert all(e.actor_id == admin.id and e.session_id and e.request_id for e in events)
@@ -151,6 +167,7 @@ def test_production_same_origin_login_renew_logout_and_cookie_boundary(client, r
     headers, admin = admin_headers(api, db)
     row = api.post(BASE, headers=headers, json={"hostname": hostname, "role": role})
     assert row.status_code == 201
+    admit_fixture(db, hostname, admin)
     user = admin if role == "admin" else create_user(db, f"host-production-{role}@example.com")
     from app.main import app
     from app.core.config import get_settings

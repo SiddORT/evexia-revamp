@@ -7,9 +7,9 @@ export async function checkPortalHostname(base, fetchRequest = fetch, report = c
   if (!['http:', 'https:'].includes(origin.protocol) || origin.username || origin.password) {
     throw new Error('Use an HTTP(S) preview URL without credentials.');
   }
-  // Localhost intentionally skips the DB query. Also probe a valid DNS hostname
-  // to detect a missing resolver table without exposing or changing any mapping.
-  for (const hostname of new Set([origin.hostname, 'portal-smoke-unmapped.allergyevexia.com'])) {
+  // Probe only the actual same-origin host. Arbitrary resolver query hosts are
+  // rejected and cannot be used as a directory or policy readiness oracle.
+  for (const hostname of [origin.hostname]) {
     const url = new URL('/api/v1/portal/resolve', origin);
     url.searchParams.set('hostname', hostname);
     const response = await fetchRequest(url, {

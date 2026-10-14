@@ -1,3 +1,13 @@
+# Secure-domain release prerequisite
+
+The current coordinated target is `0037_domain_admission`. Before starting
+production services, independently approve and configure exact
+`PORTAL_BOOTSTRAP_HOSTS`, trusted proxy peers, DNS/TLS and the guarded API/nginx
+entrypoints described in [domain-admission.md](domain-admission.md).
+Any optional fresh-install Admin hostname row remains unverified and is not
+automatically admitted; recovery allowlist access retains path routing without
+assigning an Admin role. Updated source review metadata is not target approval.
+
 # Fresh production installation (dedicated empty PostgreSQL)
 
 This is an **operator procedure**, never a CI fallback. Do not run
@@ -27,6 +37,7 @@ review, not a runtime override.
 | 0033_merge_directory_branches; 0034_shared_phone_countries | Existing operator continuation, including separate phone approval and crypto validation. |
 | 0035_account_identifiers | Operator-only account/reservation encryption. Fresh finalization may apply it only after proving every business table empty under locks; populated installs require separate approval and genuine backup/rehearsal evidence. |
 | 0036_reference_privacy | Operator-only assignment snapshots/Vendor encryption. Fresh finalization may apply it only under the same all-business-tables-empty proof; populated installs use [the separately scoped privacy procedure](reference-privacy.md). |
+| 0037_domain_admission | Operator-only shared primary configuration and exact-host ownership/admission. Legacy role rows remain unverified; retain separately approved recovery access before activation. |
 
 Preparation proves a dedicated `public` database has **no application objects**,
 including an empty `alembic_version`, tables/views/sequences/functions/types or
@@ -324,7 +335,7 @@ sh /operator-release/scripts/initialize-api.sh \
   --expected-database "$APPROVED_DB_NAME" \
   --expected-system-identifier "$APPROVED_CLUSTER_ID" \
   --admin-hostname newuat.allergyevexia.in
-# Expected: FRESH_INSTALL_READY ... 0036_reference_privacy
+# Expected: FRESH_INSTALL_READY ... 0037_domain_admission
 /workspace/.venv/bin/python -B -m alembic current
 /workspace/.venv/bin/python -B /operator-release/scripts/deploy-migrations.py \
   --backend-dir /operator-release/artifacts/api-server/backend

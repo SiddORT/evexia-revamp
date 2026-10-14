@@ -1,3 +1,11 @@
+# Current secure-domain release
+
+The ownership/admission release and exact proxy/nginx/recovery requirements are
+in [docs/domain-admission.md](../../../docs/domain-admission.md). They supersede
+the old enabled-mapping runtime behavior below. Legacy rows are retained but
+unverified and inactive until challenged, verified and explicitly activated.
+The historical `0031` procedure is not approval for `0037` or its predecessors.
+
 # Connecting role portal hostnames
 
 Mappings only choose an entry screen. They never provision accounts, change

@@ -779,3 +779,14 @@ records as part of this backend foundation.
 The spec server URL `/api` plus relative `/v1/...` paths produces exactly
 `/api/v1/...`; do not prefix `/api` twice. The managed preview has been verified:
 `/api/v1/health` and `/api/healthz` return 200, while `/api/api/...` returns 404.
+
+# Secure domain configuration
+
+Settings → Role URLs now separates shared primary configuration, exact TXT
+ownership verification, explicit admission and operator-approved recovery access.
+The coordinated release is `0037_domain_admission` (operator-only). See
+[domain-admission.md](../../../docs/domain-admission.md) before any rollout.
+Legacy mappings are preserved, not grandfathered as verified or admitted.
+Production startup requires `PORTAL_BOOTSTRAP_HOSTS`; every server entrypoint
+must disable Uvicorn proxy-header processing. No managed migration, DNS change,
+deployment or deployment-triggering push is performed by the implementation.

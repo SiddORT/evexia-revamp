@@ -5,7 +5,7 @@ import { checkPortalHostname } from './check-portal-hostname.mjs';
 const response = (body = { role: null }, status = 200, type = 'application/json') =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': type, 'Cache-Control': 'no-store' } });
 
-test('normal ingress probes actual hostname and DB-backed DNS lookup without credentials', async () => {
+test('normal ingress probes only its actual hostname without credentials', async () => {
   const hosts = [];
   const evidence = [];
   await checkPortalHostname('http://localhost:80/', async (url, options) => {
@@ -17,8 +17,8 @@ test('normal ingress probes actual hostname and DB-backed DNS lookup without cre
     hosts.push(url.searchParams.get('hostname'));
     return response();
   }, (line) => evidence.push(line));
-  assert.deepEqual(hosts, ['localhost', 'portal-smoke-unmapped.allergyevexia.com']);
-  assert.equal(evidence.length, 2);
+  assert.deepEqual(hosts, ['localhost']);
+  assert.equal(evidence.length, 1);
 });
 
 for (const role of [null, 'admin', 'mr', 'doctor']) {
@@ -39,10 +39,11 @@ for (const body of [{}, { role: 'patient' }, { role: null, extra: true }, [], nu
     await assert.rejects(checkPortalHostname('http://localhost', async () => response(body)), /invalid response shape/);
   });
 }
-test('detects DB-backed resolver failure even when localhost succeeds', async () => {
-  await assert.rejects(checkPortalHostname('http://localhost', async (url) =>
-    url.searchParams.get('hostname') === 'localhost' ? response() : response({}, 503)),
-  /HTTP 503/);
+test('detects resolver failure on the actual current host', async () => {
+  await assert.rejects(checkPortalHostname('https://portal.example.com', async (url) => {
+    assert.equal(url.searchParams.get('hostname'), 'portal.example.com');
+    return response({}, 503);
+  }), /HTTP 503/);
 });
 test('rejects malformed JSON and cacheable responses', async () => {
   await assert.rejects(checkPortalHostname('http://localhost', async () =>

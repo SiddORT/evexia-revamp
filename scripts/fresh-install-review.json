@@ -1,9 +1,9 @@
 {
-  "target": "0036_reference_privacy",
+  "target": "0037_domain_admission",
   "prepare_target": "0031_role_hostnames",
-  "policy_sha256": "df1280a55b1533910d9d9099d0df5f89bac0c3322cc0d8ef36e67415e61d0840",
+  "policy_sha256": "3cc68799bad59feb3ca3f1ddb2141cbe65ea5cb1cec404ef106ed1530c0f6f72",
   "guard_sources": {
-    "app/core/config.py": "39d83a4a50a127d0013b291314ba01f25da25215012c18483cb8fcde8316f5b4",
+    "app/core/config.py": "afdc4d023f96ca39ce09bfad67fabbb116166ee8e293f59877f28525487c850d",
     "app/services/directory_crypto.py": "6ab6062400f273db784007658d73c803e34685679c9ad9348a0b0445303213f3",
     "app/services/directory_inventory.py": "4c00a8ec316b188d432bf902d8aad3ae9a27bea6140e66c77cb2876b47799c8c",
     "app/services/reference_privacy_migration.py": "6f688e1784130248511e6f3032772f1164efec447c05930377cfa8883f0979ef",
@@ -11,7 +11,7 @@
     "app/services/organization_retirement.py": "d4a45ffdd20d754da002943b0b877e08c275b41ed9418034a4e132345789732c",
     "app/services/role_attribution.py": "ba3fc9fe0d0c51389e73fce573b74492ce9f2c47d649deab7bd9aab3ec9268e2",
     "app/services/staff_designation_mapping.py": "453a8e3e5a233e4bd1fd1f5e434f4534842ce144a8ce9a43209904f4b01bac56",
-    "app/services/account_crypto.py": "49644ada685be979a72f2e7899911ad1ff594442247fe517985448495ab56d33",
+    "app/services/account_crypto.py": "955b645468f0b8cd5fdf7b6e7218592bba8629c438bb0012fd4a59803193f753",
     "app/services/account_migration.py": "fedc3b2a121e207be409bac87e05aa184e45aca61a5325ad87ebb11b25848904"
   },
   "revisions": {
@@ -55,6 +55,7 @@
     "0033_merge_directory_branches": "45b0fddfe857865c98db387913686d74a4cb73fcf9bfbeea453b8335c9166c66",
     "0034_shared_phone_countries": "a1ef0f95ca2b5531c6bb2e25d4344614d98a6d38ee01ce360de09864c14eb749",
     "0035_account_identifiers": "383a7d5936ba4795d1368f156fcaea3081e010d1ad236f7a45750559fa230df4",
-    "0036_reference_privacy": "9a44ac0cf09babc79ea4f0d545c03603030b9bee06a0202a9ef21ce4dc8d8c4e"
+    "0036_reference_privacy": "9a44ac0cf09babc79ea4f0d545c03603030b9bee06a0202a9ef21ce4dc8d8c4e",
+    "0037_domain_admission": "78557e3c9c4030ebb11277578e0348d4e39d31c0c5cebf4078518da1cbd66958"
   }
 }

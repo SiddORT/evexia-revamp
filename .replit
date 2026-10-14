@@ -41,7 +41,7 @@ timeoutMs = 180000
 
 [nix]
 channel = "stable-25_05"
-packages = ["cargo", "freetype", "lcms2", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "openssl", "pkg-config", "postgresql", "rustc", "tcl", "tk", "zlib", "patchelf", "libavif", "icu74", "enchant", "hyphen", "libsecret", "libmanette", "nano"]
+packages = ["cacert", "cargo", "enchant", "freetype", "hyphen", "icu74", "lcms2", "libavif", "libiconv", "libimagequant", "libjpeg", "libmanette", "libsecret", "libtiff", "libwebp", "libxcrypt", "nano", "openjpeg", "openssl", "patchelf", "pkg-config", "postgresql", "rustc", "tcl", "tk", "zlib", "nginx"]
 
 [userenv]
 

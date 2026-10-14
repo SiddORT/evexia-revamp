@@ -201,13 +201,13 @@ class MigrationPolicyTests(unittest.TestCase):
         blocked = runner.plan(graph, policy, ["0030_directory_crypto_retirement"], target)
         self.assertEqual(blocked["operator_only"],
                          ["0031_remove_organizations", "0034_shared_phone_countries", "0035_account_identifiers",
-                          "0036_reference_privacy"])
+                          "0036_reference_privacy", "0037_domain_admission"])
         account_blocked = runner.plan(graph, policy, ["0034_shared_phone_countries"], target)
         self.assertEqual(account_blocked["result"], "OPERATOR_MIGRATION_REQUIRED")
-        self.assertEqual(account_blocked["operator_only"], ["0035_account_identifiers", "0036_reference_privacy"])
+        self.assertEqual(account_blocked["operator_only"], ["0035_account_identifiers", "0036_reference_privacy", "0037_domain_admission"])
         privacy_blocked = runner.plan(graph, policy, ["0035_account_identifiers"], target)
         self.assertEqual(privacy_blocked["result"], "OPERATOR_MIGRATION_REQUIRED")
-        self.assertEqual(privacy_blocked["operator_only"], ["0036_reference_privacy"])
+        self.assertEqual(privacy_blocked["operator_only"], ["0036_reference_privacy", "0037_domain_admission"])
         ready = runner.plan(graph, policy, [target], target)
         self.assertEqual(ready["pending"], [])
 

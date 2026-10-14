@@ -44,7 +44,8 @@ def test_empty_forward_migration_retains_mr_profile_and_audit(migration_db):
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(DoctorDirectory)) == 0
         assert db.get(MRProfile, mr["id"]).user_id == user_id
-        assert db.get(MRDirectory, mr["id"]).version == mr_version
+        # This fixture intentionally ends before saved assignment snapshots.
+        assert db.scalar(select(MRDirectory.version).where(MRDirectory.id == mr["id"])) == mr_version
         assert db.get(User, user_id).system_role == "mr"
         assert db.get(AuthSession, sid).status == "ACTIVE"
         assert db.scalar(select(func.count()).select_from(AuditEvent)) == audit_count

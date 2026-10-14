@@ -85,6 +85,8 @@ import type {
   DoctorResponse,
   DoctorReview,
   DoctorStatus,
+  DomainAction,
+  DomainResponse,
   DownloadAllergenSampleParams,
   DownloadDesignationSampleParams,
   DownloadDoctorSampleParams,
@@ -202,6 +204,7 @@ import type {
   PatientStatus,
   PortalResolution,
   PostalResponse,
+  PrimaryDomainFields,
   ProductCategoryEdit,
   ProductCategoryFields,
   ProductCategoryImportResult,
@@ -13009,6 +13012,238 @@ export const useCreateRoleHostname = <
   TContext
 > => {
   return useMutation(getCreateRoleHostnameMutationOptions(options));
+};
+
+export const getManageDomainAdmissionUrl = () => {
+  return `/api/v1/admin/role-urls/domain-action`;
+};
+
+/**
+ * @summary Domain Action
+ */
+export const manageDomainAdmission = async (
+  domainAction: DomainAction,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DomainResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<DomainResponse>(getManageDomainAdmissionUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(domainAction),
+  });
+};
+
+export const getManageDomainAdmissionMutationKey = () =>
+  ["manageDomainAdmission"] as const;
+
+export const getManageDomainAdmissionMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof manageDomainAdmission>>,
+    TError,
+    ManageDomainAdmissionMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof manageDomainAdmission>>,
+  TError,
+  ManageDomainAdmissionMutationVariables,
+  TContext
+> => {
+  const mutationKey = getManageDomainAdmissionMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof manageDomainAdmission>>,
+    ManageDomainAdmissionMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return manageDomainAdmission(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ManageDomainAdmissionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof manageDomainAdmission>>
+>;
+export type ManageDomainAdmissionMutationBody = BodyType<DomainAction>;
+export type ManageDomainAdmissionMutationError = ErrorType<ErrorEnvelope>;
+export type ManageDomainAdmissionMutationVariables = {
+  data: BodyType<DomainAction>;
+};
+
+/**
+ * @summary Domain Action
+ */
+export const useManageDomainAdmission = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof manageDomainAdmission>>,
+    TError,
+    ManageDomainAdmissionMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof manageDomainAdmission>>,
+  TError,
+  ManageDomainAdmissionMutationVariables,
+  TContext
+> => {
+  return useMutation(getManageDomainAdmissionMutationOptions(options));
+};
+
+export const getSavePrimaryDomainUrl = () => {
+  return `/api/v1/admin/role-urls/primary`;
+};
+
+/**
+ * @summary Primary
+ */
+export const savePrimaryDomain = async (
+  primaryDomainFields: PrimaryDomainFields,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<DomainResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<DomainResponse>(getSavePrimaryDomainUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(primaryDomainFields),
+  });
+};
+
+export const getSavePrimaryDomainMutationKey = () =>
+  ["savePrimaryDomain"] as const;
+
+export const getSavePrimaryDomainMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof savePrimaryDomain>>,
+    TError,
+    SavePrimaryDomainMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof savePrimaryDomain>>,
+  TError,
+  SavePrimaryDomainMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSavePrimaryDomainMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof savePrimaryDomain>>,
+    SavePrimaryDomainMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return savePrimaryDomain(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SavePrimaryDomainMutationResult = NonNullable<
+  Awaited<ReturnType<typeof savePrimaryDomain>>
+>;
+export type SavePrimaryDomainMutationBody = BodyType<PrimaryDomainFields>;
+export type SavePrimaryDomainMutationError = ErrorType<ErrorEnvelope>;
+export type SavePrimaryDomainMutationVariables = {
+  data: BodyType<PrimaryDomainFields>;
+};
+
+/**
+ * @summary Primary
+ */
+export const useSavePrimaryDomain = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof savePrimaryDomain>>,
+    TError,
+    SavePrimaryDomainMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof savePrimaryDomain>>,
+  TError,
+  SavePrimaryDomainMutationVariables,
+  TContext
+> => {
+  return useMutation(getSavePrimaryDomainMutationOptions(options));
 };
 
 export const getDeleteRoleHostnameUrl = (rowId: string) => {

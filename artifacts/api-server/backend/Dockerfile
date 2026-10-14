@@ -16,4 +16,4 @@ COPY artifacts/api-server/backend /app
 
 EXPOSE 8080
 
-CMD ["uv", "run", "--project", "/workspace", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uv", "run", "--project", "/workspace", "uvicorn", "app.main:app", "--no-proxy-headers", "--host", "0.0.0.0", "--port", "8080"]

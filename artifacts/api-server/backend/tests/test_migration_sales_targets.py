@@ -58,6 +58,7 @@ def seed(db, actor_id, historical=False):
         db.flush()
     mr = MRDirectory(id=profile.id, name="Migration MR", phone="", email="", contactRequirement="optional",
                      hq=hq.id, zoneId=zone.id, employeeCode="RACE-MR", dateOfJoining=date(2020, 1, 1),
+                     hq_name=hq.name, zone_name=zone.name,
                      designation_id=designation_id, reportingManagerId=None, paymentLimit=Decimal("0"),
                      doctorDaysLimit=0, status="active", pincode="110001", addressLine1="Synthetic",
                      addressLine2="", landmark="", city="Delhi", state="Delhi", country="India",
@@ -109,7 +110,8 @@ def test_empty_migration_preserves_prior_records_rejects_rounding_and_keeps_hist
 
 
 def test_duplicate_races_inactive_uniqueness_and_stale_mutation(migration_db):
-    engine, _, actor_id, session_id = prepare(migration_db)
+    engine, config, actor_id, session_id = prepare(migration_db)
+    command.upgrade(config, "0036_reference_privacy")
     with Session(engine) as db:
         mr = seed(db, actor_id)
     barrier = Barrier(2)
@@ -145,7 +147,8 @@ def test_duplicate_races_inactive_uniqueness_and_stale_mutation(migration_db):
 
 
 def test_concurrent_import_conflicts_roll_back_complete_batch(migration_db):
-    engine, _, actor_id, session_id = prepare(migration_db)
+    engine, config, actor_id, session_id = prepare(migration_db)
+    command.upgrade(config, "0036_reference_privacy")
     with Session(engine) as db:
         seed(db, actor_id)
     data = (HEADER + "RACE-MR,2030,2031,1,2,3,4,active\nRACE-MR,2032,2033,1,2,3,4,inactive").encode()

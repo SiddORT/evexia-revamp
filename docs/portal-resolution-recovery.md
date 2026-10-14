@@ -1,5 +1,11 @@
 # Portal resolution recovery
 
+For the current ownership/admission release, first read
+[domain-admission.md](domain-admission.md). Enabled legacy mappings alone no
+longer admit custom hosts. Production requires exact operator-approved recovery
+hosts; resolver query parameters must match the actual request host. Arbitrary
+unmapped hosts are not a production recovery mechanism.
+
 ## Hostname-only operator handoff
 
 The separately scoped procedure and its exact conditional operator sequence are

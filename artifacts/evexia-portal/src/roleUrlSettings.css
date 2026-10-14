@@ -19,3 +19,12 @@
 .role-urls__confirm::backdrop{background:rgba(0,0,0,.5)}
 .role-urls__skeleton,.role-urls__empty{padding:16px;opacity:.75}
 @media(max-width:600px){.role-urls__list li{flex-direction:column}.role-urls__bar button{flex:1}}
+.role-urls__primary{margin-top:16px}
+.role-urls__badge{display:inline-block;font-size:.7rem;font-weight:600;padding:2px 8px;margin-left:6px;border-radius:999px;border:1px solid var(--admin-border);vertical-align:middle}
+.role-urls__txt{margin:8px 0;padding:10px;border:1px dashed var(--admin-accent,#28706a);border-radius:8px;opacity:1}
+.role-urls__txt dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:6px 0}.role-urls__txt dt{font-weight:600}.role-urls__txt dd{margin:0;overflow-wrap:anywhere}
+.role-urls__rowmsg{margin:6px 0 0}
+.role-urls__notice:empty{display:none}
+.role-urls__hosts{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0}
+.role-urls__hosts li{padding:4px 10px;border:1px solid var(--admin-border);border-radius:8px}
+.role-urls__list li>div:first-child{display:grid;gap:2px;min-width:0;flex:1 1 260px}

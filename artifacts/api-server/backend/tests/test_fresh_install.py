@@ -53,7 +53,15 @@ def databases():
 
 
 def test_review_covers_every_revision_and_policy():
-    assert len(fresh.reviewed_graph()) == 41
+    assert len(fresh.reviewed_graph()) == 42
+
+
+def test_clean_process_registers_domain_metadata():
+    result = subprocess.run([sys.executable, "-B", "-c",
+        "from app.db import models; from app.db.base import Base; "
+        "assert 'domain_policies' in Base.metadata.tables"],
+        check=False, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
 
 
 def test_review_rejects_changed_or_unknown_migration(tmp_path):
@@ -309,7 +317,13 @@ def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap
         assert user.is_protected_system_admin and user.system_role == "super_admin"
         assert verify_password("synthetic-fresh-install-password", user.password_hash)
         assert readiness(db) == {"status": "ready"}
-        assert resolve(Response(), "fresh.allergyevexia.in", db) == {"role": "admin"}
+        from starlette.requests import Request
+        monkeypatch.setenv("PORTAL_BOOTSTRAP_HOSTS", "fresh.allergyevexia.in")
+        get_settings.cache_clear()
+        request = Request({"type": "http", "state": {"accepted_hostname": "fresh.allergyevexia.in"}})
+        # Operator recovery approval never activates the legacy Admin mapping.
+        assert resolve(request, Response(), "fresh.allergyevexia.in", db) == {"role": None}
+        assert db.scalar(text("SELECT count(*) FROM domain_policies")) == 0
     with pytest.raises(fresh.FreshInstallBlocked, match="already contains records"), source.begin() as db:
         fresh.finalize(db, get_settings())
     result = subprocess.run([sys.executable, "-B", str(fresh.ROOT / "scripts/deploy-migrations.py"),

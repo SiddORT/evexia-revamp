@@ -435,7 +435,7 @@ export async function roleRequest(path = '', body, { signal } = {}) {
 
 // Exact portal-host settings, Super Admin only. Never replay an uncertain write.
 export async function roleUrlRequest(path = '', body, { signal } = {}) {
-  if (!/^(?:|\/[0-9a-f-]{36}\/(?:edit|delete))$/i.test(path)
+  if (!/^(?:|\/primary|\/domain-action|\/[0-9a-f-]{36}\/(?:edit|delete))$/i.test(path)
       || (path && body === undefined)) throw new SessionError('Unsupported Role URL operation.');
   const mutation = body !== undefined;
   const epoch = generation;
@@ -474,16 +474,27 @@ export async function roleUrlRequest(path = '', body, { signal } = {}) {
       await verifySession(true, 'admin');
       throw new SessionError('Session checked. Your draft is preserved; retry explicitly.', 401);
     }
-    const error = new SessionError(response.status === 409
+    const domainMessage = ['/primary', '/domain-action'].includes(path) &&
+      [409, 429].includes(response.status) && typeof data?.error?.message === 'string'
+      ? data.error.message.slice(0, 300) : '';
+    const error = new SessionError(domainMessage || (response.status === 409
       ? 'Hostname already exists, changed or was removed. Your draft is preserved. Reload mappings and review before retrying.'
       : response.status === 422 ? 'Use a bare production hostname or HTTPS origin, without credentials, ports, paths, queries, fragments or wildcards.'
       : response.status === 403 ? 'Role URLs are restricted to Super Admin.'
-      : uncertain().message, response.status);
+      : response.status === 429 ? 'Too many DNS actions. Wait before retrying.'
+      : uncertain().message), response.status);
     error.code = response.status === 409 ? 'role_url_stale' : data?.error?.code;
     error.ambiguous = mutation && response.status >= 500;
     throw error;
   }
-  if ((mutation && (!data?.id || !Number.isInteger(data.version))) || (!mutation && !Array.isArray(data?.items))) throw uncertain();
+  const isDomain = path === '/primary' || path === '/domain-action';
+  const domainShape = (d) => d && typeof d.hostname === 'string' &&
+    ['primary', 'role'].includes(d.kind) && Number.isInteger(d.version) && d.version >= 1 &&
+    typeof d.active === 'boolean' && ['unverified', 'pending', 'verified', 'failed', 'expired', 'unavailable', 'revoked'].includes(d.status);
+  if (mutation ? (isDomain ? !domainShape(data) : (!data?.id || !Number.isInteger(data.version)))
+    : (!Array.isArray(data?.items) || !Array.isArray(data?.domains) ||
+      !data.domains.every(domainShape) || !Array.isArray(data?.bootstrap_hosts) ||
+      !data.bootstrap_hosts.every((host) => typeof host === 'string'))) throw uncertain();
   return data;
 }
 // Narrow reporting facility: credentials never leave this module.

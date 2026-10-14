@@ -1753,6 +1753,46 @@ export interface DoctorStatus {
   status: DoctorStatusStatus;
 }
 
+export type DomainActionAction =
+  (typeof DomainActionAction)[keyof typeof DomainActionAction];
+
+export const DomainActionAction = {
+  challenge: "challenge",
+  verify: "verify",
+  activate: "activate",
+  revoke: "revoke",
+} as const;
+
+export interface DomainAction {
+  action: DomainActionAction;
+  /** @maxLength 253 */
+  hostname: string;
+  /** @minimum 0 */
+  version: number;
+}
+
+export type DomainResponseKind =
+  (typeof DomainResponseKind)[keyof typeof DomainResponseKind];
+
+export const DomainResponseKind = {
+  primary: "primary",
+  role: "role",
+} as const;
+
+export interface DomainResponse {
+  active: boolean;
+  challenge_expires_at: string | null;
+  challenge_name: string;
+  challenge_value: string | null;
+  hostname: string;
+  kind: DomainResponseKind;
+  last_checked_at: string | null;
+  status: string;
+  verification_expires_at: string | null;
+  verified_at: string | null;
+  version: number;
+}
+
 export type DownloadEvidenceProvenance =
   (typeof DownloadEvidenceProvenance)[keyof typeof DownloadEvidenceProvenance];
 
@@ -4617,6 +4657,14 @@ export interface PostalResponse {
   pincode: string;
 }
 
+export interface PrimaryDomainFields {
+  /** @maxLength 270 */
+  hostname: string;
+  previous_hostname?: string | null;
+  /** @minimum 0 */
+  version: number;
+}
+
 export type ProductCategoryEditStatus =
   (typeof ProductCategoryEditStatus)[keyof typeof ProductCategoryEditStatus];
 
@@ -5058,6 +5106,8 @@ export interface RoleUrlResponse {
 }
 
 export interface RoleUrlPage {
+  bootstrap_hosts?: string[];
+  domains?: DomainResponse[];
   items: RoleUrlResponse[];
 }
 

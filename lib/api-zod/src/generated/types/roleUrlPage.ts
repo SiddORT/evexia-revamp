@@ -5,8 +5,11 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { DomainResponse } from "./domainResponse";
 import type { RoleUrlResponse } from "./roleUrlResponse";
 
 export interface RoleUrlPage {
+  bootstrap_hosts?: string[];
+  domains?: DomainResponse[];
   items: RoleUrlResponse[];
 }

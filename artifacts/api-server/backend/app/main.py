@@ -75,6 +75,8 @@ def create_app() -> FastAPI:
     # Refuse to start with missing/weak signing configuration or unsafe CORS.
     settings.signing_key
     origins = settings.allowed_origins
+    settings.bootstrap_hosts
+    settings.proxy_peers
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
@@ -316,6 +318,8 @@ def create_app() -> FastAPI:
                         }
         return spec
     app.openapi = openapi
+    from app.core.host_policy import HostPolicy
+    app.add_middleware(HostPolicy, settings=settings)
     return app
 
 

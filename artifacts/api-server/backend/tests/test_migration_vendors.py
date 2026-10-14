@@ -80,22 +80,38 @@ def test_migration_preserves_prior_masters_accounts_and_constraints(migration_db
     with Session(engine) as db:
         row = historical_zone(db, actor_id, session_id, "Preserved")
     from directory_test_data import approved_historical_upgrade
-    approved_historical_upgrade(engine, config, target_revision="0036_reference_privacy")
+    approved_historical_upgrade(engine, config)
     with Session(engine) as db:
         assert db.get(Zone, row["id"]).name == "Preserved"
         assert db.get(User, actor_id).is_protected_system_admin
         assert db.get(AuthSession, session_id).status == "ACTIVE"
         assert db.scalar(select(AuditEvent.id).where(AuditEvent.action == "zone_create"))
         assert db.scalar(select(func.count()).select_from(Vendor)) == 0
-        actor = identity(db, actor_id, session_id)
-        created = vendors.create(db, actor, VendorFields(**FIELDS))
+        # Check the historical plaintext constraints before the reviewed privacy
+        # migration intentionally replaces those columns with ciphertext.
+        from sqlalchemy import Table, MetaData
+        historical = Table("vendors", MetaData(), autoload_with=engine)
+        fixture_id = uuid.uuid4()
+        db.execute(historical.insert().values(**VendorFields(**FIELDS).model_dump(),
+            id=fixture_id, version=1, created_by=actor_id, updated_by=actor_id))
         for sql in ('UPDATE vendors SET version=0', "UPDATE vendors SET status='unknown'",
                     'UPDATE vendors SET "vendorName"=\' \'', 'UPDATE vendors SET "gstNo"=\'27ddddd3333d1z8\'',
-                    'UPDATE vendors SET "dialCountry_ciphertext"=NULL', 'UPDATE vendors SET "phoneNo_ciphertext"=NULL',
+                    'UPDATE vendors SET "dialCountry"=\'ZZ\'', 'UPDATE vendors SET "phoneNo"=\'123\'',
                     "UPDATE vendors SET deleted_at=now()"):
             with pytest.raises(IntegrityError):
                 with db.begin_nested():
                     db.execute(text(sql))
+        db.execute(historical.delete().where(historical.c.id == fixture_id))
+        db.commit()
+    command.upgrade(config, "0036_reference_privacy")
+    with Session(engine) as db:
+        actor = identity(db, actor_id, session_id)
+        created = vendors.create(db, actor, VendorFields(**FIELDS))
+        # Keep the incoming release's ciphertext integrity checks too.
+        for field in ("dialCountry_ciphertext", "phoneNo_ciphertext"):
+            with pytest.raises(IntegrityError):
+                with db.begin_nested():
+                    db.execute(text(f'UPDATE vendors SET "{field}"=NULL'))
         vendors.mutate(db, actor, created["id"], VendorVersion(expected_version=1), "delete")
     with pytest.raises(RuntimeError, match="Populated privacy downgrade refused"):
         command.downgrade(config, "0021_master_permissions")
@@ -104,7 +120,7 @@ def test_migration_preserves_prior_masters_accounts_and_constraints(migration_db
 
 
 def test_concurrent_duplicate_and_stale_mutations(migration_db):
-    engine, _, actor_id, session_id = prepare(migration_db)
+    engine, _, actor_id, session_id = prepare_vendor(migration_db)
     barrier = Barrier(2)
     def create(index):
         with Session(engine, expire_on_commit=False) as db:
@@ -139,7 +155,7 @@ def test_concurrent_duplicate_and_stale_mutations(migration_db):
 
 
 def test_atomic_constraint_failure_rolls_back_rows_and_audit(migration_db, monkeypatch):
-    engine, _, actor_id, session_id = prepare(migration_db)
+    engine, _, actor_id, session_id = prepare_vendor(migration_db)
     data = (HEADER + "First,27DDDDD3333D1Z8,A,C,c@example.test,9876543210,IN,active\n"
                     "Second,29EEEEE4444E1Z9,A,C,c@example.test,9876543210,IN,active").encode()
     original = vendors.insert
@@ -160,7 +176,7 @@ def test_atomic_constraint_failure_rolls_back_rows_and_audit(migration_db, monke
 
 
 def test_concurrent_imports_are_create_only_and_all_or_nothing(migration_db):
-    engine, _, actor_id, session_id = prepare(migration_db)
+    engine, _, actor_id, session_id = prepare_vendor(migration_db)
     data = (HEADER + "Race one,27DDDDD3333D1Z8,A,C,c@example.test,9876543210,IN,active\n"
                     "Race two,29EEEEE4444E1Z9,A,C,c@example.test,501234567,AE,inactive").encode()
     barrier = Barrier(2)
@@ -180,3 +196,8 @@ def test_concurrent_imports_are_create_only_and_all_or_nothing(migration_db):
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(Vendor)) == 2
         assert db.scalar(select(func.count()).select_from(AuditEvent).where(AuditEvent.action == "vendor_create")) == 2
+
+def prepare_vendor(fixture):
+    engine, config, actor_id, session_id = prepare(fixture)
+    command.upgrade(config, "0036_reference_privacy")
+    return engine, config, actor_id, session_id

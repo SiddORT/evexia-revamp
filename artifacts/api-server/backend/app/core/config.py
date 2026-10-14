@@ -25,6 +25,26 @@ class Settings(BaseSettings):
     directory_encryption_key_id: str = "primary"
     directory_index_key: SecretStr | None = None
     cors_origins: str = ""
+    portal_bootstrap_hosts: str = ""
+    trusted_proxy_peers: str = ""
+
+    @property
+    def bootstrap_hosts(self) -> tuple[str, ...]:
+        from app.schemas.role_urls import canonical_hostname
+        hosts = tuple(x.strip() for x in self.portal_bootstrap_hosts.split(",") if x.strip())
+        if self.app_env == "production" and not hosts:
+            raise ValueError("PORTAL_BOOTSTRAP_HOSTS requires exact operator-approved recovery hosts in production")
+        if any(canonical_hostname(x) != x for x in hosts):
+            raise ValueError("PORTAL_BOOTSTRAP_HOSTS must contain canonical exact hostnames")
+        return hosts
+
+    @property
+    def proxy_peers(self) -> tuple[str, ...]:
+        import ipaddress
+        peers = tuple(x.strip() for x in self.trusted_proxy_peers.split(",") if x.strip())
+        for peer in peers:
+            ipaddress.ip_address(peer)
+        return peers
     allow_public_registration: bool = False
     # Optional until recovery is enabled. Never infer the link origin from Host.
     password_recovery_url: str | None = None

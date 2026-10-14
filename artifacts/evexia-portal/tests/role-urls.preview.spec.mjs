@@ -5,6 +5,63 @@ const base = () => process.env.EVEXIA_PREVIEW_BASE_URL;
 const password = () => process.env.EVEXIA_TEST_ADMIN_PASSWORD;
 const adminName = 'crm-admin@allergyevexia.in';
 
+test('primary domain drafts survive conflicts and failed reloads; TXT evidence needs separate activation and revoke', async ({ page }, info) => {
+  test.setTimeout(120000);
+  await signIn(page);
+  await page.goto(base() + '/admin/settings?section=role-urls');
+  // Use the Settings link rather than assuming the section query key.
+  await page.getByTestId('input-settings-search').fill('hostname');
+  await page.getByTestId('link-settings-role-urls').click();
+  await page.getByTestId('button-primary-edit').click();
+  await page.getByTestId('input-primary-hostname').fill('primary-browser.allergyevexia.com');
+  await page.getByTestId('button-primary-save').click();
+  await expect(page.getByTestId('text-primary-current')).toContainText('primary-browser.allergyevexia.com');
+  await page.reload();
+  await expect(page.getByTestId('text-primary-current')).toContainText('primary-browser.allergyevexia.com');
+  await page.getByTestId('button-primary-edit').click();
+  await page.getByTestId('input-primary-hostname').fill('replacement-browser.allergyevexia.com');
+  // Another server mutation invalidates the draft's captured version.
+  await page.evaluate(async () => {
+    const { roleUrlRequest } = await import('/src/auth/adminSession.js');
+    const p = (await roleUrlRequest()).domains.find((d) => d.kind === 'primary');
+    await roleUrlRequest('/primary', { hostname: 'concurrent-browser.allergyevexia.com', previous_hostname: p.hostname, version: p.version });
+  });
+  await page.getByTestId('button-primary-save').click();
+  await expect(page.getByTestId('form-primary-domain').getByRole('alert')).toContainText('draft is kept');
+  await expect(page.getByTestId('button-primary-save')).toBeDisabled();
+  let failReload = true;
+  await page.route('**/api/v1/admin/role-urls', (route) => route.request().method() === 'GET' && failReload
+    ? route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }) : route.continue());
+  await page.getByTestId('button-primary-reload').click();
+  await expect(page.getByTestId('input-primary-hostname')).toHaveValue('replacement-browser.allergyevexia.com');
+  failReload = false;
+  await page.getByTestId('button-primary-reload').click();
+  await page.getByTestId('button-primary-review').click();
+  await page.getByTestId('button-primary-save').click();
+  const hostname = 'replacement-browser.allergyevexia.com';
+  const row = page.getByTestId(`row-domain-${hostname}`);
+  await expect(page.getByTestId('text-primary-current')).toContainText(hostname);
+  await row.getByRole('button', { name: `Create challenge ${hostname}`, exact: true }).click();
+  await expect(page.getByTestId(`text-challenge-${hostname}`)).toContainText(`_evexia-verification.${hostname}`);
+  await expect(row.getByRole('button', { name: `Activate ${hostname}`, exact: true })).toBeDisabled();
+  await row.getByRole('button', { name: `Check DNS ${hostname}`, exact: true }).click();
+  await expect(row.getByRole('status')).toContainText('Wait 30 seconds');
+  await page.waitForTimeout(30100);
+  await row.getByRole('button', { name: `Check DNS ${hostname}`, exact: true }).click();
+  await expect(row.getByRole('status')).toContainText('Ownership verified');
+  await expect(row).toContainText('Verified, inactive');
+  await row.getByRole('button', { name: `Activate ${hostname}`, exact: true }).click();
+  await expect(row).toContainText('Verified, active');
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: info.outputPath('primary-domain-verification-mobile.png'), fullPage: true });
+  page.once('dialog', (dialog) => dialog.accept());
+  await row.getByRole('button', { name: `Revoke ${hostname}`, exact: true }).click();
+  await expect(row).toContainText('Revoked, inactive');
+  await page.reload();
+  await expect(page.getByTestId(`row-domain-${hostname}`)).toContainText('Revoked, inactive');
+});
+
 test('cookie-protected exact development preview ingress; other origins omit cookies; redirects fail closed', async ({ browser }) => {
   // The Vite server embeds its exact REPLIT_DEV_DOMAIN only in development.
   const previewHost = process.env.REPLIT_DEV_DOMAIN;
@@ -75,8 +132,21 @@ async function connectTestHosts(context) {
 async function makeMapping(page, hostname, role) {
   return page.evaluate(async ({ hostname, role }) => {
     const { roleUrlRequest } = await import('/src/auth/adminSession.js');
-    return roleUrlRequest('', { hostname, role, enabled: true });
+    const mapping = await roleUrlRequest('', { hostname, role, enabled: true });
+    const challenge = await roleUrlRequest('/domain-action', { hostname, version: 0, action: 'challenge' });
+    return { mapping, challenge };
   }, { hostname, role });
+}
+
+async function activateMappings(page, mappings) {
+  // Keep the real server-side cooldown; only DNS lookup is injected.
+  await page.waitForTimeout(30100);
+  for (const { mapping, challenge } of mappings) await page.evaluate(async ({ mapping, challenge }) => {
+    const { roleUrlRequest } = await import('/src/auth/adminSession.js');
+    const verified = await roleUrlRequest('/domain-action', { hostname: mapping.hostname, version: challenge.version, action: 'verify' });
+    if (verified.status !== 'verified' || verified.active) throw new Error('Fixture verification failed or activated implicitly');
+    await roleUrlRequest('/domain-action', { hostname: mapping.hostname, version: verified.version, action: 'activate' });
+  }, { mapping, challenge });
 }
 
 test('shared settings keyboard/mobile CRUD, draft guard, duplicate and stale recovery', async ({ page, browser }) => {
@@ -93,9 +163,9 @@ test('shared settings keyboard/mobile CRUD, draft guard, duplicate and stale rec
   await page.getByTestId('input-role-url-role').selectOption('mr');
   await page.getByTestId('button-role-url-save').click();
   await expect(page.getByRole('status').filter({ hasText: 'Role URL saved.' })).toBeVisible();
-  await expect(page.getByText(hostname, { exact: true })).toBeVisible();
+  await expect(page.getByText(hostname, { exact: true }).first()).toBeVisible();
   await page.reload();
-  await expect(page.getByText(hostname, { exact: true })).toBeVisible();
+  await expect(page.getByText(hostname, { exact: true }).first()).toBeVisible();
   await page.getByRole('button', { name: `Edit ${hostname}`, exact: true }).click();
   await page.getByTestId('input-role-url-role').selectOption('doctor');
   page.once('dialog', (dialog) => dialog.dismiss());
@@ -115,7 +185,7 @@ test('shared settings keyboard/mobile CRUD, draft guard, duplicate and stale rec
   await expect(page.getByText(/Current server mapping:/)).toContainText('admin');
   await page.getByRole('button', { name: 'I reviewed the current mappings; keep my draft' }).click();
   await page.getByTestId('button-role-url-save').click();
-  await expect(page.getByText(hostname, { exact: true })).toBeVisible();
+  await expect(page.getByText(hostname, { exact: true }).first()).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('button', { name: `Disable ${hostname}`, exact: true }).click();
   await expect(page.getByRole('button', { name: `Enable ${hostname}`, exact: true })).toBeVisible();
@@ -150,13 +220,15 @@ test('shared settings keyboard/mobile CRUD, draft guard, duplicate and stale rec
 });
 
 test('new visits resolve Admin MR Doctor and unknown hosts; failure retries; incompatible paths stay assigned', async ({ page, browser }) => {
+  test.setTimeout(120000);
   await signIn(page);
-  const tag = Date.now().toString(36);
   const hosts = {};
+  const mappings = [];
   for (const role of ['admin', 'mr', 'doctor']) {
-    hosts[role] = `${role}-${tag}.allergyevexia.com`;
-    await makeMapping(page, hosts[role], role);
+    hosts[role] = `${role}-browser.allergyevexia.com`;
+    mappings.push(await makeMapping(page, hosts[role], role));
   }
+  await activateMappings(page, mappings);
   const context = await browser.newContext({ ignoreHTTPSErrors: true });
   await connectTestHosts(context);
   const visitor = await context.newPage();
@@ -182,7 +254,7 @@ test('new visits resolve Admin MR Doctor and unknown hosts; failure retries; inc
   await visitor.getByTestId('button-submit-login').click();
   await expect(visitor.getByTestId('status-auth-message')).toContainText('No credentials were sent');
   expect(credentialRequests).toBe(0);
-  const unknown = `unknown-${tag}.allergyevexia.com`;
+  const unknown = 'unknown-browser.allergyevexia.com';
   await visitor.goto(`https://${unknown}/`);
   await expect(visitor.getByText('Select your portal to continue.', { exact: false })).toBeVisible();
   let failed = true;
@@ -199,12 +271,12 @@ test('new visits resolve Admin MR Doctor and unknown hosts; failure retries; inc
 });
 
 test('same-origin mapped Admin and MR login, deep refresh, renewal and logout retain identity boundaries', async ({ page, browser }, info) => {
+  test.setTimeout(120000);
   await signIn(page);
   const tag = Date.now().toString(36);
-  const adminHost = `auth-admin-${tag}.allergyevexia.com`;
-  const mrHost = `auth-mr-${tag}.allergyevexia.com`;
-  await makeMapping(page, adminHost, 'admin');
-  await makeMapping(page, mrHost, 'mr');
+  const adminHost = 'auth-admin-browser.allergyevexia.com';
+  const mrHost = 'auth-mr-browser.allergyevexia.com';
+  await activateMappings(page, [await makeMapping(page, adminHost, 'admin'), await makeMapping(page, mrHost, 'mr')]);
   const mrUsername = `host.${tag}`;
   const mrPassword = 'Synthetic role hostname only password';
   await page.evaluate(async ({ mrUsername, mrPassword }) => {

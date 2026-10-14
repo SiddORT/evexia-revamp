@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[4]
 BACKEND = ROOT / "artifacts/api-server/backend"
 LOCK_PATH = Path("/var/www/newuat.allergyevexia.in/.deploy.lock")
 PREPARE_TARGET = "0031_role_hostnames"
-FINAL_TARGET = "0036_reference_privacy"
+FINAL_TARGET = "0037_domain_admission"
 LOCK_ID = 145002  # Same database interlock as normal CI/operator continuation.
 
 
@@ -181,11 +181,14 @@ def finalize(connection, settings, hostname=None):
     from app.api.v1.system import readiness
     dedicated_database(connection)
     revisions = connection.execute(text("SELECT version_num FROM alembic_version")).scalars().all()
-    if revisions not in (["0034_shared_phone_countries"], ["0035_account_identifiers"], [FINAL_TARGET]):
+    predecessors = (["0034_shared_phone_countries"], ["0035_account_identifiers"], ["0036_reference_privacy"])
+    if revisions not in (*predecessors, [FINAL_TARGET]):
         raise FreshInstallBlocked("Complete the existing protected operator continuation first.")
     expected = set(Base.metadata.tables) | {"alembic_version", "directory_crypto_stage"}
     if revisions == ["0034_shared_phone_countries"]:
         expected.remove("account_crypto_state")
+    if revisions in predecessors:
+        expected.remove("domain_policies")
     if set(inspect(connection).get_table_names(schema="public")) != expected:
         raise FreshInstallBlocked("Unexpected installation tables; operator review required.")
     if connection.scalar(text("""
@@ -200,7 +203,7 @@ def finalize(connection, settings, hostname=None):
     for table in tables:
         if connection.scalar(text(f"SELECT EXISTS(SELECT 1 FROM public.{quote(table)})")):
             raise FreshInstallBlocked("Installation already contains records; no accounts or credentials changed.")
-    if revisions in (["0034_shared_phone_countries"], ["0035_account_identifiers"]):
+    if revisions in predecessors:
         # Explicit fresh-finalize approval already binds the independently
         # verified target and proves ALL business tables empty under locks.
         # This is not permission to migrate a populated account database.
@@ -268,7 +271,7 @@ def main(argv=None):
         finally:
             engine.dispose()
         print("FRESH_INSTALL_PREPARED: 0031_role_hostnames; protected recovery/retirement required; NOT READY."
-              if args.phase == "prepare" else "FRESH_INSTALL_READY: 0036_reference_privacy; Super Admin initialized.")
+              if args.phase == "prepare" else "FRESH_INSTALL_READY: 0037_domain_admission; Super Admin initialized.")
         return 0
     except FreshInstallBlocked as exc:
         print(f"FRESH_INSTALL_BLOCKED: {exc}", file=sys.stderr)

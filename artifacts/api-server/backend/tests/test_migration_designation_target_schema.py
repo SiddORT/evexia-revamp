@@ -53,6 +53,7 @@ def test_populated_previous_schema_preservation_generated_values_and_safe_refusa
         old_targets = db.execute(text("SELECT * FROM sales_targets ORDER BY id")).mappings().all()
     from directory_test_data import approved_historical_upgrade
     approved_historical_upgrade(engine, config, target_revision="0036_reference_privacy")
+    command.upgrade(config, "head")
     with Session(engine) as db:
         assert db.execute(text(
             'SELECT id,name,"shortName",status,version,created_by,updated_by,created_at,updated_at,deleted_at,deleted_by '
