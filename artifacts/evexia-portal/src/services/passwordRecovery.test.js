@@ -43,3 +43,19 @@ test('safe errors and invalid success responses', async () => {
     await assert.rejects(requestRecovery('fictional', 'admin'), /Unable to reach/);
   } finally { globalThis.fetch = original; }
 });
+
+test('backend error envelope preserves only allowlisted password guidance; transport failure is retryable', async () => {
+  const original = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => ({ ok: false, status: 400, json: async () => ({
+      error: { message: 'Choose a password different from your current password.' },
+    }) });
+    await assert.rejects(resetPassword('synthetic', 'long enough password'), /different from your current/);
+    globalThis.fetch = async () => ({ ok: false, status: 500, json: async () => ({
+      error: { message: 'PRIVATE backend exception' },
+    }) });
+    await assert.rejects(resetPassword('synthetic', 'long enough password'), /try again later/);
+    globalThis.fetch = async () => ({ ok: false, status: 503, json: async () => null });
+    await assert.rejects(requestRecovery('fictional', 'admin'), /temporarily unavailable/);
+  } finally { globalThis.fetch = original; }
+});

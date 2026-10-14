@@ -16,7 +16,7 @@ from app.repositories import sessions
 from app.services import account_crypto, auth, recovery_mail
 from app.services.staff_crypto import StaffCrypto
 
-MESSAGE = "If an eligible account matches, a password-recovery email will be sent."
+MESSAGE = "If an eligible account matches, we will attempt to send a password-recovery email."
 INVALID = "This recovery link is invalid, expired or already used. Request a new link."
 logger = logging.getLogger(__name__)
 
@@ -46,6 +46,14 @@ def _kind(identity):
     return "mr" if identity.mr is not None else "admin"
 
 
+def _eligible(identity):
+    # Portal intent is not authority: Admin sign-in serves staff AND Super Admin.
+    # Recheck persisted identity at consumption so pre-policy links also fail.
+    return (not identity.user.is_protected_system_admin
+            and identity.user.system_role != "super_admin"
+            and (identity.staff is not None or identity.mr is not None))
+
+
 def rate_limit(db, settings, scope, values, maximum):
     keys = sorted(auth._limit_key(settings, "recovery:" + scope, value) for value in values)
     # Serialize count+insert; simultaneous requests cannot evade the limit.
@@ -65,7 +73,7 @@ def issue_and_send(db, settings, identifier, identity_kind):
         return
     try:
         identity = auth._load_identity(db, user)
-        if _kind(identity) != identity_kind:
+        if not _eligible(identity) or _kind(identity) != identity_kind:
             return
         recipient = _recipient(identity, settings)
     except auth.AuthError:
@@ -118,7 +126,7 @@ def reset(db, settings, token, new_password, request_id):
         raise auth.AuthError(INVALID)
     try:
         identity = auth._load_identity(db, user, lock=True)
-        if (_kind(identity) != claims["kind"]
+        if (not _eligible(identity) or _kind(identity) != claims["kind"]
                 or not hmac.compare_digest(claims["recipient"],
                                            _binding(settings, _recipient(identity, settings)))):
             raise auth.AuthError()

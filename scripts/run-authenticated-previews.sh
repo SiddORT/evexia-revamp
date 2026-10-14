@@ -138,7 +138,18 @@ with create_engine(url, hide_parameters=True).connect() as connection:
 command.upgrade(config, SCHEMA_REVISION)
 PY_PREVIEW_INITIALIZE
 python3 -B -m app.bootstrap
-python3 -m uvicorn app.main:app --host 127.0.0.1 --port "$API_PORT" --no-access-log \
+API_APP=app.main:app
+# Explicit single-spec fixture only; no test route or delivery sink in the real app.
+if [ "$#" -eq 1 ] && [ "$1" = "artifacts/evexia-portal/tests/password-recovery.preview.spec.mjs" ]; then
+  export PASSWORD_RECOVERY_URL=https://portal.example.com/reset-password
+  export SMTP_HOST=smtp.example.com SMTP_FROM=recovery@example.com
+  export EVEXIA_RECOVERY_FIXTURE="$PGROOT/recovery-fixture.json"
+  export EVEXIA_RECOVERY_OUTBOX="$PGROOT/recovery-outbox.jsonl"
+  export PYTHONPATH="$ROOT/artifacts/api-server/backend/tests:$PYTHONPATH"
+  python3 -B -m recovery_preview_app
+  API_APP=recovery_preview_app:app
+fi
+python3 -m uvicorn "$API_APP" --host 127.0.0.1 --port "$API_PORT" --no-access-log \
   >"$PGROOT/api.log" 2>&1 &
 API_PID=$!
 

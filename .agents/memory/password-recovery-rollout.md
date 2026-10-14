@@ -11,6 +11,17 @@ transactional-email integration.
 **How to apply:** Keep recovery delivery compatible with the existing SMTP
 deployment; do not replace it with another provider without asking.
 
+Public self-service recovery is for eligible staff and existing MR accounts,
+never Super Admin. The shared Admin entry must retain staff recovery even
+though Super Admin also signs in there.
+
+**Why:** The user explicitly required technical-team-only Super Admin password
+recovery, including refusal of previously issued public links.
+
+**How to apply:** Preserve that policy across issuance and consumption changes;
+do not treat an Admin portal selection or a staff display-role label as an
+authoritative identity type.
+
 For this recovery rollout, UAT access is permitted when needed, but database
 migrations and production-impacting actions require reporting the exact action
 and its risks first. A code push must not implicitly authorize deployment.

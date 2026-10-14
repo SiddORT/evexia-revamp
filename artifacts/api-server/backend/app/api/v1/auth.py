@@ -25,7 +25,10 @@ def forgot_password(body: RecoveryRequest, request: Request, response: Response,
     response.headers["Cache-Control"] = "no-store"
     try:
         recovery_mail.validate_configuration(settings)
-    except recovery_mail.RecoveryUnavailable:
+    except recovery_mail.RecoveryUnavailable as error:
+        # Only fixed category codes, not exception text or configuration values.
+        password_recovery.logger.error("Password recovery configuration unavailable: %s",
+                                       ", ".join(error.issues))
         raise HTTPException(503, "Password recovery is unavailable. Contact your administrator.") from None
     ip = request.client.host if request.client else "unknown"
     ip_allowed = password_recovery.rate_limit(db, settings, "request-ip", [ip], 30)

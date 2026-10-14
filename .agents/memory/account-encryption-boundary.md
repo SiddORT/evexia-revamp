@@ -24,3 +24,14 @@ identifier rather than failing; this is not acceptable for provisioning.
 **How to apply:** Fail explicitly on unsupported plaintext bulk account writes;
 use validated account mutation paths instead of relying on property setters
 being invoked by bulk SQL operations.
+
+Query-count budgets must distinguish fixed account-readiness checks from
+projection reads, while bounding both independently.
+
+**Why:** Fail-closed account encryption adds a constant readiness cost to
+identity loading; an old aggregate budget can mistake that for per-record
+query growth. Removing readiness or allowing arbitrary overhead would hide
+real security or scaling regressions.
+
+**How to apply:** Keep the existing projection budgets, recognize only exact
+readiness statements, and assert a small bounded number of paired checks.

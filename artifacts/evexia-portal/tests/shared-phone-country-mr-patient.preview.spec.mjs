@@ -77,7 +77,7 @@ async function fillMRRequired(page, refs, id) {
 
 async function fillPatientRequired(page, refs, id) {
   await page.getByTestId('input-patient-name').fill(`Phone test Patient ${id}`);
-  await page.getByTestId('input-patient-email').fill(`phone-${id}@example.test`);
+  await page.getByTestId('input-patient-email').fill(`phone-${id}@example.com`);
   await page.getByTestId('input-patient-dateOfBirth').fill('2000-01-01');
   await page.getByTestId('select-patient-gender').selectOption('prefer not to say');
   await page.getByTestId('tab-patient-care').click();

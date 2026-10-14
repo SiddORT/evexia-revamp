@@ -136,7 +136,9 @@ test('deep links wait for verification; login controls show safe failures, real 
   await expect(page.getByTestId('status-auth-message')).toContainText('Unable to reach');
   await page.unroute('**/api/v1/auth/login');
   await page.getByTestId('button-forgot-password').click();
-  await expect(page.getByTestId('status-auth-message')).toContainText('contact your EVEXIA administrator');
+  await expect(page.getByRole('heading', { name: 'Forgot password' })).toBeVisible();
+  await expect(page.getByTestId('text-super-admin-recovery')).toHaveText('Super Admin: Contact the tech team to reset your password.');
+  await expect(page.getByLabel('Email or User ID')).toBeVisible();
   for (const path of ['/mr', '/doctor']) {
     let requests = 0;
     const observe = (request) => { if (request.url().includes('/api/v1/auth/login')) requests++; };

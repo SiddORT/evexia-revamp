@@ -24,10 +24,11 @@ async function send(path, body) {
   const data = await response.json().catch(() => null);
   if (!response.ok) {
     const message = path === 'reset-password' && response.status === 400
-      && data?.detail === 'Choose a password different from your current password.'
-      ? data.detail
+      && (data?.error?.message ?? data?.detail) === 'Choose a password different from your current password.'
+      ? 'Choose a password different from your current password.'
       : response.status === 429 ? 'Too many attempts. Try again later.'
-      : response.status === 503 ? 'Password recovery is unavailable. Contact your administrator.'
+      : response.status === 503 ? 'Password recovery is temporarily unavailable. Try again later or contact your administrator.'
+      : response.status >= 500 ? 'Password recovery could not complete. Please try again later.'
         : path === 'reset-password' ? 'This recovery link is invalid, expired or already used. Request a new link.'
           : 'Unable to request password recovery. Please try again.';
     throw new Error(message);

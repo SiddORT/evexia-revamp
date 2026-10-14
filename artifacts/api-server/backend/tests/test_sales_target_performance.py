@@ -44,8 +44,10 @@ def directory(client):
     zones = [uuid.uuid4() for _ in range(SIZE)]
     hqs = [uuid.uuid4() for _ in range(SIZE)]
     ids = [uuid.UUID(int=i + 1) for i in range(SIZE)]
-    db.execute(insert(User), [dict(id=u, username=f"scale-user-{i}", password_hash="synthetic-unusable",
+    # Use the encrypted User properties; plaintext ORM bulk writes are rejected.
+    db.add_all([User(id=u, username=f"scale-user-{i}", password_hash="synthetic-unusable",
                                    system_role="mr") for i, u in enumerate(users)])
+    db.flush()
     db.execute(insert(MRProfile), [dict(id=m, user_id=u, is_active=True) for m, u in zip(mrs, users)])
     history = dict(deleted_at=now, deleted_by=admin_id)
     for model, refs in ((Zone, zones), (Headquarter, hqs)):

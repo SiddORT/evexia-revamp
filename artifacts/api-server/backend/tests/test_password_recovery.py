@@ -146,22 +146,41 @@ def test_rate_limit_is_uniform_and_origin_is_required(configured):
     assert reset(api, "bad", "short").status_code == 422
 
 
-def test_protected_superadmin_recovery_preserves_identity(configured):
-    api, db, _, sent = configured
+def test_protected_superadmin_never_issues_or_consumes_even_pre_policy_links(configured):
+    api, db, settings, sent = configured
     user, _ = create_user(db, "ignored@example.com", role="super_admin")
     owner = user.id
-    assert request(api, user.email, "admin").status_code == 202
-    assert reset(api, sent[0][1]).status_code == 200
+    original = (user.password_hash, user.token_version, user.identity_version)
+    logged = login(api, user.email).json()
+    # Simulate a valid link issued by the previous policy, not a tampered token.
+    now = utcnow()
+    token = jwt.encode({
+        "sub": str(user.id), "ver": user.token_version, "iver": user.identity_version,
+        "kind": "admin", "recipient": recovery._binding(settings, user.email),
+        "purpose": "password_recovery", "jti": "x" * 43,
+        "iat": now, "nbf": now, "exp": now + timedelta(minutes=15),
+        "iss": settings.jwt_issuer, "aud": settings.jwt_audience + ":password-recovery",
+    }, recovery._key(settings), algorithm="HS256")
+    generic = request(api, "unknown@example.com", "admin")
+    for identifier in filter(None, [user.email, user.username]):
+        result = request(api, identifier, "admin")
+        assert result.status_code == generic.status_code == 202
+        assert result.json() == generic.json()
+    assert not sent
+    assert reset(api, token).status_code == 400
     db.expire_all()
     user = db.get(User, owner)
+    assert (user.password_hash, user.token_version, user.identity_version) == original
     assert user.is_protected_system_admin and user.system_role == "super_admin" and user.is_active
-    assert user.email == "crm-admin@allergyevexia.in"
+    assert auth.identity_from_token(db, logged["access_token"], settings).user.id == owner
+    assert db.scalar(select(AuditEvent.id).where(
+        AuditEvent.actor_id == owner, AuditEvent.action == "password_reset")) is None
 
 
 def test_enabled_staff_recovery_uses_encrypted_current_contact(configured):
     from app.db.staff_models import StaffProfile
     from test_staff import admin_headers, BODY, BASE
-    api, db, _, sent = configured
+    api, db, settings, sent = configured
     headers, _ = admin_headers(api, db)
     result = api.post(BASE, headers=headers, json=BODY)
     assert result.status_code == 201, result.text
@@ -170,13 +189,66 @@ def test_enabled_staff_recovery_uses_encrypted_current_contact(configured):
     user = db.get(User, profile.user_id)
     profile.workspace_login_enabled = True
     db.commit()
+    # Issue a real staff session; reset must invalidate both credential types.
+    signed_in = api.post("/api/v1/auth/login", headers=HEADERS, json={
+        "identifier": user.username, "password": result.json()["initial_password"],
+        "identity_kind": "admin",
+    })
+    assert signed_in.status_code == 200, signed_in.text
+    access = signed_in.json()["access_token"]
+    cookie = api.cookies.get("evexia_refresh")
     request(api, user.username, "admin")
     assert sent[0][0] == BODY["email"] and user.email is None
     assert reset(api, sent[0][1]).status_code == 200
+    assert reset(api, sent[0][1]).status_code == 400
+    with pytest.raises(auth.AuthError):
+        auth.identity_from_token(db, access, settings)
+    with pytest.raises(auth.AuthError):
+        auth.rotate_refresh(db, cookie, settings, "synthetic-staff-recovery")
+    assert api.post("/api/v1/auth/login", headers=HEADERS, json={
+        "identifier": user.username, "password": result.json()["initial_password"],
+        "identity_kind": "admin",
+    }).status_code == 401
     response = api.post("/api/v1/auth/login", headers=HEADERS,
                         json={"identifier": user.username, "password": NEW, "identity_kind": "admin"})
     assert response.status_code == 200, response.text
     assert response.json()["user"]["identity_kind"] == "staff"
+
+
+@pytest.mark.parametrize("problem", ["login_disabled", "inactive", "deleted", "email_changed", "user_disabled"])
+def test_staff_eligibility_and_current_encrypted_recipient_rechecked(configured, problem):
+    from app.db.staff_models import StaffProfile
+    from app.services.staff_crypto import StaffCrypto
+    from test_staff import admin_headers, BODY, BASE
+    api, db, settings, sent = configured
+    headers, _ = admin_headers(api, db)
+    created = api.post(BASE, headers=headers, json=BODY).json()["record"]
+    profile = db.get(StaffProfile, uuid.UUID(created["id"]))
+    user = db.get(User, profile.user_id)
+    profile.workspace_login_enabled = True
+    db.commit()
+    request(api, user.username, "admin")
+    assert len(sent) == 1
+    original = user.password_hash
+    if problem == "login_disabled":
+        profile.workspace_login_enabled = False
+    elif problem == "inactive":
+        profile.status = "inactive"
+    elif problem == "deleted":
+        profile.deleted_at = utcnow()
+    elif problem == "user_disabled":
+        user.is_active = False
+    else:
+        profile.email_ciphertext = StaffCrypto(settings).encrypt(
+            profile.id, "email", "changed@example.com")
+    db.commit()
+    assert reset(api, sent[0][1]).status_code == 400
+    assert db.get(User, user.id).password_hash == original
+    assert request(api, user.username, "admin").json() == {"message": recovery.MESSAGE}
+    if problem == "email_changed":
+        assert len(sent) == 2 and sent[1][0] == "changed@example.com"
+    else:
+        assert len(sent) == 1
 
 
 def test_same_password_does_not_consume_link(configured):
@@ -236,11 +308,32 @@ def test_concurrent_reset_exactly_one_winner(monkeypatch):
     {"password_recovery_url": "https://user:secret@portal.example.com/reset-password"},
     {"password_recovery_url": "https://portal.example.com/reset-password?return=https://evil.example"},
     {"smtp_username": "user", "smtp_password": None},
+    {"password_recovery_url": "https://portal.example.com:bad/reset-password"},
+    {"password_recovery_url": "https://portal.example.com:0/reset-password"},
+    {"smtp_host": "https://smtp.example.com"},
 ])
 def test_configuration_fails_globally_not_per_account(configured, changes):
     api, _, settings, _ = configured
     app.dependency_overrides[get_settings] = lambda: settings.model_copy(update=changes)
     assert request(api, "unknown").status_code == 503
+
+
+def test_missing_configuration_diagnostic_is_safe_and_precedes_identity_lookup(configured, monkeypatch, caplog):
+    api, _, settings, sent = configured
+    settings = settings.model_copy(update={
+        "password_recovery_url": None, "smtp_host": None, "smtp_from": None,
+        "smtp_username": "PRIVATE-USERNAME", "smtp_password": None,
+    })
+    app.dependency_overrides[get_settings] = lambda: settings
+    def forbidden(*args):
+        pytest.fail("Configuration failure must not schedule identity lookup or delivery")
+    monkeypatch.setattr(recovery, "deliver", forbidden)
+    assert request(api, "PRIVATE-IDENTIFIER", "admin").status_code == 503
+    assert recovery_mail.configuration_issues(settings) == (
+        "PASSWORD_RECOVERY_URL:missing_or_invalid", "SMTP_HOST:missing_or_invalid",
+        "SMTP_FROM:missing_or_invalid", "SMTP_AUTH:incomplete_pair")
+    assert "SMTP_AUTH:incomplete_pair" in caplog.text
+    assert "PRIVATE" not in caplog.text and not sent
 
 
 @pytest.mark.parametrize("implicit", [False, True])

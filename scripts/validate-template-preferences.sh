@@ -4,6 +4,8 @@ set -eu
 # Run auth and preference service checks, then the complete authenticated
 # preview suite once against isolated PostgreSQL/API/Vite and fresh contexts.
 pnpm --filter @workspace/evexia-portal run test:admin-session
+node --test artifacts/evexia-portal/src/services/passwordRecovery.test.js
+sh scripts/test-api-foundation.sh tests/test_password_recovery.py
 node --test artifacts/evexia-portal/src/config/portalHost.test.js
 node --test artifacts/evexia-portal/src/config/portalResolver.test.js
 node --test scripts/check-portal-hostname.test.mjs
@@ -44,3 +46,4 @@ sh scripts/test-api-foundation.sh tests/test_vendors.py tests/test_migration_ven
 node --test artifacts/evexia-portal/src/services/serverSalesTargets.test.js artifacts/evexia-portal/src/services/salesTargets.test.js
 sh scripts/test-api-foundation.sh tests/test_sales_targets.py tests/test_migration_sales_targets.py tests/test_sales_target_performance.py tests/test_migration_designation_target_schema.py
 sh scripts/run-authenticated-previews.sh
+sh scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/password-recovery.preview.spec.mjs

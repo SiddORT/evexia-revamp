@@ -111,6 +111,8 @@ def files_env(tmp_path):
 
     storage = StorageSpy(LocalStorage(settings))
     db = Session(engine, expire_on_commit=False)
+    from account_test_data import initialize_empty_metadata_accounts
+    initialize_empty_metadata_accounts(db)
 
     def seed_user(email, role):
         if role == "super_admin":

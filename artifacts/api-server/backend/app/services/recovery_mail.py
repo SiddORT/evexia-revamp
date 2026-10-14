@@ -8,23 +8,45 @@ from pydantic import EmailStr, TypeAdapter
 
 
 class RecoveryUnavailable(Exception):
-    pass
+    """Contains only allowlisted setting categories, never configured values."""
+
+    def __init__(self, issues):
+        self.issues = tuple(issues)
+        super().__init__("Password recovery configuration unavailable")
 
 
-def validate_configuration(settings):
+def configuration_issues(settings):
+    """Offline preflight: no database lookup, network connection or secret output."""
+    issues = []
     try:
         url = urlsplit(settings.password_recovery_url or "")
         if (url.scheme != "https" or not url.hostname or url.username or url.password
-                or url.query or url.fragment or url.path.rstrip("/") != "/reset-password"):
-            raise ValueError()
-        if (not settings.smtp_host or any(c.isspace() for c in settings.smtp_host)
-                or not 1 <= settings.smtp_port <= 65535):
-            raise ValueError()
-        TypeAdapter(EmailStr).validate_python(settings.smtp_from)
-        if bool(settings.smtp_username) != bool(settings.smtp_password):
+                or url.query or url.fragment or url.path.rstrip("/") != "/reset-password"
+                or url.port == 0):
             raise ValueError()
     except Exception:
-        raise RecoveryUnavailable() from None
+        issues.append("PASSWORD_RECOVERY_URL:missing_or_invalid")
+    try:
+        if (not settings.smtp_host or any(c.isspace() for c in settings.smtp_host)
+                or any(c in settings.smtp_host for c in "/@?#")):
+            raise ValueError()
+    except Exception:
+        issues.append("SMTP_HOST:missing_or_invalid")
+    if not 1 <= settings.smtp_port <= 65535:
+        issues.append("SMTP_PORT:invalid")
+    try:
+        TypeAdapter(EmailStr).validate_python(settings.smtp_from)
+    except Exception:
+        issues.append("SMTP_FROM:missing_or_invalid")
+    if bool(settings.smtp_username) != bool(settings.smtp_password):
+        issues.append("SMTP_AUTH:incomplete_pair")
+    return tuple(issues)
+
+
+def validate_configuration(settings):
+    issues = configuration_issues(settings)
+    if issues:
+        raise RecoveryUnavailable(issues)
 
 
 def send(settings, recipient, token):
