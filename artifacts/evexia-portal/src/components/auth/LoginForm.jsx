@@ -107,9 +107,6 @@ export default function LoginForm({ role }) {
           Forgot password?
         </button>
       </div>
-      {role.short === 'ADMIN' && (
-        <p className="admin-recovery-callout" data-testid="text-super-admin-recovery">Super Admin: Contact the tech team to reset your password.</p>
-      )}
       {(message || (role.short !== 'DOCTOR' && session.message)) && <div className="form-message" role="status" data-testid="status-auth-message">{message || session.message}
         {role.short === 'ADMIN' && session.message.includes('revocation') && <button type="button" onClick={() => void logoutAdmin()}>Retry Sign Out</button>}
       </div>}
