@@ -1,0 +1,20 @@
+Implement the historical data preservation design we already reviewed for EVEXIA. Do not repeat the schema review or redesign the agreed approach.
+
+Implement the required master-record history, transaction-time snapshots, and audit-history improvements based on the existing database schema and the previously agreed design.
+
+Requirements:
+
+1. Preserve the history of changes to applicable master records, including the previous values, new values, effective timestamps, and the user responsible for each change where applicable.
+2. Preserve relevant transaction-time values so historical transactions and reports continue to reflect the information recorded at the time, even when related master records are subsequently updated or soft-deleted.
+3. Extend the existing `audit_events` functionality where appropriate to capture meaningful before-and-after changes. Avoid duplicating existing audit functionality unnecessarily.
+4. Keep stable record IDs and existing foreign-key relationships. Preserve existing records and historical references; do not physically delete data as part of this task.
+5. Ensure history and snapshots are written consistently with the underlying database changes, using transactions where appropriate. Prevent unauthorized modification or deletion of historical records.
+6. Respect existing encryption, access controls, Super Admin protections, and sensitive-data handling. Do not expose encrypted personal data through history or audit APIs.
+7. Create new, reversible Alembic migrations. Do not edit previously applied migrations. Preserve existing data and provide safe migration and rollback behavior.
+8. Update the relevant backend models, services, APIs, and frontend behavior only where required. Keep the changes limited to historical data preservation.
+9. Add and run tests covering record updates, repeated changes, soft deletion, transaction snapshots, audit attribution, authorization, migration upgrade/downgrade, and preservation of existing data.
+10. Run the relevant regression checks and build. If a genuine defect is found, fix it rather than weakening safeguards or changing test expectations merely to obtain a pass.
+
+Complete the implementation and commit/push the changes to Git if all required checks pass.
+
+Report the exact files and migrations changed, what history is now preserved, test results, any limitations, and commit/push status. Do not claim completion for any part that has not been implemented and verified. Do not start unrelated features or apply migrations to UAT or production as part of this task.
