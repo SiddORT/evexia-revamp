@@ -140,9 +140,12 @@ export default function AllergenMaster() {
     <section className="admin-panel admin-allergen-panel" aria-label="Allergen list">
       <div className="admin-allergen-toolbar">
         <div className="admin-allergen-toolbar__top">
+        <div className="admin-allergen-toolbar__search-group">
+        <button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={retry}>Refresh records</button>
         <div className="admin-filter admin-allergen-filters__search"><label htmlFor="allergen-filter-search">Search products</label><div className="admin-search"><Search size={16} aria-hidden="true" /><input id="allergen-filter-search" aria-label="Search products by name, category, storage location or concentration" maxLength={200} value={search} onChange={reset(setSearch)} placeholder="Product, category, location or concentration" data-testid="input-search-allergens" /></div></div>
+        </div>
         <span className="admin-allergen-filter-feedback" role="status" data-testid="text-allergen-filter-feedback">{invalid ? 'Price bounds need correction' : loading ? 'Loading products…' : error ? 'Product counts unavailable' : hasFilters ? `${filtered} matching · ${total} total products` : `${total} total products`}{activeFilters.length > 0 && ` · ${activeFilters.join(', ')} applied`}</span>
-        <div className="admin-allergen-filters__actions"><button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={retry}>Refresh records</button>
+        <div className="admin-allergen-filters__actions">
           <button type="button" className="admin-button admin-button--secondary" disabled={!hasFilters} onClick={clearFilters} data-testid="button-clear-filters">Clear filters</button>
         </div>
         </div>

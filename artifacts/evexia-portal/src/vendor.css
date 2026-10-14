@@ -33,9 +33,16 @@
 .admin-vendor-field--wide { grid-column: 1 / -1; }
 .admin-vendor-field input, .admin-vendor-field textarea { box-sizing: border-box; width: 100%; min-height: 40px; padding: 10px 12px; border: 1px solid var(--admin-border); border-radius: 7px; outline: none; background: var(--admin-surface); color: var(--admin-text); font: inherit; font-weight: 400; }
 .admin-vendor-field textarea { min-height: 76px; resize: vertical; }
+.admin-vendor-field .admin-vendor-phone__control { box-sizing: border-box; display: block; width: 100%; min-width: 0; height: 42px; padding: 0 11px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-text); font: inherit; font-size: 12px; font-weight: 400; outline: none; }
+.admin-vendor-field .admin-vendor-phone__control:focus-visible { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
+.admin-vendor-field .admin-vendor-phone__control:disabled { background: var(--admin-canvas); color: var(--admin-muted); cursor: not-allowed; }
+.admin-vendor-field .admin-vendor-phone__control[aria-invalid="true"] { border-color: var(--admin-danger); }
+.admin-vendor-field .admin-phone-input { flex-wrap: wrap; }
+.admin-vendor-field .admin-phone-input > select.admin-phone-input__country { flex: 1 1 7em; width: auto; }
+.admin-vendor-field .admin-phone-input > input { flex: 2 1 10em; }
 .admin-vendor-field input:focus, .admin-vendor-field textarea:focus, .admin-vendor-import input:focus-visible { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
 .admin-vendor-field [aria-invalid="true"] { border-color: var(--admin-danger); }
-.admin-vendor-field__error { color: var(--admin-danger); font-size: 11px; font-weight: 500; }
+.admin-vendor-field__error { color: var(--admin-danger); font-size: 11px; font-weight: 500; overflow-wrap: anywhere; }
 .admin-vendor-form__feedback { grid-column: 1 / -1; margin: 0; }
 .admin-vendor-import { display: grid; gap: 14px; color: var(--admin-text); font-size: 12px; }
 .admin-vendor-import p { margin: 0; line-height: 1.5; }

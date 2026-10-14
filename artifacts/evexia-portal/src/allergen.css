@@ -70,6 +70,8 @@
 }
 .admin-allergen-toolbar { display: grid; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--admin-border); }
 .admin-allergen-toolbar__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.admin-allergen-toolbar__search-group { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 12px; flex: 1 1 420px; min-width: 0; max-width: 620px; }
+.admin-allergen-toolbar__search-group > .admin-button { flex: 0 1 auto; min-height: 40px; max-width: 100%; white-space: normal; }
 .admin-allergen-filter-feedback { color: var(--admin-text-soft); font-size: 11px; overflow-wrap: anywhere; }
 .admin-allergen-filter-disclosure { min-width: 0; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-state-link); }
 .admin-allergen-filter-disclosure summary { display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; color: var(--admin-text); font-size: 12px; font-weight: 700; list-style: none; }
@@ -107,6 +109,7 @@
   .admin-allergen-toolbar { padding: 14px; }
   .admin-allergen-toolbar__top { display: grid; grid-template-columns: minmax(0, 1fr); }
   .admin-allergen-filters { grid-template-columns: minmax(0, 1fr); }
+  .admin-allergen-toolbar__search-group { max-width: none; }
   .admin-allergen-filters__search { max-width: none; }
   .admin-allergen-filters__actions .admin-button { flex: 1; }
 }

@@ -68,7 +68,7 @@ export default function VendorForm({ vendor, onSave, onClose }) {
         const common = { id, disabled: pending, value: values[key], onChange: (event) => change(key, event.target.value), 'aria-required': 'true', 'aria-invalid': Boolean(errors[key]), 'aria-describedby': errors[key] ? `vendor-error-${key}` : undefined, 'data-testid': `input-vendor-${key}`, maxLength: VENDOR_LENGTHS[key] };
         let input;
         if (key === 'registeredAddress') input = <textarea {...common} autoComplete="off" />;
-        else if (key === 'phoneNo') input = <PhoneInput prefix="vendor" country={values.dialCountry} onCountryChange={(value) => change('dialCountry', value)} countryError={errors.dialCountry} inputProps={{ ...common, name: key, autoComplete: 'tel' }} />;
+        else if (key === 'phoneNo') input = <PhoneInput prefix="vendor" country={values.dialCountry} onCountryChange={(value) => change('dialCountry', value)} countryError={errors.dialCountry} controlClassName="admin-vendor-phone__control" inputProps={{ ...common, className: 'admin-vendor-phone__control', name: key, autoComplete: 'tel' }} />;
         else input = <input {...common} type={key === 'emailId' ? 'email' : 'text'} autoComplete={key === 'emailId' ? 'email' : 'off'} />;
         return <div key={key} className={`admin-vendor-field${key === 'registeredAddress' ? ' admin-vendor-field--wide' : ''}`}>
           <label htmlFor={id}>{label} <span aria-hidden="true">*</span></label>{input}

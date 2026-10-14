@@ -18,6 +18,8 @@
 .admin-category-form__intro svg { flex: none; color: var(--admin-accent); }
 .admin-category-form .mr-form__body { min-height: 0; }
 .admin-category-form .mr-form__grid { max-width: 980px; }
+.admin-category-form .admin-info__row { min-width: 0; }
+.admin-category-form .admin-info__row .mr-form__label { min-width: 0; overflow-wrap: anywhere; }
 .admin-category-form textarea.mr-form__control { height: auto; min-height: 98px; padding: 11px; resize: vertical; line-height: 1.5; }
 .admin-category-form .mr-form__footer { justify-content: flex-end; }
 .admin-category-form__recovery { max-width: 700px; padding: 28px; color: var(--admin-text); }

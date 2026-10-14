@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, Layers3, RefreshCw } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
 import { createProductCategory, editProductCategory, getProductCategory, listProductCategories } from '../../services/serverProductCategories.js';
 import { normalizeCategoryName as normalizeName, validateProductCategory } from '../../services/productCategoryValidation.js';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
@@ -69,7 +70,13 @@ function CategoryForm({ record, onSave, onCancel, onRefresh }) {
       <div className="mr-form__grid">
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="category-name">Product category name *</label><input id="category-name" className="mr-form__control" value={values.name} onChange={(event) => update('name', event.target.value)} placeholder="e.g. Diagnostic reagents" aria-invalid={Boolean(errors.name)} data-testid="input-category-name" />{errors.name && <p className="mr-form__error" role="alert">{errors.name}</p>}</div>
         <div className="mr-form__field mr-form__field--wide"><label className="mr-form__label" htmlFor="category-description">Description (optional)</label><textarea id="category-description" className="mr-form__control" value={values.description} onChange={(event) => update('description', event.target.value)} data-testid="input-category-description" />{errors.description && <p className="mr-form__error" role="alert">{errors.description}</p>}</div>
-        <div className="mr-form__field"><label className="mr-form__label" htmlFor="category-price">Unit price *</label><input id="category-price" className="mr-form__control" inputMode="decimal" value={values.unit_price} onChange={(event) => update('unit_price', event.target.value)} aria-invalid={Boolean(errors.unit_price)} data-testid="input-category-price" /><p className="mr-form__hint">0–999999999999.999999; up to 12 integer and 6 fractional digits. Plain decimal only, never rounded.</p>{errors.unit_price && <p className="mr-form__error" role="alert">{errors.unit_price}</p>}</div>
+        <div className="mr-form__field">
+          <InfoDisclosure id="category-price-help" title="Unit price" text="0–999999999999.999999; up to 12 integer and 6 fractional digits. Plain decimal only, never rounded.">
+            <label className="mr-form__label" htmlFor="category-price">Unit price *</label>
+          </InfoDisclosure>
+          <input id="category-price" className="mr-form__control" inputMode="decimal" value={values.unit_price} onChange={(event) => update('unit_price', event.target.value)} aria-invalid={Boolean(errors.unit_price)} aria-describedby={errors.unit_price ? 'category-price-error' : undefined} data-testid="input-category-price" />
+          {errors.unit_price && <p id="category-price-error" className="mr-form__error" role="alert">{errors.unit_price}</p>}
+        </div>
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="category-status">Status *</label><select id="category-status" className="mr-form__control" value={values.status} onChange={(event) => update('status', event.target.value)} aria-invalid={Boolean(errors.status)} data-testid="select-category-status"><option value="" disabled>Select status</option><option value="active">Active</option><option value="inactive">Inactive</option></select>{errors.status && <p className="mr-form__error" role="alert">{errors.status}</p>}</div>
       </div>
     </div>
