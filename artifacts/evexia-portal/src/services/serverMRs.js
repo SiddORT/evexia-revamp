@@ -79,7 +79,9 @@ export function validateMRValues(values, { creating, password = '', confirm = ''
   if (!['active', 'inactive'].includes(values.status)) errors.status = 'Choose a valid status.';
   for (const key of ['hq', 'zoneId', 'designation_id', 'reportingManagerId']) if (values[key] && !UUID_PATTERN.test(values[key])) errors[key] = 'Select a saved server record.';
   if (creating && (password || confirm)) {
-    if (password.length < 12 || password.length > 128) errors.password = 'Use 12 to 128 characters, or leave blank to generate one.';
+    const length = Array.from(password).length;
+    if (length < 12 || length > 128) errors.password = 'Use 12 to 128 characters, or leave both fields blank to generate one.';
+    if (!confirm) errors.confirmPassword = 'Confirm the password, or clear both fields for server generation.';
     else if (password !== confirm) errors.confirmPassword = 'Passwords do not match.';
   }
   return errors;

@@ -9,15 +9,34 @@ import '../../mr.css';
 
 const OPTIONAL = new Set(['reportingManagerId', 'addressLine2', 'paymentLimit', 'doctorDaysLimit']);
 const TABS = [
-  { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'dialCountry', 'userId', 'email', 'contactRequirement'] },
+  { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'dialCountry', 'userId', 'email', 'contactRequirement', 'password', 'confirmPassword'] },
   { id: 'assignment', label: 'Assignment & work', fields: ['hq', 'zoneId', 'employeeCode', 'dateOfJoining', 'designation_id', 'reportingManagerId', 'paymentLimit', 'doctorDaysLimit', 'status'] },
   { id: 'address', label: 'Address', fields: ['pincode', 'addressLine1', 'addressLine2', 'landmark', 'city', 'state', 'country'] },
 ];
-const ORDER = FIELDS;
+const ORDER = [...FIELDS.slice(0, 6), 'password', 'confirmPassword', ...FIELDS.slice(6)];
 const STATUS_CHOICES = [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }];
+
+function initialCredentials() {
+  try {
+    const bytes = new Uint8Array(24);
+    globalThis.crypto.getRandomValues(bytes);
+    const password = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+    return { password, confirmPassword: password, generationError: '' };
+  } catch {
+    return {
+      password: '', confirmPassword: '',
+      generationError: 'Secure generation is unavailable. Type and confirm a password, or leave both fields blank for server generation after creation.',
+    };
+  }
+}
 
 export default function MRForm({ mr, onSave, onClose, onRefresh }) {
   const [values, setValues] = useState(() => emptyMRValues(mr));
+  // Enrollment credentials are deliberately separate from the MR profile.
+  const [credentials, setCredentials] = useState(() => mr ? null : initialCredentials());
+  const [passwordVisible, setPasswordVisible] = useState(true);
+  const [copyFeedback, setCopyFeedback] = useState('');
+  const copySequence = useRef(0);
   const [postal, setPostal] = useState({ status: '', choices: [] });
   const [usernamePending, setUsernamePending] = useState(false);
   const manual = useRef(new Set());
@@ -42,7 +61,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
     const owner = getSession().user?.id;
     return subscribeSession(() => { if (getSession().user?.id !== owner) lookupSeq.current++; });
   }, []);
-  useEffect(() => () => { lookupSeq.current++; }, []);
+  useEffect(() => () => { lookupSeq.current++; copySequence.current++; }, []);
   useEffect(() => {
     const pin = values.pincode.trim();
     if (!/^[1-9][0-9]{5}$/.test(pin) || pin === lookedUp.current) { if (!/^[1-9][0-9]{5}$/.test(pin)) { lookupSeq.current++; setPostal({ status: '', choices: [] }); } return undefined; }
@@ -98,6 +117,73 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
       return next;
     });
     setSaveError('');
+  }
+
+  function clearCredentialErrors() {
+    setErrors((current) => {
+      const next = { ...current };
+      delete next.password;
+      delete next.confirmPassword;
+      return next;
+    });
+    setSaveError('');
+  }
+
+  function changeCredential(key, value) {
+    if (saving || mr) return;
+    copySequence.current++;
+    setCopyFeedback('');
+    setCredentials((current) => ({ ...current, [key]: value }));
+    clearCredentialErrors();
+  }
+
+  function generatePassword() {
+    if (saving || mr) return;
+    const next = initialCredentials();
+    copySequence.current++;
+    setCopyFeedback('');
+    // A failed generation must not destroy an existing manual candidate.
+    setCredentials((current) => next.generationError ? { ...current, generationError: next.generationError } : next);
+    if (!next.generationError) clearCredentialErrors();
+  }
+
+  async function copyPassword() {
+    if (saving || mr || !credentials.password) return;
+    const sequence = ++copySequence.current;
+    setCopyFeedback('');
+    try {
+      await navigator.clipboard.writeText(credentials.password);
+      if (sequence === copySequence.current) setCopyFeedback('Password candidate copied. It is not an account credential until creation succeeds.');
+    } catch {
+      if (sequence === copySequence.current) setCopyFeedback('Copy was blocked. Show the password, select its text and copy it manually.');
+    }
+  }
+
+  function renderCredential(key, label) {
+    const isPassword = key === 'password';
+    return <div className="mr-form__field" key={key}>
+      <label className="mr-form__label" htmlFor={`mr-${key}`}>{label}</label>
+      <div className="mr-form__input-row">
+        <input id={`mr-${key}`} name={key} className="mr-form__control"
+          type={isPassword && passwordVisible ? 'text' : 'password'}
+          value={credentials[key]} onChange={(event) => changeCredential(key, event.target.value)}
+          autoComplete="new-password" spellCheck={false} autoCapitalize="none" autoCorrect="off"
+          disabled={saving} aria-required={Boolean(credentials.password || credentials.confirmPassword)}
+          aria-invalid={Boolean(errors[key])}
+          aria-describedby={`mr-password-help${errors[key] ? ` mr-${key}-error` : ''}`}
+          data-testid={`input-mr-${key}`} />
+        {isPassword && <>
+          <button type="button" className="mr-form__preview-action mr-form__credential-action"
+            aria-controls="mr-password" aria-label={passwordVisible ? 'Hide password' : 'Show password'}
+            aria-pressed={passwordVisible} onClick={() => setPasswordVisible((current) => !current)}
+            data-testid="button-toggle-mr-password">{passwordVisible ? 'Hide' : 'Show'}</button>
+          <button type="button" className="mr-form__preview-action mr-form__credential-action"
+            disabled={saving || !credentials.password} onClick={copyPassword}
+            data-testid="button-copy-mr-password">Copy password</button>
+        </>}
+      </div>
+      {errors[key] && <p id={`mr-${key}-error`} className="mr-form__error" role="alert" data-testid={`error-mr-${key}`}>{errors[key]}</p>}
+    </div>;
   }
 
   function renderField(key, label, options = {}) {
@@ -166,19 +252,21 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
     event.preventDefault();
     if (saving) return;
     const cleaned = Object.fromEntries(FIELDS.map((key) => [key, values[key].trim()]));
-    const nextErrors = validateMRValues(cleaned, { creating: !mr });
+    const nextErrors = validateMRValues(cleaned, {
+      creating: !mr, password: credentials?.password || '', confirm: credentials?.confirmPassword || '',
+    });
     if (mr && warnings.deleted.length) nextErrors.zoneId = nextErrors.zoneId || '';
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
       const first = ORDER.find((key) => nextErrors[key]);
       pendingFocus.current = first;
-      setActiveTab(TABS.find((tab) => tab.fields.includes(first)).id);
+      setActiveTab(TABS.find((tab) => tab.fields.includes(first))?.id || 'identity');
       return;
     }
     setSaveError('');
     setSaving(true);
     try {
-      const result = await onSave(payloadFromValues(cleaned), null);
+      const result = await onSave(payloadFromValues(cleaned), mr ? null : credentials.password || null);
       if (!result?.success) setSaveError(result?.error || 'This MR could not be saved. Please try again.');
     } catch (error) {
       setSaveError(error?.message || 'This MR could not be saved. Please try again.');
@@ -211,9 +299,18 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
                 {renderField('phone', 'Phone No.', { placeholder: 'National phone number', autoComplete: 'tel', inputMode: 'tel', info: 'Select the phone country and enter its national number. The country selection is saved with this MR.' })}
                {renderField('userId', 'User ID', { placeholder: 'User ID', info: mr ? 'User ID is the MR login name. Changing it signs that MR out of existing sessions.' : 'This is the MR login name: lowercase letters, digits, dot, underscore or hyphen. Auto-generate suggests an available one.' })}
                {renderField('email', 'Email ID', { type: 'email', placeholder: 'name@company.com', autoComplete: 'email' })}
-              {!mr ? <div className="mr-form__field mr-form__field--wide mr-form__password-note" data-testid="text-mr-auto-password">
-                <strong className="mr-form__label">Initial password · Generated automatically</strong>
-                <p className="mr-form__section-note">A secure initial password is generated after successful creation and shown only once. Copy the login credentials before closing that screen.</p>
+              {!mr ? <div className="mr-form__field mr-form__field--wide mr-form__password-note">
+                <div className="mr-form__credential-grid">
+                  {renderCredential('password', 'Password (optional)')}
+                  {renderCredential('confirmPassword', 'Confirm password')}
+                </div>
+                <div className="mr-form__input-row">
+                  <button type="button" className="mr-form__preview-action mr-form__credential-action"
+                    disabled={saving} onClick={generatePassword} data-testid="button-generate-mr-password">Auto-generate password</button>
+                </div>
+                <p id="mr-password-help" className="mr-form__hint">This is a pre-save candidate, not an account credential yet. Keep it or type your own 12–128-character password and confirm it exactly, including spaces. Clear both fields to have the server generate a password after successful creation. Copy the actual login credentials from the one-time confirmation screen before closing it.</p>
+                {credentials.generationError && <p className="mr-form__error" role="alert">{credentials.generationError}</p>}
+                <p className="mr-form__hint" role="status" aria-live="polite" aria-atomic="true">{copyFeedback}</p>
               </div> : <div className="mr-form__field mr-form__field--wide"><p className="mr-form__section-note" data-testid="text-mr-password-note">Passwords are not shown or edited here. Use Reset password in MR Master to issue a new one-time password.</p></div>}
             </div>
           </section>

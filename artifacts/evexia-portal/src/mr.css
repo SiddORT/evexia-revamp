@@ -244,6 +244,11 @@
 .mr-form__password-note { padding: 12px 14px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-table-head); }
 .mr-form__password-note .mr-form__label { min-height: 0; flex-wrap: wrap; }
 .mr-form__password-note p { line-height: 1.6; }
+.mr-form__credential-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 16px; }
+.mr-form__credential-action:not(:disabled) { cursor: pointer; }
+.mr-form__credential-action:disabled { opacity: .6; }
+.mr-form__credential-action:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+@media (max-width: 600px) { .mr-form__credential-grid { grid-template-columns: minmax(0, 1fr); } }
 .admin-mr-export__menu { color: var(--admin-text); }
 .admin-mr-export__menu .admin-dropdown__item { margin: 0; min-height: 40px; }
 .admin-mr-export__menu .admin-dropdown__item[data-disabled] { opacity: .6; cursor: not-allowed; }

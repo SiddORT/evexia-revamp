@@ -14,6 +14,16 @@ identity/patient/file history and demo relationships to remain untouched and sep
 Any future promotion, migration or reference conversion needs its own explicit
 scope and operator review; a matching business label is not permission to bind identities.
 
+New-MR enrollment must support an admin-visible generated candidate or a typed
+initial password, with confirmation and an optional blank server-generation fallback.
+Existing MR editing and Reset password remain separate.
+
+**Why:** The user explicitly superseded the earlier automatic-only enrollment
+presentation without expanding existing-password management.
+
+**How to apply:** Do not restore an automatic-only notice when updating enrollment,
+and do not interpret optional initial credentials as permission to expose saved passwords.
+
 Account-namespace hardening must preserve bounded random-username collision recovery
 in other provisioning services, rather than turn a retryable collision into a generic failure.
 
