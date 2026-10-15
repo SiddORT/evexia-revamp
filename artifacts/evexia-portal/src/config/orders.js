@@ -1,5 +1,5 @@
-// Immunotherapy, SPT and Kits are separate session-only demos; other destinations
-// remain navigation-only. None implements real order processing.
+// Immunotherapy, SPT, Kits and Lupin are separate session-only demos.
+// None implements real order processing.
 export const ORDER_DESTINATIONS = [
   { slug: 'immunotherapy', label: 'IMMUNOTHERAPY' },
   { slug: 'kits-consumables', label: 'KITS & CONSUMABLES', keywords: 'kits consumables lancets applicators', description: 'Covers kits, lancets and applicators.' },

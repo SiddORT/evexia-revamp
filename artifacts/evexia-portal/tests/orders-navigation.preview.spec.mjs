@@ -30,7 +30,7 @@ async function tabTo(page, target) {
 }
 
 async function selected(page, slug, label) {
-  await expect(page.getByRole('heading', { name: slug === 'immunotherapy' ? 'Immunotherapy' : slug === 'kits-consumables' ? 'Kits & Consumables' : label, exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: slug === 'lupin' ? 'Order Management – Lupin' : slug === 'immunotherapy' ? 'Immunotherapy' : slug === 'kits-consumables' ? 'Kits & Consumables' : label, exact: true })).toBeVisible();
   if (slug === 'immunotherapy') {
     await expect(page.getByTestId('status-imm-demo')).toContainText('demo');
     await expect(page.getByRole('link', { name: 'Add Order', exact: true })).toBeVisible();
@@ -38,6 +38,10 @@ async function selected(page, slug, label) {
   } else if (slug === 'kits-consumables') {
     await expect(page.getByTestId('kits-boundary')).toContainText('Fictional');
     await expect(page.getByRole('link', { name: 'Add Order', exact: true })).toBeVisible();
+    await expect(page.getByTestId('status-order-placeholder')).toHaveCount(0);
+  } else if (slug === 'lupin') {
+    await expect(page.getByTestId('status-lupin-demo')).toContainText('Fictional demo');
+    await expect(page.getByRole('link', { name: 'Add', exact: true })).toBeVisible();
     await expect(page.getByTestId('status-order-placeholder')).toHaveCount(0);
   } else if (slug === 'spt') {
     await expect(page.getByTestId('status-spt-demo')).toContainText('demo');

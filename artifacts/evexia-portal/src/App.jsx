@@ -17,6 +17,8 @@ const SptOrders = lazyRoute(() => import('./pages/admin/SptOrders.jsx'));
 const SptOrderFormPage = lazyRoute(() => import('./pages/admin/SptOrderFormPage.jsx'));
 const KitsOrders = lazyRoute(() => import('./pages/admin/KitsOrders.jsx'));
 const KitsOrderFormPage = lazyRoute(() => import('./pages/admin/KitsOrderFormPage.jsx'));
+const LupinOrders = lazyRoute(() => import('./pages/admin/LupinOrders.jsx'));
+const LupinOrderFormPage = lazyRoute(() => import('./pages/admin/LupinOrderFormPage.jsx'));
 import Masters from './pages/admin/Masters.jsx';
 import ZoneMaster from './pages/admin/ZoneMaster.jsx';
 const CourierPartnerMaster = lazyRoute(() => import('./pages/admin/CourierPartnerMaster.jsx'));
@@ -92,7 +94,10 @@ function App() {
       <Route path="/admin/orders/kits-consumables" component={KitsOrders} />
       <Route path="/admin/orders/kits-consumables/new">{() => <KitsOrderFormPage key="new" />}</Route>
       <Route path="/admin/orders/kits-consumables/:id">{(params) => <KitsOrderFormPage key={params.id} id={params.id} />}</Route>
-      {ORDER_DESTINATIONS.filter((destination) => !['spt', 'immunotherapy', 'kits-consumables'].includes(destination.slug)).map((destination) => (
+      <Route path="/admin/orders/lupin" component={LupinOrders} />
+      <Route path="/admin/orders/lupin/new">{() => <LupinOrderFormPage key="new" />}</Route>
+      <Route path="/admin/orders/lupin/:id">{(params) => <LupinOrderFormPage key={params.id} id={params.id} />}</Route>
+      {ORDER_DESTINATIONS.filter((destination) => !['spt', 'immunotherapy', 'kits-consumables', 'lupin'].includes(destination.slug)).map((destination) => (
         <Route key={destination.slug} path={`/admin/orders/${destination.slug}`}>
           {() => <OrderPlaceholder destination={destination} />}
         </Route>

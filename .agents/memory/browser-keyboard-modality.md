@@ -15,3 +15,9 @@ When a hybrid hover/touch test scrolls between controls, move the mouse to a neu
 **Why:** A stationary mouse can enter a different help button as keyboard or touch scrolling moves the page beneath it, reopening an unrelated tooltip and falsely appearing to break outside-touch dismissal.
 
 **How to apply:** End the hover phase explicitly before checking keyboard/touch help behavior; do not weaken dismissal or no-mutation assertions.
+
+Await the intended menu item's actual focus after Home/End before sending Space or Enter.
+
+**Why:** Radix roving focus schedules the destination after the key event; immediate consecutive keys can activate the previous focus target and falsely suggest a broken checkbox menu.
+
+**How to apply:** Assert the named item's focus between navigation and activation. Keep the real keyboard path rather than replacing it with programmatic focus or a pointer click.

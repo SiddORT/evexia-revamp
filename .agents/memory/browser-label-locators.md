@@ -14,3 +14,9 @@ Scope option-count assertions to the intended listbox rather than the whole page
 **Why:** Native Status and page-size selects also expose the option role, so a global option count can falsely report that a bounded searchable menu exceeded its server batch.
 
 **How to apply:** Locate the named listbox first, then count or inspect its options. Preserve separate assertions for the server request's batch bound.
+
+Prefer role/name queries for required inputs and filled textareas as well.
+
+**Why:** Exact label queries can include visually hidden required-marker text or a wrapping textarea's text content, while the control's actual accessible name remains unchanged. This blocked otherwise valid form checks.
+
+**How to apply:** Use textbox/combobox roles for text controls and an explicit locator for native file inputs; do not remove required markers or useful labels to satisfy a test.
