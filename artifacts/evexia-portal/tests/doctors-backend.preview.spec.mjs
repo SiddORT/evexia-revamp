@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
+import { choosePhoneCountry } from './helpers/searchableChoice.mjs';
 if (process.env.EVEXIA_CHROMIUM_PATH) test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
 const base = () => process.env.EVEXIA_PREVIEW_BASE_URL;
 const listPath = '/admin/masters/doctors';
@@ -74,7 +75,7 @@ for (const mobile of [false, true]) {
     for (const key of ['name', 'phone', 'alternatePhone', 'email', 'dateOfJoining', 'registrationNumber', 'qualification']) {
       await page.getByTestId(`input-doctor-${key}`).fill(values[key]);
     }
-    await page.getByTestId('select-doctor-dialCountry').selectOption('IN');
+    await choosePhoneCountry(page, page.getByTestId('select-doctor-dialCountry'), 'IN');
     await page.getByTestId('tab-doctor-clinic').click();
     await page.getByTestId('input-doctor-clinicName').fill(values.clinicName);
     await page.getByTestId('select-doctor-mrId').fill(refs.mr.name);

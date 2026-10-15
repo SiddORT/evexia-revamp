@@ -167,6 +167,18 @@ ran the whole spec instead of only the previously blocked journey.
 **How to apply:** Use a distinctive single-token filter and check the terminal
 collection count before interpreting the run as a focused continuation.
 
+Prove later-section encrypted directory choices from the actual returned IDs,
+not alphabetical fixture names or insertion order.
+
+**Why:** An older paging assertion assumed the highest-numbered synthetic name
+would be on the next page. Bounded encrypted scans use UUID continuation, so a
+working next page can contain a different name and the presumed last name can
+already be in the first section.
+
+**How to apply:** Capture first-section IDs and select an eligible newly returned
+ID from a later section. Keep real server paging and retained-choice assertions;
+never change production search ordering to satisfy the fixture.
+
 An isolated browser matrix can still share its synthetic database across
 engines. Never assume unfiltered totals contain only the current engine's seed.
 

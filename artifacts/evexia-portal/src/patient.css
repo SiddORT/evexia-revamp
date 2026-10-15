@@ -27,16 +27,6 @@
 .patient-doctor__paging { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px; }
 .patient-doctor__paging .admin-button { flex: 1 1 8em; min-width: 0; }
 .patient-doctor .searchable-select__control:has(input:disabled) { background: var(--admin-canvas); opacity: .7; }
-.patient-form__privacy {
-  margin: 0 0 18px;
-  padding: 11px 13px;
-  border-left: 3px solid var(--admin-warning);
-  background: var(--admin-state-warm);
-  color: var(--admin-text);
-  font-size: 12px;
-  line-height: 1.5;
-}
-.patient-form__privacy strong { font-weight: 700; }
 /* Keep Patient controls usable when text grows independently of the viewport.
    Native selects retain their full accessible option labels and can wrap the
    surrounding layout without reserving a fixed-width country-code column. */
@@ -112,7 +102,6 @@
 }
 @media (max-width: 600px) {
   .patient-form .mr-form__body { min-height: 0; }
-  .patient-form__privacy { margin-bottom: 16px; }
 }
 
 /* Read-only dosage reference. Admin semantic tokens keep all appearances aligned. */

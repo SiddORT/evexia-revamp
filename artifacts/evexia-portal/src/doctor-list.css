@@ -14,6 +14,11 @@
 .doctor-master__filters summary:focus-visible, .doctor-master button:focus-visible, .doctor-master input:focus-visible, .doctor-master select:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
 .doctor-master__filter-grid { display: grid; grid-template-columns: repeat(4, minmax(130px, 1fr)); gap: 12px; padding: 0 12px 12px; }
 .doctor-master__filter-grid .admin-select { width: 100%; min-width: 0; }
+.doctor-master__filter-grid > .admin-filter { min-width: 0; align-content: start; }
+.doctor-master__filter-grid > .admin-filter > label { margin: 0; line-height: 1.5; }
+.doctor-master__filter-grid .searchable-control__control { height: 40px; min-height: 40px; }
+.doctor-master__filter-grid .searchable-control__control input { min-height: 38px; }
+.doctor-master__mr-filter-actions { display: flex; flex-wrap: wrap; align-items: start; gap: 4px 8px; }
 .doctor-master__filter-feedback { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; color: var(--admin-text-soft); font-size: 11px; }
 .doctor-master__text-button { border: 0; padding: 3px 4px; background: none; color: var(--admin-accent); font: inherit; font-size: 11px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .doctor-master__bulk { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--admin-border); background: var(--admin-table-head); }

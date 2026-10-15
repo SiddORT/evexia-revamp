@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import PhoneInput from './PhoneInput.jsx';
+import SearchableControl from './SearchableControl.jsx';
 import PatientDoctorSelect from './PatientDoctorSelect.jsx';
 import { dialCountry, normalizePhone } from '../../services/phoneCountries.js';
 import { businessToday, patientAge } from '../../services/serverPatients.js';
@@ -145,7 +146,7 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
   }
 
   function renderField(key, label, options = {}) {
-    const { type = 'text', placeholder, autoComplete, span, hint, inputMode, selectOptions } = options;
+    const { type = 'text', placeholder, autoComplete, span, hint, inputMode, selectOptions, searchable = false } = options;
     const id = `patient-${key}`;
     const errorId = `${id}-error`;
     const hintId = `${id}-hint`;
@@ -163,7 +164,13 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
         <label className="mr-form__label" htmlFor={id}>
           {label} {!OPTIONAL.has(key) && <span className="mr-form__required" aria-hidden="true">*</span>}
         </label>
-        {selectOptions ? (
+        {searchable ? (
+          <SearchableControl id={id} name={key} label={label} required
+            value={values[key]} selectedLabel={values[key]} choices={selectOptions}
+            onChange={(value) => change(key, value)} disabled={blocked || saving}
+            invalid={Boolean(errors[key])} describedBy={describedBy}
+            placeholder="Select a language" testId={`select-patient-${key}`} />
+        ) : selectOptions ? (
           <select {...shared} data-testid={`select-patient-${key}`}>
             <option value="">{placeholder || 'Select an option'}</option>
             {selectOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -232,7 +239,6 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
         ))}
       </div>
       <div className="mr-form__body">
-        <p className="patient-form__privacy"><strong>Protected shared records.</strong> Patient data is saved to the server. Age uses the Asia/Kolkata calendar date.</p>
         {blocked && <div className="patient-form__block" role="alert" data-testid="warning-patient-blocked">
           <p>Saving is unavailable while patient records need attention. Refreshing discards changes on this page.</p>
           <button type="button" className="admin-button admin-button--secondary" onClick={onRefresh} data-testid="button-refresh-patient-blocked">Refresh records</button>
@@ -266,7 +272,8 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
           <div className="mr-form__grid patient-form__care-grid">
             <PatientDoctorSelect value={values.doctorId} original={patient?.doctorId} savedName={patient?.doctorName} blocked={blocked || saving} error={errors.doctorId} onChange={(value) => change('doctorId', value)} />
             {renderField('instructionsLanguage', 'Instructions language', {
-              selectOptions: [...new Set([...LANGUAGES, values.instructionsLanguage].filter(Boolean))].map((language) => ({ value: language, label: language })),
+              searchable: true,
+              selectOptions: [...new Set([...LANGUAGES, patient?.instructionsLanguage].filter(Boolean))].map((language) => ({ value: language, label: language })),
             })}
             {renderField('status', 'Status', { selectOptions: [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }] })}
           </div>

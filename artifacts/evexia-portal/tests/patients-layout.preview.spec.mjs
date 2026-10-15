@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { authenticateAdmin } from './helpers/authenticateAdmin.mjs';
 import { seedPatientRelationships } from './helpers/patientFixture.mjs';
 import { enlargePatientText, expectPatientFits, keyboardReach } from './helpers/patientLayout.mjs';
+import { choosePhoneCountry } from './helpers/searchableChoice.mjs';
 
 const base = () => process.env.EVEXIA_PREVIEW_BASE_URL;
 const path = '/admin/masters/patients';
@@ -75,8 +76,7 @@ for (const width of [390, 768]) for (const theme of ['classic', 'modern']) for (
 
     const phone = page.getByTestId('input-patient-phone'), country = page.getByLabel('Phone country code');
     for (const code of ['GB', 'US', 'IN', 'AE']) {
-      await country.selectOption(code);
-      await expect(country).toHaveValue(code);
+      await choosePhoneCountry(page, country, code);
       await expect(phone).toHaveValue('123456789');
       await expectPatientFits(page, root);
     }

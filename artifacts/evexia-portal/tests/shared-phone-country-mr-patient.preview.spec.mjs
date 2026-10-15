@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { chooseLanguage, choosePhoneCountry, expectPhoneCountries } from './helpers/searchableChoice.mjs';
 
 if (process.env.EVEXIA_CHROMIUM_PATH) {
   test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
@@ -84,7 +85,7 @@ async function fillPatientRequired(page, refs, id) {
   const doctor = page.getByTestId('select-patient-doctorId');
   await doctor.fill(refs.doctor.name);
   await page.getByRole('option', { name: refs.doctor.name, exact: false }).click();
-  await page.getByTestId('select-patient-instructionsLanguage').selectOption('Hindi');
+  await chooseLanguage(page, 'Hindi');
   await page.getByTestId('tab-patient-address').click();
   await page.getByTestId('input-patient-addressLine1').fill('Synthetic street');
   await page.getByTestId('input-patient-landmark').fill('Landmark');
@@ -134,7 +135,7 @@ test('MR and Patient shared country controls save and reload SG/EH/MF through Ad
   await page.goto(`${base()}/admin/masters/mrs/new`);
   await expect(page.getByTestId('form-mr')).toBeVisible();
   const mrSelect = page.getByTestId('select-mr-dialCountry');
-  await expect(mrSelect).toHaveValue('IN');
+  await expect(mrSelect).toHaveValue('IN +91');
   for (const appearance of ['light', 'dark']) {
     await setAppearance(page, appearance);
     await expect(page.locator('.admin-shell')).toHaveAttribute('data-admin-appearance', appearance);
@@ -149,9 +150,8 @@ test('MR and Patient shared country controls save and reload SG/EH/MF through Ad
   }
   await fillMRRequired(page, refs, id);
   const mrUsername = await page.getByTestId('input-mr-userId').inputValue();
-  await expect(mrSelect.locator('option[value="EH"]')).toHaveCount(1);
-  await expect(mrSelect.locator('option[value="MF"]')).toHaveCount(1);
   await page.getByTestId('tab-mr-identity').click();
+  await expectPhoneCountries(page, mrSelect, ['EH', 'MF']);
   const mrCreateResponse = page.waitForResponse((r) =>
     new URL(r.url()).pathname === '/api/v1/admin/mrs' && r.request().method() === 'POST');
   await page.getByTestId('button-save-mr').click();
@@ -168,7 +168,7 @@ test('MR and Patient shared country controls save and reload SG/EH/MF through Ad
   await page.goto(`${base()}/admin/masters/mrs/${createdMR.id}`);
   await expect(page.getByTestId('form-mr')).toBeVisible();
   await page.getByTestId('input-mr-phone').fill('123');
-  await page.getByTestId('select-mr-dialCountry').selectOption('SG');
+  await choosePhoneCountry(page, mrSelect, 'SG');
   await page.getByTestId('tab-mr-identity').click();
   await page.getByTestId('button-save-mr').click();
   await expect(page.getByTestId('error-mr-phone')).toContainText(/valid phone number/i);
@@ -177,15 +177,15 @@ test('MR and Patient shared country controls save and reload SG/EH/MF through Ad
   await holdNextSave(page, `/api/v1/admin/mrs/${createdMR.id}/edit`, 'button-save-mr', 'select-mr-dialCountry');
   await expect(page).toHaveURL(/\/admin\/masters\/mrs(?:\?.*)?$/);
   await page.goto(`${base()}/admin/masters/mrs/${createdMR.id}`);
-  await expect(page.getByTestId('select-mr-dialCountry')).toHaveValue('SG');
+  await expect(mrSelect).toHaveValue('SG +65');
   await expect(page.getByTestId('input-mr-phone')).toHaveValue('81234567');
   for (const [country, phone] of [['EH', '528812345'], ['MF', '590271234']]) {
-    await page.getByTestId('select-mr-dialCountry').selectOption(country);
+    await choosePhoneCountry(page, mrSelect, country);
     await page.getByTestId('input-mr-phone').fill(phone);
     await page.getByTestId('button-save-mr').click();
     await expect(page).toHaveURL(/\/admin\/masters\/mrs(?:\?.*)?$/);
     await page.goto(`${base()}/admin/masters/mrs/${createdMR.id}`);
-    await expect(page.getByTestId('select-mr-dialCountry')).toHaveValue(country);
+    await expect(mrSelect).toHaveValue(new RegExp(`^${country} \\+`));
     await expect(page.getByTestId('input-mr-phone')).toHaveValue(phone);
     await page.screenshot({ path: info.outputPath(`mr-${country.toLowerCase()}-edit-form.png`), fullPage: true });
   }
@@ -195,7 +195,7 @@ test('MR and Patient shared country controls save and reload SG/EH/MF through Ad
   await page.goto(`${base()}/admin/masters/patients/new`);
   await expect(page.getByTestId('form-patient')).toBeVisible();
   const patientSelect = page.getByTestId('select-patient-dialCountry');
-  await expect(patientSelect).toHaveValue('IN');
+  await expect(patientSelect).toHaveValue('IN +91');
   for (const appearance of ['light', 'dark']) {
     await setAppearance(page, appearance);
     await expect(page.locator('.admin-shell')).toHaveAttribute('data-admin-appearance', appearance);
@@ -209,11 +209,10 @@ test('MR and Patient shared country controls save and reload SG/EH/MF through Ad
     await page.screenshot({ path: info.outputPath(`patient-cold-${appearance}-390.png`), fullPage: true });
   }
   await fillPatientRequired(page, refs, id);
-  await expect(patientSelect.locator('option[value="EH"]')).toHaveCount(1);
-  await expect(patientSelect.locator('option[value="MF"]')).toHaveCount(1);
   await page.getByTestId('tab-patient-identity').click();
+  await expectPhoneCountries(page, patientSelect, ['EH', 'MF']);
   await page.getByTestId('input-patient-phone').fill('123');
-  await patientSelect.selectOption('SG');
+  await choosePhoneCountry(page, patientSelect, 'SG');
   await page.getByTestId('button-save-patient').click();
   await expect(page.getByTestId('error-patient-phone')).toContainText('Enter a valid national phone number for Singapore.');
   await expect(page.getByTestId('input-patient-phone')).toBeFocused();
@@ -223,16 +222,16 @@ test('MR and Patient shared country controls save and reload SG/EH/MF through Ad
   expect(patient.phone).toBe('81234567');
   await expect(page).toHaveURL(/\/admin\/masters\/patients(?:\?.*)?$/);
   await page.goto(`${base()}/admin/masters/patients/${patient.id}`);
-  await expect(patientSelect).toHaveValue('SG');
+  await expect(patientSelect).toHaveValue('SG +65');
   await expect(page.getByTestId('input-patient-phone')).toHaveValue('81234567');
   await page.screenshot({ path: info.outputPath('patient-sg-edit-form.png'), fullPage: true });
   for (const [country, phone] of [['EH', '528812345'], ['MF', '590271234']]) {
-    await patientSelect.selectOption(country);
+    await choosePhoneCountry(page, patientSelect, country);
     await page.getByTestId('input-patient-phone').fill(phone);
     await page.getByTestId('button-save-patient').click();
     await expect(page).toHaveURL(/\/admin\/masters\/patients(?:\?.*)?$/);
     await page.goto(`${base()}/admin/masters/patients/${patient.id}`);
-    await expect(patientSelect).toHaveValue(country);
+    await expect(patientSelect).toHaveValue(new RegExp(`^${country} \\+`));
     await expect(page.getByTestId('input-patient-phone')).toHaveValue(phone);
     await page.screenshot({ path: info.outputPath(`patient-${country.toLowerCase()}-edit-form.png`), fullPage: true });
   }

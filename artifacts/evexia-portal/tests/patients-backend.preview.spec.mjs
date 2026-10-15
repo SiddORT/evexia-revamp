@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { chooseLanguage, choosePhoneCountry } from './helpers/searchableChoice.mjs';
 if (process.env.EVEXIA_CHROMIUM_PATH) test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
 const base = () => process.env.EVEXIA_PREVIEW_BASE_URL;
 const path = '/admin/masters/patients';
@@ -63,7 +64,7 @@ for (const mobile of [false, true]) test(`Patient ${mobile ? 'modern dark mobile
   await page.getByTestId('button-add-patient').click();
   for (const key of ['name', 'phone', 'email', 'dateOfBirth']) await page.getByTestId(`input-patient-${key}`).fill(body[key]);
   const country = page.getByTestId('select-patient-dialCountry');
-  await country.selectOption('AE');
+  await choosePhoneCountry(page, country, 'AE');
   await expect(page.getByTestId('input-patient-phone')).toHaveValue(body.phone);
   await page.getByTestId('select-patient-gender').selectOption(body.gender);
   await expect(page.getByTestId('input-patient-age')).not.toHaveValue('');
@@ -71,7 +72,8 @@ for (const mobile of [false, true]) test(`Patient ${mobile ? 'modern dark mobile
   await page.getByTestId('select-patient-doctorId').click();
   await page.getByTestId('select-patient-doctorId').fill(refs.doctor.name);
   await page.getByRole('option', { name: refs.doctor.name, exact: false }).click();
-  await page.getByTestId('select-patient-instructionsLanguage').selectOption(body.instructionsLanguage);
+  await expect(page.getByText('Protected shared records.', { exact: true })).toHaveCount(0);
+  await chooseLanguage(page, body.instructionsLanguage);
   await page.getByTestId('tab-patient-address').click();
   await page.route('**/api/v1/admin/patients/postal/110001*', route => route.fulfill({
     contentType: 'application/json', body: JSON.stringify({ choices: [{ city: 'PIN district', state: 'Delhi', country: 'India' }], message: '' }),
@@ -92,6 +94,7 @@ for (const mobile of [false, true]) test(`Patient ${mobile ? 'modern dark mobile
   await expect(page.getByTestId('input-patient-name')).toHaveValue(body.name);
   await page.getByTestId('tab-patient-care').click();
   await expect(page.getByTestId('select-patient-doctorId')).toHaveValue(refs.doctor.name);
+  await expect(page.getByRole('combobox', { name: 'Instructions language' })).toHaveValue(body.instructionsLanguage);
   await page.getByTestId('tab-patient-identity').click();
   await page.getByTestId('input-patient-name').fill(body.name + ' edited');
   await page.getByTestId('button-save-patient').click();
@@ -101,6 +104,60 @@ for (const mobile of [false, true]) test(`Patient ${mobile ? 'modern dark mobile
   await page.goto(base() + path + '/' + saved.id + '/dosage-history');
   await expect(page.getByText(/No dosage history recorded/i)).toBeVisible();
   await page.screenshot({ path: info.outputPath('patient-history.png'), fullPage: true });
+});
+
+test('Patient language search retains saved choices and only saves selected values', async ({ page }) => {
+  const refs = await seed(page);
+  const legacyLanguage = 'Legacy instructions language';
+  const saved = await create(page, { ...values(refs), instructionsLanguage: legacyLanguage });
+  await page.goto(base() + path + '/' + saved.id);
+  await expect(page.getByTestId('form-patient')).toBeVisible();
+  await expect(page.getByText(/Patient data is saved to the server\. Age uses/)).toHaveCount(0);
+  await page.getByTestId('tab-patient-care').click();
+  const language = page.getByRole('combobox', { name: 'Instructions language' });
+  await expect(language).toHaveValue(legacyLanguage);
+  await expect(language).toHaveAttribute('aria-required', 'true');
+  await chooseLanguage(page, 'English');
+  // The original non-catalogue value stays available after changing selection.
+  await chooseLanguage(page, legacyLanguage);
+  let writes = 0;
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname.endsWith(`/${saved.id}/edit`)) writes++;
+  });
+  await language.fill('Not a supported language');
+  await expect(page.getByRole('listbox', { name: 'Instructions language' }).getByRole('option')).toHaveCount(0);
+  await language.press('Enter');
+  expect(writes).toBe(0);
+  await language.press('Escape');
+  await expect(language).toHaveValue(legacyLanguage);
+  await language.press('Enter');
+  await expect(language).toHaveAttribute('aria-expanded', 'true');
+  await language.fill('hIn');
+  await expect(page.getByRole('listbox', { name: 'Instructions language' }).getByRole('option')).toHaveCount(1);
+  await language.press('ArrowDown');
+  await expect(language).toHaveAttribute('aria-activedescendant', 'patient-instructionsLanguage-option-0');
+  await language.press('Enter');
+  await expect(language).toHaveValue('Hindi');
+  expect(writes).toBe(0);
+
+  let release, arrived;
+  const held = new Promise((resolve) => { release = resolve; });
+  const ready = new Promise((resolve) => { arrived = resolve; });
+  const match = (url) => url.pathname === `/api/v1/admin/patients/${saved.id}/edit`;
+  const handler = async (route) => { arrived(); await held; await route.continue(); };
+  await page.route(match, handler);
+  await page.getByTestId('button-save-patient').click();
+  try {
+    await ready;
+    await expect(language).toBeDisabled();
+  } finally { release(); }
+  await expect(page).toHaveURL(new RegExp(`${path}(?:\\?.*)?$`));
+  await page.unroute(match, handler);
+  expect((await detail(page, saved.id)).instructionsLanguage).toBe('Hindi');
+  await page.goto(base() + path + '/' + saved.id);
+  await expect(page.getByTestId('form-patient')).toBeVisible();
+  await page.getByTestId('tab-patient-care').click();
+  await expect(language).toHaveValue('Hindi');
 });
 
 test('Patient PIN late/manual guards, server exports and prepared atomic CSV import', async ({ page }, info) => {
@@ -187,31 +244,46 @@ test('Patient care combobox keeps IDs, real later pages, retained assignments an
   const fields = await page.locator('.patient-form__care-grid > .mr-form__field').evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().top));
   expect(fields).toHaveLength(3);
   expect(Math.max(...fields) - Math.min(...fields)).toBeLessThan(1);
+  const referenceResponse = () => page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname === '/api/v1/admin/patients/references' && url.searchParams.get('query') === prefix;
+  });
+  const firstResponse = referenceResponse();
   await control.click(); await control.fill(prefix);
-  await expect(page.getByRole('option', { name: doctors[0].name, exact: false })).toBeVisible();
+  const first = await (await firstResponse).json();
+  expect(first.items.some((row) => row.name.startsWith(prefix))).toBe(true);
+  // Encrypted directory continuations scan UUID order, not alphabetical order.
+  // Verify a real later-section choice rather than assuming name "50" is last.
+  const nextResponse = referenceResponse();
   await page.getByRole('button', { name: /Next Doctors|Continue search/ }).click();
-  await expect(page.getByRole('option', { name: doctors[50].name, exact: false })).toBeVisible();
+  const next = await (await nextResponse).json();
+  const laterChoice = next.items.find((row) => row.usable && row.name.startsWith(prefix) && !first.items.some((old) => old.id === row.id));
+  expect(laterChoice).toBeTruthy();
+  const laterDoctor = doctors.find((row) => row.id === laterChoice.id);
+  await expect(page.getByRole('option', { name: laterDoctor.name, exact: false })).toBeVisible();
   await expect(control).toBeFocused();
-  await control.press('ArrowDown'); await control.press('Enter');
-  await expect(control).toHaveValue(doctors[50].name);
+  for (let i = 0; i <= next.items.filter((row) => row.usable).findIndex((row) => row.id === laterDoctor.id); i++) await control.press('ArrowDown');
+  await control.press('Enter');
+  await expect(control).toHaveValue(laterDoctor.name);
   await control.click(); await control.fill('No such synthetic Doctor');
   // include_saved can return the assigned Doctor even when the query has no matches.
-  await expect(page.getByRole('status').filter({ hasText: /0 matching Doctors|0 choices in this section/ })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: /0 matching Doctors|No further records remain/ })).toBeVisible();
+  await expect(page.getByRole('listbox', { name: 'Assigned doctor' }).getByRole('option')).toHaveCount(1);
   await control.press('Escape');
-  await expect(control).toHaveValue(doctors[50].name);
+  await expect(control).toHaveValue(laterDoctor.name);
   await expect(page.getByRole('button', { name: 'Next Doctors' })).toHaveCount(0);
   await page.getByTestId('button-save-patient').click();
   await expect(page).toHaveURL(new RegExp(`${path}(?:\\?.*)?$`));
-  expect((await detail(page, saved.id)).doctorId).toBe(doctors[50].id);
+  expect((await detail(page, saved.id)).doctorId).toBe(laterDoctor.id);
 
   // Real inactive/deleted originals stay visible and unchanged; no ineligible
   // new relationship is made selectable.
-  await page.evaluate(async (doctor) => (await import('/src/services/serverDoctors.js')).statusDoctor(doctor, 'inactive'), doctors[50]);
+  await page.evaluate(async (doctor) => (await import('/src/services/serverDoctors.js')).statusDoctor(doctor, 'inactive'), laterDoctor);
   await page.goto(base() + path + '/' + saved.id);
   await expect(page.getByTestId('input-patient-name')).toHaveValue(saved.name);
   await page.getByTestId('tab-patient-care').click();
   await expect(control).toHaveValue(new RegExp('inactive relationship; retained only'));
-  await control.click(); await control.fill(doctors[50].name);
+  await control.click(); await control.fill(laterDoctor.name);
   const inactive = page.getByRole('option', { name: /inactive relationship; retained only/ });
   await expect(inactive).toHaveAttribute('aria-disabled', 'true');
   await control.press('ArrowDown'); await control.press('Enter');
@@ -219,18 +291,18 @@ test('Patient care combobox keeps IDs, real later pages, retained assignments an
   await control.press('Escape');
   await page.getByTestId('button-save-patient').click();
   await expect(page).toHaveURL(new RegExp(`${path}(?:\\?.*)?$`));
-  expect((await detail(page, saved.id)).doctorId).toBe(doctors[50].id);
+  expect((await detail(page, saved.id)).doctorId).toBe(laterDoctor.id);
   await page.evaluate(async (id) => {
     const svc = await import('/src/services/serverDoctors.js');
     await svc.deleteDoctor(await svc.getDoctor(id));
-  }, doctors[50].id);
+  }, laterDoctor.id);
   await page.goto(base() + path + '/' + saved.id);
   await expect(page.getByTestId('input-patient-name')).toHaveValue(saved.name);
   await page.getByTestId('tab-patient-care').click();
   await expect(control).toHaveValue(/unavailable; unchanged reference retained/);
   await page.getByTestId('button-save-patient').click();
   await expect(page).toHaveURL(new RegExp(`${path}(?:\\?.*)?$`));
-  expect((await detail(page, saved.id)).doctorId).toBe(doctors[50].id);
+  expect((await detail(page, saved.id)).doctorId).toBe(laterDoctor.id);
 
   await page.goto(base() + path + '/new');
   await expect(page.getByTestId('input-patient-name')).toBeVisible();
