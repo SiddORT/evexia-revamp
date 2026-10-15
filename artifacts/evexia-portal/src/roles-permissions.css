@@ -1,8 +1,14 @@
-.rp { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 18px; align-items: start; }
-.rp-roles { padding: 14px; display: grid; gap: 10px; }
-.rp-roles__title { margin: 0; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--admin-muted); display: flex; justify-content: space-between; }
-.rp-pageinfo { margin: 0; font-size: 11px; color: var(--admin-text-soft); }
-.rp-roles__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 55vh; overflow-y: auto; }
+.rp { display: grid; grid-template-columns: minmax(0, 280px) minmax(0, 1fr); gap: 18px; align-items: start; min-width: 0; }
+.rp-roles { padding: 14px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
+.rp-roles__title { margin: 0; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--admin-muted); display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: space-between; overflow-wrap: anywhere; }
+.rp-roles__scroll { position: relative; min-width: 0; min-height: 0; max-height: min(55vh, 36rem); max-height: min(55dvh, 36rem); overflow-y: auto; overscroll-behavior-y: contain; scrollbar-gutter: stable; padding: 4px; scroll-padding-block: 6px; border-radius: 10px; overflow-wrap: anywhere; }
+.rp-roles__scroll:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.rp-roles__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; min-width: 0; }
+.rp-roles__progress { font-size: 12px; line-height: 1.5; color: var(--admin-text-soft); }
+.rp-roles__progress:not(:empty) { padding: 8px 4px 4px; }
+.rp-roles__footer { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
+.rp-roles__footer button, .rp-roles__scroll .admin-button { min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.rp-roles__footer button > svg, .rp-card-actions button > svg { flex-shrink: 0; }
 .rp-role { width: 100%; text-align: left; display: grid; gap: 3px; padding: 10px 12px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--admin-text); cursor: pointer; font: inherit; overflow-wrap: anywhere; }
 .rp-role strong { font-size: 13px; }
 .rp-role small { font-size: 11px; color: var(--admin-text-soft); }
@@ -13,8 +19,6 @@
 .rp-add { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; border: 1px dashed var(--admin-border); border-radius: 9px; background: transparent; color: var(--admin-text-soft); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
 .rp-add:hover { background: var(--admin-state-hover); color: var(--admin-text); }
 .rp-role:focus-visible, .rp-add:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
-.rp-pager { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.rp-pager .admin-button { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 .rp-skel { display: grid; gap: 8px; }
 .rp-skel i { display: block; height: 62px; border-radius: 9px; background: var(--admin-badge-inactive-bg); animation: rp-pulse 1.2s ease-in-out infinite; }
 @keyframes rp-pulse { 50% { opacity: .45; } }
@@ -81,16 +85,13 @@
 .rp-tabs [role="tab"]:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
 
 /* ---- Directory / permissions layout ---- */
-.rp--directory { grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); }
-.rp--permissions { grid-template-columns: 220px minmax(0, 1fr); gap: 12px; }
+.rp--directory { grid-template-columns: minmax(0, 340px) minmax(0, 1fr); }
+.rp--permissions { grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 12px; }
 .rp--directory .rp-matrix { display: none; }
 .rp--permissions .rp-meta { display: none; }
 .rp-roles { border-radius: 16px; }
 .rp-work { border-radius: 16px; }
-.rp--permissions .rp-roles__list { max-height: none; }
 .rp--permissions .rp-roles { min-width: 0; grid-template-columns: minmax(0, 1fr); }
-.rp--permissions .rp-roles > .admin-button { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
-.rp--permissions .rp-pager { grid-template-columns: repeat(auto-fit, minmax(min(100%, 4em), 1fr)); }
 
 /* ---- Role cards ---- */
 .rp-role-card { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 0; border: 1px solid transparent; border-radius: 12px; background: transparent; }
@@ -101,7 +102,7 @@
 .rp-role-card:has(.rp-role--active) .rp-role--active { background: transparent; border-color: transparent; }
 .rp-role-card:has(:focus-visible) { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
 .rp-role-card .rp-role:focus-visible { outline: none; }
-.rp-card-actions { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 8px 8px; flex: 0 1 auto; }
+.rp-card-actions { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 8px 8px; flex: 0 1 auto; min-width: 0; max-width: 100%; }
 .rp-card-actions button { min-width: 32px; min-height: 32px; padding: 4px 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: inherit; font: inherit; font-size: 11px; cursor: pointer; }
 .rp-card-actions button:hover { background: var(--admin-state-hover); border-color: var(--admin-border); }
 .rp-card-actions button:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
@@ -142,7 +143,6 @@
 }
 @media (max-width: 900px) {
   .rp--directory, .rp--permissions { grid-template-columns: minmax(0, 1fr); }
-  .rp-roles__list { max-height: none; }
 }
 @media (max-width: 600px) {
   .rp-body { grid-template-columns: minmax(0, 1fr); }
