@@ -3,6 +3,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, Pencil, Plus, Search, Trash2, BriefcaseBusiness, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -124,10 +125,10 @@ export default function DesignationMaster() {
     {feedback && <div className="admin-feedback" role="status" data-testid="status-designation-feedback">{feedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-designation-action-error">{actionError}</div>}
     <section className="admin-panel" aria-label="Designation list">
-      <div className="admin-toolbar"><button className="admin-button admin-button--secondary" disabled={loading} onClick={retry}>Refresh records</button><div className="admin-toolbar__fields">
+      <div className="admin-toolbar master-filter-toolbar"><button className="admin-button admin-button--secondary" disabled={loading} onClick={retry}>Refresh records</button><div className="admin-toolbar__fields">
         <label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search designations by name or short name</span><input maxLength={200} value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Search designation or short name" data-testid="input-search-designations" /></label>
         <div className="admin-filter"><label htmlFor="designation-filter">Status</label><select id="designation-filter" className="admin-select" value={filter} onChange={(event) => { setFilter(event.target.value); pagination.resetPage(); }} data-testid="select-filter-designations"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
-      </div></div>
+      </div><MasterFilterReset disabled={!search && filter === 'all'} onClick={() => { setSearch(''); setFilter('all'); setPage(1); }} /></div>
       {loading ? <p className="admin-empty" role="status">Loading shared designations…</p> : error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><BriefcaseBusiness size={21} /></span><strong>Designations could not be loaded</strong><p>{error}</p><button className="admin-button" style={{ marginTop: 16 }} type="button" onClick={retry} data-testid="button-retry-designations">Try again</button></div> : <>
         {records.length ? (cardView ? <div className="admin-zone-cards" role="list" aria-label="Designation records">
           {pagination.pageRows.map((record, index) => <article className="admin-zone-card" role="listitem" key={record.id} data-testid={`card-designation-${record.id}`}>

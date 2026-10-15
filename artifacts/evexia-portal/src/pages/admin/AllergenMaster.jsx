@@ -3,6 +3,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { ChevronDown, CirclePower, Download, Filter, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import AllergenRefPicker from '../../components/admin/AllergenRefPicker.jsx';
 import AllergenSearchableSelect from '../../components/admin/AllergenSearchableSelect.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
@@ -140,15 +141,13 @@ export default function AllergenMaster() {
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     <section className="admin-panel admin-allergen-panel" aria-label="Allergen list">
       <div className="admin-allergen-toolbar">
-        <div className="admin-allergen-toolbar__top">
+        <div className="admin-allergen-toolbar__top master-filter-toolbar">
         <div className="admin-allergen-toolbar__search-group">
         <button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={retry}>Refresh records</button>
         <div className="admin-filter admin-allergen-filters__search"><div className="admin-search"><Search size={16} aria-hidden="true" /><input id="allergen-filter-search" aria-label="Search products by name, category, storage location or concentration" maxLength={200} value={search} onChange={reset(setSearch)} placeholder="Product, category, location or concentration" data-testid="input-search-allergens" /></div></div>
         </div>
         {filterFeedback && <span className="admin-allergen-filter-feedback" role="status" data-testid="text-allergen-filter-feedback">{filterFeedback}</span>}
-        <div className="admin-allergen-filters__actions">
-          <button type="button" className="admin-button admin-button--secondary" disabled={!hasFilters} onClick={clearFilters} data-testid="button-clear-filters">Reset filters</button>
-        </div>
+        <MasterFilterReset disabled={!hasFilters} onClick={clearFilters} testId="button-clear-filters" />
         </div>
         <details ref={filterDisclosure} className="admin-allergen-filter-disclosure">
           <summary data-testid="button-toggle-allergen-filters"><Filter size={15} aria-hidden="true" /> Filter records{activeFilters.length > 0 && ` · ${activeFilters.length} active`}<ChevronDown size={15} aria-hidden="true" /></summary>
@@ -173,7 +172,7 @@ export default function AllergenMaster() {
               <p>Price {dash(r.selling_price)} · GST {r.gst}% · {r.concentration} · Threshold {dash(r.threshold_limit)} · <strong>{r.mix ? 'Mix' : 'No Mix'}</strong></p>
               <dl className="admin-zone-card__meta"><div><dt>Created</dt><dd>{audit(r.createdBy, r.createdAt)}</dd></div><div><dt>Updated</dt><dd>{audit(r.updatedBy, r.updatedAt)}</dd></div></dl>{actions(r, true)}
             </article>)}</div></>
-            : <div className="admin-empty"><strong>{total ? 'No matching products' : 'No allergen products yet'}</strong><p>{total ? 'Try other search text or clear a filter.' : 'Add your first shared product.'}</p>{total > 0 && hasFilters && <button type="button" className="admin-button admin-button--secondary" onClick={clearFilters}>Reset filters</button>}</div>}
+            : <div className="admin-empty"><strong>{total ? 'No matching products' : 'No allergen products yet'}</strong><p>{total ? 'Try other search text or clear a filter.' : 'Add your first shared product.'}</p></div>}
           <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={filtered} total={total} label="products" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} testId="text-allergen-count" />
         </>}
     </section>

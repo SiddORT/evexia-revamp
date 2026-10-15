@@ -3,6 +3,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, History, Pencil, Plus, Search, Trash2, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import { formatAdminDate, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -110,7 +111,7 @@ export default function PatientMaster() {
     {(feedback || saved) && <div className="admin-feedback" role="status">{feedback || (saved === 'imported' ? 'Patients imported successfully.' : `Patient ${saved === 'added' ? 'added' : 'updated'} successfully.`)}</div>}
     {actionError && !confirming && !deleting && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     <section className="admin-panel" aria-label="Patient list">
-      <div className="admin-toolbar"><div className="admin-toolbar__fields">
+      <div className="admin-toolbar master-filter-toolbar"><div className="admin-toolbar__fields">
         <div className="patient-master__search-actions">
           <button ref={refreshButton} className="admin-button admin-button--secondary" type="button" onClick={refresh}>Refresh records</button>
         <label className="admin-search"><Search size={16} /><span className="sr-only">Search patient name or ID</span><input placeholder="Search name or patient ID" value={search} onChange={(e) => { setSearch(e.target.value); pagination.resetPage(); }} data-testid="input-search-patients" /></label>
@@ -118,7 +119,7 @@ export default function PatientMaster() {
         <div className="admin-filter"><label htmlFor="patient-zone">Zone</label><select className="admin-select" id="patient-zone" value={zone} onChange={(e) => { setZone(e.target.value); pagination.resetPage(); }}><option value="all">All zones</option>{zones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}<option value="missing">Missing zone</option></select></div>
         <div className="admin-filter"><label htmlFor="patient-mr">MR</label><select className="admin-select" id="patient-mr" value={mr} onChange={(e) => { setMR(e.target.value); pagination.resetPage(); }}><option value="all">All MRs</option>{mrs.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}<option value="missing">Missing MR</option></select></div>
         <div className="admin-filter"><label htmlFor="patient-status">Status</label><select className="admin-select" id="patient-status" value={status} onChange={(e) => { setStatus(e.target.value); pagination.resetPage(); }}><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
-      </div><button type="button" className="admin-button admin-button--secondary" onClick={() => { setSearch(''); setMR('all'); setZone('all'); setStatus('all'); setPage(1); }}>Reset filters</button></div>
+      </div><MasterFilterReset disabled={!search && !debouncedSearch && mr === 'all' && zone === 'all' && status === 'all'} onClick={() => { setSearch(''); setDebouncedSearch(''); setMR('all'); setZone('all'); setStatus('all'); setPage(1); }} /></div>
       {loading ? <p className="admin-empty" role="status">Loading Patients…</p> : error ? <div className="admin-empty" role="alert"><strong>Patient records could not be loaded</strong><p>{error}</p><button className="admin-button" type="button" onClick={refresh}>Refresh records</button></div> : <>
         {hasMissing && <div className="admin-feedback admin-feedback--error" role="status">Some patients have missing doctor, MR, or zone assignments. Repair the reference in Doctor or MR Master, or edit the patient assignment.</div>}
         {visible.length ? <>

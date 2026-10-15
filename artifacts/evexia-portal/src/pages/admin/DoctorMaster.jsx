@@ -3,6 +3,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { ChevronDown, CirclePower, Download, Filter, Pencil, Plus, ReceiptText, Search, ShieldCheck, ShieldX, Trash2, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import { formatAdminDate, formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import ContactRequirementButton from '../../components/admin/ContactRequirementButton.jsx';
@@ -84,7 +85,7 @@ export default function DoctorMaster() {
   const activeFilters = [search.trim() && 'search', zoneFilter !== 'all' && 'zone', mrFilter !== 'all' && 'MR', stateFilter !== 'all' && 'state', statusFilter !== 'all' && 'status'].filter(Boolean);
 
   function resetFilters() {
-    setSearch(''); setZoneFilter('all'); setMrFilter('all'); setStateFilter('all'); setStatusFilter('all'); setSelected([]); setPage(1);
+    setSearch(''); setDebounced(''); setZoneFilter('all'); setMrFilter('all'); setStateFilter('all'); setStatusFilter('all'); setSelected([]); setTargetMR(''); setPage(1);
   }
   function filterWith(setter, value) { setter(value); setSelected([]); setPage(1); }
   function selectOne(id, checked) { setSelected((previous) => checked ? [...new Set([...previous, id])] : previous.filter((value) => value !== id)); }
@@ -196,12 +197,13 @@ export default function DoctorMaster() {
       {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-doctor-action-error">{actionError}</div>}
       <section className="admin-panel" aria-label="Doctor list">
         <div className="doctor-master__toolbar">
-          <div className="doctor-master__toolbar-top">
+          <div className="doctor-master__toolbar-top master-filter-toolbar">
             <div className="doctor-master__search-actions">
               <button ref={refreshButton} type="button" className="admin-button admin-button--secondary" disabled={loading || pending} onClick={() => { retry(); setSelected([]); closeConfirmation(); }} data-testid="button-refresh-doctors">Refresh records</button>
               <label className="admin-search doctor-master__search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search doctors by name, registration, clinic or contact</span><input maxLength={200} value={search} onChange={(event) => filterWith(setSearch, event.target.value)} placeholder="Search name, registration, clinic or contact" data-testid="input-search-doctors" /></label>
             </div>
-            <span className="doctor-master__filter-feedback" data-testid="text-doctor-filter-feedback">{hasFilters ? `${partial ? 'Search section' : `${filtered} matching`} · ${activeFilters.join(', ')} applied` : `${total} total doctors`}{hasFilters && <button type="button" className="doctor-master__text-button" onClick={resetFilters} data-testid="button-reset-doctor-filters">Reset filters</button>}</span>
+            {hasFilters && <span className="doctor-master__filter-feedback" data-testid="text-doctor-filter-feedback">{`${partial ? 'Search section' : `${filtered} matching`} · ${activeFilters.join(', ')} applied`}</span>}
+            <MasterFilterReset disabled={!search && !debounced && zoneFilter === 'all' && mrFilter === 'all' && stateFilter === 'all' && statusFilter === 'all'} onClick={resetFilters} testId="button-reset-doctor-filters" />
           </div>
           <details className="doctor-master__filters">
             <summary data-testid="button-toggle-doctor-filters"><Filter size={15} aria-hidden="true" /> Filter records{activeFilters.length > 0 && ` · ${activeFilters.length} active`}<ChevronDown size={15} aria-hidden="true" /></summary>
@@ -229,7 +231,7 @@ export default function DoctorMaster() {
                 <div className="admin-record-card__body">{identity(record, true)}<dl><div><dt>Practice</dt><dd>{professional(record)}</dd></div><div><dt>MR / Zone</dt><dd>{assignment(record)}</dd></div><div><dt>Address</dt><dd>{address(record)}</dd></div><div><dt>Created details</dt><dd>{auditDetails(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated details</dt><dd>{auditDetails(record.updatedBy, record.updatedAt)}</dd></div></dl></div>
                <div className="admin-record-card__foot doctor-master__card-foot"><StatusBadge status={record.status} id={record.id} kind="doctor-mobile" /><span className={`doctor-master__verification${record.verification === 'verified' ? '' : ' doctor-master__verification--pending'}`}>{record.verification === 'verified' ? 'Verified' : 'Unverified'}</span>{actions(record, true)}</div>
             </article>)}</div>
-          </> : <div className="admin-empty" data-testid="status-doctors-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{total ? 'No matching doctors' : 'No doctor records yet'}</strong><p>{total ? 'Try a different search or reset the filters.' : 'Add a doctor to start the shared server directory.'}</p>{total > 0 && hasFilters && <button className="doctor-master__text-button" type="button" onClick={resetFilters} data-testid="button-reset-empty-doctor-filters">Reset filters</button>}</div>}
+          </> : <div className="admin-empty" data-testid="status-doctors-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{total ? 'No matching doctors' : 'No doctor records yet'}</strong><p>{total ? 'Try a different search or reset the filters.' : 'Add a doctor to start the shared server directory.'}</p></div>}
           {partial ? <DirectorySearchStatus count={records.length} scanned={scanned} nextCursor={nextCursor} loading={loading} onNext={continueSearch} onRestart={restartSearch} /> : !loading && <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={filtered} total={total} label="doctors" onPageChange={(n) => { setPage(n); setSelected([]); }} onPageSizeChange={(n) => { setPageSize(n); setPage(1); setSelected([]); }} testId="text-doctor-count" />}
         </>}
       </section>

@@ -3,6 +3,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, Pencil, Plus, Search, Trash2, UsersRound, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -117,11 +118,10 @@ function VendorWorkspace() {
     {feedback && <div className="admin-feedback" role="status" data-testid="status-vendor-feedback">{feedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-vendor-action-error">{actionError}</div>}
     <section className="admin-panel" aria-label="Vendor list">
-      <div className="admin-toolbar"><button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={retry} data-testid="button-refresh-vendors">Refresh records</button><div className="admin-toolbar__fields">
+      <div className="admin-toolbar master-filter-toolbar"><button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={retry} data-testid="button-refresh-vendors">Refresh records</button><div className="admin-toolbar__fields">
         <label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search vendors</span><input maxLength={200} value={search} onChange={(event) => { setSearch(event.target.value); pagination.resetPage(); }} placeholder="Search vendor, GST, contact, email or phone" data-testid="input-search-vendors" /></label>
         <div className="admin-filter"><label htmlFor="vendor-filter">Status</label><select id="vendor-filter" className="admin-select" value={filter} onChange={(event) => { setFilter(event.target.value); pagination.resetPage(); }} data-testid="select-filter-vendors"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
-        {(search || filter !== 'all') && <button type="button" className="admin-button admin-button--secondary" onClick={() => { setSearch(''); setFilter('all'); setPage(1); }} data-testid="button-clear-vendor-filters">Clear filters</button>}
-      </div></div>
+      </div><MasterFilterReset disabled={!search && filter === 'all'} onClick={() => { setSearch(''); setFilter('all'); setPage(1); }} testId="button-clear-vendor-filters" /></div>
       {loading ? <p className="admin-empty" role="status">Loading shared vendors…</p> : error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>Vendors could not be loaded</strong><p>{error}</p><button type="button" className="admin-button" style={{ marginTop: 16 }} onClick={retry} data-testid="button-retry-vendors">Try again</button></div> : <>
         {records.length ? <>
           <div className="admin-vendor-desktop"><DataTable columns={columns} rows={records} rowOffset={pagination.startIndex} rowKey={(r) => r.id} label="Vendor records" testIdPrefix="vendor" /></div>

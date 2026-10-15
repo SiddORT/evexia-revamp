@@ -3,6 +3,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { ChevronDown, CirclePower, Download, Filter, FolderOpen, Pencil, Plus, RefreshCw, Trash2, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -145,10 +146,10 @@ function TargetWorkspace() {
     {feedback && <div className="admin-feedback" role="status" data-testid="status-sales-target-feedback">{feedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-sales-target-action-error">{actionError}</div>}
     <section className="admin-panel" aria-label="Sales target list">
-      <div className="admin-target-toolbar"><div className="admin-target-toolbar__search-row">
+      <div className="admin-target-toolbar"><div className="admin-target-toolbar__search-row master-filter-toolbar">
         <button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={retry} data-testid="button-refresh-sales-targets"><RefreshCw size={15} aria-hidden="true" /> Refresh</button>
         <label className="admin-search"><span className="sr-only">Search MR name</span><input maxLength={100} value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search MR name" data-testid="input-search-sales-targets" /></label>
-        <button type="button" className="admin-button admin-button--secondary" disabled={!active && !dirty} onClick={reset} data-testid="button-reset-sales-target-filters">Clear filters</button>
+        <MasterFilterReset disabled={!active && !dirty} onClick={reset} testId="button-reset-sales-target-filters" />
       </div>
       {(active || dirty) && <p role="status" className="admin-target-filter-feedback" data-testid="text-sales-target-filter-feedback">{active && `${partial ? 'Search section' : `${filtered} matching`} · ${filterLabels.join(', ')} applied`}{dirty && `${active ? ' · ' : ''}unapplied changes`}</p>}
       <details className="admin-target-filter-disclosure">

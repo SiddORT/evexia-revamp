@@ -3,6 +3,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, KeyRound, Pencil, Plus, Search, Trash2, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import { formatAdminDate, formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import ContactRequirementButton from '../../components/admin/ContactRequirementButton.jsx';
@@ -184,13 +185,13 @@ export default function MRMaster() {
     {(feedback || saveFeedback) && <div className="admin-feedback" role="status" data-testid="status-mr-feedback">{feedback || saveFeedback}</div>}
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     <section className="admin-panel" aria-label="MR list">
-      <div className="admin-toolbar admin-mr-toolbar"><div className="admin-toolbar__fields">
+      <div className="admin-toolbar admin-mr-toolbar master-filter-toolbar"><div className="admin-toolbar__fields">
         <button type="button" className="admin-button admin-button--secondary admin-mr-toolbar__refresh" disabled={loading} onClick={() => { retry(); setActionError(''); }} data-testid="button-refresh-mrs">Refresh records</button>
         <div className="admin-filter admin-mr-toolbar__search"><label htmlFor="mr-details-search">MR details</label><div className="admin-search"><Search size={16} aria-hidden="true" /><input id="mr-details-search" aria-label="Search MR details" maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search MR details" data-testid="input-search-mrs" /></div></div>
         <div className="admin-filter"><label htmlFor="mr-zone-filter">Assigned zone</label><MRListFilter id="mr-zone-filter" kind="zones" label="Assigned zone" value={zoneFilter} onChange={(v) => { setZoneFilter(v); setPage(1); }} allLabel="All zones" emptyGuidance="No zones exist yet." /></div>
         <div className="admin-filter"><label htmlFor="mr-hq-filter">Headquarter</label><MRListFilter id="mr-hq-filter" kind="headquarters" label="Headquarter" value={hqFilter} onChange={(v) => { setHqFilter(v); setPage(1); }} allLabel="All headquarters" emptyGuidance="No headquarters exist yet." /></div>
         <div className="admin-filter"><label htmlFor="mr-status-filter">Status</label><MRListFilter id="mr-status-filter" label="Status" value={statusFilter} onChange={(v) => { setStatusFilter(v); setPage(1); }} allLabel="All statuses" allValue="all" options={STATUS_OPTIONS} /></div>
-      </div></div>
+      </div><MasterFilterReset disabled={!search && !debounced && !zoneFilter && !hqFilter && statusFilter === 'all'} onClick={() => { setSearch(''); setDebounced(''); setZoneFilter(''); setHqFilter(''); setStatusFilter('all'); setPage(1); }} /></div>
       {loading ? <p className="admin-empty" role="status">Loading MRs…</p> : error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><UsersRound size={21} /></span><strong>MR records could not be loaded</strong><p>{error}</p><button className="admin-button" type="button" onClick={retry} style={{ marginTop: 16 }} data-testid="button-retry-mrs">Try again</button></div> : <>
         {data.items.length ? <>
           <div className="admin-mr-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(r) => r.id} label="MR records" testIdPrefix="mr" /></div>

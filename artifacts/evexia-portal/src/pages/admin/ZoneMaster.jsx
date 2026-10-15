@@ -3,6 +3,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, Pencil, Plus, Search, Trash2, MapPinned, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -145,7 +146,7 @@ function ZoneWorkspace({ user }) {
       {feedback && <div className="admin-feedback" role="status" data-testid="status-zone-feedback">{feedback}</div>}
       {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-zone-action-error">{actionError}</div>}
       <section className="admin-panel" aria-label="Zone list">
-        <div className="admin-toolbar">
+        <div className="admin-toolbar master-filter-toolbar">
           <button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={retry}>Refresh records</button>
           <div className="admin-toolbar__fields">
             <label className="admin-search">
@@ -160,6 +161,7 @@ function ZoneWorkspace({ user }) {
               </select>
             </div>
           </div>
+          <MasterFilterReset disabled={!search && filter === 'all'} onClick={() => { setSearch(''); setFilter('all'); setPage(1); }} />
         </div>
         {loading ? <p className="admin-empty" role="status">Loading shared zones…</p> : error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><MapPinned size={21} /></span><strong>Zones could not be loaded</strong><p>{error}</p><button className="admin-button" style={{ marginTop: 16 }} onClick={retry} type="button" data-testid="button-retry-zones">Try again</button></div> : (
           <>

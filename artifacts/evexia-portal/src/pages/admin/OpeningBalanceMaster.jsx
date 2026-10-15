@@ -3,6 +3,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useLocation } from 'wouter';
 import { CirclePower, Download, Pencil, Plus, RefreshCw, Search, Trash2, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -104,10 +105,9 @@ export default function OpeningBalanceMaster() {
     {notice && <div className="admin-feedback" role="status">{notice}</div>}
     {error && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{error}</div>}
     <section className="admin-panel" aria-label="Opening balance list">
-      <div className="admin-toolbar ob-toolbar"><div className="admin-toolbar__fields"><button type="button" className="admin-button admin-button--secondary" onClick={state.retry} disabled={state.loading}><RefreshCw size={16} aria-hidden="true" /> Refresh records</button><label className="admin-search"><Search size={16} /><span className="sr-only">Search opening balances</span><input maxLength={200} value={query} placeholder="Search year, doctor, registration or amount" onChange={(e) => { setQuery(e.target.value); setPage(1); }} /></label>
+      <div className="admin-toolbar ob-toolbar master-filter-toolbar"><div className="admin-toolbar__fields"><button type="button" className="admin-button admin-button--secondary" onClick={state.retry} disabled={state.loading}><RefreshCw size={16} aria-hidden="true" /> Refresh records</button><label className="admin-search"><Search size={16} /><span className="sr-only">Search opening balances</span><input maxLength={200} value={query} placeholder="Search year, doctor, registration or amount" onChange={(e) => { setQuery(e.target.value); setPage(1); }} /></label>
         <div className="admin-filter"><label htmlFor="ob-status">Status</label><select id="ob-status" className="admin-select" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
-        <button className="admin-button admin-button--secondary" disabled={!query && status === 'all'} onClick={() => { setQuery(''); setStatus('all'); setPage(1); }}>Clear filters</button>
-      </div></div>
+      </div><MasterFilterReset disabled={!query && status === 'all'} onClick={() => { setQuery(''); setStatus('all'); setPage(1); }} /></div>
       {state.loading ? <p className="admin-empty" role="status">Loading shared opening balances…</p> : state.error ? <div className="admin-empty" role="alert"><p>{state.error}</p><button className="admin-button" onClick={state.retry}>Try again</button></div> : <>
         {state.items.length ? <><div className="ob-desktop"><DataTable columns={columns} rows={state.items} rowOffset={(page - 1) * pageSize} rowKey={(r) => r.id} label="Opening balance records" testIdPrefix="opening-balance" /></div>
           <div className="ob-mobile" role="list" aria-label="Opening balance records">{state.items.map((r) => <article className="ob-card" key={r.id} role="listitem"><div className="ob-card__head"><div><small>{r.startYear}–{r.endYear}</small><h2>{r.doctorName}</h2><small>{r.registrationNumber}</small></div><StatusBadge status={r.status} id={r.id} /></div><p className="ob-number">{formatBalance(r.amount)}</p><dl className="ob-card__details"><div><dt>Created</dt><dd>{audit(r.createdBy, r.createdAt)}</dd></div><div><dt>Updated</dt><dd>{audit(r.updatedBy, r.updatedAt)}</dd></div></dl>{actions(r, true)}</article>)}</div></> :

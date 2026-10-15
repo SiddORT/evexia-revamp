@@ -1,0 +1,30 @@
+/* Only master listing toolbars opt in; other admin toolbars are unchanged. */
+.admin-panel .master-filter-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  min-width: 0;
+}
+.master-filter-toolbar > .admin-toolbar__fields { min-width: 0; }
+.admin-mr-toolbar.master-filter-toolbar > .admin-toolbar__fields { flex-basis: 760px; }
+.master-filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  align-self: flex-end;
+  margin-left: auto;
+  min-width: 0;
+  max-width: 100%;
+}
+.master-filter-toolbar .master-filter-actions > .master-filter-reset {
+  width: auto;
+  min-height: 40px;
+  max-width: 100%;
+  padding: 0 15px;
+  white-space: normal;
+}
+@media (max-width: 700px) {
+  .master-filter-toolbar > .admin-toolbar__fields { flex-basis: 100%; }
+  .master-filter-toolbar > .master-filter-actions { flex-basis: 100%; width: 100%; }
+}
