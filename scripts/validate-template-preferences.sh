@@ -14,6 +14,7 @@ sh scripts/test-api-foundation.sh tests/test_role_urls.py tests/test_domain_admi
 node --test artifacts/evexia-portal/src/services/phoneCountries.test.js
 sh scripts/test-api-foundation.sh tests/test_shared_phone.py tests/test_shared_phone_migration.py
 pnpm --filter @workspace/evexia-portal run test:spt-orders
+pnpm --filter @workspace/evexia-portal run test:kits-orders
 pnpm --filter @workspace/evexia-portal run test:immunotherapy
 node --test artifacts/evexia-portal/src/auth/staffPermissions.test.js artifacts/evexia-portal/src/auth/navigationGuard.test.js
 pnpm --filter @workspace/evexia-portal run test:template-preferences:service

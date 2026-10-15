@@ -81,6 +81,8 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a mock Docto
 
 ## Browser regression test
 
+- Kits & Consumables is an isolated frontend-only mock: fictional recipients and orders in memory, reset by full reload; attachment metadata only, no uploads, live master reads, prices or processing. Service checks: `pnpm --filter @workspace/evexia-portal run test:kits-orders`. Its authenticated browser suite runs with `pnpm --filter @workspace/evexia-portal run test:kits-orders:browser` and is included in the default authenticated harness.
+
 - Master form refinements keep the existing listing-notice cleanup separate. Category UI filters are search/status only (the API still supports price ranges). HQ Add generates abbreviations while typing unless explicitly overridden; opening Edit preserves saved/manual codes. Sales Target filters use a closed-by-default disclosure with independent draft/applied values. Opening Balance Add uses the same controller in a listing modal and the `/new` deep link; Edit remains a page.
 - Vendor alone uses the full maintained `libphonenumber-js` / Python `phonenumbers` country catalogue with ISO identifiers and normalized national numbers. Other phone consumers keep their existing country contracts. `0025_vendor_phone` expands the column and constraints without rewriting records, and blocks narrowing downgrades when any international history exists. It is pending operator approval for managed/production databases. Run focused API checks with `sh scripts/test-api-foundation.sh tests/test_vendors.py tests/test_migration_vendors.py`; affected authenticated specs are headquarters, product-categories, vendors, sales-targets and opening-balances backend preview specs.
 

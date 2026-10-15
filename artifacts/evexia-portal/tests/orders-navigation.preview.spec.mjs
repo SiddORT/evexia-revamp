@@ -30,9 +30,13 @@ async function tabTo(page, target) {
 }
 
 async function selected(page, slug, label) {
-  await expect(page.getByRole('heading', { name: slug === 'immunotherapy' ? 'Immunotherapy' : label, exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: slug === 'immunotherapy' ? 'Immunotherapy' : slug === 'kits-consumables' ? 'Kits & Consumables' : label, exact: true })).toBeVisible();
   if (slug === 'immunotherapy') {
     await expect(page.getByTestId('status-imm-demo')).toContainText('demo');
+    await expect(page.getByRole('link', { name: 'Add Order', exact: true })).toBeVisible();
+    await expect(page.getByTestId('status-order-placeholder')).toHaveCount(0);
+  } else if (slug === 'kits-consumables') {
+    await expect(page.getByTestId('kits-boundary')).toContainText('Fictional');
     await expect(page.getByRole('link', { name: 'Add Order', exact: true })).toBeVisible();
     await expect(page.getByTestId('status-order-placeholder')).toHaveCount(0);
   } else if (slug === 'spt') {
@@ -64,7 +68,6 @@ test('Orders sits between Inventory and User Management; all links and direct de
     await selected(page, slug, label);
     await page.goto(`${base()}${route(slug)}`);
     await selected(page, slug, label);
-    if (slug === 'kits-consumables') await expect(page.getByText('Covers kits, lancets and applicators.')).toBeVisible();
   }
   await page.getByTestId('button-toggle-inventory').click();
   await page.getByTestId('link-admin-stock-status').click();
@@ -138,7 +141,7 @@ for (const mobile of [false, true]) {
     await page.screenshot({ path: testInfo.outputPath('orders-navigation.png') });
     await tabTo(page, child(page, 'kits-consumables'));
     await page.keyboard.press('Enter');
-    await expect(page.getByRole('heading', { name: 'KITS & CONSUMABLES', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Kits & Consumables', exact: true })).toBeVisible();
     if (mobile) {
       await expect(page.getByTestId('button-open-navigation')).toHaveAttribute('aria-expanded', 'false');
       await expect(page.locator('#admin-navigation')).toHaveAttribute('aria-hidden', 'true');
@@ -163,7 +166,7 @@ test('long Orders labels fit existing classic/modern light/dark themes on deskto
     for (const width of [1440, 390]) {
       await page.setViewportSize({ width, height: 1000 });
       await page.goto(`${base()}${route('kits-consumables')}`);
-      await expect(page.getByRole('heading', { name: 'KITS & CONSUMABLES', exact: true })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Kits & Consumables', exact: true })).toBeVisible();
       if (width === 390) await page.getByTestId('button-open-navigation').click();
       // Wait for the existing drawer transition, not merely its open attribute.
       if (width === 390) await expect.poll(() => page.locator('#admin-navigation').evaluate((el) => el.getBoundingClientRect().left)).toBe(0);

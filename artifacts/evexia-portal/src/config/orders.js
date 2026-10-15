@@ -1,4 +1,4 @@
-// Immunotherapy and SPT are separate session-only demos; other destinations
+// Immunotherapy, SPT and Kits are separate session-only demos; other destinations
 // remain navigation-only. None implements real order processing.
 export const ORDER_DESTINATIONS = [
   { slug: 'immunotherapy', label: 'IMMUNOTHERAPY' },
