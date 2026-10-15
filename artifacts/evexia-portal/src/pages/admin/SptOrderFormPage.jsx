@@ -15,7 +15,7 @@ const DOCTOR_OPTIONS = toOptions(DOCTORS);
 const MR_OPTIONS = toOptions(MRS);
 
 function Shell({ children, entry = false }) {
-  return <AdminLayout title="SPT"><div className={`spt${entry ? ' order-entry spt-entry' : ''}`}>{children}</div></AdminLayout>;
+  return <AdminLayout title="SPT"><div className={`spt spt-form${entry ? ' order-entry spt-entry' : ''}`}>{children}</div></AdminLayout>;
 }
 
 function OrderForm({ order, id }) {
@@ -152,7 +152,7 @@ function OrderForm({ order, id }) {
             <h3 id="spt-h-reg">Register demo patient</h3>
             {Object.keys(regErrors).length > 0 && <p role="alert" className="spt-error">Check the highlighted patient fields.</p>}
             <p className="spt-card__sub" style={{ margin: 0 }}>Demo only. This does not create a Patient Master record.</p>
-            <div className="spt-grid">
+            <div className="spt-grid spt-register__fields">
               <div className="spt-field"><label htmlFor="spt-reg-name">Patient name</label>
                 <input id="spt-reg-name" ref={regName} className="spt-input" value={reg.name} onChange={(e) => setReg({ ...reg, name: e.target.value })} aria-invalid={Boolean(regErrors.name)} aria-describedby={regErrors.name ? 'spt-reg-name-err' : undefined} />
                 {regErrors.name && <p className="spt-error" id="spt-reg-name-err">{regErrors.name}</p>}</div>
@@ -171,9 +171,11 @@ function OrderForm({ order, id }) {
           </form>}
         </>}
         {patients.length > 0 && <p className="spt-scroll-hint">Scroll horizontally to see all patient columns. Keyboard: focus the table region and use arrow keys.</p>}
-        <DataTable columns={columns} rows={patients} rowKey={(p) => p.id} label="Selected patients" testIdPrefix="spt-patient"
+        <div className="spt-patient-table">
+        <DataTable columns={columns} rows={patients} rowKey={(p) => p.id} label="Selected patients (scrolls horizontally)" testIdPrefix="spt-patient"
           empty={<div className="spt-empty"><strong>No patients added</strong><p>{readOnly ? 'This order has no patients.' : 'Search for a patient above, or register a demo patient.'}</p></div>} />
-        {patients.length > 0 && <div className="spt-total" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '12px 14px', borderRadius: 8, background: 'var(--admin-table-head)', fontWeight: 800 }}>
+        </div>
+        {patients.length > 0 && <div className="spt-total">
           <span>Total</span><span className="spt-num" aria-live="polite" data-testid="text-spt-total">INR {money(total)}</span></div>}
         {!readOnly && <p className="spt-card__sub">Total includes valid amounts only. Blank or invalid amounts are excluded and must be corrected before Save. Save as Draft keeps incomplete entries.</p>}
       </section>

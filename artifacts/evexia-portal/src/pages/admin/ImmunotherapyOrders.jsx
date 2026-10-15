@@ -50,6 +50,7 @@ export default function ImmunotherapyOrders() {
 
   const columns = [
     { key: 'sel', label: <input type="checkbox" className="imm-check" aria-label="Select eligible In process orders on this page" checked={allPage} disabled={!pageEligible.length} onChange={togglePage} data-testid="check-imm-page" />, render: (o) => <input type="checkbox" className="imm-check" aria-label={eligible(o) ? `Select ${o.number}` : `${o.number} is ${o.status}; only In process orders can be printed`} checked={selected.has(o.id)} disabled={!eligible(o)} onChange={() => toggle(o.id)} data-testid={`check-imm-${o.id}`} /> },
+    { key: 'serial', label: 'Sr No.', render: (_o, index) => <span className="imm-num">{index + 1}</span> },
     { key: 'number', label: 'Order', render: (o) => <><strong>{o.number}</strong><span className="imm-cell-sub">{o.date}</span></> },
     { key: 'patient', label: 'Patient', render: (o) => { const p = snap.patients.find((x) => x.id === o.patientId); return <><strong>{p?.name || 'Unknown'}</strong><span className="imm-cell-sub">{p?.phone}</span></>; } },
     { key: 'dm', label: 'Doctor / MR', render: (o) => <>{nameOf(DOCTORS, o.doctorId)}<span className="imm-cell-sub">{nameOf(MRS, o.mrId)}</span></> },
@@ -75,7 +76,7 @@ export default function ImmunotherapyOrders() {
       <div className="imm-stat"><strong>{snap.orders.length}</strong><span>All orders</span></div>
       {counts.map(([s, n]) => <div className="imm-stat" key={s}><strong>{n}</strong><span>{s}</span></div>)}
     </div>
-    <section className="admin-panel" aria-label="Immunotherapy orders">
+    <section className="admin-panel imm-listing" aria-label="Immunotherapy orders">
       <div className="imm-filters">
         <label className="imm-field imm-field--grow">Search
           <span style={{ position: 'relative', display: 'block' }}><Search size={15} aria-hidden="true" style={{ position: 'absolute', left: 12, top: 13, color: 'var(--admin-muted)' }} />
@@ -101,7 +102,7 @@ export default function ImmunotherapyOrders() {
           </DropdownMenu.Root>
         </div>
       </div>
-      <DataTable columns={columns} rows={pager.pageRows} rowKey={(o) => o.id} label="Immunotherapy orders (scrolls horizontally)" testIdPrefix="imm"
+      <DataTable columns={columns} rows={pager.pageRows} rowOffset={pager.startIndex} rowKey={(o) => o.id} label="Immunotherapy orders (scrolls horizontally)" testIdPrefix="imm"
         empty={<div className="imm-empty" data-testid="empty-imm"><ClipboardList size={28} aria-hidden="true" /><strong>{snap.orders.length ? 'No orders match' : 'No immunotherapy orders yet'}</strong><p>{snap.orders.length ? 'Adjust the search, status or dates.' : 'Add a demo order to begin.'}</p>{snap.orders.length ? <button type="button" className="admin-button admin-button--secondary" onClick={reset}>Reset filters</button> : <Link href={`${BASE}/new`} className="admin-button">Add Order</Link>}</div>} />
       <div className="imm-toolbar imm-edges" style={{ borderTop: '1px solid var(--admin-border)', borderBottom: 0 }}>
         <span>Jump to page {pager.page} of {pager.pageCount}</span>

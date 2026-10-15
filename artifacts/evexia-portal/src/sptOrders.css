@@ -1,4 +1,9 @@
 .spt { --spt-gap: clamp(14px, 2vw, 22px); position: relative; min-width: 0; font-size: 15px; display: grid; gap: var(--spt-gap); }
+.spt, .spt *, .spt *::before, .spt *::after { box-sizing: border-box; }
+.spt > *, .spt .admin-page-head > div, .spt-card > *, .spt-register > * { min-width: 0; }
+.spt :is(h1, h2, h3, p, label, dt, dd, li) { overflow-wrap: anywhere; }
+.spt .admin-button { min-width: 0; max-width: 100%; height: auto; padding-block: 8px; white-space: normal; overflow-wrap: anywhere; }
+.spt .admin-button svg { flex-shrink: 0; }
 .spt .admin-page-head { flex-wrap: wrap; margin-bottom: 0; }
 .spt .admin-page-head__description, .spt .admin-table td, .spt .admin-button { font-size: 14px; }
 .spt .admin-table th { font-size: 12px; }
@@ -50,7 +55,7 @@
 .spt-scroll-hint { margin: 0; padding: 10px 16px; color: var(--admin-text-soft); font-size: 12px; line-height: 1.5; }
 .spt .admin-table-scroll { max-width: 100%; min-width: 0; }
 .spt .admin-table-scroll:focus-visible, .spt-summary:focus { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
-.spt-total { flex-wrap: wrap; min-width: 0; }
+.spt-total { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; min-width: 0; padding: 12px 14px; border-radius: 8px; background: var(--admin-table-head); font-weight: 800; }
 .spt-total .spt-num { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
 .spt-notice { flex-wrap: wrap; overflow-wrap: anywhere; }
 .spt .admin-panel { min-width: 0; }
@@ -61,8 +66,10 @@
   .spt .admin-table { min-width: 640px; }
 }
 .spt .sr-only { position: absolute; left: 0; top: 0; width: 1px; height: 1px; padding: 0; margin: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-.spt-entry .spt-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 14px; }
-.spt-entry .spt-picker { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.spt-entry .spt-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 14px; }
+.spt-form .spt-picker { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; min-width: 0; }
+.spt-form .spt-picker > .spt-field { flex: 1 1 20rem; max-width: 100%; }
+.spt-form .spt-picker__actions { flex: 0 1 auto; min-width: 0; max-width: 100%; }
 .spt-entry .spt-picker__actions { align-self: end; }
 .spt-entry .spt-preview { grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 10px 14px; }
 .spt-entry .spt-preview dd { font-size: 13px; font-weight: 400; }
@@ -70,11 +77,41 @@
 .spt-entry .spt-register h3 { font-size: 14px; }
 .spt-entry .admin-table td { font-size: 13px; overflow-wrap: anywhere; }
 .spt-entry .admin-table th { font-size: 11px; }
-.spt-entry .admin-table :is(th, td):nth-child(1) { min-width: 10em; }
-.spt-entry .admin-table :is(th, td):nth-child(2) { min-width: 14em; max-width: 24em; }
-.spt-entry .admin-table :is(th, td):nth-child(5) { min-width: 10em; }
+.spt-form .spt-patient-table { min-width: 0; max-width: 100%; }
+.spt-form .spt-patient-table .admin-table { min-width: 46rem; }
+.spt-form .spt-patient-table :is(th, td):first-child { width: auto; min-width: 8em; text-align: left; }
+.spt-form .spt-patient-table :is(th, td):nth-child(2) { min-width: 12em; max-width: 24em; overflow-wrap: anywhere; }
+.spt-form .spt-patient-table :is(th, td):nth-child(5) { min-width: 11em; width: 12em; }
+.spt-form .spt-patient-table :is(th, td):last-child { width: 5em; text-align: center; }
+.spt-form .spt-patient-table .spt-amount { width: 100%; max-width: 170px; min-width: 8em; }
+.spt-form .spt-register__fields { display: flex; flex-wrap: wrap; gap: 14px; }
+.spt-form .spt-register__fields > .spt-field { flex: 1 1 9rem; }
+.spt-form .spt-register__fields > .spt-field:first-child { flex: 2 1 16rem; }
 .spt-entry .spt-actions { justify-content: flex-start; }
 .spt-entry .spt-total { font-size: 15px; }
 .spt-entry .spt-empty { padding: 28px 14px; font-size: 12px; }
 .spt-entry .spt-empty strong { font-size: 14px; }
-@media (max-width: 800px) { .spt-entry .spt-picker { grid-template-columns: minmax(0, 1fr); } }
+/* Listing-only refinements leave the shared entry baseline and other orders alone. */
+.spt-listing { gap: 14px; font-size: 14px; }
+.spt-listing .admin-page-head__description, .spt-listing .admin-table td { font-size: 13px; }
+.spt-listing .admin-table th { font-size: 10px; }
+.spt-listing .admin-button { min-height: 40px; font-size: 12px; line-height: 1.4; }
+.spt-listing .spt-boundary { padding: 10px 14px; }
+.spt-listing .spt-filters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .35fr); gap: 12px; }
+.spt-listing .spt-field { gap: 5px; font-size: 12px; color: var(--admin-text-soft); align-content: start; }
+.spt-listing .spt-field :is(input, select) { min-width: 0; max-width: 100%; min-height: 40px; font-size: 13px; line-height: 1.4; }
+.spt-search { position: relative; display: block; min-width: 0; }
+.spt-search > svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--admin-muted); pointer-events: none; }
+.spt-listing .spt-search input { padding-left: 33px; }
+.spt-listing-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; padding: 10px 16px; color: var(--admin-text-soft); }
+.spt-listing-bar .spt-count { padding: 0; border: 0; color: inherit; }
+.spt-listing-bar .spt-scroll-hint { padding: 0; }
+.spt-listing .admin-table :is(th, td):first-child { width: auto; min-width: 9em; text-align: left; }
+.spt-listing .admin-table td { overflow-wrap: anywhere; }
+.spt-listing .admin-table :is(th, td):is(:nth-child(3), :nth-child(4)) { min-width: 10em; max-width: 22em; }
+.spt-listing .spt-empty { font-size: 13px; gap: 8px; }
+.spt-listing .spt-empty strong { font-size: 14px; }
+@media (max-width: 640px) {
+  .spt-listing .spt-filters { grid-template-columns: minmax(0, 1fr); }
+  .spt-form .spt-picker__actions { flex-basis: 100%; }
+}

@@ -32,12 +32,12 @@ export default function SptOrders() {
 
   return (
     <AdminLayout title="SPT">
-      <div className="spt">
+      <div className="spt spt-listing">
         <div className="admin-page-head">
           <div>
             <p className="admin-page-head__eyebrow">Orders</p>
             <h1>SPT</h1>
-            <p className="admin-page-head__description">Evaluate the order entry workflow with sample data.</p>
+            <p className="admin-page-head__description">Review SPT orders by doctor, MR and status.</p>
           </div>
           <Link href={`${BASE}/new`} className="admin-button" data-testid="link-spt-add-order"><Plus size={16} aria-hidden="true" />Add Order</Link>
         </div>
@@ -46,9 +46,9 @@ export default function SptOrders() {
         <section className="admin-panel" aria-label="SPT orders">
           <div className="spt-filters">
             <label className="spt-field spt-field--grow">Search orders
-              <span style={{ position: 'relative', display: 'block' }}>
-                <Search size={16} aria-hidden="true" style={{ position: 'absolute', left: 12, top: 14, color: 'var(--admin-muted)' }} />
-                <input className="spt-input" style={{ paddingLeft: 36 }} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Order number, doctor or MR" data-testid="input-spt-search" />
+              <span className="spt-search">
+                <Search size={15} aria-hidden="true" />
+                <input className="spt-input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Order number, doctor or MR" data-testid="input-spt-search" />
               </span>
             </label>
             <div className="spt-field"><label htmlFor="spt-filter-status">Status</label>
@@ -57,10 +57,12 @@ export default function SptOrders() {
               </select>
             </div>
           </div>
-          {rows.length > 0 && <p className="spt-scroll-hint">Scroll horizontally to see all columns. Keyboard: focus the table region and use arrow keys.</p>}
-          <DataTable columns={columns} rows={rows} rowKey={(o) => o.id} label="SPT orders" testIdPrefix="spt"
+          <div className="spt-listing-bar">
+            <span className="spt-count" aria-live="polite">Showing {rows.length} of {snap.orders.length} orders</span>
+            {rows.length > 0 && <p className="spt-scroll-hint">Scroll for all columns; focus the table and use arrow keys.</p>}
+          </div>
+          <DataTable columns={columns} rows={rows} rowKey={(o) => o.id} label="SPT orders (scrolls horizontally)" testIdPrefix="spt"
             empty={<div className="spt-empty" data-testid="empty-spt-orders"><ClipboardList size={28} aria-hidden="true" /><strong>{snap.orders.length ? 'No orders match' : 'No SPT orders yet'}</strong><p>{snap.orders.length ? 'Try a different search or status.' : 'Add a mock order to try the workflow.'}</p>{snap.orders.length ? <button type="button" className="admin-button admin-button--secondary" onClick={clear}>Clear filters</button> : <Link href={`${BASE}/new`} className="admin-button">Add Order</Link>}</div>} />
-          <div className="spt-count" aria-live="polite">{rows.length} of {snap.orders.length} orders</div>
         </section>
       </div>
     </AdminLayout>

@@ -26,6 +26,8 @@
 .imm-menu button:hover, .imm-menu button:focus-visible { background: var(--admin-state-hover); outline: none; }
 .imm-check { width: 18px; height: 18px; accent-color: var(--admin-primary); }
 .imm-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Keep selection first and actions last; only the new serial column is sized here. */
+.imm-listing .admin-table :is(th, td):nth-child(2) { width: 4.5em; padding-inline: 8px; text-align: center; white-space: nowrap; }
 .imm-cell-sub { display: block; color: var(--admin-muted); font-size: 11px; overflow-wrap: anywhere; }
 .imm-status { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 50px; font-size: 11px; font-weight: 700; white-space: nowrap; background: var(--admin-state-soft); color: var(--admin-text); }
 .imm-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
