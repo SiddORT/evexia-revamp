@@ -22,15 +22,17 @@ recovery, including refusal of previously issued public links.
 do not treat an Admin portal selection or a staff display-role label as an
 authoritative identity type.
 
-On the shared Admin sign-in page, show recovery guidance only after clicking
-Forgot password, without leaving the page. Use exactly “Super Admin: Contact
-the tech team to reset your password.” and a separate staff recovery link.
+On the shared Admin sign-in page, Forgot password must navigate directly to
+the recovery page, with no inline Super Admin guidance or separate staff link.
+Show “Super Admin: Contact the tech team to reset your password.” only when
+the known Super Admin email is entered on the recovery page. Other identifiers
+keep the normal recovery flow. Preserve recovery theme support and background image.
 
-**Why:** The user confirmed that interaction; the entered identifier must not
-determine the recovery guidance or disclose account type.
+**Why:** The user repeated this requirement after a merge restored the older
+inline guidance and unconditional recovery-page message.
 
-**How to apply:** Keep guidance independent from login errors and preserve the
-existing MR recovery navigation.
+**How to apply:** Preserve this interaction during merges; do not introduce
+an account-type lookup or weaken backend Super Admin recovery protection.
 
 For this recovery rollout, UAT access is permitted when needed, but database
 migrations and production-impacting actions require reporting the exact action

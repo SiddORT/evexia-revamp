@@ -25,6 +25,8 @@ export default function PasswordRecoveryPage({ reset = false }) {
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const isSuperAdminRecovery = !reset && kind === 'admin'
+    && identifier.trim().toLowerCase() === 'crm-admin@allergyevexia.in';
   useEffect(() => {
     document.title = `${reset ? 'Reset password' : 'Forgot password'} — EVEXIA`;
     function acceptLink() {
@@ -57,6 +59,7 @@ export default function PasswordRecoveryPage({ reset = false }) {
   async function submit(event) {
     event.preventDefault();
     if (busy || done) return;
+    if (isSuperAdminRecovery) { setMessage(''); setFailed(false); return; }
     const error = reset ? validateReset(password, confirmation)
       : !identifier.trim() ? 'Enter your email or User ID.' : '';
     if (error) { setMessage(error); setFailed(true); return; }
@@ -93,7 +96,7 @@ export default function PasswordRecoveryPage({ reset = false }) {
           {reset ? 'Choose a new password. All existing sessions will be signed out.'
             : 'Enter your current account email or User ID. Staff should use their issued User ID.'}
         </p>
-        {!reset && kind === 'admin' && (
+        {isSuperAdminRecovery && (
           <p className="admin-recovery-callout" style={{ marginTop: -8, marginBottom: 20 }} data-testid="text-super-admin-recovery">
             Super Admin: Contact the tech team to reset your password.
           </p>
