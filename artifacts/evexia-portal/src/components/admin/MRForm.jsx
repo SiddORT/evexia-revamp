@@ -9,17 +9,15 @@ import '../../mr.css';
 
 const OPTIONAL = new Set(['reportingManagerId', 'addressLine2', 'paymentLimit', 'doctorDaysLimit']);
 const TABS = [
-  { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'dialCountry', 'userId', 'email', 'contactRequirement', 'password', 'confirmPassword'] },
+  { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'dialCountry', 'userId', 'email', 'contactRequirement'] },
   { id: 'assignment', label: 'Assignment & work', fields: ['hq', 'zoneId', 'employeeCode', 'dateOfJoining', 'designation_id', 'reportingManagerId', 'paymentLimit', 'doctorDaysLimit', 'status'] },
   { id: 'address', label: 'Address', fields: ['pincode', 'addressLine1', 'addressLine2', 'landmark', 'city', 'state', 'country'] },
 ];
-const ORDER = [...FIELDS, 'password', 'confirmPassword'];
+const ORDER = FIELDS;
 const STATUS_CHOICES = [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }];
 
 export default function MRForm({ mr, onSave, onClose, onRefresh }) {
   const [values, setValues] = useState(() => emptyMRValues(mr));
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [postal, setPostal] = useState({ status: '', choices: [] });
   const [usernamePending, setUsernamePending] = useState(false);
   const manual = useRef(new Set());
@@ -42,7 +40,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
 
   useEffect(() => {
     const owner = getSession().user?.id;
-    return subscribeSession(() => { if (getSession().user?.id !== owner) { lookupSeq.current++; setPassword(''); setConfirmPassword(''); } });
+    return subscribeSession(() => { if (getSession().user?.id !== owner) lookupSeq.current++; });
   }, []);
   useEffect(() => () => { lookupSeq.current++; }, []);
   useEffect(() => {
@@ -168,21 +166,20 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
     event.preventDefault();
     if (saving) return;
     const cleaned = Object.fromEntries(FIELDS.map((key) => [key, values[key].trim()]));
-    const nextErrors = validateMRValues(cleaned, { creating: !mr, password, confirm: confirmPassword });
+    const nextErrors = validateMRValues(cleaned, { creating: !mr });
     if (mr && warnings.deleted.length) nextErrors.zoneId = nextErrors.zoneId || '';
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
       const first = ORDER.find((key) => nextErrors[key]);
-      pendingFocus.current = first === 'password' ? 'password' : first;
+      pendingFocus.current = first;
       setActiveTab(TABS.find((tab) => tab.fields.includes(first)).id);
       return;
     }
     setSaveError('');
     setSaving(true);
     try {
-      const result = await onSave(payloadFromValues(cleaned), password);
+      const result = await onSave(payloadFromValues(cleaned), null);
       if (!result?.success) setSaveError(result?.error || 'This MR could not be saved. Please try again.');
-      else { setPassword(''); setConfirmPassword(''); }
     } catch (error) {
       setSaveError(error?.message || 'This MR could not be saved. Please try again.');
     } finally {
@@ -214,19 +211,10 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
                 {renderField('phone', 'Phone No.', { placeholder: 'National phone number', autoComplete: 'tel', inputMode: 'tel', info: 'Select the phone country and enter its national number. The country selection is saved with this MR.' })}
                {renderField('userId', 'User ID', { placeholder: 'User ID', info: mr ? 'User ID is the MR login name. Changing it signs that MR out of existing sessions.' : 'This is the MR login name: lowercase letters, digits, dot, underscore or hyphen. Auto-generate suggests an available one.' })}
                {renderField('email', 'Email ID', { type: 'email', placeholder: 'name@company.com', autoComplete: 'email' })}
-              {!mr ? <>
-              <div className="mr-form__field">
-                <InfoDisclosure id="mr-password-help" title="Password"
-                  text="Optional. Enter a password of 12 to 128 characters, or leave both blank and the server generates one, shown once after saving."
-                  testId="button-mr-password-info"><label className="mr-form__label" htmlFor="mr-password">Initial password</label></InfoDisclosure>
-                <input id="mr-password" name="password" className="mr-form__control" type="password" value={password} onChange={(e) => { setPassword(e.target.value); setErrors((c) => ({ ...c, password: undefined })); }} placeholder="Leave blank to generate" autoComplete="new-password" aria-invalid={Boolean(errors.password)} data-testid="input-mr-password" />
-                {errors.password && <p className="mr-form__error" role="alert" data-testid="error-mr-password">{errors.password}</p>}
-              </div>
-              <div className="mr-form__field">
-                <label className="mr-form__label" htmlFor="mr-confirm-password">Confirm password</label>
-                <input id="mr-confirm-password" name="confirmPassword" className="mr-form__control" type="password" value={confirmPassword} onChange={(e) => { setConfirmPassword(e.target.value); setErrors((c) => ({ ...c, confirmPassword: undefined })); }} placeholder="Repeat password" autoComplete="new-password" aria-invalid={Boolean(errors.confirmPassword)} data-testid="input-mr-confirm-password" />
-                {errors.confirmPassword && <p className="mr-form__error" role="alert" data-testid="error-mr-confirmPassword">{errors.confirmPassword}</p>}
-              </div></> : <div className="mr-form__field mr-form__field--wide"><p className="mr-form__section-note" data-testid="text-mr-password-note">Passwords are not shown or edited here. Use Reset password in MR Master to issue a new one-time password.</p></div>}
+              {!mr ? <div className="mr-form__field mr-form__field--wide mr-form__password-note" data-testid="text-mr-auto-password">
+                <strong className="mr-form__label">Initial password · Generated automatically</strong>
+                <p className="mr-form__section-note">A secure initial password is generated after successful creation and shown only once. Copy the login credentials before closing that screen.</p>
+              </div> : <div className="mr-form__field mr-form__field--wide"><p className="mr-form__section-note" data-testid="text-mr-password-note">Passwords are not shown or edited here. Use Reset password in MR Master to issue a new one-time password.</p></div>}
             </div>
           </section>
 

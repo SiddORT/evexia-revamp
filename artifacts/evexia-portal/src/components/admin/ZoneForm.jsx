@@ -36,7 +36,7 @@ export default function ZoneForm({ zone, onSave, onClose, canSave = true }) {
 
   return (
     <Dialog title={zone ? 'Edit zone' : 'Add zone'} onClose={pending ? () => {} : onClose}
-      titleInfo="Changes are saved to shared server records. Server identity and time determine audit details. Local demo assignments are unchanged.">
+      titleInfo={zone ? 'Changes are saved to shared server records. Server identity and time determine audit details. Local demo assignments are unchanged.' : undefined}>
       <form id="zone-form" className="admin-dialog__form" onSubmit={handleSubmit} noValidate>
         {!canSave && <p role="alert">Your permission for this action was removed. This draft is kept for reference, but cannot be saved.</p>}
         <Field id="zone-name" label="Zone name *" value={name} onChange={(event) => { setName(event.target.value); setError(''); }} error={error} placeholder="e.g. Central Zone" autoComplete="off" />

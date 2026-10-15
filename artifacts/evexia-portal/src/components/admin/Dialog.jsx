@@ -14,6 +14,17 @@ export default function Dialog({ title, eyebrow, description, titleInfo, onClose
     closeRef.current?.focus();
     function handleKey(event) {
       if (event.key === 'Escape' && document.activeElement?.closest?.('.searchable-select--open')) return;
+      const activeControl = document.activeElement?.closest?.('.searchable-control--open');
+      const portal = document.activeElement?.closest?.('[data-searchable-owner]');
+      const portalOwner = portal && document.getElementById(portal.dataset.searchableOwner);
+      const ownedControl = activeControl && dialogRef.current?.contains(activeControl);
+      const ownedPortal = portalOwner && dialogRef.current?.contains(portalOwner);
+      if (event.key === 'Escape' && (ownedControl || ownedPortal)) return;
+      // Let the combobox manage its portalled async action. Ordinary Tab from
+      // its input still uses the dialog trap, including a final field.
+      if (event.key === 'Tab' && (ownedPortal ||
+        (ownedControl && !event.shiftKey && [...document.querySelectorAll('[data-searchable-owner]')]
+          .some((node) => node.dataset.searchableOwner === document.activeElement?.id && node.querySelector('button'))))) return;
       if (event.key === 'Escape' && !dialogRef.current?.parentElement?.querySelector('[data-admin-info-open="true"]')) { event.preventDefault(); event.stopPropagation(); onCloseRef.current(); }
       if (event.key === 'Tab') {
         const focusable = [...(dialogRef.current?.querySelectorAll('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), summary, a[href], [tabindex]:not([tabindex="-1"])') || [])]

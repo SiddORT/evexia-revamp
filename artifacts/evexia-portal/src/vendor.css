@@ -38,7 +38,7 @@
 .admin-vendor-field .admin-vendor-phone__control:disabled { background: var(--admin-canvas); color: var(--admin-muted); cursor: not-allowed; }
 .admin-vendor-field .admin-vendor-phone__control[aria-invalid="true"] { border-color: var(--admin-danger); }
 .admin-vendor-field .admin-phone-input { flex-wrap: wrap; }
-.admin-vendor-field .admin-phone-input > select.admin-phone-input__country { flex: 1 1 7em; width: auto; }
+.admin-vendor-field .admin-phone-input > .admin-phone-input__country { flex: 1 1 7em; width: auto; }
 .admin-vendor-field .admin-phone-input > input { flex: 2 1 10em; }
 .admin-vendor-field input:focus, .admin-vendor-field textarea:focus, .admin-vendor-import input:focus-visible { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
 .admin-vendor-field [aria-invalid="true"] { border-color: var(--admin-danger); }

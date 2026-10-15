@@ -170,7 +170,6 @@ export default function MRMaster() {
     <div className="admin-page-head">
       <div><p className="admin-page-head__eyebrow">Masters / Team</p><h1>MR Master</h1><p className="admin-page-head__description">Shared server records. Each MR has a login account using the User ID.</p></div>
       <div className="admin-mr-head-actions">
-        <button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={() => { retry(); setActionError(''); }} data-testid="button-refresh-mrs">Refresh records</button>
         {can.import && <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/mr')} data-testid="button-import-mrs"><Upload size={16} aria-hidden="true" /> Import data</button>}
         {can.export && <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild><button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-mrs"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button></DropdownMenu.Trigger>
@@ -186,6 +185,7 @@ export default function MRMaster() {
     {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     <section className="admin-panel" aria-label="MR list">
       <div className="admin-toolbar admin-mr-toolbar"><div className="admin-toolbar__fields">
+        <button type="button" className="admin-button admin-button--secondary admin-mr-toolbar__refresh" disabled={loading} onClick={() => { retry(); setActionError(''); }} data-testid="button-refresh-mrs">Refresh records</button>
         <div className="admin-filter admin-mr-toolbar__search"><label htmlFor="mr-details-search">MR details</label><div className="admin-search"><Search size={16} aria-hidden="true" /><input id="mr-details-search" aria-label="Search MR details" maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search MR details" data-testid="input-search-mrs" /></div></div>
         <div className="admin-filter"><label htmlFor="mr-zone-filter">Assigned zone</label><MRListFilter id="mr-zone-filter" kind="zones" label="Assigned zone" value={zoneFilter} onChange={(v) => { setZoneFilter(v); setPage(1); }} allLabel="All zones" emptyGuidance="No zones exist yet." /></div>
         <div className="admin-filter"><label htmlFor="mr-hq-filter">Headquarter</label><MRListFilter id="mr-hq-filter" kind="headquarters" label="Headquarter" value={hqFilter} onChange={(v) => { setHqFilter(v); setPage(1); }} allLabel="All headquarters" emptyGuidance="No headquarters exist yet." /></div>

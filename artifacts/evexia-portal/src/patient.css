@@ -58,7 +58,7 @@
   background-repeat: no-repeat;
 }
 .patient-form .admin-phone-input { flex-wrap: wrap; }
-.patient-form .admin-phone-input > select.admin-phone-input__country { flex: 1 1 9em; width: auto; padding-inline-end: 32px; }
+.patient-form .admin-phone-input > .admin-phone-input__country { flex: 1 1 9em; width: auto; }
 .patient-form .admin-phone-input > input { flex: 2 1 10em; }
 .patient-form :is(.mr-form__actions, .mr-form__footer, .mr-form__section-head) { flex-wrap: wrap; }
 .patient-form .mr-form__actions { display: flex; }

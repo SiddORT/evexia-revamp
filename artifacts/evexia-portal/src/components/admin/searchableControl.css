@@ -1,0 +1,22 @@
+.searchable-control { min-width: 0; }
+.searchable-control__control { box-sizing: border-box; display: flex; height: 42px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); }
+.searchable-control__control:focus-within { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
+.searchable-control__control:has(input[aria-invalid="true"]) { border-color: var(--admin-danger); }
+.searchable-control__control:has(input:disabled) { opacity: .6; cursor: not-allowed; }
+.searchable-control .searchable-control__control input { box-sizing: border-box; width: 100%; height: 100%; min-width: 0; min-height: 0; border: 0; border-radius: 8px; outline: 0; box-shadow: none; padding: 0 0 0 11px; background: transparent; color: var(--admin-text); font: inherit; font-size: 12px; font-weight: 400; text-overflow: ellipsis; }
+.searchable-control .searchable-control__control input:focus { border: 0; outline: 0; box-shadow: none; }
+.searchable-control__control input::placeholder { color: var(--admin-muted); opacity: 1; }
+.searchable-control__control button { display: grid; place-items: center; width: 30px; flex: none; border: 0; background: transparent; color: var(--admin-text-soft); cursor: pointer; }
+.searchable-control__control button:disabled { cursor: not-allowed; }
+.searchable-control__menu { position: fixed; box-sizing: border-box; z-index: 65; overflow-y: auto; overscroll-behavior: contain; color: var(--admin-text); background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: 9px; box-shadow: 0 10px 30px #0002; padding: 5px; }
+.searchable-control__option { box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 40px; padding: 9px 8px; border-radius: 6px; cursor: pointer; font-size: 12px; line-height: 1.4; }
+.searchable-control__option span { min-width: 0; overflow-wrap: anywhere; }
+.searchable-control__option svg { flex: none; }
+.searchable-control__option:hover, .searchable-control__option--active { background: var(--admin-state-hover); }
+.searchable-control__option[aria-selected="true"] { color: var(--admin-accent); font-weight: 700; }
+.searchable-control__option[aria-disabled="true"] { opacity: .6; cursor: not-allowed; }
+.searchable-control__feedback { margin: 0; padding: 7px 8px; font-size: 12px; line-height: 1.5; color: var(--admin-text-soft); overflow-wrap: anywhere; }
+.searchable-control__feedback:empty { display: none; }
+.searchable-control__action { min-height: 40px; width: 100%; border: 1px solid var(--admin-border); border-radius: 6px; background: var(--admin-canvas); color: var(--admin-text); font: inherit; font-size: 12px; cursor: pointer; }
+.searchable-control__action:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: -3px; }
+.searchable-control__action[aria-disabled="true"] { opacity: .6; cursor: wait; }

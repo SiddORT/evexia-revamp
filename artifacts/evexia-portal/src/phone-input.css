@@ -1,3 +1,4 @@
 .admin-phone-input { display: flex; align-items: stretch; gap: 8px; min-width: 0; }
-.admin-phone-input > select.admin-phone-input__country { flex: 0 1 46%; width: 46%; min-width: 0; padding-inline: 7px; }
+.admin-phone-input > .admin-phone-input__country { flex: 0 1 46%; width: 46%; min-width: 0; }
+.admin-phone-input .searchable-control__control { height: 100%; min-height: 42px; }
 .admin-phone-input > input { flex: 1 1 0; min-width: 0; }

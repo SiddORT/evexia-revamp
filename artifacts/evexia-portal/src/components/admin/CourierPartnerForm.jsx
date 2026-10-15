@@ -32,7 +32,7 @@ export default function CourierPartnerForm({ partner, onSave, onClose }) {
     finally { setPending(false); }
   }
   return <Dialog title={partner ? 'Edit courier partner' : 'Add courier partner'} eyebrow="Courier Partner Master"
-    titleInfo="Changes are saved to shared server records. Verified server identity and UTC time determine audit details. No courier provider account is created." onClose={pending ? () => {} : onClose}>
+    titleInfo={partner ? 'Changes are saved to shared server records. Verified server identity and UTC time determine audit details. No courier provider account is created.' : undefined} onClose={pending ? () => {} : onClose}>
     <form className="admin-dialog__form" onSubmit={submit} noValidate>
       <Field id="courier-partner-name" label="Courier partner name *" value={name} onChange={(event) => { setName(event.target.value); setError(''); }} error={error} placeholder="e.g. Express Delivery" autoComplete="off" />
       <label className="admin-dialog__field" htmlFor="courier-partner-status">Status
