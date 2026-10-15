@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, X } from 'lucide-react';
 import './searchableSelect.css';
+import useSelectViewportMenu from './useSelectViewportMenu.js';
 
-export default function SearchableSelect({ id, label, value, options, onChange, placeholder, invalid, describedBy, searchOptions, onSearch, preserveSearch = false, disabled = false }) {
+export default function SearchableSelect({ id, label, value, options, onChange, placeholder, invalid, describedBy, searchOptions, onSearch, preserveSearch = false, disabled = false, viewportMenu = false }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(-1);
   const rootRef = useRef(null);
   const inputRef = useRef(null);
+  const menuRef = useRef(null);
+  const menuStyle = useSelectViewportMenu(viewportMenu && open, rootRef, menuRef);
   const selected = options.find((option) => option.value === value);
   const matches = searchOptions ? searchOptions(query) : options.filter((option) => option.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
   const searchRef = useRef(onSearch);
@@ -71,7 +74,7 @@ export default function SearchableSelect({ id, label, value, options, onChange, 
     }
   }
 
-  return <div className={`searchable-select${open ? ' searchable-select--open' : ''}`} ref={rootRef} onKeyDown={(event) => {
+  return <div className={`searchable-select${open ? ' searchable-select--open' : ''}${viewportMenu ? ' searchable-select--viewport' : ''}`} ref={rootRef} onKeyDown={(event) => {
     if (event.key === 'Escape' && open && !event.defaultPrevented) {
       event.preventDefault(); event.stopPropagation(); inputRef.current?.focus();
       setOpen(false); setQuery(''); setActive(-1);
@@ -104,7 +107,7 @@ export default function SearchableSelect({ id, label, value, options, onChange, 
       {value && <button type="button" disabled={disabled} className="searchable-select__clear" aria-label={`Clear ${label.toLowerCase()}`} onClick={() => { onChange(''); setQuery(''); setActive(-1); inputRef.current?.focus(); }}><X size={14} aria-hidden="true" /></button>}
       <ChevronDown size={16} className="searchable-select__chevron" aria-hidden="true" onClick={() => { inputRef.current?.focus(); openMenu(); }} />
     </div>
-    {open && <div id={`${id}-options`} role="listbox" aria-label={label} className="searchable-select__menu">
+    {open && <div ref={menuRef} style={viewportMenu ? menuStyle : undefined} id={`${id}-options`} role="listbox" aria-label={label} className="searchable-select__menu">
       {matches.length ? matches.map((option, index) => <div
         key={option.value}
         id={`${id}-option-${index}`}

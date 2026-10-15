@@ -199,13 +199,13 @@ function Editor({ order, mode, snap }) {
           <p className="imm-hint">Search by name, ID or phone.</p>
           <div className="imm-grid" style={{ marginTop: 12 }}>
             <div className="imm-field"><label htmlFor="imm-patientId">Patient</label>
-              <SearchableSelect id="imm-patientId" label="Patient" value={v.patientId} options={patientOptions} onChange={choosePatient} placeholder="Find a demo patient" invalid={errors.patientId} describedBy={errors.patientId ? 'imm-patientId-err' : undefined} disabled={dis} />
+              <SearchableSelect viewportMenu id="imm-patientId" label="Patient" value={v.patientId} options={patientOptions} onChange={choosePatient} placeholder="Find a demo patient" invalid={errors.patientId} describedBy={errors.patientId ? 'imm-patientId-err' : undefined} disabled={dis} />
               <Err id="imm-patientId-err" text={errors.patientId} /></div>
             <div className="imm-field"><label htmlFor="imm-doctorId">Doctor</label>
-              <SearchableSelect id="imm-doctorId" label="Doctor" value={v.doctorId} options={doctorOptions} onChange={(x) => set({ doctorId: x })} placeholder="Select doctor" invalid={errors.doctorId} describedBy={errors.doctorId ? 'imm-doctorId-err' : undefined} disabled={dis} />
+              <SearchableSelect viewportMenu id="imm-doctorId" label="Doctor" value={v.doctorId} options={doctorOptions} onChange={(x) => set({ doctorId: x })} placeholder="Select doctor" invalid={errors.doctorId} describedBy={errors.doctorId ? 'imm-doctorId-err' : undefined} disabled={dis} />
               <Err id="imm-doctorId-err" text={errors.doctorId} /></div>
             <div className="imm-field"><label htmlFor="imm-mrId">MR</label>
-              <SearchableSelect id="imm-mrId" label="MR" value={v.mrId} options={mrOptions} onChange={(x) => set({ mrId: x })} placeholder="Select MR" invalid={errors.mrId} describedBy={errors.mrId ? 'imm-mrId-err' : undefined} disabled={dis} />
+              <SearchableSelect viewportMenu id="imm-mrId" label="MR" value={v.mrId} options={mrOptions} onChange={(x) => set({ mrId: x })} placeholder="Select MR" invalid={errors.mrId} describedBy={errors.mrId ? 'imm-mrId-err' : undefined} disabled={dis} />
               <Err id="imm-mrId-err" text={errors.mrId} /></div>
           </div>
           {patient && <dl className="imm-facts" data-testid="imm-patient-facts"><div><dt>Name</dt><dd>{patient.name}</dd></div><div><dt>Age / gender</dt><dd>{patient.age} / {patient.gender}</dd></div><div><dt>Phone</dt><dd>{patient.phone}</dd></div><div><dt>Address</dt><dd>{addr(patient.address)}</dd></div></dl>}
@@ -258,7 +258,7 @@ function Editor({ order, mode, snap }) {
                     {!dis && <div style={{ display: 'flex', gap: 6, alignItems: 'end' }}>{v.groups.length > 1 && <label className="imm-field">Move to<select value="" onChange={(e) => moveItem(g.id, it.allergenId, e.target.value)} aria-label={`Move ${a?.name} to another bottle`} data-testid={`select-imm-move-${gi}-${ii}`}><option value="">Choose</option>{v.groups.filter((x) => x.id !== g.id).map((x) => <option key={x.id} value={x.id}>Bottle {gIndex(x.id) + 1} ({x.id})</option>)}</select></label>}<button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Remove ${a?.name} from bottle ${gi + 1}`} onClick={() => updGroup(g.id, (x) => ({ ...x, items: x.items.filter((y) => y.allergenId !== it.allergenId) }))}><Trash2 size={16} aria-hidden="true" /></button></div>}
                   </div>; })}
                 <div className="imm-bottle__foot">
-                  {!dis ? <div className="imm-field"><label htmlFor={`imm-add-${gi}`}>Add allergen</label><SearchableSelect id={`imm-add-${gi}`} label="Allergen" value="" options={allergenOptions} onChange={(aid) => addAllergen(g.id, aid)} placeholder="Search allergens" /></div> : <span />}
+                  {!dis ? <div className="imm-field"><label htmlFor={`imm-add-${gi}`}>Add allergen</label><SearchableSelect viewportMenu id={`imm-add-${gi}`} label="Allergen" value="" options={allergenOptions} onChange={(aid) => addAllergen(g.id, aid)} placeholder="Search allergens" /></div> : <span />}
                   <div className="imm-field"><label htmlFor={`imm-mrp-${gi}`}>MRP (INR)</label><input id={`imm-mrp-${gi}`} inputMode="decimal" value={g.mrp} disabled={dis} aria-invalid={Boolean(errors[`mrp-${g.id}`])} aria-describedby={errors[`mrp-${g.id}`] ? `mrp-${g.id}-err` : undefined} onChange={(e) => updGroup(g.id, (x) => ({ ...x, mrp: e.target.value }))} data-testid={`input-imm-mrp-${gi}`} /><Err id={`mrp-${g.id}-err`} text={errors[`mrp-${g.id}`]} /></div>
                 </div>
                 <Err id={`group-${g.id}-err`} text={err} />

@@ -1,5 +1,6 @@
 .searchable-select { position: relative; min-width: 0; }
 .searchable-select--open { z-index: 5; }
+.searchable-select--viewport.searchable-select--open { z-index: 40; }
 .searchable-select__control { display: flex; align-items: center; min-height: 40px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); }
 .searchable-select__control:focus-within { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
 .searchable-select__control:has(input[aria-invalid="true"]) { border-color: var(--admin-danger); }

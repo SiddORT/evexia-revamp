@@ -51,6 +51,134 @@ async function enlargeText(page) {
   });
 }
 
+// DOM visibility alone misses overflow clips and neighbouring cards painting
+// over a menu. Check actual pointer ownership at several points in each row.
+async function hitOption(option) {
+  await expect(option).toBeVisible();
+  await expect.poll(() => option.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return [0.2, 0.5, 0.8].every((x) => [0.25, 0.75].every((y) =>
+      el.contains(document.elementFromPoint(r.left + r.width * x, r.top + r.height * y))));
+  })).toBe(true);
+}
+async function openPicker(page, id, { bottom = false } = {}) {
+  const input = page.locator(`#${id}`);
+  await input.evaluate((el, nearBottom) => {
+    el.scrollIntoView({ block: 'center' });
+    if (nearBottom) window.scrollBy(0, el.getBoundingClientRect().bottom - innerHeight + 60);
+  }, bottom);
+  await input.click();
+  const menu = page.locator(`#${id}-options`);
+  await expect(menu).toBeVisible();
+  await expect.poll(() => menu.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return r.left >= 7 && r.right <= innerWidth - 7 && r.top >= 7 && r.bottom <= innerHeight - 7;
+  })).toBe(true);
+  const anchor = await input.locator('..').boundingBox();
+  const bounds = await menu.boundingBox();
+  expect(Math.abs(bounds.x - anchor.x)).toBeLessThan(2);
+  expect(Math.min(Math.abs(bounds.y - anchor.y - anchor.height - 4),
+    Math.abs(bounds.y + bounds.height - anchor.y + 4))).toBeLessThan(2);
+  await overflow(page, `menu-${id}`);
+  return { input, menu };
+}
+async function reachableOptions(menu) {
+  for (const option of await menu.getByRole('option').all()) {
+    await option.evaluate((el) => el.scrollIntoView({ block: 'nearest' }));
+    await hitOption(option);
+  }
+}
+
+for (const width of [1440, 390, 320]) test(`order dropdowns escape cards and retain interactions at ${width}px`, async ({ page }) => {
+  test.setTimeout(120000);
+  await page.setViewportSize({ width, height: 900 });
+  await login(page, `${route}/new`);
+  const faults = [];
+  page.on('pageerror', (e) => faults.push(e.message));
+  for (const id of ['imm-patientId', 'imm-doctorId', 'imm-mrId']) {
+    const { input, menu } = await openPicker(page, id);
+    await reachableOptions(menu);
+    if (width === 1440 || id === 'imm-mrId') {
+      const cardBottom = await input.evaluate((el) => el.closest('.admin-panel').getBoundingClientRect().bottom);
+      const last = await menu.getByRole('option').last().boundingBox();
+      expect(last.y + last.height).toBeGreaterThan(cardBottom + 4);
+      await hitOption(menu.getByRole('option').last());
+    }
+    if (id === 'imm-mrId') await page.screenshot({ path: test.info().outputPath(`mr-unclipped-${width}.png`) });
+    await input.press('Escape');
+    await expect(menu).toHaveCount(0);
+    await expect(input).toBeFocused();
+  }
+  const { input: mr, menu: mrMenu } = await openPicker(page, 'imm-mrId', { bottom: true });
+  const mrBounds = await mr.boundingBox(), menuBounds = await mrMenu.boundingBox();
+  expect(menuBounds.y + menuBounds.height).toBeLessThan(mrBounds.y);
+  await mr.fill('Noor');
+  await expect(mrMenu.getByRole('option')).toHaveCount(1);
+  await hitOption(mrMenu.getByRole('option'));
+  await mrMenu.getByRole('option').click();
+  await expect(mr).toHaveValue('Noor Sample');
+  await page.getByRole('button', { name: 'Clear mr', exact: true }).click();
+  await mr.press('Escape');
+  await expect(mr).toHaveValue('');
+  await mr.click();
+  await mr.press('ArrowDown'); await mr.press('ArrowDown'); await mr.press('ArrowUp');
+  await expect(mr).toHaveAttribute('aria-activedescendant', 'imm-mrId-option-0');
+  await mr.press('Enter');
+  await expect(mr).toHaveValue('Dev Example');
+  await mr.click(); await mr.press('Tab');
+  await expect(mrMenu).toHaveCount(0);
+  await expect(mr).not.toBeFocused();
+  await mr.click();
+  await page.locator('#imm-h-patient').click();
+  await expect(mrMenu).toHaveCount(0);
+  await choose(page, 'Patient', 'Asha');
+  await choose(page, 'Doctor', 'Leela');
+  await page.getByTestId('input-imm-remarks').fill('Keep dropdown draft');
+  await page.getByTestId('input-imm-mrp-0').fill('42.50');
+  await page.getByTestId('button-imm-add-bottle').click();
+  for (const gi of [0, 1]) {
+    const { input, menu } = await openPicker(page, `imm-add-${gi}`);
+    await reachableOptions(menu);
+    const bottleBottom = await input.evaluate((el) => el.closest('.imm-bottle').getBoundingClientRect().bottom);
+    const last = await menu.getByRole('option').last().boundingBox();
+    expect(last.y + last.height).toBeGreaterThan(bottleBottom);
+    await hitOption(menu.getByRole('option').last());
+    await page.screenshot({ path: test.info().outputPath(`allergen-bottle-${gi}-${width}.png`) });
+    await input.press('Escape');
+    const lower = await openPicker(page, `imm-add-${gi}`, { bottom: true });
+    expect((await lower.menu.boundingBox()).y).toBeLessThan((await input.boundingBox()).y);
+    await reachableOptions(lower.menu);
+    await input.fill(gi ? 'Weed' : 'Grass');
+    await hitOption(lower.menu.getByRole('option'));
+    await lower.menu.getByRole('option').click();
+    await expect(page.getByTestId(`imm-bottle-${gi}`)).toContainText(gi ? 'Sample Weed F' : 'Example Grass A');
+  }
+  // Scroll and resize while open: no detached overlay or horizontal overflow.
+  const moving = await openPicker(page, 'imm-add-1');
+  await page.evaluate(() => window.scrollBy(0, 35));
+  await expect.poll(async () => {
+    const r = await moving.input.locator('..').boundingBox(), m = await moving.menu.boundingBox();
+    return Math.min(Math.abs(m.y - r.y - r.height - 4), Math.abs(m.y + m.height - r.y + 4));
+  }).toBeLessThan(2);
+  await page.setViewportSize({ width: width === 1440 ? 1100 : 360, height: 760 });
+  await moving.input.press('Escape');
+  await openPicker(page, 'imm-add-1');
+  await reachableOptions(moving.menu);
+  await moving.input.press('Escape');
+  await page.getByTestId('button-imm-register').click();
+  await page.getByTestId('input-imm-reg-name').fill('Unsaved inline draft');
+  const registered = await openPicker(page, 'imm-mrId');
+  await registered.input.fill('no such representative');
+  await expect(registered.menu).toContainText('No matches found');
+  await registered.input.press('Escape');
+  await expect(page.getByTestId('input-imm-reg-name')).toHaveValue('Unsaved inline draft');
+  await page.getByTestId('button-imm-reg-cancel').click();
+  await expect(page.getByTestId('input-imm-remarks')).toHaveValue('Keep dropdown draft');
+  await expect(page.getByTestId('input-imm-mrp-0')).toHaveValue('42.50');
+  await expect(page.getByTestId('text-imm-total')).toHaveText('₹42.50');
+  expect(faults).toEqual([]);
+});
+
 test('patient-first order, grouping, exact MRP, metadata, guard, edit and reload boundary', async ({ page }) => {
   test.setTimeout(120000);
   const calls = [], faults = [];
@@ -272,10 +400,20 @@ test('cold view and direct edit are read-only/editable; Radix print keyboard and
   await login(page, `${route}/demo-it-1`);
   await expect(page.getByRole('heading', { name: 'Order DEMO-IT-0001' })).toBeVisible();
   await expect(page.getByTestId('radio-imm-dose-PD')).toBeDisabled();
+  for (const id of ['imm-patientId', 'imm-doctorId', 'imm-mrId']) {
+    await expect(page.locator(`#${id}`)).toBeDisabled();
+    await expect(page.locator(`#${id}`)).toHaveAttribute('aria-expanded', 'false');
+  }
+  await expect(page.getByRole('combobox', { name: 'Allergen', exact: true })).toHaveCount(0);
   await expect(page.getByTestId('button-imm-save')).toHaveCount(0);
   await page.goto(`${base()}${route}/demo-it-1/edit`);
   await expect(page.getByTestId('button-imm-save')).toBeVisible();
   await expect(page.getByTestId('radio-imm-dose-DD')).toBeEnabled();
+  for (const id of ['imm-patientId', 'imm-doctorId', 'imm-mrId', 'imm-add-0']) {
+    const { input, menu } = await openPicker(page, id);
+    await reachableOptions(menu);
+    await input.press('Escape');
+  }
   await page.goto(`${base()}${route}`);
   await page.getByTestId('check-imm-page').check();
   await expect(page.getByTestId('text-imm-selection')).toContainText('1 selected');
