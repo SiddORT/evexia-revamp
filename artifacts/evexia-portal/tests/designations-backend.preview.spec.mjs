@@ -6,6 +6,27 @@ const key = 'evexia.admin.designations.v1';
 const legacy = '[{"id":"local-only","name":"Untouched browser designation"}]';
 const headers = 'Designation Name,Short Name,Level,Status,Basic + DA (%),HRA (%),Medical Allowance (%),Travelling Allowance (%),Special Allowance (%),professional tax (Rs)';
 const currentHeaders = 'Designation Name,Short Name,Status';
+const footerNote = 'Shared business metadata only; no payroll or staff records are rewritten.';
+async function checkFooter(page, editing = false) {
+  const footer = page.locator('.admin-designation-form .mr-form__footer');
+  await expect(footer.locator('.mr-form__footer-note')).toHaveCount(editing ? 1 : 0);
+  await expect(footer.getByText(footerNote, { exact: true })).toHaveCount(editing ? 1 : 0);
+  const cancel = page.getByTestId('button-cancel-designation');
+  const save = page.getByTestId('button-save-designation');
+  await expect(cancel).toBeVisible();
+  await expect(cancel).toBeEnabled();
+  await expect(save).toBeVisible();
+  await expect(save).toBeEnabled();
+  await expect(save).toHaveText(editing ? 'Save changes' : 'Save designation');
+  const cancelBox = await cancel.boundingBox();
+  const saveBox = await save.boundingBox();
+  const footerBox = await footer.boundingBox();
+  expect(Math.abs(cancelBox.y - saveBox.y)).toBeLessThanOrEqual(1);
+  expect(cancelBox.x + cancelBox.width).toBeLessThanOrEqual(saveBox.x);
+  expect(cancelBox.x).toBeGreaterThanOrEqual(footerBox.x);
+  expect(saveBox.x + saveBox.width).toBeLessThanOrEqual(footerBox.x + footerBox.width);
+  expect(saveBox.x + saveBox.width).toBeLessThanOrEqual(page.viewportSize().width);
+}
 async function open(page) {
   await page.goto(`${base()}/admin/login`);
   await page.getByLabel('Email or username').fill('crm-admin@allergyevexia.in');
@@ -18,6 +39,15 @@ async function open(page) {
 }
 async function create(page, name) {
   await page.getByTestId('button-add-designation').click();
+  await checkFooter(page);
+  await page.getByTestId('button-cancel-designation').click();
+  await expect(page.getByTestId('text-designation-count')).toBeVisible();
+  await page.getByTestId('button-add-designation').click();
+  await checkFooter(page);
+  await page.getByTestId('button-save-designation').click();
+  await expect(page.getByTestId('input-designation-name')).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByTestId('input-designation-shortName')).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByTestId('select-designation-status')).toHaveAttribute('aria-invalid', 'true');
   await page.getByTestId('input-designation-name').fill(name);
   await page.getByTestId('input-designation-shortName').fill('SYN');
   for (const field of ['level', 'basicDa', 'hra', 'medicalAllowance', 'travellingAllowance', 'specialAllowance', 'professionalTax']) {
@@ -52,6 +82,7 @@ for (const mobile of [false, true]) {
     await page.evaluate(({ key, legacy }) => localStorage.setItem(key, legacy), { key, legacy });
     await page.getByTestId(`button-edit-designation-${row.id}`).click();
     await expect(page.getByTestId('input-designation-shortName')).toHaveValue('SYN');
+    await checkFooter(page, true);
     await page.getByTestId('input-designation-name').fill(row.name + ' edited');
     await page.getByTestId('input-designation-shortName').fill('EDITED');
     await page.evaluate(async (row) => {

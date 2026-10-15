@@ -61,7 +61,7 @@ function DesignationForm({ record, onSave, onCancel, onRefresh }) {
         </div>)}
       </div>
     </div>
-    <div className="mr-form__footer"><span className="mr-form__footer-note">Shared business metadata only; no payroll or staff records are rewritten.</span><div className="mr-form__actions"><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={onCancel} data-testid="button-cancel-designation">Cancel</button><button type="submit" disabled={pending || blocked} className="admin-button" data-testid="button-save-designation">{pending ? 'Saving…' : record ? 'Save changes' : 'Save designation'}</button></div></div>
+    <div className="mr-form__footer">{record && <span className="mr-form__footer-note">Shared business metadata only; no payroll or staff records are rewritten.</span>}<div className="mr-form__actions"><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={onCancel} data-testid="button-cancel-designation">Cancel</button><button type="submit" disabled={pending || blocked} className="admin-button" data-testid="button-save-designation">{pending ? 'Saving…' : record ? 'Save changes' : 'Save designation'}</button></div></div>
   </form>;
 }
 export default function DesignationFormPage({ id }) {
