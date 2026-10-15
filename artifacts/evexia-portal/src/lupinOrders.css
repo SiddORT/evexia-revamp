@@ -41,5 +41,9 @@
 .lupin-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin: 0; }
 .lupin-facts dt { color: var(--admin-text-soft); font-size: 12px; font-weight: 700; margin-bottom: 3px; }
 .lupin-facts dd { margin: 0; overflow-wrap: anywhere; }
+.lupin-entry__identity { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 14px; }
+.lupin-entry__amounts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 14px; padding-top: 14px; border-top: 1px solid var(--admin-border); }
+.lupin-entry .lupin-more-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 18px; }
+.lupin-entry .lupin-more-grid > div { display: grid; gap: 10px; }
 @media (max-width: 1100px) { .lupin-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } .lupin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .lupin-filters, .lupin-grid, .lupin-more-grid { grid-template-columns: 1fr; } .lupin-actions > * { flex: 1 1 140px; } }

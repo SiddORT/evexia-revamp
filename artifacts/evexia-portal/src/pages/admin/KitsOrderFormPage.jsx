@@ -5,6 +5,7 @@ import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import { DOCTORS, KIT_PRODUCTS, MRS, STATUSES, addressText, blankOrder, demoStore, fileSize, productSummary, shippingRecipient, validateAttachments } from '../../services/kitsOrdersDemo.js';
 import '../../kitsOrders.css';
+import '../../orderEntry.css';
 
 const BASE = '/admin/orders/kits-consumables';
 const LABELS = { orderFor: 'Order for', doctorId: 'Doctor', mrId: 'MR', products: 'Products', 'kit-product': 'Kit product', 'kit-custom': 'Custom value', 'kit-volume': 'Kit volume', 'kit-quantity': 'Kit quantity', lancets: 'Lancets', applicators: 'Applicators', tray: 'Tray', shipping: 'Shipping', 'other-name': 'Recipient name', 'other-phone': 'Recipient phone', 'other-line1': 'Address line 1', 'other-country': 'Country', 'other-state': 'State', 'other-city': 'City', 'other-pincode': 'Pincode', attachments: 'Attachments' };
@@ -112,7 +113,7 @@ function Form() {
   const consumable = (k, label) => <div className="kits-field"><label htmlFor={`kits-${k}`}>{label} - products</label>
     <input {...inv(k)} inputMode="numeric" value={v[k]} onChange={(ev) => set({ [k]: ev.target.value })} placeholder="Count, optional" /><Err id={`kits-${k}-err`} text={e[k]} /></div>;
 
-  return <AdminLayout title="KITS & CONSUMABLES"><div className="kits">
+  return <AdminLayout title="KITS & CONSUMABLES"><div className="kits order-entry kits-entry">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Orders / Kits &amp; Consumables</p><h1>Add order</h1>
       <p className="admin-page-head__description">Choose who the order is for, configure the kit and consumables, then set shipping.</p></div>
       <Link href={BASE} className="admin-button admin-button--secondary" data-testid="kits-back"><ArrowLeft size={15} aria-hidden="true" />Back</Link></div>
@@ -154,9 +155,9 @@ function Form() {
         <section className="admin-panel kits-panel" aria-labelledby="kits-h-people"><h2 id="kits-h-people">Doctor details</h2>
           <div className="kits-grid">
             <div className="kits-field"><label htmlFor="kits-doctorId">Doctor (billing)</label>
-              <SearchableSelect id="kits-doctorId" label="Doctor" value={v.doctorId} options={doctorOptions} onChange={(x) => set({ doctorId: x })} placeholder="Select doctor" invalid={e.doctorId} describedBy={e.doctorId ? 'kits-doctorId-err' : undefined} /><Err id="kits-doctorId-err" text={e.doctorId} /></div>
+              <SearchableSelect viewportMenu id="kits-doctorId" label="Doctor" value={v.doctorId} options={doctorOptions} onChange={(x) => set({ doctorId: x })} placeholder="Select doctor" invalid={e.doctorId} describedBy={e.doctorId ? 'kits-doctorId-err' : undefined} /><Err id="kits-doctorId-err" text={e.doctorId} /></div>
             <div className="kits-field"><label htmlFor="kits-mrId">MR{v.orderFor === 'mr' || v.shipping === 'mr' ? '' : ' (optional)'}</label>
-              <SearchableSelect id="kits-mrId" label="MR" value={v.mrId} options={mrOptions} onChange={(x) => set({ mrId: x })} placeholder="Select MR" invalid={e.mrId} describedBy={e.mrId ? 'kits-mrId-err' : undefined} /><Err id="kits-mrId-err" text={e.mrId} /></div>
+              <SearchableSelect viewportMenu id="kits-mrId" label="MR" value={v.mrId} options={mrOptions} onChange={(x) => set({ mrId: x })} placeholder="Select MR" invalid={e.mrId} describedBy={e.mrId ? 'kits-mrId-err' : undefined} /><Err id="kits-mrId-err" text={e.mrId} /></div>
           </div></section>
         <section className="admin-panel kits-panel" aria-labelledby="kits-h-ship"><h2 id="kits-h-ship">Shipping details</h2>
           <fieldset className="kits-radios" aria-describedby={e.shipping ? 'kits-shipping-err' : undefined}><legend>Ship to</legend>

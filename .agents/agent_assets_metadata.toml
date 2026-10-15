@@ -28,3 +28,17 @@ mtime_ms = 1791550999249
 storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0/130624d0-2821-43b2-8627-71e4ca449b18/3d09e674-d4ec-4ce8-9cf8-8b062720444c"
 storage_version_token = "1791551226173611"
 content_type = "text/html"
+
+[[outputs]]
+id = "zsEQMS0R34g_1y3tfV1vZ"
+uri = "file://generated-artifacts/order-entry-before-after.pdf"
+type = "pdf"
+title = "Order entry — before and after"
+description = "Side-by-side screenshots of Add Lupin, Add Kits & Consumables and Add SPT."
+logical_id = "948d3207-f90e-4af1-9735-aa2feb0b1659"
+content_hash = "sha256:5aea3a7f1d0ab37e99356d4bd2859a182c82fcabf7e36078e20b5cd01eb9535c"
+size = 601843
+mtime_ms = 1792053508040
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0/948d3207-f90e-4af1-9735-aa2feb0b1659/ec32f848-db35-42e8-8d20-d2ad0db2c72e"
+storage_version_token = "1792053925509194"
+content_type = "application/pdf"

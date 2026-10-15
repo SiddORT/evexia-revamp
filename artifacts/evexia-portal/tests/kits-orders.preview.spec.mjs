@@ -199,7 +199,7 @@ test('cold routes and keyboard menus stay visible at desktop tablet mobile in ea
         return { visible: el.contains(target), left: r.left, right: r.right, viewport: innerWidth, position: getComputedStyle(el).position };
       });
       expect(geometry.visible, JSON.stringify(geometry)).toBe(true);
-      expect(geometry.position).toBe('absolute');
+      expect(geometry.position).toBe('fixed');
       expect(geometry.left).toBeGreaterThanOrEqual(0);
       expect(geometry.right).toBeLessThanOrEqual(geometry.viewport);
       await input.press('ArrowDown'); await input.press('Enter'); await input.press('Tab');

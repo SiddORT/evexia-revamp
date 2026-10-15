@@ -5,6 +5,7 @@ import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import { DOCTORS, MRS, demoStore, money, totalMinor, validateAttachments, validateOrder } from '../../services/lupinOrdersDemo.js';
 import '../../lupinOrders.css';
+import '../../orderEntry.css';
 
 const BASE = '/admin/orders/lupin';
 const doctorOptions = DOCTORS.map((d) => ({ value: d.id, label: d.name }));
@@ -63,17 +64,19 @@ function Form() {
   const list = Object.entries(errors).filter(([, m]) => m);
   const num = (k, label, extra = {}) => <div className="lupin-field"><label htmlFor={`lupin-${k}`}>{label} <span aria-hidden="true">*</span></label>
     <input id={`lupin-${k}`} inputMode="decimal" value={v[k]} onChange={(e) => set({ [k]: e.target.value })} aria-required="true" aria-invalid={Boolean(errors[k])} aria-describedby={errors[k] ? `lupin-req lupin-${k}-err` : 'lupin-req'} data-testid={`input-lupin-${k}`} {...extra} /><Err id={`lupin-${k}-err`} text={errors[k]} /></div>;
-  return <AdminLayout title="LUPIN"><form className="lupin" onSubmit={save} noValidate aria-label="Add Lupin Order">
+  return <AdminLayout title="LUPIN"><form className="lupin order-entry lupin-entry" onSubmit={save} noValidate aria-label="Add Lupin Order">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Orders / Lupin</p><h1>Add Lupin Order</h1></div><span id="lupin-req" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>Required field</span></div>
     <p className="lupin-notice">Fictional demo: the order is kept in browser memory only; a full reload resets it. Attachments are not uploaded; only file metadata is kept. New orders use illustrative Confirmed / unpaid status.</p>
     {list.length > 0 && <div className="lupin-errors" role="alert" tabIndex={-1} ref={summary} data-testid="lupin-errors"><strong>Fix {list.length} problem{list.length > 1 ? 's' : ''} before saving</strong>
       <ul>{list.map(([k, m]) => <li key={k}><button type="button" className="lupin-link" onClick={() => focusId(TARGET[k] || k)}>{LABEL[k] || k}: {m}</button></li>)}</ul></div>}
     <section className="admin-panel lupin-section" aria-labelledby="lupin-h-det"><h2 id="lupin-h-det">Order Details</h2>
-      <div className="lupin-grid">
+      <div className="lupin-entry__identity">
         <div className="lupin-field"><label htmlFor="lupin-doctorId">Doctor <span aria-hidden="true">*</span></label>
           <SearchableSelect viewportMenu id="lupin-doctorId" label="Doctor" value={v.doctorId} options={doctorOptions} onChange={(x) => set({ doctorId: x })} placeholder="Select doctor" invalid={errors.doctorId} describedBy={errors.doctorId ? 'lupin-req lupin-doctorId-err' : 'lupin-req'} /><Err id="lupin-doctorId-err" text={errors.doctorId} /></div>
         <div className="lupin-field"><label htmlFor="lupin-mrId">MR <span aria-hidden="true">*</span></label>
           <SearchableSelect viewportMenu id="lupin-mrId" label="MR" value={v.mrId} options={mrOptions} onChange={(x) => set({ mrId: x })} placeholder="Select MR" invalid={errors.mrId} describedBy={errors.mrId ? 'lupin-req lupin-mrId-err' : 'lupin-req'} /><Err id="lupin-mrId-err" text={errors.mrId} /></div>
+      </div>
+      <div className="lupin-entry__amounts">
         {num('patientCount', 'No. of Patients', { inputMode: 'numeric' })}
         {num('price', 'Price (per Test)')}
         <div className="lupin-field"><label htmlFor="lupin-total">Total Amount (₹)</label><input id="lupin-total" readOnly value={money(total)} aria-live="polite" data-testid="lupin-total" /></div>

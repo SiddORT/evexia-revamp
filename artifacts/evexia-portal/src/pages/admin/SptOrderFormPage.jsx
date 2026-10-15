@@ -6,6 +6,7 @@ import DataTable from '../../components/admin/DataTable.jsx';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import { DOCTORS, MRS, demoStore, money, totalMinor, validateOrder } from '../../services/sptOrdersDemo.js';
 import '../../sptOrders.css';
+import '../../orderEntry.css';
 
 const BASE = '/admin/orders/spt';
 const GENDERS = ['Male', 'Female', 'Other', 'Prefer not to say'];
@@ -13,8 +14,8 @@ const toOptions = (list) => list.map((x) => ({ value: x.id, label: x.name }));
 const DOCTOR_OPTIONS = toOptions(DOCTORS);
 const MR_OPTIONS = toOptions(MRS);
 
-function Shell({ children }) {
-  return <AdminLayout title="SPT"><div className="spt">{children}</div></AdminLayout>;
+function Shell({ children, entry = false }) {
+  return <AdminLayout title="SPT"><div className={`spt${entry ? ' order-entry spt-entry' : ''}`}>{children}</div></AdminLayout>;
 }
 
 function OrderForm({ order, id }) {
@@ -97,7 +98,7 @@ function OrderForm({ order, id }) {
   ];
 
   return (
-    <Shell>
+    <Shell entry={!order}>
       <div className="admin-page-head">
         <div>
           <p className="admin-page-head__eyebrow">Orders / SPT</p>
@@ -117,12 +118,12 @@ function OrderForm({ order, id }) {
         <div className="spt-grid">
           <div className={`spt-field${errors.doctorId ? ' spt-field--error' : ''}`}>
             <label htmlFor="spt-doctor">Doctor</label>
-            <SearchableSelect id="spt-doctor" label="Doctor" value={doctorId} options={DOCTOR_OPTIONS} onChange={(v) => { setDoctorId(v); setErrors((e) => ({ ...e, doctorId: undefined })); }} placeholder="Select doctor" invalid={Boolean(errors.doctorId)} describedBy={errors.doctorId ? 'spt-err-doctor' : undefined} disabled={readOnly} />
+            <SearchableSelect viewportMenu id="spt-doctor" label="Doctor" value={doctorId} options={DOCTOR_OPTIONS} onChange={(v) => { setDoctorId(v); setErrors((e) => ({ ...e, doctorId: undefined })); }} placeholder="Select doctor" invalid={Boolean(errors.doctorId)} describedBy={errors.doctorId ? 'spt-err-doctor' : undefined} disabled={readOnly} />
             {errors.doctorId && <p className="spt-error" id="spt-err-doctor">{errors.doctorId}</p>}
           </div>
           <div className={`spt-field${errors.mrId ? ' spt-field--error' : ''}`}>
             <label htmlFor="spt-mr">MR</label>
-            <SearchableSelect id="spt-mr" label="MR" value={mrId} options={MR_OPTIONS} onChange={(v) => { setMrId(v); setErrors((e) => ({ ...e, mrId: undefined })); }} placeholder="Select MR" invalid={Boolean(errors.mrId)} describedBy={errors.mrId ? 'spt-err-mr' : undefined} disabled={readOnly} />
+            <SearchableSelect viewportMenu id="spt-mr" label="MR" value={mrId} options={MR_OPTIONS} onChange={(v) => { setMrId(v); setErrors((e) => ({ ...e, mrId: undefined })); }} placeholder="Select MR" invalid={Boolean(errors.mrId)} describedBy={errors.mrId ? 'spt-err-mr' : undefined} disabled={readOnly} />
             {errors.mrId && <p className="spt-error" id="spt-err-mr">{errors.mrId}</p>}
           </div>
         </div>
@@ -135,7 +136,7 @@ function OrderForm({ order, id }) {
           <div className={`spt-picker${errors.patients ? ' spt-field--error' : ''}`}>
             <div className="spt-field">
               <label htmlFor="spt-patient">Find patient</label>
-              <SearchableSelect id="spt-patient" label="Patient search" value={pending} options={options} onChange={setPending} placeholder="Patient ID or name" invalid={Boolean(errors.patients)} describedBy={errors.patients ? 'spt-err-patients' : undefined} />
+              <SearchableSelect viewportMenu id="spt-patient" label="Patient search" value={pending} options={options} onChange={setPending} placeholder="Patient ID or name" invalid={Boolean(errors.patients)} describedBy={errors.patients ? 'spt-err-patients' : undefined} />
             </div>
             <div className="spt-picker__actions">
               <button type="button" className="admin-button" onClick={add} disabled={!preview} data-testid="button-spt-add-patient">Add patient</button>

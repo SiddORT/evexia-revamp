@@ -109,6 +109,10 @@ for (const width of [1440, 390, 320]) test(`order dropdowns escape cards and ret
     await expect(menu).toHaveCount(0);
     await expect(input).toBeFocused();
   }
+  // At desktop width this field is too high on the page to move near the
+  // bottom by scrolling (the requested negative scroll clamps to zero).
+  // Use a shorter viewport so this really exercises upward placement.
+  await page.setViewportSize({ width, height: 500 });
   const { input: mr, menu: mrMenu } = await openPicker(page, 'imm-mrId', { bottom: true });
   const mrBounds = await mr.boundingBox(), menuBounds = await mrMenu.boundingBox();
   expect(menuBounds.y + menuBounds.height).toBeLessThan(mrBounds.y);
@@ -117,6 +121,7 @@ for (const width of [1440, 390, 320]) test(`order dropdowns escape cards and ret
   await hitOption(mrMenu.getByRole('option'));
   await mrMenu.getByRole('option').click();
   await expect(mr).toHaveValue('Noor Sample');
+  await page.setViewportSize({ width, height: 900 });
   await page.getByRole('button', { name: 'Clear mr', exact: true }).click();
   await mr.press('Escape');
   await expect(mr).toHaveValue('');
