@@ -121,14 +121,52 @@ function POEditor({ snapshot, record, isNew, onSaved, onCancel, onRefresh }) {
     } catch (cause) { setSaveError(cause.message || 'Could not save this order. Refresh records and review again.'); }
     finally { setBusy(false); }
   }
-  return <section className="admin-panel" aria-label={isNew ? 'New purchase order' : 'Edit purchase order'}>
+  return <section className={`admin-panel${isNew ? ' po-new' : ''}`} aria-label={isNew ? 'New purchase order' : 'Edit purchase order'}>
     <div className="po-form-intro"><div><h2>{review ? 'Review before saving' : 'Order details'}</h2><p>{review ? 'Nothing has been saved yet. Check quantities, prices and delivery details.' : 'Required fields are marked *. Amounts are calculated in INR as you work.'}</p></div><ClipboardList size={21} color="var(--admin-accent)" aria-hidden="true" /></div>
     {saveError && <div className="admin-feedback admin-feedback--error" role="alert" style={{ margin: 18 }}>{saveError} <button type="button" className="po-link" onClick={onRefresh} data-testid="button-refresh-po-draft">Refresh and discard draft</button></div>}
     {review ? <>
       <div className="po-review"><p className="po-review__note">This is a browser-local preview. Confirming saves the order in this browser; it does not send an order to a supplier.</p><dl className="po-detail-grid"><div><dt>Vendor</dt><dd>{review.vendorName}</dd></div><div><dt>Storage location</dt><dd>{review.locationName}</dd></div><div><dt>PO date</dt><dd>{displayDate(review.poDate)}</dd></div><div><dt>Expected delivery</dt><dd>{displayDate(review.expectedDate)}</dd></div></dl><h3 className="po-section-title">Items <span>{review.lines.length} product {review.lines.length === 1 ? 'line' : 'lines'}</span></h3></div>
        <LineTable lines={review.lines} figures={review} />
+        {isNew && <div className="po-new-summary po-new-summary--review"><dl><div><dt>Gross total</dt><dd>{money(review.subtotal)}</dd></div><div><dt>GST amount</dt><dd>{money(review.gstAmount)}</dd></div><div className="po-new-summary__final"><dt>Final total</dt><dd>{money(review.total)}</dd></div></dl></div>}
        <div className="po-form-footer"><span>Changes are saved locally on confirmation.</span><div className="po-actions"><button type="button" disabled={busy} className="admin-button admin-button--secondary" onClick={() => { setReview(null); setSaveError(''); }} data-testid="button-back-po-draft">Back to draft</button><button type="button" disabled={busy} className="admin-button" onClick={save} data-testid="button-confirm-po">{busy ? 'Saving…' : isNew ? 'Create purchase order' : 'Save changes'}</button></div></div>
-    </> : <form onSubmit={prepare} noValidate>
+    </> : isNew ? <form onSubmit={prepare} noValidate className="po-new-form">
+      <div className="po-new-layout">
+        <div className="po-new-main">
+          {(errors.form || errors.lines || Object.entries(errors).some(([key, value]) => value && key.startsWith('lines.'))) && <div id="po-form-errors" className="admin-feedback admin-feedback--error" role="alert">{errors.form || errors.lines || 'Check the highlighted product rows before continuing.'}</div>}
+          <fieldset className="po-group"><legend>Vendor and delivery</legend>
+            <div className="po-group__grid">
+              <ReferenceField id="po-vendor" label="Vendor" items={refs.vendors} nameKey="vendorName" value={values.vendorId} existingName="" error={errors.vendorId} onChange={(value) => change('vendorId', value)} />
+              <ReferenceField id="po-location" label="Storage location" items={refs.locations} nameKey="name" activeOnly value={values.locationId} existingName="" error={errors.locationId} onChange={(value) => change('locationId', value)} />
+            </div>
+            <div className="po-group__dates">
+              <InputField id="po-date" label="PO date" type="date" value={values.poDate} onChange={(value) => change('poDate', value)} error={errors.poDate} />
+              <InputField id="po-expected-date" label="Expected delivery" type="date" min={values.poDate} value={values.expectedDate} onChange={(value) => change('expectedDate', value)} error={errors.expectedDate} />
+            </div>
+            <p className="mr-form__footer-note">Purchasing uses separate browser-local locations and IDs, not the shared Storage Location Master. Server edits do not change these choices or existing orders.</p>
+          </fieldset>
+          <fieldset className="po-group"><legend>Products <span>{values.lines.length} {values.lines.length === 1 ? 'line' : 'lines'}</span></legend>
+            <div className="po-new-lines">{values.lines.map((line, index) => <div className="po-new-line" key={index}>
+              <div className="po-new-line__top"><strong>Item {String(index + 1).padStart(2, '0')}</strong>
+                <button type="button" className="po-action po-action--danger" disabled={values.lines.length === 1} onClick={() => { setValues((current) => ({ ...current, lines: current.lines.filter((_, i) => i !== index) })); setErrors({}); }} data-testid={`button-remove-po-line-${index}`}><X size={14} aria-hidden="true" /> Remove</button></div>
+              <div className="po-new-line__fields">
+                <div className="po-new-line__product"><ReferenceField id={`po-product-${index}`} label="Product" items={refs.products} nameKey="name" activeOnly value={line.productId} existingName="" error={errors[`lines.${index}.productId`]} onChange={(value) => changeLine(index, 'productId', value)} /></div>
+                <InputField id={`po-quantity-${index}`} label="Quantity" type="number" min="0.001" step="0.001" placeholder="1" value={line.quantity} onChange={(value) => changeLine(index, 'quantity', value)} error={errors[`lines.${index}.quantity`]} />
+                <InputField id={`po-price-${index}`} label="Unit price (₹)" type="number" min="0" step="0.01" placeholder="0.00" value={line.unitPrice} onChange={(value) => changeLine(index, 'unitPrice', value)} error={errors[`lines.${index}.unitPrice`]} />
+                <InputField id={`po-gst-${index}`} label="GST (%)" type="number" min="0" max="100" step="0.01" placeholder="0" value={line.gst} onChange={(value) => changeLine(index, 'gst', value)} error={errors[`lines.${index}.gst`]} />
+              </div>
+              <div className="po-new-line__totals"><span>Gross <b>{draftLines[index].subtotal == null ? '—' : money(draftLines[index].subtotal)}</b></span><span>GST <b>{draftLines[index].gstAmount == null ? '—' : money(draftLines[index].gstAmount)}</b></span><span className="po-new-line__final">Line total <b>{draftLines[index].total == null ? '—' : money(draftLines[index].total)}</b></span></div>
+              {errors[`lines.${index}.total`] && <p className="mr-form__error" role="alert">{errors[`lines.${index}.total`]}</p>}
+              {errors[`lines.${index}.id`] && <p className="mr-form__error" role="alert">{errors[`lines.${index}.id`]}</p>}
+            </div>)}</div>
+            <button type="button" className="admin-button admin-button--secondary po-add-line" disabled={values.lines.length >= 100} onClick={() => { setValues((current) => ({ ...current, lines: [...current.lines, blankLine()] })); setErrors((current) => ({ ...current, lines: undefined, form: undefined })); }} data-testid="button-add-po-line"><Plus size={15} aria-hidden="true" /> Add product line</button>
+          </fieldset>
+        </div>
+        <aside className="po-new-summary" aria-label="Order totals"><h3>Order totals</h3>
+          <dl><div><dt>Gross total</dt><dd>{figures ? money(figures.subtotal) : '—'}</dd></div><div><dt>GST amount</dt><dd>{figures ? money(figures.gstAmount) : '—'}</dd></div><div className="po-new-summary__final"><dt>Final total</dt><dd data-testid="text-po-form-total">{figures ? money(figures.total) : '—'}</dd></div></dl>
+          <p>Amounts in INR. Nothing is sent to a supplier; the order is saved in this browser only.</p></aside>
+      </div>
+      <div className="po-form-footer"><span>Review the order before it is saved in this browser.</span><div className="po-actions"><button type="button" className="admin-button admin-button--secondary" onClick={onCancel} data-testid="button-cancel-po">Cancel</button><button type="submit" className="admin-button" data-testid="button-review-po">Review order</button></div></div>
+    </form> : <form onSubmit={prepare} noValidate>
       <div className="po-form-body">
         {(errors.form || errors.lines || Object.entries(errors).some(([key, value]) => value && key.startsWith('lines.'))) && <div id="po-form-errors" className="admin-feedback admin-feedback--error" role="alert">{errors.form || errors.lines || 'Check the highlighted product rows before continuing.'}</div>}
         <h3 className="po-section-title">01 / Order information <span>Supplier and delivery destination</span></h3>
@@ -204,7 +242,7 @@ export default function PurchaseOrderFormPage({ id }) {
     finally { setBusy(false); }
   }
   const title = isNew ? 'New purchase order' : editing ? 'Edit purchase order' : record?.number || 'Purchase order';
-  return <AdminLayout title={title}><div className="po-page">
+  return <AdminLayout title={title}><div className={`po-page${isNew ? ' po-page--new' : ''}`}>
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Purchase orders / {isNew ? 'New' : record?.number || 'Detail'}</p><h1>{title}</h1><p className="admin-page-head__description">{isNew ? 'Build a supplier order, review its totals, then save it locally.' : 'Review order details, item values and recorded changes.'}</p></div><div className="po-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(BASE)} data-testid="button-back-purchase-orders"><ArrowLeft size={16} aria-hidden="true" /> All orders</button><button type="button" className="admin-button admin-button--secondary" onClick={refresh} data-testid="button-refresh-po-detail"><RefreshCw size={15} aria-hidden="true" /> Refresh</button></div></div>
     {notice && <div className="admin-feedback" role="status">{notice}</div>}
     {actionError && !confirmDelete && <div className="admin-feedback admin-feedback--error" role="alert">{actionError} <button type="button" className="po-link" onClick={refresh}>Refresh records</button></div>}
