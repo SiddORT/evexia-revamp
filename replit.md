@@ -35,6 +35,8 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a mock Docto
 
 ## Stack and scope
 
+- Live Purchase Orders creation/listing/Activity/Analytics use protected Super Admin FastAPI persistence and shared Vendor/Storage Location/Allergen records. `0038_purchase_orders` is operator-only and needs separate managed activation approval. Legacy local PO/PR/master stores are untouched; receiving/invoices and detail/edit/delete UI remain deferred. Exact rounding, retry and focused-test guidance: `docs/purchase-order-backend.md`.
+
 - Shared Allergen Master is protected singleton-only (no assignable staff Allergen permissions). `mix=true` means Mix; `false` means No Mix, catalogue metadata only. It uses shared category/location references, exact optional decimal strings, versioned soft deletion and bounded CSV/XLSX review/confirm/filtered exports with durable acceptance. No HSN in the current catalogue; explicit legacy CSV HSN is ignored. Migration `0022_allergen_catalogue` is empty and requires operator approval for managed rollout. The original local allergen/category/location and procurement datasets stay separate and untouched. See `docs/allergen-master.md`.
 
 - Product Category Master is protected singleton-only shared persistence with exact `NUMERIC(18,6)` prices, server price/status/search filters, versioned soft deletion and bounded CSV/XLSX review/confirm/downloads. Migration `0018_product_categories` starts empty after Headquarter. The legacy browser-local allergen dataset and procurement retain separate untouched local category IDs. See `docs/product-category-master.md`; managed migration requires separate approval.

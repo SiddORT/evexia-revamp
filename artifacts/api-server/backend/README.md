@@ -784,9 +784,28 @@ The spec server URL `/api` plus relative `/v1/...` paths produces exactly
 
 Settings → Role URLs now separates shared primary configuration, exact TXT
 ownership verification, explicit admission and operator-approved recovery access.
-The coordinated release is `0037_domain_admission` (operator-only). See
+The domain-admission migration is `0037_domain_admission` (operator-only). See
 [domain-admission.md](../../../docs/domain-admission.md) before any rollout.
 Legacy mappings are preserved, not grandfathered as verified or admitted.
 Production startup requires `PORTAL_BOOTSTRAP_HOSTS`; every server entrypoint
 must disable Uvicorn proxy-header processing. No managed migration, DNS change,
 deployment or deployment-triggering push is performed by the implementation.
+
+## Shared Purchase Orders
+
+The application schema target is now `0038_purchase_orders`, an operator-only
+successor. **Managed activation is blocked pending separate operator approval.**
+No existing fresh-install/domain approval automatically authorizes this
+migration. It adds empty shared procurement tables and audit-linked metadata;
+legacy browser PO/PR records are never migrated or read as fallback.
+
+Protected Super Admin endpoints under `/api/v1/admin/purchase-orders` include
+create/list/detail, versioned edit/delete, review, shared reference/filter
+choices, global overview, activity and analytics. Only create/list and the two
+reporting tabs are connected to UI. See
+[purchase-order-backend.md](../../../docs/purchase-order-backend.md) for exact
+rounding, review conflicts, retry identities and deferred workflow boundaries.
+Run only the focused API test with
+`sh scripts/test-api-foundation.sh tests/test_purchase_orders.py` from the root;
+the requested narrow authenticated browser check has its own
+`sh scripts/test-purchase-orders-smoke.sh` fixture.

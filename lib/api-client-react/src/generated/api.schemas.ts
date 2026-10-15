@@ -3533,6 +3533,183 @@ export interface OpeningBalanceVersion {
   expected_version: number;
 }
 
+export interface POActivityEvent {
+  action: string;
+  actor: string;
+  at: string;
+  id: string;
+  number: string;
+  orderId: string;
+  summary: string;
+}
+
+export interface POActivityPage {
+  filtered: number;
+  items: POActivityEvent[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export interface POMutationCounts {
+  created: number;
+  deleted: number;
+  updated: number;
+}
+
+export interface POVendorValue {
+  amount: number;
+  count: number;
+  id: string;
+  name: string;
+}
+
+export interface POAnalytics {
+  counts: POMutationCounts;
+  vendors: POVendorValue[];
+}
+
+export interface POLineInput {
+  productId: string;
+  /**
+   * @maxLength 11
+   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   */
+  quantity: string;
+}
+
+export interface POCreate {
+  expectedDate: string;
+  idempotencyKey: string;
+  /**
+   * @minItems 1
+   * @maxItems 100
+   */
+  lines: POLineInput[];
+  locationId: string;
+  poDate: string;
+  /** @pattern ^[0-9a-f]{64}$ */
+  reviewToken: string;
+  vendorId: string;
+}
+
+export interface PODelete {
+  /** @minimum 1 */
+  expected_version: number;
+  idempotencyKey: string;
+}
+
+export interface POEdit {
+  expectedDate: string;
+  /** @minimum 1 */
+  expected_version: number;
+  idempotencyKey: string;
+  /**
+   * @minItems 1
+   * @maxItems 100
+   */
+  lines: POLineInput[];
+  locationId: string;
+  poDate: string;
+  /** @pattern ^[0-9a-f]{64}$ */
+  reviewToken: string;
+  vendorId: string;
+}
+
+export interface POInput {
+  expectedDate: string;
+  /**
+   * @minItems 1
+   * @maxItems 100
+   */
+  lines: POLineInput[];
+  locationId: string;
+  poDate: string;
+  vendorId: string;
+}
+
+export interface POLineResponse {
+  gst: string;
+  gstAmount: number;
+  id?: string | null;
+  productId: string;
+  productName: string;
+  quantity: string;
+  subtotal: number;
+  total: number;
+  unitPrice: string;
+}
+
+export interface POOverview {
+  changes: number;
+  lineCount: number;
+  openCount: number;
+  openValue: number;
+  vendorCount: number;
+}
+
+export interface POResponse {
+  createdAt: string;
+  deletedAt: string | null;
+  expectedDate: string;
+  gstAmount: number;
+  id: string;
+  lines: POLineResponse[];
+  locationId: string;
+  locationName: string;
+  number: string;
+  poDate: string;
+  status: string;
+  subtotal: number;
+  total: number;
+  updatedAt: string;
+  vendorId: string;
+  vendorName: string;
+  version: number;
+}
+
+export interface POPage {
+  filtered: number;
+  items: POResponse[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export interface POReference {
+  gst?: string | null;
+  id: string;
+  name: string;
+  unitPrice?: string | null;
+  version?: number | null;
+}
+
+export interface POReferencePage {
+  filtered: number;
+  items: POReference[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export interface POReviewOrder {
+  expectedDate: string;
+  gstAmount: number;
+  lines: POLineResponse[];
+  locationId: string;
+  locationName: string;
+  poDate: string;
+  subtotal: number;
+  total: number;
+  vendorId: string;
+  vendorName: string;
+}
+
+export interface POReview {
+  order: POReviewOrder;
+  reviewToken: string;
+}
+
 export interface PatientChoice {
   id: string;
   mrName: string;
@@ -8445,6 +8622,99 @@ export const DownloadProductCategorySampleFormat = {
   csv: "csv",
   xlsx: "xlsx",
 } as const;
+
+export type ListPurchaseOrdersParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ListPurchaseOrdersStatus;
+  vendor_id?: string | null;
+  product_id?: string | null;
+  from_date?: string | null;
+  to_date?: string | null;
+  sort?: ListPurchaseOrdersSort;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
+export type ListPurchaseOrdersStatus =
+  (typeof ListPurchaseOrdersStatus)[keyof typeof ListPurchaseOrdersStatus];
+
+export const ListPurchaseOrdersStatus = {
+  open: "open",
+  deleted: "deleted",
+  all: "all",
+} as const;
+
+export type ListPurchaseOrdersSort =
+  (typeof ListPurchaseOrdersSort)[keyof typeof ListPurchaseOrdersSort];
+
+export const ListPurchaseOrdersSort = {
+  recent: "recent",
+  oldest: "oldest",
+} as const;
+
+export type ListPurchaseOrderActivityParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
+export type ListPurchaseOrderFilterOptionsParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  selected_id?: string | null;
+};
+
+export type ListPurchaseOrderReferencesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  selected_id?: string | null;
+};
 
 export type ListDownloadLogsParams = {
   /**

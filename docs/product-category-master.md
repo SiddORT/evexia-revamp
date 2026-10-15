@@ -26,7 +26,8 @@ downgraded schema containing retained data. Downgrade drops this table, so
 it is not a data-preserving rollback or restoration procedure.
 
 The existing `services/productCategories.js` and `useProductCategories.js`
-remain intact for browser-local Allergen and procurement workflows. Those
+remain intact for legacy browser-local Allergen and procurement consumers. Live
+Purchase Orders now select server Allergen products (see `purchase-order-backend.md`). Those legacy
 local IDs, saved references, inventory and drafts are neither read by the live
 screens nor migrated/mirrored to the server. Live category changes do not
 affect demo inventory. Clearing browser storage cannot delete live records.

@@ -133,6 +133,7 @@ export default function PurchaseReceived() {
   const tabs = [['receipts', ClipboardCheck, 'Receipts'], ['activity', Activity, 'Activity'], ['analytics', BarChart3, 'Analytics']];
 
   return <AdminLayout title="Purchase Received"><div className="po-page">
+    <div className="admin-feedback" role="note">Legacy browser-local receiving only. These receipts, fulfillment figures and invoices are not evidence for server-backed Purchase Orders. Receiving server orders is not available yet; no server PO is imported here.</div>
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Receiving</p><h1>Purchase received</h1><p className="admin-page-head__description">Record goods received against saved purchase orders in this browser.</p></div><div className="po-head-actions">
       <button type="button" className="admin-button admin-button--secondary" onClick={refresh} data-testid="button-refresh-pr"><RefreshCw size={15} /> Refresh</button>
       <button type="button" className="admin-button" disabled={!snapshot || !canCreate} title={!canCreate ? 'This PO is deleted, unavailable or fully received.' : 'Create a receipt'} onClick={() => navigate(newPRPath)} data-testid="button-new-pr"><Plus size={16} /> New PR</button></div></div>

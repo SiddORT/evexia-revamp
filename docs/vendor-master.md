@@ -13,8 +13,10 @@ creates an empty `vendors` table. There are no startup schema writes, sample
 seeds, local migration, mirroring, ID remapping, or procurement rewrites.
 The old `evexia.admin.vendors.v1` collection and local PO/receipt snapshots,
 samples and vendor references remain owned by the legacy services. New server
-vendors do not populate demonstration procurement selectors. Explicitly
-importing a local backup creates **new** server IDs, not procurement links.
+vendors populate the live server-backed Purchase Order form, not legacy
+demonstration procurement selectors. Explicitly importing a local backup
+creates **new** server IDs, not links to legacy procurement. See
+`purchase-order-backend.md` for the live PO persistence boundary.
 
 Required business fields: Vendor Name and Contact Person Name (1–200
 characters), GST No. (15-character GST format), Registered Address (1–2,000),

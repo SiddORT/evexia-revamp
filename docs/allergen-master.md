@@ -13,8 +13,9 @@ are added.
 This is product catalogue metadata, **not inventory or a mixing operation**.
 The existing local allergen/category/location storage, obsolete local HSN values
 and procurement references are never initialized, migrated, mirrored, rewritten
-or deleted by these pages. Purchase Orders, Purchase Received, Stock Status and
-Move Stocks remain separate.
+or deleted by these pages. Live Purchase Orders select active shared Allergen
+products and snapshot catalogue selling price/GST; see `purchase-order-backend.md`.
+Legacy Purchase Received, Stock Status and Move Stocks remain separate.
 
 ## Rollout — operator approval required
 

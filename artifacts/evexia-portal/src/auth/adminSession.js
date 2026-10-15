@@ -644,6 +644,66 @@ export const headquarterRequest = (path, options) => masterRequest('headquarters
 export const productCategoryRequest = (path, options) => masterRequest('product-categories', path, options);
 export const openingBalanceRequest = (path, options) => masterRequest('opening-balances', path, options);
 
+// Procurement is not a master permission and never replays mutations silently.
+export async function purchaseOrderRequest(path = '', { body, params = {}, signal } = {}) {
+  if (!/^(?:|\/(?:overview|activity|analytics|preview)|\/(?:references|filter-options)\/(?:vendors|locations|products)|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete))?)$/i.test(path)) {
+    throw new SessionError('Unsupported purchase order operation.');
+  }
+  const epoch = generation;
+  const owner = state.user?.id;
+  const mutation = body !== undefined && !path.endsWith('/preview');
+  const check = () => {
+    signal?.throwIfAborted();
+    if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
+      throw new SessionError('Your session changed. Your draft is preserved; sign in again before retrying.', 401);
+    }
+    if (state.user.identity_kind !== 'super_admin' || !state.user.permissions.includes('admin.access')) {
+      throw new SessionError('Purchase orders are restricted to the protected Super Admin.', 403);
+    }
+  };
+  if (pending) await pending;
+  else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true, 'admin');
+  check();
+  const uncertain = () => {
+    const error = new SessionError(mutation
+      ? 'Save outcome is unconfirmed. Retry the same reviewed order to check or finish this save safely.'
+      : 'Unable to load purchase orders. Check your connection and retry.');
+    error.ambiguous = mutation;
+    return error;
+  };
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => { if (value !== '' && value != null) search.set(key, String(value)); });
+  let response, data;
+  try {
+    response = await fetch(`/api/v1/admin/purchase-orders${path}${search.size ? `?${search}` : ''}`, {
+      method: body === undefined ? 'GET' : 'POST', credentials: 'same-origin', cache: 'no-store',
+      headers: { Authorization: `Bearer ${token}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
+    });
+    data = await response.json();
+  } catch (error) { if (signal?.aborted) throw error; throw uncertain(); }
+  if (pending) await pending;
+  try { check(); } catch (error) { error.ambiguous = mutation; throw error; }
+  if (!response.ok) {
+    if (response.status === 401) {
+      await verifySession(true, 'admin');
+      const error = new SessionError('Session checked. Your draft is preserved; retry explicitly.', 401);
+      error.ambiguous = mutation;
+      throw error;
+    }
+    const error = new SessionError(response.status === 403 ? 'Purchase orders are restricted to the protected Super Admin.'
+      : response.status >= 500 ? uncertain().message
+      : typeof data?.error?.message === 'string' ? data.error.message
+      : 'Purchase order fields are invalid. Check dates, quantities and current references.', response.status);
+    error.code = data?.error?.code;
+    error.ambiguous = mutation && response.status >= 500;
+    throw error;
+  }
+  if (mutation && (!data?.id || !data?.number || !Array.isArray(data.lines))) throw uncertain();
+  return data;
+}
+
 export async function reportingRequest(resource, params = {}, { signal } = {}) {
   if (!['summary', 'users', 'sessions', 'events', 'activity', 'sessions/export', 'events/export', 'downloads', 'downloads/initiate'].includes(resource)) {
     throw new SessionError('Unsupported report.');

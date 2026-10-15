@@ -1,0 +1,148 @@
+import { getSession, purchaseOrderRequest } from '../auth/adminSession.js';
+
+const clean = (params) => Object.fromEntries(Object.entries(params || {}).filter(([, value]) => value !== '' && value != null));
+
+export const listPurchaseOrders = (params, signal) => purchaseOrderRequest('', { params: clean(params), signal });
+export const getPurchaseOrderOverview = (signal) => purchaseOrderRequest('/overview', { signal });
+export const listPurchaseOrderActivity = (params, signal) => purchaseOrderRequest('/activity', { params: clean(params), signal });
+export const getPurchaseOrderAnalytics = (signal) => purchaseOrderRequest('/analytics', { signal });
+export const listPurchaseOrderReferences = (kind, params, signal) => purchaseOrderRequest(`/references/${kind}`, { params: clean(params), signal });
+export const listPurchaseOrderFilterOptions = (kind, params, signal) => purchaseOrderRequest(`/filter-options/${kind}`, { params: clean(params), signal });
+export const previewPurchaseOrder = (input, signal) => purchaseOrderRequest('/preview', { body: input, signal });
+export const createPurchaseOrder = (input, reviewToken, idempotencyKey, signal) => purchaseOrderRequest('', { body: { ...input, reviewToken, idempotencyKey }, signal });
+
+/* ---------- errors ---------- */
+export const errorCode = (error) => error?.code || error?.detail?.code || error?.body?.code || error?.body?.detail?.code || '';
+export const isPermissionError = (error) => error?.status === 403;
+export const isStaleReview = (error) => error?.status === 409 && errorCode(error) === 'po_review_stale';
+export const isUncertain = (error) => typeof error?.ambiguous === 'boolean' ? error.ambiguous : (!error?.status || error.status >= 500 || error.status === 408);
+export function describeError(error, fallback) {
+  if (isPermissionError(error)) return 'Your account does not have permission to use purchase orders.';
+  return error?.message || fallback;
+}
+
+/* ---------- money display ---------- */
+const rupees = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export function formatPaise(paise) {
+  const value = Number(paise);
+  if (!Number.isFinite(value)) return '—';
+  return rupees.format(value / 100);
+}
+export function trimDecimal(text, min = 2) {
+  const value = String(text ?? '');
+  if (!/^\d+(?:\.\d+)?$/.test(value)) return value || '—';
+  const [whole, frac = ''] = value.split('.');
+  const trimmed = frac.replace(/0+$/, '').padEnd(min, '0');
+  return trimmed ? `${whole}.${trimmed}` : whole;
+}
+
+/* ---------- exact arithmetic (BigInt) ---------- */
+function parseScaled(text, scale) {
+  const value = String(text ?? '').trim();
+  const match = /^(\d+)(?:\.(\d+))?$/.exec(value);
+  if (!match || (match[2] || '').length > scale) return null;
+  return BigInt(match[1] + (match[2] || '').padEnd(scale, '0'));
+}
+const roundDiv = (numerator, divisor) => (numerator * 2n + divisor) / (divisor * 2n);
+
+export const MAX_LINES = 100;
+export const MAX_TOTAL_PAISE = 10000000000;
+const MAX_QTY = 1000000n * 1000n;
+const MAX_PRICE = 999999999999999999n; // 999999999999.999999 at scale 6
+const MAX_GST = 100n * 1000000n;
+
+export function parseQuantity(text) {
+  const value = parseScaled(text, 3);
+  return value === null || value <= 0n || value > MAX_QTY ? null : value;
+}
+
+/** Returns { subtotal, gstAmount, total } in integer paise, or null when inputs are not computable. */
+export function computeLine(quantityText, product) {
+  const qty = parseQuantity(quantityText);
+  if (qty === null || !product || product.unitPrice == null) return null;
+  const price = parseScaled(product.unitPrice, 6);
+  const gst = parseScaled(product.gst, 6);
+  if (price === null || price > MAX_PRICE || gst === null || gst > MAX_GST) return null;
+  const subtotal = roundDiv(qty * price, 10n ** 7n);
+  const gstAmount = roundDiv(subtotal * gst, 10n ** 8n);
+  const total = subtotal + gstAmount;
+  if (total > BigInt(MAX_TOTAL_PAISE)) return { overflow: true };
+  return { subtotal: Number(subtotal), gstAmount: Number(gstAmount), total: Number(total) };
+}
+
+/** Sum of rounded lines; null when no line is computable. overflow flags totals above the limit. */
+export function computeTotals(lines) {
+  const parts = lines.map((line) => computeLine(line.quantity, line.product));
+  if (!parts.length || parts.some((part) => !part || part.overflow)) {
+    return parts.some((part) => part?.overflow) ? { overflow: true } : null;
+  }
+  const sum = (key) => parts.reduce((acc, part) => acc + BigInt(part[key]), 0n);
+  const total = sum('total');
+  if (total > BigInt(MAX_TOTAL_PAISE)) return { overflow: true };
+  return { subtotal: Number(sum('subtotal')), gstAmount: Number(sum('gstAmount')), total: Number(total) };
+}
+
+/* ---------- dates ---------- */
+export function validDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+/* ---------- durable create identity (owner scoped, fails closed) ---------- */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const newKey = () => crypto.randomUUID();
+const ownerId = () => { const id = getSession()?.user?.id; return id ? String(id) : ''; };
+const pendingKey = () => `evexia.po.pending-create:${ownerId()}`;
+const isRef = (item) => item && typeof item.id === 'string' && typeof item.name === 'string';
+function validPending(p) {
+  return Boolean(p && typeof p === 'object' && typeof p.fingerprint === 'string' && UUID.test(p.key || '') && typeof p.reviewToken === 'string'
+    && p.owner === ownerId() && p.values && typeof p.values.poDate === 'string' && typeof p.values.expectedDate === 'string'
+    && isRef(p.values.vendor) && isRef(p.values.location) && Array.isArray(p.values.lines) && p.values.lines.length > 0 && p.values.lines.length <= MAX_LINES
+    && p.values.lines.every((line) => typeof line.key === 'string' && typeof line.quantity === 'string' && isRef(line.product))
+    && p.order && Array.isArray(p.order.lines) && ['subtotal', 'gstAmount', 'total'].every((k) => Number.isFinite(Number(p.order[k])))
+    && typeof p.order.vendorName === 'string' && typeof p.order.locationName === 'string');
+}
+/** Returns { status: 'none' | 'found' | 'blocked', pending?, message? }. Anything unreadable blocks creation. */
+export function loadPending() {
+  if (!ownerId()) return { status: 'blocked', message: 'Your session identity is unavailable, so a safe create cannot be started. Sign in again.' };
+  let raw;
+  try { raw = window.localStorage.getItem(pendingKey()); }
+  catch { return { status: 'blocked', message: 'Browser storage is unavailable, so a duplicate-safe create cannot be guaranteed. Enable storage and reload.' }; }
+  if (raw == null) return { status: 'none' };
+  try {
+    const pending = JSON.parse(raw);
+    if (validPending(pending)) return { status: 'found', pending };
+  } catch { /* falls through */ }
+  return { status: 'blocked', message: 'A saved create attempt could not be read. Creation stays locked so it cannot be duplicated; check the order list, then clear this site\'s stored data to continue.' };
+}
+export async function savePending(pending) {
+  const owner = ownerId();
+  if (!owner || !navigator.locks) return false;
+  try {
+    return await navigator.locks.request(`evexia-po-create:${owner}`, () => {
+      const stored = loadPending();
+      if (ownerId() !== owner || stored.status === 'blocked' ||
+          (stored.status === 'found' && (stored.pending.key !== pending.key || stored.pending.fingerprint !== pending.fingerprint))) return false;
+      window.localStorage.setItem(pendingKey(), JSON.stringify({ ...pending, owner }));
+      return true;
+    });
+  } catch { return false; }
+}
+export function clearPending() {
+  try { window.localStorage.removeItem(pendingKey()); return true; } catch { return false; }
+}
+
+/* ---------- confirmed-save marker (set only after a confirmed server response) ---------- */
+const SAVED_KEY = 'evexia.po.saved-notice';
+export function markSaved(order) {
+  try { window.sessionStorage.setItem(SAVED_KEY, JSON.stringify({ owner: ownerId(), number: String(order?.number || '') })); } catch { /* notice is optional */ }
+}
+export function consumeSaved() {
+  try {
+    const raw = window.sessionStorage.getItem(SAVED_KEY);
+    window.sessionStorage.removeItem(SAVED_KEY);
+    const value = JSON.parse(raw || 'null');
+    return value && value.owner === ownerId() ? value : null;
+  } catch { return null; }
+}

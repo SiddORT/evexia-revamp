@@ -27,3 +27,13 @@ Physical PostgreSQL replicas/clones can also share a cluster system identifier.
 **How to apply:** Bind approval to independently reviewed server/network and
 database identity. Keep target confirmation distinct from content checks and
 recovery evidence; do not claim that an identifier alone verifies the host.
+
+Reviewed fresh-install targets and manifests stay pinned when the application
+schema advances beyond them; a new additive feature does not widen that approval.
+
+**Why:** Fresh-install approval covers a specific reviewed migration sequence,
+not every later repository head, even when the successor adds unrelated tables.
+
+**How to apply:** Advance application readiness to its required head, classify
+the successor explicitly, and require separate operator approval for activation
+instead of silently updating an earlier runner's target or review hashes.

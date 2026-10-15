@@ -20,10 +20,11 @@ Readiness now checks the storage-location schema explicitly.
 
 Legacy `evexia.admin.storage-locations.v1` records are neither read as fallback,
 mirrored, overwritten nor silently migrated by this Master. To copy a saved
-backup, explicitly review and confirm its CSV. Allergen, Purchase Order and
-Purchase Received continue using the separate browser-local directory and IDs;
-server edits here do not change their selections, saved relationships, receipts,
-or inventory. Their datasets and services are unchanged.
+backup, explicitly review and confirm its CSV. Live Allergen and Purchase Order
+forms use shared locations; PO snapshots retain their saved labels after edits.
+Legacy browser-local procurement and Purchase Received retain separate IDs
+and unchanged datasets. Server edits never migrate or rewrite local receipts
+or inventory. See `purchase-order-backend.md` for the live procurement boundary.
 
 ## API and concurrency
 

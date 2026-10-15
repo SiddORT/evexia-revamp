@@ -1,4 +1,4 @@
-"""Shared catalogue only: never used by browser-local procurement."""
+"""Shared catalogue, including source prices/taxes for shared Purchase Orders."""
 import uuid
 from datetime import datetime
 from decimal import Decimal
