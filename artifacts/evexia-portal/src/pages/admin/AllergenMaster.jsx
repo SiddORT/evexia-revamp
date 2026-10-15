@@ -48,6 +48,7 @@ export default function AllergenMaster() {
   const [actionError, setActionError] = useState('');
   const hasFilters = Boolean(search || status !== 'all' || categoryId || locationId || mix !== 'all' || minPrice || maxPrice);
   const activeFilters = [search.trim() && 'search', status !== 'all' && 'status', mix !== 'all' && 'mix', categoryId && 'category', locationId && 'storage location', minPrice && 'minimum price', maxPrice && 'maximum price'].filter(Boolean);
+  const filterFeedback = [invalid ? 'Price bounds need correction' : loading ? 'Loading products…' : error ? 'Product counts unavailable' : hasFilters ? `${filtered} matching` : '', activeFilters.length > 0 ? `${activeFilters.join(', ')} applied` : ''].filter(Boolean).join(' · ');
   function correctPriceBounds() {
     filterDisclosure.current.open = true;
     document.getElementById(priceErrors.min ? 'allergen-min-price' : 'allergen-max-price')?.focus();
@@ -142,11 +143,11 @@ export default function AllergenMaster() {
         <div className="admin-allergen-toolbar__top">
         <div className="admin-allergen-toolbar__search-group">
         <button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={retry}>Refresh records</button>
-        <div className="admin-filter admin-allergen-filters__search"><label htmlFor="allergen-filter-search">Search products</label><div className="admin-search"><Search size={16} aria-hidden="true" /><input id="allergen-filter-search" aria-label="Search products by name, category, storage location or concentration" maxLength={200} value={search} onChange={reset(setSearch)} placeholder="Product, category, location or concentration" data-testid="input-search-allergens" /></div></div>
+        <div className="admin-filter admin-allergen-filters__search"><div className="admin-search"><Search size={16} aria-hidden="true" /><input id="allergen-filter-search" aria-label="Search products by name, category, storage location or concentration" maxLength={200} value={search} onChange={reset(setSearch)} placeholder="Product, category, location or concentration" data-testid="input-search-allergens" /></div></div>
         </div>
-        <span className="admin-allergen-filter-feedback" role="status" data-testid="text-allergen-filter-feedback">{invalid ? 'Price bounds need correction' : loading ? 'Loading products…' : error ? 'Product counts unavailable' : hasFilters ? `${filtered} matching · ${total} total products` : `${total} total products`}{activeFilters.length > 0 && ` · ${activeFilters.join(', ')} applied`}</span>
+        {filterFeedback && <span className="admin-allergen-filter-feedback" role="status" data-testid="text-allergen-filter-feedback">{filterFeedback}</span>}
         <div className="admin-allergen-filters__actions">
-          <button type="button" className="admin-button admin-button--secondary" disabled={!hasFilters} onClick={clearFilters} data-testid="button-clear-filters">Clear filters</button>
+          <button type="button" className="admin-button admin-button--secondary" disabled={!hasFilters} onClick={clearFilters} data-testid="button-clear-filters">Reset filters</button>
         </div>
         </div>
         <details ref={filterDisclosure} className="admin-allergen-filter-disclosure">
@@ -172,7 +173,7 @@ export default function AllergenMaster() {
               <p>Price {dash(r.selling_price)} · GST {r.gst}% · {r.concentration} · Threshold {dash(r.threshold_limit)} · <strong>{r.mix ? 'Mix' : 'No Mix'}</strong></p>
               <dl className="admin-zone-card__meta"><div><dt>Created</dt><dd>{audit(r.createdBy, r.createdAt)}</dd></div><div><dt>Updated</dt><dd>{audit(r.updatedBy, r.updatedAt)}</dd></div></dl>{actions(r, true)}
             </article>)}</div></>
-            : <div className="admin-empty"><strong>{total ? 'No matching products' : 'No allergen products yet'}</strong><p>{total ? 'Try other search text or clear a filter.' : 'Add your first shared product.'}</p>{total > 0 && hasFilters && <button type="button" className="admin-button admin-button--secondary" onClick={clearFilters}>Clear filters</button>}</div>}
+            : <div className="admin-empty"><strong>{total ? 'No matching products' : 'No allergen products yet'}</strong><p>{total ? 'Try other search text or clear a filter.' : 'Add your first shared product.'}</p>{total > 0 && hasFilters && <button type="button" className="admin-button admin-button--secondary" onClick={clearFilters}>Reset filters</button>}</div>}
           <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={filtered} total={total} label="products" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} testId="text-allergen-count" />
         </>}
     </section>
