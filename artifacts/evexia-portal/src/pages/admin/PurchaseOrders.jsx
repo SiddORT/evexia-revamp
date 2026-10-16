@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { Activity, BarChart3, ChevronDown, ClipboardList, Plus, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -60,6 +60,13 @@ export default function PurchaseOrders() {
   const [activityPage, setActivityPage] = useState(1);
   const [savedNotice] = useState(() => consumeSaved());
   const [showSaved, setShowSaved] = useState(Boolean(savedNotice));
+  const [freshness, setFreshness] = useState(0);
+  useEffect(() => {
+    const refresh = () => { if (!document.hidden) setFreshness((n) => n + 1); };
+    const timer = setInterval(refresh, 30000);
+    window.addEventListener('focus', refresh);
+    return () => { clearInterval(timer); window.removeEventListener('focus', refresh); };
+  }, []);
 
   useEffect(() => { const timer = setTimeout(() => setDebounced(search.trim()), 300); return () => clearTimeout(timer); }, [search]);
 
@@ -70,13 +77,13 @@ export default function PurchaseOrders() {
   const activeFilterCount = [filters.status !== 'open', filters.vendor, filters.product, from, to].filter(Boolean).length;
 
   const settled = search.trim() === debounced;
-  const [overview, reloadOverview] = useServerData((signal) => getPurchaseOrderOverview(signal), []);
+  const [overview, reloadOverview] = useServerData((signal) => getPurchaseOrderOverview(signal), [freshness]);
   const [orders, reloadOrders] = useServerData((signal) => listPurchaseOrders({
     query: debounced, status: filters.status, vendor_id: filters.vendor?.id, product_id: filters.product?.id, from_date: from, to_date: to,
     sort: filters.sort, limit: pageSize, offset: (page - 1) * pageSize,
-  }, signal), [debounced, filters.status, filters.vendor?.id, filters.product?.id, from, to, filters.sort, page, pageSize], tab === 'orders' && !rangeError && settled);
-  const [activity, reloadActivity] = useServerData((signal) => listPurchaseOrderActivity({ query: debounced, limit: pageSize, offset: (activityPage - 1) * pageSize }, signal), [debounced, activityPage, pageSize], tab === 'activity' && settled);
-  const [analytics, reloadAnalytics] = useServerData((signal) => getPurchaseOrderAnalytics(signal), [], tab === 'analytics');
+  }, signal), [debounced, filters.status, filters.vendor?.id, filters.product?.id, from, to, filters.sort, page, pageSize, freshness], tab === 'orders' && !rangeError && settled);
+  const [activity, reloadActivity] = useServerData((signal) => listPurchaseOrderActivity({ query: debounced, limit: pageSize, offset: (activityPage - 1) * pageSize }, signal), [debounced, activityPage, pageSize, freshness], tab === 'activity' && settled);
+  const [analytics, reloadAnalytics] = useServerData((signal) => getPurchaseOrderAnalytics(signal), [freshness], tab === 'analytics');
 
   const orderData = orders.data;
   const ordersFor = orderData ? Math.max(1, Math.ceil(orderData.filtered / pageSize)) : 1;
@@ -98,13 +105,14 @@ export default function PurchaseOrders() {
 
   const columns = [
     { key: 'serial', label: 'Sr. no.', render: (_order, index) => (page - 1) * pageSize + index + 1 },
-    { key: 'number', label: 'Purchase order', render: (order) => <><span className="po-number">{order.number}</span><span className="po-secondary">{order.lines.length} {order.lines.length === 1 ? 'item' : 'items'}</span></> },
+    { key: 'number', label: 'Purchase order', render: (order) => <><Link className="po-number po-link" href={`${BASE}/${order.id}`}>{order.number}</Link><span className="po-secondary">{order.lines.length} {order.lines.length === 1 ? 'item' : 'items'}</span></> },
     { key: 'vendor', label: 'Vendor', render: (order) => <strong>{order.vendorName}</strong> },
     { key: 'location', label: 'Deliver to', render: (order) => order.locationName },
     { key: 'date', label: 'PO date', render: (order) => displayDate(order.poDate) },
     { key: 'expected', label: 'Expected', render: (order) => displayDate(order.expectedDate) },
     { key: 'amount', label: 'Total incl. GST', render: (order) => <span className="po-amount" data-testid={`text-po-total-${order.id}`}>{formatPaise(order.total)}</span> },
     { key: 'status', label: 'Status', render: (order) => <span className={`po-status${order.status === 'deleted' ? ' po-status--draft' : ''}`}>{order.status}</span> },
+    { key: 'actions', label: 'Actions', render: (order) => <Link className="po-link" href={`${BASE}/${order.id}`}>View{order.status === 'open' ? ' / Edit / Delete' : ''}</Link> },
   ];
   const ov = overview.data;
   const card = (value) => overview.status === 'error' && !ov ? 'Unavailable' : ov ? value : '…';
@@ -152,7 +160,7 @@ export default function PurchaseOrders() {
           : !orderData ? <Skeleton label="Loading purchase orders" /> : <>
             {orders.status === 'error' && <div className="admin-feedback admin-feedback--error" role="alert">{orders.error} <button type="button" className="po-link" onClick={reloadOrders}>Retry</button></div>}
             {orderData.items.length ? <><div className="po-table"><DataTable columns={columns} rows={orderData.items} rowOffset={0} rowKey={(order) => order.id} label="Purchase orders" testIdPrefix="po" /></div>
-              <div className="po-mobile" role="list" aria-label="Purchase orders">{orderData.items.map((order, index) => <article className="po-card" key={order.id} role="listitem"><div className="po-card__top"><div><span className="po-secondary">Sr. no. {(page - 1) * pageSize + index + 1}</span><span className="po-number">{order.number}</span><h2>{order.vendorName}</h2><p>{order.locationName}</p></div><span className={`po-status${order.status === 'deleted' ? ' po-status--draft' : ''}`}>{order.status}</span></div><dl><div><dt>PO date</dt><dd>{displayDate(order.poDate)}</dd></div><div><dt>Expected</dt><dd>{displayDate(order.expectedDate)}</dd></div><div><dt>Items</dt><dd>{order.lines.length}</dd></div><div><dt>Total incl. GST</dt><dd className="po-amount">{formatPaise(order.total)}</dd></div></dl></article>)}</div></>
+              <div className="po-mobile" role="list" aria-label="Purchase orders">{orderData.items.map((order, index) => <article className="po-card" key={order.id} role="listitem"><div className="po-card__top"><div><span className="po-secondary">Sr. no. {(page - 1) * pageSize + index + 1}</span><Link className="po-number po-link" href={`${BASE}/${order.id}`}>{order.number}</Link><h2>{order.vendorName}</h2><p>{order.locationName}</p></div><span className={`po-status${order.status === 'deleted' ? ' po-status--draft' : ''}`}>{order.status}</span></div><dl><div><dt>PO date</dt><dd>{displayDate(order.poDate)}</dd></div><div><dt>Expected</dt><dd>{displayDate(order.expectedDate)}</dd></div><div><dt>Items</dt><dd>{order.lines.length}</dd></div><div><dt>Total incl. GST</dt><dd className="po-amount">{formatPaise(order.total)}</dd></div></dl><Link className="po-link" href={`${BASE}/${order.id}`}>View{order.status === 'open' ? ' / Edit / Delete' : ''}</Link></article>)}</div></>
               : <div className="admin-empty"><span className="admin-empty__icon"><ClipboardList size={21} aria-hidden="true" /></span><strong>{hasFilters ? 'No orders match these filters' : 'No purchase orders yet'}</strong><p>{hasFilters ? 'Change the filters or search to see more orders.' : 'Create your first order to start a procurement record.'}</p>{hasFilters ? <div className="po-actions" style={{ marginTop: 17 }}><button type="button" className="admin-button admin-button--secondary" onClick={clearFilters}>Clear filters</button></div> : <div className="po-actions" style={{ marginTop: 17 }}><button type="button" className="admin-button" onClick={() => navigate(`${BASE}/new`)}>Create purchase order</button></div>}</div>}
             <TablePagination page={page} pageCount={ordersFor} pageSize={pageSize} filtered={orderData.filtered} total={orderData.total} label={orderData.filtered === 1 ? 'order' : 'orders'} onPageChange={(next) => setPage(Math.min(Math.max(1, next), ordersFor))} onPageSizeChange={changePageSize} testId="text-po-count" />
           </>}
@@ -163,7 +171,7 @@ export default function PurchaseOrders() {
           : !activityData ? <Skeleton label="Loading activity" /> : <>
             {activity.status === 'error' && <div className="admin-feedback admin-feedback--error" role="alert">{activity.error} <button type="button" className="po-link" onClick={reloadActivity}>Retry</button></div>}
             {activityData.items.length ? <div className="po-activity">{activityData.items.map((event) => <article className="po-event" key={event.id}><div className="po-event__mark"><Activity size={14} aria-hidden="true" /></div><div><span className="po-number">{event.number}</span> <strong>· {event.action}</strong><p>{event.summary}</p>
-              <p className="po-event__attribution"><strong>{ACTION_LABEL[event.action] || 'By'}</strong> {actorName(event.actor)}<span aria-hidden="true"> · </span><time dateTime={event.at}>{displayTime(event.at)}</time></p></div></article>)}</div>
+              <p className="po-event__attribution"><strong>{ACTION_LABEL[event.action] || 'By'}</strong> {actorName(event.actor)}<span aria-hidden="true"> · </span><time dateTime={event.at}>{displayTime(event.at)}</time></p><Link className="po-link" href={`${BASE}/${event.orderId}`}>View {event.number}</Link></div></article>)}</div>
               : <div className="admin-empty"><span className="admin-empty__icon"><Activity size={21} aria-hidden="true" /></span><strong>No activity to show</strong><p>{debounced ? 'Try a different search.' : 'Order changes will appear here after your first purchase order.'}</p></div>}
             <TablePagination page={activityPage} pageCount={activityFor} pageSize={pageSize} filtered={activityData.filtered} total={activityData.total} label={activityData.filtered === 1 ? 'event' : 'events'} onPageChange={(next) => setActivityPage(Math.min(Math.max(1, next), activityFor))} onPageSizeChange={changePageSize} testId="text-po-activity-count" />
           </>}

@@ -57,13 +57,23 @@ not distinct orders, and groups Open GST-inclusive value by retained vendor
 identity/name. A renamed vendor can have separately labeled historical groups;
 the global distinct-vendor count uses the retained master identity.
 
-The API includes versioned edit/delete and edit-preview for focused CRUD checks;
-those actions are intentionally **not wired to the UI**. An edit retains names,
-prices and taxes for retained references/products; new selections are validated
-under locks. There is no supplier submission, receiving, stock/payment effect,
-invoice preview/PDF, status transition, sample loader or live detail workflow.
-Direct PO detail links show an explicit deferred screen. Legacy receiving
-retains its separate data and is labeled as such, not backend evidence.
+Protected Super Admin UI now includes server detail, versioned edit-preview/update
+and confirmed soft deletion. Desktop/mobile list links and readable Activity links
+open the saved record, including deleted records in read-only mode. An edit
+retains names, prices and taxes for retained references/products; new selections
+are validated under locks. Every edit requires a new server review. A stale
+version preserves the draft but blocks saving until the operator explicitly
+discards it and reloads the latest order. Unconfirmed edit/delete requests retain
+their owner/order-scoped durable retry key, exact version and payload across
+reloads; editing stays locked until reconciliation. Unreadable/unavailable retry
+storage fails closed. Successful changes update detail immediately; listing,
+global cards, Activity and Analytics refetch on mount, visible-window focus and
+every 30 seconds. Active editors are never refreshed underneath a draft.
+
+There is no supplier submission, receiving, stock/payment effect, invoice
+preview/PDF, status transition or sample loader. Legacy receiving retains its
+separate untouched data and is not backend evidence. Managed activation approval
+remains separate; this UI does not apply the operator-only migration.
 
 ## Focused checks only
 
@@ -73,6 +83,32 @@ retains its separate data and is labeled as such, not backend evidence.
 Both use private disposable socket-only PostgreSQL with synthetic accounts
 and keys. The smoke command runs only the new PO Chromium spec, not existing
 regression suites or the root build/release gate.
+
+### Saved-order UI verification (2026-10-16)
+
+- Portal Vite production compilation passed. Retry-storage unit check passed:
+  `node --test artifacts/evexia-portal/tests/purchase-order-retry.test.mjs`.
+  It checks owner isolation, matching browser locks for writes/clears, conflicting
+  attempts, corrupt/unavailable storage and missing-lock rejection.
+- Targeted disposable-database Chromium journey:
+  `EVEXIA_CHROMIUM_PATH=<installed chromium> sh scripts/test-purchase-orders-smoke.sh purchase-orders-mutations.spec.mjs`.
+  Detail, retained duplicate-product snapshots, current-catalogue price changes,
+  edit review/save and overview were observed in the initial partial run.
+  A test-only Activity locator ambiguity was corrected; the continuation prepared
+  the already-verified version-2 state through server services and passed the
+  remaining journey (**1 passed**). It verified Activity/Analytics refresh,
+  competing-update rejection with draft preservation, confirmed reload,
+  response-loss edit/delete retries with identical payload/version/key and
+  nonduplicated audit events, nonmutating deletion cancellation, deleted read-only
+  detail, Open/Deleted visibility, mobile links and readable Activity links.
+- The fixture's default browser executable was absent; the continuation used an
+  installed Chromium binary. No Firefox/Safari matrix, enlarged-text matrix,
+  managed migration or production rollout was performed for these UI changes.
+  Completion attempted `pnpm run validate:release`: its service/API checks ran,
+  but the broad browser stage stopped before launch because its configured Nix
+  browser-library source directory did not exist. The full release gate did not
+  pass; task acceptance records that environment limitation separately from the
+  passing focused PO checks. Managed activation remains separate.
 
 ### Implementation verification (2026-10-15)
 

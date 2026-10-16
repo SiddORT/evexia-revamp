@@ -57,4 +57,4 @@ for _ in $(seq 1 60); do
   sleep 1
 done
 curl -fsS "http://127.0.0.1:$API_PORT/api/v1/health/readiness" >/dev/null
-pnpm exec playwright test --config=playwright.purchase-orders.config.mjs --workers=1 --retries=0 --output=generated-artifacts/po-smoke
+pnpm exec playwright test --config=playwright.purchase-orders.config.mjs --workers=1 --retries=0 --output=generated-artifacts/po-smoke "$@"

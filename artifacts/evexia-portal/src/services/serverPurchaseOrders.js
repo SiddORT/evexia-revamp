@@ -10,6 +10,58 @@ export const listPurchaseOrderReferences = (kind, params, signal) => purchaseOrd
 export const listPurchaseOrderFilterOptions = (kind, params, signal) => purchaseOrderRequest(`/filter-options/${kind}`, { params: clean(params), signal });
 export const previewPurchaseOrder = (input, signal) => purchaseOrderRequest('/preview', { body: input, signal });
 export const createPurchaseOrder = (input, reviewToken, idempotencyKey, signal) => purchaseOrderRequest('', { body: { ...input, reviewToken, idempotencyKey }, signal });
+export const getPurchaseOrder = (id, signal) => purchaseOrderRequest(`/${id}`, { signal });
+export const previewPurchaseOrderEdit = (id, input) => purchaseOrderRequest(`/${id}/preview`, { body: input });
+export const updatePurchaseOrder = (id, input, version, reviewToken, idempotencyKey) => purchaseOrderRequest(`/${id}/edit`, { body: { ...input, expected_version: version, reviewToken, idempotencyKey } });
+export const deletePurchaseOrder = (id, version, idempotencyKey) => purchaseOrderRequest(`/${id}/delete`, { body: { expected_version: version, idempotencyKey } });
+export const isStaleOrder = (error) => error?.status === 409 && errorCode(error) === 'po_stale';
+
+/* Edit/delete retries are durable and scoped to owner + order, never local PO records. */
+const mutationKey = (id) => `evexia.po.pending-mutation:${ownerId()}:${id}`;
+export function loadOrderMutation(id) {
+  try {
+    if (!ownerId()) throw new Error();
+    const raw = window.localStorage.getItem(mutationKey(id));
+    if (raw === null) return { status: 'none' };
+    const p = JSON.parse(raw);
+    if (p.owner !== ownerId() || p.id !== id || !UUID.test(p.key) || !['edit', 'delete'].includes(p.operation)
+      || !Number.isInteger(p.version) || p.version < 1
+      || (p.operation === 'edit' && (!validPending(p) || !/^[0-9a-f]{64}$/.test(p.reviewToken)
+        || !Array.isArray(p.order.lines) || p.order.lines.length < 1
+        || !p.order.lines.every((line) => line && typeof line.productName === 'string' && typeof line.quantity === 'string'
+          && typeof line.unitPrice === 'string' && typeof line.gst === 'string'
+          && ['subtotal', 'gstAmount', 'total'].every((key) => Number.isSafeInteger(line[key])))))) throw new Error();
+    return { status: 'found', pending: p };
+  } catch {
+    return { status: 'blocked', message: 'The saved retry state cannot be read. Changes are locked to avoid repeating an unconfirmed action. Restore browser storage access and reload; do not clear retry data without checking the saved order.' };
+  }
+}
+export async function saveOrderMutation(id, pending) {
+  const owner = ownerId();
+  if (!owner || !navigator.locks) return false;
+  try {
+    return await navigator.locks.request(`evexia-po-mutation:${owner}:${id}`, () => {
+      const current = loadOrderMutation(id);
+      if (ownerId() !== owner || current.status === 'blocked' || (current.status === 'found' && JSON.stringify(current.pending) !== JSON.stringify({ ...pending, owner, id }))) return false;
+      window.localStorage.setItem(mutationKey(id), JSON.stringify({ ...pending, owner, id }));
+      return true;
+    });
+  } catch { return false; }
+}
+export async function clearOrderMutation(id, key) {
+  const owner = ownerId();
+  if (!owner || !navigator.locks) return false;
+  try {
+    return await navigator.locks.request(`evexia-po-mutation:${owner}:${id}`, () => {
+      if (ownerId() !== owner) return false;
+      const state = loadOrderMutation(id);
+      if (state.status === 'none') return true;
+      if (state.status !== 'found' || state.pending.key !== key) return false;
+      window.localStorage.removeItem(mutationKey(id));
+      return true;
+    });
+  } catch { return false; }
+}
 
 /* ---------- errors ---------- */
 export const errorCode = (error) => error?.code || error?.detail?.code || error?.body?.code || error?.body?.detail?.code || '';

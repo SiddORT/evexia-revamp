@@ -1,11 +1,13 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, ClipboardList, Plus, X } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import PurchaseOrderReferenceSelect from '../../components/admin/PurchaseOrderReferenceSelect.jsx';
+import { interceptNavigation, setNavigationGuard } from '../../auth/navigationGuard.js';
 import {
   MAX_LINES, MAX_TOTAL_PAISE, clearPending, computeLine, computeTotals, createPurchaseOrder, describeError, formatPaise, isStaleReview,
   isUncertain, loadPending, markSaved, newKey, parseQuantity, previewPurchaseOrder, savePending, trimDecimal, validDate,
+  clearOrderMutation, isStaleOrder, loadOrderMutation, previewPurchaseOrderEdit, saveOrderMutation, updatePurchaseOrder,
 } from '../../services/serverPurchaseOrders.js';
 import '../../mr.css';
 import '../../purchaseOrders.css';
@@ -42,7 +44,7 @@ function Field({ id, label, error, children }) {
   return <div className="po-field"><label htmlFor={id}>{label} <span className="mr-form__required">*</span></label>{children}{error && <p id={`${id}-error`} className="mr-form__error" role="alert">{error}</p>}</div>;
 }
 
-function LineTable({ lines, figures }) {
+export function LineTable({ lines, figures }) {
   return <div className="po-items-table" role="region" aria-label="Purchase order item summary" tabIndex={0}>
     <p className="po-items-table__scroll-hint">Swipe across to see prices and totals →</p>
     <table>
@@ -60,23 +62,61 @@ function LineTable({ lines, figures }) {
   </div>;
 }
 
-function Editor({ onCancel, onSaved }) {
-  const [loaded] = useState(() => loadPending());
+const fromSaved = (order) => ({
+  poDate: order.poDate, expectedDate: order.expectedDate,
+  vendor: { id: order.vendorId, name: order.vendorName }, location: { id: order.locationId, name: order.locationName },
+  lines: order.lines.map((line) => ({ key: line.id || newKey(), quantity: line.quantity, product: { id: line.productId, name: line.productName, unitPrice: line.unitPrice, gst: line.gst } })),
+});
+
+export function Editor({ order, onCancel, onSaved, onReload }) {
+  const editing = Boolean(order);
+  const [loaded] = useState(() => editing ? loadOrderMutation(order.id) : loadPending());
   const restored = loaded.status === 'found' ? loaded.pending : null;
   const blocked = loaded.status === 'blocked' ? loaded.message : '';
-  const pendingRef = useRef(restored ? { fingerprint: restored.fingerprint, key: restored.key } : null);
-  const [values, setValues] = useState(() => restored?.values || { poDate: today(), expectedDate: '', vendor: null, location: null, lines: [blankLine()] });
+  const pendingRef = useRef(restored || null);
+  const [values, setValues] = useState(() => restored?.values || (editing ? fromSaved(order) : { poDate: today(), expectedDate: '', vendor: null, location: null, lines: [blankLine()] }));
+  const baseline = useRef(JSON.stringify(values));
   const [errors, setErrors] = useState({});
-  const [notice, setNotice] = useState(restored ? 'A previous create attempt did not return a confirmed result. Retry it to confirm whether it was saved; nothing is duplicated.' : '');
+  const [notice, setNotice] = useState(restored ? 'A previous save attempt did not return a confirmed result. Retry it to confirm whether it was saved; nothing is duplicated.' : '');
   const [saveError, setSaveError] = useState('');
   const [review, setReview] = useState(restored ? { order: restored.order, token: restored.reviewToken } : null);
   const [uncertain, setUncertain] = useState(Boolean(restored));
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
+  const [conflict, setConflict] = useState(false);
   const locked = uncertain || busy || Boolean(blocked);
   const figures = computeTotals(values.lines);
   const draft = values.lines.map((line) => computeLine(line.quantity, line.product));
   const hasErrors = Object.values(errors).some(Boolean);
+  const navigation = useRef({});
+  navigation.current = { busy, dirty: JSON.stringify(values) !== baseline.current || Boolean(review), uncertain };
+  useEffect(() => {
+    const canLeave = () => {
+      const state = navigation.current;
+      if (state.busy) return false;
+      return !(state.dirty || state.uncertain) || window.confirm(state.uncertain
+        ? 'This save is unconfirmed. Leave now? Reopen this order to retry the same request.'
+        : 'Discard the unsaved purchase order changes?');
+    };
+    const release = setNavigationGuard(() => {
+      if (canLeave()) return false;
+      return true;
+    });
+    const warn = (event) => { if (navigation.current.busy || navigation.current.dirty || navigation.current.uncertain) { event.preventDefault(); event.returnValue = ''; } };
+    const links = (event) => {
+      const anchor = event.target.closest?.('a[href]');
+      if (anchor && !event.defaultPrevented && !canLeave()) { event.preventDefault(); event.stopPropagation(); }
+    };
+    window.addEventListener('beforeunload', warn);
+    document.addEventListener('click', links, true);
+    return () => { release(); window.removeEventListener('beforeunload', warn); document.removeEventListener('click', links, true); };
+  }, []);
+  const cancel = () => {
+    if (busyRef.current) return;
+    if (JSON.stringify(values) !== baseline.current && !window.confirm('Discard the unsaved purchase order changes?')) return;
+    navigation.current = {};
+    onCancel();
+  };
 
   const edit = (patch, clear = []) => {
     if (locked) return;
@@ -100,7 +140,7 @@ function Editor({ onCancel, onSaved }) {
     if (Object.keys(found).length) { document.getElementById('po-form-errors')?.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
     busyRef.current = true; setBusy(true);
     try {
-      const result = await previewPurchaseOrder(toInput(values));
+      const result = await (editing ? previewPurchaseOrderEdit(order.id, toInput(values)) : previewPurchaseOrder(toInput(values)));
       setReview({ order: result.order, token: result.reviewToken });
       setNotice('');
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -117,25 +157,33 @@ function Editor({ onCancel, onSaved }) {
     const fingerprint = JSON.stringify({ input, token: review.token });
     if (pendingRef.current?.fingerprint !== fingerprint) pendingRef.current = { fingerprint, key: newKey() };
     const { key } = pendingRef.current;
-    if (!await savePending({ fingerprint, key, values, order: review.order, reviewToken: review.token })) {
+    const attempt = editing
+      ? { fingerprint, key, values, order: review.order, reviewToken: review.token, operation: 'edit', version: restored?.version || order.version }
+      : { fingerprint, key, values, order: review.order, reviewToken: review.token };
+    const clearAttempt = () => editing ? clearOrderMutation(order.id, key) : clearPending();
+    if (!await (editing ? saveOrderMutation(order.id, attempt) : savePending(attempt))) {
       busyRef.current = false; setBusy(false);
-      setSaveError('A safe retry identity could not be stored, or another tab has a pending order. Nothing was sent. Enable storage or reopen New purchase order to reconcile the pending attempt.');
+      setSaveError('A safe retry identity could not be stored, or another tab has a pending order. Nothing was sent. Enable storage or reopen this form to reconcile the pending attempt.');
       return;
     }
     try {
-      const saved = await createPurchaseOrder(input, review.token, key);
-      clearPending(); pendingRef.current = null;
+      const saved = await (editing ? updatePurchaseOrder(order.id, input, attempt.version, review.token, key) : createPurchaseOrder(input, review.token, key));
+      await clearAttempt(); pendingRef.current = null;
+      navigation.current = {};
       markSaved(saved);
       onSaved(saved);
     } catch (cause) {
-      if (isStaleReview(cause)) {
-        clearPending(); pendingRef.current = null; setUncertain(false); setReview(null);
+      if (isStaleOrder(cause)) {
+        await clearAttempt(); pendingRef.current = null; setUncertain(false); setReview(null); setConflict(true);
+        setSaveError('Another session changed or deleted this order. Your draft is kept, but cannot overwrite it. Reload the latest saved order before making a new edit.');
+      } else if (isStaleReview(cause)) {
+        await clearAttempt(); pendingRef.current = null; setUncertain(false); setReview(null);
         setSaveError('Catalogue prices or references changed since your review. Your draft is kept; review the order again to see current amounts.');
       } else if (isUncertain(cause)) {
         setUncertain(true);
         setSaveError('The server did not confirm whether this order was saved. Retry to confirm; the same request identity is reused so no duplicate is created.');
       } else {
-        clearPending(); pendingRef.current = null; setUncertain(false);
+        await clearAttempt(); pendingRef.current = null; setUncertain(false);
         setSaveError(describeError(cause, 'The order could not be saved. Your draft is kept.'));
       }
     } finally { busyRef.current = false; setBusy(false); }
@@ -148,11 +196,13 @@ function Editor({ onCancel, onSaved }) {
       : null;
   };
 
-  return <section className="admin-panel po-new" aria-label="New purchase order">
+  return <section className="admin-panel po-new" aria-label={editing ? 'Edit purchase order' : 'New purchase order'}>
     <div className="po-form-intro"><div><h2>{review ? 'Review before saving' : 'Order details'}</h2><p>{review ? 'Nothing has been saved yet. Amounts below are calculated by the server.' : 'Required fields are marked *. Prices and GST come from the product catalogue.'}</p></div><ClipboardList size={21} color="var(--admin-accent)" aria-hidden="true" /></div>
     {notice && <div className="admin-feedback" role="status" style={{ margin: 18 }}>{notice}</div>}
     {blocked && <div className="admin-feedback admin-feedback--error" role="alert" style={{ margin: 18 }}>{blocked}</div>}
     {saveError && <div className="admin-feedback admin-feedback--error" role="alert" style={{ margin: 18 }}>{saveError}</div>}
+    {editing && <p className="po-review__note" style={{ margin: 18 }}>Retained products keep their saved names, prices and GST, even if their master records are no longer available. Newly selected products use the current catalogue.</p>}
+    {conflict && <button type="button" className="admin-button" onClick={() => { if (window.confirm('Discard this draft and reload the latest saved order?')) { navigation.current = {}; onReload(); } }}>Reload latest order</button>}
     {review ? <>
       <div className="po-review"><p className="po-review__note">Confirming saves this order on the server. It does not send an order to a supplier.</p>
         <dl className="po-detail-grid"><div><dt>Vendor</dt><dd>{review.order.vendorName}</dd></div><div><dt>Storage location</dt><dd>{review.order.locationName}</dd></div><div><dt>PO date</dt><dd>{displayDate(review.order.poDate)}</dd></div><div><dt>Expected delivery</dt><dd>{displayDate(review.order.expectedDate)}</dd></div></dl>
@@ -161,7 +211,7 @@ function Editor({ onCancel, onSaved }) {
       <LineTable lines={review.order.lines} figures={review.order} />
       <div className="po-form-footer"><span>{uncertain ? 'Editing is locked until this exact request is confirmed.' : 'The order is saved only after the server confirms it.'}</span><div className="po-actions">
         {!uncertain && <button type="button" disabled={busy} className="admin-button admin-button--secondary" onClick={() => { setReview(null); setSaveError(''); }} data-testid="button-back-po-draft">Back to draft</button>}
-        <button type="button" disabled={busy || Boolean(blocked)} className="admin-button" onClick={save} data-testid="button-confirm-po">{busy ? 'Saving…' : uncertain ? 'Retry and confirm' : 'Create purchase order'}</button></div></div>
+        <button type="button" disabled={busy || Boolean(blocked) || conflict} className="admin-button" onClick={save} data-testid="button-confirm-po">{busy ? 'Saving…' : uncertain ? 'Retry and confirm' : editing ? 'Save changes' : 'Create purchase order'}</button></div></div>
     </> : <form onSubmit={runReview} noValidate className="po-new-form">
       <div className="po-new-layout">
         <aside className="po-new-summary" aria-label="Order totals"><h3>Order totals</h3>
@@ -172,10 +222,10 @@ function Editor({ onCancel, onSaved }) {
           <fieldset className="po-group" disabled={locked}><legend>Vendor and delivery</legend>
             <div className="po-group__grid">
               <Field id="po-vendor" label="Vendor" error={errors.vendorId}>
-                <PurchaseOrderReferenceSelect id="po-vendor" kind="vendors" label="Vendor" selected={values.vendor} placeholder="Select vendor" invalid={errors.vendorId} describedBy={errors.vendorId ? 'po-vendor-error' : undefined} onChange={(item) => edit({ vendor: item }, ['vendorId'])} />
+                <PurchaseOrderReferenceSelect id="po-vendor" kind="vendors" label="Vendor" selected={values.vendor} placeholder="Select vendor" invalid={errors.vendorId} describedBy={errors.vendorId ? 'po-vendor-error' : undefined} onChange={(item) => edit({ vendor: editing && item?.id === order.vendorId ? { id: order.vendorId, name: order.vendorName } : item }, ['vendorId'])} />
               </Field>
               <Field id="po-location" label="Storage location" error={errors.locationId}>
-                <PurchaseOrderReferenceSelect id="po-location" kind="locations" label="Storage location" selected={values.location} placeholder="Select storage location" invalid={errors.locationId} describedBy={errors.locationId ? 'po-location-error' : undefined} onChange={(item) => edit({ location: item }, ['locationId'])} />
+                <PurchaseOrderReferenceSelect id="po-location" kind="locations" label="Storage location" selected={values.location} placeholder="Select storage location" invalid={errors.locationId} describedBy={errors.locationId ? 'po-location-error' : undefined} onChange={(item) => edit({ location: editing && item?.id === order.locationId ? { id: order.locationId, name: order.locationName } : item }, ['locationId'])} />
               </Field>
             </div>
             <div className="po-group__dates">
@@ -192,7 +242,10 @@ function Editor({ onCancel, onSaved }) {
                   <button type="button" className="po-action po-action--danger" disabled={values.lines.length === 1 || locked} onClick={() => { edit({ lines: values.lines.filter((_, i) => i !== index) }); setErrors({}); }} data-testid={`button-remove-po-line-${index}`}><X size={14} aria-hidden="true" /> Remove</button></div>
                 <div className="po-new-line__fields">
                   <div className="po-new-line__product"><Field id={`po-product-${index}`} label="Product" error={errors[`lines.${index}.productId`]}>
-                    <PurchaseOrderReferenceSelect id={`po-product-${index}`} kind="products" label="Product" selected={product} placeholder="Select product" invalid={errors[`lines.${index}.productId`]} describedBy={errors[`lines.${index}.productId`] ? `po-product-${index}-error` : undefined} onChange={(item) => editLine(index, { product: item }, ['productId'])} />
+                    <PurchaseOrderReferenceSelect id={`po-product-${index}`} kind="products" label="Product" selected={product} placeholder="Select product" invalid={errors[`lines.${index}.productId`]} describedBy={errors[`lines.${index}.productId`] ? `po-product-${index}-error` : undefined} onChange={(item) => {
+                      const retained = editing && order.lines.find((saved) => saved.productId === item?.id);
+                      editLine(index, { product: retained ? { id: retained.productId, name: retained.productName, unitPrice: retained.unitPrice, gst: retained.gst } : item }, ['productId']);
+                    }} />
                   </Field>{productHint(line, index) && !errors[`lines.${index}.productId`] ? productHint(line, index) : null}</div>
                   <Field id={`po-quantity-${index}`} label="Quantity" error={errors[`lines.${index}.quantity`]}><input id={`po-quantity-${index}`} className="mr-form__control" type="text" inputMode="decimal" placeholder="1" value={line.quantity} onChange={(e) => editLine(index, { quantity: e.target.value }, ['quantity'])} aria-invalid={Boolean(errors[`lines.${index}.quantity`])} aria-describedby={errors[`lines.${index}.quantity`] ? `po-quantity-${index}-error` : undefined} data-testid={`input-po-quantity-${index}`} /></Field>
                   <div className="po-field"><label htmlFor={`po-price-${index}`}>Unit price (₹)</label><input id={`po-price-${index}`} className="mr-form__control" readOnly tabIndex={-1} value={!product ? '' : product.unitPrice == null ? 'Unavailable' : trimDecimal(product.unitPrice)} placeholder="From catalogue" aria-readonly="true" data-testid={`input-po-price-${index}`} /></div>
@@ -206,18 +259,16 @@ function Editor({ onCancel, onSaved }) {
           </fieldset>
         </div>
       </div>
-      <div className="po-form-footer"><span>The server reviews the order before anything is saved.</span><div className="po-actions"><button type="button" className="admin-button admin-button--secondary" onClick={onCancel} data-testid="button-cancel-po">Cancel</button><button type="submit" disabled={busy} className="admin-button" data-testid="button-review-po">{busy ? 'Reviewing…' : 'Review order'}</button></div></div>
+      <div className="po-form-footer"><span>The server reviews the order before anything is saved.</span><div className="po-actions"><button type="button" disabled={busy} className="admin-button admin-button--secondary" onClick={cancel} data-testid="button-cancel-po">Cancel</button><button type="submit" disabled={locked || conflict} className="admin-button" data-testid="button-review-po">{busy ? 'Reviewing…' : 'Review order'}</button></div></div>
     </form>}
   </section>;
 }
 
-export default function PurchaseOrderFormPage({ id }) {
+export default function PurchaseOrderFormPage() {
   const [, navigate] = useLocation();
-  const isNew = !id || id === 'new';
-  const title = isNew ? 'New purchase order' : 'Purchase order';
-  return <AdminLayout title={title}><div className={`po-page${isNew ? ' po-page--new' : ''}`}>
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Purchase orders / {isNew ? 'New' : 'Detail'}</p><h1>{title}</h1><p className="admin-page-head__description">{isNew ? 'Build a supplier order, review the server-calculated totals, then save it.' : 'Order detail is not available yet.'}</p></div><div className="po-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(BASE)} data-testid="button-back-purchase-orders"><ArrowLeft size={16} aria-hidden="true" /> All orders</button></div></div>
-    {isNew ? <Editor onCancel={() => navigate(BASE)} onSaved={() => navigate(BASE)} />
-      : <section className="admin-panel po-recovery" role="status"><h2>Order detail is coming later</h2><p>Viewing, editing, deleting, invoices and receiving for saved purchase orders are not part of this release. Saved orders are listed on the Purchase orders page.</p><div className="po-actions"><button type="button" className="admin-button" onClick={() => navigate(BASE)}>Back to orders</button></div></section>}
+  const title = 'New purchase order';
+  return <AdminLayout title={title}><div className="po-page po-page--new">
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Purchase orders / New</p><h1>{title}</h1><p className="admin-page-head__description">Build a supplier order, review the server-calculated totals, then save it.</p></div><div className="po-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => { if (!interceptNavigation({ kind: 'href', href: BASE })) navigate(BASE); }} data-testid="button-back-purchase-orders"><ArrowLeft size={16} aria-hidden="true" /> All orders</button></div></div>
+    <Editor onCancel={() => navigate(BASE)} onSaved={() => navigate(BASE)} />
   </div></AdminLayout>;
 }

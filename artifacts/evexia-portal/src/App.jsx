@@ -51,6 +51,7 @@ const RolesPermissions = lazyRoute(() => import('./pages/admin/RolesPermissions.
 const AdminSettings = lazyRoute(() => import('./pages/admin/AdminSettings.jsx'));
 const PurchaseOrders = lazyRoute(() => import('./pages/admin/PurchaseOrders.jsx'));
 const PurchaseOrderFormPage = lazyRoute(() => import('./pages/admin/PurchaseOrderFormPage.jsx'));
+const PurchaseOrderDetail = lazyRoute(() => import('./components/admin/PurchaseOrderDetail.jsx'));
 const PurchaseReceived = lazyRoute(() => import('./pages/admin/PurchaseReceived.jsx'));
 const StockStatus = lazyRoute(() => import('./pages/admin/StockStatus.jsx'));
 const PurchaseReceivedFormPage = lazyRoute(() => import('./pages/admin/PurchaseReceivedFormPage.jsx'));
@@ -77,7 +78,7 @@ function App() {
       <Route path="/admin/roles-permissions" component={RolesPermissions} />
       <Route path="/admin/inventory/purchase-orders" component={PurchaseOrders} />
       <Route path="/admin/inventory/purchase-orders/new">{() => <PurchaseOrderFormPage />}</Route>
-      <Route path="/admin/inventory/purchase-orders/:id">{(params) => <PurchaseOrderFormPage id={params.id} />}</Route>
+      <Route path="/admin/inventory/purchase-orders/:id">{(params) => <PurchaseOrderDetail key={params.id} id={params.id} />}</Route>
       <Route path="/admin/inventory/purchase-received" component={PurchaseReceived} />
       <Route path="/admin/inventory/stock-status" component={StockStatus} />
       <Route path="/admin/inventory/purchase-received/new">{() => <PurchaseReceivedFormPage />}</Route>
