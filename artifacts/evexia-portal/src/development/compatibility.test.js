@@ -8,14 +8,39 @@ const json = (body, status = 200, type = 'application/json') =>
 function responses(runtime, candidate = { format: 1, identity }) {
   return async url => url.includes('__development-release') ? json(candidate) : json(runtime);
 }
-test('matching loaded runtime and same-origin candidate pass; probes omit credentials', async () => {
+test('matching runtime and candidate pass with same-origin preview credentials only', async () => {
   const fetcher = responses({ format: 1, identity, ready: true });
   assert.deepEqual(await probeCompatibility(async (url, options) => {
     assert.equal(options.cache, 'no-store');
-    assert.equal(options.credentials, 'omit');
+    assert.equal(options.credentials, 'same-origin');
     assert.equal(options.redirect, 'error');
     return fetcher(url);
   }, identity), identity);
+});
+test('private preview access works without following an authentication redirect', async () => {
+  const visited = [];
+  const fetcher = responses({ format: 1, identity, ready: true });
+  const privatePreview = async (url, options) => {
+    visited.push(url);
+    // Model ingress that requires the existing same-origin access cookie.
+    if (options.credentials !== 'same-origin') {
+      throw TypeError('Authentication redirect rejected');
+    }
+    assert.equal(options.redirect, 'error');
+    return fetcher(url);
+  };
+  assert.deepEqual(await probeCompatibility(privatePreview, identity), identity);
+  assert.deepEqual(visited, ['/__development-release', '/api/v1/development/compatibility']);
+});
+test('missing preview access still fails closed rather than following a redirect', async () => {
+  let calls = 0;
+  await assert.rejects(probeCompatibility(async (_, options) => {
+    calls++;
+    assert.equal(options.credentials, 'same-origin');
+    assert.equal(options.redirect, 'error');
+    throw TypeError('Authentication redirect rejected');
+  }, identity), { message: 'candidate_unreachable' });
+  assert.equal(calls, 1);
 });
 test('new backend source requires a matching runtime, not a browser reload', async () => {
   const newer = { ...identity, source: 'b'.repeat(64) };

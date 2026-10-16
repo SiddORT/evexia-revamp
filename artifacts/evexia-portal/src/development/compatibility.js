@@ -10,7 +10,9 @@ export async function probeCompatibility(fetcher, expected, base = '/', signal) 
     let response;
     try {
       response = await fetcher(url, {
-        cache: 'no-store', credentials: 'omit', redirect: 'error', signal,
+        // Private preview ingress may require its existing access cookie.
+        // Never send credentials cross-origin or follow authentication redirects.
+        cache: 'no-store', credentials: 'same-origin', redirect: 'error', signal,
       });
     } catch {
       throw Error(signal?.aborted ? 'check_timeout' : `${stage}_unreachable`);
