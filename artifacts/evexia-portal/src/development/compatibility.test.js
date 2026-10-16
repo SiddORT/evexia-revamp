@@ -13,6 +13,7 @@ test('matching loaded runtime and same-origin candidate pass; probes omit creden
   assert.deepEqual(await probeCompatibility(async (url, options) => {
     assert.equal(options.cache, 'no-store');
     assert.equal(options.credentials, 'omit');
+    assert.equal(options.redirect, 'error');
     return fetcher(url);
   }, identity), identity);
 });
@@ -51,4 +52,33 @@ test('HTML fallback, disconnected API and abort timeout fail closed', async () =
 test('identity comparison rejects unknown and malformed hashes', () => {
   assert.equal(Boolean(matchingIdentity({}, identity)), false);
   assert.equal(Boolean(matchingIdentity({ ...identity, source: null }, identity)), false);
+});
+
+for (const stage of ['candidate', 'api']) {
+  for (const [failure, makeResponse] of [
+    ['not_json', () => json({}, 200, 'text/html')],
+    ['invalid_json', () => new Response('{', { headers: { 'content-type': 'application/json' } })],
+    ['http_error', () => json({}, 502)],
+    ['unreachable', () => { throw Error('private upstream diagnostic'); }],
+  ]) test(`${stage} ${failure} has a safe, endpoint-specific failure`, async () => {
+    await assert.rejects(probeCompatibility(async url => {
+      if (stage === 'api' && url.includes('__development-release')) return json({ format: 1, identity });
+      return makeResponse();
+    }, identity), { message: `${stage}_${failure}` });
+  });
+}
+
+test('a 503 never authorizes even when its body claims ready', async () => {
+  await assert.rejects(probeCompatibility(async url => url.includes('__development-release')
+    ? json({ format: 1, identity }) : json({ format: 1, identity, ready: true }, 503), identity),
+  { message: 'setup_pending' });
+});
+
+test('abort has a safe timeout category and redirects cannot authorize', async () => {
+  const controller = new AbortController();
+  controller.abort();
+  await assert.rejects(probeCompatibility(async () => { throw Error('private'); }, identity, '/', controller.signal),
+    { message: 'check_timeout' });
+  await assert.rejects(probeCompatibility(async () => ({ redirected: true }), identity),
+    { message: 'candidate_unreachable' });
 });

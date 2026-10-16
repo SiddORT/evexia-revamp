@@ -33,11 +33,42 @@ test('initial incompatible load never mounts normal content and explicit retry v
   mode = 'html';
   await page.getByRole('button', { name: 'Retry compatibility check' }).click();
   await expect(page.getByRole('status')).toContainText('could not be verified');
+  await expect(page.getByText('API compatibility check returned a page instead of JSON')).toBeVisible();
   await expect(page.getByTestId('development-content')).toBeEmpty();
   mode = 'ready';
   await page.getByRole('button', { name: 'Retry compatibility check' }).click();
   await expect(page.getByTestId('development-content')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Development setup pending' })).toHaveCount(0);
+});
+
+test('retry remains visibly checking while waiting and candidate HTML never reaches the API', async ({ page }) => {
+  let mode = 'html';
+  let unblock;
+  let entered;
+  const entry = new Promise(resolve => { entered = resolve; });
+  const hold = new Promise(resolve => { unblock = resolve; });
+  let apiCalls = 0;
+  await page.route('**/__development-release', async route => {
+    if (mode === 'html') return route.fulfill({ contentType: 'text/html', body: '<html>fallback</html>' });
+    entered();
+    await hold;
+    return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ format: 1, identity: expectedIdentity }) });
+  });
+  page.on('request', request => {
+    if (new URL(request.url()).pathname === '/api/v1/development/compatibility') apiCalls++;
+  });
+  await runtime(page, () => 'ready');
+  await page.goto(base());
+  await expect(page.getByText('Preview check returned a page instead of JSON')).toBeVisible();
+  expect(apiCalls).toBe(0);
+  mode = 'ready';
+  await page.getByRole('button', { name: 'Retry compatibility check' }).click();
+  await entry;
+  await expect(page.getByRole('button', { name: 'Checking compatibility…' })).toBeDisabled();
+  await expect(page.getByRole('status')).toContainText('Checking the running API');
+  unblock();
+  await expect(page.getByTestId('development-content')).toBeVisible();
+  expect(apiCalls).toBe(1);
 });
 
 test('mounted real editor and auth identity survive HMR, failed checks, late replies and explicit recovery', async ({ page }) => {

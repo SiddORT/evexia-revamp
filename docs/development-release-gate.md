@@ -61,6 +61,23 @@ tools, approvals, migration policy and public API behavior remain unchanged.
 - `unavailable` / `unavailable_or_invalid_json` / `timeout_or_unverified`: fix
   the managed service or ingress and explicitly retry.
 
+The browser also distinguishes `candidate_*` (frontend release endpoint) from
+`api_*` (running compatibility endpoint) failures: `unreachable`, `not_json`,
+`http_error`, and `invalid_json`. `check_timeout` is the bounded browser deadline.
+Each category has fixed, non-secret recovery guidance; raw responses and
+exception text are never displayed. The recovery screen shows the actual tab's
+origin so an operator can compare it with the hostname used by the verifier.
+During a retry the disabled button reads **Checking compatibility…**. A failed
+retry remains blocked and can be retried explicitly after the cause is resolved.
+Probes omit credentials and reject redirects. An API HTTP 503 never authorizes
+access, even if its body incorrectly claims readiness.
+
+Do not infer ingress failure from a direct request to Vite's frontend port:
+that port can serve SPA HTML for API paths while the routed preview correctly
+forwards them to the API service. Compare the actual browser origin, candidate
+and compatibility responses first. Do not introduce another proxy, switch
+origins, relax hostname rules or restart the API based on that observation alone.
+
 Operator reports contain fixed categories, non-secret contract/source identity,
 known revisions and timings, never URLs, credentials, business records or raw
 exception text. Public development compatibility exposes only identity and a
@@ -140,3 +157,34 @@ evidence. Synthetic unit checks took about 0.3 seconds, seven disposable API/
 database tests took 6.95 seconds excluding database harness setup, and the two
 Chromium tests took 6.3 seconds excluding fixture startup. The frontend build
 took 5.5 seconds and is separate from recurring compatibility cost.
+
+Recovery investigation on 2026-10-16 in a task fork: both managed services were
+initially stopped. After starting their existing managed workflows, both the
+local routed preview and the fork's HTTPS development origin rendered the
+normal portal; browser candidate and API compatibility requests returned HTTP
+200 JSON with matching identities and `ready: true`. Explicit invalidation and
+Retry restored normal rendering on both origins. The operator verifier also
+passed. This did **not** reproduce the earlier persistent failure in the
+original user's browser, and does not establish that an API restart or stale
+tab caused it. No routing, key, database or production changes were made.
+
+After the recovery changes, `pnpm test:development-gate` passed six Python
+checks and 26 Node checks; `pnpm check:development` and
+`pnpm verify:development` both passed. The frontend production build passed
+(with its existing large-chunk warning). The focused isolated Chromium command
+above passed all three browser scenarios in 5.7 seconds, including the same
+mounted editor node/value across failed checks, no navigation or auth renewal,
+late-success rejection, and explicit recovery.
+
+Real browser requests through the managed HTTPS ingress returned matching
+candidate/API HTTP 200 JSON and rendered **Welcome to EVEXIA**. In both a
+top-level tab and a static localhost-parent iframe containing that HTTPS
+preview, injecting API HTML blocked access with endpoint-specific guidance;
+Retry against a held genuine API response displayed the disabled checking
+button, then restored the portal when the real response completed. Browser
+page/console errors were absent in the top-level check. The iframe is an
+embedding simulation, not access to the original Replit host UI or the user's
+already-open tab; those remain an explicit environment limitation. An initial
+test invocation accidentally included a trailing `.` and selected the broad
+suite; it timed out and is not passing evidence. The corrected one-spec
+invocation produced the focused result above.

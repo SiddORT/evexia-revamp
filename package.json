@@ -8,7 +8,7 @@
     "validate:release": "sh scripts/validate-template-preferences.sh",
     "check:development": "sh scripts/development-preflight.sh",
     "verify:development": "python -B scripts/verify-development-release.py",
-    "test:development-gate": "python -B -m unittest discover -s scripts/tests -p 'test_development_gate.py' && node --test scripts/development-identity.test.mjs artifacts/evexia-portal/src/development/compatibility.test.js",
+    "test:development-gate": "python -B -m unittest discover -s scripts/tests -p 'test_development_gate.py' && node --test scripts/development-identity.test.mjs artifacts/evexia-portal/src/development/compatibility.test.js artifacts/evexia-portal/src/development/releaseState.test.js",
     "test:template-preferences": "pnpm --filter @workspace/evexia-portal run test:template-preferences",
     "test:api-foundation": "sh scripts/test-api-foundation.sh",
     "check:portal-hostname": "node scripts/check-portal-hostname.mjs",

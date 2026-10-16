@@ -1,4 +1,5 @@
 import { probeCompatibility } from './compatibility.js';
+import { knownFailure } from './failureGuidance.js';
 
 const environment = import.meta.env || {};
 export const gateEnabled = environment.EVEXIA_DEVELOPMENT_GATE === true;
@@ -42,8 +43,7 @@ export async function retryRelease() {
       environment.BASE_URL, activeController.signal);
     if (generation === store.epoch) publish('ready');
   } catch (error) {
-    const allowed = ['browser_contract_changed', 'incompatible_runtime', 'setup_pending'];
-    if (generation === store.epoch) publish('blocked', allowed.includes(error.message) ? error.message : 'unavailable');
+    if (generation === store.epoch) publish('blocked', knownFailure(error?.message) ? error.message : 'unavailable');
   } finally { clearTimeout(timeout); }
 }
 
