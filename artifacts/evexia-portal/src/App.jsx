@@ -5,6 +5,7 @@ import RouteLoadingBoundary, { lazyRoute } from './components/RouteLoadingBounda
 import { roleConfig } from './config/roles.js';
 import PortalSelection from './pages/PortalSelection.jsx';
 import AuthPage from './pages/AuthPage.jsx';
+const DoctorPortal = lazyRoute(() => import('./doctor/DoctorPortal.jsx'));
 const PasswordRecoveryPage = lazyRoute(() => import('./pages/PasswordRecoveryPage.jsx'));
 import MRHome from './pages/MRHome.jsx';
 import NotFound from './pages/NotFound.jsx';
@@ -142,7 +143,8 @@ function App() {
       <Route path="/admin/login">{() => <AuthPage role={roleConfig.admin} />}</Route>
       <Route path="/mr/home" component={MRHome} />
       <Route path="/mr">{() => <AuthPage role={roleConfig.mr} />}</Route>
-      <Route path="/doctor">{() => <AuthPage role={roleConfig.doctor} />}</Route>
+      <Route path="/doctor" component={DoctorPortal} />
+      <Route path="/doctor/*" component={DoctorPortal} />
       <Route component={NotFound} />
     </Switch></RouteLoadingBoundary></AdminBoundary></PortalHostBoundary>
   );

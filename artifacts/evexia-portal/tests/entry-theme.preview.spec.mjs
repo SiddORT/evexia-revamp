@@ -76,9 +76,9 @@ for (const scenario of [{ value: null }, { value: '__proto__' }, { value: 'moder
   });
 }
 
-test('MR and Doctor retain Classic styling even with Modern/dark saved', async ({ page }) => {
+test('MR retains Classic styling even with Modern/dark saved', async ({ page }) => {
   await seed(page, 'modern');
-  for (const path of ['/mr', '/doctor']) {
+  for (const path of ['/mr']) {
     await page.goto(`${base()}${path}`);
     await expect(page.locator('.auth-page')).not.toHaveAttribute('data-admin-theme');
     await expect(page.locator('.entry-theme')).toHaveCount(0);

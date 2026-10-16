@@ -5,6 +5,7 @@ import {
   setAdminPreference, subscribeAdminPreferences, validatePreference,
 } from './src/components/admin/adminPreferences.js';
 import { ADMIN_APPEARANCE_KEY, ADMIN_THEME_KEY } from './src/components/admin/adminTheme.js';
+import { subscribeLocalActivity } from './src/services/localActivity.js';
 
 test('saved choices are validated and existing theme and appearance keys still load', () => {
   const saved = new Map([
@@ -40,6 +41,25 @@ test('inaccessible storage falls back without throwing', () => {
     assert.deepEqual(readAdminPreferences(), { dateFormat: 'dd-mmm-yyyy', timeZone: 'browser', clock: '12', theme: 'classic', appearance: 'light' });
     assert.doesNotThrow(() => setAdminPreference('clock', '12'));
   } finally { delete globalThis.window; }
+});
+
+test('Doctor shared preference changes notify UI without recording Admin activity', () => {
+  const stored = new Map();
+  globalThis.window = { localStorage: { getItem: (key) => stored.get(key), setItem: (key, value) => stored.set(key, value) } };
+  const observations = [];
+  const unsubscribe = subscribeLocalActivity((event) => observations.push(event));
+  let updates = 0;
+  const release = subscribeAdminPreferences(() => updates++);
+  try {
+    setAdminPreference('theme', 'modern', { recordActivity: false });
+    setAdminPreference('appearance', 'dark', { recordActivity: false });
+    assert.equal(updates, 2);
+    assert.equal(stored.get(ADMIN_THEME_KEY), 'modern');
+    assert.equal(stored.get(ADMIN_APPEARANCE_KEY), 'dark');
+    assert.deepEqual(observations, []);
+    setAdminPreference('theme', 'classic');
+    assert.deepEqual(observations, [{ resource: 'settings', action: 'settings_changed' }]);
+  } finally { unsubscribe(); release(); delete globalThis.window; }
 });
 
 test('calendar days do not move across zones; timestamps do, using either clock', () => {

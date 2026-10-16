@@ -8,7 +8,6 @@ const scenarios = [
   ...['classic', 'modern'].flatMap((theme) =>
     ['light', 'dark'].map((appearance) => ({ role: 'admin', path: '/admin/login', theme, appearance }))),
   { role: 'mr', path: '/mr', theme: 'modern', appearance: 'dark' },
-  { role: 'doctor', path: '/doctor', theme: 'modern', appearance: 'dark' },
 ];
 
 for (const scenario of scenarios) {

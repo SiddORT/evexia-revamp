@@ -40,14 +40,14 @@ export function subscribeAdminPreferences(listener) {
 export function useAdminPreferences() {
   return useSyncExternalStore(subscribeAdminPreferences, snapshot, () => ({ ...DISPLAY_DEFAULTS, theme: 'classic', appearance: 'light' }));
 }
-export function setAdminPreference(key, value) {
+export function setAdminPreference(key, value, { recordActivity = true } = {}) {
   if (!Object.hasOwn(OPTIONS, key) || validatePreference(key, value) !== value) return;
   current = { ...snapshot(), [key]: value };
   if (key === 'theme') saveAdminTheme(value);
   else if (key === 'appearance') saveAdminAppearance(value);
   else try { window.localStorage.setItem(DISPLAY_KEYS[key], value); }
   catch { /* In-memory choice remains active for this visit. */ }
-  recordLocalAction('settings', 'settings_changed');
+  if (recordActivity) recordLocalAction('settings', 'settings_changed');
   listeners.forEach((listener) => listener());
 }
 

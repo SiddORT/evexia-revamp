@@ -231,11 +231,21 @@ test('deep links wait for verification; login controls show safe failures, real 
     const observe = (request) => { if (request.url().includes('/api/v1/auth/login')) requests++; };
     page.on('request', observe);
     await page.goto(`${base()}${path}`);
+    if (path === '/doctor') {
+      await page.getByLabel('Email', { exact: true }).fill('doctor@example.invalid');
+      await page.getByLabel('Password', { exact: true }).fill('demo-only-pass');
+      await page.getByRole('button', { name: 'Continue to demo', exact: true }).click();
+      await expect(page).toHaveURL(/\/doctor\/home$/);
+      await expect(page.getByRole('heading', { name: 'Good day, Dr. Sen' })).toBeVisible();
+      expect(requests).toBe(0);
+      page.off('request', observe);
+      continue;
+    }
     await page.getByLabel('Email or username').fill('fictional@example.test');
     await page.getByLabel('Password', { exact: true }).fill('mock-only');
     await page.getByTestId('button-submit-login').click();
-    await expect(page.getByTestId('status-auth-message')).toContainText(path === '/doctor' ? 'No credentials were sent' : 'Invalid credentials');
-    expect(requests).toBe(path === '/doctor' ? 0 : 1);
+    await expect(page.getByTestId('status-auth-message')).toContainText('Invalid credentials');
+    expect(requests).toBe(1);
     page.off('request', observe);
   }
 });

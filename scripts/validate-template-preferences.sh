@@ -6,6 +6,7 @@ set -eu
 pnpm run test:development-gate
 pnpm --filter @workspace/evexia-portal run test:admin-session
 pnpm --filter @workspace/evexia-portal run test:date-preferences
+pnpm --filter @workspace/evexia-portal run test:doctor-demo
 node --test artifacts/evexia-portal/src/services/passwordRecovery.test.js
 sh scripts/test-api-foundation.sh tests/test_password_recovery.py tests/test_development_gate.py
 node --test artifacts/evexia-portal/src/config/portalHost.test.js

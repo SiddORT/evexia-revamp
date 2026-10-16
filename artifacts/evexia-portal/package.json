@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite --config vite.config.js --host 0.0.0.0",
     "build": "vite build --config vite.config.js",
+    "test:doctor-demo": "node --test src/doctor/doctorStore.test.js",
+    "test:doctor-demo:browser": "pnpm --workspace-root exec playwright test artifacts/evexia-portal/tests/doctor-demo.preview.spec.mjs --config playwright.config.mjs",
     "test:admin-session": "node --test src/auth/adminSession.test.js",
     "test:date-preferences": "node --test admin-preferences.test.mjs date-presentation.test.mjs tests/date-display-guard.test.mjs src/services/poInvoiceRender.test.js src/services/prReceiptRender.test.js src/services/poInvoiceTemplates.test.js src/services/prDocuments.test.js src/services/poInvoicePdf.test.js src/services/prReceiptPdf.test.js src/services/stockStatusDemo.test.js",
     "test:date-preferences:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/date-preferences.preview.spec.mjs",
