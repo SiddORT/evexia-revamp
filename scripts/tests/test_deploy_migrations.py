@@ -222,6 +222,20 @@ class MigrationPolicyTests(unittest.TestCase):
         self.assertNotIn("git reset", workflow)
 
 
+class ReleaseWorkflowIsolationTests(unittest.TestCase):
+    def test_validation_job_cannot_inherit_vps_secrets(self):
+        workflow = (ROOT.parent / ".github/workflows/deploy.yml").read_text()
+        validation_job = workflow.split("  validate_release:", 1)[1].split("\n  deploy:", 1)[0]
+        reusable = (ROOT.parent / ".github/workflows/release-validation.yml").read_text()
+        self.assertNotIn("inherit", validation_job)
+        self.assertIn("RELEASE_VALIDATION_PRIVATE_KEY: ${{ secrets.RELEASE_VALIDATION_PRIVATE_KEY }}",
+                      validation_job)
+        self.assertNotIn("SSH_", validation_job)
+        self.assertNotIn("SSH_", reusable)
+        self.assertIn("needs: validate_release", workflow)
+        self.assertIn("required: true", reusable)
+
+
 class DeploymentShellTests(unittest.TestCase):
     """Execute the actual CI Bash with stub tools in a disposable directory."""
 
@@ -238,6 +252,11 @@ class DeploymentShellTests(unittest.TestCase):
             (active / ".env").write_text("# synthetic placeholder, no real secrets\n")
             (active / ".deployed-release").write_text("previous-release\n")
             (active / "docker-compose.yml").write_text("services: {}\n")
+            (active / ".release-evidence").mkdir()
+            (active / ".release-evidence/release-validation.json").write_text("{}")
+            (root / "trust.json").write_text("{}")
+            script = script.replace("TRUST=/restricted/operator/release/trust.json",
+                                    f"TRUST={root / 'trust.json'}")
             (source / "docker-compose.yml").write_text("services: {}\n")
             if maintenance:
                 (active / ".operator-maintenance").touch()

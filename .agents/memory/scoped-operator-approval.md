@@ -37,3 +37,15 @@ not every later repository head, even when the successor adds unrelated tables.
 **How to apply:** Advance application readiness to its required head, classify
 the successor explicitly, and require separate operator approval for activation
 instead of silently updating an earlier runner's target or review hashes.
+
+Routine validated automatic migrations and independently evidenced pristine
+fresh installations should not require recurring human release approval.
+Existing/populated protected changes still require their operator approval.
+
+**Why:** The user explicitly requested removing the release-approval bottleneck
+only for verified safe cases, not weakening protected existing-database gates.
+
+**How to apply:** Preserve the distinction between release validation, independent
+target/recovery authorization and existing-database operator approval. Never
+replace those checks with a manifest status rename or treat passing tests as
+production authorization.

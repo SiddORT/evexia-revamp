@@ -264,6 +264,15 @@ def main(argv=None):
             sys.path.insert(0, str(args.backend_dir.resolve()))
             from app.services import release_authorization as authorization
             authorization.release(args.release_root.resolve(), args.validated_release, args.trust_config)
+            if authorization.sha(args.policy) != authorization.sha(
+                    args.release_root / "scripts/migration-policy.json"):
+                raise PolicyError("VALIDATED_POLICY_MISMATCH")
+            for directory in ("app", "alembic"):
+                for path in args.backend_dir.joinpath(directory).rglob("*.py"):
+                    corresponding = (args.release_root / "artifacts/api-server/backend"
+                                     / path.relative_to(args.backend_dir))
+                    if not corresponding.is_file() or authorization.sha(path) != authorization.sha(corresponding):
+                        raise PolicyError("VALIDATED_BACKEND_MISMATCH")
             config = authorization.trust(args.trust_config, args.release_root.resolve())
             evidence = authorization.signed(args.validated_release, config["release_public_key"],
                                             args.release_root.resolve())

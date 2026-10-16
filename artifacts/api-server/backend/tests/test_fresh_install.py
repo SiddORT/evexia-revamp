@@ -403,6 +403,7 @@ def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap
                     ignore=shutil.ignore_patterns("__pycache__"))
     shutil.copytree(fresh.BACKEND, release / "artifacts/api-server/backend",
                     ignore=shutil.ignore_patterns("__pycache__"))
+    shutil.copytree(fresh.ROOT / ".github", release / ".github")
     lock = tmp_path / ".deploy.lock"
     (tmp_path / ".operator-maintenance").touch()
     wrapper = release / "scripts/operator-retirement.sh"
@@ -542,3 +543,186 @@ def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap
     result = subprocess.run([sys.executable, "-B", str(fresh.ROOT / "scripts/deploy-migrations.py"),
                              "--backend-dir", str(fresh.BACKEND)], capture_output=True, text=True)
     assert result.returncode == 0 and '"result": "READY"' in result.stdout, result.stderr
+
+
+@pytest.mark.parametrize("contents", [
+    None,
+    "CREATE TABLE existing_application_data(id integer); INSERT INTO existing_application_data VALUES (1)",
+    "CREATE SCHEMA unrelated",
+    "CREATE TYPE public.existing_enum AS ENUM ('existing')",
+    "CREATE TABLE alembic_version(version_num text)",
+    "CREATE TEXT SEARCH CONFIGURATION public.unrelated (COPY=pg_catalog.simple)",
+    "CREATE FOREIGN DATA WRAPPER unrelated",
+    "ALTER DEFAULT PRIVILEGES GRANT SELECT ON TABLES TO PUBLIC",
+    "CREATE PUBLICATION unrelated FOR ALL TABLES",
+    "MISMATCH_DATABASE",
+    "MISMATCH_CLUSTER",
+])
+def test_machine_prepare_requires_live_pristine_proof(databases, tmp_path, monkeypatch, contents):
+    """Synthetic authorities exercise authorization; real isolated PG exercises DDL."""
+    import importlib.util
+    helper_spec = importlib.util.spec_from_file_location(
+        "synthetic_release_evidence", fresh.ROOT / "scripts/tests/test_release_authorization.py")
+    helper = importlib.util.module_from_spec(helper_spec)
+    helper_spec.loader.exec_module(helper)
+    from sqlalchemy.engine import make_url
+    source, _, _ = databases
+    with source.connect() as db:
+        database, cluster = db.execute(text(
+            "SELECT current_database(),system_identifier FROM pg_catalog.pg_control_system()")).one()
+    settings = get_settings()
+    proof = helper.evidence(fresh.ROOT, tmp_path, settings, database, cluster)
+    proof.config["database_host"] = make_url(settings.database_url).query["host"]
+    if contents == "MISMATCH_DATABASE":
+        proof.config["database"] = proof.recovery["database"] = "wrong_database"
+    if contents == "MISMATCH_CLUSTER":
+        proof.config["cluster"] = proof.recovery["cluster"] = cluster + 10
+    helper.sign(proof.recovery_receipt, proof.recovery, proof.recovery_key)
+    helper.private_json(proof.trust_file, proof.config)
+    lock = tmp_path / ".deploy.lock"
+    (tmp_path / ".operator-maintenance").touch()
+    monkeypatch.setattr(fresh, "LOCK_PATH", lock)
+    monkeypatch.setenv("EVEXIA_DEPLOY_LOCK", str(lock))
+    if contents and not contents.startswith("MISMATCH_"):
+        with source.begin() as db:
+            db.execute(text(contents))
+    state = tmp_path / "fresh-origin.json"
+    arguments = [
+        "--writers-stopped", "--expected-database", database,
+        "--expected-system-identifier", str(cluster),
+        "--validated-release", str(proof.receipt), "--trust-config", str(proof.trust_file),
+        "--recovery-evidence", str(proof.recovery_receipt), "--fresh-state", str(state),
+    ]
+    with lock.open("a") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        monkeypatch.setenv("EVEXIA_DEPLOY_LOCK_FD", str(handle.fileno()))
+        assert fresh.main(["prepare", *arguments]) == (1 if contents else 0)
+        assert state.exists() is (contents is None)
+        if contents is None:
+            with source.connect() as db:
+                assert db.scalar(text("SELECT version_num FROM alembic_version")) == fresh.PREPARE_TARGET
+            # Even authenticated preparation does NOT bypass the retirement cap.
+            assert fresh.main(["finalize", *arguments]) == 1
+        else:
+            with patch.object(fresh, "finalize") as bootstrap:
+                assert fresh.main(["finalize", *arguments]) == 1
+                bootstrap.assert_not_called()
+
+
+def test_machine_fresh_path_rehearses_then_runs_original_retirement_and_bootstrap(databases, tmp_path, monkeypatch):
+    """Real empty backup/independent restore; test authorities sign only test facts."""
+    import importlib.util
+    from app.services import organization_retirement as recovery
+    from app.services import release_authorization as auth
+    helper_spec = importlib.util.spec_from_file_location(
+        "machine_path_evidence", fresh.ROOT / "scripts/tests/test_release_authorization.py")
+    helper = importlib.util.module_from_spec(helper_spec)
+    helper_spec.loader.exec_module(helper)
+    source, rehearsal, pgroot = databases
+    # Pin a test-only release copy solely to relocate the canonical host lock.
+    release = tmp_path / "release"
+    shutil.copytree(fresh.ROOT / "scripts", release / "scripts",
+                    ignore=shutil.ignore_patterns("__pycache__"))
+    shutil.copytree(fresh.BACKEND, release / "artifacts/api-server/backend",
+                    ignore=shutil.ignore_patterns("__pycache__"))
+    shutil.copytree(fresh.ROOT / ".github", release / ".github")
+    lock = tmp_path / ".deploy.lock"
+    (tmp_path / ".operator-maintenance").touch()
+    wrapper = release / "scripts/operator-retirement.sh"
+    wrapper.write_text(wrapper.read_text().replace(
+        "/var/www/newuat.allergyevexia.in/.deploy.lock", str(lock)))
+    copied_fresh = release / "artifacts/api-server/backend/app/fresh_install.py"
+    copied_fresh.write_text(copied_fresh.read_text().replace(
+        "/var/www/newuat.allergyevexia.in/.deploy.lock", str(lock)))
+    review_file = release / "scripts/fresh-install-review.json"
+    review = json.loads(review_file.read_text())
+    review["release_sources"]["scripts/operator-retirement.sh"] = auth.sha(wrapper)
+    review["release_sources"]["artifacts/api-server/backend/app/fresh_install.py"] = auth.sha(copied_fresh)
+    review_file.write_text(json.dumps(review))
+    archive = tmp_path / "pristine.dump"
+    subprocess.run(["pg_dump", "-h", str(pgroot / "source/socket"), "-Fc",
+                    "-f", str(archive), "fresh_install"], check=True, capture_output=True)
+    archive.chmod(0o600)
+    subprocess.run(["pg_restore", "-h", str(pgroot / "rehearsal/socket"),
+                    "-d", "fresh_install", "--exit-on-error", str(archive)],
+                   check=True, capture_output=True)
+    with source.connect() as db:
+        fresh.pristine(db)
+        database, cluster = db.execute(text(
+            "SELECT current_database(),system_identifier FROM pg_catalog.pg_control_system()")).one()
+    with rehearsal.begin() as db:
+        fresh.pristine(db)
+        restored_cluster = db.scalar(text("SELECT system_identifier FROM pg_catalog.pg_control_system()"))
+        assert restored_cluster != cluster
+        fresh.prepare(db)
+    organization_file = tmp_path / "organization.json"
+    with rehearsal.connect() as db:
+        organization_sha = recovery.save_backup(db, organization_file)
+    settings = get_settings()
+    proof = helper.evidence(release, tmp_path, settings, database, cluster)
+    proof.config["database_host"] = str(pgroot / "source/socket")
+    helper.private_json(proof.trust_file, proof.config)
+    proof.recovery.update(restored_cluster=restored_cluster, backup_path=str(archive),
+                          backup_sha256=auth.sha(archive),
+                          organization_recovery_path=str(organization_file),
+                          organization_recovery_sha256=organization_sha)
+    helper.sign(proof.recovery_receipt, proof.recovery, proof.recovery_key)
+    state = tmp_path / "pristine-origin.json"
+    common = ["--writers-stopped", "--expected-database", database,
+        "--expected-system-identifier", str(cluster), "--validated-release", str(proof.receipt),
+        "--trust-config", str(proof.trust_file), "--recovery-evidence", str(proof.recovery_receipt),
+        "--fresh-state", str(state)]
+    with lock.open("a") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        env = dict(os.environ, EVEXIA_DEPLOY_LOCK=str(lock),
+                   EVEXIA_DEPLOY_LOCK_FD=str(handle.fileno()),
+                   EVEXIA_OPERATOR_PYTHON=sys.executable,
+                   PYTHONPATH=str(release / "artifacts/api-server/backend") + os.pathsep + os.environ["PYTHONPATH"])
+        def run(arguments):
+            result = subprocess.run(arguments, env=env, pass_fds=(handle.fileno(),),
+                                    capture_output=True, text=True)
+            assert result.returncode == 0, result.stdout + result.stderr
+        clone_environment = dict(env, DATABASE_URL=rehearsal.url.render_as_string(hide_password=False))
+        cloned = subprocess.run([
+            "bash", str(wrapper), "--writers-stopped",
+            "--expected-database", database, "--expected-system-identifier", str(restored_cluster),
+            "--approve-release", auth.sha(review_file),
+            "--backup", str(organization_file), "--sha256", organization_sha,
+            "--restore-verified", organization_sha, "--attest-restoration-rehearsal",
+            "--approve-retirement", "--external-consumers-reviewed", "--backup-durable",
+            "--retention-resolved", "--approve-phone-continuation",
+        ], env=clone_environment, pass_fds=(handle.fileno(),), capture_output=True, text=True)
+        assert cloned.returncode == 0, cloned.stdout + cloned.stderr
+        helper.private_json(Path(proof.recovery["restoration_report_path"]), {
+            "restored_cluster": restored_cluster, "source_cluster": cluster,
+            "restoration_exit": 0, "guarded_rehearsal_exit": cloned.returncode,
+        })
+        proof.recovery["restoration_report_sha256"] = auth.sha(proof.recovery["restoration_report_path"])
+        helper.sign(proof.recovery_receipt, proof.recovery, proof.recovery_key)
+        run([sys.executable, "-B", "-m", "app.fresh_install", "prepare", *common])
+        run(["bash", str(wrapper), *common, "--backup", str(organization_file),
+             "--sha256", organization_sha, "--restore-verified", organization_sha,
+             "--attest-restoration-rehearsal", "--approve-retirement",
+             "--external-consumers-reviewed", "--backup-durable", "--retention-resolved",
+             "--approve-phone-continuation"])
+        with source.connect() as db:
+            assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0034_shared_phone_countries"
+            assert db.scalar(text("SELECT count(*) FROM users")) == 0
+        # Bootstrap permission is separately configured, not inferred from release success.
+        proof.config["allow_initial_bootstrap"] = False
+        helper.private_json(proof.trust_file, proof.config)
+        denied = subprocess.run([sys.executable, "-B", "-m", "app.fresh_install", "finalize", *common],
+                                env=env, pass_fds=(handle.fileno(),), capture_output=True)
+        assert denied.returncode != 0
+        proof.config["allow_initial_bootstrap"] = True
+        helper.private_json(proof.trust_file, proof.config)
+        run([sys.executable, "-B", "-m", "app.fresh_install", "finalize", *common])
+        # A populated install cannot silently bootstrap again.
+        denied = subprocess.run([sys.executable, "-B", "-m", "app.fresh_install", "finalize", *common],
+                                env=env, pass_fds=(handle.fileno(),), capture_output=True)
+        assert denied.returncode != 0
+    with source.connect() as db:
+        assert db.scalar(text("SELECT version_num FROM alembic_version")) == fresh.FINAL_TARGET
+        assert db.scalar(text("SELECT count(*) FROM users")) == 1
+        assert "organizations" not in inspect(db).get_table_names()
+        fresh.communication_channels(db)

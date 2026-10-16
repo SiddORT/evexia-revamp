@@ -1,5 +1,11 @@
 # Legacy organization retirement
 
+For the separate machine-evidenced pristine-install mode, see
+[release authorization](release-authorization.md). Existing-database approvals,
+actual restoration evidence, lock/maintenance interlocks and the `0034` cap
+below are unchanged; a release-validation certificate alone cannot authorize
+organization retirement on an existing database.
+
 Current account-encryption release note: retirement approval still ends at
 `0034_shared_phone_countries`. The wrapper does **not** automatically cross
 `0035_account_identifiers`. Populated databases need the separate account

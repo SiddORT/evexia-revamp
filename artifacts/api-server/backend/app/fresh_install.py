@@ -160,7 +160,12 @@ def dedicated_database(connection):
         OR EXISTS(SELECT 1 FROM pg_extension WHERE extname NOT IN ('plpgsql','pg_trgm'))
         OR EXISTS(SELECT 1 FROM pg_largeobject_metadata)
         OR EXISTS(SELECT 1 FROM pg_foreign_server)
+        OR EXISTS(SELECT 1 FROM pg_foreign_data_wrapper)
         OR EXISTS(SELECT 1 FROM pg_event_trigger)
+        OR EXISTS(SELECT 1 FROM pg_default_acl)
+        OR EXISTS(SELECT 1 FROM pg_publication)
+        OR EXISTS(SELECT 1 FROM pg_subscription
+                  WHERE subdbid=(SELECT oid FROM pg_database WHERE datname=current_database()))
     """)):
         raise FreshInstallBlocked("Database contains unreviewed objects; use the existing operator workflow.")
 
@@ -189,6 +194,12 @@ def pristine(connection):
           UNION ALL SELECT 'pg_operator'::regclass,oid,oprnamespace FROM pg_operator
           UNION ALL SELECT 'pg_collation'::regclass,oid,collnamespace FROM pg_collation
           UNION ALL SELECT 'pg_conversion'::regclass,oid,connamespace FROM pg_conversion
+          UNION ALL SELECT 'pg_opclass'::regclass,oid,opcnamespace FROM pg_opclass
+          UNION ALL SELECT 'pg_opfamily'::regclass,oid,opfnamespace FROM pg_opfamily
+          UNION ALL SELECT 'pg_ts_config'::regclass,oid,cfgnamespace FROM pg_ts_config
+          UNION ALL SELECT 'pg_ts_dict'::regclass,oid,dictnamespace FROM pg_ts_dict
+          UNION ALL SELECT 'pg_ts_parser'::regclass,oid,prsnamespace FROM pg_ts_parser
+          UNION ALL SELECT 'pg_ts_template'::regclass,oid,tmplnamespace FROM pg_ts_template
         )
         SELECT EXISTS(SELECT 1 FROM objects o JOIN pg_namespace n ON n.oid=o.namespace
           WHERE n.nspname='public' AND NOT EXISTS(

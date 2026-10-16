@@ -1,3 +1,12 @@
+# Current release-authorization policy
+
+The enforceable [release-authorization policy](release-authorization.md) now
+allows validated routine releases and evidenced pristine-origin fresh phases
+without a per-release human digest approval. It preserves the fixed 0031/0034/
+0039 boundaries and all existing-database operator gates. The explicit manual
+commands below remain supported; their human approvals are not required by the
+separate machine-evidenced fresh mode. No production approval is implied.
+
 # Secure-domain release prerequisite
 
 The current coordinated candidate target is `0039_communication`. Before starting

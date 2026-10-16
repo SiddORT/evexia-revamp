@@ -13,7 +13,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate_release:
+    uses: ./.github/workflows/release-validation.yml
+    secrets:
+      RELEASE_VALIDATION_PRIVATE_KEY: ${{ secrets.RELEASE_VALIDATION_PRIVATE_KEY }}
+
   deploy:
+    needs: validate_release
     runs-on: ubuntu-latest
     timeout-minutes: 40
     outputs:
@@ -28,6 +34,21 @@ jobs:
         run: |
           python -B -m unittest discover -s scripts/tests -p 'test_deploy_migrations.py' -v
           bash -n scripts/operator-retirement.sh
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-validation
+          path: .release-upload
+
+      - name: Transfer signed evidence, not application services
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: .release-upload/release-validation.json
+          target: /var/www/newuat.allergyevexia.in/.release-evidence
+          strip_components: 1
 
       - name: Stage, check policy, then promote exact release
         id: remote_deploy
@@ -58,6 +79,11 @@ jobs:
             }
             test -r "$ACTIVE/.env"
             test -f "$ACTIVE/docker-compose.yml"
+            EVIDENCE="$ACTIVE/.release-evidence/release-validation.json"
+            TRUST=/restricted/operator/release/trust.json
+            test -f "$EVIDENCE" && test ! -L "$EVIDENCE"
+            test -f "$TRUST" && test ! -L "$TRUST"
+            chmod 600 "$EVIDENCE"
             PROJECT=$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.project" }}' evexia-backend)
             [[ "$PROJECT" =~ ^[a-zA-Z0-9_-]+$ ]] || exit 1
             NETWORKS=$(docker inspect --format '{{ range $name, $_ := .NetworkSettings.Networks }}{{ println $name }}{{ end }}' evexia-backend)
@@ -82,12 +108,17 @@ jobs:
             # The one-off image has candidate code, no app startup, no ports and
             # no service replacement. Secrets stay in the existing env file.
             run_policy() {
-              docker run --rm --network "$NETWORK" \
+              docker run --rm --network "$NETWORK" --user "$(id -u):$(id -g)" \
                 --env-file "$ACTIVE/.env" -e APP_ENV=production \
                 -v "$RELEASE/scripts:/release-scripts:ro" \
-                --entrypoint uv "$BACKEND_IMAGE" run --project /workspace \
-                python /release-scripts/deploy-migrations.py \
-                --backend-dir /app --policy /release-scripts/migration-policy.json "$@"
+                -v "$RELEASE:/release:ro" \
+                -v "$EVIDENCE:/release-evidence.json:ro" \
+                -v "$TRUST:/release-trust.json:ro" \
+                --entrypoint /workspace/.venv/bin/python "$BACKEND_IMAGE" \
+                /release-scripts/deploy-migrations.py \
+                --backend-dir /app --policy /release-scripts/migration-policy.json \
+                --release-root /release --validated-release /release-evidence.json \
+                --trust-config /release-trust.json --expected-commit "$DEPLOY_SHA" "$@"
             }
             if run_policy; then
               :

@@ -10,7 +10,9 @@ import hmac
 import json
 import os
 from pathlib import Path
+import re
 import stat
+import time
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
@@ -24,7 +26,11 @@ def canonical(value):
 
 
 def sha(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def unique(pairs):
@@ -73,6 +79,12 @@ def trust(path, root):
     if (result.get("format") != 1
             or result.get("release_public_key") == result.get("recovery_public_key")):
         raise AuthorizationBlocked("Independent release/recovery authorities required.")
+    if (not isinstance(result.get("database"), str) or not result["database"]
+            or type(result.get("cluster")) is not int or not 0 < result["cluster"] < 2**64
+            or not isinstance(result.get("database_host"), str) or not result["database_host"]
+            or type(result.get("database_port")) is not int
+            or not 0 < result["database_port"] < 65536):
+        raise AuthorizationBlocked("Independently configured database/cluster endpoint required.")
     for name in ("release_public_key", "recovery_public_key"):
         Ed25519PublicKey.from_public_bytes(bytes.fromhex(result[name]))
     return result
@@ -120,8 +132,9 @@ def release(root, receipt, trust_file):
             or proof.get("review_sha256") != sha(root / "scripts/fresh-install-review.json")
             or proof.get("commands") != rules["validation_commands"]
             or proof.get("results") != [0] * len(rules["validation_commands"])
+            or any(type(code) is not int for code in proof["results"])
             or not isinstance(proof.get("files"), dict) or not proof["files"]
-            or len(proof.get("commit", "")) != 40):
+            or not re.fullmatch(r"[0-9a-f]{40}", proof.get("commit", ""))):
         raise AuthorizationBlocked("Complete successful release validation required.")
     review = json.loads((root / "scripts/fresh-install-review.json").read_text())
     required = {"scripts/fresh-install-review.json", "scripts/migration-policy.json",
@@ -168,15 +181,17 @@ def recovery(root, config, receipt, settings):
             or not isinstance(proof.get("restored_cluster"), int)
             or proof["restored_cluster"] == config["cluster"]
             or proof.get("key_fingerprint") != key_fingerprint(settings)
+            or type(proof.get("observed_at")) is not int
+            or not time.time() - 86400 <= proof["observed_at"] <= time.time() + 60
             or any(proof.get(name) is not True for name in (
                 "durable_custody_verified", "restoration_rehearsal_verified",
                 "independent_key_recovery_verified", "external_consumers_reviewed",
-                "retention_resolved"))
+                "retention_resolved", "source_pristine_verified"))
             or not proof.get("restoration_reference")
             or not proof.get("key_recovery_reference")):
         raise AuthorizationBlocked("Independent restoration/key recovery evidence required.")
     # Integrity supplements, and NEVER replaces, the separate signed rehearsal.
-    for prefix in ("backup", "restoration_report", "organization_recovery"):
+    for prefix in ("backup", "restoration_report", "organization_recovery", "source_inventory"):
         path = private_path(proof[prefix + "_path"], root)
         if sha(path) != proof[prefix + "_sha256"]:
             raise AuthorizationBlocked("Recovery artifact integrity failure.")
