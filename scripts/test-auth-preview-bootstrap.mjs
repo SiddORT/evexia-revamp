@@ -25,3 +25,16 @@ test('preview cannot send recovery mail using inherited operator secrets', () =>
   assert.ok(source.includes('export PASSWORD_RECOVERY_URL= SMTP_HOST= SMTP_USERNAME= SMTP_PASSWORD= SMTP_FROM='));
   assert.ok(source.includes('export SMTP_PORT=587 SMTP_IMPLICIT_TLS=false'));
 });
+test('isolated API and browser fixtures force independent synthetic Communication keys', () => {
+  const apiSource = readFileSync(new URL('./test-api-foundation.sh', import.meta.url), 'utf8');
+  const synthetic = '{"primary":"RkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkY="}';
+  for (const fixture of [source, apiSource]) {
+    assert.ok(fixture.includes(`export COMMUNICATION_ENCRYPTION_KEYS='${synthetic}'`));
+    assert.ok(fixture.includes('export COMMUNICATION_ENCRYPTION_KEY_ID=primary'));
+    assert.ok(!fixture.includes('${COMMUNICATION_ENCRYPTION_KEYS'));
+    assert.ok(fixture.indexOf('export COMMUNICATION_ENCRYPTION_KEYS=') > fixture.indexOf('export APP_ENV=test'));
+  }
+  const material = Buffer.from(JSON.parse(synthetic).primary, 'base64');
+  assert.equal(material.length, 32);
+  for (const byte of [65, 66, 67, 69]) assert.notDeepEqual(material, Buffer.alloc(32, byte));
+});

@@ -28,6 +28,10 @@ export STAFF_EMAIL_INDEX_KEY=QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI=
 export DIRECTORY_ENCRYPTION_KEYS='{"primary":"Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0M="}'
 export DIRECTORY_ENCRYPTION_KEY_ID=primary
 export DIRECTORY_INDEX_KEY=RUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUU=
+# Synthetic, independent Communication material for this private fixture only.
+# Override inherited operator configuration; never provision managed Secrets.
+export COMMUNICATION_ENCRYPTION_KEYS='{"primary":"RkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkY="}'
+export COMMUNICATION_ENCRYPTION_KEY_ID=primary
 export JWT_SECRET=synthetic-isolated-tests-only-signing-key-not-a-live-credential
 export SCANNER_BACKEND=unavailable
 export STORAGE_BACKEND=local

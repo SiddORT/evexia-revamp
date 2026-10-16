@@ -1,3 +1,10 @@
+# Managed development compatibility
+
+See [development release gate](../../../docs/development-release-gate.md).
+The managed development command runs a read-only preflight before Uvicorn.
+After separately approved setup and restart, verify browser-facing ingress with
+`pnpm verify:development`; a source preflight pass alone is not activation.
+
 # Encrypted Communication configuration
 
 See [the Communication operating guide](../../../docs/communication-configuration.md)

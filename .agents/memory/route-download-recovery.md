@@ -14,3 +14,16 @@ errors could discard an already-mounted browser-local editor draft.
 **How to apply:** Keep pending downloads distinct from errors. If improving
 in-place retry later, account for both React lazy's rejected promise and the
 browser module cache, without keying or replacing healthy editor subtrees.
+
+Vite's development client can reload independently of React on full-update,
+circular-import recovery, and server reconnection paths. A mounted hidden/inert
+boundary alone does not protect drafts from these reloads.
+
+**Why:** Development recovery must not turn a service restart into an automatic
+loss of browser-local editor state. Vite's reload notifications are not
+cancellable simply by subscribing to them.
+
+**How to apply:** Preserve the development-only suppression of automatic client
+reloads, fail closed if Vite changes that interface, and use a separate new tab
+when an update genuinely requires a new page. Verify actual full-reload messages
+over the browser websocket, not just direct calls to the compatibility store.

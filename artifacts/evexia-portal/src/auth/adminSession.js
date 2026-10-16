@@ -1,5 +1,6 @@
 // Tokens live only in this module's memory. No credential or identity storage.
 import { STAFF_VISIBLE_PERMISSIONS, MASTER_CATALOGUE, canViewMaster, hasMasterPermission } from './capabilities.js';
+import { developmentBlocked } from '../development/releaseState.js';
 const AUTH_URL = '/api/v1/auth';
 const LOCK_NAME = 'evexia-auth-cookie';
 const REPLACED_MESSAGE = 'Your Admin session ended because this account was signed in elsewhere. Please log in again.';
@@ -211,6 +212,8 @@ export async function changeMrPassword(currentPassword, newPassword) {
 
 let pendingPortal = null;
 export function verifySession(forceRefresh = false, portalArg) {
+  // Compatibility checks must not trigger cookie rotation or reset mounted drafts.
+  if (developmentBlocked()) return Promise.resolve();
   // Omitted portal follows the already-verified identity; never default a verified MR to Admin.
   const portal = portalArg ?? portalOf(state.user);
   if (pending) return pendingPortal === portal ? pending : pending.then(() => verifySession(forceRefresh, portal));

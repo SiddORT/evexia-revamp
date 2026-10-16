@@ -1,5 +1,10 @@
 # Shared encrypted Communication configuration
 
+For managed development preview, missing or invalid Communication keys or the
+required schema block the coordinated release gate. That gate does not activate
+this storage or grant migration approval. See
+[development release compatibility](development-release-gate.md).
+
 Settings → Communication is restricted to the protected system Super Admin.
 It manages Email (SMTP, API and Platform), SMS and WABA records centrally.
 It does **not** send messages, probe providers, onboard OAuth accounts, verify

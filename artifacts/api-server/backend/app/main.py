@@ -1,6 +1,13 @@
 import json
 import logging
 import uuid
+import os
+# Freeze the source identity before importing application modules, only for the
+# managed development service. Production must not read development metadata.
+_managed_development = (os.environ.get("EVEXIA_MANAGED_PREVIEW") == "1"
+                        and os.environ.get("APP_ENV", "development") == "development")
+if _managed_development:
+    from app.core.development_identity import LOADED_IDENTITY
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -76,6 +83,10 @@ def error_body(request, status, message, code=None, fields=None):
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    development_gate = None
+    if _managed_development and settings.app_env == "development":
+        from app.services.development_gate import DevelopmentGate
+        development_gate = DevelopmentGate()
     # Refuse to start with missing/weak signing configuration or unsafe CORS.
     settings.signing_key
     origins = settings.allowed_origins
@@ -113,6 +124,20 @@ def create_app() -> FastAPI:
             limit = body_limit(request.method, request.url.path, settings.max_upload_bytes)
             if content_length and (not content_length.isdigit() or int(content_length) > limit):
                 response = JSONResponse(error_body(request, 413, "Request too large"), status_code=413)
+            elif development_gate is not None and request.url.path == "/api/v1/health/readiness":
+                ready = await development_gate.ready()
+                response = JSONResponse({"status": "ready"} if ready else
+                                        error_body(request, 503, "Service unavailable"),
+                                        status_code=200 if ready else 503)
+            elif (development_gate is not None
+                  and request.url.path not in {
+                      "/api/healthz", "/api/v1/health", "/api/v1/health/readiness",
+                      "/api/v1/version", "/api/v1/development/compatibility"}
+                  and (request.headers.get("X-Evexia-Development-Contract") !=
+                       f'{LOADED_IDENTITY["contract"]}:{LOADED_IDENTITY["schema"]}'
+                       or not await development_gate.ready())):
+                response = JSONResponse(error_body(request, 503, "Development setup pending",
+                                                    "development_release_blocked"), status_code=503)
             else:
                 response = await call_next(request)
         except RequestTooLarge:
@@ -293,6 +318,13 @@ def create_app() -> FastAPI:
         return JSONResponse(error_body(request, 413, "Request too large"), status_code=413)
 
     app.include_router(system_router, prefix="/api/v1")
+    if development_gate is not None:
+        @app.get("/api/v1/development/compatibility", include_in_schema=False)
+        async def development_compatibility():
+            ready = await development_gate.ready()
+            return JSONResponse({"format": 1, "identity": LOADED_IDENTITY, "ready": ready},
+                                status_code=200 if ready else 503,
+                                headers={"Cache-Control": "no-store"})
     app.include_router(auth_router, prefix="/api/v1")
     app.include_router(domain_router, prefix="/api/v1")
     app.include_router(files_router, prefix="/api/v1")

@@ -1,0 +1,8 @@
+.development-incompatible body > :not(.development-block):not(script):not(style):not(link) { visibility:hidden !important; pointer-events:none !important; }
+.development-block { position:fixed; inset:0; z-index:2147483647; overflow:auto; min-height:100dvh; display:grid; place-items:center; padding:24px; background:#f5f7fa; color:#182b40; font-family:system-ui,sans-serif; pointer-events:auto; }
+.development-block section { max-width:640px; padding:32px; border:1px solid #ccd5df; border-radius:12px; background:white; }
+.development-block h1 { font-size:1.7rem; margin:16px 0; }
+.development-block p { margin:16px 0; line-height:1.6; }
+.development-block button { padding:12px 18px; border:1px solid #244e73; border-radius:6px; color:white; background:#244e73; cursor:pointer; }
+.development-block button:disabled { opacity:.6; cursor:wait; }
+.development-block a { color:#244e73; text-decoration:underline; }

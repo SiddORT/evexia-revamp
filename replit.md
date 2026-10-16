@@ -1,3 +1,12 @@
+# Development release compatibility
+
+Managed development API startup and post-merge reconciliation use the read-only,
+fail-closed development preflight. See `docs/development-release-gate.md` for the
+approved-setup/restart/ingress-verification/browser-retry sequence. A candidate
+pass does not activate the running preview. Communication prerequisites remain
+required and separately approved; never migrate or replace keys to clear a
+blocked report. Production installation and deployment are unchanged.
+
 # EVEXIA Portal
 
 EVEXIA Life Sciences portal with protected Admin and MR workspaces, a mock Doctor login screen, browser-local demonstration masters, and a FastAPI authentication/API service. Admin/MR authentication, Staff Management, Roles, Zone, Courier Partner, Storage Location, Designation, Headquarter, Product Category, Allergen, MR, Doctor, Patient, Vendor and Sales Target Masters use the backend; unrelated masters remain browser-local.

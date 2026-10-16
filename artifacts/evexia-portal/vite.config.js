@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
+import { candidateIdentity, developmentCompatibilityPlugin } from '../../scripts/development-identity.mjs';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const rawPort = process.env.PORT;
@@ -40,14 +41,20 @@ function exactDevelopmentHosts() {
   };
 }
 
-export default defineConfig(({ command, isPreview }) => ({
+export default defineConfig(({ command, isPreview }) => {
+ const gate = command === 'serve' && !isPreview &&
+   (process.env.EVEXIA_TEST_DEVELOPMENT_GATE === '1' ||
+    (Boolean(process.env.REPLIT_DEV_DOMAIN) && !(process.env.APP_ENV === 'test' && apiProxyTarget)));
+ return ({
   base: basePath,
   define: {
+    'import.meta.env.EVEXIA_DEVELOPMENT_GATE': JSON.stringify(gate),
+    'import.meta.env.EVEXIA_DEVELOPMENT_CONTRACT': JSON.stringify(gate ? candidateIdentity() : null),
     // Public host metadata only. Build/production preview never enable cookies.
     'import.meta.env.EVEXIA_PREVIEW_HOSTNAME': JSON.stringify(
       command === 'serve' && !isPreview ? process.env.REPLIT_DEV_DOMAIN || '' : ''),
   },
-  plugins: [exactDevelopmentHosts(), react(), tailwindcss(), runtimeErrorOverlay()],
+  plugins: [exactDevelopmentHosts(), developmentCompatibilityPlugin(gate, basePath), react(), tailwindcss(), runtimeErrorOverlay()],
   resolve: {
     alias: { '@': path.resolve(dirname, 'src') },
     dedupe: ['react', 'react-dom'],
@@ -71,4 +78,4 @@ export default defineConfig(({ command, isPreview }) => ({
     } : {}),
   },
   preview: { port, host: '0.0.0.0', allowedHosts: ['localhost', '127.0.0.1', '::1'] },
-}));
+}); });

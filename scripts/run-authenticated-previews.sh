@@ -87,6 +87,9 @@ export STAFF_EMAIL_INDEX_KEY=QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI=
 export DIRECTORY_ENCRYPTION_KEYS='{"primary":"Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0M="}'
 export DIRECTORY_ENCRYPTION_KEY_ID=primary
 export DIRECTORY_INDEX_KEY=RUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUU=
+# Synthetic and independent; the disposable API must not inherit operator keys.
+export COMMUNICATION_ENCRYPTION_KEYS='{"primary":"RkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkY="}'
+export COMMUNICATION_ENCRYPTION_KEY_ID=primary
 export JWT_SECRET=synthetic-isolated-preview-only-signing-key-145
 export SESSION_SECRET=synthetic-isolated-preview-only-session-key-145
 export SUPER_ADMIN_INITIAL_PASSWORD=Synthetic-preview-only-password-145
