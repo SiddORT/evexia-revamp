@@ -1,5 +1,10 @@
 # Purchase Order activation
 
+This document records **development-only** approval and evidence. It does not
+authorize production, another workspace, or a fresh production install. The
+separate [0038 fresh-install release candidate](fresh-install.md) has its own
+human release, target, recovery and empty-finalization approvals; this historical
+development activation must not be used to satisfy any of them.
 
 ## Original-development completion reported by the user — 16 October 2026
 

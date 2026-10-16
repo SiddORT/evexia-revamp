@@ -1,7 +1,22 @@
 {
-  "target": "0037_domain_admission",
+  "status": "reviewed_candidate_requires_human_release_approval",
+  "review_scope": "Fresh empty PostgreSQL 17 install only; prepare 0031, retirement capped at 0034, separately approved empty-only finalization through 0038. Not production approval.",
+  "target": "0038_purchase_orders",
   "prepare_target": "0031_role_hostnames",
-  "policy_sha256": "3cc68799bad59feb3ca3f1ddb2141cbe65ea5cb1cec404ef106ed1530c0f6f72",
+  "policy_sha256": "d7e3f02b352a670ebe3a0266160a1a6b28734d18a29d47fdd9b1add19ed2c7bc",
+  "release_sources": {
+    "artifacts/api-server/backend/app/fresh_install.py": "65c3a52f7df2f625c1c8ac7dd24fa991eb0b257c3e17944c198d2b3f6d152606",
+    "artifacts/api-server/backend/app/services/fresh_catalog.py": "e4a2009b45b76eb15a5d76b3e365b5b54e9b2f53191d417e1cafed69ca2f8970",
+    "artifacts/api-server/backend/app/services/fresh_recovery.py": "af8e518d8427f3bbc5d18607f8a11bc39a9761b6330b52a762d63c3d6b690681",
+    "scripts/fresh-install-catalog.json": "69e51f820b2dec57e4d1ec8c11bf292889fc7e6df2656dc1a930ded193a886cd",
+    "scripts/operator-retirement.sh": "bfcbf9d57e9c479548b14c3c9c654be32b04bb82556916b4b3f79ada53d7cc27",
+    "scripts/deploy-migrations.py": "d8824c4d2cab740f91f0fad55ea0f4ee6ea6f0327677a6b69e4b9af31379235a",
+    "scripts/initialize-api.sh": "09b7ec92a4b341b2f58afcf4ac6065bb7a5681dd03e9aab07db8f360a417ea1f",
+    "artifacts/api-server/backend/app/core/schema.py": "ca20b7a38b7d021083997de443c78234d3df7f1301c0d89159a962b9e8a94d32",
+    "artifacts/api-server/backend/app/db/models.py": "56c67c8c6492450864df61d0e56c3df92296de66faba58172c4fd0f8650be639",
+    "artifacts/api-server/backend/app/bootstrap.py": "0b70826aff0832e265804081f64686497b2fcf9a7c8a81198536ed2ee2a79131",
+    "artifacts/api-server/backend/app/api/v1/system.py": "19498e08b63a6acea39ae26eacaa83f3b50bb22112c73a1f4169967568bbe5ba"
+  },
   "guard_sources": {
     "app/core/config.py": "afdc4d023f96ca39ce09bfad67fabbb116166ee8e293f59877f28525487c850d",
     "app/services/directory_crypto.py": "6ab6062400f273db784007658d73c803e34685679c9ad9348a0b0445303213f3",
@@ -11,7 +26,7 @@
     "app/services/organization_retirement.py": "d4a45ffdd20d754da002943b0b877e08c275b41ed9418034a4e132345789732c",
     "app/services/role_attribution.py": "ba3fc9fe0d0c51389e73fce573b74492ce9f2c47d649deab7bd9aab3ec9268e2",
     "app/services/staff_designation_mapping.py": "453a8e3e5a233e4bd1fd1f5e434f4534842ce144a8ce9a43209904f4b01bac56",
-    "app/services/account_crypto.py": "955b645468f0b8cd5fdf7b6e7218592bba8629c438bb0012fd4a59803193f753",
+    "app/services/account_crypto.py": "ffea1624ee7d659c5dd3972f36ad094e9e7b56452aa923eebfcd1c31ee6a9b9d",
     "app/services/account_migration.py": "fedc3b2a121e207be409bac87e05aa184e45aca61a5325ad87ebb11b25848904"
   },
   "revisions": {
@@ -56,6 +71,7 @@
     "0034_shared_phone_countries": "a1ef0f95ca2b5531c6bb2e25d4344614d98a6d38ee01ce360de09864c14eb749",
     "0035_account_identifiers": "383a7d5936ba4795d1368f156fcaea3081e010d1ad236f7a45750559fa230df4",
     "0036_reference_privacy": "9a44ac0cf09babc79ea4f0d545c03603030b9bee06a0202a9ef21ce4dc8d8c4e",
-    "0037_domain_admission": "78557e3c9c4030ebb11277578e0348d4e39d31c0c5cebf4078518da1cbd66958"
+    "0037_domain_admission": "78557e3c9c4030ebb11277578e0348d4e39d31c0c5cebf4078518da1cbd66958",
+    "0038_purchase_orders": "768d4d86d2efc07fc78351091ec9ae5063a9cc7088bd0c787f93d5fc36b04c43"
   }
 }

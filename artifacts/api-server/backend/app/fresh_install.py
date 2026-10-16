@@ -11,7 +11,7 @@ import sys
 
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[4]
 BACKEND = ROOT / "artifacts/api-server/backend"
 LOCK_PATH = Path("/var/www/newuat.allergyevexia.in/.deploy.lock")
 PREPARE_TARGET = "0031_role_hostnames"
-FINAL_TARGET = "0037_domain_admission"
+FINAL_TARGET = "0038_purchase_orders"
 LOCK_ID = 145002  # Same database interlock as normal CI/operator continuation.
 
 
@@ -56,6 +56,8 @@ def verify_supervisor():
 def reviewed_graph(root=ROOT):
     """Fail closed on ANY changed/unreviewed migration or policy, by revision ID."""
     review = json.loads((root / "scripts/fresh-install-review.json").read_text())
+    if review.get("status") != "reviewed_candidate_requires_human_release_approval":
+        raise FreshInstallBlocked("Explicit candidate review boundary required.")
     hashes = {}
     for path in (root / "artifacts/api-server/backend/alembic/versions").glob("*.py"):
         assignments = [node for node in ast.parse(path.read_text()).body
@@ -75,6 +77,9 @@ def reviewed_graph(root=ROOT):
     if any(hashlib.sha256((root / "artifacts/api-server/backend" / path).read_bytes()).hexdigest() != digest
            for path, digest in review["guard_sources"].items()):
         raise FreshInstallBlocked("Migration guard changed; fresh-install review required.")
+    if any(hashlib.sha256((root / path).read_bytes()).hexdigest() != digest
+           for path, digest in review["release_sources"].items()):
+        raise FreshInstallBlocked("Release tooling changed; fresh-install review required.")
     spec = importlib.util.spec_from_file_location("fresh_install_policy", root / "scripts/deploy-migrations.py")
     runner = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = runner
@@ -90,6 +95,26 @@ def reviewed_graph(root=ROOT):
     if "0031_remove_organizations" in runner.ordered_ancestors(graph, PREPARE_TARGET):
         raise FreshInstallBlocked("Preparation must never reach organization retirement.")
     return graph
+
+
+def approve_release(digest):
+    """An explicit human attestation of the exact candidate, not automatic approval."""
+    actual = hashlib.sha256((ROOT / "scripts/fresh-install-review.json").read_bytes()).hexdigest()
+    if digest != actual:
+        raise FreshInstallBlocked("Human release approval must name the exact reviewed manifest SHA256.")
+
+
+def catalog(connection, revision):
+    from app.services.fresh_catalog import digest
+    expectations = json.loads((ROOT / "scripts/fresh-install-catalog.json").read_text())
+    expected = expectations.get(revision)
+    if expected is None or digest(connection) != expected["sha256"]:
+        raise FreshInstallBlocked("Unexpected installation catalog; operator review required.")
+    if revision == FINAL_TARGET:
+        if connection.execute(text(
+                "SELECT last_value,is_called FROM purchase_order_number_seq")).one() != (1, False):
+            raise FreshInstallBlocked("Purchase Order sequence is not unused; operator review required.")
+    return set(expected["tables"])
 
 
 def configuration(settings):
@@ -175,31 +200,20 @@ def prepare(connection):
 
 def finalize(connection, settings, hostname=None):
     """Only a never-used CURRENT schema can be bootstrapped by this command."""
-    from app.db.base import Base
-    from app.db import models  # noqa: F401
     from app.bootstrap import bootstrap_super_admin
     from app.api.v1.system import readiness
     dedicated_database(connection)
     revisions = connection.execute(text("SELECT version_num FROM alembic_version")).scalars().all()
-    predecessors = (["0034_shared_phone_countries"], ["0035_account_identifiers"], ["0036_reference_privacy"])
+    predecessors = (["0034_shared_phone_countries"], ["0035_account_identifiers"],
+                    ["0036_reference_privacy"], ["0037_domain_admission"])
     if revisions not in (*predecessors, [FINAL_TARGET]):
         raise FreshInstallBlocked("Complete the existing protected operator continuation first.")
-    expected = set(Base.metadata.tables) | {"alembic_version", "directory_crypto_stage"}
-    if revisions == ["0034_shared_phone_countries"]:
-        expected.remove("account_crypto_state")
-    if revisions in predecessors:
-        expected.remove("domain_policies")
-    if set(inspect(connection).get_table_names(schema="public")) != expected:
-        raise FreshInstallBlocked("Unexpected installation tables; operator review required.")
-    if connection.scalar(text("""
-        SELECT EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-          WHERE n.nspname='public' AND c.relkind IN ('v','m','f'))
-    """)):
-        raise FreshInstallBlocked("Unexpected installation views/foreign tables; operator review required.")
+    expected = catalog(connection, revisions[0])
     quote = connection.dialect.identifier_preparer.quote
     tables = sorted(expected - {"alembic_version", "directory_crypto_stage", "account_crypto_state"})
     connection.execute(text("LOCK TABLE " + ", ".join('public.' + quote(t) for t in sorted(expected)) +
                             " IN ACCESS EXCLUSIVE MODE NOWAIT"))
+    catalog(connection, revisions[0])
     for table in tables:
         if connection.scalar(text(f"SELECT EXISTS(SELECT 1 FROM public.{quote(table)})")):
             raise FreshInstallBlocked("Installation already contains records; no accounts or credentials changed.")
@@ -208,6 +222,9 @@ def finalize(connection, settings, hostname=None):
         # verified target and proves ALL business tables empty under locks.
         # This is not permission to migrate a populated account database.
         command.upgrade(alembic_config(connection), FINAL_TARGET)
+    if connection.execute(text("SELECT version_num FROM alembic_version")).scalars().all() != [FINAL_TARGET]:
+        raise FreshInstallBlocked("Unexpected final revision; transaction rolled back.")
+    catalog(connection, FINAL_TARGET)
     with Session(bind=connection) as db:
         result = bootstrap_super_admin(db, settings.super_admin_initial_password)
         if hostname is not None:
@@ -231,8 +248,11 @@ def main(argv=None):
     parser.add_argument("phase", choices=("prepare", "finalize"))
     parser.add_argument("--approve-fresh-install", action="store_true",
                         help="Approve reviewed history only through 0031_role_hostnames on a proven pristine DB.")
-    parser.add_argument("--approve-bootstrap", action="store_true")
+    parser.add_argument("--approve-bootstrap", action="store_true",
+                        help="Approve empty-only finalization through 0038 and atomic protected bootstrap.")
     parser.add_argument("--writers-stopped", action="store_true")
+    parser.add_argument("--approve-release", required=True,
+                        help="Human release approval: exact candidate manifest SHA256; not inferred.")
     parser.add_argument("--admin-hostname", help="Explicit optional initial Admin hostname; never inferred.")
     parser.add_argument("--expected-database", required=True,
                         help="Database name from independently verified target evidence, not inferred from DATABASE_URL.")
@@ -252,6 +272,7 @@ def main(argv=None):
             hostname = canonical_hostname(args.admin_hostname)
         verify_supervisor()
         reviewed_graph()
+        approve_release(args.approve_release)
         settings = get_settings()
         configuration(settings)
         url = settings.database_url
@@ -262,6 +283,7 @@ def main(argv=None):
         engine = create_engine(url, hide_parameters=True)
         try:
             with engine.begin() as connection:
+                connection.execute(text("SET LOCAL lock_timeout='5s'"))
                 verify_database_target(connection, args.expected_database, args.expected_system_identifier)
                 connection.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": LOCK_ID})
                 if args.phase == "prepare":
@@ -271,7 +293,7 @@ def main(argv=None):
         finally:
             engine.dispose()
         print("FRESH_INSTALL_PREPARED: 0031_role_hostnames; protected recovery/retirement required; NOT READY."
-              if args.phase == "prepare" else "FRESH_INSTALL_READY: 0037_domain_admission; Super Admin initialized.")
+              if args.phase == "prepare" else "FRESH_INSTALL_READY: 0038_purchase_orders; Super Admin initialized.")
         return 0
     except FreshInstallBlocked as exc:
         print(f"FRESH_INSTALL_BLOCKED: {exc}", file=sys.stderr)

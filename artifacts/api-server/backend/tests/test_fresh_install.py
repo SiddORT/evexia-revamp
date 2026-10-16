@@ -1,5 +1,6 @@
 """Real production guards on socket-only disposable PG, not the workspace DB."""
 import fcntl
+import hashlib
 import getpass
 import json
 import os
@@ -53,13 +54,14 @@ def databases():
 
 
 def test_review_covers_every_revision_and_policy():
-    assert len(fresh.reviewed_graph()) == 42
+    assert len(fresh.reviewed_graph()) == 43
 
 
 def test_clean_process_registers_domain_metadata():
     result = subprocess.run([sys.executable, "-B", "-c",
         "from app.db import models; from app.db.base import Base; "
-        "assert 'domain_policies' in Base.metadata.tables"],
+        "assert {'domain_policies','purchase_orders','purchase_order_lines',"
+        "'purchase_order_audit','purchase_order_requests'} <= set(Base.metadata.tables)"],
         check=False, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
 
@@ -73,6 +75,19 @@ def test_review_rejects_changed_or_unknown_migration(tmp_path):
         target = tmp_path / "artifacts/api-server/backend" / path
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(fresh.BACKEND / path, target)
+    for path in json.loads((tmp_path / "scripts/fresh-install-review.json").read_text())["release_sources"]:
+        target = tmp_path / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(fresh.ROOT / path, target)
+    for relative in ("scripts/migration-policy.json",
+                     "artifacts/api-server/backend/app/services/account_crypto.py",
+                     "scripts/deploy-migrations.py", "scripts/fresh-install-catalog.json"):
+        changed = tmp_path / relative
+        original = changed.read_bytes()
+        changed.write_bytes(original + b"\n")
+        with pytest.raises(fresh.FreshInstallBlocked, match="review required"):
+            fresh.reviewed_graph(tmp_path)
+        changed.write_bytes(original)
     path = versions / "unreviewed.py"
     path.write_text("revision='unreviewed'\ndown_revision='0034_shared_phone_countries'\n")
     with pytest.raises(fresh.FreshInstallBlocked, match="review required"):
@@ -88,7 +103,9 @@ def identity_arguments(engine):
         name, identifier = db.execute(text(
             "SELECT current_database(), system_identifier FROM pg_catalog.pg_control_system()"
         )).one()
-    return ["--expected-database", name, "--expected-system-identifier", str(identifier)]
+    return ["--expected-database", name, "--expected-system-identifier", str(identifier),
+            "--approve-release", hashlib.sha256(
+                (fresh.ROOT / "scripts/fresh-install-review.json").read_bytes()).hexdigest()]
 
 
 def test_missing_identity_refused_before_connection():
@@ -100,7 +117,8 @@ def test_missing_identity_refused_before_connection():
 
 
 def test_explicit_phase_approvals_cannot_be_reused():
-    identity = ["--expected-database", "fixture", "--expected-system-identifier", "123"]
+    identity = ["--expected-database", "fixture", "--expected-system-identifier", "123",
+                "--approve-release", "a" * 64]
     with patch.object(fresh, "verify_supervisor") as supervisor:
         assert fresh.main(["prepare", "--writers-stopped", *identity]) == 1
         assert fresh.main(["finalize", "--approve-fresh-install", "--writers-stopped", *identity]) == 1
@@ -139,6 +157,10 @@ def test_cli_preparation_and_normal_policy_barrier(databases, tmp_path, monkeypa
     with lock.open("w") as handle:
         fcntl.flock(handle, fcntl.LOCK_EX)
         monkeypatch.setenv("EVEXIA_DEPLOY_LOCK_FD", str(handle.fileno()))
+        with patch.object(fresh, "create_engine") as connect:
+            assert fresh.main(["prepare", "--approve-fresh-install", "--writers-stopped",
+                               *identity[:-1], "f" * 64]) == 1
+            connect.assert_not_called()
         assert fresh.main(["prepare", "--approve-fresh-install", "--writers-stopped", *identity]) == 0
         assert fresh.main(["prepare", "--approve-fresh-install", "--writers-stopped", *identity]) == 1
     result = subprocess.run([sys.executable, "-B",
@@ -155,11 +177,11 @@ def test_cli_preparation_and_normal_policy_barrier(databases, tmp_path, monkeypa
 def test_wrong_database_or_cluster_refused_before_any_mutation(databases, tmp_path, monkeypatch, phase, mismatch):
     source, rehearsal, _ = databases
     identity = identity_arguments(source)
-    assert identity_arguments(rehearsal)[-1] != identity[-1]
+    assert identity_arguments(rehearsal)[3] != identity[3]
     if mismatch == "name":
         identity[1] = "another_database"
     elif mismatch == "identifier":
-        identity[-1] = str(int(identity[-1]) + 1)
+        identity[3] = str(int(identity[3]) + 1)
     else:
         settings = get_settings().model_copy(update={"database_url": str(rehearsal.url)})
         monkeypatch.setattr(fresh, "get_settings", lambda: settings)
@@ -250,7 +272,11 @@ def test_preparation_stops_and_original_production_retirement_guard_survives(dat
         fresh.finalize(db, get_settings())
 
 
-def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap(databases, tmp_path, monkeypatch):
+@pytest.mark.parametrize("stage", [
+    "0034_shared_phone_countries", "0035_account_identifiers", "0036_reference_privacy",
+    "0037_domain_admission", "0038_purchase_orders",
+])
+def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap(databases, tmp_path, monkeypatch, stage):
     from app.services import organization_retirement as recovery
     from app.api.v1.system import readiness
     from app.api.v1.role_urls import resolve
@@ -258,7 +284,7 @@ def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap
     source, rehearsal, root = databases
     with source.begin() as db:
         fresh.prepare(db)
-    custody = root / "custody"
+    custody = root / ("custody-" + stage)
     custody.mkdir(mode=0o700)
     with source.connect() as db:
         report = recovery.preflight(db)
@@ -268,6 +294,68 @@ def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap
     # A SHA alone is NOT restoration proof. Actually dump/restore into the
     # independent second cluster before any retirement approval is supplied.
     archive = custody / "predecessor.dump"
+    full_archive = custody / "full-predecessor.dump"
+    subprocess.run(["pg_dump", "-h", str(root / "source/socket"), "-Fc", "-f", str(full_archive),
+                    "fresh_install"], check=True, capture_output=True)
+    # Restore the COMPLETE archive on the independent cluster first. Keep the
+    # same DB/role identity for the full recovery comparison. Do not run the
+    # strict historical guard on reserialized CHECK expressions to force a pass.
+    subprocess.run(["pg_restore", "-h", str(root / "rehearsal/socket"), "-d", "fresh_install",
+                    "--exit-on-error", str(full_archive)], check=True, capture_output=True)
+    from app.services.fresh_catalog import projection
+    from app.services import fresh_recovery as full
+    with source.connect() as original, rehearsal.connect() as restored:
+        differences = full.compare(full.snapshot(original), full.snapshot(restored))
+        assert differences["source_checks"] and differences["restored_checks"]
+        assert recovery.snapshot(restored) == recovery.load_backup(custody / "recovery.json", digest)
+        # Full pg_restore reserializes CHECK expressions. Compare the entire
+        # data set, non-CHECK catalog, and constraint identities/validation.
+        # Record the textual differences; do NOT weaken the strict live guard.
+        before, after = projection(original), projection(restored)
+        for category in before:
+            if category == "constraints":
+                assert [(r[0], r[1], r[3]) for r in before[category]] == [
+                    (r[0], r[1], r[3]) for r in after[category]]
+                assert [r for r in before[category] if not r[2].startswith("CHECK")] == [
+                    r for r in after[category] if not r[2].startswith("CHECK")]
+            else:
+                assert before[category] == after[category], category
+        restored_report = recovery.preflight(restored)
+        assert restored_report["unexpected_dependency_count"] == 0, restored_report
+        for table in inspect(original).get_table_names():
+            quote = original.dialect.identifier_preparer.quote
+            rows = lambda db: sorted(json.dumps(dict(row), sort_keys=True, default=str)
+                for row in db.execute(text(f"SELECT * FROM {quote(table)}")).mappings())
+            assert rows(original) == rows(restored), table
+    recovery_lock = tmp_path / ".deploy.lock"
+    (tmp_path / ".operator-maintenance").touch()
+    evidence = custody / "full-evidence.json"
+    report_path = custody / "full-check-report.json"
+    with recovery_lock.open("a") as handle, patch.object(fresh, "LOCK_PATH", recovery_lock):
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        with patch.dict(os.environ, EVEXIA_DEPLOY_LOCK=str(recovery_lock),
+                        EVEXIA_DEPLOY_LOCK_FD=str(handle.fileno())):
+            for engine, mode in ((source, "export"), (rehearsal, "verify")):
+                args = ["fresh_recovery", mode, "--evidence", str(evidence), *identity_arguments(engine)]
+                if mode == "verify":
+                    args += ["--sha256", hashlib.sha256(evidence.read_bytes()).hexdigest(),
+                             "--catalog-report", str(report_path)]
+                settings = get_settings().model_copy(update={
+                    "database_url": engine.url.render_as_string(hide_password=False)})
+                with patch.object(sys, "argv", args), patch.object(full, "get_settings", return_value=settings):
+                    assert full.main() == 0
+            assert report_path.stat().st_mode & 0o077 == 0
+            # Same-cluster evidence cannot masquerade as independent recovery.
+            with patch.object(sys, "argv", ["fresh_recovery", "verify", "--evidence", str(evidence),
+                    "--sha256", hashlib.sha256(evidence.read_bytes()).hexdigest(),
+                    "--catalog-report", str(custody / "must-not-exist.json"), *identity_arguments(source)]):
+                assert full.main() == 1
+            assert not (custody / "must-not-exist.json").exists()
+    rehearsal.dispose()
+    subprocess.run(["dropdb", "-h", str(root / "rehearsal/socket"), "fresh_install"],
+                   check=True, capture_output=True)
+    subprocess.run(["createdb", "-h", str(root / "rehearsal/socket"), "fresh_install"],
+                   check=True, capture_output=True)
     subprocess.run(["pg_dump", "-h", str(root / "source/socket"), "-Fc", "-f", str(archive),
                     "--exclude-table-data=public.alembic_version",
                     "--exclude-table-data=public.directory_crypto_stage",
@@ -283,24 +371,108 @@ def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap
         report = recovery.preflight(db)
         assert report["unexpected_dependency_count"] == 0, str(report)
         assert recovery.snapshot(db) == recovery.load_backup(custody / "recovery.json", digest)
-    arguments = [
-        "organization_removal_approved=yes", "organization_writers_stopped=yes",
-        "organization_external_consumers_reviewed=yes", "organization_backup_durable=yes",
-        "organization_retention_resolved=yes", f"organization_backup={custody / 'recovery.json'}",
-        f"organization_backup_sha256={digest}", f"organization_restore_verified={digest}",
-    ]
-    # Explicit approvals only for these test-owned databases, after real restoration.
+    # Exercise the ACTUAL shell wrapper, not a translation of its Alembic calls.
+    # Relocate only the canonical path in a test-owned release copy. Production
+    # has no configurable lock-path bypass. Rebind that exact reviewed test copy.
+    release = tmp_path / "release"
+    shutil.copytree(fresh.ROOT / "scripts", release / "scripts",
+                    ignore=shutil.ignore_patterns("__pycache__"))
+    shutil.copytree(fresh.BACKEND, release / "artifacts/api-server/backend",
+                    ignore=shutil.ignore_patterns("__pycache__"))
+    lock = tmp_path / ".deploy.lock"
+    (tmp_path / ".operator-maintenance").touch()
+    wrapper = release / "scripts/operator-retirement.sh"
+    wrapper.write_text(wrapper.read_text().replace(
+        "/var/www/newuat.allergyevexia.in/.deploy.lock", str(lock)))
+    review_path = release / "scripts/fresh-install-review.json"
+    review = json.loads(review_path.read_text())
+    review["release_sources"]["scripts/operator-retirement.sh"] = hashlib.sha256(wrapper.read_bytes()).hexdigest()
+    review_path.write_text(json.dumps(review))
+    test_release_digest = hashlib.sha256(review_path.read_bytes()).hexdigest()
+    # Test-only approval follows actual independent restoration; no production
+    # recovery evidence or release approval is manufactured by this test.
     for engine in (rehearsal, source):
+        env = dict(os.environ, DATABASE_URL=engine.url.render_as_string(hide_password=False))
+        with lock.open("a") as handle:
+            fcntl.flock(handle, fcntl.LOCK_EX)
+            env.update(EVEXIA_DEPLOY_LOCK=str(lock), EVEXIA_DEPLOY_LOCK_FD=str(handle.fileno()),
+                       PYTHONPATH=str(release / "artifacts/api-server/backend") +
+                       os.pathsep + os.environ["PYTHONPATH"], EVEXIA_OPERATOR_PYTHON=sys.executable)
+            identity = identity_arguments(engine)[:4]
+            args = ["bash", str(wrapper), "--backup", str(custody / "recovery.json"),
+                "--sha256", digest, "--restore-verified", digest, "--attest-restoration-rehearsal",
+                "--approve-retirement", "--writers-stopped", "--external-consumers-reviewed",
+                "--backup-durable", "--retention-resolved", "--approve-phone-continuation",
+                "--approve-release", test_release_digest, *identity]
+            if engine is source and stage == "0034_shared_phone_countries":
+                def rejected(arguments, *, inherited=True):
+                    failed = subprocess.run(arguments, env=env,
+                        pass_fds=(handle.fileno(),) if inherited else (),
+                        capture_output=True, text=True)
+                    assert failed.returncode != 0
+                    with source.connect() as unchanged:
+                        assert unchanged.scalar(text("SELECT version_num FROM alembic_version")) == fresh.PREPARE_TARGET
+                        assert unchanged.scalar(text("SELECT count(*) FROM users")) == 0
+                rejected(args + ["--expected-database", "wrong_target"])
+                rejected(args + ["--expected-system-identifier", identity_arguments(rehearsal)[3]])
+                rejected(args + ["--approve-release", "f" * 64])
+                rejected([a for a in args if a != "--approve-phone-continuation"])
+                rejected(args, inherited=False)
+                (tmp_path / ".operator-maintenance").unlink()
+                rejected(args)
+                (tmp_path / ".operator-maintenance").touch()
+                policy = release / "scripts/migration-policy.json"
+                original = policy.read_bytes()
+                policy.write_bytes(original + b"\n")
+                rejected(args)
+                policy.write_bytes(original)
+                unknown = release / "artifacts/api-server/backend/alembic/versions/unreviewed.py"
+                unknown.write_text("revision='unreviewed'\ndown_revision='0038_purchase_orders'\n")
+                rejected(args)
+                unknown.unlink()
+            result = subprocess.run(args,
+                env=env, pass_fds=(handle.fileno(),), capture_output=True, text=True)
+            assert result.returncode == 0, result.stdout + result.stderr
         with engine.begin() as db:
+            assert db.scalar(text("SELECT version_num FROM alembic_version")) == "0034_shared_phone_countries"
+            assert not db.scalar(text("SELECT to_regclass('purchase_order_number_seq')"))
+            fresh.catalog(db, "0034_shared_phone_countries")
             config = fresh.alembic_config(db)
-            config.cmd_opts = SimpleNamespace(x=arguments)
-            # Each target is deliberate; never upgrade head.
-            for target in ("0031_remove_organizations", "0033_merge_directory_branches", fresh.FINAL_TARGET):
-                command.upgrade(config, target)
+            command.upgrade(config, stage)
+            fresh.catalog(db, stage)
+            assert ("purchase_orders" in inspect(db).get_table_names()) == (stage == fresh.FINAL_TARGET)
+            assert bool(db.scalar(text("SELECT to_regclass('purchase_order_number_seq')"))) == (stage == fresh.FINAL_TARGET)
+    if stage == fresh.FINAL_TARGET:
+        # Consume only the disposable rehearsal's sequence. Never reset it to
+        # disguise use; leave that independent test database blocked.
+        with rehearsal.begin() as db:
+            assert db.scalar(text("SELECT nextval('purchase_order_number_seq')")) == 1
+        with pytest.raises(fresh.FreshInstallBlocked, match="sequence is not unused"), rehearsal.begin() as db:
+            fresh.finalize(db, get_settings())
+        with rehearsal.connect() as db:
+            assert db.scalar(text("SELECT count(*) FROM users")) == 0
+    # Every admitted predecessor refuses populated data or altered catalogs
+    # before changing revision, account, or credentials. Roll back test mutations.
+    mutations = [
+        "CREATE TABLE unrelated(id int)", "CREATE VIEW unrelated AS SELECT 1 AS id",
+        "CREATE SEQUENCE unrelated", "CREATE TYPE unrelated AS ENUM ('x')",
+        "CREATE FUNCTION unrelated() RETURNS integer LANGUAGE SQL AS 'SELECT 1'",
+        "ALTER TABLE users ADD COLUMN unrelated int",
+        "INSERT INTO login_attempts(id,identifier_hash,attempted_at) VALUES "
+        "('00000000-0000-0000-0000-000000000001','synthetic',now())",
+    ]
+    for sql in mutations:
+        with pytest.raises(fresh.FreshInstallBlocked), source.begin() as db:
+            db.execute(text(sql))
+            fresh.finalize(db, get_settings())
+        with source.connect() as db:
+            assert db.scalar(text("SELECT version_num FROM alembic_version")) == stage
+            assert db.scalar(text("SELECT count(*) FROM users")) == 0
     with pytest.raises(RuntimeError), source.begin() as db:
         fresh.finalize(db, get_settings(), "fresh.allergyevexia.in")
         raise RuntimeError("Synthetic failure after bootstrap; outer transaction still owns commit")
     with source.connect() as db:
+        assert db.scalar(text("SELECT version_num FROM alembic_version")) == stage
         assert db.scalar(text("SELECT count(*) FROM users")) == 0
         assert db.scalar(text("SELECT count(*) FROM role_hostnames")) == 0
     lock = tmp_path / ".deploy.lock"
@@ -312,6 +484,13 @@ def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap
         monkeypatch.setenv("EVEXIA_DEPLOY_LOCK_FD", str(handle.fileno()))
         assert fresh.main(["finalize", "--approve-bootstrap", "--writers-stopped",
                            "--admin-hostname", "fresh.allergyevexia.in", *identity_arguments(source)]) == 0
+        # Simulate a lost successful acknowledgement: a retry with a different
+        # configured initial password must refuse, never reset the committed one.
+        replacement = get_settings().model_copy(update={
+            "super_admin_initial_password": SecretStr("different-synthetic-password")})
+        with patch.object(fresh, "get_settings", return_value=replacement):
+            assert fresh.main(["finalize", "--approve-bootstrap", "--writers-stopped",
+                               *identity_arguments(source)]) == 1
     with Session(source) as db:
         user = db.query(User).one()
         assert user.is_protected_system_admin and user.system_role == "super_admin"

@@ -18,6 +18,18 @@ Alembic/directory-stage metadata. Verify restored data against external recovery
 Do not generalize that fresh-only procedure to populated recoveries, edit restored
 constraints to force acceptance, or relax the production guard.
 
+Keep complete archive recovery evidence separate from exact-catalog continuation
+evidence. A replay-plus-data-only clone is not proof that a full archive restores.
+
+**Why:** A full restoration can match all data and pass the bounded retirement
+preflight while still having reserialized CHECK text elsewhere that an exact
+fresh-install catalog projection rejects. Neither check substitutes for the other.
+
+**How to apply:** Rehearse complete restoration and review any DDL differences;
+use a separate migration-replayed clone for the exact protected continuation.
+Retain both results before human attestation. Never delete or overwrite an
+operator recovery target merely to reuse it for the second proof.
+
 The reviewed membership predicate permits only its two exact equivalent typed
 array-cast forms, never arbitrary cast removal or expression simplification.
 Grouping normalization must preserve characters inside quoted literals.

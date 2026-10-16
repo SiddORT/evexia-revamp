@@ -190,7 +190,10 @@ compatible successor, not arbitrary future revisions.
 
 Apply `0037_domain_admission` only through the separately authorized migration
 procedure after all predecessor approvals. Readiness requires the coordinated
-new head and the domain-policy table. Then independently verify DNS TXT,
+application head (currently `0038_purchase_orders`), not just 0037 and the
+domain-policy table. The separately reviewed [fresh-install candidate](fresh-install.md)
+includes empty-only finalization through 0038; it is not approval for any
+populated production database or for domain admission. Then independently verify DNS TXT,
 admission, TLS, exact proxy peers, same-origin API routing, health Host,
 SPA deep links, role incompatibility, cookie isolation, and rejection/revocation
 at every actual ingress, including any direct API/static listener.

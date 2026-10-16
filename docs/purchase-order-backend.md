@@ -11,9 +11,13 @@ add staff procurement permissions to the eight-master catalogue.
 No shared/managed database was migrated as part of implementation. Obtain
 separate operator approval before applying it. Until activation, application
 readiness reports the schema mismatch; do not claim the live service is ready.
-The previously reviewed fresh-install runner still ends at its reviewed
-domain-admission target; its approval does not authorize this successor.
-Do not silently extend that runner's review manifest or bypass its guards.
+The historical fresh-install approval ended at domain admission and did not
+authorize this successor. The new [0038 fresh-install candidate](fresh-install.md)
+explicitly reviews this DDL for **genuinely empty production installations only**,
+requires human approval of the exact release manifest and target, and retains
+all recovery/retirement gates. Candidate metadata is not production approval.
+Populated installations still require their own separately reviewed operator
+procedure. Do not rehash an unreviewed manifest or bypass its guards.
 
 The separately approved Replit Helium development activation, verified backup
 and live API results are recorded in

@@ -201,13 +201,13 @@ class MigrationPolicyTests(unittest.TestCase):
         blocked = runner.plan(graph, policy, ["0030_directory_crypto_retirement"], target)
         self.assertEqual(blocked["operator_only"],
                          ["0031_remove_organizations", "0034_shared_phone_countries", "0035_account_identifiers",
-                          "0036_reference_privacy", "0037_domain_admission"])
+                          "0036_reference_privacy", "0037_domain_admission", "0038_purchase_orders"])
         account_blocked = runner.plan(graph, policy, ["0034_shared_phone_countries"], target)
         self.assertEqual(account_blocked["result"], "OPERATOR_MIGRATION_REQUIRED")
-        self.assertEqual(account_blocked["operator_only"], ["0035_account_identifiers", "0036_reference_privacy", "0037_domain_admission"])
+        self.assertEqual(account_blocked["operator_only"], ["0035_account_identifiers", "0036_reference_privacy", "0037_domain_admission", "0038_purchase_orders"])
         privacy_blocked = runner.plan(graph, policy, ["0035_account_identifiers"], target)
         self.assertEqual(privacy_blocked["result"], "OPERATOR_MIGRATION_REQUIRED")
-        self.assertEqual(privacy_blocked["operator_only"], ["0036_reference_privacy", "0037_domain_admission"])
+        self.assertEqual(privacy_blocked["operator_only"], ["0036_reference_privacy", "0037_domain_admission", "0038_purchase_orders"])
         ready = runner.plan(graph, policy, [target], target)
         self.assertEqual(ready["pending"], [])
 
@@ -439,6 +439,8 @@ class OperatorSafetyTests(unittest.TestCase):
                     changes(root, lock, marker, env)
                 digest = "a" * 64
                 args = ["bash", str(script), "--backup", str(backup), "--sha256", digest,
+                        "--approve-release", "b" * 64, "--expected-database", "fixture",
+                        "--expected-system-identifier", "123",
                         "--approve-retirement", "--writers-stopped",
                         "--external-consumers-reviewed", "--backup-durable",
                         "--retention-resolved", "--approve-phone-continuation"]

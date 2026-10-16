@@ -7,10 +7,14 @@ ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 BACKEND="$ROOT/artifacts/api-server/backend"
 PYTHON="${EVEXIA_OPERATOR_PYTHON:-python3}"
 BACKUP= SHA= RESTORE=
+RELEASE= DATABASE= CLUSTER=
 APPROVED=no WRITERS=no CONSUMERS=no DURABLE=no RETENTION=no PHONE=no
 RESTORATION_ATTESTED=no
 while (($#)); do
   case "$1" in
+    --approve-release) RELEASE="${2:?Missing release digest}"; shift 2 ;;
+    --expected-database) DATABASE="${2:?Missing approved database}"; shift 2 ;;
+    --expected-system-identifier) CLUSTER="${2:?Missing approved cluster}"; shift 2 ;;
     --backup) BACKUP="${2:?Missing backup path}"; shift 2 ;;
     --sha256) SHA="${2:?Missing digest}"; shift 2 ;;
     --restore-verified) RESTORE="${2:?Missing attested backup digest}"; shift 2 ;;
@@ -25,6 +29,8 @@ while (($#)); do
   esac
 done
 [[ "${APP_ENV:-}" == production ]] || { echo "Production environment required." >&2; exit 1; }
+[[ "$RELEASE" =~ ^[0-9a-f]{64}$ && -n "$DATABASE" && "$CLUSTER" =~ ^[0-9]+$ ]] ||
+  { echo "Exact release approval and independently approved database/cluster required." >&2; exit 1; }
 [[ "$APPROVED$WRITERS$CONSUMERS$DURABLE$RETENTION$PHONE" == yesyesyesyesyesyes ]] ||
   { echo "All explicit operator attestations and continuation approval are required." >&2; exit 1; }
 [[ "$RESTORATION_ATTESTED" == yes ]] ||
@@ -80,13 +86,13 @@ cd "$BACKEND"
 export PYTHONPATH="$BACKEND${PYTHONPATH:+:$PYTHONPATH}"
 # Session-level DB lock is shared with the automatic runner. It spans the
 # predecessor, protected retirement and continuation, including child processes.
-"$PYTHON" - "$ROOT" "$BACKUP" "$SHA" "$RESTORE" <<'PY'
+"$PYTHON" - "$ROOT" "$BACKUP" "$SHA" "$RESTORE" "$RELEASE" "$DATABASE" "$CLUSTER" <<'PY'
 import importlib.util
 from pathlib import Path
 import subprocess
 import sys
 
-root, backup, digest, attested_backup_digest = sys.argv[1:]
+root, backup, digest, attested_backup_digest, release, database, cluster = sys.argv[1:]
 spec = importlib.util.spec_from_file_location("deployment_migrations", Path(root) / "scripts/deploy-migrations.py")
 runner = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = runner
@@ -105,14 +111,20 @@ try:
     graph = runner.load_graph(backend / "alembic/versions")
     policy = runner.load_policy(Path(root) / "scripts/migration-policy.json")
     target = runner.literal_assignments(backend / "app/core/schema.py", {"SCHEMA_REVISION"})["SCHEMA_REVISION"]
-    if target not in ("0034_shared_phone_countries", "0035_account_identifiers"):
+    if target != "0038_purchase_orders":
         raise runner.PolicyError("OPERATOR_WORKFLOW_REQUIRES_REVIEW_FOR_CHANGED_RELEASE")
+    from app import fresh_install
+    fresh_install.reviewed_graph()
+    fresh_install.approve_release(release)
     # Retirement approval remains bounded to its original phone continuation.
     # Account encryption requires its own gate, never these recovery arguments.
+    source_target = target
     target = "0034_shared_phone_countries"
     with runner.production_connection(backend) as connection:
+        fresh_install.verify_database_target(connection, database, int(cluster))
+        connection.rollback()
         current = runner.applied_revisions(connection)
-        runner.plan(graph, policy, current, target)
+        runner.plan(graph, policy, current, source_target)
         if current == [target]:
             print("Operator continuation already applied; no migration executed.")
         else:
