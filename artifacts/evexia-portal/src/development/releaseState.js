@@ -13,6 +13,10 @@ if (import.meta.hot) import.meta.hot.data.release = store;
 export const releaseSnapshot = () => store.state;
 export const releaseSubscribe = listener => { store.listeners.add(listener); return () => store.listeners.delete(listener); };
 export const developmentBlocked = () => gateEnabled && store.state.status !== 'ready';
+export function developmentRequestUrl(input, base) {
+  return new URL(input instanceof URL ? input.href
+    : typeof input === 'string' ? input : input.url, base);
+}
 function publish(status, reason = '') {
   store.state = { status, reason };
   store.listeners.forEach(listener => listener());
@@ -53,7 +57,7 @@ if (gateEnabled && typeof window !== 'undefined') {
   import.meta.hot?.dispose(() => window.removeEventListener('evexia:automatic-reload-blocked', reloadBlocked));
   // Block background requests as well as hidden controls. Never replay them.
   window.fetch = async (input, options) => {
-    const url = new URL(typeof input === 'string' ? input : input.url, location.href);
+    const url = developmentRequestUrl(input, location.href);
     const protectedApi = url.origin === location.origin && url.pathname.startsWith('/api/');
     if (protectedApi && developmentBlocked()) throw Error('Development compatibility is not verified. Retry explicitly.');
     const generation = store.epoch;

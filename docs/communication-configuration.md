@@ -1,5 +1,72 @@
 # Shared encrypted Communication configuration
 
+## Original-development activation — 16 October 2026
+
+Separately approved activation completed against the independently confirmed
+original development database: `heliumdb` on `helium`, cluster
+`7689828272860483604`, database OID `16384`. Only `0039_communication`
+was applied from exact predecessor `0038_purchase_orders`; no migration
+policy, existing migration, production/VPS database or transport was changed.
+
+Before DDL, the migration advisory mutex and SHARE locks excluded concurrent
+application writes. A fresh full archive was restored on a separate socket-only
+PostgreSQL cluster; all **36 tables / 1,668 rows** matched. The exact pinned
+migration was rehearsed there, preserving existing table contents, before
+execution on the original locked connection. Existing table contents were
+compared again before committing. The user separately confirmed a saved and
+checked private recovery copy of the new dedicated Communication keyring and
+active ID. Key contents were not printed or put in the backup reports.
+
+Private App Storage retains the backup and separate recovery/activation evidence
+under the existing operator recovery transport's historical namespace:
+
+```
+.private/operator-recovery/purchase-orders/evexia-communication-activation-kun1gqy8/
+  before-0039.dump
+  recovery.json
+  activation.json
+```
+
+Archive SHA-256:
+`1e6372785222e7a57af9a56d5062e1784e2a282300f45f41d81d6b15004d735c`.
+Authenticated storage readback matched; anonymous access was denied.
+Local `/tmp/evexia-communication-activation-kun1gqy8` working files are not the
+durable backup location. The rehearsal cluster was stopped.
+
+After restart, the managed launcher needed an explicit inherited backend import
+path: Uvicorn's own `--app-dir` did not make `app` importable to the runtime
+preflight child when launched from the artifact directory. The launcher now
+exports that path; the existing real-process regression runs from the artifact
+directory without inheriting the test harness's `PYTHONPATH`. No readiness or
+authentication checks were bypassed.
+
+Browser verification also exposed an integration gap in the new fetch wrapper:
+portal lookup uses a `URL` object, whose address must be classified just like a
+string or `Request` before attaching the development contract header. The
+wrapper now handles all three standard input forms without changing same-origin
+restrictions, failure blocking or credential handling.
+
+Verification:
+
+- Development gate unit checks: **6 passed**.
+- Disposable backend gate and Communication tests: **36 passed**.
+- Frontend compatibility, fetch-input regression, portal resolver and
+  Communication service/form checks: **23 passed**.
+- Shell syntax and `git diff --check`: passed.
+- Post-merge setup, candidate schema/configuration checks, and actual running
+  preview ingress/readiness verification: passed.
+- Live preview health, readiness, compatibility, Super Admin login/current
+  user, Communication listing and Purchase Order listing: **HTTP 200**;
+  verification logout: **204**. Requests used the required development contract
+  header, just as the frontend does. Its absence remains blocked.
+- Public Admin login page rendered after the launcher and fetch-wrapper fixes,
+  without a portal-resolution or development-setup error.
+
+The three structural channels exist; there are no saved Communication
+configurations. No provider calls, real emails, order mutations or new delivery
+activation were performed. No full release gate or authenticated browser
+interaction suite was run for this operation.
+
 For managed development preview, missing or invalid Communication keys or the
 required schema block the coordinated release gate. That gate does not activate
 this storage or grant migration approval. See

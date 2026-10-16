@@ -1,3 +1,4 @@
+- [Development runtime subprocesses](development-runtime-subprocesses.md) — test real managed working directories without harness import paths; parent preflight success does not prove child readiness.
 - [Master seeding scope](master-seeding-scope.md) — master samples mean linked directories/catalogues, not stock transactions or Purchase Orders activation.
 - [Restored catalog fidelity](restored-catalog-fidelity.md) — pg_restore can reserialize CHECK expressions; rerun strict retirement preflight on the actual restored catalog.
 - [Development preview origins](development-preview-origins.md) — forked preview login can fail before password checking when its origin allowlist still names the previous workspace.

@@ -124,8 +124,12 @@ def test_actual_managed_startup_loaded_process_and_nonzero_failed_start(developm
            "COMMUNICATION_ENCRYPTION_KEYS": development_settings.communication_encryption_keys.get_secret_value()}
     # This environment is the harness's private socket-only synthetic database.
     assert "evexia_api_test" in env["DATABASE_URL"]
+    # Managed workflows start in the artifact, without the harness's import path.
+    # The runtime gate must still be able to import app in its real child process.
+    env.pop("PYTHONPATH", None)
     process = subprocess.Popen(["sh", str(root / "scripts/start-development-api.sh")],
-                               cwd=root, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                               cwd=root / "artifacts/api-server", env=env,
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     started = time.monotonic()
     try:
         runtime = None
