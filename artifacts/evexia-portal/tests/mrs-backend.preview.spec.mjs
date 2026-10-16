@@ -380,17 +380,31 @@ test('MR assignment comboboxes: selected IDs, manager clearing, stale responses,
   await zone.fill('not chosen'); await zone.press('Escape');
   await expect(zone).toHaveValue('Final paged zone');
 
-  for (const width of [1280, 390]) {
+  for (const width of [1280, 1024, 390]) {
     await page.setViewportSize({ width, height: 844 });
     for (const appearance of ['light', 'dark']) {
       await page.evaluate(async (appearance) => (await import('/src/components/admin/adminPreferences.js')).setAdminPreference('appearance', appearance), appearance);
       const heights = await page.locator('#mr-panel-assignment .searchable-control__control, #mr-panel-assignment .mr-form__control')
         .evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().height));
       expect(heights).toHaveLength(9); for (const height of heights) expect(height).toBe(42);
-      const grid = await page.locator('#mr-panel-assignment .mr-form__grid').evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(' ').length);
-      expect(grid).toBe(width === 390 ? 1 : 2);
+      const fields = await page.locator('#mr-panel-assignment .mr-form__grid > .mr-form__field').evaluateAll((nodes) => nodes.map((node) => {
+        const { x, y, width } = node.getBoundingClientRect();
+        return { x: Math.round(x), y, width };
+      }));
+      const columns = width === 390 ? 1 : width === 1024 ? 2 : 4;
+      expect(fields).toHaveLength(9);
+      const positions = [...new Set(fields.map((field) => field.x))].sort((a, b) => a - b);
+      expect(positions).toHaveLength(columns);
+      expect(Math.max(...fields.map((field) => field.width)) - Math.min(...fields.map((field) => field.width))).toBeLessThanOrEqual(1);
+      fields.forEach((field, index) => {
+        expect(field.x).toBe(positions[index % columns]);
+        if (index >= columns) expect(field.y).toBeGreaterThan(fields[index - columns].y);
+      });
       await status.click();
-      const menu = page.getByRole('listbox');
+      const listbox = page.getByRole('listbox');
+      await expect(listbox).toBeVisible();
+      const menu = listbox.locator('..');
+      await expect(menu).toHaveClass(/searchable-control__menu/);
       const bounds = await menu.boundingBox();
       expect(bounds.x).toBeGreaterThanOrEqual(0); expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
       expect(bounds.y).toBeGreaterThanOrEqual(0); expect(bounds.y + bounds.height).toBeLessThanOrEqual(844);

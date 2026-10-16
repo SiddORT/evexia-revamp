@@ -67,8 +67,9 @@ export default function OpeningBalanceDoctorSelect({ value, record, disabled, er
       const up = below < 200 && above > below;
       setMenuPosition({
         left: box.left, width: box.width,
-        top: up ? undefined : box.bottom + 4,
-        bottom: up ? window.innerHeight - box.top + 4 : undefined,
+        // Override the shared menu's default top when anchoring upward.
+        top: up ? 'auto' : box.bottom + 4,
+        bottom: up ? window.innerHeight - box.top + 4 : 'auto',
         maxHeight: Math.min(260, up ? above : below),
       });
     };

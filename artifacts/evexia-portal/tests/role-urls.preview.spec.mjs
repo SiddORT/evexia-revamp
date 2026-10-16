@@ -232,27 +232,35 @@ test('new visits resolve Admin MR Doctor and unknown hosts; failure retries; inc
   const context = await browser.newContext({ ignoreHTTPSErrors: true });
   await connectTestHosts(context);
   const visitor = await context.newPage();
+  const expectEntry = async (role) => role === 'doctor'
+    ? expect(visitor.getByRole('heading', { name: 'IMMUNO PORTAL', exact: true })).toBeVisible()
+    : expect(visitor.getByTestId('text-login-title')).toHaveText(role === 'admin' ? 'Admin Portal' : 'Medical Representative Portal');
   for (const role of ['admin', 'mr', 'doctor']) {
     await visitor.goto(`https://${hosts[role]}/`);
-    await expect(visitor.getByTestId('text-login-title')).toHaveText(role === 'admin' ? 'Admin Portal' : role === 'mr' ? 'Medical Representative Portal' : 'Doctor Portal');
+    await expectEntry(role);
     await expect(visitor.getByText('Select your portal to continue.', { exact: false })).toHaveCount(0);
-    await visitor.getByTestId('link-back-portals').click();
-    await expect(visitor.getByTestId('text-login-title')).toBeVisible();
+    if (role !== 'doctor') await visitor.getByTestId('link-back-portals').click();
+    await expectEntry(role);
     await visitor.goto(`https://${hosts[role]}/${role === 'admin' ? 'mr' : 'admin/settings'}`);
     await expect(visitor.getByRole('alert')).toContainText('different portal');
     await visitor.getByRole('link', { name: 'Continue to the assigned portal' }).click();
-    await expect(visitor.getByTestId('text-login-title')).toBeVisible();
+    await expectEntry(role);
     await visitor.reload();
-    await expect(visitor.getByTestId('text-login-title')).toBeVisible();
+    await expectEntry(role);
   }
   await visitor.goto(`https://${hosts.doctor}/doctor`);
-  await expect(visitor.getByText(/This portal is a mock preview/)).toBeVisible();
+  await expect(visitor.getByRole('status')).toContainText('This is not real sign-in');
   let credentialRequests = 0;
   visitor.on('request', (request) => { if (request.url().includes('/auth/')) credentialRequests += 1; });
-  await visitor.getByLabel('Email or username').fill('synthetic@example.com');
+  await visitor.getByRole('textbox', { name: 'Email', exact: true }).fill('synthetic@example.com');
   await visitor.getByLabel('Password', { exact: true }).fill('Synthetic preview only');
-  await visitor.getByTestId('button-submit-login').click();
-  await expect(visitor.getByTestId('status-auth-message')).toContainText('No credentials were sent');
+  await visitor.getByRole('button', { name: 'Continue to demo', exact: true }).click();
+  await expect(visitor.getByText('Only doctor@example.invalid works in this preview.')).toBeVisible();
+  expect(credentialRequests).toBe(0);
+  await visitor.getByRole('textbox', { name: 'Email', exact: true }).fill(await visitor.locator('.dr-creds dd').nth(0).textContent());
+  await visitor.getByLabel('Password', { exact: true }).fill(await visitor.locator('.dr-creds dd').nth(1).textContent());
+  await visitor.getByRole('button', { name: 'Continue to demo', exact: true }).click();
+  await expect(visitor).toHaveURL(/\/doctor\/home$/);
   expect(credentialRequests).toBe(0);
   const unknown = 'unknown-browser.allergyevexia.com';
   await visitor.goto(`https://${unknown}/`);
@@ -313,6 +321,7 @@ test('same-origin mapped Admin and MR login, deep refresh, renewal and logout re
     const cookies = await context.cookies(`https://${host}/api/v1/auth`);
     expect(cookies.some((c) => c.httpOnly && c.sameSite === 'Strict' && c.domain === host)).toBe(true);
     if (role === 'mr') {
+      await visitor.getByTestId('button-profile-menu').click();
       await expect(visitor.getByTestId('text-mr-account')).toContainText(mrUsername);
       await visitor.getByTestId('button-mr-signout').click();
     } else {

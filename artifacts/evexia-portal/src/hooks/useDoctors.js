@@ -12,7 +12,11 @@ export default function useDoctors(params = {}, detailId = null) {
   const alive = useRef(true);
   const continuation = useDirectoryContinuation(params);
   const requestKey = JSON.stringify(continuation.params);
-  const retry = useCallback(() => { setRevision((n) => n + 1); }, []);
+  const retry = useCallback(() => {
+    // Do not expose an idle frame before the reload effect starts.
+    setState((old) => ({ ...old, loading: true }));
+    setRevision((n) => n + 1);
+  }, []);
   useEffect(() => {
     alive.current = true;
     const owner = getSession().user?.id;

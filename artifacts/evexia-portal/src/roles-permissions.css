@@ -8,6 +8,9 @@
 .rp-roles__progress:not(:empty) { padding: 8px 4px 4px; }
 .rp-roles__footer { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
 .rp-roles__footer button, .rp-roles__scroll .admin-button { min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+/* Explicit intrinsic height prevents WebKit grid stretch from retaining the
+   minimum button height when its label wraps at enlarged text sizes. */
+.rp-roles__footer .admin-button { height: fit-content; }
 .rp-roles__footer button > svg, .rp-card-actions button > svg { flex-shrink: 0; }
 .rp-role { width: 100%; text-align: left; display: grid; gap: 3px; padding: 10px 12px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--admin-text); cursor: pointer; font: inherit; overflow-wrap: anywhere; }
 .rp-role strong { font-size: 13px; }

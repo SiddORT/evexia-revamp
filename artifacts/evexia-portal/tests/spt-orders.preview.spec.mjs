@@ -144,7 +144,7 @@ test('SPT cold direct routes fit mobile tablet desktop and enlarged text in ligh
       sizes.forEach(([el, size]) => el.style.setProperty('font-size', `${size * 2}px`, 'important'));
     });
     await noOverflow(page);
-    const table = page.getByRole('region', { name: 'Selected patients', exact: true });
+    const table = page.getByRole('region', { name: 'Selected patients (scrolls horizontally)', exact: true });
     await table.focus();
     await expect(table).toBeFocused();
     await page.keyboard.press('ArrowRight');

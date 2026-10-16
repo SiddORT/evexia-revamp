@@ -121,7 +121,7 @@ test('order entry themes, conditional content, keyboard menus and real doubled t
       expect(samples.every((ratio) => Math.abs(ratio - 2) < 0.01)).toBe(true);
       await fit(page);
       if (form.name === 'spt' && width === 360) {
-        const table = page.getByRole('region', { name: 'Selected patients', exact: true });
+        const table = page.getByRole('region', { name: 'Selected patients (scrolls horizontally)', exact: true });
         // Long names must wrap into readable lines, not a character-wide
         // column that turns a selected patient into a full-height row.
         const row = await table.locator('tbody tr').boundingBox();

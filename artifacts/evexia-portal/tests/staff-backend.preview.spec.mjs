@@ -109,7 +109,10 @@ async function fill(page, suffix, country = 'IN', phone = '9876543210') {
   await page.getByTestId('input-staff-name').fill(`Fictional ${suffix}`);
   await page.getByTestId('input-staff-email').fill(`fictional-${suffix}@example.com`);
   await page.getByTestId('input-staff-phone').fill(phone);
-  await page.getByLabel('Phone country code').selectOption(country);
+  const countryInput = page.getByRole('combobox', { name: 'Phone country code', exact: true });
+  await countryInput.fill(country);
+  await page.getByRole('option', { name: new RegExp(`\\(${country}\\) \\+`) }).click();
+  await expect(countryInput).toHaveValue(new RegExp(`^${country} \\+`));
   await page.getByTestId('select-staff-designation').selectOption({ label: 'Synthetic Executive' });
   await page.getByTestId('input-staff-dateOfJoining').fill('2025-01-15');
 }
@@ -232,8 +235,8 @@ test('shared mobile form retains phone countries and clears one-time credentials
     await expect(page.getByTestId(`link-staff-mobile-phone-${record.id}`)).toHaveText(full);
     await page.getByTestId(`card-staff-${record.id}`).getByRole('button', { name: `Edit ${record.name}`, exact: true }).click();
     await expect(page.getByTestId('input-staff-userId')).toHaveValue(record.userId);
-    await expect(page.getByLabel('Phone country code')).toHaveValue(country);
-    for (const control of [page.getByTestId('input-staff-userId'), page.getByTestId('input-staff-phone'), page.getByLabel('Phone country code')]) {
+    await expect(page.getByRole('combobox', { name: 'Phone country code', exact: true })).toHaveValue(new RegExp(`^${country} \\+`));
+    for (const control of [page.getByTestId('input-staff-userId'), page.getByTestId('input-staff-phone'), page.getByRole('combobox', { name: 'Phone country code', exact: true })]) {
       const box = await control.boundingBox();
       expect(box.x).toBeGreaterThanOrEqual(0);
       expect(box.x + box.width).toBeLessThanOrEqual(375);

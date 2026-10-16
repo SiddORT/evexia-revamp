@@ -182,7 +182,11 @@ test('Patient PIN late/manual guards, server exports and prepared atomic CSV imp
   await expect(page.getByTestId('input-patient-city')).toHaveValue('Manual correction');
   await page.getByTestId('button-save-patient').click();
   await expect(page).toHaveURL(new RegExp(`${path}(?:\\?.*)?$`));
+  const patientNameFilterReady = page.waitForResponse((response) => response.request().method() === 'GET'
+    && new URL(response.url()).pathname === '/api/v1/admin/patients'
+    && new URL(response.url()).searchParams.get('query') === body.name && response.status() === 200);
   await page.getByTestId('input-search-patients').fill(body.name);
+  await (await patientNameFilterReady).finished();
   await expect(page.getByTestId('button-export-patients')).toBeEnabled();
   const trigger = page.getByTestId('button-export-patients');
   await expect(trigger).toBeVisible();

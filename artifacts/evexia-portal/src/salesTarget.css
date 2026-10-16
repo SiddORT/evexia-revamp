@@ -40,7 +40,9 @@
 .admin-target-summary > div:last-child { border-right: 0; }
 .admin-target-summary span { display: block; margin-bottom: 5px; font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-soft); }
 .admin-target-summary strong { font-size: 17px; letter-spacing: -.025em; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.admin-target-dialog { width: min(100%, 860px); }
+/* Preserve the normal 860px width, but use available space as text grows so
+   full quarter amounts fit across engines. Narrow viewports keep the 100% cap. */
+.admin-target-dialog { width: min(100%, max(860px, 50em)); }
 .admin-target-form { display: grid; gap: 16px; margin-top: 20px; }
 .admin-target-form__grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; }
 .admin-target-form__quarter { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; }

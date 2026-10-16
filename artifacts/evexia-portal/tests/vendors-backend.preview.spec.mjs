@@ -10,7 +10,8 @@ const tag = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const gst = (number) => `27DDDDD${String(number).padStart(4, '0')}D1Z8`;
 async function chooseCountry(page, label) {
   const input = page.getByTestId('select-vendor-dialCountry');
-  await input.selectOption({ label });
+  await input.fill(label.split(' (')[0]);
+  await page.getByRole('option', { name: label, exact: true }).click();
 }
 
 async function open(page) {
@@ -26,7 +27,7 @@ async function open(page) {
 
 async function create(page, name, gstNo) {
   await page.getByTestId('button-add-vendor').click();
-  await expect(page.getByTestId('select-vendor-dialCountry')).toHaveValue('IN');
+  await expect(page.getByTestId('select-vendor-dialCountry')).toHaveValue('IN +91');
   await expect(page.getByTestId('select-vendor-status')).toHaveValue('active');
   for (const [field, value] of Object.entries({ vendorName: name, gstNo, registeredAddress: 'Synthetic address\nSecond floor',
     contactPersonName: 'Synthetic Contact', emailId: 'contact@example.test', phoneNo: '501234567' })) {
@@ -43,19 +44,21 @@ async function create(page, name, gstNo) {
   return record;
 }
 
-test('vendor cold shared native catalogue supports shared codes, keyboard selection and international numbers', async ({ page }) => {
+test('vendor cold searchable catalogue supports shared codes, keyboard selection and international numbers', async ({ page }) => {
   await open(page);
   await page.getByTestId('button-add-vendor').click();
   const country = page.getByTestId('select-vendor-dialCountry');
-  await expect(country.locator('option[value="CA"]')).toHaveText('Canada (CA) +1');
-  await expect(country.locator('option[value="US"]')).toHaveText('United States (US) +1');
+  await country.click();
+  const countries = page.getByRole('listbox', { name: 'Phone country code', exact: true });
+  await expect.poll(() => countries.getByRole('option').count()).toBeGreaterThan(240);
+  await expect(countries.getByRole('option', { name: 'Canada (CA) +1', exact: true })).toBeVisible();
+  await expect(countries.getByRole('option', { name: 'United States (US) +1', exact: true })).toBeVisible();
   await country.focus();
-  await country.press('Home');
-  await country.press('c');
-  await country.selectOption('CA');
-  await expect(country).toHaveValue('CA');
+  await country.fill('Canada');
+  await country.press('ArrowDown');
+  await country.press('Enter');
+  await expect(country).toHaveValue('CA +1');
   await expect(country).toBeFocused();
-  expect(await country.locator('option').count()).toBeGreaterThan(240);
   await expect(page.getByRole('dialog')).toBeVisible();
   const name = `International ${tag()}`;
   for (const [field, value] of Object.entries({ vendorName: name, gstNo: gst(4901),
@@ -74,7 +77,7 @@ test('vendor cold shared native catalogue supports shared codes, keyboard select
   await page.getByTestId('input-search-vendors').fill(name);
   const edit = page.getByRole('button', { name: `Edit ${name}`, exact: true }).filter({ visible: true });
   await edit.click();
-  await expect(country).toHaveValue('CA');
+  await expect(country).toHaveValue('CA +1');
   await expect(page.getByTestId('input-vendor-phoneNo')).toHaveValue('5062345678');
   await chooseCountry(page, 'Brazil (BR) +55');
   await page.getByTestId('input-vendor-phoneNo').fill('(11) 96123-4567');
@@ -103,7 +106,7 @@ for (const mobile of [false, true]) {
     await page.reload();
     await expect(row()).toBeVisible();
     await page.getByTestId(`button-edit-vendor-${mobile ? 'mobile-' : ''}${record.id}`).click();
-    await expect(page.getByTestId('select-vendor-dialCountry')).toHaveValue('AE');
+    await expect(page.getByTestId('select-vendor-dialCountry')).toHaveValue('AE +971');
     await expect(page.getByTestId('input-vendor-phoneNo')).toHaveValue('501234567');
     await page.getByTestId('input-vendor-vendorName').fill(record.vendorName + ' draft');
     await page.evaluate(async (record) => {

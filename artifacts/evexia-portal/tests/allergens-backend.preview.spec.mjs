@@ -204,6 +204,8 @@ for (const [label, viewport, scheme] of [['desktop light', { width: 1280, height
     await expect(page.getByRole('button', { name: 'Refresh records', exact: true })).toBeVisible();
     await expect(page.getByTestId('button-clear-filters')).toBeVisible();
     await page.getByRole('button', { name: 'Refresh records', exact: true }).focus();
+    await page.keyboard.press('Tab');
+    await expect(page.getByTestId('input-search-allergens')).toBeFocused();
     await page.keyboard.press('Tab'); // disabled Clear filters is skipped
     await expect(toggle).toBeFocused();
     await page.keyboard.press('Enter');

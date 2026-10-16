@@ -74,7 +74,7 @@ for (const width of [390, 768]) for (const theme of ['classic', 'modern']) for (
     await enlargePatientText(page, root);
     expect(await page.getByTestId('input-patient-phone').evaluate((node) => parseFloat(getComputedStyle(node).fontSize))).toBe(originalSize * 2);
 
-    const phone = page.getByTestId('input-patient-phone'), country = page.getByLabel('Phone country code');
+    const phone = page.getByTestId('input-patient-phone'), country = page.getByRole('combobox', { name: 'Phone country code', exact: true });
     for (const code of ['GB', 'US', 'IN', 'AE']) {
       await choosePhoneCountry(page, country, code);
       await expect(phone).toHaveValue('123456789');

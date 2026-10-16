@@ -38,8 +38,9 @@ async function sameRow(page, desktop = false) {
   const refresh = await page.getByTestId('button-refresh-sales-targets').boundingBox();
   expect(Math.abs(search.y - refresh.y)).toBeLessThanOrEqual(1);
   expect(Math.abs(search.height - refresh.height)).toBeLessThanOrEqual(1);
-  expect(refresh.x - search.x - search.width).toBeGreaterThanOrEqual(7);
-  expect(refresh.x - search.x - search.width).toBeLessThanOrEqual(9);
+  // The shared master-filter-toolbar defines a 12px gap, Refresh then Search.
+  expect(search.x - refresh.x - refresh.width).toBeGreaterThanOrEqual(11);
+  expect(search.x - refresh.x - refresh.width).toBeLessThanOrEqual(13);
   if (desktop) {
     expect(search.width).toBeGreaterThanOrEqual(280);
     expect(search.width).toBeLessThanOrEqual(360);
@@ -119,8 +120,11 @@ export function registerSalesTargetToolbar(test, fixture) {
         await page.evaluate(() => document.getElementById('sales-target-text-enlargement')?.remove());
       }
 
-      await search.fill('Target');
-      await expect(feedback).toContainText('matching');
+      // Ordinary backend cases and earlier engines retain their own targets.
+      // Scope this status assertion to this fixture's active target.
+      await search.fill(refs.mr.name);
+      await expect(feedback).toHaveText('Search section · name applied');
+      await expect(page.getByTestId(`row-sales-target-${record.id}`)).toBeVisible();
       await sameRow(page, true);
       await toggle.click();
       await status.selectOption('inactive');
@@ -135,7 +139,8 @@ export function registerSalesTargetToolbar(test, fixture) {
       await expect(status).toHaveValue('inactive');
       await page.getByTestId('button-apply-sales-target-filters').click();
       await expect(page.getByTestId('status-sales-target-empty')).toBeVisible();
-      await expect(feedback).toContainText('0 matching');
+      await expect(feedback).toHaveText('Search section · name, inactive applied');
+      await expect(page.getByRole('region', { name: 'Encrypted search section', exact: true })).toBeVisible();
       await expect(feedback).not.toContainText('unapplied changes');
       await toggle.click();
       await expect(feedback).toContainText('inactive applied');

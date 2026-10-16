@@ -26,3 +26,14 @@ edited file. The displayed source was not proof of which test version ran.
 **How to apply:** Finish regression edits before launch. If a test is corrected
 while other specs are running, let their results stand and rerun just the
 corrected specs after the invocation ends.
+
+Keep long-running validation output and its exit-status record in an ignored
+workspace directory, not only `/tmp` or the background task's log.
+
+**Why:** A workspace restart preserved the reviewed source changes but terminated
+the full gate and erased its temporary logs. Partial successes did not establish
+a completed gate.
+
+**How to apply:** Use an already ignored local-state directory, retain an explicit
+completed exit status, and treat an interrupted run as unverified rather than
+successful. Confirm engine page creation after a restart before a full rerun.

@@ -73,11 +73,33 @@ for (const mobile of [false, true]) test(`Directory deletion cancellation, retai
     await expect(button).toBeFocused();
     await button.click();
     await page.screenshot({ path: info.outputPath(`${kind}-delete-${mobile ? 'mobile' : 'desktop'}.png`), fullPage: true });
-    await page.getByTestId('button-confirm-action').click();
-    await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: `Delete ${record.name}`, exact: true })).toHaveCount(0);
-    await expect(page.getByRole('status').filter({ hasText: /removed from normal use/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Refresh records', exact: true }).first()).toBeFocused();
+    const refresh = page.getByRole('button', { name: 'Refresh records', exact: true }).first();
+    const listURL = new RegExp(`/api/v1/admin/${kind}s\\?`);
+    let release, finish, refetchStarted = false;
+    const held = new Promise((resolve) => { release = resolve; });
+    const finished = new Promise((resolve) => { finish = resolve; });
+    const holdRefetch = async (route) => {
+      refetchStarted = true;
+      try { await held; await route.continue(); } finally { finish(); }
+    };
+    await page.route(listURL, holdRefetch);
+    try {
+      await page.getByTestId('button-confirm-action').click();
+      await expect.poll(() => refetchStarted).toBe(true);
+      await expect(page.getByRole('status').filter({ hasText: new RegExp(`Loading ${kind === 'doctor' ? 'Doctors' : 'Patients'}`, 'i') })).toBeVisible();
+      // Patient Refresh intentionally remains available during loading.
+      if (kind === 'doctor') await expect(refresh).toBeDisabled();
+      release();
+      await finished;
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+      await expect(page.getByRole('button', { name: `Delete ${record.name}`, exact: true })).toHaveCount(0);
+      await expect(page.getByRole('status').filter({ hasText: /removed from normal use/ })).toBeVisible();
+      await expect(refresh).toBeFocused();
+    } finally {
+      release();
+      if (refetchStarted) await finished;
+      await page.unroute(listURL, holdRefetch);
+    }
     expect(requests).toBe(1);
     page.off('request', listener);
     if (kind === 'doctor') {
@@ -140,8 +162,11 @@ test('Doctor and Patient delete-only staff can confirm without edit or file acce
     const staff = await import('/src/services/staff.js');
     let role = await roles.createRole({ name: `Delete-only ${tag}`, description: 'Synthetic deletion fixture' });
     role = await roles.setRolePermissions(role.id, ['doctor.delete', 'patient.delete'], role.version);
+    const designation = await (await import('/src/services/serverDesignations.js')).createDesignation({
+      name: `Delete-only designation ${tag}`, shortName: 'DD', status: 'active',
+    });
     const made = await staff.createStaff({ name: `Delete staff ${tag}`, email: `delete-${tag}@example.com`,
-      phone: '9876543210', dialCountry: 'IN', status: 'active', role: 'Staff', designation: 'Executive', dateOfJoining: '2020-01-01' });
+      phone: '9876543210', dialCountry: 'IN', status: 'active', role: 'Staff', designation_id: designation.id, dateOfJoining: '2020-01-01' });
     await staff.setStaffAccess(made.record, { customRoleId: role.id, loginEnabled: true });
     return { userId: made.record.userId, password: made.initial_password };
   }, refs.tag);

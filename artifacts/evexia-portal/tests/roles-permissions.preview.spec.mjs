@@ -234,18 +234,22 @@ test('full bounded directory navigation, sidebar and responsive zero-permission 
   await page.getByTestId('tab-permissions').click();
   await page.getByTestId('checkbox-permission-zone.add').check();
   await page.getByTestId('tab-roles').click();
-  await page.getByTestId('button-next-roles').click();
+  // Directory appends are read-only; changing the selected role still guards drafts.
+  const directory = page.getByTestId('region-roles-directory');
+  await directory.evaluate((el) => { el.scrollTop = el.scrollHeight; });
+  await expect(page.locator('.rp-role')).toHaveCount(52);
+  await expect(page.getByTestId('text-active-role')).toHaveText(selectedName);
+  await page.locator('.rp-role').filter({ hasNotText: selectedName }).first().click();
   await expect(page.getByRole('dialog')).toHaveAccessibleName('Unsaved permission changes');
   await page.getByTestId('button-keep-editing-permissions').click();
   await page.getByTestId('tab-permissions').click();
   await expect(page.getByTestId('checkbox-permission-zone.add')).toBeChecked();
   await page.getByTestId('button-cancel-permissions').click();
   await page.getByTestId('tab-roles').click();
-  await page.getByTestId('button-next-roles').click();
-  await expect(page.locator('.rp-role')).toHaveCount(2);
+  await expect(page.locator('.rp-role')).toHaveCount(52);
   await expect(page.getByTestId('text-active-role')).toHaveText(selectedName);
-  await expect(page.getByTestId('button-next-roles')).toBeDisabled();
-  await page.getByTestId('button-previous-roles').click();
+  await expect(page.getByTestId('text-role-count')).toHaveText('52 loaded');
+  await page.getByTestId('button-refresh-roles').click();
   await expect(page.locator('.rp-role')).toHaveCount(50);
   await expect(page.getByTestId('link-admin-roles-permissions')).toHaveAttribute('aria-current', 'page');
   await page.getByTestId('input-search-navigation').fill('permissions');
