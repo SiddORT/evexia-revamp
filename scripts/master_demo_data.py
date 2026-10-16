@@ -1,6 +1,7 @@
 """Fictional, deterministic business inputs; no credentials or stock fixtures."""
 
 PREFIX = "Master Demo"
+FINANCIAL_START_YEAR = 2026  # Fixed fixture identity, never derived from today's date.
 ADDRESS = dict(addressLine1="1 Fictional Demo Lane", addressLine2="Sample data only",
                landmark="Fictional Sample Centre", pincode="560001",
                city="Demo City", state="Demo State", country="India")
@@ -65,3 +66,32 @@ def patients(doctors):
             dialCountry="GB", phone=f"7700900{index:03}", email=f"master-demo-patient{index}@example.com",
             dateOfBirth=f"199{index}-01-15", doctorId=doctors[(index - 1) % 3].id,
             instructionsLanguage="English", status="active")
+
+
+def vendors():
+    # Syntactically valid GST fixtures, not verified registrations or real suppliers.
+    for index, name in enumerate(("Alpha", "Beta", "Gamma"), 1):
+        yield dict(vendorName=f"{PREFIX} Fictional Vendor {name}",
+                   gstNo=f"29DEMOA{index:04}A1Z0",
+                   registeredAddress=f"{index} Fictional Demo Lane, Demo City; sample data only",
+                   contactPersonName=f"Fictional Contact {name}",
+                   emailId=f"master-demo-vendor{index}@example.com",
+                   dialCountry="GB", phoneNo=f"7700900{index:03}", status="active")
+
+
+def sales_targets(mrs):
+    quarters = (
+        ("100000.25", "125000.50", "150000.75", "175000.00"),
+        ("80000.00", "90000.10", "100000.20", "110000.30"),
+        ("0.00", "25000.01", "35000.02", "45000.03"),
+    )
+    for mr, values in zip(mrs, quarters, strict=True):
+        yield dict(mrId=mr.id, startYear=FINANCIAL_START_YEAR,
+                   endYear=FINANCIAL_START_YEAR + 1,
+                   **dict(zip(("q1", "q2", "q3", "q4"), values)), status="active")
+
+
+def opening_balances(doctors):
+    for doctor, amount in zip(doctors, ("12500.25", "-3500.50", "0.00"), strict=True):
+        yield dict(doctorId=doctor.id, startYear=FINANCIAL_START_YEAR,
+                   endYear=FINANCIAL_START_YEAR + 1, amount=amount, status="active")

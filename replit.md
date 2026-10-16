@@ -4,6 +4,8 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a mock Docto
 
 ## Run & operate
 
+- Fictional development master samples use `scripts/seed-master-data.py` with an independently confirmed development fingerprint. The seed reuses linked demo Allergens/MRs/Doctors and adds fictional Vendors, fixed 2026–2027 Sales Targets and signed Doctor Opening Balances atomically; exact matches skip and conflicting history blocks. It never resets identities, migrates, activates Purchase Orders or writes stock/payment transactions. Coverage, safe rerun command and actual execution evidence: `docs/development-master-seed.md`.
+
 - Legacy organization retirement uses `0031_remove_organizations` after the
   reconciled directory-encrypted head. No tenants, account promotions or
   substitute archive tables are introduced. Managed rollout needs separate

@@ -31,6 +31,9 @@ from app.db.designation_models import Designation
 from app.db.mr_models import MRDirectory
 from app.db.doctor_models import DoctorDirectory as Doctor
 from app.db.patient_models import PatientDirectory
+from app.db.vendor_models import Vendor
+from app.db.sales_target_models import SalesTarget
+from app.db.opening_balance_models import OpeningBalance
 from app.schemas.zones import ZoneFields
 from app.schemas.locations import LocationFields
 from app.schemas.product_categories import ProductCategoryFields
@@ -40,8 +43,12 @@ from app.schemas.designations import DesignationFields
 from app.schemas.mrs import MRCreate
 from app.schemas.doctors import DoctorFields
 from app.schemas.patients import PatientFields
+from app.schemas.vendors import VendorFields
+from app.schemas.sales_targets import SalesTargetFields, QUARTERS
+from app.schemas.opening_balances import OpeningBalanceFields
 from app.services import zones, locations, product_categories, allergens, headquarters, designations, mrs, doctors, patients
 from app.services import account_crypto, directory_runtime
+from app.services import vendors, sales_targets, opening_balances
 from app.services.zone_policy import lock_policy
 import master_demo_data as fixtures
 
@@ -94,13 +101,41 @@ def require_matching(row, body, extra=None):
         raise Blocked("A matching demo record has different saved values; review it manually. No overwrite is allowed.")
 
 
-def candidates(db, model, name):
-    column = model.name
+def candidates(db, model, name, column=None):
+    column = model.name if column is None else column
     normalized = func.lower(func.btrim(func.regexp_replace(column, r"\s+", " ", "g")))
     rows = list(db.scalars(select(model).where(normalized == normalize(name)).limit(2)))
     if len(rows) > 1:
         raise Blocked("Multiple records match a demo name, including deleted history.")
     return rows[0] if rows else None
+
+
+def period_candidate(db, model, owner_column, owner_id, start_year):
+    # Include inactive/deleted history, but never scan unrelated years/owners.
+    rows = list(db.scalars(select(model).where(
+        owner_column == owner_id, model.startYear == start_year).limit(2)))
+    if len(rows) > 1:
+        raise Blocked("Multiple records match a demo owner/year, including deleted history.")
+    return rows[0] if rows else None
+
+
+def schema_ready(db):
+    revisions = list(db.scalars(text("SELECT version_num FROM alembic_version")))
+    if revisions not in (["0037_domain_admission"], ["0038_purchase_orders"]):
+        raise Blocked("Master schema is not a supported ready revision; no migrations will be run.")
+    for model in (*[v[0] for v in CATALOGUE.values()], *DIRECTORIES.values(),
+                  AllergenProduct, MRProfile, Patient, Vendor, SalesTarget, OpeningBalance):
+        db.execute(select(model).limit(0))
+    generated = db.execute(text("""
+        SELECT is_generated, generation_expression, data_type
+        FROM information_schema.columns
+        WHERE table_schema=current_schema() AND table_name='sales_targets'
+          AND column_name='annual_target'
+    """)).one_or_none()
+    if (not generated or generated.is_generated != "ALWAYS" or generated.data_type != "numeric"
+            or "".join(c for c in (generated.generation_expression or "")
+                       if c not in '()" \t\r\n') != "q1+q2+q3+q4"):
+        raise Blocked("Sales Target annual total must be the installed generated quarterly sum.")
 
 
 class Seed:
@@ -201,6 +236,41 @@ class Seed:
                 patients.unique(self.db, body, code)
                 row = patients.insert(self.db, self.actor, body, code)
             self.remember("patients", row, body, created, {"code": code})
+        for values in fixtures.vendors():
+            body = VendorFields(**values)
+            named = candidates(self.db, Vendor, body.vendorName, Vendor.vendorName)
+            keyed = list(self.db.scalars(select(Vendor).where(Vendor.gstNo == body.gstNo).limit(2)))
+            if len(keyed) > 1 or ({named.id} if named else set()) != {r.id for r in keyed}:
+                raise Blocked("A demo Vendor name or GST conflicts with existing history.")
+            row = named
+            created = row is None
+            if row:
+                require_matching(row, body)
+            else:
+                row = vendors.insert(self.db, self.actor, body)
+            self.remember("vendors", row, body, created)
+        for values in fixtures.sales_targets(collected["mrs"]):
+            body = SalesTargetFields(**values)
+            sales_targets.reference(self.db, body.mrId, lock=True)
+            row = period_candidate(self.db, SalesTarget, SalesTarget.mrId, body.mrId, body.startYear)
+            created = row is None
+            extra = {"annual_target": sum((Decimal(getattr(body, q)) for q in QUARTERS), Decimal(0))}
+            if row:
+                require_matching(row, body, extra)
+            else:
+                row = sales_targets.insert(self.db, self.actor, body)
+                require_matching(row, body, extra)
+            self.remember("sales_targets", row, body, created, extra)
+        for values in fixtures.opening_balances(collected["doctors"]):
+            body = OpeningBalanceFields(**values)
+            opening_balances.reference(self.db, body.doctorId)
+            row = period_candidate(self.db, OpeningBalance, OpeningBalance.doctorId, body.doctorId, body.startYear)
+            created = row is None
+            if row:
+                require_matching(row, body)
+            else:
+                row = opening_balances.insert(self.db, self.actor, body)
+            self.remember("opening_balances", row, body, created)
         return dict(self.counts)
 
 
@@ -215,12 +285,7 @@ def main():
     with factory() as db:
         if db.scalar(text(FINGERPRINT_SQL)) != args.development_database_fingerprint:
             raise Blocked("Database fingerprint differs from the confirmed development target.")
-        revisions = list(db.scalars(text("SELECT version_num FROM alembic_version")))
-        if revisions not in (["0037_domain_admission"], ["0038_purchase_orders"]):
-            raise Blocked("Master schema is not a supported ready revision; no migrations will be run.")
-        # Check the complete installed mapped shape without selecting any rows.
-        for model in (*[v[0] for v in CATALOGUE.values()], *DIRECTORIES.values(), AllergenProduct, MRProfile, Patient):
-            db.execute(select(model).limit(0))
+        schema_ready(db)
         admins = list(db.scalars(select(User).where(User.is_protected_system_admin.is_(True))))
         if len(admins) != 1 or not admins[0].is_active or admins[0].system_role != "super_admin":
             raise Blocked("Exactly one existing active protected administrator is required.")
@@ -248,7 +313,9 @@ def main():
         # preflight and insertion; normal reads continue. Lock timeout rolls back.
         db.execute(text("LOCK TABLE zones,storage_locations,product_categories,allergen_products,"
                         "headquarters,designations,mr_directory,doctor_directory,patient_directory,"
-                        "users,mr_profiles,patients,account_identifier_reservations IN SHARE ROW EXCLUSIVE MODE"))
+                         "users,mr_profiles,patients,account_identifier_reservations,"
+                         "vendors,sales_targets,opening_balances IN SHARE ROW EXCLUSIVE MODE"))
+        schema_ready(db)
         seed = Seed(db, OperatorOwnership(admin))
         counts = seed.run(prepared)
         if any(value["inserted"] for value in counts.values()):
@@ -259,6 +326,10 @@ def main():
     # After commit any failure explicitly reports that rows may already exist.
     try:
         with factory() as db:
+            db.execute(text("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY"))
+            db.execute(text("SET LOCAL statement_timeout='10s'"))
+            if db.scalar(text(FINGERPRINT_SQL)) != args.development_database_fingerprint:
+                raise Blocked("Development target changed before persistence confirmation.")
             account_crypto.ready(db)
             directory_runtime.ready(db)
             for _, model, record_id, body, extra in seed.saved:
@@ -266,7 +337,19 @@ def main():
                 if row is None:
                     raise Blocked("A committed master record could not be read.")
                 require_matching(row, body, extra)
+                if model is SalesTarget:
+                    mr = db.get(MRDirectory, row.mrId)
+                    if not mr or mr.deleted_at or mr.status != "active":
+                        raise Blocked("Persisted Sales Target MR is unavailable.")
+                    for related_model, related_id in ((Zone, mr.zoneId), (Headquarter, mr.hq)):
+                        related = db.get(related_model, related_id)
+                        if not related or related.deleted_at or related.status != "active":
+                            raise Blocked("Persisted Sales Target MR dependency is unavailable.")
+                elif model is OpeningBalance:
+                    if not opening_balances.usable(db.get(Doctor, row.doctorId)):
+                        raise Blocked("Persisted Opening Balance Doctor is unavailable.")
             print(json.dumps({"target": "confirmed development database", "prefix": fixtures.PREFIX,
+                              "financial_year": f"{fixtures.FINANCIAL_START_YEAR}-{fixtures.FINANCIAL_START_YEAR + 1}",
                               "persisted_records": len(seed.saved), "counts": counts}, indent=2))
     except Exception:
         raise Blocked("Seed transaction committed, but persistence confirmation failed. Rerun safely; do not reset.") from None
