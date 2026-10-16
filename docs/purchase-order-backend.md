@@ -15,6 +15,11 @@ The previously reviewed fresh-install runner still ends at its reviewed
 domain-admission target; its approval does not authorize this successor.
 Do not silently extend that runner's review manifest or bypass its guards.
 
+The separately approved Replit Helium development activation, verified backup
+and live API results are recorded in
+[development activation](purchase-order-development-activation.md). This does
+not activate or approve VPS, UAT, production, or another workspace database.
+
 The new tables start empty; no local records are migrated, merged, mirrored,
 seeded or deleted. The migration adds headers, ordered lines, durable retry
 responses and one-to-one metadata on existing `audit_events`. Foreign keys

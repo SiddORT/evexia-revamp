@@ -1,5 +1,6 @@
 - [Master seeding scope](master-seeding-scope.md) — master samples mean linked directories/catalogues, not stock transactions or Purchase Orders activation.
 - [Restored catalog fidelity](restored-catalog-fidelity.md) — pg_restore can reserialize CHECK expressions; rerun strict retirement preflight on the actual restored catalog.
+- [Development preview origins](development-preview-origins.md) — forked preview login can fail before password checking when its origin allowlist still names the previous workspace.
 - [Role directory refresh](role-directory-refresh.md) — reset cursor depth with a bounded selected-role read; keep automatic appends separate from unknown-save reconciliation.
 - [Export keyring lifetime](export-keyring-lifetime.md) — reuse validated keys only within one authorized export; never cache plaintext or reuse operation state across requests.
 - [Self-contained recovery](self-contained-postgres-recovery.md) — schema-filtered archives can omit shared extension dependencies; verify a complete database restoration.
