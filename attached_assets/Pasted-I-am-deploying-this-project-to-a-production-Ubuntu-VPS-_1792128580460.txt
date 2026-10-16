@@ -1,0 +1,24 @@
+I am deploying this project to a production Ubuntu VPS at `/var/www/newuat.allergyevexia.in`.
+
+**Current state**
+- FastAPI backend and React frontend run using Docker Compose.
+- PostgreSQL runs in container `evexia-postgres`.
+- The application database `newevexia_db` was dropped and recreated with owner `newevexia_user`. It is currently empty.
+- Backend health endpoint `/api/v1/health` returns 200, but readiness fails because application tables and migration state are missing.
+- The source schema revision is `0038_purchase_orders`.
+- The project contains `artifacts/api-server/backend/app/fresh_install.py`, `scripts/deploy-migrations.py`, `scripts/fresh-install-review.json`, and `scripts/migration-policy.json`.
+- `fresh_install.py` defines `PREPARE_TARGET = "0031_role_hostnames"` and `FINAL_TARGET = "0037_domain_admission"`, and currently requires `SCHEMA_REVISION == FINAL_TARGET` for its review check. The source instead reports `0038_purchase_orders`.
+- The installer requires production configuration, encryption keys, `SUPER_ADMIN_INITIAL_PASSWORD`, an approved database and PostgreSQL cluster identity, an inherited exclusive flock, and `.operator-maintenance`.
+- `.deploy.lock` exists, but `.operator-maintenance` does not.
+- Other unrelated Docker services run on this VPS and must not be interrupted.
+- Do not expose, print, or request production secrets.
+
+**Please inspect the repository and provide:**
+1. Whether the fresh-install review manifest, migration policy, migration graph, and `SCHEMA_REVISION` are consistent.
+2. Why the installer targets revision `0037_domain_admission` while the application expects `0038_purchase_orders`.
+3. The exact supported procedure for initializing a genuinely empty production database, including any required release review or code changes.
+4. The correct way to coordinate the maintenance lock and stop application writers without affecting unrelated VPS services.
+5. The exact commands and expected checks for prepare, protected recovery/retirement steps if required, finalization, and readiness verification.
+6. Whether `0038_purchase_orders` should be included in the reviewed fresh-install release, and how to update the review manifest safely if needed.
+
+Do not recommend bypassing guard checks, manually inserting migration revisions, blindly running `alembic upgrade head`, deleting Docker volumes, or resetting encryption keys. Return a step-by-step plan and clearly identify any action that requires explicit operator approval.

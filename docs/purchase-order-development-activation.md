@@ -1,5 +1,48 @@
 # Purchase Order activation
 
+## Original-development continuation — 16 October 2026
+
+After the task handoff was merged, the original running API was independently
+checked before execution. Its process environment and application settings
+connected to `helium:5432`, database `heliumdb`, cluster
+`7689828272860483604`, database OID `16384`. A separate development database
+query matched this identity. The live marker was still exactly
+`0037_domain_admission`, with none of the five Purchase Order objects present.
+The task-workspace execution described below was not used as migration evidence
+for this original database.
+
+The existing guarded runner applied only `0038_purchase_orders`, with explicit
+target arguments and development approval. Before DDL, a full private archive
+was restored into a separate socket-only cluster and all **32 tables / 1,547
+rows** matched. Backup and recovery reports were retained in private App Storage
+with checksum readback and anonymous-access denial:
+
+```
+.private/operator-recovery/purchase-orders/evexia-po-recovery-g44v_mhu/
+  before-0038.dump
+  recovery.json
+  activation.json
+```
+
+Archive SHA-256:
+`8e21f3eb4abc9c7234f84bc9dcfcf5b0a1fde101e5fd007ca39dcabf41544d1e`.
+Local working files are under `/tmp/evexia-po-recovery-g44v_mhu`, not the
+durable backup location. Independent secret-key recovery was not newly
+attested by this operation; existing keys were unchanged.
+
+Post-commit queries confirmed revision `0038_purchase_orders`, all four empty
+PO tables, and the numbering sequence. After restarting the original managed
+API, actual HTTPS requests through the original preview verified liveness,
+readiness, Super Admin login/current user, PO listing, overview, Activity,
+Analytics, both historical filter directories and all three reference
+directories: **HTTP 200**. The verification session was logged out (**204**).
+No shared order was created, edited or deleted. Six pure activation-target
+guard tests passed. No full release gate or authenticated browser interaction
+test was run for this continuation.
+
+No production/VPS or task-copy database was migrated by this continuation.
+No migration, migration policy, application configuration or keys were changed.
+
 ## Development execution — 16 October 2026
 
 The operator confirmed the **Replit Helium development database** and approved
