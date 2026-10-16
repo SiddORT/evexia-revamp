@@ -1,0 +1,26 @@
+I need a permanent solution for release and migration synchronization across Replit, Git, CI/CD, and my Ubuntu VPS—not just a one-time fix for the current 0038/0039 mismatch.
+
+Please inspect the existing repository and implement a maintainable release synchronization system with these requirements:
+
+1. **Single authoritative release metadata:** Establish how the current application schema revision, Alembic migration graph, fresh-install target, retirement/prepare targets, migration policy, review manifest, and deployment metadata relate. Avoid duplicating version constants where a safe shared source can be used. Where duplication is necessary for independent approval or integrity verification, add explicit consistency checks rather than silently deriving away the check.
+
+2. **Automatic CI validation:** Add or strengthen automated checks that fail if:
+   - the application's expected schema revision is not a valid migration head;
+   - migration files, dependencies, or migration policy change without the required review-manifest update;
+   - fresh-install and retirement/prepare release bindings are inconsistent with their explicitly documented scopes;
+   - a release references an obsolete or unreviewed schema target;
+   - required migration, security, or release-gate tests fail.
+
+3. **Migration synchronization:** For every future database change, require a migration file, correct parent revision, documented upgrade behavior, and relevant tests. Verify that a fresh install and an upgrade from supported prior revisions reach the intended schema. Preserve operator-only restrictions for sensitive migrations, including `0039_communication`, until the required approval process explicitly authorizes them.
+
+4. **Release and deployment traceability:** Produce a release manifest containing the Git commit, application release, schema target, migration-manifest/policy fingerprints, and required approvals. CI/CD must deploy the exact verified commit and stop if the deployed revision or target database is inconsistent. Do not assume Replit has direct VPS access.
+
+5. **Safe failure and recovery:** Make failures actionable, with clear messages identifying which file, revision, or approval is inconsistent. Never bypass a gate to make readiness green. Do not automatically run sensitive production migrations, reset databases, delete Docker volumes, or modify unrelated VPS applications.
+
+6. **Test the safeguards:** Add tests for mismatched revisions, missing review updates, unreviewed migrations, wrong deployment commits, and unsupported database revisions. Run the relevant checks and report actual results. Do not claim a test passed if it was not run.
+
+7. **Fix the current release only through the proper review process:** Resolve the `0038_purchase_orders` versus `0039_communication` inconsistency, including the retirement wrapper's separate target binding, only after inspecting the migration graph and existing review rules. Do not fabricate approval or weaken the operator-only restriction. If human approval is still required, stop and state exactly what must be approved.
+
+8. **Deliver a complete result:** Give me the exact changed files, commit hash, tests actually run and their results, remaining approvals, and a step-by-step procedure to sync GitHub and deploy to my VPS. Preserve the existing PostgreSQL volume and unrelated applications.
+
+First inspect the existing implementation and CI configuration to avoid duplicating an existing gate. Make focused changes, complete the relevant tests, and provide one consolidated report instead of stopping after each small change.
