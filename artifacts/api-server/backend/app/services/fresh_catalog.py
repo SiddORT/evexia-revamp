@@ -95,6 +95,17 @@ def projection(connection):
             for name, sql in queries.items()}
 
 
-def digest(connection):
-    return hashlib.sha256(json.dumps(projection(connection), sort_keys=True,
+def digest(connection, *, additions=None):
+    catalog = projection(connection)
+    # An additive review freezes every added catalog row explicitly and retains
+    # the original full predecessor digest. Remove EXACT rows, never objects
+    # selected by a name prefix, so unknown DDL still changes the digest.
+    for section, rows in (additions or {}).items():
+        if section not in catalog:
+            raise ValueError("Unknown additive catalog section.")
+        for row in rows:
+            if row not in catalog[section]:
+                raise ValueError("Reviewed additive catalog row is absent or changed.")
+            catalog[section].remove(row)
+    return hashlib.sha256(json.dumps(catalog, sort_keys=True,
                                     separators=(",", ":")).encode()).hexdigest()

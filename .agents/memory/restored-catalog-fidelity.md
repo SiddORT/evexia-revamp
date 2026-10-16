@@ -7,6 +7,18 @@ Treat successful pg_restore and matching rows as insufficient evidence that a
 restored catalog passes the operator retirement preflight. Even same-major
 restoration can change cast/expression representation without changing semantics.
 
+Do not replace a frozen fresh-install catalog digest with a fingerprint from a
+retained restored development rehearsal just to admit a new additive migration.
+Development PostgreSQL can also differ from the fresh-install supported major.
+
+**Why:** A retained PostgreSQL 17 Communication rehearsal's predecessor projection
+did not match the frozen fresh-install predecessor, despite successful restoration.
+The shared development database also used a different PostgreSQL major.
+
+**How to apply:** Preserve the frozen predecessor contract; review added catalog
+rows exactly, and require fresh-install validation separately. Read-only restored
+catalog inspection does not establish a successful fresh-install rehearsal.
+
 **Why:** An independent PostgreSQL 17 rehearsal restored the membership role CHECK
 with different casts; the unchanged strict retirement guard correctly rejected
 its catalog. The original migration-created catalog passed.

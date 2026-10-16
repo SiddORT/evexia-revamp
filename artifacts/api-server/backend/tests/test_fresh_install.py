@@ -54,14 +54,38 @@ def databases():
 
 
 def test_review_covers_every_revision_and_policy():
-    assert len(fresh.reviewed_graph()) == 43
+    assert len(fresh.reviewed_graph()) == 44
+
+
+def test_additive_catalog_removes_only_exact_reviewed_rows(monkeypatch):
+    from app.services import fresh_catalog
+    base = {"relations": [["users", "r"]], "columns": []}
+    added = ["communication_channels", "r"]
+    monkeypatch.setattr(fresh_catalog, "projection", lambda _: {
+        "relations": base["relations"] + [added], "columns": []})
+    expected = hashlib.sha256(json.dumps(
+        base, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    assert fresh_catalog.digest(None, additions={"relations": [added]}) == expected
+    with pytest.raises(ValueError, match="absent or changed"):
+        fresh_catalog.digest(None, additions={"relations": [["communication_channels", "v"]]})
+    monkeypatch.setattr(fresh_catalog, "projection", lambda _: {
+        "relations": base["relations"] + [added, ["unreviewed", "r"]], "columns": []})
+    assert fresh_catalog.digest(None, additions={"relations": [added]}) != expected
+
+
+def test_missing_communication_keys_refused_before_initialization():
+    from app.services.communication_crypto import CommunicationError
+    settings = get_settings().model_copy(update={"communication_encryption_keys": None})
+    with pytest.raises(CommunicationError):
+        fresh.configuration(settings)
 
 
 def test_clean_process_registers_domain_metadata():
     result = subprocess.run([sys.executable, "-B", "-c",
         "from app.db import models; from app.db.base import Base; "
         "assert {'domain_policies','purchase_orders','purchase_order_lines',"
-        "'purchase_order_audit','purchase_order_requests'} <= set(Base.metadata.tables)"],
+        "'purchase_order_audit','purchase_order_requests','communication_channels',"
+        "'communication_configurations'} <= set(Base.metadata.tables)"],
         check=False, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
 
@@ -274,7 +298,7 @@ def test_preparation_stops_and_original_production_retirement_guard_survives(dat
 
 @pytest.mark.parametrize("stage", [
     "0034_shared_phone_countries", "0035_account_identifiers", "0036_reference_privacy",
-    "0037_domain_admission", "0038_purchase_orders",
+    "0037_domain_admission", "0038_purchase_orders", "0039_communication",
 ])
 def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap(databases, tmp_path, monkeypatch, stage):
     from app.services import organization_retirement as recovery
@@ -440,9 +464,10 @@ def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap
             config = fresh.alembic_config(db)
             command.upgrade(config, stage)
             fresh.catalog(db, stage)
-            assert ("purchase_orders" in inspect(db).get_table_names()) == (stage == fresh.FINAL_TARGET)
-            assert bool(db.scalar(text("SELECT to_regclass('purchase_order_number_seq')"))) == (stage == fresh.FINAL_TARGET)
-    if stage == fresh.FINAL_TARGET:
+            has_po = stage in ("0038_purchase_orders", fresh.FINAL_TARGET)
+            assert ("purchase_orders" in inspect(db).get_table_names()) == has_po
+            assert bool(db.scalar(text("SELECT to_regclass('purchase_order_number_seq')"))) == has_po
+    if stage in ("0038_purchase_orders", fresh.FINAL_TARGET):
         # Consume only the disposable rehearsal's sequence. Never reset it to
         # disguise use; leave that independent test database blocked.
         with rehearsal.begin() as db:
@@ -461,6 +486,13 @@ def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap
         "INSERT INTO login_attempts(id,identifier_hash,attempted_at) VALUES "
         "('00000000-0000-0000-0000-000000000001','synthetic',now())",
     ]
+    if stage == fresh.FINAL_TARGET:
+        mutations += [
+            "UPDATE communication_channels SET version=2 WHERE channel='email'",
+            "DELETE FROM communication_channels WHERE channel='sms'",
+            "ALTER TABLE communication_configurations DROP CONSTRAINT ck_comm_encrypted",
+            "DROP INDEX uq_comm_default",
+        ]
     for sql in mutations:
         with pytest.raises(fresh.FreshInstallBlocked), source.begin() as db:
             db.execute(text(sql))
@@ -496,6 +528,8 @@ def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap
         assert user.is_protected_system_admin and user.system_role == "super_admin"
         assert verify_password("synthetic-fresh-install-password", user.password_hash)
         assert readiness(db) == {"status": "ready"}
+        fresh.communication_channels(db)
+        assert db.scalar(text("SELECT count(*) FROM communication_configurations")) == 0
         from starlette.requests import Request
         monkeypatch.setenv("PORTAL_BOOTSTRAP_HOSTS", "fresh.allergyevexia.in")
         get_settings.cache_clear()

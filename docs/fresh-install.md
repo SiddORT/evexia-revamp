@@ -1,6 +1,6 @@
 # Secure-domain release prerequisite
 
-The current coordinated candidate target is `0038_purchase_orders`. Before starting
+The current coordinated candidate target is `0039_communication`. Before starting
 production services, independently verify the existing approved exact
 `PORTAL_BOOTSTRAP_HOSTS`, trusted proxy peers, DNS/TLS and the guarded API/nginx
 entrypoints described in [domain-admission.md](domain-admission.md).
@@ -9,6 +9,48 @@ any missing prerequisite needs a separate reviewed operation.
 Any optional fresh-install Admin hostname row remains unverified and is not
 automatically admitted; recovery allowlist access retains path routing without
 assigning an Admin role. Updated source review metadata is not target approval.
+
+## Communication candidate correction — operator validation still required
+
+This source correction extends only the separately approved **empty-only
+finalization** to `0039_communication`. Preparation still stops at
+`0031_role_hostnames`; the retirement wrapper still stops at
+`0034_shared_phone_countries`. No retirement approval authorizes populated-account
+conversion or Communication activation on an existing installation.
+
+`0039_communication` remains **operator_only**. Normal CI must still return
+`OPERATOR_MIGRATION_REQUIRED` / exit 42 before promotion when it is pending.
+Neither CI nor an application startup initializes an empty database. `/health`
+200 establishes only that the process is alive; an absent schema correctly
+fails readiness. Do not delete/recreate the database or PostgreSQL volume.
+
+The candidate manifest binds all 44 migrations, current policy/schema/readiness
+sources, the dedicated Communication crypto implementation, and installer
+changes. Its status still requires human release approval of its exact SHA256.
+**No release or regression checks were run for this correction**, as requested.
+Historical results below are not verification of this candidate. Run the
+isolated fresh-install, deployment-policy and coordinated release checks before
+release approval/promotion; do not treat the new hashes as evidence they passed.
+
+The `0039` catalog uses a strict additive projection: every new PostgreSQL 17
+catalog row is frozen explicitly. After removing those **exact** rows, the
+entire remaining catalog must match the unchanged frozen `0038` digest. Missing,
+altered or additional DDL fails closed; no name-prefix exclusions or alternative
+restored-catalog digests are accepted. The new rows were inspected read-only
+in the retained local PostgreSQL 17 Communication rehearsal, not on the VPS.
+This source/DDL inspection is not a fresh-install/restoration rehearsal.
+
+The finalizer accepts pristine `0034`–`0039` stages, still rejects any business
+records, and requires an unused PO sequence at both `0038` and `0039`. At `0039`,
+only the exact migration-owned channel rows `email=1`, `sms=1`, `waba=1` are
+allowed; Communication configurations must be empty. Finalization atomically
+applies the remaining reviewed migrations, checks that metadata, bootstraps the
+protected Super Admin, and verifies the unchanged readiness requirement.
+
+For an **existing/populated** database, do not use `prepare` or `finalize`.
+Retain maintenance and use its separately reviewed, explicit operator migration
+and recovery procedure. This fresh-only release review does not supply that
+authorization.
 
 # Fresh production installation (dedicated empty PostgreSQL)
 
@@ -20,7 +62,7 @@ claimed retirement/recovery approval is used.
 
 ## Reviewed history and scope
 
-This candidate covers **43** migration files and their upgrade/downgrade guards.
+This candidate covers **44** migration files and their upgrade/downgrade guards.
 `scripts/fresh-install-review.json` pins their bytes by **revision ID**, the
 direct guard-module bytes, unchanged policy, preparation target and final head.
 Any changed/unclassified revision or changed reviewed guard requires a new
@@ -41,6 +83,7 @@ review, not a runtime override.
 | 0036_reference_privacy | Operator-only assignment snapshots/Vendor encryption. Fresh finalization may apply it only under the same all-business-tables-empty proof; populated installs use [the separately scoped privacy procedure](reference-privacy.md). |
 | 0037_domain_admission | Operator-only shared primary configuration and exact-host ownership/admission. Legacy role rows remain unverified; retain separately approved recovery access before activation. |
 | 0038_purchase_orders | Operator-only empty PO tables/sequence; included only in this new candidate's separately approved empty-only finalization scope, never in retirement authorization. |
+| 0039_communication | Operator-only encrypted configuration storage plus three fixed channel/version rows. Reviewed empty-only finalization includes it; existing databases need separate operator approval. No provider calls or delivery activation. |
 
 Preparation proves a dedicated `public` database has **no application objects**,
 including an empty `alembic_version`, tables/views/sequences/functions/types or
@@ -95,7 +138,7 @@ was performed for this review. Never run the development PO activation helper
 on production. A push to `main` triggers deployment; do not use a push as a
 method of making this candidate available before separate release approval.
 
-## Audit and new approval boundary
+## Historical 0038 audit and approval boundary
 
 The starting repository had **43 source migrations and 42 reviewed migrations**:
 all 42 historical revision hashes matched; only `0038_purchase_orders` was absent.
@@ -136,8 +179,8 @@ Policy remains unchanged, including operator-only account/reference/domain/PO
 migrations. The existing account and reference conversion guards still permit
 the genuinely all-business-empty path, not a populated-account shortcut.
 
-The new manifest labels itself
-`reviewed_candidate_requires_human_release_approval`. It binds all 43 migration
+The current manifest labels itself
+`reviewed_candidate_requires_human_release_approval`. It binds all 44 migration
 bytes, policy, historical guards, installer, catalog checker/evidence helper,
 wrapper, planner, bootstrap, metadata registration and readiness sources.
 There is no automatic manifest regeneration command. A future change requires
@@ -153,15 +196,17 @@ Supported sequence:
 | Empty account conversion | 0035_account_identifiers | 31 | absent |
 | Empty reference conversion | 0036_reference_privacy | 31 | absent |
 | Empty domain conversion | 0037_domain_admission | 32 | absent |
-| Empty finalization + bootstrap | 0038_purchase_orders | 36 | present |
+| Empty PO stage | 0038_purchase_orders | 36 | present |
+| Empty finalization + bootstrap | 0039_communication | 38 | present |
 
 `scripts/fresh-install-catalog.json` contains frozen PostgreSQL **17** projections
-for every supported 0034–0038 finalization start. These are not derived from the
+for every supported 0034–0039 finalization start. These are not derived from the
 current ORM. They bind relations, columns/defaults, constraints, indexes,
 triggers/functions, types, namespace objects and sequence definitions.
 Finalization locks all expected tables, rechecks the exact catalog, proves
 every business table empty (including account history, audit and PO retry data),
-upgrades only to explicit 0038, and rechecks revision/catalog/unused sequence.
+upgrades only to explicit 0039, and rechecks revision/catalog/unused sequence and
+the exact three migration-owned Communication channel/version rows.
 Bootstrap, optional hostname, audit and readiness share one outer transaction.
 No arbitrary old revision, object, populated installation, or future head is
 accepted. The canonical supervisor lock also excludes other operator/CI work;
@@ -179,7 +224,7 @@ the PostgreSQL advisory lock coordinates database migration invocations.
 5. After real independent full restoration, full-data/catalog review and
    protected-path rehearsal, attest the exact recovery digest and separately
    approve organization retirement and phone continuation **only to 0034**.
-6. Approve empty-only account/reference/domain/PO finalization through 0038 and
+6. Approve empty-only account/reference/domain/PO/Communication finalization through 0039 and
    protected bootstrap, plus the optional *unverified* hostname mapping.
 7. Separately approve release-matched service promotion, readiness/authentication
    checks and traffic/writer handover. Domain ownership/admission remains separate.
@@ -194,6 +239,10 @@ The existing backend-only environment must already provide:
   `STAFF_ENCRYPTION_KEY_ID` (defaults to `primary`).
 - `DIRECTORY_ENCRYPTION_KEYS`, `DIRECTORY_INDEX_KEY`, matching
   `DIRECTORY_ENCRYPTION_KEY_ID` (defaults to `primary`).
+- Dedicated `COMMUNICATION_ENCRYPTION_KEYS` (JSON keyring of base64-encoded
+  32-byte keys) and matching `COMMUNICATION_ENCRYPTION_KEY_ID` (defaults to
+  `primary`). Do not reuse staff/directory/signing key material. Validate and
+  independently retain these keys in private recovery custody before starting.
 - `SUPER_ADMIN_INITIAL_PASSWORD`, 12–128 characters.
 
 Encryption/index/signing keys must satisfy the existing independent-key checks.
@@ -539,7 +588,7 @@ Human-approved separate operation, while the production supervisor remains open:
      --approve-release "$APPROVED_RELEASE_REVIEW_SHA" \
      --expected-database "$APPROVED_REHEARSAL_DB_NAME" \
      --expected-system-identifier "$APPROVED_REHEARSAL_CLUSTER_ID"
-   # Expected: FRESH_INSTALL_READY: 0038_purchase_orders.
+   # Expected: FRESH_INSTALL_READY: 0039_communication.
    ```
    Retain the rehearsal result and approve/retain a separate production
    restoration/continuation attestation naming that exact recovery SHA.
@@ -579,11 +628,11 @@ sh /operator-release/scripts/initialize-api.sh \
   --expected-database "$APPROVED_DB_NAME" \
   --expected-system-identifier "$APPROVED_CLUSTER_ID" \
   --admin-hostname newuat.allergyevexia.in
-# Expected: FRESH_INSTALL_READY ... 0038_purchase_orders
+# Expected: FRESH_INSTALL_READY ... 0039_communication
 /workspace/.venv/bin/python -B -m alembic current
 /workspace/.venv/bin/python -B /operator-release/scripts/deploy-migrations.py \
   --backend-dir /operator-release/artifacts/api-server/backend
-# Expected: exact single 0038_purchase_orders revision, policy READY, no migrations applied.
+# Expected: exact single 0039_communication revision, policy READY, no migrations applied.
 ```
 
 Finalization refuses other revisions, unexpected tables/views and **any existing
@@ -594,7 +643,7 @@ The reserved login is `crm-admin@allergyevexia.in`, using the already-configured
 initial password. No password is printed.
 
 From a second host terminal, with the supervisor still holding FD9, verify the
-existing backend is the independently reviewed matching **0038** image before restarting it.
+existing backend is the independently reviewed matching **0039** image before restarting it.
 Do not infer that from an image tag, container name, or a successful `/health`.
 On that second host terminal (not inside the tooling shell), restore the
 non-secret approved release/image variables from the retained operator record:
@@ -643,7 +692,7 @@ docker compose --project-name "$PROJECT" --project-directory "$ACTIVE" \
 test "$(docker inspect --format '{{.Image}}' evexia-backend)" = "$APPROVED_BACKEND_IMAGE_ID"
 test "$(docker inspect --format '{{.Image}}' evexia-frontend)" = "$APPROVED_FRONTEND_IMAGE_ID"
 docker exec evexia-backend /workspace/.venv/bin/python -B -c \
-  'from app.core.schema import SCHEMA_REVISION; assert SCHEMA_REVISION == "0038_purchase_orders"'
+  'from app.core.schema import SCHEMA_REVISION; assert SCHEMA_REVISION == "0039_communication"'
 docker exec evexia-backend /workspace/.venv/bin/python -B -c \
   'import urllib.request; urllib.request.urlopen("http://127.0.0.1:8080/api/v1/health/readiness", timeout=5).read()'
 docker exec evexia-frontend wget -q -O /dev/null http://127.0.0.1/
@@ -659,9 +708,10 @@ PostgreSQL restart. Do not start background writers until checks/handover permit
 
 Verify actual **Super Admin** login through the approved bootstrap host using the
 already privately configured initial password, then `/api/v1/auth/me` and protected
-Admin/PO reads, logout and rejection of unauthenticated protected reads. Use the
+Admin/PO/Communication reads, logout and rejection of unauthenticated protected reads. Use the
 browser, not a password/token-bearing shell command or a captured HAR. Confirm
-no seed data, no admitted domain policy, and no PO records. `role:null` is correct
+no business seed data, no admitted domain policy, no PO records and no Communication
+configurations (only the three fixed channel/version rows). `role:null` is correct
 until a separate domain-ownership/admission operation; do not edit DNS/TLS/ingress
 as part of this installation. `PORTAL_BOOTSTRAP_HOSTS` and accepted proxy/Host
 configuration must already match the approved host; if they do not, stop for a
@@ -700,8 +750,9 @@ storage, PostgreSQL or key changes are part of initialization.
   explicitly reviewed recovery/continuation procedure; no automatic downgrade,
   retry, stamp or old-release restart.
 - Finalization errors before commit: account/hostname/audit writes roll back
-  together with any 0035–0038 DDL in the same outer transaction. A rejected
-  0034/0035/0036/0037/0038 catalog, populated table or used PO sequence is not
+  together with any 0035–0039 DDL in the same outer transaction. A rejected
+  0034/0035/0036/0037/0038/0039 catalog, populated table, changed channel version
+  or used PO sequence is not
   permission to repair it by deleting records or changing the sequence.
   Verify actual state after ambiguous commit. A successful but
   unacknowledged bootstrap causes a retry to refuse populated tables, not change
@@ -746,7 +797,7 @@ Container runtime, Ubuntu-specific client packaging, live ingress/authentication
 and approved image promotion must still be verified by the operator. A local
 test pass is neither human release approval nor evidence of the reported VPS state.
 
-### Candidate verification evidence
+### Historical 0038 verification evidence — not rerun for the 0039 correction
 
 - Isolated production-mode fresh-install suite: **27 passed** on socket-only
   PostgreSQL 17 clusters with synthetic keys/passwords. The added used-PO-sequence

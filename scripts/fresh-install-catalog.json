@@ -15,6 +15,61 @@
     "sha256": "cf856677c16ae4616043a2dcbe85d056c2ff1ff283f6c83cb3fdaa368774b6f7",
     "tables": ["account_crypto_state", "account_identifier_reservations", "alembic_version", "allergen_products", "audit_events", "auth_sessions", "courier_partners", "custom_roles", "designations", "directory_crypto_stage", "doctor_directory", "domain_policies", "download_grants", "download_logs", "files", "headquarters", "login_attempts", "mr_directory", "mr_profiles", "opening_balance_import_reviews", "opening_balances", "patient_directory", "patients", "product_categories", "refresh_sessions", "role_hostnames", "sales_targets", "staff_profiles", "storage_locations", "users", "vendors", "zones"]
   },
+  "0039_communication": {
+    "base_revision": "0038_purchase_orders",
+    "tables": ["account_crypto_state", "account_identifier_reservations", "alembic_version", "allergen_products", "audit_events", "auth_sessions", "communication_channels", "communication_configurations", "courier_partners", "custom_roles", "designations", "directory_crypto_stage", "doctor_directory", "domain_policies", "download_grants", "download_logs", "files", "headquarters", "login_attempts", "mr_directory", "mr_profiles", "opening_balance_import_reviews", "opening_balances", "patient_directory", "patients", "product_categories", "purchase_order_audit", "purchase_order_lines", "purchase_order_requests", "purchase_orders", "refresh_sessions", "role_hostnames", "sales_targets", "staff_profiles", "storage_locations", "users", "vendors", "zones"],
+    "additions": {
+      "namespace_objects": [
+        ["table", "public.communication_channels"],
+        ["table", "public.communication_configurations"]
+      ],
+      "relations": [
+        ["communication_channels", "r", "p", false, false, "d", null, null],
+        ["communication_channels_pkey", "i", "p", false, false, "n", null, null],
+        ["communication_configurations", "r", "p", false, false, "d", null, null],
+        ["communication_configurations_pkey", "i", "p", false, false, "n", null, null],
+        ["uq_comm_default", "i", "p", false, false, "n", null, null]
+      ],
+      "columns": [
+        ["communication_channels", "channel", "character varying(8)", true, "", "", null, null],
+        ["communication_channels", "version", "integer", true, "", "", null, null],
+        ["communication_configurations", "id", "uuid", true, "", "", null, null],
+        ["communication_configurations", "channel", "character varying(8)", true, "", "", null, null],
+        ["communication_configurations", "type", "character varying(8)", true, "", "", null, null],
+        ["communication_configurations", "is_default", "boolean", true, "", "", null, null],
+        ["communication_configurations", "version", "integer", true, "", "", null, null],
+        ["communication_configurations", "payload_ciphertext", "text", true, "", "", null, null],
+        ["communication_configurations", "secret_ciphertext", "text", true, "", "", null, null],
+        ["communication_configurations", "created_by", "uuid", true, "", "", null, null],
+        ["communication_configurations", "updated_by", "uuid", true, "", "", null, null],
+        ["communication_configurations", "created_at", "timestamp with time zone", true, "", "", "now()", null],
+        ["communication_configurations", "updated_at", "timestamp with time zone", true, "", "", "now()", null]
+      ],
+      "constraints": [
+        ["communication_channels", "ck_comm_channel", "CHECK (((channel)::text = ANY ((ARRAY['email'::character varying, 'sms'::character varying, 'waba'::character varying])::text[])))", true],
+        ["communication_channels", "ck_comm_channel_version", "CHECK ((version >= 1))", true],
+        ["communication_channels", "communication_channels_pkey", "PRIMARY KEY (channel)", true],
+        ["communication_configurations", "ck_comm_encrypted", "CHECK (((payload_ciphertext ~~ 'v1:%'::text) AND (secret_ciphertext ~~ 'v1:%'::text)))", true],
+        ["communication_configurations", "ck_comm_type", "CHECK (((((channel)::text = 'email'::text) AND ((type)::text = ANY ((ARRAY['smtp'::character varying, 'api'::character varying, 'platform'::character varying])::text[]))) OR (((channel)::text = ANY ((ARRAY['sms'::character varying, 'waba'::character varying])::text[])) AND ((type)::text = 'api'::text))))", true],
+        ["communication_configurations", "ck_comm_version", "CHECK ((version >= 1))", true],
+        ["communication_configurations", "communication_configurations_channel_fkey", "FOREIGN KEY (channel) REFERENCES communication_channels(channel)", true],
+        ["communication_configurations", "communication_configurations_created_by_fkey", "FOREIGN KEY (created_by) REFERENCES users(id)", true],
+        ["communication_configurations", "communication_configurations_pkey", "PRIMARY KEY (id)", true],
+        ["communication_configurations", "communication_configurations_updated_by_fkey", "FOREIGN KEY (updated_by) REFERENCES users(id)", true]
+      ],
+      "indexes": [
+        ["communication_channels_pkey", "CREATE UNIQUE INDEX communication_channels_pkey ON public.communication_channels USING btree (channel)", true, true],
+        ["communication_configurations_pkey", "CREATE UNIQUE INDEX communication_configurations_pkey ON public.communication_configurations USING btree (id)", true, true],
+        ["uq_comm_default", "CREATE UNIQUE INDEX uq_comm_default ON public.communication_configurations USING btree (channel) WHERE is_default", true, true]
+      ],
+      "types": [
+        ["_communication_channels", "b", "-", false, null],
+        ["_communication_configurations", "b", "-", false, null],
+        ["communication_channels", "c", "-", false, null],
+        ["communication_configurations", "c", "-", false, null]
+      ]
+    }
+  },
   "0038_purchase_orders": {
     "sha256": "f5fa74eca21a044457b56f125b984742c1ca72695547b4c07f5557fa1c444f64",
     "tables": ["account_crypto_state", "account_identifier_reservations", "alembic_version", "allergen_products", "audit_events", "auth_sessions", "courier_partners", "custom_roles", "designations", "directory_crypto_stage", "doctor_directory", "domain_policies", "download_grants", "download_logs", "files", "headquarters", "login_attempts", "mr_directory", "mr_profiles", "opening_balance_import_reviews", "opening_balances", "patient_directory", "patients", "product_categories", "purchase_order_audit", "purchase_order_lines", "purchase_order_requests", "purchase_orders", "refresh_sessions", "role_hostnames", "sales_targets", "staff_profiles", "storage_locations", "users", "vendors", "zones"]

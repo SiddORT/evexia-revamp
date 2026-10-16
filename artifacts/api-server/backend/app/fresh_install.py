@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[4]
 BACKEND = ROOT / "artifacts/api-server/backend"
 LOCK_PATH = Path("/var/www/newuat.allergyevexia.in/.deploy.lock")
 PREPARE_TARGET = "0031_role_hostnames"
-FINAL_TARGET = "0038_purchase_orders"
+FINAL_TARGET = "0039_communication"
 LOCK_ID = 145002  # Same database interlock as normal CI/operator continuation.
 
 
@@ -108,9 +108,16 @@ def catalog(connection, revision):
     from app.services.fresh_catalog import digest
     expectations = json.loads((ROOT / "scripts/fresh-install-catalog.json").read_text())
     expected = expectations.get(revision)
-    if expected is None or digest(connection) != expected["sha256"]:
+    if expected is None:
         raise FreshInstallBlocked("Unexpected installation catalog; operator review required.")
-    if revision == FINAL_TARGET:
+    base = expectations[expected["base_revision"]] if "base_revision" in expected else expected
+    try:
+        actual = digest(connection, additions=expected.get("additions"))
+    except ValueError:
+        raise FreshInstallBlocked("Unexpected installation catalog; operator review required.") from None
+    if actual != base["sha256"]:
+        raise FreshInstallBlocked("Unexpected installation catalog; operator review required.")
+    if revision in ("0038_purchase_orders", FINAL_TARGET):
         if connection.execute(text(
                 "SELECT last_value,is_called FROM purchase_order_number_seq")).one() != (1, False):
             raise FreshInstallBlocked("Purchase Order sequence is not unused; operator review required.")
@@ -122,6 +129,8 @@ def configuration(settings):
         raise FreshInstallBlocked("APP_ENV=production is required.")
     StaffCrypto(settings)
     DirectoryCrypto(settings)
+    from app.services.communication_crypto import CommunicationCrypto
+    CommunicationCrypto(settings)
     password = settings.super_admin_initial_password
     if password is None or not 12 <= len(password.get_secret_value()) <= 128:
         raise FreshInstallBlocked("A valid SUPER_ADMIN_INITIAL_PASSWORD is required before initialization.")
@@ -205,7 +214,8 @@ def finalize(connection, settings, hostname=None):
     dedicated_database(connection)
     revisions = connection.execute(text("SELECT version_num FROM alembic_version")).scalars().all()
     predecessors = (["0034_shared_phone_countries"], ["0035_account_identifiers"],
-                    ["0036_reference_privacy"], ["0037_domain_admission"])
+                    ["0036_reference_privacy"], ["0037_domain_admission"],
+                    ["0038_purchase_orders"])
     if revisions not in (*predecessors, [FINAL_TARGET]):
         raise FreshInstallBlocked("Complete the existing protected operator continuation first.")
     expected = catalog(connection, revisions[0])
@@ -214,7 +224,11 @@ def finalize(connection, settings, hostname=None):
     connection.execute(text("LOCK TABLE " + ", ".join('public.' + quote(t) for t in sorted(expected)) +
                             " IN ACCESS EXCLUSIVE MODE NOWAIT"))
     catalog(connection, revisions[0])
+    if revisions == [FINAL_TARGET]:
+        communication_channels(connection)
     for table in tables:
+        if table == "communication_channels":
+            continue  # Only the exact migration-owned constants verified above.
         if connection.scalar(text(f"SELECT EXISTS(SELECT 1 FROM public.{quote(table)})")):
             raise FreshInstallBlocked("Installation already contains records; no accounts or credentials changed.")
     if revisions in predecessors:
@@ -225,6 +239,7 @@ def finalize(connection, settings, hostname=None):
     if connection.execute(text("SELECT version_num FROM alembic_version")).scalars().all() != [FINAL_TARGET]:
         raise FreshInstallBlocked("Unexpected final revision; transaction rolled back.")
     catalog(connection, FINAL_TARGET)
+    communication_channels(connection)
     with Session(bind=connection) as db:
         result = bootstrap_super_admin(db, settings.super_admin_initial_password)
         if hostname is not None:
@@ -243,13 +258,21 @@ def finalize(connection, settings, hostname=None):
     # A subsequent error rolls back bootstrap AND optional hostname together.
 
 
+def communication_channels(connection):
+    """Seeded channel versions are migration metadata, not disposable user data."""
+    if connection.execute(text(
+            "SELECT channel, version FROM communication_channels ORDER BY channel"
+    )).all() != [("email", 1), ("sms", 1), ("waba", 1)]:
+        raise FreshInstallBlocked("Communication channel state is not pristine; operator review required.")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=("prepare", "finalize"))
     parser.add_argument("--approve-fresh-install", action="store_true",
                         help="Approve reviewed history only through 0031_role_hostnames on a proven pristine DB.")
     parser.add_argument("--approve-bootstrap", action="store_true",
-                        help="Approve empty-only finalization through 0038 and atomic protected bootstrap.")
+                        help="Approve empty-only finalization through 0039 and atomic protected bootstrap.")
     parser.add_argument("--writers-stopped", action="store_true")
     parser.add_argument("--approve-release", required=True,
                         help="Human release approval: exact candidate manifest SHA256; not inferred.")
@@ -293,7 +316,7 @@ def main(argv=None):
         finally:
             engine.dispose()
         print("FRESH_INSTALL_PREPARED: 0031_role_hostnames; protected recovery/retirement required; NOT READY."
-              if args.phase == "prepare" else "FRESH_INSTALL_READY: 0038_purchase_orders; Super Admin initialized.")
+              if args.phase == "prepare" else f"FRESH_INSTALL_READY: {FINAL_TARGET}; Super Admin initialized.")
         return 0
     except FreshInstallBlocked as exc:
         print(f"FRESH_INSTALL_BLOCKED: {exc}", file=sys.stderr)
