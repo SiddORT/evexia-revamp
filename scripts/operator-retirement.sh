@@ -8,11 +8,16 @@ BACKEND="$ROOT/artifacts/api-server/backend"
 PYTHON="${EVEXIA_OPERATOR_PYTHON:-python3}"
 BACKUP= SHA= RESTORE=
 RELEASE= DATABASE= CLUSTER=
+VALIDATED= TRUST= RECOVERY_EVIDENCE= FRESH_STATE=
 APPROVED=no WRITERS=no CONSUMERS=no DURABLE=no RETENTION=no PHONE=no
 RESTORATION_ATTESTED=no
 while (($#)); do
   case "$1" in
     --approve-release) RELEASE="${2:?Missing release digest}"; shift 2 ;;
+    --validated-release) VALIDATED="${2:?Missing signed release evidence}"; shift 2 ;;
+    --trust-config) TRUST="${2:?Missing independent trust configuration}"; shift 2 ;;
+    --recovery-evidence) RECOVERY_EVIDENCE="${2:?Missing signed recovery evidence}"; shift 2 ;;
+    --fresh-state) FRESH_STATE="${2:?Missing pristine origin}"; shift 2 ;;
     --expected-database) DATABASE="${2:?Missing approved database}"; shift 2 ;;
     --expected-system-identifier) CLUSTER="${2:?Missing approved cluster}"; shift 2 ;;
     --backup) BACKUP="${2:?Missing backup path}"; shift 2 ;;
@@ -29,7 +34,14 @@ while (($#)); do
   esac
 done
 [[ "${APP_ENV:-}" == production ]] || { echo "Production environment required." >&2; exit 1; }
-[[ "$RELEASE" =~ ^[0-9a-f]{64}$ && -n "$DATABASE" && "$CLUSTER" =~ ^[0-9]+$ ]] ||
+if [[ -n "$VALIDATED" ]]; then
+  [[ -z "$RELEASE" && -n "$TRUST" && -n "$RECOVERY_EVIDENCE" && -n "$FRESH_STATE" ]] ||
+    { echo "Complete fresh-only machine evidence required; do not mix approval modes." >&2; exit 1; }
+else
+  [[ "$RELEASE" =~ ^[0-9a-f]{64}$ && -z "$TRUST$RECOVERY_EVIDENCE$FRESH_STATE" ]] ||
+    { echo "Exact operator release approval required." >&2; exit 1; }
+fi
+[[ -n "$DATABASE" && "$CLUSTER" =~ ^[0-9]+$ ]] ||
   { echo "Exact release approval and independently approved database/cluster required." >&2; exit 1; }
 [[ "$APPROVED$WRITERS$CONSUMERS$DURABLE$RETENTION$PHONE" == yesyesyesyesyesyes ]] ||
   { echo "All explicit operator attestations and continuation approval are required." >&2; exit 1; }
@@ -86,13 +98,13 @@ cd "$BACKEND"
 export PYTHONPATH="$BACKEND${PYTHONPATH:+:$PYTHONPATH}"
 # Session-level DB lock is shared with the automatic runner. It spans the
 # predecessor, protected retirement and continuation, including child processes.
-"$PYTHON" - "$ROOT" "$BACKUP" "$SHA" "$RESTORE" "$RELEASE" "$DATABASE" "$CLUSTER" <<'PY'
+"$PYTHON" - "$ROOT" "$BACKUP" "$SHA" "$RESTORE" "$RELEASE" "$DATABASE" "$CLUSTER" "$VALIDATED" "$TRUST" "$RECOVERY_EVIDENCE" "$FRESH_STATE" <<'PY'
 import importlib.util
 from pathlib import Path
 import subprocess
 import sys
 
-root, backup, digest, attested_backup_digest, release, database, cluster = sys.argv[1:]
+root, backup, digest, attested_backup_digest, release, database, cluster, validated, trust, recovery_evidence, fresh_state = sys.argv[1:]
 spec = importlib.util.spec_from_file_location("deployment_migrations", Path(root) / "scripts/deploy-migrations.py")
 runner = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = runner
@@ -115,7 +127,8 @@ try:
         raise runner.PolicyError("OPERATOR_WORKFLOW_REQUIRES_REVIEW_FOR_CHANGED_RELEASE")
     from app import fresh_install
     fresh_install.reviewed_graph()
-    fresh_install.approve_release(release)
+    if not validated:
+        fresh_install.approve_release(release)
     # Retirement approval remains bounded to its original phone continuation.
     # Account encryption requires its own gate, never these recovery arguments.
     source_target = target
@@ -123,6 +136,20 @@ try:
     with runner.production_connection(backend) as connection:
         fresh_install.verify_database_target(connection, database, int(cluster))
         connection.rollback()
+        if validated:
+            from app.core.config import get_settings
+            from app.services import release_authorization as authorization
+            settings = get_settings()
+            fresh_install.configuration(settings)
+            authorization.authorize_fresh(
+                Path(root), connection, settings, receipt=validated,
+                trust_file=trust, recovery_receipt=recovery_evidence,
+                state_file=fresh_state, phase="retirement")
+            config = authorization.trust(trust, Path(root))
+            evidence = authorization.recovery(Path(root), config, recovery_evidence, settings)
+            if evidence["organization_recovery_path"] != backup or evidence["organization_recovery_sha256"] != digest:
+                raise runner.PolicyError("RECOVERY_EVIDENCE_MISMATCH")
+            connection.rollback()
         current = runner.applied_revisions(connection)
         runner.plan(graph, policy, current, source_target)
         if current == [target]:

@@ -247,12 +247,28 @@ def main(argv=None):
     parser.add_argument("--policy", type=Path, default=ROOT / "scripts/migration-policy.json")
     parser.add_argument("--execute", action="store_true",
                         help="Apply a completely automatic path, after production inspection.")
+    parser.add_argument("--validated-release", type=Path)
+    parser.add_argument("--trust-config", type=Path)
+    parser.add_argument("--release-root", type=Path, default=ROOT)
+    parser.add_argument("--expected-commit")
     parser.add_argument("--offline-current", action="append",
                         help="Source-only example/test; cannot be combined with --execute.")
     try:
         args = parser.parse_args(argv)
         if args.execute and args.offline_current is not None:
             raise PolicyError("OFFLINE_EXECUTION_FORBIDDEN")
+        if args.execute:
+            if not all((args.validated_release, args.trust_config, args.expected_commit)):
+                raise PolicyError("VALIDATED_RELEASE_REQUIRED")
+            # Import a library, never initialize the application/database.
+            sys.path.insert(0, str(args.backend_dir.resolve()))
+            from app.services import release_authorization as authorization
+            authorization.release(args.release_root.resolve(), args.validated_release, args.trust_config)
+            config = authorization.trust(args.trust_config, args.release_root.resolve())
+            evidence = authorization.signed(args.validated_release, config["release_public_key"],
+                                            args.release_root.resolve())
+            if evidence["commit"] != args.expected_commit:
+                raise PolicyError("VALIDATED_COMMIT_MISMATCH")
         backend = args.backend_dir.resolve()
         graph = load_graph(backend / "alembic/versions")
         policy = load_policy(args.policy)

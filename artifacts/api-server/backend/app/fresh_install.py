@@ -56,8 +56,13 @@ def verify_supervisor():
 def reviewed_graph(root=ROOT):
     """Fail closed on ANY changed/unreviewed migration or policy, by revision ID."""
     review = json.loads((root / "scripts/fresh-install-review.json").read_text())
-    if review.get("status") != "reviewed_candidate_requires_human_release_approval":
-        raise FreshInstallBlocked("Explicit candidate review boundary required.")
+    if review.get("status") != "reviewed_candidate_requires_release_policy":
+        raise FreshInstallBlocked("Explicit policy-reviewed candidate boundary required.")
+    from app.services import release_authorization as authorization
+    authorization.policy(root)
+    if review.get("authorization_policy_sha256") != authorization.sha(
+            root / "scripts/release-authorization-policy.json"):
+        raise FreshInstallBlocked("Release authorization policy changed; review required.")
     hashes = {}
     for path in (root / "artifacts/api-server/backend/alembic/versions").glob("*.py"):
         assignments = [node for node in ast.parse(path.read_text()).body
@@ -274,8 +279,14 @@ def main(argv=None):
     parser.add_argument("--approve-bootstrap", action="store_true",
                         help="Approve empty-only finalization through 0039 and atomic protected bootstrap.")
     parser.add_argument("--writers-stopped", action="store_true")
-    parser.add_argument("--approve-release", required=True,
-                        help="Human release approval: exact candidate manifest SHA256; not inferred.")
+    approval = parser.add_mutually_exclusive_group(required=True)
+    approval.add_argument("--approve-release",
+                          help="Existing explicit operator release approval: manifest SHA256.")
+    approval.add_argument("--validated-release",
+                          help="Signed successful machine validation; fresh-only authorization.")
+    parser.add_argument("--trust-config")
+    parser.add_argument("--recovery-evidence")
+    parser.add_argument("--fresh-state")
     parser.add_argument("--admin-hostname", help="Explicit optional initial Admin hostname; never inferred.")
     parser.add_argument("--expected-database", required=True,
                         help="Database name from independently verified target evidence, not inferred from DATABASE_URL.")
@@ -285,9 +296,17 @@ def main(argv=None):
     try:
         if not args.expected_database or not 0 < args.expected_system_identifier < 2**64:
             raise FreshInstallBlocked("Explicit valid approved database/cluster identity required.")
-        if not args.writers_stopped or (
+        automatic = args.validated_release is not None
+        if automatic and (
+            not all((args.trust_config, args.recovery_evidence, args.fresh_state))
+            or args.approve_fresh_install or args.approve_bootstrap
+        ):
+            raise FreshInstallBlocked("Complete independent automatic evidence required; do not mix approval modes.")
+        if not automatic and any((args.trust_config, args.recovery_evidence, args.fresh_state)):
+            raise FreshInstallBlocked("Do not mix operator and machine approval modes.")
+        if not args.writers_stopped or (not automatic and ((
             args.phase == "prepare" and (not args.approve_fresh_install or args.approve_bootstrap or args.admin_hostname)
-        ) or (args.phase == "finalize" and (not args.approve_bootstrap or args.approve_fresh_install)):
+        ) or (args.phase == "finalize" and (not args.approve_bootstrap or args.approve_fresh_install)))):
             raise FreshInstallBlocked("Separate phase-specific approval and stopped-writer attestation required.")
         hostname = None
         if args.admin_hostname is not None:
@@ -295,7 +314,8 @@ def main(argv=None):
             hostname = canonical_hostname(args.admin_hostname)
         verify_supervisor()
         reviewed_graph()
-        approve_release(args.approve_release)
+        if not automatic:
+            approve_release(args.approve_release)
         settings = get_settings()
         configuration(settings)
         url = settings.database_url
@@ -309,10 +329,24 @@ def main(argv=None):
                 connection.execute(text("SET LOCAL lock_timeout='5s'"))
                 verify_database_target(connection, args.expected_database, args.expected_system_identifier)
                 connection.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": LOCK_ID})
+                if automatic:
+                    from app.services import release_authorization as authorization
+                    origin = authorization.authorize_fresh(
+                        ROOT, connection, settings, receipt=args.validated_release,
+                        trust_file=args.trust_config, recovery_receipt=args.recovery_evidence,
+                        state_file=args.fresh_state, phase=args.phase, hostname=hostname)
                 if args.phase == "prepare":
                     prepare(connection)
+                    if automatic:
+                        from app.services.fresh_recovery import snapshot
+                        origin["prepared_snapshot_sha256"] = hashlib.sha256(
+                            authorization.canonical(snapshot(connection))).hexdigest()
                 else:
                     finalize(connection, settings, hostname)
+            if automatic and args.phase == "prepare":
+                # Commit first. If custody fails, the origin is absent and all
+                # unattended continuation blocks; never invent a replacement.
+                authorization.write_origin(args.fresh_state, ROOT, settings, origin)
         finally:
             engine.dispose()
         print("FRESH_INSTALL_PREPARED: 0031_role_hostnames; protected recovery/retirement required; NOT READY."
