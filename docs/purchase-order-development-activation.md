@@ -1,5 +1,81 @@
 # Purchase Order activation
 
+
+## Original-development completion reported by the user — 16 October 2026
+
+The user confirmed that the main workspace completed the original-development
+operation described in the handoff below. This is **user-supplied evidence from
+the main workspace**, not a migration or live verification performed by this
+isolated task workspace:
+
+- The running API connection and an independent query identified the original
+  Helium development database at exactly `0037_domain_admission`, with no PO
+  objects present.
+- The guarded runner retained a private backup and successfully restored it on a
+  separate cluster; all **32 existing tables and 1,547 rows** matched.
+- Only `0038_purchase_orders` committed. All four PO tables and the numbering
+  sequence were confirmed present; the new tables were empty. No orders were
+  inserted.
+- After API restart, the original preview returned HTTP 200 for health/readiness,
+  Super Admin login, and the checked PO listing, overview, Activity, Analytics,
+  historical filters and reference endpoints. Logout returned HTTP 204.
+- The six activation safety tests passed in the original workspace.
+- Production/VPS were untouched. The main workspace reported updating this
+  document locally without committing or pushing.
+
+The task workspace has not repeated those operations, logged in again or
+attempted to migrate its own database copy. The main workspace's updated document
+and private recovery evidence remain authoritative for exact backup locations
+and checksums; the earlier task-workspace archive below must not be substituted.
+Independent key recovery and a full browser interaction/release pass are not
+attested by this completion report. No UI code changed in this task.
+
+The following handoff records the earlier access limitation and conditional
+approval. Its pending-action statements describe the state **before** the user
+reported successful original-workspace execution; they are not instructions to
+rerun the now-completed migration.
+
+## Original-preview recovery handoff — 16 October 2026
+
+**Historical investigation status: original preview not repaired or verified
+from this task workspace. No activation was attempted
+during this investigation.** The execution report below remains evidence for a
+different task workspace, not authorization or evidence for the original preview.
+
+### Conditional approval received
+
+The user explicitly approved: **"Approve after the original live database is
+independently confirmed."** This authorizes the guarded single-successor
+activation only in the original EVEXIA development workspace after its actual
+running API connection is independently reconciled with the target database.
+It does not authorize activation of this task's copy, production/VPS changes,
+or automatic migration after merge. No permission to replace the user's active
+Admin session was supplied; coordinate any new verification login separately.
+The target-confirmation condition remains unmet in this isolated workspace.
+
+Read-only inspection in the current task workspace found:
+
+- The development database tool and the application's configured session factory
+  both returned `heliumdb`, cluster `7689828272860483604`, database OID `16384`;
+  the application's connection host is `helium`, environment `development`.
+- Its only migration marker is `0037_domain_admission`. No relation named
+  `purchase_orders`, `purchase_order_lines`, `purchase_order_audit`,
+  `purchase_order_requests` or `purchase_order_number_seq` exists in any schema.
+- Those identifiers match the earlier report despite a different catalog state.
+  Matching identifiers are therefore insufficient to identify the original
+  preview's live database across task-workspace copies.
+- This task preview hostname ends in `-6u9froal.sisko.replit.dev`; all its managed
+  workflows were `not_started`. Public health and readiness requests returned
+  HTTP 502, not API responses.
+- The candidate original preview, the exact configured origin without a task
+  suffix, returned HTTP 307 to `replit.com/__replshield` for both health routes.
+  No API health response or original-runtime database identity was observable
+  through that ingress. No access restriction was bypassed.
+- Migration and Alembic-environment SHA-256 values still match the activation
+  helper's reviewed pins. Required encryption/signing secrets and private storage
+  configuration were reported present; their values were not displayed or
+  independently recovered. No new backup or restoration evidence was produced.
+
 ## Original-development continuation — 16 October 2026
 
 After the task handoff was merged, the original running API was independently
@@ -189,3 +265,61 @@ These are instructions for your **external VPS database**, not a production
 operation performed or approved here. For Replit-managed production, follow the
 supported Publish schema-review process instead; this development approval does
 not authorize publishing.
+
+### Operator actions required in the original workspace
+
+1. Resume the operation in the workspace that actually runs the user's preview,
+   not another task fork. Identify its exact preview ingress independently and
+   reconcile the running API process's configured connection with an independent
+   database inspection. Inspect `current_database()`,
+   `pg_control_system().system_identifier`, database OID, actual connection host,
+   the complete `alembic_version` result and the five PO relation names across
+   schemas. Require exactly the predecessor above and no PO objects. Stop on any
+   discrepancy; do not redirect the application to another database.
+2. Honor the conditional original-development approval recorded above only once
+   the original live target is independently confirmed. Earlier separate-workspace
+   activation approval does not transfer. Confirm matching retained
+   encryption/signing-key custody separately; a database backup does not recover
+   workspace secrets. Coordinate verification sign-in because a new login can
+   replace the user's active session.
+3. From the reviewed checkout in that original workspace, invoke the existing
+   guarded helper with the **independently confirmed** identity values:
+
+   ```sh
+   python scripts/activate-purchase-orders-development.py \
+     --confirm-database <confirmed-database> \
+     --confirm-host <confirmed-host> \
+     --confirm-cluster <confirmed-cluster> \
+     --confirm-oid <confirmed-database-oid> \
+     --approve-development
+   ```
+
+   The placeholders are not executable confirmation values. Do not automatically
+   fill them from the migration connection or copy them from this task's report.
+   The helper must retain its migration mutex and writer locks throughout backup,
+   independent restoration and the single-successor transaction. Require private
+   archive readback, anonymous access denial and matching restored table contents
+   before DDL. Preserve the resulting private recovery location and checksums.
+   Do not use `upgrade head`, startup migrations, schema stamping or seeds.
+4. Confirm the same database now has exactly `0038_purchase_orders`, all four PO
+   tables empty and its sequence present. Restart the original managed API
+   workflow, `artifacts/api-server: API Server`, after coordinating the matching
+   merged application version. Check logs and HTTP 200 responses from the
+   **original preview ingress** for `/api/v1/health` and
+   `/api/v1/health/readiness`; task-workspace checks do not substitute.
+5. Using a coordinated authenticated session, require HTTP 200 and valid response
+   bodies under `/api/v1/admin/purchase-orders` for:
+   the listing (including search/status/date/sort filters), `/overview`,
+   `/filter-options/vendors`, `/filter-options/products`, `/activity`,
+   `/analytics`, `/references/vendors`, `/references/locations` and
+   `/references/products`. Check legitimate empty order/activity/filter pages,
+   zero overview and analytics aggregates, and the target's actual existing
+   reference directories without assuming they are empty. Do not insert orders.
+   In the original signed-in preview confirm cards, filters, Activity, Analytics
+   and new-order reference selectors render those results without submitting.
+   Repeat final readiness verification after merge/restart if the operation
+   preceded merge. Record that evidence separately before declaring recovery.
+
+Until these actions succeed, the original preview remains unverified and this
+task must not be reported as a completed repair. Production and VPS operations
+remain outside this approval and handoff.
