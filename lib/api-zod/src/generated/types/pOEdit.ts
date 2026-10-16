@@ -18,6 +18,7 @@ export interface POEdit {
    */
   lines: POLineInput[];
   locationId: string;
+  placeOfSupplyCode?: string | null;
   poDate: Date;
   /** @pattern ^[0-9a-f]{64}$ */
   reviewToken: string;

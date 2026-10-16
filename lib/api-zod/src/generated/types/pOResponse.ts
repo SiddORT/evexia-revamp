@@ -6,6 +6,8 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { POLineResponse } from "./pOLineResponse";
+import type { POTaxAmounts } from "./pOTaxAmounts";
+import type { POTaxBasis } from "./pOTaxBasis";
 
 export interface POResponse {
   createdAt: string;
@@ -20,6 +22,8 @@ export interface POResponse {
   poDate: Date;
   status: string;
   subtotal: number;
+  taxBasis?: POTaxBasis | null;
+  taxComponents?: POTaxAmounts | null;
   total: number;
   updatedAt: string;
   vendorId: string;

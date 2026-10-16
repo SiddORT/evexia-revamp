@@ -4,11 +4,14 @@ import { ArrowLeft, ClipboardList, Plus, X } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import PurchaseOrderReferenceSelect from '../../components/admin/PurchaseOrderReferenceSelect.jsx';
+import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
+import { TaxAmounts, TaxBasis, LineTax } from '../../components/admin/PurchaseOrderTaxSummary.jsx';
 import { interceptNavigation, setNavigationGuard } from '../../auth/navigationGuard.js';
 import {
   MAX_LINES, MAX_TOTAL_PAISE, clearPending, computeLine, computeTotals, createPurchaseOrder, describeError, formatPaise, isStaleReview,
   isUncertain, loadPending, markSaved, newKey, parseQuantity, previewPurchaseOrder, savePending, trimDecimal, validDate,
   clearOrderMutation, isStaleOrder, loadOrderMutation, previewPurchaseOrderEdit, saveOrderMutation, updatePurchaseOrder,
+  GST_STATES, taxContext, listPurchaseOrderReferences,
 } from '../../services/serverPurchaseOrders.js';
 import '../../mr.css';
 import '../../purchaseOrders.css';
@@ -18,6 +21,7 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
 const blankLine = () => ({ key: Math.random().toString(36).slice(2), product: null, quantity: '1' });
 const toInput = (values) => ({
   poDate: values.poDate, expectedDate: values.expectedDate, vendorId: values.vendor?.id || '', locationId: values.location?.id || '',
+  ...(values.placeOfSupplyCode ? { placeOfSupplyCode: values.placeOfSupplyCode } : {}),
   lines: values.lines.map((line) => ({ productId: line.product?.id || '', quantity: String(line.quantity).trim() })),
 });
 
@@ -25,6 +29,8 @@ function validate(values) {
   const errors = {};
   if (!values.vendor) errors.vendorId = 'Select a vendor.';
   if (!values.location) errors.locationId = 'Select a storage location.';
+  const tax = taxContext(values.vendor, values.placeOfSupplyCode);
+  if (tax.error) errors.placeOfSupplyCode = tax.error;
   if (!validDate(values.poDate)) errors.poDate = 'Enter a valid PO date.';
   if (!validDate(values.expectedDate)) errors.expectedDate = 'Enter a valid expected delivery date.';
   else if (validDate(values.poDate) && values.expectedDate < values.poDate) errors.expectedDate = 'Expected delivery cannot be before the PO date.';
@@ -32,10 +38,11 @@ function validate(values) {
     if (!line.product) errors[`lines.${index}.productId`] = 'Select a product.';
     else if (line.product.unitPrice == null) errors[`lines.${index}.productId`] = 'This product has no catalogue price. Add one in the Allergen master before ordering it.';
     if (parseQuantity(line.quantity) === null) errors[`lines.${index}.quantity`] = 'Enter a quantity above 0, up to 1,000,000 with at most 3 decimals.';
-    const figures = computeLine(line.quantity, line.product);
+    const figures = computeLine(line.quantity, line.product, tax.treatment);
+    if (line.product && !figures && parseQuantity(line.quantity) !== null && line.product.unitPrice != null) errors[`lines.${index}.productId`] = 'Catalogue price or GST is invalid. Correct the product before reviewing.';
     if (figures?.overflow) errors[`lines.${index}.total`] = 'This line exceeds the maximum order total.';
   });
-  const sum = computeTotals(values.lines);
+  const sum = computeTotals(values.lines, tax.treatment);
   if (sum?.overflow && !errors.lines) errors.lines = `The order total cannot exceed ${formatPaise(MAX_TOTAL_PAISE)}.`;
   return errors;
 }
@@ -51,10 +58,11 @@ export function LineTable({ lines, figures }) {
       <thead><tr><th scope="col">Sr. no.</th><th scope="col">Product name</th><th scope="col">Quantity</th><th scope="col">Unit price</th><th scope="col">Gross total</th><th scope="col">GST %</th><th scope="col">GST amount</th><th scope="col">Final total</th></tr></thead>
       <tbody>{lines.map((line, index) => <tr key={line.id || index}>
         <td>{index + 1}</td><td><strong>{line.productName}</strong></td><td>{trimDecimal(line.quantity, 0)}</td>
-        <td>₹{trimDecimal(line.unitPrice)}</td><td>{formatPaise(line.subtotal)}</td><td>{trimDecimal(line.gst, 0)}%</td><td>{formatPaise(line.gstAmount)}</td><td className="po-amount">{formatPaise(line.total)}</td>
+        <td>₹{trimDecimal(line.unitPrice)}</td><td>{formatPaise(line.subtotal)}</td><td>{trimDecimal(line.gst, 0)}%</td><td>{formatPaise(line.gstAmount)}<LineTax line={line} /></td><td className="po-amount">{formatPaise(line.total)}</td>
       </tr>)}</tbody>
       <tfoot>
-        <tr><th colSpan="7" scope="row">Gross total</th><td>{formatPaise(figures.subtotal)}</td></tr>
+        <tr><th colSpan="7" scope="row">Taxable subtotal</th><td>{formatPaise(figures.subtotal)}</td></tr>
+        {figures.taxComponents && Object.entries(figures.taxComponents).filter(([k, value]) => value || figures.taxBasis?.treatment.includes(k)).map(([k, value]) => <tr key={k}><th colSpan="7" scope="row">{k.toUpperCase()}</th><td>{formatPaise(value)}</td></tr>)}
         <tr><th colSpan="7" scope="row">GST amount</th><td>{formatPaise(figures.gstAmount)}</td></tr>
         <tr className="po-items-table__final"><th colSpan="7" scope="row">Final total</th><td data-testid="text-po-form-total">{formatPaise(figures.total)}</td></tr>
       </tfoot>
@@ -64,7 +72,8 @@ export function LineTable({ lines, figures }) {
 
 const fromSaved = (order) => ({
   poDate: order.poDate, expectedDate: order.expectedDate,
-  vendor: { id: order.vendorId, name: order.vendorName }, location: { id: order.locationId, name: order.locationName },
+  placeOfSupplyCode: order.taxBasis?.placeOfSupplyCode || '',
+  vendor: { id: order.vendorId, name: order.vendorName, gstin: order.taxBasis?.supplierGstin }, location: { id: order.locationId, name: order.locationName },
   lines: order.lines.map((line) => ({ key: line.id || newKey(), quantity: line.quantity, product: { id: line.productId, name: line.productName, unitPrice: line.unitPrice, gst: line.gst } })),
 });
 
@@ -86,8 +95,21 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
   const busyRef = useRef(false);
   const [conflict, setConflict] = useState(false);
   const locked = uncertain || busy || Boolean(blocked);
-  const figures = computeTotals(values.lines);
-  const draft = values.lines.map((line) => computeLine(line.quantity, line.product));
+  const tax = taxContext(values.vendor, values.placeOfSupplyCode);
+  const figures = computeTotals(values.lines, tax.treatment);
+  const draft = values.lines.map((line) => computeLine(line.quantity, line.product, tax.treatment));
+  const [legacyTaxStatus, setLegacyTaxStatus] = useState('');
+  async function loadLegacyTax() {
+    if (locked || !editing || order.taxBasis) return;
+    setLegacyTaxStatus('Loading current vendor tax basis…');
+    try {
+      const result = await listPurchaseOrderReferences('vendors', { selected_id: order.vendorId });
+      const vendor = result.items?.find((item) => item.id === order.vendorId);
+      if (!vendor) throw new Error();
+      setValues((current) => current.vendor?.id === order.vendorId ? { ...current, vendor: { ...vendor, name: order.vendorName } } : current);
+      setLegacyTaxStatus('Current vendor GSTIN loaded for this explicit edit. A fresh review is required.');
+    } catch { setLegacyTaxStatus('Current vendor tax basis unavailable. Restore the vendor master or select another available vendor.'); }
+  }
   const hasErrors = Object.values(errors).some(Boolean);
   const navigation = useRef({});
   navigation.current = { busy, dirty: JSON.stringify(values) !== baseline.current || Boolean(review), uncertain };
@@ -154,13 +176,13 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
     if (busyRef.current || !review) return;
     busyRef.current = true; setBusy(true);
     setSaveError('');
-    const input = toInput(values);
-    const fingerprint = JSON.stringify({ input, token: review.token });
+    const input = uncertain && restored ? (restored.input || toInput(restored.values)) : toInput(values);
+    const fingerprint = uncertain && restored ? restored.fingerprint : JSON.stringify({ input, token: review.token });
     if (pendingRef.current?.fingerprint !== fingerprint) pendingRef.current = { fingerprint, key: newKey() };
     const { key } = pendingRef.current;
-    const attempt = editing
-      ? { fingerprint, key, values, order: review.order, reviewToken: review.token, operation: 'edit', version: restored?.version || order.version }
-      : { fingerprint, key, values, order: review.order, reviewToken: review.token };
+    const attempt = uncertain && restored ? restored : editing
+      ? { fingerprint, key, input, values, order: review.order, reviewToken: review.token, operation: 'edit', version: restored?.version || order.version }
+      : { fingerprint, key, input, values, order: review.order, reviewToken: review.token };
     const clearAttempt = () => editing ? clearOrderMutation(order.id, key) : clearPending();
     if (!await (editing ? saveOrderMutation(order.id, attempt) : savePending(attempt))) {
       busyRef.current = false; setBusy(false);
@@ -179,7 +201,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
         setSaveError('Another session changed or deleted this order. Your draft is kept, but cannot overwrite it. Reload the latest saved order before making a new edit.');
       } else if (isStaleReview(cause)) {
         await clearAttempt(); pendingRef.current = null; setUncertain(false); setReview(null);
-        setSaveError('Catalogue prices or references changed since your review. Your draft is kept; review the order again to see current amounts.');
+        setSaveError('Catalogue prices, vendor tax basis or references changed since your review. Your draft is kept; review the order again to see current amounts.');
       } else if (isUncertain(cause)) {
         setUncertain(true);
         setSaveError('The server did not confirm whether this order was saved. Retry to confirm; the same request identity is reused so no duplicate is created.');
@@ -207,27 +229,40 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
     {review ? <>
       <div className="po-review"><p className="po-review__note">Confirming saves this order on the server. It does not send an order to a supplier.</p>
         <dl className="po-detail-grid"><div><dt>Vendor</dt><dd>{review.order.vendorName}</dd></div><div><dt>Storage location</dt><dd>{review.order.locationName}</dd></div><div><dt>PO date</dt><dd>{displayDate(review.order.poDate)}</dd></div><div><dt>Expected delivery</dt><dd>{displayDate(review.order.expectedDate)}</dd></div></dl>
+        <TaxBasis basis={review.order.taxBasis} />
         <h3 className="po-section-title">Items <span>{review.order.lines.length} product {review.order.lines.length === 1 ? 'line' : 'lines'}</span></h3></div>
-      <div className="po-new-summary po-new-summary--review"><dl><div><dt>Gross total</dt><dd>{formatPaise(review.order.subtotal)}</dd></div><div><dt>GST amount</dt><dd>{formatPaise(review.order.gstAmount)}</dd></div><div className="po-new-summary__final"><dt>Final total</dt><dd>{formatPaise(review.order.total)}</dd></div></dl></div>
+      <div className="po-new-summary po-new-summary--review"><TaxAmounts figures={{ ...review.order, treatment: review.order.taxBasis?.treatment }} /></div>
       <LineTable lines={review.order.lines} figures={review.order} />
       <div className="po-form-footer"><span>{uncertain ? 'Editing is locked until this exact request is confirmed.' : 'The order is saved only after the server confirms it.'}</span><div className="po-actions">
         {!uncertain && <button type="button" disabled={busy} className="admin-button admin-button--secondary" onClick={() => { setReview(null); setSaveError(''); }} data-testid="button-back-po-draft">Back to draft</button>}
         <button type="button" disabled={busy || Boolean(blocked) || conflict} className="admin-button" onClick={save} data-testid="button-confirm-po">{busy ? 'Saving…' : uncertain ? 'Retry and confirm' : editing ? 'Save changes' : 'Create purchase order'}</button></div></div>
     </> : <form onSubmit={runReview} noValidate className="po-new-form">
       <div className="po-new-layout">
-        <aside className="po-new-summary" aria-label="Order totals"><h3>Order totals</h3>
-          <dl><div><dt>Gross total</dt><dd>{figures && !figures.overflow ? formatPaise(figures.subtotal) : '—'}</dd></div><div><dt>GST amount</dt><dd>{figures && !figures.overflow ? formatPaise(figures.gstAmount) : '—'}</dd></div><div className="po-new-summary__final"><dt>Final total</dt><dd data-testid="text-po-form-total">{figures && !figures.overflow ? formatPaise(figures.total) : '—'}</dd></div></dl>
+        <aside className="po-new-summary" aria-label="Order totals" aria-live="polite" aria-atomic="true"><h3>Order totals</h3>
+          <TaxAmounts figures={{ ...figures, treatment: tax.treatment }} />
+          {figures.partial && <div className="po-totals-status" role="status">Partial totals: {figures.completed} computable {figures.completed === 1 ? 'line' : 'lines'}; {figures.incomplete} unfinished or invalid. Complete every line before review.</div>}
+          {figures.taxPending && <div className="po-totals-status">Tax pending — select a valid vendor tax basis and place of supply. This is not zero-rated GST.</div>}
+          {figures.overflow && <div className="po-totals-status" role="alert">Order exceeds {formatPaise(MAX_TOTAL_PAISE)}. Reduce quantities or remove lines.</div>}
           <p>Estimate in INR. The server recalculates it at review.</p></aside>
         <div className="po-new-main">
           {(errors.lines || hasErrors) && <div id="po-form-errors" className="admin-feedback admin-feedback--error" role="alert">{errors.lines || 'Check the highlighted fields before continuing.'}</div>}
           <fieldset className="po-group" disabled={locked}><legend>Vendor and delivery</legend>
             <div className="po-group__grid">
               <Field id="po-vendor" label="Vendor" error={errors.vendorId}>
-                <PurchaseOrderReferenceSelect id="po-vendor" kind="vendors" label="Vendor" selected={values.vendor} placeholder="Select vendor" invalid={errors.vendorId} describedBy={errors.vendorId ? 'po-vendor-error' : undefined} onChange={(item) => edit({ vendor: editing && item?.id === order.vendorId ? { id: order.vendorId, name: order.vendorName } : item }, ['vendorId'])} />
+                <PurchaseOrderReferenceSelect id="po-vendor" kind="vendors" label="Vendor" selected={values.vendor} placeholder="Select vendor" invalid={errors.vendorId} describedBy={errors.vendorId ? 'po-vendor-error' : undefined} onChange={(item) => edit({ vendor: editing && order.taxBasis && item?.id === order.vendorId ? fromSaved(order).vendor : item }, ['vendorId', 'placeOfSupplyCode'])} />
               </Field>
               <Field id="po-location" label="Storage location" error={errors.locationId}>
                 <PurchaseOrderReferenceSelect id="po-location" kind="locations" label="Storage location" selected={values.location} placeholder="Select storage location" invalid={errors.locationId} describedBy={errors.locationId ? 'po-location-error' : undefined} onChange={(item) => edit({ location: editing && item?.id === order.locationId ? { id: order.locationId, name: order.locationName } : item }, ['locationId'])} />
               </Field>
+            </div>
+            <Field id="po-place-of-supply" label="Place of supply (State/UT)" error={errors.placeOfSupplyCode}>
+              <SearchableSelect id="po-place-of-supply" label="Place of supply (State/UT)" value={values.placeOfSupplyCode || ''} options={GST_STATES.map((state) => ({ value: state.code, label: `${state.name} (${state.code})` }))} onChange={(code) => edit({ placeOfSupplyCode: code }, ['placeOfSupplyCode'])} placeholder="Select applicable State/UT" invalid={errors.placeOfSupplyCode} describedBy="po-supply-help" disabled={locked} />
+            </Field>
+            <div id="po-supply-help" className="po-tax-context">
+              <p>Supplier GSTIN: <strong>{values.vendor?.gstin || 'Not captured'}</strong> · Registration state: <strong>{tax.supplier ? `${tax.supplier.name} (${tax.supplier.code})` : 'Unavailable'}</strong></p>
+              <p>{tax.error || (tax.treatment === 'igst' ? 'Different state codes: full catalogue GST rate applies as IGST.' : `Matching state codes: equal CGST and ${tax.treatment === 'cgst_utgst' ? 'UTGST' : 'SGST'} rates apply.`)}</p>
+              <p>Choose the applicable place of supply for ordinary domestic goods. No destination is inferred from vendor or storage location. This calculator does not determine special supply, reverse-charge, composition, SEZ or import/export rules.</p>
+              {editing && !order.taxBasis && values.vendor?.id === order.vendorId && <><button type="button" className="po-link" disabled={locked} onClick={loadLegacyTax}>Load current vendor tax basis for this edit</button><p role="status">{legacyTaxStatus}</p></>}
             </div>
             <div className="po-group__dates">
               <Field id="po-date" label="PO date" error={errors.poDate}><input id="po-date" className="mr-form__control" type="date" value={values.poDate} onChange={(e) => edit({ poDate: e.target.value }, ['poDate'])} aria-invalid={Boolean(errors.poDate)} aria-describedby={errors.poDate ? 'po-date-error' : undefined} data-testid="input-po-date" /></Field>
@@ -252,7 +287,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
                   <div className="po-field"><label htmlFor={`po-price-${index}`}>Unit price (₹)</label><input id={`po-price-${index}`} className="mr-form__control" readOnly tabIndex={-1} value={!product ? '' : product.unitPrice == null ? 'Unavailable' : trimDecimal(product.unitPrice)} placeholder="From catalogue" aria-readonly="true" data-testid={`input-po-price-${index}`} /></div>
                   <div className="po-field"><label htmlFor={`po-gst-${index}`}>GST (%)</label><input id={`po-gst-${index}`} className="mr-form__control" readOnly tabIndex={-1} value={product ? trimDecimal(product.gst, 0) : ''} placeholder="From catalogue" aria-readonly="true" data-testid={`input-po-gst-${index}`} /></div>
                 </div>
-                <div className="po-new-line__totals"><span>Gross <b>{draft[index] && !draft[index].overflow ? formatPaise(draft[index].subtotal) : '—'}</b></span><span>GST <b>{draft[index] && !draft[index].overflow ? formatPaise(draft[index].gstAmount) : '—'}</b></span><span className="po-new-line__final">Line total <b>{draft[index] && !draft[index].overflow ? formatPaise(draft[index].total) : '—'}</b></span></div>
+                <div className="po-new-line__totals"><span>Taxable <b>{draft[index] && !draft[index].overflow ? formatPaise(draft[index].subtotal) : '—'}</b></span><LineTax line={draft[index]} /><span>GST <b>{draft[index]?.taxPending ? 'Tax pending' : draft[index] && !draft[index].overflow ? formatPaise(draft[index].gstAmount) : '—'}</b></span><span className="po-new-line__final">Line total <b>{draft[index]?.taxPending ? 'Tax pending' : draft[index] && !draft[index].overflow ? formatPaise(draft[index].total) : '—'}</b></span></div>
                 {errors[`lines.${index}.total`] && <p className="mr-form__error" role="alert">{errors[`lines.${index}.total`]}</p>}
               </div>;
             })}</div>

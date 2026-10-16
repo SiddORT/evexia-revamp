@@ -5,8 +5,11 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { POTaxAmounts } from "./pOTaxAmounts";
+import type { POTaxRates } from "./pOTaxRates";
 
 export interface POLineResponse {
+  componentRates?: POTaxRates | null;
   gst: string;
   gstAmount: number;
   id?: string | null;
@@ -14,6 +17,7 @@ export interface POLineResponse {
   productName: string;
   quantity: string;
   subtotal: number;
+  taxComponents?: POTaxAmounts | null;
   total: number;
   unitPrice: string;
 }

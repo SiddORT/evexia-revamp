@@ -35,6 +35,8 @@ export STAFF_ENCRYPTION_KEYS='{"primary":"QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQU
 export STAFF_ENCRYPTION_KEY_ID=primary STAFF_EMAIL_INDEX_KEY=QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI=
 export DIRECTORY_ENCRYPTION_KEYS='{"primary":"Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0M="}'
 export DIRECTORY_ENCRYPTION_KEY_ID=primary DIRECTORY_INDEX_KEY=RUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUVFRUU=
+export COMMUNICATION_ENCRYPTION_KEYS='{"primary":"RkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkY="}'
+export COMMUNICATION_ENCRYPTION_KEY_ID=primary
 export JWT_SECRET=synthetic-isolated-po-smoke-signing-key-not-a-live-credential
 export SUPER_ADMIN_INITIAL_PASSWORD=Synthetic-po-smoke-only-password
 export EVEXIA_TEST_ADMIN_PASSWORD="$SUPER_ADMIN_INITIAL_PASSWORD"
@@ -44,7 +46,7 @@ export PYTHONPATH="$ROOT/artifacts/api-server/backend"
 export EVEXIA_ISOLATED_AUTH_PREVIEW=1 EVEXIA_TEST_API_PROXY_TARGET="http://127.0.0.1:$API_PORT"
 export EVEXIA_PREVIEW_BASE_URL="http://127.0.0.1:$PORT" PORT BASE_PATH=/
 cd "$ROOT/artifacts/api-server/backend"
-python3 -m alembic upgrade 0038_purchase_orders
+python3 -m alembic upgrade 0040_po_tax_basis
 python3 -m app.bootstrap
 python3 -m uvicorn app.main:app --host 127.0.0.1 --port "$API_PORT" --no-access-log --no-proxy-headers >"$PGROOT/api.log" 2>&1 &
 API_PID=$!

@@ -2,7 +2,7 @@
 import hashlib
 import json
 import uuid
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal
 from sqlalchemy import select, func, or_, delete, text
 from sqlalchemy.exc import SQLAlchemyError
 from app.core.security import utcnow
@@ -14,6 +14,7 @@ from app.db.allergen_models import AllergenProduct
 from app.schemas.purchase_orders import POInput
 from app.services.allergens import authorize
 from app.services.zones import label
+from app.services.purchase_order_tax import tax_basis, supplier_state, calculate_components, COMPONENTS
 
 MAX_TOTAL = 10000000000
 MODELS = {"vendors": (Vendor, Vendor.vendorName), "locations": (StorageLocation, StorageLocation.name),
@@ -44,21 +45,6 @@ def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
 
 
-def paise(value):
-    return int((value * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
-
-
-def calculate(quantity, price, gst):
-    q = Decimal(quantity)
-    if q < Decimal(".001") or q > 1000000:
-        raise POError("Quantity must be from 0.001 to 1,000,000 with at most three decimals.", 422, "po_quantity")
-    subtotal = paise(q * price)
-    tax = int((Decimal(subtotal) * gst / 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
-    if subtotal + tax > MAX_TOTAL:
-        raise POError("Line amount exceeds ₹10 crore.", 422, "po_total")
-    return dict(subtotal=subtotal, gstAmount=tax, total=subtotal + tax)
-
-
 def locked_reference(db, kind, record_id):
     model, _ = MODELS[kind]
     row = db.scalar(select(model).where(model.id == record_id).with_for_update())
@@ -75,6 +61,7 @@ def projection(db, row):
                 expectedDate=row.expected_date.isoformat(), vendorId=str(row.vendor_id), vendorName=row.vendor_name,
                 locationId=str(row.location_id), locationName=row.location_name, status=row.status,
                 subtotal=row.subtotal, gstAmount=row.gst_amount, total=row.total,
+                taxBasis=row.tax_basis, taxComponents=row.tax_components,
                 createdAt=row.created_at.isoformat(), updatedAt=row.updated_at.isoformat(), deletedAt=row.deleted_at,
                 lines=[dict(**line.snapshot, id=str(line.id)) for line in lines])
 
@@ -82,6 +69,12 @@ def projection(db, row):
 def preview_data(db, body, existing=None):
     previous = projection(db, existing) if existing else None
     vendor = None if previous and previous["vendorId"] == str(body.vendorId) else locked_reference(db, "vendors", body.vendorId)
+    # Retained vendors keep captured tax identity, never silently adopt master changes.
+    # Legacy edits explicitly capture the current, available vendor tax identity.
+    if vendor is None and not previous.get("taxBasis"):
+        vendor = locked_reference(db, "vendors", body.vendorId)
+    gstin = vendor.gstNo if vendor else previous["taxBasis"]["supplierGstin"]
+    basis = tax_basis(gstin, body.placeOfSupplyCode)
     location = None if previous and previous["locationId"] == str(body.locationId) else locked_reference(db, "locations", body.locationId)
     products = {}
     retained = {line["productId"]: line for line in previous["lines"]} if previous else {}
@@ -99,15 +92,16 @@ def preview_data(db, body, existing=None):
             raise POError("The selected product has no catalogue selling price. Set it in Allergen Master before reviewing.", 422, "po_price_missing")
         lines.append(dict(productId=str(line.productId), productName=old["productName"] if old else product.name,
                           quantity=line.quantity, unitPrice=str(price), gst=str(gst),
-                          **calculate(line.quantity, price, gst)))
+                          **calculate_components(line.quantity, price, gst, basis["treatment"])))
         revisions.append(product.version if product else None)
     figures = {field: sum(line[field] for line in lines) for field in ("subtotal", "gstAmount", "total")}
     if figures["total"] > MAX_TOTAL:
         raise POError("Order total exceeds ₹10 crore.", 422, "po_total")
     order = dict(poDate=body.poDate.isoformat(), expectedDate=body.expectedDate.isoformat(),
-                 vendorId=str(body.vendorId), vendorName=vendor.vendorName if vendor else previous["vendorName"],
+                 vendorId=str(body.vendorId), vendorName=previous["vendorName"] if previous and previous["vendorId"] == str(body.vendorId) else vendor.vendorName,
                  locationId=str(body.locationId), locationName=location.name if location else previous["locationName"],
                  lines=lines, **figures)
+    order.update(taxBasis=basis, taxComponents={k: sum(line["taxComponents"][k] for line in lines) for k in COMPONENTS})
     token = digest([order, vendor.version if vendor else None, location.version if location else None, revisions,
                     str(existing.id) if existing else None, existing.version if existing else None])
     return dict(order=order, reviewToken=token)
@@ -150,7 +144,12 @@ def persist_lines(db, row, lines):
 
 def mutation(db, actor, body, record_id=None, operation="created"):
     def work(current):
-        payload_digest = digest([operation, record_id, body.model_dump(mode="json")])
+        payload = body.model_dump(mode="json")
+        # Pre-upgrade requests omitted this field. Preserve their exact digest so
+        # committed/lost-ack responses can be recovered before any new validation.
+        if "placeOfSupplyCode" not in body.model_fields_set:
+            payload.pop("placeOfSupplyCode", None)
+        payload_digest = digest([operation, record_id, payload])
         # Serialize retry key before existence check, including across requests.
         db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": int(body.idempotencyKey.int % (2**63 - 1))})
         prior = db.get(Retry, body.idempotencyKey)
@@ -180,11 +179,12 @@ def mutation(db, actor, body, record_id=None, operation="created"):
             row.vendor_name, row.location_name = data["vendorName"], data["locationName"]
             row.po_date, row.expected_date = body.poDate, body.expectedDate
             row.subtotal, row.gst_amount, row.total = data["subtotal"], data["gstAmount"], data["total"]
+            row.tax_basis, row.tax_components = data["taxBasis"], data["taxComponents"]
             db.flush()
             persist_lines(db, row, data["lines"])
             if before:
                 changed = [name for key, name in (("poDate", "PO date"), ("expectedDate", "expected delivery"),
-                           ("vendorId", "vendor"), ("locationId", "destination"), ("lines", "product lines"))
+                           ("vendorId", "vendor"), ("locationId", "storage location"), ("taxBasis", "tax basis / place of supply"), ("lines", "product lines"))
                            if (before[key] if key != "lines" else [{k: v for k, v in l.items() if k != "id"} for l in before[key]]) != data[key]]
                 if not changed:
                     raise POError("No changes to save.", 422, "po_no_change")
@@ -307,6 +307,10 @@ def references(db, actor, kind, query="", limit=25, offset=0, selected_id=None, 
             data = dict(id=str(row.id), name=getattr(row, name.key), version=row.version)
             if kind == "products":
                 data.update(unitPrice=str(row.selling_price) if row.selling_price is not None else None, gst=str(row.gst))
+            if kind == "vendors":
+                state = supplier_state(row.gstNo)
+                data.update(gstin=row.gstNo, registrationStateCode=state["code"] if state else None,
+                            registrationStateName=state["name"] if state else None)
             return data
         return page(db, statement.order_by(name, model.id), total, limit, offset, project)
     return transaction(db, actor, work)

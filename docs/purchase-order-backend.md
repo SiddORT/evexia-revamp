@@ -37,9 +37,16 @@ Quantities are positive plain decimals with up to three decimal places and
 maximum 1,000,000. There are 1–100 lines and a ₹10 crore per-order limit.
 
 For each line, multiply quantity by catalogue price, round to paise using
-**round half up**, then calculate GST on that rounded subtotal and round half
-up again. Sum the rounded line subtotals, GST and totals. The draft uses scaled
-BigInt; preview/create use Python Decimal. No IGST/CGST/SGST split is inferred.
+**round half up**, then independently round each applicable GST component half
+up on that rounded subtotal. Sum rounded components for line GST, then rounded
+lines for order totals. Equal component **rates** can differ from the former
+aggregate-only result: a 1-paise subtotal at 50% gives two 25% components rounded
+to zero, whereas aggregate GST rounded to 1 paise. Never alter historical totals
+to reconcile this. Halved six-decimal rates retain seven decimal places.
+The draft uses scaled BigInt; preview/create use Python Decimal with explicit
+precision. Unfinished/invalid rows are excluded from clearly marked **partial
+totals**, not allowed through review. Empty drafts show zero. Missing tax basis
+shows **Tax pending**, distinct from valid zero-rated GST or unavailable prices.
 Server preview binds the exact input, current reference versions, names,
 prices and GST into a review token. Changed catalogue/reference details
 between preview and submission return `409 po_review_stale`, requiring review.
@@ -50,6 +57,79 @@ response. An identical retry returns that response without another mutation.
 A reused key for different data is refused. Uncertain attempts lock editing
 until the same request is reconciled. Corrupt/unavailable retry storage blocks
 new sends explicitly. This is retry metadata, not a local PO dataset.
+
+## Ordinary domestic tax contract
+
+Each new/reviewed edit requires explicitly selected **Place of supply (State/UT)**,
+with no default. This means the applicable place of supply for **ordinary domestic
+goods**, not necessarily the storage-location address. Supplier state comes from
+the server vendor GSTIN, never client assertions. Different state codes apply the
+full catalogue rate as IGST. Matching codes apply equal CGST and SGST, except
+Chandigarh (04), merged Dadra and Nagar Haveli and Daman and Diu (26),
+Lakshadweep (31), Andaman and Nicobar Islands (35), and Ladakh (38), which use
+CGST + UTGST. Delhi (07), Puducherry (34), and Jammu and Kashmir (01) use SGST.
+Unsupported/retired/special codes (including 25, 28, 97, 99) block review with
+actionable errors, never zero tax.
+
+The shared allowlist is `app/services/gst_states.json`. Reviewed sources:
+[NIC e-waybill State Codes](https://docs.ewaybillgst.gov.in/apidocs/state-code.html),
+[government GST state-code list](https://nagalandtax.nic.in/docs/GST/Statistics/GST_State_Code_List.pdf),
+and [CBIC GST concept/status, sections 10.1–10.2](https://cbic-gst.gov.in/pdf/01042019_GST-Concept-Status.pdf).
+The UTGST distinction follows union territories without legislatures; Jammu and
+Kashmir retains SGST while Ladakh uses UTGST. This is not a registration
+verification service or comprehensive statutory tax engine. Rate/HSN selection,
+ITC, reverse charge, composition, SEZ, imports/exports, and special bill-to/
+ship-to determinations are outside scope.
+
+## Tax snapshot activation and historical compatibility
+
+`0040_po_tax_basis` is a new **operator-only, additive** successor to
+`0039_communication`. It adds two nullable JSON order snapshot columns; existing
+line JSON gains component rates/amounts only on explicit saves. It does not
+backfill/recalculate orders, change prior migrations or rewrite retry responses.
+Orders without a basis retain original aggregate amounts and display
+“Historical tax breakdown unavailable”; no destination or split is fabricated.
+For an explicit legacy edit, select a destination and load/select an available
+vendor with valid GSTIN, then obtain a new review. Retained nonlegacy vendors
+use saved GST identity on edits; changed vendors use current server data.
+Retained products continue using saved names/prices/rates.
+
+The review digest includes destination, supplier basis, treatment, components and
+reference versions; audit summaries identify tax-basis changes. Successful retry
+responses are returned before current-basis validation. The input destination is
+optional **only on the wire** for old retry reconciliation: new previews and
+uncommitted saves require it. Old pending browser journals retain their exact
+body, token and UUID without adding a destination or issuing a new create.
+A definitively uncommitted old request must be re-reviewed.
+
+No managed/shared database or deployment is activated by this work. Obtain
+separate approval of `0040_po_tax_basis` and unapplied predecessors, backup/restore
+evidence, and a maintenance window before activation. Existing 0038-only activators,
+0039 fresh-install manifests and release authorizations remain pinned: they are
+**not** permission to upgrade to head or apply this successor. Application
+readiness requires the new revision and correctly blocks a predecessor database
+until approved activation.
+
+Focused commands (disposable data only):
+```
+node --test artifacts/evexia-portal/src/services/serverPurchaseOrders.test.js
+sh scripts/test-api-foundation.sh tests/test_purchase_orders.py tests/test_purchase_order_tax.py
+sh scripts/test-purchase-orders-smoke.sh artifacts/evexia-portal/tests/purchase-orders-tax.spec.mjs
+```
+The browser command uses private temporary PostgreSQL/API/Vite processes, synthetic
+accounts, separate ports and generated output. Its legacy fixture helper refuses
+configured/shared databases. No broad release suite is required for this feature's
+focused verification.
+
+Verification on 2026-10-16: the four client arithmetic/state groups, 47 focused
+backend cases (including populated additive DDL preservation), 45 migration-policy
+checks, generated-client/library typechecks, API contract comparison, and direct
+portal compilation passed. The authenticated Chromium tax journey passed against
+the private disposable fixture, including mobile sticky geometry, stale vendor
+review, save/reload parity, retained tax basis, real legacy reads, and original
+pending create/edit identities. No Firefox/Safari or full release pass was run.
+The managed preview remains **blocked**, not verified: its database is still
+`0039_communication`; code now requires separately approved `0040_po_tax_basis`.
 
 ## Queries and audit
 

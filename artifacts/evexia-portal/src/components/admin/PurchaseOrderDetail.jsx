@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import AdminLayout from './AdminLayout.jsx';
 import { useAdminDateFormatters } from './adminPreferences.js';
 import { Editor, LineTable } from '../../pages/admin/PurchaseOrderFormPage.jsx';
+import { TaxBasis } from './PurchaseOrderTaxSummary.jsx';
 import {
   clearOrderMutation, deletePurchaseOrder, describeError, formatPaise, getPurchaseOrder, isPermissionError,
   isStaleOrder, isUncertain, loadOrderMutation, newKey, saveOrderMutation,
@@ -105,6 +106,7 @@ export default function PurchaseOrderDetail({ id }) {
             <div><dt>Created</dt><dd>{timestamp(order.createdAt, true)}</dd></div><div><dt>Last updated</dt><dd>{timestamp(order.updatedAt, true)}</dd></div>
             {order.deletedAt && <div><dt>Deleted</dt><dd>{timestamp(order.deletedAt, true)}</dd></div>}
           </dl>
+          <TaxBasis basis={order.taxBasis} />
         </div>
         <LineTable lines={order.lines} figures={order} />
         {deleting ? <div className="po-review" role="region" aria-label="Confirm purchase order deletion">

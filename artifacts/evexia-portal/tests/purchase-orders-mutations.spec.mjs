@@ -28,6 +28,7 @@ async function loginAndSeed(page) {
       threshold_limit: null, status: 'active', mix: false,
     });
     const input = {
+      placeOfSupplyCode: '27',
       vendorId: vendor.id, locationId: location.id, poDate: '2028-12-30', expectedDate: '2028-12-31',
       lines: [{ productId: product.id, quantity: '1' }, { productId: product.id, quantity: '2' }],
     };
@@ -63,6 +64,7 @@ test('protected server PO detail, edit conflict/retry, and soft-delete retry', a
   }, refs.product);
   const firstEdit = await byService('getPurchaseOrder', orderId);
   const firstEditInput = {
+    placeOfSupplyCode: firstEdit.taxBasis.placeOfSupplyCode,
     poDate: firstEdit.poDate, expectedDate: firstEdit.expectedDate, vendorId: firstEdit.vendorId, locationId: firstEdit.locationId,
     lines: firstEdit.lines.map((line, index) => ({ productId: line.productId, quantity: index === 0 ? '3' : line.quantity })),
   };
@@ -94,6 +96,7 @@ test('protected server PO detail, edit conflict/retry, and soft-delete retry', a
   await page.getByTestId('button-review-po').click();
   const competitor = await byService('getPurchaseOrder', orderId);
   const competingInput = {
+    placeOfSupplyCode: competitor.taxBasis.placeOfSupplyCode,
     poDate: competitor.poDate, expectedDate: competitor.expectedDate, vendorId: competitor.vendorId, locationId: competitor.locationId,
     lines: competitor.lines.map((line, index) => ({ productId: line.productId, quantity: index === 0 ? '5' : line.quantity })),
   };

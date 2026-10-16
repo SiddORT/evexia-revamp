@@ -1,4 +1,17 @@
 import { getSession, purchaseOrderRequest } from '../auth/adminSession.js';
+import states from '../../../api-server/backend/app/services/gst_states.json' with { type: 'json' };
+
+export const GST_STATES = states;
+export const TAX_COMPONENTS = ['cgst', 'sgst', 'utgst', 'igst'];
+export function taxContext(vendor, destination) {
+  const gstin = vendor?.gstin;
+  const supplier = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gstin || '') && states.find((s) => s.code === gstin.slice(0, 2));
+  const place = states.find((s) => s.code === destination);
+  if (!supplier) return { error: vendor ? 'Vendor GST registration state unavailable or unsupported. Select a vendor with a supported GSTIN; for a legacy order, load its current vendor tax basis.' : 'Select a vendor to determine its GST registration state.' };
+  if (!place) return { supplier, error: 'Select Place of supply (State/UT) to calculate GST components.' };
+  const treatment = supplier.code === place.code ? `cgst_${place.localTax}` : 'igst';
+  return { supplier, place, treatment };
+}
 
 const clean = (params) => Object.fromEntries(Object.entries(params || {}).filter(([, value]) => value !== '' && value != null));
 
@@ -109,29 +122,45 @@ export function parseQuantity(text) {
 }
 
 /** Returns { subtotal, gstAmount, total } in integer paise, or null when inputs are not computable. */
-export function computeLine(quantityText, product) {
+export function computeLine(quantityText, product, treatment) {
   const qty = parseQuantity(quantityText);
   if (qty === null || !product || product.unitPrice == null) return null;
   const price = parseScaled(product.unitPrice, 6);
   const gst = parseScaled(product.gst, 6);
   if (price === null || price > MAX_PRICE || gst === null || gst > MAX_GST) return null;
   const subtotal = roundDiv(qty * price, 10n ** 7n);
-  const gstAmount = roundDiv(subtotal * gst, 10n ** 8n);
+  if (subtotal > BigInt(MAX_TOTAL_PAISE)) return { overflow: true };
+  if (!['igst', 'cgst_sgst', 'cgst_utgst'].includes(treatment)) return { subtotal: Number(subtotal), taxPending: true, gstAmount: null, total: null };
+  // Rates have seven decimals: halving a six-decimal product rate is exact.
+  const rates = Object.fromEntries(TAX_COMPONENTS.map((k) => [k, 0n]));
+  if (treatment === 'igst') rates.igst = gst * 10n;
+  else { rates.cgst = gst * 5n; rates[treatment.slice(5)] = gst * 5n; }
+  const components = Object.fromEntries(TAX_COMPONENTS.map((k) => [k, roundDiv(subtotal * rates[k], 10n ** 9n)]));
+  const gstAmount = TAX_COMPONENTS.reduce((sum, k) => sum + components[k], 0n);
   const total = subtotal + gstAmount;
   if (total > BigInt(MAX_TOTAL_PAISE)) return { overflow: true };
-  return { subtotal: Number(subtotal), gstAmount: Number(gstAmount), total: Number(total) };
+  const rateString = (value) => `${value / 10000000n}.${String(value % 10000000n).padStart(7, '0')}`.replace(/\.?0+$/, '');
+  return { subtotal: Number(subtotal), gstAmount: Number(gstAmount), total: Number(total),
+    taxComponents: Object.fromEntries(TAX_COMPONENTS.map((k) => [k, Number(components[k])])),
+    componentRates: Object.fromEntries(TAX_COMPONENTS.map((k) => [k, rateString(rates[k]) || '0'])) };
 }
 
 /** Sum of rounded lines; null when no line is computable. overflow flags totals above the limit. */
-export function computeTotals(lines) {
-  const parts = lines.map((line) => computeLine(line.quantity, line.product));
-  if (!parts.length || parts.some((part) => !part || part.overflow)) {
-    return parts.some((part) => part?.overflow) ? { overflow: true } : null;
-  }
+export function computeTotals(lines, treatment) {
+  const all = lines.map((line) => computeLine(line.quantity, line.product, treatment));
+  if (all.some((part) => part?.overflow)) return { overflow: true };
+  const parts = all.filter(Boolean);
+  const incomplete = all.length - parts.length;
+  const taxPending = parts.some((part) => part.taxPending);
+  const metadata = { incomplete, partial: incomplete > 0, completed: parts.length, taxPending };
   const sum = (key) => parts.reduce((acc, part) => acc + BigInt(part[key]), 0n);
+  const subtotal = sum('subtotal');
+  if (subtotal > BigInt(MAX_TOTAL_PAISE)) return { ...metadata, overflow: true };
+  if (taxPending) return { ...metadata, subtotal: Number(subtotal), gstAmount: null, total: null };
   const total = sum('total');
   if (total > BigInt(MAX_TOTAL_PAISE)) return { overflow: true };
-  return { subtotal: Number(sum('subtotal')), gstAmount: Number(sum('gstAmount')), total: Number(total) };
+  return { ...metadata, subtotal: Number(subtotal), gstAmount: Number(sum('gstAmount')), total: Number(total),
+    taxComponents: Object.fromEntries(TAX_COMPONENTS.map((k) => [k, parts.reduce((sum, part) => sum + part.taxComponents[k], 0)])) };
 }
 
 /* ---------- dates ---------- */

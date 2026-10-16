@@ -7017,6 +7017,18 @@
             "title": "Locationid",
             "type": "string"
           },
+          "placeOfSupplyCode": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placeofsupplycode"
+          },
           "poDate": {
             "format": "date",
             "title": "Podate",
@@ -7098,6 +7110,18 @@
             "title": "Locationid",
             "type": "string"
           },
+          "placeOfSupplyCode": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placeofsupplycode"
+          },
           "poDate": {
             "format": "date",
             "title": "Podate",
@@ -7149,6 +7173,18 @@
             "title": "Locationid",
             "type": "string"
           },
+          "placeOfSupplyCode": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placeofsupplycode"
+          },
           "poDate": {
             "format": "date",
             "title": "Podate",
@@ -7194,6 +7230,16 @@
       },
       "POLineResponse": {
         "properties": {
+          "componentRates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/POTaxRates"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "gst": {
             "title": "Gst",
             "type": "string"
@@ -7230,6 +7276,16 @@
           "subtotal": {
             "title": "Subtotal",
             "type": "integer"
+          },
+          "taxComponents": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/POTaxAmounts"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "total": {
             "title": "Total",
@@ -7358,6 +7414,17 @@
             ],
             "title": "Gst"
           },
+          "gstin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gstin"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -7366,6 +7433,28 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "registrationStateCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registrationstatecode"
+          },
+          "registrationStateName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registrationstatename"
           },
           "unitPrice": {
             "anyOf": [
@@ -7497,6 +7586,26 @@
             "title": "Subtotal",
             "type": "integer"
           },
+          "taxBasis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/POTaxBasis"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "taxComponents": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/POTaxAmounts"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "total": {
             "title": "Total",
             "type": "integer"
@@ -7594,6 +7703,26 @@
             "title": "Subtotal",
             "type": "integer"
           },
+          "taxBasis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/POTaxBasis"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "taxComponents": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/POTaxAmounts"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "total": {
             "title": "Total",
             "type": "integer"
@@ -7621,6 +7750,105 @@
           "total"
         ],
         "title": "POReviewOrder",
+        "type": "object"
+      },
+      "POTaxAmounts": {
+        "properties": {
+          "cgst": {
+            "title": "Cgst",
+            "type": "integer"
+          },
+          "igst": {
+            "title": "Igst",
+            "type": "integer"
+          },
+          "sgst": {
+            "title": "Sgst",
+            "type": "integer"
+          },
+          "utgst": {
+            "title": "Utgst",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cgst",
+          "sgst",
+          "utgst",
+          "igst"
+        ],
+        "title": "POTaxAmounts",
+        "type": "object"
+      },
+      "POTaxBasis": {
+        "properties": {
+          "placeOfSupplyCode": {
+            "title": "Placeofsupplycode",
+            "type": "string"
+          },
+          "placeOfSupplyName": {
+            "title": "Placeofsupplyname",
+            "type": "string"
+          },
+          "supplierGstin": {
+            "title": "Suppliergstin",
+            "type": "string"
+          },
+          "supplierStateCode": {
+            "title": "Supplierstatecode",
+            "type": "string"
+          },
+          "supplierStateName": {
+            "title": "Supplierstatename",
+            "type": "string"
+          },
+          "treatment": {
+            "enum": [
+              "igst",
+              "cgst_sgst",
+              "cgst_utgst"
+            ],
+            "title": "Treatment",
+            "type": "string"
+          }
+        },
+        "required": [
+          "supplierGstin",
+          "supplierStateCode",
+          "supplierStateName",
+          "placeOfSupplyCode",
+          "placeOfSupplyName",
+          "treatment"
+        ],
+        "title": "POTaxBasis",
+        "type": "object"
+      },
+      "POTaxRates": {
+        "properties": {
+          "cgst": {
+            "title": "Cgst",
+            "type": "string"
+          },
+          "igst": {
+            "title": "Igst",
+            "type": "string"
+          },
+          "sgst": {
+            "title": "Sgst",
+            "type": "string"
+          },
+          "utgst": {
+            "title": "Utgst",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cgst",
+          "sgst",
+          "utgst",
+          "igst"
+        ],
+        "title": "POTaxRates",
         "type": "object"
       },
       "POVendorValue": {

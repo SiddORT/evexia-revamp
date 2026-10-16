@@ -14300,6 +14300,17 @@ export const ListPurchaseOrdersResponse = zod.object({
       id: zod.string().uuid(),
       lines: zod.array(
         zod.object({
+          componentRates: zod
+            .union([
+              zod.object({
+                cgst: zod.string(),
+                igst: zod.string(),
+                sgst: zod.string(),
+                utgst: zod.string(),
+              }),
+              zod.null(),
+            ])
+            .optional(),
           gst: zod.string(),
           gstAmount: zod.number().int(),
           id: zod.union([zod.string().uuid(), zod.null()]).optional(),
@@ -14307,6 +14318,17 @@ export const ListPurchaseOrdersResponse = zod.object({
           productName: zod.string(),
           quantity: zod.string(),
           subtotal: zod.number().int(),
+          taxComponents: zod
+            .union([
+              zod.object({
+                cgst: zod.number().int(),
+                igst: zod.number().int(),
+                sgst: zod.number().int(),
+                utgst: zod.number().int(),
+              }),
+              zod.null(),
+            ])
+            .optional(),
           total: zod.number().int(),
           unitPrice: zod.string(),
         }),
@@ -14317,6 +14339,30 @@ export const ListPurchaseOrdersResponse = zod.object({
       poDate: zod.coerce.date(),
       status: zod.string(),
       subtotal: zod.number().int(),
+      taxBasis: zod
+        .union([
+          zod.object({
+            placeOfSupplyCode: zod.string(),
+            placeOfSupplyName: zod.string(),
+            supplierGstin: zod.string(),
+            supplierStateCode: zod.string(),
+            supplierStateName: zod.string(),
+            treatment: zod.enum(["igst", "cgst_sgst", "cgst_utgst"]),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      taxComponents: zod
+        .union([
+          zod.object({
+            cgst: zod.number().int(),
+            igst: zod.number().int(),
+            sgst: zod.number().int(),
+            utgst: zod.number().int(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
       total: zod.number().int(),
       updatedAt: zod.string(),
       vendorId: zod.string().uuid(),
@@ -14337,6 +14383,9 @@ export const createPurchaseOrderBodyLinesItemQuantityRegExp = new RegExp(
   "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
 );
 
+export const createPurchaseOrderBodyPlaceOfSupplyCodeOneRegExp = new RegExp(
+  "^\\d{2}$",
+);
 export const createPurchaseOrderBodyReviewTokenRegExp = new RegExp(
   "^[0-9a-f]{64}$",
 );
@@ -14357,6 +14406,12 @@ export const CreatePurchaseOrderBody = zod.object({
     .min(1)
     .max(createPurchaseOrderBodyLinesMax),
   locationId: zod.string().uuid(),
+  placeOfSupplyCode: zod
+    .union([
+      zod.string().regex(createPurchaseOrderBodyPlaceOfSupplyCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional(),
   poDate: zod.coerce.date(),
   reviewToken: zod.string().regex(createPurchaseOrderBodyReviewTokenRegExp),
   vendorId: zod.string().uuid(),
@@ -14370,6 +14425,17 @@ export const CreatePurchaseOrderResponse = zod.object({
   id: zod.string().uuid(),
   lines: zod.array(
     zod.object({
+      componentRates: zod
+        .union([
+          zod.object({
+            cgst: zod.string(),
+            igst: zod.string(),
+            sgst: zod.string(),
+            utgst: zod.string(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
       gst: zod.string(),
       gstAmount: zod.number().int(),
       id: zod.union([zod.string().uuid(), zod.null()]).optional(),
@@ -14377,6 +14443,17 @@ export const CreatePurchaseOrderResponse = zod.object({
       productName: zod.string(),
       quantity: zod.string(),
       subtotal: zod.number().int(),
+      taxComponents: zod
+        .union([
+          zod.object({
+            cgst: zod.number().int(),
+            igst: zod.number().int(),
+            sgst: zod.number().int(),
+            utgst: zod.number().int(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
       total: zod.number().int(),
       unitPrice: zod.string(),
     }),
@@ -14387,6 +14464,30 @@ export const CreatePurchaseOrderResponse = zod.object({
   poDate: zod.coerce.date(),
   status: zod.string(),
   subtotal: zod.number().int(),
+  taxBasis: zod
+    .union([
+      zod.object({
+        placeOfSupplyCode: zod.string(),
+        placeOfSupplyName: zod.string(),
+        supplierGstin: zod.string(),
+        supplierStateCode: zod.string(),
+        supplierStateName: zod.string(),
+        treatment: zod.enum(["igst", "cgst_sgst", "cgst_utgst"]),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  taxComponents: zod
+    .union([
+      zod.object({
+        cgst: zod.number().int(),
+        igst: zod.number().int(),
+        sgst: zod.number().int(),
+        utgst: zod.number().int(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   total: zod.number().int(),
   updatedAt: zod.string(),
   vendorId: zod.string().uuid(),
@@ -14489,8 +14590,11 @@ export const ListPurchaseOrderFilterOptionsResponse = zod.object({
   items: zod.array(
     zod.object({
       gst: zod.union([zod.string(), zod.null()]).optional(),
+      gstin: zod.union([zod.string(), zod.null()]).optional(),
       id: zod.string().uuid(),
       name: zod.string(),
+      registrationStateCode: zod.union([zod.string(), zod.null()]).optional(),
+      registrationStateName: zod.union([zod.string(), zod.null()]).optional(),
       unitPrice: zod.union([zod.string(), zod.null()]).optional(),
       version: zod.union([zod.number().int(), zod.null()]).optional(),
     }),
@@ -14519,6 +14623,10 @@ export const previewPurchaseOrderBodyLinesItemQuantityRegExp = new RegExp(
   "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
 );
 
+export const previewPurchaseOrderBodyPlaceOfSupplyCodeOneRegExp = new RegExp(
+  "^\\d{2}$",
+);
+
 export const PreviewPurchaseOrderBody = zod.object({
   expectedDate: zod.coerce.date(),
   lines: zod
@@ -14534,6 +14642,12 @@ export const PreviewPurchaseOrderBody = zod.object({
     .min(1)
     .max(previewPurchaseOrderBodyLinesMax),
   locationId: zod.string().uuid(),
+  placeOfSupplyCode: zod
+    .union([
+      zod.string().regex(previewPurchaseOrderBodyPlaceOfSupplyCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional(),
   poDate: zod.coerce.date(),
   vendorId: zod.string().uuid(),
 });
@@ -14544,6 +14658,17 @@ export const PreviewPurchaseOrderResponse = zod.object({
     gstAmount: zod.number().int(),
     lines: zod.array(
       zod.object({
+        componentRates: zod
+          .union([
+            zod.object({
+              cgst: zod.string(),
+              igst: zod.string(),
+              sgst: zod.string(),
+              utgst: zod.string(),
+            }),
+            zod.null(),
+          ])
+          .optional(),
         gst: zod.string(),
         gstAmount: zod.number().int(),
         id: zod.union([zod.string().uuid(), zod.null()]).optional(),
@@ -14551,6 +14676,17 @@ export const PreviewPurchaseOrderResponse = zod.object({
         productName: zod.string(),
         quantity: zod.string(),
         subtotal: zod.number().int(),
+        taxComponents: zod
+          .union([
+            zod.object({
+              cgst: zod.number().int(),
+              igst: zod.number().int(),
+              sgst: zod.number().int(),
+              utgst: zod.number().int(),
+            }),
+            zod.null(),
+          ])
+          .optional(),
         total: zod.number().int(),
         unitPrice: zod.string(),
       }),
@@ -14559,6 +14695,30 @@ export const PreviewPurchaseOrderResponse = zod.object({
     locationName: zod.string(),
     poDate: zod.coerce.date(),
     subtotal: zod.number().int(),
+    taxBasis: zod
+      .union([
+        zod.object({
+          placeOfSupplyCode: zod.string(),
+          placeOfSupplyName: zod.string(),
+          supplierGstin: zod.string(),
+          supplierStateCode: zod.string(),
+          supplierStateName: zod.string(),
+          treatment: zod.enum(["igst", "cgst_sgst", "cgst_utgst"]),
+        }),
+        zod.null(),
+      ])
+      .optional(),
+    taxComponents: zod
+      .union([
+        zod.object({
+          cgst: zod.number().int(),
+          igst: zod.number().int(),
+          sgst: zod.number().int(),
+          utgst: zod.number().int(),
+        }),
+        zod.null(),
+      ])
+      .optional(),
     total: zod.number().int(),
     vendorId: zod.string().uuid(),
     vendorName: zod.string(),
@@ -14600,8 +14760,11 @@ export const ListPurchaseOrderReferencesResponse = zod.object({
   items: zod.array(
     zod.object({
       gst: zod.union([zod.string(), zod.null()]).optional(),
+      gstin: zod.union([zod.string(), zod.null()]).optional(),
       id: zod.string().uuid(),
       name: zod.string(),
+      registrationStateCode: zod.union([zod.string(), zod.null()]).optional(),
+      registrationStateName: zod.union([zod.string(), zod.null()]).optional(),
       unitPrice: zod.union([zod.string(), zod.null()]).optional(),
       version: zod.union([zod.number().int(), zod.null()]).optional(),
     }),
@@ -14626,6 +14789,17 @@ export const GetPurchaseOrderResponse = zod.object({
   id: zod.string().uuid(),
   lines: zod.array(
     zod.object({
+      componentRates: zod
+        .union([
+          zod.object({
+            cgst: zod.string(),
+            igst: zod.string(),
+            sgst: zod.string(),
+            utgst: zod.string(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
       gst: zod.string(),
       gstAmount: zod.number().int(),
       id: zod.union([zod.string().uuid(), zod.null()]).optional(),
@@ -14633,6 +14807,17 @@ export const GetPurchaseOrderResponse = zod.object({
       productName: zod.string(),
       quantity: zod.string(),
       subtotal: zod.number().int(),
+      taxComponents: zod
+        .union([
+          zod.object({
+            cgst: zod.number().int(),
+            igst: zod.number().int(),
+            sgst: zod.number().int(),
+            utgst: zod.number().int(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
       total: zod.number().int(),
       unitPrice: zod.string(),
     }),
@@ -14643,6 +14828,30 @@ export const GetPurchaseOrderResponse = zod.object({
   poDate: zod.coerce.date(),
   status: zod.string(),
   subtotal: zod.number().int(),
+  taxBasis: zod
+    .union([
+      zod.object({
+        placeOfSupplyCode: zod.string(),
+        placeOfSupplyName: zod.string(),
+        supplierGstin: zod.string(),
+        supplierStateCode: zod.string(),
+        supplierStateName: zod.string(),
+        treatment: zod.enum(["igst", "cgst_sgst", "cgst_utgst"]),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  taxComponents: zod
+    .union([
+      zod.object({
+        cgst: zod.number().int(),
+        igst: zod.number().int(),
+        sgst: zod.number().int(),
+        utgst: zod.number().int(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   total: zod.number().int(),
   updatedAt: zod.string(),
   vendorId: zod.string().uuid(),
@@ -14670,6 +14879,17 @@ export const DeletePurchaseOrderResponse = zod.object({
   id: zod.string().uuid(),
   lines: zod.array(
     zod.object({
+      componentRates: zod
+        .union([
+          zod.object({
+            cgst: zod.string(),
+            igst: zod.string(),
+            sgst: zod.string(),
+            utgst: zod.string(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
       gst: zod.string(),
       gstAmount: zod.number().int(),
       id: zod.union([zod.string().uuid(), zod.null()]).optional(),
@@ -14677,6 +14897,17 @@ export const DeletePurchaseOrderResponse = zod.object({
       productName: zod.string(),
       quantity: zod.string(),
       subtotal: zod.number().int(),
+      taxComponents: zod
+        .union([
+          zod.object({
+            cgst: zod.number().int(),
+            igst: zod.number().int(),
+            sgst: zod.number().int(),
+            utgst: zod.number().int(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
       total: zod.number().int(),
       unitPrice: zod.string(),
     }),
@@ -14687,6 +14918,30 @@ export const DeletePurchaseOrderResponse = zod.object({
   poDate: zod.coerce.date(),
   status: zod.string(),
   subtotal: zod.number().int(),
+  taxBasis: zod
+    .union([
+      zod.object({
+        placeOfSupplyCode: zod.string(),
+        placeOfSupplyName: zod.string(),
+        supplierGstin: zod.string(),
+        supplierStateCode: zod.string(),
+        supplierStateName: zod.string(),
+        treatment: zod.enum(["igst", "cgst_sgst", "cgst_utgst"]),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  taxComponents: zod
+    .union([
+      zod.object({
+        cgst: zod.number().int(),
+        igst: zod.number().int(),
+        sgst: zod.number().int(),
+        utgst: zod.number().int(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   total: zod.number().int(),
   updatedAt: zod.string(),
   vendorId: zod.string().uuid(),
@@ -14705,6 +14960,9 @@ export const editPurchaseOrderBodyLinesItemQuantityRegExp = new RegExp(
   "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
 );
 
+export const editPurchaseOrderBodyPlaceOfSupplyCodeOneRegExp = new RegExp(
+  "^\\d{2}$",
+);
 export const editPurchaseOrderBodyReviewTokenRegExp = new RegExp(
   "^[0-9a-f]{64}$",
 );
@@ -14726,6 +14984,12 @@ export const EditPurchaseOrderBody = zod.object({
     .min(1)
     .max(editPurchaseOrderBodyLinesMax),
   locationId: zod.string().uuid(),
+  placeOfSupplyCode: zod
+    .union([
+      zod.string().regex(editPurchaseOrderBodyPlaceOfSupplyCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional(),
   poDate: zod.coerce.date(),
   reviewToken: zod.string().regex(editPurchaseOrderBodyReviewTokenRegExp),
   vendorId: zod.string().uuid(),
@@ -14739,6 +15003,17 @@ export const EditPurchaseOrderResponse = zod.object({
   id: zod.string().uuid(),
   lines: zod.array(
     zod.object({
+      componentRates: zod
+        .union([
+          zod.object({
+            cgst: zod.string(),
+            igst: zod.string(),
+            sgst: zod.string(),
+            utgst: zod.string(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
       gst: zod.string(),
       gstAmount: zod.number().int(),
       id: zod.union([zod.string().uuid(), zod.null()]).optional(),
@@ -14746,6 +15021,17 @@ export const EditPurchaseOrderResponse = zod.object({
       productName: zod.string(),
       quantity: zod.string(),
       subtotal: zod.number().int(),
+      taxComponents: zod
+        .union([
+          zod.object({
+            cgst: zod.number().int(),
+            igst: zod.number().int(),
+            sgst: zod.number().int(),
+            utgst: zod.number().int(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
       total: zod.number().int(),
       unitPrice: zod.string(),
     }),
@@ -14756,6 +15042,30 @@ export const EditPurchaseOrderResponse = zod.object({
   poDate: zod.coerce.date(),
   status: zod.string(),
   subtotal: zod.number().int(),
+  taxBasis: zod
+    .union([
+      zod.object({
+        placeOfSupplyCode: zod.string(),
+        placeOfSupplyName: zod.string(),
+        supplierGstin: zod.string(),
+        supplierStateCode: zod.string(),
+        supplierStateName: zod.string(),
+        treatment: zod.enum(["igst", "cgst_sgst", "cgst_utgst"]),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  taxComponents: zod
+    .union([
+      zod.object({
+        cgst: zod.number().int(),
+        igst: zod.number().int(),
+        sgst: zod.number().int(),
+        utgst: zod.number().int(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
   total: zod.number().int(),
   updatedAt: zod.string(),
   vendorId: zod.string().uuid(),
@@ -14774,6 +15084,9 @@ export const previewPurchaseOrderEditBodyLinesItemQuantityRegExp = new RegExp(
   "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
 );
 
+export const previewPurchaseOrderEditBodyPlaceOfSupplyCodeOneRegExp =
+  new RegExp("^\\d{2}$");
+
 export const PreviewPurchaseOrderEditBody = zod.object({
   expectedDate: zod.coerce.date(),
   lines: zod
@@ -14789,6 +15102,14 @@ export const PreviewPurchaseOrderEditBody = zod.object({
     .min(1)
     .max(previewPurchaseOrderEditBodyLinesMax),
   locationId: zod.string().uuid(),
+  placeOfSupplyCode: zod
+    .union([
+      zod
+        .string()
+        .regex(previewPurchaseOrderEditBodyPlaceOfSupplyCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional(),
   poDate: zod.coerce.date(),
   vendorId: zod.string().uuid(),
 });
@@ -14799,6 +15120,17 @@ export const PreviewPurchaseOrderEditResponse = zod.object({
     gstAmount: zod.number().int(),
     lines: zod.array(
       zod.object({
+        componentRates: zod
+          .union([
+            zod.object({
+              cgst: zod.string(),
+              igst: zod.string(),
+              sgst: zod.string(),
+              utgst: zod.string(),
+            }),
+            zod.null(),
+          ])
+          .optional(),
         gst: zod.string(),
         gstAmount: zod.number().int(),
         id: zod.union([zod.string().uuid(), zod.null()]).optional(),
@@ -14806,6 +15138,17 @@ export const PreviewPurchaseOrderEditResponse = zod.object({
         productName: zod.string(),
         quantity: zod.string(),
         subtotal: zod.number().int(),
+        taxComponents: zod
+          .union([
+            zod.object({
+              cgst: zod.number().int(),
+              igst: zod.number().int(),
+              sgst: zod.number().int(),
+              utgst: zod.number().int(),
+            }),
+            zod.null(),
+          ])
+          .optional(),
         total: zod.number().int(),
         unitPrice: zod.string(),
       }),
@@ -14814,6 +15157,30 @@ export const PreviewPurchaseOrderEditResponse = zod.object({
     locationName: zod.string(),
     poDate: zod.coerce.date(),
     subtotal: zod.number().int(),
+    taxBasis: zod
+      .union([
+        zod.object({
+          placeOfSupplyCode: zod.string(),
+          placeOfSupplyName: zod.string(),
+          supplierGstin: zod.string(),
+          supplierStateCode: zod.string(),
+          supplierStateName: zod.string(),
+          treatment: zod.enum(["igst", "cgst_sgst", "cgst_utgst"]),
+        }),
+        zod.null(),
+      ])
+      .optional(),
+    taxComponents: zod
+      .union([
+        zod.object({
+          cgst: zod.number().int(),
+          igst: zod.number().int(),
+          sgst: zod.number().int(),
+          utgst: zod.number().int(),
+        }),
+        zod.null(),
+      ])
+      .optional(),
     total: zod.number().int(),
     vendorId: zod.string().uuid(),
     vendorName: zod.string(),

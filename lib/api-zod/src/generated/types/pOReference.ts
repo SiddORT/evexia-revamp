@@ -8,8 +8,11 @@
 
 export interface POReference {
   gst?: string | null;
+  gstin?: string | null;
   id: string;
   name: string;
+  registrationStateCode?: string | null;
+  registrationStateName?: string | null;
   unitPrice?: string | null;
   version?: number | null;
 }

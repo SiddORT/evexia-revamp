@@ -25,7 +25,7 @@ def fixture(api, db, price="12.345678", gst="18.123456"):
     assert vendor.status_code == 201, vendor.text
     product = add(api, headers, category, location, selling_price=price, gst=gst)
     values = dict(poDate="2026-10-15", expectedDate="2026-10-16", vendorId=vendor.json()["id"],
-                  locationId=location["id"], lines=[dict(productId=product["id"], quantity="1.001")])
+                  locationId=location["id"], placeOfSupplyCode="27", lines=[dict(productId=product["id"], quantity="1.001")])
     return headers, actor, values, product
 
 
@@ -167,9 +167,10 @@ def test_half_up_limits_dates_and_no_client_price_override(client):
     headers, _, values, product = fixture(api, db, price="0.005000", gst="50.000000")
     values["lines"][0]["quantity"] = "1"
     order, _, _ = save(api, headers, values)
-    assert (order["subtotal"], order["gstAmount"], order["total"]) == (1, 1, 2)
+    # Subtotal rounds first; each 25% component rounds independently, not 50% aggregate.
+    assert (order["subtotal"], order["gstAmount"], order["total"]) == (1, 0, 1)
     values["lines"] *= 2
-    assert api.post(BASE + "/preview", headers=headers, json=values).json()["order"]["total"] == 4
+    assert api.post(BASE + "/preview", headers=headers, json=values).json()["order"]["total"] == 2
     assert api.post(BASE + "/preview", headers=headers, json={**values, "expectedDate": "2026-10-14"}).status_code == 422
     assert api.post(BASE + "/preview", headers=headers, json={**values, "lines": values["lines"] * 51}).status_code == 422
     values["lines"][0] = {**values["lines"][0], "unitPrice": "0"}

@@ -15,6 +15,7 @@ export interface POInput {
    */
   lines: POLineInput[];
   locationId: string;
+  placeOfSupplyCode?: string | null;
   poDate: Date;
   vendorId: string;
 }

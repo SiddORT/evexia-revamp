@@ -28,6 +28,8 @@ class PurchaseOrder(Timestamps, Base):
     subtotal: Mapped[int] = mapped_column(BigInteger)
     gst_amount: Mapped[int] = mapped_column(BigInteger)
     total: Mapped[int] = mapped_column(BigInteger)
+    tax_basis: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    tax_components: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     deleted_at: Mapped[str | None] = mapped_column(String(40))
 

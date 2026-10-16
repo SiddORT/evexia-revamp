@@ -58,6 +58,7 @@ test('authenticated server-backed PO create, listing, activity, analytics and lo
   await page.screenshot({ path: test.info().outputPath('po-form-loaded.png'), fullPage: true });
   await choose(page, 'select-po-vendor', refs.vendor.vendorName);
   await choose(page, 'select-po-location', refs.location.name);
+  await choose(page, 'select-po-place-of-supply', 'Maharashtra (27)');
   await page.getByTestId('input-po-expected-date').fill('2028-12-31');
   await choose(page, 'select-po-product-0', refs.priced.name);
   const price = page.getByTestId('input-po-price-0');

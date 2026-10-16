@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
-  testMatch: ['**/purchase-orders-backend.smoke.spec.mjs', '**/purchase-orders-mutations.spec.mjs'],
+  testMatch: ['**/purchase-orders-backend.smoke.spec.mjs', '**/purchase-orders-mutations.spec.mjs', '**/purchase-orders-tax.spec.mjs'],
   timeout: 120_000,
   expect: { timeout: 15_000 },
   workers: 1,

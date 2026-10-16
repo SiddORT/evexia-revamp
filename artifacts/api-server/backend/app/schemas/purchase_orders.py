@@ -1,5 +1,6 @@
 import uuid
 from datetime import date
+from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
@@ -15,6 +16,9 @@ class POInput(BaseModel):
     expectedDate: date
     vendorId: uuid.UUID
     locationId: uuid.UUID
+    # Optional on the wire ONLY to reconcile pre-upgrade durable retry identities.
+    # New previews/saves require a supported value in the authoritative service.
+    placeOfSupplyCode: str | None = Field(default=None, pattern=r"^\d{2}$")
     lines: list[POLineInput] = Field(min_length=1, max_length=100)
 
     @model_validator(mode="after")
@@ -39,6 +43,29 @@ class PODelete(BaseModel):
     idempotencyKey: uuid.UUID
 
 
+class POTaxBasis(BaseModel):
+    supplierGstin: str
+    supplierStateCode: str
+    supplierStateName: str
+    placeOfSupplyCode: str
+    placeOfSupplyName: str
+    treatment: Literal["igst", "cgst_sgst", "cgst_utgst"]
+
+
+class POTaxAmounts(BaseModel):
+    cgst: int
+    sgst: int
+    utgst: int
+    igst: int
+
+
+class POTaxRates(BaseModel):
+    cgst: str
+    sgst: str
+    utgst: str
+    igst: str
+
+
 class POLineResponse(BaseModel):
     id: uuid.UUID | None = None
     productId: uuid.UUID
@@ -49,6 +76,8 @@ class POLineResponse(BaseModel):
     subtotal: int
     gstAmount: int
     total: int
+    taxComponents: POTaxAmounts | None = None
+    componentRates: POTaxRates | None = None
 
 
 class POReviewOrder(BaseModel):
@@ -62,6 +91,8 @@ class POReviewOrder(BaseModel):
     subtotal: int
     gstAmount: int
     total: int
+    taxBasis: POTaxBasis | None = None
+    taxComponents: POTaxAmounts | None = None
 
 
 class POResponse(POReviewOrder):
@@ -137,6 +168,9 @@ class POReference(BaseModel):
     version: int | None = None
     unitPrice: str | None = None
     gst: str | None = None
+    gstin: str | None = None
+    registrationStateCode: str | None = None
+    registrationStateName: str | None = None
 
 
 class POReferencePage(BaseModel):

@@ -1,10 +1,10 @@
 ---
-name: Purchase order tax display
-description: Why purchase order summaries do not infer interstate or intrastate GST components.
+name: Purchase order supply destination
+description: Deliveries are not limited to Maharashtra; vendor state alone cannot determine GST treatment.
 ---
 
-Show a gross/taxable amount, aggregate GST amount, and final amount for purchase orders; do not infer IGST versus SGST/CGST amounts from the GST rate alone.
+The user confirmed that deliveries can be outside Maharashtra. Never treat Maharashtra as an implicit delivery destination or choose interstate GST from vendor state alone.
 
-**Why:** A visual reference included separate tax components, but the requested fields only required GST and GST amount. The current purchase order data does not establish a reliable place of supply or interstate/intrastate tax treatment.
+**Why:** A Karnataka vendor delivering to Karnataka is an intrastate purchase, while that same vendor delivering to Maharashtra is interstate. Supplier identity alone cannot distinguish them.
 
-**How to apply:** If tax component breakdown is later requested, first define and capture the relevant supply and destination information and calculation rules, then extend validation and persistence consistently rather than splitting GST evenly as a display shortcut.
+**How to apply:** Require an explicit applicable place of supply for any newly reviewed ordinary domestic goods purchase. Missing historical destination evidence is not permission to fabricate a tax breakdown.

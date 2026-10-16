@@ -3696,6 +3696,7 @@ export interface POCreate {
    */
   lines: POLineInput[];
   locationId: string;
+  placeOfSupplyCode?: string | null;
   poDate: string;
   /** @pattern ^[0-9a-f]{64}$ */
   reviewToken: string;
@@ -3719,6 +3720,7 @@ export interface POEdit {
    */
   lines: POLineInput[];
   locationId: string;
+  placeOfSupplyCode?: string | null;
   poDate: string;
   /** @pattern ^[0-9a-f]{64}$ */
   reviewToken: string;
@@ -3733,11 +3735,27 @@ export interface POInput {
    */
   lines: POLineInput[];
   locationId: string;
+  placeOfSupplyCode?: string | null;
   poDate: string;
   vendorId: string;
 }
 
+export interface POTaxRates {
+  cgst: string;
+  igst: string;
+  sgst: string;
+  utgst: string;
+}
+
+export interface POTaxAmounts {
+  cgst: number;
+  igst: number;
+  sgst: number;
+  utgst: number;
+}
+
 export interface POLineResponse {
+  componentRates?: POTaxRates | null;
   gst: string;
   gstAmount: number;
   id?: string | null;
@@ -3745,6 +3763,7 @@ export interface POLineResponse {
   productName: string;
   quantity: string;
   subtotal: number;
+  taxComponents?: POTaxAmounts | null;
   total: number;
   unitPrice: string;
 }
@@ -3755,6 +3774,24 @@ export interface POOverview {
   openCount: number;
   openValue: number;
   vendorCount: number;
+}
+
+export type POTaxBasisTreatment =
+  (typeof POTaxBasisTreatment)[keyof typeof POTaxBasisTreatment];
+
+export const POTaxBasisTreatment = {
+  igst: "igst",
+  cgst_sgst: "cgst_sgst",
+  cgst_utgst: "cgst_utgst",
+} as const;
+
+export interface POTaxBasis {
+  placeOfSupplyCode: string;
+  placeOfSupplyName: string;
+  supplierGstin: string;
+  supplierStateCode: string;
+  supplierStateName: string;
+  treatment: POTaxBasisTreatment;
 }
 
 export interface POResponse {
@@ -3770,6 +3807,8 @@ export interface POResponse {
   poDate: string;
   status: string;
   subtotal: number;
+  taxBasis?: POTaxBasis | null;
+  taxComponents?: POTaxAmounts | null;
   total: number;
   updatedAt: string;
   vendorId: string;
@@ -3787,8 +3826,11 @@ export interface POPage {
 
 export interface POReference {
   gst?: string | null;
+  gstin?: string | null;
   id: string;
   name: string;
+  registrationStateCode?: string | null;
+  registrationStateName?: string | null;
   unitPrice?: string | null;
   version?: number | null;
 }
@@ -3809,6 +3851,8 @@ export interface POReviewOrder {
   locationName: string;
   poDate: string;
   subtotal: number;
+  taxBasis?: POTaxBasis | null;
+  taxComponents?: POTaxAmounts | null;
   total: number;
   vendorId: string;
   vendorName: string;

@@ -14,7 +14,7 @@
 - [Offline pnpm lock updates](offline-pnpm-lock-updates.md) — workspace lockfile-only updates can need metadata for unrelated packages unavailable offline.
 - [Headless Chromium targets](headless-chromium-targets.md) — remote debugging can list extension backgrounds before app pages; select the page target, not the first target.
 - [CSV backup compatibility](csv-backup-compatibility.md) — when export schemas gain fields, preserve imports of previously exported backups with explicit defaults.
-- [Purchase order tax display](purchase-order-tax-display.md) — show total GST only until place-of-supply data supports a defensible IGST versus SGST/CGST split.
+- [Purchase order supply destination](purchase-order-tax-display.md) — deliveries can be outside Maharashtra; vendor state alone cannot determine interstate treatment.
 - [Local PO actor attribution](local-po-actor-attribution.md) — label unauthenticated activity as local demo actions, not verified staff identity.
 - [Browser-local invoice exports](browser-local-invoice-exports.md) — keep PO exports on-device; previews and PDFs must show identical saved amounts and template layouts.
 - [Document date preferences](document-date-preferences.md) — subscribe outside pure renderers; share one explicit immutable snapshot across pages, accessible summaries and each export.
