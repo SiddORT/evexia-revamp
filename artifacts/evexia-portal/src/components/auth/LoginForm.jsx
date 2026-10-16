@@ -110,7 +110,7 @@ export default function LoginForm({ role }) {
         </button>
       </div>
       {(message || (role.short !== 'DOCTOR' && session.message)) && <div className="form-message" role="status" data-testid="status-auth-message">{message || session.message}
-        {role.short === 'ADMIN' && session.message.includes('revocation') && <button type="button" onClick={() => void logoutAdmin()}>Retry Sign Out</button>}
+        {role.short !== 'DOCTOR' && session.message.includes('revocation') && <button type="button" onClick={() => void logoutAdmin()}>Retry Sign Out</button>}
       </div>}
       <button className="submit-button" type="submit" disabled={isLoading} data-testid="button-submit-login">
         {isLoading ? <span className="submit-button__loading">Checking access</span> : 'Log in'}

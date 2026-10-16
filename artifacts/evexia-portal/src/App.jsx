@@ -141,7 +141,7 @@ function App() {
       <Route path="/admin/masters/patients/:id/dosage-history">{(params) => <PatientDosageHistory id={params.id} />}</Route>
       <Route path="/admin/masters/patients/:id">{(params) => <PatientFormPage id={params.id} />}</Route>
       <Route path="/admin/login">{() => <AuthPage role={roleConfig.admin} />}</Route>
-      <Route path="/mr/home" component={MRHome} />
+      <Route path="/mr/*" component={MRHome} />
       <Route path="/mr">{() => <AuthPage role={roleConfig.mr} />}</Route>
       <Route path="/doctor" component={DoctorPortal} />
       <Route path="/doctor/*" component={DoctorPortal} />

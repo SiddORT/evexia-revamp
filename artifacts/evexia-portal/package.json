@@ -27,6 +27,8 @@
     "test:master-listing-notices:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/master-listing-notices.preview.spec.mjs",
     "test:move-stocks": "node --test src/services/moveStocksDemo.test.js",
     "test:mrs:service": "node --test src/services/serverMRs.test.js",
+    "test:mr-workspace": "node --test src/services/mrWorkspaceDemo.test.js",
+    "test:mr-workspace:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/mr-workspace.preview.spec.mjs",
     "test:mrs:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/mrs-backend.preview.spec.mjs",
     "test:allergens:service": "node --test src/services/serverAllergens.test.js",
     "test:allergens:browser": "sh ../../scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/allergens-backend.preview.spec.mjs",

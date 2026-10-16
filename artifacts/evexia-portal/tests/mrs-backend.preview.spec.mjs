@@ -169,15 +169,19 @@ for (const mobile of [false, true]) {
     await page.screenshot({ path: info.outputPath(`mr-${label.toLowerCase()}-directory.png`), fullPage: true });
     await page.evaluate(async () => (await import('/src/auth/adminSession.js')).logoutAdmin());
     await signIn(page, '/mr', username, saved.credentials.password);
+    await page.getByTestId('button-profile-menu').click();
     await expect(page.getByTestId('text-mr-account')).toContainText(username);
     await page.reload();
     await expect(page.getByTestId('page-mr-home')).toBeVisible();
+    await page.getByTestId('button-profile-menu').click();
+    await page.getByTestId('link-settings').click();
     await page.getByLabel('Current password', { exact: true }).fill(saved.credentials.password);
     await page.getByLabel('New password (12 to 128 characters)').fill(`Synthetic-${label}-changed-password`);
     await page.getByLabel('Confirm new password', { exact: true }).fill(`Synthetic-${label}-changed-password`);
     await page.getByTestId('button-change-password').click();
     await expect(page.getByTestId('form-login-mr')).toBeVisible();
     await signIn(page, '/mr', username, `Synthetic-${label}-changed-password`);
+    await page.getByTestId('button-profile-menu').click();
     await page.getByTestId('button-mr-signout').click();
     await expect(page.getByTestId('form-login-mr')).toBeVisible();
   });
@@ -380,13 +384,13 @@ test('MR assignment comboboxes: selected IDs, manager clearing, stale responses,
     await page.setViewportSize({ width, height: 844 });
     for (const appearance of ['light', 'dark']) {
       await page.evaluate(async (appearance) => (await import('/src/components/admin/adminPreferences.js')).setAdminPreference('appearance', appearance), appearance);
-      const heights = await page.locator('#mr-panel-assignment .mr-form-combobox__control, #mr-panel-assignment .mr-form__control')
+      const heights = await page.locator('#mr-panel-assignment .searchable-control__control, #mr-panel-assignment .mr-form__control')
         .evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().height));
       expect(heights).toHaveLength(9); for (const height of heights) expect(height).toBe(42);
       const grid = await page.locator('#mr-panel-assignment .mr-form__grid').evaluate((node) => getComputedStyle(node).gridTemplateColumns.split(' ').length);
       expect(grid).toBe(width === 390 ? 1 : 2);
       await status.click();
-      const menu = page.locator('.mr-form-combobox__menu');
+      const menu = page.getByRole('listbox');
       const bounds = await menu.boundingBox();
       expect(bounds.x).toBeGreaterThanOrEqual(0); expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
       expect(bounds.y).toBeGreaterThanOrEqual(0); expect(bounds.y + bounds.height).toBeLessThanOrEqual(844);
@@ -564,7 +568,7 @@ test('MR compact server filters: paging, query isolation, feedback, keyboard, to
   await expect(zone).toHaveValue(`${'Long reference label '.repeat(12)} (inactive)`);
   await page.setViewportSize({ width: 390, height: 844 });
   await hq.click();
-  const bounds = await page.locator('.mr-list-filter__menu').boundingBox();
+  const bounds = await page.getByRole('listbox').boundingBox();
   expect(bounds.x).toBeGreaterThanOrEqual(0); expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
   expect(bounds.y).toBeGreaterThanOrEqual(0); expect(bounds.y + bounds.height).toBeLessThanOrEqual(844);
   await page.screenshot({ path: info.outputPath('mr-compact-mobile.png'), fullPage: true });

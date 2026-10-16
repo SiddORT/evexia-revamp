@@ -228,6 +228,7 @@ if [ "$#" -eq 0 ]; then
   SPECS="$SPECS artifacts/evexia-portal/tests/master-listing-notices.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/opening-balances-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/mrs-backend.preview.spec.mjs"
+  SPECS="$SPECS artifacts/evexia-portal/tests/mr-workspace.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/doctors-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/patients-backend.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/shared-phone-country-mr-patient.preview.spec.mjs"
@@ -248,6 +249,7 @@ PATIENT_LAYOUT=0
 ROLE_LAYOUT=0
 SALES_TARGET_LAYOUT=0
 ISOLATE_MR=0
+ISOLATE_MR_WORKSPACE=0
 ISOLATE_SALES_TARGET=0
 ISOLATE_OPENING_BALANCE=0
 ISOLATE_MASTER_STAFF=0
@@ -276,6 +278,10 @@ for spec in $SPECS; do
       # the MR password-reset test's ten-per-hour actor budget with other suites,
       # disable production limits, or erase the protected credential audit.
       if [ "$SPEC_COUNT" -gt 1 ]; then ISOLATE_MR=1; else OTHER_SPECS="$OTHER_SPECS $spec"; fi ;;
+    */mr-workspace.preview.spec.mjs)
+      # Real synthetic MR login needs its own session/provisioning budget.
+      # Business state remains fictional; never reuse managed identities.
+      if [ "$SPEC_COUNT" -gt 1 ]; then ISOLATE_MR_WORKSPACE=1; else OTHER_SPECS="$OTHER_SPECS $spec"; fi ;;
     */sales-targets-backend.preview.spec.mjs)
       # Targets need real MR identities. Keep their credential-hashing actor
       # budget and reference rows out of other directory baseline suites.
@@ -339,6 +345,9 @@ fi
 if [ "$ISOLATE_MR" -eq 1 ]; then
   echo "MR credential flows: separate private database, listeners and audit budget."
   sh "$ROOT/scripts/run-authenticated-previews.sh" artifacts/evexia-portal/tests/mrs-backend.preview.spec.mjs
+fi
+if [ "$ISOLATE_MR_WORKSPACE" -eq 1 ]; then
+  sh "$ROOT/scripts/run-authenticated-previews.sh" artifacts/evexia-portal/tests/mr-workspace.preview.spec.mjs
 fi
 if [ "$ISOLATE_SALES_TARGET" -eq 1 ]; then
   echo "Sales Target flows: separate private database, listeners and MR credential budget."

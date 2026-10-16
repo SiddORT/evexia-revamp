@@ -8,7 +8,7 @@ import '../entryTheme.css';
 
 export default function AuthPage({ role }) {
   const { theme } = useAdminPreferences();
-  const isAdmin = role.short === 'ADMIN';
+  const isAdmin = role.short === 'ADMIN' || role.short === 'MR';
   const hostRole = usePortalHost();
   const home = portalEntry(hostRole);
   return (

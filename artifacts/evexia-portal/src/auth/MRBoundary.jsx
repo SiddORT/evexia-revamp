@@ -6,7 +6,7 @@ import PortalLoader from '../components/PortalLoader.jsx';
 
 // Mounts children only for a database-verified MR identity.
 export default function MRBoundary({ children }) {
-  const [, navigate] = useLocation();
+  const [path, navigate] = useLocation();
   const session = useAdminSession();
   const [verified, setVerified] = useState(false);
   const mountedOwner = useRef(null);
@@ -14,7 +14,7 @@ export default function MRBoundary({ children }) {
     let active = true;
     void verifySession(false, 'mr').then(() => { if (active) setVerified(true); });
     return () => { active = false; };
-  }, []);
+  }, [path]);
   useEffect(() => {
     if (verified && getSession().status === 'anonymous') navigate('/mr', { replace: true });
   }, [verified, session.status, navigate]);

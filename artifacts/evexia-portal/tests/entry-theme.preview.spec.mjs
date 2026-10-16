@@ -76,17 +76,12 @@ for (const scenario of [{ value: null }, { value: '__proto__' }, { value: 'moder
   });
 }
 
-test('MR retains Classic styling even with Modern/dark saved', async ({ page }) => {
+test('MR adopts Modern light entry styling even with dark saved', async ({ page }) => {
   await seed(page, 'modern');
-  for (const path of ['/mr']) {
-    await page.goto(`${base()}${path}`);
-    await expect(page.locator('.auth-page')).not.toHaveAttribute('data-admin-theme');
-    await expect(page.locator('.entry-theme')).toHaveCount(0);
-    await expect(page.locator('.submit-button')).toHaveCSS('background-color', primary.classic);
-    await expect(page.locator('.auth-panel')).toHaveCSS('background-color', 'rgb(252, 252, 251)');
-    await page.getByLabel('Email or username').focus();
-    await expect(page.getByLabel('Email or username')).toHaveCSS('border-color', primary.classic);
-  }
+  await page.goto(`${base()}/mr`);
+  await checkTheme(page, 'modern', true);
+  await page.getByLabel('Email or username').focus();
+  await expect(page.getByLabel('Email or username')).toHaveCSS('border-color', 'rgb(18, 107, 97)');
 });
 
 for (const theme of ['modern', 'classic']) {

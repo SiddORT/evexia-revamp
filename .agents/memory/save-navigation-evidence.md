@@ -28,3 +28,15 @@ steps signed out. A valid intermediate redirect is not evidence of completion.
 and after redirects, then make negative capability assertions or navigate
 again. Do not weaken single-use refresh behavior or staff permission checks to
 compensate for test timing.
+
+API-request authentication fixtures establish cookies, not the page module's
+in-memory authorization. Before invoking browser-imported authenticated
+transports, load a protected route and wait for its verified content.
+
+**Why:** Fixture setup can successfully authenticate through the API while the
+page is still blank or has no restored bearer; importing transports at that
+point fails independently of the feature under test.
+
+**How to apply:** Separate cookie acquisition from browser session readiness in
+synthetic setup. Resolve browser module URLs against the loaded preview origin,
+and keep the real route boundary and `/me` verification in the setup path.
