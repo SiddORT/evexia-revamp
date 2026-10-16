@@ -67,6 +67,13 @@ export const setAllergenStatusResponseGstMax = 64;
 export const setAllergenStatusResponseNameMax = 200;
 export const setAllergenStatusResponseSellingPriceOneMax = 64;
 export const setAllergenStatusResponseThresholdLimitOneMax = 64;
+export const listCommunicationConfigurationsResponseChannelsConfigurationsMax = 100;
+export const createCommunicationConfigurationBodySecretOneMax = 4096;
+export const createCommunicationConfigurationResponseChannelsConfigurationsMax = 100;
+export const defaultCommunicationConfigurationResponseChannelsConfigurationsMax = 100;
+export const deleteCommunicationConfigurationResponseChannelsConfigurationsMax = 100;
+export const editCommunicationConfigurationBodySecretOneMax = 4096;
+export const editCommunicationConfigurationResponseChannelsConfigurationsMax = 100;
 export const listCourierPartnersQueryQueryMax = 200;
 export const listCourierPartnersQueryLimitDefault = 10;
 export const listCourierPartnersQueryLimitMax = 100;
@@ -1671,6 +1678,205 @@ export const SetAllergenStatusResponse = zod.object({
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
   version: zod.number().int(),
+});
+
+/**
+ * @summary Listing
+ */
+
+export const ListCommunicationConfigurationsResponse = zod.object({
+  channels: zod.record(
+    zod.string(),
+    zod.object({
+      configurations: zod
+        .array(
+          zod.object({
+            credentialPresent: zod.boolean(),
+            id: zod.string(),
+            type: zod.enum(["smtp", "api", "platform"]),
+            values: zod.record(zod.string(), zod.string()),
+            version: zod.number().int(),
+          }),
+        )
+        .max(listCommunicationConfigurationsResponseChannelsConfigurationsMax),
+      defaultId: zod.union([zod.string(), zod.null()]),
+      version: zod.number().int(),
+    }),
+  ),
+});
+
+/**
+ * @summary Create
+ */
+
+export const CreateCommunicationConfigurationBody = zod.object({
+  channel: zod.enum(["email", "sms", "waba"]),
+  channelVersion: zod.number().int().min(1),
+  secret: zod
+    .union([
+      zod.string().max(createCommunicationConfigurationBodySecretOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  type: zod.enum(["smtp", "api", "platform"]),
+  values: zod.record(zod.string(), zod.string()),
+});
+
+export const CreateCommunicationConfigurationResponse = zod.object({
+  channels: zod.record(
+    zod.string(),
+    zod.object({
+      configurations: zod
+        .array(
+          zod.object({
+            credentialPresent: zod.boolean(),
+            id: zod.string(),
+            type: zod.enum(["smtp", "api", "platform"]),
+            values: zod.record(zod.string(), zod.string()),
+            version: zod.number().int(),
+          }),
+        )
+        .max(createCommunicationConfigurationResponseChannelsConfigurationsMax),
+      defaultId: zod.union([zod.string(), zod.null()]),
+      version: zod.number().int(),
+    }),
+  ),
+});
+
+/**
+ * @summary Detail
+ */
+export const GetCommunicationConfigurationParams = zod.object({
+  configuration_id: zod.coerce.string().uuid(),
+});
+
+export const GetCommunicationConfigurationResponse = zod.object({
+  credentialPresent: zod.boolean(),
+  id: zod.string(),
+  type: zod.enum(["smtp", "api", "platform"]),
+  values: zod.record(zod.string(), zod.string()),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Default
+ */
+export const DefaultCommunicationConfigurationParams = zod.object({
+  configuration_id: zod.coerce.string().uuid(),
+});
+
+export const DefaultCommunicationConfigurationBody = zod.object({
+  channelVersion: zod.number().int().min(1),
+  version: zod.number().int().min(1),
+});
+
+export const DefaultCommunicationConfigurationResponse = zod.object({
+  channels: zod.record(
+    zod.string(),
+    zod.object({
+      configurations: zod
+        .array(
+          zod.object({
+            credentialPresent: zod.boolean(),
+            id: zod.string(),
+            type: zod.enum(["smtp", "api", "platform"]),
+            values: zod.record(zod.string(), zod.string()),
+            version: zod.number().int(),
+          }),
+        )
+        .max(
+          defaultCommunicationConfigurationResponseChannelsConfigurationsMax,
+        ),
+      defaultId: zod.union([zod.string(), zod.null()]),
+      version: zod.number().int(),
+    }),
+  ),
+});
+
+/**
+ * @summary Delete
+ */
+export const DeleteCommunicationConfigurationParams = zod.object({
+  configuration_id: zod.coerce.string().uuid(),
+});
+
+export const deleteCommunicationConfigurationBodyReplacementIdOneRegExp =
+  new RegExp("^[0-9a-f-]{36}$");
+
+export const DeleteCommunicationConfigurationBody = zod.object({
+  channelVersion: zod.number().int().min(1),
+  replacementId: zod
+    .union([
+      zod
+        .string()
+        .regex(deleteCommunicationConfigurationBodyReplacementIdOneRegExp),
+      zod.null(),
+    ])
+    .optional(),
+  version: zod.number().int().min(1),
+});
+
+export const DeleteCommunicationConfigurationResponse = zod.object({
+  channels: zod.record(
+    zod.string(),
+    zod.object({
+      configurations: zod
+        .array(
+          zod.object({
+            credentialPresent: zod.boolean(),
+            id: zod.string(),
+            type: zod.enum(["smtp", "api", "platform"]),
+            values: zod.record(zod.string(), zod.string()),
+            version: zod.number().int(),
+          }),
+        )
+        .max(deleteCommunicationConfigurationResponseChannelsConfigurationsMax),
+      defaultId: zod.union([zod.string(), zod.null()]),
+      version: zod.number().int(),
+    }),
+  ),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditCommunicationConfigurationParams = zod.object({
+  configuration_id: zod.coerce.string().uuid(),
+});
+
+export const EditCommunicationConfigurationBody = zod.object({
+  channel: zod.enum(["email", "sms", "waba"]),
+  channelVersion: zod.number().int().min(1),
+  secret: zod
+    .union([
+      zod.string().max(editCommunicationConfigurationBodySecretOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  type: zod.enum(["smtp", "api", "platform"]),
+  values: zod.record(zod.string(), zod.string()),
+  version: zod.number().int().min(1),
+});
+
+export const EditCommunicationConfigurationResponse = zod.object({
+  channels: zod.record(
+    zod.string(),
+    zod.object({
+      configurations: zod
+        .array(
+          zod.object({
+            credentialPresent: zod.boolean(),
+            id: zod.string(),
+            type: zod.enum(["smtp", "api", "platform"]),
+            values: zod.record(zod.string(), zod.string()),
+            version: zod.number().int(),
+          }),
+        )
+        .max(editCommunicationConfigurationResponseChannelsConfigurationsMax),
+      defaultId: zod.union([zod.string(), zod.null()]),
+      version: zod.number().int(),
+    }),
+  ),
 });
 
 /**

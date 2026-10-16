@@ -43,6 +43,7 @@
     "0035_account_identifiers": "operator_only",
     "0036_reference_privacy": "operator_only",
     "0037_domain_admission": "operator_only",
-    "0038_purchase_orders": "operator_only"
+    "0038_purchase_orders": "operator_only",
+    "0039_communication": "operator_only"
   }
 }

@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     super_admin_initial_password: SecretStr | None = None
     staff_encryption_keys: SecretStr | None = None
     staff_encryption_key_id: str = "primary"
+    communication_encryption_keys: SecretStr | None = None
+    communication_encryption_key_id: str = "primary"
     staff_email_index_key: SecretStr | None = None
     directory_encryption_keys: SecretStr | None = None
     directory_encryption_key_id: str = "primary"

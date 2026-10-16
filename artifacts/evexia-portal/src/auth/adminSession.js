@@ -497,6 +497,65 @@ export async function roleUrlRequest(path = '', body, { signal } = {}) {
       !data.bootstrap_hosts.every((host) => typeof host === 'string'))) throw uncertain();
   return data;
 }
+// Write-only Communication credentials are sent once, never logged or replayed.
+export async function communicationRequest(path = '', body, { signal } = {}) {
+  if (!/^(?:|\/[0-9a-f-]{36}(?:\/(?:edit|delete|default))?)$/i.test(path)
+      || (body !== undefined && path && !/\/(?:edit|delete|default)$/.test(path))) {
+    throw new SessionError('Unsupported Communication operation.');
+  }
+  const mutation = body !== undefined;
+  const epoch = generation;
+  const owner = state.user?.id;
+  const check = () => {
+    signal?.throwIfAborted();
+    if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
+      throw new SessionError('Your session changed. Sign in again before retrying.', 401);
+    }
+    if (state.user.identity_kind !== 'super_admin') throw new SessionError('Communication is restricted to Super Admin.', 403);
+  };
+  if (pending) await pending;
+  else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true, 'admin');
+  check();
+  const uncertain = () => {
+    const error = new SessionError(mutation
+      ? 'Save outcome could not be confirmed. Load latest settings and review before retrying; the change may already be saved.'
+      : 'Unable to load Communication. Check your connection and retry.');
+    error.ambiguous = mutation;
+    return error;
+  };
+  let response, data;
+  try {
+    response = await fetch(`/api/v1/admin/communication${path}`, {
+      method: mutation ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
+      headers: { Authorization: `Bearer ${token}`, ...(mutation ? { 'Content-Type': 'application/json' } : {}) },
+      ...(mutation ? { body: JSON.stringify(body) } : {}),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
+    });
+    data = await response.json();
+  } catch { throw uncertain(); }
+  if (pending) await pending;
+  try { check(); } catch (error) { error.ambiguous = mutation; throw error; }
+  if (!response.ok) {
+    const code = data?.error?.code;
+    const messages = {
+      communication_stale: 'Communication changed. Your draft is kept. Load latest settings and review before retrying.',
+      communication_duplicate: 'Use a unique configuration name within this channel.',
+      communication_credential_required: 'Enter the credential for this configuration type.',
+      communication_replacement: 'Choose a same-channel replacement default.',
+      communication_unavailable: 'Encrypted Communication storage is unavailable. Ask the operator to check keys and migration readiness.',
+    };
+    const error = new SessionError(messages[code] || (response.status === 422
+      ? 'Configuration fields are invalid. Check required values, field lengths, HTTPS endpoint and credential.'
+      : response.status === 403 ? 'Communication is restricted to Super Admin.'
+      : response.status === 401 ? 'Your session expired. Sign in again; your draft is kept.'
+      : uncertain().message), response.status);
+    error.code = code;
+    error.ambiguous = mutation && response.status >= 500;
+    throw error;
+  }
+  return data;
+}
+
 // Narrow reporting facility: credentials never leave this module.
 // Shared master transport. No automatic replay of a potentially committed write.
 // Per-operation Zone authorization. Staff never reach other master services;

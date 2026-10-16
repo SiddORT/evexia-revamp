@@ -1,3 +1,15 @@
+# Communication configuration storage
+
+`communication_configurations` encrypts **all** user-entered values in authenticated
+payload/credential ciphertexts, bound to record/channel/type/purpose with versioned
+independent operator keys. Only structural UUIDs, channel/type, default/version,
+actor UUIDs and timestamps remain plaintext. Credentials never appear in reads or
+audits. `communication_channels` has three lock/version rows. A partial unique
+index and serialized versioned transactions maintain one default per nonempty
+channel. Migration `0039_communication` is operator-only; no legacy local data is
+read or migrated. See [the operating guide](../../../docs/communication-configuration.md).
+Recovery SMTP and provider delivery do not consume these records.
+
 # Private storage feature contract
 
 Private PDF preparation and local grant redemption require durable metadata-only

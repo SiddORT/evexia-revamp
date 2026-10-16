@@ -282,6 +282,115 @@ export interface ChangePasswordRequest {
   new_password: string;
 }
 
+export type CommunicationRecordType =
+  (typeof CommunicationRecordType)[keyof typeof CommunicationRecordType];
+
+export const CommunicationRecordType = {
+  smtp: "smtp",
+  api: "api",
+  platform: "platform",
+} as const;
+
+export type CommunicationRecordValues = { [key: string]: string };
+
+export interface CommunicationRecord {
+  credentialPresent: boolean;
+  id: string;
+  type: CommunicationRecordType;
+  values: CommunicationRecordValues;
+  version: number;
+}
+
+export interface CommunicationChannel {
+  /** @maxItems 100 */
+  configurations: CommunicationRecord[];
+  defaultId: string | null;
+  version: number;
+}
+
+export interface CommunicationDelete {
+  /** @minimum 1 */
+  channelVersion: number;
+  replacementId?: string | null;
+  /** @minimum 1 */
+  version: number;
+}
+
+export type CommunicationEditChannel =
+  (typeof CommunicationEditChannel)[keyof typeof CommunicationEditChannel];
+
+export const CommunicationEditChannel = {
+  email: "email",
+  sms: "sms",
+  waba: "waba",
+} as const;
+
+export type CommunicationEditType =
+  (typeof CommunicationEditType)[keyof typeof CommunicationEditType];
+
+export const CommunicationEditType = {
+  smtp: "smtp",
+  api: "api",
+  platform: "platform",
+} as const;
+
+export type CommunicationEditValues = { [key: string]: string };
+
+export interface CommunicationEdit {
+  channel: CommunicationEditChannel;
+  /** @minimum 1 */
+  channelVersion: number;
+  secret?: string | null;
+  type: CommunicationEditType;
+  values: CommunicationEditValues;
+  /** @minimum 1 */
+  version: number;
+}
+
+export type CommunicationInputChannel =
+  (typeof CommunicationInputChannel)[keyof typeof CommunicationInputChannel];
+
+export const CommunicationInputChannel = {
+  email: "email",
+  sms: "sms",
+  waba: "waba",
+} as const;
+
+export type CommunicationInputType =
+  (typeof CommunicationInputType)[keyof typeof CommunicationInputType];
+
+export const CommunicationInputType = {
+  smtp: "smtp",
+  api: "api",
+  platform: "platform",
+} as const;
+
+export type CommunicationInputValues = { [key: string]: string };
+
+export interface CommunicationInput {
+  channel: CommunicationInputChannel;
+  /** @minimum 1 */
+  channelVersion: number;
+  secret?: string | null;
+  type: CommunicationInputType;
+  values: CommunicationInputValues;
+}
+
+export type CommunicationSnapshotChannels = {
+  [key: string]: CommunicationChannel;
+};
+
+export interface CommunicationSnapshot {
+  channels: CommunicationSnapshotChannels;
+}
+
+export interface CommunicationVersion {
+  /** @minimum 1 */
+  channelVersion: number;
+  /** @minimum 1 */
+  version: number;
+}
+
 export type CourierEditStatus =
   (typeof CourierEditStatus)[keyof typeof CourierEditStatus];
 

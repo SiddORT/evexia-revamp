@@ -14,7 +14,7 @@
 - [Purchase order tax display](purchase-order-tax-display.md) — show total GST only until place-of-supply data supports a defensible IGST versus SGST/CGST split.
 - [Local PO actor attribution](local-po-actor-attribution.md) — label unauthenticated activity as local demo actions, not verified staff identity.
 - [Browser-local invoice exports](browser-local-invoice-exports.md) — keep PO exports on-device; previews and PDFs must show identical saved amounts and template layouts.
-- [Communication preview boundary](communication-preview-boundary.md) — demo endpoints exclude all query/fragment data because provider credential names vary.
+- [Communication storage boundary](communication-preview-boundary.md) — encrypted shared credentials are approved; delivery remains separate and endpoints exclude query/fragment data.
 - [Linked local procurement mutations](linked-local-procurement-mutations.md) — PO and receipt writes must share a browser lock; deterministic legacy normalization must not write during reads.
 - [Receipt historical balances](receipt-historical-balances.md) — preserve post-receipt snapshots; legacy or unrepresentable history must be unavailable, never inferred from current balances.
 - [Template preference recovery](template-preference-recovery.md) — cross-tab refresh is read-only; storage errors require explicit retry or confirmed document-specific reset.

@@ -30,6 +30,11 @@ def readiness(db: Session = Depends(get_db)):
         ready(db)
         from app.services.account_crypto import ready as accounts_ready
         accounts_ready(db)
+        from app.core.config import get_settings
+        from app.services.communication_crypto import CommunicationCrypto
+        CommunicationCrypto(get_settings())
+        db.execute(text("SELECT channel, version FROM communication_channels LIMIT 0"))
+        db.execute(text("SELECT id, channel, type, version, is_default, payload_ciphertext, secret_ciphertext, created_by, updated_by FROM communication_configurations LIMIT 0"))
         db.execute(text(
             "SELECT username, system_role, identity_version, is_protected_system_admin FROM users LIMIT 0"
         ))

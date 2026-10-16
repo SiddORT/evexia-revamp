@@ -1,3 +1,11 @@
+# Encrypted Communication configuration
+
+See [the Communication operating guide](../../../docs/communication-configuration.md)
+for protected CRUD, write-only secrets, independent encryption-key provisioning,
+operator-only migration `0039_communication`, recovery custody and focused tests.
+Provider delivery and the environment-configured recovery SMTP are unchanged.
+No shared/managed migration or activation is authorized by this code change.
+
 # Role portal hostname deployment
 
 See [ROLE_HOSTNAME_DEPLOYMENT.md](ROLE_HOSTNAME_DEPLOYMENT.md) before connecting

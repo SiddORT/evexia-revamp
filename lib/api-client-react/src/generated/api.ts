@@ -54,6 +54,12 @@ import type {
   CommitVendorImportBody,
   CommitVendorImportParams,
   CommitZoneImportParams,
+  CommunicationDelete,
+  CommunicationEdit,
+  CommunicationInput,
+  CommunicationRecord,
+  CommunicationSnapshot,
+  CommunicationVersion,
   CourierEdit,
   CourierFields,
   CourierImportResult,
@@ -1607,6 +1613,704 @@ export const useSetAllergenStatus = <
   TContext
 > => {
   return useMutation(getSetAllergenStatusMutationOptions(options));
+};
+
+export const getListCommunicationConfigurationsUrl = () => {
+  return `/api/v1/admin/communication`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listCommunicationConfigurations = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CommunicationSnapshot> => {
+  return customFetch<CommunicationSnapshot>(
+    getListCommunicationConfigurationsUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListCommunicationConfigurationsQueryKey = () => {
+  return [`/api/v1/admin/communication`] as const;
+};
+
+export const getListCommunicationConfigurationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCommunicationConfigurations>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCommunicationConfigurations>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListCommunicationConfigurationsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCommunicationConfigurations>>
+  > = ({ signal }) =>
+    listCommunicationConfigurations({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCommunicationConfigurations>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCommunicationConfigurationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCommunicationConfigurations>>
+>;
+export type ListCommunicationConfigurationsQueryError =
+  ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListCommunicationConfigurations<
+  TData = Awaited<ReturnType<typeof listCommunicationConfigurations>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCommunicationConfigurations>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCommunicationConfigurationsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateCommunicationConfigurationUrl = () => {
+  return `/api/v1/admin/communication`;
+};
+
+/**
+ * @summary Create
+ */
+export const createCommunicationConfiguration = async (
+  communicationInput: CommunicationInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CommunicationSnapshot> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<CommunicationSnapshot>(
+    getCreateCommunicationConfigurationUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(communicationInput),
+    },
+  );
+};
+
+export const getCreateCommunicationConfigurationMutationKey = () =>
+  ["createCommunicationConfiguration"] as const;
+
+export const getCreateCommunicationConfigurationMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCommunicationConfiguration>>,
+    TError,
+    CreateCommunicationConfigurationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createCommunicationConfiguration>>,
+  TError,
+  CreateCommunicationConfigurationMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateCommunicationConfigurationMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createCommunicationConfiguration>>,
+    CreateCommunicationConfigurationMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createCommunicationConfiguration(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateCommunicationConfigurationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createCommunicationConfiguration>>
+>;
+export type CreateCommunicationConfigurationMutationBody =
+  BodyType<CommunicationInput>;
+export type CreateCommunicationConfigurationMutationError =
+  ErrorType<ErrorEnvelope>;
+export type CreateCommunicationConfigurationMutationVariables = {
+  data: BodyType<CommunicationInput>;
+};
+
+/**
+ * @summary Create
+ */
+export const useCreateCommunicationConfiguration = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCommunicationConfiguration>>,
+    TError,
+    CreateCommunicationConfigurationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createCommunicationConfiguration>>,
+  TError,
+  CreateCommunicationConfigurationMutationVariables,
+  TContext
+> => {
+  return useMutation(
+    getCreateCommunicationConfigurationMutationOptions(options),
+  );
+};
+
+export const getGetCommunicationConfigurationUrl = (
+  configurationId: string,
+) => {
+  return `/api/v1/admin/communication/${configurationId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getCommunicationConfiguration = async (
+  configurationId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CommunicationRecord> => {
+  return customFetch<CommunicationRecord>(
+    getGetCommunicationConfigurationUrl(configurationId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetCommunicationConfigurationQueryKey = (
+  configurationId: string,
+) => {
+  return [`/api/v1/admin/communication/${configurationId}`] as const;
+};
+
+export const getGetCommunicationConfigurationQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCommunicationConfiguration>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  configurationId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCommunicationConfiguration>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetCommunicationConfigurationQueryKey(configurationId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCommunicationConfiguration>>
+  > = ({ signal }) =>
+    getCommunicationConfiguration(configurationId, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: configurationId !== null && configurationId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCommunicationConfiguration>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCommunicationConfigurationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCommunicationConfiguration>>
+>;
+export type GetCommunicationConfigurationQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetCommunicationConfiguration<
+  TData = Awaited<ReturnType<typeof getCommunicationConfiguration>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  configurationId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCommunicationConfiguration>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCommunicationConfigurationQueryOptions(
+    configurationId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDefaultCommunicationConfigurationUrl = (
+  configurationId: string,
+) => {
+  return `/api/v1/admin/communication/${configurationId}/default`;
+};
+
+/**
+ * @summary Default
+ */
+export const defaultCommunicationConfiguration = async (
+  configurationId: string,
+  communicationVersion: CommunicationVersion,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CommunicationSnapshot> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<CommunicationSnapshot>(
+    getDefaultCommunicationConfigurationUrl(configurationId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(communicationVersion),
+    },
+  );
+};
+
+export const getDefaultCommunicationConfigurationMutationKey = () =>
+  ["defaultCommunicationConfiguration"] as const;
+
+export const getDefaultCommunicationConfigurationMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof defaultCommunicationConfiguration>>,
+    TError,
+    DefaultCommunicationConfigurationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof defaultCommunicationConfiguration>>,
+  TError,
+  DefaultCommunicationConfigurationMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDefaultCommunicationConfigurationMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof defaultCommunicationConfiguration>>,
+    DefaultCommunicationConfigurationMutationVariables
+  > = (props) => {
+    const { configurationId, data } = props ?? {};
+
+    return defaultCommunicationConfiguration(
+      configurationId,
+      data,
+      requestOptions,
+    );
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DefaultCommunicationConfigurationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof defaultCommunicationConfiguration>>
+>;
+export type DefaultCommunicationConfigurationMutationBody =
+  BodyType<CommunicationVersion>;
+export type DefaultCommunicationConfigurationMutationError =
+  ErrorType<ErrorEnvelope>;
+export type DefaultCommunicationConfigurationMutationVariables = {
+  configurationId: string;
+  data: BodyType<CommunicationVersion>;
+};
+
+/**
+ * @summary Default
+ */
+export const useDefaultCommunicationConfiguration = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof defaultCommunicationConfiguration>>,
+    TError,
+    DefaultCommunicationConfigurationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof defaultCommunicationConfiguration>>,
+  TError,
+  DefaultCommunicationConfigurationMutationVariables,
+  TContext
+> => {
+  return useMutation(
+    getDefaultCommunicationConfigurationMutationOptions(options),
+  );
+};
+
+export const getDeleteCommunicationConfigurationUrl = (
+  configurationId: string,
+) => {
+  return `/api/v1/admin/communication/${configurationId}/delete`;
+};
+
+/**
+ * @summary Delete
+ */
+export const deleteCommunicationConfiguration = async (
+  configurationId: string,
+  communicationDelete: CommunicationDelete,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CommunicationSnapshot> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<CommunicationSnapshot>(
+    getDeleteCommunicationConfigurationUrl(configurationId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(communicationDelete),
+    },
+  );
+};
+
+export const getDeleteCommunicationConfigurationMutationKey = () =>
+  ["deleteCommunicationConfiguration"] as const;
+
+export const getDeleteCommunicationConfigurationMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCommunicationConfiguration>>,
+    TError,
+    DeleteCommunicationConfigurationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteCommunicationConfiguration>>,
+  TError,
+  DeleteCommunicationConfigurationMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteCommunicationConfigurationMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteCommunicationConfiguration>>,
+    DeleteCommunicationConfigurationMutationVariables
+  > = (props) => {
+    const { configurationId, data } = props ?? {};
+
+    return deleteCommunicationConfiguration(
+      configurationId,
+      data,
+      requestOptions,
+    );
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteCommunicationConfigurationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteCommunicationConfiguration>>
+>;
+export type DeleteCommunicationConfigurationMutationBody =
+  BodyType<CommunicationDelete>;
+export type DeleteCommunicationConfigurationMutationError =
+  ErrorType<ErrorEnvelope>;
+export type DeleteCommunicationConfigurationMutationVariables = {
+  configurationId: string;
+  data: BodyType<CommunicationDelete>;
+};
+
+/**
+ * @summary Delete
+ */
+export const useDeleteCommunicationConfiguration = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCommunicationConfiguration>>,
+    TError,
+    DeleteCommunicationConfigurationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteCommunicationConfiguration>>,
+  TError,
+  DeleteCommunicationConfigurationMutationVariables,
+  TContext
+> => {
+  return useMutation(
+    getDeleteCommunicationConfigurationMutationOptions(options),
+  );
+};
+
+export const getEditCommunicationConfigurationUrl = (
+  configurationId: string,
+) => {
+  return `/api/v1/admin/communication/${configurationId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editCommunicationConfiguration = async (
+  configurationId: string,
+  communicationEdit: CommunicationEdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CommunicationSnapshot> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<CommunicationSnapshot>(
+    getEditCommunicationConfigurationUrl(configurationId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(communicationEdit),
+    },
+  );
+};
+
+export const getEditCommunicationConfigurationMutationKey = () =>
+  ["editCommunicationConfiguration"] as const;
+
+export const getEditCommunicationConfigurationMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editCommunicationConfiguration>>,
+    TError,
+    EditCommunicationConfigurationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editCommunicationConfiguration>>,
+  TError,
+  EditCommunicationConfigurationMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditCommunicationConfigurationMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editCommunicationConfiguration>>,
+    EditCommunicationConfigurationMutationVariables
+  > = (props) => {
+    const { configurationId, data } = props ?? {};
+
+    return editCommunicationConfiguration(
+      configurationId,
+      data,
+      requestOptions,
+    );
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditCommunicationConfigurationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editCommunicationConfiguration>>
+>;
+export type EditCommunicationConfigurationMutationBody =
+  BodyType<CommunicationEdit>;
+export type EditCommunicationConfigurationMutationError =
+  ErrorType<ErrorEnvelope>;
+export type EditCommunicationConfigurationMutationVariables = {
+  configurationId: string;
+  data: BodyType<CommunicationEdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditCommunicationConfiguration = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editCommunicationConfiguration>>,
+    TError,
+    EditCommunicationConfigurationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editCommunicationConfiguration>>,
+  TError,
+  EditCommunicationConfigurationMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditCommunicationConfigurationMutationOptions(options));
 };
 
 export const getListCourierPartnersUrl = (

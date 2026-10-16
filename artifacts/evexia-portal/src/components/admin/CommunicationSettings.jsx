@@ -1,163 +1,156 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './communicationSettings.css';
 import Dialog from './Dialog.jsx';
-import ConfirmationDialog from './ConfirmationDialog.jsx';
 import CommunicationForm, { CHANNEL_LABELS, TYPE_LABELS } from './CommunicationForm.jsx';
-import { CHANNELS, loadCommunicationSnapshot, saveConfiguration, chooseCommunicationDefault, deleteConfiguration, resetCommunication } from '../../services/communicationSettings.js';
-
-function load() {
-  try { return { snapshot: loadCommunicationSnapshot(), error: '', raw: null }; }
-  catch (e) { return { snapshot: null, error: e?.message || 'Saved communication metadata could not be read.', raw: e?.snapshot || null }; }
-}
-const safeMsg = (e, d) => ({ message: e?.message || d, fields: e?.fields || {} });
-const isStale = (e) => e?.code === 'conflict' || /\b(changed|stale|conflict)\b/i.test(e?.message || '');
-const SAVED = 'Saved metadata only. No credentials saved. No connections made.';
+import { useAdminSession } from '../../auth/AdminBoundary.jsx';
+import { CHANNELS, loadCommunicationSnapshot, saveConfiguration, chooseCommunicationDefault, deleteConfiguration } from '../../services/communicationSettings.js';
 
 export default function CommunicationSettings() {
-  const [state, setState] = useState(load);
+  const session = useAdminSession();
+  const allowed = session?.user?.identity_kind === 'super_admin';
+  const [snapshot, setSnapshot] = useState(null);
   const [channel, setChannel] = useState('email');
   const [editor, setEditor] = useState(null);
   const [formError, setFormError] = useState(null);
   const [del, setDel] = useState(null);
   const [replacement, setReplacement] = useState('');
   const [delConfirm, setDelConfirm] = useState(false);
-  const [delError, setDelError] = useState('');
-  const [resetting, setResetting] = useState(false);
-  const [resetError, setResetError] = useState('');
-  const [status, setStatus] = useState('');
   const [error, setError] = useState('');
-  const { snapshot } = state;
+  const [status, setStatus] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [blocked, setBlocked] = useState(false);
+  const mounted = useRef(true);
+  const serial = useRef(0);
+  const pending = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    const controller = new AbortController();
+    if (allowed) loadCommunicationSnapshot({ signal: controller.signal })
+      .then((next) => { if (mounted.current) { setSnapshot(next); setLoading(false); } })
+      .catch((e) => { if (mounted.current) { setError(e.message); setLoading(false); } });
+    else { setSnapshot(null); setLoading(false); }
+    return () => { mounted.current = false; controller.abort(); };
+  }, [allowed, session?.user?.id]);
+
   const data = snapshot?.record.channels[channel];
   const items = data?.configurations || [];
-
-  const onTabKey = (e, i) => {
-    let idx = null;
-    if (e.key === 'ArrowRight') idx = (i + 1) % CHANNELS.length;
-    else if (e.key === 'ArrowLeft') idx = (i - 1 + CHANNELS.length) % CHANNELS.length;
-    else if (e.key === 'Home') idx = 0;
-    else if (e.key === 'End') idx = CHANNELS.length - 1;
-    if (idx === null) return;
-    e.preventDefault();
-    setChannel(CHANNELS[idx]);
-    document.getElementById(`comm-tab-${CHANNELS[idx]}`)?.focus();
-  };
-
-  // Explicit reload: refreshes data, clears obsolete errors, closes dialogs that depend on old data.
-  // Never saves. An open editor stays open with its non-secret values.
-  const reload = () => {
-    const next = load();
-    setState(next);
-    setError(''); setDelError(''); setResetError(''); setStatus('');
-    setDel(null); setResetting(false);
-    if (editor) {
-      if (!next.snapshot) setFormError({ message: `${next.error} Retry loading to continue; saving is blocked until storage is read.`, fields: {}, stale: false, load: true });
-      else if (editor.id && !next.snapshot.record.channels[channel].configurations.some((c) => c.id === editor.id)) {
-        setEditor({ ...editor, missing: true });
-        setFormError({ message: 'The configuration you were editing no longer exists. Your entries are kept. Save as new to add them, or cancel.', fields: {}, stale: false, missing: true });
-      } else setFormError({ message: 'Latest settings loaded. Review your entries, then save again.', fields: {}, stale: false, info: true });
-    } else setFormError(null);
-  };
-  const closeEditor = () => { setEditor(null); setFormError(null); };
-  const submit = (input) => {
-    if (!snapshot) { setFormError({ message: 'Storage has not been read. Retry loading before saving.', fields: {}, load: true }); return; }
-    if (editor.missing) { setFormError({ message: 'The edited configuration no longer exists. Choose Save as new or cancel.', fields: {}, missing: true }); return; }
+  const reload = async () => {
+    if (pending.current) return;
+    pending.current = true; setLoading(true); setError(''); setStatus('');
     try {
-      const next = saveConfiguration(snapshot, channel, input, editor.id);
-      setState({ snapshot: next, error: '', raw: null });
-      setEditor(null); setFormError(null); setError('');
-      setStatus(SAVED);
-    } catch (e) { setFormError({ ...safeMsg(e, 'Could not save configuration.'), stale: isStale(e) }); }
+      const next = await loadCommunicationSnapshot();
+      if (!mounted.current) return;
+      setSnapshot(next); setDel(null);
+      if (editor) {
+        setEditor((old) => ({ ...old, review: true }));
+        setBlocked(true);
+        setFormError({ message: 'Latest settings loaded. Compare the current saved details below with your draft before continuing.' });
+      } else setBlocked(false);
+    } catch (e) {
+      if (mounted.current) { setError(e.message); setBlocked(true); }
+    } finally { pending.current = false; if (mounted.current) setLoading(false); }
   };
-  const makeDefault = (id) => {
-    try { setState({ snapshot: chooseCommunicationDefault(snapshot, channel, id), error: '', raw: null }); setStatus('Default updated.'); setError(''); }
-    catch (e) { setError(safeMsg(e, 'Could not change default.').message); }
+  const fail = (e, form = false) => {
+    const mustReview = e.ambiguous || e.status === 409;
+    if (mustReview) setBlocked(true);
+    (form ? setFormError : setError)(form ? { message: e.message } : e.message);
   };
-  const startDelete = (c) => { setDel(c); setReplacement(''); setDelConfirm(false); setDelError(''); };
-  const runDelete = () => {
-    const others = items.filter((c) => c.id !== del.id);
-    const needs = data.defaultId === del.id && others.length > 0;
-    if (needs && !replacement) { setDelError('Choose a replacement default first.'); return; }
-    if (needs && !delConfirm) { setDelError('Confirm the change of default.'); return; }
-    try { setState({ snapshot: deleteConfiguration(snapshot, channel, del.id, needs ? replacement : null), error: '', raw: null }); setDel(null); setError(''); setStatus('Configuration deleted.'); }
-    catch (e) { setDelError(safeMsg(e, 'Could not delete configuration.').message); }
+  const mutate = async (run, form = false) => {
+    if (pending.current || blocked || loading) return;
+    pending.current = true; setBusy(true); setError(''); setStatus('');
+    try {
+      const next = await run();
+      if (!mounted.current) return;
+      setSnapshot(next); setEditor(null); setDel(null); setFormError(null);
+      setStatus('Shared encrypted Communication settings updated. No provider connection or delivery was tested.');
+    } catch (e) { if (mounted.current) fail(e, form); }
+    finally { pending.current = false; if (mounted.current) setBusy(false); }
   };
-  const runReset = () => {
-    const target = state.snapshot || state.raw;
-    if (!target) { setResetError('Storage has not been read. Retry loading first.'); return; }
-    try { setState({ snapshot: resetCommunication(target), error: '', raw: null }); setResetting(false); setResetError(''); setError(''); setStatus('Communication settings reset.'); }
-    catch (e) { setResetError(safeMsg(e, 'Could not reset.').message); }
+  const current = editor?.id ? items.find((c) => c.id === editor.id) : null;
+  const review = () => {
+    setEditor((old) => ({ ...old, version: current?.version, review: false }));
+    setBlocked(false); setFormError(null);
   };
-  const retryBtn = (label = 'Load latest settings') => <button type="button" className="admin-button admin-button--secondary" onClick={reload} data-testid="button-communication-reload">{label}</button>;
-
-  const editing = editor?.initial || null;
-  const recovery = formError && !formError.info && !formError.missing ? { label: formError.load ? 'Retry loading' : formError.stale ? 'Load latest settings' : 'Retry loading', run: reload } : null;
-  const extra = formError?.missing ? <button type="button" className="admin-button admin-button--secondary" onClick={() => { setEditor({ id: null, key: editor.key }); setFormError(null); }} data-testid="button-communication-save-as-new">Save as new configuration</button> : null;
+  const closeEditor = () => { if (!pending.current) { setEditor(null); setFormError(null); } };
   const others = del ? items.filter((c) => c.id !== del.id) : [];
-  const needsRepl = !!del && data?.defaultId === del.id && others.length > 0;
-  const resetBlocked = !state.snapshot && !state.raw;
-
-  return <section className="admin-panel admin-settings__section comm" aria-labelledby="comm-heading">
+  const needsRepl = del && data?.defaultId === del.id && others.length > 0;
+  const open = (c = null) => {
+    setFormError(null); setStatus('');
+    setEditor({ id: c?.id || null, version: c?.version, initial: c, key: ++serial.current });
+  };
+  const retryBtn = <button type="button" disabled={busy || loading} className="admin-button admin-button--secondary" onClick={reload} data-testid="button-communication-reload">Load latest settings</button>;
+  const onTabKey = (e, i) => {
+    const index = e.key === 'ArrowRight' ? (i + 1) % 3 : e.key === 'ArrowLeft' ? (i + 2) % 3 : e.key === 'Home' ? 0 : e.key === 'End' ? 2 : null;
+    if (index === null || busy || editor || del) return;
+    e.preventDefault(); setChannel(CHANNELS[index]);
+    document.getElementById(`comm-tab-${CHANNELS[index]}`)?.focus();
+  };
+  if (!allowed) return <section className="admin-panel"><h2>Communication</h2><p role="alert">Only Super Admin can view or change Communication settings.</p></section>;
+  return <section className="admin-panel admin-settings__section comm" aria-labelledby="comm-heading" aria-busy={loading || busy}>
     <div className="comm__head">
-      <div><h2 id="comm-heading">Communication</h2><p>Preview of sender configuration for Email, SMS and WABA (WhatsApp Business API).</p></div>
-      {snapshot && <div className="comm__actions">
-         <button type="button" className="admin-button" onClick={() => { setFormError(null); setEditor({ id: null, key: Date.now() }); }} data-testid="button-add-communication">Add configuration</button>
-        <button type="button" className="admin-button admin-button--secondary" onClick={() => { setResetError(''); setResetting(true); }} data-testid="button-communication-reset">Reset</button>
-      </div>}
+      <div><h2 id="comm-heading">Communication</h2><p>Shared encrypted sender configurations for Email, SMS and WABA.</p></div>
+      <div className="comm__actions">{retryBtn}<button type="button" className="admin-button" disabled={!snapshot || busy || loading || blocked || !!editor || !!del} onClick={() => open()} data-testid="button-add-communication">Add configuration</button></div>
     </div>
-    <p className="comm__warn" data-testid="text-communication-page-warning">Use dummy values only. Never enter real credentials or account details.</p>
-    <p className="comm__notice">Demo only. Saved cards hold metadata only, are unconnected, and no credentials are saved. Nothing is sent from this browser.</p>
+    <p className="comm__notice">Configuration details and credentials are encrypted in shared storage. Saved credentials are write-only. A default selects a configuration only; it does not activate a provider, verify connectivity or send messages. Password-recovery SMTP remains separately environment-configured.</p>
+    {loading && <p role="status">Loading Communication settings…</p>}
     <div aria-live="polite">{status && <div className="admin-feedback" data-testid="text-communication-status">{status}</div>}</div>
-    {error && <div className="admin-feedback admin-feedback--error" role="alert">{error} {retryBtn()}</div>}
-    {!snapshot ? <div data-testid="panel-communication-error">
-      <div className="admin-feedback admin-feedback--error" role="alert">{state.error}</div>
-      <div className="comm__actions">
-        {retryBtn('Retry loading')}
-        <button type="button" className="admin-button admin-button--danger" disabled={resetBlocked} onClick={() => { setResetError(''); setResetting(true); }} data-testid="button-communication-reset-unreadable">Reset Communication settings</button>
-      </div>
-      {resetBlocked && <p className="comm__hint">Reset is unavailable until storage can be read. Retry first.</p>}
-    </div> : <>
+    {error && <div className="admin-feedback admin-feedback--error" role="alert">{error} {retryBtn}</div>}
+    {snapshot && <>
       <div className="admin-tabs" role="tablist" aria-label="Communication channels">
-        {CHANNELS.map((c, i) => <button key={c} type="button" role="tab" id={`comm-tab-${c}`} aria-selected={channel === c} aria-controls="comm-panel" tabIndex={channel === c ? 0 : -1} onClick={() => setChannel(c)} onKeyDown={(e) => onTabKey(e, i)} data-testid={`tab-communication-${c}`}>{CHANNEL_LABELS[c]}</button>)}
+        {CHANNELS.map((c, i) => <button key={c} type="button" role="tab" id={`comm-tab-${c}`} aria-selected={channel === c} aria-controls="comm-panel" tabIndex={channel === c ? 0 : -1} disabled={busy || !!editor || !!del} onClick={() => setChannel(c)} onKeyDown={(e) => onTabKey(e, i)} data-testid={`tab-communication-${c}`}>{CHANNEL_LABELS[c]}</button>)}
       </div>
       <div role="tabpanel" id="comm-panel" aria-labelledby={`comm-tab-${channel}`}>
         {channel === 'email' && <p className="comm__hint">One default is shared across SMTP, API and Platform types.</p>}
-        {items.length === 0 ? <div className="admin-empty" data-testid="empty-communication"><strong>No {CHANNEL_LABELS[channel]} configurations</strong><p>Add one to preview how sender metadata is recorded.</p></div>
-        : <ul className="comm__list">{items.map((c) => {
-          const isDef = data.defaultId === c.id;
-          return <li key={c.id} className={`comm__card${isDef ? ' comm__card--default' : ''}`} data-testid={`card-communication-${c.id}`}>
-            <div className="comm__card-body">
-              <div className="comm__tags">{isDef && <span className="comm__tag comm__tag--default">Default</span>}<span className="comm__tag">{TYPE_LABELS[c.type] || c.type}</span><span className="comm__tag">Metadata only</span><span className="comm__tag">Unconnected</span></div>
-              <h3>{c.name}</h3>
-              <dl>
-                {c.provider && <div><dt>Provider</dt><dd>{c.provider}</dd></div>}
-                {(c.host || c.endpoint) && <div><dt>{c.host ? 'Host' : 'Endpoint'}</dt><dd>{c.host ? `${c.host}${c.port ? `:${c.port}` : ''}` : c.endpoint}</dd></div>}
-                {(c.fromEmail || c.senderId || c.senderPhone) && <div><dt>Sender</dt><dd>{c.fromEmail || c.senderId || c.senderPhone}</dd></div>}
-              </dl>
-              <span className="comm__hint">No credentials saved.</span>
-            </div>
-            <div className="comm__card-foot">
-              <button type="button" onClick={() => { setFormError(null); setEditor({ id: c.id, key: Date.now(), initial: c }); }} data-testid={`button-edit-communication-${c.id}`}>Edit</button>
-              <button type="button" disabled={isDef} onClick={() => makeDefault(c.id)} data-testid={`button-default-communication-${c.id}`}>{isDef ? 'Default' : 'Make default'}</button>
-              <button type="button" onClick={() => startDelete(c)} data-testid={`button-delete-communication-${c.id}`}>Delete</button>
-            </div>
-          </li>;
-        })}</ul>}
+        {items.length === 0 ? <div className="admin-empty" data-testid="empty-communication"><strong>No {CHANNEL_LABELS[channel]} configurations</strong><p>Add a shared encrypted configuration.</p></div>
+          : <ul className="comm__list">{items.map((c) => {
+            const isDefault = data.defaultId === c.id;
+            return <li key={c.id} className={`comm__card${isDefault ? ' comm__card--default' : ''}`} data-testid={`card-communication-${c.id}`}>
+              <div className="comm__card-body">
+                <div className="comm__tags">{isDefault && <span className="comm__tag comm__tag--default">Default</span>}<span className="comm__tag">{TYPE_LABELS[c.type]}</span><span className="comm__tag">Encrypted storage</span></div>
+                <h3>{c.name}</h3><dl>
+                  {c.provider && <div><dt>Provider</dt><dd>{c.provider}</dd></div>}
+                  {(c.host || c.endpoint) && <div><dt>{c.host ? 'Host' : 'Endpoint'}</dt><dd>{c.host ? `${c.host}:${c.port}` : c.endpoint}</dd></div>}
+                  <div><dt>Sender</dt><dd>{c.fromEmail || c.senderId || c.senderPhone}</dd></div>
+                </dl><span className="comm__hint">Credential saved. Connection status not checked.</span>
+              </div>
+              <div className="comm__card-foot">
+                <button type="button" disabled={busy || loading || blocked || !!editor || !!del} onClick={() => open(c)} data-testid={`button-edit-communication-${c.id}`}>View / edit</button>
+                <button type="button" disabled={isDefault || busy || loading || blocked || !!editor || !!del} onClick={() => mutate(() => chooseCommunicationDefault(snapshot, channel, c.id))} data-testid={`button-default-communication-${c.id}`}>{isDefault ? 'Default' : 'Make default'}</button>
+                <button type="button" disabled={busy || loading || blocked || !!editor || !!del} onClick={() => { setDel(c); setReplacement(''); setDelConfirm(false); setError(''); }} data-testid={`button-delete-communication-${c.id}`}>Delete</button>
+              </div>
+            </li>;
+          })}</ul>}
       </div>
     </>}
-    {editor && <Dialog className="comm__dialog" title={editor.id ? 'Edit configuration' : 'Add configuration'} eyebrow={CHANNEL_LABELS[channel]} description="Metadata only. Nothing connects or sends." onClose={closeEditor}>
-      <CommunicationForm key={`${channel}-${editor.key}`} channel={channel} initial={editing} editing={!!editor.id || !!editor.missing} error={formError} recovery={recovery} extra={extra} blocked={!snapshot || !!editor.missing} onSubmit={submit} onCancel={closeEditor} onTypeChange={() => setFormError(null)} />
+    {editor && <Dialog className="comm__dialog" title={editor.id ? 'View / edit configuration' : 'Add configuration'} eyebrow={CHANNEL_LABELS[channel]} description="Shared encrypted settings. Saving does not connect or send." onClose={closeEditor}>
+      <CommunicationForm key={editor.key} channel={channel} initial={editor.initial} editing={!!editor.id} busy={busy}
+        blocked={blocked || loading || !snapshot} error={formError}
+        recovery={blocked ? { label: 'Load latest settings', run: reload } : null}
+        extra={editor.review && <div role="status">
+          {current ? <><p>Current saved configuration (version {current.version}):</p><dl>{configurationEntries(current).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl></>
+            : <p>{editor.id ? 'This configuration was deleted. Cancel and create a new configuration if needed.' : 'Compare your draft with the saved cards. If this create already succeeded, cancel and edit that record.'}</p>}
+          {(!editor.id || current) && <button type="button" onClick={review}>I reviewed the saved settings; keep my draft</button>}
+        </div>}
+        onSubmit={(input) => mutate(() => saveConfiguration(snapshot, channel, input, editor.id, editor.version), true)}
+        onCancel={closeEditor} onTypeChange={() => setFormError(null)} />
     </Dialog>}
-    {del && <Dialog title="Delete configuration" eyebrow={CHANNEL_LABELS[channel]} description={`Delete ${del.name}? This only removes browser-local metadata.`} onClose={() => setDel(null)} footer={<>
-      <button type="button" className="admin-button admin-button--secondary" onClick={() => setDel(null)}>Cancel</button>
-      <button type="button" className="admin-button admin-button--danger" onClick={runDelete} data-testid="button-confirm-delete-communication">Delete</button></>}>
+    {del && <Dialog title="Delete configuration" eyebrow={CHANNEL_LABELS[channel]} description={`Delete ${del.name} from shared storage for all browsers?`} onClose={() => { if (!pending.current) setDel(null); }} footer={<>
+      <button type="button" disabled={busy} className="admin-button admin-button--secondary" onClick={() => setDel(null)}>Cancel</button>
+      <button type="button" disabled={busy || loading || blocked} className="admin-button admin-button--danger" onClick={() => {
+        if (needsRepl && (!replacement || !delConfirm)) { setError('Choose a replacement default and confirm the change.'); return; }
+        return mutate(() => deleteConfiguration(snapshot, channel, del.id, needsRepl ? replacement : null));
+      }} data-testid="button-confirm-delete-communication">Delete</button></>}>
       {needsRepl && <div className="comm__form">
-        <p className="comm__warn" role="alert">Warning: this is the default {CHANNEL_LABELS[channel]} configuration. Choose a replacement default.</p>
-        <fieldset className="comm__radios"><legend>Replacement default</legend>
-          {others.map((o) => <label key={o.id}><input type="radio" name="comm-repl" value={o.id} checked={replacement === o.id} onChange={() => setReplacement(o.id)} />{o.name}</label>)}</fieldset>
-        <label className="comm__radios"><span style={{ display: 'flex', gap: 8 }}><input type="checkbox" checked={delConfirm} onChange={(e) => setDelConfirm(e.target.checked)} />I confirm the default will change.</span></label>
+        <p className="comm__warn">This is the default configuration. Choose its replacement.</p>
+        <fieldset className="comm__radios" disabled={busy}><legend>Replacement default</legend>{others.map((o) => <label key={o.id}><input type="radio" name="comm-repl" checked={replacement === o.id} onChange={() => setReplacement(o.id)} />{o.name}</label>)}</fieldset>
+        <label><input type="checkbox" disabled={busy} checked={delConfirm} onChange={(e) => setDelConfirm(e.target.checked)} />I confirm the default will change.</label>
       </div>}
-      {delError && <div className="admin-feedback admin-feedback--error" role="alert">{delError} {retryBtn()}</div>}
+      {error && <p role="alert">{error} {retryBtn}</p>}
     </Dialog>}
-    {resetting && <ConfirmationDialog title="Reset Communication settings?" description="Only saved Communication metadata is replaced. Other settings are untouched." actionLabel="Reset" destructive error={resetError ? <>{resetError} {retryBtn()}</> : ''} onConfirm={runReset} onClose={() => setResetting(false)} />}
   </section>;
+}
+
+function configurationEntries(record) {
+  return Object.entries(record).filter(([key]) => !['id', 'version', 'credentialPresent'].includes(key));
 }

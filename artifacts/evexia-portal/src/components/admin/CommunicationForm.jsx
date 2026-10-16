@@ -14,13 +14,6 @@ export default function CommunicationForm({ channel, initial, editing, onSubmit,
   const [secret, setSecret] = useState('');
   useEffect(() => () => setSecret(''), []);
   useEffect(() => { setSecret(''); }, [channel, type]);
-  useEffect(() => {
-    const clear = () => setSecret('');
-    const onVis = () => { if (document.hidden) clear(); };
-    document.addEventListener('visibilitychange', onVis);
-    window.addEventListener('blur', clear);
-    return () => { document.removeEventListener('visibilitychange', onVis); window.removeEventListener('blur', clear); };
-  }, []);
   const fields = configurationFields(channel, type);
   const set = (k, v) => setValues((p) => ({ ...p, [k]: v }));
   const fieldErrors = error?.fields || {};
@@ -29,42 +22,42 @@ export default function CommunicationForm({ channel, initial, editing, onSubmit,
     e.preventDefault();
     const input = { type };
     fields.forEach((f) => { input[f] = String(values[f] ?? (f === 'security' ? 'starttls' : '')); });
-    setSecret('');
+    if (secret) input.secret = secret;
     onSubmit(input);
+    setSecret('');
   };
   const changeType = (t) => { setSecret(''); setType(t); onTypeChange?.(); };
   return <form className="comm__form" onSubmit={submit} noValidate autoComplete="off" data-testid="form-communication">
     {error?.message && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="text-communication-error">{error.message}{recovery && <> <button type="button" className="admin-button admin-button--secondary" onClick={() => { setSecret(''); recovery.run(); }} data-testid="button-communication-recover">{recovery.label}</button></>}</div>}
-    <p className="comm__warn" data-testid="text-communication-dummy-warning">Use dummy values only. Never enter real credentials or account details.</p>
     {extra}
     {channel === 'email' && <label className="comm__field">Connection type
-      <select value={type} disabled={!!editing} onChange={(e) => changeType(e.target.value)} data-testid="select-communication-type">{types.map((t) => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}</select>
-       {type === 'platform' && <span className="comm__hint">Unconnected platform service preview. Enter your own dummy provider name and endpoint metadata; no built-in service is available.</span>}
+      <select value={type} disabled={busy} onChange={(e) => changeType(e.target.value)} data-testid="select-communication-type">{types.map((t) => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}</select>
+       {type === 'platform' && <span className="comm__hint">Save your platform provider settings. This does not activate or connect a service.</span>}
     </label>}
     <div className="comm__fields">
       {fields.map((f) => {
         const id = `comm-${f}`; const err = fieldErrors[f];
         return <label key={f} className={`comm__field${err ? ' comm__field--error' : ''}`} htmlFor={id}>{LABELS[f] || f}
           {f === 'security'
-            ? <select id={id} value={values[f] || 'starttls'} onChange={(e) => set(f, e.target.value)} aria-invalid={!!err} data-testid={`select-communication-${f}`}>{Object.entries(SECURITY).map(([k, t]) => <option key={k} value={k}>{t}</option>)}</select>
-            : <input id={id} type="text" value={values[f] || ''} onChange={(e) => set(f, e.target.value)} aria-invalid={!!err} aria-describedby={err ? `${id}-err` : undefined} autoComplete="off" inputMode={f === 'port' ? 'numeric' : undefined} data-testid={`input-communication-${f}`} />}
+             ? <select id={id} disabled={busy} value={values[f] || 'starttls'} onChange={(e) => set(f, e.target.value)} aria-invalid={!!err} data-testid={`select-communication-${f}`}>{Object.entries(SECURITY).map(([k, t]) => <option key={k} value={k}>{t}</option>)}</select>
+             : <input id={id} disabled={busy} maxLength={f === 'endpoint' ? 500 : 160} type="text" value={values[f] || ''} onChange={(e) => set(f, e.target.value)} aria-invalid={!!err} aria-describedby={err ? `${id}-err` : undefined} autoComplete="off" inputMode={f === 'port' ? 'numeric' : undefined} data-testid={`input-communication-${f}`} />}
           {f === 'dltEntityId' && <span className="comm__hint">India-specific (DLT) IDs. Not every provider requires them.</span>}
           {f === 'dltTemplateId' && <span className="comm__hint">India-specific (DLT) IDs. Not every provider requires them.</span>}
           {channel === 'waba' && f === 'businessAccountId' && <span className="comm__hint">Provider-specific; values vary. Entering them does not register or verify a WhatsApp account.</span>}
            {channel === 'waba' && f === 'apiVersion' && <span className="comm__hint">Optional for Meta-style configurations, for example v23.0. Provider requirements vary.</span>}
-          {f === 'endpoint' && !err && <span className="comm__hint" id={`${id}-hint`}>Metadata only. Use an HTTPS address with no query string or fragment. It is never contacted.</span>}
+           {f === 'endpoint' && !err && <span className="comm__hint" id={`${id}-hint`}>Use HTTPS without embedded credentials, query parameters or fragments. Saving does not contact this address.</span>}
           {err && <span className="comm__err" id={`${id}-err`}>{err}</span>}
         </label>;
       })}
     </div>
     <div className="comm__secret">
-      <label className="comm__field" htmlFor="comm-secret">{secretLabel} (dummy only)
-         <input id="comm-secret" type="password" value={secret} onChange={(e) => setSecret(e.target.value)} onBlur={() => setSecret('')} autoComplete="new-password" data-testid="input-communication-secret" aria-describedby="comm-secret-help" />
+       <label className="comm__field" htmlFor="comm-secret">{editing ? `Replacement ${secretLabel.toLowerCase()}` : secretLabel}
+          <input id="comm-secret" type="password" value={secret} onChange={(e) => setSecret(e.target.value)} maxLength={4096} disabled={busy} autoComplete="new-password" data-testid="input-communication-secret" aria-describedby="comm-secret-help" />
       </label>
-      <span className="comm__hint" id="comm-secret-help">Separate from the saved metadata: never saved or sent, and no credentials are kept. It is always empty when you reopen a configuration, and it clears on save, cancel, type switch, hidden tab or lost focus.</span>
+       <span className="comm__hint" id="comm-secret-help">Credentials are saved encrypted and never returned. {editing ? 'Leave blank to keep the saved credential. Changing type requires a replacement.' : 'A credential is required.'} Re-enter a replacement after a failed save if needed.</span>
     </div>
     <div className="comm__form-actions">
-      <button type="button" className="admin-button admin-button--secondary" onClick={() => { setSecret(''); onCancel(); }} data-testid="button-communication-cancel">Cancel</button>
+      <button type="button" disabled={busy} className="admin-button admin-button--secondary" onClick={() => { setSecret(''); onCancel(); }} data-testid="button-communication-cancel">Cancel</button>
       <button type="submit" className="admin-button" disabled={busy || blocked} data-testid="button-communication-save">{editing ? 'Save changes' : 'Save configuration'}</button>
     </div>
   </form>;
