@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useAdminDateFormatters } from '../admin/adminPreferences.js';
 import { createPortal } from 'react-dom';
 import { Printer } from 'lucide-react';
 import ImmDialog from './ImmDialog.jsx';
@@ -14,6 +15,7 @@ export const PRINT_KINDS = [
 const addressText = (a) => typeof a === 'string' ? a : a ? [a.line1, a.line2, a.landmark, a.city, a.state, a.pincode, a.country].filter(Boolean).join(', ') : '';
 
 export default function ImmPrintDialog({ kind, orders, snap, onClose, returnFocusRef }) {
+  const { date } = useAdminDateFormatters();
   // This portal is outside the Admin shell. Copy its current semantic tokens,
   // rather than duplicating the palette or losing the selected appearance.
   const shell = document.querySelector('.admin-shell');
@@ -44,7 +46,7 @@ export default function ImmPrintDialog({ kind, orders, snap, onClose, returnFocu
     } else if (kind === 'newbox') {
       labels.push({ key: o.id, cls: '', lines: [<b key="a">{o.number}</b>, <span key="b">{patient?.name}, {patient?.age} / {patient?.gender}</span>, <br key="b2" />, <span key="c">{names(doctors, o.doctorId)} | MR {names(mrs, o.mrId)}</span>, <br key="c2" />, <span key="d">Dosage {o.dosage} | {o.groups.length} bottle(s) | {money(totalMinor(o.groups))}</span>] });
     } else {
-      labels.push({ key: o.id, cls: 'imm-label--old', lines: [<b key="a">{o.number} ({o.date})</b>, <span key="b">{patient?.name}</span>, <br key="b2" />, <span key="c">Dosage {o.dosage} | {o.groups.length} bottle(s)</span>] });
+      labels.push({ key: o.id, cls: 'imm-label--old', lines: [<b key="a">{o.number} ({date(o.date)})</b>, <span key="b">{patient?.name}</span>, <br key="b2" />, <span key="c">Dosage {o.dosage} | {o.groups.length} bottle(s)</span>] });
     }
   });
   return createPortal(<div className="imm-print-portal" style={palette} data-admin-theme={shell?.dataset.adminTheme} data-admin-appearance={shell?.dataset.adminAppearance}>

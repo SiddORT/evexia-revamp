@@ -1,4 +1,5 @@
 import { downloadBlob } from '../../services/downloads.js';
+import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import { useMemo, useState } from 'react';
 import { Eye, FileDown, FileText, Info } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
@@ -8,10 +9,11 @@ import StockAllergenSelect from '../../components/admin/StockAllergenSelect.jsx'
 import StockStatusDetail from '../../components/admin/StockStatusDetail.jsx';
 import StockStatusReport from '../../components/admin/StockStatusReport.jsx';
 import useTablePagination from '../../hooks/useTablePagination.js';
-import { STOCK_DEMO_DISCLAIMER, createStockDemo, displayStockDate, exportStockCSV, filterStock, financialYearLabel, financialYearRange, formatStockPrice, snapshotScope, stockFilterOptions } from '../../services/stockStatusDemo.js';
+import { STOCK_DEMO_DISCLAIMER, createStockDemo, exportStockCSV, filterStock, financialYearLabel, financialYearRange, formatStockPrice, snapshotScope, stockFilterOptions } from '../../services/stockStatusDemo.js';
 import '../../stockStatus.css';
 
 export default function StockStatus() {
+  const { date: displayStockDate } = useAdminDateFormatters();
   const [now] = useState(() => new Date());
   const demo = useMemo(() => createStockDemo(now), [now]);
   const year = demo.currentYear;

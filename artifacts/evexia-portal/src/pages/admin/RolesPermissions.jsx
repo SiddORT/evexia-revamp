@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import { Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
-import { useAdminPreferences } from '../../components/admin/adminPreferences.js';
+import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ZonePermissionMatrix, { countLabel } from '../../components/admin/ZonePermissionMatrix.jsx';
 import { MASTER_KEYS as ZONE_KEYS } from '../../auth/capabilities.js';
 import { setNavigationGuard } from '../../auth/navigationGuard.js';
@@ -11,8 +11,8 @@ import { getSession, subscribeSession } from '../../auth/adminSession.js';
 import { listRoles, getRole, createRole, updateRole, deleteRole, setRolePermissions, samePermissions, validateRoleName, validateRoleDescription, ROLE_NAME_LIMIT, ROLE_DESCRIPTION_LIMIT } from '../../services/rolePermissions.js';
 import '../../roles-permissions.css';
 
-const fmt = (value) => { const d = new Date(value); return Number.isNaN(d.getTime()) ? value : d.toLocaleString(); };
 const errInfo = (e) => ({ code: e?.code || '', ambiguous: Boolean(e?.ambiguous), message: (e && e.message) || 'The role service could not complete this request.' });
+const fmt = (value) => formatAdminTimestamp(value, undefined, true);
 // Keep row order, but never replace a known version with an older batch snapshot.
 const mergeRoles = (known, incoming) => {
   const rows = new Map(known.map((r) => [r.id, r]));
@@ -21,6 +21,7 @@ const mergeRoles = (known, incoming) => {
 };
 
 function RoleForm({ form, setForm, busy, blocked, error, current, onSubmit, onClose, onReview, onAdopt, onUseCurrent, reviewing, onRefresh, refreshing }) {
+  useAdminPreferences();
   const edit = form.mode === 'edit';
   const deleted = error?.code === 'role_deleted';
   const stale = error?.code === 'role_stale';

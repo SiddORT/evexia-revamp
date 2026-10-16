@@ -4,22 +4,24 @@ import { downloadInvoiceDocument } from './poInvoicePdf.js';
 import { loadPRTemplatePreference, PR_TEMPLATES } from './prReceiptTemplates.js';
 import { normalizePRReceipt, makeSamplePRReceipt } from './prReceiptModel.js';
 import { renderPRReceiptPages } from './prReceiptRender.js';
+import { displayPreferences } from './datePresentation.js';
 import { downloadSearchableReceipt } from './prReceiptPdf.js';
 
 /**
  * Preview and PDF share this normalized saved receipt and its exact SVG pages.
  * No live PO balance or master-data lookup is allowed during document generation.
  */
-export function makePRDocument(receipt, templateId = loadPRTemplatePreference()) {
+export function makePRDocument(receipt, templateId = loadPRTemplatePreference(), preferences) {
   if (!PR_TEMPLATES.some((template) => template.id === templateId)) {
     throw new Error('Choose a supported PR receipt template in Settings > Templates.');
   }
   const model = normalizePRReceipt(receipt);
-  return { number: model.number, templateId, model, pages: renderPRReceiptPages(model, templateId) };
+  const presentation = displayPreferences(preferences);
+  return { number: model.number, templateId, model, presentation, pages: renderPRReceiptPages(model, templateId, presentation) };
 }
 
-export function makeSamplePRDocument(templateId = 'classic') {
-  return makePRDocument(makeSamplePRReceipt(templateId), templateId);
+export function makeSamplePRDocument(templateId = 'classic', preferences) {
+  return makePRDocument(makeSamplePRReceipt(templateId), templateId, preferences);
 }
 
 export function prReceiptFilename(number) {

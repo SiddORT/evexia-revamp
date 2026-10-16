@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { ArrowLeft, ClipboardCheck, Download, Eye, History, Pencil, RefreshCw, Trash2, X } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useAdminDateFormatters, getAdminDisplayPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import PRDocumentPreview from '../../components/admin/PRDocumentPreview.jsx';
@@ -14,8 +15,6 @@ import '../../purchaseReceived.css';
 const BASE = '/admin/inventory/purchase-received';
 const PO_BASE = '/admin/inventory/purchase-orders';
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
-const displayDate = (d) => d ? new Date(`${d}T00:00:00Z`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '—';
-const stamp = (d) => d ? new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 const q3 = (n) => String(Math.round(Number(n) * 1000) / 1000);
 const num = (v) => (String(v).trim() === '' || !Number.isFinite(Number(v)) ? 0 : Number(v));
 const fclass = (f) => f === 'Closed' ? 'pr-tag pr-tag--closed' : f === 'Open' ? 'pr-tag pr-tag--open' : 'pr-tag';
@@ -28,6 +27,7 @@ function rowsFor(po, receipt) {
 }
 
 function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, onDraftDirty, onSaveStateChange, saveBlocked }) {
+  const { date: displayDate } = useAdminDateFormatters();
   const isNew = !receipt;
   const sample = isSamplePR(receipt);
   const orders = snapshot.poRecord.orders;
@@ -145,6 +145,7 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
 }
 
 export default function PurchaseReceivedFormPage({ id }) {
+  const { date: displayDate, timestamp: stamp } = useAdminDateFormatters();
   const [, navigate] = useLocation();
   const search = useSearch();
   const isNew = !id || id === 'new';
@@ -235,11 +236,11 @@ export default function PurchaseReceivedFormPage({ id }) {
   }
   async function pdf() {
     if (pdfBusy) return; setPdfBusy(true); setActionError('');
-    try { await downloadPRDocument(makePRDocument(record), `${record.number}.pdf`, `${import.meta.env.BASE_URL}images/evexia-logo.png`); }
+    try { await downloadPRDocument(makePRDocument(record, undefined, getAdminDisplayPreferences()), `${record.number}.pdf`, `${import.meta.env.BASE_URL}images/evexia-logo.png`); }
     catch (cause) { setActionError(cause.message || 'Could not download this receipt.'); }
     finally { setPdfBusy(false); }
   }
-  function preview() { setActionError(''); try { setDoc(makePRDocument(record)); } catch (cause) { setActionError(cause.message || 'Could not preview this receipt.'); } }
+  function preview() { setActionError(''); try { setDoc(makePRDocument(record, undefined, getAdminDisplayPreferences())); } catch (cause) { setActionError(cause.message || 'Could not preview this receipt.'); } }
   const title = isNew ? 'New purchase received' : editing ? 'Edit purchase received' : record?.number || 'Purchase received';
 
   return <AdminLayout title={title}><div className="po-page">

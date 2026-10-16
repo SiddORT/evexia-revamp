@@ -2,6 +2,7 @@ import { useRef, useState, useSyncExternalStore } from 'react';
 import { Link, useLocation } from 'wouter';
 import { ArrowLeft, Paperclip } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import { DOCTORS, KIT_PRODUCTS, MRS, STATUSES, addressText, blankOrder, demoStore, fileSize, productSummary, shippingRecipient, validateAttachments } from '../../services/kitsOrdersDemo.js';
 import '../../kitsOrders.css';
@@ -31,6 +32,7 @@ export default function KitsOrderFormPage({ id }) {
 }
 
 function Summary({ order }) {
+  const { date } = useAdminDateFormatters();
   const doctor = DOCTORS.find((d) => d.id === order.doctorId);
   const mr = MRS.find((m) => m.id === order.mrId);
   const k = order.kit || {};
@@ -55,7 +57,7 @@ function Summary({ order }) {
             {order.tray && <div><dt>Tray</dt><dd>{order.tray}</dd></div>}
             <div><dt>Status</dt><dd data-testid="kits-summary-status">{order.status}</dd></div>
             <div><dt>Payment</dt><dd>{order.paymentStatus}</dd></div>
-            <div><dt>Date</dt><dd>{order.date}</dd></div>
+            <div><dt>Date</dt><dd>{date(order.date)}</dd></div>
             <div><dt>Remarks</dt><dd>{order.remarks || 'None'}</dd></div></dl>
           <h2 style={{ marginTop: 16 }}>Attachments (names only)</h2>
           {order.attachments?.length ? <ul className="kits-files">{order.attachments.map((f, i) => <li key={i}><span><Paperclip size={13} aria-hidden="true" /> {f.name} ({fileSize(f.size)})</span></li>)}</ul> : <p className="kits-hint">No files attached.</p>}

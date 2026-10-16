@@ -21,6 +21,10 @@ createdb -h "$PGROOT/socket" -p 5432 -U "$(id -un)" evexia_api_test
 export DATABASE_URL="postgresql+psycopg://$(id -un)@/evexia_api_test?host=$PGROOT/socket&port=5432"
 export TEST_DATABASE_URL="$DATABASE_URL"
 export APP_ENV=test
+# Readiness now validates the shared Communication keyring too. Always use a
+# distinct synthetic key in this disposable fixture, never an ambient live key.
+export COMMUNICATION_ENCRYPTION_KEYS='{"primary":"RkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkY="}'
+export COMMUNICATION_ENCRYPTION_KEY_ID=primary
 export PORTAL_BOOTSTRAP_HOSTS= TRUSTED_PROXY_PEERS=
 export STAFF_ENCRYPTION_KEYS='{"primary":"QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="}'
 export STAFF_ENCRYPTION_KEY_ID=primary

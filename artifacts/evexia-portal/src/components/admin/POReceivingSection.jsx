@@ -1,14 +1,14 @@
 import { Link } from 'wouter';
+import { useAdminDateFormatters } from './adminPreferences.js';
 import { rollupPOReceiving, createPRState } from '../../services/poReceivingRollup.js';
 import { getPOBalances } from '../../services/purchaseReceived.js';
 import '../../purchaseReceived.css';
 import '../../poReceivingDetail.css';
 
-const date = (d) => d ? new Date(`${d}T00:00:00Z`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '—';
-const stamp = (d) => d ? new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 const BASE = '/admin/inventory/purchase-received';
 
 export default function POReceivingSection({ order, receipts }) {
+  const { date, timestamp: stamp } = useAdminDateFormatters();
   const linked = receipts.filter((r) => r.poId === order.id);
   const balances = getPOBalances(order, linked);
   let roll;

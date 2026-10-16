@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Activity, BarChart3, ChevronDown, ClipboardList, Plus, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import PurchaseOrderReferenceSelect from '../../components/admin/PurchaseOrderReferenceSelect.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
@@ -12,8 +13,6 @@ import {
 import '../../purchaseOrders.css';
 
 const BASE = '/admin/inventory/purchase-orders';
-const displayDate = (date) => date ? new Date(`${date}T00:00:00Z`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '—';
-const displayTime = (value) => value ? new Date(value).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 const DEFAULT_FILTERS = { status: 'open', vendor: null, product: null, from: '', to: '', sort: 'recent' };
 const actorName = (actor) => typeof actor === 'string' ? actor : actor?.name || actor?.username || actor?.email || actor?.id || 'Unknown actor';
 const ACTION_LABEL = { created: 'Created by', updated: 'Updated by', deleted: 'Deleted by' };
@@ -49,6 +48,7 @@ function Recovery({ title, state, onRetry }) {
 const Skeleton = ({ label }) => <div aria-label={label} role="status"><div className="po-skeleton" /><div className="po-skeleton" /><div className="po-skeleton" /></div>;
 
 export default function PurchaseOrders() {
+  const { date: displayDate, timestamp: displayTime } = useAdminDateFormatters();
   const [, navigate] = useLocation();
   const [tab, setTab] = useState('orders');
   const [search, setSearch] = useState('');

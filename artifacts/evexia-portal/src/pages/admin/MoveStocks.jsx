@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import { useLocation } from 'wouter';
 import { ArrowLeftRight, Eye, Plus } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
@@ -10,9 +11,9 @@ import { useMoveStocks } from '../../hooks/useMoveStocks.js';
 import '../../moveStocks.css';
 
 const BASE = '/admin/inventory/move-stocks';
-const displayDate = (d) => d ? new Date(`${d}T00:00:00Z`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '—';
 
 export default function MoveStocks() {
+  const { date: displayDate } = useAdminDateFormatters();
   const [, navigate] = useLocation();
   const { snapshot } = useMoveStocks();
   const [viewing, setViewing] = useState(null);

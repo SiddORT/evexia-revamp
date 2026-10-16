@@ -3,6 +3,7 @@ import { Link } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { ChevronDown, Check, Download, Eye, Plus, Search, X, ClipboardList } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import { useAdminPreferences } from '../../components/admin/adminPreferences.js';
@@ -15,6 +16,7 @@ const doctorOptions = DOCTORS.map((d) => ({ value: d.id, label: d.name }));
 const none = { date: '', doctorId: '', statuses: [] };
 
 export default function LupinOrders() {
+  const { date } = useAdminDateFormatters();
   const snap = useSyncExternalStore(demoStore.subscribe, demoStore.getSnapshot, demoStore.getSnapshot);
   const { theme, appearance } = useAdminPreferences();
   const [search, setSearch] = useState('');
@@ -36,7 +38,7 @@ export default function LupinOrders() {
   };
   const columns = [
     { key: 'sn', label: 'S.No', render: (_o, i) => i + 1 },
-    { key: 'order', label: 'Order details', render: (o) => <><strong>{o.number}</strong><span className="lupin-sub">{o.date}</span><span className="lupin-sub">{o.patientCount} patients, {money(totalMinor(o.patientCount, o.price))}</span></> },
+    { key: 'order', label: 'Order details', render: (o) => <><strong>{o.number}</strong><span className="lupin-sub">{date(o.date)}</span><span className="lupin-sub">{o.patientCount} patients, {money(totalMinor(o.patientCount, o.price))}</span></> },
     { key: 'dm', label: 'Doctor / MR', render: (o) => <>{o.doctorName}<span className="lupin-sub">{o.mrName}</span></> },
     { key: 'status', label: 'Order status', render: (o) => <span className="lupin-pill">{o.status}</span> },
     { key: 'pay', label: 'Payment status', render: (o) => <span className={`lupin-pill${o.paymentStatus === 'Unpaid' ? ' lupin-pill--unpaid' : ''}`}>{o.paymentStatus}</span> },

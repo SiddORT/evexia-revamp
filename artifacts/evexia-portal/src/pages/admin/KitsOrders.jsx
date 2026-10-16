@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { Link } from 'wouter';
 import { Download, Eye, PackageOpen, Plus, Search } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import useTablePagination from '../../hooks/useTablePagination.js';
@@ -13,6 +14,7 @@ const BASE = '/admin/orders/kits-consumables';
 const EMPTY = { search: '', from: '', to: '', doctorId: '', statuses: [], paymentStatus: '' };
 
 export default function KitsOrders() {
+  const { date } = useAdminDateFormatters();
   const snap = useSyncExternalStore(demoStore.subscribe, demoStore.getSnapshot, demoStore.getSnapshot);
   const [draft, setDraft] = useState(EMPTY);
   const [applied, setApplied] = useState(EMPTY);
@@ -38,7 +40,7 @@ export default function KitsOrders() {
 
   const columns = [
     { key: 'sr', label: 'Sr. No.', render: (o) => rows.indexOf(o) + 1 },
-    { key: 'number', label: 'Order', render: (o) => <><strong>{o.number}</strong><span className="kits-sub">{o.date}</span></> },
+    { key: 'number', label: 'Order', render: (o) => <><strong>{o.number}</strong><span className="kits-sub">{date(o.date)}</span></> },
     { key: 'items', label: 'Order details', render: (o) => productSummary(o) },
     { key: 'who', label: 'Doctor / MR', render: (o) => <>{DOCTORS.find((d) => d.id === o.doctorId)?.name || '-'}<span className="kits-sub">{o.orderFor === 'mr' ? 'MR order' : 'Doctor order'}</span>{o.mrId && <span className="kits-sub">MR: {MRS.find((m) => m.id === o.mrId)?.name || '-'}</span>}</> },
     { key: 'status', label: 'Status', render: (o) => <span className="kits-pill">{o.status}</span> },

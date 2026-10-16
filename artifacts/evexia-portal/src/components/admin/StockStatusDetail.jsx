@@ -3,11 +3,13 @@ import Dialog from './Dialog.jsx';
 import DataTable from './DataTable.jsx';
 import TablePagination from './TablePagination.jsx';
 import useTablePagination from '../../hooks/useTablePagination.js';
-import { displayStockDate, filterHistory, financialYearLabel, formatStockPrice } from '../../services/stockStatusDemo.js';
+import { filterHistory, financialYearLabel, formatStockPrice } from '../../services/stockStatusDemo.js';
+import { useAdminDateFormatters } from './adminPreferences.js';
 
 const TABS = [['purchases', 'Purchases', 'Vendor'], ['orders', 'Orders', 'Customer']];
 
 export default function StockStatusDetail({ row, demo, year, onClose }) {
+  const { date: displayStockDate } = useAdminDateFormatters();
   const [tab, setTab] = useState('purchases');
   const [scope, setScope] = useState(String(year));
   const refs = useRef({});

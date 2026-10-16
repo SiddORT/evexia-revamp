@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useAdminDateFormatters } from './adminPreferences.js';
 import { roleUrlRequest } from '../../auth/adminSession.js';
 
-const fmt = (v) => { if (!v) return 'Not recorded'; const d = new Date(v); return Number.isNaN(d.getTime()) ? 'Not recorded' : d.toLocaleString(); };
 const past = (v) => { const t = v ? new Date(v).getTime() : NaN; return !Number.isNaN(t) && t <= Date.now(); };
 
 function label(d) {
@@ -13,6 +13,8 @@ function label(d) {
 }
 
 export default function PrimaryDomainPanel({ items, domains, bootstrapHosts, listReady, onReload, onDomainUpdate, onSaved, onDirtyChange, parentBusy, onBusyChange }) {
+  const { timestamp } = useAdminDateFormatters();
+  const fmt = (value) => timestamp(value, true);
   const primary = useMemo(() => domains.find((d) => d.kind === 'primary') || null, [domains]);
   const current = primary?.hostname || '';
   const [draft, setDraft] = useState(null); // null = no draft

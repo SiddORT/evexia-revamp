@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
-import { formatAdminTimestamp } from '../../components/admin/adminPreferences.js';
+import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import OpeningBalanceDoctorSelect from '../../components/admin/OpeningBalanceDoctorSelect.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
@@ -44,6 +44,7 @@ function YearField({ field, values, errors, onChange, disabled }) {
 }
 
 function BalanceForm({ record, onSave, onCancel, onReload, onPendingChange }) {
+  useAdminPreferences();
   const [values, setValues] = useState(() => record ? fields(record) : empty());
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState('');

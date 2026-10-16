@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Printer } from 'lucide-react';
 import Dialog from './Dialog.jsx';
-import { STOCK_DEMO_DISCLAIMER, displayStockDate, financialYearLabel, financialYearRange, formatStockPrice } from '../../services/stockStatusDemo.js';
+import { STOCK_DEMO_DISCLAIMER, financialYearLabel, financialYearRange, formatStockPrice } from '../../services/stockStatusDemo.js';
+import { useAdminDateFormatters } from './adminPreferences.js';
 
 export default function StockStatusReport({ rows, year, scope, search, category, allergenLabels, generatedAt, onClose }) {
+  const { date: displayStockDate, timestamp } = useAdminDateFormatters();
   const [error, setError] = useState('');
   const range = financialYearRange(year);
   function print() {
@@ -24,7 +26,7 @@ export default function StockStatusReport({ rows, year, scope, search, category,
         <div><dt>Product Category</dt><dd>{category || 'All categories'}</dd></div>
         <div><dt>Allergen scope (any selected)</dt><dd>{allergenLabels.length ? allergenLabels.join('; ') : 'All allergens'}</dd></div>
         <div><dt>{scope.label}</dt><dd>As of {displayStockDate(scope.asOf)}</dd></div>
-        <div><dt>Generated</dt><dd>{generatedAt.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</dd></div>
+        <div><dt>Generated</dt><dd>{timestamp(generatedAt)}</dd></div>
       </dl>
       <div className="stock-report-scroll" role="region" aria-label="Sample inventory report table" tabIndex={0}>
         <table><thead><tr><th>Sr.</th><th>Product</th><th>Concentration</th><th>Category</th><th>Selling price</th><th>Quantity ({scope.label})</th></tr></thead>

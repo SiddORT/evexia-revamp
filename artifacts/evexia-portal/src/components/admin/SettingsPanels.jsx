@@ -15,7 +15,7 @@ export function BasicSettings() {
   const p = useAdminPreferences();
   return <section className="admin-panel admin-settings__section" aria-labelledby="basic-heading">
     <h2 id="basic-heading">General</h2>
-    <p>How dates and times appear in Admin. Stored records and CSV files are unchanged.</p>
+    <p>How dates and times appear throughout the portal and its documents in this browser. Stored records and CSV/XLSX files are unchanged. Native date entry controls follow your browser or device format, not this display setting. Reporting filters explicitly labeled UTC still use UTC boundaries.</p>
     <div className="admin-settings__grid">
       <Setting label="Date format" id="date-format" value={p.dateFormat} choices={DATE_FORMATS} onChange={(v) => setAdminPreference('dateFormat', v)} description="Choose the order and style of displayed calendar dates." />
       <Setting label="Time zone" id="time-zone" value={p.timeZone} choices={TIME_ZONES} onChange={(v) => setAdminPreference('timeZone', v)} description="Applies to timestamps only; calendar-only dates stay on the same day." />

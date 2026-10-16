@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { Activity, ArrowUpRight, BarChart3, ChevronDown, ClipboardCheck, Download, Eye, FileDown, Plus, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useAdminDateFormatters, getAdminDisplayPreferences } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import PRDocumentPreview from '../../components/admin/PRDocumentPreview.jsx';
@@ -13,12 +14,11 @@ import '../../purchaseOrders.css';
 import '../../purchaseReceived.css';
 
 const BASE = '/admin/inventory/purchase-received';
-const displayDate = (d) => d ? new Date(`${d}T00:00:00Z`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '—';
-const stamp = (d) => d ? new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 const initial = { search: '', from: '', to: '', vendorId: '', receivedBy: '', fulfillment: '', status: 'active', sort: 'recent' };
 export const fulfilClass = (f) => f === 'Closed' ? 'pr-tag pr-tag--closed' : f === 'Open' ? 'pr-tag pr-tag--open' : 'pr-tag';
 
 export default function PurchaseReceived() {
+  const { date: displayDate, timestamp: stamp } = useAdminDateFormatters();
   const [, navigate] = useLocation();
   const scopedPoId = new URLSearchParams(useSearch()).get('poId') || '';
   const newPRPath = `${BASE}/new${scopedPoId ? `?poId=${encodeURIComponent(scopedPoId)}` : ''}`;
@@ -106,10 +106,10 @@ export default function PurchaseReceived() {
       setBusy('');
     }
   }
-  function preview(r) { setActionError(''); try { setDoc(makePRDocument(r)); } catch (cause) { setActionError(cause.message || 'Could not preview this receipt.'); } }
+  function preview(r) { setActionError(''); try { setDoc(makePRDocument(r, undefined, getAdminDisplayPreferences())); } catch (cause) { setActionError(cause.message || 'Could not preview this receipt.'); } }
   async function pdf(r) {
     if (busy) return; setBusy(r.id); setActionError('');
-    try { await downloadPRDocument(makePRDocument(r), `${r.number}.pdf`, `${import.meta.env.BASE_URL}images/evexia-logo.png`); }
+    try { await downloadPRDocument(makePRDocument(r, undefined, getAdminDisplayPreferences()), `${r.number}.pdf`, `${import.meta.env.BASE_URL}images/evexia-logo.png`); }
     catch (cause) { setActionError(cause.message || 'Could not download this receipt.'); }
     finally { setBusy(''); }
   }

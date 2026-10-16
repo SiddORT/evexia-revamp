@@ -4,6 +4,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import { ClipboardList, Eye, Pencil, Plus, Printer, Search, ChevronDown } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import ImmPrintDialog, { PRINT_KINDS } from '../../components/immunotherapy/ImmPrintDialog.jsx';
@@ -16,6 +17,7 @@ export const StatusPill = ({ status }) => <span className={`imm-status imm-statu
 const nameOf = (list, id) => list.find((x) => x.id === id)?.name || 'Not recorded';
 
 export default function ImmunotherapyOrders() {
+  const { date } = useAdminDateFormatters();
   const snap = useSyncExternalStore(demoStore.subscribe, demoStore.getSnapshot, demoStore.getSnapshot);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('All');
@@ -51,7 +53,7 @@ export default function ImmunotherapyOrders() {
   const columns = [
     { key: 'sel', label: <input type="checkbox" className="imm-check" aria-label="Select eligible In process orders on this page" checked={allPage} disabled={!pageEligible.length} onChange={togglePage} data-testid="check-imm-page" />, render: (o) => <input type="checkbox" className="imm-check" aria-label={eligible(o) ? `Select ${o.number}` : `${o.number} is ${o.status}; only In process orders can be printed`} checked={selected.has(o.id)} disabled={!eligible(o)} onChange={() => toggle(o.id)} data-testid={`check-imm-${o.id}`} /> },
     { key: 'serial', label: 'Sr No.', render: (_o, index) => <span className="imm-num">{index + 1}</span> },
-    { key: 'number', label: 'Order', render: (o) => <><strong>{o.number}</strong><span className="imm-cell-sub">{o.date}</span></> },
+    { key: 'number', label: 'Order', render: (o) => <><strong>{o.number}</strong><span className="imm-cell-sub">{date(o.date)}</span></> },
     { key: 'patient', label: 'Patient', render: (o) => { const p = snap.patients.find((x) => x.id === o.patientId); return <><strong>{p?.name || 'Unknown'}</strong><span className="imm-cell-sub">{p?.phone}</span></>; } },
     { key: 'dm', label: 'Doctor / MR', render: (o) => <>{nameOf(DOCTORS, o.doctorId)}<span className="imm-cell-sub">{nameOf(MRS, o.mrId)}</span></> },
     { key: 'dosage', label: 'Dosage', render: (o) => o.dosage },

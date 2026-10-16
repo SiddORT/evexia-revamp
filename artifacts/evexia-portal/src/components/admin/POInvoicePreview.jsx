@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Download, X } from 'lucide-react';
 import POInvoiceDocument from './POInvoiceDocument.jsx';
+import useDocumentPresentation from '../../hooks/useDocumentPresentation.js';
 import { PO_TEMPLATES } from '../../services/poInvoiceTemplates.js';
 import { downloadInvoiceDocument } from '../../services/poInvoicePdf.js';
 import '../../poInvoice.css';
 
-export default function POInvoicePreview({ document, onClose }) {
+export default function POInvoicePreview({ document: sourceDocument, onClose }) {
+  const document = useDocumentPresentation(sourceDocument, 'po');
   const dialogRef = useRef(null);
   const openerRef = useRef(null);
   const [busy, setBusy] = useState(false);

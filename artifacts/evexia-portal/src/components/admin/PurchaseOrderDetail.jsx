@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import AdminLayout from './AdminLayout.jsx';
+import { useAdminDateFormatters } from './adminPreferences.js';
 import { Editor, LineTable } from '../../pages/admin/PurchaseOrderFormPage.jsx';
 import {
   clearOrderMutation, deletePurchaseOrder, describeError, formatPaise, getPurchaseOrder, isPermissionError,
@@ -10,6 +11,7 @@ import {
 const BASE = '/admin/inventory/purchase-orders';
 
 export default function PurchaseOrderDetail({ id }) {
+  const { date, timestamp } = useAdminDateFormatters();
   const [, navigate] = useLocation();
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');
@@ -99,9 +101,9 @@ export default function PurchaseOrderDetail({ id }) {
           <p><strong>Status: {order.status}</strong> · Version {order.version}</p>
           <dl className="po-detail-grid">
             <div><dt>Vendor</dt><dd>{order.vendorName}</dd></div><div><dt>Storage location</dt><dd>{order.locationName}</dd></div>
-            <div><dt>PO date</dt><dd>{order.poDate}</dd></div><div><dt>Expected delivery</dt><dd>{order.expectedDate}</dd></div>
-            <div><dt>Created</dt><dd>{new Date(order.createdAt).toLocaleString()}</dd></div><div><dt>Last updated</dt><dd>{new Date(order.updatedAt).toLocaleString()}</dd></div>
-            {order.deletedAt && <div><dt>Deleted</dt><dd>{new Date(order.deletedAt).toLocaleString()}</dd></div>}
+            <div><dt>PO date</dt><dd>{date(order.poDate)}</dd></div><div><dt>Expected delivery</dt><dd>{date(order.expectedDate)}</dd></div>
+            <div><dt>Created</dt><dd>{timestamp(order.createdAt, true)}</dd></div><div><dt>Last updated</dt><dd>{timestamp(order.updatedAt, true)}</dd></div>
+            {order.deletedAt && <div><dt>Deleted</dt><dd>{timestamp(order.deletedAt, true)}</dd></div>}
           </dl>
         </div>
         <LineTable lines={order.lines} figures={order} />

@@ -1,3 +1,4 @@
+import { formatCalendarDate } from './datePresentation.js';
 // Standalone, read-only UI fixtures. Never derive quantities from procurement or masters.
 export const STOCK_DEMO_DISCLAIMER = 'Stock and histories are sample UI data, not server-backed or connected to PO/PR or Move stocks quantities. Purchases and sample sales/customer orders do not calculate available inventory.';
 
@@ -13,7 +14,7 @@ export function snapshotScope(year, now = new Date()) {
     : { asOf: financialYearRange(year).to, label: 'Demo year-end snapshot' };
 }
 export const formatStockPrice = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value);
-export const displayStockDate = (date) => new Date(`${date}T00:00:00Z`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
+export const displayStockDate = formatCalendarDate;
 
 function freeze(value) {
   if (value && typeof value === 'object') {

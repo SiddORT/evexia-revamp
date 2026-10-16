@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { renderPRReceiptPages } from './prReceiptRender.js';
+import { DATE_FORMATS, formatCalendarDate } from './datePresentation.js';
 
 function line(index = 1, overrides = {}) {
   return {
@@ -51,6 +52,20 @@ function textContent(svg) {
 function textOnPages(pages) {
   return pages.map(textContent).join(' ');
 }
+
+test('all PR layouts format receipt, PO and expiry dates from one explicit snapshot without mutating saved data', () => {
+  const saved = model();
+  const original = structuredClone(saved);
+  for (const template of ['classic', 'modern', 'compact']) for (const dateFormat of Object.keys(DATE_FORMATS)) {
+    const p = { dateFormat, timeZone: 'America/Los_Angeles', clock: '24' };
+    const text = textOnPages(renderPRReceiptPages(saved, template, p));
+    for (const value of [saved.receivedDate, saved.poDate, saved.lines[0].expiryDate]) {
+      assert.ok(text.includes(formatCalendarDate(value, p)), `${template}: ${dateFormat}: ${value}`);
+    }
+    assert.ok(text.includes('4.125'));
+    assert.deepEqual(saved, original);
+  }
+});
 
 function occurrences(text, value) {
   return text.split(value).length - 1;
@@ -157,7 +172,7 @@ test('renders the Classic reference header, saved receipt metadata, seven quanti
     'Source',
     'Line ID',
     'BATCH-1',
-    '2027-08-31',
+    '31 Aug 2027',
     'LOCAL DEMO · NOT A STOCK-LEDGER ENTRY',
     'Certified that the particulars given above are true and correct.',
     'UNSIGNED · SIGNATURE PLACEHOLDER',

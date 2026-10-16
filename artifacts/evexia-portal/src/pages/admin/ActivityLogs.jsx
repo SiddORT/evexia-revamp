@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import { Activity, ChevronLeft, ChevronRight, Download, Filter, RefreshCw, Search, ShieldAlert } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import TableSkeleton, { TableLoadingStatus } from '../../components/admin/TableSkeleton.jsx';
@@ -62,11 +63,6 @@ const resourceNames = {
 const PAGE = 25;
 const USER_PAGE = 8;
 const DAY = 86400000;
-const fmt = (v) => {
-  if (!v) return '—';
-  const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? '—' : `${d.toISOString().slice(0, 19).replace('T', ' ')} UTC`;
-};
 const dash = (v) => (v === null || v === undefined || v === '' ? '—' : String(v));
 const who = (u) => (u && typeof u === 'object' && u.label ? u.label : 'Unknown/System');
 const errInfo = (e) => (e?.name === 'AbortError' ? null : { denied: [401, 403].includes(e?.status), message: [401, 403].includes(e?.status) ? 'Access to activity reporting was denied for this session.' : 'Activity data could not be loaded. Check your connection and retry.' });
@@ -216,6 +212,8 @@ function State({ r, empty, children, cols }) {
 }
 
 export default function ActivityLogs() {
+  const { timestamp } = useAdminDateFormatters();
+  const fmt = (value) => timestamp(value, true);
   const session = useAdminSession();
   const enabled = session.status === 'authenticated';
   const identity = session.user?.id || session.user?.email || '';

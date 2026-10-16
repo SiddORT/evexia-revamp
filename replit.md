@@ -130,6 +130,11 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a mock Docto
 
 ## Where things live
 
+- Date displays must use the shared subscribed browser presentation helpers; pure
+  documents receive an explicit preference snapshot. Keep native input values,
+  APIs, storage and CSV/XLSX canonical. See `artifacts/evexia-portal/DATE_PRESENTATION.md`
+  for the inventory, UTC filter exceptions and date regression commands.
+
 - `artifacts/evexia-portal/src/App.jsx` — routing
 - `artifacts/evexia-portal/src/config/roles.js` — role content
 - `artifacts/evexia-portal/src/components/` — shared portal and auth UI

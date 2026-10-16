@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useAdminPreferences } from './adminPreferences.js';
 import '../../poTemplateSettings.css';
 import { PO_TEMPLATES, loadPOTemplatePreference, setDefaultPOTemplate, resetPOTemplatePreference, subscribePOTemplatePreference, makeSampleInvoiceDocument } from '../../services/poInvoiceTemplates.js';
 import POInvoiceDocument from './POInvoiceDocument.jsx';
@@ -13,9 +14,10 @@ function readDefault(type) {
 }
 
 function Preview({ id, type }) {
+  const preferences = useAdminPreferences();
   const doc = useMemo(() => {
-    try { const d = type === 'pr' ? makeSamplePRDocument(id) : makeSampleInvoiceDocument(id); return { ...d, pages: d.pages.slice(0, 1) }; } catch { return null; }
-  }, [id, type]);
+    try { const d = type === 'pr' ? makeSamplePRDocument(id, preferences) : makeSampleInvoiceDocument(id, preferences); return { ...d, pages: d.pages.slice(0, 1) }; } catch { return null; }
+  }, [id, type, preferences]);
   if (!doc) return <p role="alert">Preview unavailable.</p>;
   return type === 'pr' ? <PRReceiptDocument document={doc} compact /> : <POInvoiceDocument document={doc} compact />;
 }

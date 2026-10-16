@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { renderPOInvoicePages } from './poInvoiceRender.js';
+import { DATE_FORMATS, formatCalendarDate } from './datePresentation.js';
 
 function makeModel(lines = []) {
   return {
@@ -23,6 +24,19 @@ function makeModel(lines = []) {
     isSample: false,
   };
 }
+
+test('every PO layout applies explicit date preferences without changing saved figures or the canonical model', () => {
+  const model = makeModel([]);
+  const original = structuredClone(model);
+  for (const template of ['classic', 'modern', 'compact']) for (const dateFormat of Object.keys(DATE_FORMATS)) {
+    const p = { dateFormat, timeZone: 'America/Los_Angeles', clock: '24' };
+    const svg = renderPOInvoicePages(model, template, p).join('');
+    assert.ok(svg.includes(formatCalendarDate(model.poDate, p)));
+    assert.ok(svg.includes(formatCalendarDate(model.expectedDate, p)));
+    assert.ok(svg.includes('₹1,234.50'));
+    assert.deepEqual(model, original);
+  }
+});
 
 test('renders each supported template as A4 SVG with the same invoice details', () => {
   const line = {

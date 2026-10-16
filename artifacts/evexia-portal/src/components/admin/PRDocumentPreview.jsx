@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { Download, X } from 'lucide-react';
 import { downloadPRDocument } from '../../services/prDocuments.js';
+import useDocumentPresentation from '../../hooks/useDocumentPresentation.js';
+import { formatCalendarDate } from '../../services/datePresentation.js';
 import '../../prDocument.css';
 
 const logoUrl = `${import.meta.env.BASE_URL}images/evexia-logo.png`;
 
-export default function PRDocumentPreview({ document, onClose }) {
+export default function PRDocumentPreview({ document: sourceDocument, onClose }) {
+  const document = useDocumentPresentation(sourceDocument, 'pr');
+  const date = (value) => formatCalendarDate(value, document.presentation);
   const dialogRef = useRef(null);
   const openerRef = useRef(null);
   const [busy, setBusy] = useState(false);
@@ -105,8 +109,8 @@ export default function PRDocumentPreview({ document, onClose }) {
       {error && <div className="admin-feedback admin-feedback--error" role="alert">{error}</div>}
       <section className="pr-document-dialog__accessible" aria-label="Purchase Received details">
         <h3>Purchase Received {document.number}</h3>
-        <p>Received date: {model.receivedDate || 'Not recorded'}. Received by: {model.receivedBy || 'Not recorded'}.</p>
-        <p>Purchase order: {model.poNumber || 'Not recorded'}, dated {model.poDate || 'Not recorded'}. Vendor: {model.vendorName || 'Not recorded'}, phone: {model.vendorPhone || 'Not recorded'}. Destination: {model.locationName || 'Not recorded'}.</p>
+        <p>Received date: {date(model.receivedDate)}. Received by: {model.receivedBy || 'Not recorded'}.</p>
+        <p>Purchase order: {model.poNumber || 'Not recorded'}, dated {date(model.poDate)}. Vendor: {model.vendorName || 'Not recorded'}, phone: {model.vendorPhone || 'Not recorded'}. Destination: {model.locationName || 'Not recorded'}.</p>
         {model.status === 'deleted' && <p>Deleted receipt, for reference only.</p>}
         {model.isSample && <p>Sample document, preview only.</p>}
         <p>Recorded receiver is local demo data, not verified identity. Vendor address: {model.vendorAddress || 'Not recorded'}. GST number: {model.vendorGstNo || 'Not recorded'}.</p>
@@ -123,7 +127,7 @@ export default function PRDocumentPreview({ document, onClose }) {
             <td>{line.balanceAfterQty ?? 'Not recorded'}</td>
             <td>{line.rejectedQty}</td>
             <td>{line.batchNo}</td>
-            <td>{line.expiryDate}</td>
+            <td>{date(line.expiryDate)}</td>
             <td>{line.lineId}</td>
           </tr>)}</tbody>
         </table>

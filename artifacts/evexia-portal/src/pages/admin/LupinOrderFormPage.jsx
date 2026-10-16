@@ -2,6 +2,7 @@ import { useRef, useState, useSyncExternalStore } from 'react';
 import { Link, useLocation } from 'wouter';
 import { ArrowLeft, Paperclip } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import { DOCTORS, MRS, demoStore, money, totalMinor, validateAttachments, validateOrder } from '../../services/lupinOrdersDemo.js';
 import '../../lupinOrders.css';
@@ -23,13 +24,14 @@ export default function LupinOrderFormPage({ id }) {
 }
 
 function Review({ order }) {
+  const { date } = useAdminDateFormatters();
   return <AdminLayout title="LUPIN"><div className="lupin">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Orders / Lupin</p><h1>Order {order.number}</h1><p className="admin-page-head__description">Read-only review of this demo order.</p></div>
       <Link href={BASE} className="admin-button admin-button--secondary" data-testid="link-lupin-back"><ArrowLeft size={15} aria-hidden="true" />Back</Link></div>
     <p className="lupin-notice">Fictional, session-only record. Attachment names are metadata only; nothing was uploaded.</p>
     <section className="admin-panel lupin-section" aria-labelledby="lupin-h-sum"><h2 id="lupin-h-sum">Summary</h2>
       <dl className="lupin-facts">
-        <div><dt>Date</dt><dd>{order.date}</dd></div><div><dt>Doctor</dt><dd>{order.doctorName}</dd></div><div><dt>MR</dt><dd>{order.mrName}</dd></div>
+        <div><dt>Date</dt><dd>{date(order.date)}</dd></div><div><dt>Doctor</dt><dd>{order.doctorName}</dd></div><div><dt>MR</dt><dd>{order.mrName}</dd></div>
         <div><dt>No. of Patients</dt><dd>{order.patientCount}</dd></div><div><dt>Price (per Test)</dt><dd>{money(totalMinor('1', order.price))}</dd></div>
         <div><dt>Total Amount</dt><dd data-testid="text-lupin-review-total">{money(totalMinor(order.patientCount, order.price))}</dd></div>
         <div><dt>Order status</dt><dd>{order.status}</dd></div><div><dt>Payment status</dt><dd>{order.paymentStatus}</dd></div></dl>

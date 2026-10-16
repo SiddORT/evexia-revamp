@@ -2,6 +2,7 @@ import { useMemo, useState, useSyncExternalStore } from 'react';
 import { Link } from 'wouter';
 import { ClipboardList, Plus, Search } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import { demoStore, money, totalMinor } from '../../services/sptOrdersDemo.js';
 import '../../sptOrders.css';
@@ -9,6 +10,7 @@ import '../../sptOrders.css';
 const BASE = '/admin/orders/spt';
 
 export default function SptOrders() {
+  const { date } = useAdminDateFormatters();
   const snap = useSyncExternalStore(demoStore.subscribe, demoStore.getSnapshot, demoStore.getSnapshot);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('All');
@@ -21,7 +23,7 @@ export default function SptOrders() {
 
   const columns = [
     { key: 'number', label: 'Order no.', render: (o) => <strong>{o.number}</strong> },
-    { key: 'date', label: 'Date', render: (o) => o.date },
+    { key: 'date', label: 'Date', render: (o) => date(o.date) },
     { key: 'doctor', label: 'Doctor', render: (o) => o.doctorName || 'Not chosen' },
     { key: 'mr', label: 'MR', render: (o) => o.mrName || 'Not chosen' },
     { key: 'count', label: 'Patients', render: (o) => o.patients.length },

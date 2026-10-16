@@ -1,3 +1,4 @@
+import { formatCalendarDate } from './datePresentation.js';
 const PAGE_WIDTH = 794;
 const PAGE_HEIGHT = 1123;
 const MARGIN = 44;
@@ -1046,11 +1047,14 @@ function renderPage(model, page, pageIndex, pageCount, hasLegacyBalance, theme, 
  * Render a saved Purchase Received model into reference-style Classic A4 SVG pages.
  * No prices, tax figures, product-master lookups, or unsaved values are introduced.
  */
-export function renderPRReceiptPages(model, templateId = 'classic') {
+export function renderPRReceiptPages(model, templateId = 'classic', preferences) {
   if (!Object.hasOwn(THEMES, templateId)) {
     throw new Error(`Unsupported Purchase Received template: ${String(templateId)}`);
   }
   const normalized = normalizeModel(model);
+  normalized.poDate = formatCalendarDate(model.poDate, preferences);
+  normalized.receivedDate = formatCalendarDate(model.receivedDate, preferences);
+  normalized.lines.forEach((line, index) => { line.expiryDate = formatCalendarDate(model.lines[index].expiryDate, preferences); });
   const layout = prepareLayout(normalized, THEMES[templateId]);
   const legacyBalance = normalized.lines.some((line) => line.balanceAfterQty === null);
   const units = [

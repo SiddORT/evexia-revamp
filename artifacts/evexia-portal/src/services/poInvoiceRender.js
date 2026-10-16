@@ -1,3 +1,4 @@
+import { formatCalendarDate } from './datePresentation.js';
 const PAGE_WIDTH = 794;
 const PAGE_HEIGHT = 1123;
 const EM_DASH = '—';
@@ -551,7 +552,7 @@ function svgPage(layout, model, rows, pageIndex, pageCount, isLast) {
  * Render a purchase order as one or more self-contained A4 SVG pages.
  * The logo href is deliberately left as __EVEXIA_LOGO__ for the caller to replace.
  */
-export function renderPOInvoicePages(model, templateId = 'classic') {
+export function renderPOInvoicePages(model, templateId = 'classic', preferences) {
   if (!Object.hasOwn(TEMPLATES, templateId)) {
     throw new Error(`Unsupported purchase order invoice template: ${String(templateId)}`);
   }
@@ -562,6 +563,7 @@ export function renderPOInvoicePages(model, templateId = 'classic') {
     throw new Error('Purchase order invoice lines must be an array.');
   }
 
+  model = { ...model, poDate: formatCalendarDate(model.poDate, preferences), expectedDate: formatCalendarDate(model.expectedDate, preferences) };
   const template = TEMPLATES[templateId];
   const layout = prepareLayout(model, template);
   layout.templateId = templateId;

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, ClipboardList, Plus, X } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import PurchaseOrderReferenceSelect from '../../components/admin/PurchaseOrderReferenceSelect.jsx';
 import { interceptNavigation, setNavigationGuard } from '../../auth/navigationGuard.js';
 import {
@@ -15,7 +16,6 @@ import '../../purchaseOrders.css';
 const BASE = '/admin/inventory/purchase-orders';
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const blankLine = () => ({ key: Math.random().toString(36).slice(2), product: null, quantity: '1' });
-const displayDate = (date) => date ? new Date(`${date}T00:00:00Z`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '—';
 const toInput = (values) => ({
   poDate: values.poDate, expectedDate: values.expectedDate, vendorId: values.vendor?.id || '', locationId: values.location?.id || '',
   lines: values.lines.map((line) => ({ productId: line.product?.id || '', quantity: String(line.quantity).trim() })),
@@ -69,6 +69,7 @@ const fromSaved = (order) => ({
 });
 
 export function Editor({ order, onCancel, onSaved, onReload }) {
+  const { date: displayDate } = useAdminDateFormatters();
   const editing = Boolean(order);
   const [loaded] = useState(() => editing ? loadOrderMutation(order.id) : loadPending());
   const restored = loaded.status === 'found' ? loaded.pending : null;

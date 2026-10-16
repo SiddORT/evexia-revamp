@@ -1,6 +1,7 @@
 import { recordLocalAction } from './localActivity.js';
 import { calculateLine, totals, validPODate } from './purchaseOrders.js';
 import { renderPOInvoicePages } from './poInvoiceRender.js';
+import { displayPreferences } from './datePresentation.js';
 
 export const PO_TEMPLATE_KEY = 'evexia.admin.document-templates.v1';
 export const PO_TEMPLATES = [
@@ -64,16 +65,17 @@ export function subscribePOTemplatePreference(onChange) {
   window.addEventListener('storage', refresh);
   return () => window.removeEventListener('storage', refresh);
 }
-function documentFromModel(model, templateId) {
+function documentFromModel(model, templateId, preferences) {
   checkTemplate(templateId);
   const figures = totals(model.lines);
   if (!figures || ['subtotal', 'gstAmount', 'total'].some((field) => figures[field] !== model[field]) ||
     !validPODate(model.poDate) || !validPODate(model.expectedDate)) {
     throw new Error('This order contains invalid invoice figures or dates. Refresh purchase orders and try again.');
   }
-  return { templateId, number: model.number, model, pages: renderPOInvoicePages(model, templateId) };
+  const presentation = displayPreferences(preferences);
+  return { templateId, number: model.number, model, presentation, pages: renderPOInvoicePages(model, templateId, presentation) };
 }
-export function makePOInvoiceDocument(order, refs, templateId = loadPOTemplatePreference()) {
+export function makePOInvoiceDocument(order, refs, templateId = loadPOTemplatePreference(), preferences) {
   const vendor = refs.vendors.find((item) => item.id === order.vendorId);
   return documentFromModel({
     company, number: order.number, poDate: order.poDate, expectedDate: order.expectedDate,
@@ -83,9 +85,9 @@ export function makePOInvoiceDocument(order, refs, templateId = loadPOTemplatePr
       ...line, hsnCode: refs.products.find((product) => product.id === line.productId)?.hsnCode || '',
     })),
     subtotal: order.subtotal, gstAmount: order.gstAmount, total: order.total,
-  }, templateId);
+  }, templateId, preferences);
 }
-export function makeSampleInvoiceDocument(templateId) {
+export function makeSampleInvoiceDocument(templateId, preferences) {
   const lines = [
     { productName: 'Sample Diagnostic Reagent', hsnCode: '3822', quantity: 24, unitPrice: 425, gst: 12 },
     { productName: 'Sample Lab Buffer', hsnCode: '3822', quantity: 12, unitPrice: 115.5, gst: 18 },
@@ -95,5 +97,5 @@ export function makeSampleInvoiceDocument(templateId) {
     locationName: 'Sample Main Warehouse', status: 'open', isSample: true,
     vendor: { name: 'Sample North Supply', address: 'Demo address, North District', gstNo: '27AAAAA0000A1Z5' },
     lines, ...totals(lines),
-  }, templateId);
+  }, templateId, preferences);
 }
