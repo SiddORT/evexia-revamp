@@ -5,6 +5,7 @@ import { firefox, webkit } from '@playwright/test';
 import { existsSync, openSync, readSync, closeSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
+import { resolveNixSystemDependencies } from './nix-browser-runtime.mjs';
 
 const source = process.env.EVEXIA_NIX_BROWSER_LIBRARY_SOURCE;
 const loader = process.env.EVEXIA_NIX_BROWSER_LOADER;
@@ -27,8 +28,19 @@ const engineDir = (prefix) => {
   if (!name) throw new Error(`Nix library source has no ${prefix} bundle.`);
   return join(source, name);
 };
-const oldFirefox = join(engineDir('firefox'), 'firefox');
-const oldWebkit = join(engineDir('webkit'), 'minibrowser-wpe');
+// Declared Nix packages survive environment rebuilds without a copied browser
+// bundle's immutable store path. They supply libraries, NEVER test executables.
+const systemPackages = source === 'system-packages';
+const dependencies = systemPackages ? resolveNixSystemDependencies(process.env.PATH) : null;
+const firefoxLibrary = dependencies
+  ? dependencies.firefoxLibrary
+  : join(engineDir('firefox'), 'firefox/libxul.so');
+const webkitLibrary = dependencies
+  ? dependencies.webkitLibrary
+  : join(engineDir('webkit'), 'minibrowser-wpe/lib/libWPEWebKit-2.0.so.1');
+for (const file of [firefoxLibrary, webkitLibrary]) {
+  if (!existsSync(file)) throw new Error(`Missing Nix browser dependency library: ${file}`);
+}
 const libraries = new Set();
 const add = (paths) => paths.forEach((path) => {
   // Never load an old browser's private code or mix libc with another loader.
@@ -36,8 +48,8 @@ const add = (paths) => paths.forEach((path) => {
 });
 // The preinstalled Nix bundle supplies system dependency paths only. Its
 // Firefox/WebKit executables are protocol-incompatible with current Playwright.
-add(rpath(join(oldFirefox, 'libxul.so')));
-add(rpath(join(oldWebkit, 'lib/libWPEWebKit-2.0.so.1')));
+add(rpath(firefoxLibrary));
+add(rpath(webkitLibrary));
 for (const name of ['icuinfo', 'avifdec']) {
   const executable = process.env.PATH.split(':').map((path) => join(path, name)).find(existsSync);
   if (!executable) throw new Error(`Missing Nix browser dependency: ${name}. Install icu74 and libavif.`);
@@ -63,12 +75,16 @@ function adaptProcesses(path) {
   }
 }
 adaptProcesses(webkitRoot);
+if (systemPackages) adaptProcesses(dirname(firefoxExe));
 const wpe = join(webkitRoot, 'minibrowser-wpe');
 const manifest = {
   firefox: {
     executablePath: firefoxExe,
-    // Raw Firefox works with its stock loader and these older Nix GTK libs.
-    env: { LD_LIBRARY_PATH: [dirname(firefoxExe), ...rpath(join(oldFirefox, 'libxul.so')).filter((p) => p && !p.includes('playwright'))].join(':') },
+    // Keep bundled Firefox/NSS code untouched. Modern Nix system libraries use
+    // the same explicitly selected loader/libc as WebKit.
+    env: { LD_LIBRARY_PATH: systemPackages
+      ? [dirname(firefoxExe), ...libraries, dirname(loader)].join(':')
+      : [dirname(firefoxExe), ...rpath(firefoxLibrary).filter((p) => p && !p.includes('playwright'))].join(':') },
   },
   webkit: {
     executablePath: join(wpe, 'bin/MiniBrowser'),
@@ -77,6 +93,12 @@ const manifest = {
       WEBKIT_EXEC_PATH: join(wpe, 'bin'),
       WEBKIT_INJECTED_BUNDLE_PATH: join(wpe, 'lib'),
       WEBKIT_INSPECTOR_RESOURCES_PATH: join(wpe, 'share'),
+      ...(dependencies ? {
+        // Headless Replit has no GPU/display vendor discovery. Use Mesa's real
+        // software EGL implementation; do not disable page rendering checks.
+        __EGL_VENDOR_LIBRARY_FILENAMES: dependencies.mesaVendor,
+        LIBGL_ALWAYS_SOFTWARE: '1',
+      } : {}),
     },
   },
 };

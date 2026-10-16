@@ -19,11 +19,13 @@ deployment, push, real email delivery or production approval occurred.
 | Targeted browser commands below | 10 passed: Communication 1, recovery 4, development gate 2, dates 3 |
 | `pnpm run typecheck` | Passed |
 | `pnpm --filter @workspace/evexia-portal run build` | Passed; existing large-chunk advisory |
-| `pnpm run validate:release` | **Not green:** 792 backend tests and 282 Node tests passed before browser setup failed |
+| Initial `pnpm run validate:release` | **Not green:** 792 backend tests and 282 Node tests passed before browser setup failed |
+| `pnpm run validate:release` after runtime restoration | **Not green:** 792 backend and 282 Node tests passed; Chromium 196 passed, 13 failed; exit 1 before later engine matrices |
+| `node --test scripts/test-nix-browser-runtime.mjs` | 8 passed |
 | Shell syntax and `git diff --check` | Passed |
 | Workflow YAML | Parsed using installed `yaml@2.9.0`; concurrency and main trigger retained |
 
-Full release failure: `scripts/prepare-nix-download-browsers.mjs` cannot read
+Initial release failure: `scripts/prepare-nix-download-browsers.mjs` cannot read
 the configured Nix Firefox/WebKit dependency source
 `/nix/store/q70d15vcgipibv45yxp44hdjfhdmdmg5-playwright-browsers`.
 The available replacement Nix bundle contains only Chromium. Downloaded
@@ -33,6 +35,50 @@ engine omission or weakened gate was used to declare success.
 
 The full browser matrix and whole release gate remain required before release
 approval. Passing fresh-install tests is not approval to initialize any VPS.
+
+## Follow-up: runtime restored; browser assertions still block release
+
+Declared development Nix dependencies now include `firefox`, `webkitgtk_4_1`,
+`libjpeg8` and `mesa`. The `system-packages` adapter discovers their system
+library paths through PATH instead of requiring the vanished copied bundle.
+It still launches the CURRENT downloaded Playwright Firefox/WebKit engines,
+not the installed Nix browser executables. Bundled browser libraries/NSS remain
+untouched; only cached ELF process interpreters are adapted to the selected
+loader. WebKit explicitly uses Mesa's software EGL vendor for headless rendering.
+
+Firefox 155.0 and WebKit 26.6 both passed launch, page creation and DOM-content
+checks using the exact current-driver engine locations. Eight dependency tests
+cover missing executables/libraries/Mesa, empty PATH and rebuilt store hashes.
+
+The complete command was rerun:
+
+```sh
+node --test scripts/test-nix-browser-runtime.mjs
+node scripts/prepare-nix-download-browsers.mjs
+pnpm run validate:release
+```
+
+The gate passed all 792 backend tests and 282 Node tests, then ran all 209
+Chromium cases: 196 passed and 13 failed. These are browser assertions, not the
+previous missing-runtime error:
+
+| Spec | Failures | Observed assertion |
+| --- | ---: | --- |
+| `allergens-backend.preview.spec.mjs` | 2 | Filter summary not focused |
+| `order-entry-layout.preview.spec.mjs` | 1 | Selected-patients row not found before timeout |
+| `role-urls.preview.spec.mjs` | 2 | Doctor login title / mapped MR account not found |
+| `roles-permissions.preview.spec.mjs` | 1 | Next-role control not found |
+| `spt-orders.preview.spec.mjs` | 1 | Selected-patients region not found |
+| `staff-backend.preview.spec.mjs` | 3 | Native select/ambiguous phone-country locator against searchable controls |
+| `vendors-backend.preview.spec.mjs` | 3 | Native option/value expectations against searchable country combobox |
+
+Full output: `/tmp/evexia-release-runtime-restored.log`.
+Browser failure contexts: `test-results/evexia-auth-preview.jxaOpS/`.
+The normal fail-fast exit prevented subsequent engine matrices and trailing
+recovery/development/date stages in this invocation; they are not claimed passed.
+The remaining browser assertions were not changed as part of dependency repair.
+No CI matrix, test stage, application security or operator approval was removed.
+The complete gate must still pass before release approval.
 
 ## Commands
 

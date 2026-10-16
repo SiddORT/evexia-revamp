@@ -36,3 +36,17 @@ passed, but the broader gate could not prepare its required other engines.
 **How to apply:** Check path existence and engine subdirectories before starting
 the long gate. Keep this setup failure distinct from application assertions;
 never skip required engines silently or claim full release evidence.
+
+Prefer declared system-library packages to a copied browser-bundle store hash.
+Keep the current downloaded engines and bundled libraries separate from those
+system dependency sources.
+
+**Why:** The retired bundle could be replaced with declared Nix library
+closures, but current GTK dependencies also required a matching modern process
+loader/libc. WebKit launched yet crashed on page creation until Mesa's software
+EGL vendor was explicitly available in the headless environment.
+
+**How to apply:** Check page creation after resolving system libraries; use
+per-engine launch environments and a consistent loader/libc. Never repair ABI
+errors with fake soname symlinks, older engine substitutions, or rewritten
+bundled Firefox/NSS libraries.

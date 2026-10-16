@@ -41,12 +41,12 @@ timeoutMs = 180000
 
 [nix]
 channel = "stable-25_05"
-packages = ["cacert", "cargo", "enchant", "freetype", "hyphen", "icu74", "lcms2", "libavif", "libiconv", "libimagequant", "libjpeg", "libmanette", "libsecret", "libtiff", "libwebp", "libxcrypt", "nano", "openjpeg", "openssl", "patchelf", "pkg-config", "postgresql", "rustc", "tcl", "tk", "zlib", "nginx"]
+packages = ["cacert", "cargo", "enchant", "freetype", "hyphen", "icu74", "lcms2", "libavif", "libiconv", "libimagequant", "libjpeg", "libmanette", "libsecret", "libtiff", "libwebp", "libxcrypt", "nano", "openjpeg", "openssl", "patchelf", "pkg-config", "postgresql", "rustc", "tcl", "tk", "zlib", "nginx", "firefox", "webkitgtk_4_1", "libjpeg8", "mesa"]
 
 [userenv]
 
 [userenv.development]
-EVEXIA_NIX_BROWSER_LIBRARY_SOURCE = "/nix/store/q70d15vcgipibv45yxp44hdjfhdmdmg5-playwright-browsers"
+EVEXIA_NIX_BROWSER_LIBRARY_SOURCE = "system-packages"
 EVEXIA_NIX_BROWSER_LOADER = "/repl/tools/qqiqd3ah10x8hzsif4j1y4xc1miw23nx-glibc-2.42-67/lib/ld-linux-x86-64.so.2"
 EVEXIA_NIX_DOWNLOAD_ENGINES = "1"
 CORS_ORIGINS = "https://9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0-00-4nbv234okadk.sisko.replit.dev,https://9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0-00-4nbv234okadk-jkv3ezgh.sisko.replit.dev"
