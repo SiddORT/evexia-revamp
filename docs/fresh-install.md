@@ -27,10 +27,12 @@ fails readiness. Do not delete/recreate the database or PostgreSQL volume.
 The candidate manifest binds all 44 migrations, current policy/schema/readiness
 sources, the dedicated Communication crypto implementation, and installer
 changes. Its status still requires human release approval of its exact SHA256.
-**No release or regression checks were run for this correction**, as requested.
-Historical results below are not verification of this candidate. Run the
-isolated fresh-install, deployment-policy and coordinated release checks before
-release approval/promotion; do not treat the new hashes as evidence they passed.
+No release or regression checks were run during the initial source correction.
+The subsequent [verification report](release-0039-verification.md) records
+passing fresh-install/operator regressions and the full release gate's browser
+runtime blocker. Historical results below are not current candidate evidence.
+Complete the remaining coordinated gate before release approval/promotion;
+do not treat the new hashes as evidence it passed.
 
 The `0039` catalog uses a strict additive projection: every new PostgreSQL 17
 catalog row is frozen explicitly. After removing those **exact** rows, the

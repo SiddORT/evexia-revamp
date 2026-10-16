@@ -102,10 +102,8 @@ test('staff recovery: real request, constructed delivery, reset and revoked cred
     await page.goto(`${base()}/admin/login`);
     await expect(page.getByTestId('text-super-admin-recovery')).toHaveCount(0);
     await page.getByRole('button', { name: 'Forgot password?' }).click();
-    await expect(page).toHaveURL(`${base()}/admin/login`);
-    await expect(page.getByTestId('text-super-admin-recovery')).toHaveText(
-      'Super Admin: Contact the tech team to reset your password.');
-    await page.getByRole('link', { name: 'Staff password recovery', exact: true }).click();
+    await expect(page).toHaveURL(`${base()}/forgot-password?portal=admin`);
+    await expect(page.getByTestId('text-super-admin-recovery')).toHaveCount(0);
     await expect(page.getByLabel('Email or User ID')).toBeVisible();
     await presentation(page);
     // Request can be submitted from the keyboard; hold response to prove loading.
@@ -163,14 +161,21 @@ test('staff recovery: real request, constructed delivery, reset and revoked cred
   } finally { await api.dispose(); }
 });
 
-test('Admin recovery submits every identifier and shows the generic response', async ({ page }) => {
+test('Admin recovery explains protected Super Admin recovery and keeps staff responses generic', async ({ page }) => {
   const submitted = [];
   const message = 'If this account is eligible, recovery instructions will be sent.';
   await page.route('**/api/v1/auth/forgot-password', async route => {
     submitted.push(route.request().postDataJSON().identifier);
     await route.fulfill({ status: 202, json: { message } });
   });
-  for (const identifier of ['crm-admin@allergyevexia.in', 'synthetic-staff@example.test']) {
+  await page.goto(`${base()}/forgot-password?portal=admin`);
+  await expect(page.getByTestId('text-super-admin-recovery')).toHaveCount(0);
+  await page.getByLabel('Email or User ID').fill('crm-admin@allergyevexia.in');
+  await expect(page.getByTestId('text-super-admin-recovery')).toHaveText(
+    'Super Admin: Contact the tech team to reset your password.');
+  await page.getByRole('button', { name: 'Send recovery link', exact: true }).click();
+  expect(submitted).toHaveLength(0);
+  for (const identifier of ['synthetic-staff@example.test', 'unknown@example.test']) {
     await page.goto(`${base()}/forgot-password?portal=admin`);
     await page.getByLabel('Email or User ID').fill(identifier);
     await page.getByRole('button', { name: 'Send recovery link', exact: true }).click();

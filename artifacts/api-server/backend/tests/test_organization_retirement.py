@@ -153,8 +153,12 @@ def test_fresh_upgrade_downgrade_reupgrade_and_head_schema(retired_db, tmp_path)
         assert not set(retirement.TABLES) & set(inspector.get_table_names())
         for table in ("refresh_sessions", "audit_events"):
             assert "organization_id" not in {c["name"] for c in inspector.get_columns(table)}
-        # The pre-existing crypto phase registry is migration-only infrastructure.
-        expected_models = set(Base.metadata.tables) - {"account_crypto_state"}
+        # This recovery boundary is 0034, not the current application head.
+        # Keep its reviewed table inventory and reverse only the explicit
+        # later additive/replacement column changes in the ORM projection.
+        catalog_path = Path(__file__).resolve().parents[4] / "scripts/fresh-install-catalog.json"
+        historical = json.loads(catalog_path.read_text())[RETIREMENT_RELEASE]
+        expected_models = set(historical["tables"]) - {"alembic_version", "directory_crypto_stage"}
         assert set(inspector.get_table_names()) - {"alembic_version", "directory_crypto_stage"} == expected_models
         for name in expected_models:
             columns = set(Base.metadata.tables[name].c.keys())
@@ -162,6 +166,14 @@ def test_fresh_upgrade_downgrade_reupgrade_and_head_schema(retired_db, tmp_path)
                 columns -= {"email_index", "username_index"}
             if name == "account_identifier_reservations":
                 columns = {"identifier", "user_id"}
+            if name == "allergen_products":
+                columns -= {"category_name", "storage_location_name"}
+            if name == "mr_directory":
+                columns -= {"hq_name", "zone_name", "reporting_manager_name_ciphertext"}
+            if name == "vendors":
+                # 0036 replaces these five historical plaintext columns.
+                fields = {"registeredAddress", "contactPersonName", "emailId", "phoneNo", "dialCountry"}
+                columns = (columns - {field + "_ciphertext" for field in fields}) | fields
             assert {c["name"] for c in inspector.get_columns(name)} == columns
     restore_retirement(config)
     with engine.connect() as db:

@@ -12,6 +12,12 @@ test('Communication metadata CRUD, default replacement, and credential boundary'
   const context = await browser.newContext();
   const page = await context.newPage();
   const invalidProviderRequests = [];
+  const responseAudits = [];
+  page.on('response', (response) => {
+    if (/\/api\/v1\/admin\/communication(?:\/|$)/.test(new URL(response.url()).pathname) && response.ok()) {
+      responseAudits.push(response.text());
+    }
+  });
   page.on('request', (request) => {
     try {
       if (new URL(request.url()).hostname.endsWith('.invalid')) invalidProviderRequests.push(request.url());
@@ -40,8 +46,8 @@ test('Communication metadata CRUD, default replacement, and credential boundary'
       await page.getByTestId('input-communication-fromName').fill('Dummy');
       await page.getByTestId('input-communication-fromEmail').fill('sender@example.invalid');
     }
+    await page.getByTestId('input-communication-secret').fill('DUMMY-COMM-CANARY');
     if (withCanary) {
-      await page.getByTestId('input-communication-secret').fill('DUMMY-COMM-CANARY');
       await page.keyboard.press('Enter'); // submit without first blurring the secret field
     } else {
       await page.getByTestId('button-communication-save').click();
@@ -50,36 +56,34 @@ test('Communication metadata CRUD, default replacement, and credential boundary'
   const card = (name) => page.locator('[data-testid^="card-communication-"]').filter({ hasText: name });
 
   await addEmail('smtp', 'Preview SMTP', true);
-  await expect(card('Preview SMTP')).toContainText('No credentials saved.');
-  await card('Preview SMTP').getByRole('button', { name: 'Edit' }).click();
+  await expect(card('Preview SMTP')).toContainText('Credential saved. Connection status not checked.');
+  await card('Preview SMTP').getByRole('button', { name: 'View / edit' }).click();
   await expect(page.getByTestId('input-communication-secret')).toHaveValue('');
   await page.getByTestId('input-communication-name').fill('');
   await page.getByTestId('input-communication-secret').fill('DUMMY-COMM-CANARY');
   await page.keyboard.press('Enter');
-  await expect(page.getByTestId('text-communication-error')).toContainText('Configuration name is required');
+  await expect(page.getByTestId('text-communication-error')).toContainText('Complete required fields');
   await expect(page.getByTestId('input-communication-secret')).toHaveValue('');
   await expect(page.getByTestId('input-communication-host')).toHaveValue('smtp.example.invalid');
   await page.getByTestId('input-communication-secret').fill('DUMMY-COMM-CANARY');
   await page.getByTestId('input-communication-host').focus();
-  await expect(page.getByTestId('input-communication-secret')).toHaveValue('');
+  await expect(page.getByTestId('input-communication-secret')).toHaveValue('DUMMY-COMM-CANARY');
   await page.getByTestId('input-communication-secret').fill('DUMMY-COMM-CANARY');
   await page.getByTestId('button-communication-cancel').click();
-  await card('Preview SMTP').getByRole('button', { name: 'Edit' }).click();
+  await card('Preview SMTP').getByRole('button', { name: 'View / edit' }).click();
   await expect(page.getByTestId('input-communication-secret')).toHaveValue('');
   await page.keyboard.press('Escape');
   const credentialAudit = await page.evaluate(() => {
     const raw = localStorage.getItem('evexia.admin.communication.v1') || '';
-    const record = JSON.parse(raw);
     return {
       canaryAbsent: !raw.includes('DUMMY-COMM-CANARY') &&
         !JSON.stringify(localStorage).includes('DUMMY-COMM-CANARY') &&
         !JSON.stringify(sessionStorage).includes('DUMMY-COMM-CANARY') &&
         !location.href.includes('DUMMY-COMM-CANARY'),
-      noSecretFields: Object.values(record.channels).flatMap((channel) => channel.configurations)
-        .every((config) => !Object.keys(config).some((key) => /secret|token|password|apiKey/i.test(key))),
+      noLocalConfigurations: raw === '',
     };
   });
-  expect(credentialAudit).toEqual({ canaryAbsent: true, noSecretFields: true });
+  expect(credentialAudit).toEqual({ canaryAbsent: true, noLocalConfigurations: true });
 
   await page.getByTestId('button-add-communication').click();
   await page.getByTestId('input-communication-secret').fill('DUMMY-COMM-CANARY');
@@ -89,7 +93,7 @@ test('Communication metadata CRUD, default replacement, and credential boundary'
   await addEmail('api', 'Preview API');
   await addEmail('platform', 'Preview Platform');
   const apiCard = card('Preview API');
-  await apiCard.getByRole('button', { name: 'Make default' }).click();
+  await apiCard.getByRole('button', { name: 'Make default', exact: true }).click();
   await expect(apiCard).toContainText('Default');
   await apiCard.getByRole('button', { name: 'Delete' }).click();
   await page.getByRole('radio', { name: 'Preview SMTP' }).check();
@@ -104,6 +108,7 @@ test('Communication metadata CRUD, default replacement, and credential boundary'
   await page.getByTestId('input-communication-provider').fill('Demo SMS');
   await page.getByTestId('input-communication-senderId').fill('DEMO');
   await page.getByTestId('input-communication-endpoint').fill('https://demo.example.invalid/send');
+  await page.getByTestId('input-communication-secret').fill('DUMMY-COMM-CANARY');
   await page.getByTestId('button-communication-save').click();
   await expect(card('Preview SMS')).toContainText('DEMO');
 
@@ -116,10 +121,11 @@ test('Communication metadata CRUD, default replacement, and credential boundary'
   await page.getByTestId('input-communication-phoneNumberId').fill('654321');
   await page.getByTestId('input-communication-senderPhone').fill('+919876543210');
   await page.getByTestId('input-communication-apiVersion').fill('v23.0');
+  await page.getByTestId('input-communication-secret').fill('DUMMY-COMM-CANARY');
   await page.getByTestId('button-communication-save').click();
   const waba = card('Preview WABA');
-  await expect(waba).toContainText('No credentials saved.');
-  await waba.getByRole('button', { name: 'Edit' }).click();
+  await expect(waba).toContainText('Credential saved. Connection status not checked.');
+  await waba.getByRole('button', { name: 'View / edit' }).click();
   await expect(page.getByTestId('input-communication-businessAccountId')).toHaveValue('123456');
   await expect(page.getByTestId('input-communication-phoneNumberId')).toHaveValue('654321');
   await expect(page.getByTestId('input-communication-apiVersion')).toHaveValue('v23.0');
@@ -132,6 +138,17 @@ test('Communication metadata CRUD, default replacement, and credential boundary'
     document.body.scrollWidth > document.body.clientWidth);
   expect(overflow).toBe(false);
   expect(invalidProviderRequests.length).toBe(0);
+  for (const body of await Promise.all(responseAudits)) {
+    expect(body).not.toContain('DUMMY-COMM-CANARY');
+    const snapshot = JSON.parse(body);
+    for (const channel of Object.values(snapshot.channels)) {
+      for (const config of channel.configurations) {
+        expect(Object.keys(config).sort()).toEqual(
+          ['credentialPresent', 'id', 'type', 'values', 'version']);
+      }
+    }
+  }
+  expect(responseAudits.length).toBeGreaterThan(0);
 
   await context.close();
 });
