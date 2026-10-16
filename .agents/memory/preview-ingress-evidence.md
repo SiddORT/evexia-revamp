@@ -23,6 +23,8 @@ Server-side requests succeeding cannot rule out this browser-only difference.
 
 **Why:** Replit documents development URLs as private and authenticated; omitting
 cookies from a browser probe can reject platform access before it reaches Vite.
+The user confirmed that preserving same-origin credentials restored their
+previously blocked preview; server-side probes alone had not reproduced it.
 
 **How to apply:** Preserve same-origin platform credentials for compatibility
 probes, never cross-origin credentials. Keep redirect rejection, identity
