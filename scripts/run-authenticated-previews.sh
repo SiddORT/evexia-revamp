@@ -243,6 +243,7 @@ else
 fi
 if [ "$#" -eq 0 ]; then
   SPECS="$SPECS artifacts/evexia-portal/tests/doctor-demo.preview.spec.mjs"
+  SPECS="$SPECS artifacts/evexia-portal/tests/role-urls-presentation.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/role-urls.preview.spec.mjs"
    SPECS="$SPECS artifacts/evexia-portal/tests/masters-directory-import.preview.spec.mjs"
   SPECS="$SPECS artifacts/evexia-portal/tests/orders-navigation.preview.spec.mjs"
