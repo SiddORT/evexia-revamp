@@ -49,6 +49,36 @@ def finish_batches(engine, settings):
                 pass
 
 
+def test_paused_rotation_can_finish_across_exact_geography_successor(migration_db):
+    from app.core.config import get_settings
+    from app.services.directory_inventory import RUNTIME_FIELDS
+    from test_migration_zones import prepare
+    engine, config, *_ = prepare(migration_db)
+    command.upgrade(config, "0040_po_tax_basis")
+    # The historical upgrade's temporary runtime login is already gone.
+    # Bind this fixture to a real, independently privilege-checked login.
+    with runtime(engine) as (role, _):
+        with engine.begin() as connection:
+            connection.execute(text("UPDATE directory_crypto_stage SET runtime_role=:role WHERE id=1"),
+                               {"role": role})
+        source = get_settings()
+        destination = target(source)
+        plan = arm(engine, source, destination)
+        assert plan["schema"] == "0040_po_tax_basis" and plan["status"] == "frozen"
+        command.upgrade(config, "0041_location_geography")
+        for table in RUNTIME_FIELDS:
+            with Session(engine) as db:
+                while rotation.batch(db, destination, table=table, limit=1)["remaining"]:
+                    pass
+        with Session(engine) as db:
+            result = rotation.verify(db, destination, finish=True,
+                                     expected_content_digest=plan["content_digest"])
+        assert result["schema"] == "0041_location_geography"
+        assert result["status"] == "committed"
+        with Session(engine) as db:
+            assert db.scalar(text("SELECT phase FROM directory_crypto_stage")) == "encrypted"
+
+
 def logical(data, crypto):
     for table, fields in FIELDS.items():
         for row in data[table]:

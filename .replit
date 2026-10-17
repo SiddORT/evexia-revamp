@@ -20,13 +20,298 @@ author = "agent"
 task = "workflow.run"
 args = "release"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-api-password-recovery"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-api-role-urls"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-api-shared-phone"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-api-staff"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-api-directory-crypto"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-api-allergens"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-api-product-categories"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-api-mrs"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-api-opening-balances"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-api-doctors"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-api-patients"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-api-headquarters"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-api-roles"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-api-vendors"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-api-sales-targets"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-policy-02"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-policy-03"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-coverage"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "release-api-account-crypto"
+
 [[workflows.workflow]]
 name = "release"
 author = "agent"
 
+[workflows.workflow.metadata]
+isValidation = true
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "pnpm run validate:release"
+args = "python3 -B scripts/local-release-checks.py run services"
+
+[[workflows.workflow]]
+name = "release-api-password-recovery"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run api-password-recovery"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-api-role-urls"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run api-role-urls"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-api-shared-phone"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run api-shared-phone"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-api-staff"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run api-staff"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-api-directory-crypto"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run api-directory-crypto"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-api-allergens"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run api-allergens"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-api-product-categories"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run api-product-categories"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-api-mrs"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run api-mrs"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-api-opening-balances"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run api-opening-balances"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-api-doctors"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run api-doctors"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-api-patients"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run api-patients"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-api-headquarters"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run api-headquarters"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-api-roles"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run api-roles"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-api-vendors"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run api-vendors"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-api-sales-targets"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run api-sales-targets"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-policy-02"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run policy-02"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-policy-03"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run policy-03"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow]]
+name = "release-coverage"
+author = "agent"
+
+[workflows.workflow.metadata]
+isValidation = true
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py audit --without-browser"
+
+[[workflows.workflow]]
+name = "release-api-account-crypto"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -B scripts/local-release-checks.py run api-account-crypto"
 
 [workflows.workflow.metadata]
 isValidation = true

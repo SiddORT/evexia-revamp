@@ -5,6 +5,11 @@ set -eu
 [ "${1:-}" != "--" ] || shift
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+. "$ROOT/scripts/release-timing.sh"
+PREVIEW_SETUP_START=
+if [ -n "${EVEXIA_RELEASE_PROFILE:-}" ]; then
+  PREVIEW_SETUP_START=$(python3 -c 'import time; print(time.monotonic())')
+fi
 node --test "$ROOT/scripts/test-auth-preview-bootstrap.mjs"
 if [ "${EVEXIA_ROLES_LAYOUT_ONLY:-}" = "1" ]; then
   if [ "$#" -ne 1 ] || [ "$1" != "artifacts/evexia-portal/tests/roles-permissions.preview.spec.mjs" ]; then
@@ -70,12 +75,6 @@ cleanup() {
 }
 trap cleanup EXIT HUP INT TERM
 
-initdb -D "$PGROOT/data" -A trust --no-locale --encoding=UTF8 >/dev/null
-# No TCP listener: trust authentication is limited to this private test socket.
-pg_ctl -D "$PGROOT/data" -l "$PGROOT/postgres.log" \
-  -o "-k $PGROOT/socket -p 5432 -c listen_addresses=''" start >/dev/null
-createdb -h "$PGROOT/socket" -p 5432 -U "$(id -un)" evexia_auth_preview_test
-
 # Replace any ambient DB/auth settings so this fixture cannot reach a configured database.
 export DATABASE_URL="postgresql+psycopg://$(id -un)@/evexia_auth_preview_test?host=$PGROOT/socket&port=5432"
 export TEST_DATABASE_URL="$DATABASE_URL"
@@ -107,10 +106,24 @@ export EVEXIA_ISOLATED_AUTH_PREVIEW=1
 export EVEXIA_PREVIEW_BASE_URL="http://127.0.0.1:$PORT"
 export EVEXIA_TEST_API_PROXY_TARGET="http://127.0.0.1:$API_PORT"
 
+CACHE=disabled
+if [ -n "${EVEXIA_TEST_CACHE_ROOT:-}" ]; then
+  CACHE=$(timed preview:cache-restore python3 "$ROOT/scripts/test-fixture-cache.py" restore "$PGROOT" evexia_auth_preview_test)
+fi
+if [ "$CACHE" != "hit" ]; then
+  timed preview:initdb initdb -D "$PGROOT/data" -A trust --no-locale --encoding=UTF8 >/dev/null
+fi
+# No TCP listener: trust authentication is limited to this private test socket.
+timed preview:postgres pg_ctl -D "$PGROOT/data" -l "$PGROOT/postgres.log" \
+  -o "-k $PGROOT/socket -p 5432 -c listen_addresses=''" start >/dev/null
+if [ "$CACHE" != "hit" ]; then
+  createdb -h "$PGROOT/socket" -p 5432 -U "$(id -un)" evexia_auth_preview_test
+fi
 cd "$ROOT/artifacts/api-server/backend"
 # Production initialization deliberately requires operator evidence. This is a
 # newly created private test database, not a production/operator invocation.
-python3 -B - "$PGROOT/socket" <<'PY_PREVIEW_INITIALIZE'
+if [ "$CACHE" != "hit" ]; then
+timed preview:migrate python3 -B - "$PGROOT/socket" <<'PY_PREVIEW_INITIALIZE'
 import os
 import sys
 from pathlib import Path
@@ -141,7 +154,11 @@ with create_engine(url, hide_parameters=True).connect() as connection:
 # Exact application revision; no stamp, recovery/approval arguments or bypasses.
 command.upgrade(config, SCHEMA_REVISION)
 PY_PREVIEW_INITIALIZE
-python3 -B -m app.bootstrap
+  if [ "$CACHE" = "miss" ]; then
+    timed preview:cache-save python3 "$ROOT/scripts/test-fixture-cache.py" save "$PGROOT" evexia_auth_preview_test
+  fi
+fi
+timed preview:bootstrap python3 -B -m app.bootstrap
 API_APP=app.main:app
 case "$*" in
 ""|*role-urls.preview.spec.mjs*)
@@ -165,6 +182,16 @@ python3 -m uvicorn "$API_APP" --host 127.0.0.1 --port "$API_PORT" --no-access-lo
   >"$PGROOT/api.log" 2>&1 &
 API_PID=$!
 
+# With the release context, launch independent Vite setup while Uvicorn starts.
+# Baseline mode retains the original serial startup for timing comparisons.
+start_vite() {
+  (cd "$ROOT" && exec env PORT="$PORT" pnpm --filter @workspace/evexia-portal run dev) >"$PGROOT/vite.log" 2>&1 &
+  VITE_PID=$!
+}
+if [ -n "${EVEXIA_TEST_CACHE_ROOT:-}" ] && [ "${EVEXIA_DISABLE_FIXTURE_CACHE:-}" != "1" ]; then
+  start_vite
+fi
+
 ready=0
 for _ in $(seq 1 60); do
   if ! kill -0 "$API_PID" 2>/dev/null; then break; fi
@@ -180,8 +207,7 @@ if [ "$ready" -ne 1 ]; then
 fi
 
 cd "$ROOT"
-PORT="$PORT" pnpm --filter @workspace/evexia-portal run dev >"$PGROOT/vite.log" 2>&1 &
-VITE_PID=$!
+if [ -z "$VITE_PID" ]; then start_vite; fi
 ready=0
 for _ in $(seq 1 60); do
   if ! kill -0 "$VITE_PID" 2>/dev/null; then break; fi
@@ -200,6 +226,10 @@ if ! curl -fsS "$EVEXIA_PREVIEW_BASE_URL/api/healthz" >/dev/null; then
   exit 1
 fi
 node "$ROOT/scripts/check-portal-hostname.mjs" "$EVEXIA_PREVIEW_BASE_URL"
+if [ -n "$PREVIEW_SETUP_START" ]; then
+  python3 "$ROOT/scripts/profile-release-command.py" --output "$EVEXIA_RELEASE_PROFILE" \
+    --label preview:startup --elapsed-since "$PREVIEW_SETUP_START"
+fi
 
 if [ -z "${EVEXIA_CHROMIUM_PATH:-}" ]; then
   EVEXIA_CHROMIUM_PATH=$(command -v chromium || command -v chromium-browser || true)
@@ -314,23 +344,23 @@ for spec in $SPECS; do
   esac
 done
 if [ "$RESPONSIVE" -eq 1 ]; then
-  EVEXIA_RESPONSIVE_RESULT="$RESULTS/responsive-summary.json" pnpm exec playwright test --config=playwright.responsive.config.mjs --workers=1 --output="$RESULTS/portal-responsive"
+  EVEXIA_RESPONSIVE_RESULT="$RESULTS/responsive-summary.json" timed preview:responsive pnpm exec playwright test --config=playwright.responsive.config.mjs --workers=1 --output="$RESULTS/portal-responsive"
 fi
 if [ -n "$OTHER_SPECS" ] && [ "${EVEXIA_ROLES_LAYOUT_ONLY:-}" != "1" ] && [ "${EVEXIA_SALES_TARGET_LAYOUT_ONLY:-}" != "1" ]; then
   # shellcheck disable=SC2086
-  pnpm exec playwright test $OTHER_SPECS --grep-invert='@roles-layout|@sales-target-layout' --workers=1 --output="$RESULTS/chromium-previews"
+  timed preview:chromium pnpm exec playwright test $OTHER_SPECS --grep-invert='@roles-layout|@sales-target-layout' --workers=1 --output="$RESULTS/chromium-previews"
 fi
 if [ "$SALES_TARGET_LAYOUT" -eq 1 ]; then
   echo "Sales Target enlarged-text gate: Chromium, Firefox and WebKit (not native Safari). Missing engines are failures."
-  pnpm exec playwright test --config=playwright.sales-targets.config.mjs --workers=1 --output="$RESULTS/sales-target-matrix"
+  timed preview:sales-target-matrix pnpm exec playwright test --config=playwright.sales-targets.config.mjs --workers=1 --output="$RESULTS/sales-target-matrix"
 fi
 if [ "$ROLE_LAYOUT" -eq 1 ]; then
   echo "Roles and Permissions focused gate: Chromium, Firefox and WebKit (not native Safari). Missing engines are failures."
-  pnpm exec playwright test --config=playwright.roles-permissions.config.mjs --workers=1 --output="$RESULTS/roles-permissions-matrix"
+  timed preview:roles-permissions-matrix pnpm exec playwright test --config=playwright.roles-permissions.config.mjs --workers=1 --output="$RESULTS/roles-permissions-matrix"
 fi
 if [ "$DOWNLOADS" -eq 1 ]; then
   echo "Download gate: Chromium, Firefox and WebKit (Safari engine, not native Safari). Missing engines are failures."
-  pnpm exec playwright test --config=playwright.downloads.config.mjs --workers=1 --output="$RESULTS/download-matrix"
+  timed preview:download-matrix pnpm exec playwright test --config=playwright.downloads.config.mjs --workers=1 --output="$RESULTS/download-matrix"
 fi
 if [ "$PATIENT_LAYOUT" -eq 1 ]; then
   echo "Patient enlarged-text gate: Chromium, Firefox and WebKit (Safari engine, not native Safari). Missing engines are failures."
@@ -339,7 +369,7 @@ if [ "$PATIENT_LAYOUT" -eq 1 ]; then
     # budget separate from the larger Doctor/Patient baseline release suite.
     sh "$ROOT/scripts/run-authenticated-previews.sh" artifacts/evexia-portal/tests/patients-layout.preview.spec.mjs
   else
-    pnpm exec playwright test --config=playwright.patients.config.mjs --workers=1 --output="$RESULTS/patient-layout-matrix"
+    timed preview:patient-layout-matrix pnpm exec playwright test --config=playwright.patients.config.mjs --workers=1 --output="$RESULTS/patient-layout-matrix"
   fi
 fi
 if [ "$ISOLATE_MR" -eq 1 ]; then

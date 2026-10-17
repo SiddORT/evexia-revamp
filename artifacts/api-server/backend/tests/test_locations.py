@@ -1,5 +1,6 @@
 """Synthetic isolated PostgreSQL only; never uses managed data or credentials."""
 import csv
+from collections import OrderedDict
 import io
 import uuid
 import pytest
@@ -208,7 +209,7 @@ def test_location_pin_permissions_match_consuming_action_not_other_master(client
     admin, _, _, record, password = setup(api, db, [f"location.{grant}"])
     lookup = mr_postal.lookup
     calls = []
-    monkeypatch.setattr(mr_postal, "_cache", {})
+    monkeypatch.setattr(mr_postal, "_cache", OrderedDict())
     def provider(pin):
         calls.append(pin)
         return [dict(city="Pune", state="Maharashtra", country="India")]
@@ -234,7 +235,7 @@ def test_location_pin_provider_failure_leaves_saved_geography_unchanged(client, 
     body = dict(name="Retained geography", address="Office", status="active", **PUNE)
     saved = api.post(BASE, headers=headers, json=body).json()
     lookup = mr_postal.lookup
-    monkeypatch.setattr(mr_postal, "_cache", {})
+    monkeypatch.setattr(mr_postal, "_cache", OrderedDict())
     def unavailable(pin):
         raise TimeoutError("Synthetic provider failure")
     monkeypatch.setattr(mr_postal, "lookup", lambda db, actor, pin, **policy:

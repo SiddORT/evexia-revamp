@@ -57,7 +57,14 @@ def main():
         commit = git("rev-parse", "HEAD").decode().strip()
         results = []
         for command in rules["validation_commands"]:
-            code = subprocess.run(command, cwd=ROOT).returncode
+            invocation = command
+            if os.environ.get("EVEXIA_RELEASE_PROFILE"):
+                invocation = [
+                    sys.executable, str(ROOT / "scripts/profile-release-command.py"),
+                    "--output", os.environ["EVEXIA_RELEASE_PROFILE"],
+                    "--label", "release:" + " ".join(command), "--", *command,
+                ]
+            code = subprocess.run(invocation, cwd=ROOT).returncode
             results.append(code)
             if code:
                 print("RELEASE_VALIDATION_FAILED: no automatic authorization issued.")

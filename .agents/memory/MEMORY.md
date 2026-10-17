@@ -78,6 +78,7 @@
 - [Browser fixture failure isolation](browser-fixture-failure-isolation.md) — earlier retry scenarios must not consume failures intended for later paging checks.
 - [Directory encryption scope](directory-encryption-scope.md) — retain approved business identifiers; disclose linked plaintext account metadata and equality-index leakage.
 - [Historical encryption inventories](historical-encryption-inventories.md) — new encrypted fields must not rewrite the field contracts used by historical staging and retirement.
+- [Release fixture reuse](release-fixture-reuse.md) — optimize setup before bootstrap, not account creation, credential budgets or assertions.
 - [Operator prepared plans](operator-schema-prepared-plans.md) — pooled queries can retain predecessor result shapes across schema retirement.
 - [Generated validator literal order](codegen-literal-order.md) — fix generator initialization order without weakening API validation or changing valid contracts.
 - [Operator revision boundaries](operator-revision-boundaries.md) — head changes must preserve compatible paused maintenance without accepting arbitrary future schemas.

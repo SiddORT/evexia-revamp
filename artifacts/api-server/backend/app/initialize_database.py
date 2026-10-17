@@ -84,6 +84,7 @@ def main(argv=None):
     parser.add_argument("--admin-hostname")
     args = parser.parse_args(argv)
     engine = None
+    awaiting_commit_acknowledgement = False
     try:
         if (not args.expected_database or not args.expected_host
                 or not 0 < args.expected_system_identifier < 2**64
@@ -102,6 +103,7 @@ def main(argv=None):
             initialize(connection, settings, database=args.expected_database,
                        cluster=args.expected_system_identifier, host=args.expected_host,
                        port=args.expected_port, hostname=hostname)
+            awaiting_commit_acknowledgement = True
         print(json.dumps({"result": "INITIALIZATION_READY", "schema": fresh.FINAL_TARGET,
                           "super_admin": "created", "transaction": "committed"}))
         return 0
@@ -109,7 +111,12 @@ def main(argv=None):
         print("INITIALIZATION_BLOCKED: " + exception_diagnostic(exc), file=sys.stderr)
         return 1
     except Exception as exc:
-        print("INITIALIZATION_ERROR: " + exception_diagnostic(exc), file=sys.stderr)
+        # A commit/output error can contain private driver context and does not
+        # prove rollback. Preserve bounded pre-commit operator diagnostics, but
+        # never expose details from an uncertain commit acknowledgement.
+        diagnostic = ("commit/output acknowledgement not confirmed; details withheld"
+                      if awaiting_commit_acknowledgement else exception_diagnostic(exc))
+        print("INITIALIZATION_ERROR: " + diagnostic, file=sys.stderr)
         print("INITIALIZATION_FAILED: success was not confirmed; details sanitized. "
               "Failures before commit roll back. If commit/output acknowledgement was lost, "
               "inspect revision/readiness before retry; do not assume rollback.",

@@ -27,6 +27,41 @@ Task completion can create a local implementation commit even when a later
 required validation fails. Commit creation, task acceptance and pushing are
 separate states.
 
+Manual validation runs can also hit a shorter waiting budget: a 600-poll limit
+stopped a long release shell after roughly ten minutes.
+
+**Why:** The initial result reported a polling limit; a subsequent status read
+showed `STOPPED` and the retained shell log ended in `Hangup`. It was not a
+still-running release or a failed product assertion.
+
+**How to apply:** Read the terminal validation status once after a polling-limit
+result. Use bounded required stages or a sufficiently long-lived CI runner for
+the full suite; do not retry an unchanged oversized run or waive its remainder.
+
+The user approved smaller **required local checks**, rather than moving this
+verification to GitHub. Keep the full CI gate and production approvals intact.
+
+**Why:** Independent bounded local checks completed where an oversized
+invocation was interrupted. Per-stage execution receipts must remain evidence,
+not cached substitutes for running checks.
+
+**How to apply:** Run bounded checks individually, preserve all assertions and
+engine projects, and reject receipts after tested code or dependency changes.
+Extra fixture starts can make the local total slower even when schema reuse
+reduces setup; report that distinction rather than claiming a net CI speedup.
+
+Required local checks can be dispatched concurrently and in a different order
+than their displayed list; an execution lock serializes them but does not
+establish a first or last check.
+
+**Why:** A backend check acquired the lock before the service initializer,
+and a final reporting check cannot safely assume all other checks finished.
+
+**How to apply:** Initialize shared empty-schema context once under the lock
+from whichever stage starts first. Keep registration/partition audits independent
+of scheduling; require every execution check separately and assemble current-source
+receipts only after all execution checks have passed.
+
 **Why:** A completion attempt passed code review and recorded the local changes,
 but the broader release command failed and the task remained incomplete.
 

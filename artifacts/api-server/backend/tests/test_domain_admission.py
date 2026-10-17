@@ -362,3 +362,13 @@ def test_current_head_keeps_reviewed_crypto_inventory(client):
     _, db, _ = client
     assert directory_rotation._fields(db) == RUNTIME_FIELDS
     assert "0037_domain_admission" in directory_rotation.SUPPORTED_REVISIONS
+    assert "0041_location_geography" in directory_rotation.SUPPORTED_REVISIONS
+    assert "0042_unreviewed" not in directory_rotation.SUPPORTED_REVISIONS
+    db.rollback()
+    try:
+        directory_rotation._lock(db)
+        assert db.scalar(text("""SELECT EXISTS (
+            SELECT 1 FROM pg_locks WHERE pid=pg_backend_pid()
+            AND relation=to_regclass('vendors') AND mode='ShareLock' AND granted)"""))
+    finally:
+        db.rollback()

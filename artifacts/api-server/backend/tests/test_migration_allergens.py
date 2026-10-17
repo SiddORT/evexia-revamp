@@ -2,6 +2,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier, Event
 from decimal import Decimal
+import uuid
 import pytest
 from alembic import command
 from sqlalchemy import func, select, text
@@ -18,22 +19,20 @@ from test_migration_0006 import migration_db
 from test_migration_zones import prepare, identity
 
 
-def prepare_catalogue(fixture):
-    engine, config, actor_id, sid = prepare(fixture)
-    # Current Allergen writes include the saved reference names introduced here.
-    # Keep the shared historical identity fixture at its reviewed boundary.
-    command.upgrade(config, "0036_reference_privacy")
-    return engine, config, actor_id, sid
-
-
 def setup_refs(engine, actor_id):
     with Session(engine) as db:
         c = ProductCategory(name="Shared category", unit_price=Decimal("0"), status="active",
                             created_by=actor_id, updated_by=actor_id)
-        l = StorageLocation(name="Shared location", address="Lab", status="active",
-                            created_by=actor_id, updated_by=actor_id)
-        db.add_all([c, l]); db.flush()
-        ids = c.id, l.id
+        db.add(c)
+        db.flush()
+        location_id = uuid.uuid4()
+        # This helper also seeds 0021, before optional geography exists.
+        # Use that historical contract, not today's broader ORM INSERT.
+        db.execute(text("""INSERT INTO storage_locations
+            (id,name,address,status,version,created_by,updated_by)
+            VALUES (:id,'Shared location','Lab','active',1,:actor,:actor)"""),
+            {"id": location_id, "actor": actor_id})
+        ids = c.id, location_id
         db.commit()
         return ids
 
@@ -45,9 +44,9 @@ def fields(c, l, name="Reagent"):
 
 def prepare_catalogue(fixture):
     engine, config, actor_id, sid = prepare(fixture)
-    # Current catalogue services require the saved-reference columns. Keep the
+    # These operational tests use today's complete location model. Keep the
     # shared historical identity helper at its explicitly reviewed boundary.
-    command.upgrade(config, "0036_reference_privacy")
+    command.upgrade(config, "0041_location_geography")
     return engine, config, actor_id, sid
 
 
@@ -60,8 +59,13 @@ def test_forward_empty_rollout_preserves_categories_locations_and_accounts(migra
     command.upgrade(config, "0036_reference_privacy")
     with Session(engine) as db:
         assert db.get(User, actor_id).is_protected_system_admin and db.get(AuthSession, sid).status == "ACTIVE"
-        assert db.get(ProductCategory, c).name == "Shared category" and db.get(StorageLocation, l).name == "Shared location"
+        assert db.get(ProductCategory, c).name == "Shared category" and db.scalar(
+            select(StorageLocation.name).where(StorageLocation.id == l)) == "Shared location"
         assert db.scalar(select(func.count()).select_from(AllergenProduct)) == 0
+    # Preservation is asserted at the original historical boundary above;
+    # only the current operational consumer needs the newer model contract.
+    command.upgrade(config, "0041_location_geography")
+    with Session(engine) as db:
         row = allergens.create(db, identity(db, actor_id, sid), fields(c, l))
         for sql in ("UPDATE allergen_products SET name=' '", "UPDATE allergen_products SET concentration=''",
                     "UPDATE allergen_products SET version=0", "UPDATE allergen_products SET status='unknown'",

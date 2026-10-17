@@ -6,7 +6,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
-from app.api.deps import master_router
+from app.api.deps import master_router, require_master
 from app.db.session import get_db
 from app.schemas.locations import (
     LocationFields, LocationEdit, LocationStatus, LocationVersion, LocationResponse,
@@ -25,7 +25,7 @@ OVERHEAD = 64 * 1024
 
 @router.get("/postal/{pin}", response_model=PostalResponse, operation_id="lookupStorageLocationPincode")
 def postal(pin: str, action: Literal["add", "edit"] = "add",
-           actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+           actor: Identity = Depends(require_master("location")), db: Session = Depends(get_db)):
     return mr_postal.lookup(db, actor, pin, resource="location", action=action)
 
 
