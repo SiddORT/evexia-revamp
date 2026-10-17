@@ -1,3 +1,4 @@
+.pr-editor-fields { border: 0; margin: 0; min-width: 0; }
 .pr-tag { display:inline-flex; padding:3px 8px; border-radius:20px; font-size:10px; font-weight:800; background:var(--admin-state-soft); color:var(--admin-accent); }
 .pr-tag--open { background:var(--admin-badge-inactive-bg); color:var(--admin-badge-inactive-text); }
 .pr-tag--closed { background:var(--admin-badge-success-bg); color:var(--admin-badge-success-text); }

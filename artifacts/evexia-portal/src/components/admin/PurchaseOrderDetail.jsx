@@ -5,6 +5,8 @@ import { useAdminDateFormatters } from './adminPreferences.js';
 import { Editor, LineTable } from '../../pages/admin/PurchaseOrderFormPage.jsx';
 import { TaxBasis } from './PurchaseOrderTaxSummary.jsx';
 import PurchaseOrderDeleteDialog from './PurchaseOrderDeleteDialog.jsx';
+import POReceivingSection from './POReceivingSection.jsx';
+import { sourcePR } from '../../services/serverPurchaseReceived.js';
 import {
   describeError, getPurchaseOrder, isPermissionError, loadOrderMutation,
 } from '../../services/serverPurchaseOrders.js';
@@ -24,6 +26,8 @@ export default function PurchaseOrderDetail({ id }) {
   const [retry, setRetry] = useState(() => loadOrderMutation(id));
   const [deleting, setDeleting] = useState(retry.pending?.operation === 'delete');
   const [notice, setNotice] = useState('');
+  const [receiving, setReceiving] = useState(null);
+  const [receivingError, setReceivingError] = useState('');
   const pending = retry.status === 'found' ? retry.pending : null;
   const blocked = retry.status === 'blocked' ? retry.message : '';
   useEffect(() => {
@@ -40,9 +44,13 @@ export default function PurchaseOrderDetail({ id }) {
     getPurchaseOrder(id, controller.signal).then((result) => {
       if (controller.signal.aborted) return;
       setOrder(result);
+      setReceiving(null); setReceivingError('');
+      sourcePR(id, null, controller.signal).then((data) => {
+        if (!controller.signal.aborted) setReceiving(data);
+      }).catch((cause) => { if (!controller.signal.aborted) setReceivingError(cause.message); });
       // Reconcile an edit even if a later mutation changed/deleted the order.
       if (pending?.operation === 'edit') setEditing(true);
-      else if (enterEdit.current && result.status === 'open' && !pending && !blocked) setEditing(true);
+      else if (enterEdit.current && result.status === 'open' && !result.activeReceiptCount && !pending && !blocked) setEditing(true);
       enterEdit.current = false;
     }).catch((cause) => {
       if (controller.signal.aborted) return;
@@ -81,10 +89,13 @@ export default function PurchaseOrderDetail({ id }) {
         </div>
         <LineTable lines={order.lines} figures={order} />
         {order.status === 'open' && <div className="po-form-footer"><div className="po-actions">
-          <button type="button" className="admin-button" disabled={Boolean(blocked) || Boolean(pending)} onClick={() => { setRetry(loadOrderMutation(id)); setEditing(true); setNotice(''); }} data-testid="button-edit-po">Edit purchase order</button>
-          <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(blocked) || pending?.operation === 'edit'} onClick={() => { setDeleting(true); setNotice(''); }} data-testid="button-delete-po">{pending?.operation === 'delete' ? 'Reconcile deletion' : 'Delete purchase order'}</button>
+          <button type="button" className="admin-button" disabled={Boolean(order.activeReceiptCount) || Boolean(blocked) || Boolean(pending)} onClick={() => { setRetry(loadOrderMutation(id)); setEditing(true); setNotice(''); }} data-testid="button-edit-po">Edit purchase order</button>
+          <button type="button" className="admin-button admin-button--secondary" disabled={(Boolean(order.activeReceiptCount) && !pending) || Boolean(blocked) || pending?.operation === 'edit'} onClick={() => { setDeleting(true); setNotice(''); }} data-testid="button-delete-po">{pending?.operation === 'delete' ? 'Reconcile deletion' : 'Delete purchase order'}</button>
         </div></div>}
         <div className="po-review"><button type="button" className="admin-button admin-button--secondary" onClick={reload}>Reload latest order</button></div>
+        {!!order.activeReceiptCount && <p className="admin-feedback">Active receipts prevent editing or deleting this PO. <button type="button" className="po-link" onClick={() => navigate(`/admin/inventory/purchase-received?poId=${id}`)}>View linked receipts ({order.activeReceiptCount})</button></p>}
+        {receivingError && <p className="admin-feedback admin-feedback--error" role="alert">Receiving is unavailable: {receivingError}</p>}
+        {receiving && <><p className="admin-feedback">Fulfillment: <strong>{receiving.fulfillment}</strong> · separate from PO lifecycle ({order.status}).</p><POReceivingSection order={receiving} receipts={receiving.receipts} /></>}
       </section>}
     {deleting && order && <PurchaseOrderDeleteDialog key={id} order={order} onClose={() => { setDeleting(false); setRetry(loadOrderMutation(id)); }} onDeleted={(saved) => { setOrder(saved); setDeleting(false); setRetry(loadOrderMutation(id)); setNotice('Purchase order deleted.'); requestAnimationFrame(() => allOrdersButton.current?.focus()); }} />}
   </div></AdminLayout>;

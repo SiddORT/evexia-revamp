@@ -10,6 +10,7 @@ import type { POTaxAmounts } from "./pOTaxAmounts";
 import type { POTaxBasis } from "./pOTaxBasis";
 
 export interface POResponse {
+  activeReceiptCount?: number;
   createdAt: string;
   deletedAt: string | null;
   expectedDate: Date;

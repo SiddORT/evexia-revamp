@@ -827,8 +827,10 @@ export const listPurchaseOrdersQueryLimitMax = 100;
 export const listPurchaseOrdersQueryOffsetDefault = 0;
 export const listPurchaseOrdersQueryOffsetMin = 0;
 export const listPurchaseOrdersQueryOffsetMax = 1000000;
+export const listPurchaseOrdersResponseItemsItemActiveReceiptCountDefault = 0;
 export const createPurchaseOrderBodyLinesItemQuantityMax = 11;
 export const createPurchaseOrderBodyLinesMax = 100;
+export const createPurchaseOrderResponseActiveReceiptCountDefault = 0;
 export const listPurchaseOrderActivityQueryQueryMax = 200;
 export const listPurchaseOrderActivityQueryLimitDefault = 10;
 export const listPurchaseOrderActivityQueryLimitMax = 100;
@@ -849,10 +851,80 @@ export const listPurchaseOrderReferencesQueryLimitMax = 100;
 export const listPurchaseOrderReferencesQueryOffsetDefault = 0;
 export const listPurchaseOrderReferencesQueryOffsetMin = 0;
 export const listPurchaseOrderReferencesQueryOffsetMax = 1000000;
+export const getPurchaseOrderResponseActiveReceiptCountDefault = 0;
+export const deletePurchaseOrderResponseActiveReceiptCountDefault = 0;
 export const editPurchaseOrderBodyLinesItemQuantityMax = 11;
 export const editPurchaseOrderBodyLinesMax = 100;
+export const editPurchaseOrderResponseActiveReceiptCountDefault = 0;
 export const previewPurchaseOrderEditBodyLinesItemQuantityMax = 11;
 export const previewPurchaseOrderEditBodyLinesMax = 100;
+export const listPurchaseReceivedQueryQueryMax = 200;
+export const listPurchaseReceivedQueryReceiverMax = 50;
+export const listPurchaseReceivedQueryLimitDefault = 10;
+export const listPurchaseReceivedQueryLimitMax = 100;
+export const listPurchaseReceivedQueryOffsetDefault = 0;
+export const listPurchaseReceivedQueryOffsetMin = 0;
+export const listPurchaseReceivedQueryOffsetMax = 1000000;
+export const listPurchaseReceivedQueryActivityQueryMax = 200;
+export const createPurchaseReceivedBodyLinesItemAcceptedQtyMax = 11;
+export const createPurchaseReceivedBodyLinesItemBatchNoMax = 120;
+export const createPurchaseReceivedBodyLinesItemReceivedQtyMax = 11;
+export const createPurchaseReceivedBodyLinesMax = 100;
+export const createPurchaseReceivedBodyOtherNameOneMax = 120;
+export const listPurchaseReceivedActivityQueryQueryMax = 200;
+export const listPurchaseReceivedActivityQueryReceiverMax = 50;
+export const listPurchaseReceivedActivityQueryLimitDefault = 10;
+export const listPurchaseReceivedActivityQueryLimitMax = 100;
+export const listPurchaseReceivedActivityQueryOffsetDefault = 0;
+export const listPurchaseReceivedActivityQueryOffsetMin = 0;
+export const listPurchaseReceivedActivityQueryOffsetMax = 1000000;
+export const listPurchaseReceivedActivityQueryActivityQueryMax = 200;
+export const getPurchaseReceivedAnalyticsQueryQueryMax = 200;
+export const getPurchaseReceivedAnalyticsQueryReceiverMax = 50;
+export const getPurchaseReceivedAnalyticsQueryLimitDefault = 10;
+export const getPurchaseReceivedAnalyticsQueryLimitMax = 100;
+export const getPurchaseReceivedAnalyticsQueryOffsetDefault = 0;
+export const getPurchaseReceivedAnalyticsQueryOffsetMin = 0;
+export const getPurchaseReceivedAnalyticsQueryOffsetMax = 1000000;
+export const getPurchaseReceivedAnalyticsQueryActivityQueryMax = 200;
+export const exportPurchaseReceivedQueryQueryMax = 200;
+export const exportPurchaseReceivedQueryReceiverMax = 50;
+export const exportPurchaseReceivedQueryLimitDefault = 10;
+export const exportPurchaseReceivedQueryLimitMax = 100;
+export const exportPurchaseReceivedQueryOffsetDefault = 0;
+export const exportPurchaseReceivedQueryOffsetMin = 0;
+export const exportPurchaseReceivedQueryOffsetMax = 1000000;
+export const exportPurchaseReceivedQueryActivityQueryMax = 200;
+export const getPurchaseReceivedFiltersQueryQueryMax = 200;
+export const getPurchaseReceivedFiltersQueryReceiverMax = 50;
+export const getPurchaseReceivedFiltersQueryLimitDefault = 10;
+export const getPurchaseReceivedFiltersQueryLimitMax = 100;
+export const getPurchaseReceivedFiltersQueryOffsetDefault = 0;
+export const getPurchaseReceivedFiltersQueryOffsetMin = 0;
+export const getPurchaseReceivedFiltersQueryOffsetMax = 1000000;
+export const getPurchaseReceivedFiltersQueryActivityQueryMax = 200;
+export const previewPurchaseReceivedBodyLinesItemAcceptedQtyMax = 11;
+export const previewPurchaseReceivedBodyLinesItemBatchNoMax = 120;
+export const previewPurchaseReceivedBodyLinesItemReceivedQtyMax = 11;
+export const previewPurchaseReceivedBodyLinesMax = 100;
+export const previewPurchaseReceivedBodyOtherNameOneMax = 120;
+export const listPurchaseReceivedReferencesQueryQueryMax = 200;
+export const listPurchaseReceivedReferencesQueryOffsetDefault = 0;
+export const listPurchaseReceivedReferencesQueryOffsetMin = 0;
+export const listPurchaseReceivedReferencesQueryOffsetMax = 1000000;
+export const listPurchaseReceivedReferencesQueryLimitDefault = 25;
+export const listPurchaseReceivedReferencesQueryLimitMax = 100;
+export const getPurchaseReceivedSourceResponseActiveReceiptCountDefault = 0;
+export const editPurchaseReceivedBodyLinesItemAcceptedQtyMax = 11;
+export const editPurchaseReceivedBodyLinesItemBatchNoMax = 120;
+export const editPurchaseReceivedBodyLinesItemReceivedQtyMax = 11;
+export const editPurchaseReceivedBodyLinesMax = 100;
+export const editPurchaseReceivedBodyOtherNameOneMax = 120;
+export const previewPurchaseReceivedEditBodyLinesItemAcceptedQtyMax = 11;
+export const previewPurchaseReceivedEditBodyLinesItemBatchNoMax = 120;
+export const previewPurchaseReceivedEditBodyLinesItemReceivedQtyMax = 11;
+export const previewPurchaseReceivedEditBodyLinesMax = 100;
+export const previewPurchaseReceivedEditBodyOtherNameOneMax = 120;
 export const recordBrowserActivityBodyEventsMax = 20;
 export const listDownloadLogsQueryLimitDefault = 20;
 export const listDownloadLogsQueryLimitMax = 100;
@@ -14747,6 +14819,10 @@ export const ListPurchaseOrdersResponse = zod.object({
   filtered: zod.number().int(),
   items: zod.array(
     zod.object({
+      activeReceiptCount: zod
+        .number()
+        .int()
+        .default(listPurchaseOrdersResponseItemsItemActiveReceiptCountDefault),
       createdAt: zod.string(),
       deletedAt: zod.union([zod.string(), zod.null()]),
       expectedDate: zod.coerce.date(),
@@ -14872,6 +14948,10 @@ export const CreatePurchaseOrderBody = zod.object({
 });
 
 export const CreatePurchaseOrderResponse = zod.object({
+  activeReceiptCount: zod
+    .number()
+    .int()
+    .default(createPurchaseOrderResponseActiveReceiptCountDefault),
   createdAt: zod.string(),
   deletedAt: zod.union([zod.string(), zod.null()]),
   expectedDate: zod.coerce.date(),
@@ -15246,6 +15326,10 @@ export const GetPurchaseOrderParams = zod.object({
 });
 
 export const GetPurchaseOrderResponse = zod.object({
+  activeReceiptCount: zod
+    .number()
+    .int()
+    .default(getPurchaseOrderResponseActiveReceiptCountDefault),
   createdAt: zod.string(),
   deletedAt: zod.union([zod.string(), zod.null()]),
   expectedDate: zod.coerce.date(),
@@ -15336,6 +15420,10 @@ export const DeletePurchaseOrderBody = zod.object({
 });
 
 export const DeletePurchaseOrderResponse = zod.object({
+  activeReceiptCount: zod
+    .number()
+    .int()
+    .default(deletePurchaseOrderResponseActiveReceiptCountDefault),
   createdAt: zod.string(),
   deletedAt: zod.union([zod.string(), zod.null()]),
   expectedDate: zod.coerce.date(),
@@ -15460,6 +15548,10 @@ export const EditPurchaseOrderBody = zod.object({
 });
 
 export const EditPurchaseOrderResponse = zod.object({
+  activeReceiptCount: zod
+    .number()
+    .int()
+    .default(editPurchaseOrderResponseActiveReceiptCountDefault),
   createdAt: zod.string(),
   deletedAt: zod.union([zod.string(), zod.null()]),
   expectedDate: zod.coerce.date(),
@@ -15648,6 +15740,1114 @@ export const PreviewPurchaseOrderEditResponse = zod.object({
     total: zod.number().int(),
     vendorId: zod.string().uuid(),
     vendorName: zod.string(),
+  }),
+  reviewToken: zod.string(),
+});
+
+/**
+ * @summary Listing
+ */
+export const listPurchaseReceivedQueryQueryDefault = ``;
+
+export const listPurchaseReceivedQueryStatusDefault = `active`;
+export const listPurchaseReceivedQueryReceiverDefault = ``;
+
+export const listPurchaseReceivedQueryFulfillmentDefault = ``;
+export const listPurchaseReceivedQuerySortDefault = `recent`;
+
+export const listPurchaseReceivedQueryActivityQueryDefault = ``;
+
+export const ListPurchaseReceivedQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listPurchaseReceivedQueryQueryMax)
+    .default(listPurchaseReceivedQueryQueryDefault),
+  status: zod
+    .enum(["active", "deleted", "all"])
+    .default(listPurchaseReceivedQueryStatusDefault),
+  po_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  vendor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  receipt_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  receiver: zod.coerce
+    .string()
+    .max(listPurchaseReceivedQueryReceiverMax)
+    .default(listPurchaseReceivedQueryReceiverDefault),
+  fulfillment: zod
+    .enum(["", "Open", "Partially Received", "Closed"])
+    .default(listPurchaseReceivedQueryFulfillmentDefault),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+  sort: zod
+    .enum(["recent", "oldest", "number"])
+    .default(listPurchaseReceivedQuerySortDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listPurchaseReceivedQueryLimitMax)
+    .default(listPurchaseReceivedQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listPurchaseReceivedQueryOffsetMin)
+    .max(listPurchaseReceivedQueryOffsetMax)
+    .default(listPurchaseReceivedQueryOffsetDefault),
+  activity_query: zod.coerce
+    .string()
+    .max(listPurchaseReceivedQueryActivityQueryMax)
+    .default(listPurchaseReceivedQueryActivityQueryDefault),
+});
+
+export const ListPurchaseReceivedResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      createdAt: zod.string(),
+      deletedAt: zod.union([zod.string(), zod.null()]),
+      fulfillment: zod
+        .union([zod.enum(["Open", "Partially Received", "Closed"]), zod.null()])
+        .optional(),
+      id: zod.string().uuid(),
+      lines: zod.array(
+        zod.object({
+          acceptedQty: zod.string(),
+          balanceAfterQty: zod.union([zod.string(), zod.null()]),
+          batchNo: zod.string(),
+          expiryDate: zod.coerce.date(),
+          lineId: zod.string().uuid(),
+          orderedQty: zod.string(),
+          productId: zod.string().uuid(),
+          productName: zod.string(),
+          receivedQty: zod.string(),
+          rejectedQty: zod.string(),
+        }),
+      ),
+      locationId: zod.string().uuid(),
+      locationName: zod.string(),
+      number: zod.string(),
+      poDate: zod.coerce.date(),
+      poId: zod.string().uuid(),
+      poNumber: zod.string(),
+      receivedBy: zod.string(),
+      receivedDate: zod.coerce.date(),
+      receiverMode: zod.enum(["staff", "other"]),
+      source: zod.literal("server"),
+      staffId: zod.union([zod.string().uuid(), zod.null()]),
+      status: zod.enum(["active", "deleted"]),
+      updatedAt: zod.string(),
+      vendorAddress: zod.string(),
+      vendorGstNo: zod.string(),
+      vendorId: zod.string().uuid(),
+      vendorName: zod.string(),
+      vendorPhone: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+
+export const createPurchaseReceivedBodyLinesItemAcceptedQtyRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const createPurchaseReceivedBodyLinesItemReceivedQtyRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const createPurchaseReceivedBodyReviewTokenRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const CreatePurchaseReceivedBody = zod.object({
+  idempotencyKey: zod.string().uuid(),
+  lines: zod
+    .array(
+      zod.object({
+        acceptedQty: zod
+          .string()
+          .max(createPurchaseReceivedBodyLinesItemAcceptedQtyMax)
+          .regex(createPurchaseReceivedBodyLinesItemAcceptedQtyRegExp),
+        batchNo: zod
+          .string()
+          .min(1)
+          .max(createPurchaseReceivedBodyLinesItemBatchNoMax),
+        expiryDate: zod.coerce.date(),
+        lineId: zod.string().uuid(),
+        receivedQty: zod
+          .string()
+          .max(createPurchaseReceivedBodyLinesItemReceivedQtyMax)
+          .regex(createPurchaseReceivedBodyLinesItemReceivedQtyRegExp),
+      }),
+    )
+    .min(1)
+    .max(createPurchaseReceivedBodyLinesMax),
+  otherName: zod
+    .union([
+      zod.string().max(createPurchaseReceivedBodyOtherNameOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  poId: zod.string().uuid(),
+  receivedDate: zod.coerce.date(),
+  receiverMode: zod.enum(["staff", "other"]),
+  reviewToken: zod.string().regex(createPurchaseReceivedBodyReviewTokenRegExp),
+  staffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+});
+
+export const CreatePurchaseReceivedResponse = zod.object({
+  createdAt: zod.string(),
+  deletedAt: zod.union([zod.string(), zod.null()]),
+  fulfillment: zod
+    .union([zod.enum(["Open", "Partially Received", "Closed"]), zod.null()])
+    .optional(),
+  id: zod.string().uuid(),
+  lines: zod.array(
+    zod.object({
+      acceptedQty: zod.string(),
+      balanceAfterQty: zod.union([zod.string(), zod.null()]),
+      batchNo: zod.string(),
+      expiryDate: zod.coerce.date(),
+      lineId: zod.string().uuid(),
+      orderedQty: zod.string(),
+      productId: zod.string().uuid(),
+      productName: zod.string(),
+      receivedQty: zod.string(),
+      rejectedQty: zod.string(),
+    }),
+  ),
+  locationId: zod.string().uuid(),
+  locationName: zod.string(),
+  number: zod.string(),
+  poDate: zod.coerce.date(),
+  poId: zod.string().uuid(),
+  poNumber: zod.string(),
+  receivedBy: zod.string(),
+  receivedDate: zod.coerce.date(),
+  receiverMode: zod.enum(["staff", "other"]),
+  source: zod.literal("server"),
+  staffId: zod.union([zod.string().uuid(), zod.null()]),
+  status: zod.enum(["active", "deleted"]),
+  updatedAt: zod.string(),
+  vendorAddress: zod.string(),
+  vendorGstNo: zod.string(),
+  vendorId: zod.string().uuid(),
+  vendorName: zod.string(),
+  vendorPhone: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Activity
+ */
+export const listPurchaseReceivedActivityQueryQueryDefault = ``;
+
+export const listPurchaseReceivedActivityQueryStatusDefault = `active`;
+export const listPurchaseReceivedActivityQueryReceiverDefault = ``;
+
+export const listPurchaseReceivedActivityQueryFulfillmentDefault = ``;
+export const listPurchaseReceivedActivityQuerySortDefault = `recent`;
+
+export const listPurchaseReceivedActivityQueryActivityQueryDefault = ``;
+
+export const ListPurchaseReceivedActivityQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listPurchaseReceivedActivityQueryQueryMax)
+    .default(listPurchaseReceivedActivityQueryQueryDefault),
+  status: zod
+    .enum(["active", "deleted", "all"])
+    .default(listPurchaseReceivedActivityQueryStatusDefault),
+  po_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  vendor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  receipt_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  receiver: zod.coerce
+    .string()
+    .max(listPurchaseReceivedActivityQueryReceiverMax)
+    .default(listPurchaseReceivedActivityQueryReceiverDefault),
+  fulfillment: zod
+    .enum(["", "Open", "Partially Received", "Closed"])
+    .default(listPurchaseReceivedActivityQueryFulfillmentDefault),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+  sort: zod
+    .enum(["recent", "oldest", "number"])
+    .default(listPurchaseReceivedActivityQuerySortDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listPurchaseReceivedActivityQueryLimitMax)
+    .default(listPurchaseReceivedActivityQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listPurchaseReceivedActivityQueryOffsetMin)
+    .max(listPurchaseReceivedActivityQueryOffsetMax)
+    .default(listPurchaseReceivedActivityQueryOffsetDefault),
+  activity_query: zod.coerce
+    .string()
+    .max(listPurchaseReceivedActivityQueryActivityQueryMax)
+    .default(listPurchaseReceivedActivityQueryActivityQueryDefault),
+});
+
+export const ListPurchaseReceivedActivityResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      action: zod.enum(["created", "updated", "deleted"]),
+      actor: zod.string(),
+      at: zod.string(),
+      id: zod.string().uuid(),
+      number: zod.string(),
+      receiptId: zod.string().uuid(),
+      summary: zod.string(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Analytics
+ */
+export const getPurchaseReceivedAnalyticsQueryQueryDefault = ``;
+
+export const getPurchaseReceivedAnalyticsQueryStatusDefault = `active`;
+export const getPurchaseReceivedAnalyticsQueryReceiverDefault = ``;
+
+export const getPurchaseReceivedAnalyticsQueryFulfillmentDefault = ``;
+export const getPurchaseReceivedAnalyticsQuerySortDefault = `recent`;
+
+export const getPurchaseReceivedAnalyticsQueryActivityQueryDefault = ``;
+
+export const GetPurchaseReceivedAnalyticsQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(getPurchaseReceivedAnalyticsQueryQueryMax)
+    .default(getPurchaseReceivedAnalyticsQueryQueryDefault),
+  status: zod
+    .enum(["active", "deleted", "all"])
+    .default(getPurchaseReceivedAnalyticsQueryStatusDefault),
+  po_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  vendor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  receipt_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  receiver: zod.coerce
+    .string()
+    .max(getPurchaseReceivedAnalyticsQueryReceiverMax)
+    .default(getPurchaseReceivedAnalyticsQueryReceiverDefault),
+  fulfillment: zod
+    .enum(["", "Open", "Partially Received", "Closed"])
+    .default(getPurchaseReceivedAnalyticsQueryFulfillmentDefault),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+  sort: zod
+    .enum(["recent", "oldest", "number"])
+    .default(getPurchaseReceivedAnalyticsQuerySortDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getPurchaseReceivedAnalyticsQueryLimitMax)
+    .default(getPurchaseReceivedAnalyticsQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(getPurchaseReceivedAnalyticsQueryOffsetMin)
+    .max(getPurchaseReceivedAnalyticsQueryOffsetMax)
+    .default(getPurchaseReceivedAnalyticsQueryOffsetDefault),
+  activity_query: zod.coerce
+    .string()
+    .max(getPurchaseReceivedAnalyticsQueryActivityQueryMax)
+    .default(getPurchaseReceivedAnalyticsQueryActivityQueryDefault),
+});
+
+export const GetPurchaseReceivedAnalyticsResponse = zod.object({
+  acceptedAny: zod.number().int(),
+  active: zod.number().int(),
+  allRejected: zod.number().int(),
+  anyRejected: zod.number().int(),
+  counts: zod.record(zod.string(), zod.number().int()),
+  deleted: zod.number().int(),
+  fulfillment: zod.record(zod.string(), zod.number().int()),
+  fullyAccepted: zod.number().int(),
+  lines: zod.number().int(),
+  receipts: zod.number().int(),
+  scope: zod.string(),
+});
+
+/**
+ * @summary Export
+ */
+export const exportPurchaseReceivedQueryQueryDefault = ``;
+
+export const exportPurchaseReceivedQueryStatusDefault = `active`;
+export const exportPurchaseReceivedQueryReceiverDefault = ``;
+
+export const exportPurchaseReceivedQueryFulfillmentDefault = ``;
+export const exportPurchaseReceivedQuerySortDefault = `recent`;
+
+export const exportPurchaseReceivedQueryActivityQueryDefault = ``;
+
+export const ExportPurchaseReceivedQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(exportPurchaseReceivedQueryQueryMax)
+    .default(exportPurchaseReceivedQueryQueryDefault),
+  status: zod
+    .enum(["active", "deleted", "all"])
+    .default(exportPurchaseReceivedQueryStatusDefault),
+  po_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  vendor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  receipt_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  receiver: zod.coerce
+    .string()
+    .max(exportPurchaseReceivedQueryReceiverMax)
+    .default(exportPurchaseReceivedQueryReceiverDefault),
+  fulfillment: zod
+    .enum(["", "Open", "Partially Received", "Closed"])
+    .default(exportPurchaseReceivedQueryFulfillmentDefault),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+  sort: zod
+    .enum(["recent", "oldest", "number"])
+    .default(exportPurchaseReceivedQuerySortDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(exportPurchaseReceivedQueryLimitMax)
+    .default(exportPurchaseReceivedQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(exportPurchaseReceivedQueryOffsetMin)
+    .max(exportPurchaseReceivedQueryOffsetMax)
+    .default(exportPurchaseReceivedQueryOffsetDefault),
+  activity_query: zod.coerce
+    .string()
+    .max(exportPurchaseReceivedQueryActivityQueryMax)
+    .default(exportPurchaseReceivedQueryActivityQueryDefault),
+});
+
+export const ExportPurchaseReceivedResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      createdAt: zod.string(),
+      deletedAt: zod.union([zod.string(), zod.null()]),
+      fulfillment: zod
+        .union([zod.enum(["Open", "Partially Received", "Closed"]), zod.null()])
+        .optional(),
+      id: zod.string().uuid(),
+      lines: zod.array(
+        zod.object({
+          acceptedQty: zod.string(),
+          balanceAfterQty: zod.union([zod.string(), zod.null()]),
+          batchNo: zod.string(),
+          expiryDate: zod.coerce.date(),
+          lineId: zod.string().uuid(),
+          orderedQty: zod.string(),
+          productId: zod.string().uuid(),
+          productName: zod.string(),
+          receivedQty: zod.string(),
+          rejectedQty: zod.string(),
+        }),
+      ),
+      locationId: zod.string().uuid(),
+      locationName: zod.string(),
+      number: zod.string(),
+      poDate: zod.coerce.date(),
+      poId: zod.string().uuid(),
+      poNumber: zod.string(),
+      receivedBy: zod.string(),
+      receivedDate: zod.coerce.date(),
+      receiverMode: zod.enum(["staff", "other"]),
+      source: zod.literal("server"),
+      staffId: zod.union([zod.string().uuid(), zod.null()]),
+      status: zod.enum(["active", "deleted"]),
+      updatedAt: zod.string(),
+      vendorAddress: zod.string(),
+      vendorGstNo: zod.string(),
+      vendorId: zod.string().uuid(),
+      vendorName: zod.string(),
+      vendorPhone: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Options
+ */
+export const getPurchaseReceivedFiltersQueryQueryDefault = ``;
+
+export const getPurchaseReceivedFiltersQueryStatusDefault = `active`;
+export const getPurchaseReceivedFiltersQueryReceiverDefault = ``;
+
+export const getPurchaseReceivedFiltersQueryFulfillmentDefault = ``;
+export const getPurchaseReceivedFiltersQuerySortDefault = `recent`;
+
+export const getPurchaseReceivedFiltersQueryActivityQueryDefault = ``;
+
+export const GetPurchaseReceivedFiltersQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(getPurchaseReceivedFiltersQueryQueryMax)
+    .default(getPurchaseReceivedFiltersQueryQueryDefault),
+  status: zod
+    .enum(["active", "deleted", "all"])
+    .default(getPurchaseReceivedFiltersQueryStatusDefault),
+  po_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  vendor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  receipt_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  receiver: zod.coerce
+    .string()
+    .max(getPurchaseReceivedFiltersQueryReceiverMax)
+    .default(getPurchaseReceivedFiltersQueryReceiverDefault),
+  fulfillment: zod
+    .enum(["", "Open", "Partially Received", "Closed"])
+    .default(getPurchaseReceivedFiltersQueryFulfillmentDefault),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+  sort: zod
+    .enum(["recent", "oldest", "number"])
+    .default(getPurchaseReceivedFiltersQuerySortDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getPurchaseReceivedFiltersQueryLimitMax)
+    .default(getPurchaseReceivedFiltersQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(getPurchaseReceivedFiltersQueryOffsetMin)
+    .max(getPurchaseReceivedFiltersQueryOffsetMax)
+    .default(getPurchaseReceivedFiltersQueryOffsetDefault),
+  activity_query: zod.coerce
+    .string()
+    .max(getPurchaseReceivedFiltersQueryActivityQueryMax)
+    .default(getPurchaseReceivedFiltersQueryActivityQueryDefault),
+});
+
+export const GetPurchaseReceivedFiltersResponse = zod.object({
+  receivers: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+    }),
+  ),
+  vendors: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Preview
+ */
+
+export const previewPurchaseReceivedBodyLinesItemAcceptedQtyRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const previewPurchaseReceivedBodyLinesItemReceivedQtyRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const PreviewPurchaseReceivedBody = zod.object({
+  lines: zod
+    .array(
+      zod.object({
+        acceptedQty: zod
+          .string()
+          .max(previewPurchaseReceivedBodyLinesItemAcceptedQtyMax)
+          .regex(previewPurchaseReceivedBodyLinesItemAcceptedQtyRegExp),
+        batchNo: zod
+          .string()
+          .min(1)
+          .max(previewPurchaseReceivedBodyLinesItemBatchNoMax),
+        expiryDate: zod.coerce.date(),
+        lineId: zod.string().uuid(),
+        receivedQty: zod
+          .string()
+          .max(previewPurchaseReceivedBodyLinesItemReceivedQtyMax)
+          .regex(previewPurchaseReceivedBodyLinesItemReceivedQtyRegExp),
+      }),
+    )
+    .min(1)
+    .max(previewPurchaseReceivedBodyLinesMax),
+  otherName: zod
+    .union([
+      zod.string().max(previewPurchaseReceivedBodyOtherNameOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  poId: zod.string().uuid(),
+  receivedDate: zod.coerce.date(),
+  receiverMode: zod.enum(["staff", "other"]),
+  staffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+});
+
+export const PreviewPurchaseReceivedResponse = zod.object({
+  receipt: zod.object({
+    lines: zod.array(
+      zod.object({
+        acceptedQty: zod.string(),
+        balanceAfterQty: zod.union([zod.string(), zod.null()]),
+        batchNo: zod.string(),
+        expiryDate: zod.coerce.date(),
+        lineId: zod.string().uuid(),
+        orderedQty: zod.string(),
+        productId: zod.string().uuid(),
+        productName: zod.string(),
+        receivedQty: zod.string(),
+        rejectedQty: zod.string(),
+      }),
+    ),
+    locationId: zod.string().uuid(),
+    locationName: zod.string(),
+    poDate: zod.coerce.date(),
+    poId: zod.string().uuid(),
+    poNumber: zod.string(),
+    receivedBy: zod.string(),
+    receivedDate: zod.coerce.date(),
+    receiverMode: zod.enum(["staff", "other"]),
+    staffId: zod.union([zod.string().uuid(), zod.null()]),
+    vendorAddress: zod.string(),
+    vendorGstNo: zod.string(),
+    vendorId: zod.string().uuid(),
+    vendorName: zod.string(),
+    vendorPhone: zod.string(),
+  }),
+  reviewToken: zod.string(),
+});
+
+/**
+ * @summary References
+ */
+export const ListPurchaseReceivedReferencesParams = zod.object({
+  kind: zod.enum(["staff", "orders"]),
+});
+
+export const listPurchaseReceivedReferencesQueryQueryDefault = ``;
+
+export const ListPurchaseReceivedReferencesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listPurchaseReceivedReferencesQueryQueryMax)
+    .default(listPurchaseReceivedReferencesQueryQueryDefault),
+  selected_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listPurchaseReceivedReferencesQueryOffsetMin)
+    .max(listPurchaseReceivedReferencesQueryOffsetMax)
+    .default(listPurchaseReceivedReferencesQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listPurchaseReceivedReferencesQueryLimitMax)
+    .default(listPurchaseReceivedReferencesQueryLimitDefault),
+});
+
+export const ListPurchaseReceivedReferencesResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Reconcile
+ */
+export const ReconcilePurchaseReceivedParams = zod.object({
+  key: zod.coerce.string().uuid(),
+});
+
+export const ReconcilePurchaseReceivedResponse = zod.object({
+  receipt: zod.union([
+    zod.object({
+      createdAt: zod.string(),
+      deletedAt: zod.union([zod.string(), zod.null()]),
+      fulfillment: zod
+        .union([zod.enum(["Open", "Partially Received", "Closed"]), zod.null()])
+        .optional(),
+      id: zod.string().uuid(),
+      lines: zod.array(
+        zod.object({
+          acceptedQty: zod.string(),
+          balanceAfterQty: zod.union([zod.string(), zod.null()]),
+          batchNo: zod.string(),
+          expiryDate: zod.coerce.date(),
+          lineId: zod.string().uuid(),
+          orderedQty: zod.string(),
+          productId: zod.string().uuid(),
+          productName: zod.string(),
+          receivedQty: zod.string(),
+          rejectedQty: zod.string(),
+        }),
+      ),
+      locationId: zod.string().uuid(),
+      locationName: zod.string(),
+      number: zod.string(),
+      poDate: zod.coerce.date(),
+      poId: zod.string().uuid(),
+      poNumber: zod.string(),
+      receivedBy: zod.string(),
+      receivedDate: zod.coerce.date(),
+      receiverMode: zod.enum(["staff", "other"]),
+      source: zod.literal("server"),
+      staffId: zod.union([zod.string().uuid(), zod.null()]),
+      status: zod.enum(["active", "deleted"]),
+      updatedAt: zod.string(),
+      vendorAddress: zod.string(),
+      vendorGstNo: zod.string(),
+      vendorId: zod.string().uuid(),
+      vendorName: zod.string(),
+      vendorPhone: zod.string(),
+      version: zod.number().int(),
+    }),
+    zod.null(),
+  ]),
+  state: zod.enum(["committed", "not_committed"]),
+});
+
+/**
+ * @summary Source
+ */
+export const GetPurchaseReceivedSourceParams = zod.object({
+  po_id: zod.coerce.string().uuid(),
+});
+
+export const GetPurchaseReceivedSourceQueryParams = zod.object({
+  exclude_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+});
+
+export const GetPurchaseReceivedSourceResponse = zod.object({
+  activeReceiptCount: zod
+    .number()
+    .int()
+    .default(getPurchaseReceivedSourceResponseActiveReceiptCountDefault),
+  balances: zod.record(zod.string(), zod.string()),
+  createdAt: zod.string(),
+  deletedAt: zod.union([zod.string(), zod.null()]),
+  expectedDate: zod.coerce.date(),
+  fulfillment: zod.enum(["Open", "Partially Received", "Closed"]),
+  gstAmount: zod.number().int(),
+  id: zod.string().uuid(),
+  lines: zod.array(
+    zod.object({
+      componentRates: zod
+        .union([
+          zod.object({
+            cgst: zod.string(),
+            igst: zod.string(),
+            sgst: zod.string(),
+            utgst: zod.string(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      gst: zod.string(),
+      gstAmount: zod.number().int(),
+      id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      productId: zod.string().uuid(),
+      productName: zod.string(),
+      quantity: zod.string(),
+      subtotal: zod.number().int(),
+      taxComponents: zod
+        .union([
+          zod.object({
+            cgst: zod.number().int(),
+            igst: zod.number().int(),
+            sgst: zod.number().int(),
+            utgst: zod.number().int(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      total: zod.number().int(),
+      unitPrice: zod.string(),
+    }),
+  ),
+  locationId: zod.string().uuid(),
+  locationName: zod.string(),
+  number: zod.string(),
+  poDate: zod.coerce.date(),
+  receipts: zod.array(
+    zod.object({
+      createdAt: zod.string(),
+      deletedAt: zod.union([zod.string(), zod.null()]),
+      fulfillment: zod
+        .union([zod.enum(["Open", "Partially Received", "Closed"]), zod.null()])
+        .optional(),
+      id: zod.string().uuid(),
+      lines: zod.array(
+        zod.object({
+          acceptedQty: zod.string(),
+          balanceAfterQty: zod.union([zod.string(), zod.null()]),
+          batchNo: zod.string(),
+          expiryDate: zod.coerce.date(),
+          lineId: zod.string().uuid(),
+          orderedQty: zod.string(),
+          productId: zod.string().uuid(),
+          productName: zod.string(),
+          receivedQty: zod.string(),
+          rejectedQty: zod.string(),
+        }),
+      ),
+      locationId: zod.string().uuid(),
+      locationName: zod.string(),
+      number: zod.string(),
+      poDate: zod.coerce.date(),
+      poId: zod.string().uuid(),
+      poNumber: zod.string(),
+      receivedBy: zod.string(),
+      receivedDate: zod.coerce.date(),
+      receiverMode: zod.enum(["staff", "other"]),
+      source: zod.literal("server"),
+      staffId: zod.union([zod.string().uuid(), zod.null()]),
+      status: zod.enum(["active", "deleted"]),
+      updatedAt: zod.string(),
+      vendorAddress: zod.string(),
+      vendorGstNo: zod.string(),
+      vendorId: zod.string().uuid(),
+      vendorName: zod.string(),
+      vendorPhone: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  status: zod.string(),
+  subtotal: zod.number().int(),
+  taxBasis: zod
+    .union([
+      zod.object({
+        placeOfSupplyCode: zod.string(),
+        placeOfSupplyName: zod.string(),
+        supplierGstin: zod.string(),
+        supplierStateCode: zod.string(),
+        supplierStateName: zod.string(),
+        treatment: zod.enum(["igst", "cgst_sgst", "cgst_utgst"]),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  taxComponents: zod
+    .union([
+      zod.object({
+        cgst: zod.number().int(),
+        igst: zod.number().int(),
+        sgst: zod.number().int(),
+        utgst: zod.number().int(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  total: zod.number().int(),
+  updatedAt: zod.string(),
+  vendorId: zod.string().uuid(),
+  vendorName: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Detail
+ */
+export const GetPurchaseReceivedParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const GetPurchaseReceivedResponse = zod.object({
+  createdAt: zod.string(),
+  deletedAt: zod.union([zod.string(), zod.null()]),
+  fulfillment: zod
+    .union([zod.enum(["Open", "Partially Received", "Closed"]), zod.null()])
+    .optional(),
+  id: zod.string().uuid(),
+  lines: zod.array(
+    zod.object({
+      acceptedQty: zod.string(),
+      balanceAfterQty: zod.union([zod.string(), zod.null()]),
+      batchNo: zod.string(),
+      expiryDate: zod.coerce.date(),
+      lineId: zod.string().uuid(),
+      orderedQty: zod.string(),
+      productId: zod.string().uuid(),
+      productName: zod.string(),
+      receivedQty: zod.string(),
+      rejectedQty: zod.string(),
+    }),
+  ),
+  locationId: zod.string().uuid(),
+  locationName: zod.string(),
+  number: zod.string(),
+  poDate: zod.coerce.date(),
+  poId: zod.string().uuid(),
+  poNumber: zod.string(),
+  receivedBy: zod.string(),
+  receivedDate: zod.coerce.date(),
+  receiverMode: zod.enum(["staff", "other"]),
+  source: zod.literal("server"),
+  staffId: zod.union([zod.string().uuid(), zod.null()]),
+  status: zod.enum(["active", "deleted"]),
+  updatedAt: zod.string(),
+  vendorAddress: zod.string(),
+  vendorGstNo: zod.string(),
+  vendorId: zod.string().uuid(),
+  vendorName: zod.string(),
+  vendorPhone: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Delete
+ */
+export const DeletePurchaseReceivedParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const DeletePurchaseReceivedBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  idempotencyKey: zod.string().uuid(),
+});
+
+export const DeletePurchaseReceivedResponse = zod.object({
+  createdAt: zod.string(),
+  deletedAt: zod.union([zod.string(), zod.null()]),
+  fulfillment: zod
+    .union([zod.enum(["Open", "Partially Received", "Closed"]), zod.null()])
+    .optional(),
+  id: zod.string().uuid(),
+  lines: zod.array(
+    zod.object({
+      acceptedQty: zod.string(),
+      balanceAfterQty: zod.union([zod.string(), zod.null()]),
+      batchNo: zod.string(),
+      expiryDate: zod.coerce.date(),
+      lineId: zod.string().uuid(),
+      orderedQty: zod.string(),
+      productId: zod.string().uuid(),
+      productName: zod.string(),
+      receivedQty: zod.string(),
+      rejectedQty: zod.string(),
+    }),
+  ),
+  locationId: zod.string().uuid(),
+  locationName: zod.string(),
+  number: zod.string(),
+  poDate: zod.coerce.date(),
+  poId: zod.string().uuid(),
+  poNumber: zod.string(),
+  receivedBy: zod.string(),
+  receivedDate: zod.coerce.date(),
+  receiverMode: zod.enum(["staff", "other"]),
+  source: zod.literal("server"),
+  staffId: zod.union([zod.string().uuid(), zod.null()]),
+  status: zod.enum(["active", "deleted"]),
+  updatedAt: zod.string(),
+  vendorAddress: zod.string(),
+  vendorGstNo: zod.string(),
+  vendorId: zod.string().uuid(),
+  vendorName: zod.string(),
+  vendorPhone: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditPurchaseReceivedParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const editPurchaseReceivedBodyLinesItemAcceptedQtyRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const editPurchaseReceivedBodyLinesItemReceivedQtyRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const editPurchaseReceivedBodyReviewTokenRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const EditPurchaseReceivedBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  idempotencyKey: zod.string().uuid(),
+  lines: zod
+    .array(
+      zod.object({
+        acceptedQty: zod
+          .string()
+          .max(editPurchaseReceivedBodyLinesItemAcceptedQtyMax)
+          .regex(editPurchaseReceivedBodyLinesItemAcceptedQtyRegExp),
+        batchNo: zod
+          .string()
+          .min(1)
+          .max(editPurchaseReceivedBodyLinesItemBatchNoMax),
+        expiryDate: zod.coerce.date(),
+        lineId: zod.string().uuid(),
+        receivedQty: zod
+          .string()
+          .max(editPurchaseReceivedBodyLinesItemReceivedQtyMax)
+          .regex(editPurchaseReceivedBodyLinesItemReceivedQtyRegExp),
+      }),
+    )
+    .min(1)
+    .max(editPurchaseReceivedBodyLinesMax),
+  otherName: zod
+    .union([
+      zod.string().max(editPurchaseReceivedBodyOtherNameOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  poId: zod.string().uuid(),
+  receivedDate: zod.coerce.date(),
+  receiverMode: zod.enum(["staff", "other"]),
+  reviewToken: zod.string().regex(editPurchaseReceivedBodyReviewTokenRegExp),
+  staffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+});
+
+export const EditPurchaseReceivedResponse = zod.object({
+  createdAt: zod.string(),
+  deletedAt: zod.union([zod.string(), zod.null()]),
+  fulfillment: zod
+    .union([zod.enum(["Open", "Partially Received", "Closed"]), zod.null()])
+    .optional(),
+  id: zod.string().uuid(),
+  lines: zod.array(
+    zod.object({
+      acceptedQty: zod.string(),
+      balanceAfterQty: zod.union([zod.string(), zod.null()]),
+      batchNo: zod.string(),
+      expiryDate: zod.coerce.date(),
+      lineId: zod.string().uuid(),
+      orderedQty: zod.string(),
+      productId: zod.string().uuid(),
+      productName: zod.string(),
+      receivedQty: zod.string(),
+      rejectedQty: zod.string(),
+    }),
+  ),
+  locationId: zod.string().uuid(),
+  locationName: zod.string(),
+  number: zod.string(),
+  poDate: zod.coerce.date(),
+  poId: zod.string().uuid(),
+  poNumber: zod.string(),
+  receivedBy: zod.string(),
+  receivedDate: zod.coerce.date(),
+  receiverMode: zod.enum(["staff", "other"]),
+  source: zod.literal("server"),
+  staffId: zod.union([zod.string().uuid(), zod.null()]),
+  status: zod.enum(["active", "deleted"]),
+  updatedAt: zod.string(),
+  vendorAddress: zod.string(),
+  vendorGstNo: zod.string(),
+  vendorId: zod.string().uuid(),
+  vendorName: zod.string(),
+  vendorPhone: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit Preview
+ */
+export const PreviewPurchaseReceivedEditParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const previewPurchaseReceivedEditBodyLinesItemAcceptedQtyRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+
+export const previewPurchaseReceivedEditBodyLinesItemReceivedQtyRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+
+export const PreviewPurchaseReceivedEditBody = zod.object({
+  lines: zod
+    .array(
+      zod.object({
+        acceptedQty: zod
+          .string()
+          .max(previewPurchaseReceivedEditBodyLinesItemAcceptedQtyMax)
+          .regex(previewPurchaseReceivedEditBodyLinesItemAcceptedQtyRegExp),
+        batchNo: zod
+          .string()
+          .min(1)
+          .max(previewPurchaseReceivedEditBodyLinesItemBatchNoMax),
+        expiryDate: zod.coerce.date(),
+        lineId: zod.string().uuid(),
+        receivedQty: zod
+          .string()
+          .max(previewPurchaseReceivedEditBodyLinesItemReceivedQtyMax)
+          .regex(previewPurchaseReceivedEditBodyLinesItemReceivedQtyRegExp),
+      }),
+    )
+    .min(1)
+    .max(previewPurchaseReceivedEditBodyLinesMax),
+  otherName: zod
+    .union([
+      zod.string().max(previewPurchaseReceivedEditBodyOtherNameOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  poId: zod.string().uuid(),
+  receivedDate: zod.coerce.date(),
+  receiverMode: zod.enum(["staff", "other"]),
+  staffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+});
+
+export const PreviewPurchaseReceivedEditResponse = zod.object({
+  receipt: zod.object({
+    lines: zod.array(
+      zod.object({
+        acceptedQty: zod.string(),
+        balanceAfterQty: zod.union([zod.string(), zod.null()]),
+        batchNo: zod.string(),
+        expiryDate: zod.coerce.date(),
+        lineId: zod.string().uuid(),
+        orderedQty: zod.string(),
+        productId: zod.string().uuid(),
+        productName: zod.string(),
+        receivedQty: zod.string(),
+        rejectedQty: zod.string(),
+      }),
+    ),
+    locationId: zod.string().uuid(),
+    locationName: zod.string(),
+    poDate: zod.coerce.date(),
+    poId: zod.string().uuid(),
+    poNumber: zod.string(),
+    receivedBy: zod.string(),
+    receivedDate: zod.coerce.date(),
+    receiverMode: zod.enum(["staff", "other"]),
+    staffId: zod.union([zod.string().uuid(), zod.null()]),
+    vendorAddress: zod.string(),
+    vendorGstNo: zod.string(),
+    vendorId: zod.string().uuid(),
+    vendorName: zod.string(),
+    vendorPhone: zod.string(),
   }),
   reviewToken: zod.string(),
 });

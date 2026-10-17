@@ -3945,6 +3945,7 @@ export interface POTaxBasis {
 }
 
 export interface POResponse {
+  activeReceiptCount?: number;
   createdAt: string;
   deletedAt: string | null;
   expectedDate: string;
@@ -4016,6 +4017,324 @@ export interface POReviewOrder {
 export interface POReview {
   order: POReviewOrder;
   reviewToken: string;
+}
+
+export type PRActivityEventAction =
+  (typeof PRActivityEventAction)[keyof typeof PRActivityEventAction];
+
+export const PRActivityEventAction = {
+  created: "created",
+  updated: "updated",
+  deleted: "deleted",
+} as const;
+
+export interface PRActivityEvent {
+  action: PRActivityEventAction;
+  actor: string;
+  at: string;
+  id: string;
+  number: string;
+  receiptId: string;
+  summary: string;
+}
+
+export interface PRActivityPage {
+  filtered: number;
+  items: PRActivityEvent[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export type PRAnalyticsCounts = { [key: string]: number };
+
+export type PRAnalyticsFulfillment = { [key: string]: number };
+
+export interface PRAnalytics {
+  acceptedAny: number;
+  active: number;
+  allRejected: number;
+  anyRejected: number;
+  counts: PRAnalyticsCounts;
+  deleted: number;
+  fulfillment: PRAnalyticsFulfillment;
+  fullyAccepted: number;
+  lines: number;
+  receipts: number;
+  scope: string;
+}
+
+export type PRCreateReceiverMode =
+  (typeof PRCreateReceiverMode)[keyof typeof PRCreateReceiverMode];
+
+export const PRCreateReceiverMode = {
+  staff: "staff",
+  other: "other",
+} as const;
+
+export interface PRLineInput {
+  /**
+   * @maxLength 11
+   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   */
+  acceptedQty: string;
+  /**
+   * @minLength 1
+   * @maxLength 120
+   */
+  batchNo: string;
+  expiryDate: string;
+  lineId: string;
+  /**
+   * @maxLength 11
+   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   */
+  receivedQty: string;
+}
+
+export interface PRCreate {
+  idempotencyKey: string;
+  /**
+   * @minItems 1
+   * @maxItems 100
+   */
+  lines: PRLineInput[];
+  otherName?: string | null;
+  poId: string;
+  receivedDate: string;
+  receiverMode: PRCreateReceiverMode;
+  /** @pattern ^[0-9a-f]{64}$ */
+  reviewToken: string;
+  staffId?: string | null;
+}
+
+export interface PRDelete {
+  /** @minimum 1 */
+  expected_version: number;
+  idempotencyKey: string;
+}
+
+export type PREditReceiverMode =
+  (typeof PREditReceiverMode)[keyof typeof PREditReceiverMode];
+
+export const PREditReceiverMode = {
+  staff: "staff",
+  other: "other",
+} as const;
+
+export interface PREdit {
+  /** @minimum 1 */
+  expected_version: number;
+  idempotencyKey: string;
+  /**
+   * @minItems 1
+   * @maxItems 100
+   */
+  lines: PRLineInput[];
+  otherName?: string | null;
+  poId: string;
+  receivedDate: string;
+  receiverMode: PREditReceiverMode;
+  /** @pattern ^[0-9a-f]{64}$ */
+  reviewToken: string;
+  staffId?: string | null;
+}
+
+export interface PRFilterChoice {
+  id: string;
+  name: string;
+}
+
+export interface PRFilters {
+  receivers: PRFilterChoice[];
+  vendors: PRFilterChoice[];
+}
+
+export type PRInputReceiverMode =
+  (typeof PRInputReceiverMode)[keyof typeof PRInputReceiverMode];
+
+export const PRInputReceiverMode = {
+  staff: "staff",
+  other: "other",
+} as const;
+
+export interface PRInput {
+  /**
+   * @minItems 1
+   * @maxItems 100
+   */
+  lines: PRLineInput[];
+  otherName?: string | null;
+  poId: string;
+  receivedDate: string;
+  receiverMode: PRInputReceiverMode;
+  staffId?: string | null;
+}
+
+export interface PRLineSnapshot {
+  acceptedQty: string;
+  balanceAfterQty: string | null;
+  batchNo: string;
+  expiryDate: string;
+  lineId: string;
+  orderedQty: string;
+  productId: string;
+  productName: string;
+  receivedQty: string;
+  rejectedQty: string;
+}
+
+export type PRSavedFulfillment =
+  (typeof PRSavedFulfillment)[keyof typeof PRSavedFulfillment] | null;
+
+export const PRSavedFulfillment = {
+  Open: "Open",
+  Partially_Received: "Partially Received",
+  Closed: "Closed",
+} as const;
+
+export type PRSavedReceiverMode =
+  (typeof PRSavedReceiverMode)[keyof typeof PRSavedReceiverMode];
+
+export const PRSavedReceiverMode = {
+  staff: "staff",
+  other: "other",
+} as const;
+
+export type PRSavedStatus = (typeof PRSavedStatus)[keyof typeof PRSavedStatus];
+
+export const PRSavedStatus = {
+  active: "active",
+  deleted: "deleted",
+} as const;
+
+export interface PRSaved {
+  createdAt: string;
+  deletedAt: string | null;
+  fulfillment?: PRSavedFulfillment;
+  id: string;
+  lines: PRLineSnapshot[];
+  locationId: string;
+  locationName: string;
+  number: string;
+  poDate: string;
+  poId: string;
+  poNumber: string;
+  receivedBy: string;
+  receivedDate: string;
+  receiverMode: PRSavedReceiverMode;
+  source: "server";
+  staffId: string | null;
+  status: PRSavedStatus;
+  updatedAt: string;
+  vendorAddress: string;
+  vendorGstNo: string;
+  vendorId: string;
+  vendorName: string;
+  vendorPhone: string;
+  version: number;
+}
+
+export interface PRPage {
+  filtered: number;
+  items: PRSaved[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export type PRReconciliationState =
+  (typeof PRReconciliationState)[keyof typeof PRReconciliationState];
+
+export const PRReconciliationState = {
+  committed: "committed",
+  not_committed: "not_committed",
+} as const;
+
+export interface PRReconciliation {
+  receipt: PRSaved | null;
+  state: PRReconciliationState;
+}
+
+export interface PRReference {
+  id: string;
+  name: string;
+}
+
+export interface PRReferencePage {
+  filtered: number;
+  items: PRReference[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export type PRSnapshotReceiverMode =
+  (typeof PRSnapshotReceiverMode)[keyof typeof PRSnapshotReceiverMode];
+
+export const PRSnapshotReceiverMode = {
+  staff: "staff",
+  other: "other",
+} as const;
+
+export interface PRSnapshot {
+  lines: PRLineSnapshot[];
+  locationId: string;
+  locationName: string;
+  poDate: string;
+  poId: string;
+  poNumber: string;
+  receivedBy: string;
+  receivedDate: string;
+  receiverMode: PRSnapshotReceiverMode;
+  staffId: string | null;
+  vendorAddress: string;
+  vendorGstNo: string;
+  vendorId: string;
+  vendorName: string;
+  vendorPhone: string;
+}
+
+export interface PRReview {
+  receipt: PRSnapshot;
+  reviewToken: string;
+}
+
+export type PRSourceBalances = { [key: string]: string };
+
+export type PRSourceFulfillment =
+  (typeof PRSourceFulfillment)[keyof typeof PRSourceFulfillment];
+
+export const PRSourceFulfillment = {
+  Open: "Open",
+  Partially_Received: "Partially Received",
+  Closed: "Closed",
+} as const;
+
+export interface PRSource {
+  activeReceiptCount?: number;
+  balances: PRSourceBalances;
+  createdAt: string;
+  deletedAt: string | null;
+  expectedDate: string;
+  fulfillment: PRSourceFulfillment;
+  gstAmount: number;
+  id: string;
+  lines: POLineResponse[];
+  locationId: string;
+  locationName: string;
+  number: string;
+  poDate: string;
+  receipts: PRSaved[];
+  status: string;
+  subtotal: number;
+  taxBasis?: POTaxBasis | null;
+  taxComponents?: POTaxAmounts | null;
+  total: number;
+  updatedAt: string;
+  vendorId: string;
+  vendorName: string;
+  version: number;
 }
 
 export interface PatientChoice {
@@ -9022,6 +9341,333 @@ export type ListPurchaseOrderReferencesParams = {
    */
   offset?: number;
   selected_id?: string | null;
+};
+
+export type ListPurchaseReceivedParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ListPurchaseReceivedStatus;
+  po_id?: string | null;
+  vendor_id?: string | null;
+  receipt_id?: string | null;
+  /**
+   * @maxLength 50
+   */
+  receiver?: string;
+  fulfillment?: ListPurchaseReceivedFulfillment;
+  from_date?: string | null;
+  to_date?: string | null;
+  sort?: ListPurchaseReceivedSort;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @maxLength 200
+   */
+  activity_query?: string;
+};
+
+export type ListPurchaseReceivedStatus =
+  (typeof ListPurchaseReceivedStatus)[keyof typeof ListPurchaseReceivedStatus];
+
+export const ListPurchaseReceivedStatus = {
+  active: "active",
+  deleted: "deleted",
+  all: "all",
+} as const;
+
+export type ListPurchaseReceivedFulfillment =
+  (typeof ListPurchaseReceivedFulfillment)[keyof typeof ListPurchaseReceivedFulfillment];
+
+export const ListPurchaseReceivedFulfillment = {
+  "": "",
+  Open: "Open",
+  Partially_Received: "Partially Received",
+  Closed: "Closed",
+} as const;
+
+export type ListPurchaseReceivedSort =
+  (typeof ListPurchaseReceivedSort)[keyof typeof ListPurchaseReceivedSort];
+
+export const ListPurchaseReceivedSort = {
+  recent: "recent",
+  oldest: "oldest",
+  number: "number",
+} as const;
+
+export type ListPurchaseReceivedActivityParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ListPurchaseReceivedActivityStatus;
+  po_id?: string | null;
+  vendor_id?: string | null;
+  receipt_id?: string | null;
+  /**
+   * @maxLength 50
+   */
+  receiver?: string;
+  fulfillment?: ListPurchaseReceivedActivityFulfillment;
+  from_date?: string | null;
+  to_date?: string | null;
+  sort?: ListPurchaseReceivedActivitySort;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @maxLength 200
+   */
+  activity_query?: string;
+};
+
+export type ListPurchaseReceivedActivityStatus =
+  (typeof ListPurchaseReceivedActivityStatus)[keyof typeof ListPurchaseReceivedActivityStatus];
+
+export const ListPurchaseReceivedActivityStatus = {
+  active: "active",
+  deleted: "deleted",
+  all: "all",
+} as const;
+
+export type ListPurchaseReceivedActivityFulfillment =
+  (typeof ListPurchaseReceivedActivityFulfillment)[keyof typeof ListPurchaseReceivedActivityFulfillment];
+
+export const ListPurchaseReceivedActivityFulfillment = {
+  "": "",
+  Open: "Open",
+  Partially_Received: "Partially Received",
+  Closed: "Closed",
+} as const;
+
+export type ListPurchaseReceivedActivitySort =
+  (typeof ListPurchaseReceivedActivitySort)[keyof typeof ListPurchaseReceivedActivitySort];
+
+export const ListPurchaseReceivedActivitySort = {
+  recent: "recent",
+  oldest: "oldest",
+  number: "number",
+} as const;
+
+export type GetPurchaseReceivedAnalyticsParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: GetPurchaseReceivedAnalyticsStatus;
+  po_id?: string | null;
+  vendor_id?: string | null;
+  receipt_id?: string | null;
+  /**
+   * @maxLength 50
+   */
+  receiver?: string;
+  fulfillment?: GetPurchaseReceivedAnalyticsFulfillment;
+  from_date?: string | null;
+  to_date?: string | null;
+  sort?: GetPurchaseReceivedAnalyticsSort;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @maxLength 200
+   */
+  activity_query?: string;
+};
+
+export type GetPurchaseReceivedAnalyticsStatus =
+  (typeof GetPurchaseReceivedAnalyticsStatus)[keyof typeof GetPurchaseReceivedAnalyticsStatus];
+
+export const GetPurchaseReceivedAnalyticsStatus = {
+  active: "active",
+  deleted: "deleted",
+  all: "all",
+} as const;
+
+export type GetPurchaseReceivedAnalyticsFulfillment =
+  (typeof GetPurchaseReceivedAnalyticsFulfillment)[keyof typeof GetPurchaseReceivedAnalyticsFulfillment];
+
+export const GetPurchaseReceivedAnalyticsFulfillment = {
+  "": "",
+  Open: "Open",
+  Partially_Received: "Partially Received",
+  Closed: "Closed",
+} as const;
+
+export type GetPurchaseReceivedAnalyticsSort =
+  (typeof GetPurchaseReceivedAnalyticsSort)[keyof typeof GetPurchaseReceivedAnalyticsSort];
+
+export const GetPurchaseReceivedAnalyticsSort = {
+  recent: "recent",
+  oldest: "oldest",
+  number: "number",
+} as const;
+
+export type ExportPurchaseReceivedParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ExportPurchaseReceivedStatus;
+  po_id?: string | null;
+  vendor_id?: string | null;
+  receipt_id?: string | null;
+  /**
+   * @maxLength 50
+   */
+  receiver?: string;
+  fulfillment?: ExportPurchaseReceivedFulfillment;
+  from_date?: string | null;
+  to_date?: string | null;
+  sort?: ExportPurchaseReceivedSort;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @maxLength 200
+   */
+  activity_query?: string;
+};
+
+export type ExportPurchaseReceivedStatus =
+  (typeof ExportPurchaseReceivedStatus)[keyof typeof ExportPurchaseReceivedStatus];
+
+export const ExportPurchaseReceivedStatus = {
+  active: "active",
+  deleted: "deleted",
+  all: "all",
+} as const;
+
+export type ExportPurchaseReceivedFulfillment =
+  (typeof ExportPurchaseReceivedFulfillment)[keyof typeof ExportPurchaseReceivedFulfillment];
+
+export const ExportPurchaseReceivedFulfillment = {
+  "": "",
+  Open: "Open",
+  Partially_Received: "Partially Received",
+  Closed: "Closed",
+} as const;
+
+export type ExportPurchaseReceivedSort =
+  (typeof ExportPurchaseReceivedSort)[keyof typeof ExportPurchaseReceivedSort];
+
+export const ExportPurchaseReceivedSort = {
+  recent: "recent",
+  oldest: "oldest",
+  number: "number",
+} as const;
+
+export type GetPurchaseReceivedFiltersParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: GetPurchaseReceivedFiltersStatus;
+  po_id?: string | null;
+  vendor_id?: string | null;
+  receipt_id?: string | null;
+  /**
+   * @maxLength 50
+   */
+  receiver?: string;
+  fulfillment?: GetPurchaseReceivedFiltersFulfillment;
+  from_date?: string | null;
+  to_date?: string | null;
+  sort?: GetPurchaseReceivedFiltersSort;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @maxLength 200
+   */
+  activity_query?: string;
+};
+
+export type GetPurchaseReceivedFiltersStatus =
+  (typeof GetPurchaseReceivedFiltersStatus)[keyof typeof GetPurchaseReceivedFiltersStatus];
+
+export const GetPurchaseReceivedFiltersStatus = {
+  active: "active",
+  deleted: "deleted",
+  all: "all",
+} as const;
+
+export type GetPurchaseReceivedFiltersFulfillment =
+  (typeof GetPurchaseReceivedFiltersFulfillment)[keyof typeof GetPurchaseReceivedFiltersFulfillment];
+
+export const GetPurchaseReceivedFiltersFulfillment = {
+  "": "",
+  Open: "Open",
+  Partially_Received: "Partially Received",
+  Closed: "Closed",
+} as const;
+
+export type GetPurchaseReceivedFiltersSort =
+  (typeof GetPurchaseReceivedFiltersSort)[keyof typeof GetPurchaseReceivedFiltersSort];
+
+export const GetPurchaseReceivedFiltersSort = {
+  recent: "recent",
+  oldest: "oldest",
+  number: "number",
+} as const;
+
+export type ListPurchaseReceivedReferencesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  selected_id?: string | null;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type GetPurchaseReceivedSourceParams = {
+  exclude_id?: string | null;
 };
 
 export type ListDownloadLogsParams = {

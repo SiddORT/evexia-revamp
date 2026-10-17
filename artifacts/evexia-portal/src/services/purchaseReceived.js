@@ -567,7 +567,7 @@ const csvHeaders = ['Document Type', 'Record Context', 'PR Number', 'PR Status',
 export function exportPRCSV(...args) { return reportExport('purchase_received', () => buildPRCSV(...args)); }
 function buildPRCSV(receipts, poRecord) {
   const rows = (receipts || []).flatMap((receipt) => receipt.lines.map((line) => {
-    return ['Purchase Received', `${isSamplePR(receipt) ? 'Sample · fictional · ' : ''}Local demo — not a financial invoice or stock-ledger entry`, receipt.number, receipt.status === 'deleted' ? 'Deleted' : 'Active',
+    return ['Purchase Received', receipt.source === 'server' ? 'Saved server receipt — not a financial invoice or stock-ledger entry' : `${isSamplePR(receipt) ? 'Sample · fictional · ' : ''}Local demo — not a financial invoice or stock-ledger entry`, receipt.number, receipt.status === 'deleted' ? 'Deleted' : 'Active',
       receipt.receivedDate, receipt.receivedBy, receipt.poNumber, receipt.poDate, receipt.vendorName,
       receipt.vendorPhone, receipt.locationName, line.productName, line.batchNo, line.orderedQty,
       line.receivedQty, line.acceptedQty, line.rejectedQty, line.expiryDate];

@@ -102,6 +102,9 @@ def ready(db):
         ["0037_domain_admission"], ["0038_purchase_orders"],
         ["0039_communication"], ["0040_po_tax_basis"], ["0041_location_geography"],
         ["0042_rate_hundredths"],
+        ["0043_email_templates"],
+        # Additive PR tables leave the account ciphertext/index anchors unchanged.
+        ["0044_purchase_received"],
     ):
         raise AccountCryptoError()
     current = crypto()

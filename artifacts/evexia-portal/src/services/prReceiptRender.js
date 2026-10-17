@@ -381,7 +381,7 @@ function drawPageHeader(model, pageIndex, pageCount, theme, layout) {
     }),
   );
 
-  const markings = ['LOCAL DEMO · NOT A STOCK-LEDGER ENTRY'];
+  const markings = [model.source === 'server' ? 'SERVER RECEIPT · NOT A STOCK-LEDGER ENTRY' : 'LOCAL DEMO · NOT A STOCK-LEDGER ENTRY'];
   if (model.status.toLowerCase() === 'deleted' || model.deletedAt !== DASH) {
     markings.push('DELETED · FOR REFERENCE');
   }
@@ -402,7 +402,7 @@ function drawPageHeader(model, pageIndex, pageCount, theme, layout) {
 }
 
 function receiptMarkings(model) {
-  const markings = ['LOCAL DEMO · NOT A STOCK-LEDGER ENTRY'];
+  const markings = [model.source === 'server' ? 'SERVER RECEIPT · NOT A STOCK-LEDGER ENTRY' : 'LOCAL DEMO · NOT A STOCK-LEDGER ENTRY'];
   if (model.status.toLowerCase() === 'deleted' || model.deletedAt !== DASH) {
     markings.push('DELETED · FOR REFERENCE');
   }

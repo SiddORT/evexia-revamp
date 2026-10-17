@@ -9,7 +9,7 @@ const empty = { items: [], filtered: 0, total: 0, offset: 0 };
  * Searchable, server-paged reference picker. Searches never include selected_id, so a replacement search is never
  * restricted to the current selection. The selected record comes from the parent (set only by explicit choice).
  */
-export default function PurchaseOrderReferenceSelect({ id, kind, source = 'references', label, selected, onChange, placeholder, invalid, describedBy, disabled }) {
+export default function PurchaseOrderReferenceSelect({ id, kind, source = 'references', label, selected, onChange, placeholder, invalid, describedBy, disabled, fetcher: customFetcher }) {
   const [page, setPage] = useState(empty);
   const [state, setState] = useState('idle');
   const seq = useRef(0);
@@ -30,17 +30,18 @@ export default function PurchaseOrderReferenceSelect({ id, kind, source = 'refer
     abort.current = controller;
     const request = seq.current;
     setState('loading');
-    const fetcher = source === 'filter-options' ? listPurchaseOrderFilterOptions : listPurchaseOrderReferences;
+    const fetcher = customFetcher || (source === 'filter-options' ? listPurchaseOrderFilterOptions : listPurchaseOrderReferences);
     fetcher(kind, { query, limit: LIMIT, offset }, controller.signal).then((result) => {
       if (request !== seq.current) return;
-      setPage({ items: result.items || [], filtered: result.filtered ?? 0, total: result.total ?? 0, offset: result.offset ?? offset });
+      setPage({ items: result.items || [], filtered: result.filtered ?? 0, total: result.total ?? 0, offset: result.offset ?? offset,
+        pageItemCount: result.pageItemCount ?? result.items?.length ?? 0 });
       setState('ready');
     }).catch((error) => {
       if (request !== seq.current || error?.name === 'AbortError') return;
       setPage(empty);
       setState('error');
     });
-  }, [kind, source, invalidate]);
+  }, [kind, source, invalidate, customFetcher]);
 
   useEffect(() => invalidate, [invalidate]);
   useEffect(() => { if (disabled) { invalidate(); setState('idle'); } }, [disabled, invalidate]);
@@ -67,7 +68,7 @@ export default function PurchaseOrderReferenceSelect({ id, kind, source = 'refer
   }
 
   const first = page.filtered ? page.offset + 1 : 0;
-  const last = page.offset + page.items.length;
+  const last = page.offset + (page.pageItemCount ?? page.items.length);
   const paged = state === 'ready' && page.filtered > LIMIT;
 
   return <>

@@ -48,6 +48,7 @@
     "0040_po_tax_basis": "operator_only",
     "0041_location_geography": "operator_only",
     "0042_rate_hundredths": "operator_only",
-    "0043_email_templates": "operator_only"
+    "0043_email_templates": "operator_only",
+    "0044_purchase_received": "operator_only"
   }
 }

@@ -58,8 +58,10 @@ def locked_reference(db, kind, record_id):
 
 
 def projection(db, row):
-    lines = db.scalars(select(Line).where(Line.order_id == row.id).order_by(Line.position)).all()
-    return dict(id=str(row.id), number=row.number, version=row.version, poDate=row.po_date.isoformat(),
+    lines = db.scalars(select(Line).where(Line.order_id == row.id, Line.position >= 0).order_by(Line.position)).all()
+    installed = db.scalar(text("SELECT to_regclass('purchase_receipts') IS NOT NULL"))
+    receipt_count = db.scalar(text("SELECT count(*) FROM purchase_receipts WHERE po_id=:id AND status='active'"), {"id": row.id}) if installed else 0
+    return dict(id=str(row.id), number=row.number, version=row.version, activeReceiptCount=receipt_count, poDate=row.po_date.isoformat(),
                 expectedDate=row.expected_date.isoformat(), vendorId=str(row.vendor_id), vendorName=row.vendor_name,
                 locationId=str(row.location_id), locationName=row.location_name, status=row.status,
                 subtotal=row.subtotal, gstAmount=row.gst_amount, total=row.total,
@@ -131,7 +133,7 @@ def audit(db, actor, row, action, summary):
 
 
 def persist_lines(db, row, lines):
-    old = list(db.scalars(select(Line).where(Line.order_id == row.id).order_by(Line.position)))
+    old = list(db.scalars(select(Line).where(Line.order_id == row.id, Line.position >= 0).order_by(Line.position)))
     # Reuse matching server identities, including repeated products, once each.
     for position, data in enumerate(lines):
         match = next((line for line in old if str(line.product_id) == data["productId"]), None)
@@ -141,7 +143,9 @@ def persist_lines(db, row, lines):
         else:
             db.add(Line(order_id=row.id, product_id=uuid.UUID(data["productId"]), position=position, snapshot=data))
     for line in old:
-        db.delete(line)
+        # Retain source identities for deleted receipt history; negative positions
+        # are archived and never appear in the current PO or financial snapshot.
+        line.position = -1
 
 
 def mutation(db, actor, body, record_id=None, operation="created"):
@@ -160,6 +164,13 @@ def mutation(db, actor, body, record_id=None, operation="created"):
                 raise POError("Retry identity belongs to different data. Check the saved order before continuing.", 409, "po_retry_conflict")
             return prior.response
         row = find(db, record_id) if record_id else None
+        if row:
+            # The additive receipt schema can be pending activation. No startup
+            # DDL: pre-activation POs remain usable, but once installed the guard
+            # participates in the same transaction-held PO lock as PR writes.
+            installed = db.scalar(text("SELECT to_regclass('purchase_receipts') IS NOT NULL"))
+            if installed and db.scalar(text("SELECT EXISTS (SELECT 1 FROM purchase_receipts WHERE po_id=:id AND status='active')"), {"id": row.id}):
+                raise POError("Active Purchase Received records prevent editing or deleting this PO. View its linked receipts.", 409, "po_active_receipts")
         before = projection(db, row) if row else None
         if row and (row.status != "open" or row.version != body.expected_version):
             raise POError("Order changed or was deleted. Reload it before retrying.", 409, "po_stale")
@@ -226,7 +237,7 @@ def listing(db, actor, query="", status="open", vendor_id=None, product_id=None,
         if vendor_id:
             statement = statement.where(PO.vendor_id == vendor_id)
         if product_id:
-            statement = statement.where(select(Line.id).where(Line.order_id == PO.id, Line.product_id == product_id).exists())
+            statement = statement.where(select(Line.id).where(Line.order_id == PO.id, Line.position >= 0, Line.product_id == product_id).exists())
         if from_date:
             statement = statement.where(PO.po_date >= from_date)
         if to_date:
@@ -235,7 +246,7 @@ def listing(db, actor, query="", status="open", vendor_id=None, product_id=None,
             p = pattern(query)
             statement = statement.where(or_(PO.number.ilike(p, escape="\\"), PO.vendor_name.ilike(p, escape="\\"),
                 PO.location_name.ilike(p, escape="\\"),
-                select(Line.id).where(Line.order_id == PO.id, Line.snapshot["productName"].as_string().ilike(p, escape="\\")).exists()))
+                select(Line.id).where(Line.order_id == PO.id, Line.position >= 0, Line.snapshot["productName"].as_string().ilike(p, escape="\\")).exists()))
         ordering = (PO.po_date, PO.created_at, PO.id)
         statement = statement.order_by(*(col.asc() if sort == "oldest" else col.desc() for col in ordering))
         return page(db, statement, select(func.count()).select_from(PO), limit, offset, lambda r: projection(db, r[0]))
@@ -245,7 +256,7 @@ def listing(db, actor, query="", status="open", vendor_id=None, product_id=None,
 def overview_data(db):
     count, value, vendors = db.execute(select(func.count(), func.coalesce(func.sum(PO.total), 0),
         func.count(func.distinct(PO.vendor_id))).where(PO.status == "open")).one()
-    lines = db.scalar(select(func.count()).select_from(Line).join(PO).where(PO.status == "open"))
+    lines = db.scalar(select(func.count()).select_from(Line).join(PO).where(PO.status == "open", Line.position >= 0))
     changes = db.scalar(select(func.count()).select_from(Meta))
     return dict(openValue=int(value), openCount=count, vendorCount=vendors, lineCount=lines, changes=changes)
 
@@ -282,7 +293,7 @@ def references(db, actor, kind, query="", limit=25, offset=0, selected_id=None, 
             if kind == "vendors":
                 choices = select(PO.vendor_id.label("id"), PO.vendor_name.label("name")).distinct().subquery()
             else:
-                choices = select(Line.product_id.label("id"), Line.snapshot["productName"].as_string().label("name")).distinct().subquery()
+                choices = select(Line.product_id.label("id"), Line.snapshot["productName"].as_string().label("name")).where(Line.position >= 0).distinct().subquery()
             # One choice per master identity, even after historical renames.
             # Search every retained label, but return a stable representative.
             grouped = select(choices.c.id, func.min(choices.c.name).label("name")).group_by(choices.c.id)

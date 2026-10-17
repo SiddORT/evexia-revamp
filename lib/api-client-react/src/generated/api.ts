@@ -124,6 +124,7 @@ import type {
   ExportOpeningBalancesParams,
   ExportPatientDirectoryParams,
   ExportProductCategoriesParams,
+  ExportPurchaseReceivedParams,
   ExportReportingEventsParams,
   ExportReportingSessionsParams,
   ExportSalesTargetsParams,
@@ -131,6 +132,9 @@ import type {
   ExportVendorsParams,
   ExportZonesParams,
   FileResponse,
+  GetPurchaseReceivedAnalyticsParams,
+  GetPurchaseReceivedFiltersParams,
+  GetPurchaseReceivedSourceParams,
   GetSalesTargetChoicesParams,
   HeadquarterEdit,
   HeadquarterFields,
@@ -163,6 +167,9 @@ import type {
   ListPurchaseOrderFilterOptionsParams,
   ListPurchaseOrderReferencesParams,
   ListPurchaseOrdersParams,
+  ListPurchaseReceivedActivityParams,
+  ListPurchaseReceivedParams,
+  ListPurchaseReceivedReferencesParams,
   ListReportingEventsParams,
   ListReportingSessionsParams,
   ListReportingUsersParams,
@@ -219,6 +226,19 @@ import type {
   POReferencePage,
   POResponse,
   POReview,
+  PRActivityPage,
+  PRAnalytics,
+  PRCreate,
+  PRDelete,
+  PREdit,
+  PRFilters,
+  PRInput,
+  PRPage,
+  PRReconciliation,
+  PRReferencePage,
+  PRReview,
+  PRSaved,
+  PRSource,
   PatientChoices,
   PatientDeletion,
   PatientDirectoryResponse,
@@ -14483,6 +14503,1536 @@ export const usePreviewPurchaseOrderEdit = <
   TContext
 > => {
   return useMutation(getPreviewPurchaseOrderEditMutationOptions(options));
+};
+
+export const getListPurchaseReceivedUrl = (
+  params?: ListPurchaseReceivedParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/purchase-received?${stringifiedParams}`
+    : `/api/v1/admin/purchase-received`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listPurchaseReceived = async (
+  params?: ListPurchaseReceivedParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PRPage> => {
+  return customFetch<PRPage>(getListPurchaseReceivedUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListPurchaseReceivedQueryKey = (
+  params?: ListPurchaseReceivedParams,
+) => {
+  return [
+    `/api/v1/admin/purchase-received`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListPurchaseReceivedQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPurchaseReceived>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListPurchaseReceivedParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPurchaseReceived>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListPurchaseReceivedQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPurchaseReceived>>
+  > = ({ signal }) =>
+    listPurchaseReceived(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPurchaseReceived>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPurchaseReceivedQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPurchaseReceived>>
+>;
+export type ListPurchaseReceivedQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListPurchaseReceived<
+  TData = Awaited<ReturnType<typeof listPurchaseReceived>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListPurchaseReceivedParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPurchaseReceived>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPurchaseReceivedQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreatePurchaseReceivedUrl = () => {
+  return `/api/v1/admin/purchase-received`;
+};
+
+/**
+ * @summary Create
+ */
+export const createPurchaseReceived = async (
+  pRCreate: PRCreate,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PRSaved> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<PRSaved>(getCreatePurchaseReceivedUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(pRCreate),
+  });
+};
+
+export const getCreatePurchaseReceivedMutationKey = () =>
+  ["createPurchaseReceived"] as const;
+
+export const getCreatePurchaseReceivedMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPurchaseReceived>>,
+    TError,
+    CreatePurchaseReceivedMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createPurchaseReceived>>,
+  TError,
+  CreatePurchaseReceivedMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreatePurchaseReceivedMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createPurchaseReceived>>,
+    CreatePurchaseReceivedMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createPurchaseReceived(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreatePurchaseReceivedMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createPurchaseReceived>>
+>;
+export type CreatePurchaseReceivedMutationBody = BodyType<PRCreate>;
+export type CreatePurchaseReceivedMutationError = ErrorType<ErrorEnvelope>;
+export type CreatePurchaseReceivedMutationVariables = {
+  data: BodyType<PRCreate>;
+};
+
+/**
+ * @summary Create
+ */
+export const useCreatePurchaseReceived = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPurchaseReceived>>,
+    TError,
+    CreatePurchaseReceivedMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createPurchaseReceived>>,
+  TError,
+  CreatePurchaseReceivedMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreatePurchaseReceivedMutationOptions(options));
+};
+
+export const getListPurchaseReceivedActivityUrl = (
+  params?: ListPurchaseReceivedActivityParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/purchase-received/activity?${stringifiedParams}`
+    : `/api/v1/admin/purchase-received/activity`;
+};
+
+/**
+ * @summary Activity
+ */
+export const listPurchaseReceivedActivity = async (
+  params?: ListPurchaseReceivedActivityParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PRActivityPage> => {
+  return customFetch<PRActivityPage>(
+    getListPurchaseReceivedActivityUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListPurchaseReceivedActivityQueryKey = (
+  params?: ListPurchaseReceivedActivityParams,
+) => {
+  return [
+    `/api/v1/admin/purchase-received/activity`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListPurchaseReceivedActivityQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPurchaseReceivedActivity>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListPurchaseReceivedActivityParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPurchaseReceivedActivity>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListPurchaseReceivedActivityQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPurchaseReceivedActivity>>
+  > = ({ signal }) =>
+    listPurchaseReceivedActivity(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPurchaseReceivedActivity>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPurchaseReceivedActivityQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPurchaseReceivedActivity>>
+>;
+export type ListPurchaseReceivedActivityQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Activity
+ */
+
+export function useListPurchaseReceivedActivity<
+  TData = Awaited<ReturnType<typeof listPurchaseReceivedActivity>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListPurchaseReceivedActivityParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPurchaseReceivedActivity>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPurchaseReceivedActivityQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetPurchaseReceivedAnalyticsUrl = (
+  params?: GetPurchaseReceivedAnalyticsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/purchase-received/analytics?${stringifiedParams}`
+    : `/api/v1/admin/purchase-received/analytics`;
+};
+
+/**
+ * @summary Analytics
+ */
+export const getPurchaseReceivedAnalytics = async (
+  params?: GetPurchaseReceivedAnalyticsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PRAnalytics> => {
+  return customFetch<PRAnalytics>(getGetPurchaseReceivedAnalyticsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPurchaseReceivedAnalyticsQueryKey = (
+  params?: GetPurchaseReceivedAnalyticsParams,
+) => {
+  return [
+    `/api/v1/admin/purchase-received/analytics`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetPurchaseReceivedAnalyticsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPurchaseReceivedAnalytics>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: GetPurchaseReceivedAnalyticsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPurchaseReceivedAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPurchaseReceivedAnalyticsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPurchaseReceivedAnalytics>>
+  > = ({ signal }) =>
+    getPurchaseReceivedAnalytics(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPurchaseReceivedAnalytics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPurchaseReceivedAnalyticsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPurchaseReceivedAnalytics>>
+>;
+export type GetPurchaseReceivedAnalyticsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Analytics
+ */
+
+export function useGetPurchaseReceivedAnalytics<
+  TData = Awaited<ReturnType<typeof getPurchaseReceivedAnalytics>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: GetPurchaseReceivedAnalyticsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPurchaseReceivedAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPurchaseReceivedAnalyticsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getExportPurchaseReceivedUrl = (
+  params?: ExportPurchaseReceivedParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/purchase-received/export?${stringifiedParams}`
+    : `/api/v1/admin/purchase-received/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportPurchaseReceived = async (
+  params?: ExportPurchaseReceivedParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PRPage> => {
+  return customFetch<PRPage>(getExportPurchaseReceivedUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportPurchaseReceivedQueryKey = (
+  params?: ExportPurchaseReceivedParams,
+) => {
+  return [
+    `/api/v1/admin/purchase-received/export`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getExportPurchaseReceivedQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportPurchaseReceived>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportPurchaseReceivedParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportPurchaseReceived>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getExportPurchaseReceivedQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exportPurchaseReceived>>
+  > = ({ signal }) =>
+    exportPurchaseReceived(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportPurchaseReceived>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportPurchaseReceivedQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportPurchaseReceived>>
+>;
+export type ExportPurchaseReceivedQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportPurchaseReceived<
+  TData = Awaited<ReturnType<typeof exportPurchaseReceived>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportPurchaseReceivedParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportPurchaseReceived>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportPurchaseReceivedQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetPurchaseReceivedFiltersUrl = (
+  params?: GetPurchaseReceivedFiltersParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/purchase-received/filter-options?${stringifiedParams}`
+    : `/api/v1/admin/purchase-received/filter-options`;
+};
+
+/**
+ * @summary Options
+ */
+export const getPurchaseReceivedFilters = async (
+  params?: GetPurchaseReceivedFiltersParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PRFilters> => {
+  return customFetch<PRFilters>(getGetPurchaseReceivedFiltersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPurchaseReceivedFiltersQueryKey = (
+  params?: GetPurchaseReceivedFiltersParams,
+) => {
+  return [
+    `/api/v1/admin/purchase-received/filter-options`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetPurchaseReceivedFiltersQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPurchaseReceivedFilters>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: GetPurchaseReceivedFiltersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPurchaseReceivedFilters>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPurchaseReceivedFiltersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPurchaseReceivedFilters>>
+  > = ({ signal }) =>
+    getPurchaseReceivedFilters(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPurchaseReceivedFilters>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPurchaseReceivedFiltersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPurchaseReceivedFilters>>
+>;
+export type GetPurchaseReceivedFiltersQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Options
+ */
+
+export function useGetPurchaseReceivedFilters<
+  TData = Awaited<ReturnType<typeof getPurchaseReceivedFilters>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: GetPurchaseReceivedFiltersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPurchaseReceivedFilters>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPurchaseReceivedFiltersQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getPreviewPurchaseReceivedUrl = () => {
+  return `/api/v1/admin/purchase-received/preview`;
+};
+
+/**
+ * @summary Preview
+ */
+export const previewPurchaseReceived = async (
+  pRInput: PRInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PRReview> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<PRReview>(getPreviewPurchaseReceivedUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(pRInput),
+  });
+};
+
+export const getPreviewPurchaseReceivedMutationKey = () =>
+  ["previewPurchaseReceived"] as const;
+
+export const getPreviewPurchaseReceivedMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewPurchaseReceived>>,
+    TError,
+    PreviewPurchaseReceivedMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof previewPurchaseReceived>>,
+  TError,
+  PreviewPurchaseReceivedMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPreviewPurchaseReceivedMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof previewPurchaseReceived>>,
+    PreviewPurchaseReceivedMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return previewPurchaseReceived(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PreviewPurchaseReceivedMutationResult = NonNullable<
+  Awaited<ReturnType<typeof previewPurchaseReceived>>
+>;
+export type PreviewPurchaseReceivedMutationBody = BodyType<PRInput>;
+export type PreviewPurchaseReceivedMutationError = ErrorType<ErrorEnvelope>;
+export type PreviewPurchaseReceivedMutationVariables = {
+  data: BodyType<PRInput>;
+};
+
+/**
+ * @summary Preview
+ */
+export const usePreviewPurchaseReceived = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewPurchaseReceived>>,
+    TError,
+    PreviewPurchaseReceivedMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof previewPurchaseReceived>>,
+  TError,
+  PreviewPurchaseReceivedMutationVariables,
+  TContext
+> => {
+  return useMutation(getPreviewPurchaseReceivedMutationOptions(options));
+};
+
+export const getListPurchaseReceivedReferencesUrl = (
+  kind: "staff" | "orders",
+  params?: ListPurchaseReceivedReferencesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/purchase-received/references/${kind}?${stringifiedParams}`
+    : `/api/v1/admin/purchase-received/references/${kind}`;
+};
+
+/**
+ * @summary References
+ */
+export const listPurchaseReceivedReferences = async (
+  kind: "staff" | "orders",
+  params?: ListPurchaseReceivedReferencesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PRReferencePage> => {
+  return customFetch<PRReferencePage>(
+    getListPurchaseReceivedReferencesUrl(kind, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListPurchaseReceivedReferencesQueryKey = (
+  kind: "staff" | "orders",
+  params?: ListPurchaseReceivedReferencesParams,
+) => {
+  return [
+    `/api/v1/admin/purchase-received/references/${kind}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListPurchaseReceivedReferencesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPurchaseReceivedReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "staff" | "orders",
+  params?: ListPurchaseReceivedReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPurchaseReceivedReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListPurchaseReceivedReferencesQueryKey(kind, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPurchaseReceivedReferences>>
+  > = ({ signal }) =>
+    listPurchaseReceivedReferences(kind, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: kind !== null && kind !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPurchaseReceivedReferences>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPurchaseReceivedReferencesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPurchaseReceivedReferences>>
+>;
+export type ListPurchaseReceivedReferencesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary References
+ */
+
+export function useListPurchaseReceivedReferences<
+  TData = Awaited<ReturnType<typeof listPurchaseReceivedReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "staff" | "orders",
+  params?: ListPurchaseReceivedReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPurchaseReceivedReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPurchaseReceivedReferencesQueryOptions(
+    kind,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getReconcilePurchaseReceivedUrl = (key: string) => {
+  return `/api/v1/admin/purchase-received/requests/${key}`;
+};
+
+/**
+ * @summary Reconcile
+ */
+export const reconcilePurchaseReceived = async (
+  key: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PRReconciliation> => {
+  return customFetch<PRReconciliation>(getReconcilePurchaseReceivedUrl(key), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getReconcilePurchaseReceivedQueryKey = (key: string) => {
+  return [`/api/v1/admin/purchase-received/requests/${key}`] as const;
+};
+
+export const getReconcilePurchaseReceivedQueryOptions = <
+  TData = Awaited<ReturnType<typeof reconcilePurchaseReceived>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  key: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof reconcilePurchaseReceived>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getReconcilePurchaseReceivedQueryKey(key);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof reconcilePurchaseReceived>>
+  > = ({ signal }) =>
+    reconcilePurchaseReceived(key, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: key !== null && key !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof reconcilePurchaseReceived>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ReconcilePurchaseReceivedQueryResult = NonNullable<
+  Awaited<ReturnType<typeof reconcilePurchaseReceived>>
+>;
+export type ReconcilePurchaseReceivedQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Reconcile
+ */
+
+export function useReconcilePurchaseReceived<
+  TData = Awaited<ReturnType<typeof reconcilePurchaseReceived>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  key: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof reconcilePurchaseReceived>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getReconcilePurchaseReceivedQueryOptions(key, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetPurchaseReceivedSourceUrl = (
+  poId: string,
+  params?: GetPurchaseReceivedSourceParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/purchase-received/sources/${poId}?${stringifiedParams}`
+    : `/api/v1/admin/purchase-received/sources/${poId}`;
+};
+
+/**
+ * @summary Source
+ */
+export const getPurchaseReceivedSource = async (
+  poId: string,
+  params?: GetPurchaseReceivedSourceParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PRSource> => {
+  return customFetch<PRSource>(getGetPurchaseReceivedSourceUrl(poId, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPurchaseReceivedSourceQueryKey = (
+  poId: string,
+  params?: GetPurchaseReceivedSourceParams,
+) => {
+  return [
+    `/api/v1/admin/purchase-received/sources/${poId}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetPurchaseReceivedSourceQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPurchaseReceivedSource>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  poId: string,
+  params?: GetPurchaseReceivedSourceParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPurchaseReceivedSource>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetPurchaseReceivedSourceQueryKey(poId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPurchaseReceivedSource>>
+  > = ({ signal }) =>
+    getPurchaseReceivedSource(poId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: poId !== null && poId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPurchaseReceivedSource>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPurchaseReceivedSourceQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPurchaseReceivedSource>>
+>;
+export type GetPurchaseReceivedSourceQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Source
+ */
+
+export function useGetPurchaseReceivedSource<
+  TData = Awaited<ReturnType<typeof getPurchaseReceivedSource>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  poId: string,
+  params?: GetPurchaseReceivedSourceParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPurchaseReceivedSource>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPurchaseReceivedSourceQueryOptions(
+    poId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetPurchaseReceivedUrl = (recordId: string) => {
+  return `/api/v1/admin/purchase-received/${recordId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getPurchaseReceived = async (
+  recordId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PRSaved> => {
+  return customFetch<PRSaved>(getGetPurchaseReceivedUrl(recordId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPurchaseReceivedQueryKey = (recordId: string) => {
+  return [`/api/v1/admin/purchase-received/${recordId}`] as const;
+};
+
+export const getGetPurchaseReceivedQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPurchaseReceived>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPurchaseReceived>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPurchaseReceivedQueryKey(recordId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPurchaseReceived>>
+  > = ({ signal }) =>
+    getPurchaseReceived(recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPurchaseReceived>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPurchaseReceivedQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPurchaseReceived>>
+>;
+export type GetPurchaseReceivedQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetPurchaseReceived<
+  TData = Awaited<ReturnType<typeof getPurchaseReceived>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPurchaseReceived>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPurchaseReceivedQueryOptions(recordId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDeletePurchaseReceivedUrl = (recordId: string) => {
+  return `/api/v1/admin/purchase-received/${recordId}/delete`;
+};
+
+/**
+ * @summary Delete
+ */
+export const deletePurchaseReceived = async (
+  recordId: string,
+  pRDelete: PRDelete,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PRSaved> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<PRSaved>(getDeletePurchaseReceivedUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(pRDelete),
+  });
+};
+
+export const getDeletePurchaseReceivedMutationKey = () =>
+  ["deletePurchaseReceived"] as const;
+
+export const getDeletePurchaseReceivedMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePurchaseReceived>>,
+    TError,
+    DeletePurchaseReceivedMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deletePurchaseReceived>>,
+  TError,
+  DeletePurchaseReceivedMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeletePurchaseReceivedMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deletePurchaseReceived>>,
+    DeletePurchaseReceivedMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return deletePurchaseReceived(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeletePurchaseReceivedMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deletePurchaseReceived>>
+>;
+export type DeletePurchaseReceivedMutationBody = BodyType<PRDelete>;
+export type DeletePurchaseReceivedMutationError = ErrorType<ErrorEnvelope>;
+export type DeletePurchaseReceivedMutationVariables = {
+  recordId: string;
+  data: BodyType<PRDelete>;
+};
+
+/**
+ * @summary Delete
+ */
+export const useDeletePurchaseReceived = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePurchaseReceived>>,
+    TError,
+    DeletePurchaseReceivedMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deletePurchaseReceived>>,
+  TError,
+  DeletePurchaseReceivedMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeletePurchaseReceivedMutationOptions(options));
+};
+
+export const getEditPurchaseReceivedUrl = (recordId: string) => {
+  return `/api/v1/admin/purchase-received/${recordId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editPurchaseReceived = async (
+  recordId: string,
+  pREdit: PREdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PRSaved> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<PRSaved>(getEditPurchaseReceivedUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(pREdit),
+  });
+};
+
+export const getEditPurchaseReceivedMutationKey = () =>
+  ["editPurchaseReceived"] as const;
+
+export const getEditPurchaseReceivedMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editPurchaseReceived>>,
+    TError,
+    EditPurchaseReceivedMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editPurchaseReceived>>,
+  TError,
+  EditPurchaseReceivedMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditPurchaseReceivedMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editPurchaseReceived>>,
+    EditPurchaseReceivedMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return editPurchaseReceived(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditPurchaseReceivedMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editPurchaseReceived>>
+>;
+export type EditPurchaseReceivedMutationBody = BodyType<PREdit>;
+export type EditPurchaseReceivedMutationError = ErrorType<ErrorEnvelope>;
+export type EditPurchaseReceivedMutationVariables = {
+  recordId: string;
+  data: BodyType<PREdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditPurchaseReceived = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editPurchaseReceived>>,
+    TError,
+    EditPurchaseReceivedMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editPurchaseReceived>>,
+  TError,
+  EditPurchaseReceivedMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditPurchaseReceivedMutationOptions(options));
+};
+
+export const getPreviewPurchaseReceivedEditUrl = (recordId: string) => {
+  return `/api/v1/admin/purchase-received/${recordId}/preview`;
+};
+
+/**
+ * @summary Edit Preview
+ */
+export const previewPurchaseReceivedEdit = async (
+  recordId: string,
+  pRInput: PRInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PRReview> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<PRReview>(getPreviewPurchaseReceivedEditUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(pRInput),
+  });
+};
+
+export const getPreviewPurchaseReceivedEditMutationKey = () =>
+  ["previewPurchaseReceivedEdit"] as const;
+
+export const getPreviewPurchaseReceivedEditMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewPurchaseReceivedEdit>>,
+    TError,
+    PreviewPurchaseReceivedEditMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof previewPurchaseReceivedEdit>>,
+  TError,
+  PreviewPurchaseReceivedEditMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPreviewPurchaseReceivedEditMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof previewPurchaseReceivedEdit>>,
+    PreviewPurchaseReceivedEditMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return previewPurchaseReceivedEdit(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PreviewPurchaseReceivedEditMutationResult = NonNullable<
+  Awaited<ReturnType<typeof previewPurchaseReceivedEdit>>
+>;
+export type PreviewPurchaseReceivedEditMutationBody = BodyType<PRInput>;
+export type PreviewPurchaseReceivedEditMutationError = ErrorType<ErrorEnvelope>;
+export type PreviewPurchaseReceivedEditMutationVariables = {
+  recordId: string;
+  data: BodyType<PRInput>;
+};
+
+/**
+ * @summary Edit Preview
+ */
+export const usePreviewPurchaseReceivedEdit = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewPurchaseReceivedEdit>>,
+    TError,
+    PreviewPurchaseReceivedEditMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof previewPurchaseReceivedEdit>>,
+  TError,
+  PreviewPurchaseReceivedEditMutationVariables,
+  TContext
+> => {
+  return useMutation(getPreviewPurchaseReceivedEditMutationOptions(options));
 };
 
 export const getRecordBrowserActivityUrl = () => {

@@ -9,7 +9,7 @@
 .searchable-select__clear { flex: none; display: grid; place-items: center; padding: 5px; border: 0; background: transparent; color: var(--admin-muted); cursor: pointer; }
 .searchable-select__clear:hover { color: var(--admin-text); }
 .searchable-select__clear:focus-visible { outline: 2px solid var(--admin-focus); }
-.searchable-select__chevron { flex: none; margin: 0 10px 0 4px; color: var(--admin-muted); cursor: pointer; }
+.searchable-select__chevron { flex: none; width: 16px; height: 16px; margin: 0 8px 0 6px; align-self: center; color: var(--admin-text-soft); cursor: pointer; }
 .searchable-select__menu { position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 230px; overflow-y: auto; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); box-shadow: 0 8px 24px rgba(0,0,0,.13); padding: 4px; }
 .searchable-select__option, .searchable-select__empty { padding: 9px 8px; color: var(--admin-text); font-size: 12px; overflow-wrap: anywhere; }
 .searchable-select__selection { display: block; margin-top: 5px; font-size: 11px; color: var(--admin-muted); overflow-wrap: anywhere; }

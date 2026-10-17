@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     staff_encryption_key_id: str = "primary"
     communication_encryption_keys: SecretStr | None = None
     communication_encryption_key_id: str = "primary"
+    pr_encryption_keys: SecretStr | None = None
+    pr_encryption_key_id: str = "primary"
     staff_email_index_key: SecretStr | None = None
     directory_encryption_keys: SecretStr | None = None
     directory_encryption_key_id: str = "primary"

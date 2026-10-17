@@ -757,9 +757,12 @@ export const headquarterRequest = (path, options) => masterRequest('headquarters
 export const productCategoryRequest = (path, options) => masterRequest('product-categories', path, options);
 export const openingBalanceRequest = (path, options) => masterRequest('opening-balances', path, options);
 
-// Procurement is not a master permission and never replays mutations silently.
-export async function purchaseOrderRequest(path = '', { body, params = {}, signal } = {}) {
-  if (!/^(?:|\/(?:overview|activity|analytics|preview)|\/(?:references|filter-options)\/(?:vendors|locations|products)|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete))?)$/i.test(path)) {
+export const purchaseReceivedRequest = (path, options) => purchaseOrderRequest(path, options, 'purchase-received');
+export async function purchaseOrderRequest(path = '', { body, params = {}, signal } = {}, resource = 'purchase-orders') {
+  const allowed = resource === 'purchase-received'
+    ? /^(?:|\/(?:export|activity|analytics|preview|filter-options)|\/references\/(?:staff|orders)|\/(?:sources|requests)\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete))?)$/i
+    : /^(?:|\/(?:overview|activity|analytics|preview)|\/(?:references|filter-options)\/(?:vendors|locations|products)|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete))?)$/i;
+  if (!allowed.test(path)) {
     throw new SessionError('Unsupported purchase order operation.');
   }
   const epoch = generation;
@@ -788,7 +791,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   Object.entries(params).forEach(([key, value]) => { if (value !== '' && value != null) search.set(key, String(value)); });
   let response, data;
   try {
-    response = await fetch(`/api/v1/admin/purchase-orders${path}${search.size ? `?${search}` : ''}`, {
+    response = await fetch(`/api/v1/admin/${resource}${path}${search.size ? `?${search}` : ''}`, {
       method: body === undefined ? 'GET' : 'POST', credentials: 'same-origin', cache: 'no-store',
       headers: { Authorization: `Bearer ${token}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),

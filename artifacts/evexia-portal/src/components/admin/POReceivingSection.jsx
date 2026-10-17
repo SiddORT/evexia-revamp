@@ -10,7 +10,7 @@ const BASE = '/admin/inventory/purchase-received';
 export default function POReceivingSection({ order, receipts }) {
   const { date, timestamp: stamp } = useAdminDateFormatters();
   const linked = receipts.filter((r) => r.poId === order.id);
-  const balances = getPOBalances(order, linked);
+  const balances = order.balances || getPOBalances(order, linked);
   let roll;
   try { roll = rollupPOReceiving(order, linked, balances); }
   catch (cause) { return <section className="porx admin-feedback admin-feedback--error" role="alert"><h3>Receiving details are unavailable</h3><p>{cause.message || 'Saved quantities could not be read.'} Refresh this purchase order before continuing.</p></section>; }
@@ -38,7 +38,7 @@ export default function POReceivingSection({ order, receipts }) {
         <div className="porx-card__body">
           <dl className="pr-ctx"><div><dt>Saved source PO</dt><dd>{r.poNumber}</dd></div><div><dt>Receipt ID</dt><dd>{r.id}</dd></div><div><dt>Source PO ID</dt><dd>{r.poId}</dd></div><div><dt>Vendor ID</dt><dd>{r.vendorId}</dd></div><div><dt>Destination ID</dt><dd>{r.locationId}</dd></div></dl>
           {r.status === 'deleted' && <p className="pr-note pr-warn">Deleted receipt. Shown as history; excluded from current fulfillment.</p>}
-          <dl className="pr-ctx"><div><dt>Vendor</dt><dd>{r.vendorName}<span className="po-secondary">{r.vendorPhone || 'No mobile on record'}</span></dd></div><div><dt>Destination</dt><dd>{r.locationName}</dd></div><div><dt>PO date</dt><dd>{date(r.poDate)}</dd></div>{r.vendorAddress && <div><dt>Supplier address</dt><dd>{r.vendorAddress}</dd></div>}{r.vendorGstNo && <div><dt>Supplier GST</dt><dd>{r.vendorGstNo}</dd></div>}<div><dt>Received by</dt><dd>{r.receivedBy}<span className="po-secondary">Local demo name, not verified</span></dd></div><div><dt>Created</dt><dd>{stamp(r.createdAt)}</dd></div><div><dt>Last changed</dt><dd>{stamp(r.updatedAt)}</dd></div>{r.deletedAt && <div><dt>Deleted</dt><dd>{stamp(r.deletedAt)}</dd></div>}</dl>
+          <dl className="pr-ctx"><div><dt>Vendor</dt><dd>{r.vendorName}<span className="po-secondary">{r.vendorPhone || 'No mobile on record'}</span></dd></div><div><dt>Destination</dt><dd>{r.locationName}</dd></div><div><dt>PO date</dt><dd>{date(r.poDate)}</dd></div>{r.vendorAddress && <div><dt>Supplier address</dt><dd>{r.vendorAddress}</dd></div>}{r.vendorGstNo && <div><dt>Supplier GST</dt><dd>{r.vendorGstNo}</dd></div>}<div><dt>Received by</dt><dd>{r.receivedBy}<span className="po-secondary">Named receiver; saving actor recorded separately</span></dd></div><div><dt>Created</dt><dd>{stamp(r.createdAt)}</dd></div><div><dt>Last changed</dt><dd>{stamp(r.updatedAt)}</dd></div>{r.deletedAt && <div><dt>Deleted</dt><dd>{stamp(r.deletedAt)}</dd></div>}</dl>
           <div className="pr-grid" style={{ marginTop: 10 }} role="region" tabIndex={0} aria-label={`Lines of ${r.number}`}><table>
             <thead><tr><th>Sr. No.</th><th>Product</th><th>Batch</th><th>Ordered</th><th>Received</th><th>Accepted</th><th>Rejected</th><th>Expiry</th><th>Balance after (historical)</th></tr></thead>
             <tbody>{r.lines.map((l, i) => <tr key={l.lineId}><td>{i + 1}</td><td><strong>{l.productName}</strong><small>Product ID: {l.productId}</small><small>Line {l.lineId}</small></td><td>{l.batchNo}</td><td>{l.orderedQty}</td><td>{l.receivedQty}</td><td>{l.acceptedQty}</td><td>{l.rejectedQty}</td><td>{date(l.expiryDate)}</td><td>{l.balanceAfterQty == null ? 'Unavailable' : l.balanceAfterQty}</td></tr>)}</tbody>

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Download, X } from 'lucide-react';
 import { downloadPRDocument } from '../../services/prDocuments.js';
 import useDocumentPresentation from '../../hooks/useDocumentPresentation.js';
+import SelectIndicator from './SelectIndicator.jsx';
 import { formatCalendarDate } from '../../services/datePresentation.js';
 import '../../prDocument.css';
 
@@ -69,15 +70,15 @@ export default function PRDocumentPreview({ document: sourceDocument, onClose })
     <header className="pr-document-dialog__header">
       <div>
         <h2 id="pr-document-title">Purchase Received · {document.number}</h2>
-        <p>{document.pages.length} {document.pages.length === 1 ? 'page' : 'pages'} · Browser-local document</p>
+        <p>{document.pages.length} {document.pages.length === 1 ? 'page' : 'pages'} · {document.model?.source === 'server' ? 'Saved server receipt · generated on-device' : 'Template preview / legacy document'}</p>
       </div>
       <div className="pr-document-dialog__actions">
         <label>
           PDF format{' '}
-          <select value={pdfFormat} onChange={(event) => setPdfFormat(event.target.value)} disabled={busy}>
+          <SelectIndicator><select className="admin-select" value={pdfFormat} onChange={(event) => setPdfFormat(event.target.value)} disabled={busy}>
             <option value="searchable">Searchable PDF</option>
             <option value="image">Image-only PDF</option>
-          </select>
+          </select></SelectIndicator>
         </label>
         <button
           type="button"
@@ -113,7 +114,7 @@ export default function PRDocumentPreview({ document: sourceDocument, onClose })
         <p>Purchase order: {model.poNumber || 'Not recorded'}, dated {date(model.poDate)}. Vendor: {model.vendorName || 'Not recorded'}, phone: {model.vendorPhone || 'Not recorded'}. Destination: {model.locationName || 'Not recorded'}.</p>
         {model.status === 'deleted' && <p>Deleted receipt, for reference only.</p>}
         {model.isSample && <p>Sample document, preview only.</p>}
-        <p>Recorded receiver is local demo data, not verified identity. Vendor address: {model.vendorAddress || 'Not recorded'}. GST number: {model.vendorGstNo || 'Not recorded'}.</p>
+        <p>Named receiver is separate from the authenticated saving actor. Vendor address: {model.vendorAddress || 'Not recorded'}. GST number: {model.vendorGstNo || 'Not recorded'}.</p>
         {lines.some((line) => line.balanceAfterQty == null) && <p>Historical post-receipt balance was not recorded for this older receipt. It is not inferred from current receipts.</p>}
         <table>
           <caption>Received product and batch details</caption>

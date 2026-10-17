@@ -103,6 +103,7 @@ class POResponse(POReviewOrder):
     createdAt: str
     updatedAt: str
     deletedAt: str | None
+    activeReceiptCount: int = 0
 
 
 class POReview(BaseModel):

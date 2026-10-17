@@ -1,0 +1,7 @@
+.admin-select-indicator { display: inline-grid; position: relative; min-width: 0; max-width: 100%; vertical-align: middle; }
+.admin-select-indicator > select { grid-area: 1 / 1; appearance: none; -webkit-appearance: none; background-image: none; padding-right: 38px; max-width: 100%; width: 100%; }
+.admin-select-indicator__icon { grid-area: 1 / 1; align-self: center; justify-self: end; width: 16px; height: 16px; margin-right: 8px; color: var(--admin-text-soft); pointer-events: none; }
+@media (forced-colors: active) {
+  .admin-select-indicator > select { appearance: auto; -webkit-appearance: auto; }
+  .admin-select-indicator__icon { display: none; }
+}

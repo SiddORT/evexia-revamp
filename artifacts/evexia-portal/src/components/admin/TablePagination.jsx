@@ -1,16 +1,18 @@
-export default function TablePagination({ page, pageCount, pageSize, filtered, total, label, onPageChange, onPageSizeChange, testId }) {
+import SelectIndicator from './SelectIndicator.jsx';
+export default function TablePagination({ page, pageCount, pageSize, filtered, total, label, onPageChange, onPageSizeChange, testId, indicated = false }) {
   const first = filtered ? (page - 1) * pageSize + 1 : 0;
   const last = Math.min(page * pageSize, filtered);
   const start = Math.max(1, Math.min(page - 2, pageCount - 4));
   const pageNumbers = Array.from({ length: Math.min(5, pageCount) }, (_, index) => start + index);
+  const sizeSelect = <select value={pageSize} onChange={(event) => onPageSizeChange(Number(event.target.value))} aria-label="Rows per page">
+    {[2, 5, 10, 25].map((size) => <option key={size} value={size}>{size}</option>)}
+  </select>;
 
   return <div className="admin-panel__foot admin-pagination">
     <span data-testid={testId} aria-live="polite">Showing {filtered ? `${first}–${last}` : '0'} of {filtered} {label}{filtered !== total ? ` (${total} total)` : ''}</span>
     <div className="admin-pagination__controls">
       <label className="admin-pagination__size">Rows per page
-        <select value={pageSize} onChange={(event) => onPageSizeChange(Number(event.target.value))} aria-label="Rows per page">
-          {[2, 5, 10, 25].map((size) => <option key={size} value={size}>{size}</option>)}
-        </select>
+        {indicated ? <SelectIndicator>{sizeSelect}</SelectIndicator> : sizeSelect}
       </label>
       <nav className="admin-pagination__pages" aria-label={`${label} pages`}>
         <button type="button" onClick={() => onPageChange(page - 1)} disabled={page === 1} aria-label="Previous page">Previous</button>

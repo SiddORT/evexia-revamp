@@ -125,10 +125,11 @@ export default function PurchaseOrders() {
 
   const actions = (order) => <div className="po-actions">
     <Link className="po-icon-action" href={`${BASE}/${order.id}`} aria-label={`View ${order.number}`} title={`View ${order.number}`}><Eye size={17} aria-hidden="true" /></Link>
-    {order.status === 'open' && <>
+    {order.status === 'open' && !order.activeReceiptCount && <>
       <Link className="po-icon-action" href={`${BASE}/${order.id}?edit=1`} aria-label={`Edit ${order.number}`} title={`Edit ${order.number}`}><Pencil size={17} aria-hidden="true" /></Link>
       <button type="button" className="po-icon-action po-action--danger" aria-label={`Delete ${order.number}`} title={`Delete ${order.number}`} onClick={(event) => { deleteFocus.current = event.currentTarget; setDeleting(order); setDeleteNotice(''); }}><Trash2 size={17} aria-hidden="true" /></button>
     </>}
+    {!!order.activeReceiptCount && <Link className="po-link" href={`/admin/inventory/purchase-received?poId=${order.id}`} title="Active receipts prevent PO editing/deletion">Receipts ({order.activeReceiptCount}) · edit/delete locked</Link>}
   </div>;
   const columns = [
     { key: 'serial', label: 'Sr. no.', render: (_order, index) => (page - 1) * pageSize + index + 1 },

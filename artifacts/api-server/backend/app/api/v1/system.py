@@ -33,6 +33,10 @@ def readiness(db: Session = Depends(get_db)):
         accepted = [[SCHEMA_REVISION]]
         if SCHEMA_REVISION == "0041_location_geography":
             accepted.append(["0042_rate_hundredths"])
+        if SCHEMA_REVISION == "0043_email_templates":
+            # PR is an explicit additive successor, not an automatic migration
+            # target or authorization to activate it on a managed database.
+            accepted.append(["0044_purchase_received"])
         if revisions not in accepted:
             raise RuntimeError("Coordinated schema release required")
         from app.services.directory_runtime import ready
@@ -42,6 +46,10 @@ def readiness(db: Session = Depends(get_db)):
         from app.core.config import get_settings
         from app.services.communication_crypto import CommunicationCrypto
         CommunicationCrypto(get_settings())
+        if revisions == ["0044_purchase_received"]:
+            from app.services.purchase_received_crypto import ReceiptCrypto
+            ReceiptCrypto(get_settings())
+            db.execute(text("SELECT payload_ciphertext FROM purchase_receipts LIMIT 0"))
         db.execute(text("SELECT channel, version FROM communication_channels LIMIT 0"))
         db.execute(text("SELECT id, channel, type, version, is_default, payload_ciphertext, secret_ciphertext, created_by, updated_by FROM communication_configurations LIMIT 0"))
         db.execute(text(

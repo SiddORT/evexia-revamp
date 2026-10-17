@@ -50,7 +50,7 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a separate f
 
 ## Stack and scope
 
-- Live Purchase Orders creation/listing/detail/versioned edit/soft deletion/Activity/Analytics use protected Super Admin FastAPI persistence and shared Vendor/Storage Location/Allergen records. Explicit Place of supply plus supplier GSTIN determines CGST/SGST/UTGST/IGST for ordinary domestic goods; retained tax snapshots and aggregate-only historical totals must not be inferred or recalculated. `0038_purchase_orders` and additive `0040_po_tax_basis` are operator-only and need separate managed activation approval; existing pinned activation/release manifests do not authorize the latter. Legacy local PO/PR/master stores are untouched; receiving/invoices/stock and supplier submission remain excluded. Exact rounding, retry and focused-test guidance: `docs/purchase-order-backend.md`.
+- Live Purchase Orders creation/listing/detail/versioned edit/soft deletion/Activity/Analytics use protected Super Admin FastAPI persistence and shared Vendor/Storage Location/Allergen records. Explicit Place of supply plus supplier GSTIN determines CGST/SGST/UTGST/IGST for ordinary domestic goods; retained tax snapshots and aggregate-only historical totals must not be inferred or recalculated. `0038_purchase_orders` and additive `0040_po_tax_basis` are operator-only and need separate managed activation approval; existing pinned activation/release manifests do not authorize the latter. Legacy local PO/PR/master stores are untouched; invoices/stock and supplier submission remain excluded. Receiving is a separately operator-gated domain described below. Exact rounding, retry and focused-test guidance: `docs/purchase-order-backend.md`.
 
 - Shared Allergen Master is protected singleton-only (no assignable staff Allergen permissions). `mix=true` means Mix; `false` means No Mix, catalogue metadata only. It uses shared category/location references, exact optional decimal strings, versioned soft deletion and bounded CSV/XLSX review/confirm/filtered exports with durable acceptance. No HSN in the current catalogue; explicit legacy CSV HSN is ignored. Migration `0022_allergen_catalogue` is empty and requires operator approval for managed rollout. The original local allergen/category/location and procurement datasets stay separate and untouched. See `docs/allergen-master.md`.
 
@@ -116,6 +116,19 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a separate f
 - The harness requires `initdb`, `pg_ctl`, `createdb`, Python backend dependencies, `pnpm`, `curl`, and installed Playwright Chromium, Firefox and WebKit. The Download Logs spec runs in all three engines sequentially against the same isolated fixture, using `playwright.downloads.config.mjs`; missing engines fail the gate. Optional `EVEXIA_TEST_PORT` and `EVEXIA_TEST_API_PORT` change its local Vite/API ports.
 - The isolated harness passing is evidence for those synthetic code regressions only; it is not a live managed-preview or deployment check. For a live authenticated preview, the API database must already be migrated and contain the protected singleton. On a fresh database, bootstrap requires the operator-managed `SUPER_ADMIN_INITIAL_PASSWORD`; missing/invalid initial configuration or a conflicting reserved identifier blocks bootstrap. Record that live check as **BLOCKED**, not passed, when its bootstrap prerequisite is unavailable. Do not seed a managed/shared database with the synthetic fixture. Existing protected accounts can be bootstrapped idempotently without the initial secret and are never reset by it. See the backend README for the explicit migration/bootstrap sequence.
 - Message-template service checks: `node --test artifacts/evexia-portal/src/services/messageTemplates.test.js artifacts/evexia-portal/src/services/messageTemplatePreview.test.js`. Its existing browser suite also uses the real synthetic-account fixture and runs in the authenticated harness.
+
+## Purchase Received persistence
+
+- Live PR screens use protected server receipts, never local demo data. The additive
+  `0044_purchase_received` migration and independent `PR_ENCRYPTION_KEYS` /
+  `PR_ENCRYPTION_KEY_ID` need separate operator activation; delivery is not approval
+  to migrate managed/shared databases, install keys or deploy. Existing PO encryption
+  scope is unchanged. See `docs/purchase-received-backend.md` for the encrypted
+  receipt/history/retry inventory, bounded reads and operational plaintext fields.
+- For this connection, verification is limited to PR CRUD:
+  `sh scripts/test-purchase-received-crud.sh`, optionally one authenticated CRUD smoke
+  using `sh scripts/start-pr-crud-preview.sh`. No regression/release/default browser
+  harnesses or development compatibility checks are authorized by this task.
 
 ## Release validation
 
