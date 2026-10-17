@@ -10,7 +10,7 @@
     "artifacts/api-server/backend/app/services/release_authorization.py": "67212a1caa6ff2a475b339d199f9f1dabf8f7fc194e11d92d83abba78c8a1554",
     "scripts/validate-release-artifact.py": "b8a155a3dd669a782f68d8cba5dcb2a7a462f272b13a8dcd4ccf00b98660d5ae",
     "scripts/release-authorization-policy.json": "a13d7ae1ce4f0d819d14c8697ab7dd7c62601233d20cb1fb44d05e7ae12910ed",
-    ".github/workflows/deploy.yml": "69cbd57407ce4f4de76194c8d9aa1bc6eaa0db643a21700ad4c9b9e8d093dba6",
+    ".github/workflows/deploy.yml": "56332420892ddaa3071756dcedb368102dd17d2a776c413429ddc08771e950de",
     ".github/workflows/release-validation.yml": "c992df1a33895ccf604613b36ec95af4c80889d6de01509c200b2e7597ed48fc",
     "artifacts/api-server/backend/app/services/fresh_catalog.py": "25c32d43095de45f5f927d0587de6df93f2a9b8b3b61ea795e99295cad1e3747",
     "artifacts/api-server/backend/app/services/fresh_recovery.py": "af8e518d8427f3bbc5d18607f8a11bc39a9761b6330b52a762d63c3d6b690681",

@@ -1,0 +1,28 @@
+name: Smoke test empty Docker installation
+
+on:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  initialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Reserve a new disposable canonical checkout
+        run: |
+          set -euo pipefail
+          # Never overwrite a pre-existing installation, including a symlink.
+          test ! -e /var/www/newuat.allergyevexia.in
+          test ! -L /var/www/newuat.allergyevexia.in
+          sudo install -d -o "$(id -u)" -g "$(id -g)" -m 700 /var/www/newuat.allergyevexia.in
+      - name: Exercise the actual Docker image and initialization supervisor
+        run: python -B scripts/test-docker-initialization.py --disposable-ci-only

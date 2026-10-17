@@ -16,8 +16,11 @@ jobs:
   validate_release:
     uses: ./.github/workflows/release-validation.yml
 
+  validate_docker_initialization:
+    uses: ./.github/workflows/docker-initialization.yml
+
   deploy:
-    needs: validate_release
+    needs: [validate_release, validate_docker_initialization]
     runs-on: ubuntu-latest
     timeout-minutes: 40
     outputs:

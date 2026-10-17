@@ -122,6 +122,32 @@ containers have been promoted.
 
 ## Failure/recovery
 
+### Isolated Docker CI rehearsal
+
+The `Smoke test empty Docker installation` GitHub workflow runs on pull requests,
+can be started manually, and is a required job dependency before deployment.
+It uses a new GitHub-hosted runner, the actual backend Dockerfile and repository
+Compose topology, PostgreSQL 17, and generated synthetic credentials/keys only.
+It never receives deployment secrets or connects to the VPS/UAT database.
+
+The rehearsal reserves a new canonical-path fixture rather than relaxing the
+wrapper's production path checks. Its original backend/frontend containers idle
+without starting application writers. It verifies mounted-source imports and
+read-only mounts, a non-default existing Compose project, host lock contention,
+maintenance ownership, wrong host/port/database/cluster rejection, existing
+schemas/version tables/data rejection, and a real atomic installation.
+A test-only Python import hook raises after actual bootstrap/readiness to prove
+that the entire schema and account roll back together. No historical migration
+or operator-only classification is changed or bypassed by this test.
+
+After each invocation it compares original container IDs, images, start times,
+restart counts, mounts, volume identity and cluster identity. Only after these
+assertions does cleanup remove resources labeled with that CI run's random
+project name. The harness refuses a nonempty Docker daemon or pre-existing
+fixture checkout. Do not run it on an installation host.
+
+### Operator recovery
+
 - Validation failure before DDL: zero schema/account changes.
 - Migration/catalog/bootstrap/readiness failure: the **entire transaction**
   rolls back, including historical retirement and the account.

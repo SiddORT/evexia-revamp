@@ -273,9 +273,24 @@ class ReleaseWorkflowIsolationTests(unittest.TestCase):
         self.assertNotIn("RELEASE_VALIDATION_PRIVATE_KEY", reusable)
         self.assertNotIn("SSH_", validation_job)
         self.assertNotIn("SSH_", reusable)
-        self.assertIn("needs: validate_release", workflow)
+        self.assertIn("needs: [validate_release, validate_docker_initialization]", workflow)
         self.assertIn("--ci-report", reusable)
         self.assertIn("validate-release-artifact.py", reusable)
+
+    def test_docker_gate_is_isolated_and_required_before_deployment(self):
+        workflow = (ROOT.parent / ".github/workflows/deploy.yml").read_text()
+        validation_job = workflow.split("  validate_docker_initialization:", 1)[1].split("\n  deploy:", 1)[0]
+        reusable = (ROOT.parent / ".github/workflows/docker-initialization.yml").read_text()
+        self.assertIn("uses: ./.github/workflows/docker-initialization.yml", validation_job)
+        self.assertNotIn("secrets", validation_job)
+        self.assertNotIn("secrets.", reusable)
+        self.assertNotIn("inherit", validation_job)
+        self.assertNotIn("ssh-action", reusable)
+        self.assertNotIn("scp-action", reusable)
+        self.assertIn("runs-on: ubuntu-24.04", reusable)
+        self.assertIn("workflow_call:", reusable)
+        self.assertIn("pull_request:", reusable)
+        self.assertIn("--disposable-ci-only", reusable)
 
 
 class DeploymentShellTests(unittest.TestCase):
