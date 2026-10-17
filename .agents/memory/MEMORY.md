@@ -1,3 +1,4 @@
+- [GitHub API redirects](github-api-redirects.md) — renamed repository paths can return proxy Forbidden despite healthy credentials; use the canonical API path.
 - [Development release policy](development-release-policy.md) — routine additive dev updates need no repeated approval; verify actual running releases, not Git alone.
 - [Docker initialization CI boundary](docker-initialization-ci-boundary.md) — local Docker build/run support does not prove canonical-path or namespace-entry capability.
 - [Browser response audits](browser-response-audits.md) — exact API pathname boundaries keep Vite source modules out of JSON/credential audits without hiding malformed API responses.

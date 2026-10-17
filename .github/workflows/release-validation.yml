@@ -2,6 +2,8 @@ name: Validate exact release artifact
 
 on:
   workflow_call:
+  # Run the complete validation without invoking the VPS deployment workflow.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -25,6 +27,10 @@ jobs:
         with:
           python-version: "3.13"
       - uses: cachix/install-nix-action@v31
+        with:
+          # install-nix-action does not populate <nixpkgs> by default.
+          # Pin a reviewed stable package set instead of a moving channel.
+          nix_path: nixpkgs=https://github.com/NixOS/nixpkgs/archive/26f4107e47e3ad0ffd0db220469ba83b6f6d96e8.tar.gz
       - name: Install existing locked dependencies and browser engines
         run: |
           python -m pip install uv

@@ -171,6 +171,13 @@ workflow for the intended current commit). Do not call the older
 `deploy-scripts/deploy.sh`: it is intentionally untouched and still has an
 unconditional historical upgrade.
 
+For verification **without contacting the VPS**, use **Run workflow** on
+`Validate exact release artifact` and `Smoke test empty Docker installation`.
+Both support manual dispatch and contain no deployment job. A normal push to
+`main` does trigger deployment; for an explicitly verification-only push use
+`[skip ci]` in that commit message, then manually dispatch these validation
+workflows for the pushed commit. This does not waive any validation checks.
+
 GitHub automatically runs **all** release, fresh-install and policy suites.
 Only complete success on the same clean, unchanged commit produces the CI
 report. It is transported through the authenticated GitHub/SSH deployment

@@ -295,5 +295,22 @@ class ReleaseAuthorizationTests(unittest.TestCase):
         self.assertFalse(output.exists())
 
 
+class ValidationWorkflowTests(unittest.TestCase):
+    def test_ci_pins_nixpkgs_for_the_existing_postgres_gate(self):
+        workflow = (ROOT / ".github/workflows/release-validation.yml").read_text()
+        self.assertRegex(workflow, r"nix_path: nixpkgs=https://github.com/NixOS/nixpkgs/archive/[0-9a-f]{40}\.tar\.gz")
+        self.assertIn('nix-shell -p postgresql_17 --run', workflow)
+        self.assertIn('scripts/validate-release-artifact.py --ci-report', workflow)
+        self.assertIn('pnpm exec playwright install --with-deps chromium firefox webkit', workflow)
+
+    def test_validation_can_run_manually_without_a_deploy_job(self):
+        workflow = (ROOT / ".github/workflows/release-validation.yml").read_text()
+        self.assertIn('workflow_call:', workflow)
+        self.assertIn('workflow_dispatch:', workflow)
+        self.assertNotIn('ssh-action', workflow)
+        self.assertNotIn('VPS_', workflow)
+        self.assertNotIn('continue-on-error:', workflow)
+
+
 if __name__ == "__main__":
     unittest.main()
