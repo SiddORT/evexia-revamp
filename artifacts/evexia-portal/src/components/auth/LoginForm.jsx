@@ -65,7 +65,7 @@ export default function LoginForm({ role }) {
   }
 
   return (
-    <form className="auth-form" onSubmit={handleSubmit} noValidate data-testid={`form-login-${role.short.toLowerCase()}`}>
+    <form className={`auth-form${role.short === 'ADMIN' ? ' auth-form--admin' : ''}`} onSubmit={handleSubmit} noValidate data-testid={`form-login-${role.short.toLowerCase()}`}>
       <Field
         id="email"
         label="Email or username"

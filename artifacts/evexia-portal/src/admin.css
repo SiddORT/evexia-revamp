@@ -256,6 +256,49 @@
 .admin-search input { display: block; width: 100%; padding: 0 14px 0 39px; }
 .admin-search input:focus, .admin-select:focus { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); }
 .admin-select { min-width: 133px; padding: 0 32px 0 12px; cursor: pointer; }
+/* Listing filters only: preserve native semantics and all MR filter controls.
+   Grid overlay follows the select's actual height, including enlarged text.
+   The 16px Lucide chevron and 30px end area match MR's existing control. */
+.admin-shell[data-admin-page$=" Master"]:not([data-admin-page="MR Master"]) .admin-toolbar .admin-filter:has(> select.admin-select) {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+}
+.admin-shell[data-admin-page$=" Master"]:not([data-admin-page="MR Master"]) .admin-toolbar .admin-filter > select.admin-select {
+  grid-area: 2 / 1;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: none;
+  font-family: var(--font-sans);
+  font-weight: 400;
+  line-height: 1.5;
+  height: auto;
+  min-height: 40px;
+  max-width: 100%;
+  padding: .55em 38px .55em 12px;
+  text-overflow: ellipsis;
+}
+.admin-shell[data-admin-page$=" Master"]:not([data-admin-page="MR Master"]) .admin-toolbar .admin-filter:has(> select.admin-select)::after {
+  content: '';
+  grid-area: 2 / 1;
+  align-self: center;
+  justify-self: end;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  background: var(--admin-text-soft);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  pointer-events: none;
+}
+@media (forced-colors: active) {
+  .admin-shell[data-admin-page$=" Master"]:not([data-admin-page="MR Master"]) .admin-toolbar .admin-filter > select.admin-select {
+    appearance: auto;
+    -webkit-appearance: auto;
+  }
+  .admin-shell[data-admin-page$=" Master"]:not([data-admin-page="MR Master"]) .admin-toolbar .admin-filter:has(> select.admin-select)::after {
+    content: none;
+  }
+}
 .admin-filter { display: grid; gap: 5px; }
 .admin-filter label { color: var(--ink-soft); font-size: 10px; font-weight: 700; }
 .admin-table-scroll { width: 100%; overflow-x: auto; }
@@ -300,9 +343,13 @@
 .admin-badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 .admin-badge--inactive { background: var(--admin-badge-inactive-bg); color: var(--admin-badge-inactive-text); }
 .admin-panel__foot { border-top: 1px solid var(--line); padding: 10px 16px; color: var(--muted); font-size: 11px; }
-.admin-pagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 18px; }
+.admin-pagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 18px; font-family: var(--font-sans); font-size: .8125rem; font-weight: 400; line-height: 1.5; color: var(--admin-text-soft); }
 .admin-pagination__controls, .admin-pagination__pages, .admin-pagination__size { display: flex; align-items: center; gap: 7px; }
-.admin-pagination__controls { flex-wrap: wrap; gap: 10px 16px; }
+.admin-pagination__controls { flex-wrap: wrap; gap: 10px 16px; min-width: 0; max-width: 100%; }
+.admin-pagination > span { min-width: 0; overflow-wrap: anywhere; }
+.admin-pagination__size, .admin-pagination__pages { flex-wrap: wrap; max-width: 100%; }
+.admin-shell[data-admin-page$=" Master"] .admin-table-pagination { font-family: var(--font-sans); font-size: .8125rem; font-weight: 400; line-height: 1.5; color: var(--admin-text-soft); overflow-wrap: anywhere; }
+.admin-shell[data-admin-page$=" Master"] .admin-table-pagination button { font: inherit; }
 .admin-pagination__size select { min-width: 54px; padding: 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font: inherit; }
 .admin-pagination__pages button { min-width: 29px; min-height: 29px; padding: 4px 7px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink-soft); font: inherit; cursor: pointer; }
 .admin-pagination__pages button:hover:not(:disabled), .admin-pagination__pages .admin-pagination__current { border-color: var(--admin-accent); background: var(--admin-state-soft); color: var(--admin-accent); }

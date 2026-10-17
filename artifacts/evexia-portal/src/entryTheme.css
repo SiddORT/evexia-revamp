@@ -2,6 +2,25 @@
    Classic and non-Admin login presentation stay in index.css unchanged. */
 @import './admin.css';
 
+/* Keep identifier, masked password and revealed password on the same baseline.
+   Entry screens intentionally remain light regardless of workspace appearance. */
+.entry-theme .auth-form--admin .field input {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: normal;
+}
+.entry-theme .auth-form--admin .field input::placeholder {
+  color: var(--admin-text-soft);
+  font: inherit;
+  letter-spacing: inherit;
+  opacity: 1;
+}
+.entry-theme .auth-form--admin .field__input-wrap:has(.password-toggle) input {
+  padding-right: 54px;
+}
+
 .entry-theme[data-admin-theme="modern"] {
   color: var(--admin-text);
   --shadow: 0 22px 48px color-mix(in srgb, var(--admin-text) 8%, transparent);

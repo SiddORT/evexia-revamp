@@ -206,7 +206,7 @@ export default function AdminLayout({ title, children }) {
   }, [compact, drawerOpen]);
 
   return (
-    <div className={`admin-shell${isCollapsed ? ' admin-shell--collapsed' : ''}`} data-admin-theme={theme} data-admin-appearance={appearance}>
+    <div className={`admin-shell${isCollapsed ? ' admin-shell--collapsed' : ''}`} data-admin-page={title} data-admin-theme={theme} data-admin-appearance={appearance}>
       {drawerOpen && compact && <button type="button" className="admin-backdrop" aria-label="Close navigation" tabIndex={-1} onClick={() => closeDrawer()} data-testid="button-close-navigation-backdrop" />}
       <aside ref={sidebarRef} id="admin-navigation" className={`admin-sidebar${drawerOpen ? ' admin-sidebar--open' : ''}`} aria-label="Admin navigation" aria-hidden={compact && !drawerOpen} inert={compact && !drawerOpen ? true : undefined} role={compact && drawerOpen ? 'dialog' : undefined} aria-modal={compact && drawerOpen ? true : undefined}>
         <div className="admin-sidebar__brand">
