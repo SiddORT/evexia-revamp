@@ -157,6 +157,166 @@ fixture checkout. Do not run it on an installation host.
 
 ### Operator recovery
 
+#### Retrying an AccountCryptoError from the 0041 installer
+
+The reviewed account-readiness list now explicitly includes
+`0041_location_geography`. That migration adds only Storage Location geography;
+account ciphertext, lookup domains and protected-account anchors are unchanged.
+Unknown revisions and multiple revision rows remain blocked. Do not solve this
+error by changing keys, stamping a revision or removing the readiness check.
+The VPS checkout and the outcome of your earlier transaction must be inspected;
+local test results do not establish their state.
+
+**Update source without deploying.** Obtain the reviewed, merged fix through
+your authorized source channel first. This task does not push to GitHub or
+authorize a deployment. In particular, do not push to `main` just to transfer
+the fix: that starts the normal deployment workflow. As the existing deployment
+Unix account, with no initialization/deployment/operator running, inspect:
+
+```sh
+cd /var/www/admin-uat.allergyevexia.in
+git status --short
+git rev-parse HEAD
+git fetch origin
+git show --stat VERIFIED_FIX_COMMIT
+git diff HEAD VERIFIED_FIX_COMMIT -- \
+  artifacts/api-server/backend/app/services/account_crypto.py \
+  scripts/fresh-install-review.json docs/installation.md
+```
+
+`VERIFIED_FIX_COMMIT` means the exact trusted commit containing the fix and
+consistent generated review metadata, not a moving branch name. Review its full
+diff and passing validation evidence too. Fetching does not check out or deploy
+it. If the checkout is clean and the intended commit has been verified, update
+the canonical checkout under the existing lock:
+
+```sh
+flock -n .deploy.lock git switch --detach VERIFIED_FIX_COMMIT
+python3 -B scripts/review-schema-release.py
+```
+
+The metadata check needs the application's Python dependencies; if host Python
+does not have them, use the existing approved tool environment rather than
+installing packages or altering the check. Do not force checkout, discard local
+changes, delete lock files, change file ownership, run a deploy script or restart
+services. Detached source is deliberate for this non-deploying retry; normal
+deployment is a separate operation after initialization succeeds.
+
+**Inspect actual database state read-only.** Run the following using the existing
+backend environment. It prints only target identity, object names, counts and
+transaction/lock activity, never identifiers, passwords, keys or query text:
+
+```sh
+docker exec -i evexia-backend /workspace/.venv/bin/python - <<'PY'
+import json
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import make_url
+from app.core.config import get_settings
+url = make_url(get_settings().database_url)
+if url.drivername == "postgresql":
+    url = url.set(drivername="postgresql+psycopg")
+engine = create_engine(url, hide_parameters=True)
+with engine.connect() as db:
+    db.execute(text("SET TRANSACTION READ ONLY"))
+    target = db.execute(text(
+        "SELECT current_database() AS database, system_identifier AS cluster, "
+        "pg_is_in_recovery() AS replica FROM pg_control_system()")).mappings().one()
+    print(json.dumps(dict(target)))
+    objects = db.execute(text(
+        "SELECT n.nspname,c.relname,c.relkind FROM pg_class c "
+        "JOIN pg_namespace n ON n.oid=c.relnamespace "
+        "WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema' "
+        "ORDER BY 1,2")).all()
+    print("relations:", [tuple(r) for r in objects])
+    if db.scalar(text("SELECT to_regclass('public.alembic_version')")):
+        print("revisions:", list(db.scalars(text("SELECT version_num FROM public.alembic_version"))))
+    if db.scalar(text("SELECT to_regclass('public.users')")):
+        print("accounts:", dict(db.execute(text(
+            "SELECT count(*) AS total, count(*) FILTER (WHERE is_protected_system_admin) "
+            "AS protected FROM public.users")).mappings().one()))
+    print("other_database_sessions:", [tuple(r) for r in db.execute(text(
+        "SELECT pid,state,xact_start IS NOT NULL AS has_transaction,wait_event_type "
+        "FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid()"))])
+    print("migration_interlock:", [tuple(r) for r in db.execute(text(
+        "SELECT pid,mode,granted FROM pg_locks WHERE locktype='advisory' "
+        "AND classid=0 AND objid=145002 "
+        "AND database=(SELECT oid FROM pg_database WHERE datname=current_database())"))])
+engine.dispose()
+PY
+```
+
+If these reads fail, permissions hide relevant sessions, any operator remains
+active, revisions are unexpected, or objects/accounts exist in an uncertain
+state, **stop and retain maintenance**. No version table is necessary for a
+pristine database, but its absence alone is not sufficient: the initializer
+still checks all objects, schemas, extensions and target identity. Do not reset
+an existing installation. A committed schema and protected account require
+readiness and protected lookup using the reviewed candidate before proceeding,
+not another initialization. An older running backend can still reject 0041;
+its response is not evidence that the committed database should be recreated.
+
+For a confirmed committed installation, check the updated source without
+replacing the running backend. Establish the existing Compose project exactly
+as the wrapper does; stop if it cannot be verified. This uses a disposable tool
+container, the existing environment and a read-only database transaction:
+
+```sh
+PROJECT=$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.project" }}' evexia-backend)
+case "$PROJECT" in ''|*[!a-zA-Z0-9_-]*) echo "Unverified Compose project"; exit 1;; esac
+docker compose --project-name "$PROJECT" --project-directory "$PWD" \
+  --env-file .env -f docker-compose.yml run --rm --no-deps -T \
+  --workdir /release-source -v "$PWD:/release-source:ro" \
+  -e APP_ENV=production -e PYTHONPATH=/release-source/artifacts/api-server/backend \
+  --entrypoint /workspace/.venv/bin/python backend -B - <<'PY'
+from sqlalchemy import create_engine, select, text
+from sqlalchemy.engine import make_url
+from sqlalchemy.orm import Session
+from app.core.config import get_settings
+from app.api.v1.system import readiness
+from app.bootstrap import SUPER_ADMIN_EMAIL
+from app.db.models import User
+from app.services.account_crypto import lookup
+url = make_url(get_settings().database_url)
+if url.drivername == "postgresql":
+    url = url.set(drivername="postgresql+psycopg")
+engine = create_engine(url, hide_parameters=True)
+with Session(engine) as db:
+    db.execute(text("SET TRANSACTION READ ONLY"))
+    assert readiness(db) == {"status": "ready"}
+    user = db.scalars(select(User).where(lookup(db, SUPER_ADMIN_EMAIL))).one()
+    assert user.email == SUPER_ADMIN_EMAIL and user.is_protected_system_admin
+    assert user.system_role == "super_admin" and user.is_active
+    assert db.scalar(text("SELECT count(*) FROM users")) == 1
+    print("COMMITTED_INSTALL_READINESS_AND_PROTECTED_LOOKUP_OK")
+engine.dispose()
+PY
+```
+
+Use this singleton-count check only for the never-used installation being
+reconciled, not an installation that has since admitted other accounts.
+Any failure leaves the result unresolved; retain maintenance and investigate.
+
+**Reconcile maintenance ownership before retrying.** Under
+`flock -n .deploy.lock`, inspect `.operator-maintenance` with `lstat`/`stat`
+(not by following a symlink). Confirm it is a regular nonsymlink file owned by
+the deployment account. Its expected JSON is
+`{"operation": "empty-database-initialization"}`. Check your attempt's timing
+and operator records: this generic content alone does not prove ownership.
+Ensure the lock and marker identities have not changed, no tool container or
+other operator/deployment is active, and the failed transaction is reconciled.
+Do not unlink/recreate `.deploy.lock`.
+
+Only when the intended database is proven still pristine and the marker is
+confirmed to belong to **your failed attempt**, an authorized operator may
+remove that marker while holding the same exclusive lock, rechecking its
+device/inode before removal. Do not blindly run `rm .operator-maintenance`.
+Release the lock before invoking the normal initialization command above (the
+wrapper acquires it itself); it builds the candidate and creates its own marker.
+If the prior attempt committed, do not retry initialization: preserve the
+account and credentials, verify candidate readiness/lookup, and reconcile that
+attempt's marker under the same ownership checks before the separately
+authorized normal deployment. Keep maintenance whenever any outcome is unknown.
+
 - Validation failure before DDL: zero schema/account changes.
 - Migration/catalog/bootstrap/readiness failure: the **entire transaction**
   rolls back, including historical retirement and the account.

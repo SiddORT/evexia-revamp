@@ -53,7 +53,7 @@
     "app/services/organization_retirement.py": "d4a45ffdd20d754da002943b0b877e08c275b41ed9418034a4e132345789732c",
     "app/services/role_attribution.py": "ba3fc9fe0d0c51389e73fce573b74492ce9f2c47d649deab7bd9aab3ec9268e2",
     "app/services/staff_designation_mapping.py": "453a8e3e5a233e4bd1fd1f5e434f4534842ce144a8ce9a43209904f4b01bac56",
-    "app/services/account_crypto.py": "f984fbce98b6ce4e4b1e1f3f3ee6cf715ce553d16a41590f9510e48c75d2eed7",
+    "app/services/account_crypto.py": "666348e0dd182acc42e892079aa40f23e4f32ec6ec7c57c8ebef2b1789a9b4a3",
     "app/services/account_migration.py": "fedc3b2a121e207be409bac87e05aa184e45aca61a5325ad87ebb11b25848904"
   },
   "revisions": {

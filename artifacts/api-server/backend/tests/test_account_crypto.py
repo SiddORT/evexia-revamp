@@ -51,6 +51,73 @@ def test_randomized_authenticated_ciphertext():
         encrypted.read(owner, "email", a, None)
 
 
+@pytest.mark.parametrize("revision", [
+    "0035_account_identifiers", "0036_reference_privacy", "0037_domain_admission",
+    "0038_purchase_orders", "0039_communication", "0040_po_tax_basis",
+    "0041_location_geography",
+])
+def test_explicit_reviewed_account_boundaries(db, revision):
+    # Only the revision guard is exercised at predecessor boundaries. Actual
+    # current-head migration/bootstrap is covered by the production harness.
+    db.execute(sa.text("UPDATE alembic_version SET version_num=:revision"), {"revision": revision})
+    assert encrypted.ready(db).configuration() == encrypted.crypto().configuration()
+
+
+@pytest.mark.parametrize("revisions", [
+    [], ["0034_shared_phone_countries"], ["0042_unknown"], ["unreviewed"],
+    ["0040_po_tax_basis", "0041_location_geography"],
+    ["0041_location_geography", "0042_unknown"],
+])
+def test_unsupported_or_multiple_account_revisions_fail_closed(db, revisions):
+    db.execute(sa.text("DELETE FROM alembic_version"))
+    for revision in revisions:
+        db.execute(sa.text("INSERT INTO alembic_version VALUES (:revision)"), {"revision": revision})
+    with pytest.raises(encrypted.AccountCryptoError):
+        encrypted.lookup(db, "synthetic@example.test")
+
+
+@pytest.mark.parametrize("anchor", ["configuration_digest", "protected_email_index", "missing"])
+def test_account_anchors_fail_closed(db, anchor):
+    if anchor == "missing":
+        db.execute(sa.text("DELETE FROM account_crypto_state"))
+    else:
+        assert anchor in ("configuration_digest", "protected_email_index")
+        db.execute(sa.text(f"UPDATE account_crypto_state SET {anchor}=:invalid"),
+                   {"invalid": "0" * 64})
+    with pytest.raises(encrypted.AccountCryptoError):
+        encrypted.ready(db)
+
+
+@pytest.mark.parametrize("setting", ["directory_encryption_keys", "directory_encryption_key_id",
+                                    "directory_index_key"])
+def test_invalid_account_configuration_fails_closed(db, monkeypatch, setting):
+    from pydantic import SecretStr
+    value = "missing-key" if setting.endswith("_id") else SecretStr("invalid")
+    settings = get_settings().model_copy(update={setting: value})
+    monkeypatch.setattr(encrypted, "get_settings", lambda: settings)
+    with pytest.raises(encrypted.AccountCryptoError):
+        encrypted.ready(db)
+
+
+@pytest.mark.parametrize("logger_name", ["sqlalchemy.engine", "sqlalchemy.engine.Engine"])
+def test_account_readiness_rejects_sql_logging(db, logger_name):
+    import logging
+    logger = logging.getLogger(logger_name)
+    previous = logger.level
+    try:
+        logger.setLevel(logging.INFO)
+        with pytest.raises(encrypted.AccountCryptoError):
+            encrypted.ready(db)
+    finally:
+        logger.setLevel(previous)
+
+
+def test_account_readiness_rejects_engine_echo(db, monkeypatch):
+    monkeypatch.setattr(db.get_bind(), "echo", True)
+    with pytest.raises(encrypted.AccountCryptoError):
+        encrypted.ready(db)
+
+
 def test_users_and_history_have_no_plaintext_copies(db):
     user = account(db)
     row = db.execute(sa.text("SELECT * FROM users WHERE id=:id"), {"id": user.id}).mappings().one()

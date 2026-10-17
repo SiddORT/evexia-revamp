@@ -94,8 +94,13 @@ def ready(db):
             or logging.getLogger("sqlalchemy.engine.Engine").isEnabledFor(logging.INFO)):
         raise AccountCryptoError()
     revisions = db.execute(text("SELECT version_num FROM alembic_version")).scalars().all()
-    # This reviewed successor does not alter account storage or its anchors.
-    if revisions not in (["0035_account_identifiers"], ["0036_reference_privacy"], ["0037_domain_admission"], ["0038_purchase_orders"], ["0039_communication"], ["0040_po_tax_basis"]):
+    # Explicitly reviewed successors do not alter account storage or its anchors.
+    # 0041 adds only Storage Location geography; never infer future compatibility.
+    if revisions not in (
+        ["0035_account_identifiers"], ["0036_reference_privacy"],
+        ["0037_domain_admission"], ["0038_purchase_orders"],
+        ["0039_communication"], ["0040_po_tax_basis"], ["0041_location_geography"],
+    ):
         raise AccountCryptoError()
     current = crypto()
     row = db.execute(text(

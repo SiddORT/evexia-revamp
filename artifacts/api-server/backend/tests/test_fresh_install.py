@@ -54,7 +54,7 @@ def databases():
 
 
 def test_review_covers_every_revision_and_policy():
-    assert len(fresh.reviewed_graph()) == 45
+    assert len(fresh.reviewed_graph()) == 46
 
 
 def simple_initialize(source, settings=None, **overrides):
@@ -83,10 +83,16 @@ def test_simple_install_runs_real_history_atomically_without_receipts(databases)
         assert db.scalar(text("SELECT email FROM users")) != SUPER_ADMIN_EMAIL
         assert db.scalar(text("SELECT length(email_index) FROM users")) == 64
     from app.db.models import User
-    from app.services.account_crypto import read
+    from app.services.account_crypto import read, lookup, ready
+    from app.api.v1.system import readiness
     from sqlalchemy import select
     with Session(source) as db:
-        user = db.scalar(select(User))
+        assert ready(db)
+        assert readiness(db) == {"status": "ready"}
+        user = db.scalar(select(User).where(lookup(db, SUPER_ADMIN_EMAIL.upper())))
+        assert user is not None
+        assert user.is_protected_system_admin and user.system_role == "super_admin" and user.is_active
+        assert verify_password(get_settings().super_admin_initial_password.get_secret_value(), user.password_hash)
         assert read(user.id, "email", user.email_ciphertext, user.email_index) == SUPER_ADMIN_EMAIL
     with pytest.raises(fresh.FreshInstallBlocked, match="not pristine"):
         simple_initialize(source)
@@ -132,6 +138,32 @@ def test_simple_install_bootstrap_failure_rolls_back_entire_schema(databases):
         fresh.pristine(db)
 
 
+def test_simple_install_readiness_failure_rolls_back_real_bootstrap(databases):
+    from app.api.v1.system import readiness
+    from app.bootstrap import SUPER_ADMIN_EMAIL
+    from app.db.models import User
+    from app.services.account_crypto import lookup
+    from sqlalchemy import select
+    source, _, _ = databases
+    checked = []
+
+    def fail_after_readiness(db):
+        assert readiness(db) == {"status": "ready"}
+        user = db.scalar(select(User).where(lookup(db, SUPER_ADMIN_EMAIL)))
+        assert user.is_protected_system_admin
+        assert db.scalar(text("SELECT count(*) FROM users")) == 1
+        assert db.scalar(text("SELECT count(*) FROM role_hostnames")) == 1
+        checked.append(user.id)
+        raise RuntimeError("injected post-bootstrap readiness failure")
+
+    with patch("app.api.v1.system.readiness", side_effect=fail_after_readiness):
+        with pytest.raises(RuntimeError, match="injected post-bootstrap"):
+            simple_initialize(source, hostname="fresh.allergyevexia.in")
+    assert len(checked) == 1
+    with source.connect() as db:
+        fresh.pristine(db)
+
+
 def test_simple_install_invalid_encryption_configuration_writes_nothing(databases):
     source, _, _ = databases
     settings = get_settings().model_copy(
@@ -160,7 +192,8 @@ def test_simple_cli_commit_failure_never_claims_success_or_certain_rollback(caps
     from types import SimpleNamespace
     from unittest.mock import MagicMock
     engine = MagicMock()
-    engine.begin.return_value.__exit__.side_effect = RuntimeError("synthetic lost acknowledgement")
+    engine.begin.return_value.__exit__.side_effect = RuntimeError(
+        "synthetic lost acknowledgement: 'synthetic-private-detail'")
     with patch.object(installer, "get_settings", return_value=SimpleNamespace(
             database_url="postgresql+psycopg://synthetic")), \
          patch.object(installer, "create_engine", return_value=engine), \
@@ -170,7 +203,10 @@ def test_simple_cli_commit_failure_never_claims_success_or_certain_rollback(caps
     captured = capsys.readouterr()
     assert "INITIALIZATION_READY" not in captured.out
     assert "do not assume rollback" in captured.err
-    assert "synthetic lost acknowledgement" not in captured.err
+    # Bounded diagnostics intentionally expose the safe primary cause, but
+    # quoted input must stay redacted even when commit acknowledgement is lost.
+    assert "RuntimeError" in captured.err
+    assert "synthetic-private-detail" not in captured.err
     engine.dispose.assert_called_once()
 
 
@@ -600,10 +636,11 @@ def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap
             config = fresh.alembic_config(db)
             command.upgrade(config, stage)
             fresh.catalog(db, stage)
-            has_po = stage in ("0038_purchase_orders", "0039_communication", fresh.FINAL_TARGET)
+            has_po = stage in ("0038_purchase_orders", "0039_communication",
+                               "0040_po_tax_basis", fresh.FINAL_TARGET)
             assert ("purchase_orders" in inspect(db).get_table_names()) == has_po
             assert bool(db.scalar(text("SELECT to_regclass('purchase_order_number_seq')"))) == has_po
-    if stage in ("0038_purchase_orders", "0039_communication", fresh.FINAL_TARGET):
+    if stage in ("0038_purchase_orders", "0039_communication", "0040_po_tax_basis", fresh.FINAL_TARGET):
         # Consume only the disposable rehearsal's sequence. Never reset it to
         # disguise use; leave that independent test database blocked.
         with rehearsal.begin() as db:
