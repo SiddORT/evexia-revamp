@@ -54,7 +54,7 @@ def databases():
 
 
 def test_review_covers_every_revision_and_policy():
-    assert len(fresh.reviewed_graph()) == 44
+    assert len(fresh.reviewed_graph()) == 45
 
 
 def test_additive_catalog_removes_only_exact_reviewed_rows(monkeypatch):
@@ -298,7 +298,7 @@ def test_preparation_stops_and_original_production_retirement_guard_survives(dat
 
 @pytest.mark.parametrize("stage", [
     "0034_shared_phone_countries", "0035_account_identifiers", "0036_reference_privacy",
-    "0037_domain_admission", "0038_purchase_orders", "0039_communication",
+    "0037_domain_admission", "0038_purchase_orders", "0039_communication", "0040_po_tax_basis",
 ])
 def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap(databases, tmp_path, monkeypatch, stage):
     from app.services import organization_retirement as recovery
@@ -404,6 +404,10 @@ def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap
     shutil.copytree(fresh.BACKEND, release / "artifacts/api-server/backend",
                     ignore=shutil.ignore_patterns("__pycache__"))
     shutil.copytree(fresh.ROOT / ".github", release / ".github")
+    for relative in json.loads((fresh.ROOT / "scripts/fresh-install-review.json").read_text())["release_sources"]:
+        destination = release / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(fresh.ROOT / relative, destination)
     lock = tmp_path / ".deploy.lock"
     (tmp_path / ".operator-maintenance").touch()
     wrapper = release / "scripts/operator-retirement.sh"
@@ -465,10 +469,10 @@ def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap
             config = fresh.alembic_config(db)
             command.upgrade(config, stage)
             fresh.catalog(db, stage)
-            has_po = stage in ("0038_purchase_orders", fresh.FINAL_TARGET)
+            has_po = stage in ("0038_purchase_orders", "0039_communication", fresh.FINAL_TARGET)
             assert ("purchase_orders" in inspect(db).get_table_names()) == has_po
             assert bool(db.scalar(text("SELECT to_regclass('purchase_order_number_seq')"))) == has_po
-    if stage in ("0038_purchase_orders", fresh.FINAL_TARGET):
+    if stage in ("0038_purchase_orders", "0039_communication", fresh.FINAL_TARGET):
         # Consume only the disposable rehearsal's sequence. Never reset it to
         # disguise use; leave that independent test database blocked.
         with rehearsal.begin() as db:
@@ -626,6 +630,10 @@ def test_machine_fresh_path_rehearses_then_runs_original_retirement_and_bootstra
     shutil.copytree(fresh.BACKEND, release / "artifacts/api-server/backend",
                     ignore=shutil.ignore_patterns("__pycache__"))
     shutil.copytree(fresh.ROOT / ".github", release / ".github")
+    for relative in json.loads((fresh.ROOT / "scripts/fresh-install-review.json").read_text())["release_sources"]:
+        destination = release / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(fresh.ROOT / relative, destination)
     lock = tmp_path / ".deploy.lock"
     (tmp_path / ".operator-maintenance").touch()
     wrapper = release / "scripts/operator-retirement.sh"

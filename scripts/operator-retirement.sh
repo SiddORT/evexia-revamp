@@ -123,10 +123,10 @@ try:
     graph = runner.load_graph(backend / "alembic/versions")
     policy = runner.load_policy(Path(root) / "scripts/migration-policy.json")
     target = runner.literal_assignments(backend / "app/core/schema.py", {"SCHEMA_REVISION"})["SCHEMA_REVISION"]
-    if target != "0039_communication":
-        raise runner.PolicyError("OPERATOR_WORKFLOW_REQUIRES_REVIEW_FOR_CHANGED_RELEASE")
     from app import fresh_install
     fresh_install.reviewed_graph()
+    if target != fresh_install.FINAL_TARGET:
+        raise runner.PolicyError("OPERATOR_WORKFLOW_REQUIRES_REVIEW_FOR_CHANGED_RELEASE")
     if not validated:
         fresh_install.approve_release(release)
     # Retirement approval remains bounded to its original phone continuation.

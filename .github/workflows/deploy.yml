@@ -135,6 +135,13 @@ jobs:
             # Finish builds before changing the schema. Recheck the complete
             # path under the runner's DB lock immediately before any upgrade.
             docker build -f "$RELEASE/artifacts/evexia-portal/Dockerfile" -t "$FRONTEND_IMAGE" "$RELEASE"
+            # Expected frontend proof comes from the built candidate image,
+            # never from Git labels or a response from the running container.
+            IMAGE_HOLDER=$(docker create "$FRONTEND_IMAGE")
+            trap 'docker rm "$IMAGE_HOLDER" >/dev/null 2>&1 || true' EXIT
+            docker cp "$IMAGE_HOLDER:/usr/share/nginx/html/release-runtime.json" "$RELEASE/frontend-runtime.json"
+            docker rm "$IMAGE_HOLDER" >/dev/null
+            trap - EXIT
             if run_policy --execute; then
               :
             else
@@ -161,7 +168,7 @@ jobs:
             # is neither recreated nor restarted by this command.
             docker compose --project-name "$PROJECT" --project-directory "$ACTIVE" \
               --env-file "$ACTIVE/.env" -f "$ACTIVE/docker-compose.yml" \
-              -f "$RELEASE/promote.yml" up -d --no-build --no-deps backend frontend
+              -f "$RELEASE/promote.yml" up -d --no-build --no-deps --force-recreate backend frontend
             READY=no
             for ATTEMPT in $(seq 1 30); do
               if docker exec evexia-backend uv run --project /workspace python -c \
@@ -173,6 +180,14 @@ jobs:
               echo "DEPLOYMENT_ERROR: candidate readiness failed; do not infer schema rollback safety"; exit 1;
             }
             docker exec evexia-frontend wget -q -O /dev/null http://127.0.0.1/
+            test "$(docker inspect --format '{{.Image}}' evexia-backend)" = "$(docker image inspect --format '{{.Id}}' "$BACKEND_IMAGE")"
+            test "$(docker inspect --format '{{.Image}}' evexia-frontend)" = "$(docker image inspect --format '{{.Id}}' "$FRONTEND_IMAGE")"
+            docker run --rm --network "$NETWORK" \
+              -e APP_ENV=production -e PYTHONPATH=/release-source/artifacts/api-server/backend \
+              -v "$RELEASE:/release-source:ro" --entrypoint /workspace/.venv/bin/python "$BACKEND_IMAGE" \
+              /release-source/scripts/verify-running-release.py \
+              --frontend http://evexia-frontend --backend http://evexia-backend:8080 \
+              --expected-frontend /release-source/frontend-runtime.json
             printf '%s\n' "$DEPLOY_SHA" > "$ACTIVE/.deployed-release"
             echo "DEPLOYMENT_READY: $DEPLOY_SHA"
             echo "EVEXIA_DEPLOY_STATUS=promoted"

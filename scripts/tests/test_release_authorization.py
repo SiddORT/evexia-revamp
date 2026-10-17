@@ -54,7 +54,7 @@ def evidence(root, custody, settings=None, database="fixture", cluster=123):
         names.update(str(path.relative_to(root)) for path in (root / directory).rglob("*.py"))
     payload = {
         "purpose": "evexia-release-validation-v1", "commit": "a" * 40,
-        "target": "0039_communication",
+        "target": json.loads((root / "scripts/release-authorization-policy.json").read_text())["final_target"],
         "review_sha256": auth.sha(root / "scripts/fresh-install-review.json"),
         "commands": auth.policy(root)["validation_commands"], "results": [0, 0, 0],
         "files": {name: auth.sha(root / name) for name in names},

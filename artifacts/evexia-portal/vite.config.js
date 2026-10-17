@@ -5,6 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 import { candidateIdentity, developmentCompatibilityPlugin } from '../../scripts/development-identity.mjs';
+import { frontendRuntimePlugin } from '../../scripts/frontend-runtime.mjs';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const rawPort = process.env.PORT;
@@ -42,9 +43,9 @@ function exactDevelopmentHosts() {
 }
 
 export default defineConfig(({ command, isPreview }) => {
- const gate = command === 'serve' && !isPreview &&
-   (process.env.EVEXIA_TEST_DEVELOPMENT_GATE === '1' ||
-    (Boolean(process.env.REPLIT_DEV_DOMAIN) && !(process.env.APP_ENV === 'test' && apiProxyTarget)));
+ // Browsing/HMR never performs compatibility quarantine. Startup/update uses
+ // the live-version pipeline once. Legacy gate fixtures remain isolated.
+ const gate = command === 'serve' && !isPreview && process.env.EVEXIA_TEST_DEVELOPMENT_GATE === '1';
  return ({
   base: basePath,
   define: {
@@ -54,7 +55,7 @@ export default defineConfig(({ command, isPreview }) => {
     'import.meta.env.EVEXIA_PREVIEW_HOSTNAME': JSON.stringify(
       command === 'serve' && !isPreview ? process.env.REPLIT_DEV_DOMAIN || '' : ''),
   },
-  plugins: [exactDevelopmentHosts(), developmentCompatibilityPlugin(gate, basePath), react(), tailwindcss(), runtimeErrorOverlay()],
+  plugins: [exactDevelopmentHosts(), frontendRuntimePlugin(basePath), developmentCompatibilityPlugin(command === 'serve' && !isPreview && (gate || Boolean(process.env.REPLIT_DEV_DOMAIN)), basePath), react(), tailwindcss(), runtimeErrorOverlay()],
   resolve: {
     alias: { '@': path.resolve(dirname, 'src') },
     dedupe: ['react', 'react-dom'],

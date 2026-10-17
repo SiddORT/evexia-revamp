@@ -15,6 +15,16 @@
     "sha256": "cf856677c16ae4616043a2dcbe85d056c2ff1ff283f6c83cb3fdaa368774b6f7",
     "tables": ["account_crypto_state", "account_identifier_reservations", "alembic_version", "allergen_products", "audit_events", "auth_sessions", "courier_partners", "custom_roles", "designations", "directory_crypto_stage", "doctor_directory", "domain_policies", "download_grants", "download_logs", "files", "headquarters", "login_attempts", "mr_directory", "mr_profiles", "opening_balance_import_reviews", "opening_balances", "patient_directory", "patients", "product_categories", "refresh_sessions", "role_hostnames", "sales_targets", "staff_profiles", "storage_locations", "users", "vendors", "zones"]
   },
+  "0040_po_tax_basis": {
+    "base_revision": "0039_communication",
+    "tables": ["account_crypto_state", "account_identifier_reservations", "alembic_version", "allergen_products", "audit_events", "auth_sessions", "communication_channels", "communication_configurations", "courier_partners", "custom_roles", "designations", "directory_crypto_stage", "doctor_directory", "domain_policies", "download_grants", "download_logs", "files", "headquarters", "login_attempts", "mr_directory", "mr_profiles", "opening_balance_import_reviews", "opening_balances", "patient_directory", "patients", "product_categories", "purchase_order_audit", "purchase_order_lines", "purchase_order_requests", "purchase_orders", "refresh_sessions", "role_hostnames", "sales_targets", "staff_profiles", "storage_locations", "users", "vendors", "zones"],
+    "additions": {
+      "columns": [
+        ["purchase_orders", "tax_basis", "json", false, "", "", null, null],
+        ["purchase_orders", "tax_components", "json", false, "", "", null, null]
+      ]
+    }
+  },
   "0039_communication": {
     "base_revision": "0038_purchase_orders",
     "tables": ["account_crypto_state", "account_identifier_reservations", "alembic_version", "allergen_products", "audit_events", "auth_sessions", "communication_channels", "communication_configurations", "courier_partners", "custom_roles", "designations", "directory_crypto_stage", "doctor_directory", "domain_policies", "download_grants", "download_logs", "files", "headquarters", "login_attempts", "mr_directory", "mr_profiles", "opening_balance_import_reviews", "opening_balances", "patient_directory", "patients", "product_categories", "purchase_order_audit", "purchase_order_lines", "purchase_order_requests", "purchase_orders", "refresh_sessions", "role_hostnames", "sales_targets", "staff_profiles", "storage_locations", "users", "vendors", "zones"],

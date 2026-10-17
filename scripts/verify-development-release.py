@@ -12,6 +12,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "artifacts/api-serv
 
 
 def verify(origin, fetch=None):
+    if fetch is None:
+        import importlib.util
+        import subprocess
+        root = Path(__file__).resolve().parents[1]
+        spec = importlib.util.spec_from_file_location("running_release", root / "scripts/verify-running-release.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        expected = json.loads(subprocess.check_output(
+            ["node", str(root / "scripts/frontend-runtime.mjs")], cwd=root, timeout=10))
+        return module.verify(origin, origin, expected, development=True)
     from app.core.development_identity import candidate_identity
     expected = candidate_identity()
     def read(path, allow503=False):

@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "host": "helium",
+  "port": 5432,
+  "database": "heliumdb",
+  "cluster": "7689828272860483604",
+  "oid": 16384
+}

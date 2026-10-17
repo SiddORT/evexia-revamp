@@ -10,6 +10,8 @@ UV_PROJECT_ENVIRONMENT="$ROOT/.pythonlibs" uv sync --frozen
 # Do not automatically cross the separately approved organization-retirement
 # boundary (or its directory-encryption predecessors). Operator evidence and
 # coordinated write exclusion cannot be supplied by unattended post-merge.
-sh "$ROOT/scripts/development-preflight.sh"
-# No migrations or runtime restart here. Source validation alone is not activation.
-python "$ROOT/scripts/verify-development-release.py"
+APP_ENV=development python -B "$ROOT/scripts/development-sync.py"
+APP_ENV=development sh "$ROOT/scripts/development-preflight.sh"
+# The platform reconciles managed workflows after this script. The frontend
+# launcher then verifies BOTH newly running services and served build identity.
+# Checking old processes here would block reconciliation on every real update.

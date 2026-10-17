@@ -5,10 +5,26 @@
   "existing_database": "operator_approval_for_protected_revisions_and_bootstrap",
   "prepare_target": "0031_role_hostnames",
   "retirement_cap": "0034_shared_phone_countries",
-  "final_target": "0039_communication",
+  "final_target": "0040_po_tax_basis",
   "validation_commands": [
-    ["pnpm", "run", "validate:release"],
-    ["sh", "scripts/test-fresh-install.sh"],
-    ["python", "-B", "-m", "unittest", "discover", "-s", "scripts/tests", "-v"]
+    [
+      "pnpm",
+      "run",
+      "validate:release"
+    ],
+    [
+      "sh",
+      "scripts/test-fresh-install.sh"
+    ],
+    [
+      "python",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "scripts/tests",
+      "-v"
+    ]
   ]
 }

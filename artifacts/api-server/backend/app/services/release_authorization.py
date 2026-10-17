@@ -15,6 +15,7 @@ import stat
 import time
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+from app.core.schema import SCHEMA_REVISION
 
 
 class AuthorizationBlocked(ValueError):
@@ -111,7 +112,7 @@ def policy(root):
         "existing_database": "operator_approval_for_protected_revisions_and_bootstrap",
         "prepare_target": "0031_role_hostnames",
         "retirement_cap": "0034_shared_phone_countries",
-        "final_target": "0039_communication",
+        "final_target": SCHEMA_REVISION,
         "validation_commands": [
             ["pnpm", "run", "validate:release"],
             ["sh", "scripts/test-fresh-install.sh"],

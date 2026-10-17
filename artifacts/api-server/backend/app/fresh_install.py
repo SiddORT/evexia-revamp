@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[4]
 BACKEND = ROOT / "artifacts/api-server/backend"
 LOCK_PATH = Path("/var/www/newuat.allergyevexia.in/.deploy.lock")
 PREPARE_TARGET = "0031_role_hostnames"
-FINAL_TARGET = "0039_communication"
+FINAL_TARGET = SCHEMA_REVISION
 LOCK_ID = 145002  # Same database interlock as normal CI/operator continuation.
 
 
@@ -115,14 +115,23 @@ def catalog(connection, revision):
     expected = expectations.get(revision)
     if expected is None:
         raise FreshInstallBlocked("Unexpected installation catalog; operator review required.")
-    base = expectations[expected["base_revision"]] if "base_revision" in expected else expected
+    base, additions, visited = expected, {}, set()
+    while True:
+        if id(base) in visited:
+            raise FreshInstallBlocked("Cyclic catalog review.")
+        visited.add(id(base))
+        for section, rows in base.get("additions", {}).items():
+            additions.setdefault(section, []).extend(rows)
+        if "base_revision" not in base:
+            break
+        base = expectations[base["base_revision"]]
     try:
-        actual = digest(connection, additions=expected.get("additions"))
+        actual = digest(connection, additions=additions)
     except ValueError:
         raise FreshInstallBlocked("Unexpected installation catalog; operator review required.") from None
     if actual != base["sha256"]:
         raise FreshInstallBlocked("Unexpected installation catalog; operator review required.")
-    if revision in ("0038_purchase_orders", FINAL_TARGET):
+    if "purchase_orders" in expected["tables"]:
         if connection.execute(text(
                 "SELECT last_value,is_called FROM purchase_order_number_seq")).one() != (1, False):
             raise FreshInstallBlocked("Purchase Order sequence is not unused; operator review required.")
@@ -229,9 +238,14 @@ def finalize(connection, settings, hostname=None):
     from app.api.v1.system import readiness
     dedicated_database(connection)
     revisions = connection.execute(text("SELECT version_num FROM alembic_version")).scalars().all()
-    predecessors = (["0034_shared_phone_countries"], ["0035_account_identifiers"],
-                    ["0036_reference_privacy"], ["0037_domain_admission"],
-                    ["0038_purchase_orders"])
+    # Only explicitly catalog-reviewed descendants of the unchanged retirement
+    # cap qualify. New releases do not require another handwritten target list.
+    graph = reviewed_graph()
+    def after_retirement(revision):
+        return revision == "0034_shared_phone_countries" or any(
+            after_retirement(parent) for parent in graph[revision].parents)
+    stages = json.loads((ROOT / "scripts/fresh-install-catalog.json").read_text())
+    predecessors = tuple([r] for r in stages if r != FINAL_TARGET and r in graph and after_retirement(r))
     if revisions not in (*predecessors, [FINAL_TARGET]):
         raise FreshInstallBlocked("Complete the existing protected operator continuation first.")
     expected = catalog(connection, revisions[0])
@@ -240,7 +254,7 @@ def finalize(connection, settings, hostname=None):
     connection.execute(text("LOCK TABLE " + ", ".join('public.' + quote(t) for t in sorted(expected)) +
                             " IN ACCESS EXCLUSIVE MODE NOWAIT"))
     catalog(connection, revisions[0])
-    if revisions == [FINAL_TARGET]:
+    if "communication_channels" in expected:
         communication_channels(connection)
     for table in tables:
         if table == "communication_channels":

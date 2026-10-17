@@ -21,6 +21,9 @@ export function candidateIdentity() {
   }
   visit(appPath);
   const digest = crypto.createHash('sha256').update(raw);
+  for (const name of ['pyproject.toml', 'uv.lock']) {
+    digest.update(name).update('\0').update(fs.readFileSync(path.join(root, name)));
+  }
   for (const file of files.sort()) digest.update(path.relative(appPath, file)).update('\0').update(fs.readFileSync(file));
   return { ...contract, source: digest.digest('hex') };
 }

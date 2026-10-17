@@ -124,20 +124,6 @@ def create_app() -> FastAPI:
             limit = body_limit(request.method, request.url.path, settings.max_upload_bytes)
             if content_length and (not content_length.isdigit() or int(content_length) > limit):
                 response = JSONResponse(error_body(request, 413, "Request too large"), status_code=413)
-            elif development_gate is not None and request.url.path == "/api/v1/health/readiness":
-                ready = await development_gate.ready()
-                response = JSONResponse({"status": "ready"} if ready else
-                                        error_body(request, 503, "Service unavailable"),
-                                        status_code=200 if ready else 503)
-            elif (development_gate is not None
-                  and request.url.path not in {
-                      "/api/healthz", "/api/v1/health", "/api/v1/health/readiness",
-                      "/api/v1/version", "/api/v1/development/compatibility"}
-                  and (request.headers.get("X-Evexia-Development-Contract") !=
-                       f'{LOADED_IDENTITY["contract"]}:{LOADED_IDENTITY["schema"]}'
-                       or not await development_gate.ready())):
-                response = JSONResponse(error_body(request, 503, "Development setup pending",
-                                                    "development_release_blocked"), status_code=503)
             else:
                 response = await call_next(request)
         except RequestTooLarge:

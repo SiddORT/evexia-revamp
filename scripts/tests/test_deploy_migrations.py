@@ -274,7 +274,11 @@ if tool == 'git':
         with tarfile.open(fileobj=sys.stdout.buffer, mode='w|') as archive:
             archive.add(os.environ['FAKE_SOURCE'], arcname='.')
 elif tool == 'docker':
-    if args[0] == 'inspect':
+    if args[0] == 'create':
+        print('fixture-holder')
+    elif args[0] == 'image':
+        print('sha256:previous-image')
+    elif args[0] == 'inspect':
         fmt=args[args.index('--format')+1]
         print('fixture-project' if 'compose.project' in fmt else
               'fixture-network' if 'Networks' in fmt else 'sha256:previous-image')

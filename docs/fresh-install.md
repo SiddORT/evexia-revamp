@@ -9,7 +9,7 @@ separate machine-evidenced fresh mode. No production approval is implied.
 
 # Secure-domain release prerequisite
 
-The current coordinated candidate target is `0039_communication`. Before starting
+The current coordinated candidate target is `0040_po_tax_basis`. Before starting
 production services, independently verify the existing approved exact
 `PORTAL_BOOTSTRAP_HOSTS`, trusted proxy peers, DNS/TLS and the guarded API/nginx
 entrypoints described in [domain-admission.md](domain-admission.md).
@@ -22,7 +22,7 @@ assigning an Admin role. Updated source review metadata is not target approval.
 ## Communication candidate correction — operator validation still required
 
 This source correction extends only the separately approved **empty-only
-finalization** to `0039_communication`. Preparation still stops at
+finalization** to `0040_po_tax_basis`. Preparation still stops at
 `0031_role_hostnames`; the retirement wrapper still stops at
 `0034_shared_phone_countries`. No retirement approval authorizes populated-account
 conversion or Communication activation on an existing installation.
@@ -52,8 +52,8 @@ restored-catalog digests are accepted. The new rows were inspected read-only
 in the retained local PostgreSQL 17 Communication rehearsal, not on the VPS.
 This source/DDL inspection is not a fresh-install/restoration rehearsal.
 
-The finalizer accepts pristine `0034`–`0039` stages, still rejects any business
-records, and requires an unused PO sequence at both `0038` and `0039`. At `0039`,
+The finalizer accepts pristine, catalog-reviewed `0034`–`0040` stages, still rejects any business
+records, and requires an unused PO sequence at every stage containing Purchase Orders. At `0039` and `0040`,
 only the exact migration-owned channel rows `email=1`, `sms=1`, `waba=1` are
 allowed; Communication configurations must be empty. Finalization atomically
 applies the remaining reviewed migrations, checks that metadata, bootstraps the
@@ -65,6 +65,12 @@ and recovery procedure. This fresh-only release review does not supply that
 authorization.
 
 # Fresh production installation (dedicated empty PostgreSQL)
+
+Current schema declarations and review-source fingerprints are checked together
+by `python -B scripts/review-schema-release.py`. Author the schema in
+`development-contract.json`; regeneration is not release authorization. See
+[development synchronization](development-sync.md) for the separate routine
+development pipeline. Historical reports below do not approve an uninspected VPS.
 
 This is an **operator procedure**, never a CI fallback. Do not run
 `deploy-scripts/deploy.sh` or a bare historical `initialize-api.sh`.
@@ -96,6 +102,7 @@ review, not a runtime override.
 | 0037_domain_admission | Operator-only shared primary configuration and exact-host ownership/admission. Legacy role rows remain unverified; retain separately approved recovery access before activation. |
 | 0038_purchase_orders | Operator-only empty PO tables/sequence; included only in this new candidate's separately approved empty-only finalization scope, never in retirement authorization. |
 | 0039_communication | Operator-only encrypted configuration storage plus three fixed channel/version rows. Reviewed empty-only finalization includes it; existing databases need separate operator approval. No provider calls or delivery activation. |
+| 0040_po_tax_basis | Two nullable JSON Purchase Order columns; no backfill. Remains operator-only for existing production databases. Empty-only finalization extends the exact 0039 catalog by these two columns. |
 
 Preparation proves a dedicated `public` database has **no application objects**,
 including an empty `alembic_version`, tables/views/sequences/functions/types or
@@ -209,15 +216,15 @@ Supported sequence:
 | Empty reference conversion | 0036_reference_privacy | 31 | absent |
 | Empty domain conversion | 0037_domain_admission | 32 | absent |
 | Empty PO stage | 0038_purchase_orders | 36 | present |
-| Empty finalization + bootstrap | 0039_communication | 38 | present |
+| Empty finalization + bootstrap | 0040_po_tax_basis | 38 | present |
 
 `scripts/fresh-install-catalog.json` contains frozen PostgreSQL **17** projections
-for every supported 0034–0039 finalization start. These are not derived from the
+for every supported 0034–0040 finalization start. These are not derived from the
 current ORM. They bind relations, columns/defaults, constraints, indexes,
 triggers/functions, types, namespace objects and sequence definitions.
 Finalization locks all expected tables, rechecks the exact catalog, proves
 every business table empty (including account history, audit and PO retry data),
-upgrades only to explicit 0039, and rechecks revision/catalog/unused sequence and
+upgrades only to the explicit reviewed target, and rechecks revision/catalog/unused sequence and
 the exact three migration-owned Communication channel/version rows.
 Bootstrap, optional hostname, audit and readiness share one outer transaction.
 No arbitrary old revision, object, populated installation, or future head is
@@ -236,7 +243,7 @@ the PostgreSQL advisory lock coordinates database migration invocations.
 5. After real independent full restoration, full-data/catalog review and
    protected-path rehearsal, attest the exact recovery digest and separately
    approve organization retirement and phone continuation **only to 0034**.
-6. Approve empty-only account/reference/domain/PO/Communication finalization through 0039 and
+6. Approve empty-only account/reference/domain/PO/Communication/tax-basis finalization through 0040 and
    protected bootstrap, plus the optional *unverified* hostname mapping.
 7. Separately approve release-matched service promotion, readiness/authentication
    checks and traffic/writer handover. Domain ownership/admission remains separate.
@@ -600,7 +607,7 @@ Human-approved separate operation, while the production supervisor remains open:
      --approve-release "$APPROVED_RELEASE_REVIEW_SHA" \
      --expected-database "$APPROVED_REHEARSAL_DB_NAME" \
      --expected-system-identifier "$APPROVED_REHEARSAL_CLUSTER_ID"
-   # Expected: FRESH_INSTALL_READY: 0039_communication.
+   # Expected: FRESH_INSTALL_READY: 0040_po_tax_basis.
    ```
    Retain the rehearsal result and approve/retain a separate production
    restoration/continuation attestation naming that exact recovery SHA.
@@ -640,11 +647,11 @@ sh /operator-release/scripts/initialize-api.sh \
   --expected-database "$APPROVED_DB_NAME" \
   --expected-system-identifier "$APPROVED_CLUSTER_ID" \
   --admin-hostname newuat.allergyevexia.in
-# Expected: FRESH_INSTALL_READY ... 0039_communication
+# Expected: FRESH_INSTALL_READY ... 0040_po_tax_basis
 /workspace/.venv/bin/python -B -m alembic current
 /workspace/.venv/bin/python -B /operator-release/scripts/deploy-migrations.py \
   --backend-dir /operator-release/artifacts/api-server/backend
-# Expected: exact single 0039_communication revision, policy READY, no migrations applied.
+# Expected: exact single 0040_po_tax_basis revision, policy READY, no migrations applied.
 ```
 
 Finalization refuses other revisions, unexpected tables/views and **any existing
@@ -655,7 +662,7 @@ The reserved login is `crm-admin@allergyevexia.in`, using the already-configured
 initial password. No password is printed.
 
 From a second host terminal, with the supervisor still holding FD9, verify the
-existing backend is the independently reviewed matching **0039** image before restarting it.
+existing backend is the independently reviewed matching **0040** image before restarting it.
 Do not infer that from an image tag, container name, or a successful `/health`.
 On that second host terminal (not inside the tooling shell), restore the
 non-secret approved release/image variables from the retained operator record:
@@ -704,7 +711,7 @@ docker compose --project-name "$PROJECT" --project-directory "$ACTIVE" \
 test "$(docker inspect --format '{{.Image}}' evexia-backend)" = "$APPROVED_BACKEND_IMAGE_ID"
 test "$(docker inspect --format '{{.Image}}' evexia-frontend)" = "$APPROVED_FRONTEND_IMAGE_ID"
 docker exec evexia-backend /workspace/.venv/bin/python -B -c \
-  'from app.core.schema import SCHEMA_REVISION; assert SCHEMA_REVISION == "0039_communication"'
+  'from app.core.schema import SCHEMA_REVISION; assert SCHEMA_REVISION == "0040_po_tax_basis"'
 docker exec evexia-backend /workspace/.venv/bin/python -B -c \
   'import urllib.request; urllib.request.urlopen("http://127.0.0.1:8080/api/v1/health/readiness", timeout=5).read()'
 docker exec evexia-frontend wget -q -O /dev/null http://127.0.0.1/
@@ -762,8 +769,8 @@ storage, PostgreSQL or key changes are part of initialization.
   explicitly reviewed recovery/continuation procedure; no automatic downgrade,
   retry, stamp or old-release restart.
 - Finalization errors before commit: account/hostname/audit writes roll back
-  together with any 0035–0039 DDL in the same outer transaction. A rejected
-  0034/0035/0036/0037/0038/0039 catalog, populated table, changed channel version
+  together with any 0035–0040 DDL in the same outer transaction. A rejected
+  0034/0035/0036/0037/0038/0039/0040 catalog, populated table, changed channel version
   or used PO sequence is not
   permission to repair it by deleting records or changing the sequence.
   Verify actual state after ambiguous commit. A successful but

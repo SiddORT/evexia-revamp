@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --config vite.config.js --host 0.0.0.0",
+    "dev": "sh ../../scripts/start-development-web.sh",
     "build": "vite build --config vite.config.js",
     "test:doctor-demo": "node --test src/doctor/doctorStore.test.js",
     "test:doctor-demo:browser": "pnpm --workspace-root exec playwright test artifacts/evexia-portal/tests/doctor-demo.preview.spec.mjs --config playwright.config.mjs",

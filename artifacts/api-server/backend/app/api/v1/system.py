@@ -3,6 +3,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.core.development_identity import LOADED_IDENTITY
 
 router = APIRouter(tags=["system"])
 
@@ -14,7 +15,8 @@ def health():
 
 @router.get("/version")
 def version():
-    return {"api": "v1"}
+    # Captured when this process loaded, never relabelled from mutable Git/files.
+    return {"api": "v1", "release": LOADED_IDENTITY}
 
 
 @router.get("/health/readiness")

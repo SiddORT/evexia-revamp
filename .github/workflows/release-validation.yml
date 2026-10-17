@@ -34,6 +34,8 @@ jobs:
           uv sync --frozen
           pnpm install --frozen-lockfile
           pnpm exec playwright install --with-deps chromium firefox webkit
+      - name: Verify coordinated schema and reviewed fresh-install target
+        run: python -B scripts/review-schema-release.py
       - name: Run all gates and issue signed evidence only on complete success
         env:
           VALIDATION_SIGNING_KEY: ${{ secrets.RELEASE_VALIDATION_PRIVATE_KEY }}

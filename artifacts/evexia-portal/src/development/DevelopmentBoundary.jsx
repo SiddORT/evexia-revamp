@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
+import DevelopmentUpdateNotice from './DevelopmentUpdateNotice.jsx';
 import { gateEnabled, releaseSnapshot, releaseSubscribe, retryRelease, invalidateRelease } from './releaseState.js';
 import { failureGuidance } from './failureGuidance.js';
 import './development.css';
@@ -63,7 +64,7 @@ export default function DevelopmentBoundary({ children }) {
     };
   }, []);
   useEffect(() => { if (!ready) statusRef.current?.focus(); }, [ready]);
-  if (!gateEnabled) return children;
+  if (!gateEnabled) return <DevelopmentUpdateNotice>{children}</DevelopmentUpdateNotice>;
   return <>
     <div hidden={!ready} inert={!ready ? true : undefined} data-testid="development-content">
       {mounted.current ? children : null}

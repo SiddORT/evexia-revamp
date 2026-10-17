@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir uv \
     && uv sync --frozen --no-dev
 
 COPY artifacts/api-server/backend /app
+COPY development-contract.json /app/development-contract.json
 
 EXPOSE 8080
 
