@@ -11,6 +11,7 @@ from sqlalchemy.engine import make_url
 
 from app import fresh_install as fresh
 from app.core.config import get_settings
+from app.services.initialization_diagnostics import exception_diagnostic
 
 
 def initialize(connection, settings, *, database, cluster, host, port, hostname=None):
@@ -105,10 +106,11 @@ def main(argv=None):
                           "super_admin": "created", "transaction": "committed"}))
         return 0
     except fresh.FreshInstallBlocked as exc:
-        print("INITIALIZATION_BLOCKED: " + str(exc), file=sys.stderr)
+        print("INITIALIZATION_BLOCKED: " + exception_diagnostic(exc), file=sys.stderr)
         return 1
-    except Exception:
-        print("INITIALIZATION_FAILED: success was not confirmed; no credentials printed. "
+    except Exception as exc:
+        print("INITIALIZATION_ERROR: " + exception_diagnostic(exc), file=sys.stderr)
+        print("INITIALIZATION_FAILED: success was not confirmed; details sanitized. "
               "Failures before commit roll back. If commit/output acknowledgement was lost, "
               "inspect revision/readiness before retry; do not assume rollback.",
               file=sys.stderr)

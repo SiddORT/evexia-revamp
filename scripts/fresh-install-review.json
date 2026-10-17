@@ -6,6 +6,7 @@
   "prepare_target": "0031_role_hostnames",
   "policy_sha256": "d7c61565115c72ae02dda7f40fe3c4460aafcbc4199be8fdc4f84f485b182efa",
   "release_sources": {
+    "artifacts/api-server/backend/app/services/initialization_diagnostics.py": "9732dd29159788eb77976a7ed70635e49ca76d2982e0c42fafcb99ed2ff04a6f",
     "artifacts/api-server/backend/app/fresh_install.py": "3b2d341742e7e7da266a5dc34d2dcb614fa6a3dc031d055ef9e5f50ede8dea3a",
     "artifacts/api-server/backend/app/services/release_authorization.py": "67212a1caa6ff2a475b339d199f9f1dabf8f7fc194e11d92d83abba78c8a1554",
     "scripts/validate-release-artifact.py": "b8a155a3dd669a782f68d8cba5dcb2a7a462f272b13a8dcd4ccf00b98660d5ae",
@@ -39,8 +40,8 @@
     "scripts/development-identity.mjs": "1ff5683721d2f73505db27b8a19e9df4d893902e5dce5b1ef7388ef527913657",
     "pyproject.toml": "5e030b9c521d64516b63a2a90021f794576bb6254aa23864facb3e5faa3236d5",
     "uv.lock": "4549b31b4b1a49bca6000cbac25f4d670d540e336dd7989e6fd3809a0870aa29",
-    "artifacts/api-server/backend/app/initialize_database.py": "1faa1a674ad94ab3df549ccc48bbc514bb0c1f3efc601d7c7b57b258cb2ffae0",
-    "scripts/initialize-production.py": "7c8830c42f6f5571848068dc191dc99afa7c9fe16362ad87ac4c0bf6d6906f48"
+    "artifacts/api-server/backend/app/initialize_database.py": "ad0ac566b7e9dd02b2a122d300b794fab33d6bf5ac4766b2f406b0c98ff06769",
+    "scripts/initialize-production.py": "ec073c9d2ff3e7aeca520ee24770741c28dabd2c6c01cc4154cfe04b2f6e414d"
   },
   "guard_sources": {
     "app/core/config.py": "147d94942cdecc234ba91f07f642c126d99faca2c797db52eaaab080718042af",

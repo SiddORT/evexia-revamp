@@ -10,6 +10,10 @@ import stat
 import subprocess
 import sys
 
+# This shared helper is standard-library-only: host Python needs no app packages.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "artifacts/api-server/backend"))
+from app.services.initialization_diagnostics import exception_diagnostic
+
 ACTIVE = Path("/var/www/admin-uat.allergyevexia.in")
 
 
@@ -82,10 +86,15 @@ def run(arguments):
         os.close(descriptor)
 
 
-if __name__ == "__main__":
+def main(arguments=None):
     try:
-        sys.exit(run(sys.argv[1:]))
-    except Exception:
+        return run(sys.argv[1:] if arguments is None else arguments)
+    except Exception as exc:
+        print("INITIALIZATION_ERROR: " + exception_diagnostic(exc), file=sys.stderr)
         print("INITIALIZATION_BLOCKED: inspect checkout/lock/maintenance/build state. "
               "Existing maintenance is never cleared on failure.", file=sys.stderr)
-        sys.exit(1)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

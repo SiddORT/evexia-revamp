@@ -1,7 +1,10 @@
 """Host supervisor tests: fake Docker, no network/database/services."""
 import fcntl
+from contextlib import redirect_stderr
 import importlib.util
+import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -112,3 +115,25 @@ class InitializationSupervisorTests(unittest.TestCase):
                     tool.run(ARGS)
                 docker.assert_not_called()
             self.assertTrue(marker.is_file())
+
+    def test_main_reports_sanitized_build_failure_and_keeps_maintenance(self):
+        errors = io.StringIO()
+        failure = subprocess.CalledProcessError(
+            19, ["docker", "private-command-value"], stderr="private-stderr-value")
+        with patch.object(tool.subprocess, "run", side_effect=failure), \
+                patch.dict(os.environ, {}, clear=True), redirect_stderr(errors):
+            self.assertEqual(tool.main(ARGS), 1)
+        self.assertTrue((self.root / ".operator-maintenance").is_file())
+        self.assertIn("CalledProcessError", errors.getvalue())
+        self.assertIn("status 19", errors.getvalue())
+        self.assertIn("never cleared on failure", errors.getvalue())
+        self.assertNotIn("private", errors.getvalue())
+
+    def test_main_reports_existing_marker_without_clearing_it(self):
+        marker = self.root / ".operator-maintenance"
+        marker.write_text("existing operator")
+        errors = io.StringIO()
+        with patch.dict(os.environ, {}, clear=True), redirect_stderr(errors):
+            self.assertEqual(tool.main(ARGS), 1)
+        self.assertEqual(marker.read_text(), "existing operator")
+        self.assertIn("FileExistsError", errors.getvalue())
