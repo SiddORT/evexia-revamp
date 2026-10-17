@@ -5,7 +5,7 @@ import uuid
 import pytest
 from alembic import command
 from sqlalchemy import func, select, text
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import DataError, IntegrityError
 from sqlalchemy.orm import Session
 from app.db.models import User, AuthSession, AuditEvent
 from app.db.zone_models import Zone
@@ -36,6 +36,7 @@ def test_actual_location_migration_preserves_zone_identity_history(migration_db,
     reviewed_fixture_mapping(config, tmp_path, role_id, actor_id)
     from directory_test_data import approved_historical_upgrade
     approved_historical_upgrade(engine, config)
+    command.upgrade(config, "0041_location_geography")
     with Session(engine) as db:
         assert db.get(CustomRole, role_id).description == "Existing business metadata"
         assert db.get(CourierPartner, courier_id).name == "Preserved courier"
@@ -60,7 +61,8 @@ def test_actual_location_migration_preserves_zone_identity_history(migration_db,
 
 
 def test_concurrent_duplicates_and_stale_mutations(migration_db):
-    engine, _, actor_id, session_id = prepare(migration_db)
+    engine, config, actor_id, session_id = prepare(migration_db)
+    command.upgrade(config, "0041_location_geography")
     barrier = Barrier(2)
     def create(index):
         with Session(engine, expire_on_commit=False) as db:
@@ -91,7 +93,8 @@ def test_concurrent_duplicates_and_stale_mutations(migration_db):
 
 
 def test_constraint_conflict_rolls_back_batch_and_audit(migration_db, monkeypatch):
-    engine, _, actor_id, session_id = prepare(migration_db)
+    engine, config, actor_id, session_id = prepare(migration_db)
+    command.upgrade(config, "0041_location_geography")
     original = locations.insert
     data = b"Storage Location,Address,Status\nFirst,Building A,active\nSecond,Building A,inactive"
     with Session(engine, expire_on_commit=False) as db:
@@ -108,3 +111,47 @@ def test_constraint_conflict_rolls_back_batch_and_audit(migration_db, monkeypatc
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(StorageLocation)) == 0
         assert db.scalar(select(func.count()).select_from(AuditEvent).where(AuditEvent.action == "location_create")) == 0
+
+
+def test_geography_migration_preserves_live_and_deleted_addresses_without_inference(migration_db):
+    """Raw historical contract in the disposable schema, not current ORM defaults."""
+    engine, config, actor_id, _ = prepare(migration_db)
+    command.upgrade(config, "0040_po_tax_basis")
+    live_id, deleted_id = uuid.uuid4(), uuid.uuid4()
+    with engine.begin() as connection:
+        for row_id, deleted in ((live_id, False), (deleted_id, True)):
+            connection.execute(text("""
+                INSERT INTO storage_locations
+                    (id, name, address, status, version, created_by, updated_by, deleted_at, deleted_by)
+                VALUES (:id, :name, 'Pune Maharashtra India 411001', 'inactive', 7, :actor, :actor,
+                        CASE WHEN :deleted THEN now() ELSE NULL END,
+                        CASE WHEN :deleted THEN :actor ELSE NULL END)
+            """), dict(id=row_id, name="Historical deleted" if deleted else "Historical live",
+                       actor=actor_id, deleted=deleted))
+        before = connection.execute(text("SELECT * FROM storage_locations ORDER BY id")).mappings().all()
+    command.upgrade(config, "0041_location_geography")
+    with engine.connect() as connection:
+        after = connection.execute(text("SELECT * FROM storage_locations ORDER BY id")).mappings().all()
+        assert len(after) == 2
+        for old, current in zip(before, after):
+            assert {key: current[key] for key in old} == dict(old)
+            assert {key: current[key] for key in ("pincode", "country_code", "state", "city")} == {
+                "pincode": "", "country_code": "", "state": "", "city": "",
+            }
+    with Session(engine) as db:
+        for column, value in (("pincode", "x" * 21), ("country_code", "USA"),
+                              ("state", "x" * 101), ("city", "x" * 101),
+                              ("country_code", "in")):
+            with pytest.raises((DataError, IntegrityError)):
+                with db.begin_nested():
+                    db.execute(text(f"UPDATE storage_locations SET {column}=:value WHERE id=:id"),
+                               dict(value=value, id=live_id))
+    # Structured data on tombstones also prevents a lossy downgrade.
+    with engine.begin() as connection:
+        connection.execute(text("UPDATE storage_locations SET country_code='IN', state='Maharashtra' WHERE id=:id"),
+                           dict(id=deleted_id))
+    with pytest.raises(RuntimeError, match="Archive structured location geography"):
+        command.downgrade(config, "0040_po_tax_basis")
+    with engine.connect() as connection:
+        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0041_location_geography"
+        assert connection.scalar(text("SELECT state FROM storage_locations WHERE id=:id"), dict(id=deleted_id)) == "Maharashtra"

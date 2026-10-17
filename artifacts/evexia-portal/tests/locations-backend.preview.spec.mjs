@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { checkExportMenuStyles } from './helpers/export-menu-styles.mjs';
 if (process.env.EVEXIA_CHROMIUM_PATH) test.use({ launchOptions: { executablePath: process.env.EVEXIA_CHROMIUM_PATH, args: ['--no-sandbox'] } });
 const base = () => process.env.EVEXIA_PREVIEW_BASE_URL;
@@ -10,6 +12,249 @@ const locationFile = (name) => ({
   buffer: Buffer.from(`Storage Location,Address,Status\n${name},Synthetic office,active`),
 });
 const downloadCount = (page) => page.evaluate(async () => (await (await import('/src/auth/adminSession.js')).reportingRequest('downloads')).total);
+const postalPattern = '**/api/v1/admin/storage-locations/postal/*?*';
+const postalChoice = (city, state = 'Maharashtra') => ({ city, state, country: 'India' });
+const postalReply = (route, choices, message = 'Synthetic PIN choices') => route.fulfill({
+  json: { pincode: new URL(route.request().url()).pathname.split('/').at(-1), choices, message },
+});
+async function expectGeography(page, geography) {
+  for (const [field, value] of Object.entries(geography)) await expect(page.locator(`#storage-${field}`)).toHaveValue(value);
+}
+
+for (const format of ['csv', 'xlsx']) {
+  test(`all four exact ${format.toUpperCase()} backup shapes retain structured geography or deliberate legacy blanks`, async ({ page }) => {
+    test.setTimeout(120000);
+    await open(page);
+    const tag = randomUUID();
+    const legacyColumns = ['Storage Location', 'Address', 'Status'];
+    const structuredColumns = [...legacyColumns, 'PIN Code', 'Country Code', 'State/UT', 'City'];
+    const auditColumns = ['Created By', 'Created At', 'Updated By', 'Updated At'];
+    for (const [structured, audited] of [[false, false], [false, true], [true, false], [true, true]]) {
+      const name = `Backup ${format} ${structured}-${audited} ${tag}`;
+      const columns = [...(structured ? structuredColumns : legacyColumns), ...(audited ? auditColumns : [])];
+      const cells = [name, 'Pune Maharashtra India 411001', 'inactive',
+        ...(structured ? ['411001', 'IN', 'maharashtra', 'Pune'] : []),
+        ...(audited ? ['Forged', '1900', 'Forged', '1900'] : [])];
+      const rows = [columns, cells];
+      const buffer = format === 'csv'
+        ? Buffer.from('\uFEFF' + rows.map((row) => row.join(',')).join('\r\n'))
+        : execFileSync('python3', ['-c',
+          'import sys,json,io; from openpyxl import Workbook; w=Workbook(); [w.active.append(r) for r in json.load(sys.stdin)]; b=io.BytesIO(); w.save(b); w.close(); sys.stdout.buffer.write(b.getvalue())'],
+        { input: JSON.stringify(rows), timeout: 10000 });
+      await page.getByTestId('button-import-storage-locations').click();
+      await page.getByTestId('input-storage-import').setInputFiles({
+        name: `backup.${format}`, buffer,
+        mimeType: format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const response = page.waitForResponse((res) => new URL(res.url()).pathname === '/api/v1/admin/storage-locations/import/review');
+      await page.getByRole('button', { name: 'Upload & review', exact: true }).click();
+      const report = await (await response).json();
+      const geography = structured
+        ? { pincode: '411001', countryCode: 'IN', state: 'Maharashtra', city: 'Pune' }
+        : { pincode: '', countryCode: '', state: '', city: '' };
+      expect(report.valid).toBe(true);
+      expect(report.rows).toHaveLength(1);
+      expect(report.rows[0]).toMatchObject({ name, address: cells[1], ...geography, errors: [] });
+      const preview = page.getByTestId('storage-location-excel-report');
+      await expect(preview).toContainText(structured ? 'Maharashtra' : 'Not captured');
+      await expect(page.getByTestId('button-confirm-storage-import')).toBeEnabled();
+      expect(await page.evaluate(async (name) => (await (await import('/src/services/serverLocations.js'))
+        .listLocations({ query: name, status: 'all', limit: 10, offset: 0 })).filtered, name)).toBe(0);
+      await page.getByTestId('button-confirm-storage-import').click();
+      await expect(page.getByRole('status').filter({ hasText: '1 storage locations imported' })).toBeVisible();
+      await page.getByRole('button', { name: 'Back to Storage Location Master' }).click();
+      await expect(page.getByTestId('text-storage-location-count')).toBeVisible();
+      const saved = await page.evaluate(async (name) => (await (await import('/src/services/serverLocations.js'))
+        .listLocations({ query: name, status: 'all', limit: 10, offset: 0 })).items[0], name);
+      expect(saved).toMatchObject({ name, address: cells[1], status: 'inactive', ...geography,
+        stateCode: structured ? '27' : null, createdBy: 'Super Admin', updatedBy: 'Super Admin' });
+      expect(saved.createdAt).not.toContain('1900');
+      await page.getByTestId('input-search-storage-locations').fill(name);
+      await page.getByTestId(`button-edit-storage-location-${saved.id}`).click();
+      await expectGeography(page, geography);
+      await expect(page.getByTestId('input-storage-address')).toHaveValue(cells[1]);
+      await page.reload();
+      await expectGeography(page, geography);
+      await page.getByTestId('button-cancel-storage').click();
+      await expect(page.getByTestId('text-storage-location-count')).toBeVisible();
+    }
+    expect(await page.evaluate((key) => localStorage.getItem(key), key)).toBe(legacy);
+  });
+}
+
+test('Location PIN ignores obsolete responses after PIN or manual address changes', async ({ page }) => {
+  await open(page);
+  await page.getByTestId('button-add-storage-location').click();
+  await page.getByTestId('input-storage-name').fill(`Stale PIN ${randomUUID()}`);
+  await page.getByTestId('input-storage-address').fill('Unchanged free-text address');
+  await page.getByTestId('select-storage-status').selectOption('active');
+  const pin = page.locator('#storage-pincode');
+  let release, started, finished;
+  const gate = new Promise((resolve) => { release = resolve; });
+  const requested = new Promise((resolve) => { started = resolve; });
+  const handled = new Promise((resolve) => { finished = resolve; });
+  const actions = [];
+  await page.route(postalPattern, async (route) => {
+    actions.push(new URL(route.request().url()).searchParams.get('action'));
+    if (route.request().url().includes('/411001?')) {
+      started();
+      await gate;
+      try { await postalReply(route, [postalChoice('Obsolete Pune')]); }
+      finally { finished(); }
+    } else await postalReply(route, [postalChoice('New Delhi', 'NCT of Delhi')]);
+  });
+  try {
+    await pin.fill('411001');
+    await requested;
+    await pin.fill('110001');
+    await expectGeography(page, { pincode: '110001', countryCode: 'IN', state: 'Delhi', city: 'New Delhi' });
+    release();
+    await handled;
+    await expectGeography(page, { pincode: '110001', countryCode: 'IN', state: 'Delhi', city: 'New Delhi' });
+    expect(actions).toEqual(['add', 'add']);
+  } finally {
+    release();
+    await page.unroute(postalPattern);
+  }
+  let resume, manualStarted, manualFinished;
+  const manualGate = new Promise((resolve) => { resume = resolve; });
+  const manualRequest = new Promise((resolve) => { manualStarted = resolve; });
+  const manualHandled = new Promise((resolve) => { manualFinished = resolve; });
+  await page.route(postalPattern, async (route) => {
+    manualStarted();
+    await manualGate;
+    try { await postalReply(route, [postalChoice('Must not replace manual city')]); }
+    finally { manualFinished(); }
+  });
+  try {
+    await pin.fill('400001');
+    await manualRequest;
+    await page.locator('#storage-city').fill('Manual city retained');
+    resume();
+    await manualHandled;
+    await expectGeography(page, { pincode: '400001', countryCode: 'IN', state: 'Delhi', city: 'Manual city retained' });
+    await expect(page.getByTestId('input-storage-address')).toHaveValue('Unchanged free-text address');
+    await expect(page.getByTestId('button-save-storage')).toBeEnabled();
+  } finally {
+    resume();
+    await page.unroute(postalPattern);
+  }
+});
+
+test('ambiguous Location PIN requires a choice or explicit manual fallback before saving', async ({ page }) => {
+  await open(page);
+  const name = `PIN choices ${randomUUID()}`;
+  const posts = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/v1/admin/storage-locations' && request.method() === 'POST') posts.push(request);
+  });
+  await page.route(postalPattern, (route) => postalReply(route, [postalChoice('Pune'), postalChoice('Mumbai')]));
+  await page.getByTestId('button-add-storage-location').click();
+  await page.getByTestId('input-storage-name').fill(name);
+  await page.getByTestId('input-storage-address').fill('Keep this authored address');
+  await page.getByTestId('select-storage-status').selectOption('active');
+  await page.locator('#storage-pincode').fill('411001');
+  await expect(page.getByLabel('PIN locations', { exact: true })).toBeVisible();
+  await expectGeography(page, { countryCode: '', state: '', city: '' });
+  await page.getByTestId('button-save-storage').click();
+  await expect(page.getByRole('alert').filter({ hasText: 'Choose a PIN location' })).toBeVisible();
+  expect(posts).toHaveLength(0);
+  await page.getByLabel('PIN locations', { exact: true }).selectOption('1');
+  await expectGeography(page, { pincode: '411001', countryCode: 'IN', state: 'Maharashtra', city: 'Mumbai' });
+  await expect(page.getByTestId('input-storage-address')).toHaveValue('Keep this authored address');
+  // A subsequent ambiguous PIN must require a new decision, not reuse the old one.
+  await page.locator('#storage-pincode').fill('400001');
+  await expect(page.getByLabel('PIN locations', { exact: true })).toBeVisible();
+  await page.getByTestId('button-save-storage').click();
+  await expect(page.getByRole('alert').filter({ hasText: 'Choose a PIN location' })).toBeVisible();
+  expect(posts).toHaveLength(0);
+  await page.getByRole('button', { name: 'Use manual address entry', exact: true }).click();
+  await page.locator('#storage-city').fill('Authored manual city');
+  await page.getByTestId('button-save-storage').click();
+  await expect(page.getByTestId('text-storage-location-count')).toBeVisible();
+  expect(posts).toHaveLength(1);
+  expect(posts[0].postDataJSON()).toMatchObject({ pincode: '400001', countryCode: 'IN',
+    state: 'Maharashtra', city: 'Authored manual city', address: 'Keep this authored address' });
+  const saved = await page.evaluate(async (name) => (await (await import('/src/services/serverLocations.js'))
+    .listLocations({ query: name, status: 'all', limit: 10, offset: 0 })).items[0], name);
+  expect(saved).toMatchObject({ pincode: '400001', countryCode: 'IN', stateCode: '27', city: 'Authored manual city' });
+});
+
+test('Location edit sends edit PIN action and keeps every draft field on empty or failed provider responses', async ({ page }) => {
+  await open(page);
+  const row = await page.evaluate(async (name) => (await import('/src/services/serverLocations.js')).createLocation({
+    name, address: 'Saved authored address', status: 'active', pincode: '411001',
+    countryCode: 'IN', state: 'Maharashtra', city: 'Saved city',
+  }), `Provider failure ${randomUUID()}`);
+  await page.getByTestId('input-search-storage-locations').fill(row.name);
+  const requests = [];
+  page.on('request', (request) => { if (new URL(request.url()).pathname.includes('/storage-locations/postal/')) requests.push(request.url()); });
+  await page.getByTestId(`button-edit-storage-location-${row.id}`).click();
+  await expectGeography(page, { pincode: '411001', countryCode: 'IN', state: 'Maharashtra', city: 'Saved city' });
+  expect(requests).toHaveLength(0); // Opening a saved record must not overwrite it with provider data.
+  await page.getByTestId('input-storage-name').fill(row.name + ' draft');
+  await page.getByTestId('input-storage-address').fill('Draft free-text address');
+  await page.getByTestId('select-storage-status').selectOption('inactive');
+  await page.locator('#storage-city').fill('Draft city');
+  for (const [pin, status, message] of [
+    ['400001', 200, 'No matching location. Enter the address manually.'],
+    ['110001', 200, 'Postal provider is unavailable. Enter the address manually.'],
+    ['560001', 503, 'PIN lookup unavailable'],
+  ]) {
+    const handler = (route) => status === 200 ? postalReply(route, [], message)
+      : route.fulfill({ status, json: { error: { code: 'mr_postal_unavailable', message: 'Synthetic provider outage' } } });
+    await page.route(postalPattern, handler);
+    await page.locator('#storage-pincode').fill(pin);
+    await expect(page.locator('#storage-pin-feedback')).toContainText(message);
+    await expectGeography(page, { pincode: pin, countryCode: 'IN', state: 'Maharashtra', city: 'Draft city' });
+    await expect(page.getByTestId('input-storage-name')).toHaveValue(row.name + ' draft');
+    await expect(page.getByTestId('input-storage-address')).toHaveValue('Draft free-text address');
+    await expect(page.getByTestId('select-storage-status')).toHaveValue('inactive');
+    await expect(page.getByTestId('button-save-storage')).toBeEnabled();
+    await page.unroute(postalPattern, handler);
+  }
+  expect(requests).toHaveLength(3);
+  expect(requests.every((url) => new URL(url).searchParams.get('action') === 'edit')).toBe(true);
+  await page.getByTestId('button-save-storage').click();
+  await expect(page.getByTestId('text-storage-location-count')).toBeVisible();
+  await page.reload();
+  await expect(page.getByTestId('text-storage-location-count')).toBeVisible();
+  const saved = await page.evaluate(async (id) => (await import('/src/services/serverLocations.js')).getLocation(id), row.id);
+  expect(saved).toMatchObject({ name: row.name + ' draft', address: 'Draft free-text address', status: 'inactive',
+    pincode: '560001', countryCode: 'IN', state: 'Maharashtra', city: 'Draft city', version: 2 });
+});
+
+test('Location geography validation blocks incomplete Indian PINs and missing country without losing the draft', async ({ page }) => {
+  await open(page);
+  await page.getByTestId('button-add-storage-location').click();
+  const name = `Bounded geography ${randomUUID()}`;
+  await page.getByTestId('input-storage-name').fill(name);
+  await page.getByTestId('input-storage-address').fill('Retain this address');
+  await page.getByTestId('select-storage-status').selectOption('active');
+  const mutations = [], postal = [];
+  page.on('request', (request) => {
+    const path = new URL(request.url()).pathname;
+    if (path === '/api/v1/admin/storage-locations' && request.method() === 'POST') mutations.push(request);
+    if (path.includes('/storage-locations/postal/')) postal.push(request);
+  });
+  await expect(page.locator('#storage-pincode')).toHaveAttribute('maxlength', '20');
+  await expect(page.locator('#storage-state')).toHaveAttribute('maxlength', '100');
+  await expect(page.locator('#storage-city')).toHaveAttribute('maxlength', '100');
+  await page.locator('#storage-city').fill('Manual city');
+  await page.getByTestId('button-save-storage').click();
+  await expect(page.getByRole('alert').filter({ hasText: 'Select a country for this address' })).toBeVisible();
+  await page.locator('#storage-countryCode').selectOption('IN');
+  await page.locator('#storage-state').selectOption('Maharashtra');
+  await page.locator('#storage-city').fill('Manual city');
+  await page.locator('#storage-pincode').fill('011001');
+  await page.getByTestId('button-save-storage').click();
+  await expect(page.getByRole('alert').filter({ hasText: 'Enter a six-digit Indian PIN' })).toBeVisible();
+  expect(mutations).toHaveLength(0);
+  expect(postal).toHaveLength(0);
+  await expect(page.getByTestId('input-storage-name')).toHaveValue(name);
+  await expect(page.getByTestId('input-storage-address')).toHaveValue('Retain this address');
+  await expectGeography(page, { pincode: '011001', countryCode: 'IN', state: 'Maharashtra', city: 'Manual city' });
+});
 async function open(page) {
   await page.goto(`${base()}/admin/login`);
   await page.getByLabel('Email or username').fill('crm-admin@allergyevexia.in');

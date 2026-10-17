@@ -1,4 +1,5 @@
 """Synthetic isolated PostgreSQL only; never uses managed data or credentials."""
+import csv
 import io
 import uuid
 import pytest
@@ -13,6 +14,247 @@ from test_reporting import admin_headers
 from test_zones import workbook, replace_zip
 
 BASE = "/api/v1/admin/storage-locations"
+LEGACY = ["Storage Location", "Address", "Status"]
+AUDIT = ["Created By", "Created At", "Updated By", "Updated At"]
+STRUCTURED = LEGACY + ["PIN Code", "Country Code", "State/UT", "City"]
+EMPTY_GEO = dict(pincode="", countryCode="", state="", city="")
+PUNE = dict(pincode="411001", countryCode="IN", state="Maharashtra", city="Pune")
+
+
+def transfer_file(rows, format):
+    if format == "xlsx":
+        return workbook(rows)
+    output = io.StringIO()
+    csv.writer(output).writerows(rows)
+    return output.getvalue().encode("utf-8-sig")
+
+
+@pytest.mark.parametrize("format", ["csv", "xlsx"])
+@pytest.mark.parametrize("structured,audited", [(False, False), (False, True), (True, False), (True, True)])
+def test_all_exact_backup_shapes_preserve_explicit_geography(client, format, structured, audited):
+    api, db, _ = client
+    headers, actor = admin_headers(api, db)
+    columns = (STRUCTURED if structured else LEGACY) + (AUDIT if audited else [])
+    # Legacy address text is deliberately recognizable: it must never be parsed
+    # into authoritative geography, including on seven-column audited backups.
+    cells = ["Backup location", "Pune Maharashtra India 411001", "Inactive"]
+    cells += ["411001", "IN", "  maharashtra ", " Pune "] if structured else []
+    cells += ["Forged", "1900", "Forged", "1900"] if audited else []
+    data = transfer_file([columns, cells], format)
+    filename = "locations." + format
+    response = review(api, headers, data, filename)
+    assert response.status_code == 200, response.text
+    report = response.json()
+    expected = PUNE if structured else EMPTY_GEO
+    assert report["valid"] and len(report["rows"]) == 1
+    assert {key: report["rows"][0][key] for key in EMPTY_GEO} == expected
+    assert not report["rows"][0]["errors"]
+    assert db.scalar(select(func.count()).select_from(StorageLocation)) == 0
+    assert commit(api, headers, data, report["digest"], filename).json() == {"imported": 1}
+    stored = db.scalar(select(StorageLocation))
+    assert {key: getattr(stored, key) for key in EMPTY_GEO} == expected
+    assert stored.address == cells[1] and stored.status == "inactive"
+    assert stored.created_by == stored.updated_by == actor.id and stored.created_at.year > 1900
+    response = api.get(f"{BASE}/{stored.id}", headers=headers).json()
+    assert {key: response[key] for key in EMPTY_GEO} == expected
+    assert response["stateCode"] == ("27" if structured else None)
+
+
+@pytest.mark.parametrize("format", ["csv", "xlsx"])
+@pytest.mark.parametrize("columns", [LEGACY, LEGACY + AUDIT, STRUCTURED, STRUCTURED + AUDIT])
+def test_header_shapes_are_exact_not_just_matching_width(format, columns):
+    mutations = [columns[::-1], [columns[0] + " ", *columns[1:]],
+                 [*columns[:-1], columns[-1].lower()], [*columns, "ID"]]
+    for changed in mutations:
+        with pytest.raises(LocationError) as exc:
+            parse(transfer_file([changed, ["x"] * len(changed)], format), "locations." + format)
+        assert exc.value.code == "location_invalid_file"
+
+
+@pytest.mark.parametrize("alias,canonical,code", [
+    ("27", "Maharashtra", "27"), ("maha-rashtra", "Maharashtra", "27"),
+    ("Orissa", "Odisha", "21"), ("Uttaranchal", "Uttarakhand", "05"),
+    ("Pondicherry", "Puducherry", "34"), ("NCT of Delhi", "Delhi", "07"),
+    ("Andaman & Nicobar Islands", "Andaman and Nicobar Islands", "35"),
+    ("Dadra and Nagar Haveli", "Dadra and Nagar Haveli and Daman and Diu", "26"),
+    ("Daman and Diu", "Dadra and Nagar Haveli and Daman and Diu", "26"),
+])
+def test_state_aliases_are_canonical_in_review_and_saved_response(client, alias, canonical, code):
+    api, db, _ = client
+    headers, _ = admin_headers(api, db)
+    data = transfer_file([STRUCTURED, ["Alias", "Office", "active", "411001", "IN", alias, "City"]], "csv")
+    report = review(api, headers, data).json()
+    assert report["valid"] and report["rows"][0]["state"] == canonical
+    assert commit(api, headers, data, report["digest"]).status_code == 200
+    saved = api.get(BASE, headers=headers).json()["items"][0]
+    assert saved["state"] == canonical and saved["stateCode"] == code
+
+
+@pytest.mark.parametrize("field,value", [
+    ("pincode", "x" * 21), ("state", "x" * 101), ("city", "x" * 101),
+    ("countryCode", "USA"), ("countryCode", "ZZ"), ("countryCode", "in"),
+    ("countryCode", ""), ("state", "Nul\x00state"), ("city", "Nul\x00city"),
+    ("pincode", "Nul\x00pin"),
+])
+def test_geography_bounds_reject_api_and_import_without_partial_writes(client, field, value):
+    api, db, _ = client
+    headers, _ = admin_headers(api, db)
+    geo = dict(pincode="12345", countryCode="US", state="Region", city="City")
+    geo[field] = value
+    body = dict(name="Invalid geography", address="Office", status="active", **geo)
+    assert api.post(BASE, headers=headers, json=body).status_code == 422
+    data = transfer_file([STRUCTURED, ["Valid first", "Office", "active", *PUNE.values()],
+                          [body[key] for key in ("name", "address", "status", *EMPTY_GEO)]], "csv")
+    report = review(api, headers, data).json()
+    assert not report["valid"] and not report["rows"][0]["errors"] and report["rows"][1]["errors"]
+    assert commit(api, headers, data, report["digest"]).status_code == 409
+    assert db.scalar(select(func.count()).select_from(StorageLocation)) == 0
+    assert db.scalar(select(func.count()).select_from(AuditEvent).where(AuditEvent.action == "location_create")) == 0
+
+
+@pytest.mark.parametrize("pin", ["011001", "12345", "1234567", "１２３４５６", "12345a"])
+def test_indian_pin_validation_is_not_generic_postal_text(client, pin):
+    api, db, _ = client
+    headers, _ = admin_headers(api, db)
+    assert api.post(BASE, headers=headers, json=dict(name="Bad PIN", address="Office", status="active",
+                                                    **{**PUNE, "pincode": pin})).status_code == 422
+    row = parse(transfer_file([STRUCTURED, ["Bad PIN", "Office", "active", pin, "IN", "Maharashtra", "Pune"]], "csv"),
+                "locations.csv")[0]
+    assert row["errors"]
+
+
+def test_maximum_foreign_geography_and_optional_fields_are_accepted(client):
+    api, db, _ = client
+    headers, _ = admin_headers(api, db)
+    geo = dict(pincode="x" * 20, countryCode="US", state="s" * 100, city="c" * 100)
+    response = api.post(BASE, headers=headers, json=dict(name="Bounded", address="Office", status="active", **geo))
+    assert response.status_code == 201, response.text
+    assert {key: response.json()[key] for key in EMPTY_GEO} == geo
+    assert response.json()["stateCode"] is None
+    for partial in ({}, {"countryCode": "IN"}, {"countryCode": "IN", "state": "Maharashtra"}):
+        row = api.post(BASE, headers=headers, json=dict(name="Optional " + str(len(partial)), address="Office",
+                                                       status="active", **partial))
+        assert row.status_code == 201, row.text
+
+
+@pytest.mark.parametrize("format", ["csv", "xlsx"])
+def test_current_formula_safe_geography_roundtrip_and_digest_binding(client, format):
+    api, db, _ = client
+    headers, actor = admin_headers(api, db)
+    geo = dict(pincode="+12345", countryCode="US", state="'=literal", city="@City")
+    body = dict(name="=SUM(1)", address="-Office", status="active", **geo)
+    saved = api.post(BASE, headers=headers, json=body)
+    assert saved.status_code == 201, saved.text
+    exported = api.get(BASE + "/export", headers=headers, params={"format": format}).content
+    if format == "xlsx":
+        book = load_workbook(io.BytesIO(exported))
+        assert list(next(book.active.values)) == STRUCTURED + AUDIT
+        assert all(cell.data_type != "f" for row in book.active for cell in row)
+        book.close()
+    else:
+        rows = list(csv.reader(io.StringIO(exported.decode("utf-8-sig"))))
+        assert rows[0] == STRUCTURED + AUDIT
+        assert rows[1][:7] == ["'=SUM(1)", "'-Office", "active", "'+12345", "US", "''=literal", "'@City"]
+    assert {key: parse(exported, "locations." + format)[0][key] for key in body} == body
+    row = saved.json()
+    assert api.post(f"{BASE}/{row['id']}/delete", headers=headers, json={"expected_version": 1}).status_code == 200
+    filename = "locations." + format
+    report = review(api, headers, exported, filename).json()
+    assert report["valid"]
+    # A changed city, filename or actor is not the reviewed operation, even if
+    # the upload remains a syntactically valid current-format backup.
+    changed = transfer_file([STRUCTURED, ["'=SUM(1)", "'-Office", "active", "'+12345", "US", "''=literal", "Changed"]], format)
+    assert commit(api, headers, changed, report["digest"], filename).status_code == 409
+    assert commit(api, headers, exported, report["digest"], "renamed." + format).status_code == 409
+    from app.services.location_transfer import review_digest
+    from app.services.auth import Identity
+    session_id = db.scalar(select(AuditEvent.session_id).where(AuditEvent.action == "location_create"))
+    current = Identity(actor, session_id=session_id)
+    assert review_digest(current, exported, filename) == report["digest"]
+    from types import SimpleNamespace
+    other = SimpleNamespace(user=SimpleNamespace(id=uuid.uuid4()), session_id=session_id)
+    assert review_digest(other, exported, filename) != report["digest"]
+    assert review_digest(SimpleNamespace(user=actor, session_id="different-session"), exported, filename) != report["digest"]
+    assert commit(api, headers, exported, report["digest"], filename).json() == {"imported": 1}
+    restored = api.get(BASE, headers=headers).json()["items"][0]
+    assert {key: restored[key] for key in body} == body
+
+
+def test_eleven_column_workbook_bounds_include_hidden_coordinates():
+    columns = STRUCTURED + AUDIT
+    row = ["Room", "Office", "active", "411001", "IN", "Maharashtra", "Pune", "Ignored", "1900", "Ignored", "1900"]
+    valid = workbook([columns] + [row] * 1000)
+    assert len(parse(valid, "locations.xlsx")) == 1000
+    for data in [
+        workbook([columns + ["Extra"], row + ["hidden"]]),
+        workbook([columns] + [row] * 1001),
+        replace_zip(workbook([columns, row]), "xl/worksheets/sheet1.xml",
+                    lambda xml: xml.replace(b'r="K2"', b'r="L2"')),
+        replace_zip(workbook([columns, row]), "xl/worksheets/sheet1.xml",
+                    lambda xml: xml.replace(b'r="K2"', b'r="K1002"')),
+        replace_zip(workbook([columns, row]), "xl/worksheets/sheet1.xml",
+                    lambda xml: xml.replace(b'ref="A1:K2"', b'ref="A1:C2"').replace(b'r="K2"', b'r="L2"')),
+    ]:
+        with pytest.raises(LocationError) as exc:
+            parse(data, "locations.xlsx")
+        assert exc.value.code == "location_invalid_file"
+
+
+@pytest.mark.parametrize("grant", ["add", "edit", "delete", "import", "export"])
+def test_location_pin_permissions_match_consuming_action_not_other_master(client, monkeypatch, grant):
+    from test_zone_permissions import setup, staff_login, bearer
+    from app.services import mr_postal
+    api, db, _ = client
+    admin, _, _, record, password = setup(api, db, [f"location.{grant}"])
+    lookup = mr_postal.lookup
+    calls = []
+    monkeypatch.setattr(mr_postal, "_cache", {})
+    def provider(pin):
+        calls.append(pin)
+        return [dict(city="Pune", state="Maharashtra", country="India")]
+    monkeypatch.setattr(mr_postal, "lookup", lambda db, actor, pin, **policy:
+                        lookup(db, actor, pin, provider, **policy))
+    assert api.get(BASE + "/postal/411001").status_code == 401
+    staff = bearer(staff_login(api, record, password))
+    for action in ("add", "edit"):
+        response = api.get(BASE + "/postal/411001", params={"action": action}, headers=staff)
+        assert response.status_code == (200 if grant == action else 403), response.text
+        if grant == action:
+            assert response.json()["choices"] == [dict(city="Pune", state="Maharashtra", country="India")]
+    assert len(calls) == (1 if grant in ("add", "edit") else 0)
+    for resource in ("mrs", "doctors", "patients"):
+        assert api.get(f"/api/v1/admin/{resource}/postal/411001", headers=staff).status_code == 403
+    assert api.get(BASE + "/postal/411001?action=delete", headers=admin).status_code == 422
+
+
+def test_location_pin_provider_failure_leaves_saved_geography_unchanged(client, monkeypatch):
+    from app.services import mr_postal
+    api, db, _ = client
+    headers, _ = admin_headers(api, db)
+    body = dict(name="Retained geography", address="Office", status="active", **PUNE)
+    saved = api.post(BASE, headers=headers, json=body).json()
+    lookup = mr_postal.lookup
+    monkeypatch.setattr(mr_postal, "_cache", {})
+    def unavailable(pin):
+        raise TimeoutError("Synthetic provider failure")
+    monkeypatch.setattr(mr_postal, "lookup", lambda db, actor, pin, **policy:
+                        lookup(db, actor, pin, unavailable, **policy))
+    response = api.get(BASE + "/postal/411001?action=edit", headers=headers)
+    assert response.status_code == 200
+    assert response.json()["choices"] == [] and "unavailable" in response.json()["message"]
+    assert api.get(f"{BASE}/{saved['id']}", headers=headers).json() == saved
+
+
+def test_unknown_indian_state_is_rejected_but_foreign_state_is_free_text(client):
+    api, db, _ = client
+    headers, _ = admin_headers(api, db)
+    for country, valid in (("IN", False), ("US", True)):
+        body = dict(name="Unknown state " + country, address="Office", status="active",
+                    pincode="", countryCode=country, state="Not a recognized Indian state", city="City")
+        assert api.post(BASE, headers=headers, json=body).status_code == (201 if valid else 422)
+        data = transfer_file([STRUCTURED, [body[key] for key in ("name", "address", "status", *EMPTY_GEO)]], "csv")
+        parsed = parse(data, "locations.csv")[0]
+        assert bool(parsed["errors"]) is not valid
 
 
 def add(api, headers, name="Supply room", status="active", address="Building A"):
