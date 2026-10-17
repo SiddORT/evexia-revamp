@@ -49,3 +49,14 @@ only for verified safe cases, not weakening protected existing-database gates.
 target/recovery authorization and existing-database operator approval. Never
 replace those checks with a manifest status rename or treat passing tests as
 production authorization.
+
+The user confirmed the `admin-uat.allergyevexia.in` VPS checkout is active and
+the `newuat.allergyevexia.in` checkout is old. Correcting filesystem references
+does not authorize moving the checkout or changing portal hostname arguments,
+URLs, DNS/TLS, Compose project identity or database resources.
+
+**Why:** The user explicitly clarified that the active filesystem location and
+the portal hostname are separate concerns.
+
+**How to apply:** Keep checkout-path maintenance separate from hostname and
+resource changes; obtain separate authorization for either of those operations.
