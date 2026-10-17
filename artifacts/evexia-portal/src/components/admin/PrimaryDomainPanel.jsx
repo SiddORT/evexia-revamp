@@ -1,3 +1,4 @@
+import { Globe2, LifeBuoy, ShieldCheck } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAdminDateFormatters } from './adminPreferences.js';
 import { roleUrlRequest } from '../../auth/adminSession.js';
@@ -93,18 +94,21 @@ export default function PrimaryDomainPanel({ items, domains, bootstrapHosts, lis
   };
 
   return <div className="role-urls__primary" data-testid="panel-primary-domain">
-    <h3>Primary domain</h3>
-    <p>The primary domain is the shared main address for the portal chooser and existing role paths, not an Admin role. Enter an exact hostname. Changing it resets ownership evidence. Disable a conflicting role mapping before choosing the same hostname.</p>
-    <p data-testid="text-primary-current"><strong>Current:</strong> {current || 'None set'} {primary && <span className="role-urls__badge">{label(primary)}</span>}</p>
+    <section className="role-urls__section" aria-labelledby="primary-domain-heading">
+    <h3 className="role-urls__h" id="primary-domain-heading"><Globe2 size={18} aria-hidden="true" />Primary domain</h3>
+    <p className="role-urls__description">The shared main address for the portal chooser and existing role paths. This does not assign an Admin role.</p>
+    <div data-testid="text-primary-current" className="role-urls__current"><span className="role-urls__label">Current:</span><strong>{current || 'None set'}</strong>{primary ? <span className="role-urls__badge">{label(primary)}</span> : <span className="role-urls__hint">Choose an exact hostname to begin configuration.</span>}</div>
+    <p className="role-urls__hint">Changing the primary resets ownership evidence. Disable a conflicting role mapping before choosing the same hostname.</p>
     {draft === null ? <button type="button" onClick={startDraft} disabled={locked || !listReady} data-testid="button-primary-edit">{current ? 'Change primary domain' : 'Choose primary domain'}</button>
       : <form className="role-urls__form" onSubmit={savePrimary} aria-label="Edit primary domain" data-testid="form-primary-domain">
+        <div className="role-urls__form-head"><h4>Edit primary domain</h4><p>Enter an exact hostname. Saving requires ownership verification again.</p></div>
         <label>Primary hostname<input value={value} onChange={(e) => setDraft(e.target.value)} disabled={locked} maxLength={270} required autoComplete="off" list="primary-hostname-options" data-testid="input-primary-hostname" /></label>
         <datalist id="primary-hostname-options">{options.map((h) => <option key={h} value={h}>{roleOf(h)?.role || 'Primary'}</option>)}</datalist>
         {error && <p role="alert" className="role-urls__error">{error}</p>}
-        {stale && <div role="status"><p>{`Current primary on the server: ${current || 'none'} (version ${primary?.version || 0}). Compare it with your draft before continuing.`}</p>
+        {stale && <div role="status" className="role-urls__review"><p>{`Current primary on the server: ${current || 'none'} (version ${primary?.version || 0}). Compare it with your draft before continuing.`}</p>
           <button type="button" onClick={review} data-testid="button-primary-review">I reviewed the current primary; keep my draft</button></div>}
         <div className="role-urls__actions">
-          <button type="submit" disabled={locked || !dirty} data-testid="button-primary-save">{busy && !pendingKey ? 'Saving...' : 'Save primary'}</button>
+          <button type="submit" className="role-urls__primary-btn" disabled={locked || !dirty} data-testid="button-primary-save">{busy && !pendingKey ? 'Saving...' : 'Save primary'}</button>
           {uncertain && <button type="button" onClick={reload} disabled={busy} data-testid="button-primary-reload">Reload to review</button>}
           <button type="button" onClick={cancel} disabled={busy} data-testid="button-primary-cancel">Cancel</button>
         </div>
@@ -114,17 +118,22 @@ export default function PrimaryDomainPanel({ items, domains, bootstrapHosts, lis
     {uncertain && draft === null && <div className="role-urls__actions"><p role="alert" className="role-urls__error">Domain state is uncertain. DNS actions are disabled until you reload.</p>
       <button type="button" onClick={reload} disabled={busy} data-testid="button-domain-reload">Reload to review</button></div>}
 
-    <h3>DNS ownership and admission</h3>
-    <p>For each hostname: create a challenge, add the TXT record at your DNS provider, check it, then activate. Verification lasts 30 days and does not activate the domain. Challenges expire after 24 hours, and DNS actions are limited to one every 30 seconds. Editing a mapping resets its evidence.</p>
-    {rows.length === 0 ? <p className="role-urls__empty">Add a Role URL to manage its domain ownership.</p>
-      : <ul className="role-urls__list">{rows.map(({ hostname, domain: d }) => {
+    </section>
+    <section className="role-urls__section" aria-labelledby="dns-ownership-heading">
+    <h3 className="role-urls__h" id="dns-ownership-heading"><ShieldCheck size={18} aria-hidden="true" />DNS ownership and admission</h3>
+    <p className="role-urls__description">Complete these steps for each hostname. Ownership verification and admission are separate from deployment readiness.</p>
+    <ol className="role-urls__steps" aria-label="DNS workflow"><li><strong>Create challenge</strong><span>Generate ownership evidence.</span></li><li><strong>Add TXT record</strong><span>Use the exact name and value at your DNS provider.</span></li><li><strong>Check DNS</strong><span>Confirm the record after propagation.</span></li><li><strong>Activate</strong><span>Explicitly admit the verified hostname.</span></li></ol>
+    <p className="role-urls__caveat"><strong>Verification does not activate a domain.</strong> Editing a mapping resets its evidence.</p>
+    <details className="role-urls__details"><summary>Expiry and DNS action limits</summary><p>Verification lasts 30 days. Challenges expire after 24 hours, and DNS actions are limited to one every 30 seconds. DNS propagation may take time; a failed or unavailable check is not proof of ownership.</p></details>
+    {rows.length === 0 ? <p className="role-urls__empty">Choose a primary domain or add a Role URL to manage domain ownership.</p>
+      : <ul className="role-urls__list role-urls__list--domains">{rows.map(({ hostname, domain: d }) => {
         const challengeLive = Boolean(d?.challenge_value && d?.challenge_expires_at && !past(d.challenge_expires_at));
         const verifiedLive = d?.verified_at && !past(d.verification_expires_at);
-        const btn = (action, text, enabled) => <button type="button" onClick={() => act({ hostname, domain: d }, action)} disabled={locked || !enabled} aria-label={`${text} ${hostname}`} data-testid={`button-domain-${action}-${hostname}`}>{pendingKey === `${hostname}:${action}` ? 'Working...' : text}</button>;
+        const btn = (action, text, enabled) => <button type="button" className={action === 'revoke' ? 'role-urls__danger-btn' : undefined} onClick={() => act({ hostname, domain: d }, action)} disabled={locked || !enabled} aria-label={`${text} ${hostname}`} data-testid={`button-domain-${action}-${hostname}`}>{pendingKey === `${hostname}:${action}` ? 'Working...' : text}</button>;
         return <li key={hostname} data-testid={`row-domain-${hostname}`}>
           <div>
             <strong>{hostname}</strong>{d?.kind === 'primary' && <span className="role-urls__badge">Primary</span>}
-            <small>{label(d)}</small>
+            <span className="role-urls__badge role-urls__domain-status">{label(d)}</span>
             {!d && <small>No ownership record yet. Create a challenge to begin.</small>}
             {d && <small>{({
               unverified: 'Create a challenge to begin ownership verification.',
@@ -154,8 +163,11 @@ export default function PrimaryDomainPanel({ items, domains, bootstrapHosts, lis
           </div>
         </li>; })}</ul>}
 
-    <h3>Recovery allowlist</h3>
-    <p>These hosts stay reachable so you can recover if a domain is misconfigured. Being listed grants no role and no ownership.</p>
+    </section>
+    <section className="role-urls__section" aria-labelledby="recovery-allowlist-heading">
+    <h3 className="role-urls__h" id="recovery-allowlist-heading"><LifeBuoy size={18} aria-hidden="true" />Recovery allowlist</h3>
+    <p className="role-urls__description">These hosts stay reachable so you can recover if a domain is misconfigured. Being listed grants no role and no ownership.</p>
     {bootstrapHosts.length ? <ul className="role-urls__hosts" data-testid="list-bootstrap-hosts">{bootstrapHosts.map((h) => <li key={h}><code>{h}</code></li>)}</ul> : <p className="role-urls__empty">No recovery hosts were reported by the server.</p>}
+    </section>
   </div>;
 }

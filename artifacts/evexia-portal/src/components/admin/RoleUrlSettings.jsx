@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link2, Plus, RefreshCw, Search, SearchX } from 'lucide-react';
 import '../../roleUrlSettings.css';
 import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
@@ -123,51 +124,66 @@ export default function RoleUrlSettings({ onGuardChange }) {
   };
 
   return <section className="admin-panel admin-settings__section role-urls" aria-labelledby="role-urls-heading" aria-busy={status === 'loading'}>
-    <h2 id="role-urls-heading" ref={headRef}>Role URLs <span className="role-urls__tag">Shared setting</span></h2>
-    <p>These mappings are stored centrally and apply to every user, not just this browser. A hostname here is only a label for choosing a role. It does not register a domain, configure DNS or HTTPS, or mean a deployment is ready. Doctor remains a mock preview.</p>
+    <header className="role-urls__intro">
+      <div className="role-urls__eyebrow">Shared portal configuration · Super Admin</div>
+      <h2 id="role-urls-heading" ref={headRef}>Role URLs <span className="role-urls__tag">Shared setting</span></h2>
+      <p>Manage role hostnames and the portal’s primary address for every user, not just this browser.</p>
+      <p className="role-urls__boundary">Mapping a hostname does not register a domain, configure DNS or HTTPS, or establish deployment readiness. Doctor remains a mock preview.</p>
+    </header>
+    <section className="role-urls__section" aria-labelledby="role-mappings-heading">
+    <h3 className="role-urls__h" id="role-mappings-heading"><Link2 size={18} aria-hidden="true" />Role mappings</h3>
+    <p className="role-urls__description">Choose which role each exact hostname opens. Enabled mappings still require ownership verification and admission.</p>
     <div className="role-urls__bar">
-      <label className="role-urls__search"><span className="role-urls__sr">Search role URLs</span><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search hostname or role" data-testid="input-role-url-search" /></label>
-      <button type="button" onClick={() => open(null)} disabled={busy || blocked || status !== 'ready'} data-testid="button-role-url-add">Add Role URL</button>
-      <button type="button" onClick={reload} disabled={busy || status === 'loading'} data-testid="button-role-url-reload">Reload</button>
+      <label className="role-urls__search"><span className="role-urls__label">Search role URLs</span><span className="role-urls__field"><Search size={15} aria-hidden="true" /><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search hostname or role" data-testid="input-role-url-search" /></span></label>
+      <button type="button" onClick={() => open(null)} disabled={busy || blocked || status !== 'ready'} data-testid="button-role-url-add" className="role-urls__primary-btn"><Plus size={16} aria-hidden="true" />Add Role URL</button>
+      <button type="button" onClick={reload} disabled={busy || status === 'loading'} data-testid="button-role-url-reload" className="role-urls__secondary-btn"><RefreshCw size={15} aria-hidden="true" />Reload</button>
     </div>
     <div role="status" className="role-urls__notice">{notice}</div>
     {error && !editing && <p role="alert" className="role-urls__error">{error} {status === 'error' && <button type="button" onClick={load} data-testid="button-role-url-retry">Retry</button>}</p>}
     {editing && <form className="role-urls__form" onSubmit={save} aria-label={editing.id ? 'Edit Role URL' : 'Add Role URL'} data-testid="form-role-url">
+      <div className="role-urls__form-head"><h4>{editing.id ? 'Edit Role URL' : 'Add Role URL'}</h4><p>Changes to this mapping apply to every user.</p></div>
       <label>Hostname<input value={draft.hostname} onChange={(e) => setDraft({ ...draft, hostname: e.target.value })} required maxLength={270} autoComplete="off" placeholder="mr.allergyevexia.com" data-testid="input-role-url-hostname" /></label>
       <label>Role<select value={draft.role} onChange={(e) => setDraft({ ...draft, role: e.target.value })} required data-testid="input-role-url-role">
         <option value="admin">Admin</option><option value="mr">MR</option><option value="doctor">Doctor (mock preview)</option>
       </select></label>
       <label className="role-urls__check"><input type="checkbox" checked={draft.enabled} onChange={(e) => setDraft({ ...draft, enabled: e.target.checked })} data-testid="checkbox-role-url-enabled" />Enabled</label>
       {error && <p role="alert" className="role-urls__error">{error}</p>}
-      {editing.stale && <div role="status">
+      {editing.stale && <div role="status" className="role-urls__review">
         <p>{editing.id ? current ? `Current server mapping: ${current.hostname}, ${current.role}, ${current.enabled ? 'enabled' : 'disabled'} (version ${current.version}). Compare with your draft before continuing.` : 'This mapping was removed. Cancel this draft and add a new mapping if needed.' : 'Compare your draft with the reloaded list. If this hostname was already saved, cancel and edit that mapping instead.'}</p>
         {(!editing.id || current) && <button type="button" onClick={review}>I reviewed the current mappings; keep my draft</button>}
       </div>}
       <div className="role-urls__actions">
-        <button type="submit" disabled={busy || blocked || status !== 'ready' || (editing.id && !dirty)} data-testid="button-role-url-save">{busy ? 'Saving...' : 'Save'}</button>
+        <button type="submit" className="role-urls__primary-btn" disabled={busy || blocked || status !== 'ready' || (editing.id && !dirty)} data-testid="button-role-url-save">{busy ? 'Saving...' : 'Save'}</button>
         {blocked && <button type="button" onClick={reload} disabled={busy} data-testid="button-role-url-review">Reload to review</button>}
         <button type="button" onClick={cancel} disabled={busy} data-testid="button-role-url-cancel">Cancel</button>
       </div>
     </form>}
-    {status === 'loading' ? <p className="role-urls__skeleton" data-testid="status-role-urls-loading">Loading Role URLs...</p>
+    {status === 'loading' ? <p role="status" className="role-urls__skeleton" data-testid="status-role-urls-loading">Loading Role URLs...</p>
       : status === 'error' ? null
-      : shown.length === 0 ? <p className="role-urls__empty">{items.length ? 'No Role URLs match your search.' : 'No Role URLs yet. Add one to map a hostname to a role.'}</p>
+      : shown.length === 0 ? <div className={`role-urls__empty ${items.length ? 'role-urls__empty--nomatch' : 'role-urls__empty--directory'}`}>{items.length ? <SearchX size={24} aria-hidden="true" /> : <Link2 size={24} aria-hidden="true" />}<div><strong>{items.length ? 'No matching mappings' : 'Your role directory is not configured'}</strong><p>{items.length ? 'No Role URLs match your search. Try another hostname or role, or clear the search field.' : 'No Role URLs yet. Add one to map a hostname to a role.'}</p></div></div>
       : <ul className="role-urls__list">{shown.map((i) => <li key={i.id} data-testid={`row-role-url-${i.id}`}>
-        <div><strong>{i.hostname}</strong><small>Role: {i.role} - {i.enabled ? 'Enabled' : 'Disabled'}</small></div>
+        <div><strong>{i.hostname}</strong><small>Role: {i.role} · <span className={`role-urls__badge ${i.enabled ? 'role-urls__on' : 'role-urls__off'}`}>{i.enabled ? 'Enabled' : 'Disabled'}</span></small></div>
         <div className="role-urls__actions">
           <button type="button" onClick={() => open(i)} disabled={busy || blocked} aria-label={`Edit ${i.hostname}`}>Edit</button>
           <button type="button" onClick={() => toggle(i)} disabled={busy || blocked || Boolean(editing)} aria-label={`${i.enabled ? 'Disable' : 'Enable'} ${i.hostname}`}>{i.enabled ? 'Disable' : 'Enable'}</button>
-          <button type="button" onClick={(event) => { removeTrigger.current = event.currentTarget; setRemoving(i); }} disabled={busy || blocked || Boolean(editing)} aria-label={`Remove ${i.hostname}`}>Remove</button>
+          <button type="button" className="role-urls__danger-btn" onClick={(event) => { removeTrigger.current = event.currentTarget; setRemoving(i); }} disabled={busy || blocked || Boolean(editing)} aria-label={`Remove ${i.hostname}`}>Remove</button>
         </div></li>)}</ul>}
-    {removing && <dialog ref={dialogRef} onCancel={(e) => { e.preventDefault(); if (!busy) closeRemoval(); }} role="alertdialog" aria-labelledby="role-url-rm" className="role-urls__confirm" data-testid="dialog-role-url-remove">
-      <p id="role-url-rm">Remove {removing.hostname}? This changes the shared mapping for every user.</p>
+    </section>
+    {removing && <dialog ref={dialogRef} onCancel={(e) => { e.preventDefault(); if (!busy) closeRemoval(); }} role="alertdialog" aria-labelledby="role-url-rm" aria-describedby="role-url-rm-description" className="role-urls__confirm" data-testid="dialog-role-url-remove">
+      <h3 id="role-url-rm">Remove Role URL?</h3>
+      <p id="role-url-rm-description">Remove <strong>{removing.hostname}</strong>? This changes the shared mapping for every user.</p>
       <div className="role-urls__actions">
         {error && <p role="alert">{error}</p>}
         <button type="button" autoFocus onClick={closeRemoval} disabled={busy}>Keep</button>
-        <button type="button" onClick={remove} disabled={busy || blocked} data-testid="button-role-url-confirm-remove">{busy ? 'Removing...' : 'Remove'}</button>
+        <button type="button" className="role-urls__danger-btn" onClick={remove} disabled={busy || blocked} data-testid="button-role-url-confirm-remove">{busy ? 'Removing...' : 'Remove'}</button>
       </div></dialog>}
     {(status === 'ready' || loadedOnce.current) && <PrimaryDomainPanel items={items} domains={domains} bootstrapHosts={bootstrapHosts} listReady={status === 'ready'} parentBusy={roleBusy || status !== 'ready' || Boolean(editing)} onReload={load} onSaved={load} onDomainUpdate={patchDomain} onDirtyChange={setPrimaryDirty} onBusyChange={setDomainBusy} />}
-    <h3>Connect each hostname separately</h3>
-    <p>Your deployment operator must bind the domain, configure DNS, enable HTTPS, serve portal deep links with an SPA fallback, and reverse-proxy <code>/api</code> on the same origin. Saving here performs none of those steps. Keep an unchanged, unmapped main-domain Admin URL available for recovery. There is no cross-domain sign-in.</p>
+    <aside className="role-urls__deployment" aria-labelledby="role-urls-deployment-heading">
+      <h3 className="role-urls__h" id="role-urls-deployment-heading">Connect each hostname separately</h3>
+      <p>Saving or activating a hostname here does not configure its infrastructure. Keep an unchanged, unmapped main-domain Admin URL available for recovery. There is no cross-domain sign-in.</p>
+      <details className="role-urls__details"><summary>Deployment operator checklist</summary>
+        <ul><li>Bind each domain to the deployment and configure DNS.</li><li>Enable HTTPS for every hostname.</li><li>Serve portal deep links with an SPA fallback.</li><li>Reverse-proxy <code>/api</code> on the same origin.</li></ul>
+      </details>
+    </aside>
   </section>;
 }
