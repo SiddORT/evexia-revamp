@@ -20,3 +20,12 @@ Verify enclosing controls and panels as well as each text node's own bounds.
 **Why:** A WebKit enlarged-text failure stopped reporting out-of-bounds text after a label wrapper was added, but the button's allocated hit area and its ancestors still overflowed. Text-bound success alone would have accepted an incomplete repair.
 
 **How to apply:** Keep both ancestor scroll/client-size checks and text-range checks. Diagnose the allocated control height before changing markup or layout mode; confirm the complete cross-engine matrix rather than only the initially failing theme.
+
+Keep full layout measurements in one attachment per state, not in every
+per-rectangle assertion message. Aggregate bound violations before asserting.
+
+**Why:** Repeated assertions retaining the entire geometry tree exhausted the
+test worker's heap even though the first enlarged-text screen rendered correctly.
+
+**How to apply:** Preserve all geometry comparisons, but collect concise
+violations and attach the complete measurements once for diagnosis.

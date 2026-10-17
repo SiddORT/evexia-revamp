@@ -40,6 +40,7 @@
 - [Post-merge verification](post-merge-verification.md) — reconciliation success does not guarantee restarted services are healthy; confirm readiness separately.
 - [Staff search privacy](staff-search-privacy.md) — explicit bounded scans avoid substring-index leakage and unbounded automatic directory traversal.
 - [Authenticated test isolation](authenticated-test-isolation.md) — isolate test listeners and results, not just databases; shared ports cause synthetic logins to revoke each other.
+- [Presentation fixture boundary](presentation-fixture-boundary.md) — frontend-only synthetic layout checks must deny API writes and never count as backend authorization or DNS evidence.
 - [Multi-format upload codegen](multi-format-codegen.md) — retain both accepted upload formats in OpenAPI, but generate one supported representation to avoid invalid Blob/object serialization.
 - [Import request boundaries](import-request-boundaries.md) — test valid large raw/multipart imports, not only oversized rejection; request and file limits must agree.
 - [Lazy-route print styles](lazy-route-print-styles.md) — gate print layout overrides on the report's presence; imported CSS survives navigation.
