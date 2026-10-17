@@ -9,6 +9,8 @@ test('escapes large unterminated markup and rejects control characters before im
   }), /unsupported control characters/);
 });
 import assert from 'node:assert/strict';
+import { SYSTEM_TEMPLATES } from './messageTemplates.js';
+import { EVEXIA_LOGO_DATA } from './messageTemplateBrand.js';
 import {
   SUPPORTED_TOKENS,
   SAMPLE_VALUES,
@@ -28,7 +30,7 @@ function file(name, content) {
 }
 
 test('exports supported literal tokens and fictional sample values', () => {
-  assert.deepEqual(SUPPORTED_TOKENS, ['recipient_name', 'order_number', 'amount', 'company_name']);
+  assert.deepEqual(SUPPORTED_TOKENS, ['recipient_name', 'order_number', 'amount', 'company_name', 'reset_url', 'expiry_minutes']);
   assert.deepEqual(Object.keys(SAMPLE_VALUES), SUPPORTED_TOKENS);
   assert.ok(Object.values(SAMPLE_VALUES).every((value) => typeof value === 'string' && value.length > 0));
 });
@@ -81,7 +83,7 @@ test('email preview preserves safe email formatting and applies restrictive sand
   assert.match(preview, /default-src 'none'/);
   assert.match(preview, /script-src 'none'/);
   assert.match(preview, /style-src 'unsafe-inline'/);
-  assert.match(preview, /img-src 'none'/);
+  assert.match(preview, /img-src data:/);
   assert.match(preview, /font-src 'none'/);
   assert.match(preview, /connect-src 'none'/);
   assert.match(preview, /form-action 'none'/);
@@ -92,6 +94,44 @@ test('email preview preserves safe email formatting and applies restrictive sand
   assert.match(preview, /<table border="1"><tr><td align="center">Order EVX-01<\/td><\/tr><\/table>/);
   assert.match(preview, /style="color:#123456;font-size:16px"/);
   assert.doesNotMatch(preview, /position:fixed/);
+});
+
+test('reset card renders only the fixed offline raster and inert styled links after literal substitution', () => {
+  const source = SYSTEM_TEMPLATES[0].content.html;
+  const preview = buildEmailPreview(source, SAMPLE_VALUES);
+  assert.ok(preview.includes(`src="${EVEXIA_LOGO_DATA}"`));
+  assert.match(preview, /background-color:#eef4f5/);
+  assert.match(preview, /border-radius:16px/);
+  assert.match(preview, /<span style="display:inline-block;background-color:#126b70;color:#ffffff/);
+  assert.match(preview, /fictional-not-a-token/);
+  assert.doesNotMatch(preview, /<a\b|\shref=|\{\{reset_url\}\}|\{\{expiry_minutes\}\}/);
+  const hostile = buildEmailPreview(source, {
+    ...SAMPLE_VALUES, reset_url: 'javascript:alert(1)"><img src="https://attacker.invalid/pixel">',
+    expiry_minutes: '<svg onload="alert(1)">',
+  });
+  assert.equal((hostile.match(/<img /g) || []).length, 1);
+  assert.doesNotMatch(hostile, /<a\b|<[^>]+\shref=|<svg\b|<[^>]+\sonload=/);
+  assert.match(hostile, /&lt;svg/);
+});
+
+test('rejects logo impersonation through arbitrary images, data URLs, duplicate sources or sample tokens', () => {
+  const attacks = [
+    '<img src="/images/evexia-logo.png?x=1">',
+    '<img src="https://attacker.invalid/images/evexia-logo.png">',
+    '<img src="//attacker.invalid/images/evexia-logo.png">',
+    '<img src="&#47;images/evexia-logo.png">',
+    '<img src="/images/evexia-logo.png" src="https://attacker.invalid">',
+    '<img src="data:image/svg+xml;base64,PHN2Zz4=">',
+    `<img src="${EVEXIA_LOGO_DATA}">`,
+    '<svg><image href="/images/evexia-logo.png"></svg>',
+    '<img src="{{reset_url}}">',
+  ];
+  for (const attack of attacks) {
+    assert.doesNotMatch(buildEmailPreview(attack, { reset_url: '/images/evexia-logo.png' }), /<img\b|<svg\b/);
+  }
+  const preview = buildEmailPreview('<img src="/images/evexia-logo.png" srcset="https://attacker.invalid" onerror="alert(1)" style="background:url(https://attacker.invalid)">');
+  assert.ok(preview.includes(EVEXIA_LOGO_DATA));
+  assert.doesNotMatch(preview, /attacker.invalid|onerror|srcset/);
 });
 
 test('email preview removes active markup, navigation, outbound resources, and unsafe CSS without DOM parsing', () => {

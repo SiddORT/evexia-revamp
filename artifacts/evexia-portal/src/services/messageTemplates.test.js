@@ -53,14 +53,15 @@ test.beforeEach(() => {
   });
 });
 
-test('exports bounded limits and four deeply immutable stable email/SMS starter examples', () => {
+test('exports bounded limits and five deeply immutable stable email/SMS starter examples', () => {
   assert.equal(MESSAGE_TEMPLATES_KEY, 'evexia.admin.message-templates.v1');
   assert.deepEqual(LIMITS, {
     name: 100, description: 500, subject: 200, html: 100000, text: 20000,
     body: 2000, providerTemplateId: 160, fileBytes: 100000, records: 100,
   });
-  assert.equal(SYSTEM_TEMPLATES.length, 4);
+  assert.equal(SYSTEM_TEMPLATES.length, 5);
   assert.deepEqual(SYSTEM_TEMPLATES.map(({ id, channel }) => [id, channel]), [
+    ['system-email-forgot-password', 'email'],
     ['system-email-order-confirmation', 'email'],
     ['system-email-payment-receipt', 'email'],
     ['system-sms-order-confirmation', 'sms'],
@@ -76,6 +77,21 @@ test('exports bounded limits and four deeply immutable stable email/SMS starter 
     assert.equal(template.content.providerTemplateId, '');
   }
   assert.throws(() => { SYSTEM_TEMPLATES[0].content.subject = 'overwritten'; }, TypeError);
+});
+
+test('forgot password starter is fictional, branded, immutable and survives local copy/save/reload', async () => {
+  const starter = SYSTEM_TEMPLATES[0];
+  assert.match(starter.content.subject, /fictional preview/i);
+  assert.match(starter.content.html, /<img src="\/images\/evexia-logo.png"/);
+  assert.match(starter.content.html, /<table/);
+  assert.match(starter.content.html, /Reset password/);
+  assert.match(starter.content.text, /\{\{reset_url\}\}/);
+  assert.match(starter.content.text, /\{\{expiry_minutes\}\}/);
+  assert.match(starter.content.text, /ignore this email/);
+  const snap = await saveMessageTemplate(loadMessageTemplates(), { ...starter, name: 'My reset copy' });
+  assert.equal(snap.record.templates[0].source, 'user');
+  assert.deepEqual(loadMessageTemplates().record.templates[0].content, starter.content);
+  assert.equal(SYSTEM_TEMPLATES[0], starter);
 });
 
 test('validates and normalizes user content, preserves template IDs as strings, and projects out IDs', () => {

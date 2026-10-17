@@ -24,6 +24,31 @@ const MAX_STORED_RAW_LENGTH = LIMITS.records * 2 * (
 
 const systemTemplates = [
   {
+    id: 'system-email-forgot-password',
+    source: 'system',
+    channel: 'email',
+    name: 'Forgot password (example)',
+    description: 'Fictional EVEXIA reset preview only; not connected to account recovery or sends.',
+    content: {
+      subject: 'Reset your EVEXIA password — fictional preview',
+      html: `<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef4f5;padding:24px 12px;font-family:Arial,sans-serif;color:#203b48"><tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#ffffff;border:1px solid #dce7e9;border-radius:16px"><tr><td style="padding:28px;text-align:center">
+<img src="/images/evexia-logo.png" alt="EVEXIA Life Sciences" width="154" height="80">
+<p style="font-size:11px;color:#526b76;letter-spacing:1px">FICTIONAL PREVIEW · NOTHING IS SENT</p>
+<h1 style="font-size:26px;color:#126b70;margin:16px 0">Reset your password</h1>
+<p style="text-align:left">Hello {{recipient_name}},</p>
+<p style="text-align:left;line-height:1.6">This is a fictional password reset request for an EVEXIA demo account. The sample link below does not reset any password.</p>
+<p style="margin:24px 0"><a href="{{reset_url}}" style="display:inline-block;background-color:#126b70;color:#ffffff;padding:14px 24px;border-radius:8px;font-weight:bold;text-decoration:none">Reset password</a></p>
+<p style="text-align:left">Sample expiry: {{expiry_minutes}} minutes. All reset details are fictional preview content.</p>
+<p style="text-align:left;font-size:12px;color:#526b76">If the button does not work, the fictional fallback URL is:</p>
+<p style="text-align:left;overflow-wrap:anywhere;font-size:12px"><a href="{{reset_url}}" style="color:#126b70;text-decoration:underline">{{reset_url}}</a></p>
+<p style="text-align:left;font-size:13px;line-height:1.6">If you did not request this, ignore this email. Your password would remain unchanged. This example is not connected to real recovery events.</p>
+<hr style="border:1px solid #dce7e9"><p style="font-size:12px;color:#526b76">EVEXIA LIFE SCIENCES · {{company_name}}<br>Browser-local template preview only</p>
+</td></tr></table></td></tr></table>`,
+      text: 'FICTIONAL PREVIEW — NOTHING IS SENT. Hello {{recipient_name}}, reset your EVEXIA demo password: {{reset_url}}. Sample expiry: {{expiry_minutes}} minutes. All reset details are fictional and this URL cannot reset a password. If you did not request this, ignore this email; your password would remain unchanged. Not connected to recovery events. — {{company_name}}',
+    },
+  },
+  {
     id: 'system-email-order-confirmation',
     source: 'system',
     channel: 'email',

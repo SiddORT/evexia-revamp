@@ -1,8 +1,12 @@
+import { EVEXIA_LOGO_SOURCE, EVEXIA_LOGO_DATA } from './messageTemplateBrand.js';
+
 export const SUPPORTED_TOKENS = Object.freeze([
   'recipient_name',
   'order_number',
   'amount',
   'company_name',
+  'reset_url',
+  'expiry_minutes',
 ]);
 
 export const SAMPLE_VALUES = Object.freeze({
@@ -10,6 +14,8 @@ export const SAMPLE_VALUES = Object.freeze({
   order_number: 'EVX-SAMPLE-1042',
   amount: '₹1,250.00',
   company_name: 'EVEXIA LIFE SCIENCES (Demo)',
+  reset_url: 'https://preview.example.invalid/reset-password/fictional-not-a-token',
+  expiry_minutes: '30 (fictional)',
 });
 
 const SUPPORTED_TOKEN_SET = new Set(SUPPORTED_TOKENS);
@@ -239,7 +245,7 @@ function sanitizeCssValue(property, rawValue) {
       ? value : null;
   }
   if (property === 'letter-spacing') {
-    return value === 'normal' || validLength(value);
+    return value === 'normal' || validLength(value) ? value : null;
   }
   if (property === 'border-style') {
     return /^(?:none|hidden|dotted|dashed|solid|double|groove|ridge|inset|outset)$/.test(value)
@@ -249,6 +255,8 @@ function sanitizeCssValue(property, rawValue) {
     return /^(?:collapse|separate)$/.test(value) ? value : null;
   }
   if (property === 'border-width') return validLength(value) ? value : null;
+  if (property === 'border-radius') return validLength(value) ? value : null;
+  if (property === 'overflow-wrap') return /^(?:normal|anywhere|break-word)$/.test(value) ? value : null;
   if (property === 'border') {
     const parts = value.split(/\s+/);
     return parts.length <= 3 && parts.every((part) =>
@@ -276,7 +284,7 @@ function sanitizeCssValue(property, rawValue) {
 const ALLOWED_STYLE_PROPERTIES = new Set([
   'color', 'background-color', 'font-family', 'font-size', 'font-weight', 'font-style',
   'text-decoration', 'text-align', 'vertical-align', 'white-space', 'line-height',
-  'letter-spacing', 'border', 'border-color', 'border-style', 'border-width',
+   'letter-spacing', 'border', 'border-color', 'border-style', 'border-width', 'border-radius', 'overflow-wrap',
   'border-collapse', 'padding', 'padding-top', 'padding-right', 'padding-bottom',
   'padding-left', 'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left',
   'width', 'min-width', 'max-width', 'height', 'min-height', 'max-height', 'display',
@@ -396,7 +404,7 @@ function findBlockedElementEnd(source, start, tagName) {
  * stripped while their text/children remain; executable/foreign/raw-text
  * elements are discarded with their contents.
  */
-function sanitizeEmailHtml(source) {
+function sanitizeEmailHtml(source, embedLogo = false) {
   let output = '';
   let index = 0;
   while (index < source.length) {
@@ -440,7 +448,17 @@ function sanitizeEmailHtml(source) {
       continue;
     }
 
-    if (ALLOWED_TAGS.has(tag.name)) {
+    if (tag.name === 'img' && !tag.closing) {
+      // Match the exact source spelling and a single src attribute. Never echo
+      // untrusted src/data/srcset values, styles, sizes or event handlers.
+      const sources = tag.attributes.filter(([name]) => name === 'src');
+      if (sources.length === 1 && sources[0][1] === EVEXIA_LOGO_SOURCE) {
+        output += `<img src="${embedLogo ? EVEXIA_LOGO_DATA : EVEXIA_LOGO_SOURCE}" alt="EVEXIA Life Sciences" width="154" height="80" style="display:inline-block;max-width:100%;height:auto">`;
+      }
+    } else if (tag.name === 'a') {
+      // Preserve link/button presentation but never emit a navigable element.
+      output += tag.closing ? '</span>' : `<span${sanitizeAttributes(tag.attributes)}>`;
+    } else if (ALLOWED_TAGS.has(tag.name)) {
       if (tag.closing) {
         if (!VOID_TAGS.has(tag.name)) output += `</${tag.name}>`;
       } else {
@@ -458,7 +476,7 @@ const PREVIEW_CSP = [
   "object-src 'none'",
   "media-src 'none'",
   "style-src 'unsafe-inline'",
-  "img-src 'none'",
+  "img-src data:",
   "font-src 'none'",
   "connect-src 'none'",
   "form-action 'none'",
@@ -469,8 +487,11 @@ const PREVIEW_CSP = [
 
 export function buildEmailPreview(html, values = null) {
   const source = typeof html === 'string' ? html : '';
-  const substituted = values === null ? source : substituteTokens(source, values, true);
-  const safeContent = sanitizeEmailHtml(substituted);
+  // Establish image identity before substitution: a sample value must never
+  // turn an untrusted src token into the trusted logo capability.
+  const authored = sanitizeEmailHtml(source);
+  const substituted = values === null ? authored : substituteTokens(authored, values, true);
+  const safeContent = sanitizeEmailHtml(substituted, true);
   return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${PREVIEW_CSP}"><meta name="referrer" content="no-referrer"><style>html,body{margin:0;padding:0}body{padding:16px;color:#222;background:#fff;font:14px/1.5 Arial,sans-serif;overflow-wrap:anywhere}table{border-collapse:collapse;max-width:100%}td,th{vertical-align:top}</style></head><body>${safeContent}</body></html>`;
 }
 

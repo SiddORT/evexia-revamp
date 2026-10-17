@@ -282,12 +282,15 @@ test('guards dirty category navigation and supports browser history, keyboard ta
     const name = page.getByTestId('input-template-name');
     await name.fill('Unsaved navigation draft');
     const rejectedNavigation = page.waitForEvent('dialog');
-    const rejectedClick = page.getByTestId('link-settings-basic').click();
+    // Native modal background is intentionally inert. Exercise a route request
+    // programmatically; real pointer and keyboard users must close it first.
+    const rejectedClick = page.getByTestId('link-settings-basic').evaluate((el) => el.click());
     await (await rejectedNavigation).dismiss();
     await rejectedClick;
     await expect(page).toHaveURL(/tab=message-templates/);
     await expect(name).toHaveValue('Unsaved navigation draft');
     await name.fill('');
+    await page.getByTestId('button-template-close').click();
     await page.getByTestId('link-settings-basic').click();
     await expect(page).toHaveURL(/tab=basic/);
     await expect(page.getByTestId('link-settings-basic')).toHaveAttribute('aria-current', 'page');
@@ -320,4 +323,125 @@ test('guards dirty category navigation and supports browser history, keyboard ta
   } finally {
     await context.close();
   }
+});
+
+test('email drawer keeps library context, contains focus, guards dismissal, and saves the branded reset copy', async ({ browser }, testInfo) => {
+  const { context, page } = await openTemplates(browser);
+  const requests = [];
+  const navigations = [];
+  page.on('request', (r) => {
+    if (r.frame().parentFrame()) requests.push(r.url());
+  });
+  page.on('framenavigated', (frame) => {
+    if (frame.parentFrame() && frame.url() !== 'about:srcdoc' && frame.url() !== 'about:blank') navigations.push(frame.url());
+  });
+  try {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.getByTestId('link-settings-ui').click();
+    await page.getByTestId('select-admin-appearance').selectOption('light');
+    await page.getByTestId('link-settings-message-templates').click();
+    await expect(page.locator('.mt-list > li').first()).toHaveAttribute('data-testid', 'card-template-system-email-forgot-password');
+    const trigger = page.getByTestId('button-preview-template-system-email-forgot-password');
+    await page.getByTestId('input-template-search').fill('Forgot');
+    await trigger.click();
+    const drawer = page.getByRole('dialog', { name: 'Forgot password (example)' });
+    await expect(drawer).toBeVisible();
+    const rendered = page.frameLocator('[data-testid="mtv-frame"]');
+    await expect(rendered.getByAltText('EVEXIA Life Sciences')).toBeVisible();
+    await expect.poll(() => rendered.locator('img').evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath('drawer-desktop-light.png'), fullPage: true });
+    await page.keyboard.press('Escape');
+    await expect(drawer).toHaveCount(0);
+    await page.getByTestId('link-settings-ui').click();
+    await page.getByTestId('select-admin-appearance').selectOption('dark');
+    await page.getByTestId('link-settings-message-templates').click();
+    await trigger.click();
+    await expect(drawer).toBeVisible();
+    await expect.poll(() => rendered.locator('img').evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath('drawer-desktop-dark.png'), fullPage: true });
+    await page.keyboard.press('Escape');
+    await expect(drawer).toHaveCount(0);
+    await page.getByTestId('link-settings-ui').click();
+    await page.getByTestId('select-admin-appearance').selectOption('light');
+    await page.getByTestId('link-settings-message-templates').click();
+    // Appearance checks above intentionally remounted Settings. Establish the
+    // filter again for the separate drawer-context preservation assertion.
+    await page.getByTestId('input-template-search').fill('Forgot');
+    await trigger.click();
+    await expect(drawer).toBeVisible();
+    await expect(page.getByTestId('text-template-source')).toHaveAttribute('readonly', '');
+    expect(await page.evaluate(() => document.body.style.overflow)).toBe('hidden');
+    await page.keyboard.press('Shift+Tab');
+    expect(await drawer.evaluate((d) => d.contains(document.activeElement))).toBe(true);
+    await page.keyboard.press('Tab');
+    expect(await drawer.evaluate((d) => d.contains(document.activeElement))).toBe(true);
+    const previewFrame = page.locator('[data-testid="mtv-frame"]');
+    await previewFrame.focus();
+    await expect(previewFrame).toBeFocused();
+    await page.keyboard.press('Tab');
+    expect(await drawer.evaluate((d) => d.contains(document.activeElement))).toBe(true);
+    await page.keyboard.press('Shift+Tab');
+    expect(await drawer.evaluate((d) => d.contains(document.activeElement))).toBe(true);
+    await expect(rendered.getByAltText('EVEXIA Life Sciences')).toBeVisible();
+    await expect.poll(() => rendered.locator('img').evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
+    await expect(rendered.locator('table').first()).toHaveCSS('background-color', 'rgb(238, 244, 245)');
+    await expect(rendered.locator('table table')).toHaveCSS('border-radius', '16px');
+    await expect(rendered.locator('a, form, button, script, svg')).toHaveCount(0);
+    await rendered.getByText('Reset password', { exact: true }).click();
+    await page.getByTestId('mtv-mode-sample').click();
+    await expect(rendered.locator('body')).toContainText('fictional-not-a-token');
+    await page.getByTestId('mtv-sample-reset_url').fill('javascript:alert(1)"><img src="https://preview-canary.invalid/reset">');
+    await expect(rendered.locator('img')).toHaveCount(1);
+    await expect(rendered.locator('a, form, script')).toHaveCount(0);
+    await page.getByTestId('button-drawer-copy-template').click();
+    await expect(page.getByTestId('input-template-name')).toBeFocused();
+    const refusedClose = page.waitForEvent('dialog');
+    const escape = page.keyboard.press('Escape');
+    await (await refusedClose).dismiss();
+    await escape;
+    await expect(page.getByTestId('drawer-template')).toBeVisible();
+    await expect(page.getByTestId('input-template-html')).toHaveValue(/evexia-logo.png/);
+    const refusedX = page.waitForEvent('dialog');
+    const close = page.getByTestId('button-template-close').click();
+    await (await refusedX).dismiss();
+    await close;
+    await expect(page.getByTestId('drawer-template')).toBeVisible();
+    await page.getByTestId('input-template-name').fill('Forgot password drawer copy');
+    const html = await page.getByTestId('input-template-html').inputValue();
+    await page.getByTestId('input-template-html').fill(html.replace('Reset your password', 'Edited reset preview'));
+    await expect(page.frameLocator('[data-testid="mted-frame"]').getByRole('heading', { name: 'Edited reset preview' })).toBeVisible();
+    await page.getByTestId('button-template-save').click();
+    await expect(page.getByTestId('drawer-template')).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+    await expect(page.getByTestId('input-template-search')).toHaveValue('Forgot');
+    expect(await page.evaluate(() => document.body.style.overflow)).not.toBe('hidden');
+    await page.reload();
+    const saved = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)).templates.find((t) => t.name === 'Forgot password drawer copy'), libraryKey);
+    await page.getByTestId(`button-edit-template-${saved.id}`).click();
+    await expect(page.getByTestId('input-template-html')).toHaveValue(/Edited reset preview/);
+    await expect.poll(() => page.frameLocator('[data-testid="mted-frame"]').locator('img').evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
+    await page.getByTestId('button-template-close').click();
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const appearance of ['light', 'dark']) {
+      await page.getByTestId('link-settings-ui').click();
+      await page.getByTestId('select-admin-appearance').selectOption(appearance);
+      await page.getByTestId('link-settings-message-templates').click();
+      await trigger.click();
+      await expect(page.getByTestId('mtv-preview')).toBeVisible();
+      await page.getByRole('group', { name: 'View', exact: true }).getByRole('button', { name: 'Code', exact: true }).click();
+      await expect(page.getByTestId('text-template-source')).toBeVisible();
+      await page.getByRole('group', { name: 'View', exact: true }).getByRole('button', { name: 'Preview', exact: true }).click();
+      await expect(page.getByTestId('mtv-preview')).toBeVisible();
+      await expect.poll(() => page.frameLocator('[data-testid="mtv-frame"]').locator('img').evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
+      await page.screenshot({ path: testInfo.outputPath(`drawer-mobile-${appearance}.png`), fullPage: true });
+      const bounds = await page.getByTestId('drawer-template').boundingBox();
+      expect(bounds.width).toBeLessThanOrEqual(390);
+      expect(bounds.width).toBeGreaterThanOrEqual(388);
+      expect(await page.getByTestId('drawer-template').evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+      await page.keyboard.press('Escape');
+      await expect(trigger).toBeFocused();
+    }
+    expect(requests).toEqual([]);
+    expect(navigations).toEqual([]);
+  } finally { await context.close(); }
 });

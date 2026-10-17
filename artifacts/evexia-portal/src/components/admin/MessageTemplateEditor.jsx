@@ -28,6 +28,7 @@ export default function MessageTemplateEditor({ draft, baseline, loadError, late
   const refs = useRef({});
   const fileRef = useRef(null);
   const htmlRef = useRef(draft.content.html || '');
+  const [pane, setPane] = useState('code');
   const [recovered, setRecovered] = useState(false);
   const dirty = useMemo(() => !!draft.copyOf || Object.keys(f).some((k) => f[k] !== initial[k]), [f, initial, draft.copyOf]);
   const dirtyRef = useRef(onDirtyChange); dirtyRef.current = onDirtyChange;
@@ -84,7 +85,7 @@ export default function MessageTemplateEditor({ draft, baseline, loadError, late
   const close = () => { if (dirty && !window.confirm('Discard unsaved changes?')) return; onClose(); };
   const reopen = () => { if (!window.confirm('Discard your draft and open the latest saved version?')) return; onReopenLatest?.(draft.id); };
   const field = ([k, label, max, kind]) => {
-    const common = { id: `mt-${k}`, value: f[k], maxLength: max, 'aria-invalid': !!errors[k], 'aria-describedby': `mt-${k}-h`, 'data-testid': `input-template-${k}`,
+    const common = { id: `mt-${k}`, value: f[k], maxLength: max, autoFocus: channel === 'email' && k === 'name', 'aria-invalid': !!errors[k], 'aria-describedby': `mt-${k}-h`, 'data-testid': `input-template-${k}`,
       ref: (el) => { refs.current[k] = el; }, onFocus: () => { if (['subject', 'html', 'text', 'body'].includes(k)) lastFocus.current = k; }, onChange: (e) => set(k, e.target.value) };
     return <div key={k} className={`mt-field${errors[k] ? ' mt-field--error' : ''}${k === 'html' ? ' mt-field--wide' : ''}`}>
       <label htmlFor={`mt-${k}`}>{label}{k !== 'description' ? <span className="mt-req"> (required)</span> : null}</label>
@@ -94,10 +95,11 @@ export default function MessageTemplateEditor({ draft, baseline, loadError, late
     </div>;
   };
   return <section className="mt-editor" aria-labelledby="mt-ed-h">
-    <div className="mt-head"><div><h3 id="mt-ed-h">{draft.id ? 'Edit' : 'New'} {channel === 'email' ? 'email' : 'SMS'} template</h3>
+    <div className="mt-head"><div><h3 id="mt-ed-h" className={channel === 'email' ? 'mt-sr' : ''}>{draft.id ? 'Edit' : 'New'} {channel === 'email' ? 'email' : 'SMS'} template</h3>
       {draft.copyOf && draft.copySource === 'system' && <p className="mt-note">Copied from a system example. It becomes your own user template when saved.{channel === 'sms' ? ' Enter your own Provider/DLT template ID.' : ''}</p>}
       {draft.copyOf && draft.copySource === 'user' && <p className="mt-note">Copied from one of your user templates.</p>}</div>
-      <button type="button" className="admin-button admin-button--secondary" onClick={close} data-testid="button-template-close">Close</button></div>
+      {channel === 'sms' && <button type="button" className="admin-button admin-button--secondary" onClick={close} data-testid="button-template-close">Close</button>}</div>
+    {channel === 'email' && <div className="mt-seg" role="group" aria-label="Editor view"><button type="button" aria-pressed={pane === 'code'} onClick={() => setPane('code')}>Code</button><button type="button" aria-pressed={pane === 'preview'} onClick={() => setPane('preview')}>Preview</button></div>}
     {loadError && <div className="admin-feedback admin-feedback--error" role="alert">{loadError} Saving over saved templates is blocked; previewing and copying drafts still work.
       <div className="mt-row"><button type="button" className="admin-button admin-button--secondary" onClick={retryStorage} data-testid="button-template-retry-storage">Retry storage</button>
         {recovered && <button type="button" className="admin-button" onClick={() => save(true)} disabled={busy} data-testid="button-template-save-new-recovered">Save as new template</button>}</div></div>}
@@ -106,7 +108,7 @@ export default function MessageTemplateEditor({ draft, baseline, loadError, late
         <button type="button" className="admin-button admin-button--danger" onClick={reopen} data-testid="button-template-reopen">Discard and reopen latest</button></div></div>}
     {banner && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="text-template-error">{banner}</div>}
     <div aria-live="polite" className="mt-note">{info}</div>
-    <div className="mt-grid">
+    <div className="mt-grid" data-pane={pane}>
       <form className="mt-form" onSubmit={(e) => { e.preventDefault(); save(false); }} noValidate>
         {FIELDS[channel].map(field)}
         {channel === 'email' && <div className="mt-row"><input ref={fileRef} type="file" accept=".html,.htm,text/html" hidden onChange={importFile} data-testid="input-template-file" />

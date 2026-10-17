@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import './messageTemplates.css';
 import MessageTemplateEditor from './MessageTemplateEditor.jsx';
+import MessageTemplateDrawer from './MessageTemplateDrawer.jsx';
 import MessageTemplatePreview from './MessageTemplatePreview.jsx';
+import { SUPPORTED_TOKENS } from '../../services/messageTemplatePreview.js';
 import { MESSAGE_TEMPLATES_KEY, SYSTEM_TEMPLATES, deleteMessageTemplate, loadMessageTemplates } from '../../services/messageTemplates.js';
 
 function load() {
@@ -22,6 +24,7 @@ export default function MessageTemplateSettings({ onGuardChange }) {
   const dirtyRef = useRef(false);
   const [q, setQ] = useState('');
   const [src, setSrc] = useState('all');
+  const [pane, setPane] = useState('preview');
   const [delBusy, setDelBusy] = useState(false);
 
   const guard = useCallback(() => {
@@ -51,9 +54,10 @@ export default function MessageTemplateSettings({ onGuardChange }) {
   const users = lib.snap?.record.templates || [];
   const all = [...SYSTEM_TEMPLATES, ...users].filter((t) => t.channel === channel);
   const items = all.filter((t) => (src === 'all' || t.source === src) && t.name.toLowerCase().includes(q.trim().toLowerCase()));
-  const open = (draft) => { if (!guard()) return; const l = load(); setStatus(''); setEditor({ key: Date.now(), draft, baseline: l.snap, loadError: l.error }); setView(null); setDel(null); };
+  const open = (draft) => { if (!guard()) return; const l = load(); setStatus(''); setEditor({ key: Date.now(), draft, baseline: l.snap, loadError: l.error }); setView(null); setDel(null); setPane('code'); };
   const blank = () => open({ id: null, channel, name: '', description: '', content: channel === 'email' ? { subject: '', html: '', text: '' } : { body: '', providerTemplateId: '' } });
-  const closeEditor = () => { dirtyRef.current = false; setEditor(null); setLib(load()); };
+  const requestClose = () => { if (!guard()) return; closeEditor(); };
+  const closeEditor = () => { dirtyRef.current = false; setEditor(null); setView(null); setLib(load()); };
   const onTab = (e, i) => {
     let n = null; if (e.key === 'ArrowRight') n = (i + 1) % 2; else if (e.key === 'ArrowLeft') n = (i + 1) % 2; else if (e.key === 'Home') n = 0; else if (e.key === 'End') n = 1;
     if (n === null) return; e.preventDefault(); pick(CH[n][0]); document.getElementById(`mt-tab-${CH[n][0]}`)?.focus();
@@ -86,16 +90,16 @@ export default function MessageTemplateSettings({ onGuardChange }) {
       {CH.map(([c, l], i) => <button key={c} type="button" role="tab" id={`mt-tab-${c}`} aria-selected={channel === c} aria-controls="mt-panel" tabIndex={channel === c ? 0 : -1} onClick={() => pick(c)} onKeyDown={(e) => onTab(e, i)} data-testid={`tab-template-${c}`}>{l}</button>)}
     </div>
     <div role="tabpanel" id="mt-panel" aria-labelledby={`mt-tab-${channel}`}>
-      {editor && <MessageTemplateEditor key={editor.key} draft={editor.draft} baseline={editor.baseline} loadError={editor.loadError} latestRevision={latestRevision}
+      {editor && channel === 'sms' && <MessageTemplateEditor key={editor.key} draft={editor.draft} baseline={editor.baseline} loadError={editor.loadError} latestRevision={latestRevision}
         onDirtyChange={(d) => { dirtyRef.current = d; }} onClose={closeEditor} onReopenLatest={reopenLatest}
         onSaved={(snap) => { dirtyRef.current = false; setLib({ snap, error: '' }); setEditor(null); setStatus('Template saved to this browser.'); }} />}
-      {!editor && <>
+      {!(editor && channel === 'sms') && <>
         <div className="mt-notes" data-testid="text-template-notices">
-          <p><strong>Token syntax.</strong> Write {'{{token_name}}'} using only supported tokens: recipient_name, order_number, amount, company_name. Unknown or malformed tokens are left as typed and flagged.</p>
+          <p><strong>Token syntax.</strong> Write {'{{token_name}}'} using only supported tokens: {SUPPORTED_TOKENS.join(', ')}. Unknown or malformed tokens are left as typed and flagged.</p>
           <p><strong>Not wired.</strong> System examples are samples only. They are not connected to any events, triggers or sends.</p>
           <p><strong>Future providers.</strong> Mapping these tokens to provider-specific placeholders (for example numbered or named variables) is not done yet and will be added later.</p>
           <p><strong>SMS and DLT.</strong> Saving a template does not register, submit or approve it with any DLT registry or provider. The ID is a reference you type.</p>
-          <p><strong>Email.</strong> There is no guarantee of email-client compatibility. External assets, styles, fonts and images are always blocked in previews.</p>
+          <p><strong>Email.</strong> There is no guarantee of email-client compatibility. Only the bundled offline EVEXIA logo is allowed in previews. Other images, styles, fonts and resources are blocked, and links are inert.</p>
         </div>
         <div className="mt-filters">
           <label className="mt-field"><span>Search templates by name</span><input type="search" value={q} maxLength={100} onChange={(e) => setQ(e.target.value)} data-testid="input-template-search" /></label>
@@ -108,12 +112,12 @@ export default function MessageTemplateSettings({ onGuardChange }) {
               {t.channel === 'sms' && <span className="mt-tag">{t.content.providerTemplateId ? `Provider/DLT ID: ${t.content.providerTemplateId}` : 'Provider/DLT ID: unassigned, unregistered'}</span>}</div>
             <h3>{t.name}</h3><p>{t.description}</p>
             <div className="mt-row">
-              <button type="button" onClick={() => setView(view?.id === t.id ? null : t)} aria-expanded={view?.id === t.id} data-testid={`button-preview-template-${t.id}`}>{view?.id === t.id ? 'Hide preview' : 'Preview'}</button>
+              <button type="button" onClick={() => { if (t.channel === 'email') { if (guard()) { setEditor(null); setDel(null); setPane('preview'); setView(t); } } else setView(view?.id === t.id ? null : t); }} aria-expanded={t.channel === 'email' ? undefined : view?.id === t.id} data-testid={`button-preview-template-${t.id}`}>{t.channel === 'sms' && view?.id === t.id ? 'Hide preview' : 'Preview'}</button>
               {t.source === 'user' ? <button type="button" onClick={() => open(t)} data-testid={`button-edit-template-${t.id}`}>Edit</button> : null}
               <button type="button" onClick={() => open(cloneDraft(t))} data-testid={`button-copy-template-${t.id}`}>Copy to draft</button>
               {t.source === 'user' && <button type="button" onClick={() => startDel(t)} data-testid={`button-delete-template-${t.id}`}>Delete</button>}
             </div>
-            {view?.id === t.id && <MessageTemplatePreview channel={t.channel} content={t.content} idPrefix="mtv" />}
+            {t.channel === 'sms' && view?.id === t.id && <MessageTemplatePreview channel={t.channel} content={t.content} idPrefix="mtv" />}
           </li>)}</ul>}
         {del && <div className="admin-feedback admin-feedback--error mt-del" role="alertdialog" aria-labelledby="mt-del-h">
           <strong id="mt-del-h">Delete {del.tpl.name}?</strong> This removes it from this browser only.
@@ -123,5 +127,21 @@ export default function MessageTemplateSettings({ onGuardChange }) {
             {delErr && <button type="button" className="admin-button admin-button--secondary" onClick={() => { setLib(load()); setDel(null); }}>Reload latest</button>}</div></div>}
       </>}
     </div>
+    {channel === 'email' && (editor || view) && <MessageTemplateDrawer onRequestClose={requestClose}
+      title={editor ? `${editor.draft.id ? 'Edit' : 'New'} email template` : view.name}
+      subtitle={editor ? (editor.draft.copyOf ? 'Editable copy. Saved as your own browser-local template.' : null) : `${view.source === 'system' ? 'System example, read-only' : 'User template, read-only preview'}`}>
+      {editor ? <MessageTemplateEditor key={editor.key} draft={editor.draft} baseline={editor.baseline} loadError={editor.loadError} latestRevision={latestRevision}
+        onDirtyChange={(d) => { dirtyRef.current = d; }} onClose={closeEditor} onReopenLatest={reopenLatest}
+        onSaved={(snap) => { dirtyRef.current = false; setLib({ snap, error: '' }); setEditor(null); setView(null); setStatus('Template saved to this browser.'); }} />
+      : <>
+        <div className="mt-row"><button type="button" className="admin-button" onClick={() => open(cloneDraft(view))} data-testid="button-drawer-copy-template">Copy to draft</button>
+          {view.source === 'user' && <button type="button" className="admin-button admin-button--secondary" onClick={() => open(view)} data-testid="button-drawer-edit-template">Edit</button>}</div>
+        <div className="mt-seg" role="group" aria-label="View"><button type="button" aria-pressed={pane === 'code'} onClick={() => setPane('code')}>Code</button><button type="button" aria-pressed={pane === 'preview'} onClick={() => setPane('preview')}>Preview</button></div>
+        <div className="mt-split" data-pane={pane}>
+          <div className="mt-pane mt-pane--code mt-field"><label htmlFor="mt-ro-html">HTML source <span className="mt-badge-ro">(read-only)</span></label>
+            <textarea id="mt-ro-html" className="mt-ro" readOnly spellCheck={false} value={view.content.html || ''} data-testid="text-template-source" /></div>
+          <div className="mt-pane mt-pane--view"><MessageTemplatePreview channel="email" content={view.content} idPrefix="mtv" /></div>
+        </div></>}
+    </MessageTemplateDrawer>}
   </section>;
 }

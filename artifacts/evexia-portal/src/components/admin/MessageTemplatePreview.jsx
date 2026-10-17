@@ -41,7 +41,7 @@ export default function MessageTemplatePreview({ channel, content, idPrefix = 'm
     <div aria-live="polite" className="mt-prev__warns">
       {report.unknown.size > 0 && <p className="mt-warn" data-testid={`${idPrefix}-warn-unknown`}>Unknown tokens: {[...report.unknown].map(tok).join(', ')}. They are not replaced.</p>}
       {report.malformed > 0 && <p className="mt-warn" data-testid={`${idPrefix}-warn-malformed`}>Malformed token syntax found ({report.malformed}). Use the form {tok('name')}.</p>}
-      {blocked && <p className="mt-warn" data-testid={`${idPrefix}-warn-blocked`}>Safety: scripts, frames, forms, event handlers and external assets are blocked in the preview.</p>}
+      {blocked && <p className="mt-warn" data-testid={`${idPrefix}-warn-blocked`}>Safety: scripts, frames, forms, event handlers and external resources are blocked. Only the bundled offline EVEXIA logo is allowed; links are inert.</p>}
       {report.tokens.size > 0 && <p className="mt-note">Tokens used: {[...report.tokens].map(tok).join(', ')}</p>}
     </div>
     {email ? <>
@@ -53,6 +53,6 @@ export default function MessageTemplatePreview({ channel, content, idPrefix = 'm
       <pre className="mt-prev__sms" data-testid={`${idPrefix}-sms`}>{smsText || '(empty)'}</pre>
       <p className="mt-note" data-testid={`${idPrefix}-provider`}>Provider/DLT template ID: {c.providerTemplateId ? c.providerTemplateId : 'Unassigned / unregistered'}</p>
       <p className="mt-note" data-testid={`${idPrefix}-length`}>{smsText.length} characters{mode === 'tokens' ? ' (with tokens)' : ''}. Segment count depends on carrier and encoding.</p></div>}
-    <p className="mt-note">Preview is approximate. There is no guarantee of email-client compatibility; real inboxes and handsets render differently. External assets, styles, fonts and images are always blocked in this preview. Nothing is sent from this browser.</p>
+    <p className="mt-note">Preview is approximate. There is no guarantee of email-client compatibility; real inboxes and handsets render differently. Only the bundled offline EVEXIA logo is allowed; other images, styles, fonts and resources are blocked and links are inert. Nothing is sent from this browser.</p>
   </section>;
 }
