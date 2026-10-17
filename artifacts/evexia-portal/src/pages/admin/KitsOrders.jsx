@@ -24,7 +24,6 @@ export default function KitsOrders() {
   const { resetPage } = pager;
   useEffect(() => { resetPage(); }, [applied]); // eslint-disable-line react-hooks/exhaustive-deps
   const set = (patch) => setDraft((d) => ({ ...d, ...patch }));
-  const toggleStatus = (s) => set({ statuses: draft.statuses.includes(s) ? draft.statuses.filter((x) => x !== s) : [...draft.statuses, s] });
   const reset = () => { setDraft(EMPTY); setApplied(EMPTY); };
   const apply = (e) => { e?.preventDefault(); setApplied({ ...draft }); };
   const exportRows = () => {
@@ -69,8 +68,7 @@ export default function KitsOrders() {
         <label className="kits-field">To<input type="date" value={draft.to} min={draft.from || undefined} onChange={(e) => set({ to: e.target.value })} data-testid="kits-filter-to" /></label>
         <label className="kits-field">Doctor<select value={draft.doctorId} onChange={(e) => set({ doctorId: e.target.value })} data-testid="kits-filter-doctor"><option value="">All</option>{DOCTORS.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
         <label className="kits-field">Payment status<select value={draft.paymentStatus} onChange={(e) => set({ paymentStatus: e.target.value })} data-testid="kits-filter-payment"><option value="">All</option>{PAYMENT_STATUSES.map((s) => <option key={s}>{s}</option>)}</select></label>
-        <fieldset className="kits-statuses" data-testid="kits-filter-status"><legend>Order status</legend>
-          {STATUSES.map((s) => <label key={s}><input type="checkbox" checked={draft.statuses.includes(s)} onChange={() => toggleStatus(s)} data-testid={`kits-filter-status-${s.toLowerCase().replace(/\s+/g, '-')}`} />{s}</label>)}</fieldset>
+        <label className="kits-field">Order status<select value={draft.statuses[0] || ''} onChange={(e) => set({ statuses: e.target.value ? [e.target.value] : [] })} data-testid="kits-filter-status"><option value="">All</option>{STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</select></label>
         <div className="kits-actions"><button type="submit" className="admin-button" data-testid="kits-apply">Apply Filter</button>
           <button type="button" className="admin-button admin-button--secondary" onClick={reset} data-testid="kits-reset">Reset</button></div>
       </form>

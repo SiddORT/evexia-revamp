@@ -40,8 +40,6 @@
 .kits-files li button { flex: none; min-height: 44px; }
 .kits-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; padding: 14px 18px; }
 .kits-filters .kits-field { flex: 1 1 150px; }
-.kits-statuses { border: 1px solid var(--admin-border); border-radius: 8px; padding: 6px 10px; display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 0; flex: 2 1 280px; font-size: 0.82rem; }
-.kits-statuses label { display: flex; gap: 5px; align-items: center; font-weight: 400; }
 .kits-pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 0.76rem; border: 1px solid var(--admin-border); white-space: nowrap; }
 .kits-sub { display: block; font-size: 0.78rem; color: var(--admin-muted); }
 .kits-empty { display: grid; gap: 8px; justify-items: center; padding: 30px 12px; text-align: center; }
