@@ -1,29 +1,29 @@
 {
   "status": "reviewed_candidate_requires_release_policy",
-  "review_scope": "Pinned PostgreSQL 17 fresh path through 0041_location_geography. Empty-only atomic initialization requires live target identity, pristine catalog, valid encryption configuration and exact final catalog/readiness checks; it does not require external recovery receipts. Routine deployment requires complete exact-commit CI validation and additive migration classification. Existing protected migrations retain operator approval and recovery. Legacy signed staged initialization remains available. This manifest alone is not evidence of passing validation or authorization to modify an existing database.",
-  "authorization_policy_sha256": "df807a629a510e4bfbea92306bbeee7ce501acb783823ba720a71e794497ff72",
-  "target": "0041_location_geography",
+  "review_scope": "Pinned PostgreSQL 17 fresh path through 0042_rate_hundredths. Empty-only atomic initialization requires live target identity, pristine catalog, valid encryption configuration and exact final catalog/readiness checks; it does not require external recovery receipts. Routine deployment requires complete exact-commit CI validation and additive migration classification. Existing protected migrations retain operator approval and recovery. Legacy signed staged initialization remains available. This manifest alone is not evidence of passing validation or authorization to modify an existing database.",
+  "authorization_policy_sha256": "42fbc2098e7718df2457040f86a58146915d17b08fb6bc75e4fa8299a0d758eb",
+  "target": "0042_rate_hundredths",
   "prepare_target": "0031_role_hostnames",
-  "policy_sha256": "d7c61565115c72ae02dda7f40fe3c4460aafcbc4199be8fdc4f84f485b182efa",
+  "policy_sha256": "9526643a1505293dde5cd37384c0ebb9c4c94b8a84fcf63960a4a7a47e8c5427",
   "release_sources": {
     "artifacts/api-server/backend/app/services/initialization_diagnostics.py": "9732dd29159788eb77976a7ed70635e49ca76d2982e0c42fafcb99ed2ff04a6f",
     "artifacts/api-server/backend/app/fresh_install.py": "3b2d341742e7e7da266a5dc34d2dcb614fa6a3dc031d055ef9e5f50ede8dea3a",
     "artifacts/api-server/backend/app/services/release_authorization.py": "67212a1caa6ff2a475b339d199f9f1dabf8f7fc194e11d92d83abba78c8a1554",
-    "scripts/validate-release-artifact.py": "b8a155a3dd669a782f68d8cba5dcb2a7a462f272b13a8dcd4ccf00b98660d5ae",
-    "scripts/release-authorization-policy.json": "df807a629a510e4bfbea92306bbeee7ce501acb783823ba720a71e794497ff72",
+    "scripts/validate-release-artifact.py": "cf4f0962f660e37d99580babb7c9dd5e50539e685baa662166355396944d020f",
+    "scripts/release-authorization-policy.json": "42fbc2098e7718df2457040f86a58146915d17b08fb6bc75e4fa8299a0d758eb",
     ".github/workflows/deploy.yml": "38e5ddd8c41f4cf52996259726fdaa9b8c2cd7b2e42f7d720fb3c4663833cd68",
-    ".github/workflows/release-validation.yml": "6e7c9091fcc6257df0e04ff5dfb8870f61cf1e843fffdf7be5004bb23d58341c",
+    ".github/workflows/release-validation.yml": "19016225c6f1b14e6174983270c0bb2209ba8218c91cedc317c4fa247dc070b0",
     "artifacts/api-server/backend/app/services/fresh_catalog.py": "25c32d43095de45f5f927d0587de6df93f2a9b8b3b61ea795e99295cad1e3747",
     "artifacts/api-server/backend/app/services/fresh_recovery.py": "af8e518d8427f3bbc5d18607f8a11bc39a9761b6330b52a762d63c3d6b690681",
-    "scripts/fresh-install-catalog.json": "0c491018c6cc3b0b6ea8818ecb833ac878e3d776cdc5cc7351c47cded2171bc3",
+    "scripts/fresh-install-catalog.json": "d8c1a5f734820d8c706f436eac8b051d14895e8e5c1cc97a1512bd58a606828e",
     "scripts/operator-retirement.sh": "07c315caab994b0315b78272763d91b71b18744c83b5ac3c46880961a5bbb505",
     "scripts/deploy-migrations.py": "d8e3b72c708eb636b3b8c460bfe16c0a3dc0ef4c3041ce854123e24a30e9b34d",
     "scripts/initialize-api.sh": "4e46f0ef6f47a04d43eafb27fd111943e319a8cff2108291d2af6fc2a2461142",
-    "artifacts/api-server/backend/app/core/schema.py": "8b8bcd8984d3d9e690d8c314534395caeb4695193ef449a8edc622f40974ea07",
+    "artifacts/api-server/backend/app/core/schema.py": "9df17a7ea371841747e1d1c6b2060768750591874fba8128af806d4d4169d2c2",
     "artifacts/api-server/backend/app/db/models.py": "fba11f6e0ade29d87cf440c340a9862a743751dfcc4768fab0ef3c4cef2a2b2c",
     "artifacts/api-server/backend/app/bootstrap.py": "0b70826aff0832e265804081f64686497b2fcf9a7c8a81198536ed2ee2a79131",
-    "artifacts/api-server/backend/app/api/v1/system.py": "2ee0bd7f6ac9ca8d88a7ee717c6e5f8c672cdc641d237eff8f4a43aa35b7ba00",
-    "development-contract.json": "d3afd37eaa7ff28c4f09c58c563d3ea38f71b172f73864aa6969b6b404278920",
+    "artifacts/api-server/backend/app/api/v1/system.py": "dfbced35538970f2bddaaaf75854c79153817d2b9742630e53578ff7113e9439",
+    "development-contract.json": "de4419b4e4f3e6876a83a819d5039cd17e6adf88ff35122f61432c12b10f3241",
     "scripts/review-schema-release.py": "4f1354ebf28e343d24442f7b5014fc488842da56947d7c4f5bbfc6968c97a00a",
     "scripts/development-sync.py": "40ee41496018061445875e6cb740e8d779d2c6100c6b2fa2c567f82d1f7fd58b",
     "scripts/frontend-runtime.mjs": "89e1998bea39facc318e3e13e1381fe32fbdf80b4ed376c17f8d31d6785dacab",
@@ -40,7 +40,7 @@
     "scripts/development-identity.mjs": "1ff5683721d2f73505db27b8a19e9df4d893902e5dce5b1ef7388ef527913657",
     "pyproject.toml": "5e030b9c521d64516b63a2a90021f794576bb6254aa23864facb3e5faa3236d5",
     "uv.lock": "4549b31b4b1a49bca6000cbac25f4d670d540e336dd7989e6fd3809a0870aa29",
-    "artifacts/api-server/backend/app/initialize_database.py": "ad0ac566b7e9dd02b2a122d300b794fab33d6bf5ac4766b2f406b0c98ff06769",
+    "artifacts/api-server/backend/app/initialize_database.py": "7fc60a86e189cfe2f65dece45856f2f6353c4c212500347446b2e190adb95325",
     "scripts/initialize-production.py": "ec073c9d2ff3e7aeca520ee24770741c28dabd2c6c01cc4154cfe04b2f6e414d"
   },
   "guard_sources": {
@@ -53,7 +53,7 @@
     "app/services/organization_retirement.py": "d4a45ffdd20d754da002943b0b877e08c275b41ed9418034a4e132345789732c",
     "app/services/role_attribution.py": "ba3fc9fe0d0c51389e73fce573b74492ce9f2c47d649deab7bd9aab3ec9268e2",
     "app/services/staff_designation_mapping.py": "453a8e3e5a233e4bd1fd1f5e434f4534842ce144a8ce9a43209904f4b01bac56",
-    "app/services/account_crypto.py": "666348e0dd182acc42e892079aa40f23e4f32ec6ec7c57c8ebef2b1789a9b4a3",
+    "app/services/account_crypto.py": "5c3582e17a918c668fae622679227893fd237ce531c0571321296b4b90047f09",
     "app/services/account_migration.py": "fedc3b2a121e207be409bac87e05aa184e45aca61a5325ad87ebb11b25848904"
   },
   "revisions": {
@@ -102,6 +102,7 @@
     "0038_purchase_orders": "768d4d86d2efc07fc78351091ec9ae5063a9cc7088bd0c787f93d5fc36b04c43",
     "0039_communication": "a01d29f3acf8555543e9b0ab4322f55e498cebc0947799ac2965a5a03a6d41ae",
     "0040_po_tax_basis": "80691394dc1f39c7e8e09b12587d35e5ff7eb8aca5542a896f21b3439540019a",
-    "0041_location_geography": "fc231db1c58f90d9727ee93af259ca320cb07e17a1cebed3b58b42b2c8da7e37"
+    "0041_location_geography": "fc231db1c58f90d9727ee93af259ca320cb07e17a1cebed3b58b42b2c8da7e37",
+    "0042_rate_hundredths": "e8eceb75617e7b0620beaaf7930424cd253b8a8a612aed50f35e16a57f94cab0"
   }
 }

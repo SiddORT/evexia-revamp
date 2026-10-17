@@ -15,9 +15,12 @@ jobs:
     env:
       UV_PROJECT_ENVIRONMENT: .pythonlibs
       PYTHONPATH: ${{ github.workspace }}/artifacts/api-server/backend:${{ github.workspace }}/.pythonlibs/lib/python3.13/site-packages
-      UV_CACHE_DIR: ${{ runner.temp }}/uv-cache
-      EVEXIA_RELEASE_PROFILE: ${{ runner.temp }}/release-profile.jsonl
     steps:
+      - name: Initialize runner-temporary release paths
+        run: |
+          set -euo pipefail
+          printf 'UV_CACHE_DIR=%s/uv-cache\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          printf 'EVEXIA_RELEASE_PROFILE=%s/release-profile.jsonl\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:

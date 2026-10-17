@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 from unittest.mock import patch
 
@@ -116,6 +117,12 @@ class CacheContracts(unittest.TestCase):
     def test_ci_caches_only_downloads_with_exact_invalidation(self):
         workflow = (ROOT / ".github/workflows/release-validation.yml").read_text()
         section = workflow.split("- uses: actions/cache@v4", 1)[1].split("- name:", 1)[0]
+        paths = section.split("          path: |\n", 1)[1].split("          key:", 1)[0]
+        self.assertEqual(textwrap.dedent(paths).splitlines(), [
+            "${{ steps.pnpm-cache.outputs.store }}",
+            "${{ runner.temp }}/uv-cache",
+            "~/.cache/ms-playwright",
+        ])
         self.assertNotIn("restore-keys:", section)
         self.assertNotIn("evexia-release-cache", section)
         for source in ("uv.lock", "pnpm-lock.yaml", "backend/alembic/**",
@@ -123,6 +130,54 @@ class CacheContracts(unittest.TestCase):
                        "test-fixture-cache.py"):
             self.assertIn(source, section)
         self.assertIn("playwright install --with-deps chromium firefox webkit", workflow)
+
+    def test_ci_initializes_runner_paths_before_consumers_and_preserves_failed_timing(self):
+        workflow = (ROOT / ".github/workflows/release-validation.yml").read_text()
+        job_environment, steps = workflow.split("    steps:\n", 1)
+        self.assertNotIn("runner.", job_environment)
+        self.assertNotIn("UV_CACHE_DIR:", job_environment)
+        self.assertNotIn("EVEXIA_RELEASE_PROFILE:", job_environment)
+        initialization, consumers = steps.split("      - uses: actions/checkout@v4", 1)
+        script = textwrap.dedent(initialization.split("        run: |\n", 1)[1])
+        self.assertIn("actions/cache@v4", consumers)
+        self.assertIn('--output "$EVEXIA_RELEASE_PROFILE"', consumers)
+        timing_upload = consumers.split(
+            "      - name: Preserve timing evidence, including failed runs\n", 1)[1]
+        self.assertIn("        if: always()\n", timing_upload)
+        self.assertIn("        uses: actions/upload-artifact@v4\n", timing_upload)
+        self.assertIn("          name: release-profile\n", timing_upload)
+        self.assertIn("          path: ${{ runner.temp }}/release-profile.jsonl\n", timing_upload)
+        self.assertIn("          if-no-files-found: warn\n", timing_upload)
+        self.assertIn("--output '$RUNNER_TEMP/release-validation.json'", consumers)
+        self.assertIn("          path: ${{ runner.temp }}/release-validation.json\n", consumers)
+
+        # Execute the actual initialization with a path that needs shell quoting.
+        # Emulate GitHub's next-step environment, never use configured secrets.
+        with tempfile.TemporaryDirectory(prefix="runner temp ' ") as directory:
+            root = Path(directory)
+            environment_file = root / "github env"
+            environment = {"PATH": os.environ["PATH"], "RUNNER_TEMP": str(root),
+                           "GITHUB_ENV": str(environment_file)}
+            result = subprocess.run(["bash", "-e"], input=script, text=True,
+                                    env=environment, capture_output=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            exported = dict(line.split("=", 1)
+                            for line in environment_file.read_text().splitlines())
+            self.assertEqual(exported, {
+                "UV_CACHE_DIR": str(root / "uv-cache"),
+                "EVEXIA_RELEASE_PROFILE": str(root / "release-profile.jsonl"),
+            })
+            environment.update(exported)
+            result = subprocess.run([
+                "bash", "-e", "-c",
+                'exec "$1" "$2" --output "$EVEXIA_RELEASE_PROFILE" '
+                '--label synthetic-failure -- "$1" -c "import sys; sys.exit(7)"',
+                "profile-test", sys.executable, str(ROOT / "scripts/profile-release-command.py"),
+            ], env=environment, capture_output=True, timeout=10)
+            self.assertEqual(result.returncode, 7, result.stderr)
+            row = json.loads((root / "release-profile.jsonl").read_text())
+            self.assertEqual(row["returncode"], 7)
+            self.assertFalse((root / "release-validation.json").exists())
 
     def test_timing_retains_failure_and_argument_boundaries(self):
         with tempfile.TemporaryDirectory() as directory:

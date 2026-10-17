@@ -54,7 +54,7 @@ def databases():
 
 
 def test_review_covers_every_revision_and_policy():
-    assert len(fresh.reviewed_graph()) == 46
+    assert len(fresh.reviewed_graph()) == 47
 
 
 def simple_initialize(source, settings=None, **overrides):
@@ -96,6 +96,23 @@ def test_simple_install_runs_real_history_atomically_without_receipts(databases)
         assert read(user.id, "email", user.email_ciphertext, user.email_index) == SUPER_ADMIN_EMAIL
     with pytest.raises(fresh.FreshInstallBlocked, match="not pristine"):
         simple_initialize(source)
+
+
+@pytest.mark.parametrize("mutation", [
+    "ALTER TABLE allergen_products DROP CONSTRAINT ck_allergen_gst",
+    "ALTER TABLE product_categories ALTER COLUMN unit_price TYPE numeric(18,2)",
+    "ALTER TABLE allergen_products DROP CONSTRAINT ck_allergen_price; "
+    "ALTER TABLE allergen_products ADD CONSTRAINT ck_allergen_price CHECK (selling_price >= 0)",
+    "ALTER TABLE product_categories ADD COLUMN unrelated int",
+])
+def test_rate_catalog_rejects_missing_checks_changed_precision_and_extra_ddl(databases, mutation):
+    source, _, _ = databases
+    simple_initialize(source)
+    with source.begin() as db:
+        fresh.catalog(db, fresh.FINAL_TARGET)
+        db.execute(text(mutation))
+        with pytest.raises(fresh.FreshInstallBlocked, match="Unexpected installation catalog"):
+            fresh.catalog(db, fresh.FINAL_TARGET)
 
 
 @pytest.mark.parametrize("object_sql", [
@@ -203,9 +220,11 @@ def test_simple_cli_commit_failure_never_claims_success_or_certain_rollback(caps
     captured = capsys.readouterr()
     assert "INITIALIZATION_READY" not in captured.out
     assert "do not assume rollback" in captured.err
-    # Bounded diagnostics intentionally expose the safe primary cause, but
-    # quoted input must stay redacted even when commit acknowledgement is lost.
-    assert "RuntimeError" in captured.err
+    # An uncertain commit withholds even the primary exception: its details
+    # cannot establish whether the transaction committed or rolled back.
+    assert "commit/output acknowledgement not confirmed; details withheld" in captured.err
+    assert "RuntimeError" not in captured.err
+    assert "synthetic lost acknowledgement" not in captured.err
     assert "synthetic-private-detail" not in captured.err
     engine.dispose.assert_called_once()
 
@@ -465,7 +484,7 @@ def test_preparation_stops_and_original_production_retirement_guard_survives(dat
 @pytest.mark.parametrize("stage", [
     "0034_shared_phone_countries", "0035_account_identifiers", "0036_reference_privacy",
     "0037_domain_admission", "0038_purchase_orders", "0039_communication", "0040_po_tax_basis",
-    "0041_location_geography",
+    "0041_location_geography", "0042_rate_hundredths",
 ])
 def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap(databases, tmp_path, monkeypatch, stage):
     from app.services import organization_retirement as recovery
@@ -637,10 +656,11 @@ def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap
             command.upgrade(config, stage)
             fresh.catalog(db, stage)
             has_po = stage in ("0038_purchase_orders", "0039_communication",
-                               "0040_po_tax_basis", fresh.FINAL_TARGET)
+                               "0040_po_tax_basis", "0041_location_geography", fresh.FINAL_TARGET)
             assert ("purchase_orders" in inspect(db).get_table_names()) == has_po
             assert bool(db.scalar(text("SELECT to_regclass('purchase_order_number_seq')"))) == has_po
-    if stage in ("0038_purchase_orders", "0039_communication", "0040_po_tax_basis", fresh.FINAL_TARGET):
+    if stage in ("0038_purchase_orders", "0039_communication", "0040_po_tax_basis",
+                 "0041_location_geography", fresh.FINAL_TARGET):
         # Consume only the disposable rehearsal's sequence. Never reset it to
         # disguise use; leave that independent test database blocked.
         with rehearsal.begin() as db:

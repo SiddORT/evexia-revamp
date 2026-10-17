@@ -41,21 +41,24 @@ Rate-bearing master samples are read-only until an explicit guarded write.
 `0042_rate_hundredths` follows `0041_location_geography` and is **forward-only**.
 Runtime identity readiness and offline directory rotation explicitly recognize
 this successor because it changes no account/directory encryption contract.
-The generated automatic migration/fresh-install target remains pinned to `0041`;
-recognition is not permission to apply `0042` or any other pending migration.
-The migration policy classifies `0042` as `operator_only`.
+The code-only catalog review covers `0042_rate_hundredths`, following
+separate authorization to align the release review. Its full fresh-install
+catalogue was measured on a disposable, socket-only PostgreSQL 17 instance after
+replaying the real migration history. The predecessor catalogue reviews remain
+unchanged; the new snapshot does not ignore altered types or constraints.
 
-**Installation/release metadata is deliberately not re-approved here.** The
-existing review generator requires the pinned target to equal the source head,
-and a tested fresh-install catalogue for that target. Adding this pending
-migration means the predecessor fresh-install review no longer covers the source
-graph. Offline metadata refresh therefore stops with
-`APPLICATION_REQUIREMENT_NOT_SOURCE_HEAD`; it does not justify moving the pin,
-inventing catalogue evidence or weakening that guard. Fresh installation and
-release approval remain blocked until a separately authorized rollout task
-provides the `0042` fresh catalogue/review and coordinated release metadata.
-No managed database migration, data rewrite, backup, deployment or activation
-was performed for this task. Do not run a general migrate-to-head wrapper:
+Newer merged features may advance the application target independently. This
+review does not authorize those successors: `0043_email_templates`, introduced
+concurrently, still requires its own tested fresh-install catalog and review.
+Keep that guard blocked rather than discarding the newer application target
+or treating the `0042` snapshot as evidence for `0043`.
+
+**Metadata consistency is not production authorization.** The migration policy
+still classifies `0042` as `operator_only`; existing databases at `0041` remain
+blocked by the automatic deployment runner. The original migration, downgrade
+guard, recovery requirements and writer-stop approval requirements are unchanged.
+No live database migration, data rewrite, backup, deployment or activation was
+performed. Do not run a general migrate-to-head wrapper:
 earlier pending operations require their own independent approvals.
 
 Before separately approving activation:
@@ -107,12 +110,12 @@ FROM allergen_products;
    system normalization; unchanged `updated_by` remains the last human updater,
    not a claim that person performed the migration.
 7. Start the coordinated API/frontend release only after schema acceptance.
-   For fresh-install/release authorization, obtain separately authorized
-   disposable fresh-catalogue evidence for `0042`, review the target change in
-   `development-contract.json`, and regenerate metadata with
-   `python3 -B scripts/review-schema-release.py --refresh`. Do not do this merely
-   to clear a blocked report, and do not interpret regenerated hashes as a
-   validation signature or migration permission.
+   The separately authorized `0042` code-only catalog/target review is recorded
+   in the release metadata. Run the required exact-commit validation before any
+   separately approved activation. For later targets, obtain new disposable
+   catalogue evidence and explicit review before regenerating metadata with
+   `python3 -B scripts/review-schema-release.py --refresh`. Do not interpret
+   regenerated hashes as a validation signature or migration permission.
    Discard old import reviews (digest namespaces changed), refresh master forms
    and catalogue choices, and re-review pending PO saves. Version increments
    reject predecessor drafts; exact new DB constraints reject old six-place

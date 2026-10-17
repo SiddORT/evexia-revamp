@@ -38,6 +38,17 @@ not every later repository head, even when the successor adds unrelated tables.
 the successor explicitly, and require separate operator approval for activation
 instead of silently updating an earlier runner's target or review hashes.
 
+Explicit permission for code-only schema-review alignment allows a coordinated
+review-target update only with catalog evidence from disposable PostgreSQL.
+It does not authorize deployment, live data rewrites or protected migrations.
+
+**Why:** The user separately approved code-only alignment after a pending
+successor prevented the existing checksum review from running.
+
+**How to apply:** Preserve the prior catalogs and migration classifications,
+measure the real successor catalog rather than guessing from ORM metadata,
+and retain independent live-activation and recovery approvals.
+
 Routine validated automatic migrations and independently evidenced pristine
 fresh installations should not require recurring human release approval.
 Existing/populated protected changes still require their operator approval.
