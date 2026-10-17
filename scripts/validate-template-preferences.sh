@@ -18,6 +18,9 @@ echo "Release timing evidence: $EVEXIA_RELEASE_PROFILE"
 
 # Preserve every service/backend/migration/security/browser command and its
 # order. A failed command still stops the entire gate immediately.
+run python -B scripts/review-development-schema.py
+run python -B -m unittest discover -s scripts/tests -p 'test_development_sync*.py'
+run node --test artifacts/evexia-portal/src/services/emailTemplates.feature.test.js artifacts/evexia-portal/src/services/emailTemplates.state.test.js
 run pnpm run test:development-gate
 run pnpm --filter @workspace/evexia-portal run test:admin-session
 run pnpm --filter @workspace/evexia-portal run test:date-preferences

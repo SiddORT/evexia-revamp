@@ -11,6 +11,13 @@ failed report. Production uses the empty-only initialization and automatic
 patch-validation workflow in `docs/installation.md`; destructive existing-data
 operations remain separately protected.
 
+Run `pnpm check:development-schema` for the source-only consistency check; review and
+explicitly regenerate development pins with
+`python -B scripts/review-development-schema.py --refresh` when authoring a
+schema feature. Never reclassify protected history to clear a sync block. See
+`docs/development-schema-activation.md` for the single pending 0040→0044
+activation/recovery handoff; process repair is not live email recovery.
+
 # EVEXIA Portal
 
 EVEXIA Life Sciences portal with protected Admin and MR workspaces, a separate fictional IMMUNO Doctor demo, browser-local demonstration masters, and a FastAPI authentication/API service. Admin/MR authentication, Staff Management, Roles, Zone, Courier Partner, Storage Location, Designation, Headquarter, Product Category, Allergen, MR, Doctor, Patient, Vendor and Sales Target Masters use the backend; unrelated masters remain browser-local.

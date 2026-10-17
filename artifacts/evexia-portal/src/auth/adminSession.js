@@ -600,7 +600,10 @@ export async function emailTemplateRequest(path = '', body, { signal } = {}) {
       ? 'Template changed, or its name/event is already in use. Load latest and review; your draft is kept.'
       : response.status === 422 ? 'Template rejected. Check variables, required recovery link/expiry, safe HTML and field lengths.'
       : response.status === 403 ? 'Email templates are restricted to Super Admin.'
-      : response.status === 404 ? 'Template no longer exists. Load latest; your draft is kept.'
+      : response.status === 404 ? (
+        /^\/[0-9a-f-]{36}(?:\/(?:edit|delete))?$/i.test(path) && data?.error?.code === 'email_template_not_found'
+          ? 'Template no longer exists. Load latest; your draft is kept.'
+          : 'Email template API is unavailable for this operation. Ask the operator to verify the running release and schema; your draft is kept.')
       : response.status >= 500 ? 'Email template storage is unavailable. Ask the operator to check migration readiness; load latest before retrying.'
       : uncertain().message, response.status);
     error.code = response.status === 409 ? 'conflict' : data?.error?.code;

@@ -55,7 +55,11 @@ jobs:
           python scripts/profile-release-command.py --output "$EVEXIA_RELEASE_PROFILE" --label install-python -- uv sync --frozen
           python scripts/profile-release-command.py --output "$EVEXIA_RELEASE_PROFILE" --label install-node -- pnpm install --frozen-lockfile
           python scripts/profile-release-command.py --output "$EVEXIA_RELEASE_PROFILE" --label install-engines -- pnpm exec playwright install --with-deps chromium firefox webkit
-      - name: Verify coordinated schema and reviewed fresh-install target
+      - name: Verify development schema coordination without database access
+        # Integration tests run later in validate-template-preferences.sh,
+        # inside the existing postgresql_17 Nix environment.
+        run: python -B scripts/review-development-schema.py
+      - name: Verify separately reviewed production fresh-install target
         run: python -B scripts/review-schema-release.py
       - name: Run all gates and record exact-commit CI result only on complete success
         run: |

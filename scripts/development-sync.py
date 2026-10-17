@@ -24,6 +24,7 @@ def additive(path):
     """Conservative allowlist; arbitrary Python/SQL cannot be auto-authorized."""
     tree = ast.parse(path.read_text())
     upgrade = None
+    functions = set()
     for node in tree.body:
         if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
             continue
@@ -38,6 +39,9 @@ def additive(path):
                 raise Blocked("EXECUTABLE_MODULE_STATE")
             ast.literal_eval(node.value)
         elif isinstance(node, ast.FunctionDef) and node.name in ("upgrade", "downgrade"):
+            if node.name in functions:
+                raise Blocked("DUPLICATE_MIGRATION_FUNCTION")
+            functions.add(node.name)
             if (node.decorator_list or node.returns or node.args.args or node.args.defaults or
                     node.args.posonlyargs or node.args.kwonlyargs or node.args.kw_defaults or
                     node.args.vararg or node.args.kwarg):
@@ -95,26 +99,45 @@ def target_matches(settings, connection, binding):
         raise Blocked("WRONG_DEVELOPMENT_DATABASE")
 
 
-def synchronize():
+def source_review(root):
+    spec = importlib.util.spec_from_file_location(
+        "development_schema_review", root / "scripts/review-development-schema.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    try:
+        return module.review(root)
+    except module.ReviewBlocked as exc:
+        raise Blocked(str(exc)) from None
+
+
+def synchronize(*, root=ROOT, settings=None, engine=None, readiness_check=None):
+    """Only tests inject a disposable engine/settings; the CLI has no overrides."""
     from sqlalchemy import create_engine
     from alembic import command
     from alembic.config import Config
-    from app.core.config import get_settings
-    from app.core.schema import SCHEMA_REVISION
-    from app.fresh_install import reviewed_graph
-    # This also rejects stale source pins/catalog/graph before any DB connection.
-    reviewed_graph()
-    spec = importlib.util.spec_from_file_location("development_policy", ROOT / "scripts/deploy-migrations.py")
-    runner = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = runner
-    spec.loader.exec_module(runner)
-    settings = get_settings()
+    # Independent development integrity, not production installation approval.
+    # No compatibility diagnostics or shared database probe occurs in this check.
+    runner, graph, policy, target, paths = source_review(root)
+    backend = root / "artifacts/api-server/backend"
+    if settings is None:
+        from app.core.config import get_settings
+        settings = get_settings()
     if settings.app_env != "development":
         raise Blocked("DEVELOPMENT_ONLY")
-    binding = json.loads((ROOT / "scripts/development-database.json").read_text())
-    graph = runner.load_graph(BACKEND / "alembic/versions")
-    policy = runner.load_policy(ROOT / "scripts/migration-policy.json")
-    engine = create_engine(settings.database_url.replace("postgresql://", "postgresql+psycopg://", 1), hide_parameters=True)
+    binding = json.loads((root / "scripts/development-database.json").read_text())
+    owned_engine = engine is None
+    if owned_engine:
+        engine = create_engine(settings.database_url.replace("postgresql://", "postgresql+psycopg://", 1), hide_parameters=True)
+    try:
+        return synchronize_connection(engine, settings, binding, root, backend, runner,
+                                      graph, policy, target, paths, command, Config, readiness_check)
+    finally:
+        if owned_engine:
+            engine.dispose()
+
+
+def synchronize_connection(engine, settings, binding, root, backend, runner,
+                           graph, policy, target, paths, command, Config, readiness_check):
     with engine.begin() as connection:
         connection.exec_driver_sql("SET LOCAL lock_timeout='10s'")
         connection.exec_driver_sql("SET LOCAL statement_timeout='60s'")
@@ -124,12 +147,17 @@ def synchronize():
         if not connection.exec_driver_sql("SELECT to_regclass('public.alembic_version')").scalar_one():
             raise Blocked("FRESH_DATABASE_REQUIRES_SUPPORTED_FRESH_INSTALL")
         current = list(connection.exec_driver_sql("SELECT version_num FROM public.alembic_version").scalars())
-        planned = runner.plan(graph, policy, current, SCHEMA_REVISION)
+        try:
+            planned = runner.plan(graph, policy, current, target)
+        except runner.PolicyError as exc:
+            raise Blocked(str(exc)) from None
         if planned["operator_only"]:
+            planned["action"] = (
+                "No migrations executed. Obtain exact-path operator approval and verified recovery; "
+                "follow docs/development-schema-activation.md. Do not stamp, reclassify or upgrade head."
+            )
             print(json.dumps(planned))
             return 42
-        paths = {runner.literal_assignments(p, {"revision"})["revision"]: p
-                 for p in (BACKEND / "alembic/versions").glob("*.py")}
         pinned = {}
         for revision in planned["pending"]:
             additive(paths[revision])
@@ -144,19 +172,24 @@ def synchronize():
             for revision, digest in pinned.items():
                 if hashlib.sha256(paths[revision].read_bytes()).hexdigest() != digest:
                     raise Blocked("MIGRATION_CHANGED")
-            config = Config(str(BACKEND / "alembic.ini"))
-            config.set_main_option("script_location", str(BACKEND / "alembic"))
+            # Revalidate the complete reviewed contract after waiting for table locks.
+            source_review(root)
+            config = Config(str(backend / "alembic.ini"))
+            config.set_main_option("script_location", str(backend / "alembic"))
             config.attributes["connection"] = connection
-            command.upgrade(config, SCHEMA_REVISION)
+            command.upgrade(config, target)
             # A schema/key/runtime postcondition failure rolls back the DDL too.
-            from sqlalchemy.orm import Session
-            from app.api.v1.system import readiness
-            with Session(bind=connection, join_transaction_mode="create_savepoint") as db:
-                readiness(db)
-        if list(connection.exec_driver_sql("SELECT version_num FROM public.alembic_version").scalars()) != [SCHEMA_REVISION]:
+            if readiness_check is None:
+                from sqlalchemy.orm import Session
+                from app.api.v1.system import readiness
+                with Session(bind=connection, join_transaction_mode="create_savepoint") as db:
+                    readiness(db)
+            else:
+                readiness_check(connection)
+        if list(connection.exec_driver_sql("SELECT version_num FROM public.alembic_version").scalars()) != [target]:
             raise Blocked("POSTCONDITION_FAILED")
-        print(json.dumps({"result": "READY", "schema": SCHEMA_REVISION, "applied": planned["pending"]}))
-    engine.dispose()
+    # Emit success only after commit succeeds.
+    print(json.dumps({"result": "READY", "schema": target, "applied": planned["pending"]}))
     return 0
 
 

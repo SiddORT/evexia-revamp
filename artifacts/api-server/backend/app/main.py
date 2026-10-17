@@ -154,6 +154,13 @@ def create_app() -> FastAPI:
         }))
         return response
 
+    from app.services.email_templates import EmailTemplateNotFound
+
+    @app.exception_handler(EmailTemplateNotFound)
+    async def email_template_missing(request: Request, exc: EmailTemplateNotFound):
+        return JSONResponse(error_body(request, 404, exc.detail, "email_template_not_found"),
+                            status_code=404)
+
     @app.exception_handler(StarletteHTTPException)
     async def http_error(request: Request, exc: StarletteHTTPException):
         return JSONResponse(

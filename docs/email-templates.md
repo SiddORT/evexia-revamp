@@ -77,6 +77,13 @@ remount provide cross-browser freshness. Version conflicts never overwrite newer
 content. Failed reads and saves preserve the mounted draft. No email operation
 falls back to localStorage or hardcoded examples.
 
+An absent collection endpoint (or an unmatched detail/write route on an older
+running API) reports API/release availability, never a deleted template. Only
+the typed `email_template_not_found` response from an individual record operation
+uses missing-record guidance. Storage failures remain distinct. The last valid
+list and existing editor stay mounted on read failures; explicit reconciliation
+does not silently replay a mutation or replace typed content.
+
 Lost/invalid responses block another save until **Load latest to reconcile (keep
 draft)**. Matching saved content confirms the outcome. Otherwise the draft stays
 mounted and a version mismatch requires explicitly reopening latest. Creates use
@@ -95,8 +102,9 @@ offline logo; delivery rules never relax the browser preview boundary.
 
 The explicit additive migration is **`0043_email_templates`**, with actual
 predecessor **`0042_rate_hundredths`**, itself after `0041_location_geography`.
-The application/development declaration and policy target name 0043, and 0043 is
-classified **operator_only**. There is no startup `create_all`, auto-seed or
+The source also contains the separately protected successor
+`0044_purchase_received`; the coordinated application/development declaration
+now targets 0044. Both successors remain **operator_only**. There is no startup `create_all`, auto-seed or
 request-time repair.
 
 This work does **not** approve or execute 0043 or any predecessor on a managed,
@@ -119,6 +127,12 @@ required release authorization. Then apply only the explicitly authorized path
 and separately approve service activation. Until the table/migration and service
 activation are complete, the new email APIs/recovery content are not operational
 on that database. Do not restart services against an unmigrated database.
+
+Use the single [development schema activation handoff](development-schema-activation.md)
+for the existing activation task. It includes the complete current 0040→0044
+path, not just the email table. The independent development source review fixes
+the recurring production-review coupling; it does not execute this protected
+path or resolve the live incident.
 
 ## Focused verification only
 

@@ -64,6 +64,37 @@ release tooling; computing that metadata does not invoke API/database probes
 or authorize access. Vite's compatibility endpoint computes its response only
 on an explicit diagnostic request.
 
+### Independent development schema review
+
+Routine additive synchronization now uses `scripts/development-schema-review.json`
+instead of production `fresh_install.reviewed_graph()`. It checks the authoritative
+`development-contract.json`, generated application constant, unique graph head and
+ancestry, exhaustive classification policy, exact historical migration bytes,
+execution guards and independent target binding. Production fresh-install
+approval/catalog evidence is not updated or weakened by this contract.
+
+`pnpm check:development-schema` is source-only: no settings, database or network.
+It runs on pull requests, in release validation and before synchronization.
+After reviewing a feature's declared head, migration and classification, explicitly
+run `python -B scripts/review-development-schema.py --refresh` to generate the
+constant and record reviewed development bytes. This is review metadata, not
+permission to activate protected migrations. Do not relabel a migration to make
+the check pass. Unreviewed files/guards or contradictory feature metadata fail
+before a connection is made.
+
+Synchronization retains independent primary/host/database/cluster/OID binding,
+the shared advisory lock, bounded statement/table locks, transactional Alembic
+execution and runtime postconditions. Success is emitted only after commit;
+a readiness/DDL failure rolls back both schema and revision. No-op does not run
+compatibility diagnostics. Concurrent attempts fail closed with
+`OTHER_OPERATOR_ACTIVE`; an explicit later attempt sees a no-op after commit.
+Any protected step blocks the entire path with exit 42 and an actionable report.
+
+The current shared recovery remains a separate operation. See the single
+[development schema activation handoff](development-schema-activation.md) for the
+exact 0040→0044 path, recovery requirements and running-release completion checks.
+Process repair does not establish live email-template recovery.
+
 Normal API requests do not invoke development compatibility diagnostics or
 require their header/result. Independent startup security configuration checks
 (signing key, allowed origins, bootstrap hosts and proxy peers), host policy,

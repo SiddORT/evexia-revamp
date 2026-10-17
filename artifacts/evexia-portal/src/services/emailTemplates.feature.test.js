@@ -66,6 +66,23 @@ test('invalid responses and stale saves never become local success', async (t) =
   assert.equal(calls.length, 2);
 });
 
+test('collection/API absence is not a deleted record, even on a stale detail route', async (t) => {
+  let code = 'not_found', status = 404;
+  const calls = await signedIn(t, async () => response({ error: { code } }, status));
+  await assert.rejects(loadEmailTemplates, (e) => e.status === 404 && /API is unavailable/.test(e.message) && !/no longer exists/.test(e.message));
+  await assert.rejects(() => getEmailTemplate(id), /API is unavailable/);
+  await assert.rejects(() => saveEmailTemplate({ id: null, creationId: newId }, {
+    name: 'Draft', description: '', eventKey: null, content: { subject: 'Subject', html: '<p>Draft</p>', text: 'Draft' },
+  }), /API is unavailable/);
+  code = 'email_template_not_found';
+  await assert.rejects(() => getEmailTemplate(id), /Template no longer exists.*draft is kept/);
+  // A malformed collection response must never imply a particular record was deleted.
+  await assert.rejects(loadEmailTemplates, /API is unavailable/);
+  status = 503;
+  await assert.rejects(loadEmailTemplates, /storage is unavailable/);
+  assert.equal(calls.length, 6);
+});
+
 test('email previews stay isolated and fictional; source has no copy controls or local email fallback', () => {
   const preview = buildEmailPreview('<p><a href="{{reset_url}}">Reset</a></p><img src="https://external.example/test">', { reset_url: 'https://preview.example.invalid/fictional' });
   assert.ok(preview.includes("default-src 'none'"));

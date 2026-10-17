@@ -16,6 +16,17 @@ Keep the independently approved additive synchronization boundary separate
 from compatibility diagnostics. Keep destructive/operator-only and production
 approvals separate; successful development checks never imply production permission.
 
+Approved routine additive development synchronization must not depend on the
+freshness of unrelated production fresh-install review evidence.
+
+**Why:** Stale production approval prevented even development database inspection,
+concealing the actual protected pending path behind a generic installation failure.
+
+**How to apply:** Keep an independent exact development integrity/ancestry review.
+Preserve conservative classification, independent target binding and atomicity;
+report protected paths without executing them. Advancing the application target
+does not widen production approval or resolve an unactivated live incident.
+
 For EVEXIA, a genuinely pristine database should have a single initialization
 command, without external signed release/recovery files or a restoration
 rehearsal. Routine patches should get their validation automatically from CI,

@@ -11,6 +11,12 @@ from app.services.email_rendering import VARIABLES
 EVENTS = [dict(key=RECOVERY_EVENT, label="Password recovery", required=True, variables=list(VARIABLES))]
 
 
+class EmailTemplateNotFound(HTTPException):
+    """Distinct from an absent route on a stale running API."""
+    def __init__(self):
+        super().__init__(404, "Template no longer exists. Reload the library.")
+
+
 def reject(status, message):
     raise HTTPException(status, message)
 
@@ -41,7 +47,7 @@ def operation(db, actor, *, body=None, row_id=None, action=None):
         row = db.get(EmailTemplate, row_id, populate_existing=True,
                      with_for_update=bool(action)) if row_id else None
         if row_id and row is None:
-            reject(404, "Template no longer exists. Reload the library.")
+            raise EmailTemplateNotFound()
         if action:
             if row and row.version != body.version:
                 reject(409, "Template changed. Your draft is kept. Reopen the latest version before editing.")
