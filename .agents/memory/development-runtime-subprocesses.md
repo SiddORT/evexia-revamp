@@ -14,6 +14,19 @@ break repository-relative manifests/guards even when the source mount is valid.
 **How to apply:** Test both the emitted container workdir and package resolution
 from the actual operator working directory, not only an in-process import.
 
+Apply this rule to read-only operator inspections too, not just migration
+execution. Do not import repository-dependent installation helpers through
+`docker exec` in the running API image.
+
+**Why:** A healthy image can import API configuration successfully while an
+installation-helper import fails before any database check. Successful earlier
+configuration queries do not prove the image supports repository tooling.
+
+**How to apply:** Use a disposable tool container with the checkout mounted
+read-only and the workdir set to that mount; verify the helper's resolved source
+path before checking database state. Do not change runtime path guards to make
+the flattened image layout work.
+
 Validate child-process import availability separately from parent and standalone
 preflight success. Managed startup tests must use the artifact working directory
 and remove inherited test-harness import paths.
