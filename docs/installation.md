@@ -3,7 +3,7 @@
 ## Boundaries
 
 The schema target is `development-contract.json` (currently
-`0040_po_tax_basis`); source metadata is generated with
+`0041_location_geography`); source metadata is generated with
 `python -B scripts/review-schema-release.py --refresh` during development.
 No migrations, volumes, `.env`, Compose overrides, Nginx or HTTPS settings need
 to be deleted/recreated to use the procedure below.
@@ -77,6 +77,15 @@ installer is still available, but is not the default.
    the expected values below are the operator's explicit target selection.
 
 ## Initialize: one command
+
+The empty-only initializer includes the original `0041_location_geography`
+migration after `0040_po_tax_basis`, in the same transaction. Its four
+empty-default geography columns and country-code constraint are included in
+the exact catalog review. It is not a separate post-install operation.
+For **existing** databases, 0041 remains `operator_only`: normal deployment
+from 0040 still returns `OPERATOR_MIGRATION_REQUIRED` (exit 42), applies no
+migrations and does not promote the candidate. This fresh-install review
+does not approve that existing-database upgrade or activate the development database.
 
 Replace the identity placeholders with the verified values above; `postgres`
 is only an example hostname. The hostname option creates the initial Admin

@@ -14,7 +14,7 @@ separate machine-evidenced fresh mode. No production approval is implied.
 
 # Secure-domain release prerequisite
 
-The current coordinated candidate target is `0040_po_tax_basis`. Before starting
+The current coordinated candidate target is `0041_location_geography`. Before starting
 production services, independently verify the existing approved exact
 `PORTAL_BOOTSTRAP_HOSTS`, trusted proxy peers, DNS/TLS and the guarded API/nginx
 entrypoints described in [domain-admission.md](domain-admission.md).
@@ -27,7 +27,7 @@ assigning an Admin role. Updated source review metadata is not target approval.
 ## Communication candidate correction — operator validation still required
 
 This source correction extends only the separately approved **empty-only
-finalization** to `0040_po_tax_basis`. Preparation still stops at
+finalization** to `0041_location_geography`. Preparation still stops at
 `0031_role_hostnames`; the retirement wrapper still stops at
 `0034_shared_phone_countries`. No retirement approval authorizes populated-account
 conversion or Communication activation on an existing installation.
@@ -57,7 +57,7 @@ restored-catalog digests are accepted. The new rows were inspected read-only
 in the retained local PostgreSQL 17 Communication rehearsal, not on the VPS.
 This source/DDL inspection is not a fresh-install/restoration rehearsal.
 
-The finalizer accepts pristine, catalog-reviewed `0034`–`0040` stages, still rejects any business
+The finalizer accepts pristine, catalog-reviewed `0034`–`0041` stages, still rejects any business
 records, and requires an unused PO sequence at every stage containing Purchase Orders. At `0039` and `0040`,
 only the exact migration-owned channel rows `email=1`, `sms=1`, `waba=1` are
 allowed; Communication configurations must be empty. Finalization atomically
@@ -108,6 +108,7 @@ review, not a runtime override.
 | 0038_purchase_orders | Operator-only empty PO tables/sequence; included only in this new candidate's separately approved empty-only finalization scope, never in retirement authorization. |
 | 0039_communication | Operator-only encrypted configuration storage plus three fixed channel/version rows. Reviewed empty-only finalization includes it; existing databases need separate operator approval. No provider calls or delivery activation. |
 | 0040_po_tax_basis | Two nullable JSON Purchase Order columns; no backfill. Remains operator-only for existing production databases. Empty-only finalization extends the exact 0039 catalog by these two columns. |
+| 0041_location_geography | Four empty-default Storage Location columns and a country-code check; no inference/backfill. Included in empty-only initialization/finalization and exact catalog review. Still operator-only for existing databases; this review grants no existing-data upgrade approval. |
 
 Preparation proves a dedicated `public` database has **no application objects**,
 including an empty `alembic_version`, tables/views/sequences/functions/types or
@@ -221,10 +222,10 @@ Supported sequence:
 | Empty reference conversion | 0036_reference_privacy | 31 | absent |
 | Empty domain conversion | 0037_domain_admission | 32 | absent |
 | Empty PO stage | 0038_purchase_orders | 36 | present |
-| Empty finalization + bootstrap | 0040_po_tax_basis | 38 | present |
+| Empty finalization + bootstrap | 0041_location_geography | 38 | present |
 
 `scripts/fresh-install-catalog.json` contains frozen PostgreSQL **17** projections
-for every supported 0034–0040 finalization start. These are not derived from the
+for every supported 0034–0041 finalization start. These are not derived from the
 current ORM. They bind relations, columns/defaults, constraints, indexes,
 triggers/functions, types, namespace objects and sequence definitions.
 Finalization locks all expected tables, rechecks the exact catalog, proves
@@ -248,7 +249,7 @@ the PostgreSQL advisory lock coordinates database migration invocations.
 5. After real independent full restoration, full-data/catalog review and
    protected-path rehearsal, attest the exact recovery digest and separately
    approve organization retirement and phone continuation **only to 0034**.
-6. Approve empty-only account/reference/domain/PO/Communication/tax-basis finalization through 0040 and
+6. Approve empty-only account/reference/domain/PO/Communication/tax-basis/geography finalization through 0041 and
    protected bootstrap, plus the optional *unverified* hostname mapping.
 7. Separately approve release-matched service promotion, readiness/authentication
    checks and traffic/writer handover. Domain ownership/admission remains separate.
@@ -612,7 +613,7 @@ Human-approved separate operation, while the production supervisor remains open:
      --approve-release "$APPROVED_RELEASE_REVIEW_SHA" \
      --expected-database "$APPROVED_REHEARSAL_DB_NAME" \
      --expected-system-identifier "$APPROVED_REHEARSAL_CLUSTER_ID"
-   # Expected: FRESH_INSTALL_READY: 0040_po_tax_basis.
+   # Expected: FRESH_INSTALL_READY: 0041_location_geography.
    ```
    Retain the rehearsal result and approve/retain a separate production
    restoration/continuation attestation naming that exact recovery SHA.
@@ -652,11 +653,11 @@ sh /operator-release/scripts/initialize-api.sh \
   --expected-database "$APPROVED_DB_NAME" \
   --expected-system-identifier "$APPROVED_CLUSTER_ID" \
   --admin-hostname newuat.allergyevexia.in
-# Expected: FRESH_INSTALL_READY ... 0040_po_tax_basis
+# Expected: FRESH_INSTALL_READY ... 0041_location_geography
 /workspace/.venv/bin/python -B -m alembic current
 /workspace/.venv/bin/python -B /operator-release/scripts/deploy-migrations.py \
   --backend-dir /operator-release/artifacts/api-server/backend
-# Expected: exact single 0040_po_tax_basis revision, policy READY, no migrations applied.
+# Expected: exact single 0041_location_geography revision, policy READY, no migrations applied.
 ```
 
 Finalization refuses other revisions, unexpected tables/views and **any existing
@@ -667,7 +668,7 @@ The reserved login is `crm-admin@allergyevexia.in`, using the already-configured
 initial password. No password is printed.
 
 From a second host terminal, with the supervisor still holding FD9, verify the
-existing backend is the independently reviewed matching **0040** image before restarting it.
+existing backend is the independently reviewed matching **0041** image before restarting it.
 Do not infer that from an image tag, container name, or a successful `/health`.
 On that second host terminal (not inside the tooling shell), restore the
 non-secret approved release/image variables from the retained operator record:
@@ -716,7 +717,7 @@ docker compose --project-name "$PROJECT" --project-directory "$ACTIVE" \
 test "$(docker inspect --format '{{.Image}}' evexia-backend)" = "$APPROVED_BACKEND_IMAGE_ID"
 test "$(docker inspect --format '{{.Image}}' evexia-frontend)" = "$APPROVED_FRONTEND_IMAGE_ID"
 docker exec evexia-backend /workspace/.venv/bin/python -B -c \
-  'from app.core.schema import SCHEMA_REVISION; assert SCHEMA_REVISION == "0040_po_tax_basis"'
+  'from app.core.schema import SCHEMA_REVISION; assert SCHEMA_REVISION == "0041_location_geography"'
 docker exec evexia-backend /workspace/.venv/bin/python -B -c \
   'import urllib.request; urllib.request.urlopen("http://127.0.0.1:8080/api/v1/health/readiness", timeout=5).read()'
 docker exec evexia-frontend wget -q -O /dev/null http://127.0.0.1/
@@ -774,8 +775,8 @@ storage, PostgreSQL or key changes are part of initialization.
   explicitly reviewed recovery/continuation procedure; no automatic downgrade,
   retry, stamp or old-release restart.
 - Finalization errors before commit: account/hostname/audit writes roll back
-  together with any 0035–0040 DDL in the same outer transaction. A rejected
-  0034/0035/0036/0037/0038/0039/0040 catalog, populated table, changed channel version
+  together with any 0035–0041 DDL in the same outer transaction. A rejected
+  0034/0035/0036/0037/0038/0039/0040/0041 catalog, populated table, changed channel version
   or used PO sequence is not
   permission to repair it by deleting records or changing the sequence.
   Verify actual state after ambiguous commit. A successful but

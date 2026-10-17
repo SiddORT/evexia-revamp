@@ -429,6 +429,7 @@ def test_preparation_stops_and_original_production_retirement_guard_survives(dat
 @pytest.mark.parametrize("stage", [
     "0034_shared_phone_countries", "0035_account_identifiers", "0036_reference_privacy",
     "0037_domain_admission", "0038_purchase_orders", "0039_communication", "0040_po_tax_basis",
+    "0041_location_geography",
 ])
 def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap(databases, tmp_path, monkeypatch, stage):
     from app.services import organization_retirement as recovery

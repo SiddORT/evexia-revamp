@@ -1,28 +1,28 @@
 {
   "status": "reviewed_candidate_requires_release_policy",
-  "review_scope": "Pinned PostgreSQL 17 fresh path through 0040_po_tax_basis. Empty-only atomic initialization requires live target identity, pristine catalog, valid encryption configuration and exact final catalog/readiness checks; it does not require external recovery receipts. Routine deployment requires complete exact-commit CI validation and additive migration classification. Existing protected migrations retain operator approval and recovery. Legacy signed staged initialization remains available. This manifest alone is not evidence of passing validation or authorization to modify an existing database.",
-  "authorization_policy_sha256": "a13d7ae1ce4f0d819d14c8697ab7dd7c62601233d20cb1fb44d05e7ae12910ed",
-  "target": "0040_po_tax_basis",
+  "review_scope": "Pinned PostgreSQL 17 fresh path through 0041_location_geography. Empty-only atomic initialization requires live target identity, pristine catalog, valid encryption configuration and exact final catalog/readiness checks; it does not require external recovery receipts. Routine deployment requires complete exact-commit CI validation and additive migration classification. Existing protected migrations retain operator approval and recovery. Legacy signed staged initialization remains available. This manifest alone is not evidence of passing validation or authorization to modify an existing database.",
+  "authorization_policy_sha256": "df807a629a510e4bfbea92306bbeee7ce501acb783823ba720a71e794497ff72",
+  "target": "0041_location_geography",
   "prepare_target": "0031_role_hostnames",
-  "policy_sha256": "4bc6baa21a88b855e0be8d6240611b602228e18e417d1f32ea5d560aac145a70",
+  "policy_sha256": "d7c61565115c72ae02dda7f40fe3c4460aafcbc4199be8fdc4f84f485b182efa",
   "release_sources": {
-    "artifacts/api-server/backend/app/fresh_install.py": "58ddabe5d8e5384ef5431cda67dd6163934c5c4a1dc61a9f84d34864bd0a2093",
+    "artifacts/api-server/backend/app/fresh_install.py": "3b2d341742e7e7da266a5dc34d2dcb614fa6a3dc031d055ef9e5f50ede8dea3a",
     "artifacts/api-server/backend/app/services/release_authorization.py": "67212a1caa6ff2a475b339d199f9f1dabf8f7fc194e11d92d83abba78c8a1554",
     "scripts/validate-release-artifact.py": "b8a155a3dd669a782f68d8cba5dcb2a7a462f272b13a8dcd4ccf00b98660d5ae",
-    "scripts/release-authorization-policy.json": "a13d7ae1ce4f0d819d14c8697ab7dd7c62601233d20cb1fb44d05e7ae12910ed",
-    ".github/workflows/deploy.yml": "56332420892ddaa3071756dcedb368102dd17d2a776c413429ddc08771e950de",
+    "scripts/release-authorization-policy.json": "df807a629a510e4bfbea92306bbeee7ce501acb783823ba720a71e794497ff72",
+    ".github/workflows/deploy.yml": "38e5ddd8c41f4cf52996259726fdaa9b8c2cd7b2e42f7d720fb3c4663833cd68",
     ".github/workflows/release-validation.yml": "6e7c9091fcc6257df0e04ff5dfb8870f61cf1e843fffdf7be5004bb23d58341c",
     "artifacts/api-server/backend/app/services/fresh_catalog.py": "25c32d43095de45f5f927d0587de6df93f2a9b8b3b61ea795e99295cad1e3747",
     "artifacts/api-server/backend/app/services/fresh_recovery.py": "af8e518d8427f3bbc5d18607f8a11bc39a9761b6330b52a762d63c3d6b690681",
-    "scripts/fresh-install-catalog.json": "e6c4c9d3c5ada0e0f1bbd2a4a688f1bbbfb5138b1062adbeec818624561a3ec4",
-    "scripts/operator-retirement.sh": "c9828a8b0f661495a575b0a46ebc6eba003b78f206577644f351cba931dc4147",
+    "scripts/fresh-install-catalog.json": "0c491018c6cc3b0b6ea8818ecb833ac878e3d776cdc5cc7351c47cded2171bc3",
+    "scripts/operator-retirement.sh": "07c315caab994b0315b78272763d91b71b18744c83b5ac3c46880961a5bbb505",
     "scripts/deploy-migrations.py": "d8e3b72c708eb636b3b8c460bfe16c0a3dc0ef4c3041ce854123e24a30e9b34d",
     "scripts/initialize-api.sh": "4e46f0ef6f47a04d43eafb27fd111943e319a8cff2108291d2af6fc2a2461142",
-    "artifacts/api-server/backend/app/core/schema.py": "cd97982d682f78864a21c31662a01421b368c3d43c565e113bad37a57a2a65dd",
+    "artifacts/api-server/backend/app/core/schema.py": "8b8bcd8984d3d9e690d8c314534395caeb4695193ef449a8edc622f40974ea07",
     "artifacts/api-server/backend/app/db/models.py": "fba11f6e0ade29d87cf440c340a9862a743751dfcc4768fab0ef3c4cef2a2b2c",
     "artifacts/api-server/backend/app/bootstrap.py": "0b70826aff0832e265804081f64686497b2fcf9a7c8a81198536ed2ee2a79131",
-    "artifacts/api-server/backend/app/api/v1/system.py": "cbca16a91a7af97c1f577dffc6dbaa11e363ca4872b3443692c3424bff6d4d13",
-    "development-contract.json": "c0d70d8a79d86f5d660373dddf9b2fb4113a47782ece1c1efe0f643501d0b726",
+    "artifacts/api-server/backend/app/api/v1/system.py": "2ee0bd7f6ac9ca8d88a7ee717c6e5f8c672cdc641d237eff8f4a43aa35b7ba00",
+    "development-contract.json": "d3afd37eaa7ff28c4f09c58c563d3ea38f71b172f73864aa6969b6b404278920",
     "scripts/review-schema-release.py": "4f1354ebf28e343d24442f7b5014fc488842da56947d7c4f5bbfc6968c97a00a",
     "scripts/development-sync.py": "40ee41496018061445875e6cb740e8d779d2c6100c6b2fa2c567f82d1f7fd58b",
     "scripts/frontend-runtime.mjs": "89e1998bea39facc318e3e13e1381fe32fbdf80b4ed376c17f8d31d6785dacab",
@@ -40,7 +40,7 @@
     "pyproject.toml": "5e030b9c521d64516b63a2a90021f794576bb6254aa23864facb3e5faa3236d5",
     "uv.lock": "4549b31b4b1a49bca6000cbac25f4d670d540e336dd7989e6fd3809a0870aa29",
     "artifacts/api-server/backend/app/initialize_database.py": "1faa1a674ad94ab3df549ccc48bbc514bb0c1f3efc601d7c7b57b258cb2ffae0",
-    "scripts/initialize-production.py": "e59f9fe243ee070b5f5ad1f7cebbd75995fe555fe0f2a441a4745ed8ce0b60b5"
+    "scripts/initialize-production.py": "7c8830c42f6f5571848068dc191dc99afa7c9fe16362ad87ac4c0bf6d6906f48"
   },
   "guard_sources": {
     "app/core/config.py": "147d94942cdecc234ba91f07f642c126d99faca2c797db52eaaab080718042af",
@@ -100,6 +100,7 @@
     "0037_domain_admission": "78557e3c9c4030ebb11277578e0348d4e39d31c0c5cebf4078518da1cbd66958",
     "0038_purchase_orders": "768d4d86d2efc07fc78351091ec9ae5063a9cc7088bd0c787f93d5fc36b04c43",
     "0039_communication": "a01d29f3acf8555543e9b0ab4322f55e498cebc0947799ac2965a5a03a6d41ae",
-    "0040_po_tax_basis": "80691394dc1f39c7e8e09b12587d35e5ff7eb8aca5542a896f21b3439540019a"
+    "0040_po_tax_basis": "80691394dc1f39c7e8e09b12587d35e5ff7eb8aca5542a896f21b3439540019a",
+    "0041_location_geography": "fc231db1c58f90d9727ee93af259ca320cb07e17a1cebed3b58b42b2c8da7e37"
   }
 }
