@@ -7,6 +7,22 @@ Treat successful pg_restore and matching rows as insufficient evidence that a
 restored catalog passes the operator retirement preflight. Even same-major
 restoration can change cast/expression representation without changing semantics.
 
+For a populated-development full-archive rehearsal, compare the restored schema
+against a separate disposable reference created from the complete source
+schema-only SQL using the same PostgreSQL major. Compare canonical dumps without
+discarding SQL definitions; independently compare all restored row contents.
+This is not migration replay or a replacement for the actual operator preflight.
+
+**Why:** Both PostgreSQL 16-to-17 and 16-to-16 archive restoration reserialized
+array casts and flattened CHECK conjunctions, making raw dump byte equality an
+invalid fidelity test. A native schema-only reference preserves every supplied
+definition without inventing textual normalization or modifying either catalog.
+
+**How to apply:** Require error-on-first-failure for both independent restores,
+same-major tools, exact canonical schema comparison, full data comparison and the
+actual unchanged migration/readiness rehearsal. Never use this comparison to
+replace frozen production/fresh-install catalog evidence.
+
 Do not replace a frozen fresh-install catalog digest with a fingerprint from a
 retained restored development rehearsal just to admit a new additive migration.
 Development PostgreSQL can also differ from the fresh-install supported major.

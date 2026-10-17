@@ -1,5 +1,80 @@
 # Development schema recovery: single activation handoff
 
+## Original-development activation completed — 2026-10-17
+
+The separately approved recovery task executed only the documented
+`0040_po_tax_basis` → `0044_purchase_received` path on the independently confirmed
+original workspace and `helium` / `heliumdb` primary, cluster
+`7689828272860483604`, database OID `16384`. This is not production approval.
+
+`scripts/activate-development-0044.py` is an explicit operator command, not a
+startup hook. It requires exact-path approval, stopped-writer confirmation and
+separate key-recovery attestation. It rejects other workspaces, changed source,
+other revisions, partial successor objects and mismatched database identities.
+It holds advisory lock `145002` and table writer-exclusion locks through backup,
+rehearsal, validation and the live transaction. It never upgrades to `head`,
+stamps revisions, changes classification, or supplies retirement bypass flags.
+
+The successful run retained a complete archive plus separate restoration and
+activation reports in private App Storage under
+`operator-recovery/development-0044/evexia-development-0044-sxlkoxdx/`.
+Authenticated archive readback matched SHA-256
+`e5f96ecafaca8c0748a7579a2ed9c126c376a8f2a9f421d35028565dc2cd20bc`;
+anonymous access was rejected. All **38 predecessor tables / 2,019 rows** matched
+after actual restoration to a distinct disposable PostgreSQL cluster. The
+corrected independent PR keyring passed application validation, and the operator
+separately confirmed its private recovery copy; keys are not stored in these reports.
+
+Use recovery tools matching the source PostgreSQL major (the original server is
+16.10). Even same-major dump/restore reparses CHECK expressions. The runner
+independently loads the complete source schema-only SQL into a second disposable
+reference database and compares its PostgreSQL-canonical dump against the full
+archive restoration. It excludes only dump comments, random restriction tokens
+and blank lines, not SQL definitions. Full original row-content comparison is
+separate. Neither source nor restored constraints are edited to force acceptance,
+and this does not refresh any production/fresh-install catalog evidence.
+
+The restored predecessor passed the exact four unchanged migrations, readiness,
+catalogue normalization/version checks, protected recovery seed and rejection of
+delete/reassignment/truncate attempts. Those mutation probes ran only on the
+disposable restoration. The live transaction then passed unchanged-data checks
+for all predecessor tables (with only the explicitly approved catalogue changes
+and empty geography additions), the protected seed, empty receipt tables and
+readiness. The exact committed revision was re-read after commit.
+
+The existing managed API and portal workflows were stopped through their owners,
+which also removed the stale listeners, and restarted once after activation.
+API startup reported `READY`, schema `0044_purchase_received`, applied `[]`.
+`pnpm verify:development` passed actual running frontend/backend identity,
+database readiness and served assets through the original routed preview.
+The public Admin login page rendered without browser errors. Focused operator
+and development-sync checks passed (8 + 6 + 29 tests).
+
+**Protected-screen verification is still pending:** the bootstrap credential was
+rejected by the normal login endpoint with HTTP 401 on one controlled attempt.
+No account/password/permissions were reset, no session was fabricated, no template
+was edited and no email was sent. This does not establish an account defect.
+Complete the protected-library/drawer verification using a legitimate current
+Super Admin credential before closing the user-visible incident.
+
+For this historical activation the invocation used the already installed 16.10
+toolchain:
+
+```sh
+PATH=/nix/store/bgwr5i8jf8jpg75rr53rz3fqv5k8yrwp-postgresql-16.10/bin:$PATH \
+PYTHONPATH=artifacts/api-server/backend \
+python -B scripts/activate-development-0044.py \
+  --approve-0040-to-0044 --attest-key-recovery --writers-stopped
+```
+
+**Do not rerun it now:** the original database is no longer the required 0040
+predecessor. The Nix store path is environment-specific, not a portable installation
+instruction. Precommit failures roll back; any uncertain commit must be reconciled
+read-only before another action. No automatic replay, downgrade or restoration is
+performed. A committed-data restoration still needs separately coordinated approval.
+The earlier generic blockers and source-only test descriptions below are historical
+handoff context, not claims that this activation was automatic.
+
 ## Status and ownership
 
 This is the handoff for the **existing separately authorized activation task

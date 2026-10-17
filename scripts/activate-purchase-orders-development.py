@@ -65,8 +65,10 @@ def inventory(connection):
 
 class PrivateRecovery:
     """Use existing Replit sidecar credentials; never print or persist credentials."""
-    def __init__(self):
+    def __init__(self, scope="purchase-orders"):
         import httpx
+        require(scope in ("purchase-orders", "development-0044"), "Unknown recovery scope")
+        self.scope = scope
         self.client = httpx.Client(verify=ssl.create_default_context(), timeout=90)
         directory = os.environ.get("PRIVATE_OBJECT_DIR", "").strip("/")
         require("/" in directory, "Existing private App Storage is required")
@@ -89,7 +91,7 @@ class PrivateRecovery:
         self.headers = {"Authorization": "Bearer " + token.json()["access_token"]}
 
     def retain(self, path, run_id):
-        name = f"{self.prefix}/operator-recovery/purchase-orders/{run_id}/{path.name}"
+        name = f"{self.prefix}/operator-recovery/{self.scope}/{run_id}/{path.name}"
         url = f"https://storage.googleapis.com/storage/v1/b/{quote(self.bucket, safe='')}/o/{quote(name, safe='')}"
         upload = self.client.post(
             f"https://storage.googleapis.com/upload/storage/v1/b/{quote(self.bucket, safe='')}/o",
