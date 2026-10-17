@@ -542,7 +542,7 @@ def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap
     (tmp_path / ".operator-maintenance").touch()
     wrapper = release / "scripts/operator-retirement.sh"
     wrapper.write_text(wrapper.read_text().replace(
-        "/var/www/newuat.allergyevexia.in/.deploy.lock", str(lock)))
+        "/var/www/admin-uat.allergyevexia.in/.deploy.lock", str(lock)))
     review_path = release / "scripts/fresh-install-review.json"
     review = json.loads(review_path.read_text())
     review["release_sources"]["scripts/operator-retirement.sh"] = hashlib.sha256(wrapper.read_bytes()).hexdigest()
@@ -768,10 +768,10 @@ def test_machine_fresh_path_rehearses_then_runs_original_retirement_and_bootstra
     (tmp_path / ".operator-maintenance").touch()
     wrapper = release / "scripts/operator-retirement.sh"
     wrapper.write_text(wrapper.read_text().replace(
-        "/var/www/newuat.allergyevexia.in/.deploy.lock", str(lock)))
+        "/var/www/admin-uat.allergyevexia.in/.deploy.lock", str(lock)))
     copied_fresh = release / "artifacts/api-server/backend/app/fresh_install.py"
     copied_fresh.write_text(copied_fresh.read_text().replace(
-        "/var/www/newuat.allergyevexia.in/.deploy.lock", str(lock)))
+        "/var/www/admin-uat.allergyevexia.in/.deploy.lock", str(lock)))
     review_file = release / "scripts/fresh-install-review.json"
     review = json.loads(review_file.read_text())
     review["release_sources"]["scripts/operator-retirement.sh"] = auth.sha(wrapper)

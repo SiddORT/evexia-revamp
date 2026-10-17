@@ -53,7 +53,7 @@ fi
   { echo "Regular restricted recovery file required." >&2; exit 1; }
 : "${EVEXIA_DEPLOY_LOCK:?Set the same absolute lock path used by normal VPS deployment}"
 # This is CI's fixed production lock, NOT a caller-configurable alternative.
-DEPLOY_LOCK=/var/www/newuat.allergyevexia.in/.deploy.lock
+DEPLOY_LOCK=/var/www/admin-uat.allergyevexia.in/.deploy.lock
 [[ "$EVEXIA_DEPLOY_LOCK" == "$DEPLOY_LOCK" ]] ||
   { echo "Only CI's exact deployment lock path is accepted." >&2; exit 1; }
 : "${EVEXIA_DEPLOY_LOCK_FD:?An operator supervisor must hold the host lock through reopening traffic}"

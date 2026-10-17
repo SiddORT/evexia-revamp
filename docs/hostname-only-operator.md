@@ -35,7 +35,7 @@ Use `scripts/operator-hostnames.py`, not `operator-retirement.sh`. It requires:
   source identity and a plan digest. The custodian must independently verify the
   target; a digest of the wrong database does not make that database correct.
 - Separately approved maintenance/writer exclusion, the canonical existing
-  `/var/www/newuat.allergyevexia.in/.operator-maintenance` marker, and an inherited
+  `/var/www/admin-uat.allergyevexia.in/.operator-maintenance` marker, and an inherited
   supervisor-held **exclusive** flock of the canonical `.deploy.lock` inode.
   The existing shared database advisory lock is held throughout inspection/DDL.
 - Explicit hostname-only approval bound to the exact plan and reviewed recovery
@@ -117,12 +117,12 @@ export APP_ENV=production
 # environment. Never echo them or source an unreviewed dotenv file as shell code.
 test "$(git -C "$PINNED_RELEASE" rev-parse HEAD)" = "$RELEASE_SHA"
 cd "$PINNED_RELEASE"
-export EVEXIA_DEPLOY_LOCK=/var/www/newuat.allergyevexia.in/.deploy.lock
+export EVEXIA_DEPLOY_LOCK=/var/www/admin-uat.allergyevexia.in/.deploy.lock
 export EVEXIA_DEPLOY_LOCK_FD=9
 exec 9>"$EVEXIA_DEPLOY_LOCK"
 flock -x 9
-test ! -L /var/www/newuat.allergyevexia.in/.operator-maintenance
-touch /var/www/newuat.allergyevexia.in/.operator-maintenance
+test ! -L /var/www/admin-uat.allergyevexia.in/.operator-maintenance
+touch /var/www/admin-uat.allergyevexia.in/.operator-maintenance
 # NO EXIT trap removes the marker. Keep this supervisor/FD alive throughout.
 ```
 

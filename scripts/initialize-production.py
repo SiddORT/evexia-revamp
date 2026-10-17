@@ -10,7 +10,7 @@ import stat
 import subprocess
 import sys
 
-ACTIVE = Path("/var/www/newuat.allergyevexia.in")
+ACTIVE = Path("/var/www/admin-uat.allergyevexia.in")
 
 
 def run(arguments):

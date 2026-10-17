@@ -220,7 +220,7 @@ install -d -m 0700 /restricted/operator/retirement
 python3 -B scripts/operator-recovery.py \
   --image "$PINNED_BACKEND_IMAGE" \
   --network "$NETWORK" \
-  --env-file /var/www/newuat.allergyevexia.in/.env \
+  --env-file /var/www/admin-uat.allergyevexia.in/.env \
   --recovery-dir /restricted/operator/retirement \
   --backup-name recovery.json
 
@@ -340,7 +340,7 @@ The automatic runner never supplies retirement approval/recovery arguments.
 
 `.github/workflows/deploy.yml` serializes push deployments without cancelling
 an in-flight deployment. Its VPS phase takes
-`/var/www/newuat.allergyevexia.in/.deploy.lock`, fetches the exact event commit,
+`/var/www/admin-uat.allergyevexia.in/.deploy.lock`, fetches the exact event commit,
 and extracts it into a private sibling release directory. It does not reset
 the active checkout. The candidate backend is built and inspected through a
 one-off container on the existing backend network, with the existing restricted
@@ -445,7 +445,7 @@ explicitly reviewed continuation; do not automatically restart the old backend.
 The host lock must cover the **whole maintenance window**, including final
 readiness and reopening traffic. A supervising operator shell should hold it
 and pass its descriptor using `EVEXIA_DEPLOY_LOCK_FD=9`. The script accepts only
-CI's exact `/var/www/newuat.allergyevexia.in/.deploy.lock` path, rejects symlink
+CI's exact `/var/www/admin-uat.allergyevexia.in/.deploy.lock` path, rejects symlink
 aliases, and requires a regular lock file and an inherited descriptor for its
 current inode. Linux `/proc/self/fdinfo` must show an already-held exclusive
 `flock` on that descriptor; an unlocked or shared-lock descriptor is rejected.
@@ -461,16 +461,16 @@ It is a temporary maintenance interlock, not permission to bypass policy:
 
 ```sh
 # Outline only: execute within the separately approved maintenance procedure.
-export EVEXIA_DEPLOY_LOCK=/var/www/newuat.allergyevexia.in/.deploy.lock
+export EVEXIA_DEPLOY_LOCK=/var/www/admin-uat.allergyevexia.in/.deploy.lock
 exec 9>"$EVEXIA_DEPLOY_LOCK"
 flock -x 9
 export EVEXIA_DEPLOY_LOCK_FD=9
 umask 077
-touch /var/www/newuat.allergyevexia.in/.operator-maintenance
+touch /var/www/admin-uat.allergyevexia.in/.operator-maintenance
 # Stop/verify writers; complete evidence; invoke the operator script above.
 # Start the matching release; verify readiness and approved user flows.
 # ONLY after successful verification and reopening traffic:
-rm /var/www/newuat.allergyevexia.in/.operator-maintenance
+rm /var/www/admin-uat.allergyevexia.in/.operator-maintenance
 flock -u 9
 ```
 

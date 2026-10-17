@@ -21,7 +21,7 @@ from app.services.staff_crypto import StaffCrypto
 
 ROOT = Path(__file__).resolve().parents[4]
 BACKEND = ROOT / "artifacts/api-server/backend"
-LOCK_PATH = Path("/var/www/newuat.allergyevexia.in/.deploy.lock")
+LOCK_PATH = Path("/var/www/admin-uat.allergyevexia.in/.deploy.lock")
 PREPARE_TARGET = "0031_role_hostnames"
 FINAL_TARGET = SCHEMA_REVISION
 LOCK_ID = 145002  # Same database interlock as normal CI/operator continuation.

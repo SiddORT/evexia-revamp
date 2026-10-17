@@ -25,7 +25,7 @@ installer is still available, but is not the default.
 ## One-time prerequisites
 
 1. Use the intended, tested checkout at
-   `/var/www/newuat.allergyevexia.in`. Review the diff and deploy the updated
+   `/var/www/admin-uat.allergyevexia.in`. Review the diff and deploy the updated
    tooling there through your authorized source-update process.
    Run as the **same Unix deployment account used by the existing GitHub SSH
    workflow**, so restricted lock/maintenance files remain accessible to CI.
@@ -51,7 +51,7 @@ installer is still available, but is not the default.
    read-only, prints no password or connection URI, and does not initialize it:
 
    ```sh
-   cd /var/www/newuat.allergyevexia.in
+   cd /var/www/admin-uat.allergyevexia.in
    docker exec -i evexia-backend /workspace/.venv/bin/python - <<'PY'
    import json
    from sqlalchemy import create_engine, text
@@ -83,7 +83,7 @@ is only an example hostname. The hostname option creates the initial Admin
 portal mapping without enabling public registration.
 
 ```sh
-cd /var/www/newuat.allergyevexia.in
+cd /var/www/admin-uat.allergyevexia.in
 python3 scripts/initialize-production.py \
   --expected-database newevexia_db \
   --expected-system-identifier VERIFIED_CLUSTER_INTEGER \

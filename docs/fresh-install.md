@@ -306,7 +306,7 @@ Nginx/HTTPS, storage or unrelated services:
 
 ```bash
 set -euo pipefail
-ACTIVE=/var/www/newuat.allergyevexia.in
+ACTIVE=/var/www/admin-uat.allergyevexia.in
 umask 077
 : "${REVIEWED_SHA:?Set the reviewed committed release SHA}"
 : "${APPROVED_RELEASE_REVIEW_SHA:?Manifest SHA256 from explicit human release approval}"
@@ -691,7 +691,7 @@ service/network settings and affected-service list, use this scoped host branch:
 
 ```bash
 set -euo pipefail
-ACTIVE=/var/www/newuat.allergyevexia.in
+ACTIVE=/var/www/admin-uat.allergyevexia.in
 : "${RELEASE:?Approved extracted source release}"
 : "${APPROVED_BACKEND_IMAGE_ID:?Reviewed local immutable backend image ID}"
 : "${APPROVED_FRONTEND_IMAGE_ID:?Reviewed local immutable frontend image ID}"
@@ -746,7 +746,7 @@ readiness/authentication verification, approved traffic reopening and writer
 handover, remove the host marker from that second terminal:
 
 ```sh
-rm -- /var/www/newuat.allergyevexia.in/.operator-maintenance
+rm -- /var/www/admin-uat.allergyevexia.in/.operator-maintenance
 ```
 
 Then exit the supervisor to release FD9. The next normal CI run sees the current

@@ -352,7 +352,7 @@ elif tool == 'docker':
             env.update(PATH=str(tools) + os.pathsep + env["PATH"],
                        DEPLOY_SHA="a" * 40, FAKE_LOG=str(log), FAKE_SOURCE=str(source),
                        PLAN_EXIT=str(plan_exit), EXECUTE_EXIT=str(execute_exit))
-            script = script.replace("ACTIVE=/var/www/newuat.allergyevexia.in",
+            script = script.replace("ACTIVE=/var/www/admin-uat.allergyevexia.in",
                                     "ACTIVE=" + str(active))
             completed = subprocess.run(["bash"], input=script, text=True, env=env,
                                        capture_output=True, timeout=15)
@@ -486,7 +486,7 @@ class OperatorSafetyTests(unittest.TestCase):
             # Relocate ONLY the fixed constant in a disposable script copy.
             # Production code has no path-override/testing environment escape.
             source = source.replace(
-                "DEPLOY_LOCK=/var/www/newuat.allergyevexia.in/.deploy.lock",
+                "DEPLOY_LOCK=/var/www/admin-uat.allergyevexia.in/.deploy.lock",
                 "DEPLOY_LOCK=" + str(lock))
             script = scripts / "operator-retirement.sh"
             script.write_text(source)
@@ -558,7 +558,7 @@ class OperatorSafetyTests(unittest.TestCase):
     def test_fixed_operator_path_matches_unchanged_ci_path(self):
         operator = (ROOT / "operator-retirement.sh").read_text()
         ci = (ROOT.parent / ".github/workflows/deploy.yml").read_text()
-        path = "/var/www/newuat.allergyevexia.in"
+        path = "/var/www/admin-uat.allergyevexia.in"
         self.assertIn("DEPLOY_LOCK=" + path + "/.deploy.lock", operator)
         self.assertIn("ACTIVE=" + path, ci)
         self.assertNotIn('flock -n "$EVEXIA_DEPLOY_LOCK_FD"', operator)

@@ -48,7 +48,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           source: .release-upload/release-validation.json
-          target: /var/www/newuat.allergyevexia.in/.release-evidence
+          target: /var/www/admin-uat.allergyevexia.in/.release-evidence
           strip_components: 1
 
       - name: Stage, check policy, then promote exact release
@@ -68,7 +68,7 @@ jobs:
             set +e
             bash -se <<'DEPLOY'
             set -euo pipefail
-            ACTIVE=/var/www/newuat.allergyevexia.in
+            ACTIVE=/var/www/admin-uat.allergyevexia.in
             [[ "$DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
             # Operator rollout must take this same host lock. Never invoke the
             # old VPS deploy.sh: it still performs an unconditional upgrade.

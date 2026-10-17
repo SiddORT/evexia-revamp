@@ -18,7 +18,7 @@ from hostname_recovery import ScopeError, canonical_digest, verified_recovery
 
 ROOT = Path(__file__).resolve().parents[1]
 BACKEND = ROOT / "artifacts/api-server/backend"
-ACTIVE = Path("/var/www/newuat.allergyevexia.in")
+ACTIVE = Path("/var/www/admin-uat.allergyevexia.in")
 LOCK = ACTIVE / ".deploy.lock"
 MARKER = ACTIVE / ".operator-maintenance"
 PREDECESSOR = "0030_directory_crypto_retirement"

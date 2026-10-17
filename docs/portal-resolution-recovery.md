@@ -46,7 +46,7 @@ use their existing secure session on the VPS. Do not paste SSH keys, passwords,
 environment files, raw logs, `docker inspect` output or `nginx -T` into chat.
 Do not invoke the historical VPS `deploy.sh` or upgrade/stamp any database.
 
-1. In `/var/www/newuat.allergyevexia.in`, record the active checkout commit:
+1. In `/var/www/admin-uat.allergyevexia.in`, record the active checkout commit:
    `git rev-parse HEAD`. Record whether it has tracked changes with
    `git diff --quiet; echo $?`. Compare the running image to this release,
    not merely the checkout's source.

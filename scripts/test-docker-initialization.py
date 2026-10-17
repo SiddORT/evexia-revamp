@@ -18,7 +18,7 @@ import tempfile
 import time
 
 SOURCE = Path(__file__).resolve().parents[1]
-ACTIVE = Path("/var/www/newuat.allergyevexia.in")
+ACTIVE = Path("/var/www/admin-uat.allergyevexia.in")
 PYTHON = "/workspace/.venv/bin/python"
 # Reserved documentation domain with a public TLD accepted by the unchanged
 # production hostname validator. This is stored only; no DNS/HTTP is performed.
