@@ -2,9 +2,6 @@ name: Validate exact release artifact
 
 on:
   workflow_call:
-    secrets:
-      RELEASE_VALIDATION_PRIVATE_KEY:
-        required: true
 
 permissions:
   contents: read
@@ -36,19 +33,12 @@ jobs:
           pnpm exec playwright install --with-deps chromium firefox webkit
       - name: Verify coordinated schema and reviewed fresh-install target
         run: python -B scripts/review-schema-release.py
-      - name: Run all gates and issue signed evidence only on complete success
-        env:
-          VALIDATION_SIGNING_KEY: ${{ secrets.RELEASE_VALIDATION_PRIVATE_KEY }}
+      - name: Run all gates and record exact-commit CI result only on complete success
         run: |
           set -euo pipefail
-          test -n "$VALIDATION_SIGNING_KEY"
           umask 077
-          KEY="$RUNNER_TEMP/release-validation-key.pem"
-          trap 'rm -f "$KEY"' EXIT
-          printf '%s\n' "$VALIDATION_SIGNING_KEY" > "$KEY"
-          unset VALIDATION_SIGNING_KEY
           nix-shell -p postgresql_17 --run \
-            "python -B scripts/validate-release-artifact.py --signing-key '$KEY' --output '$RUNNER_TEMP/release-validation.json'"
+            "python -B scripts/validate-release-artifact.py --ci-report --output '$RUNNER_TEMP/release-validation.json'"
       - uses: actions/upload-artifact@v4
         with:
           name: release-validation

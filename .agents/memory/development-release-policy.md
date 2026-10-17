@@ -15,3 +15,16 @@ pointed out that synchronized Git does not prove running containers are current.
 Keep the independently approved additive synchronization boundary separate
 from compatibility diagnostics. Keep destructive/operator-only and production
 approvals separate; successful development checks never imply production permission.
+
+For EVEXIA, a genuinely pristine database should have a single initialization
+command, without external signed release/recovery files or a restoration
+rehearsal. Routine patches should get their validation automatically from CI,
+without separate signing-key provisioning. Keep recovery/approval requirements
+for destructive existing-data work.
+
+**Why:** The user explicitly approved simplifying installation after being
+blocked for days by safeguards intended for populated legacy databases.
+
+**How to apply:** Never reintroduce legacy retirement paperwork into the
+empty-only path. Preserve real target/emptiness checks, atomic bootstrap,
+authentication/encryption, exact-commit CI integrity and runtime verification.

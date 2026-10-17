@@ -15,8 +15,6 @@ concurrency:
 jobs:
   validate_release:
     uses: ./.github/workflows/release-validation.yml
-    secrets:
-      RELEASE_VALIDATION_PRIVATE_KEY: ${{ secrets.RELEASE_VALIDATION_PRIVATE_KEY }}
 
   deploy:
     needs: validate_release
@@ -40,7 +38,7 @@ jobs:
           name: release-validation
           path: .release-upload
 
-      - name: Transfer signed evidence, not application services
+      - name: Transfer successful CI result, not application services
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -80,9 +78,7 @@ jobs:
             test -r "$ACTIVE/.env"
             test -f "$ACTIVE/docker-compose.yml"
             EVIDENCE="$ACTIVE/.release-evidence/release-validation.json"
-            TRUST=/restricted/operator/release/trust.json
             test -f "$EVIDENCE" && test ! -L "$EVIDENCE"
-            test -f "$TRUST" && test ! -L "$TRUST"
             chmod 600 "$EVIDENCE"
             PROJECT=$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.project" }}' evexia-backend)
             [[ "$PROJECT" =~ ^[a-zA-Z0-9_-]+$ ]] || exit 1
@@ -113,12 +109,11 @@ jobs:
                 -v "$RELEASE/scripts:/release-scripts:ro" \
                 -v "$RELEASE:/release:ro" \
                 -v "$EVIDENCE:/release-evidence.json:ro" \
-                -v "$TRUST:/release-trust.json:ro" \
                 --entrypoint /workspace/.venv/bin/python "$BACKEND_IMAGE" \
                 /release-scripts/deploy-migrations.py \
                 --backend-dir /app --policy /release-scripts/migration-policy.json \
-                --release-root /release --validated-release /release-evidence.json \
-                --trust-config /release-trust.json --expected-commit "$DEPLOY_SHA" "$@"
+                --release-root /release --ci-report /release-evidence.json \
+                --expected-commit "$DEPLOY_SHA" "$@"
             }
             if run_policy; then
               :

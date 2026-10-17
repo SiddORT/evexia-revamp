@@ -39,7 +39,7 @@ test('General dates persist across mounted masters, procurement, native controls
     const location = await createLocation({ name: `Date Depot ${suffix}`, address: 'Synthetic Depot', status: 'active' });
     const category = await createProductCategory({ name: `Date Category ${suffix}`, description: '', unit_price: '0.000000', status: 'active' });
     const product = await createAllergen({ name: `Date Product ${suffix}`, category_id: category.id, storage_location_id: location.id, selling_price: '123.456789', gst: '18.123456', concentration: 'Synthetic', threshold_limit: null, status: 'active', mix: false });
-    const input = { poDate: '2026-01-01', expectedDate: '2026-01-05', vendorId: vendor.id, locationId: location.id, lines: [{ productId: product.id, quantity: '2' }] };
+    const input = { poDate: '2026-01-01', expectedDate: '2026-01-05', vendorId: vendor.id, locationId: location.id, placeOfSupplyCode: '27', lines: [{ productId: product.id, quantity: '2' }] };
     const reviewed = await po.previewPurchaseOrder(input);
     const order = await po.createPurchaseOrder(input, reviewed.reviewToken, crypto.randomUUID());
     return { zone, order };
@@ -61,8 +61,9 @@ test('General dates persist across mounted masters, procurement, native controls
   await expect(page.locator('.po-card').filter({ hasText: seeded.order.number })).toContainText('01/05/2026');
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(`${base()}/admin/inventory/purchase-orders/${seeded.order.id}`);
-  await expect(page.locator('.po-detail-grid')).toContainText('01/01/2026');
-  await expect(page.locator('.po-detail-grid')).toContainText(stamp(seeded.order.createdAt, true));
+  const orderDetails = page.locator('.po-detail-grid').filter({ has: page.getByText('PO date', { exact: true }) });
+  await expect(orderDetails).toContainText('01/01/2026');
+  await expect(orderDetails).toContainText(stamp(seeded.order.createdAt, true));
   await page.getByTestId('button-edit-po').click();
   await expect(page.getByTestId('input-po-date')).toHaveValue('2026-01-01');
   await expect(page.getByTestId('input-po-expected-date')).toHaveValue('2026-01-05');

@@ -108,7 +108,7 @@ def policy(root):
     expected = {
         "version": 1,
         "automatic_migrations": "classified_automatic_only",
-        "fresh_install": "validated_release_and_independent_recovery_and_pristine_origin",
+        "fresh_install": "verified_pristine_atomic_initialization",
         "existing_database": "operator_approval_for_protected_revisions_and_bootstrap",
         "prepare_target": "0031_role_hostnames",
         "retirement_cap": "0034_shared_phone_countries",
@@ -127,9 +127,25 @@ def policy(root):
 def release(root, receipt, trust_file):
     config = trust(trust_file, root)
     proof = signed(receipt, config["release_public_key"], root)
+    validate_payload(root, proof, "evexia-release-validation-v1")
+    return config
+
+
+def ci_report(root, receipt, expected_commit):
+    """Authenticated CI/SSH transport replaces separate key provisioning.
+
+    This report is NOT a signed recovery/retirement/fresh-origin authority.
+    Only the ordinary automatic deployment entrypoint consumes it.
+    """
+    proof = read_private(receipt, root)
+    validate_payload(root, proof, "evexia-ci-validation-v1")
+    if proof["commit"] != expected_commit:
+        raise AuthorizationBlocked("Validated CI commit mismatch.")
+
+
+def validate_payload(root, proof, purpose):
     rules = policy(root)
-    if (proof.get("purpose") != "evexia-release-validation-v1"
-            or proof.get("target") != rules["final_target"]
+    if (proof.get("purpose") != purpose or proof.get("target") != rules["final_target"]
             or proof.get("review_sha256") != sha(root / "scripts/fresh-install-review.json")
             or proof.get("commands") != rules["validation_commands"]
             or proof.get("results") != [0] * len(rules["validation_commands"])
@@ -157,7 +173,6 @@ def release(root, receipt, trust_file):
         for path in (root / directory).rglob("*.py"):
             if str(path.relative_to(root)) not in proof["files"]:
                 raise AuthorizationBlocked("Unvalidated executable source.")
-    return config
 
 
 def key_fingerprint(settings):

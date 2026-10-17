@@ -1,5 +1,10 @@
 # Current release-authorization policy
 
+**For a new empty database, use [the current one-command installation
+procedure](installation.md).** The staged/signed-evidence instructions below
+remain an opt-in legacy workflow, not the ordinary installation requirement.
+Existing-data retirement retains its separate protected operator procedure.
+
 The enforceable [release-authorization policy](release-authorization.md) now
 allows validated routine releases and evidenced pristine-origin fresh phases
 without a per-release human digest approval. It preserves the fixed 0031/0034/

@@ -8,6 +8,7 @@ import argparse
 import ast
 from contextlib import contextmanager
 from dataclasses import dataclass
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -220,10 +221,14 @@ def execute_plan(connection, graph, policy, backend, target, execute):
     result = plan(graph, policy, applied_revisions(connection), target)
     if result["operator_only"] or not execute or not result["pending"]:
         return result
+    validate_additive(backend, result["pending"])
     # No approval flags, injected arguments, or unconditional head upgrade.
     try:
         completed = subprocess.run(upgrade_command(backend, target), cwd=backend,
-                                   capture_output=True, check=False, timeout=600)
+                                   capture_output=True, check=False, timeout=600,
+                                   env={**os.environ, "PGOPTIONS":
+                                        os.environ.get("PGOPTIONS", "") +
+                                        " -c lock_timeout=10000 -c statement_timeout=60000"})
         if completed.returncode:
             raise PolicyError("MIGRATION_EXECUTION_FAILED", mutation_attempted=True)
         if applied_revisions(connection) != [target]:
@@ -234,6 +239,21 @@ def execute_plan(connection, graph, policy, backend, target, execute):
         raise PolicyError("MIGRATION_RESULT_UNCONFIRMED", mutation_attempted=True) from None
     result["migrations_applied"] = len(result["pending"])
     return result
+
+
+def validate_additive(backend, pending):
+    """Use the same conservative DDL allowlist as development."""
+    spec = importlib.util.spec_from_file_location(
+        "deployment_additive", Path(__file__).resolve().with_name("development-sync.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    paths = {literal_assignments(p, {"revision"})["revision"]: p
+             for p in (backend / "alembic/versions").glob("*.py")}
+    try:
+        for revision in pending:
+            module.additive(paths[revision])
+    except Exception:
+        raise PolicyError("AUTOMATIC_MIGRATION_NOT_ADDITIVE") from None
 
 
 def main(argv=None):
@@ -248,6 +268,7 @@ def main(argv=None):
     parser.add_argument("--execute", action="store_true",
                         help="Apply a completely automatic path, after production inspection.")
     parser.add_argument("--validated-release", type=Path)
+    parser.add_argument("--ci-report", type=Path)
     parser.add_argument("--trust-config", type=Path)
     parser.add_argument("--release-root", type=Path, default=ROOT)
     parser.add_argument("--expected-commit")
@@ -258,12 +279,31 @@ def main(argv=None):
         if args.execute and args.offline_current is not None:
             raise PolicyError("OFFLINE_EXECUTION_FORBIDDEN")
         if args.execute:
-            if not all((args.validated_release, args.trust_config, args.expected_commit)):
+            if args.ci_report:
+                if not args.expected_commit or args.validated_release or args.trust_config:
+                    raise PolicyError("INVALID_CI_VALIDATION_ARGUMENTS")
+                sys.path.insert(0, str(args.backend_dir.resolve()))
+                from app.services import release_authorization as authorization
+                try:
+                    authorization.ci_report(args.release_root.resolve(), args.ci_report, args.expected_commit)
+                except Exception:
+                    raise PolicyError("CI_VALIDATION_FAILED") from None
+            elif not all((args.validated_release, args.trust_config, args.expected_commit)):
                 raise PolicyError("VALIDATED_RELEASE_REQUIRED")
-            # Import a library, never initialize the application/database.
+        if args.execute and not args.ci_report:
+            # Legacy signed operator tooling remains supported separately.
             sys.path.insert(0, str(args.backend_dir.resolve()))
             from app.services import release_authorization as authorization
             authorization.release(args.release_root.resolve(), args.validated_release, args.trust_config)
+            if authorization.sha(args.policy) != authorization.sha(
+                    args.release_root / "scripts/migration-policy.json"):
+                raise PolicyError("VALIDATED_POLICY_MISMATCH")
+            config = authorization.trust(args.trust_config, args.release_root.resolve())
+            evidence = authorization.signed(args.validated_release, config["release_public_key"],
+                                            args.release_root.resolve())
+            if evidence["commit"] != args.expected_commit:
+                raise PolicyError("VALIDATED_COMMIT_MISMATCH")
+        if args.execute:
             if authorization.sha(args.policy) != authorization.sha(
                     args.release_root / "scripts/migration-policy.json"):
                 raise PolicyError("VALIDATED_POLICY_MISMATCH")
@@ -273,11 +313,6 @@ def main(argv=None):
                                      / path.relative_to(args.backend_dir))
                     if not corresponding.is_file() or authorization.sha(path) != authorization.sha(corresponding):
                         raise PolicyError("VALIDATED_BACKEND_MISMATCH")
-            config = authorization.trust(args.trust_config, args.release_root.resolve())
-            evidence = authorization.signed(args.validated_release, config["release_public_key"],
-                                            args.release_root.resolve())
-            if evidence["commit"] != args.expected_commit:
-                raise PolicyError("VALIDATED_COMMIT_MISMATCH")
         backend = args.backend_dir.resolve()
         graph = load_graph(backend / "alembic/versions")
         policy = load_policy(args.policy)

@@ -1,5 +1,15 @@
 # Release authorization: automatic safe cases, protected existing databases
 
+**Current default:** see [installation and automatic patches](installation.md).
+The empty-only initializer requires no signed validation/recovery certificates.
+Routine CI deployment now consumes its own complete exact-commit CI report,
+without a separately provisioned validation signing key or external trust file.
+The signature/trust/recovery protocol described below remains supported ONLY
+for the explicitly selected legacy staged/retirement workflow; an unsigned CI
+report can never satisfy that legacy authority.
+
+## Retained legacy signed protocol
+
 This policy replaces the broad per-release human manifest-digest gate with
 machine validation **only for the cases described below**. It does not approve
 this release, assert that the VPS is empty, or activate anything.

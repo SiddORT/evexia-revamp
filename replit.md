@@ -7,7 +7,9 @@ startup and post-merge do not run them or quarantine the app. Frontend/API/schem
 compatibility is no longer automatically verified. Authentication, permissions,
 mandatory security configuration and operation-level integrity remain enforced.
 See `docs/development-release-gate.md`. Never migrate or replace keys to clear a
-failed report. Production installation and deployment are unchanged.
+failed report. Production uses the empty-only initialization and automatic
+patch-validation workflow in `docs/installation.md`; destructive existing-data
+operations remain separately protected.
 
 # EVEXIA Portal
 

@@ -57,6 +57,136 @@ def test_review_covers_every_revision_and_policy():
     assert len(fresh.reviewed_graph()) == 45
 
 
+def simple_initialize(source, settings=None, **overrides):
+    from app.initialize_database import initialize
+    settings = settings or get_settings()
+    with source.begin() as connection:
+        name, cluster = connection.execute(text(
+            "SELECT current_database(),system_identifier FROM pg_control_system()")).one()
+        values = dict(database=name, cluster=cluster, host=source.url.query["host"], port=5432)
+        values.update(overrides)
+        initialize(connection, settings, **values)
+
+
+def test_simple_install_runs_real_history_atomically_without_receipts(databases):
+    from app.bootstrap import SUPER_ADMIN_EMAIL
+    source, _, _ = databases
+    simple_initialize(source, hostname="fresh.allergyevexia.in")
+    with source.connect() as db:
+        assert list(db.scalars(text("SELECT version_num FROM alembic_version"))) == [fresh.FINAL_TARGET]
+        fresh.catalog(db, fresh.FINAL_TARGET)
+        fresh.communication_channels(db)
+        assert db.scalar(text("SELECT count(*) FROM users")) == 1
+        assert db.scalar(text("SELECT to_regclass('organizations')")) is None
+        assert db.scalar(text("SELECT to_regclass('memberships')")) is None
+        assert db.scalar(text("SELECT hostname FROM role_hostnames")) == "fresh.allergyevexia.in"
+        assert db.scalar(text("SELECT email FROM users")) != SUPER_ADMIN_EMAIL
+        assert db.scalar(text("SELECT length(email_index) FROM users")) == 64
+    from app.db.models import User
+    from app.services.account_crypto import read
+    from sqlalchemy import select
+    with Session(source) as db:
+        user = db.scalar(select(User))
+        assert read(user.id, "email", user.email_ciphertext, user.email_index) == SUPER_ADMIN_EMAIL
+    with pytest.raises(fresh.FreshInstallBlocked, match="not pristine"):
+        simple_initialize(source)
+
+
+@pytest.mark.parametrize("object_sql", [
+    "CREATE TABLE existing_data(id int); INSERT INTO existing_data VALUES(7)",
+    "CREATE TABLE alembic_version(version_num varchar(64))",
+    "CREATE SCHEMA other_app",
+    "CREATE FUNCTION public.extra() RETURNS int LANGUAGE SQL AS 'SELECT 1'",
+    "CREATE TYPE public.extra AS ENUM ('a','b')",
+    "CREATE SEQUENCE public.extra",
+    "CREATE FUNCTION pg_catalog.unexpected() RETURNS int LANGUAGE SQL AS 'SELECT 1'",
+    "CREATE TEMP TABLE extra(id int)",
+])
+def test_simple_install_rejects_every_existing_object(databases, object_sql):
+    source, _, _ = databases
+    with source.begin() as db:
+        db.execute(text(object_sql))
+    with pytest.raises(fresh.FreshInstallBlocked):
+        simple_initialize(source)
+    with source.connect() as db:
+        assert db.scalar(text("SELECT to_regclass('users')")) is None
+
+
+@pytest.mark.parametrize("wrong", [
+    {"database": "another_database"}, {"cluster": 1}, {"host": "another_host"}, {"port": 1},
+])
+def test_simple_install_refuses_wrong_target_before_ddl(databases, wrong):
+    source, _, _ = databases
+    with pytest.raises(fresh.FreshInstallBlocked):
+        simple_initialize(source, **wrong)
+    with source.connect() as db:
+        fresh.pristine(db)
+
+
+def test_simple_install_bootstrap_failure_rolls_back_entire_schema(databases):
+    source, _, _ = databases
+    with patch("app.bootstrap.bootstrap_super_admin", side_effect=RuntimeError("injected bootstrap failure")):
+        with pytest.raises(RuntimeError, match="injected"):
+            simple_initialize(source)
+    with source.connect() as db:
+        fresh.pristine(db)
+
+
+def test_simple_install_invalid_encryption_configuration_writes_nothing(databases):
+    source, _, _ = databases
+    settings = get_settings().model_copy(
+        update={"communication_encryption_keys": SecretStr("invalid-json")})
+    with pytest.raises(Exception):
+        simple_initialize(source, settings=settings)
+    with source.connect() as db:
+        fresh.pristine(db)
+
+
+def test_simple_install_competing_operator_is_refused(databases):
+    source, _, _ = databases
+    with source.connect() as blocker:
+        blocker.execute(text("SELECT pg_advisory_lock(:key)"), {"key": fresh.LOCK_ID})
+        try:
+            with pytest.raises(fresh.FreshInstallBlocked, match="Another migration"):
+                simple_initialize(source)
+        finally:
+            blocker.execute(text("SELECT pg_advisory_unlock(:key)"), {"key": fresh.LOCK_ID})
+    with source.connect() as db:
+        fresh.pristine(db)
+
+
+def test_simple_cli_commit_failure_never_claims_success_or_certain_rollback(capsys):
+    from app import initialize_database as installer
+    from types import SimpleNamespace
+    from unittest.mock import MagicMock
+    engine = MagicMock()
+    engine.begin.return_value.__exit__.side_effect = RuntimeError("synthetic lost acknowledgement")
+    with patch.object(installer, "get_settings", return_value=SimpleNamespace(
+            database_url="postgresql+psycopg://synthetic")), \
+         patch.object(installer, "create_engine", return_value=engine), \
+         patch.object(installer, "initialize"):
+        assert installer.main(["--expected-database", "synthetic", "--expected-host", "postgres",
+                               "--expected-system-identifier", "1"]) == 1
+    captured = capsys.readouterr()
+    assert "INITIALIZATION_READY" not in captured.out
+    assert "do not assume rollback" in captured.err
+    assert "synthetic lost acknowledgement" not in captured.err
+    engine.dispose.assert_called_once()
+
+
+def test_ordinary_alembic_still_requires_retirement_approvals_on_empty_legacy_db(databases):
+    source, _, _ = databases
+    with source.begin() as db:
+        fresh.prepare(db)
+    from app.services.organization_retirement import RetirementBlocked
+    with pytest.raises(RetirementBlocked, match="approval"):
+        with source.begin() as db:
+            command.upgrade(fresh.alembic_config(db), "0031_remove_organizations")
+    with source.connect() as db:
+        assert db.scalar(text("SELECT version_num FROM alembic_version")) == fresh.PREPARE_TARGET
+        assert db.scalar(text("SELECT to_regclass('organizations')")) is not None
+
+
 def test_additive_catalog_removes_only_exact_reviewed_rows(monkeypatch):
     from app.services import fresh_catalog
     base = {"relations": [["users", "r"]], "columns": []}

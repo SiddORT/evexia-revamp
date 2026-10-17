@@ -21,11 +21,52 @@ SPEC.loader.exec_module(runner)
 R = runner.Revision
 
 
+class RealAdditivePolicyTests(unittest.TestCase):
+    def test_actual_source_allowlist_accepts_empty_and_reviewed_additive_path(self):
+        backend = ROOT.parent / "artifacts/api-server/backend"
+        runner.validate_additive(backend, [])
+        runner.validate_additive(backend, ["0040_po_tax_basis"])
+
+    def test_actual_source_allowlist_rejects_destructive_retirement(self):
+        with self.assertRaises(runner.PolicyError):
+            runner.validate_additive(
+                ROOT.parent / "artifacts/api-server/backend", ["0031_remove_organizations"])
+
+    def test_helper_import_works_from_docker_style_script_mount(self):
+        backend = ROOT.parent / "artifacts/api-server/backend"
+        with tempfile.TemporaryDirectory() as temporary:
+            scripts = Path(temporary) / "release-scripts"
+            scripts.mkdir()
+            for name in ("deploy-migrations.py", "development-sync.py"):
+                (scripts / name).write_text((ROOT / name).read_text())
+            spec = importlib.util.spec_from_file_location(
+                "mounted_deployment_policy", scripts / "deploy-migrations.py")
+            mounted = importlib.util.module_from_spec(spec)
+            sys.modules[spec.name] = mounted
+            self.addCleanup(sys.modules.pop, spec.name, None)
+            with patch.object(sys, "path", [str(backend), *sys.path]):
+                spec.loader.exec_module(mounted)
+                mounted.validate_additive(backend, ["0040_po_tax_basis"])
+
+
 class MigrationPolicyTests(unittest.TestCase):
     def setUp(self):
         self.graph = {"base": R("base"), "safe": R("safe", ("base",)),
                       "tip": R("tip", ("safe",))}
         self.policy = {key: "automatic" for key in self.graph}
+        # Synthetic graph tests do not have real revision source files.
+        checker = patch.object(runner, "validate_additive")
+        self.addCleanup(checker.stop)
+        checker.start()
+
+    def test_non_additive_automatic_revision_applies_nothing(self):
+        with patch.object(runner, "applied_revisions", return_value=["base"]), \
+                patch.object(runner, "validate_additive",
+                             side_effect=runner.PolicyError("AUTOMATIC_MIGRATION_NOT_ADDITIVE")), \
+                patch.object(runner.subprocess, "run") as execute:
+            with self.assertRaisesRegex(runner.PolicyError, "NOT_ADDITIVE"):
+                runner.execute_plan(object(), self.graph, self.policy, ROOT, "tip", True)
+        execute.assert_not_called()
 
     def test_completely_automatic_path(self):
         result = runner.plan(self.graph, self.policy, ["base"], "tip")
@@ -228,12 +269,13 @@ class ReleaseWorkflowIsolationTests(unittest.TestCase):
         validation_job = workflow.split("  validate_release:", 1)[1].split("\n  deploy:", 1)[0]
         reusable = (ROOT.parent / ".github/workflows/release-validation.yml").read_text()
         self.assertNotIn("inherit", validation_job)
-        self.assertIn("RELEASE_VALIDATION_PRIVATE_KEY: ${{ secrets.RELEASE_VALIDATION_PRIVATE_KEY }}",
-                      validation_job)
+        self.assertNotIn("secrets:", validation_job)
+        self.assertNotIn("RELEASE_VALIDATION_PRIVATE_KEY", reusable)
         self.assertNotIn("SSH_", validation_job)
         self.assertNotIn("SSH_", reusable)
         self.assertIn("needs: validate_release", workflow)
-        self.assertIn("required: true", reusable)
+        self.assertIn("--ci-report", reusable)
+        self.assertIn("validate-release-artifact.py", reusable)
 
 
 class DeploymentShellTests(unittest.TestCase):

@@ -4,6 +4,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import sys
 from pathlib import Path
 import tempfile
 import time
@@ -111,6 +112,76 @@ class ReleaseAuthorizationTests(unittest.TestCase):
 
     def test_valid_machine_release_passes(self):
         self.assertEqual(auth.release(self.root, self.e.receipt, self.e.trust_file), self.e.config)
+
+    def test_ci_result_requires_complete_checks_exact_commit_and_artifact(self):
+        receipt = self.custody / "ci.json"
+        payload = dict(self.e.payload, purpose="evexia-ci-validation-v1")
+        private_json(receipt, payload)
+        auth.ci_report(self.root, receipt, payload["commit"])
+        for changed in (dict(payload, results=[0, 1, 0]),
+                        dict(payload, files={}), dict(payload, commit="b" * 40),
+                        dict(payload, target="unreviewed")):
+            private_json(receipt, changed)
+            with self.assertRaises(Exception):
+                auth.ci_report(self.root, receipt, payload["commit"])
+        private_json(receipt, payload)
+        (self.root / "scripts/migration-policy.json").write_text('{"tampered":true}')
+        with self.assertRaises(Exception):
+            auth.ci_report(self.root, receipt, payload["commit"])
+
+    def test_ci_result_is_never_signed_recovery_or_legacy_release_authority(self):
+        receipt = self.custody / "ci.json"
+        private_json(receipt, dict(self.e.payload, purpose="evexia-ci-validation-v1"))
+        with self.assertRaises(Exception):
+            auth.release(self.root, receipt, self.e.trust_file)
+
+    def test_unsigned_ci_generator_runs_all_commands_and_never_issues_after_failure(self):
+        spec = importlib.util.spec_from_file_location("ci_validator", ROOT / "scripts/validate-release-artifact.py")
+        validator = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(validator)
+        names = sorted(str(p.relative_to(self.root)) for p in self.root.rglob("*") if p.is_file())
+        def synthetic_git(*args):
+            if args[0] == "status":
+                return b""
+            if args[0] == "ls-files":
+                return ("\0".join(names) + "\0").encode()
+            return b"a" * 40
+        for code in (0, 1):
+            output = self.custody / f"ci-result-{code}.json"
+            with patch.object(validator, "ROOT", self.root), \
+                 patch.object(validator, "git", synthetic_git), \
+                 patch.object(validator.subprocess, "run", return_value=SimpleNamespace(returncode=code)) as run, \
+                 patch("sys.argv", ["validator", "--ci-report", "--output", str(output)]):
+                self.assertEqual(validator.main(), 0 if code == 0 else 1)
+            if code == 0:
+                self.assertEqual(run.call_count, 3)
+                auth.ci_report(self.root, output, "a" * 40)
+                self.assertNotIn("signature", json.loads(output.read_text()))
+            else:
+                self.assertFalse(output.exists())
+
+    def test_automatic_cli_accepts_ci_result_without_signing_or_trust_files(self):
+        spec = importlib.util.spec_from_file_location("ci_deployer", ROOT / "scripts/deploy-migrations.py")
+        deployer = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = deployer
+        spec.loader.exec_module(deployer)
+        receipt = self.custody / "ci-result.json"
+        payload = dict(self.e.payload, purpose="evexia-ci-validation-v1")
+        private_json(receipt, payload)
+        args = ["--backend-dir", str(self.root / "artifacts/api-server/backend"),
+                "--policy", str(self.root / "scripts/migration-policy.json"),
+                "--release-root", str(self.root), "--execute", "--ci-report", str(receipt),
+                "--expected-commit", payload["commit"]]
+        with patch.object(deployer, "load_graph"), patch.object(deployer, "load_policy"), \
+             patch.object(deployer, "literal_assignments", return_value={"SCHEMA_REVISION": "target"}), \
+             patch.object(deployer, "production_connection") as connect, \
+             patch.object(deployer, "execute_plan", return_value={"operator_only": []}) as execute:
+            self.assertEqual(deployer.main(args), 0)
+            execute.assert_called_once()
+            connect.reset_mock()
+            private_json(receipt, dict(payload, results=[0, 1, 0]))
+            self.assertEqual(deployer.main(args), 1)
+            connect.assert_not_called()
 
     def test_failed_or_incomplete_release_validation_never_authorizes(self):
         for results in ([0, 1, 0], [0], [], [True, True, True], [False, False, False]):

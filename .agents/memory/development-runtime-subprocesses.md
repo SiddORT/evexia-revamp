@@ -3,6 +3,17 @@ name: Development runtime subprocess imports
 description: Test managed startup from its actual working directory without inherited harness import paths.
 ---
 
+For Docker operator tools that import the mounted repository's Python package,
+set the container working directory to the mounted release root (or its backend
+directory). `PYTHONPATH` alone does not override an image's `/app` package:
+`python -m` places its current working directory before `PYTHONPATH`.
+
+**Why:** Loading the image package instead of the mounted operator source can
+break repository-relative manifests/guards even when the source mount is valid.
+
+**How to apply:** Test both the emitted container workdir and package resolution
+from the actual operator working directory, not only an in-process import.
+
 Validate child-process import availability separately from parent and standalone
 preflight success. Managed startup tests must use the artifact working directory
 and remove inherited test-harness import paths.

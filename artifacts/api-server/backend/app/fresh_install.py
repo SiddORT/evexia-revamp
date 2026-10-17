@@ -211,7 +211,9 @@ def pristine(connection):
           UNION ALL SELECT 'pg_ts_template'::regclass,oid,tmplnamespace FROM pg_ts_template
         )
         SELECT EXISTS(SELECT 1 FROM objects o JOIN pg_namespace n ON n.oid=o.namespace
-          WHERE n.nspname='public' AND NOT EXISTS(
+          WHERE (n.nspname='public'
+            OR (n.nspname IN ('pg_catalog','pg_toast') AND o.objid>=16384)
+            OR n.nspname ~ '^pg_(toast_)?temp_') AND NOT EXISTS(
             SELECT 1 FROM extension_objects e WHERE e.classid=o.classid AND e.objid=o.objid))
     """)):
         raise FreshInstallBlocked("Database is not pristine; zero migrations applied.")

@@ -18,7 +18,8 @@ When adding a migration:
    This updates source fingerprints/derived targets, **not** release signatures,
    recovery attestations, production approvals or migration classifications.
 4. Run the affected migration/fresh-install tests and the release checks.
-   CI checks the coordinated declaration before issuing signed release evidence.
+   CI checks the coordinated declaration before issuing the exact-commit CI
+   result; routine deployment does not require a separate signing-key setup.
 
 After a merge, setup installs locked dependencies and runs
 `scripts/development-sync.py`. The platform reconciles managed workflows.
@@ -77,8 +78,10 @@ Expected frontend metadata comes from the built candidate image, never from
 the active server. A post-promotion runtime failure is a deployment failure,
 not an inferred safe database downgrade.
 
-This does not grant production permission. Signed release/artifact-integrity
-checks, pristine-target checks, independent recovery evidence, production
-operator-only approvals, and PostgreSQL volumes are unchanged. Do not use the
+This does not grant production permission. Routine CI now uses an automatically
+generated exact-commit test report and full artifact-integrity checks, not a
+separate signing-key setup. Empty initialization uses live pristine/identity
+checks; recovery evidence remains required for protected existing-data work.
+Operator-only approvals and PostgreSQL volumes remain protected. Do not use the
 development launcher on a VPS. No routine process forcibly reloads a draft tab;
 open an updated tab when a frontend update requires a full page reload.

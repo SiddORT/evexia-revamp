@@ -39,11 +39,13 @@ def refresh(root=ROOT):
     policy_path.write_text(json.dumps(authorization_policy, indent=2) + "\n")
     review["target"] = target
     review["review_scope"] = (
-        f"Pinned PostgreSQL 17 fresh path through {target}. Machine release authorization "
-        "requires complete successful validation, independent external trust and recovery "
-        "evidence, live target checks and authenticated pristine origin. Existing protected "
-        "migrations/bootstrap retain operator approval. This manifest alone is neither "
-        "validation evidence nor production approval."
+        f"Pinned PostgreSQL 17 fresh path through {target}. Empty-only atomic initialization "
+        "requires live target identity, pristine catalog, valid encryption configuration and "
+        "exact final catalog/readiness checks; it does not require external recovery receipts. "
+        "Routine deployment requires complete exact-commit CI validation and additive migration "
+        "classification. Existing protected migrations retain operator approval and recovery. "
+        "Legacy signed staged initialization remains available. This manifest alone is not "
+        "evidence of passing validation or authorization to modify an existing database."
     )
     review["policy_sha256"] = sha(root / "scripts/migration-policy.json")
     review["authorization_policy_sha256"] = sha(root / "scripts/release-authorization-policy.json")
@@ -63,6 +65,8 @@ def refresh(root=ROOT):
         "artifacts/evexia-portal/vite.config.js",
         "scripts/start-development-web.sh", "scripts/start-development-api.sh",
         "scripts/post-merge.sh", "scripts/development-identity.mjs",
+        "artifacts/api-server/backend/app/initialize_database.py",
+        "scripts/initialize-production.py", "scripts/initialize-api.sh",
     ):
         review["release_sources"][path] = sha(root / path)
     for path in review["release_sources"]:
