@@ -11,6 +11,108 @@ from test_sessions import client
 from test_purchase_orders import fixture, save, get, BASE
 
 
+LOCATION_BASE = "/api/v1/admin/storage-locations"
+
+
+def change_location(api, headers, location_id, **patch):
+    current = api.get(f"{LOCATION_BASE}/{location_id}", headers=headers)
+    assert current.status_code == 200, current.text
+    row = current.json()
+    fields = {key: row[key] for key in
+              ("name", "address", "status", "pincode", "countryCode", "state", "city")}
+    response = api.post(f"{LOCATION_BASE}/{location_id}/edit", headers=headers,
+                        json={**fields, **patch, "expected_version": row["version"]})
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def test_location_references_publish_canonical_indian_states_and_no_free_text_inference(client):
+    api, db, _ = client
+    headers, _, values, _ = fixture(api, db)
+    location_id = values["locationId"]
+    # Exercise master validation and the actual PO reference projection, including
+    # every supported code and historical spellings (no postal/network lookup).
+    cases = [(code, code, state["name"]) for code, state in STATES.items()]
+    cases += [(name, code, STATES[code]["name"]) for name, code in
+              [("Orissa", "21"), ("Uttaranchal", "05"), ("Pondicherry", "34"),
+               ("NCT of Delhi", "07"), ("Daman & Diu", "26")]]
+    for supplied, code, canonical in cases:
+        row = change_location(api, headers, location_id, countryCode="IN", state=supplied)
+        assert (row["state"], row["stateCode"]) == (canonical, code)
+        choice, = get(api, headers, "/references/locations", selected_id=location_id)["items"]
+        assert (choice["countryCode"], choice["state"], choice["stateCode"]) == ("IN", canonical, code)
+    for country, state in [("", ""), ("IN", ""), ("US", "Maharashtra")]:
+        change_location(api, headers, location_id, countryCode=country, state=state,
+                        address="Maharashtra 400001, India", pincode="", city="")
+        choice, = get(api, headers, "/references/locations", selected_id=location_id)["items"]
+        assert choice["countryCode"] == country and choice["stateCode"] is None
+
+
+@pytest.mark.parametrize("supplier,destination,components", [
+    ("27", "27", dict(cgst=900, sgst=900, utgst=0, igst=0)),
+    ("27", "29", dict(cgst=0, sgst=0, utgst=0, igst=1800)),
+    ("04", "04", dict(cgst=900, sgst=0, utgst=900, igst=0)),
+])
+def test_structured_location_review_save_and_saved_edit_preserve_tax_snapshot(
+        client, supplier, destination, components):
+    api, db, _ = client
+    headers, _, values, _ = fixture(api, db, price="100", gst="18")
+    values["lines"][0]["quantity"] = "1"
+    vendor = db.get(Vendor, uuid.UUID(values["vendorId"]))
+    vendor.gstNo = supplier + "DDDDD3333D1Z8"
+    db.commit()
+    change_location(api, headers, values["locationId"], countryCode="IN", state=destination)
+    reference, = get(api, headers, "/references/locations", selected_id=values["locationId"])["items"]
+    values["placeOfSupplyCode"] = reference["stateCode"]
+    saved, body, review = save(api, headers, values)
+    expected = {key: saved[key] for key in
+                ("taxBasis", "taxComponents", "subtotal", "gstAmount", "total", "locationName")}
+    assert {key: review["order"][key] for key in expected} == expected
+    assert saved["taxBasis"]["placeOfSupplyCode"] == destination
+    assert saved["taxComponents"] == components
+    assert (saved["subtotal"], saved["gstAmount"], saved["total"]) == (10000, 1800, 11800)
+    assert saved["lines"][0]["taxComponents"] == components
+    assert {key: saved["lines"][0][key] for key in ("componentRates", "taxComponents", "total")} == {
+        key: review["order"]["lines"][0][key] for key in ("componentRates", "taxComponents", "total")}
+
+    # Current masters and later reference lookups must not rewrite history.
+    for country, state in [("IN", "Tamil Nadu"), ("IN", ""), ("US", "Maharashtra"), ("", "")]:
+        change_location(api, headers, values["locationId"], countryCode=country, state=state,
+                        name="Renamed synthetic depot", address="Changed synthetic address")
+        assert get(api, headers, "/" + saved["id"]) == saved
+        assert api.post(BASE, headers=headers, json=body).json() == saved
+        edited_review = api.post(BASE + f"/{saved['id']}/preview", headers=headers, json=values)
+        assert edited_review.status_code == 200, edited_review.text
+        assert {key: edited_review.json()["order"][key] for key in expected} == expected
+    updated, _, edited_review = save(api, headers, values, saved["id"], 1)
+    assert {key: updated[key] for key in expected} == expected
+    assert updated["lines"] == saved["lines"]
+    assert updated["taxBasis"] == edited_review["order"]["taxBasis"]
+
+
+def test_location_master_change_invalidates_new_review_without_overriding_explicit_destination(client):
+    api, db, _ = client
+    headers, _, values, _ = fixture(api, db, price="100", gst="18")
+    values["lines"][0]["quantity"] = "1"
+    change_location(api, headers, values["locationId"], countryCode="IN", state="Maharashtra")
+    reviewed = api.post(BASE + "/preview", headers=headers, json=values)
+    assert reviewed.status_code == 200, reviewed.text
+    change_location(api, headers, values["locationId"], countryCode="IN", state="Karnataka")
+    response = api.post(BASE, headers=headers, json={**values, "reviewToken": reviewed.json()["reviewToken"],
+                                                  "idempotencyKey": str(uuid.uuid4())})
+    assert response.status_code == 409 and response.json()["error"]["code"] == "po_review_stale"
+    # An address is only a suggestion: a deliberate delivery exception is authoritative.
+    saved, _, review = save(api, headers, values)
+    assert saved["taxBasis"]["placeOfSupplyCode"] == "27"
+    assert saved["taxBasis"]["treatment"] == "cgst_sgst"
+    assert saved["taxComponents"] == review["order"]["taxComponents"] == dict(cgst=900, sgst=900, utgst=0, igst=0)
+    # Missing geography does not license the server to invent a destination.
+    for country, state in [("IN", ""), ("US", "Maharashtra"), ("", "")]:
+        change_location(api, headers, values["locationId"], countryCode=country, state=state)
+        missing = {key: value for key, value in values.items() if key != "placeOfSupplyCode"}
+        assert api.post(BASE + "/preview", headers=headers, json=missing).status_code == 422
+
+
 @pytest.mark.parametrize("supplier,destination,treatment", [
     ("27", "27", "cgst_sgst"), ("29", "27", "igst"), ("29", "29", "cgst_sgst"),
     ("04", "04", "cgst_utgst"), ("26", "26", "cgst_utgst"), ("31", "31", "cgst_utgst"),

@@ -46,7 +46,7 @@ export PYTHONPATH="$ROOT/artifacts/api-server/backend"
 export EVEXIA_ISOLATED_AUTH_PREVIEW=1 EVEXIA_TEST_API_PROXY_TARGET="http://127.0.0.1:$API_PORT"
 export EVEXIA_PREVIEW_BASE_URL="http://127.0.0.1:$PORT" PORT BASE_PATH=/
 cd "$ROOT/artifacts/api-server/backend"
-python3 -m alembic upgrade 0040_po_tax_basis
+python3 -m alembic upgrade 0041_location_geography
 python3 -m app.bootstrap
 python3 -m uvicorn app.main:app --host 127.0.0.1 --port "$API_PORT" --no-access-log --no-proxy-headers >"$PGROOT/api.log" 2>&1 &
 API_PID=$!

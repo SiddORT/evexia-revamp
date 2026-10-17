@@ -13,10 +13,16 @@ const call = (page, method, ...args) => page.evaluate(async ({ method, args }) =
   return service[method](...args);
 }, { method, args });
 
-function makeLegacy(id, oldBody) {
-  // Deliberately only usable inside the private disposable fixture.
+function requireDisposableFixture() {
   if (process.env.APP_ENV !== 'test' || process.env.EVEXIA_ISOLATED_AUTH_PREVIEW !== '1'
     || !process.env.TEST_DATABASE_URL?.includes('/evexia_po_smoke?host=/tmp/evexia-po-smoke.')) throw new Error('Disposable PO database required');
+}
+
+test.beforeEach(() => requireDisposableFixture());
+
+function makeLegacy(id, oldBody) {
+  // Deliberately only usable inside the private disposable fixture.
+  requireDisposableFixture();
   execFileSync('python3', ['-c', `
 import json, sys, uuid
 from sqlalchemy import select
@@ -237,3 +243,194 @@ test('live PO tax totals, snapshots, legacy data and original pending request re
   expect(errors).toEqual([]);
   console.log(JSON.stringify({ savedId: saved.id, componentRounding: true, legacyRetryOriginalIdentity: true, isolatedDatabase: true }));
 });
+
+async function structuredDraft(page, supplierCode = '27') {
+  await page.goto(`${base()}/admin/login`);
+  await page.getByLabel('Email or username').fill('crm-admin@allergyevexia.in');
+  await page.getByLabel('Password', { exact: true }).fill(process.env.EVEXIA_TEST_ADMIN_PASSWORD);
+  await page.getByTestId('button-submit-login').click();
+  await expect(page.getByTestId('button-admin-profile')).toBeVisible();
+  const refs = await page.evaluate(async (supplierCode) => {
+    const vendors = await import('/src/services/serverVendors.js');
+    const locations = await import('/src/services/serverLocations.js');
+    const categories = await import('/src/services/serverProductCategories.js');
+    const allergens = await import('/src/services/serverAllergens.js');
+    const tag = crypto.randomUUID();
+    const vendor = await vendors.createVendor({
+      vendorName: `Structured vendor ${tag}`, gstNo: `${supplierCode}DDDDD3333D1Z8`,
+      registeredAddress: 'Synthetic supplier road', contactPersonName: 'Synthetic contact',
+      emailId: 'structured-po@example.test', phoneNo: '9876543210', dialCountry: 'IN', status: 'active',
+    });
+    const make = (label, countryCode = '', state = '') => locations.createLocation({
+      name: `${label} ${tag}`, address: 'Maharashtra 400001 India (unstructured text only)',
+      countryCode, state, city: '', pincode: '', status: 'active',
+    });
+    const mh = await make('Structured Maharashtra', 'IN', '27');
+    const ka = await make('Structured Karnataka', 'IN', 'Karnataka');
+    const ut = await make('Structured Chandigarh', 'IN', '04');
+    const alias = await make('Structured Odisha alias', 'IN', 'Orissa');
+    const missing = await make('Legacy geography');
+    const noState = await make('Indian missing state', 'IN');
+    // A familiar Indian state name in another country is not an Indian destination.
+    const foreign = await make('Foreign geography', 'US', 'Maharashtra');
+    const category = await categories.createProductCategory({ name: `Structured category ${tag}`, description: '', unit_price: '0', status: 'active' });
+    const product = await allergens.createAllergen({
+      name: `Structured product ${tag}`, category_id: category.id, storage_location_id: mh.id,
+      selling_price: '100', gst: '18', concentration: 'Synthetic', threshold_limit: null, status: 'active', mix: false,
+    });
+    return { vendor, mh, ka, ut, alias, missing, noState, foreign, product };
+  }, supplierCode);
+  await page.goto(`${base()}/admin/inventory/purchase-orders/new`);
+  await choose(page, 'po-vendor', refs.vendor.vendorName);
+  await page.getByTestId('input-po-expected-date').fill('2028-12-31');
+  await choose(page, 'po-product-0', refs.product.name);
+  return refs;
+}
+
+const destination = (page) => page.getByTestId('select-po-place-of-supply');
+const locationControl = (page) => page.getByTestId('select-po-location');
+const destinationDialog = (page) => page.getByRole('dialog', { name: 'Review delivery destination', exact: true });
+
+test('structured locations suggest canonical states and clear automatic destinations for missing or foreign geography', async ({ page }) => {
+  const refs = await structuredDraft(page);
+  for (const [location, label] of [[refs.mh, 'Maharashtra (27)'], [refs.alias, 'Odisha (21)'], [refs.ut, 'Chandigarh (04)']]) {
+    await choose(page, 'po-location', location.name);
+    await expect(destination(page)).toHaveValue(label);
+    await expect(destinationDialog(page)).toHaveCount(0);
+    await expect(page.locator('.po-tax-context')).toContainText('Destination suggested by the selected storage location.');
+  }
+  for (const location of [refs.missing, refs.noState, refs.foreign]) {
+    // Every negative case starts with a valid automatic suggestion.
+    await choose(page, 'po-location', refs.mh.name);
+    await expect(destination(page)).toHaveValue('Maharashtra (27)');
+    await choose(page, 'po-location', location.name);
+    await expect(locationControl(page)).toHaveValue(location.name);
+    await expect(destination(page)).toHaveValue('');
+    await expect(destinationDialog(page)).toHaveCount(0);
+    await expect(page.getByTestId('text-po-form-total')).toHaveText('Tax pending');
+    await expect(page.locator('.po-tax-context')).toContainText('no previous suggestion is retained');
+    await page.getByTestId('button-review-po').click();
+    await expect(page.getByRole('heading', { name: 'Review before saving' })).toHaveCount(0);
+    await expect(page.getByText('Select a supported State/UT.', { exact: true })).toBeVisible();
+  }
+});
+
+test('manual delivery exceptions require explicit cancel keep use or clear when storage changes', async ({ page }) => {
+  const refs = await structuredDraft(page);
+  await choose(page, 'po-location', refs.mh.name);
+  await choose(page, 'po-place-of-supply', 'Delhi (07)');
+  const dialog = destinationDialog(page);
+  await choose(page, 'po-location', refs.ka.name);
+  await expect(dialog).toBeVisible();
+  await expect(destination(page)).toHaveValue('Delhi (07)');
+  await expect(locationControl(page)).toHaveValue(refs.mh.name);
+  await dialog.getByRole('button', { name: 'Cancel location change', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(locationControl(page)).toHaveValue(refs.mh.name);
+  await expect(destination(page)).toHaveValue('Delhi (07)');
+
+  await choose(page, 'po-location', refs.ka.name);
+  await dialog.getByRole('button', { name: 'Keep current destination', exact: true }).click();
+  await expect(locationControl(page)).toHaveValue(refs.ka.name);
+  await expect(destination(page)).toHaveValue('Delhi (07)');
+  await expect(page.locator('.po-tax-context')).toContainText('Manually selected destination.');
+  await choose(page, 'po-location', refs.ut.name);
+  await dialog.getByRole('button', { name: 'Use location State/UT', exact: true }).click();
+  await expect(locationControl(page)).toHaveValue(refs.ut.name);
+  await expect(destination(page)).toHaveValue('Chandigarh (04)');
+  // "Use" restores automatic provenance: the next switch needs no confirmation.
+  await choose(page, 'po-location', refs.mh.name);
+  await expect(dialog).toHaveCount(0);
+  await expect(destination(page)).toHaveValue('Maharashtra (27)');
+
+  for (const location of [refs.missing, refs.foreign]) {
+    await choose(page, 'po-place-of-supply', 'Delhi (07)');
+    await choose(page, 'po-location', location.name);
+    await expect(dialog).toContainText('no usable Indian State/UT');
+    await dialog.getByRole('button', { name: 'Keep current destination', exact: true }).click();
+    await expect(locationControl(page)).toHaveValue(location.name);
+    await expect(destination(page)).toHaveValue('Delhi (07)');
+    await choose(page, 'po-location', refs.mh.name);
+    await dialog.getByRole('button', { name: 'Keep current destination', exact: true }).click();
+    await choose(page, 'po-location', location.name);
+    await dialog.getByRole('button', { name: 'Clear destination and select manually', exact: true }).click();
+    await expect(locationControl(page)).toHaveValue(location.name);
+    await expect(destination(page)).toHaveValue('');
+    await expect(page.getByTestId('text-po-form-total')).toHaveText('Tax pending');
+    await choose(page, 'po-location', refs.mh.name);
+    await expect(destination(page)).toHaveValue('Maharashtra (27)');
+  }
+});
+
+for (const [supplier, depot, code, label, treatment, components] of [
+  ['27', 'mh', '27', 'Maharashtra (27)', 'cgst_sgst', { cgst: 900, sgst: 900, utgst: 0, igst: 0 }],
+  ['27', 'ka', '29', 'Karnataka (29)', 'igst', { cgst: 0, sgst: 0, utgst: 0, igst: 1800 }],
+  ['04', 'ut', '04', 'Chandigarh (04)', 'cgst_utgst', { cgst: 900, sgst: 0, utgst: 900, igst: 0 }],
+]) {
+  test(`structured destination ${treatment} has authoritative review/save parity and survives storage master edits`, async ({ page }) => {
+    test.setTimeout(120_000);
+    const refs = await structuredDraft(page, supplier);
+    const selected = refs[depot];
+    await choose(page, 'po-location', selected.name);
+    await expect(destination(page)).toHaveValue(label);
+    await expect(page.getByTestId('text-po-form-total')).toHaveText('₹118.00');
+    const reviewing = page.waitForResponse((response) => response.url().endsWith('/purchase-orders/preview') && response.request().method() === 'POST');
+    await page.getByTestId('button-review-po').click();
+    const response = await reviewing;
+    expect(response.status()).toBe(200);
+    const review = await response.json();
+    expect(response.request().postDataJSON().placeOfSupplyCode).toBe(code);
+    expect(review.order.taxBasis.placeOfSupplyCode).toBe(code);
+    expect(review.order.taxBasis.treatment).toBe(treatment);
+    expect(review.order.taxComponents).toEqual(components);
+    await expect(page.locator('.po-tax-basis')).toContainText(label);
+    await expect(page.locator('.po-new-summary').getByTestId('text-po-form-total')).toHaveText('₹118.00');
+    // Assert each visible component, not just the total (all regimes total ₹118).
+    for (const [key, amount] of Object.entries(components).filter(([, amount]) => amount)) {
+      await expect(page.locator('.po-new-summary dl > div').filter({ has: page.locator('dt', { hasText: new RegExp(`^${key}$`, 'i') }) }).locator('dd')).toHaveText(`₹${(amount / 100).toFixed(2)}`);
+    }
+    const saving = page.waitForResponse((response) => response.url().endsWith('/api/v1/admin/purchase-orders') && response.request().method() === 'POST');
+    await page.getByTestId('button-confirm-po').click();
+    const savedResponse = await saving;
+    expect(savedResponse.status()).toBe(201);
+    const saved = await savedResponse.json();
+    await expect(page).toHaveURL(/\/purchase-orders$/);
+    for (const key of ['taxBasis', 'taxComponents', 'subtotal', 'gstAmount', 'total', 'locationName']) {
+      expect(saved[key]).toEqual(review.order[key]);
+    }
+    expect(saved.lines[0].taxComponents).toEqual(components);
+    expect(saved.lines[0].componentRates).toEqual(review.order.lines[0].componentRates);
+    await page.evaluate(async (selected) => {
+      const api = await import('/src/services/serverLocations.js');
+      const current = await api.getLocation(selected.id);
+      const fields = Object.fromEntries(['name', 'address', 'status', 'pincode', 'countryCode', 'state', 'city'].map((key) => [key, current[key]]));
+      await api.editLocation(current, { ...fields, name: `Renamed ${current.name}`, countryCode: 'US', state: 'Maharashtra', address: 'Changed synthetic foreign address' });
+    }, selected);
+    expect(await call(page, 'getPurchaseOrder', saved.id)).toEqual(saved);
+    await page.goto(`${base()}/admin/inventory/purchase-orders/${saved.id}`);
+    await expect(page.getByTestId('button-edit-po')).toBeVisible();
+    await expect(page.locator('.po-tax-basis')).toContainText(label);
+    await page.reload();
+    await expect(page.getByTestId('button-edit-po')).toBeVisible();
+    await page.getByTestId('button-edit-po').click();
+    await expect(destination(page)).toHaveValue(label);
+    await expect(locationControl(page)).toHaveValue(selected.name);
+    await expect(page.locator('.po-tax-context')).toContainText('Saved destination retained');
+    // A saved destination has the same explicit-decision protection as a manual one.
+    await choose(page, 'po-location', refs.missing.name);
+    await expect(destinationDialog(page)).toBeVisible();
+    await destinationDialog(page).getByRole('button', { name: 'Cancel location change', exact: true }).click();
+    await expect(locationControl(page)).toHaveValue(selected.name);
+    await expect(destination(page)).toHaveValue(label);
+    await page.getByTestId('input-po-quantity-0').fill('2');
+    await page.getByTestId('button-review-po').click();
+    await expect(page.locator('.po-tax-basis')).toContainText(label);
+    await expect(page.locator('.po-new-summary').getByTestId('text-po-form-total')).toHaveText('₹236.00');
+    await page.getByTestId('button-confirm-po').click();
+    await expect(page.getByTestId('button-edit-po')).toBeVisible();
+    const edited = await call(page, 'getPurchaseOrder', saved.id);
+    expect(edited.taxBasis).toEqual(saved.taxBasis);
+    expect(edited.locationName).toBe(saved.locationName);
+    expect(edited.taxComponents).toEqual(Object.fromEntries(Object.entries(components).map(([key, value]) => [key, value * 2])));
+  });
+}
