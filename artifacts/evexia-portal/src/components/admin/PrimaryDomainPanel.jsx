@@ -97,7 +97,7 @@ export default function PrimaryDomainPanel({ items, domains, bootstrapHosts, lis
     <section className="role-urls__section" aria-labelledby="primary-domain-heading">
     <h3 className="role-urls__h" id="primary-domain-heading"><Globe2 size={18} aria-hidden="true" />Primary domain</h3>
     <p className="role-urls__description">The shared main address for the portal chooser and existing role paths. This does not assign an Admin role.</p>
-    <div data-testid="text-primary-current" className="role-urls__current"><span className="role-urls__label">Current:</span><strong>{current || 'None set'}</strong>{primary ? <span className="role-urls__badge">{label(primary)}</span> : <span className="role-urls__hint">Choose an exact hostname to begin configuration.</span>}</div>
+    <div data-testid="text-primary-current" className="role-urls__current"><span className="role-urls__label">Current primary domain</span><strong>{current || 'None set'}</strong>{primary ? <span className="role-urls__badge">{label(primary)}</span> : <span className="role-urls__hint">Choose an exact hostname to begin configuration.</span>}</div>
     <p className="role-urls__hint">Changing the primary resets ownership evidence. Disable a conflicting role mapping before choosing the same hostname.</p>
     {draft === null ? <button type="button" onClick={startDraft} disabled={locked || !listReady} data-testid="button-primary-edit">{current ? 'Change primary domain' : 'Choose primary domain'}</button>
       : <form className="role-urls__form" onSubmit={savePrimary} aria-label="Edit primary domain" data-testid="form-primary-domain">
@@ -132,8 +132,8 @@ export default function PrimaryDomainPanel({ items, domains, bootstrapHosts, lis
         const btn = (action, text, enabled) => <button type="button" className={action === 'revoke' ? 'role-urls__danger-btn' : undefined} onClick={() => act({ hostname, domain: d }, action)} disabled={locked || !enabled} aria-label={`${text} ${hostname}`} data-testid={`button-domain-${action}-${hostname}`}>{pendingKey === `${hostname}:${action}` ? 'Working...' : text}</button>;
         return <li key={hostname} data-testid={`row-domain-${hostname}`}>
           <div>
-            <strong>{hostname}</strong>{d?.kind === 'primary' && <span className="role-urls__badge">Primary</span>}
-            <span className="role-urls__badge role-urls__domain-status">{label(d)}</span>
+            <div className="role-urls__domain-head"><strong>{hostname}</strong>{d?.kind === 'primary' && <span className="role-urls__badge">Primary</span>}
+            <span className="role-urls__badge role-urls__domain-status">{label(d)}</span></div>
             {!d && <small>No ownership record yet. Create a challenge to begin.</small>}
             {d && <small>{({
               unverified: 'Create a challenge to begin ownership verification.',
@@ -165,7 +165,7 @@ export default function PrimaryDomainPanel({ items, domains, bootstrapHosts, lis
 
     </section>
     <section className="role-urls__section" aria-labelledby="recovery-allowlist-heading">
-    <h3 className="role-urls__h" id="recovery-allowlist-heading"><LifeBuoy size={18} aria-hidden="true" />Recovery allowlist</h3>
+    <h3 className="role-urls__h" id="recovery-allowlist-heading"><LifeBuoy size={18} aria-hidden="true" />Recovery access</h3>
     <p className="role-urls__description">These hosts stay reachable so you can recover if a domain is misconfigured. Being listed grants no role and no ownership.</p>
     {bootstrapHosts.length ? <ul className="role-urls__hosts" data-testid="list-bootstrap-hosts">{bootstrapHosts.map((h) => <li key={h}><code>{h}</code></li>)}</ul> : <p className="role-urls__empty">No recovery hosts were reported by the server.</p>}
     </section>

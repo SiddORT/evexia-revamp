@@ -123,7 +123,7 @@ export default function RoleUrlSettings({ onGuardChange }) {
     catch (err) { fail(err); } finally { setBusy(false); }
   };
 
-  return <section className="admin-panel admin-settings__section role-urls" aria-labelledby="role-urls-heading" aria-busy={status === 'loading'}>
+  return <section className="admin-panel role-urls" aria-labelledby="role-urls-heading" aria-busy={status === 'loading'}>
     <header className="role-urls__intro">
       <div className="role-urls__eyebrow">Shared portal configuration · Super Admin</div>
       <h2 id="role-urls-heading" ref={headRef}>Role URLs <span className="role-urls__tag">Shared setting</span></h2>
