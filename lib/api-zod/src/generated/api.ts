@@ -346,6 +346,47 @@ export const setDoctorDirectoryStatusResponsePincodeMax = 12;
 export const setDoctorDirectoryStatusResponseQualificationMax = 200;
 export const setDoctorDirectoryStatusResponseRegistrationNumberMax = 100;
 export const setDoctorDirectoryStatusResponseStateMax = 100;
+export const listEmailTemplatesResponseItemsItemDescriptionMax = 500;
+export const listEmailTemplatesResponseItemsItemHtmlMax = 100000;
+export const listEmailTemplatesResponseItemsItemNameMax = 100;
+export const listEmailTemplatesResponseItemsItemSubjectMax = 200;
+export const listEmailTemplatesResponseItemsItemTextMax = 20000;
+export const listEmailTemplatesResponseItemsMax = 100;
+export const createEmailTemplateBodyDescriptionMax = 500;
+export const createEmailTemplateBodyHtmlMax = 100000;
+export const createEmailTemplateBodyNameMax = 100;
+export const createEmailTemplateBodySubjectMax = 200;
+export const createEmailTemplateBodyTextMax = 20000;
+export const createEmailTemplateResponseItemsItemDescriptionMax = 500;
+export const createEmailTemplateResponseItemsItemHtmlMax = 100000;
+export const createEmailTemplateResponseItemsItemNameMax = 100;
+export const createEmailTemplateResponseItemsItemSubjectMax = 200;
+export const createEmailTemplateResponseItemsItemTextMax = 20000;
+export const createEmailTemplateResponseItemsMax = 100;
+export const getEmailTemplateResponseDescriptionMax = 500;
+export const getEmailTemplateResponseHtmlMax = 100000;
+export const getEmailTemplateResponseNameMax = 100;
+export const getEmailTemplateResponseSubjectMax = 200;
+export const getEmailTemplateResponseTextMax = 20000;
+export const deleteEmailTemplateBodyVersionMax = 2147483647;
+export const deleteEmailTemplateResponseItemsItemDescriptionMax = 500;
+export const deleteEmailTemplateResponseItemsItemHtmlMax = 100000;
+export const deleteEmailTemplateResponseItemsItemNameMax = 100;
+export const deleteEmailTemplateResponseItemsItemSubjectMax = 200;
+export const deleteEmailTemplateResponseItemsItemTextMax = 20000;
+export const deleteEmailTemplateResponseItemsMax = 100;
+export const editEmailTemplateBodyDescriptionMax = 500;
+export const editEmailTemplateBodyHtmlMax = 100000;
+export const editEmailTemplateBodyNameMax = 100;
+export const editEmailTemplateBodySubjectMax = 200;
+export const editEmailTemplateBodyTextMax = 20000;
+export const editEmailTemplateBodyVersionMax = 2147483647;
+export const editEmailTemplateResponseItemsItemDescriptionMax = 500;
+export const editEmailTemplateResponseItemsItemHtmlMax = 100000;
+export const editEmailTemplateResponseItemsItemNameMax = 100;
+export const editEmailTemplateResponseItemsItemSubjectMax = 200;
+export const editEmailTemplateResponseItemsItemTextMax = 20000;
+export const editEmailTemplateResponseItemsMax = 100;
 export const listHeadquartersQueryQueryMax = 200;
 export const listHeadquartersQueryLimitDefault = 10;
 export const listHeadquartersQueryLimitMax = 100;
@@ -6503,6 +6544,283 @@ export const SetDoctorDirectoryStatusResponse = zod.object({
   version: zod.number().int(),
   zoneId: zod.union([zod.string().uuid(), zod.null()]),
   zoneName: zod.string(),
+});
+
+/**
+ * @summary Listing
+ */
+export const listEmailTemplatesResponseItemsItemDescriptionDefault = ``;
+
+export const ListEmailTemplatesResponse = zod.object({
+  events: zod.array(
+    zod.object({
+      key: zod.literal("password_recovery"),
+      label: zod.string(),
+      required: zod.boolean(),
+      variables: zod.array(zod.string()),
+    }),
+  ),
+  items: zod
+    .array(
+      zod.object({
+        description: zod
+          .string()
+          .max(listEmailTemplatesResponseItemsItemDescriptionMax)
+          .default(listEmailTemplatesResponseItemsItemDescriptionDefault),
+        event_key: zod
+          .union([zod.literal("password_recovery"), zod.null()])
+          .optional(),
+        html: zod
+          .string()
+          .min(1)
+          .max(listEmailTemplatesResponseItemsItemHtmlMax),
+        id: zod.string().uuid(),
+        name: zod
+          .string()
+          .min(1)
+          .max(listEmailTemplatesResponseItemsItemNameMax),
+        protected: zod.boolean(),
+        subject: zod
+          .string()
+          .min(1)
+          .max(listEmailTemplatesResponseItemsItemSubjectMax),
+        text: zod
+          .string()
+          .min(1)
+          .max(listEmailTemplatesResponseItemsItemTextMax),
+        version: zod.number().int(),
+      }),
+    )
+    .max(listEmailTemplatesResponseItemsMax),
+});
+
+/**
+ * @summary Create
+ */
+export const createEmailTemplateBodyDescriptionDefault = ``;
+
+export const CreateEmailTemplateBody = zod.object({
+  creation_id: zod.string().uuid(),
+  description: zod
+    .string()
+    .max(createEmailTemplateBodyDescriptionMax)
+    .default(createEmailTemplateBodyDescriptionDefault),
+  event_key: zod
+    .union([zod.literal("password_recovery"), zod.null()])
+    .optional(),
+  html: zod.string().min(1).max(createEmailTemplateBodyHtmlMax),
+  name: zod.string().min(1).max(createEmailTemplateBodyNameMax),
+  subject: zod.string().min(1).max(createEmailTemplateBodySubjectMax),
+  text: zod.string().min(1).max(createEmailTemplateBodyTextMax),
+});
+
+export const createEmailTemplateResponseItemsItemDescriptionDefault = ``;
+
+export const CreateEmailTemplateResponse = zod.object({
+  events: zod.array(
+    zod.object({
+      key: zod.literal("password_recovery"),
+      label: zod.string(),
+      required: zod.boolean(),
+      variables: zod.array(zod.string()),
+    }),
+  ),
+  items: zod
+    .array(
+      zod.object({
+        description: zod
+          .string()
+          .max(createEmailTemplateResponseItemsItemDescriptionMax)
+          .default(createEmailTemplateResponseItemsItemDescriptionDefault),
+        event_key: zod
+          .union([zod.literal("password_recovery"), zod.null()])
+          .optional(),
+        html: zod
+          .string()
+          .min(1)
+          .max(createEmailTemplateResponseItemsItemHtmlMax),
+        id: zod.string().uuid(),
+        name: zod
+          .string()
+          .min(1)
+          .max(createEmailTemplateResponseItemsItemNameMax),
+        protected: zod.boolean(),
+        subject: zod
+          .string()
+          .min(1)
+          .max(createEmailTemplateResponseItemsItemSubjectMax),
+        text: zod
+          .string()
+          .min(1)
+          .max(createEmailTemplateResponseItemsItemTextMax),
+        version: zod.number().int(),
+      }),
+    )
+    .max(createEmailTemplateResponseItemsMax),
+});
+
+/**
+ * @summary Events
+ */
+export const ListEmailTemplateEventsResponseItem = zod.object({
+  key: zod.literal("password_recovery"),
+  label: zod.string(),
+  required: zod.boolean(),
+  variables: zod.array(zod.string()),
+});
+export const ListEmailTemplateEventsResponse = zod.array(
+  ListEmailTemplateEventsResponseItem,
+);
+
+/**
+ * @summary Detail
+ */
+export const GetEmailTemplateParams = zod.object({
+  template_id: zod.coerce.string().uuid(),
+});
+
+export const getEmailTemplateResponseDescriptionDefault = ``;
+
+export const GetEmailTemplateResponse = zod.object({
+  description: zod
+    .string()
+    .max(getEmailTemplateResponseDescriptionMax)
+    .default(getEmailTemplateResponseDescriptionDefault),
+  event_key: zod
+    .union([zod.literal("password_recovery"), zod.null()])
+    .optional(),
+  html: zod.string().min(1).max(getEmailTemplateResponseHtmlMax),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(getEmailTemplateResponseNameMax),
+  protected: zod.boolean(),
+  subject: zod.string().min(1).max(getEmailTemplateResponseSubjectMax),
+  text: zod.string().min(1).max(getEmailTemplateResponseTextMax),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Delete
+ */
+export const DeleteEmailTemplateParams = zod.object({
+  template_id: zod.coerce.string().uuid(),
+});
+
+export const DeleteEmailTemplateBody = zod.object({
+  version: zod.number().int().min(1).max(deleteEmailTemplateBodyVersionMax),
+});
+
+export const deleteEmailTemplateResponseItemsItemDescriptionDefault = ``;
+
+export const DeleteEmailTemplateResponse = zod.object({
+  events: zod.array(
+    zod.object({
+      key: zod.literal("password_recovery"),
+      label: zod.string(),
+      required: zod.boolean(),
+      variables: zod.array(zod.string()),
+    }),
+  ),
+  items: zod
+    .array(
+      zod.object({
+        description: zod
+          .string()
+          .max(deleteEmailTemplateResponseItemsItemDescriptionMax)
+          .default(deleteEmailTemplateResponseItemsItemDescriptionDefault),
+        event_key: zod
+          .union([zod.literal("password_recovery"), zod.null()])
+          .optional(),
+        html: zod
+          .string()
+          .min(1)
+          .max(deleteEmailTemplateResponseItemsItemHtmlMax),
+        id: zod.string().uuid(),
+        name: zod
+          .string()
+          .min(1)
+          .max(deleteEmailTemplateResponseItemsItemNameMax),
+        protected: zod.boolean(),
+        subject: zod
+          .string()
+          .min(1)
+          .max(deleteEmailTemplateResponseItemsItemSubjectMax),
+        text: zod
+          .string()
+          .min(1)
+          .max(deleteEmailTemplateResponseItemsItemTextMax),
+        version: zod.number().int(),
+      }),
+    )
+    .max(deleteEmailTemplateResponseItemsMax),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditEmailTemplateParams = zod.object({
+  template_id: zod.coerce.string().uuid(),
+});
+
+export const editEmailTemplateBodyDescriptionDefault = ``;
+
+export const EditEmailTemplateBody = zod.object({
+  description: zod
+    .string()
+    .max(editEmailTemplateBodyDescriptionMax)
+    .default(editEmailTemplateBodyDescriptionDefault),
+  event_key: zod
+    .union([zod.literal("password_recovery"), zod.null()])
+    .optional(),
+  html: zod.string().min(1).max(editEmailTemplateBodyHtmlMax),
+  name: zod.string().min(1).max(editEmailTemplateBodyNameMax),
+  subject: zod.string().min(1).max(editEmailTemplateBodySubjectMax),
+  text: zod.string().min(1).max(editEmailTemplateBodyTextMax),
+  version: zod.number().int().min(1).max(editEmailTemplateBodyVersionMax),
+});
+
+export const editEmailTemplateResponseItemsItemDescriptionDefault = ``;
+
+export const EditEmailTemplateResponse = zod.object({
+  events: zod.array(
+    zod.object({
+      key: zod.literal("password_recovery"),
+      label: zod.string(),
+      required: zod.boolean(),
+      variables: zod.array(zod.string()),
+    }),
+  ),
+  items: zod
+    .array(
+      zod.object({
+        description: zod
+          .string()
+          .max(editEmailTemplateResponseItemsItemDescriptionMax)
+          .default(editEmailTemplateResponseItemsItemDescriptionDefault),
+        event_key: zod
+          .union([zod.literal("password_recovery"), zod.null()])
+          .optional(),
+        html: zod
+          .string()
+          .min(1)
+          .max(editEmailTemplateResponseItemsItemHtmlMax),
+        id: zod.string().uuid(),
+        name: zod
+          .string()
+          .min(1)
+          .max(editEmailTemplateResponseItemsItemNameMax),
+        protected: zod.boolean(),
+        subject: zod
+          .string()
+          .min(1)
+          .max(editEmailTemplateResponseItemsItemSubjectMax),
+        text: zod
+          .string()
+          .min(1)
+          .max(editEmailTemplateResponseItemsItemTextMax),
+        version: zod.number().int(),
+      }),
+    )
+    .max(editEmailTemplateResponseItemsMax),
 });
 
 /**

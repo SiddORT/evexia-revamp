@@ -1,5 +1,5 @@
 {
   "format": 1,
   "contract": "evexia-preview-2026-10",
-  "schema": "0041_location_geography"
+  "schema": "0043_email_templates"
 }

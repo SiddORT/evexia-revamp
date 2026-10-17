@@ -557,6 +557,59 @@ export async function communicationRequest(path = '', body, { signal } = {}) {
   return data;
 }
 
+// Separate endpoint boundary; no browser-local fallback and no mutation replay.
+export async function emailTemplateRequest(path = '', body, { signal } = {}) {
+  if (!/^(?:|\/events|\/[0-9a-f-]{36}(?:\/(?:edit|delete))?)$/i.test(path)
+      || (body !== undefined && path && !/\/(?:edit|delete)$/.test(path))) throw new SessionError('Unsupported email template operation.');
+  const mutation = body !== undefined;
+  const epoch = generation, owner = state.user?.id;
+  const check = () => {
+    signal?.throwIfAborted();
+    if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token)
+      throw new SessionError('Your session changed. Sign in again before retrying; your draft is kept.', 401);
+    if (state.user.identity_kind !== 'super_admin') throw new SessionError('Email templates are restricted to Super Admin.', 403);
+  };
+  if (pending) await pending;
+  else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true, 'admin');
+  check();
+  const uncertain = () => {
+    const error = new SessionError(mutation
+      ? 'Save outcome could not be confirmed. Load latest to reconcile before retrying; your draft is kept.'
+      : 'Unable to load email templates. Check your connection and retry.');
+    error.ambiguous = mutation;
+    return error;
+  };
+  let response, data;
+  try {
+    response = await fetch(`/api/v1/admin/email-templates${path}`, {
+      method: mutation ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
+      headers: { Authorization: `Bearer ${token}`, ...(mutation ? { 'Content-Type': 'application/json' } : {}) },
+      ...(mutation ? { body: JSON.stringify(body) } : {}),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
+    });
+    data = await response.json();
+  } catch { throw uncertain(); }
+  if (pending) await pending;
+  try { check(); } catch (error) { error.ambiguous = mutation; throw error; }
+  if (!response.ok) {
+    if (response.status === 401) {
+      await verifySession(true, 'admin');
+      throw new SessionError('Session checked. Your draft is preserved; retry explicitly.', 401);
+    }
+    const error = new SessionError(response.status === 409
+      ? 'Template changed, or its name/event is already in use. Load latest and review; your draft is kept.'
+      : response.status === 422 ? 'Template rejected. Check variables, required recovery link/expiry, safe HTML and field lengths.'
+      : response.status === 403 ? 'Email templates are restricted to Super Admin.'
+      : response.status === 404 ? 'Template no longer exists. Load latest; your draft is kept.'
+      : response.status >= 500 ? 'Email template storage is unavailable. Ask the operator to check migration readiness; load latest before retrying.'
+      : uncertain().message, response.status);
+    error.code = response.status === 409 ? 'conflict' : data?.error?.code;
+    error.ambiguous = mutation && response.status >= 500;
+    throw error;
+  }
+  return data;
+}
+
 // Narrow reporting facility: credentials never leave this module.
 // Shared master transport. No automatic replay of a potentially committed write.
 // Per-operation Zone authorization. Staff never reach other master services;

@@ -235,6 +235,26 @@ See the coordinated `0028_directory_soft_delete` rollout in the backend README.
 
 ## Grants and failure boundaries
 
+Email template source is stored separately in `email_templates` (revision
+`0043_email_templates`), not inside encrypted Communication transport rows or
+browser storage. Source fields are bounded (name 100, description 500, subject
+200, HTML 100,000, text 20,000 characters); the library is capped at 100.
+Case-insensitive names and event assignments are database-unique. Super Admin
+management repeats live identity authorization, serializes mutations, requires
+optimistic versions and commits metadata-only audit/provenance with the write.
+The migration seed has no invented human creator; administrator writes use the
+verified user. Creation identities make explicit lost-response retries safe.
+
+The immutable recovery identity is assigned to `password_recovery`; database
+constraints/triggers and APIs protect its event/identity from removal, reassignment
+or truncation while allowing direct content edits. Recovery snapshots and validates
+the stored content, substitutes only literal event variables, and releases the
+read transaction before sending multipart text/HTML with a fixed owned inline
+MIME logo through approved environment-configured TLS SMTP. It never persists
+rendered URLs, tokens or recipient data, consults Communication defaults, or falls
+back to hardcoded email content. See `docs/email-templates.md` for delivery HTML
+validation versus inert preview and the separate migration/activation boundary.
+
 Local grants contain no path/key, have bounded expiry and identity/version
 binding, and are reauthorized against live database state on redemption.
 S3 presigning uses the identical authorization/state gate and bounded expiry.

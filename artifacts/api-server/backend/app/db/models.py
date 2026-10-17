@@ -198,3 +198,4 @@ from app.db import role_url_models as _role_url_models  # noqa: E402,F401
 from app.db import domain_models as _domain_models  # noqa: E402,F401
 from app.db import purchase_order_models as _purchase_order_models  # noqa: E402,F401
 from app.db import communication_models as _communication_models  # noqa: E402,F401
+from app.db import email_template_models as _email_template_models  # noqa: E402,F401

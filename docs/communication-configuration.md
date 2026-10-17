@@ -1,5 +1,16 @@
 # Shared encrypted Communication configuration
 
+## Email template storage is separate from transport
+
+Settings → Email templates uses its own PostgreSQL `email_templates` table and
+Super Admin APIs, described in [Email templates](email-templates.md). Eligible
+password recovery reads the protected `password_recovery` template automatically,
+but still sends through the existing environment-configured verified-TLS SMTP
+transport. Neither template edits nor Communication defaults change SMTP provider,
+sender, credentials or trusted recovery origin. SMS templates retain their local
+storage and preview-only behavior. No browser-local email records are imported
+or erased.
+
 ## Original-development activation — 16 October 2026
 
 Separately approved activation completed against the independently confirmed

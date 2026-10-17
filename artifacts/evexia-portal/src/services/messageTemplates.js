@@ -24,55 +24,6 @@ const MAX_STORED_RAW_LENGTH = LIMITS.records * 2 * (
 
 const systemTemplates = [
   {
-    id: 'system-email-forgot-password',
-    source: 'system',
-    channel: 'email',
-    name: 'Forgot password (example)',
-    description: 'Fictional EVEXIA reset preview only; not connected to account recovery or sends.',
-    content: {
-      subject: 'Reset your EVEXIA password — fictional preview',
-      html: `<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#eef4f5;padding:24px 12px;font-family:Arial,sans-serif;color:#203b48"><tr><td align="center">
-<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#ffffff;border:1px solid #dce7e9;border-radius:16px"><tr><td style="padding:28px;text-align:center">
-<img src="/images/evexia-logo.png" alt="EVEXIA Life Sciences" width="154" height="80">
-<p style="font-size:11px;color:#526b76;letter-spacing:1px">FICTIONAL PREVIEW · NOTHING IS SENT</p>
-<h1 style="font-size:26px;color:#126b70;margin:16px 0">Reset your password</h1>
-<p style="text-align:left">Hello {{recipient_name}},</p>
-<p style="text-align:left;line-height:1.6">This is a fictional password reset request for an EVEXIA demo account. The sample link below does not reset any password.</p>
-<p style="margin:24px 0"><a href="{{reset_url}}" style="display:inline-block;background-color:#126b70;color:#ffffff;padding:14px 24px;border-radius:8px;font-weight:bold;text-decoration:none">Reset password</a></p>
-<p style="text-align:left">Sample expiry: {{expiry_minutes}} minutes. All reset details are fictional preview content.</p>
-<p style="text-align:left;font-size:12px;color:#526b76">If the button does not work, the fictional fallback URL is:</p>
-<p style="text-align:left;overflow-wrap:anywhere;font-size:12px"><a href="{{reset_url}}" style="color:#126b70;text-decoration:underline">{{reset_url}}</a></p>
-<p style="text-align:left;font-size:13px;line-height:1.6">If you did not request this, ignore this email. Your password would remain unchanged. This example is not connected to real recovery events.</p>
-<hr style="border:1px solid #dce7e9"><p style="font-size:12px;color:#526b76">EVEXIA LIFE SCIENCES · {{company_name}}<br>Browser-local template preview only</p>
-</td></tr></table></td></tr></table>`,
-      text: 'FICTIONAL PREVIEW — NOTHING IS SENT. Hello {{recipient_name}}, reset your EVEXIA demo password: {{reset_url}}. Sample expiry: {{expiry_minutes}} minutes. All reset details are fictional and this URL cannot reset a password. If you did not request this, ignore this email; your password would remain unchanged. Not connected to recovery events. — {{company_name}}',
-    },
-  },
-  {
-    id: 'system-email-order-confirmation',
-    source: 'system',
-    channel: 'email',
-    name: 'Order confirmation (example)',
-    description: 'EVEXIA starter example; not connected to order events.',
-    content: {
-      subject: 'Order {{order_number}} received',
-      html: '<h1>Thank you, {{recipient_name}}</h1><p>We received order <strong>{{order_number}}</strong>.</p><p>— {{company_name}}</p>',
-      text: 'Thank you, {{recipient_name}}. We received order {{order_number}}. — {{company_name}}',
-    },
-  },
-  {
-    id: 'system-email-payment-receipt',
-    source: 'system',
-    channel: 'email',
-    name: 'Payment receipt (example)',
-    description: 'EVEXIA starter example; not connected to payment events.',
-    content: {
-      subject: 'Payment receipt for {{order_number}}',
-      html: '<h1>Payment received</h1><p>Hello {{recipient_name}},</p><p>We recorded a payment of {{amount}} for order {{order_number}}.</p><p>— {{company_name}}</p>',
-      text: 'Hello {{recipient_name}}, we recorded a payment of {{amount}} for order {{order_number}}. — {{company_name}}',
-    },
-  },
-  {
     id: 'system-sms-order-confirmation',
     source: 'system',
     channel: 'sms',
@@ -227,7 +178,7 @@ function readRaw() {
   }
 }
 
-export function loadMessageTemplates() {
+function readLegacySnapshot() {
   const raw = readRaw();
   if (raw === null) return { raw, record: emptyRecord() };
   if (typeof raw !== 'string' || raw.length > MAX_STORED_RAW_LENGTH) {
@@ -249,6 +200,15 @@ export function loadMessageTemplates() {
   }
 }
 
+// The local service exposes SMS only. Legacy local emails stay untouched in raw
+// storage so an SMS save never imports, erases or reauthors those records.
+function smsSnapshot(snapshot) {
+  return { ...snapshot, record: { ...snapshot.record, templates: snapshot.record.templates.filter((t) => t.channel === 'sms') } };
+}
+export function loadMessageTemplates() {
+  return smsSnapshot(readLegacySnapshot());
+}
+
 function assertFresh(snapshot) {
   if (!snapshot || !Object.hasOwn(snapshot, 'raw') || readRaw() !== snapshot.raw) {
     throw new Error('Message templates changed in another tab. Reload the latest templates, review your form and try again. No changes were saved.');
@@ -264,8 +224,8 @@ function persist(snapshot, record) {
   } catch {
     throw new Error('Message templates could not be saved. Check browser storage permissions or free space, then try again. Your saved templates are unchanged.');
   }
-  recordLocalChanges('message_template', snapshot.record, record);
-  return { raw, record };
+  recordLocalChanges('message_template', smsSnapshot(snapshot).record, smsSnapshot({ record }).record);
+  return smsSnapshot({ raw, record });
 }
 
 function newId() {
@@ -288,25 +248,26 @@ async function withMutationLock(operation) {
 
 function prepareCurrent(snapshot) {
   assertFresh(snapshot);
-  const current = loadMessageTemplates();
+  const current = readLegacySnapshot();
   assertFresh(snapshot);
   return current;
 }
 
 export async function saveMessageTemplate(snapshot, input, id = null) {
+  if (input?.channel !== 'sms') throw new Error('Email templates must be saved through the authenticated email service.');
   const normalized = validateMessageTemplate(input);
   if (id !== null && (typeof id !== 'string' || !validId(id))) {
     throw new Error('This template ID is invalid. Reload the template list and try again.');
   }
   if (id !== null && SYSTEM_TEMPLATES.some((template) => template.id === id)) {
-    throw new Error('System templates cannot be overwritten. Copy the template to create a user version.');
+    throw new Error('System SMS examples are read-only. Create a new SMS template instead.');
   }
 
   return withMutationLock(() => {
     const current = prepareCurrent(snapshot);
     const record = current.record;
     const existingIndex = id === null ? -1 : record.templates.findIndex((template) => template.id === id);
-    if (id !== null && existingIndex === -1) {
+    if (id !== null && (existingIndex === -1 || record.templates[existingIndex].channel !== 'sms')) {
       throw new Error('This user template no longer exists. Reload the latest templates and try again.');
     }
     if (record.templates.some((template) =>
@@ -337,6 +298,9 @@ export async function deleteMessageTemplate(snapshot, id) {
   return withMutationLock(() => {
     const current = prepareCurrent(snapshot);
     const record = current.record;
+    if (record.templates.some((template) => template.id === id && template.channel !== 'sms')) {
+      throw new Error('Legacy local email records cannot be changed by the SMS service.');
+    }
     const remaining = record.templates.filter((template) => template.id !== id);
     if (remaining.length === record.templates.length) {
       throw new Error('This user template no longer exists. Reload the latest templates and try again.');

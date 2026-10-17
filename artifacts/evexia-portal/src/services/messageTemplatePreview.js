@@ -15,7 +15,7 @@ export const SAMPLE_VALUES = Object.freeze({
   amount: '₹1,250.00',
   company_name: 'EVEXIA LIFE SCIENCES (Demo)',
   reset_url: 'https://preview.example.invalid/reset-password/fictional-not-a-token',
-  expiry_minutes: '30 (fictional)',
+  expiry_minutes: '15 (fictional)',
 });
 
 const SUPPORTED_TOKEN_SET = new Set(SUPPORTED_TOKENS);

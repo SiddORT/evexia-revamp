@@ -1,8 +1,11 @@
 # Password recovery
 
-Recovery adds no tables or migrations, changes no migration
-policy, and does not enable public registration. Existing account encryption and
-application revision `0035_account_identifiers` are still required.
+Recovery does not enable public registration. Existing account encryption remains
+required. Recovery email content now comes exclusively from the dedicated
+`email_templates` table at `0043_email_templates`; see [Email templates](email-templates.md)
+for its protected event assignment and separately approved migration requirements.
+There is no hardcoded or browser-local email fallback. This does **not** switch
+delivery to encrypted Communication configuration defaults.
 
 ## Operator configuration (not applied automatically)
 

@@ -8,3 +8,16 @@ Communication configuration storage is shared, encrypted and Super Admin-only, i
 **Why:** The user explicitly approved encrypted credential storage but excluded sending, connection testing, provider activation and switching environment-configured password recovery. Provider credential names are not standardized; query-name denylists would allow credentials under unknown aliases.
 
 **How to apply:** Keep credentials write-only through the dedicated encrypted configuration API, never in localStorage or returned to editors. Do not migrate or delete legacy browser demo records. Delivery, key rotation and shared migration execution require separate approval. Revisit URL requirements explicitly rather than weakening validation with a short denylist.
+
+Database email authoring is not approval to change recovery's SMTP selection or
+import existing local email records. Recovery event delivery may use stored
+template content while keeping environment-configured SMTP; SMS persistence and
+delivery remain separate.
+
+**Why:** The user explicitly separated database email templates and real recovery
+content selection from transport changes, local-record migration and SMS backend
+work.
+
+**How to apply:** Keep those permissions separate when extending templates or
+planning activation; do not broaden an additive template rollout to pending
+unrelated migrations.

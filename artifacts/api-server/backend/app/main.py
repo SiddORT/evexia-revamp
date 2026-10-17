@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from app.api.v1.role_urls import router as role_urls_router
 from app.api.v1.communication import router as communication_router
+from app.api.v1.email_templates import router as email_templates_router
 from app.services.communication_crypto import CommunicationError
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -163,7 +164,7 @@ def create_app() -> FastAPI:
         # Do not echo invalid bodies: they may contain passwords or other sensitive values.
         fields = [{"field": ".".join(str(part) for part in err["loc"] if isinstance(part, (str, int))),
                    "code": err["type"]} for err in exc.errors()[:20]]
-        if request.url.path.startswith("/api/v1/admin/communication"):
+        if request.url.path.startswith(("/api/v1/admin/communication", "/api/v1/admin/email-templates")):
             # Unknown property names can themselves contain a credential.
             fields = [{"field": "body", "code": "invalid_configuration"}]
         if request.url.path.startswith("/api/v1/admin/sales-targets"):
@@ -333,6 +334,7 @@ def create_app() -> FastAPI:
     app.include_router(roles_router, prefix="/api/v1")
     app.include_router(role_urls_router, prefix="/api/v1")
     app.include_router(communication_router, prefix="/api/v1")
+    app.include_router(email_templates_router, prefix="/api/v1")
     app.add_api_route("/api/healthz", lambda: {"status": "ok"}, methods=["GET"],
                       response_model=HealthStatus, operation_id="getHealthCheck", tags=["health"])
     original_openapi = app.openapi

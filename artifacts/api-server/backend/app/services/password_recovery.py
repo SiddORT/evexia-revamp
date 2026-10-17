@@ -13,7 +13,8 @@ from sqlalchemy import select, text
 from app.core.security import hash_password, utcnow, verify_password
 from app.db.models import User
 from app.repositories import sessions
-from app.services import account_crypto, auth, recovery_mail
+from app.services import account_crypto, auth, recovery_mail, email_templates
+from app.services.email_rendering import render_recovery
 from app.services.staff_crypto import StaffCrypto
 
 MESSAGE = "If an eligible account matches, we will attempt to send a password-recovery email."
@@ -87,9 +88,14 @@ def issue_and_send(db, settings, identifier, identity_kind):
         "iss": settings.jwt_issuer, "aud": settings.jwt_audience + ":password-recovery",
     }
     token = jwt.encode(claims, _key(settings), algorithm="HS256")
+    template = email_templates.resolve_recovery(db)
+    # Neutral greeting avoids decrypting extra directory fields just for email.
+    rendered = render_recovery(template, recipient_name="there",
+                               reset_url=settings.password_recovery_url.rstrip("/") + "#token=" + token,
+                               expiry_minutes=15)
     # Release read transactions before potentially slow network delivery.
     db.rollback()
-    recovery_mail.send(settings, recipient, token)
+    recovery_mail.send(settings, recipient, rendered)
 
 
 def deliver(bind, settings, identifier, identity_kind):

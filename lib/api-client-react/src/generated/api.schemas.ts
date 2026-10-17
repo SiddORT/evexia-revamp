@@ -2011,6 +2011,114 @@ export interface DownloadURLResponse {
   url: string;
 }
 
+export interface EmailTemplateCreate {
+  creation_id: string;
+  /** @maxLength 500 */
+  description?: string;
+  event_key?: "password_recovery" | null;
+  /**
+   * @minLength 1
+   * @maxLength 100000
+   */
+  html: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  subject: string;
+  /**
+   * @minLength 1
+   * @maxLength 20000
+   */
+  text: string;
+}
+
+export interface EmailTemplateEdit {
+  /** @maxLength 500 */
+  description?: string;
+  event_key?: "password_recovery" | null;
+  /**
+   * @minLength 1
+   * @maxLength 100000
+   */
+  html: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  subject: string;
+  /**
+   * @minLength 1
+   * @maxLength 20000
+   */
+  text: string;
+  /**
+   * @minimum 1
+   * @maximum 2147483647
+   */
+  version: number;
+}
+
+export interface EmailTemplateEvent {
+  key: "password_recovery";
+  label: string;
+  required: boolean;
+  variables: string[];
+}
+
+export interface EmailTemplateRecord {
+  /** @maxLength 500 */
+  description?: string;
+  event_key?: "password_recovery" | null;
+  /**
+   * @minLength 1
+   * @maxLength 100000
+   */
+  html: string;
+  id: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  protected: boolean;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  subject: string;
+  /**
+   * @minLength 1
+   * @maxLength 20000
+   */
+  text: string;
+  version: number;
+}
+
+export interface EmailTemplateList {
+  events: EmailTemplateEvent[];
+  /** @maxItems 100 */
+  items: EmailTemplateRecord[];
+}
+
+export interface EmailTemplateVersion {
+  /**
+   * @minimum 1
+   * @maximum 2147483647
+   */
+  version: number;
+}
+
 export interface ErrorField {
   code: string;
   field: string;
