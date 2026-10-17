@@ -50,12 +50,20 @@ database readiness and served assets through the original routed preview.
 The public Admin login page rendered without browser errors. Focused operator
 and development-sync checks passed (8 + 6 + 29 tests).
 
-**Protected-screen verification is still pending:** the bootstrap credential was
-rejected by the normal login endpoint with HTTP 401 on one controlled attempt.
-No account/password/permissions were reset, no session was fabricated, no template
-was edited and no email was sent. This does not establish an account defect.
-Complete the protected-library/drawer verification using a legitimate current
-Super Admin credential before closing the user-visible incident.
+**Protected-screen verification passed:** a normal authenticated Super Admin
+session loaded both the collection and the protected Forgot password detail with
+HTTP 200 through the original routed preview. The actual drawer displayed the
+read-only HTML source and rendered email preview. Its iframe has an empty
+sandbox, `srcdoc`, and restrictive `default-src 'none'` CSP. There were zero
+template writes, zero error banners, and no email delivery. A private screenshot
+and sanitized request-status report were retained with the recovery evidence.
+
+The initial sign-in checks used a stale environment account identifier; read-only
+encrypted lookup established the real protected account before normal login
+using the separately supplied current credential. No account/password/permissions
+were reset and no session was fabricated. This recovery did not change the stale
+environment setting. The development recovery is complete; it is not a full
+project release, production activation or SMTP-delivery approval.
 
 For this historical activation the invocation used the already installed 16.10
 toolchain:
