@@ -1,190 +1,142 @@
-# Development coordinated release gate
+# Manual development compatibility diagnostics
 
-This gate applies only to the managed Replit development preview. There is no
-production activation in this work. Production artifact commands, installation
-tools, approvals, migration policy and public API behavior remain unchanged.
+EVEXIA development compatibility checks run **only when explicitly requested**.
+Opening the preview, waiting, returning focus, changing visibility, going
+offline/online, reconnecting Vite, or editing source does not run a compatibility
+probe. There is no compatibility blocking screen, fetch wrapper, special
+development contract header, or compatibility-based API quarantine.
 
-## Completion sequence
+**Tradeoff:** frontend/API/schema compatibility is no longer automatically
+verified. Normal access is not evidence that the frontend, loaded API source,
+and database schema match. Source edits can leave a running API stale; operators
+must explicitly diagnose and restart it when appropriate.
 
-1. A completed merge installs the existing locked dependencies, then runs
-   `pnpm check:development`. A nonzero result stops reconciliation setup.
-   No migration, bootstrap, backup, key provisioning, secret replacement or
-   Communication activation is performed.
-2. Read the JSON report. `required_revision` is the loaded application's exact
-   requirement. `current_revision` contains only known migration identifiers
-   (or `unknown`); multiple/empty revisions fail. Every check is explicitly
-   `pass`, a stable failure category, or `not_verified`. Configuration rules
-   validate signing/host settings and independent Directory, Staff and
-   Communication keyrings; Directory/account anchors and the existing exact
-   readiness rules are also checked against a read-only transaction.
-3. Obtain separate operator approval before any schema/crypto rollout or
-   Secrets setup. Follow the existing directory/account rollout and
-   [Communication configuration](communication-configuration.md) instructions.
-   A blocked report is the expected outcome until this work is approved and
-   completed. Never generate or replace keys just to make this gate pass.
-4. Restart **artifacts/api-server: API Server** using its existing managed
-   workflow. Restart **artifacts/evexia-portal: web** only when its command or
-   configuration changed; keep existing draft tabs open, using a separate tab
-   if the frontend needs a new page.
-   API startup executes the same bounded preflight and exits nonzero before
-   starting the normal service if prerequisites fail. The Vite preview remains
-   available to show the blocking screen even when no API can start.
-5. Run `pnpm verify:development`. This checks the source identity through Vite's
-   browser-facing ingress, then the actual loaded API's compatibility/readiness
-   response, through the normal HTTPS development hostname. It rejects HTML
-   fallbacks, redirects, malformed/unknown JSON, stale processes and timeouts.
-   No localhost proxy, hosts override or ingress replacement is installed.
-6. In each existing browser tab, select **Retry compatibility check**. Only a
-   successful check of that tab's contract, candidate and running API enables
-   interaction. A candidate preflight pass is never activation evidence.
-   Post-merge also runs the ingress verifier, so a merge over a stale running
-   API reports failure instead of claiming successful setup. Restart separately
-   and repeat verification; this is not an automatic restart/promotion.
+## Explicit commands
 
-## Failure categories and recovery
+- `pnpm check:development`: read-only candidate preflight against the selected
+  development configuration/database. Reports configuration, schema revision,
+  required columns and functional encryption anchors. A candidate pass does
+  not establish that the running API or preview ingress matches.
+- `pnpm verify:development`: one bounded ingress verification against the
+  development preview. Uses the shared running-release verifier to compare
+  `/release-runtime.json`, `/api/v1/version` and ordinary database readiness
+  against candidate frontend/backend identity. It reports success or failure
+  and schedules no recurring work. The separate `/__development-release` and
+  `/api/v1/development/compatibility` endpoints remain explicit diagnostics.
 
-- `revision_mismatch` / `revision_unverified`: inspect the selected development
-  database; do not upgrade, stamp, or reclassify migrations automatically.
-- `missing_or_invalid_configuration`: configure the named key family through
-  existing Secrets tooling after approval, retaining keys required by old data.
-- `configuration_or_schema_invalid`: keyring anchors, required columns, or
-  other existing functional readiness rules failed; investigate with existing
-  approved operator diagnostics. No underlying exception is exposed.
-- `database_unavailable`: verify database access. `not_verified` never means
-  success.
-- Browser `incompatible runtime` or verifier `stale_or_incompatible_api`:
-  restart the managed API; it may still be serving older loaded code.
-- `browser contract changed`: the browser bundle expects an older explicit
-  contract. Keep this tab and its drafts; use a separate tab with the updated
-  frontend to finish setup. Do not promise safe in-place conversion of a
-  draft across an incompatible contract.
-- `unavailable` / `unavailable_or_invalid_json` / `timeout_or_unverified`: fix
-  the managed service or ingress and explicitly retry.
+These commands can inspect the configured development environment: invoke them
+only when the user/operator requests compatibility diagnostics. Regression
+tests use disposable databases or synthetic responses, not these commands
+against shared data.
 
-The browser also distinguishes `candidate_*` (frontend release endpoint) from
-`api_*` (running compatibility endpoint) failures: `unreachable`, `not_json`,
-`http_error`, and `invalid_json`. `check_timeout` is the bounded browser deadline.
-Each category has fixed, non-secret recovery guidance; raw responses and
-exception text are never displayed. The recovery screen shows the actual tab's
-origin so an operator can compare it with the hostname used by the verifier.
-During a retry the disabled button reads **Checking compatibility…**. A failed
-retry remains blocked and can be retried explicitly after the cause is resolved.
-Probes omit credentials and reject redirects. An API HTTP 503 never authorizes
-access, even if its body incorrectly claims readiness.
+The compatibility endpoint is an explicit diagnostic, not a readiness or access
+gate. It returns only `{format, identity, ready}`, with HTTP 200 for a passing
+check and 503 for an unverified/incompatible runtime. It is available only on
+the managed development API, not production. Requests are single-flight with a
+five-second finite cache (including failures); cache expiry does not start
+work. A later explicit request is required. The child preflight is killed
+after ten seconds. Candidate preflight has an eight-second process deadline,
+bounded connection/SQL/lock timeouts; ingress verification has a 25-second
+total deadline. Neither diagnostic response nor command output enables or
+disables normal application access.
 
-Do not infer ingress failure from a direct request to Vite's frontend port:
-that port can serve SPA HTML for API paths while the routed preview correctly
-forwards them to the API service. Compare the actual browser origin, candidate
-and compatibility responses first. Do not introduce another proxy, switch
-origins, relax hostname rules or restart the API based on that observation alone.
+Reports retain fixed non-secret failure categories; missing keys, mismatched
+schema revisions, unavailable databases, stale loaded source and malformed/
+unreachable ingress responses remain failures, never fabricated readiness.
+Detailed local reports do not expose credentials, raw exception text, URLs or
+business records. Public diagnostics expose only non-secret identity and a
+boolean. Inspect `checks` in the local report to distinguish
+`missing_or_invalid_configuration`, `revision_mismatch`, `database_unavailable`
+and `not_verified`; the latter never means success.
 
-Operator reports contain fixed categories, non-secret contract/source identity,
-known revisions and timings, never URLs, credentials, business records or raw
-exception text. Public development compatibility exposes only identity and a
-boolean; detailed configuration diagnostics remain a local operator command.
+## Normal startup and security
 
-When the API is running but becomes incompatible, health/version/compatibility
-remain reachable and readiness returns a generic 503; all other development
-API paths require the browser contract header and a passing cached probe.
-Authentication/permissions are still required after this check. When startup
-itself fails, API endpoints are unavailable; use the Vite blocking screen and
-the local preflight command as recovery access.
+Managed API startup runs Uvicorn without a development preflight.
+Post-merge setup still installs frozen Node/Python dependencies; it runs neither
+compatibility preflight nor ingress verification. The incoming main branch's
+separately approved additive database synchronization is retained in API startup
+and post-merge setup, including its migration integrity postconditions; this
+task neither changes its policy nor authorizes/executes shared-data migrations.
+The frontend launcher starts Vite without waiting on a live-verification loop.
+The process still captures its source identity for later explicit diagnostics.
+Passive served-release metadata is retained for explicit checks and production
+release tooling; computing that metadata does not invoke API/database probes
+or authorize access. Vite's compatibility endpoint computes its response only
+on an explicit diagnostic request.
 
-## Drafts, HMR and bounded work
+Normal API requests do not invoke development compatibility diagnostics or
+require their header/result. Independent startup security configuration checks
+(signing key, allowed origins, bootstrap hosts and proxy peers), host policy,
+request limits, login/session validation, permissions, encryption needed by
+actual operations and domain/database integrity protections are unchanged.
+Ordinary health/readiness retain their independent existing semantics; they do
+not invoke the development preflight. Production release, installation,
+approval and validation behavior is unchanged.
 
-Initial unknown/incompatible loads never mount the application. A mounted
-subtree is kept hidden **and inert** during rechecks and failures, not replaced.
-The gate does not log out, rotate credentials, reload, clear local drafts, or
-replay mutations. Auth verification skips renewal while compatibility is
-blocked. Definitive authentication denial retains its existing behavior.
-In-flight completions from an older verification generation cannot reopen the
-preview. A request crossing invalidation is rejected locally, not replayed:
-operators must reconcile uncertain mutations through the existing workflow.
+## Drafts and HMR
 
-The explicit shared contract is `development-contract.json`; change its
-contract identifier when frontend/API semantics become incompatible. The
-process also captures a SHA-256 of application Python source and the manifest
-**before** importing application routes. Vite computes the candidate identity
-independently. This detects stale processes even without a Git commit change.
-Backend source/manifest edits notify the browser through the existing HMR
-channel. Frontend HMR invalidates compatibility before updating; recovery is
-explicit. Backend-only edits can recover after API restart without reloading
-the browser. A new incompatible frontend contract cannot silently authorize
-the old bundle.
+There is no compatibility-induced logout, credential clearing, request replay,
+page reload, editor reset, hidden/inert subtree or auth-renewal suppression.
+Authentication denial retains its ordinary behavior.
 
-Healthy tabs check every 15 seconds and on focus/visibility return. Failed tabs
-require explicit retry. The API uses a single-flight five-second finite cache,
-including failures; no per-request DB probe flood. Preflight has an eight-second
-process deadline, two-second connect and bounded SQL/lock timeouts; API child
-probes are killed after ten seconds. Browser checks time out after twelve
-seconds; operator ingress verification has a 25-second total deadline. These
-are upper bounds for checks, **not** promises of activation timing.
+For managed development only, the served Vite client continues suppressing its
+automatic full-page reload calls (including reconnection paths). This preserves
+already-mounted drafts where feasible without quarantining the app. A
+notification event is emitted but does not run compatibility work or block
+access. The incoming non-blocking update notice links to a separate tab without
+reloading or hiding the old one. Normal React HMR still operates and only preserves state where React
+supports it. An unrecognized Vite reload interface produces an explicit
+development tooling error, not a fabricated successful transform. Dependency
+files on disk and production clients are untouched.
 
-There is no immutable staging, atomic promotion, automatic rollback or
-last-known-good guarantee. In-place source/HMR can be diagnosed and blocked,
-not undone by this gate. Full-page updates explicitly requested by the user
-can still discard browser-local drafts; normal HMR preserves state only where
-React supports it. Keep browser tabs open during recovery.
+Some changes require a fresh page. Open a separate preview tab yourself while
+retaining an old draft tab; no automatic recovery promises to reconcile stale
+frontend code or uncertain mutations. Explicit reloads/closing tabs can still
+lose unsaved drafts.
 
-Vite normally reloads on some full-update paths and after server reconnection.
-For the gated development service only, the served Vite client replaces those
-automatic reload calls with a blocking notification. Dependency files and
-production clients are not modified. An unrecognized Vite recovery interface
-fails closed. A full-page update remains blocked even after retry; open a
-separate preview tab while retaining the old draft tab. Portaled menus/dialogs
-are hidden and inert as well as the main app; their mounted state is preserved,
-and their focus traps cannot capture the recovery controls.
+## Focused regressions
 
-## Focused evidence
+- `pnpm test:development-gate`: synthetic identity, manual probe/verifier success
+  and failure, cache/timeout, no automatic startup hooks or frontend gating.
+- `sh scripts/test-api-foundation.sh tests/test_development_gate.py`: disposable
+  PostgreSQL diagnostics, ordinary managed requests without compatibility
+  enforcement, real launcher and mandatory signing validation.
+- `EVEXIA_TEST_DEVELOPMENT_GATE=1 sh scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/development-gate.preview.spec.mjs`:
+  isolated lifecycle/authentication and mounted-editor HMR regressions. The
+  legacy fixture variable enables development diagnostic tooling/draft reload
+  protection only, never compatibility gating or production behavior.
 
-Run `pnpm test:development-gate` for synthetic unit and ingress checks,
-`sh scripts/test-api-foundation.sh tests/test_development_gate.py` for
-disposable PostgreSQL/API checks, and
-`EVEXIA_TEST_DEVELOPMENT_GATE=1 sh scripts/run-authenticated-previews.sh artifacts/evexia-portal/tests/development-gate.preview.spec.mjs`
-for Chromium initial-block/recovery and mounted real-editor retention checks.
-The dedicated test switch affects development Vite only, never production
-builds. Isolated fixtures retain their existing test-only migration/bootstrap
-guards; the release gate itself never invokes them.
+`pnpm validate:release` remains the separately invoked regression suite, not an
+automatic development compatibility check.
 
-The full regression suite remains `pnpm validate:release`; it is not run on
-ordinary edits or as part of recurring probes. Record observed lightweight
-timings separately from test harness setup, regression and build durations.
+## Verification evidence (2026-10-17)
 
-Observed in this workspace on 2026-10-16: the blocked development candidate
-report took 482–561 ms; the failed ingress verification took 138 ms (Vite passed,
-API unavailable). These are **failure-path measurements**, not activation
-evidence. Synthetic unit checks took about 0.3 seconds, seven disposable API/
-database tests took 6.95 seconds excluding database harness setup, and the two
-Chromium tests took 6.3 seconds excluding fixture startup. The frontend build
-took 5.5 seconds and is separate from recurring compatibility cost.
+Synthetic diagnostics regressions passed (7 Python and 28 Node checks).
+Disposable API/database regressions passed (8 cases), including actual managed
+startup with both valid and missing diagnostic prerequisites, truthful explicit
+HTTP 200/503 diagnostics, ordinary HTTP 401 protection before/after diagnostics,
+and rejection of missing signing configuration. Session service tests and the
+frontend production build passed (existing large-chunk warning only).
 
-Recovery investigation on 2026-10-16 in a task fork: both managed services were
-initially stopped. After starting their existing managed workflows, both the
-local routed preview and the fork's HTTPS development origin rendered the
-normal portal; browser candidate and API compatibility requests returned HTTP
-200 JSON with matching identities and `ready: true`. Explicit invalidation and
-Retry restored normal rendering on both origins. The operator verifier also
-passed. This did **not** reproduce the earlier persistent failure in the
-original user's browser, and does not establish that an API restart or stale
-tab caused it. No routing, key, database or production changes were made.
+The isolated Chromium scenarios passed: normal portal rendering, 31 seconds
+across former polling intervals, offline/online/focus/visibility events with no
+diagnostic calls or special header, protected navigation returning to login,
+and the same mounted editor node/value after HMR and full-reload messages.
+An initial assertion omitted the welcome heading's punctuation; correcting that
+test locator and rerunning that scenario passed. The mounted-draft scenario
+passed on its first run.
 
-After the recovery changes, `pnpm test:development-gate` passed six Python
-checks and 26 Node checks; `pnpm check:development` and
-`pnpm verify:development` both passed. The frontend production build passed
-(with its existing large-chunk warning). The focused isolated Chromium command
-above passed all three browser scenarios in 5.7 seconds, including the same
-mounted editor node/value across failed checks, no navigation or auth renewal,
-late-success rejection, and explicit recovery.
+Both existing managed workflows restarted cleanly. Actual routed preview
+screenshots showed the normal portal at `/` and the Admin login at the protected
+`/admin/masters/zones` path; an unauthenticated managed API request returned 401.
+No compatibility command or endpoint was invoked against the shared environment.
+These checks cannot access the user's original Replit-host iframe or already-open
+draft tab; the exact original embedded-preview experience remains unverified.
 
-Real browser requests through the managed HTTPS ingress returned matching
-candidate/API HTTP 200 JSON and rendered **Welcome to EVEXIA**. In both a
-top-level tab and a static localhost-parent iframe containing that HTTPS
-preview, injecting API HTML blocked access with endpoint-specific guidance;
-Retry against a held genuine API response displayed the disabled checking
-button, then restored the portal when the real response completed. Browser
-page/console errors were absent in the top-level check. The iframe is an
-embedding simulation, not access to the original Replit host UI or the user's
-already-open tab; those remain an explicit environment limitation. An initial
-test invocation accidentally included a trailing `.` and selected the broad
-suite; it timed out and is not passing evidence. The corrected one-spec
-invocation produced the focused result above.
+The completion attempt also ran `pnpm run validate:release`. Its backend/unit
+groups and the first 139 broad browser cases passed, but the runner exhausted
+its validation polling budget and terminated the command during the next case.
+The full release suite therefore has **no passing terminal result**. Completion
+records this runner limitation explicitly rather than changing or weakening
+the release validation command; the scoped results above remain the task's
+completed verification.

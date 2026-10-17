@@ -79,31 +79,41 @@ def test_missing_signing_configuration_does_not_echo_values(development_settings
     assert result["checks"]["database"] == "not_verified"
 
 
-def test_manual_diagnostics_never_quarantine_normal_requests_or_bypass_auth(monkeypatch):
+def test_managed_requests_never_run_compatibility_and_diagnostics_do_not_gate_auth(monkeypatch):
     import app.main as main
     settings = get_settings().model_copy(update={"app_env": "development"})
     monkeypatch.setattr(main, "_managed_development", True)
     monkeypatch.setattr(main, "LOADED_IDENTITY", LOADED_IDENTITY, raising=False)
     monkeypatch.setattr(main, "get_settings", lambda: settings)
     from app.services.development_gate import DevelopmentGate
+    calls = []
     async def failed(self):
+        calls.append("explicit")
         return False
     monkeypatch.setattr(DevelopmentGate, "ready", failed)
     with TestClient(main.create_app()) as api:
         assert api.get("/api/v1/health").status_code == 200
+        assert api.get("/api/v1/version").status_code == 200
+        assert api.get("/api/v1/auth/me").status_code == 401
+        assert api.post("/api/v1/auth/refresh").status_code == 403  # origin protection
+        assert api.get("/api/v1/admin/staff").status_code == 401
+        assert api.get("/api/v1/health/readiness").status_code == 200
+        assert calls == []  # including ordinary readiness, no diagnostic preflight
         status = api.get("/api/v1/development/compatibility")
         assert status.status_code == 503
         assert set(status.json()) == {"format", "identity", "ready"}
         assert "checks" not in status.json()
-        assert api.post("/api/v1/auth/refresh").status_code == 403  # CSRF/origin checks still enforced.
-        assert api.get("/api/v1/health/readiness").status_code == 200
+        assert calls == ["explicit"]
+        assert api.post("/api/v1/auth/refresh").status_code == 403
+        assert api.get("/api/v1/admin/staff").status_code == 401
+        assert calls == ["explicit"]
         async def passed(self):
             return True
         monkeypatch.setattr(DevelopmentGate, "ready", passed)
         assert api.get("/api/v1/development/compatibility").json()["ready"] is True
         assert api.get("/api/v1/admin/staff").status_code == 401
-        headers = {"X-Evexia-Development-Contract": f'{LOADED_IDENTITY["contract"]}:{LOADED_IDENTITY["schema"]}'}
-        assert api.get("/api/v1/admin/staff", headers=headers).status_code == 401  # no auth bypass
+        headers = {"X-Evexia-Development-Contract": "stale:irrelevant"}
+        assert api.get("/api/v1/admin/staff", headers=headers).status_code == 401
 
 
 def test_production_has_no_development_dependency_or_route(monkeypatch):
@@ -115,10 +125,11 @@ def test_production_has_no_development_dependency_or_route(monkeypatch):
             assert api.get("/api/v1/version").json() == {"api": "v1", "release": LOADED_IDENTITY}
 
 
-def test_actual_managed_startup_loaded_process_and_nonzero_failed_start(development_settings, tmp_path):
+@pytest.mark.parametrize("diagnostics_pass", [True, False])
+def test_actual_managed_startup_without_preflight_and_security_failure(development_settings, diagnostics_pass, tmp_path):
     root = Path(__file__).resolve().parents[4]
-    # Clone reviewed CODE only; bind the clone to the disposable DB. Never add a
-    # test-only bypass or allow the managed launcher to migrate a foreign target.
+    # Preserve the real launcher's separately approved database-sync boundary:
+    # bind a code-only clone to this disposable database, never the shared one.
     import shutil
     original = root
     root = tmp_path / "candidate"
@@ -149,42 +160,53 @@ def test_actual_managed_startup_loaded_process_and_nonzero_failed_start(developm
         reservation.bind(("127.0.0.1", 0))
         port = reservation.getsockname()[1]
     env = {**os.environ, "APP_ENV": "development", "PORT": str(port),
-           "COMMUNICATION_ENCRYPTION_KEYS": development_settings.communication_encryption_keys.get_secret_value()}
+           "COMMUNICATION_ENCRYPTION_KEYS": (
+               development_settings.communication_encryption_keys.get_secret_value() if diagnostics_pass else "")}
     # This environment is the harness's private socket-only synthetic database.
     assert "evexia_api_test" in env["DATABASE_URL"]
     # Managed workflows start in the artifact, without the harness's import path.
-    # The runtime gate must still be able to import app in its real child process.
+    # Explicit diagnostics must still import app in their real child process.
     env.pop("PYTHONPATH", None)
     process = subprocess.Popen(["sh", str(root / "scripts/start-development-api.sh")],
                                cwd=root / "artifacts/api-server", env=env,
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     started = time.monotonic()
     try:
-        runtime = None
-        while time.monotonic() - started < 25:
+        healthy = False
+        while time.monotonic() - started < 12:
             assert process.poll() is None
             try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/v1/development/compatibility", timeout=2) as response:
-                    runtime = json.load(response)
+                with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/v1/health", timeout=2) as response:
+                    healthy = json.load(response) == {"status": "ok"}
                 break
             except (OSError, urllib.error.URLError):
                 time.sleep(.05)
-        assert runtime and runtime["ready"] is True
-        assert runtime["identity"] == LOADED_IDENTITY
-        with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/v1/health", timeout=2) as response:
-            assert json.load(response) == {"status": "ok"}
+        # Missing diagnostic prerequisites do not prevent normal startup.
+        assert healthy
         with pytest.raises(urllib.error.HTTPError) as rejected:
             urllib.request.urlopen(f"http://127.0.0.1:{port}/api/v1/auth/me", timeout=2)
         assert rejected.value.code == 401
+        # Only now explicitly request diagnostics, against the disposable DB.
+        try:
+            response = urllib.request.urlopen(
+                f"http://127.0.0.1:{port}/api/v1/development/compatibility", timeout=12)
+        except urllib.error.HTTPError as error:
+            response = error
+        with response:
+            assert response.status == (200 if diagnostics_pass else 503)
+            runtime = json.load(response)
+        assert runtime["ready"] is diagnostics_pass
+        assert runtime["identity"] == LOADED_IDENTITY
+        with pytest.raises(urllib.error.HTTPError) as still_protected:
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/api/v1/auth/me", timeout=2)
+        assert still_protected.value.code == 401
     finally:
         process.terminate()
         process.wait(timeout=5)
-    # Missing keys fail before exec: a nonzero setup must never start Uvicorn.
-    env["COMMUNICATION_ENCRYPTION_KEYS"] = ""
+    # Independent signing validation remains mandatory at actual startup.
+    env["JWT_SECRET"] = ""
+    env["SESSION_SECRET"] = ""
     failed = subprocess.run(["sh", str(root / "scripts/start-development-api.sh")],
-                            cwd=root, env=env, capture_output=True, timeout=25)
+                            cwd=root, env=env, capture_output=True, timeout=12)
     assert failed.returncode != 0
-    result = json.loads(failed.stdout.splitlines()[-1])
-    assert not result["ok"]
-    assert result["checks"]["communication_keys"] == "missing_or_invalid_configuration"
     assert b"Uvicorn running" not in failed.stderr

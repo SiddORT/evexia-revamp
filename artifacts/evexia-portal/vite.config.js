@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
-import { candidateIdentity, developmentCompatibilityPlugin } from '../../scripts/development-identity.mjs';
+import { developmentCompatibilityPlugin } from '../../scripts/development-identity.mjs';
 import { frontendRuntimePlugin } from '../../scripts/frontend-runtime.mjs';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -43,19 +43,17 @@ function exactDevelopmentHosts() {
 }
 
 export default defineConfig(({ command, isPreview }) => {
- // Browsing/HMR never performs compatibility quarantine. Startup/update uses
- // the live-version pipeline once. Legacy gate fixtures remain isolated.
- const gate = command === 'serve' && !isPreview && process.env.EVEXIA_TEST_DEVELOPMENT_GATE === '1';
+  const developmentTools = command === 'serve' && !isPreview &&
+   (process.env.EVEXIA_TEST_DEVELOPMENT_GATE === '1' ||
+    (Boolean(process.env.REPLIT_DEV_DOMAIN) && !(process.env.APP_ENV === 'test' && apiProxyTarget)));
  return ({
   base: basePath,
   define: {
-    'import.meta.env.EVEXIA_DEVELOPMENT_GATE': JSON.stringify(gate),
-    'import.meta.env.EVEXIA_DEVELOPMENT_CONTRACT': JSON.stringify(gate ? candidateIdentity() : null),
     // Public host metadata only. Build/production preview never enable cookies.
     'import.meta.env.EVEXIA_PREVIEW_HOSTNAME': JSON.stringify(
       command === 'serve' && !isPreview ? process.env.REPLIT_DEV_DOMAIN || '' : ''),
   },
-  plugins: [exactDevelopmentHosts(), frontendRuntimePlugin(basePath), developmentCompatibilityPlugin(command === 'serve' && !isPreview && (gate || Boolean(process.env.REPLIT_DEV_DOMAIN)), basePath), react(), tailwindcss(), runtimeErrorOverlay()],
+   plugins: [exactDevelopmentHosts(), frontendRuntimePlugin(basePath), developmentCompatibilityPlugin(developmentTools, basePath), react(), tailwindcss(), runtimeErrorOverlay()],
   resolve: {
     alias: { '@': path.resolve(dirname, 'src') },
     dedupe: ['react', 'react-dom'],

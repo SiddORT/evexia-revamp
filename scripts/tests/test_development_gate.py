@@ -6,6 +6,9 @@ from pathlib import Path
 import subprocess
 import sys
 import unittest
+import io
+from email.message import Message
+from urllib.error import HTTPError
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -74,6 +77,28 @@ class GateTests(unittest.TestCase):
         runtime["ready"] = False
         self.assertFalse(verifier.verify("https://synthetic.replit.dev", fetch)["ok"])
 
+    def test_ingress_503_cannot_report_success_from_a_ready_body(self):
+        expected = json.loads(subprocess.check_output(
+            ["node", str(ROOT / "scripts/frontend-runtime.mjs")], cwd=ROOT, timeout=10))
+        identity = candidate_identity()
+        candidate = json.dumps({**expected, "mode": "development", "assets": {}}).encode()
+        runtime = json.dumps({"format": 1, "identity": identity, "ready": True}).encode()
+        headers = Message()
+        headers["Content-Type"] = "application/json"
+        class Response(io.BytesIO):
+            status = 200
+            def __init__(self):
+                super().__init__(candidate)
+                self.headers = headers
+            def geturl(self):
+                return "https://synthetic.replit.dev/release-runtime.json"
+        error = HTTPError("https://synthetic.replit.dev/api/v1/version",
+                          503, "Unavailable", headers, io.BytesIO(runtime))
+        with patch("urllib.request.urlopen", side_effect=[Response(), error]):
+            result = verifier.verify("https://synthetic.replit.dev")
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["checks"]["failure"], "unreachable_or_invalid_runtime")
+
     def test_no_mutation_or_regression_suite_in_recurring_scripts(self):
         for script in ("development-preflight.sh", "start-development-api.sh", "post-merge.sh"):
             source = (ROOT / "scripts" / script).read_text()
@@ -81,12 +106,19 @@ class GateTests(unittest.TestCase):
             self.assertNotIn("validate:release", source)
             self.assertNotIn("bootstrap-super-admin", source)
         source = (ROOT / "scripts/start-development-api.sh").read_text()
-        self.assertLess(source.index("set -eu"), source.index("development-preflight.sh"))
-        self.assertLess(source.index('sh "$ROOT/scripts/development-preflight.sh"'), source.index("exec python"))
+        self.assertIn("set -eu", source)
+        self.assertIn("exec python -m uvicorn", source)
+        self.assertNotIn("development-preflight.sh", source)
+        self.assertNotIn("verify-development-release.py", source)
+        self.assertIn("development-sync.py", source)
         source = (ROOT / "scripts/post-merge.sh").read_text()
         self.assertIn("set -euo pipefail", source)
+        self.assertIn("pnpm install --frozen-lockfile", source)
+        self.assertIn("uv sync --frozen", source)
+        self.assertNotIn("development-preflight.sh", source)
+        self.assertNotIn("verify-development-release.py", source)
         self.assertIn("development-sync.py", source)
-        self.assertNotIn('python "$ROOT/scripts/verify-development-release.py"', source)
         launcher = (ROOT / "scripts/start-development-web.sh").read_text()
-        self.assertIn("verify-running-release.py", launcher)
-        self.assertIn("DEVELOPMENT_RUNNING_RELEASE_VERIFIED", launcher)
+        self.assertIn("exec pnpm exec vite", launcher)
+        self.assertNotIn("verify-running-release.py", launcher)
+        self.assertNotIn("DEVELOPMENT_RUNNING_RELEASE_VERIFIED", launcher)

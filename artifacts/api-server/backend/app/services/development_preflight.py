@@ -17,8 +17,8 @@ def report():
               "next_steps": [
                   "Resolve failed configuration checks using existing Secrets; never replace keys to clear this report.",
                   "Inspect the selected development database. Apply schema or crypto rollout only with separate operator approval.",
-                  "Restart managed development services after approved setup. Run pnpm verify:development and retry in the browser.",
-                  "A candidate pass does not verify the running API or activate this release.",
+                  "Restart managed development services after approved setup. Explicitly run pnpm verify:development when ingress diagnostics are requested.",
+                  "A candidate pass does not verify the running API. Diagnostics do not gate normal access.",
               ]}
     for name in ("contract", "configuration", "directory_keys", "staff_keys",
                  "communication_keys", "database", "revision", "directory_state",

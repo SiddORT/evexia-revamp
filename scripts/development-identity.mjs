@@ -36,8 +36,8 @@ export function developmentCompatibilityPlugin(enabled, base) {
     transform(code, id) {
       if (!id.replaceAll('\\', '/').endsWith('/vite/dist/client/client.mjs')) return;
       // Vite otherwise reloads on full-reload messages and after reconnection,
-      // bypassing React's draft-preserving boundary. Change only the served dev
-      // client, never dependencies on disk or production assets. Fail closed if
+      // discarding open drafts. Change only the served dev client, never
+      // dependencies on disk or production assets. Fail explicitly if
       // a future Vite runtime no longer has the reviewed recovery interface.
       const reloads = code.match(/\blocation\.reload\(\);/g);
       if (!code.includes('vite:beforeFullReload') || !reloads || reloads.length < 3) {
@@ -46,16 +46,9 @@ export function developmentCompatibilityPlugin(enabled, base) {
       return { code: code.replace(/\blocation\.reload\(\);/g,
         'window.dispatchEvent(new CustomEvent("evexia:automatic-reload-blocked"));'), map: null };
     },
-    handleHotUpdate(ctx) {
-      if (ctx.file.startsWith(appPath) || ctx.file === manifestPath) return [];
-    },
     configureServer(server) {
-      server.watcher.add([appPath, manifestPath]);
-      server.watcher.on('all', (_, file) => {
-        if ((file.startsWith(appPath) && file.endsWith('.py')) || file === manifestPath) {
-          server.ws.send({ type: 'custom', event: 'evexia:compatibility-invalidated', data: {} });
-        }
-      });
+      // Compute identity only when an operator explicitly requests diagnostics.
+      // No source watcher, invalidation event or compatibility quarantine.
       server.middlewares.use((req, res, next) => {
         if (req.url?.split('?')[0] !== `${base.replace(/\/$/, '')}/__development-release`) return next();
         res.setHeader('Content-Type', 'application/json');

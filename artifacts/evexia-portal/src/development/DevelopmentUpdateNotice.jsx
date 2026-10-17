@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import './updateNotice.css';
 
 /** No probe, timer, navigation or reload: retain the current tab's drafts. */
 export default function DevelopmentUpdateNotice({ children }) {

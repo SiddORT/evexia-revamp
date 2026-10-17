@@ -1,4 +1,8 @@
-"""Single-flight, finite-cache development gate; no production enforcement."""
+"""Explicit development diagnostics only; never gates ordinary API access.
+
+Single-flight and a finite cache bound concurrent operator requests. Expiry does
+not schedule work: another explicit diagnostic request is required.
+"""
 import asyncio
 import json
 import os

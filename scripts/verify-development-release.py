@@ -1,4 +1,4 @@
-"""Read-only activation evidence through normal browser-facing ingress."""
+"""Explicit read-only diagnostics through normal browser-facing ingress."""
 import json
 import os
 import ssl
@@ -43,7 +43,12 @@ def verify(origin, fetch=None):
             raw = response.read(65537)
             if len(raw) > 65536:
                 raise ValueError()
-            return json.loads(raw)
+            body = json.loads(raw)
+            # A failed HTTP status can never establish readiness, even if an
+            # inconsistent body claims success.
+            if response.status == 503 and (not isinstance(body, dict) or body.get("ready") is not False):
+                raise ValueError()
+            return body
     report = {"format": 1, "scope": "running-development-ingress", "ok": False,
               "checks": {"candidate": "pass", "ingress": "not_verified", "running_api": "not_verified", "readiness": "not_verified"}}
     try:

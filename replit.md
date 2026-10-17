@@ -1,11 +1,13 @@
 # Development release compatibility
 
-Managed development API startup and post-merge reconciliation use the read-only,
-fail-closed development preflight. See `docs/development-release-gate.md` for the
-approved-setup/restart/ingress-verification/browser-retry sequence. A candidate
-pass does not activate the running preview. Communication prerequisites remain
-required and separately approved; never migrate or replace keys to clear a
-blocked report. Production installation and deployment are unchanged.
+Development compatibility checks are manual-only: explicitly request
+`pnpm check:development` or `pnpm verify:development` when diagnostics are needed.
+Normal preview access, lifecycle/HMR events, ordinary API requests, managed
+startup and post-merge do not run them or quarantine the app. Frontend/API/schema
+compatibility is no longer automatically verified. Authentication, permissions,
+mandatory security configuration and operation-level integrity remain enforced.
+See `docs/development-release-gate.md`. Never migrate or replace keys to clear a
+failed report. Production installation and deployment are unchanged.
 
 # EVEXIA Portal
 

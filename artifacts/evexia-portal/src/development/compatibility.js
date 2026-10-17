@@ -1,4 +1,5 @@
-// No auth operations, reloads or retries of application requests in this gate.
+// Explicit diagnostics only. Never imported by normal application access.
+// No auth operations, reloads or retries of application requests.
 export function matchingIdentity(value, expected) {
   return value && expected && Object.keys(value).sort().join() === 'contract,format,schema,source' &&
     value.format === 1 && /^[a-f0-9]{64}$/.test(value.source) &&

@@ -22,11 +22,14 @@ When adding a migration:
 
 After a merge, setup installs locked dependencies and runs
 `scripts/development-sync.py`. The platform reconciles managed workflows.
-The API launcher repeats the idempotent synchronization and runs preflight once;
-the frontend launcher waits for and verifies the actual newly running services.
-`pnpm verify:development` repeats the explicit, read-only running-version check.
-There are no recurring browser compatibility probes or page-wide quarantine in
-normal development. Existing authentication and operation-level checks remain.
+The API launcher repeats the idempotent synchronization, preserving its separate
+migration integrity policy. It does not run compatibility preflight. The
+frontend launcher starts Vite without waiting on ingress/runtime verification.
+`pnpm verify:development` explicitly requests the read-only running-version
+check; `pnpm check:development` explicitly requests candidate preflight.
+There are no automatic startup/post-merge/browser compatibility probes or
+page-wide quarantine. Frontend/API/schema compatibility is not automatically
+verified. Existing authentication and operation-level checks remain.
 
 ## Automatic development migration boundary
 
