@@ -21,6 +21,7 @@ export interface AllergenResponse {
   createdAt: Date;
   createdBy: string;
   /**
+   * Original percentage 0–100, up to six source places; half-up rounded and returned with two places.
    * @minLength 1
    * @maxLength 64
    */
@@ -33,6 +34,7 @@ export interface AllergenResponse {
    * @maxLength 200
    */
   name: string;
+  /** Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. */
   selling_price?: string | null;
   status: AllergenResponseStatus;
   storage_location_id: string;

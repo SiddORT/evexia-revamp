@@ -3,7 +3,8 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from app.schemas.product_categories import exact_price
+from app.schemas.product_categories import exact_price, exact_quantity
+from app.schemas.rates import rate
 
 BUSINESS_FIELDS = ("name", "category_id", "storage_location_id", "selling_price", "gst",
                    "concentration", "threshold_limit", "status", "mix")
@@ -14,8 +15,8 @@ class AllergenFields(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     category_id: uuid.UUID
     storage_location_id: uuid.UUID
-    selling_price: str | None = Field(default=None, max_length=64)
-    gst: str = Field(min_length=1, max_length=64)
+    selling_price: str | None = Field(default=None, max_length=64, description="Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.")
+    gst: str = Field(min_length=1, max_length=64, description="Original percentage 0–100, up to six source places; half-up rounded and returned with two places.")
     concentration: str = Field(min_length=1, max_length=200)
     threshold_limit: str | None = Field(default=None, max_length=64)
     status: Literal["active", "inactive"]
@@ -33,18 +34,20 @@ class AllergenFields(BaseModel):
             raise ValueError("Unsupported characters")
         return value
 
-    @field_validator("selling_price", "threshold_limit", mode="before")
+    @field_validator("selling_price", mode="before")
     @classmethod
     def optional_decimal(cls, value):
         return None if value is None else exact_price(value)
 
+    @field_validator("threshold_limit", mode="before")
+    @classmethod
+    def threshold(cls, value):
+        return None if value is None else exact_quantity(value)
+
     @field_validator("gst", mode="before")
     @classmethod
     def tax(cls, value):
-        result = exact_price(value)
-        if Decimal(result) > 100:
-            raise ValueError("GST must be between zero and 100")
-        return result
+        return rate(value, Decimal("100"))
 
 
 class AllergenVersion(BaseModel):

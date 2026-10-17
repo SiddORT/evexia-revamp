@@ -189,7 +189,7 @@ def review_digest(actor, data, filename, snapshots):
     # An intentionally short, stateless review lease: no file bytes saved.
     # References, actor and refresh session are bound, not merely file bytes.
     bucket = int(utcnow().timestamp()) // REVIEW_SECONDS
-    message = "\0".join(("allergen", str(actor.user.id), actor.session_id, str(bucket), filename,
+    message = "\0".join(("allergen:half-up-cents", str(actor.user.id), actor.session_id, str(bucket), filename,
                          hashlib.sha256(data).hexdigest(), *snapshots)).encode()
     return hmac.new(get_settings().signing_key.encode(), message, hashlib.sha256).hexdigest()
 
@@ -228,7 +228,7 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
 def sample(format):
     # Deliberately not local sample references. Operators replace these labels
     # with names from their active shared directories before review.
-    return encode([HEADERS[:9], ["Diagnostic reagent", "Your active category", "125.500000", "12.000000",
+    return encode([HEADERS[:9], ["Diagnostic reagent", "Your active category", "125.50", "12.00",
                                 "Your active location", "10 mg/mL", "", "active", "Mix"]], format)
 
 

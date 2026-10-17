@@ -57,18 +57,24 @@ inactive rows using the same PostgreSQL lower/btrim/whitespace normalization for
 both import duplicate checks and the partial unique index.
 
 Prices are **strings**, never JSON numbers or binary-float calculations.
-`"125.5"` and `"0"` are accepted and returned as `"125.500000"` and
-`"0.000000"` respectively. Persistence is `NUMERIC(18,6)`: at most twelve
-integer and six fractional digits, maximum `999999999999.999999`, minimum zero.
+`"125.5"` and `"0"` are accepted and returned as `"125.50"` and
+`"0.00"` respectively. Up to twelve integer and six **source** fractional
+digits are accepted; saves/reviews round half-up to hundredths (`1.005` → `1.01`).
+The rounded maximum is `999999999999.99`; a carry beyond it is rejected.
+Forward `0042_rate_hundredths` changes current price storage to unconstrained
+NUMERIC with explicit range/two-place CHECKs, preventing coercion before validation.
 Plain decimal strings only (bounded to 64 input characters); signs, exponents,
 commas, non-finite numbers, negatives, overflow and over-precision are rejected
-without rounding. Strings preserve the exact value, not the original number
-of trailing zeroes. XLSX samples/exports store prices as text. Numeric XLSX
+before rounding. Canonical strings always contain exactly two fractional digits.
+XLSX samples/exports store prices as text. Numeric XLSX
 prices are recovered from the validated original XML decimal lexeme, not
 openpyxl's binary-float conversion; producer scientific notation is accepted
 only when its exact numeric amount fits the same precision/range limits.
 Excel may already have rounded a manually entered numeric value: store prices
-as text to retain all eighteen significant digits before upload.
+as text to retain the original significant digits before upload.
+
+Operator-only normalization and release requirements: [Rate rounding rollout](rate-rounding-rollout.md).
+No managed migration or historical procurement rewrite is implied by this code.
 
 Server UTC creation/update times and backend User actor references are
 initialized on creation. Updates preserve creation evidence and advance

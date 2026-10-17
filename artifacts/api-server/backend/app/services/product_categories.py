@@ -5,6 +5,7 @@ from app.core.security import utcnow
 from app.db.models import AuditEvent
 from app.db.product_category_models import ProductCategory, normalized_name
 from app.schemas.product_categories import exact_price
+from app.schemas.rates import display_rate
 from app.services.zones import label
 from app.services.master_policy import authorize_master
 
@@ -37,7 +38,7 @@ def authorize(db, actor, action=None):
 
 
 def projection(db, row):
-    return dict(id=row.id, name=row.name, description=row.description, unit_price=format(row.unit_price, ".6f"), status=row.status, version=row.version,
+    return dict(id=row.id, name=row.name, description=row.description, unit_price=display_rate(row.unit_price), status=row.status, version=row.version,
                 createdBy=label(db, row.created_by), updatedBy=label(db, row.updated_by),
                 createdAt=row.created_at, updatedAt=row.updated_at)
 

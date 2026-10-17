@@ -9,6 +9,8 @@
 export interface DoctorImportRow {
   errors: string[];
   name: string;
+  orderDiscount: string;
+  paymentLimit: string;
   registrationNumber: string;
   row: number;
 }

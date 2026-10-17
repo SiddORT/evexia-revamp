@@ -58,6 +58,7 @@ export interface DoctorFields {
    * @maxLength 200
    */
   name: string;
+  /** Original 0–100 percentage; up to six source decimal places, half-up rounded to two. */
   orderDiscount?: string | number | null;
   paymentLimit?: string | number | null;
   /** @maxLength 20 */

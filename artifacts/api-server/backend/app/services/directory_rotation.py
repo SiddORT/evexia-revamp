@@ -21,7 +21,7 @@ from app.services import directory_staging as staging
 REVISION = "0030_directory_crypto_retirement"
 PHONE_REVISION = "0034_shared_phone_countries"
 # Geography adds no encrypted directory fields or maintenance anchors.
-SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations", "0033_merge_directory_branches", PHONE_REVISION, "0035_account_identifiers", PRIVACY_REVISION, "0037_domain_admission", "0038_purchase_orders", "0039_communication", "0040_po_tax_basis", "0041_location_geography"})
+SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations", "0033_merge_directory_branches", PHONE_REVISION, "0035_account_identifiers", PRIVACY_REVISION, "0037_domain_admission", "0038_purchase_orders", "0039_communication", "0040_po_tax_basis", "0041_location_geography", "0042_rate_hundredths"})
 COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS
 
 
@@ -36,7 +36,7 @@ def _fields(db):
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
     if revision not in SUPPORTED_REVISIONS:
         raise RotationError()
-    if revision in (PRIVACY_REVISION, "0037_domain_admission", "0038_purchase_orders", "0039_communication", "0040_po_tax_basis", "0041_location_geography"):
+    if revision in (PRIVACY_REVISION, "0037_domain_admission", "0038_purchase_orders", "0039_communication", "0040_po_tax_basis", "0041_location_geography", "0042_rate_hundredths"):
         return FIELDS
     return PHONE_FIELDS if revision in (PHONE_REVISION, "0035_account_identifiers") else LEGACY_FIELDS
 
@@ -57,7 +57,7 @@ def _lock(db, exclusive=False):
     revisions = list(db.scalars(text("SELECT version_num FROM alembic_version")))
     if len(revisions) != 1 or revisions[0] not in SUPPORTED_REVISIONS:
         raise RotationError()
-    if revisions in ([PRIVACY_REVISION], ["0037_domain_admission"], ["0038_purchase_orders"], ["0039_communication"], ["0040_po_tax_basis"], ["0041_location_geography"]):
+    if revisions in ([PRIVACY_REVISION], ["0037_domain_admission"], ["0038_purchase_orders"], ["0039_communication"], ["0040_po_tax_basis"], ["0041_location_geography"], ["0042_rate_hundredths"]):
         db.execute(text(f"LOCK TABLE vendors IN {mode} MODE NOWAIT"))
     # Organization retirement changes no encrypted directory storage. Verify
     # that required final projections still exist and plaintext did not return;

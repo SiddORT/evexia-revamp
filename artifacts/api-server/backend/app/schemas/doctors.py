@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from email_validator import validate_email, EmailNotValidError
 from app.schemas.phone import DialCountry, normalize_phone
+from app.schemas.rates import rate
 
 
 class DoctorFields(BaseModel):
@@ -28,7 +29,7 @@ class DoctorFields(BaseModel):
     invoiceType: Literal["normal", "gst"] = "normal"
     gstNumber: str = Field(default="", max_length=20)
     drugLicenceNumber: str = Field(default="", max_length=100)
-    orderDiscount: Decimal = Field(default=Decimal("0.00"), ge=0, le=100, decimal_places=2)
+    orderDiscount: Decimal = Field(default=Decimal("0.00"), ge=0, le=100, decimal_places=2, description="Original 0–100 percentage; up to six source decimal places, half-up rounded to two.")
     daysLimit: int = Field(default=0, ge=0, le=2147483647, strict=True)
     paymentLimit: Decimal = Field(default=Decimal("0.00"), ge=0, le=Decimal("9999999999999.99"), max_digits=15, decimal_places=2)
     status: Literal["active", "inactive"] = "active"
@@ -65,7 +66,17 @@ class DoctorFields(BaseModel):
             raise ValueError("Joining date cannot be in the future")
         return value
 
-    @field_validator("orderDiscount", "paymentLimit", mode="before", json_schema_input_type=str | int | None)
+    @field_validator("orderDiscount", mode="before", json_schema_input_type=str | int | None)
+    @classmethod
+    def discount(cls, value):
+        if isinstance(value, (float, bool)):
+            raise ValueError("Send rates as exact decimal strings")
+        text = "0" if value is None or value == "" else str(value)
+        if not re.fullmatch(r"\d{1,13}(?:\.\d{1,6})?", text):
+            raise ValueError("Use up to thirteen integer and six source fractional digits")
+        return Decimal(rate(text, Decimal("100")))
+
+    @field_validator("paymentLimit", mode="before", json_schema_input_type=str | int | None)
     @classmethod
     def exact(cls, value):
         if isinstance(value, (float, bool)):
@@ -199,6 +210,8 @@ class DoctorImportRow(BaseModel):
     row: int
     name: str
     registrationNumber: str
+    orderDiscount: str
+    paymentLimit: str
     errors: list[str]
 
 

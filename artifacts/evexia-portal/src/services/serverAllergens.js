@@ -1,5 +1,6 @@
 import { allergenRequest } from '../auth/adminSession.js';
 import { downloadServerBlob } from './downloads.js';
+import { catalogueRate } from './rates.js';
 
 export const DECIMAL_RE = /^(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,6})?$/;
 export const listAllergens = (params, signal) => allergenRequest('', { params, signal });
@@ -26,9 +27,10 @@ export function compareDecimal(a, b) {
 }
 export function validatePriceBounds(min, max) {
   const errors = {};
-  if (min && !DECIMAL_RE.test(min)) errors.min = 'Minimum price must be a plain decimal (up to 12 integer and 6 fractional digits).';
-  if (max && !DECIMAL_RE.test(max)) errors.max = 'Maximum price must be a plain decimal (up to 12 integer and 6 fractional digits).';
-  if (!errors.min && !errors.max && min && max && compareDecimal(min, max) > 0) errors.max = 'Maximum price must not be below minimum price.';
+  for (const [key, value] of [['min', min], ['max', max]]) {
+    if (value) { try { catalogueRate(value); } catch { errors[key] = 'Use a plain decimal with up to 12 integer and 6 source places; rounded maximum 999999999999.99.'; } }
+  }
+  if (!errors.min && !errors.max && min && max && compareDecimal(catalogueRate(min), catalogueRate(max)) > 0) errors.max = 'Maximum price must not be below minimum price.';
   return errors;
 }
 export function validateAllergen(v) {
@@ -38,7 +40,7 @@ export function validateAllergen(v) {
   if (!v.category_id) e.category_id = 'Select a product category.';
   if (!v.storage_location_id) e.storage_location_id = 'Select a storage location.';
   const price = v.selling_price.trim();
-  if (price && !DECIMAL_RE.test(price)) e.selling_price = 'Enter a plain nonnegative decimal (12 integer, 6 fractional digits max).';
+  if (price) { try { catalogueRate(price); } catch { e.selling_price = 'Use up to 12 integer and 6 source decimal digits; rounded maximum 999999999999.99.'; } }
   const gst = v.gst.trim();
   if (!gst) e.gst = 'GST is required.'; else if (!/^(?:0|[1-9][0-9]{0,2})(?:\.[0-9]{1,6})?$/.test(gst) || compareDecimal(gst, '100') > 0) e.gst = 'GST must be between 0 and 100 with up to 6 decimals.';
   const conc = v.concentration.trim();
@@ -48,4 +50,4 @@ export function validateAllergen(v) {
   if (!['active', 'inactive'].includes(v.status)) e.status = 'Select a status.';
   return e;
 }
-export const allergenPayload = (v) => ({ name: v.name.trim().replace(/\s+/g, ' '), category_id: v.category_id, storage_location_id: v.storage_location_id, selling_price: v.selling_price.trim() || null, gst: v.gst.trim(), concentration: v.concentration.trim(), threshold_limit: v.threshold_limit.trim() || null, status: v.status, mix: v.mix === true });
+export const allergenPayload = (v) => ({ name: v.name.trim().replace(/\s+/g, ' '), category_id: v.category_id, storage_location_id: v.storage_location_id, selling_price: v.selling_price.trim() ? catalogueRate(v.selling_price) : null, gst: catalogueRate(v.gst, true), concentration: v.concentration.trim(), threshold_limit: v.threshold_limit.trim() || null, status: v.status, mix: v.mix === true });

@@ -75,7 +75,7 @@ def exact_workbook_rows(data):
                     continue
                 amount = Decimal(value)
                 rows[index][column] = ("invalid decimal" if not amount.is_finite() or amount < 0 or amount.adjusted() > 12
-                                       or amount.as_tuple().exponent < -2 else format(amount, "f"))
+                                       or amount.as_tuple().exponent < (-6 if monetary[coordinate[1]] == "Order Discount" else -2) else format(amount, "f"))
         return rows
     except (ValueError, InvalidOperation, KeyError, StopIteration, zipfile.BadZipFile):
         invalid("Malformed workbook decimal or worksheet.")
@@ -137,6 +137,7 @@ def review_state(db, parsed):
     for row in parsed:
         values = dict(row["values"])
         errors = list(row["errors"])
+        commercial = {key: str(values[key]) for key in ("orderDiscount", "paymentLimit")}
         try:
             # Exact UUID, user:username, employee:code or unique server name.
             # No browser-local ID conversion or fuzzy name mapping.
@@ -152,6 +153,7 @@ def review_state(db, parsed):
             if supplied_dial and supplied_dial != DIAL.get(values["dialCountry"]):
                 errors.append("Dial Code disagrees with Dial Country.")
             body = DoctorFields(**values)
+            commercial = {key: format(getattr(body, key), ".2f") for key in commercial}
             mr, zone = doctors.assignment(db, body.mrId)
             if supplied_zone and supplied_zone.lower() != zone.name.lower():
                 errors.append("Zone does not match the assigned server MR. Zone is derived, not writable.")
@@ -167,12 +169,12 @@ def review_state(db, parsed):
         except mrs.MRError as exc:
             errors.append(exc.message)
         reviewed.append(dict(row=row["row"], name=row["values"]["name"],
-                             registrationNumber=row["values"]["registrationNumber"], errors=errors))
+                             registrationNumber=row["values"]["registrationNumber"], **commercial, errors=errors))
     return reviewed, bodies, snapshot
 
 
 def digest_for(actor, data, filename, snapshot):
-    message = json.dumps(["doctor", str(actor.user.id), actor.session_id, actor.user.identity_version,
+    message = json.dumps(["doctor:half-up-cents", str(actor.user.id), actor.session_id, actor.user.identity_version,
                           filename, hashlib.sha256(data).hexdigest(), snapshot], sort_keys=True).encode()
     return hmac.new(get_settings().signing_key.encode(), message, hashlib.sha256).hexdigest()
 
@@ -253,6 +255,8 @@ def export(db, actor, query="", status="all", zone_id="", mr_id="", state="", fo
             # Explicit durable server reference, not a potentially ambiguous display label.
             values["mrId"] = "user:" + db.get(User, profile.user_id).username if mr and not mr.deleted_at and profile else str(row.mrId)
             values["dialCode"] = DIAL[row.dialCountry]
+            for key in ("orderDiscount", "paymentLimit"):
+                values[key] = format(Decimal(values[key]), ".2f")
             result.append([str(values[key]) if values[key] is not None else "" for key, _ in CURRENT_COLUMNS] +
                           [str(values[key]) for key in ("createdBy", "createdAt", "updatedBy", "updatedAt")])
         db.commit()

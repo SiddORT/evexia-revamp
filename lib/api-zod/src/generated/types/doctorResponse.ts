@@ -64,7 +64,10 @@ export interface DoctorResponse {
    * @maxLength 200
    */
   name: string;
-  /** @pattern ^(?!^[-+.]*$)[+-]?0*\d*\.?\d{0,2}0*$ */
+  /**
+   * Original 0–100 percentage; up to six source decimal places, half-up rounded to two.
+   * @pattern ^(?!^[-+.]*$)[+-]?0*\d*\.?\d{0,2}0*$
+   */
   orderDiscount?: string;
   /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,13}|(?=[\d.]{1,16}0*$)\d{0,13}\.\d{0,2}0*$) */
   paymentLimit?: string;

@@ -2,6 +2,7 @@ import { recordLocalChanges, recordLocalAction, reportExport } from './localActi
 import { loadMRs } from './mrs.js';
 import { loadZones } from './zones.js';
 import { dialCountry, normalizePhone } from './phoneCountries.js';
+import { roundRate } from './rates.js';
 
 const STORAGE_KEY = 'evexia.admin.doctors.v1';
 export const DOCTOR_STORAGE_KEY = STORAGE_KEY;
@@ -47,6 +48,11 @@ function validateDoctor(values, records = [], exceptId = null) {
     for (const key of ['phone', 'email']) if (!fields[key]) errors[key] = `${key === 'phone' ? 'Phone' : 'Email'} is required.`;
   }
   for (const key of NUMBER_FIELDS) {
+    if (key === 'orderDiscount') {
+      try { fields[key] = roundRate(values[key] === '' || values[key] == null ? '0' : values[key], { originalMax: '100', max: '100' }); }
+      catch { errors[key] = 'Order discount must be a nonnegative percentage from 0 to 100.'; }
+      continue;
+    }
     const value = values[key] === '' || values[key] == null ? 0 : Number(values[key]);
     fields[key] = value;
     if (!Number.isFinite(value) || value < 0 || (key === 'daysLimit' && !Number.isSafeInteger(value))
@@ -136,17 +142,7 @@ function read() {
     const mrs = loadMRs();
     const samples = sampleDoctors(mrs);
     if (!samples.length) return [];
-    try {
-      // Only seed a genuinely absent list; never replace saved records or an intentional [].
-      if (window.localStorage.getItem(STORAGE_KEY) !== null) return read();
-      if (JSON.stringify(loadMRs()) !== JSON.stringify(mrs)) {
-        fail('MR records changed while preparing sample doctors. Refresh records before retrying.', 'SNAPSHOT_CONFLICT');
-      }
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(samples));
-    } catch (error) {
-      if (error.code) throw error;
-      fail('Sample doctors could not be saved in this browser. Check browser storage settings and try again.', 'RECOVERY_REQUIRED');
-    }
+    // Fictional samples remain in memory until an explicit save.
     return samples;
   }
   let parsed;
@@ -164,7 +160,7 @@ function read() {
     || typeof record.id !== 'string' || !record.id
     || !['verified', 'unverified'].includes(record.verification)
     || ![record.createdAt, record.updatedAt].every((date) => typeof date === 'string' && !Number.isNaN(Date.parse(date)))
-    || NUMBER_FIELDS.some((key) => typeof record[key] !== 'number')
+    || NUMBER_FIELDS.some((key) => key === 'orderDiscount' ? !['number', 'string'].includes(typeof record[key]) : typeof record[key] !== 'number')
     || STRING_FIELDS.some((key) => typeof record[key] !== 'string')
     || Object.keys(validateDoctor(Object.fromEntries(FIELDS.map((key) => [key, key === 'contactRequirement' && !own(record, key) ? 'optional' : record[key]])), parsed, record.id).errors).length
   ) || new Set(parsed.map((record) => record.id)).size !== parsed.length
@@ -211,6 +207,11 @@ function save(next, expectedRecords, expectedMRs) {
     fail('MR records changed in another tab. Refresh records to review the latest data before saving.', 'SNAPSHOT_CONFLICT');
   }
   currentZones(expectedMRs);
+  // Only explicitly changed records normalize; unrelated rows retain history.
+  next = next.map((record) => {
+    const old = expectedRecords.find((item) => item.id === record.id);
+    return old && JSON.stringify(old) === JSON.stringify(record) ? record : { ...record, orderDiscount: roundRate(record.orderDiscount, { originalMax: '100', max: '100' }) };
+  });
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch {
@@ -302,6 +303,7 @@ function buildDoctorCSV(visible, mrs, zones) {
   const header = DOCTOR_CSV_COLUMNS.map(([, label]) => csvCell(label)).join(',');
   const rows = visible.map((doctor) => DOCTOR_CSV_COLUMNS.map(([key]) => {
     let value = doctor[key];
+    if (['orderDiscount', 'paymentLimit'].includes(key)) value = roundRate(value);
     if (key === 'dialCode') value = dialCountry(doctor.dialCountry)?.code;
     if (key === 'mrName') value = mrs.find((mr) => mr.id === doctor.mrId)?.name || (doctor.mrId ? 'Missing MR' : '');
     if (key === 'zoneName') {

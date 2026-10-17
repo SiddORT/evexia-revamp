@@ -16,8 +16,8 @@ class AllergenProduct(Timestamps, Base):
         CheckConstraint("status IN ('active', 'inactive')", name="ck_allergen_status"),
         CheckConstraint("length(name) BETWEEN 1 AND 200 AND name = btrim(name)", name="ck_allergen_name"),
         CheckConstraint("length(concentration) BETWEEN 1 AND 200 AND concentration = btrim(concentration)", name="ck_allergen_concentration"),
-        CheckConstraint("selling_price >= 0 AND selling_price <= 999999999999.999999", name="ck_allergen_price"),
-        CheckConstraint("gst >= 0 AND gst <= 100", name="ck_allergen_gst"),
+        CheckConstraint("selling_price >= 0 AND selling_price <= 999999999999.99 AND selling_price = round(selling_price, 2)", name="ck_allergen_price"),
+        CheckConstraint("gst >= 0 AND gst <= 100 AND gst = round(gst, 2)", name="ck_allergen_gst"),
         CheckConstraint("threshold_limit >= 0 AND threshold_limit <= 999999999999.999999", name="ck_allergen_threshold"),
         CheckConstraint("(deleted_at IS NULL) = (deleted_by IS NULL)", name="ck_allergen_deletion"),
     )
@@ -27,8 +27,8 @@ class AllergenProduct(Timestamps, Base):
     storage_location_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("storage_locations.id"), nullable=False, index=True)
     category_name: Mapped[str] = mapped_column(String(200), nullable=False)
     storage_location_name: Mapped[str] = mapped_column(String(200), nullable=False)
-    selling_price: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
-    gst: Mapped[Decimal] = mapped_column(Numeric(9, 6), nullable=False)
+    selling_price: Mapped[Decimal | None] = mapped_column(Numeric())
+    gst: Mapped[Decimal] = mapped_column(Numeric(), nullable=False)
     concentration: Mapped[str] = mapped_column(String(200), nullable=False)
     threshold_limit: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
     mix: Mapped[bool] = mapped_column(Boolean, nullable=False)

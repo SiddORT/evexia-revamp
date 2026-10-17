@@ -144,7 +144,15 @@ decimal strings. Quarter constraints remain unchanged; the annual maximum is
 
 ## File API and validation
 
-Product Category Master uses exact `NUMERIC(18,6)` persistence/string transport,
+Product Category Master uses exact decimal-string rate transport. Forward
+`0042_rate_hundredths` normalizes current Category prices and Allergen selling
+prices/GST half-up to hundredths, using unconstrained NUMERIC plus explicit
+two-place/range CHECKs. Rate source strings retain their six-place input limit;
+canonical rates have exactly two fractional digits. Thresholds stay six-place,
+quantities/paise amounts are unchanged, and original percentage bounds are checked
+before rounding. Historical procurement/audit snapshots are never normalized.
+Operator-only activation, backups, preflight and concurrency/version handling are
+documented in `docs/rate-rounding-rollout.md`. Product Category retains
 server-owned User/UTC audit evidence, live-name uniqueness, expected versions,
 retained soft deletion and bounded identity/session-bound atomic CSV/XLSX imports.
 Price bounds/search/status share predicates with full-filter exports. Allergen and

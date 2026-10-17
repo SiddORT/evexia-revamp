@@ -145,7 +145,7 @@ export default function AllergenImportPage() {
           <div className="excel-import__columns"><strong>Expected columns (exact order)</strong><span>{ALLERGEN_COLUMNS.map(([, label]) => label).join(' · ')}</span>
             <strong>Current backup schema (CSV or Excel)</strong><span>The same nine columns, followed by Created By · Created At · Updated By · Updated At</span>
           </div>
-          <p>GST is 0 to 100; selling price and threshold are optional exact decimals.</p>
+          <p>GST must originally be 0 to 100. Selling price is optional. Prices/GST accept up to six source decimals and round half-up to two places; review shows the values that will be saved. Rounded price maximum 999999999999.99. Keep long prices as Excel text. Optional stock thresholds retain six-place precision without rounding.</p>
           <div className="excel-import__sample-actions">
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('csv')}>Download CSV sample</button>
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('xlsx')}><Download size={16} aria-hidden="true" /> Download Excel sample</button>

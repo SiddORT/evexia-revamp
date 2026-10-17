@@ -3,6 +3,7 @@ import hashlib
 import json
 import uuid
 from decimal import Decimal
+from app.schemas.rates import rate, display_rate
 from sqlalchemy import select, func, or_, delete, text
 from sqlalchemy.exc import SQLAlchemyError
 from app.core.security import utcnow
@@ -87,8 +88,8 @@ def preview_data(db, body, existing=None):
     for line in body.lines:
         old = retained.get(str(line.productId))
         product = products.get(line.productId)
-        price = Decimal(old["unitPrice"]) if old else product.selling_price
-        gst = Decimal(old["gst"]) if old else product.gst
+        price = Decimal(old["unitPrice"]) if old else (Decimal(rate(str(product.selling_price))) if product.selling_price is not None else None)
+        gst = Decimal(old["gst"]) if old else Decimal(rate(str(product.gst), Decimal("100")))
         if price is None:
             raise POError("The selected product has no catalogue selling price. Set it in Allergen Master before reviewing.", 422, "po_price_missing")
         lines.append(dict(productId=str(line.productId), productName=old["productName"] if old else product.name,
@@ -307,7 +308,7 @@ def references(db, actor, kind, query="", limit=25, offset=0, selected_id=None, 
             row = r[0]
             data = dict(id=str(row.id), name=getattr(row, name.key), version=row.version)
             if kind == "products":
-                data.update(unitPrice=str(row.selling_price) if row.selling_price is not None else None, gst=str(row.gst))
+                data.update(unitPrice=display_rate(row.selling_price) if row.selling_price is not None else None, gst=display_rate(row.gst))
             if kind == "locations":
                 data.update(geography(row))
             if kind == "vendors":

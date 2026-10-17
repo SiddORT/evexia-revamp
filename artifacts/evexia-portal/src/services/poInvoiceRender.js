@@ -1,4 +1,6 @@
 import { formatCalendarDate } from './datePresentation.js';
+import { formatRate } from './rates.js';
+import { groupIndian } from './salesTargetFields.js';
 const PAGE_WIDTH = 794;
 const PAGE_HEIGHT = 1123;
 const EM_DASH = '—';
@@ -87,12 +89,11 @@ function formatPaise(value) {
   return `${negative ? '-' : ''}₹${grouped}.${paise}`;
 }
 
-function formatRupees(value, maxFractionDigits = 2) {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return EM_DASH;
-  return `₹${new Intl.NumberFormat('en-IN', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: maxFractionDigits,
-  }).format(value)}`;
+function formatRupees(value) {
+  const text = formatRate(value);
+  if (text === EM_DASH) return EM_DASH;
+  const [whole, fraction] = text.split('.');
+  return `₹${groupIndian(whole)}.${fraction}`;
 }
 
 function formatDecimal(value, maxFractionDigits = 3) {
@@ -243,7 +244,7 @@ function rowCellValues(line, index) {
     display(line.hsnCode),
     formatRupees(line.unitPrice),
     formatDecimal(line.quantity),
-    typeof line.gst === 'number' && Number.isFinite(line.gst) ? `${formatDecimal(line.gst, 2)}%` : EM_DASH,
+    `${formatRate(line.gst)}%`,
     formatPaise(line.total),
   ];
 }

@@ -1,3 +1,4 @@
+import { formatRate } from './rates.js';
 import { formatCalendarDate } from './datePresentation.js';
 // Standalone, read-only UI fixtures. Never derive quantities from procurement or masters.
 export const STOCK_DEMO_DISCLAIMER = 'Stock and histories are sample UI data, not server-backed or connected to PO/PR or Move stocks quantities. Purchases and sample sales/customer orders do not calculate available inventory.';
@@ -93,6 +94,6 @@ export function stockCSVCell(value) {
 export function exportStockCSV(rows, { year, asOf }) {
   const header = ['Scope', 'Financial year', 'As-of date', 'Product', 'Concentration', 'Category', 'Selling price (INR)', 'Quantity', 'Unit'];
   const records = rows.map((row) => ['Sample/demo UI data — not available inventory', financialYearLabel(year), asOf,
-    row.name, row.concentration, row.category, row.sellingPrice.toFixed(2), row.quantity, row.unit]);
+    row.name, row.concentration, row.category, formatRate(row.sellingPrice), row.quantity, row.unit]);
   return '\uFEFF' + [header, ...records].map((cells) => cells.map(stockCSVCell).join(',')).join('\r\n') + '\r\n';
 }

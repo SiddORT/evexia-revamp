@@ -53,6 +53,7 @@
 - [Deferred migration integrity](deferred-migration-integrity.md) — validate pending integrity checks before backfill-following DDL without disabling guards or breaking atomicity.
 - [Frontend test HMR isolation](frontend-test-hmr-isolation.md) — freeze source during Vite browser passes; isolated listeners do not isolate hot reloads.
 - [Exact workbook decimals](exact-workbook-decimals.md) — validate monetary XML lexemes, not parser floats; text cells retain long prices.
+- [Rate policy scope](rate-policy-scope.md) — rates/discounts round half-up on save and export; quantities, existing money contracts and historical snapshots remain separate.
 - [Import navigation ownership](import-navigation-ownership.md) — backend-only import tabs must not require mock templates or weaken authenticated transfers.
 - [Delayed browser route teardown](delayed-route-teardown.md) — await held response handlers before removing their interception; avoid global teardown between late-response scenarios.
 - [MR account boundary](mr-account-boundary.md) — real MR login must not silently promote existing identities or mix browser-local demo relationships.

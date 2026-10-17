@@ -9,6 +9,7 @@ from app.db.product_category_models import ProductCategory
 from app.db.location_models import StorageLocation
 from app.schemas.allergens import BUSINESS_FIELDS
 from app.schemas.product_categories import exact_price
+from app.schemas.rates import display_rate
 from app.services.zones import label
 from app.services.auth import revalidate_identity
 
@@ -53,7 +54,7 @@ def projection(db, row):
     location = db.get(StorageLocation, row.storage_location_id)
     values = {field: getattr(row, field) for field in BUSINESS_FIELDS}
     for field in ("selling_price", "gst", "threshold_limit"):
-        values[field] = format(values[field], ".6f") if values[field] is not None else None
+        values[field] = (format(values[field], ".6f") if field == "threshold_limit" else display_rate(values[field])) if values[field] is not None else None
     return dict(id=row.id, **values, version=row.version,
                 category_name=row.category_name, storage_location_name=row.storage_location_name,
                 category_status=reference_status(category), storage_location_status=reference_status(location),

@@ -14,7 +14,9 @@ may represent a valid exact amount even though form/CSV transport requires
 plain decimals.
 
 **How to apply:** Run the shared inert archive/formula/link/size validation
-first, then validate numeric XML using Decimal and explicit precision/range
-limits without rounding. Support bounded exact numeric workbook notation, but
+first, then validate the original numeric XML using Decimal and explicit source
+precision/range limits. Apply the field's own normalization only after validation:
+rates round half-up, while exact-rejection monetary fields remain unrounded.
+Support bounded exact numeric workbook notation, but
 never infer or restore precision already lost by the spreadsheet producer.
 Advise users to keep long prices in text cells before upload.

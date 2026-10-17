@@ -1,5 +1,6 @@
 import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { parseCSV } from './masterImport.js';
+import { roundRate } from './rates.js';
 
 export const CATEGORY_STORAGE_KEY = 'evexia.admin.product-categories.v1';
 export const CATEGORY_COLUMNS = [
@@ -44,17 +45,16 @@ export function validateCategory(values, records = [], exceptId = null) {
   const description = typeof values.description === 'string' ? values.description.trim() : '';
   const status = typeof values.status === 'string' ? values.status.trim() : '';
   const priceText = typeof values.unitPrice === 'number' ? String(values.unitPrice) : values.unitPrice;
-  const validPrice = typeof values.unitPrice === 'number'
-    ? Number.isFinite(values.unitPrice) && values.unitPrice >= 0
-    : typeof priceText === 'string' && /^(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(priceText.trim()) &&
-      Number.isFinite(Number(priceText.trim())) && Number(priceText.trim()) >= 0;
+  let roundedPrice = null;
+  try { roundedPrice = roundRate(priceText); } catch { /* Report at the field boundary. */ }
+  const validPrice = roundedPrice !== null;
   if (!name) errors.name = 'Product Category Name is required.';
   if (name && records.some((record) => record.id !== exceptId && normalized(record.name) === normalized(name))) {
     errors.name = 'Product Category Name already exists.';
   }
   if (!validPrice) errors.unitPrice = 'Enter a non-negative numeric Unit Price.';
   if (!['active', 'inactive'].includes(status)) errors.status = 'Choose an active or inactive status.';
-  return { fields: { name, description, unitPrice: validPrice ? Number(priceText.trim()) : null, status }, errors };
+  return { fields: { name, description, unitPrice: roundedPrice, status }, errors };
 }
 
 export function loadCategories() {
@@ -63,11 +63,7 @@ export function loadCategories() {
   catch { throw new Error('Product categories could not be loaded because browser storage is unavailable.'); }
   if (raw === null) {
     const samples = sampleCategories();
-    try {
-      // A saved list (including []) wins if another tab initialized storage meanwhile.
-      if (window.localStorage.getItem(CATEGORY_STORAGE_KEY) !== null) return loadCategories();
-      window.localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(samples));
-    } catch { throw new Error('Sample product categories could not be saved in this browser. Check browser storage settings and try again.'); }
+    // Samples are read-only until an explicit guarded mutation.
     return samples;
   }
   let parsed;
@@ -81,7 +77,7 @@ export function loadCategories() {
         typeof record.id !== 'string' || !record.id ||
         typeof record.name !== 'string' || record.name !== record.name.trim() ||
         typeof record.description !== 'string' || record.description !== record.description.trim() ||
-        typeof record.unitPrice !== 'number' ||
+        !['number', 'string'].includes(typeof record.unitPrice) ||
         typeof record.createdBy !== 'string' || !record.createdBy.trim() ||
         typeof record.updatedBy !== 'string' || !record.updatedBy.trim() ||
         ![record.createdAt, record.updatedAt].every((date) => typeof date === 'string' &&
@@ -122,7 +118,7 @@ export function setCategoryStatus(records, id, status) {
   const record = records.find((item) => item.id === id);
   if (!record) throw new Error('This category is no longer available.');
   if (!['active', 'inactive'].includes(status) || record.status === status) throw new Error('Choose a different valid status.');
-  return save(records.map((item) => item.id === id ? { ...item, status, updatedBy: ACTOR, updatedAt: nextTimestamp(item.updatedAt) } : item), records);
+  return save(records.map((item) => item.id === id ? { ...item, unitPrice: roundRate(item.unitPrice), status, updatedBy: ACTOR, updatedAt: nextTimestamp(item.updatedAt) } : item), records);
 }
 
 function csvCell(value) {
@@ -133,7 +129,7 @@ function csvCell(value) {
 export function exportCategoryCSV(...args) { return reportExport('product_category', () => buildCategoryCSV(...args)); }
 function buildCategoryCSV(records) {
   return '\uFEFF' + [CATEGORY_COLUMNS.map(([, label]) => csvCell(label)).join(','),
-    ...records.map((record) => CATEGORY_COLUMNS.map(([key]) => csvCell(record[key])).join(','))].join('\r\n') + '\r\n';
+    ...records.map((record) => CATEGORY_COLUMNS.map(([key]) => csvCell(key === 'unitPrice' ? roundRate(record[key]) : record[key])).join(','))].join('\r\n') + '\r\n';
 }
 export function categoryCSVTemplate() {
   return '\uFEFF' + CATEGORY_COLUMNS.map(([, label]) => csvCell(label)).join(',') + '\r\n';
@@ -158,7 +154,7 @@ export function reviewCategoryCSV(text, records) {
     const issues = Object.values(errors);
     if (fields.name && names.has(normalized(fields.name))) issues.push('Product Category Name already exists (in saved records or this file).');
     if (fields.name) names.add(normalized(fields.name));
-    return { line, values, fields, errors: issues };
+    return { line, values: { ...values, unitPrice: fields.unitPrice ?? values.unitPrice }, fields, errors: issues };
   });
 }
 

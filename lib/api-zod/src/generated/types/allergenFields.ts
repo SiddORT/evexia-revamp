@@ -15,6 +15,7 @@ export interface AllergenFields {
    */
   concentration: string;
   /**
+   * Original percentage 0–100, up to six source places; half-up rounded and returned with two places.
    * @minLength 1
    * @maxLength 64
    */
@@ -26,6 +27,7 @@ export interface AllergenFields {
    * @maxLength 200
    */
   name: string;
+  /** Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. */
   selling_price?: string | null;
   status: AllergenFieldsStatus;
   storage_location_id: string;

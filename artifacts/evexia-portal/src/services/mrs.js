@@ -1,3 +1,4 @@
+import { roundRate } from './rates.js';
 import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { loadZones } from './zones.js';
 
@@ -210,7 +211,7 @@ function buildMRCSV(records, zones, allRecords) {
     const value = key === 'zoneName' ? zones.find((zone) => zone.id === record.zoneId)?.name || 'Deleted zone'
       : key === 'managerName' ? allRecords.find((mr) => mr.id === record.reportingManagerId)?.name || (record.reportingManagerId ? 'Missing MR' : '')
       : record[key];
-    return csvCell(value);
+    return csvCell(key === 'paymentLimit' ? roundRate(value) : value);
   }).join(','));
   return '\uFEFF' + [header, ...rows].join('\r\n') + '\r\n';
 }

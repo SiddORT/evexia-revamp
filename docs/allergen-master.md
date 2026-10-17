@@ -55,8 +55,15 @@ the existing PostgreSQL normalized-name expression, including inactive records.
 `selling_price` and `threshold_limit` are optional **nullable** decimal strings:
 null means absent, `"0"` means supplied zero. `gst` is a required decimal string
 between zero and 100. Amounts accept up to 12 integer and 6 fractional digits
-(`0`–`999999999999.999999`) without exponent notation or binary floats; responses
-use six decimal places. GST has the same fractional limit and its narrower range.
+without exponent notation or binary floats. Selling prices/GST round half-up to
+two places at save/import review; responses and CSV/XLSX text exports use exactly
+two places (`1.005` → `1.01`). Selling price's rounded maximum is
+`999999999999.99`; overflow after rounding is rejected. GST is checked against
+0–100 **before** rounding, so `100.000001` is rejected, not rounded into range.
+Stock thresholds retain the original `0`–`999999999999.999999` six-place
+contract, independently of rates. Optional absent selling prices stay null.
+Current master normalization is forward-only `0042_rate_hundredths`;
+see [operator rollout](rate-rounding-rollout.md). No historical PO/receipt is rewritten.
 `status` is `active` or `inactive`. `mix` is a strict boolean:
 
 - `true` = **Mix**

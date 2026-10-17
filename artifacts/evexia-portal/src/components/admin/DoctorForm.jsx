@@ -4,6 +4,7 @@ import InfoDisclosure from './InfoDisclosure.jsx';
 import PhoneInput from './PhoneInput.jsx';
 import { dialCountry, normalizePhone } from '../../services/phoneCountries.js';
 import { lookupDoctorPIN } from '../../services/serverDoctors.js';
+import { discountRate, roundRate } from '../../services/rates.js';
 import '../../doctor-form.css';
 
 const FIELDS = [
@@ -23,6 +24,7 @@ const TABS = [
   { id: 'address', label: 'Address', fields: ['pincode', 'addressLine1', 'addressLine2', 'landmark', 'country', 'state', 'city'] },
 ];
 const FIELD_INFO = {
+  orderDiscount: 'Original percentage must be 0 to 100. Up to six source decimal places are rounded half-up to two when saved (1.005 → 1.01).',
   phone: 'Select the phone country and enter its national number. The selection is saved and also applies to the alternate phone.',
   daysLimit: 'Saved business setting only. No payment ledger, order placement or overdue-payment blocking engine is connected.',
   gstNumber: 'GST Number is required for GST invoices. For Indian addresses, enter a 15-character GSTIN.',
@@ -81,8 +83,9 @@ function validate(values) {
   } else if (values.gstNumber && values.country.toLocaleLowerCase() !== 'india' && !/^[A-Za-z0-9 -]{5,20}$/.test(values.gstNumber)) {
     errors.gstNumber = 'Enter a GST number with 5–20 letters, digits, spaces or hyphens.';
   }
-  if (values.orderDiscount && (!/^\d+(\.\d{1,2})?$/.test(values.orderDiscount) || Number(values.orderDiscount) > 100)) {
-    errors.orderDiscount = 'Enter a discount from 0 to 100 with up to 2 decimal places.';
+  if (values.orderDiscount) {
+    try { discountRate(values.orderDiscount); }
+    catch { errors.orderDiscount = 'Enter a discount from 0 to 100 with up to 6 source decimal places; rounded half-up to two on save.'; }
   }
   if (values.daysLimit && (!/^\d+$/.test(values.daysLimit) || Number(values.daysLimit) > 2147483647)) {
     errors.daysLimit = 'Enter a whole number from 0 to 2147483647.';
@@ -199,6 +202,11 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
     const common = {
       id, name: key, className: 'doctor-form__control', value: values[key],
       onChange: (event) => change(key, event.target.value), autoComplete: autoComplete || 'off',
+      onBlur: () => {
+        if (key === 'orderDiscount' && values[key]) {
+          try { change(key, discountRate(values[key])); } catch { /* Keep invalid drafts editable. */ }
+        } else if (key === 'paymentLimit' && /^\d{1,13}(?:\.\d{1,2})?$/.test(values[key])) change(key, roundRate(values[key]));
+      },
       'aria-required': required, 'aria-invalid': Boolean(errors[key]),
       'aria-describedby': describedBy, 'data-testid': `input-doctor-${key}`,
     };
@@ -251,9 +259,9 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
         ...cleaned,
         phone: cleaned.phone ? normalizePhone(cleaned.phone, cleaned.dialCountry) : '',
         alternatePhone: cleaned.alternatePhone ? normalizePhone(cleaned.alternatePhone, cleaned.dialCountry) : '',
-        orderDiscount: cleaned.orderDiscount === '' ? '0.00' : cleaned.orderDiscount,
+        orderDiscount: cleaned.orderDiscount === '' ? '0.00' : discountRate(cleaned.orderDiscount),
         daysLimit: cleaned.daysLimit === '' ? 0 : Number(cleaned.daysLimit),
-        paymentLimit: cleaned.paymentLimit === '' ? '0.00' : cleaned.paymentLimit,
+        paymentLimit: cleaned.paymentLimit === '' ? '0.00' : roundRate(cleaned.paymentLimit),
       });
       if (!result?.success) setSaveError(result?.error || 'This doctor could not be saved. Please try again.');
     } catch (error) {
@@ -329,7 +337,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
           {renderField('invoiceType', 'Invoice Type', { selectOptions: [{ value: 'normal', label: 'Normal' }, { value: 'gst', label: 'GST' }] })}
            {renderField('gstNumber', 'GST Number', { placeholder: values.invoiceType === 'gst' ? 'GSTIN' : 'Optional' })}
           {renderField('drugLicenceNumber', 'Drug Licence No.', { placeholder: 'Drug licence number' })}
-          {renderField('orderDiscount', 'Order Discount (in %)', { type: 'number', min: '0', max: '100', step: '0.01', placeholder: '0', inputMode: 'decimal' })}
+          {renderField('orderDiscount', 'Order Discount (in %)', { type: 'text', placeholder: '0.00', inputMode: 'decimal' })}
           {renderField('daysLimit', 'Days Limit', { type: 'number', min: '0', step: '1', placeholder: '0', inputMode: 'numeric' })}
           {renderField('paymentLimit', 'Payment Limit', { type: 'number', min: '0', step: '0.01', placeholder: '0', inputMode: 'decimal' })}
         </div>

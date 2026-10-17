@@ -20,15 +20,15 @@ export function formatCents(cents) {
   const negative = value < 0n;
   const abs = negative ? -value : value;
   const whole = (abs / 100n).toString();
-  const frac = (abs % 100n).toString().padStart(2, '0').replace(/0+$/, '');
-  return `${negative ? '-' : ''}₹${groupIndian(whole)}${frac ? `.${frac}` : ''}`;
+  const frac = (abs % 100n).toString().padStart(2, '0');
+  return `${negative ? '-' : ''}₹${groupIndian(whole)}.${frac}`;
 }
 // Exact server decimal string such as "1234.50" to display text.
 export function formatAmount(text) {
   const match = /^(-?)(\d+)(?:\.(\d+))?$/.exec(String(text ?? '').trim());
   if (!match) return '—';
-  const frac = (match[3] || '').replace(/0+$/, '');
-  return `${match[1]}₹${groupIndian(match[2].replace(/^0+(?=\d)/, ''))}${frac ? `.${frac}` : ''}`;
+  const frac = (match[3] || '').padEnd(2, '0');
+  return `${match[1]}₹${groupIndian(match[2].replace(/^0+(?=\d)/, ''))}.${frac}`;
 }
 export function sumDraft(values) {
   let total = 0n;

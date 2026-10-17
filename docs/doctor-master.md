@@ -76,7 +76,10 @@ the same length rule. Required contact means both phone and email; optional
 contact permits either/both to be blank. Joining dates are real non-future dates.
 GST invoices require a GST number; India uses 15 alphanumeric characters.
 
-Order discount is an exact two-place decimal `0..100`; payment limit is an exact
+Order discount accepts up to six source places, checks the original `0..100`
+range and rounds half-up to two places (`1.005` → `1.01`). Its import review
+shows the normalized discount/payment limit that confirmation will commit.
+Payment limit remains an exact
 two-place decimal `0..9999999999999.99`. Days limit is a whole number
 `0..2147483647`. Blank optional commercial values mean zero. No float rounding
 is used for persisted monetary values or workbook numeric XML validation.

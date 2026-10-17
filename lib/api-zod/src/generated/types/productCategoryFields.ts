@@ -17,7 +17,7 @@ export interface ProductCategoryFields {
   name: string;
   status: ProductCategoryFieldsStatus;
   /**
-   * Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.
+   * Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.
    * @minLength 1
    * @maxLength 64
    */

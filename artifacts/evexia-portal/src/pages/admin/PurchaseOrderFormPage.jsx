@@ -1,3 +1,4 @@
+import { formatRate } from '../../services/rates.js';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, ClipboardList, Plus, X } from 'lucide-react';
@@ -61,7 +62,7 @@ export function LineTable({ lines, figures }) {
       <thead><tr><th scope="col">Sr. no.</th><th scope="col">Product name</th><th scope="col">Quantity</th><th scope="col">Unit price</th><th scope="col">Gross total</th><th scope="col">GST %</th><th scope="col">GST amount</th><th scope="col">Final total</th></tr></thead>
       <tbody>{lines.map((line, index) => <tr key={line.id || index}>
         <td>{index + 1}</td><td><strong>{line.productName}</strong></td><td>{trimDecimal(line.quantity, 0)}</td>
-        <td>₹{trimDecimal(line.unitPrice)}</td><td>{formatPaise(line.subtotal)}</td><td>{trimDecimal(line.gst, 0)}%</td><td>{formatPaise(line.gstAmount)}<LineTax line={line} /></td><td className="po-amount">{formatPaise(line.total)}</td>
+        <td>₹{formatRate(line.unitPrice)}</td><td>{formatPaise(line.subtotal)}</td><td>{formatRate(line.gst)}%</td><td>{formatPaise(line.gstAmount)}<LineTax line={line} /></td><td className="po-amount">{formatPaise(line.total)}</td>
       </tr>)}</tbody>
       <tfoot>
         <tr><th colSpan="7" scope="row">Taxable subtotal</th><td>{formatPaise(figures.subtotal)}</td></tr>
@@ -300,8 +301,8 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
                     }} />
                   </Field>{productHint(line, index) && !errors[`lines.${index}.productId`] ? productHint(line, index) : null}</div>
                   <Field id={`po-quantity-${index}`} label="Quantity" error={errors[`lines.${index}.quantity`]}><input id={`po-quantity-${index}`} className="mr-form__control" type="text" inputMode="decimal" placeholder="1" value={line.quantity} onChange={(e) => editLine(index, { quantity: e.target.value }, ['quantity'])} aria-invalid={Boolean(errors[`lines.${index}.quantity`])} aria-describedby={errors[`lines.${index}.quantity`] ? `po-quantity-${index}-error` : undefined} data-testid={`input-po-quantity-${index}`} /></Field>
-                  <div className="po-field"><label htmlFor={`po-price-${index}`}>Unit price (₹)</label><input id={`po-price-${index}`} className="mr-form__control" readOnly tabIndex={-1} value={!product ? '' : product.unitPrice == null ? 'Unavailable' : trimDecimal(product.unitPrice)} placeholder="From catalogue" aria-readonly="true" data-testid={`input-po-price-${index}`} /></div>
-                  <div className="po-field"><label htmlFor={`po-gst-${index}`}>GST (%)</label><input id={`po-gst-${index}`} className="mr-form__control" readOnly tabIndex={-1} value={product ? trimDecimal(product.gst, 0) : ''} placeholder="From catalogue" aria-readonly="true" data-testid={`input-po-gst-${index}`} /></div>
+                  <div className="po-field"><label htmlFor={`po-price-${index}`}>Unit price (₹)</label><input id={`po-price-${index}`} className="mr-form__control" readOnly tabIndex={-1} value={!product ? '' : product.unitPrice == null ? 'Unavailable' : formatRate(product.unitPrice)} placeholder="From catalogue" aria-readonly="true" data-testid={`input-po-price-${index}`} /></div>
+                  <div className="po-field"><label htmlFor={`po-gst-${index}`}>GST (%)</label><input id={`po-gst-${index}`} className="mr-form__control" readOnly tabIndex={-1} value={product ? formatRate(product.gst) : ''} placeholder="From catalogue" aria-readonly="true" data-testid={`input-po-gst-${index}`} /></div>
                 </div>
                 <div className="po-new-line__totals"><span>Taxable <b>{draft[index] && !draft[index].overflow ? formatPaise(draft[index].subtotal) : '—'}</b></span><LineTax line={draft[index]} /><span>GST <b>{draft[index]?.taxPending ? 'Tax pending' : draft[index] && !draft[index].overflow ? formatPaise(draft[index].gstAmount) : '—'}</b></span><span className="po-new-line__final">Line total <b>{draft[index]?.taxPending ? 'Tax pending' : draft[index] && !draft[index].overflow ? formatPaise(draft[index].total) : '—'}</b></span></div>
                 {errors[`lines.${index}.total`] && <p className="mr-form__error" role="alert">{errors[`lines.${index}.total`]}</p>}

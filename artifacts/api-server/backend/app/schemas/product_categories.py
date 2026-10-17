@@ -1,29 +1,25 @@
-import re
 import uuid
 from datetime import datetime
-from decimal import Decimal
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-
-
-PRICE = re.compile(r"^(?:0|[0-9]+)(?:\.[0-9]{1,6})?$")
+from app.schemas.rates import rate, source_decimal
 
 
 def exact_price(value):
-    """Plain decimal strings only: never accept or round a binary float."""
-    if not isinstance(value, str) or len(value) > 64 or not PRICE.fullmatch(value.strip()):
-        raise ValueError("Use a non-negative decimal string with at most six fractional digits")
-    value = value.strip()
-    if len(value.split(".")[0].lstrip("0")) > 12:
-        raise ValueError("At most twelve integer digits")
-    return format(Decimal(value), ".6f")
+    """Rates accept the historical source precision and commit half-up cents."""
+    return rate(value)
+
+
+def exact_quantity(value):
+    """Thresholds are NOT rates; retain their six-place contract."""
+    return format(source_decimal(value), ".6f")
 
 
 class ProductCategoryFields(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
     description: str = Field(default="", max_length=2000)
-    unit_price: str = Field(min_length=1, max_length=64, description="Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.")
+    unit_price: str = Field(min_length=1, max_length=64, description="Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.")
     status: Literal["active", "inactive"]
 
     @field_validator("name", "description", mode="before")

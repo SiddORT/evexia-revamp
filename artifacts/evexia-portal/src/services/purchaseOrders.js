@@ -3,6 +3,7 @@ import { loadVendors } from './vendors.js';
 import { loadStorageLocations } from './storageLocations.js';
 import { loadAllergenReferences, loadAllergens } from './allergens.js';
 import { PR_KEY, withPurchaseMutationLock } from './purchaseMutationLock.js';
+import { roundRate } from './rates.js';
 
 export const PO_KEY = 'evexia.admin.purchase-orders.v1';
 const LOCAL_ACTOR = 'Local demo operator (unverified record)';
@@ -28,15 +29,31 @@ const amount = (value, max, decimals = 2, min = 0) => {
   return Number.isFinite(num) && num >= min && num <= max ? num : null;
 };
 const fixed = (value, scale) => Math.round(value * scale);
+const rateAmount = (value, max) => {
+  if (!/^\d+(?:\.\d{1,6})?$/.test(String(value ?? '').trim())) return null;
+  try { return roundRate(value, { originalMax: String(max), max: String(max) }); } catch { return null; }
+};
 export const money = (paise) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format((paise || 0) / 100);
 
 export function calculateLine(line) {
   const quantity = amount(line.quantity, 1000000, 3, 0.001);
-  const unitPrice = amount(line.unitPrice, 10000000);
-  const gst = amount(line.gst, 100);
+  // Legacy saved orders used numeric rates and binary arithmetic. Keep their
+  // validation/document path exactly as issued; new saves use decimal strings.
+  if (quantity !== null && typeof line.unitPrice === 'number' && typeof line.gst === 'number'
+    && amount(line.unitPrice, 10000000) !== null && amount(line.gst, 100) !== null) {
+    const subtotal = Math.round(fixed(quantity, 1000) * fixed(line.unitPrice, 100) / 1000);
+    const gstAmount = Math.round(subtotal * fixed(line.gst, 100) / 10000);
+    const total = subtotal + gstAmount;
+    return Number.isSafeInteger(total) && total <= 10000000000 ? { subtotal, gstAmount, total } : null;
+  }
+  const unitPrice = rateAmount(line.unitPrice, 10000000);
+  const gst = rateAmount(line.gst, 100);
   if (quantity === null || unitPrice === null || gst === null) return null;
-  const subtotal = Math.round(fixed(quantity, 1000) * fixed(unitPrice, 100) / 1000);
-  const gstAmount = Math.round(subtotal * fixed(gst, 100) / 10000);
+  const priceCents = BigInt(unitPrice.replace('.', ''));
+  const gstHundredths = BigInt(gst.replace('.', ''));
+  const divide = (n, d) => (n * 2n + d) / (d * 2n);
+  const subtotal = Number(divide(BigInt(fixed(quantity, 1000)) * priceCents, 1000n));
+  const gstAmount = Number(divide(BigInt(subtotal) * gstHundredths, 10000n));
   const total = subtotal + gstAmount;
   if (!Number.isSafeInteger(total) || total > 10000000000) return null;
   return { subtotal, gstAmount, total };
@@ -116,12 +133,12 @@ export function validatePO(values, refs, existing = null) {
     if (typeof line.productId !== 'string' || !line.productId || (!found && !retained) ||
       (found?.status !== 'active' && !retained)) errors[`lines.${i}.productId`] = 'Choose an active saved product.';
     const quantity = amount(line.quantity, 1000000, 3, 0.001);
-    const unitPrice = amount(line.unitPrice, 10000000);
-    const gst = amount(line.gst, 100);
+    const unitPrice = rateAmount(line.unitPrice, 10000000);
+    const gst = rateAmount(line.gst, 100);
     if (quantity === null) errors[`lines.${i}.quantity`] = 'Enter a positive quantity (up to 3 decimal places).';
-    if (unitPrice === null) errors[`lines.${i}.unitPrice`] = 'Enter a non-negative price in INR (up to 2 decimals).';
-    if (gst === null) errors[`lines.${i}.gst`] = 'Enter GST from 0 to 100% (up to 2 decimals).';
-    const figures = calculateLine(line);
+    if (unitPrice === null) errors[`lines.${i}.unitPrice`] = 'Enter a non-negative price in INR up to 10000000; rounded half-up to two decimals.';
+    if (gst === null) errors[`lines.${i}.gst`] = 'Enter GST from 0 to 100%; rounded half-up to two decimals.';
+    const figures = calculateLine({ ...line, unitPrice, gst });
     if (!figures) errors[`lines.${i}.total`] = 'Line amount exceeds the safe limit or contains invalid numbers.';
     let id = explicitId ? matched?.id || line.id : matched?.id;
     if (!id) {
@@ -130,7 +147,7 @@ export function validatePO(values, refs, existing = null) {
     usedLineIds.add(normalizeLineId(id));
     return figures ? { id, productId: line.productId, productName: retained || found?.name, quantity, unitPrice, gst, ...figures } : null;
   });
-  const figures = totals(values.lines);
+  const figures = lines.every(Boolean) ? totals(lines) : null;
   if (!figures) errors.form = 'PO total exceeds ₹10 crore or contains invalid amounts.';
   return { errors, order: Object.keys(errors).length ? null : {
     poDate: values.poDate, expectedDate: values.expectedDate, vendorId: values.vendorId, vendorName: selected.vendorId,
@@ -230,7 +247,7 @@ export function eligibleSamplePOs(record, refs) {
       const line = po.lines[lineIndex];
       if (!product || !nonempty(line.id) || line.productId !== product.id || line.productName !== product.name ||
         line.quantity !== Number(index === 1 ? '72' : quantity) ||
-        line.unitPrice !== Number(price) || line.gst !== Number(gst)) return null;
+        roundRate(line.unitPrice) !== roundRate(price) || roundRate(line.gst) !== roundRate(gst)) return null;
     }
     const history = record.events.filter((event) => event.orderId === id);
     if (history.length !== (index === 1 ? 2 : 1) ||
@@ -286,6 +303,8 @@ function samplePOs() {
   orders[orders.indexOf(removed)] = { ...removed, status: 'deleted', deletedAt, updatedAt: deletedAt };
   events.push({ id: 'sample-po-event-7', orderId: removed.id, number: removed.number,
     action: 'deleted', actor: SAMPLE_ACTOR, at: deletedAt, summary: `Sample order deleted · ${money(removed.total)}` });
+  // Stable in-memory samples allow snapshot guards without a load-time write.
+  for (const order of orders) order.lines = order.lines.map((line, index) => ({ ...line, id: `${order.id}-line-${index + 1}` }));
   return { version: 1, revision: events.length, orders, events };
 }
 
@@ -296,10 +315,7 @@ export function loadPOs() {
   if (raw === null) {
     const initial = samplePOs() || { version: 1, revision: 0, orders: [], events: [] };
     if (!validRecord(initial)) throw new Error('Sample purchase orders could not be validated. Nothing was saved.');
-    try {
-      if (window.localStorage.getItem(PO_KEY) !== null) return loadPOs();
-      window.localStorage.setItem(PO_KEY, JSON.stringify(initial));
-    } catch { throw new Error('Sample purchase orders could not be saved in this browser. Check storage settings and try again.'); }
+    // Never initialize/normalize persisted rate snapshots merely by loading.
     return initial;
   }
   let record;

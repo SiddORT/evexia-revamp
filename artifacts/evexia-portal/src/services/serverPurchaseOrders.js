@@ -1,5 +1,6 @@
 import { getSession, purchaseOrderRequest } from '../auth/adminSession.js';
 import states from '../../../api-server/backend/app/services/gst_states.json' with { type: 'json' };
+import { catalogueRate } from './rates.js';
 
 export const GST_STATES = states;
 export const TAX_COMPONENTS = ['cgst', 'sgst', 'utgst', 'igst'];
@@ -19,7 +20,13 @@ export const listPurchaseOrders = (params, signal) => purchaseOrderRequest('', {
 export const getPurchaseOrderOverview = (signal) => purchaseOrderRequest('/overview', { signal });
 export const listPurchaseOrderActivity = (params, signal) => purchaseOrderRequest('/activity', { params: clean(params), signal });
 export const getPurchaseOrderAnalytics = (signal) => purchaseOrderRequest('/analytics', { signal });
-export const listPurchaseOrderReferences = (kind, params, signal) => purchaseOrderRequest(`/references/${kind}`, { params: clean(params), signal });
+export const listPurchaseOrderReferences = async (kind, params, signal) => {
+  const page = await purchaseOrderRequest(`/references/${kind}`, { params: clean(params), signal });
+  // Normalize only new catalogue choices, never fetched order/retry snapshots.
+  return kind !== 'products' ? page : { ...page, items: page.items.map((item) => ({
+    ...item, unitPrice: item.unitPrice == null ? null : catalogueRate(item.unitPrice), gst: catalogueRate(item.gst, true),
+  })) };
+};
 export const listPurchaseOrderFilterOptions = (kind, params, signal) => purchaseOrderRequest(`/filter-options/${kind}`, { params: clean(params), signal });
 export const previewPurchaseOrder = (input, signal) => purchaseOrderRequest('/preview', { body: input, signal });
 export const createPurchaseOrder = (input, reviewToken, idempotencyKey, signal) => purchaseOrderRequest('', { body: { ...input, reviewToken, idempotencyKey }, signal });
@@ -150,6 +157,8 @@ export function parseQuantity(text) {
 export function computeLine(quantityText, product, treatment) {
   const qty = parseQuantity(quantityText);
   if (qty === null || !product || product.unitPrice == null) return null;
+  // Retained lines carry historical rates and MUST keep their exact arithmetic.
+  // New choices are canonicalized at the catalogue/selection boundary.
   const price = parseScaled(product.unitPrice, 6);
   const gst = parseScaled(product.gst, 6);
   if (price === null || price > MAX_PRICE || gst === null || gst > MAX_GST) return null;

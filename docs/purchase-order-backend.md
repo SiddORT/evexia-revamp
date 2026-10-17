@@ -31,8 +31,9 @@ retain master references, while names/prices/taxes are saved snapshots.
 
 ## Arithmetic and review
 
-Allergen `selling_price` and `gst` are read-only source values, with up to six
-decimals. Missing price is unavailable, not zero. Explicit zero is supported.
+Allergen `selling_price` and `gst` are read-only source values. Newly selected
+catalogue snapshots use exact half-up two-place decimal strings.
+Missing price is unavailable, not zero. Explicit zero is supported.
 Quantities are positive plain decimals with up to three decimal places and
 maximum 1,000,000. There are 1–100 lines and a ₹10 crore per-order limit.
 
@@ -42,7 +43,12 @@ up on that rounded subtotal. Sum rounded components for line GST, then rounded
 lines for order totals. Equal component **rates** can differ from the former
 aggregate-only result: a 1-paise subtotal at 50% gives two 25% components rounded
 to zero, whereas aggregate GST rounded to 1 paise. Never alter historical totals
-to reconcile this. Halved six-decimal rates retain seven decimal places.
+to reconcile this. Halved historical six-decimal rates retain seven internal
+decimal places; halving a new two-place rate can require three. Component
+arithmetic retains those digits. Rate displays round half-up to two places
+without changing saved snapshots, paise amounts or arithmetic.
+Retained old lines keep their original precise rate strings on edit; only newly
+selected catalogue rates normalize. See [rate rollout](rate-rounding-rollout.md).
 The draft uses scaled BigInt; preview/create use Python Decimal with explicit
 precision. Unfinished/invalid rows are excluded from the **draft estimate**,
 not allowed through review. The dynamic partial-line-count notice is intentionally

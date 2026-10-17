@@ -26,7 +26,14 @@ def readiness(db: Session = Depends(get_db)):
         # Reject predecessor releases even where obsolete nullable fields would
         # let a subset of requests appear to work during an unsafe mixed rollout.
         from app.core.schema import SCHEMA_REVISION
-        if db.execute(text("SELECT version_num FROM alembic_version")).scalars().all() != [SCHEMA_REVISION]:
+        revisions = db.execute(text("SELECT version_num FROM alembic_version")).scalars().all()
+        # The rate normalization is separately operator-activated, never an
+        # automatic upgrade target. It alters no identity/directory contracts.
+        # Do not carry this predecessor exception into an unrelated future pin.
+        accepted = [[SCHEMA_REVISION]]
+        if SCHEMA_REVISION == "0041_location_geography":
+            accepted.append(["0042_rate_hundredths"])
+        if revisions not in accepted:
             raise RuntimeError("Coordinated schema release required")
         from app.services.directory_runtime import ready
         ready(db)

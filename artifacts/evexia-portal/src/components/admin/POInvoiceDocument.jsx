@@ -1,3 +1,4 @@
+import { formatRate } from '../../services/rates.js';
 import '../../poInvoice.css';
 import { money } from '../../services/purchaseOrders.js';
 import { formatCalendarDate } from '../../services/datePresentation.js';
@@ -15,7 +16,7 @@ export default function POInvoiceDocument({ document, compact = false }) {
       <p>PO date: {date(document.model.poDate)}. Expected delivery: {date(document.model.expectedDate)}. Deliver to: {document.model.locationName}. Status: {document.model.status}.</p>
       {document.model.isSample && <p>Sample document, preview only.</p>}
       <table><caption>Purchase order items</caption><thead><tr>{['Sr. no.', 'Product', 'HSN code', 'Quantity', 'Unit price', 'Gross amount', 'GST %', 'GST amount', 'Final total'].map((label) => <th scope="col" key={label}>{label}</th>)}</tr></thead>
-        <tbody>{document.model.lines.map((line, index) => <tr key={index}><td>{index + 1}</td><th scope="row">{line.productName}</th><td>{line.hsnCode || 'Not recorded'}</td><td>{line.quantity}</td><td>{money(Math.round(line.unitPrice * 100))}</td><td>{money(line.subtotal)}</td><td>{line.gst}%</td><td>{money(line.gstAmount)}</td><td>{money(line.total)}</td></tr>)}</tbody>
+        <tbody>{document.model.lines.map((line, index) => <tr key={index}><td>{index + 1}</td><th scope="row">{line.productName}</th><td>{line.hsnCode || 'Not recorded'}</td><td>{line.quantity}</td><td>₹{formatRate(line.unitPrice)}</td><td>{money(line.subtotal)}</td><td>{formatRate(line.gst)}%</td><td>{money(line.gstAmount)}</td><td>{money(line.total)}</td></tr>)}</tbody>
       </table><p>Taxable amount: {money(document.model.subtotal)}. GST amount: {money(document.model.gstAmount)}. Final total: {money(document.model.total)}.</p>
     </section>}
     {pages.map((page, index) => <div key={index} className="po-invoice-document__page" aria-hidden={!compact}

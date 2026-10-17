@@ -23,6 +23,7 @@ export interface AllergenEdit {
   /** @minimum 1 */
   expected_version: number;
   /**
+   * Original percentage 0–100, up to six source places; half-up rounded and returned with two places.
    * @minLength 1
    * @maxLength 64
    */
@@ -34,6 +35,7 @@ export interface AllergenEdit {
    * @maxLength 200
    */
   name: string;
+  /** Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. */
   selling_price?: string | null;
   status: AllergenEditStatus;
   storage_location_id: string;
@@ -56,6 +58,7 @@ export interface AllergenFields {
    */
   concentration: string;
   /**
+   * Original percentage 0–100, up to six source places; half-up rounded and returned with two places.
    * @minLength 1
    * @maxLength 64
    */
@@ -67,6 +70,7 @@ export interface AllergenFields {
    * @maxLength 200
    */
   name: string;
+  /** Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. */
   selling_price?: string | null;
   status: AllergenFieldsStatus;
   storage_location_id: string;
@@ -129,6 +133,7 @@ export interface AllergenResponse {
   createdAt: string;
   createdBy: string;
   /**
+   * Original percentage 0–100, up to six source places; half-up rounded and returned with two places.
    * @minLength 1
    * @maxLength 64
    */
@@ -141,6 +146,7 @@ export interface AllergenResponse {
    * @maxLength 200
    */
   name: string;
+  /** Optional plain decimal rate, up to six source places; half-up rounded and returned with two places. */
   selling_price?: string | null;
   status: AllergenResponseStatus;
   storage_location_id: string;
@@ -1059,6 +1065,7 @@ export interface DoctorEdit {
    * @maxLength 200
    */
   name: string;
+  /** Original 0–100 percentage; up to six source decimal places, half-up rounded to two. */
   orderDiscount?: string | number | null;
   paymentLimit?: string | number | null;
   /** @maxLength 20 */
@@ -1409,6 +1416,7 @@ export interface DoctorFields {
    * @maxLength 200
    */
   name: string;
+  /** Original 0–100 percentage; up to six source decimal places, half-up rounded to two. */
   orderDiscount?: string | number | null;
   paymentLimit?: string | number | null;
   /** @maxLength 20 */
@@ -1452,6 +1460,8 @@ export interface DoctorImportResult {
 export interface DoctorImportRow {
   errors: string[];
   name: string;
+  orderDiscount: string;
+  paymentLimit: string;
   registrationNumber: string;
   row: number;
 }
@@ -1792,7 +1802,10 @@ export interface DoctorResponse {
    * @maxLength 200
    */
   name: string;
-  /** @pattern ^(?!^[-+.]*$)[+-]?0*\d*\.?\d{0,2}0*$ */
+  /**
+   * Original 0–100 percentage; up to six source decimal places, half-up rounded to two.
+   * @pattern ^(?!^[-+.]*$)[+-]?0*\d*\.?\d{0,2}0*$
+   */
   orderDiscount?: string;
   /** @pattern ^(?!^[-+.]*$)[+-]?0*(?:\d{0,13}|(?=[\d.]{1,16}0*$)\d{0,13}\.\d{0,2}0*$) */
   paymentLimit?: string;
@@ -5049,7 +5062,7 @@ export interface ProductCategoryEdit {
   name: string;
   status: ProductCategoryEditStatus;
   /**
-   * Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.
+   * Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.
    * @minLength 1
    * @maxLength 64
    */
@@ -5074,7 +5087,7 @@ export interface ProductCategoryFields {
   name: string;
   status: ProductCategoryFieldsStatus;
   /**
-   * Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.
+   * Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.
    * @minLength 1
    * @maxLength 64
    */
@@ -5115,7 +5128,7 @@ export interface ProductCategoryResponse {
   name: string;
   status: ProductCategoryResponseStatus;
   /**
-   * Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.
+   * Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.
    * @minLength 1
    * @maxLength 64
    */

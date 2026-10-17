@@ -21,6 +21,7 @@
             "type": "integer"
           },
           "gst": {
+            "description": "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
             "maxLength": 64,
             "minLength": 1,
             "title": "Gst",
@@ -47,6 +48,7 @@
                 "type": "null"
               }
             ],
+            "description": "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
             "title": "Selling Price"
           },
           "status": {
@@ -103,6 +105,7 @@
             "type": "string"
           },
           "gst": {
+            "description": "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
             "maxLength": 64,
             "minLength": 1,
             "title": "Gst",
@@ -129,6 +132,7 @@
                 "type": "null"
               }
             ],
+            "description": "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
             "title": "Selling Price"
           },
           "status": {
@@ -395,6 +399,7 @@
             "type": "string"
           },
           "gst": {
+            "description": "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
             "maxLength": 64,
             "minLength": 1,
             "title": "Gst",
@@ -426,6 +431,7 @@
                 "type": "null"
               }
             ],
+            "description": "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
             "title": "Selling Price"
           },
           "status": {
@@ -2223,6 +2229,7 @@
               }
             ],
             "default": "0.00",
+            "description": "Original 0–100 percentage; up to six source decimal places, half-up rounded to two.",
             "title": "Orderdiscount"
           },
           "paymentLimit": {
@@ -2672,6 +2679,7 @@
               }
             ],
             "default": "0.00",
+            "description": "Original 0–100 percentage; up to six source decimal places, half-up rounded to two.",
             "title": "Orderdiscount"
           },
           "paymentLimit": {
@@ -2807,6 +2815,14 @@
             "title": "Name",
             "type": "string"
           },
+          "orderDiscount": {
+            "title": "Orderdiscount",
+            "type": "string"
+          },
+          "paymentLimit": {
+            "title": "Paymentlimit",
+            "type": "string"
+          },
           "registrationNumber": {
             "title": "Registrationnumber",
             "type": "string"
@@ -2820,6 +2836,8 @@
           "row",
           "name",
           "registrationNumber",
+          "orderDiscount",
+          "paymentLimit",
           "errors"
         ],
         "title": "DoctorImportRow",
@@ -3281,6 +3299,7 @@
           },
           "orderDiscount": {
             "default": "0.00",
+            "description": "Original 0–100 percentage; up to six source decimal places, half-up rounded to two.",
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d{0,2}0*$",
             "title": "Orderdiscount",
             "type": "string"
@@ -9755,7 +9774,7 @@
             "type": "string"
           },
           "unit_price": {
-            "description": "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+            "description": "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
             "maxLength": 64,
             "minLength": 1,
             "title": "Unit Price",
@@ -9795,7 +9814,7 @@
             "type": "string"
           },
           "unit_price": {
-            "description": "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+            "description": "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
             "maxLength": 64,
             "minLength": 1,
             "title": "Unit Price",
@@ -9938,7 +9957,7 @@
             "type": "string"
           },
           "unit_price": {
-            "description": "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+            "description": "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
             "maxLength": 64,
             "minLength": 1,
             "title": "Unit Price",

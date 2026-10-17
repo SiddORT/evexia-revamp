@@ -1233,7 +1233,13 @@ export const ListAllergensResponse = zod.object({
         .max(listAllergensResponseItemsItemConcentrationMax),
       createdAt: zod.coerce.date(),
       createdBy: zod.string(),
-      gst: zod.string().min(1).max(listAllergensResponseItemsItemGstMax),
+      gst: zod
+        .string()
+        .min(1)
+        .max(listAllergensResponseItemsItemGstMax)
+        .describe(
+          "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+        ),
       id: zod.string().uuid(),
       mix: zod
         .boolean()
@@ -1246,7 +1252,10 @@ export const ListAllergensResponse = zod.object({
           zod.string().max(listAllergensResponseItemsItemSellingPriceOneMax),
           zod.null(),
         ])
-        .optional(),
+        .optional()
+        .describe(
+          "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+        ),
       status: zod.enum(["active", "inactive"]),
       storage_location_id: zod.string().uuid(),
       storage_location_name: zod.string(),
@@ -1274,7 +1283,13 @@ export const ListAllergensResponse = zod.object({
 export const CreateAllergenBody = zod.object({
   category_id: zod.string().uuid(),
   concentration: zod.string().min(1).max(createAllergenBodyConcentrationMax),
-  gst: zod.string().min(1).max(createAllergenBodyGstMax),
+  gst: zod
+    .string()
+    .min(1)
+    .max(createAllergenBodyGstMax)
+    .describe(
+      "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+    ),
   mix: zod
     .boolean()
     .describe(
@@ -1283,7 +1298,10 @@ export const CreateAllergenBody = zod.object({
   name: zod.string().min(1).max(createAllergenBodyNameMax),
   selling_price: zod
     .union([zod.string().max(createAllergenBodySellingPriceOneMax), zod.null()])
-    .optional(),
+    .optional()
+    .describe(
+      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+    ),
   status: zod.enum(["active", "inactive"]),
   storage_location_id: zod.string().uuid(),
   threshold_limit: zod
@@ -1304,7 +1322,13 @@ export const CreateAllergenResponse = zod.object({
     .max(createAllergenResponseConcentrationMax),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
-  gst: zod.string().min(1).max(createAllergenResponseGstMax),
+  gst: zod
+    .string()
+    .min(1)
+    .max(createAllergenResponseGstMax)
+    .describe(
+      "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+    ),
   id: zod.string().uuid(),
   mix: zod
     .boolean()
@@ -1317,7 +1341,10 @@ export const CreateAllergenResponse = zod.object({
       zod.string().max(createAllergenResponseSellingPriceOneMax),
       zod.null(),
     ])
-    .optional(),
+    .optional()
+    .describe(
+      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+    ),
   status: zod.enum(["active", "inactive"]),
   storage_location_id: zod.string().uuid(),
   storage_location_name: zod.string(),
@@ -1518,7 +1545,13 @@ export const GetAllergenResponse = zod.object({
   concentration: zod.string().min(1).max(getAllergenResponseConcentrationMax),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
-  gst: zod.string().min(1).max(getAllergenResponseGstMax),
+  gst: zod
+    .string()
+    .min(1)
+    .max(getAllergenResponseGstMax)
+    .describe(
+      "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+    ),
   id: zod.string().uuid(),
   mix: zod
     .boolean()
@@ -1531,7 +1564,10 @@ export const GetAllergenResponse = zod.object({
       zod.string().max(getAllergenResponseSellingPriceOneMax),
       zod.null(),
     ])
-    .optional(),
+    .optional()
+    .describe(
+      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+    ),
   status: zod.enum(["active", "inactive"]),
   storage_location_id: zod.string().uuid(),
   storage_location_name: zod.string(),
@@ -1568,7 +1604,13 @@ export const DeleteAllergenResponse = zod.object({
     .max(deleteAllergenResponseConcentrationMax),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
-  gst: zod.string().min(1).max(deleteAllergenResponseGstMax),
+  gst: zod
+    .string()
+    .min(1)
+    .max(deleteAllergenResponseGstMax)
+    .describe(
+      "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+    ),
   id: zod.string().uuid(),
   mix: zod
     .boolean()
@@ -1581,7 +1623,10 @@ export const DeleteAllergenResponse = zod.object({
       zod.string().max(deleteAllergenResponseSellingPriceOneMax),
       zod.null(),
     ])
-    .optional(),
+    .optional()
+    .describe(
+      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+    ),
   status: zod.enum(["active", "inactive"]),
   storage_location_id: zod.string().uuid(),
   storage_location_name: zod.string(),
@@ -1608,7 +1653,13 @@ export const EditAllergenBody = zod.object({
   category_id: zod.string().uuid(),
   concentration: zod.string().min(1).max(editAllergenBodyConcentrationMax),
   expected_version: zod.number().int().min(1),
-  gst: zod.string().min(1).max(editAllergenBodyGstMax),
+  gst: zod
+    .string()
+    .min(1)
+    .max(editAllergenBodyGstMax)
+    .describe(
+      "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+    ),
   mix: zod
     .boolean()
     .describe(
@@ -1617,7 +1668,10 @@ export const EditAllergenBody = zod.object({
   name: zod.string().min(1).max(editAllergenBodyNameMax),
   selling_price: zod
     .union([zod.string().max(editAllergenBodySellingPriceOneMax), zod.null()])
-    .optional(),
+    .optional()
+    .describe(
+      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+    ),
   status: zod.enum(["active", "inactive"]),
   storage_location_id: zod.string().uuid(),
   threshold_limit: zod
@@ -1632,7 +1686,13 @@ export const EditAllergenResponse = zod.object({
   concentration: zod.string().min(1).max(editAllergenResponseConcentrationMax),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
-  gst: zod.string().min(1).max(editAllergenResponseGstMax),
+  gst: zod
+    .string()
+    .min(1)
+    .max(editAllergenResponseGstMax)
+    .describe(
+      "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+    ),
   id: zod.string().uuid(),
   mix: zod
     .boolean()
@@ -1645,7 +1705,10 @@ export const EditAllergenResponse = zod.object({
       zod.string().max(editAllergenResponseSellingPriceOneMax),
       zod.null(),
     ])
-    .optional(),
+    .optional()
+    .describe(
+      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+    ),
   status: zod.enum(["active", "inactive"]),
   storage_location_id: zod.string().uuid(),
   storage_location_name: zod.string(),
@@ -1683,7 +1746,13 @@ export const SetAllergenStatusResponse = zod.object({
     .max(setAllergenStatusResponseConcentrationMax),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
-  gst: zod.string().min(1).max(setAllergenStatusResponseGstMax),
+  gst: zod
+    .string()
+    .min(1)
+    .max(setAllergenStatusResponseGstMax)
+    .describe(
+      "Original percentage 0–100, up to six source places; half-up rounded and returned with two places.",
+    ),
   id: zod.string().uuid(),
   mix: zod
     .boolean()
@@ -1696,7 +1765,10 @@ export const SetAllergenStatusResponse = zod.object({
       zod.string().max(setAllergenStatusResponseSellingPriceOneMax),
       zod.null(),
     ])
-    .optional(),
+    .optional()
+    .describe(
+      "Optional plain decimal rate, up to six source places; half-up rounded and returned with two places.",
+    ),
   status: zod.enum(["active", "inactive"]),
   storage_location_id: zod.string().uuid(),
   storage_location_name: zod.string(),
@@ -2811,7 +2883,10 @@ export const ListDoctorDirectoryResponse = zod.object({
       orderDiscount: zod
         .string()
         .regex(listDoctorDirectoryResponseItemsItemOrderDiscountRegExp)
-        .default(listDoctorDirectoryResponseItemsItemOrderDiscountDefault),
+        .default(listDoctorDirectoryResponseItemsItemOrderDiscountDefault)
+        .describe(
+          "Original 0–100 percentage; up to six source decimal places, half-up rounded to two.",
+        ),
       paymentLimit: zod
         .string()
         .regex(listDoctorDirectoryResponseItemsItemPaymentLimitRegExp)
@@ -3185,7 +3260,10 @@ export const CreateDoctorDirectoryBody = zod.object({
   name: zod.string().min(1).max(createDoctorDirectoryBodyNameMax),
   orderDiscount: zod
     .union([zod.string(), zod.number().int(), zod.null()])
-    .default(createDoctorDirectoryBodyOrderDiscountDefault),
+    .default(createDoctorDirectoryBodyOrderDiscountDefault)
+    .describe(
+      "Original 0–100 percentage; up to six source decimal places, half-up rounded to two.",
+    ),
   paymentLimit: zod
     .union([zod.string(), zod.number().int(), zod.null()])
     .default(createDoctorDirectoryBodyPaymentLimitDefault),
@@ -3544,7 +3622,10 @@ export const CreateDoctorDirectoryResponse = zod.object({
   orderDiscount: zod
     .string()
     .regex(createDoctorDirectoryResponseOrderDiscountRegExp)
-    .default(createDoctorDirectoryResponseOrderDiscountDefault),
+    .default(createDoctorDirectoryResponseOrderDiscountDefault)
+    .describe(
+      "Original 0–100 percentage; up to six source decimal places, half-up rounded to two.",
+    ),
   paymentLimit: zod
     .string()
     .regex(createDoctorDirectoryResponsePaymentLimitRegExp)
@@ -3931,7 +4012,10 @@ export const BulkDoctorDirectoryResponseItem = zod.object({
   orderDiscount: zod
     .string()
     .regex(bulkDoctorDirectoryResponseOrderDiscountRegExp)
-    .default(bulkDoctorDirectoryResponseOrderDiscountDefault),
+    .default(bulkDoctorDirectoryResponseOrderDiscountDefault)
+    .describe(
+      "Original 0–100 percentage; up to six source decimal places, half-up rounded to two.",
+    ),
   paymentLimit: zod
     .string()
     .regex(bulkDoctorDirectoryResponsePaymentLimitRegExp)
@@ -4062,6 +4146,8 @@ export const ReviewDoctorImportResponse = zod.object({
     zod.object({
       errors: zod.array(zod.string()),
       name: zod.string(),
+      orderDiscount: zod.string(),
+      paymentLimit: zod.string(),
       registrationNumber: zod.string(),
       row: zod.number().int(),
     }),
@@ -4507,7 +4593,10 @@ export const GetDoctorDirectoryResponse = zod.object({
   orderDiscount: zod
     .string()
     .regex(getDoctorDirectoryResponseOrderDiscountRegExp)
-    .default(getDoctorDirectoryResponseOrderDiscountDefault),
+    .default(getDoctorDirectoryResponseOrderDiscountDefault)
+    .describe(
+      "Original 0–100 percentage; up to six source decimal places, half-up rounded to two.",
+    ),
   paymentLimit: zod
     .string()
     .regex(getDoctorDirectoryResponsePaymentLimitRegExp)
@@ -4890,7 +4979,10 @@ export const SetDoctorContactRequirementResponse = zod.object({
   orderDiscount: zod
     .string()
     .regex(setDoctorContactRequirementResponseOrderDiscountRegExp)
-    .default(setDoctorContactRequirementResponseOrderDiscountDefault),
+    .default(setDoctorContactRequirementResponseOrderDiscountDefault)
+    .describe(
+      "Original 0–100 percentage; up to six source decimal places, half-up rounded to two.",
+    ),
   paymentLimit: zod
     .string()
     .regex(setDoctorContactRequirementResponsePaymentLimitRegExp)
@@ -5269,7 +5361,10 @@ export const DeleteDoctorDirectoryResponse = zod.object({
   orderDiscount: zod
     .string()
     .regex(deleteDoctorDirectoryResponseOrderDiscountRegExp)
-    .default(deleteDoctorDirectoryResponseOrderDiscountDefault),
+    .default(deleteDoctorDirectoryResponseOrderDiscountDefault)
+    .describe(
+      "Original 0–100 percentage; up to six source decimal places, half-up rounded to two.",
+    ),
   paymentLimit: zod
     .string()
     .regex(deleteDoctorDirectoryResponsePaymentLimitRegExp)
@@ -5628,7 +5723,10 @@ export const EditDoctorDirectoryBody = zod.object({
   name: zod.string().min(1).max(editDoctorDirectoryBodyNameMax),
   orderDiscount: zod
     .union([zod.string(), zod.number().int(), zod.null()])
-    .default(editDoctorDirectoryBodyOrderDiscountDefault),
+    .default(editDoctorDirectoryBodyOrderDiscountDefault)
+    .describe(
+      "Original 0–100 percentage; up to six source decimal places, half-up rounded to two.",
+    ),
   paymentLimit: zod
     .union([zod.string(), zod.number().int(), zod.null()])
     .default(editDoctorDirectoryBodyPaymentLimitDefault),
@@ -5987,7 +6085,10 @@ export const EditDoctorDirectoryResponse = zod.object({
   orderDiscount: zod
     .string()
     .regex(editDoctorDirectoryResponseOrderDiscountRegExp)
-    .default(editDoctorDirectoryResponseOrderDiscountDefault),
+    .default(editDoctorDirectoryResponseOrderDiscountDefault)
+    .describe(
+      "Original 0–100 percentage; up to six source decimal places, half-up rounded to two.",
+    ),
   paymentLimit: zod
     .string()
     .regex(editDoctorDirectoryResponsePaymentLimitRegExp)
@@ -6368,7 +6469,10 @@ export const SetDoctorDirectoryStatusResponse = zod.object({
   orderDiscount: zod
     .string()
     .regex(setDoctorDirectoryStatusResponseOrderDiscountRegExp)
-    .default(setDoctorDirectoryStatusResponseOrderDiscountDefault),
+    .default(setDoctorDirectoryStatusResponseOrderDiscountDefault)
+    .describe(
+      "Original 0–100 percentage; up to six source decimal places, half-up rounded to two.",
+    ),
   paymentLimit: zod
     .string()
     .regex(setDoctorDirectoryStatusResponsePaymentLimitRegExp)
@@ -13957,7 +14061,7 @@ export const ListProductCategoriesResponse = zod.object({
         .min(1)
         .max(listProductCategoriesResponseItemsItemUnitPriceMax)
         .describe(
-          "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+          "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
         ),
       updatedAt: zod.coerce.date(),
       updatedBy: zod.string(),
@@ -13986,7 +14090,7 @@ export const CreateProductCategoryBody = zod.object({
     .min(1)
     .max(createProductCategoryBodyUnitPriceMax)
     .describe(
-      "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+      "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
     ),
 });
 
@@ -14007,7 +14111,7 @@ export const CreateProductCategoryResponse = zod.object({
     .min(1)
     .max(createProductCategoryResponseUnitPriceMax)
     .describe(
-      "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+      "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
     ),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
@@ -14156,7 +14260,7 @@ export const GetProductCategoryResponse = zod.object({
     .min(1)
     .max(getProductCategoryResponseUnitPriceMax)
     .describe(
-      "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+      "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
     ),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
@@ -14191,7 +14295,7 @@ export const DeleteProductCategoryResponse = zod.object({
     .min(1)
     .max(deleteProductCategoryResponseUnitPriceMax)
     .describe(
-      "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+      "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
     ),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
@@ -14220,7 +14324,7 @@ export const EditProductCategoryBody = zod.object({
     .min(1)
     .max(editProductCategoryBodyUnitPriceMax)
     .describe(
-      "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+      "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
     ),
 });
 
@@ -14241,7 +14345,7 @@ export const EditProductCategoryResponse = zod.object({
     .min(1)
     .max(editProductCategoryResponseUnitPriceMax)
     .describe(
-      "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+      "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
     ),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
@@ -14277,7 +14381,7 @@ export const SetProductCategoryStatusResponse = zod.object({
     .min(1)
     .max(setProductCategoryStatusResponseUnitPriceMax)
     .describe(
-      "Exact plain decimal string; 0–999999999999.999999, at most six fractional digits.",
+      "Plain decimal string with up to six source fractional digits; half-up rounded to two places. Rounded maximum 999999999999.99; returned with exactly two fractional digits.",
     ),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),

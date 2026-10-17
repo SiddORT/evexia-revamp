@@ -14,6 +14,7 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from app.core.config import get_settings
 from app.db.product_category_models import ProductCategory, normalized_name
 from app.schemas.product_categories import ProductCategoryFields
+from app.schemas.rates import display_rate
 from app.services import product_categories
 from app.services.zone_transfer import workbook_rows, safe_text, UNSAFE
 from app.services.zones import ZoneError
@@ -111,7 +112,7 @@ def parse(data, filename):
 
 
 def review_digest(actor, data, filename):
-    message = "\0".join(("product_category", str(actor.user.id), actor.session_id, filename,
+    message = "\0".join(("product_category:half-up-cents", str(actor.user.id), actor.session_id, filename,
                          hashlib.sha256(data).hexdigest())).encode()
     return hmac.new(get_settings().signing_key.encode(), message, hashlib.sha256).hexdigest()
 
@@ -172,11 +173,11 @@ def encode(rows, format, sheet_title="ProductCategorys"):
 
 
 def sample(format):
-    return encode([HEADERS[:4], ["Diagnostic reagents", "", "125.500000", "active"]], format)
+    return encode([HEADERS[:4], ["Diagnostic reagents", "", "125.50", "active"]], format)
 
 
 def format_price(value):
-    return format(value, ".6f")
+    return display_rate(value)
 
 
 def export(db, actor, query, status, format, min_price=None, max_price=None):

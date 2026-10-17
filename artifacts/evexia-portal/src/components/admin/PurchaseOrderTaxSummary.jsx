@@ -1,4 +1,5 @@
 import { formatPaise, TAX_COMPONENTS } from '../../services/serverPurchaseOrders.js';
+import { formatRate } from '../../services/rates.js';
 
 export function TaxAmounts({ figures }) {
   const amount = (key) => figures?.overflow ? 'Over limit' : figures?.[key] == null ? 'Tax pending' : formatPaise(figures[key]);
@@ -24,5 +25,5 @@ export function TaxBasis({ basis }) {
 
 export function LineTax({ line }) {
   if (!line?.taxComponents) return null;
-  return <span className="po-line-tax">{TAX_COMPONENTS.filter((k) => Number(line.componentRates?.[k]) > 0).map((k) => <span key={k}>{k.toUpperCase()} {line.componentRates[k].replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '')}%: {formatPaise(line.taxComponents[k])}{' '}</span>)}</span>;
+  return <span className="po-line-tax">{TAX_COMPONENTS.filter((k) => Number(line.componentRates?.[k]) > 0).map((k) => <span key={k}>{k.toUpperCase()} {formatRate(line.componentRates[k])}%: {formatPaise(line.taxComponents[k])}{' '}</span>)}</span>;
 }

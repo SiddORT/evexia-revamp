@@ -1,4 +1,5 @@
 // Fictional, session-only data. No storage, master services, uploads or APIs.
+import { roundRate } from './rates.js';
 const freeze = (value) => {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
     Object.values(value).forEach(freeze);
@@ -25,8 +26,11 @@ export function parsePatientCount(value) {
   return Number.isSafeInteger(count) && count > 0 ? BigInt(value) : null;
 }
 export function parsePrice(value) {
-  if (typeof value !== 'string' || value.length > 40 || !/^\d+(?:\.\d{1,2})?$/.test(value)) return null;
-  const [whole, fraction = ''] = value.split('.');
+  if (typeof value !== 'string' || value.length > 40 || !/^\d+(?:\.\d+)?$/.test(value)) return null;
+  let normalized;
+  try { normalized = roundRate(value); } catch { return null; }
+  if (normalized.split('.')[0].length > 40) return null;
+  const [whole, fraction = ''] = normalized.split('.');
   const minor = BigInt(whole) * 100n + BigInt(fraction.padEnd(2, '0'));
   return minor > 0n ? minor : null;
 }
@@ -48,7 +52,7 @@ export function validateOrder(values) {
   if (!DOCTORS.some((d) => d.id === values.doctorId)) errors.doctorId = 'Choose a fictional doctor.';
   if (!MRS.some((m) => m.id === values.mrId)) errors.mrId = 'Choose a fictional MR.';
   if (parsePatientCount(values.patientCount) === null) errors.patientCount = 'Enter a positive safe whole number of patients (up to 9,007,199,254,740,991).';
-  if (parsePrice(values.price) === null) errors.price = 'Enter a positive INR price with at most two decimal places, for example 1000.00.';
+  if (parsePrice(values.price) === null) errors.price = 'Enter a positive INR price; rounded half-up to two decimal places, for example 1000.00.';
   const attachments = values.attachments || [];
   if (!attachments.length) errors.attachments = 'Select at least one accepted attachment. Files are not uploaded.';
   else {
@@ -102,7 +106,7 @@ export function createDemoStore({ empty = false } = {}) {
         id: `demo-lupin-${n}`, number: `DEMO-LUPIN-${String(n).padStart(4, '0')}`, date: today(),
         doctorId: values.doctorId, doctorName: nameOf(DOCTORS, values.doctorId),
         mrId: values.mrId, mrName: nameOf(MRS, values.mrId),
-        patientCount: values.patientCount, price: values.price, remarks: String(values.remarks || ''),
+        patientCount: values.patientCount, price: roundRate(values.price), remarks: String(values.remarks || ''),
         attachments: values.attachments.map(({ name, size, type }) => ({ name, size, type })),
         status: 'Confirmed', paymentStatus: 'Unpaid',
       });

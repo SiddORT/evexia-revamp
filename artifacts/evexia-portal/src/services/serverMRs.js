@@ -1,3 +1,4 @@
+import { roundRate } from './rates.js';
 import { mrRequest } from '../auth/adminSession.js';
 import { downloadServerBlob } from './downloads.js';
 import { dialCountry, normalizePhone } from './phoneCountries.js';
@@ -94,7 +95,7 @@ export function payloadFromValues(values) {
     phone: trimmed.phone ? normalizePhone(trimmed.phone, trimmed.dialCountry, 'mr') : '',
     email: trimmed.email,
     reportingManagerId: trimmed.reportingManagerId || null,
-    paymentLimit: trimmed.paymentLimit === '' ? '0.00' : trimmed.paymentLimit,
+    paymentLimit: trimmed.paymentLimit === '' ? '0.00' : /^\d{1,9}(?:\.\d{1,2})?$/.test(trimmed.paymentLimit) ? roundRate(trimmed.paymentLimit) : trimmed.paymentLimit,
     doctorDaysLimit: trimmed.doctorDaysLimit === '' ? 0 : Number(trimmed.doctorDaysLimit),
   };
 }

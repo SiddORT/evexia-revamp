@@ -2,6 +2,7 @@ import { recordLocalChanges, recordLocalAction, reportExport } from './localActi
 import { parseCSV } from './masterImport.js';
 import { loadCategories } from './productCategories.js';
 import { loadStorageLocations } from './storageLocations.js';
+import { roundRate } from './rates.js';
 
 export const ALLERGEN_KEY = 'evexia.admin.allergens.v1';
 export const ALLERGEN_COLUMNS = [
@@ -23,6 +24,10 @@ const numeric = (value, optional = false) => {
   const text = typeof value === 'number' ? String(value) : value;
   return typeof text === 'string' && /^(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(text.trim()) &&
     Number.isFinite(Number(text.trim())) && Number(text.trim()) >= 0 ? Number(text.trim()) : null;
+};
+const rateValue = (value, optional = false, percentage = false) => {
+  try { return roundRate(value, { optional, ...(percentage ? { originalMax: '100', max: '100' } : {}) }); }
+  catch { return null; }
 };
 
 export function loadAllergenReferences() {
@@ -49,8 +54,8 @@ export function validateAllergen(values, records = [], refs = { categories: [], 
       if (!existing || existing[field] !== values[field]) errors[field] = `Choose an active ${label.toLowerCase()} from the current master.`;
     }
   }
-  const sellingPrice = numeric(values.sellingPrice, true);
-  const gst = numeric(values.gst);
+  const sellingPrice = rateValue(values.sellingPrice, true);
+  const gst = rateValue(values.gst, false, true);
   const thresholdLimit = numeric(values.thresholdLimit, true);
   if (sellingPrice === null) errors.sellingPrice = 'Selling Price must be a non-negative number when supplied.';
   if (gst === null || gst > 100) errors.gst = 'GST is required and must be a number from 0 to 100.';
@@ -88,10 +93,7 @@ export function loadAllergens(refs = loadAllergenReferences()) {
   if (raw === null) {
     const initial = samples(refs);
     if (!initial) throw new Error('Add an active Product Category and an active Storage Location before initializing Allergen Master. No sample records were created.');
-    try {
-      if (window.localStorage.getItem(ALLERGEN_KEY) !== null) return loadAllergens(refs);
-      window.localStorage.setItem(ALLERGEN_KEY, JSON.stringify(initial));
-    } catch { throw new Error('Sample allergen records could not be saved in this browser. Check browser storage settings and try again.'); }
+    // Do not persist samples or normalize saved rates merely by reading.
     return initial;
   }
   let parsed;
@@ -143,7 +145,7 @@ export function setAllergenStatus(records, refs, id, status) {
   const record = records.find((item) => item.id === id);
   if (!record) throw new Error('This product is no longer available.');
   if (!['active', 'inactive'].includes(status) || record.status === status) throw new Error('Choose a different valid status.');
-  return save(records.map((item) => item.id === id ? { ...item, status, updatedBy: ACTOR, updatedAt: nextTime(item.updatedAt) } : item), records, refs);
+  return save(records.map((item) => item.id === id ? { ...item, sellingPrice: roundRate(item.sellingPrice, { optional: true }), gst: roundRate(item.gst, { originalMax: '100' }), status, updatedBy: ACTOR, updatedAt: nextTime(item.updatedAt) } : item), records, refs);
 }
 
 function csvCell(value) {
@@ -160,7 +162,8 @@ function buildAllergenCSV(records, refs) {
     ...records.map((record) => ALLERGEN_COLUMNS.map(([key]) => csvCell(
       key === 'categoryName' ? (refs.categories.find((item) => item.id === record.categoryId)?.name ?? referenceLabel(refs.categories, record.categoryId, 'category'))
         : key === 'storageLocationName' ? (refs.locations.find((item) => item.id === record.storageLocationId)?.name ?? referenceLabel(refs.locations, record.storageLocationId, 'storage location'))
-          : key === 'allergens' ? (record.allergens ? 'Allergens' : 'No Mix') : record[key])).join(','))].join('\r\n') + '\r\n';
+          : key === 'allergens' ? (record.allergens ? 'Allergens' : 'No Mix')
+            : ['sellingPrice', 'gst'].includes(key) ? roundRate(record[key], { optional: key === 'sellingPrice' }) : record[key])).join(','))].join('\r\n') + '\r\n';
 }
 export function reviewAllergenCSV(text, records, refs) {
   const rows = parseCSV(text);
@@ -186,7 +189,7 @@ export function reviewAllergenCSV(text, records, refs) {
     issues.push(...Object.values(result.errors));
     if (result.fields?.name && names.has(norm(result.fields.name))) issues.push('Product Name already exists (in saved records or this file).');
     if (result.fields?.name) names.add(norm(result.fields.name));
-    return { line, values, fields: result.fields, errors: [...new Set(issues)] };
+    return { line, values: { ...values, sellingPrice: result.fields?.sellingPrice ?? values.sellingPrice, gst: result.fields?.gst ?? values.gst }, fields: result.fields, errors: [...new Set(issues)] };
   });
 }
 export function importAllergens(...args) { const result = buildImportAllergens(...args); recordLocalAction('allergen', 'imported'); return result; }
