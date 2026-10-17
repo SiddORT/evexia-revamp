@@ -15,10 +15,15 @@ class StorageLocation(Timestamps, Base):
         CheckConstraint("length(name) BETWEEN 1 AND 200 AND name = btrim(name)", name="ck_location_name"),
         CheckConstraint("length(address) BETWEEN 1 AND 2000 AND address = btrim(address)", name="ck_location_address"),
         CheckConstraint("(deleted_at IS NULL) = (deleted_by IS NULL)", name="ck_location_deletion"),
+        CheckConstraint("country_code = '' OR country_code ~ '^[A-Z]{2}$'", name="ck_location_country_code"),
     )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     address: Mapped[str] = mapped_column(String(2000), nullable=False)
+    pincode: Mapped[str] = mapped_column(String(20), default="", server_default="", nullable=False)
+    countryCode: Mapped[str] = mapped_column("country_code", String(2), default="", server_default="", nullable=False)
+    state: Mapped[str] = mapped_column(String(100), default="", server_default="", nullable=False)
+    city: Mapped[str] = mapped_column(String(100), default="", server_default="", nullable=False)
     status: Mapped[str] = mapped_column(String(8), nullable=False)
     version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)

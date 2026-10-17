@@ -11,8 +11,8 @@ export const EXCEL_TEMPLATES = {
   },
   'storage-location': {
     title: 'Storage Location',
-    columns: ['Storage Location', 'Address', 'Status'],
-    sample: [['Example supply room', 'Building A, Ground floor', 'active']],
+    columns: ['Storage Location', 'Address', 'Status', 'PIN Code', 'Country Code', 'State/UT', 'City'],
+    sample: [['Example supply room', 'Building A, Ground floor', 'active', '411001', 'IN', 'Maharashtra', 'Pune']],
   },
   zone: {
     title: 'Zone',

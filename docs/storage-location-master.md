@@ -1,9 +1,11 @@
 # Shared Storage Location Master
 
-Storage Location is the name/address/status directory, not Zone Master, private
-file storage or stock movement. Only the authenticated protected system Super
-Admin with `admin.access` may use it. Business Roles and staff labels grant no
-access. It has a separate PostgreSQL table and `/api/v1/admin/storage-locations`
+Storage Location is the name/address/status directory with optional structured
+postal geography, not Zone Master, private
+file storage or stock movement. The authenticated protected system Super
+Admin with `admin.access`, or explicitly enabled staff with the applicable
+Storage Location action grant, may use it. Business role/staff labels alone
+grant no access. It has a separate PostgreSQL table and `/api/v1/admin/storage-locations`
 endpoints. Browser-data clearing does not remove server records.
 
 ## Initialization and scope
@@ -32,7 +34,8 @@ or inventory. See `purchase-order-backend.md` for the live procurement boundary.
 | --- | --- |
 | Paginated list | `GET ?query=&status=all&limit=10&offset=0` |
 | Detail | `GET /{location_id}` |
-| Create | `POST` with `name,address,status` |
+| Create | `POST` with `name,address,status,pincode,countryCode,state,city` |
+| PIN lookup | `GET /postal/{pin}?action=add` (or `edit`, under that Location grant) |
 | Edit | `POST /{location_id}/edit` with fields and `expected_version` |
 | Activate/deactivate | `POST /{location_id}/status` with `status,expected_version` |
 | Soft delete | `POST /{location_id}/delete` with `expected_version` |
@@ -45,6 +48,31 @@ characters. Unsupported control characters are rejected. Status is `active` or
 `inactive`. PostgreSQL applies the same lower/whitespace-normalized uniqueness
 expression in review and the partial unique index, across all non-deleted rows
 including inactive records. Deleted names may be reused by a new UUID.
+
+`0041_location_geography` is an additive **operator-only** successor to
+`0040_po_tax_basis`. It adds empty-default `pincode` (20), `country_code` (2),
+`state` (100), and `city` (100) text columns. Existing locations keep deliberately
+empty geography; there is no parsing, geocoding or backfill. Downgrade refuses
+to discard populated geography. This change authorizes no managed migration,
+pending PO activation, release-manifest reapproval, key change or deployment.
+Obtain separate coordinated rollout approval, backup and recovery evidence.
+
+API `countryCode` is an explicit uppercase supported ISO country identifier
+(for example `IN`), not a country guessed from the address. All four fields are
+optional so incomplete old records can still be edited. Supplied geography
+requires a country. India requires a six-digit nonzero-leading PIN when supplied,
+and a supported canonical GST State/UT when supplied. Known postal spellings
+resolve to that catalogue, including current merged territories. `stateCode` is
+derived in protected responses, never an independent writable assertion.
+Foreign State/City text does not create an Indian GST identity.
+
+Add/Edit presents PIN, lookup feedback/choice, Country, State/UT, City, then
+the original required address line. Lookup is debounced and cancellation/revision
+guarded; multiple suggestions require explicit choice or manual-entry selection.
+Manual changes supersede late lookup responses and provider failures preserve
+the draft. The bounded existing public-PIN adapter uses Location add/edit
+authorization, the existing shared quotas and fixed-provider network protections,
+not Patient grants. Listing details identify incomplete structured addresses.
 
 Search is literal case-insensitive name OR address matching, with `%`, `_` and
 backslash escaped. Status and search apply before counting/pagination. Responses
@@ -92,13 +120,15 @@ exact supported header arrays, including capitalization and order, are:
 ```text
 Storage Location,Address,Status
 Storage Location,Address,Status,Created By,Created At,Updated By,Updated At
+Storage Location,Address,Status,PIN Code,Country Code,State/UT,City
+Storage Location,Address,Status,PIN Code,Country Code,State/UT,City,Created By,Created At,Updated By,Updated At
 ```
 
-The first schema supports existing three-column backups. Current CSV and XLSX
-exports use the second. Audit cells are ignored, not validated as history or
+The first two schemas remain supported with deliberately empty geography. Current
+CSV/XLSX templates use the third and exports use the fourth. Audit cells are ignored, not validated as history or
 assigned to records; confirmed imports receive the current authenticated importer
 and server times. Arbitrary extra ID/version/deletion columns are rejected.
-Statuses are case-insensitive during import. Each row reports name/address/status
+Statuses are case-insensitive during import. Each row reports name/address/status/geography
 validation and duplicates within the batch or existing active/inactive records.
 
 Review saves no locations and returns `rows,valid,digest`. Commit must resend
@@ -119,7 +149,7 @@ transfer encoding. Limits:
   streamed actual-byte processing. Raw extracted bytes still have the 2 MiB bound.
 - 15-second upload reading deadline; at most 1,000 data rows.
 - Workbook: at most 100 archive entries, 8 MiB total decompressed bytes, 4 MiB
-  per entry, seven columns, 1,001 rows including the header, 7,007 cells and
+  per entry, eleven columns, 1,001 rows including the header, 11,011 cells and
   10,000 characters per cell/XML text. Cell coordinates are independently
   checked rather than trusting producer-provided worksheet dimensions.
 
@@ -135,12 +165,21 @@ than truncating. Narrow filters if necessary; split exports over 1,000 rows befo
 import. Filenames are `evexia-storage-location-master.csv` or `.xlsx`, with UTF-8
 CSV or the genuine XLSX content type and attachment/no-store/nosniff responses.
 Text cells beginning with formula-like prefixes or an apostrophe receive an
-extra apostrophe; XLSX cells are explicitly string-typed. The seven-column import
-schema decodes this documented reversible escaping for name and address. Legacy
+extra apostrophe; XLSX cells are explicitly string-typed. The legacy audit and
+both structured import schemas decode this documented reversible escaping for
+text fields. Legacy
 three-column imports preserve their literal text because they cannot reliably
 distinguish authored apostrophes from old spreadsheet escapes.
 
 ## Browser recovery and verification
+
+For the structured-geography change, no tests, typechecks, builds, release suites,
+validation scripts or broad compatibility diagnostics were executed, as requested.
+FastAPI OpenAPI was exported and Orval consumers generated directly without the
+bundled typecheck. Application request validation, authorization, stale-write,
+transfer and download protections remain in the code. See
+`storage-location-runtime-comparison.md` for the sole requested read-only runtime
+identity/revision comparison; it is not release approval or functional evidence.
 
 Credentials remain memory-only in the existing same-origin session layer.
 Writes are not automatically replayed after uncertain outcomes or renewal.

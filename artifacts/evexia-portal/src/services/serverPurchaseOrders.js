@@ -31,6 +31,31 @@ export const isStaleOrder = (error) => error?.status === 409 && errorCode(error)
 
 /* Edit/delete retries are durable and scoped to owner + order, never local PO records. */
 const mutationKey = (id) => `evexia.po.pending-mutation:${ownerId()}:${id}`;
+/** Bounded discovery of this owner's retry journals, not a local order directory. */
+export function pendingPurchaseOrderDeletions() {
+  const owner = ownerId();
+  if (!owner) return { ids: [], error: '' };
+  try {
+    const prefix = `evexia.po.pending-mutation:${owner}:`;
+    const storage = window.localStorage;
+    if (storage.length > 2000) throw new Error();
+    const ids = [];
+    let unreadable = false;
+    for (let index = 0; index < storage.length; index++) {
+      const key = storage.key(index);
+      if (!key?.startsWith(prefix)) continue;
+      const id = key.slice(prefix.length);
+      if (!/^[0-9a-f-]{36}$/i.test(id)) { unreadable = true; continue; }
+      const state = loadOrderMutation(id);
+      if (state.status === 'blocked') unreadable = true;
+      if (state.status === 'found' && state.pending.operation === 'delete') ids.push(id);
+      if (ids.length > 50) throw new Error();
+    }
+    return { ids, error: unreadable ? 'Some order retry data is unreadable. Open the affected saved order to recover it; do not clear browser retry data without checking the server.' : '' };
+  } catch {
+    return { ids: [], error: 'Deletion recovery could not read the bounded browser retry journal. Restore storage access and reopen this listing or the affected order; do not start an independent replacement action.' };
+  }
+}
 export function loadOrderMutation(id) {
   try {
     if (!ownerId()) throw new Error();

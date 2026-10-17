@@ -15,10 +15,18 @@ from app.schemas.locations import (
 from app.services.auth import Identity
 from app.services import locations, location_transfer
 from app.services.downloads import server_record
+from app.schemas.mrs import PostalResponse
+from app.services import mr_postal
 
 router = APIRouter(prefix="/admin/storage-locations", tags=["Storage Location Master"])
 manager = master_router("location")
 OVERHEAD = 64 * 1024
+
+
+@router.get("/postal/{pin}", response_model=PostalResponse, operation_id="lookupStorageLocationPincode")
+def postal(pin: str, action: Literal["add", "edit"] = "add",
+           actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return mr_postal.lookup(db, actor, pin, resource="location", action=action)
 
 
 @router.get("", response_model=LocationPage, operation_id="listStorageLocations")

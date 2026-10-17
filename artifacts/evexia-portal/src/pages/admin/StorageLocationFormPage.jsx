@@ -2,16 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { ArrowLeft, MapPin, RefreshCw } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import StorageLocationAddress from '../../components/admin/StorageLocationAddress.jsx';
+import { locationGeographyLabel, validateLocationGeography } from '../../services/locationGeography.js';
 import { createLocation, editLocation, getLocation, listLocations } from '../../services/serverLocations.js';
 import '../../mr.css';
 import '../../category.css';
 import '../../storageLocation.css';
 
 const LIST_PATH = '/admin/masters/storage-locations';
-const emptyValues = { name: '', address: '', status: '' };
+const emptyValues = { name: '', address: '', status: '', pincode: '', countryCode: '', state: '', city: '' };
 
 function validate(values) {
-  const errors = {};
+  const errors = validateLocationGeography(values);
   if (!values.name.trim()) errors.name = 'Storage location name is required.';
   if (values.name.trim().length > 200) errors.name = 'Use no more than 200 characters.';
   if (!values.address.trim()) errors.address = 'Address is required.';
@@ -25,11 +27,13 @@ function StorageLocationForm({ record, onSave, onCancel, onRefresh }) {
     name: record.name || '',
     address: record.address || '',
     status: record.status || 'active',
+    pincode: record.pincode || '', countryCode: record.countryCode || '', state: record.state || '', city: record.city || '',
   } : emptyValues);
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [pending, setPending] = useState(false);
   const [blocked, setBlocked] = useState(false);
+  const [choiceRequired, setChoiceRequired] = useState(false);
   const busy = useRef(false);
 
   function update(field, value) {
@@ -41,13 +45,14 @@ function StorageLocationForm({ record, onSave, onCancel, onRefresh }) {
     event.preventDefault();
     if (busy.current || blocked) return;
     const nextErrors = validate(values);
+    if (choiceRequired) nextErrors.pincode = 'Choose a PIN location or explicitly select manual address entry.';
     setErrors(nextErrors);
     setServerError('');
     if (Object.keys(nextErrors).length) return;
     busy.current = true;
     setPending(true);
     try {
-      await onSave({ name: values.name.trim(), address: values.address.trim(), status: values.status });
+      await onSave({ ...values, name: values.name.trim(), address: values.address.trim() });
     } catch (cause) {
       setServerError(cause.message || 'The location could not be saved.');
       setBlocked(cause.code === 'location_stale' || Boolean(cause.ambiguous));
@@ -63,16 +68,17 @@ function StorageLocationForm({ record, onSave, onCancel, onRefresh }) {
         setPending(true);
         try {
           const current = await onRefresh(values);
-          setServerError(current ? `Current server record: ${current.name}; ${current.address}; ${current.status}. Your draft is retained. Review these details before saving again.` : 'No matching server location was found. Your draft is retained; review it before retrying.');
+          setServerError(current ? `Current server record: ${current.name}; ${locationGeographyLabel(current)}; ${current.address}; ${current.status}. Your draft is retained. Review these details before saving again.` : 'No matching server location was found. Your draft is retained; review it before retrying.');
           setBlocked(false);
         } catch (cause) { setServerError(cause.message); }
         finally { busy.current = false; setPending(false); }
       }} data-testid="button-refresh-storage-error"><RefreshCw size={16} aria-hidden="true" /> Review current server details (keep draft)</button></div>}
-      <div className="mr-form__grid">
+      <fieldset disabled={pending || blocked} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}><div className="mr-form__grid">
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="storage-name">Storage location <span className="mr-form__required">*</span></label><input id="storage-name" className="mr-form__control" value={values.name} onChange={(event) => update('name', event.target.value)} placeholder="e.g. Central supply room" aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? 'storage-name-error' : undefined} data-testid="input-storage-name" />{errors.name && <p className="mr-form__error" id="storage-name-error" role="alert">{errors.name}</p>}</div>
+        <StorageLocationAddress values={values} errors={errors} disabled={pending || blocked} editing={Boolean(record)} onChoiceRequired={setChoiceRequired} onChange={(patch) => { setValues((current) => ({ ...current, ...patch })); setErrors((current) => ({ ...current, ...Object.fromEntries([...Object.keys(patch), 'pincode'].map((key) => [key, undefined])) })); setServerError(''); }} />
         <div className="mr-form__field mr-form__field--wide"><label className="mr-form__label" htmlFor="storage-address">Address <span className="mr-form__required">*</span></label><textarea id="storage-address" className="mr-form__control" value={values.address} onChange={(event) => update('address', event.target.value)} placeholder="Building, floor, street and other location details" aria-invalid={Boolean(errors.address)} aria-describedby={errors.address ? 'storage-address-error' : undefined} data-testid="input-storage-address" />{errors.address && <p className="mr-form__error" id="storage-address-error" role="alert">{errors.address}</p>}</div>
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="storage-status">Status <span className="mr-form__required">*</span></label><select id="storage-status" className="mr-form__control" value={values.status} onChange={(event) => update('status', event.target.value)} aria-invalid={Boolean(errors.status)} aria-describedby={errors.status ? 'storage-status-error' : undefined} data-testid="select-storage-status"><option value="" disabled>Select status</option><option value="active">Active</option><option value="inactive">Inactive</option></select>{errors.status && <p className="mr-form__error" id="storage-status-error" role="alert">{errors.status}</p>}</div>
-      </div>
+      </div></fieldset>
     </div>
     <div className="mr-form__footer"><div className="mr-form__actions"><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={onCancel} data-testid="button-cancel-storage">Cancel</button><button type="submit" disabled={pending || blocked} className="admin-button" data-testid="button-save-storage">{pending ? 'Saving…' : record ? 'Save changes' : 'Save location'}</button></div></div>
   </form>;

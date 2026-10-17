@@ -5,6 +5,7 @@ from app.db.models import AuditEvent
 from app.db.location_models import StorageLocation, normalized_name
 from app.services.zones import label
 from app.services.master_policy import authorize_master
+from app.services.location_geography import geography
 
 
 class LocationError(Exception):
@@ -35,7 +36,7 @@ def authorize(db, actor, action=None):
 
 
 def projection(db, row):
-    return dict(id=row.id, name=row.name, address=row.address, status=row.status, version=row.version,
+    return dict(id=row.id, name=row.name, address=row.address, status=row.status, version=row.version, **geography(row),
                 createdBy=label(db, row.created_by), updatedBy=label(db, row.updated_by),
                 createdAt=row.created_at, updatedAt=row.updated_at)
 
@@ -75,7 +76,7 @@ def audit(db, actor, row, operation):
 
 def insert(db, actor, body):
     now = utcnow()
-    row = StorageLocation(name=body.name, address=body.address, status=body.status, created_by=actor.user.id, updated_by=actor.user.id,
+    row = StorageLocation(**body.model_dump(), created_by=actor.user.id, updated_by=actor.user.id,
                          created_at=now, updated_at=now)
     db.add(row)
     db.flush()
@@ -124,6 +125,8 @@ def mutate(db, actor, record_id, body, operation):
             if operation == "edit":
                 row.name = body.name
                 row.address = body.address
+                for field in ("pincode", "countryCode", "state", "city"):
+                    setattr(row, field, getattr(body, field))
         row.version += 1
         row.updated_at, row.updated_by = now, current.user.id
         audit(db, current, row, operation)

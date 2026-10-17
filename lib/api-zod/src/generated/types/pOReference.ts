@@ -7,12 +7,17 @@
  */
 
 export interface POReference {
+  city?: string | null;
+  countryCode?: string | null;
   gst?: string | null;
   gstin?: string | null;
   id: string;
   name: string;
+  pincode?: string | null;
   registrationStateCode?: string | null;
   registrationStateName?: string | null;
+  state?: string | null;
+  stateCode?: string | null;
   unitPrice?: string | null;
   version?: number | null;
 }

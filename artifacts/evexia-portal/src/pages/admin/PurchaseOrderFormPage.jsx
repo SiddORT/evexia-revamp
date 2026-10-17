@@ -5,6 +5,8 @@ import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import PurchaseOrderReferenceSelect from '../../components/admin/PurchaseOrderReferenceSelect.jsx';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
+import Dialog from '../../components/admin/Dialog.jsx';
+import { locationSuggestion } from '../../services/locationGeography.js';
 import { TaxAmounts, TaxBasis, LineTax } from '../../components/admin/PurchaseOrderTaxSummary.jsx';
 import { interceptNavigation, setNavigationGuard } from '../../auth/navigationGuard.js';
 import {
@@ -30,7 +32,8 @@ function validate(values) {
   if (!values.vendor) errors.vendorId = 'Select a vendor.';
   if (!values.location) errors.locationId = 'Select a storage location.';
   const tax = taxContext(values.vendor, values.placeOfSupplyCode);
-  if (tax.error) errors.placeOfSupplyCode = tax.error;
+  if (tax.error) errors.taxBasis = tax.error;
+  if (!GST_STATES.some((state) => state.code === values.placeOfSupplyCode)) errors.placeOfSupplyCode = 'Select a supported State/UT.';
   if (!validDate(values.poDate)) errors.poDate = 'Enter a valid PO date.';
   if (!validDate(values.expectedDate)) errors.expectedDate = 'Enter a valid expected delivery date.';
   else if (validDate(values.poDate) && values.expectedDate < values.poDate) errors.expectedDate = 'Expected delivery cannot be before the PO date.';
@@ -94,6 +97,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
   const [conflict, setConflict] = useState(false);
+  const [locationChoice, setLocationChoice] = useState(null);
   const locked = uncertain || busy || Boolean(blocked);
   const tax = taxContext(values.vendor, values.placeOfSupplyCode);
   const figures = computeTotals(values.lines, tax.treatment);
@@ -147,6 +151,25 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
     setErrors((current) => ({ ...current, ...Object.fromEntries(clear.map((key) => [key, undefined])), lines: undefined }));
     setSaveError('');
   };
+  function selectLocation(item) {
+    if (locked || item?.id === values.location?.id) return;
+    if (editing && item?.id === order.locationId) item = { ...item, name: order.locationName };
+    const code = locationSuggestion(item);
+    // Saved destinations and restored drafts are never treated as fresh master suggestions.
+    if (values.placeOfSupplyCode && values.supplySource !== 'location') {
+      setLocationChoice({ item, code });
+      return;
+    }
+    edit({ location: item, placeOfSupplyCode: code, supplySource: 'location' }, ['locationId', 'placeOfSupplyCode']);
+  }
+  const supplyHelp = <div id="po-supply-help" className="po-tax-context">
+    <p>Supplier GSTIN: <strong>{values.vendor?.gstin || 'Not captured'}</strong> · Registration state: <strong>{tax.supplier ? `${tax.supplier.name} (${tax.supplier.code})` : 'Unavailable'}</strong></p>
+    <p>{tax.error || (tax.treatment === 'igst' ? 'Different state codes: full catalogue GST rate applies as IGST.' : `Matching state codes: equal CGST and ${tax.treatment === 'cgst_utgst' ? 'UTGST' : 'SGST'} rates apply.`)}</p>
+    <p>Storage location State/UT fills Place of supply for Indian addresses. You may override it for an exceptional delivery destination. Changing location asks before replacing a manual or saved destination.</p>
+    <p>{values.supplySource === 'location' ? (values.placeOfSupplyCode ? 'Destination suggested by the selected storage location.' : 'This location has missing or non-Indian geography. Select the applicable Indian destination explicitly; no previous suggestion is retained.') : values.placeOfSupplyCode ? (values.supplySource === 'manual' ? 'Manually selected destination.' : 'Saved destination retained; current master address changes are not applied.') : 'Select a storage location or choose Place of supply explicitly.'}</p>
+    <p>Ordinary domestic goods only. This calculator does not determine special supply, reverse-charge, composition, SEZ or import/export rules. A foreign storage address does not establish Indian tax treatment.</p>
+    {editing && !order.taxBasis && values.vendor?.id === order.vendorId && <><button type="button" className="po-link" disabled={locked} onClick={loadLegacyTax}>Load current vendor tax basis for this edit</button><p role="status">{legacyTaxStatus}</p></>}
+  </div>;
   const editLine = (index, patch, clear) => {
     if (locked) return;
     setValues((current) => ({ ...current, lines: current.lines.map((line, i) => i === index ? { ...line, ...patch } : line) }));
@@ -240,10 +263,10 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
       <div className="po-new-layout">
         <aside className="po-new-summary" aria-label="Order totals" aria-live="polite" aria-atomic="true"><h3>Order totals</h3>
           <TaxAmounts figures={{ ...figures, treatment: tax.treatment }} />
-          {figures.partial && <div className="po-totals-status" role="status">Partial totals: {figures.completed} computable {figures.completed === 1 ? 'line' : 'lines'}; {figures.incomplete} unfinished or invalid. Complete every line before review.</div>}
           {figures.taxPending && <div className="po-totals-status">Tax pending — select a valid vendor tax basis and place of supply. This is not zero-rated GST.</div>}
           {figures.overflow && <div className="po-totals-status" role="alert">Order exceeds {formatPaise(MAX_TOTAL_PAISE)}. Reduce quantities or remove lines.</div>}
-          <p>Estimate in INR. The server recalculates it at review.</p></aside>
+          <p>Draft estimate in INR, excluding unfinished or invalid lines. The server recalculates complete valid lines at review.</p>
+          {supplyHelp}</aside>
         <div className="po-new-main">
           {(errors.lines || hasErrors) && <div id="po-form-errors" className="admin-feedback admin-feedback--error" role="alert">{errors.lines || 'Check the highlighted fields before continuing.'}</div>}
           <fieldset className="po-group" disabled={locked}><legend>Vendor and delivery</legend>
@@ -252,23 +275,16 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
                 <PurchaseOrderReferenceSelect id="po-vendor" kind="vendors" label="Vendor" selected={values.vendor} placeholder="Select vendor" invalid={errors.vendorId} describedBy={errors.vendorId ? 'po-vendor-error' : undefined} onChange={(item) => edit({ vendor: editing && order.taxBasis && item?.id === order.vendorId ? fromSaved(order).vendor : item }, ['vendorId', 'placeOfSupplyCode'])} />
               </Field>
               <Field id="po-location" label="Storage location" error={errors.locationId}>
-                <PurchaseOrderReferenceSelect id="po-location" kind="locations" label="Storage location" selected={values.location} placeholder="Select storage location" invalid={errors.locationId} describedBy={errors.locationId ? 'po-location-error' : undefined} onChange={(item) => edit({ location: editing && item?.id === order.locationId ? { id: order.locationId, name: order.locationName } : item }, ['locationId'])} />
+                <PurchaseOrderReferenceSelect id="po-location" kind="locations" label="Storage location" selected={values.location} placeholder="Select storage location" invalid={errors.locationId} describedBy={errors.locationId ? 'po-location-error' : undefined} onChange={selectLocation} />
               </Field>
             </div>
             <Field id="po-place-of-supply" label="Place of supply (State/UT)" error={errors.placeOfSupplyCode}>
-              <SearchableSelect id="po-place-of-supply" label="Place of supply (State/UT)" value={values.placeOfSupplyCode || ''} options={GST_STATES.map((state) => ({ value: state.code, label: `${state.name} (${state.code})` }))} onChange={(code) => edit({ placeOfSupplyCode: code }, ['placeOfSupplyCode'])} placeholder="Select applicable State/UT" invalid={errors.placeOfSupplyCode} describedBy="po-supply-help" disabled={locked} />
+              <SearchableSelect id="po-place-of-supply" label="Place of supply (State/UT)" value={values.placeOfSupplyCode || ''} options={GST_STATES.map((state) => ({ value: state.code, label: `${state.name} (${state.code})` }))} onChange={(code) => edit({ placeOfSupplyCode: code, supplySource: 'manual' }, ['placeOfSupplyCode'])} placeholder="Select applicable State/UT" invalid={errors.placeOfSupplyCode} describedBy={`po-supply-help${errors.placeOfSupplyCode ? ' po-place-of-supply-error' : ''}`} disabled={locked} />
             </Field>
-            <div id="po-supply-help" className="po-tax-context">
-              <p>Supplier GSTIN: <strong>{values.vendor?.gstin || 'Not captured'}</strong> · Registration state: <strong>{tax.supplier ? `${tax.supplier.name} (${tax.supplier.code})` : 'Unavailable'}</strong></p>
-              <p>{tax.error || (tax.treatment === 'igst' ? 'Different state codes: full catalogue GST rate applies as IGST.' : `Matching state codes: equal CGST and ${tax.treatment === 'cgst_utgst' ? 'UTGST' : 'SGST'} rates apply.`)}</p>
-              <p>Choose the applicable place of supply for ordinary domestic goods. No destination is inferred from vendor or storage location. This calculator does not determine special supply, reverse-charge, composition, SEZ or import/export rules.</p>
-              {editing && !order.taxBasis && values.vendor?.id === order.vendorId && <><button type="button" className="po-link" disabled={locked} onClick={loadLegacyTax}>Load current vendor tax basis for this edit</button><p role="status">{legacyTaxStatus}</p></>}
-            </div>
             <div className="po-group__dates">
               <Field id="po-date" label="PO date" error={errors.poDate}><input id="po-date" className="mr-form__control" type="date" value={values.poDate} onChange={(e) => edit({ poDate: e.target.value }, ['poDate'])} aria-invalid={Boolean(errors.poDate)} aria-describedby={errors.poDate ? 'po-date-error' : undefined} data-testid="input-po-date" /></Field>
               <Field id="po-expected-date" label="Expected delivery" error={errors.expectedDate}><input id="po-expected-date" className="mr-form__control" type="date" min={values.poDate} value={values.expectedDate} onChange={(e) => edit({ expectedDate: e.target.value }, ['expectedDate'])} aria-invalid={Boolean(errors.expectedDate)} aria-describedby={errors.expectedDate ? 'po-expected-date-error' : undefined} data-testid="input-po-expected-date" /></Field>
             </div>
-            <p className="mr-form__footer-note">Vendors and storage locations are the shared server masters. Names are saved with the order and stay stable if the masters change later.</p>
           </fieldset>
           <fieldset className="po-group" disabled={locked}><legend>Products <span>{values.lines.length} {values.lines.length === 1 ? 'line' : 'lines'}</span></legend>
             <div className="po-new-lines">{values.lines.map((line, index) => {
@@ -297,6 +313,11 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
       </div>
       <div className="po-form-footer"><span>The server reviews the order before anything is saved.</span><div className="po-actions"><button type="button" disabled={busy} className="admin-button admin-button--secondary" onClick={cancel} data-testid="button-cancel-po">Cancel</button><button type="submit" disabled={locked || conflict} className="admin-button" data-testid="button-review-po">{busy ? 'Reviewing…' : 'Review order'}</button></div></div>
     </form>}
+    {locationChoice && <Dialog title="Review delivery destination" eyebrow="Storage location changed" description={`Changing to ${locationChoice.item?.name || 'no location'} suggests ${GST_STATES.find((state) => state.code === locationChoice.code)?.name || 'no usable Indian State/UT'}. Your current destination has not been replaced.`} onClose={() => setLocationChoice(null)} footer={<>
+      <button type="button" className="admin-button admin-button--secondary" onClick={() => setLocationChoice(null)}>Cancel location change</button>
+      <button type="button" className="admin-button admin-button--secondary" onClick={() => { edit({ location: locationChoice.item, supplySource: 'manual' }, ['locationId']); setLocationChoice(null); }}>Keep current destination</button>
+      <button type="button" className="admin-button" onClick={() => { edit({ location: locationChoice.item, placeOfSupplyCode: locationChoice.code, supplySource: 'location' }, ['locationId', 'placeOfSupplyCode']); setLocationChoice(null); }}>{locationChoice.code ? 'Use location State/UT' : 'Clear destination and select manually'}</button>
+    </>} />}
   </section>;
 }
 

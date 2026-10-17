@@ -85,7 +85,8 @@ test('live PO tax totals, snapshots, legacy data and original pending request re
   await expect(summary).toContainText('SGST');
   await page.getByTestId('button-add-po-line').click();
   await expect(total).toHaveText('₹118.00');
-  await expect(summary).toContainText('Partial totals: 1 computable line; 1 unfinished or invalid');
+  await expect(summary).not.toContainText('Partial totals:');
+  await expect(summary).toContainText('Draft estimate');
   await page.getByTestId('button-review-po').click();
   await expect(page.getByRole('heading', { name: 'Review before saving' })).toHaveCount(0);
   await expect(page.getByText('Select a product.', { exact: true })).toBeVisible();

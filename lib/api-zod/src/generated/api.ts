@@ -993,24 +993,56 @@ export const listStorageLocationsQueryOffsetDefault = 0;
 export const listStorageLocationsQueryOffsetMin = 0;
 export const listStorageLocationsQueryOffsetMax = 1000000;
 export const listStorageLocationsResponseItemsItemAddressMax = 2000;
+export const listStorageLocationsResponseItemsItemCityMax = 100;
+export const listStorageLocationsResponseItemsItemCountryCodeMax = 2;
 export const listStorageLocationsResponseItemsItemNameMax = 200;
+export const listStorageLocationsResponseItemsItemPincodeMax = 20;
+export const listStorageLocationsResponseItemsItemStateMax = 100;
 export const createStorageLocationBodyAddressMax = 2000;
+export const createStorageLocationBodyCityMax = 100;
+export const createStorageLocationBodyCountryCodeMax = 2;
 export const createStorageLocationBodyNameMax = 200;
+export const createStorageLocationBodyPincodeMax = 20;
+export const createStorageLocationBodyStateMax = 100;
 export const createStorageLocationResponseAddressMax = 2000;
+export const createStorageLocationResponseCityMax = 100;
+export const createStorageLocationResponseCountryCodeMax = 2;
 export const createStorageLocationResponseNameMax = 200;
+export const createStorageLocationResponsePincodeMax = 20;
+export const createStorageLocationResponseStateMax = 100;
 export const exportStorageLocationsQueryQueryMax = 200;
 export const commitLocationImportQueryFilenameMax = 200;
 export const reviewLocationImportQueryFilenameMax = 200;
 export const getStorageLocationResponseAddressMax = 2000;
+export const getStorageLocationResponseCityMax = 100;
+export const getStorageLocationResponseCountryCodeMax = 2;
 export const getStorageLocationResponseNameMax = 200;
+export const getStorageLocationResponsePincodeMax = 20;
+export const getStorageLocationResponseStateMax = 100;
 export const deleteStorageLocationResponseAddressMax = 2000;
+export const deleteStorageLocationResponseCityMax = 100;
+export const deleteStorageLocationResponseCountryCodeMax = 2;
 export const deleteStorageLocationResponseNameMax = 200;
+export const deleteStorageLocationResponsePincodeMax = 20;
+export const deleteStorageLocationResponseStateMax = 100;
 export const editStorageLocationBodyAddressMax = 2000;
+export const editStorageLocationBodyCityMax = 100;
+export const editStorageLocationBodyCountryCodeMax = 2;
 export const editStorageLocationBodyNameMax = 200;
+export const editStorageLocationBodyPincodeMax = 20;
+export const editStorageLocationBodyStateMax = 100;
 export const editStorageLocationResponseAddressMax = 2000;
+export const editStorageLocationResponseCityMax = 100;
+export const editStorageLocationResponseCountryCodeMax = 2;
 export const editStorageLocationResponseNameMax = 200;
+export const editStorageLocationResponsePincodeMax = 20;
+export const editStorageLocationResponseStateMax = 100;
 export const setStorageLocationStatusResponseAddressMax = 2000;
+export const setStorageLocationStatusResponseCityMax = 100;
+export const setStorageLocationStatusResponseCountryCodeMax = 2;
 export const setStorageLocationStatusResponseNameMax = 200;
+export const setStorageLocationStatusResponsePincodeMax = 20;
+export const setStorageLocationStatusResponseStateMax = 100;
 export const listVendorsQueryQueryMax = 200;
 export const listVendorsQueryLimitDefault = 10;
 export const listVendorsQueryLimitMax = 100;
@@ -14589,12 +14621,17 @@ export const ListPurchaseOrderFilterOptionsResponse = zod.object({
   filtered: zod.number().int(),
   items: zod.array(
     zod.object({
+      city: zod.union([zod.string(), zod.null()]).optional(),
+      countryCode: zod.union([zod.string(), zod.null()]).optional(),
       gst: zod.union([zod.string(), zod.null()]).optional(),
       gstin: zod.union([zod.string(), zod.null()]).optional(),
       id: zod.string().uuid(),
       name: zod.string(),
+      pincode: zod.union([zod.string(), zod.null()]).optional(),
       registrationStateCode: zod.union([zod.string(), zod.null()]).optional(),
       registrationStateName: zod.union([zod.string(), zod.null()]).optional(),
+      state: zod.union([zod.string(), zod.null()]).optional(),
+      stateCode: zod.union([zod.string(), zod.null()]).optional(),
       unitPrice: zod.union([zod.string(), zod.null()]).optional(),
       version: zod.union([zod.number().int(), zod.null()]).optional(),
     }),
@@ -14759,12 +14796,17 @@ export const ListPurchaseOrderReferencesResponse = zod.object({
   filtered: zod.number().int(),
   items: zod.array(
     zod.object({
+      city: zod.union([zod.string(), zod.null()]).optional(),
+      countryCode: zod.union([zod.string(), zod.null()]).optional(),
       gst: zod.union([zod.string(), zod.null()]).optional(),
       gstin: zod.union([zod.string(), zod.null()]).optional(),
       id: zod.string().uuid(),
       name: zod.string(),
+      pincode: zod.union([zod.string(), zod.null()]).optional(),
       registrationStateCode: zod.union([zod.string(), zod.null()]).optional(),
       registrationStateName: zod.union([zod.string(), zod.null()]).optional(),
+      state: zod.union([zod.string(), zod.null()]).optional(),
+      stateCode: zod.union([zod.string(), zod.null()]).optional(),
       unitPrice: zod.union([zod.string(), zod.null()]).optional(),
       version: zod.union([zod.number().int(), zod.null()]).optional(),
     }),
@@ -19782,6 +19824,14 @@ export const ListStorageLocationsQueryParams = zod.object({
     .default(listStorageLocationsQueryOffsetDefault),
 });
 
+export const listStorageLocationsResponseItemsItemCityDefault = ``;
+
+export const listStorageLocationsResponseItemsItemCountryCodeDefault = ``;
+
+export const listStorageLocationsResponseItemsItemPincodeDefault = ``;
+
+export const listStorageLocationsResponseItemsItemStateDefault = ``;
+
 export const ListStorageLocationsResponse = zod.object({
   filtered: zod.number().int(),
   items: zod.array(
@@ -19790,6 +19840,14 @@ export const ListStorageLocationsResponse = zod.object({
         .string()
         .min(1)
         .max(listStorageLocationsResponseItemsItemAddressMax),
+      city: zod
+        .string()
+        .max(listStorageLocationsResponseItemsItemCityMax)
+        .default(listStorageLocationsResponseItemsItemCityDefault),
+      countryCode: zod
+        .string()
+        .max(listStorageLocationsResponseItemsItemCountryCodeMax)
+        .default(listStorageLocationsResponseItemsItemCountryCodeDefault),
       createdAt: zod.coerce.date(),
       createdBy: zod.string(),
       id: zod.string().uuid(),
@@ -19797,6 +19855,15 @@ export const ListStorageLocationsResponse = zod.object({
         .string()
         .min(1)
         .max(listStorageLocationsResponseItemsItemNameMax),
+      pincode: zod
+        .string()
+        .max(listStorageLocationsResponseItemsItemPincodeMax)
+        .default(listStorageLocationsResponseItemsItemPincodeDefault),
+      state: zod
+        .string()
+        .max(listStorageLocationsResponseItemsItemStateMax)
+        .default(listStorageLocationsResponseItemsItemStateDefault),
+      stateCode: zod.union([zod.string(), zod.null()]).optional(),
       status: zod.enum(["active", "inactive"]),
       updatedAt: zod.coerce.date(),
       updatedBy: zod.string(),
@@ -19812,18 +19879,67 @@ export const ListStorageLocationsResponse = zod.object({
  * @summary Create
  */
 
+export const createStorageLocationBodyCityDefault = ``;
+
+export const createStorageLocationBodyCountryCodeDefault = ``;
+
+export const createStorageLocationBodyPincodeDefault = ``;
+
+export const createStorageLocationBodyStateDefault = ``;
+
 export const CreateStorageLocationBody = zod.object({
   address: zod.string().min(1).max(createStorageLocationBodyAddressMax),
+  city: zod
+    .string()
+    .max(createStorageLocationBodyCityMax)
+    .default(createStorageLocationBodyCityDefault),
+  countryCode: zod
+    .string()
+    .max(createStorageLocationBodyCountryCodeMax)
+    .default(createStorageLocationBodyCountryCodeDefault),
   name: zod.string().min(1).max(createStorageLocationBodyNameMax),
+  pincode: zod
+    .string()
+    .max(createStorageLocationBodyPincodeMax)
+    .default(createStorageLocationBodyPincodeDefault),
+  state: zod
+    .string()
+    .max(createStorageLocationBodyStateMax)
+    .default(createStorageLocationBodyStateDefault),
   status: zod.enum(["active", "inactive"]),
 });
 
+export const createStorageLocationResponseCityDefault = ``;
+
+export const createStorageLocationResponseCountryCodeDefault = ``;
+
+export const createStorageLocationResponsePincodeDefault = ``;
+
+export const createStorageLocationResponseStateDefault = ``;
+
 export const CreateStorageLocationResponse = zod.object({
   address: zod.string().min(1).max(createStorageLocationResponseAddressMax),
+  city: zod
+    .string()
+    .max(createStorageLocationResponseCityMax)
+    .default(createStorageLocationResponseCityDefault),
+  countryCode: zod
+    .string()
+    .max(createStorageLocationResponseCountryCodeMax)
+    .default(createStorageLocationResponseCountryCodeDefault),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(createStorageLocationResponseNameMax),
+  pincode: zod
+    .string()
+    .max(createStorageLocationResponsePincodeMax)
+    .default(createStorageLocationResponsePincodeDefault),
+  state: zod
+    .string()
+    .max(createStorageLocationResponseStateMax)
+    .default(createStorageLocationResponseStateDefault),
+  stateCode: zod.union([zod.string(), zod.null()]).optional(),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
@@ -19899,18 +20015,62 @@ export const ReviewLocationImportBody = zod.object({
   file: zod.instanceof(Blob),
 });
 
+export const reviewLocationImportResponseRowsItemCityDefault = ``;
+export const reviewLocationImportResponseRowsItemCountryCodeDefault = ``;
+export const reviewLocationImportResponseRowsItemPincodeDefault = ``;
+export const reviewLocationImportResponseRowsItemStateDefault = ``;
+
 export const ReviewLocationImportResponse = zod.object({
   digest: zod.string(),
   rows: zod.array(
     zod.object({
       address: zod.string(),
+      city: zod
+        .string()
+        .default(reviewLocationImportResponseRowsItemCityDefault),
+      countryCode: zod
+        .string()
+        .default(reviewLocationImportResponseRowsItemCountryCodeDefault),
       errors: zod.array(zod.string()),
       name: zod.string(),
+      pincode: zod
+        .string()
+        .default(reviewLocationImportResponseRowsItemPincodeDefault),
       row: zod.number().int(),
+      state: zod
+        .string()
+        .default(reviewLocationImportResponseRowsItemStateDefault),
       status: zod.string(),
     }),
   ),
   valid: zod.boolean(),
+});
+
+/**
+ * @summary Postal
+ */
+export const LookupStorageLocationPincodeParams = zod.object({
+  pin: zod.coerce.string(),
+});
+
+export const lookupStorageLocationPincodeQueryActionDefault = `add`;
+
+export const LookupStorageLocationPincodeQueryParams = zod.object({
+  action: zod
+    .enum(["add", "edit"])
+    .default(lookupStorageLocationPincodeQueryActionDefault),
+});
+
+export const LookupStorageLocationPincodeResponse = zod.object({
+  choices: zod.array(
+    zod.object({
+      city: zod.string(),
+      country: zod.string(),
+      state: zod.string(),
+    }),
+  ),
+  message: zod.string(),
+  pincode: zod.string(),
 });
 
 /**
@@ -19920,12 +20080,37 @@ export const GetStorageLocationParams = zod.object({
   location_id: zod.coerce.string().uuid(),
 });
 
+export const getStorageLocationResponseCityDefault = ``;
+
+export const getStorageLocationResponseCountryCodeDefault = ``;
+
+export const getStorageLocationResponsePincodeDefault = ``;
+
+export const getStorageLocationResponseStateDefault = ``;
+
 export const GetStorageLocationResponse = zod.object({
   address: zod.string().min(1).max(getStorageLocationResponseAddressMax),
+  city: zod
+    .string()
+    .max(getStorageLocationResponseCityMax)
+    .default(getStorageLocationResponseCityDefault),
+  countryCode: zod
+    .string()
+    .max(getStorageLocationResponseCountryCodeMax)
+    .default(getStorageLocationResponseCountryCodeDefault),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(getStorageLocationResponseNameMax),
+  pincode: zod
+    .string()
+    .max(getStorageLocationResponsePincodeMax)
+    .default(getStorageLocationResponsePincodeDefault),
+  state: zod
+    .string()
+    .max(getStorageLocationResponseStateMax)
+    .default(getStorageLocationResponseStateDefault),
+  stateCode: zod.union([zod.string(), zod.null()]).optional(),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
@@ -19943,12 +20128,37 @@ export const DeleteStorageLocationBody = zod.object({
   expected_version: zod.number().int().min(1),
 });
 
+export const deleteStorageLocationResponseCityDefault = ``;
+
+export const deleteStorageLocationResponseCountryCodeDefault = ``;
+
+export const deleteStorageLocationResponsePincodeDefault = ``;
+
+export const deleteStorageLocationResponseStateDefault = ``;
+
 export const DeleteStorageLocationResponse = zod.object({
   address: zod.string().min(1).max(deleteStorageLocationResponseAddressMax),
+  city: zod
+    .string()
+    .max(deleteStorageLocationResponseCityMax)
+    .default(deleteStorageLocationResponseCityDefault),
+  countryCode: zod
+    .string()
+    .max(deleteStorageLocationResponseCountryCodeMax)
+    .default(deleteStorageLocationResponseCountryCodeDefault),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(deleteStorageLocationResponseNameMax),
+  pincode: zod
+    .string()
+    .max(deleteStorageLocationResponsePincodeMax)
+    .default(deleteStorageLocationResponsePincodeDefault),
+  state: zod
+    .string()
+    .max(deleteStorageLocationResponseStateMax)
+    .default(deleteStorageLocationResponseStateDefault),
+  stateCode: zod.union([zod.string(), zod.null()]).optional(),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
@@ -19962,19 +20172,68 @@ export const EditStorageLocationParams = zod.object({
   location_id: zod.coerce.string().uuid(),
 });
 
+export const editStorageLocationBodyCityDefault = ``;
+
+export const editStorageLocationBodyCountryCodeDefault = ``;
+
+export const editStorageLocationBodyPincodeDefault = ``;
+
+export const editStorageLocationBodyStateDefault = ``;
+
 export const EditStorageLocationBody = zod.object({
   address: zod.string().min(1).max(editStorageLocationBodyAddressMax),
+  city: zod
+    .string()
+    .max(editStorageLocationBodyCityMax)
+    .default(editStorageLocationBodyCityDefault),
+  countryCode: zod
+    .string()
+    .max(editStorageLocationBodyCountryCodeMax)
+    .default(editStorageLocationBodyCountryCodeDefault),
   expected_version: zod.number().int().min(1),
   name: zod.string().min(1).max(editStorageLocationBodyNameMax),
+  pincode: zod
+    .string()
+    .max(editStorageLocationBodyPincodeMax)
+    .default(editStorageLocationBodyPincodeDefault),
+  state: zod
+    .string()
+    .max(editStorageLocationBodyStateMax)
+    .default(editStorageLocationBodyStateDefault),
   status: zod.enum(["active", "inactive"]),
 });
 
+export const editStorageLocationResponseCityDefault = ``;
+
+export const editStorageLocationResponseCountryCodeDefault = ``;
+
+export const editStorageLocationResponsePincodeDefault = ``;
+
+export const editStorageLocationResponseStateDefault = ``;
+
 export const EditStorageLocationResponse = zod.object({
   address: zod.string().min(1).max(editStorageLocationResponseAddressMax),
+  city: zod
+    .string()
+    .max(editStorageLocationResponseCityMax)
+    .default(editStorageLocationResponseCityDefault),
+  countryCode: zod
+    .string()
+    .max(editStorageLocationResponseCountryCodeMax)
+    .default(editStorageLocationResponseCountryCodeDefault),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(editStorageLocationResponseNameMax),
+  pincode: zod
+    .string()
+    .max(editStorageLocationResponsePincodeMax)
+    .default(editStorageLocationResponsePincodeDefault),
+  state: zod
+    .string()
+    .max(editStorageLocationResponseStateMax)
+    .default(editStorageLocationResponseStateDefault),
+  stateCode: zod.union([zod.string(), zod.null()]).optional(),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
@@ -19993,12 +20252,37 @@ export const SetStorageLocationStatusBody = zod.object({
   status: zod.enum(["active", "inactive"]),
 });
 
+export const setStorageLocationStatusResponseCityDefault = ``;
+
+export const setStorageLocationStatusResponseCountryCodeDefault = ``;
+
+export const setStorageLocationStatusResponsePincodeDefault = ``;
+
+export const setStorageLocationStatusResponseStateDefault = ``;
+
 export const SetStorageLocationStatusResponse = zod.object({
   address: zod.string().min(1).max(setStorageLocationStatusResponseAddressMax),
+  city: zod
+    .string()
+    .max(setStorageLocationStatusResponseCityMax)
+    .default(setStorageLocationStatusResponseCityDefault),
+  countryCode: zod
+    .string()
+    .max(setStorageLocationStatusResponseCountryCodeMax)
+    .default(setStorageLocationStatusResponseCountryCodeDefault),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(setStorageLocationStatusResponseNameMax),
+  pincode: zod
+    .string()
+    .max(setStorageLocationStatusResponsePincodeMax)
+    .default(setStorageLocationStatusResponsePincodeDefault),
+  state: zod
+    .string()
+    .max(setStorageLocationStatusResponseStateMax)
+    .default(setStorageLocationStatusResponseStateDefault),
+  stateCode: zod.union([zod.string(), zod.null()]).optional(),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),

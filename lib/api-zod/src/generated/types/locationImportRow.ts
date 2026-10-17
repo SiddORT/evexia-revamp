@@ -8,8 +8,12 @@
 
 export interface LocationImportRow {
   address: string;
+  city?: string;
+  countryCode?: string;
   errors: string[];
   name: string;
+  pincode?: string;
   row: number;
+  state?: string;
   status: string;
 }

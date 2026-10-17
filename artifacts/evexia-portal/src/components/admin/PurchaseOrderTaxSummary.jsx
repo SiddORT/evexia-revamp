@@ -6,7 +6,7 @@ export function TaxAmounts({ figures }) {
     <div><dt>Taxable subtotal</dt><dd>{amount('subtotal')}</dd></div>
     {figures?.taxComponents && TAX_COMPONENTS.filter((k) => figures.taxComponents[k] || (figures.treatment || '').includes(k)).map((k) => <div key={k}><dt>{k.toUpperCase()}</dt><dd>{formatPaise(figures.taxComponents[k])}</dd></div>)}
     <div><dt>Total GST</dt><dd>{amount('gstAmount')}</dd></div>
-    <div className="po-new-summary__final"><dt>Final total</dt><dd data-testid="text-po-form-total">{amount('total')}</dd></div>
+    <div className="po-new-summary__final"><dt>{figures?.partial ? 'Draft estimate' : 'Final total'}</dt><dd data-testid="text-po-form-total">{amount('total')}</dd></div>
   </dl>;
 }
 
@@ -19,7 +19,6 @@ export function TaxBasis({ basis }) {
       <div><dt>Place of supply</dt><dd>{basis.placeOfSupplyName} ({basis.placeOfSupplyCode})</dd></div>
       <div><dt>Tax treatment</dt><dd>{basis.treatment === 'igst' ? 'IGST — different supplier and place-of-supply states' : `${basis.treatment === 'cgst_utgst' ? 'CGST + UTGST' : 'CGST + SGST'} — matching supplier and place-of-supply states`}</dd></div>
     </dl>
-    <p className="mr-form__footer-note">Ordinary domestic goods only. Place of supply is explicitly selected, not inferred from the storage location. Special supply rules are not determined by this calculator.</p>
   </div>;
 }
 

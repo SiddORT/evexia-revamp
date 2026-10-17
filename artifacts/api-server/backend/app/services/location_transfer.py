@@ -20,7 +20,9 @@ from app.services.zones import ZoneError
 MAX_BYTES = 2 * 1024 * 1024
 MAX_ROWS = 1000
 EXPORT_LIMIT = 5000
-HEADERS = ["Storage Location", "Address", "Status", "Created By", "Created At", "Updated By", "Updated At"]
+LEGACY_HEADERS = ["Storage Location", "Address", "Status", "Created By", "Created At", "Updated By", "Updated At"]
+GEO_FIELDS = ("pincode", "countryCode", "state", "city")
+HEADERS = LEGACY_HEADERS[:3] + ["PIN Code", "Country Code", "State/UT", "City"] + LEGACY_HEADERS[3:]
 
 
 def invalid(message):
@@ -34,37 +36,41 @@ def parse(data, filename):
         try:
             rows = []
             for row in csv.reader(io.StringIO(data.decode("utf-8-sig")), strict=True):
-                if len(rows) >= MAX_ROWS + 1 or len(row) > 7 or any(len(cell) > 10000 for cell in row):
-                    invalid("CSV exceeds 1,000 records, seven columns or 10,000 characters per cell.")
+                if len(rows) >= MAX_ROWS + 1 or len(row) > 11 or any(len(cell) > 10000 for cell in row):
+                    invalid("CSV exceeds 1,000 records, eleven columns or 10,000 characters per cell.")
                 rows.append(row)
         except (UnicodeError, csv.Error):
             invalid("Use valid UTF-8 CSV with well-formed quoted cells.")
     elif filename.lower().endswith(".xlsx"):
         try:
-            rows = workbook_rows(data, max_columns=7)
+            rows = workbook_rows(data, max_columns=11)
         except ZoneError as exc:
             invalid(exc.message)
     else:
         invalid("Only UTF-8 .csv and genuine .xlsx are supported. No .xls or macro-enabled files.")
-    if not rows or rows[0] not in (HEADERS[:3], HEADERS):
-        invalid("Use exact Storage Location,Address,Status headers or the seven-column audit export schema.")
+    if not rows or rows[0] not in (LEGACY_HEADERS[:3], LEGACY_HEADERS, HEADERS[:7], HEADERS):
+        invalid("Use the exact legacy three/seven-column or structured seven/eleven-column headers.")
     width = len(rows[0])
+    structured = rows[0] in (HEADERS[:7], HEADERS)
+    escaped = rows[0] in (LEGACY_HEADERS, HEADERS[:7], HEADERS)
+    def decode(value):
+        value = value.strip()
+        return value[1:] if escaped and value.startswith("'") and (value[1:].startswith("'") or UNSAFE.match(value[1:])) else value
     reviewed = []
     for number, cells in enumerate(rows[1:], 2):
         errors = [] if len(cells) == width else ["Row must match the header column count."]
-        name = cells[0].strip() if cells else ""
-        if width == 7 and name.startswith("'") and (name[1:].startswith("'") or UNSAFE.match(name[1:])):
-            name = name[1:]
-        address = cells[1].strip() if len(cells) > 1 else ""
-        if width == 7 and address.startswith("'") and (address[1:].startswith("'") or UNSAFE.match(address[1:])):
-            address = address[1:]
+        name = decode(cells[0]) if cells else ""
+        address = decode(cells[1]) if len(cells) > 1 else ""
         status = cells[2].strip().lower() if len(cells) > 2 else ""
+        geo = {key: decode(cells[index]) if structured and len(cells) > index else ""
+               for index, key in enumerate(GEO_FIELDS, 3)}
         try:
-            fields = LocationFields(name=name, address=address, status=status)
+            fields = LocationFields(name=name, address=address, status=status, **geo)
             name, address = fields.name, fields.address
-        except ValidationError:
-            errors.append("Name must be 1–200 characters, address 1–2,000 characters and status Active or Inactive.")
-        reviewed.append(dict(row=number, name=name, address=address, status=status, errors=errors))
+            geo = {key: getattr(fields, key) for key in GEO_FIELDS}
+        except ValidationError as exc:
+            errors.extend(f"{'.'.join(map(str, item['loc'])) or 'Address'}: {item['msg']}" for item in exc.errors())
+        reviewed.append(dict(row=number, name=name, address=address, status=status, **geo, errors=errors))
     if not reviewed:
         invalid("At least one record is required.")
     return reviewed
@@ -110,7 +116,7 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
                 raise locations.LocationError("Invalid rows or new conflicts. Nothing was imported. Review again.",
                                            409, "location_import_conflict")
             for row in rows:
-                locations.insert(db, current, LocationFields(name=row["name"], address=row["address"], status=row["status"]))
+                locations.insert(db, current, LocationFields(**{key: row[key] for key in ("name", "address", "status", *GEO_FIELDS)}))
             db.commit()
             return {"imported": len(rows)}
         db.commit()
@@ -130,7 +136,9 @@ def export(db, actor, query, status, format):
         rows = [HEADERS]
         for row in records:
             record = locations.projection(db, row)
-            rows.append([safe_text(row.name), safe_text(row.address), row.status, safe_text(record["createdBy"]), row.created_at.isoformat(),
+            rows.append([safe_text(row.name), safe_text(row.address), row.status,
+                         *(safe_text(getattr(row, key)) for key in GEO_FIELDS),
+                         safe_text(record["createdBy"]), row.created_at.isoformat(),
                          safe_text(record["updatedBy"]), row.updated_at.isoformat()])
         db.commit()
         return rows

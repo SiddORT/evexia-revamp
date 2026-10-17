@@ -15,6 +15,7 @@ from app.schemas.purchase_orders import POInput
 from app.services.allergens import authorize
 from app.services.zones import label
 from app.services.purchase_order_tax import tax_basis, supplier_state, calculate_components, COMPONENTS
+from app.services.location_geography import geography
 
 MAX_TOTAL = 10000000000
 MODELS = {"vendors": (Vendor, Vendor.vendorName), "locations": (StorageLocation, StorageLocation.name),
@@ -307,6 +308,8 @@ def references(db, actor, kind, query="", limit=25, offset=0, selected_id=None, 
             data = dict(id=str(row.id), name=getattr(row, name.key), version=row.version)
             if kind == "products":
                 data.update(unitPrice=str(row.selling_price) if row.selling_price is not None else None, gst=str(row.gst))
+            if kind == "locations":
+                data.update(geography(row))
             if kind == "vendors":
                 state = supplier_state(row.gstNo)
                 data.update(gstin=row.gstNo, registrationStateCode=state["code"] if state else None,

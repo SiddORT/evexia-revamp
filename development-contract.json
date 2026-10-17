@@ -1,5 +1,5 @@
 {
   "format": 1,
   "contract": "evexia-preview-2026-10",
-  "schema": "0040_po_tax_basis"
+  "schema": "0041_location_geography"
 }

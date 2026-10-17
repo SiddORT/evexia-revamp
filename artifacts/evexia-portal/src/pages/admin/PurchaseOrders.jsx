@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Activity, BarChart3, ChevronDown, ClipboardList, Plus, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
+import { Activity, BarChart3, ChevronDown, ClipboardList, Plus, RefreshCw, Search, SlidersHorizontal, Eye, Pencil, Trash2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import PurchaseOrderReferenceSelect from '../../components/admin/PurchaseOrderReferenceSelect.jsx';
+import PurchaseOrderDeleteDialog from '../../components/admin/PurchaseOrderDeleteDialog.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import {
   describeError, formatPaise, getPurchaseOrderAnalytics, getPurchaseOrderOverview, isPermissionError, listPurchaseOrderActivity,
-  consumeSaved, listPurchaseOrders, validDate,
+  consumeSaved, listPurchaseOrders, validDate, getPurchaseOrder, pendingPurchaseOrderDeletions,
 } from '../../services/serverPurchaseOrders.js';
 import '../../purchaseOrders.css';
 
@@ -61,12 +62,31 @@ export default function PurchaseOrders() {
   const [savedNotice] = useState(() => consumeSaved());
   const [showSaved, setShowSaved] = useState(Boolean(savedNotice));
   const [freshness, setFreshness] = useState(0);
+  const [deleting, setDeleting] = useState(null);
+  const [deleteNotice, setDeleteNotice] = useState('');
+  const [deleteRecovery, setDeleteRecovery] = useState(pendingPurchaseOrderDeletions);
+  const [recoveryBusy, setRecoveryBusy] = useState('');
+  const recoveryBusyRef = useRef(false);
+  const deleteFocus = useRef(null);
+  const refreshButton = useRef(null);
+  const closeDelete = () => { setDeleting(null); setDeleteRecovery(pendingPurchaseOrderDeletions()); requestAnimationFrame(() => {
+    const target = deleteFocus.current;
+    if (target?.isConnected) target.focus(); else refreshButton.current?.focus();
+  }); };
+  async function recoverDeletion(id, trigger) {
+    if (recoveryBusyRef.current) return;
+    recoveryBusyRef.current = true; setRecoveryBusy(id);
+    deleteFocus.current = trigger;
+    try { setDeleting(await getPurchaseOrder(id)); setDeleteNotice(''); }
+    catch (cause) { setDeleteNotice(describeError(cause, 'The order could not be loaded for deletion reconciliation. Retry the same recovery action.')); }
+    finally { recoveryBusyRef.current = false; setRecoveryBusy(''); }
+  }
   useEffect(() => {
-    const refresh = () => { if (!document.hidden) setFreshness((n) => n + 1); };
+    const refresh = () => { if (!document.hidden && !deleting) setFreshness((n) => n + 1); };
     const timer = setInterval(refresh, 30000);
     window.addEventListener('focus', refresh);
     return () => { clearInterval(timer); window.removeEventListener('focus', refresh); };
-  }, []);
+  }, [deleting]);
 
   useEffect(() => { const timer = setTimeout(() => setDebounced(search.trim()), 300); return () => clearTimeout(timer); }, [search]);
 
@@ -103,6 +123,13 @@ export default function PurchaseOrders() {
   }, [tab, reloadOverview, reloadOrders, reloadActivity, reloadAnalytics]);
   const changePageSize = (size) => { setPageSize(size); setPage(1); setActivityPage(1); };
 
+  const actions = (order) => <div className="po-actions">
+    <Link className="po-icon-action" href={`${BASE}/${order.id}`} aria-label={`View ${order.number}`} title={`View ${order.number}`}><Eye size={17} aria-hidden="true" /></Link>
+    {order.status === 'open' && <>
+      <Link className="po-icon-action" href={`${BASE}/${order.id}?edit=1`} aria-label={`Edit ${order.number}`} title={`Edit ${order.number}`}><Pencil size={17} aria-hidden="true" /></Link>
+      <button type="button" className="po-icon-action po-action--danger" aria-label={`Delete ${order.number}`} title={`Delete ${order.number}`} onClick={(event) => { deleteFocus.current = event.currentTarget; setDeleting(order); setDeleteNotice(''); }}><Trash2 size={17} aria-hidden="true" /></button>
+    </>}
+  </div>;
   const columns = [
     { key: 'serial', label: 'Sr. no.', render: (_order, index) => (page - 1) * pageSize + index + 1 },
     { key: 'number', label: 'Purchase order', render: (order) => <><Link className="po-number po-link" href={`${BASE}/${order.id}`}>{order.number}</Link><span className="po-secondary">{order.lines.length} {order.lines.length === 1 ? 'item' : 'items'}</span></> },
@@ -112,7 +139,7 @@ export default function PurchaseOrders() {
     { key: 'expected', label: 'Expected', render: (order) => displayDate(order.expectedDate) },
     { key: 'amount', label: 'Total incl. GST', render: (order) => <span className="po-amount" data-testid={`text-po-total-${order.id}`}>{formatPaise(order.total)}</span> },
     { key: 'status', label: 'Status', render: (order) => <span className={`po-status${order.status === 'deleted' ? ' po-status--draft' : ''}`}>{order.status}</span> },
-    { key: 'actions', label: 'Actions', render: (order) => <Link className="po-link" href={`${BASE}/${order.id}`}>View{order.status === 'open' ? ' / Edit / Delete' : ''}</Link> },
+    { key: 'actions', label: 'Actions', render: actions },
   ];
   const ov = overview.data;
   const card = (value) => overview.status === 'error' && !ov ? 'Unavailable' : ov ? value : '…';
@@ -122,10 +149,16 @@ export default function PurchaseOrders() {
 
   return <AdminLayout title="Purchase Orders"><div className="po-page">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Procurement</p><h1>Purchase orders</h1><p className="admin-page-head__description">Plan supplier purchases, track order value and review recorded changes.</p></div><div className="po-head-actions">
-      <button type="button" className="admin-button admin-button--secondary" onClick={refresh} data-testid="button-refresh-purchase-orders"><RefreshCw size={15} aria-hidden="true" /> Refresh</button>
+      <button ref={refreshButton} type="button" className="admin-button admin-button--secondary" onClick={refresh} data-testid="button-refresh-purchase-orders"><RefreshCw size={15} aria-hidden="true" /> Refresh</button>
       <button type="button" className="admin-button" onClick={() => navigate(`${BASE}/new`)} data-testid="button-new-purchase-order"><Plus size={16} aria-hidden="true" /> New purchase order</button>
     </div></div>
     {showSaved && <div className="admin-feedback" role="status" data-testid="status-po-feedback">{savedNotice?.number ? `Purchase order ${savedNotice.number} saved.` : 'Purchase order saved.'}</div>}
+    {deleteNotice && <div className="admin-feedback" role="status">{deleteNotice}</div>}
+    {(deleteRecovery.error || deleteRecovery.ids.length > 0) && <div className="admin-feedback" role="status">
+      {deleteRecovery.error && <p>{deleteRecovery.error}</p>}
+      {deleteRecovery.ids.length > 0 && <><p>Earlier deletions are unconfirmed. Reconcile the original requests here, even if their rows are no longer on this page. No new deletion identity is created.</p>
+        <div className="po-actions">{deleteRecovery.ids.map((id, index) => <button key={id} type="button" className="admin-button admin-button--secondary" disabled={Boolean(recoveryBusy)} onClick={(event) => recoverDeletion(id, event.currentTarget)}>{recoveryBusy === id ? 'Loading order…' : `Review unconfirmed deletion ${index + 1}`}</button>)}</div></>}
+    </div>}
     {overview.status === 'error' && <div className="admin-feedback admin-feedback--error" role="alert">{overview.error} <button type="button" className="po-link" onClick={reloadOverview}>Retry overview</button></div>}
     <div className="po-summary" aria-label="Purchase order overview">
       <div className="po-summary__item po-summary__item--accent"><span>Open order value</span><strong data-testid="text-po-open-value">{card(ov && formatPaise(ov.openValue))}</strong><small>Including GST</small></div>
@@ -160,7 +193,7 @@ export default function PurchaseOrders() {
           : !orderData ? <Skeleton label="Loading purchase orders" /> : <>
             {orders.status === 'error' && <div className="admin-feedback admin-feedback--error" role="alert">{orders.error} <button type="button" className="po-link" onClick={reloadOrders}>Retry</button></div>}
             {orderData.items.length ? <><div className="po-table"><DataTable columns={columns} rows={orderData.items} rowOffset={0} rowKey={(order) => order.id} label="Purchase orders" testIdPrefix="po" /></div>
-              <div className="po-mobile" role="list" aria-label="Purchase orders">{orderData.items.map((order, index) => <article className="po-card" key={order.id} role="listitem"><div className="po-card__top"><div><span className="po-secondary">Sr. no. {(page - 1) * pageSize + index + 1}</span><Link className="po-number po-link" href={`${BASE}/${order.id}`}>{order.number}</Link><h2>{order.vendorName}</h2><p>{order.locationName}</p></div><span className={`po-status${order.status === 'deleted' ? ' po-status--draft' : ''}`}>{order.status}</span></div><dl><div><dt>PO date</dt><dd>{displayDate(order.poDate)}</dd></div><div><dt>Expected</dt><dd>{displayDate(order.expectedDate)}</dd></div><div><dt>Items</dt><dd>{order.lines.length}</dd></div><div><dt>Total incl. GST</dt><dd className="po-amount">{formatPaise(order.total)}</dd></div></dl><Link className="po-link" href={`${BASE}/${order.id}`}>View{order.status === 'open' ? ' / Edit / Delete' : ''}</Link></article>)}</div></>
+              <div className="po-mobile" role="list" aria-label="Purchase orders">{orderData.items.map((order, index) => <article className="po-card" key={order.id} role="listitem"><div className="po-card__top"><div><span className="po-secondary">Sr. no. {(page - 1) * pageSize + index + 1}</span><Link className="po-number po-link" href={`${BASE}/${order.id}`}>{order.number}</Link><h2>{order.vendorName}</h2><p>{order.locationName}</p></div><span className={`po-status${order.status === 'deleted' ? ' po-status--draft' : ''}`}>{order.status}</span></div><dl><div><dt>PO date</dt><dd>{displayDate(order.poDate)}</dd></div><div><dt>Expected</dt><dd>{displayDate(order.expectedDate)}</dd></div><div><dt>Items</dt><dd>{order.lines.length}</dd></div><div><dt>Total incl. GST</dt><dd className="po-amount">{formatPaise(order.total)}</dd></div></dl>{actions(order)}</article>)}</div></>
               : <div className="admin-empty"><span className="admin-empty__icon"><ClipboardList size={21} aria-hidden="true" /></span><strong>{hasFilters ? 'No orders match these filters' : 'No purchase orders yet'}</strong><p>{hasFilters ? 'Change the filters or search to see more orders.' : 'Create your first order to start a procurement record.'}</p>{hasFilters && <div className="po-actions" style={{ marginTop: 17 }}><button type="button" className="admin-button admin-button--secondary" onClick={clearFilters}>Clear filters</button></div>}</div>}
             <TablePagination page={page} pageCount={ordersFor} pageSize={pageSize} filtered={orderData.filtered} total={orderData.total} label={orderData.filtered === 1 ? 'order' : 'orders'} onPageChange={(next) => setPage(Math.min(Math.max(1, next), ordersFor))} onPageSizeChange={changePageSize} testId="text-po-count" />
           </>}
@@ -188,5 +221,6 @@ export default function PurchaseOrders() {
           </>}
       </div>}
     </section>
+    {deleting && <PurchaseOrderDeleteDialog key={deleting.id} order={deleting} onClose={closeDelete} onDeleted={(saved) => { closeDelete(); setDeleteNotice(`${saved.number} deleted. Listing and summary refreshed.`); setFreshness((n) => n + 1); }} />}
   </div></AdminLayout>;
 }

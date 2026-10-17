@@ -4,6 +4,7 @@ import { downloadServerBlob } from './downloads.js';
 export const listLocations = (params, signal) => locationRequest('', { params, signal });
 export const createLocation = (body) => locationRequest('', { body });
 export const getLocation = (id) => locationRequest(`/${id}`);
+export const lookupLocationPIN = (pin, signal, action = 'add') => locationRequest(`/postal/${pin}`, { params: { action }, signal });
 export const editLocation = (record, values) => locationRequest(`/${record.id}/edit`, { body: { ...values, expected_version: record.version } });
 export const statusLocation = (record, status) => locationRequest(`/${record.id}/status`, { body: { status, expected_version: record.version } });
 export const deleteLocation = (record) => locationRequest(`/${record.id}/delete`, { body: { expected_version: record.version } });

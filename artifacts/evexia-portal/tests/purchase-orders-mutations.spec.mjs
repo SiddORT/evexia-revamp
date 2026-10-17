@@ -144,8 +144,8 @@ test('protected server PO detail, edit conflict/retry, and soft-delete retry', a
   let deleteRequests = 0;
   page.on('request', (request) => { if (request.url().includes(`/purchase-orders/${orderId}/delete`)) deleteRequests++; });
   await page.getByTestId('button-delete-po').click();
-  await expect(page.getByRole('region', { name: 'Confirm purchase order deletion' })).toBeVisible();
-  await page.getByRole('button', { name: 'Cancel deletion' }).click();
+  await expect(page.getByRole('dialog', { name: `Delete ${refs.order.number}?` })).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
   expect(deleteRequests).toBe(0);
   await page.getByTestId('button-delete-po').click();
   let deleteBodies = [];
@@ -155,12 +155,12 @@ test('protected server PO detail, edit conflict/retry, and soft-delete retry', a
     if (!deleteDropped) { deleteDropped = true; await route.fetch(); await route.abort(); }
     else await route.continue();
   });
-  await page.getByTestId('button-confirm-delete-po').click();
+  await page.getByRole('dialog').getByTestId('button-confirm-action').click();
   await expect(page.getByRole('alert')).toContainText('Deletion is unconfirmed');
-  await expect(page.getByTestId('button-confirm-delete-po')).toHaveText('Retry deletion');
+  await expect(page.getByRole('dialog').getByTestId('button-confirm-action')).toHaveText('Retry deletion');
   await page.reload();
-  await expect(page.getByTestId('button-confirm-delete-po')).toHaveText('Retry deletion');
-  await page.getByTestId('button-confirm-delete-po').click();
+  await expect(page.getByRole('dialog').getByTestId('button-confirm-action')).toHaveText('Retry deletion');
+  await page.getByRole('dialog').getByTestId('button-confirm-action').click();
   await expect(page.getByText('Status: deleted · Version 5')).toBeVisible();
   expect(deleteBodies).toHaveLength(2);
   expect(deleteBodies[1]).toEqual(deleteBodies[0]);

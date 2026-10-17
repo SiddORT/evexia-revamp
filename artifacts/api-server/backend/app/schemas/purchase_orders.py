@@ -171,6 +171,11 @@ class POReference(BaseModel):
     gstin: str | None = None
     registrationStateCode: str | None = None
     registrationStateName: str | None = None
+    countryCode: str | None = None
+    state: str | None = None
+    stateCode: str | None = None
+    city: str | None = None
+    pincode: str | None = None
 
 
 class POReferencePage(BaseModel):

@@ -1,7 +1,9 @@
 import uuid
 from datetime import datetime
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from app.schemas.phone import COUNTRIES
+from app.services.location_geography import indian_state
 
 
 class LocationFields(BaseModel):
@@ -9,18 +11,39 @@ class LocationFields(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     address: str = Field(min_length=1, max_length=2000)
     status: Literal["active", "inactive"]
+    pincode: str = Field(default="", max_length=20)
+    countryCode: str = Field(default="", max_length=2)
+    state: str = Field(default="", max_length=100)
+    city: str = Field(default="", max_length=100)
 
-    @field_validator("name", "address", mode="before")
+    @field_validator("name", "address", "pincode", "countryCode", "state", "city", mode="before")
     @classmethod
     def normalize(cls, value):
         return " ".join(value.split()) if isinstance(value, str) else value
 
-    @field_validator("name", "address")
+    @field_validator("name", "address", "pincode", "countryCode", "state", "city")
     @classmethod
     def printable(cls, value):
         if any(ord(char) < 32 or 0xD800 <= ord(char) <= 0xDFFF or char in "\ufffe\uffff" for char in value):
             raise ValueError("Unsupported characters")
         return value
+
+    @model_validator(mode="after")
+    def geography(self):
+        if self.countryCode and self.countryCode not in COUNTRIES:
+            raise ValueError("Select a supported ISO country code.")
+        if (self.pincode or self.state or self.city) and not self.countryCode:
+            raise ValueError("Select a country for the structured address.")
+        if self.countryCode == "IN":
+            import re
+            if self.pincode and not re.fullmatch(r"[1-9][0-9]{5}", self.pincode):
+                raise ValueError("Enter a six-digit Indian PIN.")
+            if self.state:
+                resolved = indian_state(self.state)
+                if not resolved:
+                    raise ValueError("Select a supported Indian GST State/UT.")
+                self.state = resolved["name"]
+        return self
 
 
 class LocationEdit(LocationFields):
@@ -37,6 +60,7 @@ class LocationStatus(LocationVersion):
 
 
 class LocationResponse(LocationFields):
+    stateCode: str | None = None
     id: uuid.UUID
     version: int
     createdBy: str
@@ -58,6 +82,10 @@ class LocationImportRow(BaseModel):
     name: str
     address: str
     status: str
+    pincode: str = ""
+    countryCode: str = ""
+    state: str = ""
+    city: str = ""
     errors: list[str]
 
 

@@ -2208,6 +2208,10 @@ export interface LocationEdit {
    * @maxLength 2000
    */
   address: string;
+  /** @maxLength 100 */
+  city?: string;
+  /** @maxLength 2 */
+  countryCode?: string;
   /** @minimum 1 */
   expected_version: number;
   /**
@@ -2215,6 +2219,10 @@ export interface LocationEdit {
    * @maxLength 200
    */
   name: string;
+  /** @maxLength 20 */
+  pincode?: string;
+  /** @maxLength 100 */
+  state?: string;
   status: LocationEditStatus;
 }
 
@@ -2232,11 +2240,19 @@ export interface LocationFields {
    * @maxLength 2000
    */
   address: string;
+  /** @maxLength 100 */
+  city?: string;
+  /** @maxLength 2 */
+  countryCode?: string;
   /**
    * @minLength 1
    * @maxLength 200
    */
   name: string;
+  /** @maxLength 20 */
+  pincode?: string;
+  /** @maxLength 100 */
+  state?: string;
   status: LocationFieldsStatus;
 }
 
@@ -2246,9 +2262,13 @@ export interface LocationImportResult {
 
 export interface LocationImportRow {
   address: string;
+  city?: string;
+  countryCode?: string;
   errors: string[];
   name: string;
+  pincode?: string;
   row: number;
+  state?: string;
   status: string;
 }
 
@@ -2266,6 +2286,10 @@ export interface LocationResponse {
    * @maxLength 2000
    */
   address: string;
+  /** @maxLength 100 */
+  city?: string;
+  /** @maxLength 2 */
+  countryCode?: string;
   createdAt: string;
   createdBy: string;
   id: string;
@@ -2274,6 +2298,11 @@ export interface LocationResponse {
    * @maxLength 200
    */
   name: string;
+  /** @maxLength 20 */
+  pincode?: string;
+  /** @maxLength 100 */
+  state?: string;
+  stateCode?: string | null;
   status: LocationResponseStatus;
   updatedAt: string;
   updatedBy: string;
@@ -3825,12 +3854,17 @@ export interface POPage {
 }
 
 export interface POReference {
+  city?: string | null;
+  countryCode?: string | null;
   gst?: string | null;
   gstin?: string | null;
   id: string;
   name: string;
+  pincode?: string | null;
   registrationStateCode?: string | null;
   registrationStateName?: string | null;
+  state?: string | null;
+  stateCode?: string | null;
   unitPrice?: string | null;
   version?: number | null;
 }
@@ -9234,6 +9268,18 @@ export type ReviewLocationImportParams = {
 export type ReviewLocationImportBody = {
   file: Blob | File;
 };
+
+export type LookupStorageLocationPincodeParams = {
+  action?: LookupStorageLocationPincodeAction;
+};
+
+export type LookupStorageLocationPincodeAction =
+  (typeof LookupStorageLocationPincodeAction)[keyof typeof LookupStorageLocationPincodeAction];
+
+export const LookupStorageLocationPincodeAction = {
+  add: "add",
+  edit: "edit",
+} as const;
 
 export type ListVendorsParams = {
   /**

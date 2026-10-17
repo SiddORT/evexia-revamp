@@ -13,6 +13,10 @@ export interface LocationResponse {
    * @maxLength 2000
    */
   address: string;
+  /** @maxLength 100 */
+  city?: string;
+  /** @maxLength 2 */
+  countryCode?: string;
   createdAt: Date;
   createdBy: string;
   id: string;
@@ -21,6 +25,11 @@ export interface LocationResponse {
    * @maxLength 200
    */
   name: string;
+  /** @maxLength 20 */
+  pincode?: string;
+  /** @maxLength 100 */
+  state?: string;
+  stateCode?: string | null;
   status: LocationResponseStatus;
   updatedAt: Date;
   updatedBy: string;

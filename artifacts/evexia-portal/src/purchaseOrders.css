@@ -1,3 +1,26 @@
+.po-icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 7px;
+  border: 1px solid var(--admin-border);
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.po-icon-action:focus-visible {
+  outline: 3px solid var(--admin-accent);
+  outline-offset: 3px;
+}
+.po-new-summary .po-tax-context {
+  border-top: 1px solid var(--admin-border);
+  margin-top: 16px;
+  padding-top: 12px;
+  overflow-wrap: anywhere;
+}
 .po-page { color: var(--admin-text); }
 .po-head-actions, .po-actions { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
 .po-head-actions { justify-content: flex-end; }

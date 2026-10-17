@@ -177,6 +177,7 @@ import type {
   LookupDoctorPincodeParams,
   LookupMRPincodeParams,
   LookupPatientPincodeParams,
+  LookupStorageLocationPincodeParams,
   MRChoices,
   MRContact,
   MRCreate,
@@ -18732,6 +18733,127 @@ export const useReviewLocationImport = <
 > => {
   return useMutation(getReviewLocationImportMutationOptions(options));
 };
+
+export const getLookupStorageLocationPincodeUrl = (
+  pin: string,
+  params?: LookupStorageLocationPincodeParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/storage-locations/postal/${pin}?${stringifiedParams}`
+    : `/api/v1/admin/storage-locations/postal/${pin}`;
+};
+
+/**
+ * @summary Postal
+ */
+export const lookupStorageLocationPincode = async (
+  pin: string,
+  params?: LookupStorageLocationPincodeParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PostalResponse> => {
+  return customFetch<PostalResponse>(
+    getLookupStorageLocationPincodeUrl(pin, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getLookupStorageLocationPincodeQueryKey = (
+  pin: string,
+  params?: LookupStorageLocationPincodeParams,
+) => {
+  return [
+    `/api/v1/admin/storage-locations/postal/${pin}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getLookupStorageLocationPincodeQueryOptions = <
+  TData = Awaited<ReturnType<typeof lookupStorageLocationPincode>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  pin: string,
+  params?: LookupStorageLocationPincodeParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupStorageLocationPincode>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getLookupStorageLocationPincodeQueryKey(pin, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof lookupStorageLocationPincode>>
+  > = ({ signal }) =>
+    lookupStorageLocationPincode(pin, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: pin !== null && pin !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof lookupStorageLocationPincode>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type LookupStorageLocationPincodeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof lookupStorageLocationPincode>>
+>;
+export type LookupStorageLocationPincodeQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Postal
+ */
+
+export function useLookupStorageLocationPincode<
+  TData = Awaited<ReturnType<typeof lookupStorageLocationPincode>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  pin: string,
+  params?: LookupStorageLocationPincodeParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof lookupStorageLocationPincode>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getLookupStorageLocationPincodeQueryOptions(
+    pin,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export const getGetStorageLocationUrl = (locationId: string) => {
   return `/api/v1/admin/storage-locations/${locationId}`;

@@ -68,7 +68,7 @@ def readiness(db: Session = Depends(get_db)):
             "created_at, updated_at, deleted_at, deleted_by FROM courier_partners LIMIT 0"
         ))
         db.execute(text(
-            "SELECT id, name, address, status, version, created_by, updated_by, "
+            "SELECT id, name, address, pincode, country_code, state, city, status, version, created_by, updated_by, "
             "created_at, updated_at, deleted_at, deleted_by FROM storage_locations LIMIT 0"
         ))
         db.execute(text(

@@ -44,8 +44,9 @@ aggregate-only result: a 1-paise subtotal at 50% gives two 25% components rounde
 to zero, whereas aggregate GST rounded to 1 paise. Never alter historical totals
 to reconcile this. Halved six-decimal rates retain seven decimal places.
 The draft uses scaled BigInt; preview/create use Python Decimal with explicit
-precision. Unfinished/invalid rows are excluded from clearly marked **partial
-totals**, not allowed through review. Empty drafts show zero. Missing tax basis
+precision. Unfinished/invalid rows are excluded from the **draft estimate**,
+not allowed through review. The dynamic partial-line-count notice is intentionally
+absent; estimates are not presented as final totals. Empty drafts show zero. Missing tax basis
 shows **Tax pending**, distinct from valid zero-rated GST or unavailable prices.
 Server preview binds the exact input, current reference versions, names,
 prices and GST into a review token. Changed catalogue/reference details
@@ -60,8 +61,15 @@ new sends explicitly. This is retry metadata, not a local PO dataset.
 
 ## Ordinary domestic tax contract
 
-Each new/reviewed edit requires explicitly selected **Place of supply (State/UT)**,
-with no default. This means the applicable place of supply for **ordinary domestic
+Each new/reviewed edit requires a supported **Place of supply (State/UT)**.
+A newly selected shared Storage Location suggests its structured Indian State/UT;
+this is never derived by parsing an address or assuming Maharashtra.
+An explicit manual override remains available. A location switch requires a
+choice before replacing a manual or saved destination: keep the current destination,
+use the new suggestion (or clear it for manual selection), or cancel the switch.
+Missing/non-Indian geography clears a previous automatic suggestion and requires
+explicit destination selection. It does not establish import/export treatment.
+This means the applicable place of supply for **ordinary domestic
 goods**, not necessarily the storage-location address. Supplier state comes from
 the server vendor GSTIN, never client assertions. Different state codes apply the
 full catalogue rate as IGST. Matching codes apply equal CGST and SGST, except
@@ -93,6 +101,15 @@ For an explicit legacy edit, select a destination and load/select an available
 vendor with valid GSTIN, then obtain a new review. Retained nonlegacy vendors
 use saved GST identity on edits; changed vendors use current server data.
 Retained products continue using saved names/prices/rates.
+
+Opening a saved PO never hydrates its destination from the current location
+master. Its saved State/UT and tax snapshots remain authoritative. Only deliberate
+location selection or destination editing changes this draft; all resulting
+changes still require authoritative server preview/save. Shared location geography
+is returned by the protected PO reference helper, without a Location edit grant.
+`0041_location_geography` adds the optional location fields and requires separate
+operator approval, including any pending predecessor. It neither recalculates
+historical orders nor modifies legacy browser-local procurement data.
 
 The review digest includes destination, supplier basis, treatment, components and
 reference versions; audit summaries identify tax-basis changes. Successful retry
@@ -158,6 +175,38 @@ reloads; editing stays locked until reconciliation. Unreadable/unavailable retry
 storage fails closed. Successful changes update detail immediately; listing,
 global cards, Activity and Analytics refetch on mount, visible-window focus and
 every 30 seconds. Active editors are never refreshed underneath a draft.
+
+The listing has separate named View/Edit/Delete icon controls; Edit enters the
+editor directly and deleted rows expose only View. List and detail deletion share
+an accessible modal over the initiating page, including PO identity, retained
+version, busy protection and durable owner/order-scoped retry. Cancel returns
+focus without a request; uncertain deletion can be reopened and retried with the
+same key/version, including after reload. Stale deletion reloads the latest order
+in the same dialog and requires a second confirmation. Successful listing deletion
+refetches rows/counts/overview while retaining filters and the applicable page.
+If a triggering row disappears, focus returns to the listing refresh control.
+The listing also discovers a bounded set of the current owner's durable deletion
+journals, allowing in-place reconciliation after reload even if the committed
+delete removed its row from the current filter/page. This reads retry metadata,
+not a browser-local order dataset; the selected order's identity/amount come from
+an authorized server detail read before opening the same confirmation modal.
+
+Create/Edit keeps supplier GSTIN, registration-state availability, and supply
+guidance together in the right-hand totals card, stacking on narrow screens.
+Place-of-supply help remains associated with its control. The requested redundant
+editor/detail/review notices were removed without changing tax rules, required
+server review, idempotency, or the absence of stock/supplier effects.
+
+### Structured-location implementation execution boundary
+
+No tests, builds, typechecks, release suites, validation scripts or broad
+compatibility diagnostics were run for this change, as explicitly requested.
+Existing browser assertions were adjusted for the new modal/estimate presentation
+but not executed. Contract export and direct client generation are authoring steps,
+not evidence of passing checks. Only the bounded read-only runtime identity and
+recorded database revision comparison was requested; results and rollout blockers
+are in `storage-location-runtime-comparison.md`. No managed migration, pending PO
+activation, production deployment, release-gate policy bypass or key change occurred.
 
 There is no supplier submission, receiving, stock/payment effect, invoice
 preview/PDF, status transition or sample loader. Legacy receiving retains its

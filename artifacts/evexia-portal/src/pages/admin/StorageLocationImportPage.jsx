@@ -105,7 +105,7 @@ export default function StorageLocationImportPage() {
     setError('');
     try {
       const blob = format === 'csv'
-        ? new Blob(['\uFEFFStorage Location,Address,Status\r\nExample supply room,Building A Ground floor,active\r\n'], { type: 'text/csv;charset=utf-8' })
+        ? new Blob(['\uFEFFStorage Location,Address,Status,PIN Code,Country Code,State/UT,City\r\nExample supply room,Building A Ground floor,active,411001,IN,Maharashtra,Pune\r\n'], { type: 'text/csv;charset=utf-8' })
         : sampleExcel('storage-location');
       await downloadBlob(blob, `evexia-storage-locations.${format}`,
         { source: 'storage_location', kind: 'template', format: format.toUpperCase() },
@@ -120,7 +120,7 @@ export default function StorageLocationImportPage() {
 
   const valid = review?.rows.filter((row) => !row.errors.length) || [];
   const invalid = review?.rows.filter((row) => row.errors.length) || [];
-  const rowValues = (row) => <dl><div><dt>Storage Location</dt><dd>{row.name || '—'}</dd></div><div><dt>Address</dt><dd>{row.address || '—'}</dd></div><div><dt>Status</dt><dd>{row.status || '—'}</dd></div></dl>;
+  const rowValues = (row) => <dl><div><dt>Storage Location</dt><dd>{row.name || '—'}</dd></div><div><dt>PIN Code</dt><dd>{row.pincode || 'Not captured'}</dd></div><div><dt>Country Code</dt><dd>{row.countryCode || 'Not captured'}</dd></div><div><dt>State/UT</dt><dd>{row.state || 'Not captured'}</dd></div><div><dt>City</dt><dd>{row.city || 'Not captured'}</dd></div><div><dt>Address</dt><dd>{row.address || '—'}</dd></div><div><dt>Status</dt><dd>{row.status || '—'}</dd></div></dl>;
   return <AdminLayout title="Import Storage Location data">
     <div className="excel-import excel-import--storage-location">
       <button type="button" className="excel-import__back" disabled={pending === 'commit'} onClick={() => navigate('/admin/masters/storage-locations')}><ArrowLeft size={16} aria-hidden="true" /> Back to Storage Location Master</button>
@@ -137,7 +137,8 @@ export default function StorageLocationImportPage() {
           <div className="excel-import__icon"><FileSpreadsheet size={23} aria-hidden="true" /></div>
           <h2 id="excel-sample-title">Download sample Excel</h2>
           <p>Use the sample headers and exactly one worksheet. UTF-8 CSV and genuine .xlsx workbooks are supported.</p>
-          <div className="excel-import__columns"><strong>Expected columns</strong><span>Storage Location · Address · Status</span>
+          <div className="excel-import__columns"><strong>Expected columns</strong><span>Storage Location · Address · Status · PIN Code · Country Code · State/UT · City</span>
+            <strong>Current export schema</strong><span>The structured columns followed by Created By · Created At · Updated By · Updated At. Country Code uses ISO identifiers such as IN. Geography is optional; legacy files get empty geography, never guessed addresses.</span>
             <strong>Compatible backup schema (CSV or Excel)</strong><span>Storage Location · Address · Status · Created By · Created At · Updated By · Updated At</span>
           </div>
           <div className="excel-import__sample-actions">

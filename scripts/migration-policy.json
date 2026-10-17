@@ -45,6 +45,7 @@
     "0037_domain_admission": "operator_only",
     "0038_purchase_orders": "operator_only",
     "0039_communication": "operator_only",
-    "0040_po_tax_basis": "operator_only"
+    "0040_po_tax_basis": "operator_only",
+    "0041_location_geography": "operator_only"
   }
 }

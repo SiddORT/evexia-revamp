@@ -13,6 +13,7 @@ import useServerLocations from '../../hooks/useServerLocations.js';
 import { exportLocations, downloadLocationFile } from '../../services/serverLocations.js';
 import { reportingIdentityGuard } from '../../auth/adminSession.js';
 import { useMasterActions } from '../../auth/useMasterActions.js';
+import { locationGeographyLabel } from '../../services/locationGeography.js';
 
 function details(by, at) {
   return <span className="admin-table__details"><strong>{by}</strong><small>{formatAdminTimestamp(at)}</small></span>;
@@ -96,7 +97,7 @@ export default function StorageLocationMaster() {
   const columns = [
     { key: 'serial', label: 'Sr No', render: (_record, index) => <span className="admin-table__serial">{index + 1}</span> },
     { key: 'name', label: 'Storage location name', render: (record) => <span className="admin-table__name" data-testid={`text-storage-location-name-${record.id}`}>{record.name}</span> },
-    { key: 'address', label: 'Address', render: (record) => record.address },
+    { key: 'address', label: 'Address', render: (record) => <>{record.address}<small style={{ display: 'block' }}>{locationGeographyLabel(record)}</small></> },
     { key: 'status', label: 'Status', render: (record) => <StatusBadge status={record.status} id={record.id} /> },
     { key: 'created', label: 'Created details', render: (record) => details(record.createdBy, record.createdAt) },
     { key: 'updated', label: 'Updated details', render: (record) => details(record.updatedBy, record.updatedAt) },
@@ -134,7 +135,7 @@ export default function StorageLocationMaster() {
         {records.length ? (cardView ? <div className="admin-zone-cards" role="list" aria-label="Storage location records">
           {pagination.pageRows.map((record, index) => <article className="admin-zone-card" role="listitem" key={record.id} data-testid={`card-storage-location-${record.id}`}>
             <div className="admin-zone-card__heading"><div className="admin-zone-card__title"><span className="admin-zone-card__serial">#{pagination.startIndex + index + 1}</span><h2 data-testid={`text-storage-location-name-${record.id}`}>{record.name}</h2></div><StatusBadge status={record.status} id={record.id} /></div>
-            <p>{record.address}</p><dl className="admin-zone-card__meta"><div><dt>Created</dt><dd>{details(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated</dt><dd>{details(record.updatedBy, record.updatedAt)}</dd></div></dl>
+            <p>{record.address}</p><p>{locationGeographyLabel(record)}</p><dl className="admin-zone-card__meta"><div><dt>Created</dt><dd>{details(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated</dt><dd>{details(record.updatedBy, record.updatedAt)}</dd></div></dl>
             {actions(record, true)}
           </article>)}
         </div> : <DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(record) => record.id} />) : <div className="admin-empty" data-testid="status-storage-locations-empty"><span className="admin-empty__icon"><MapPin size={21} aria-hidden="true" /></span><strong>{total ? 'No matching storage locations' : 'No storage locations yet'}</strong><p>{total ? 'Try a different name or status filter.' : 'Add your first storage location to get started.'}</p></div>}
