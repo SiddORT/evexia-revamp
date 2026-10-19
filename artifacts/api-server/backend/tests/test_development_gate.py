@@ -19,6 +19,7 @@ from app.core.config import get_settings
 from app.core.development_identity import LOADED_IDENTITY
 from app.services.development_preflight import report
 from app.db.session import session_factory
+from managed_startup_support import dependency_environment, managed_launcher
 
 
 @pytest.fixture
@@ -171,17 +172,17 @@ def test_actual_managed_startup_without_preflight_and_security_failure(developme
                development_settings.communication_encryption_keys.get_secret_value() if diagnostics_pass else "")}
     # This environment is the harness's private socket-only synthetic database.
     assert "evexia_api_test" in env["DATABASE_URL"]
-    # Managed workflows start in the artifact, without the harness's import path.
-    # Explicit diagnostics must still import app in their real child process.
-    env.pop("PYTHONPATH", None)
-    process = subprocess.Popen(["sh", str(root / "scripts/start-development-api.sh")],
-                               cwd=root / "artifacts/api-server", env=env,
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    started = time.monotonic()
-    try:
+    # Strip all inherited application-source paths, but retain CI's locked
+    # installed packages and pin bare `python` to this harness's interpreter.
+    # The real launcher adds ONLY the cloned backend for itself and diagnostics.
+    env = dependency_environment(env, tmp_path / "python-bin")
+    with managed_launcher(root, env) as (process, output):
+        started = time.monotonic()
         healthy = False
         while time.monotonic() - started < 12:
-            assert process.poll() is None
+            if process.poll() is not None:
+                pytest.fail(output.diagnostic(process, "Managed launcher exited before health"),
+                            pytrace=False)
             try:
                 with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/v1/health", timeout=2) as response:
                     healthy = json.load(response) == {"status": "ok"}
@@ -189,7 +190,9 @@ def test_actual_managed_startup_without_preflight_and_security_failure(developme
             except (OSError, urllib.error.URLError):
                 time.sleep(.05)
         # Missing diagnostic prerequisites do not prevent normal startup.
-        assert healthy
+        if not healthy:
+            pytest.fail(output.diagnostic(process, "Managed launcher health deadline exceeded"),
+                        pytrace=False)
         with pytest.raises(urllib.error.HTTPError) as rejected:
             urllib.request.urlopen(f"http://127.0.0.1:{port}/api/v1/auth/me", timeout=2)
         assert rejected.value.code == 401
@@ -207,13 +210,17 @@ def test_actual_managed_startup_without_preflight_and_security_failure(developme
         with pytest.raises(urllib.error.HTTPError) as still_protected:
             urllib.request.urlopen(f"http://127.0.0.1:{port}/api/v1/auth/me", timeout=2)
         assert still_protected.value.code == 401
-    finally:
-        process.terminate()
-        process.wait(timeout=5)
     # Independent signing validation remains mandatory at actual startup.
     env["JWT_SECRET"] = ""
     env["SESSION_SECRET"] = ""
-    failed = subprocess.run(["sh", str(root / "scripts/start-development-api.sh")],
-                            cwd=root, env=env, capture_output=True, timeout=12)
-    assert failed.returncode != 0
-    assert b"Uvicorn running" not in failed.stderr
+    with managed_launcher(root, env) as (failed, output):
+        try:
+            failed.wait(timeout=12)
+        except subprocess.TimeoutExpired:
+            pytest.fail(output.diagnostic(failed, "Missing signing configuration did not stop startup"),
+                        pytrace=False)
+        if failed.returncode == 0:
+            pytest.fail(output.diagnostic(failed, "Missing signing configuration was accepted"),
+                        pytrace=False)
+        diagnostic = output.diagnostic(failed, "Signing configuration must fail before serving")
+        assert not output.listener_started.is_set(), diagnostic

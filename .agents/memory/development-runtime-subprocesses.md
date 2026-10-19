@@ -40,3 +40,16 @@ children and test the real launcher from its managed working directory. A
 source/candidate pass is not proof of loaded-process compatibility. The former
 automatic gate and browser contract wrapper have been removed; do not restore
 them as a workaround for diagnostic import failures.
+
+Removing inherited application paths must not also discard the installed
+dependency environment. A base interpreter may obtain locked dependencies only
+through a separate site-packages entry; pinning its executable alone is not
+sufficient.
+
+**Why:** CI's locked uv environment is exposed through the same path variable
+as the original backend. Removing the entire variable removes both; this is a
+source-confirmed mismatch, not proof of the exception behind an earlier exit.
+
+**How to apply:** Keep only vetted installed-package directories when isolating
+cloned source, and use the harness interpreter consistently in shell children.
+Preserve the distinction between source findings and observed runtime evidence.
