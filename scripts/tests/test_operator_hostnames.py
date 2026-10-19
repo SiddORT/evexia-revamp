@@ -47,10 +47,10 @@ class FixedScopeTests(unittest.TestCase):
                                     approval=recovery.canonical_digest(self.plan), release_sha="a" * 40,
                                     backup="private-backup", recovery_evidence="private-evidence")
 
-    def test_full_policy_is_still_blocked_but_scoped_validation_is_additive_only(self):
+    def test_automatic_policy_does_not_expand_the_explicit_hostname_scope(self):
         with self.reviewed_snapshot():
             protected = scope.verify_scope(self.runner, [scope.PREDECESSOR])
-        self.assertEqual(protected, ["0031_remove_organizations", "0034_shared_phone_countries"])
+        self.assertEqual(protected, [])
         self.assertEqual(scope.migration_command()[-2:], ["upgrade", "0031_role_hostnames"])
         self.assertNotIn("head", scope.migration_command())
 

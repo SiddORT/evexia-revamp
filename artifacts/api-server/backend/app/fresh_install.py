@@ -91,8 +91,10 @@ def reviewed_graph(root=ROOT):
     spec.loader.exec_module(runner)
     graph = runner.load_graph(root / "artifacts/api-server/backend/alembic/versions")
     policy = runner.load_policy(root / "scripts/migration-policy.json")
-    if set(graph) != set(policy):
-        raise FreshInstallBlocked("Every migration must be classified.")
+    try:
+        runner.validate_classifications(graph, policy)
+    except runner.PolicyError:
+        raise FreshInstallBlocked("Invalid migration policy or unknown classification.") from None
     # Validate SOURCE only, without supplying an assumed database revision.
     heads = set(graph) - {parent for node in graph.values() for parent in node.down_revision}
     if heads != {FINAL_TARGET} or set(runner.ordered_ancestors(graph, FINAL_TARGET)) != set(graph):

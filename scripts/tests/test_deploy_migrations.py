@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -50,6 +51,33 @@ class RealAdditivePolicyTests(unittest.TestCase):
 
 
 class MigrationPolicyTests(unittest.TestCase):
+    def test_version_two_defaults_future_revisions_to_automatic(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "policy.json"
+            path.write_text('{"version":2,"default":"automatic","revisions":{"base":"automatic"}}')
+            policy = runner.load_policy(path)
+            result = runner.plan(self.graph, policy, ["base"], "tip")
+            self.assertEqual(result["result"], "READY")
+            self.assertEqual(result["pending"], ["safe", "tip"])
+            self.assertEqual(result["operator_only"], [])
+            self.assertEqual(policy["future_revision"], "automatic")
+            with self.assertRaisesRegex(runner.PolicyError, "UNEXPECTED_DATABASE_REVISION_STATE"):
+                runner.plan(self.graph, policy, ["not_in_graph"], "tip")
+
+    def test_version_two_rejects_overrides_and_unrelated_policy_entries(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "policy.json"
+            for document in (
+                {"version": 2, "default": "operator_only", "revisions": {}},
+                {"version": 2, "default": "automatic", "revisions": {"base": "operator_only"}},
+            ):
+                path.write_text(json.dumps(document))
+                with self.subTest(document=document), self.assertRaises(runner.PolicyError):
+                    runner.load_policy(path)
+            path.write_text('{"version":2,"default":"automatic","revisions":{"typo":"automatic"}}')
+            with self.assertRaisesRegex(runner.PolicyError, "UNKNOWN_OR_UNCLASSIFIED"):
+                runner.plan(self.graph, runner.load_policy(path), ["base"], "tip")
+
     def setUp(self):
         self.graph = {"base": R("base"), "safe": R("safe", ("base",)),
                       "tip": R("tip", ("safe",))}
@@ -59,14 +87,16 @@ class MigrationPolicyTests(unittest.TestCase):
         self.addCleanup(checker.stop)
         checker.start()
 
-    def test_non_additive_automatic_revision_applies_nothing(self):
-        with patch.object(runner, "applied_revisions", return_value=["base"]), \
+    def test_automatic_execution_no_longer_requires_additive_allowlist(self):
+        with patch.object(runner, "applied_revisions", side_effect=[["base"], ["tip"]]), \
                 patch.object(runner, "validate_additive",
-                             side_effect=runner.PolicyError("AUTOMATIC_MIGRATION_NOT_ADDITIVE")), \
-                patch.object(runner.subprocess, "run") as execute:
-            with self.assertRaisesRegex(runner.PolicyError, "NOT_ADDITIVE"):
-                runner.execute_plan(object(), self.graph, self.policy, ROOT, "tip", True)
-        execute.assert_not_called()
+                             side_effect=AssertionError("obsolete execution gate")) as checker, \
+                patch.object(runner.subprocess, "run",
+                             return_value=SimpleNamespace(returncode=0)) as execute:
+            result = runner.execute_plan(object(), self.graph, self.policy, ROOT, "tip", True)
+        checker.assert_not_called()
+        execute.assert_called_once()
+        self.assertEqual(result["result"], "READY")
 
     def test_completely_automatic_path(self):
         result = runner.plan(self.graph, self.policy, ["base"], "tip")
@@ -240,22 +270,19 @@ class MigrationPolicyTests(unittest.TestCase):
         policy = runner.load_policy(ROOT / "migration-policy.json")
         target = runner.literal_assignments(backend / "app/core/schema.py", {"SCHEMA_REVISION"})["SCHEMA_REVISION"]
         blocked = runner.plan(graph, policy, ["0030_directory_crypto_retirement"], target)
-        self.assertEqual(blocked["operator_only"],
-                         ["0031_remove_organizations", "0034_shared_phone_countries", "0035_account_identifiers",
-                          "0036_reference_privacy", "0037_domain_admission", "0038_purchase_orders", "0039_communication", "0040_po_tax_basis", "0041_location_geography", "0042_rate_hundredths",
-                          "0043_email_templates", "0044_purchase_received", "0045_pr_batch_numbers"])
+        self.assertEqual(blocked["operator_only"], [])
+        self.assertEqual(blocked["result"], "READY")
+        self.assertTrue(blocked["pending"])
         account_blocked = runner.plan(graph, policy, ["0034_shared_phone_countries"], target)
-        self.assertEqual(account_blocked["result"], "OPERATOR_MIGRATION_REQUIRED")
-        self.assertEqual(account_blocked["operator_only"], ["0035_account_identifiers", "0036_reference_privacy", "0037_domain_admission", "0038_purchase_orders", "0039_communication", "0040_po_tax_basis", "0041_location_geography", "0042_rate_hundredths",
-                                                          "0043_email_templates", "0044_purchase_received", "0045_pr_batch_numbers"])
+        self.assertEqual(account_blocked["result"], "READY")
+        self.assertEqual(account_blocked["operator_only"], [])
         privacy_blocked = runner.plan(graph, policy, ["0035_account_identifiers"], target)
-        self.assertEqual(privacy_blocked["result"], "OPERATOR_MIGRATION_REQUIRED")
-        self.assertEqual(privacy_blocked["operator_only"], ["0036_reference_privacy", "0037_domain_admission", "0038_purchase_orders", "0039_communication", "0040_po_tax_basis", "0041_location_geography", "0042_rate_hundredths",
-                                                          "0043_email_templates", "0044_purchase_received", "0045_pr_batch_numbers"])
+        self.assertEqual(privacy_blocked["result"], "READY")
+        self.assertEqual(privacy_blocked["operator_only"], [])
         batch_blocked = runner.plan(graph, policy, ["0044_purchase_received"], target)
-        self.assertEqual(batch_blocked["result"], "OPERATOR_MIGRATION_REQUIRED")
+        self.assertEqual(batch_blocked["result"], "READY")
         self.assertEqual(batch_blocked["pending"], ["0045_pr_batch_numbers"])
-        self.assertEqual(batch_blocked["operator_only"], ["0045_pr_batch_numbers"])
+        self.assertEqual(batch_blocked["operator_only"], [])
         self.assertEqual(batch_blocked["migrations_applied"], 0)
         ready = runner.plan(graph, policy, [target], target)
         self.assertEqual(ready["pending"], [])

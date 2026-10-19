@@ -49,6 +49,26 @@ def copy_source(root):
 
 
 class SourceContractTests(unittest.TestCase):
+    def test_future_revision_needs_no_new_policy_classification(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            backend = copy_source(root)
+            target = json.loads((root / "development-contract.json").read_text())
+            (backend / "alembic/versions/future.py").write_text(
+                f"revision='future'\ndown_revision={target['schema']!r}\ndepends_on=None\n")
+            target["schema"] = "future"
+            (root / "development-contract.json").write_text(json.dumps(target))
+            review.refresh(root)
+            runner, graph, policy, target, _ = review.review(root)
+            self.assertEqual(target, "future")
+            result = runner.plan(graph, policy, [graph["future"].down_revision[0]], target)
+            self.assertEqual(result["pending"], ["future"])
+            self.assertEqual(result["operator_only"], [])
+            for name in ("post-merge.sh", "start-development-api.sh"):
+                text = (ROOT / "scripts" / name).read_text()
+                self.assertLess(text.index('review-development-schema.py" --refresh'),
+                                text.index('development-sync.py"'))
+
     def test_staged_unknown_dependencies_and_unclassified_revisions_fail_offline(self):
         for classify, dependency in ((False, None), (True, "missing_dependency")):
             with self.subTest(classify=classify, dependency=dependency), \
@@ -62,11 +82,13 @@ class SourceContractTests(unittest.TestCase):
                 (backend / "alembic/versions/staged.py").write_text(
                     f"revision='staged'\ndown_revision={head!r}\n"
                     f"depends_on={dependency!r}\n")
+                path = root / "scripts/migration-policy.json"
+                policy = json.loads(path.read_text())
+                policy["version"] = 1
+                policy.pop("default", None)
                 if classify:
-                    path = root / "scripts/migration-policy.json"
-                    policy = json.loads(path.read_text())
                     policy["revisions"]["staged"] = "operator_only"
-                    path.write_text(json.dumps(policy))
+                path.write_text(json.dumps(policy))
                 with patch("sqlalchemy.create_engine",
                            side_effect=AssertionError("must stay offline")) as connect:
                     expected_error = ("UNKNOWN_REVISION_OR_DEPENDENCY" if classify
@@ -89,6 +111,8 @@ class SourceContractTests(unittest.TestCase):
                 f"revision='staged'\ndown_revision={head!r}\ndepends_on=None\n")
             policy_path = root / "scripts/migration-policy.json"
             policy_data = json.loads(policy_path.read_text())
+            policy_data["version"] = 1
+            policy_data.pop("default", None)
             policy_data["revisions"]["staged"] = "operator_only"
             policy_path.write_text(json.dumps(policy_data))
             # Source updates still require explicit offline integrity review.
@@ -122,7 +146,8 @@ class SourceContractTests(unittest.TestCase):
         expected = ["0041_location_geography", "0042_rate_hundredths",
                     "0043_email_templates", "0044_purchase_received", "0045_pr_batch_numbers"]
         self.assertEqual(result["pending"], expected)
-        self.assertEqual(result["operator_only"], expected)
+        self.assertEqual(result["operator_only"], [])
+        self.assertEqual(result["result"], "READY")
         # Stale production approval must never be consulted by development.
         # Do not make the regression depend on production remaining stale forever.
         from app.fresh_install import FreshInstallBlocked
@@ -136,7 +161,7 @@ class SourceContractTests(unittest.TestCase):
             ("development-contract.json", lambda p: p.write_text(p.read_text().replace(
                 "0045_pr_batch_numbers", "0043_email_templates"))),
             ("artifacts/api-server/backend/app/core/schema.py", lambda p: p.write_text("SCHEMA_REVISION='0043_email_templates'")),
-            ("scripts/migration-policy.json", lambda p: p.write_text(p.read_text().replace('"0042_rate_hundredths": "operator_only"', '"0042_rate_hundredths": "automatic"'))),
+            ("scripts/migration-policy.json", lambda p: p.write_text(p.read_text().replace('"0042_rate_hundredths": "automatic"', '"0042_rate_hundredths": "operator_only"'))),
             ("artifacts/api-server/backend/alembic/versions/0044_purchase_received.py", lambda p: p.write_text(p.read_text() + "\n# tampered\n")),
             ("scripts/development-database.json", lambda p: p.write_text(p.read_text() + " ")),
             ("artifacts/api-server/backend/alembic/env.py", lambda p: p.write_text(p.read_text() + "\n# changed\n")),
@@ -192,6 +217,27 @@ class SourceContractTests(unittest.TestCase):
 
 
 class TransactionTests(unittest.TestCase):
+    def test_data_seed_runs_automatically_and_is_not_an_additive_gate(self):
+        path = self.backend / "alembic/versions/next.py"
+        path.write_text(path.read_text().replace(
+            "def downgrade():", '    op.execute("INSERT INTO notes (id) VALUES (7)")\ndef downgrade():'))
+        review.refresh(self.root)
+        self.assertEqual(self.run_sync(), 0)
+        with self.engine.connect() as connection:
+            self.assertEqual(connection.exec_driver_sql("SELECT id FROM notes").all(), [(7,)])
+
+    def test_destructive_migration_is_automatic_only_on_the_bound_fixture(self):
+        with self.engine.begin() as connection:
+            connection.exec_driver_sql("CREATE TABLE notes (id integer PRIMARY KEY)")
+            connection.exec_driver_sql("INSERT INTO notes VALUES (9)")
+        path = self.backend / "alembic/versions/next.py"
+        path.write_text(path.read_text().replace(
+            "op.create_table('notes',sa.Column('id',sa.Integer(),primary_key=True))",
+            "op.drop_table('notes')"))
+        review.refresh(self.root)
+        self.assertEqual(self.run_sync(), 0)
+        self.assertEqual(self.state(), ("next", None))
+
     @classmethod
     def setUpClass(cls):
         cls.tmp = tempfile.TemporaryDirectory(prefix="development-sync-tests-")
@@ -321,8 +367,8 @@ class TransactionTests(unittest.TestCase):
         path.write_text(path.read_text().replace("op.create_table(", "op.drop_table("))
         with self.assertRaises(Exception):
             self.run_sync()
-        review.refresh(self.root)  # Hash review alone is not additive permission.
-        with self.assertRaises(sync.Blocked):
+        review.refresh(self.root)  # Execution errors still roll back automatic migrations.
+        with self.assertRaises(TypeError):
             self.run_sync()
         self.assertEqual(self.state(), ("previous", None))
 
@@ -331,6 +377,13 @@ class TransactionTests(unittest.TestCase):
         shutil.rmtree(self.root)
         self.root.mkdir()
         copy_source(self.root)
+        # Explicit legacy-policy fixture; the real repository is now automatic.
+        policy_path = self.root / "scripts/migration-policy.json"
+        legacy = json.loads(policy_path.read_text())
+        legacy["version"] = 1
+        legacy.pop("default", None)
+        legacy["revisions"] = {r: "operator_only" for r in legacy["revisions"]}
+        policy_path.write_text(json.dumps(legacy))
         (self.root / "scripts/fresh-install-review.json").write_text('{"status":"stale"}')
         (self.root / "scripts/development-database.json").write_text(json.dumps(self.binding))
         review.refresh(self.root)

@@ -42,8 +42,9 @@ def refresh(root=ROOT):
         f"Pinned PostgreSQL 17 fresh path through {target}. Empty-only atomic initialization "
         "requires live target identity, pristine catalog, valid encryption configuration and "
         "exact final catalog/readiness checks; it does not require external recovery receipts. "
-        "Routine deployment requires complete exact-commit CI validation and additive migration "
-        "classification. Existing protected migrations retain operator approval and recovery. "
+        "Routine deployment requires complete exact-commit CI validation and graph-validated "
+        "automatic migrations. No separate per-migration human approval is required. "
+        "Embedded historical migration guards remain authoritative and are never bypassed. "
         "Legacy signed staged initialization remains available. This manifest alone is not "
         "evidence of passing validation or authorization to modify an existing database."
     )

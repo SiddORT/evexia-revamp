@@ -5,11 +5,15 @@
 it does not change migration classifications or production fresh-install evidence.
 """
 import argparse
+from contextlib import contextmanager
+import fcntl
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import sys
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 EXECUTION_SOURCES = (
@@ -58,8 +62,7 @@ def source(root):
              for p in (backend / "alembic/versions").glob("*.py") if p.name != "__init__.py"}
     approved_path = set(runner.ordered_ancestors(graph, target))
     graph = {r: node for r, node in graph.items() if r in approved_path}
-    policy = {r: classification for r, classification in policy.items()
-              if r in approved_path}
+    policy = {r: policy[r] for r in approved_path}
     return runner, graph, policy, target, paths
 
 
@@ -73,7 +76,21 @@ def manifest(root, target, paths):
     }
 
 
+@contextmanager
+def metadata_lock(root, *, exclusive=False):
+    key = hashlib.sha256(str(root.resolve()).encode()).hexdigest()[:24]
+    path = Path(tempfile.gettempdir()) / f"evexia-development-source-{key}.lock"
+    with path.open("a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH)
+        yield
+
+
 def review(root=ROOT):
+    with metadata_lock(root):
+        return reviewed_source(root)
+
+
+def reviewed_source(root):
     # Check executable planner/environment bytes BEFORE importing the planner.
     approved = json.loads((root / "scripts/development-schema-review.json").read_text())
     expected_sources = {p: sha(root / p) for p in EXECUTION_SOURCES}
@@ -91,12 +108,31 @@ def review(root=ROOT):
     return runner, graph, policy, target, paths
 
 
+def atomic_metadata(path, content):
+    if path.read_text() == content:
+        return
+    fd, name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    try:
+        os.fchmod(fd, path.stat().st_mode & 0o777)
+        with os.fdopen(fd, "w") as output:
+            output.write(content)
+        os.replace(name, path)
+    finally:
+        if os.path.exists(name):
+            os.unlink(name)
+
+
 def refresh(root=ROOT):
+    with metadata_lock(root, exclusive=True):
+        refresh_source(root)
+
+
+def refresh_source(root):
     _, _, _, target, paths = source(root)
-    (root / "artifacts/api-server/backend/app/core/schema.py").write_text(
+    atomic_metadata(root / "artifacts/api-server/backend/app/core/schema.py",
         '"""Generated coordinated schema; author development-contract.json instead."""\n\n'
         f'SCHEMA_REVISION = {json.dumps(target)}\n')
-    (root / "scripts/development-schema-review.json").write_text(
+    atomic_metadata(root / "scripts/development-schema-review.json",
         json.dumps(manifest(root, target, paths), indent=2) + "\n")
 
 

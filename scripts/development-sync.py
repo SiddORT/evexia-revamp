@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Standing development-only policy: classified, additive, atomic migrations.
+"""Standing development-only policy: graph-validated, automatic, atomic migrations.
 
 Never initializes a pristine DB through protected history, supplies approvals,
 resets data, migrates production, stamps, or upgrades head.
@@ -160,7 +160,6 @@ def synchronize_connection(engine, settings, binding, root, backend, runner,
             return 42
         pinned = {}
         for revision in planned["pending"]:
-            additive(paths[revision])
             pinned[revision] = hashlib.sha256(paths[revision].read_bytes()).hexdigest()
         if pinned:
             tables = connection.exec_driver_sql(

@@ -3,7 +3,7 @@
 ## Boundaries
 
 The schema target is `development-contract.json` (currently
-`0041_location_geography`); source metadata is generated with
+`0045_pr_batch_numbers`); source metadata is generated with
 `python -B scripts/review-schema-release.py --refresh` during development.
 No migrations, volumes, `.env`, Compose overrides, Nginx or HTTPS settings need
 to be deleted/recreated to use the procedure below.
@@ -13,8 +13,14 @@ There are three separate operations:
 | Operation | Entry point | Required protection |
 | --- | --- | --- |
 | First installation | `scripts/initialize-production.py` | Independently supplied target, proven pristine DB, valid keys/password, host and DB locks, atomic schema/bootstrap/readiness |
-| Routine patch | push to `main` / normal GitHub deployment | Successful exact-commit CI report, complete policy classification, additive-only pending DDL, existing locks, runtime/image/asset verification |
-| Existing-data retirement or other risky migration | Existing operator runbooks | Exact operator approval, actual backup/restoration/key recovery, maintenance and dependency checks |
+| Routine patch | push to `main` / normal GitHub deployment | Successful exact-commit CI report, automatic migration policy, existing locks, runtime/image/asset verification |
+| Historical migration with embedded retirement/recovery guards | Existing operator runbooks if the actual migration rejects unmet prerequisites | Genuine recovery, maintenance and dependency evidence required by that historical migration; automatic classification does not bypass its code |
+
+**Current policy:** all revisions, including future revisions, default to automatic
+in Replit development and VPS deployment. There is no separate per-migration human
+approval or additive-only execution gate in the normal runners. See
+[`migration-automation.md`](migration-automation.md) for remaining checks,
+historical limits and destructive-change risks.
 
 The first two operations do **not** need separately provisioned validation
 signing keys, a trust JSON file, external recovery certificates or repeated human
@@ -82,10 +88,10 @@ The empty-only initializer includes the original `0041_location_geography`
 migration after `0040_po_tax_basis`, in the same transaction. Its four
 empty-default geography columns and country-code constraint are included in
 the exact catalog review. It is not a separate post-install operation.
-For **existing** databases, 0041 remains `operator_only`: normal deployment
-from 0040 still returns `OPERATOR_MIGRATION_REQUIRED` (exit 42), applies no
-migrations and does not promote the candidate. This fresh-install review
-does not approve that existing-database upgrade or activate the development database.
+For **existing** databases, 0041 is now automatic under the project's standing
+migration policy. Normal deployment plans the exact pending path and applies it
+after CI/artifact validation. This fresh-install review is not proof that any
+specific existing database has been migrated.
 
 Replace the identity placeholders with the verified values above; `postgres`
 is only an example hostname. The hostname option creates the initial Admin
@@ -147,7 +153,7 @@ maintenance ownership, wrong host/port/database/cluster rejection, existing
 schemas/version tables/data rejection, and a real atomic installation.
 A test-only Python import hook raises after actual bootstrap/readiness to prove
 that the entire schema and account roll back together. No historical migration
-or operator-only classification is changed or bypassed by this test.
+or embedded migration guard is changed or bypassed by this test.
 
 After each invocation it compares original container IDs, images, start times,
 restart counts, mounts, volume identity and cluster identity. Only after these
@@ -354,15 +360,16 @@ job, matched to the exact Git archive, full file hashes, policy and schema.
 An unsigned CI report is not an independent recovery/retirement authority.
 
 Before replacing active app containers, deployment plans every dependency.
-An operator-only pending revision returns **42**, applies **zero** migrations
-and reports **DEPLOYMENT BLOCKED — OPERATOR MIGRATION REQUIRED**. Unknown
-revisions/classifications or unexpected database state fail closed. Automatic
-pending code must also pass the conservative additive DDL allowlist; marking
-arbitrary SQL/destructive code `automatic` is insufficient.
+The active version-2 policy makes every literal, graph-validated revision
+automatic, including future revisions without a new classification entry.
+Unknown database revisions, malformed graphs/policies and unexpected database
+state still fail closed. There is no additive-only DDL allowlist on execution.
+Exit **42** remains supported for maintenance interlocks and legacy version-1
+operator policies; it never promotes the candidate.
 
-Both images are built before migration execution. Supported additive upgrades
-are transactional, have bounded lock/statement timeouts and preserve the old
-release's schema compatibility. Then deployment recreates only app containers,
+Both images are built before migration execution. Authors must preserve the old
+release's schema compatibility during rolling upgrades; automatic classification
+does not make destructive SQL reversible or compatible. Then deployment recreates only app containers,
 checks actual image IDs, loaded backend identity, database readiness, served
 frontend metadata and compiled asset bytes before marking promotion successful.
 It never resets credentials/data or touches the PostgreSQL volume.

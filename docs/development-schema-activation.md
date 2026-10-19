@@ -1,5 +1,14 @@
 # Development schema recovery: single activation handoff
 
+## Current execution policy
+
+Replit development and VPS deployment now use automatic migrations without
+separate per-revision approval or an additive-only DDL restriction. See
+[`migration-automation.md`](migration-automation.md). The activation commands
+and approvals below are historical recovery records and optional fixed-scope
+tools, not the normal workflow for a new migration. Embedded historical
+migration guards and genuine recovery requirements remain unchanged.
+
 ## Original-development 0045 activation completed — 2026-10-19
 
 The user separately approved only `0044_purchase_received` →

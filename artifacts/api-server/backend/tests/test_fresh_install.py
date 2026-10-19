@@ -392,7 +392,7 @@ def test_existing_extension_membership_cannot_hide_a_table(databases):
         fresh.prepare(db)
 
 
-def test_cli_preparation_and_normal_policy_barrier(databases, tmp_path, monkeypatch):
+def test_cli_preparation_and_automatic_policy_planning_do_not_execute(databases, tmp_path, monkeypatch):
     source, _, _ = databases
     identity = identity_arguments(source)
     lock = tmp_path / ".deploy.lock"
@@ -411,8 +411,9 @@ def test_cli_preparation_and_normal_policy_barrier(databases, tmp_path, monkeypa
     result = subprocess.run([sys.executable, "-B",
                              str(fresh.ROOT / "scripts/deploy-migrations.py"),
                              "--backend-dir", str(fresh.BACKEND)], capture_output=True, text=True)
-    assert result.returncode == 42, result.stderr
-    assert "OPERATOR_MIGRATION_REQUIRED" in result.stdout
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout)["result"] == "READY"
+    assert json.loads(result.stdout)["migrations_applied"] == 0
     with source.connect() as db:
         assert db.scalar(text("SELECT version_num FROM alembic_version")) == fresh.PREPARE_TARGET
 
@@ -691,12 +692,13 @@ def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap
             config = fresh.alembic_config(db)
             command.upgrade(config, stage)
             fresh.catalog(db, stage)
-            has_po = stage in ("0038_purchase_orders", "0039_communication",
-                               "0040_po_tax_basis", "0041_location_geography", fresh.FINAL_TARGET)
+            from alembic.script import ScriptDirectory
+            has_po = any(
+                node.revision == "0038_purchase_orders"
+                for node in ScriptDirectory.from_config(config).iterate_revisions(stage, "base"))
             assert ("purchase_orders" in inspect(db).get_table_names()) == has_po
             assert bool(db.scalar(text("SELECT to_regclass('purchase_order_number_seq')"))) == has_po
-    if stage in ("0038_purchase_orders", "0039_communication", "0040_po_tax_basis",
-                 "0041_location_geography", fresh.FINAL_TARGET):
+    if has_po:
         # Consume only the disposable rehearsal's sequence. Never reset it to
         # disguise use; leave that independent test database blocked.
         with rehearsal.begin() as db:

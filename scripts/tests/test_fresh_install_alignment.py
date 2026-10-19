@@ -38,39 +38,44 @@ class FreshInstallAlignmentTests(unittest.TestCase):
             json.loads((ROOT / "scripts/release-authorization-policy.json").read_text())["final_target"],
             fresh.FINAL_TARGET)
 
-    def test_existing_0041_upgrade_stays_blocked_and_executes_nothing(self):
+    def test_existing_0041_upgrade_is_automatic_without_additive_gate(self):
         # Keep the historical rate conversion case pinned to its own target.
         target = "0042_rate_hundredths"
-        self.assertEqual(self.policy[target], "operator_only")
+        self.assertEqual(self.policy[target], "automatic")
         historical_graph = {r: self.graph[r] for r in runner.ordered_ancestors(self.graph, target)}
         historical_policy = {r: self.policy[r] for r in historical_graph}
         # Reclassifying the revision is not a safe shortcut: its locks, rewrites
         # and type/constraint replacements are outside the automatic DDL allowlist.
         with self.assertRaises(runner.PolicyError):
             runner.validate_additive(BACKEND, [target])
-        with patch.object(runner, "applied_revisions", return_value=["0041_location_geography"]), \
+        with patch.object(runner, "applied_revisions",
+                          side_effect=[["0041_location_geography"], [target]]), \
                 patch.object(runner.subprocess, "run") as execute:
+            execute.return_value.returncode = 0
             result = runner.execute_plan(object(), historical_graph, historical_policy, BACKEND,
                                          target, True)
-        self.assertEqual(result["result"], "OPERATOR_MIGRATION_REQUIRED")
-        self.assertEqual(result["operator_only"], [target])
-        self.assertEqual(result["migrations_applied"], 0)
-        execute.assert_not_called()
+        self.assertEqual(result["result"], "READY")
+        self.assertEqual(result["operator_only"], [])
+        self.assertEqual(result["migrations_applied"], 1)
+        execute.assert_called_once()
         self.assertEqual(runner.plan(self.graph, self.policy, [fresh.FINAL_TARGET],
                                      fresh.FINAL_TARGET)["result"], "READY")
 
-    def test_current_protected_path_stays_blocked_and_executes_nothing(self):
+    def test_current_path_is_automatic_and_uses_exact_target(self):
         protected = ["0043_email_templates", "0044_purchase_received", "0045_pr_batch_numbers"]
         for revision in protected:
-            self.assertEqual(self.policy[revision], "operator_only")
-        with patch.object(runner, "applied_revisions", return_value=["0042_rate_hundredths"]), \
+            self.assertEqual(self.policy[revision], "automatic")
+        with patch.object(runner, "applied_revisions",
+                          side_effect=[["0042_rate_hundredths"], [fresh.FINAL_TARGET]]), \
                 patch.object(runner.subprocess, "run") as execute:
+            execute.return_value.returncode = 0
             result = runner.execute_plan(object(), self.graph, self.policy, BACKEND,
                                          fresh.FINAL_TARGET, True)
-        self.assertEqual(result["result"], "OPERATOR_MIGRATION_REQUIRED")
-        self.assertEqual(result["operator_only"], protected)
-        self.assertEqual(result["migrations_applied"], 0)
-        execute.assert_not_called()
+        self.assertEqual(result["result"], "READY")
+        self.assertEqual(result["pending"], protected)
+        self.assertEqual(result["operator_only"], [])
+        self.assertEqual(result["migrations_applied"], len(protected))
+        execute.assert_called_once()
 
     def test_catalog_extends_0040_without_changing_predecessor_tables(self):
         self.assertEqual(self.stage["base_revision"], "0040_po_tax_basis")
@@ -130,8 +135,8 @@ class FreshInstallAlignmentTests(unittest.TestCase):
         self.assertRegex(stage["sha256"], r"^[0-9a-f]{64}$")
         self.assertNotEqual(stage["sha256"], self.catalog["0037_domain_admission"]["sha256"])
         self.assertEqual(stage["tables"], self.stage["tables"])
-        self.assertEqual(self.policy["0041_location_geography"], "operator_only")
-        self.assertEqual(self.policy[fresh.FINAL_TARGET], "operator_only")
+        self.assertEqual(self.policy["0041_location_geography"], "automatic")
+        self.assertEqual(self.policy[fresh.FINAL_TARGET], "automatic")
 
     def test_current_catalog_is_a_full_snapshot_with_receipt_and_batch_tables(self):
         stage = self.catalog[fresh.FINAL_TARGET]

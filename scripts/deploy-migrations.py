@@ -31,6 +31,14 @@ class PolicyError(Exception):
         self.mutation_attempted = mutation_attempted
 
 
+class AutomaticPolicy(dict):
+    """Version 2: literal, graph-validated revisions default to automatic."""
+    default = "automatic"
+
+    def __missing__(self, revision):
+        return self.default
+
+
 @dataclass(frozen=True)
 class Revision:
     revision: str
@@ -107,8 +115,17 @@ def load_policy(path):
         data = json.loads(path.read_text(), object_pairs_hook=unique_object)
     except (OSError, ValueError):
         raise PolicyError("UNREADABLE_POLICY") from None
-    if (not isinstance(data, dict) or set(data) != {"version", "revisions"}
-            or type(data["version"]) is not int or data["version"] != 1
+    if not isinstance(data, dict) or type(data.get("version")) is not int:
+        raise PolicyError("INVALID_POLICY")
+    if data["version"] == 2:
+        if (set(data) != {"version", "default", "revisions"}
+                or data.get("default") != "automatic"
+                or not isinstance(data.get("revisions"), dict)):
+            raise PolicyError("INVALID_POLICY")
+        if any(value != "automatic" for value in data["revisions"].values()):
+            raise PolicyError("INVALID_POLICY_CLASSIFICATION")
+        return AutomaticPolicy(data["revisions"])
+    if (data["version"] != 1 or set(data) != {"version", "revisions"}
             or not isinstance(data["revisions"], dict)):
         raise PolicyError("INVALID_POLICY")
     if any(value not in ("automatic", "operator_only") for value in data["revisions"].values()):
@@ -137,6 +154,15 @@ def ordered_ancestors(graph, target):
     return ordered
 
 
+def validate_classifications(graph, policy):
+    """A v2 default covers new graph revisions, never unknown DB revisions."""
+    if (set(policy) - set(graph)
+            or (set(graph) - set(policy) and getattr(policy, "default", None) != "automatic")):
+        raise PolicyError("UNKNOWN_OR_UNCLASSIFIED_MIGRATION")
+    if any(value not in ("automatic", "operator_only") for value in policy.values()):
+        raise PolicyError("INVALID_POLICY_CLASSIFICATION")
+
+
 def plan(graph, policy, current, target):
     down_parents = {p for node in graph.values() for p in node.down_revision}
     heads = set(graph) - down_parents
@@ -147,10 +173,7 @@ def plan(graph, policy, current, target):
     # Validate the whole source graph/policy, not just the first pending step.
     for revision in graph:
         ordered_ancestors(graph, revision)
-    if set(policy) != set(graph):
-        raise PolicyError("UNKNOWN_OR_UNCLASSIFIED_MIGRATION")
-    if any(value not in ("automatic", "operator_only") for value in policy.values()):
-        raise PolicyError("INVALID_POLICY_CLASSIFICATION")
+    validate_classifications(graph, policy)
     if len(current) != 1 or current[0] not in graph:
         raise PolicyError("UNEXPECTED_DATABASE_REVISION_STATE")
     required = ordered_ancestors(graph, target)
@@ -221,7 +244,8 @@ def execute_plan(connection, graph, policy, backend, target, execute):
     result = plan(graph, policy, applied_revisions(connection), target)
     if result["operator_only"] or not execute or not result["pending"]:
         return result
-    validate_additive(backend, result["pending"])
+    # Automatic execution is not restricted to an AST DDL allowlist.
+    # Actual migration guards and failures remain authoritative.
     # No approval flags, injected arguments, or unconditional head upgrade.
     try:
         completed = subprocess.run(upgrade_command(backend, target), cwd=backend,

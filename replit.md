@@ -1,3 +1,20 @@
+# Automatic migration policy
+
+All migrations are automatic in both Replit development and VPS deployments.
+This standing instruction replaces earlier per-revision `operator_only` and
+additive-only normal-runner approval policies. Do not ask the user to approve
+each new migration separately. Maintain the coordinated schema declaration and
+generate integrity/catalog metadata as part of implementation, not as a separate
+human approval. API startup and post-merge regenerate development review metadata.
+See `docs/migration-automation.md`.
+
+Preserve target identity checks, graph validity, database/deployment locks,
+transaction/error handling, CI/artifact validation and actual runtime checks.
+Do not edit applied migrations or fabricate the recovery evidence/attestations
+required by historical migration guards. Those guards can still stop an old
+database. Automatic classification is not permission to access the VPS, push or
+deploy without authorization for that operation.
+
 # Development release compatibility
 
 Development compatibility checks are manual-only: explicitly request
