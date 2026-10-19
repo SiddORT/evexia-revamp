@@ -23,4 +23,11 @@
 .pr-sample-empty__actions { justify-content:center; margin-top:16px; }
 .pr-sample-empty__requirements { max-width:620px; margin:16px auto 0; font-size:12px; }
 .pr-toolbar-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:end; }
+.pr-lines-content { min-width: 0; }
+.pr-lines-content > .po-section-title { margin-top: 20px; margin-bottom: 12px; flex-wrap: wrap; }
+.pr-lines-content > .pr-grid { min-width: 0; max-width: 100%; }
+.pr-page--detail .admin-page-head > div { min-width: 0; }
+.pr-page--detail .admin-page-head h1 { font-size: clamp(24px, 3vw, 30px); line-height: 1.25; overflow-wrap: anywhere; }
+.pr-page--detail .admin-page-head__eyebrow { overflow-wrap: anywhere; }
+.pr-page--detail .po-summary__item--accent > strong { font-size: 16px; line-height: 1.4; letter-spacing: -.02em; overflow-wrap: anywhere; }
 @media (max-width:760px){ .pr-ctx{grid-template-columns:1fr;} }

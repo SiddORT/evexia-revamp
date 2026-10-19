@@ -178,11 +178,12 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
     <div className="po-form-intro"><div><h2>{review ? 'Review before saving' : 'Receipt details'}</h2>{review && <p>Nothing has been saved yet. Check batches, quantities and balances.</p>}</div><ClipboardCheck size={21} color="var(--admin-accent)" aria-hidden="true" /></div>
     {saveError && <div className="admin-feedback admin-feedback--error" role="alert" style={{ margin: 18 }}>{saveError} <button type="button" className="po-link" onClick={requestRefresh} data-testid="button-refresh-pr-draft">Refresh records</button></div>}
     {review ? <>
-      <div className="po-review"><p className="po-review__note">Server-reviewed receipt. Confirming saves receiving only; it does not update a stock ledger or notify a supplier.</p>
+      <div className="po-review pr-lines-content"><p className="po-review__note">Server-reviewed receipt. Confirming saves receiving only; it does not update a stock ledger or notify a supplier.</p>
         <dl className="po-detail-grid"><div><dt>PO</dt><dd>{review.poNumber}</dd></div><div><dt>Vendor</dt><dd>{review.vendorName}</dd></div><div><dt>Destination</dt><dd>{review.locationName}</dd></div><div><dt>Received date</dt><dd>{displayDate(review.receivedDate)}</dd></div><div><dt>Received by</dt><dd>{review.receivedBy}</dd></div></dl>
-        <h3 className="po-section-title">Lines <span>{summary.lines.length} to save</span></h3></div>
+        <h3 className="po-section-title">Lines <span>{summary.lines.length} to save</span></h3>
       <div className="pr-grid" tabIndex={0} role="region" aria-label="Receipt lines"><table><thead><tr><th>Sr. No.</th><th>Product</th><th>Ordered</th><th>Received</th><th>Accepted</th><th>Rejected</th><th>Batch No.</th><th>Expiry</th><th>Balance after</th></tr></thead>
-        <tbody>{summary.lines.map((l, i) => <tr key={l.lineId}><td>{i + 1}</td><td><strong>{l.productName}</strong></td><td>{l.orderedQty}</td><td>{l.receivedQty}</td><td>{l.acceptedQty}</td><td>{l.rejectedQty}</td><td>{l.batchNo}</td><td>{displayDate(l.expiryDate)}</td><td>{l.balanceAfterQty ?? 'Unavailable'}</td></tr>)}</tbody></table></div>
+         <tbody>{summary.lines.map((l, i) => <tr key={l.lineId}><td>{i + 1}</td><td><strong>{l.productName}</strong></td><td>{l.orderedQty}</td><td>{l.receivedQty}</td><td>{l.acceptedQty}</td><td>{l.rejectedQty}</td><td>{l.batchNo}</td><td>{displayDate(l.expiryDate)}</td><td>{l.balanceAfterQty ?? 'Unavailable'}</td></tr>)}</tbody></table></div>
+      </div>
        <div className="po-form-footer"><span>Saved only after server confirmation.</span><div className="po-actions"><button type="button" className="admin-button admin-button--secondary" disabled={busy || uncertain} onClick={() => { setReview(null); setSaveError(''); }} data-testid="button-back-pr-draft">Back to draft</button><button type="button" className="admin-button" disabled={busy || saveBlocked} onClick={save} data-testid="button-confirm-pr">{busy ? 'Checking…' : uncertain ? 'Check save outcome' : isNew ? 'Create receipt' : 'Save changes'}</button></div></div>
     </> : <form onSubmit={prepare} noValidate>
       <fieldset className="po-form-body pr-editor-fields" disabled={busy || uncertain || !!otherPending}>
@@ -367,7 +368,7 @@ export default function PurchaseReceivedFormPage({ id }) {
   function preview() { setActionError(''); try { setDoc(makePRDocument(record, undefined, getAdminDisplayPreferences())); } catch (cause) { setActionError(cause.message || 'Could not preview this receipt.'); } }
   const title = isNew ? 'New purchase received' : editing ? 'Edit purchase received' : record?.number || 'Purchase received';
 
-  return <AdminLayout title={title}><div className="po-page">
+  return <AdminLayout title={title}><div className={`po-page${!isNew && !editing ? ' pr-page--detail' : ''}`}>
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Purchase received / {isNew ? 'New' : record?.number || 'Detail'}</p><h1>{title}</h1><p className="admin-page-head__description">{isNew ? 'Record goods received against a saved purchase order.' : 'Review received batches, balances and recorded changes.'}</p></div><div className="po-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => go(BASE)} data-testid="button-back-pr"><ArrowLeft size={16} /> All receipts</button>{!isNew && !editing && <button type="button" className="admin-button admin-button--secondary" disabled={deleting || !!recovery.pending || !!recovery.error} onClick={refresh} data-testid="button-refresh-pr-detail"><RefreshCw size={15} /> Refresh</button>}</div></div>
     {notice && <div className="admin-feedback" role="status" data-testid="status-pr-feedback">{notice}</div>}
      {savingNotice && saving && <div className="admin-feedback" role="status">Saving receipt… Wait for the current save to finish before switching purchase orders.</div>}
@@ -386,13 +387,13 @@ export default function PurchaseReceivedFormPage({ id }) {
             <button type="button" className="admin-button admin-button--secondary" disabled={pdfBusy} onClick={pdf} data-testid="button-pdf-pr"><Download size={15} /> {pdfBusy ? 'Preparing…' : 'PDF'}</button>
             {record.status === 'active' && <><button type="button" className="admin-button admin-button--secondary" onClick={() => setEditing(true)} data-testid="button-edit-pr"><Pencil size={15} /> Edit</button><button type="button" className="admin-button admin-button--danger" onClick={() => { setActionError(''); setConfirmDelete(true); }} data-testid="button-delete-pr"><Trash2 size={15} /> Delete</button></>}
           </div></div>
-        <div className="po-review">
+        <div className="po-review pr-lines-content">
           {record.status === 'deleted' && <p className="pr-note pr-warn">This receipt is deleted. Its accepted quantities no longer count toward the PO balance.</p>}
           <dl className="po-detail-grid"><div><dt>Purchase order</dt><dd><button type="button" className="po-link" onClick={() => navigate(`${PO_BASE}/${encodeURIComponent(record.poId)}`)}>{record.poNumber}</button><span className="po-secondary">PO date {displayDate(record.poDate)}</span></dd></div><div><dt>Vendor</dt><dd>{record.vendorName}<span className="po-secondary">{record.vendorPhone || 'No mobile on record'}</span></dd></div><div><dt>Destination</dt><dd>{record.locationName}</dd></div><div><dt>Received by</dt><dd>{record.receivedBy}<span className="po-secondary">{record.receiverMode === 'staff' ? `Staff reference: ${record.staffId}` : 'Others'} · Named receiver, separate from saving actor</span></dd></div></dl>
           <h3 className="po-section-title">Received lines <span>Saved historic details</span></h3>
-        </div>
         <div className="pr-grid" tabIndex={0} role="region" aria-label="Received lines"><table><thead><tr><th>Sr. No.</th><th>Product</th><th>Ordered</th><th>Received</th><th>Accepted</th><th>Rejected</th><th>Batch No.</th><th>Expiry</th></tr></thead>
           <tbody>{record.lines.map((l, i) => <tr key={l.lineId}><td>{i + 1}</td><td><strong>{l.productName}</strong></td><td>{l.orderedQty}</td><td>{l.receivedQty}</td><td>{l.acceptedQty}</td><td>{l.rejectedQty}</td><td>{l.batchNo}</td><td>{displayDate(l.expiryDate)}</td></tr>)}</tbody></table></div>
+        </div>
          {showActivity && <div className="po-activity"><p>Latest {events.length} of {snapshot.record.eventTotal} changes. <button type="button" className="po-link" onClick={() => navigate(`${BASE}?poId=${record.poId}`)}>Open the paged server Activity listing</button></p>{events.length ? events.map((e) => <article className="po-event" key={e.id}><div className="po-event__mark"><History size={14} /></div><div><strong>{e.action}</strong><p>{e.summary}</p><p className="po-event__attribution"><strong>{e.actor}</strong> · authenticated saving actor · <time dateTime={e.at}>{stamp(e.at)}</time></p></div></article>) : <div className="admin-empty"><strong>No activity recorded</strong></div>}</div>}
       </section>
     </>}
