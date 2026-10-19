@@ -129,6 +129,7 @@ export default function MoveStockFormPage() {
     unavailable.forEach((p) => { e[p.lot.id] = 'This lot is no longer available at the source. Remove it to continue.'; });
     if (unavailable.length) e.lines = 'Remove lots that are no longer available before review.';
     Object.entries(validateLines(selectedLines).errors).forEach(([k, v]) => { if (!e[k]) e[k] = v; });
+    selectedLines.forEach(({ lot, quantity }) => { if (lot.itemKind === 'combo' && !e[lot.id] && !/^[1-9]\d*(?:\.0{1,3})?$/.test(quantity.trim())) e[lot.id] = 'Assembled combos move only as positive whole combos.'; });
     return e;
   }
   const buildBody = () => ({ sourceId: source.value, destinationId: destination.value, date,
@@ -184,7 +185,7 @@ export default function MoveStockFormPage() {
   const hasUnavailable = unavailable.length > 0;
 
   return <AdminLayout title="Move stock"><div className="move-stocks-page">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Move stocks / New</p><h1>Move stock</h1><p className="admin-page-head__description">Choose a source, a destination and receipt lots to transfer. Quantities allow up to 3 decimals.</p></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Move stocks / New</p><h1>Move stock</h1><p className="admin-page-head__description">Choose a source, a destination and receipt lots to transfer. Allergen quantities allow up to 3 decimals; assembled combos move only in whole numbers.</p></div>
       <div className="ms-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(BASE)} data-testid="button-back-move"><ArrowLeft size={16} /> All movements</button></div></div>
     <div className="admin-feedback ms-note" role="note" data-testid="text-move-guidance">Saved movements are append-only and cannot be edited or deleted. You review the exact result before it is committed.</div>
     {message && <div className="admin-feedback admin-feedback--error" role="alert">{message}</div>}
@@ -218,10 +219,10 @@ export default function MoveStockFormPage() {
               : !lots.items.length && !pickedList.length && !lots.error ? <div className="admin-empty" role="status" data-testid="text-move-empty-source"><strong>No stock at this source</strong><p>Choose another source that holds stock, or confirm inventory is initialized.</p></div>
               : <div className="admin-table-scroll ms-stock-table" role="region" aria-label="Source lots" tabIndex={0} aria-busy={lots.loading}><table className="admin-table"><thead><tr><th scope="col">Select</th><th scope="col">Product / batch</th><th scope="col">Available (unit)</th><th scope="col">Quantity to move</th></tr></thead><tbody>{[...unavailable.map((p) => ({ lot: p.lot, gone: true })), ...lots.items.map((lot) => ({ lot, gone: false }))].map(({ lot: l, gone }) => { const on = l.id in picked; return <tr key={l.id}>
                 <td><input type="checkbox" id={`ms-p-${l.id}`} checked={on} onChange={() => togglePick(l)} aria-label={`Select ${l.name}`} data-testid={`checkbox-move-lot-${l.id}`} /></td>
-                <td><label htmlFor={`ms-p-${l.id}`} className="ms-product__name">{l.productName}</label><span className="stock-sub">Batch {l.batchNo} · {l.receiptNumber} · exp {displayDate(l.expiryDate)}</span>{gone && <span className="mr-form__error">No longer available at this source</span>}</td>
+                <td><label htmlFor={`ms-p-${l.id}`} className="ms-product__name">{l.productName}</label><span className="stock-sub">{l.itemKind === 'combo' ? 'Assembled combo, whole combos only · ' : ''}{l.batchNo ? `Batch ${l.batchNo}` : 'Batch unavailable'} · {l.receiptNumber || (l.itemKind === 'combo' ? 'Assembled' : 'Receipt unavailable')} · exp {l.expiryDate ? displayDate(l.expiryDate) : 'unavailable'}{l.itemKind === 'combo' ? ` · assembly ${l.assemblyId || 'link unavailable'}${l.recipe ? ` · recipe v${l.recipe.version}` : ''}${l.mrp != null ? ` · MRP ${l.mrp}, selling ${l.sellingPrice}` : ''}` : ''}</span>{gone && <span className="mr-form__error">No longer available at this source</span>}</td>
                 <td className="inv-mono" data-testid={`text-move-available-${l.id}`}>{gone ? 'Unavailable' : `${l.available} ${l.unit}`}</td>
-                <td>{on ? <div className="ms-qty"><label htmlFor={`ms-q-${l.id}`}>Quantity ({l.unit})</label>
-                  <input id={`ms-q-${l.id}`} className="mr-form__control" type="text" inputMode="decimal" autoComplete="off" value={picked[l.id].quantity} onChange={(e) => { const v = e.target.value; setPicked((p) => (l.id in p ? { ...p, [l.id]: { ...p[l.id], quantity: v } } : p)); clear(l.id); clear('lines'); }} aria-invalid={Boolean(errors[l.id])} aria-describedby={errors[l.id] ? `ms-q-${l.id}-error` : undefined} data-testid={`input-move-qty-${l.id}`} />
+                <td>{on ? <div className="ms-qty"><label htmlFor={`ms-q-${l.id}`}>Quantity ({l.unit}{l.itemKind === 'combo' ? ', whole number' : ''})</label>
+                  <input id={`ms-q-${l.id}`} className="mr-form__control" type="text" inputMode={l.itemKind === 'combo' ? 'numeric' : 'decimal'} autoComplete="off" value={picked[l.id].quantity} onChange={(e) => { const v = e.target.value; setPicked((p) => (l.id in p ? { ...p, [l.id]: { ...p[l.id], quantity: v } } : p)); clear(l.id); clear('lines'); }} aria-invalid={Boolean(errors[l.id])} aria-describedby={errors[l.id] ? `ms-q-${l.id}-error` : undefined} data-testid={`input-move-qty-${l.id}`} />
                   {errors[l.id] && <p id={`ms-q-${l.id}-error`} className="mr-form__error" role="alert">{errors[l.id]}</p>}</div> : <span className="mr-form__hint">Select lot first</span>}</td>
               </tr>; })}</tbody></table></div>}
             {errors.lines && <p id="ms-lines-error" className="mr-form__error" role="alert">{errors.lines}</p>}

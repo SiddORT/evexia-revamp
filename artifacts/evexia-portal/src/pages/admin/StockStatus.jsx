@@ -99,7 +99,7 @@ export default function StockStatus() {
   }
   const columns = [
     { key: 'sr', label: 'Sr No', render: (_row, index) => index + 1 },
-    { key: 'p', label: 'Product', render: (r) => <><strong className="admin-table__name">{r.name}</strong><span className="stock-sub">{r.productId}</span></> },
+    { key: 'p', label: 'Product', render: (r) => <><strong className="admin-table__name">{r.name}</strong><span className="stock-sub">{r.itemKind === 'combo' ? 'Assembled combo' : 'Allergen'} · {r.productId}</span></> },
     { key: 'c', label: 'Concentration', render: (r) => r.concentration },
     { key: 'k', label: 'Category', render: (r) => r.category },
     { key: 's', label: 'Selling Price', render: (r) => formatPrice(r.sellingPrice) },
@@ -115,7 +115,7 @@ export default function StockStatus() {
         <button type="button" className="admin-button admin-button--secondary" onClick={exportCsv} disabled={disabled} data-testid="button-export-stock"><FileDown size={15} /> Export</button>
         <button type="button" className="admin-button" onClick={openReport} disabled={disabled} data-testid="button-inventory-report"><FileText size={15} /> Inventory Report</button>
       </div></div>
-    <div className="admin-feedback stock-disclaimer" role="note" data-testid="text-stock-disclaimer"><Info size={14} aria-hidden="true" /> Quantities are in procurement quantity units, exact to 0.001, and carry across financial years. No sales backend is connected: sales, reservations, in-transit shipping and pre-system openings are not included or inferred.</div>
+    <div className="admin-feedback stock-disclaimer" role="note" data-testid="text-stock-disclaimer"><Info size={14} aria-hidden="true" /> Individual allergens use procurement quantity units, exact to 0.001; assembled products use whole combos. Assembly has already consumed its source components. Stock carries across financial years. No sales backend is connected: sales, reservations, in-transit shipping and pre-system openings are not included or inferred.</div>
     {notice && <div className="admin-feedback" role="status" data-testid="status-stock-notice">{notice}</div>}
     {error && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-stock-error">{error}</div>}
     {loadError && <div className="admin-feedback admin-feedback--error inv-banner" role="alert"><p>{loadError}</p><button type="button" className="admin-button admin-button--secondary" onClick={() => load()}>Retry</button></div>}

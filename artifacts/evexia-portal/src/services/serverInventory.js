@@ -86,8 +86,8 @@ const cell = (value) => {
   return `"${safe.replaceAll('"', '""')}"`;
 };
 export function exportStockCSV(rows, { asOf, coverage }) {
-  const header = ['Product ID', 'Product', 'Concentration', 'Category', 'Selling price (INR)', 'Quantity', 'Unit', 'State', 'As of (UTC)', 'Sales', 'Openings'];
-  const records = rows.map((r) => [r.productId, r.name, r.concentration, r.category, r.sellingPrice ?? '', r.quantity, r.unit, r.state, asOf,
+  const header = ['Product ID', 'Item type', 'Product', 'Concentration', 'Category', 'Catalogue selling price (INR)', 'Quantity', 'Unit', 'State', 'As of (UTC)', 'Sales', 'Openings'];
+  const records = rows.map((r) => [r.productId, r.itemKind === 'combo' ? 'Assembled combo' : 'Individual allergen', r.name, r.concentration, r.category, r.sellingPrice ?? '', r.quantity, r.unit, r.state, asOf,
     coverage?.sales || 'unavailable', coverage?.openings || 'outside coverage']);
   return '\uFEFF' + [header, ...records].map((c) => c.map(cell).join(',')).join('\r\n') + '\r\n';
 }

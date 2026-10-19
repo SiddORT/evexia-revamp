@@ -27,7 +27,9 @@ from app.db.inventory_models import InventoryReceiptState
 from app.services import inventory, account_crypto
 from app.services.purchase_received_crypto import ReceiptCrypto, PRError
 
-REVISION = "0046_live_inventory"
+# Same reviewed receipt initialization operation, on the explicitly reviewed
+# product successor. No future schema or copied-target identity is accepted.
+REVISION = "0049_product_language_merge"
 
 
 def require(value, message):
@@ -56,7 +58,7 @@ def target_matches(db, expected):
     require((row[0], row[1], row[2]) == (expected["database"], expected["oid"], expected["cluster"]),
             "Confirmed database identity differs")
     require(list(db.scalars(text("SELECT version_num FROM alembic_version"))) == [REVISION],
-            "Exact separately activated inventory revision required")
+            "Exact automatically synchronized inventory schema revision required")
 
 
 def anchor(db):

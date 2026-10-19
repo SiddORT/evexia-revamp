@@ -73,6 +73,7 @@ from app.services.opening_balances import OpeningBalanceError
 from app.api.v1.purchase_received import router as purchase_received_router
 from app.api.v1.inventory import router as inventory_router
 from app.services.purchase_received_crypto import PRError
+from app.api.v1.products import router as products_router
 
 
 def error_body(request, status, message, code=None, fields=None):
@@ -177,6 +178,7 @@ def create_app() -> FastAPI:
         fields = [{"field": ".".join(str(part) for part in err["loc"] if isinstance(part, (str, int))),
                    "code": err["type"]} for err in exc.errors()[:20]]
         if request.url.path.startswith(("/api/v1/admin/communication", "/api/v1/admin/email-templates",
+                                        "/api/v1/admin/products",
                                         "/api/v1/admin/purchase-received/batch-settings",
                                         "/api/v1/admin/purchase-received/batch-allocations")):
             # Unknown property names can themselves contain a credential.
@@ -361,6 +363,7 @@ def create_app() -> FastAPI:
     app.include_router(purchase_orders_router, prefix="/api/v1")
     app.include_router(purchase_received_router, prefix="/api/v1")
     app.include_router(inventory_router, prefix="/api/v1")
+    app.include_router(products_router, prefix="/api/v1")
     app.include_router(roles_router, prefix="/api/v1")
     app.include_router(role_urls_router, prefix="/api/v1")
     app.include_router(communication_router, prefix="/api/v1")

@@ -767,8 +767,12 @@ export const openingBalanceRequest = (path, options) => masterRequest('opening-b
 
 export const purchaseReceivedRequest = (path, options) => purchaseOrderRequest(path, options, 'purchase-received');
 export const inventoryRequest = (path, options) => purchaseOrderRequest(path, options, 'inventory');
-export async function purchaseOrderRequest(path = '', { body, params = {}, signal } = {}, resource = 'purchase-orders') {
-  const allowed = resource === 'inventory'
+
+export const productMasterRequest = (path, options) => purchaseOrderRequest(path, options, 'products');
+export async function purchaseOrderRequest(path = '', { body, params = {}, signal, method } = {}, resource = 'purchase-orders') {
+  const allowed = resource === 'products'
+    ? /^(?:|\/references|\/assemblies(?:\/preview|\/[0-9a-f-]{36})?|\/requests\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:status|activity|analytics|assemblies))?)$/i
+    : resource === 'inventory'
     ? /^\/(?:stock(?:\/[0-9a-f-]{36}\/history)?|initialization|references\/(?:locations|staff|lots)|requests\/[0-9a-f-]{36}|movements(?:\/preview|\/[0-9a-f-]{36}(?:\/(?:activity|analytics))?)?)$/i
     : resource === 'purchase-received'
     ? /^(?:|\/(?:export|activity|analytics|preview|filter-options|batch-settings|batch-allocations)|\/references\/(?:staff|orders)|\/(?:sources|requests)\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete))?)$/i
@@ -776,6 +780,12 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   if (!allowed.test(path)) {
     throw new SessionError('Unsupported purchase order operation.');
   }
+  const uid = '[0-9a-f-]{36}';
+  const methodRoutes = { PUT: new RegExp(`^/${uid}$`, 'i'), PATCH: new RegExp(`^/${uid}/status$`, 'i'), DELETE: new RegExp(`^/${uid}$`, 'i') };
+  if (method !== undefined && (resource !== 'products' || !methodRoutes[method]?.test(path) || body === undefined)) {
+    throw new SessionError('Unsupported purchase order operation.');
+  }
+  const httpMethod = method || (body === undefined ? 'GET' : 'POST');
   const epoch = generation;
   const owner = state.user?.id;
   const mutation = body !== undefined && !path.endsWith('/preview');
@@ -806,7 +816,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   let response, data;
   try {
     response = await fetch(`/api/v1/admin/${resource}${path}${search.size ? `?${search}` : ''}`, {
-      method: body === undefined ? 'GET' : 'POST', credentials: 'same-origin', cache: 'no-store',
+      method: httpMethod, credentials: 'same-origin', cache: 'no-store',
       headers: { Authorization: `Bearer ${token}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
@@ -846,6 +856,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     } else if (data?.idempotencyKey !== body?.idempotencyKey || !Array.isArray(data.lines)
       || data.lines.length !== body.lineIds.length || new Set(data.lines.map((line) => line?.lineId)).size !== body.lineIds.length
       || data.lines.some((line) => !line || !body.lineIds.includes(line.lineId) || typeof line.batchNo !== 'string' || !line.batchNo.trim() || line.batchNo.length > 120)) throw uncertain();
+  } else if (mutation && resource === 'products') {
+    if (method !== 'DELETE' && !data?.id) throw uncertain();
   } else if (mutation && (!data?.id || (resource !== 'inventory' && !data?.number) || !Array.isArray(data.lines))) throw uncertain();
   return data;
 }

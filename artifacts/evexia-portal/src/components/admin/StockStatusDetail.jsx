@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Dialog from './Dialog.jsx';
 import DataTable from './DataTable.jsx';
 import TablePagination from './TablePagination.jsx';
+import ComboProvenance from './ComboProvenance.jsx';
 import { dayEndExclusiveISO, dayStartISO, formatPrice, stockHistory } from '../../services/serverInventory.js';
 import { useAdminDateFormatters } from './adminPreferences.js';
 
@@ -29,28 +30,29 @@ export default function StockStatusDetail({ row, asOf, onClose }) {
   const lotById = useMemo(() => Object.fromEntries(row.lots.map((l) => [l.lotId, l])), [row]);
   const pageCount = Math.max(1, Math.ceil(state.filtered / pageSize));
   const lotColumns = [
-    { key: 'b', label: 'Batch', render: (l) => l.batchNo },
-    { key: 'r', label: 'Receipt', render: (l) => l.receiptNumber },
-    { key: 'e', label: 'Expiry', render: (l) => displayDate(l.expiryDate) },
+    { key: 'b', label: 'Batch', render: (l) => l.batchNo || 'Unavailable' },
+    { key: 'r', label: 'Receipt', render: (l) => l.receiptNumber || 'Unavailable' },
+    { key: 'e', label: 'Expiry', render: (l) => l.expiryDate ? displayDate(l.expiryDate) : 'Unavailable' },
     { key: 'l', label: 'Location', render: (l) => l.locationName },
     { key: 'q', label: 'On hand', render: (l) => <span className="inv-mono">{l.quantity}</span> },
   ];
   const columns = [
     { key: 'd', label: 'Posted', render: (r) => timestamp(r.at) },
-    { key: 'lot', label: 'Lot', render: (r) => lotById[r.lotId] ? `${lotById[r.lotId].batchNo} · ${lotById[r.lotId].receiptNumber}` : r.lotId.slice(0, 8) },
+    { key: 'lot', label: 'Lot', render: (r) => lotById[r.lotId] ? `${lotById[r.lotId].batchNo || 'Batch unavailable'} · ${lotById[r.lotId].receiptNumber || 'Assembled combo'}` : r.lotId.slice(0, 8) },
     { key: 'loc', label: 'Location', render: (r) => lotById[r.lotId]?.locationId === r.locationId ? lotById[r.lotId].locationName : r.locationId.slice(0, 8) },
     { key: 'dl', label: 'Change', render: (r) => <span className="inv-mono">{r.delta}</span> },
     { key: 'ba', label: 'Before / After', render: (r) => <span className="inv-mono">{r.before} to {r.after}</span> },
     { key: 'a', label: 'Actor', render: (r) => r.actor },
-    { key: 's', label: 'Source', render: (r) => <span className="stock-status">{r.movementId ? 'Transfer' : 'Receipt'}</span> },
+    { key: 's', label: 'Source', render: (r) => <span className="stock-status">{r.movementId ? 'Transfer' : r.source?.startsWith('assembly:') ? (r.delta.startsWith('-') ? 'Assembly consumption' : 'Assembly output') : 'Receipt'}</span> },
   ];
-  return <Dialog className="stock-detail" eyebrow="Receipt-backed stock" title={row.name} onClose={onClose}
+  return <Dialog className="stock-detail" eyebrow={row.itemKind === 'combo' ? 'Assembled combo stock' : 'Individual allergen stock'} title={row.name} onClose={onClose}
     description={`ID ${row.productId} · ${row.concentration} · ${row.category} · ${formatPrice(row.sellingPrice)}. On hand ${row.quantity} ${row.unit}${asOf ? ` as of ${timestamp(asOf)}` : ''}.`}>
-    <div className="admin-feedback" role="note">No sales backend is connected and no opening balances are inferred. History shows only recorded receipt and transfer postings.</div>
+    <div className="admin-feedback" role="note">No sales backend is connected and no opening balances are inferred. History shows recorded receipt, assembly and transfer postings, including saved before/after balances.</div>
+    {row.itemKind === 'combo' && <ComboLots lots={row.lots} />}
     <h3 className="stock-section-title">Lots on hand</h3>
     <div className="stock-history-table">
       {row.lots.length ? <DataTable columns={lotColumns} rows={row.lots} rowKey={(l) => `${l.lotId}-${l.locationId}`} label="Lots on hand" testIdPrefix="stock-lot" />
-        : <div className="admin-empty"><strong>No receipt-backed lots</strong><p>This product has no accepted receipt quantity on hand.</p></div>}
+        : <div className="admin-empty"><strong>No lots on hand</strong><p>{row.itemKind === 'combo' ? 'No assembled combo quantity remains on hand.' : 'This allergen has no accepted receipt quantity on hand.'}</p></div>}
     </div>
     <h3 className="stock-section-title">Posting history</h3>
     <div className="inv-period">
@@ -70,4 +72,11 @@ export default function StockStatusDetail({ row, asOf, onClose }) {
     </div>
     {state.scope && <p className="mr-form__hint">{state.scope}</p>}
   </Dialog>;
+}
+
+function ComboLots({ lots }) {
+  const combos = (lots || []).filter((l) => l.recipe || l.sourceComponents || l.assemblyId);
+  return <section data-testid="section-combo-provenance"><h3 className="stock-section-title">Combo provenance</h3>
+    {combos.length ? combos.map((l) => <div className="admin-feedback" key={`${l.lotId}-${l.locationId}`}>
+      <strong>{l.batchNo ? `Batch ${l.batchNo}` : 'Batch unavailable'} at {l.locationName}</strong><ComboProvenance item={l} /></div>) : <p>No retained assembly details.</p>}</section>;
 }

@@ -157,6 +157,21 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a separate f
 
 ## Purchase Received persistence
 
+- Stock-enabled Product Master extends the existing inventory ledger and
+  Products & Supply navigation, without new Staff capabilities. Explicit
+  reviewed assembly consumes individual lots and creates whole-combo stock;
+  master saves never create stock. Preserve original recipe/price/source-lot
+  snapshots through edits, deactivation/deletion and transfers. No clinical
+  semantics, unit conversions, disassembly or component re-debit on transfer.
+  See `docs/stock-enabled-products.md`.
+- Product verification is focused synthetic isolated CRUD/assembly only:
+  `sh scripts/test-products-crud.sh` explicitly names the changed product
+  operations and directly affected inventory/receipt resources. No broad,
+  default, regression, release or browser harness, build, original-target
+  migration, receipt initialization or production action. Automatic activation
+  remains the existing managed lifecycle; final live acceptance needs narrow
+  read-only database/API/served-frontend observations after merge in main.
+
 - PR Batch Number Settings are shared protected Super Admin configuration, not
   browser-local preferences. Operator-only `0045_pr_batch_numbers` follows
   `0044_purchase_received`; it authorizes no managed migration, key change,

@@ -1,0 +1,109 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocation, useSearch } from 'wouter';
+import { CirclePower, Eye, Layers, Pencil, Plus, Trash2 } from 'lucide-react';
+import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
+import DataTable from '../../components/admin/DataTable.jsx';
+import StatusBadge from '../../components/admin/StatusBadge.jsx';
+import TablePagination from '../../components/admin/TablePagination.jsx';
+import ProductDrawer from '../../components/admin/ProductDrawer.jsx';
+import ProductPendingBanner from '../../components/admin/ProductPendingBanner.jsx';
+import { deleteProduct, journaled, listProducts, newKey, setProductStatus } from '../../services/productMaster.js';
+import { formatPrice } from '../../services/serverInventory.js';
+import '../../mr.css';
+import '../../inventoryServer.css';
+
+const BASE = '/admin/masters/products';
+
+export default function ProductMaster() {
+  const [, navigate] = useLocation();
+  const queryString = useSearch();
+  const [search, setSearch] = useState('');
+  const [applied, setApplied] = useState('');
+  const [status, setStatus] = useState('all');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [viewing, setViewing] = useState(null);
+  const [confirming, setConfirming] = useState(null);
+  const [pending, setPending] = useState(false);
+  const [actionError, setActionError] = useState('');
+  const [tick, setTick] = useState(0);
+  const keyRef = useRef(null);
+  const seq = useRef(0);
+  useEffect(() => {
+    const details = new URLSearchParams(queryString).get('details');
+    if (/^[0-9a-f-]{36}$/i.test(details || '')) setViewing(details);
+  }, [queryString]);
+  useEffect(() => { const t = setTimeout(() => { setApplied(search.trim()); setPage(1); }, 300); return () => clearTimeout(t); }, [search]);
+  const load = useCallback(() => setTick((t) => t + 1), []);
+  useEffect(() => {
+    const id = ++seq.current; const c = new AbortController();
+    setLoading(true); setError('');
+    listProducts({ query: applied, status, offset: (page - 1) * pageSize, limit: pageSize }, c.signal)
+      .then((d) => { if (id === seq.current) { setData(d); setLoading(false); } })
+      .catch((e) => { if (id === seq.current && !c.signal.aborted) { setError(e.message || 'Products could not be loaded.'); setLoading(false); } });
+    return () => c.abort();
+  }, [applied, status, page, pageSize, tick]);
+
+  const items = data?.items || [];
+  const filtered = data?.filtered ?? 0;
+  const pageCount = Math.max(1, Math.ceil(filtered / pageSize));
+  useEffect(() => { if (!loading && !error && page > pageCount) setPage(pageCount); }, [loading, error, page, pageCount]);
+
+  function request(record, type) { keyRef.current = newKey(); setActionError(''); setConfirming({ record, type }); }
+  async function confirm() {
+    const { record, type } = confirming;
+    setPending(true); setActionError('');
+    const key = keyRef.current;
+    try {
+      await journaled(key, () => type === 'delete'
+        ? deleteProduct(record.id, { idempotencyKey: key, expected_version: record.version })
+        : setProductStatus(record.id, { idempotencyKey: key, expected_version: record.version, status: type === 'activate' ? 'active' : 'inactive' }));
+      keyRef.current = null; setConfirming(null); load();
+    } catch (e) {
+      setActionError(e.uncertain ? `${e.message} Retry sends the same request identity, or use Check save outcome above.` : e.message);
+      if (!e.uncertain) keyRef.current = null;
+    } finally { setPending(false); }
+  }
+  const columns = [
+    { key: 'sr', label: 'Sr No', render: (_r, i) => i + 1 },
+    { key: 'name', label: 'Combo name', render: (r) => <strong className="admin-table__name">{r.name}</strong> },
+    { key: 'members', label: 'Allergens', render: (r) => <>{r.members.length} members<span className="stock-sub">{r.members.map((m) => m.name).join(', ')}</span></> },
+    { key: 'mrp', label: 'MRP', render: (r) => formatPrice(r.mrp) },
+    { key: 'sp', label: 'Selling price', render: (r) => formatPrice(r.sellingPrice) },
+    { key: 'st', label: 'Status', render: (r) => <StatusBadge status={r.status} id={r.id} kind="product" /> },
+    { key: 'act', label: 'Actions', render: (r) => { const t = r.status === 'active' ? 'Inactivate' : 'Activate'; return <div className="admin-table__actions">
+      <button type="button" className="admin-icon-button" aria-label={`View details, ${r.name}`} title="Details, activity and analytics" onClick={() => setViewing(r.id)} data-testid={`button-view-product-${r.id}`}><Eye size={16} /></button>
+      <button type="button" className="admin-icon-button" aria-label={`Edit ${r.name}`} onClick={() => navigate(`${BASE}/${r.id}`)} data-testid={`button-edit-product-${r.id}`}><Pencil size={16} /></button>
+      <button type="button" className="admin-icon-button" aria-label={`Assemble ${r.name}`} title="Assemble combos" disabled={r.status !== 'active'} onClick={() => navigate(`${BASE}/assemble?product=${r.id}`)} data-testid={`button-assemble-product-${r.id}`}><Layers size={16} /></button>
+      <button type="button" className="admin-icon-button" aria-label={`${t} ${r.name}`} onClick={() => request(r, t.toLowerCase())} data-testid={`button-status-product-${r.id}`}><CirclePower size={16} /></button>
+      <button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Delete ${r.name}`} onClick={() => request(r, 'delete')} data-testid={`button-delete-product-${r.id}`}><Trash2 size={16} /></button>
+    </div>; } },
+  ];
+  const sum = data?.summary;
+  const name = confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'activate' ? 'Activate' : 'Inactivate';
+  return <AdminLayout title="Product Master"><div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Products & Supply</p><h1>Product Master</h1><p className="admin-page-head__description">Named combos of existing allergens with their own MRP and selling price. Saving a combo never creates stock.</p></div>
+      <div className="admin-mr-head-actions">
+        <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(`${BASE}/assemble`)} data-testid="button-assemble"><Layers size={16} /> Assemble combos</button>
+        <button type="button" className="admin-button" onClick={() => navigate(`${BASE}/new`)} data-testid="button-add-product"><Plus size={16} /> Add product</button></div></div>
+    <ProductPendingBanner onResolved={(r) => { keyRef.current = null; if (r.state === 'committed') setConfirming(null); load(); }} />
+    {sum && <div className="admin-feedback" role="status" data-testid="status-product-summary">{sum.products} matching product{sum.products === 1 ? '' : 's'}, {sum.assemblies} assembl{sum.assemblies === 1 ? 'y' : 'ies'}. Assembled: {sum.assembled.length ? sum.assembled.map((a) => `${a.productName} ${a.quantity} ${a.unit}`).join('; ') : 'none'}. Remaining: {sum.remaining.length ? sum.remaining.map((a) => `${a.productName} at ${a.locationName} ${a.quantity} ${a.unit}`).join('; ') : 'none'}. {sum.scope}</div>}
+    <section className="admin-panel" aria-label="Product list">
+      <div className="admin-toolbar">
+        <div className="admin-filter"><label htmlFor="product-search">Search products</label><input id="product-search" type="search" className="admin-input" maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Combo name" data-testid="input-search-products" /></div>
+        <div className="admin-filter"><label htmlFor="product-status">Status</label><select id="product-status" className="admin-select" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} data-testid="select-product-status"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+        <button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={load}>Refresh</button>
+      </div>
+      {error ? <div className="admin-empty" role="alert"><strong>Products could not be loaded</strong><p>{error}</p><button type="button" className="admin-button" onClick={load}>Try again</button></div> : <>
+        <DataTable columns={columns} rows={items} rowOffset={(page - 1) * pageSize} rowKey={(r) => r.id} label="Products" testIdPrefix="product" loading={loading}
+          empty={<div className="admin-empty"><strong>{applied || status !== 'all' ? 'No products match' : 'No products yet'}</strong><p>{applied || status !== 'all' ? 'Clear the search or status filter.' : 'Add your first combo of at least two allergens.'}</p></div>} />
+        <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={filtered} total={data?.total ?? 0} label="products" onPageChange={setPage} onPageSizeChange={(n) => { setPageSize(n); setPage(1); }} testId="text-product-count" /></>}
+    </section>
+    {viewing && <ProductDrawer id={viewing} onClose={() => setViewing(null)} />}
+    {confirming && <ConfirmationDialog pending={pending} title={`${name} product?`} description={`Are you sure you want to ${name.toLowerCase()} “${confirming.record.name}”?${confirming.type !== 'activate' ? ' New assembly is blocked; retained stock and history stay viewable and transferable.' : ''}`} actionLabel={`${name} product`} destructive={confirming.type === 'delete'} onConfirm={confirm} onClose={() => { setConfirming(null); load(); }} error={actionError} />}
+  </div></AdminLayout>;
+}

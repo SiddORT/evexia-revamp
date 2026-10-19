@@ -113,6 +113,9 @@ def ready(db):
         ["0047_languages"],
         # Language Unicode index only; no account storage/anchor changes.
         ["0048_language_unicode"],
+        # Reviewed product-only branch and its language-history merge preserve
+        # all account ciphertext/anchors. No arbitrary future schemas accepted.
+        ["0047_stock_products"], ["0049_product_language_merge"],
     ):
         raise AccountCryptoError()
     current = crypto()

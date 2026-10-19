@@ -331,3 +331,16 @@ unsafe filenames, type mismatch, parser/decompression bombs, scanner outage,
 symlink/traversal races, adapter/commit failures, interrupted cleanup, denied
 adapter-call assertions, grant expiry and response/log secrecy. PostgreSQL tests
 use isolated schemas, and concurrency tests independent committed connections.
+
+# Stock-enabled product extension
+
+The Product Master successor extends the authoritative inventory lot identity.
+Recipes, revision histories, assembly provenance and actor-bound retry results
+are encrypted with the existing independent PR keyring under new forward
+`inventory:*` purposes. Operational relationships/quantities remain available
+for integrity and ledger locking; a live-name HMAC discloses scoped equality.
+Historical crypto stage/retirement inventories are unchanged. See
+`docs/stock-enabled-products.md` for the forward rotation inventory, exact
+quantity/pricing contract, immutable snapshots and post-merge activation
+evidence boundary. Do not retire old keys or mutate immutable history as an
+incidental migration.

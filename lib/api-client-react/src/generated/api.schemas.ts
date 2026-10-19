@@ -213,6 +213,161 @@ export interface AllergenVersion {
   expected_version: number;
 }
 
+export interface AssemblyComponent {
+  after: string;
+  batchNo: string | null;
+  before: string;
+  expiryDate: string | null;
+  lineId: string | null;
+  lotId: string;
+  productId: string;
+  productName: string;
+  productVersion: number;
+  quantity: string;
+  receiptId: string | null;
+  receiptNumber: string | null;
+  receivedDate: string | null;
+  unit: string;
+}
+
+export interface MoveLine {
+  lotId: string;
+  /**
+   * @maxLength 11
+   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   */
+  quantity: string;
+}
+
+export interface AssemblyCreate {
+  /**
+   * @minItems 2
+   * @maxItems 100
+   */
+  allocations: MoveLine[];
+  /**
+   * @minLength 1
+   * @maxLength 80
+   */
+  batchNo: string;
+  /** @minimum 1 */
+  expected_version: number;
+  expiryDate: string;
+  idempotencyKey: string;
+  locationId: string;
+  productId: string;
+  /**
+   * @minimum 1
+   * @maximum 1000000
+   */
+  quantity: number;
+  /** @pattern ^[0-9a-f]{64}$ */
+  reviewToken: string;
+}
+
+export interface AssemblyInput {
+  /**
+   * @minItems 2
+   * @maxItems 100
+   */
+  allocations: MoveLine[];
+  /**
+   * @minLength 1
+   * @maxLength 80
+   */
+  batchNo: string;
+  /** @minimum 1 */
+  expected_version: number;
+  expiryDate: string;
+  locationId: string;
+  productId: string;
+  /**
+   * @minimum 1
+   * @maximum 1000000
+   */
+  quantity: number;
+}
+
+export interface MovementActivity {
+  action: string;
+  actor: string;
+  at: string;
+  requestId: string | null;
+}
+
+export interface MovementLocation {
+  address: string;
+  city: string;
+  countryCode: string;
+  id: string;
+  name: string;
+  pincode: string;
+  state: string;
+  version: number;
+}
+
+export interface ProductMemberView {
+  allergenId: string;
+  available: boolean;
+  name: string;
+  /**
+   * @maxLength 11
+   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   */
+  quantity: string;
+  unit: string;
+}
+
+export interface AssemblySaved {
+  activity: MovementActivity[];
+  actor: string;
+  actorId: string;
+  batchNo: string;
+  components: AssemblyComponent[];
+  createdAt: string;
+  expiryDate: string;
+  id: string;
+  location: MovementLocation;
+  lotId: string;
+  members: ProductMemberView[];
+  mrp: string;
+  outputAfter: string;
+  outputBefore: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  sellingPrice: string;
+  unit: string;
+  version: number;
+}
+
+export interface AssemblyPage {
+  filtered: number;
+  items: AssemblySaved[];
+  limit: number;
+  offset: number;
+}
+
+export interface AssemblySnapshot {
+  batchNo: string;
+  components: AssemblyComponent[];
+  expiryDate: string;
+  location: MovementLocation;
+  members: ProductMemberView[];
+  mrp: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  sellingPrice: string;
+  unit: string;
+  version: number;
+}
+
+export interface AssemblyReview {
+  assembly: AssemblySnapshot;
+  reviewToken: string;
+}
+
 export interface AssignPatientRequest {
   assigned_mr_id: string | null;
 }
@@ -247,6 +402,8 @@ export const BrowserActivityResource = {
   staff: "staff",
   product_category: "product_category",
   allergen: "allergen",
+  product: "product",
+  product_assembly: "product_assembly",
   vendor: "vendor",
   sales_target: "sales_target",
   opening_balance: "opening_balance",
@@ -2316,6 +2473,21 @@ export const HealthStatusValue = {
 } as const;
 export type HealthStatus = typeof HealthStatusValue;
 
+export interface InventoryComponentProvenance {
+  after: string;
+  batchNo: string | null;
+  before: string;
+  expiryDate: string | null;
+  lineId: string | null;
+  lotId: string;
+  productId: string;
+  productName: string;
+  quantity: string;
+  receiptId: string | null;
+  receiptNumber: string | null;
+  unit: string;
+}
+
 export interface InventoryCoverage {
   complete: boolean;
   contract: string;
@@ -2375,33 +2547,79 @@ export interface InventoryInitializationPage {
   offset: number;
 }
 
+export type InventoryLotViewItemKind =
+  (typeof InventoryLotViewItemKind)[keyof typeof InventoryLotViewItemKind];
+
+export const InventoryLotViewItemKind = {
+  allergen: "allergen",
+  combo: "combo",
+} as const;
+
+export interface InventoryRecipeMember {
+  allergenId: string;
+  available: boolean;
+  name: string;
+  quantity: string;
+  unit: string;
+}
+
+export interface InventoryRecipeSnapshot {
+  members: InventoryRecipeMember[];
+  version: number;
+}
+
 export interface InventoryLotView {
-  batchNo: string;
-  expiryDate: string;
-  lineId: string;
+  assembledQuantity?: string | null;
+  assemblyId?: string | null;
+  batchNo: string | null;
+  comboProductId?: string | null;
+  expiryDate: string | null;
+  itemKind?: InventoryLotViewItemKind;
+  lineId: string | null;
   locationId: string;
   locationName: string;
   lotId: string;
+  mrp?: string | null;
   originalCreatedAt: string;
   productId: string;
   productName: string;
   quantity: string;
-  receiptId: string;
-  receiptNumber: string;
-  receivedDate: string;
+  receiptId: string | null;
+  receiptNumber: string | null;
+  receivedDate: string | null;
+  recipe?: InventoryRecipeSnapshot | null;
+  sellingPrice?: string | null;
+  sourceComponents?: InventoryComponentProvenance[] | null;
   unit: string;
 }
 
+export type InventoryReferenceItemKind =
+  | (typeof InventoryReferenceItemKind)[keyof typeof InventoryReferenceItemKind]
+  | null;
+
+export const InventoryReferenceItemKind = {
+  allergen: "allergen",
+  combo: "combo",
+} as const;
+
 export interface InventoryReference {
+  assembledQuantity?: string | null;
+  assemblyId?: string | null;
   available?: string | null;
   batchNo?: string | null;
+  comboProductId?: string | null;
   expiryDate?: string | null;
   id: string;
+  itemKind?: InventoryReferenceItemKind;
+  mrp?: string | null;
   name: string;
   productId?: string | null;
   productName?: string | null;
   receiptId?: string | null;
   receiptNumber?: string | null;
+  recipe?: InventoryRecipeSnapshot | null;
+  sellingPrice?: string | null;
+  sourceComponents?: InventoryComponentProvenance[] | null;
   unit?: string | null;
 }
 
@@ -2412,10 +2630,19 @@ export interface InventoryReferencePage {
   offset: number;
 }
 
+export type InventoryStockRowItemKind =
+  (typeof InventoryStockRowItemKind)[keyof typeof InventoryStockRowItemKind];
+
+export const InventoryStockRowItemKind = {
+  allergen: "allergen",
+  combo: "combo",
+} as const;
+
 export interface InventoryStockRow {
   category: string;
-  categoryId: string;
+  categoryId: string | null;
   concentration: string;
+  itemKind?: InventoryStockRowItemKind;
   lots: InventoryLotView[];
   name: string;
   productId: string;
@@ -3844,15 +4071,6 @@ export const MoveCreateDeliveryMode = {
   other: "other",
 } as const;
 
-export interface MoveLine {
-  lotId: string;
-  /**
-   * @maxLength 11
-   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
-   */
-  quantity: string;
-}
-
 export interface MoveCreate {
   date: string;
   deliveryMode: MoveCreateDeliveryMode;
@@ -3892,42 +4110,40 @@ export interface MoveInput {
   staffId?: string | null;
 }
 
-export interface MovementActivity {
-  action: string;
-  actor: string;
-  at: string;
-  requestId: string | null;
-}
+export type MovementLineViewItemKind =
+  (typeof MovementLineViewItemKind)[keyof typeof MovementLineViewItemKind];
+
+export const MovementLineViewItemKind = {
+  allergen: "allergen",
+  combo: "combo",
+} as const;
 
 export interface MovementLineView {
-  batchNo: string;
+  assembledQuantity?: string | null;
+  assemblyId?: string | null;
+  batchNo: string | null;
+  comboProductId?: string | null;
   destinationAfter: string;
   destinationBefore: string;
-  expiryDate: string;
-  lineId: string;
+  expiryDate: string | null;
+  itemKind?: MovementLineViewItemKind;
+  lineId: string | null;
   lotId: string;
+  mrp?: string | null;
   originalCreatedAt: string;
   productId: string;
   productName: string;
   productVersion: number;
   quantity: string;
-  receiptId: string;
-  receiptNumber: string;
-  receivedDate: string;
+  receiptId: string | null;
+  receiptNumber: string | null;
+  receivedDate: string | null;
+  recipe?: InventoryRecipeSnapshot | null;
+  sellingPrice?: string | null;
   sourceAfter: string;
   sourceBefore: string;
+  sourceComponents?: InventoryComponentProvenance[] | null;
   unit: string;
-}
-
-export interface MovementLocation {
-  address: string;
-  city: string;
-  countryCode: string;
-  id: string;
-  name: string;
-  pincode: string;
-  state: string;
-  version: number;
 }
 
 export type MovementSavedDeliveryMode =
@@ -6056,6 +6272,181 @@ export interface ProductCategoryStatus {
 export interface ProductCategoryVersion {
   /** @minimum 1 */
   expected_version: number;
+}
+
+export type ProductCreateStatus =
+  (typeof ProductCreateStatus)[keyof typeof ProductCreateStatus];
+
+export const ProductCreateStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface ProductMemberInput {
+  allergenId: string;
+  /**
+   * @maxLength 11
+   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   */
+  quantity: string;
+}
+
+export interface ProductCreate {
+  idempotencyKey: string;
+  /**
+   * @minItems 2
+   * @maxItems 100
+   */
+  members: ProductMemberInput[];
+  mrp: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  sellingPrice: string;
+  status?: ProductCreateStatus;
+}
+
+export interface ProductDelete {
+  /** @minimum 1 */
+  expected_version: number;
+  idempotencyKey: string;
+}
+
+export type ProductEditStatus =
+  (typeof ProductEditStatus)[keyof typeof ProductEditStatus];
+
+export const ProductEditStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface ProductEdit {
+  /** @minimum 1 */
+  expected_version: number;
+  idempotencyKey: string;
+  /**
+   * @minItems 2
+   * @maxItems 100
+   */
+  members: ProductMemberInput[];
+  mrp: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  sellingPrice: string;
+  status?: ProductEditStatus;
+}
+
+export type ProductViewStatus =
+  (typeof ProductViewStatus)[keyof typeof ProductViewStatus];
+
+export const ProductViewStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface ProductView {
+  createdAt: string;
+  createdBy: string;
+  deletedAt: string | null;
+  id: string;
+  members: ProductMemberView[];
+  mrp: string;
+  name: string;
+  sellingPrice: string;
+  status: ProductViewStatus;
+  updatedAt: string;
+  updatedBy: string;
+  version: number;
+}
+
+export interface ProductHistoryItem {
+  action: string;
+  actor: string;
+  after: ProductView;
+  at: string;
+  before: ProductView | null;
+  id: string;
+  version: number;
+}
+
+export interface ProductHistoryPage {
+  filtered: number;
+  items: ProductHistoryItem[];
+  limit: number;
+  offset: number;
+}
+
+export interface ProductQuantitySummary {
+  locationId?: string | null;
+  locationName?: string | null;
+  productId: string;
+  productName: string;
+  quantity: string;
+  unit: string;
+}
+
+export interface ProductSummary {
+  assembled: ProductQuantitySummary[];
+  assemblies: number;
+  products: number;
+  remaining: ProductQuantitySummary[];
+  scope: string;
+}
+
+export interface ProductPage {
+  filtered: number;
+  items: ProductView[];
+  limit: number;
+  offset: number;
+  summary: ProductSummary;
+  total: number;
+}
+
+export type ProductReconciliationState =
+  (typeof ProductReconciliationState)[keyof typeof ProductReconciliationState];
+
+export const ProductReconciliationState = {
+  committed: "committed",
+  not_committed: "not_committed",
+} as const;
+
+export interface ProductReconciliation {
+  result: ProductView | AssemblySaved | null;
+  state: ProductReconciliationState;
+}
+
+export interface ProductReference {
+  id: string;
+  name: string;
+  unit: string;
+  version: number;
+}
+
+export interface ProductReferencePage {
+  filtered: number;
+  items: ProductReference[];
+  limit: number;
+  offset: number;
+}
+
+export type ProductStatusStatus =
+  (typeof ProductStatusStatus)[keyof typeof ProductStatusStatus];
+
+export const ProductStatusStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface ProductStatus {
+  /** @minimum 1 */
+  expected_version: number;
+  idempotencyKey: string;
+  status: ProductStatusStatus;
 }
 
 export interface ProvisionMRRequest {
@@ -9838,6 +10229,76 @@ export const DownloadProductCategorySampleFormat = {
   csv: "csv",
   xlsx: "xlsx",
 } as const;
+
+export type ListStockProductsParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ListStockProductsStatus;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type ListStockProductsStatus =
+  (typeof ListStockProductsStatus)[keyof typeof ListStockProductsStatus];
+
+export const ListStockProductsStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type GetStockProductReferencesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type GetStockProductActivityParams = {
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type GetStockProductAssembliesParams = {
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
 
 export type ListPurchaseOrdersParams = {
   /**

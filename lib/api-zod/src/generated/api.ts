@@ -881,6 +881,60 @@ export const editProductCategoryResponseUnitPriceMax = 64;
 export const setProductCategoryStatusResponseDescriptionMax = 2000;
 export const setProductCategoryStatusResponseNameMax = 200;
 export const setProductCategoryStatusResponseUnitPriceMax = 64;
+export const listStockProductsQueryQueryMax = 200;
+export const listStockProductsQueryOffsetDefault = 0;
+export const listStockProductsQueryOffsetMin = 0;
+export const listStockProductsQueryOffsetMax = 1000000;
+export const listStockProductsQueryLimitDefault = 25;
+export const listStockProductsQueryLimitMax = 100;
+export const listStockProductsResponseItemsItemMembersItemQuantityMax = 11;
+export const createStockProductBodyMembersItemQuantityMax = 11;
+export const createStockProductBodyMembersMin = 2;
+export const createStockProductBodyMembersMax = 100;
+export const createStockProductBodyNameMax = 200;
+export const createStockProductResponseMembersItemQuantityMax = 11;
+export const assembleStockProductBodyAllocationsItemQuantityMax = 11;
+export const assembleStockProductBodyAllocationsMin = 2;
+export const assembleStockProductBodyAllocationsMax = 100;
+export const assembleStockProductBodyBatchNoMax = 80;
+export const assembleStockProductBodyQuantityMax = 1000000;
+export const assembleStockProductResponseMembersItemQuantityMax = 11;
+export const previewProductAssemblyBodyAllocationsItemQuantityMax = 11;
+export const previewProductAssemblyBodyAllocationsMin = 2;
+export const previewProductAssemblyBodyAllocationsMax = 100;
+export const previewProductAssemblyBodyBatchNoMax = 80;
+export const previewProductAssemblyBodyQuantityMax = 1000000;
+export const previewProductAssemblyResponseAssemblyMembersItemQuantityMax = 11;
+export const getProductAssemblyResponseMembersItemQuantityMax = 11;
+export const getStockProductReferencesQueryQueryMax = 200;
+export const getStockProductReferencesQueryOffsetDefault = 0;
+export const getStockProductReferencesQueryOffsetMin = 0;
+export const getStockProductReferencesQueryOffsetMax = 1000000;
+export const getStockProductReferencesQueryLimitDefault = 25;
+export const getStockProductReferencesQueryLimitMax = 100;
+export const reconcileStockProductRequestResponseResultOneMembersItemQuantityMax = 11;
+export const reconcileStockProductRequestResponseResultTwoMembersItemQuantityMax = 11;
+export const deleteStockProductResponseMembersItemQuantityMax = 11;
+export const getStockProductResponseMembersItemQuantityMax = 11;
+export const editStockProductBodyMembersItemQuantityMax = 11;
+export const editStockProductBodyMembersMin = 2;
+export const editStockProductBodyMembersMax = 100;
+export const editStockProductBodyNameMax = 200;
+export const editStockProductResponseMembersItemQuantityMax = 11;
+export const getStockProductActivityQueryOffsetDefault = 0;
+export const getStockProductActivityQueryOffsetMin = 0;
+export const getStockProductActivityQueryOffsetMax = 1000000;
+export const getStockProductActivityQueryLimitDefault = 25;
+export const getStockProductActivityQueryLimitMax = 100;
+export const getStockProductActivityResponseItemsItemAfterMembersItemQuantityMax = 11;
+export const getStockProductActivityResponseItemsItemBeforeOneMembersItemQuantityMax = 11;
+export const getStockProductAssembliesQueryOffsetDefault = 0;
+export const getStockProductAssembliesQueryOffsetMin = 0;
+export const getStockProductAssembliesQueryOffsetMax = 1000000;
+export const getStockProductAssembliesQueryLimitDefault = 25;
+export const getStockProductAssembliesQueryLimitMax = 100;
+export const getStockProductAssembliesResponseItemsItemMembersItemQuantityMax = 11;
+export const setStockProductStatusResponseMembersItemQuantityMax = 11;
 export const listPurchaseOrdersQueryQueryMax = 200;
 export const listPurchaseOrdersQueryLimitDefault = 10;
 export const listPurchaseOrdersQueryLimitMax = 100;
@@ -7311,6 +7365,8 @@ export const ListInventoryMovementsQueryParams = zod.object({
     .default(listInventoryMovementsQueryLimitDefault),
 });
 
+export const listInventoryMovementsResponseItemsItemLinesItemItemKindDefault = `allergen`;
+
 export const ListInventoryMovementsResponse = zod.object({
   filtered: zod.number().int(),
   items: zod.array(
@@ -7343,22 +7399,72 @@ export const ListInventoryMovementsResponse = zod.object({
       id: zod.string().uuid(),
       lines: zod.array(
         zod.object({
-          batchNo: zod.string(),
+          assembledQuantity: zod.union([zod.string(), zod.null()]).optional(),
+          assemblyId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          batchNo: zod.union([zod.string(), zod.null()]),
+          comboProductId: zod
+            .union([zod.string().uuid(), zod.null()])
+            .optional(),
           destinationAfter: zod.string(),
           destinationBefore: zod.string(),
-          expiryDate: zod.coerce.date(),
-          lineId: zod.string().uuid(),
+          expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+          itemKind: zod
+            .enum(["allergen", "combo"])
+            .default(
+              listInventoryMovementsResponseItemsItemLinesItemItemKindDefault,
+            ),
+          lineId: zod.union([zod.string().uuid(), zod.null()]),
           lotId: zod.string().uuid(),
+          mrp: zod.union([zod.string(), zod.null()]).optional(),
           originalCreatedAt: zod.string(),
           productId: zod.string().uuid(),
           productName: zod.string(),
           productVersion: zod.number().int(),
           quantity: zod.string(),
-          receiptId: zod.string().uuid(),
-          receiptNumber: zod.string(),
-          receivedDate: zod.coerce.date(),
+          receiptId: zod.union([zod.string().uuid(), zod.null()]),
+          receiptNumber: zod.union([zod.string(), zod.null()]),
+          receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+          recipe: zod
+            .union([
+              zod.object({
+                members: zod.array(
+                  zod.object({
+                    allergenId: zod.string().uuid(),
+                    available: zod.boolean(),
+                    name: zod.string(),
+                    quantity: zod.string(),
+                    unit: zod.string(),
+                  }),
+                ),
+                version: zod.number().int(),
+              }),
+              zod.null(),
+            ])
+            .optional(),
+          sellingPrice: zod.union([zod.string(), zod.null()]).optional(),
           sourceAfter: zod.string(),
           sourceBefore: zod.string(),
+          sourceComponents: zod
+            .union([
+              zod.array(
+                zod.object({
+                  after: zod.string(),
+                  batchNo: zod.union([zod.string(), zod.null()]),
+                  before: zod.string(),
+                  expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+                  lineId: zod.union([zod.string().uuid(), zod.null()]),
+                  lotId: zod.string().uuid(),
+                  productId: zod.string().uuid(),
+                  productName: zod.string(),
+                  quantity: zod.string(),
+                  receiptId: zod.union([zod.string().uuid(), zod.null()]),
+                  receiptNumber: zod.union([zod.string(), zod.null()]),
+                  unit: zod.string(),
+                }),
+              ),
+              zod.null(),
+            ])
+            .optional(),
           unit: zod.string(),
         }),
       ),
@@ -7431,6 +7537,8 @@ export const CreateInventoryMovementBody = zod.object({
   staffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
 });
 
+export const createInventoryMovementResponseLinesItemItemKindDefault = `allergen`;
+
 export const CreateInventoryMovementResponse = zod.object({
   activity: zod.array(
     zod.object({
@@ -7460,22 +7568,68 @@ export const CreateInventoryMovementResponse = zod.object({
   id: zod.string().uuid(),
   lines: zod.array(
     zod.object({
-      batchNo: zod.string(),
+      assembledQuantity: zod.union([zod.string(), zod.null()]).optional(),
+      assemblyId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      batchNo: zod.union([zod.string(), zod.null()]),
+      comboProductId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       destinationAfter: zod.string(),
       destinationBefore: zod.string(),
-      expiryDate: zod.coerce.date(),
-      lineId: zod.string().uuid(),
+      expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+      itemKind: zod
+        .enum(["allergen", "combo"])
+        .default(createInventoryMovementResponseLinesItemItemKindDefault),
+      lineId: zod.union([zod.string().uuid(), zod.null()]),
       lotId: zod.string().uuid(),
+      mrp: zod.union([zod.string(), zod.null()]).optional(),
       originalCreatedAt: zod.string(),
       productId: zod.string().uuid(),
       productName: zod.string(),
       productVersion: zod.number().int(),
       quantity: zod.string(),
-      receiptId: zod.string().uuid(),
-      receiptNumber: zod.string(),
-      receivedDate: zod.coerce.date(),
+      receiptId: zod.union([zod.string().uuid(), zod.null()]),
+      receiptNumber: zod.union([zod.string(), zod.null()]),
+      receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+      recipe: zod
+        .union([
+          zod.object({
+            members: zod.array(
+              zod.object({
+                allergenId: zod.string().uuid(),
+                available: zod.boolean(),
+                name: zod.string(),
+                quantity: zod.string(),
+                unit: zod.string(),
+              }),
+            ),
+            version: zod.number().int(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      sellingPrice: zod.union([zod.string(), zod.null()]).optional(),
       sourceAfter: zod.string(),
       sourceBefore: zod.string(),
+      sourceComponents: zod
+        .union([
+          zod.array(
+            zod.object({
+              after: zod.string(),
+              batchNo: zod.union([zod.string(), zod.null()]),
+              before: zod.string(),
+              expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+              lineId: zod.union([zod.string().uuid(), zod.null()]),
+              lotId: zod.string().uuid(),
+              productId: zod.string().uuid(),
+              productName: zod.string(),
+              quantity: zod.string(),
+              receiptId: zod.union([zod.string().uuid(), zod.null()]),
+              receiptNumber: zod.union([zod.string(), zod.null()]),
+              unit: zod.string(),
+            }),
+          ),
+          zod.null(),
+        ])
+        .optional(),
       unit: zod.string(),
     }),
   ),
@@ -7532,6 +7686,8 @@ export const PreviewInventoryMovementBody = zod.object({
   staffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
 });
 
+export const previewInventoryMovementResponseMovementLinesItemItemKindDefault = `allergen`;
+
 export const PreviewInventoryMovementResponse = zod.object({
   movement: zod.object({
     date: zod.coerce.date(),
@@ -7549,22 +7705,70 @@ export const PreviewInventoryMovementResponse = zod.object({
     }),
     lines: zod.array(
       zod.object({
-        batchNo: zod.string(),
+        assembledQuantity: zod.union([zod.string(), zod.null()]).optional(),
+        assemblyId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        batchNo: zod.union([zod.string(), zod.null()]),
+        comboProductId: zod.union([zod.string().uuid(), zod.null()]).optional(),
         destinationAfter: zod.string(),
         destinationBefore: zod.string(),
-        expiryDate: zod.coerce.date(),
-        lineId: zod.string().uuid(),
+        expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+        itemKind: zod
+          .enum(["allergen", "combo"])
+          .default(
+            previewInventoryMovementResponseMovementLinesItemItemKindDefault,
+          ),
+        lineId: zod.union([zod.string().uuid(), zod.null()]),
         lotId: zod.string().uuid(),
+        mrp: zod.union([zod.string(), zod.null()]).optional(),
         originalCreatedAt: zod.string(),
         productId: zod.string().uuid(),
         productName: zod.string(),
         productVersion: zod.number().int(),
         quantity: zod.string(),
-        receiptId: zod.string().uuid(),
-        receiptNumber: zod.string(),
-        receivedDate: zod.coerce.date(),
+        receiptId: zod.union([zod.string().uuid(), zod.null()]),
+        receiptNumber: zod.union([zod.string(), zod.null()]),
+        receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+        recipe: zod
+          .union([
+            zod.object({
+              members: zod.array(
+                zod.object({
+                  allergenId: zod.string().uuid(),
+                  available: zod.boolean(),
+                  name: zod.string(),
+                  quantity: zod.string(),
+                  unit: zod.string(),
+                }),
+              ),
+              version: zod.number().int(),
+            }),
+            zod.null(),
+          ])
+          .optional(),
+        sellingPrice: zod.union([zod.string(), zod.null()]).optional(),
         sourceAfter: zod.string(),
         sourceBefore: zod.string(),
+        sourceComponents: zod
+          .union([
+            zod.array(
+              zod.object({
+                after: zod.string(),
+                batchNo: zod.union([zod.string(), zod.null()]),
+                before: zod.string(),
+                expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+                lineId: zod.union([zod.string().uuid(), zod.null()]),
+                lotId: zod.string().uuid(),
+                productId: zod.string().uuid(),
+                productName: zod.string(),
+                quantity: zod.string(),
+                receiptId: zod.union([zod.string().uuid(), zod.null()]),
+                receiptNumber: zod.union([zod.string(), zod.null()]),
+                unit: zod.string(),
+              }),
+            ),
+            zod.null(),
+          ])
+          .optional(),
         unit: zod.string(),
       }),
     ),
@@ -7590,6 +7794,8 @@ export const PreviewInventoryMovementResponse = zod.object({
 export const GetInventoryMovementParams = zod.object({
   record_id: zod.coerce.string().uuid(),
 });
+
+export const getInventoryMovementResponseLinesItemItemKindDefault = `allergen`;
 
 export const GetInventoryMovementResponse = zod.object({
   activity: zod.array(
@@ -7620,22 +7826,68 @@ export const GetInventoryMovementResponse = zod.object({
   id: zod.string().uuid(),
   lines: zod.array(
     zod.object({
-      batchNo: zod.string(),
+      assembledQuantity: zod.union([zod.string(), zod.null()]).optional(),
+      assemblyId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      batchNo: zod.union([zod.string(), zod.null()]),
+      comboProductId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       destinationAfter: zod.string(),
       destinationBefore: zod.string(),
-      expiryDate: zod.coerce.date(),
-      lineId: zod.string().uuid(),
+      expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+      itemKind: zod
+        .enum(["allergen", "combo"])
+        .default(getInventoryMovementResponseLinesItemItemKindDefault),
+      lineId: zod.union([zod.string().uuid(), zod.null()]),
       lotId: zod.string().uuid(),
+      mrp: zod.union([zod.string(), zod.null()]).optional(),
       originalCreatedAt: zod.string(),
       productId: zod.string().uuid(),
       productName: zod.string(),
       productVersion: zod.number().int(),
       quantity: zod.string(),
-      receiptId: zod.string().uuid(),
-      receiptNumber: zod.string(),
-      receivedDate: zod.coerce.date(),
+      receiptId: zod.union([zod.string().uuid(), zod.null()]),
+      receiptNumber: zod.union([zod.string(), zod.null()]),
+      receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+      recipe: zod
+        .union([
+          zod.object({
+            members: zod.array(
+              zod.object({
+                allergenId: zod.string().uuid(),
+                available: zod.boolean(),
+                name: zod.string(),
+                quantity: zod.string(),
+                unit: zod.string(),
+              }),
+            ),
+            version: zod.number().int(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      sellingPrice: zod.union([zod.string(), zod.null()]).optional(),
       sourceAfter: zod.string(),
       sourceBefore: zod.string(),
+      sourceComponents: zod
+        .union([
+          zod.array(
+            zod.object({
+              after: zod.string(),
+              batchNo: zod.union([zod.string(), zod.null()]),
+              before: zod.string(),
+              expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+              lineId: zod.union([zod.string().uuid(), zod.null()]),
+              lotId: zod.string().uuid(),
+              productId: zod.string().uuid(),
+              productName: zod.string(),
+              quantity: zod.string(),
+              receiptId: zod.union([zod.string().uuid(), zod.null()]),
+              receiptNumber: zod.union([zod.string(), zod.null()]),
+              unit: zod.string(),
+            }),
+          ),
+          zod.null(),
+        ])
+        .optional(),
       unit: zod.string(),
     }),
   ),
@@ -7721,15 +7973,61 @@ export const GetInventoryReferencesResponse = zod.object({
   filtered: zod.number().int(),
   items: zod.array(
     zod.object({
+      assembledQuantity: zod.union([zod.string(), zod.null()]).optional(),
+      assemblyId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       available: zod.union([zod.string(), zod.null()]).optional(),
       batchNo: zod.union([zod.string(), zod.null()]).optional(),
+      comboProductId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
       id: zod.string().uuid(),
+      itemKind: zod
+        .union([zod.enum(["allergen", "combo"]), zod.null()])
+        .optional(),
+      mrp: zod.union([zod.string(), zod.null()]).optional(),
       name: zod.string(),
       productId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       productName: zod.union([zod.string(), zod.null()]).optional(),
       receiptId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       receiptNumber: zod.union([zod.string(), zod.null()]).optional(),
+      recipe: zod
+        .union([
+          zod.object({
+            members: zod.array(
+              zod.object({
+                allergenId: zod.string().uuid(),
+                available: zod.boolean(),
+                name: zod.string(),
+                quantity: zod.string(),
+                unit: zod.string(),
+              }),
+            ),
+            version: zod.number().int(),
+          }),
+          zod.null(),
+        ])
+        .optional(),
+      sellingPrice: zod.union([zod.string(), zod.null()]).optional(),
+      sourceComponents: zod
+        .union([
+          zod.array(
+            zod.object({
+              after: zod.string(),
+              batchNo: zod.union([zod.string(), zod.null()]),
+              before: zod.string(),
+              expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+              lineId: zod.union([zod.string().uuid(), zod.null()]),
+              lotId: zod.string().uuid(),
+              productId: zod.string().uuid(),
+              productName: zod.string(),
+              quantity: zod.string(),
+              receiptId: zod.union([zod.string().uuid(), zod.null()]),
+              receiptNumber: zod.union([zod.string(), zod.null()]),
+              unit: zod.string(),
+            }),
+          ),
+          zod.null(),
+        ])
+        .optional(),
       unit: zod.union([zod.string(), zod.null()]).optional(),
     }),
   ),
@@ -7743,6 +8041,8 @@ export const GetInventoryReferencesResponse = zod.object({
 export const ReconcileInventoryMovementParams = zod.object({
   key: zod.coerce.string().uuid(),
 });
+
+export const reconcileInventoryMovementResponseMovementOneLinesItemItemKindDefault = `allergen`;
 
 export const ReconcileInventoryMovementResponse = zod.object({
   movement: zod.union([
@@ -7775,22 +8075,72 @@ export const ReconcileInventoryMovementResponse = zod.object({
       id: zod.string().uuid(),
       lines: zod.array(
         zod.object({
-          batchNo: zod.string(),
+          assembledQuantity: zod.union([zod.string(), zod.null()]).optional(),
+          assemblyId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          batchNo: zod.union([zod.string(), zod.null()]),
+          comboProductId: zod
+            .union([zod.string().uuid(), zod.null()])
+            .optional(),
           destinationAfter: zod.string(),
           destinationBefore: zod.string(),
-          expiryDate: zod.coerce.date(),
-          lineId: zod.string().uuid(),
+          expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+          itemKind: zod
+            .enum(["allergen", "combo"])
+            .default(
+              reconcileInventoryMovementResponseMovementOneLinesItemItemKindDefault,
+            ),
+          lineId: zod.union([zod.string().uuid(), zod.null()]),
           lotId: zod.string().uuid(),
+          mrp: zod.union([zod.string(), zod.null()]).optional(),
           originalCreatedAt: zod.string(),
           productId: zod.string().uuid(),
           productName: zod.string(),
           productVersion: zod.number().int(),
           quantity: zod.string(),
-          receiptId: zod.string().uuid(),
-          receiptNumber: zod.string(),
-          receivedDate: zod.coerce.date(),
+          receiptId: zod.union([zod.string().uuid(), zod.null()]),
+          receiptNumber: zod.union([zod.string(), zod.null()]),
+          receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+          recipe: zod
+            .union([
+              zod.object({
+                members: zod.array(
+                  zod.object({
+                    allergenId: zod.string().uuid(),
+                    available: zod.boolean(),
+                    name: zod.string(),
+                    quantity: zod.string(),
+                    unit: zod.string(),
+                  }),
+                ),
+                version: zod.number().int(),
+              }),
+              zod.null(),
+            ])
+            .optional(),
+          sellingPrice: zod.union([zod.string(), zod.null()]).optional(),
           sourceAfter: zod.string(),
           sourceBefore: zod.string(),
+          sourceComponents: zod
+            .union([
+              zod.array(
+                zod.object({
+                  after: zod.string(),
+                  batchNo: zod.union([zod.string(), zod.null()]),
+                  before: zod.string(),
+                  expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+                  lineId: zod.union([zod.string().uuid(), zod.null()]),
+                  lotId: zod.string().uuid(),
+                  productId: zod.string().uuid(),
+                  productName: zod.string(),
+                  quantity: zod.string(),
+                  receiptId: zod.union([zod.string().uuid(), zod.null()]),
+                  receiptNumber: zod.union([zod.string(), zod.null()]),
+                  unit: zod.string(),
+                }),
+              ),
+              zod.null(),
+            ])
+            .optional(),
           unit: zod.string(),
         }),
       ),
@@ -7851,6 +8201,11 @@ export const ListInventoryStockQueryParams = zod.object({
     .default(listInventoryStockQueryLimitDefault),
 });
 
+export const listInventoryStockResponseItemsItemItemKindDefault = `allergen`;
+export const listInventoryStockResponseItemsItemLotsItemItemKindDefault = `allergen`;
+export const listInventoryStockResponseSnapshotOneItemItemKindDefault = `allergen`;
+export const listInventoryStockResponseSnapshotOneItemLotsItemItemKindDefault = `allergen`;
+
 export const ListInventoryStockResponse = zod.object({
   asOf: zod.coerce.date(),
   coverage: zod.object({
@@ -7864,23 +8219,76 @@ export const ListInventoryStockResponse = zod.object({
   items: zod.array(
     zod.object({
       category: zod.string(),
-      categoryId: zod.string().uuid(),
+      categoryId: zod.union([zod.string().uuid(), zod.null()]),
       concentration: zod.string(),
+      itemKind: zod
+        .enum(["allergen", "combo"])
+        .default(listInventoryStockResponseItemsItemItemKindDefault),
       lots: zod.array(
         zod.object({
-          batchNo: zod.string(),
-          expiryDate: zod.coerce.date(),
-          lineId: zod.string().uuid(),
+          assembledQuantity: zod.union([zod.string(), zod.null()]).optional(),
+          assemblyId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          batchNo: zod.union([zod.string(), zod.null()]),
+          comboProductId: zod
+            .union([zod.string().uuid(), zod.null()])
+            .optional(),
+          expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+          itemKind: zod
+            .enum(["allergen", "combo"])
+            .default(
+              listInventoryStockResponseItemsItemLotsItemItemKindDefault,
+            ),
+          lineId: zod.union([zod.string().uuid(), zod.null()]),
           locationId: zod.string().uuid(),
           locationName: zod.string(),
           lotId: zod.string().uuid(),
+          mrp: zod.union([zod.string(), zod.null()]).optional(),
           originalCreatedAt: zod.string(),
           productId: zod.string().uuid(),
           productName: zod.string(),
           quantity: zod.string(),
-          receiptId: zod.string().uuid(),
-          receiptNumber: zod.string(),
-          receivedDate: zod.coerce.date(),
+          receiptId: zod.union([zod.string().uuid(), zod.null()]),
+          receiptNumber: zod.union([zod.string(), zod.null()]),
+          receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+          recipe: zod
+            .union([
+              zod.object({
+                members: zod.array(
+                  zod.object({
+                    allergenId: zod.string().uuid(),
+                    available: zod.boolean(),
+                    name: zod.string(),
+                    quantity: zod.string(),
+                    unit: zod.string(),
+                  }),
+                ),
+                version: zod.number().int(),
+              }),
+              zod.null(),
+            ])
+            .optional(),
+          sellingPrice: zod.union([zod.string(), zod.null()]).optional(),
+          sourceComponents: zod
+            .union([
+              zod.array(
+                zod.object({
+                  after: zod.string(),
+                  batchNo: zod.union([zod.string(), zod.null()]),
+                  before: zod.string(),
+                  expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+                  lineId: zod.union([zod.string().uuid(), zod.null()]),
+                  lotId: zod.string().uuid(),
+                  productId: zod.string().uuid(),
+                  productName: zod.string(),
+                  quantity: zod.string(),
+                  receiptId: zod.union([zod.string().uuid(), zod.null()]),
+                  receiptNumber: zod.union([zod.string(), zod.null()]),
+                  unit: zod.string(),
+                }),
+              ),
+              zod.null(),
+            ])
+            .optional(),
           unit: zod.string(),
         }),
       ),
@@ -7899,23 +8307,80 @@ export const ListInventoryStockResponse = zod.object({
       zod.array(
         zod.object({
           category: zod.string(),
-          categoryId: zod.string().uuid(),
+          categoryId: zod.union([zod.string().uuid(), zod.null()]),
           concentration: zod.string(),
+          itemKind: zod
+            .enum(["allergen", "combo"])
+            .default(listInventoryStockResponseSnapshotOneItemItemKindDefault),
           lots: zod.array(
             zod.object({
-              batchNo: zod.string(),
-              expiryDate: zod.coerce.date(),
-              lineId: zod.string().uuid(),
+              assembledQuantity: zod
+                .union([zod.string(), zod.null()])
+                .optional(),
+              assemblyId: zod
+                .union([zod.string().uuid(), zod.null()])
+                .optional(),
+              batchNo: zod.union([zod.string(), zod.null()]),
+              comboProductId: zod
+                .union([zod.string().uuid(), zod.null()])
+                .optional(),
+              expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+              itemKind: zod
+                .enum(["allergen", "combo"])
+                .default(
+                  listInventoryStockResponseSnapshotOneItemLotsItemItemKindDefault,
+                ),
+              lineId: zod.union([zod.string().uuid(), zod.null()]),
               locationId: zod.string().uuid(),
               locationName: zod.string(),
               lotId: zod.string().uuid(),
+              mrp: zod.union([zod.string(), zod.null()]).optional(),
               originalCreatedAt: zod.string(),
               productId: zod.string().uuid(),
               productName: zod.string(),
               quantity: zod.string(),
-              receiptId: zod.string().uuid(),
-              receiptNumber: zod.string(),
-              receivedDate: zod.coerce.date(),
+              receiptId: zod.union([zod.string().uuid(), zod.null()]),
+              receiptNumber: zod.union([zod.string(), zod.null()]),
+              receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+              recipe: zod
+                .union([
+                  zod.object({
+                    members: zod.array(
+                      zod.object({
+                        allergenId: zod.string().uuid(),
+                        available: zod.boolean(),
+                        name: zod.string(),
+                        quantity: zod.string(),
+                        unit: zod.string(),
+                      }),
+                    ),
+                    version: zod.number().int(),
+                  }),
+                  zod.null(),
+                ])
+                .optional(),
+              sellingPrice: zod.union([zod.string(), zod.null()]).optional(),
+              sourceComponents: zod
+                .union([
+                  zod.array(
+                    zod.object({
+                      after: zod.string(),
+                      batchNo: zod.union([zod.string(), zod.null()]),
+                      before: zod.string(),
+                      expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+                      lineId: zod.union([zod.string().uuid(), zod.null()]),
+                      lotId: zod.string().uuid(),
+                      productId: zod.string().uuid(),
+                      productName: zod.string(),
+                      quantity: zod.string(),
+                      receiptId: zod.union([zod.string().uuid(), zod.null()]),
+                      receiptNumber: zod.union([zod.string(), zod.null()]),
+                      unit: zod.string(),
+                    }),
+                  ),
+                  zod.null(),
+                ])
+                .optional(),
               unit: zod.string(),
             }),
           ),
@@ -15813,6 +16278,1019 @@ export const SetProductCategoryStatusResponse = zod.object({
 /**
  * @summary Listing
  */
+export const listStockProductsQueryQueryDefault = ``;
+
+export const listStockProductsQueryStatusDefault = `all`;
+
+export const ListStockProductsQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listStockProductsQueryQueryMax)
+    .default(listStockProductsQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(listStockProductsQueryStatusDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listStockProductsQueryOffsetMin)
+    .max(listStockProductsQueryOffsetMax)
+    .default(listStockProductsQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listStockProductsQueryLimitMax)
+    .default(listStockProductsQueryLimitDefault),
+});
+
+export const listStockProductsResponseItemsItemMembersItemQuantityRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+
+export const ListStockProductsResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      deletedAt: zod.union([zod.coerce.date(), zod.null()]),
+      id: zod.string().uuid(),
+      members: zod.array(
+        zod.object({
+          allergenId: zod.string().uuid(),
+          available: zod.boolean(),
+          name: zod.string(),
+          quantity: zod
+            .string()
+            .max(listStockProductsResponseItemsItemMembersItemQuantityMax)
+            .regex(listStockProductsResponseItemsItemMembersItemQuantityRegExp),
+          unit: zod.string(),
+        }),
+      ),
+      mrp: zod.string(),
+      name: zod.string(),
+      sellingPrice: zod.string(),
+      status: zod.enum(["active", "inactive"]),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  summary: zod.object({
+    assembled: zod.array(
+      zod.object({
+        locationId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        locationName: zod.union([zod.string(), zod.null()]).optional(),
+        productId: zod.string().uuid(),
+        productName: zod.string(),
+        quantity: zod.string(),
+        unit: zod.string(),
+      }),
+    ),
+    assemblies: zod.number().int(),
+    products: zod.number().int(),
+    remaining: zod.array(
+      zod.object({
+        locationId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        locationName: zod.union([zod.string(), zod.null()]).optional(),
+        productId: zod.string().uuid(),
+        productName: zod.string(),
+        quantity: zod.string(),
+        unit: zod.string(),
+      }),
+    ),
+    scope: zod.string(),
+  }),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+
+export const createStockProductBodyMembersItemQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const createStockProductBodyStatusDefault = `active`;
+
+export const CreateStockProductBody = zod.object({
+  idempotencyKey: zod.string().uuid(),
+  members: zod
+    .array(
+      zod.object({
+        allergenId: zod.string().uuid(),
+        quantity: zod
+          .string()
+          .max(createStockProductBodyMembersItemQuantityMax)
+          .regex(createStockProductBodyMembersItemQuantityRegExp),
+      }),
+    )
+    .min(createStockProductBodyMembersMin)
+    .max(createStockProductBodyMembersMax),
+  mrp: zod.string(),
+  name: zod.string().min(1).max(createStockProductBodyNameMax),
+  sellingPrice: zod.string(),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(createStockProductBodyStatusDefault),
+});
+
+export const createStockProductResponseMembersItemQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const CreateStockProductResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  deletedAt: zod.union([zod.coerce.date(), zod.null()]),
+  id: zod.string().uuid(),
+  members: zod.array(
+    zod.object({
+      allergenId: zod.string().uuid(),
+      available: zod.boolean(),
+      name: zod.string(),
+      quantity: zod
+        .string()
+        .max(createStockProductResponseMembersItemQuantityMax)
+        .regex(createStockProductResponseMembersItemQuantityRegExp),
+      unit: zod.string(),
+    }),
+  ),
+  mrp: zod.string(),
+  name: zod.string(),
+  sellingPrice: zod.string(),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Assemble
+ */
+
+export const assembleStockProductBodyAllocationsItemQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const assembleStockProductBodyReviewTokenRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const AssembleStockProductBody = zod.object({
+  allocations: zod
+    .array(
+      zod.object({
+        lotId: zod.string().uuid(),
+        quantity: zod
+          .string()
+          .max(assembleStockProductBodyAllocationsItemQuantityMax)
+          .regex(assembleStockProductBodyAllocationsItemQuantityRegExp),
+      }),
+    )
+    .min(assembleStockProductBodyAllocationsMin)
+    .max(assembleStockProductBodyAllocationsMax),
+  batchNo: zod.string().min(1).max(assembleStockProductBodyBatchNoMax),
+  expected_version: zod.number().int().min(1),
+  expiryDate: zod.coerce.date(),
+  idempotencyKey: zod.string().uuid(),
+  locationId: zod.string().uuid(),
+  productId: zod.string().uuid(),
+  quantity: zod.number().int().min(1).max(assembleStockProductBodyQuantityMax),
+  reviewToken: zod.string().regex(assembleStockProductBodyReviewTokenRegExp),
+});
+
+export const assembleStockProductResponseMembersItemQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const AssembleStockProductResponse = zod.object({
+  activity: zod.array(
+    zod.object({
+      action: zod.string(),
+      actor: zod.string(),
+      at: zod.coerce.date(),
+      requestId: zod.union([zod.string(), zod.null()]),
+    }),
+  ),
+  actor: zod.string(),
+  actorId: zod.string().uuid(),
+  batchNo: zod.string(),
+  components: zod.array(
+    zod.object({
+      after: zod.string(),
+      batchNo: zod.union([zod.string(), zod.null()]),
+      before: zod.string(),
+      expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+      lineId: zod.union([zod.string().uuid(), zod.null()]),
+      lotId: zod.string().uuid(),
+      productId: zod.string().uuid(),
+      productName: zod.string(),
+      productVersion: zod.number().int(),
+      quantity: zod.string(),
+      receiptId: zod.union([zod.string().uuid(), zod.null()]),
+      receiptNumber: zod.union([zod.string(), zod.null()]),
+      receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+      unit: zod.string(),
+    }),
+  ),
+  createdAt: zod.coerce.date(),
+  expiryDate: zod.coerce.date(),
+  id: zod.string().uuid(),
+  location: zod.object({
+    address: zod.string(),
+    city: zod.string(),
+    countryCode: zod.string(),
+    id: zod.string().uuid(),
+    name: zod.string(),
+    pincode: zod.string(),
+    state: zod.string(),
+    version: zod.number().int(),
+  }),
+  lotId: zod.string().uuid(),
+  members: zod.array(
+    zod.object({
+      allergenId: zod.string().uuid(),
+      available: zod.boolean(),
+      name: zod.string(),
+      quantity: zod
+        .string()
+        .max(assembleStockProductResponseMembersItemQuantityMax)
+        .regex(assembleStockProductResponseMembersItemQuantityRegExp),
+      unit: zod.string(),
+    }),
+  ),
+  mrp: zod.string(),
+  outputAfter: zod.string(),
+  outputBefore: zod.string(),
+  productId: zod.string().uuid(),
+  productName: zod.string(),
+  quantity: zod.number().int(),
+  sellingPrice: zod.string(),
+  unit: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Preview
+ */
+
+export const previewProductAssemblyBodyAllocationsItemQuantityRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+
+export const PreviewProductAssemblyBody = zod.object({
+  allocations: zod
+    .array(
+      zod.object({
+        lotId: zod.string().uuid(),
+        quantity: zod
+          .string()
+          .max(previewProductAssemblyBodyAllocationsItemQuantityMax)
+          .regex(previewProductAssemblyBodyAllocationsItemQuantityRegExp),
+      }),
+    )
+    .min(previewProductAssemblyBodyAllocationsMin)
+    .max(previewProductAssemblyBodyAllocationsMax),
+  batchNo: zod.string().min(1).max(previewProductAssemblyBodyBatchNoMax),
+  expected_version: zod.number().int().min(1),
+  expiryDate: zod.coerce.date(),
+  locationId: zod.string().uuid(),
+  productId: zod.string().uuid(),
+  quantity: zod
+    .number()
+    .int()
+    .min(1)
+    .max(previewProductAssemblyBodyQuantityMax),
+});
+
+export const previewProductAssemblyResponseAssemblyMembersItemQuantityRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+
+export const PreviewProductAssemblyResponse = zod.object({
+  assembly: zod.object({
+    batchNo: zod.string(),
+    components: zod.array(
+      zod.object({
+        after: zod.string(),
+        batchNo: zod.union([zod.string(), zod.null()]),
+        before: zod.string(),
+        expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+        lineId: zod.union([zod.string().uuid(), zod.null()]),
+        lotId: zod.string().uuid(),
+        productId: zod.string().uuid(),
+        productName: zod.string(),
+        productVersion: zod.number().int(),
+        quantity: zod.string(),
+        receiptId: zod.union([zod.string().uuid(), zod.null()]),
+        receiptNumber: zod.union([zod.string(), zod.null()]),
+        receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+        unit: zod.string(),
+      }),
+    ),
+    expiryDate: zod.coerce.date(),
+    location: zod.object({
+      address: zod.string(),
+      city: zod.string(),
+      countryCode: zod.string(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      pincode: zod.string(),
+      state: zod.string(),
+      version: zod.number().int(),
+    }),
+    members: zod.array(
+      zod.object({
+        allergenId: zod.string().uuid(),
+        available: zod.boolean(),
+        name: zod.string(),
+        quantity: zod
+          .string()
+          .max(previewProductAssemblyResponseAssemblyMembersItemQuantityMax)
+          .regex(
+            previewProductAssemblyResponseAssemblyMembersItemQuantityRegExp,
+          ),
+        unit: zod.string(),
+      }),
+    ),
+    mrp: zod.string(),
+    productId: zod.string().uuid(),
+    productName: zod.string(),
+    quantity: zod.number().int(),
+    sellingPrice: zod.string(),
+    unit: zod.string(),
+    version: zod.number().int(),
+  }),
+  reviewToken: zod.string(),
+});
+
+/**
+ * @summary Assembly
+ */
+export const GetProductAssemblyParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const getProductAssemblyResponseMembersItemQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const GetProductAssemblyResponse = zod.object({
+  activity: zod.array(
+    zod.object({
+      action: zod.string(),
+      actor: zod.string(),
+      at: zod.coerce.date(),
+      requestId: zod.union([zod.string(), zod.null()]),
+    }),
+  ),
+  actor: zod.string(),
+  actorId: zod.string().uuid(),
+  batchNo: zod.string(),
+  components: zod.array(
+    zod.object({
+      after: zod.string(),
+      batchNo: zod.union([zod.string(), zod.null()]),
+      before: zod.string(),
+      expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+      lineId: zod.union([zod.string().uuid(), zod.null()]),
+      lotId: zod.string().uuid(),
+      productId: zod.string().uuid(),
+      productName: zod.string(),
+      productVersion: zod.number().int(),
+      quantity: zod.string(),
+      receiptId: zod.union([zod.string().uuid(), zod.null()]),
+      receiptNumber: zod.union([zod.string(), zod.null()]),
+      receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+      unit: zod.string(),
+    }),
+  ),
+  createdAt: zod.coerce.date(),
+  expiryDate: zod.coerce.date(),
+  id: zod.string().uuid(),
+  location: zod.object({
+    address: zod.string(),
+    city: zod.string(),
+    countryCode: zod.string(),
+    id: zod.string().uuid(),
+    name: zod.string(),
+    pincode: zod.string(),
+    state: zod.string(),
+    version: zod.number().int(),
+  }),
+  lotId: zod.string().uuid(),
+  members: zod.array(
+    zod.object({
+      allergenId: zod.string().uuid(),
+      available: zod.boolean(),
+      name: zod.string(),
+      quantity: zod
+        .string()
+        .max(getProductAssemblyResponseMembersItemQuantityMax)
+        .regex(getProductAssemblyResponseMembersItemQuantityRegExp),
+      unit: zod.string(),
+    }),
+  ),
+  mrp: zod.string(),
+  outputAfter: zod.string(),
+  outputBefore: zod.string(),
+  productId: zod.string().uuid(),
+  productName: zod.string(),
+  quantity: zod.number().int(),
+  sellingPrice: zod.string(),
+  unit: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary References
+ */
+export const getStockProductReferencesQueryQueryDefault = ``;
+
+export const GetStockProductReferencesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(getStockProductReferencesQueryQueryMax)
+    .default(getStockProductReferencesQueryQueryDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(getStockProductReferencesQueryOffsetMin)
+    .max(getStockProductReferencesQueryOffsetMax)
+    .default(getStockProductReferencesQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getStockProductReferencesQueryLimitMax)
+    .default(getStockProductReferencesQueryLimitDefault),
+});
+
+export const GetStockProductReferencesResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+      unit: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+});
+
+/**
+ * @summary Reconcile
+ */
+export const ReconcileStockProductRequestParams = zod.object({
+  key: zod.coerce.string().uuid(),
+});
+
+export const reconcileStockProductRequestResponseResultOneMembersItemQuantityRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+
+export const reconcileStockProductRequestResponseResultTwoMembersItemQuantityRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+
+export const ReconcileStockProductRequestResponse = zod.object({
+  result: zod.union([
+    zod.object({
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      deletedAt: zod.union([zod.coerce.date(), zod.null()]),
+      id: zod.string().uuid(),
+      members: zod.array(
+        zod.object({
+          allergenId: zod.string().uuid(),
+          available: zod.boolean(),
+          name: zod.string(),
+          quantity: zod
+            .string()
+            .max(
+              reconcileStockProductRequestResponseResultOneMembersItemQuantityMax,
+            )
+            .regex(
+              reconcileStockProductRequestResponseResultOneMembersItemQuantityRegExp,
+            ),
+          unit: zod.string(),
+        }),
+      ),
+      mrp: zod.string(),
+      name: zod.string(),
+      sellingPrice: zod.string(),
+      status: zod.enum(["active", "inactive"]),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      version: zod.number().int(),
+    }),
+    zod.object({
+      activity: zod.array(
+        zod.object({
+          action: zod.string(),
+          actor: zod.string(),
+          at: zod.coerce.date(),
+          requestId: zod.union([zod.string(), zod.null()]),
+        }),
+      ),
+      actor: zod.string(),
+      actorId: zod.string().uuid(),
+      batchNo: zod.string(),
+      components: zod.array(
+        zod.object({
+          after: zod.string(),
+          batchNo: zod.union([zod.string(), zod.null()]),
+          before: zod.string(),
+          expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+          lineId: zod.union([zod.string().uuid(), zod.null()]),
+          lotId: zod.string().uuid(),
+          productId: zod.string().uuid(),
+          productName: zod.string(),
+          productVersion: zod.number().int(),
+          quantity: zod.string(),
+          receiptId: zod.union([zod.string().uuid(), zod.null()]),
+          receiptNumber: zod.union([zod.string(), zod.null()]),
+          receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+          unit: zod.string(),
+        }),
+      ),
+      createdAt: zod.coerce.date(),
+      expiryDate: zod.coerce.date(),
+      id: zod.string().uuid(),
+      location: zod.object({
+        address: zod.string(),
+        city: zod.string(),
+        countryCode: zod.string(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        pincode: zod.string(),
+        state: zod.string(),
+        version: zod.number().int(),
+      }),
+      lotId: zod.string().uuid(),
+      members: zod.array(
+        zod.object({
+          allergenId: zod.string().uuid(),
+          available: zod.boolean(),
+          name: zod.string(),
+          quantity: zod
+            .string()
+            .max(
+              reconcileStockProductRequestResponseResultTwoMembersItemQuantityMax,
+            )
+            .regex(
+              reconcileStockProductRequestResponseResultTwoMembersItemQuantityRegExp,
+            ),
+          unit: zod.string(),
+        }),
+      ),
+      mrp: zod.string(),
+      outputAfter: zod.string(),
+      outputBefore: zod.string(),
+      productId: zod.string().uuid(),
+      productName: zod.string(),
+      quantity: zod.number().int(),
+      sellingPrice: zod.string(),
+      unit: zod.string(),
+      version: zod.number().int(),
+    }),
+    zod.null(),
+  ]),
+  state: zod.enum(["committed", "not_committed"]),
+});
+
+/**
+ * @summary Delete
+ */
+export const DeleteStockProductParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const DeleteStockProductBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  idempotencyKey: zod.string().uuid(),
+});
+
+export const deleteStockProductResponseMembersItemQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const DeleteStockProductResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  deletedAt: zod.union([zod.coerce.date(), zod.null()]),
+  id: zod.string().uuid(),
+  members: zod.array(
+    zod.object({
+      allergenId: zod.string().uuid(),
+      available: zod.boolean(),
+      name: zod.string(),
+      quantity: zod
+        .string()
+        .max(deleteStockProductResponseMembersItemQuantityMax)
+        .regex(deleteStockProductResponseMembersItemQuantityRegExp),
+      unit: zod.string(),
+    }),
+  ),
+  mrp: zod.string(),
+  name: zod.string(),
+  sellingPrice: zod.string(),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Detail
+ */
+export const GetStockProductParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const getStockProductResponseMembersItemQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const GetStockProductResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  deletedAt: zod.union([zod.coerce.date(), zod.null()]),
+  id: zod.string().uuid(),
+  members: zod.array(
+    zod.object({
+      allergenId: zod.string().uuid(),
+      available: zod.boolean(),
+      name: zod.string(),
+      quantity: zod
+        .string()
+        .max(getStockProductResponseMembersItemQuantityMax)
+        .regex(getStockProductResponseMembersItemQuantityRegExp),
+      unit: zod.string(),
+    }),
+  ),
+  mrp: zod.string(),
+  name: zod.string(),
+  sellingPrice: zod.string(),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditStockProductParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const editStockProductBodyMembersItemQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const editStockProductBodyStatusDefault = `active`;
+
+export const EditStockProductBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  idempotencyKey: zod.string().uuid(),
+  members: zod
+    .array(
+      zod.object({
+        allergenId: zod.string().uuid(),
+        quantity: zod
+          .string()
+          .max(editStockProductBodyMembersItemQuantityMax)
+          .regex(editStockProductBodyMembersItemQuantityRegExp),
+      }),
+    )
+    .min(editStockProductBodyMembersMin)
+    .max(editStockProductBodyMembersMax),
+  mrp: zod.string(),
+  name: zod.string().min(1).max(editStockProductBodyNameMax),
+  sellingPrice: zod.string(),
+  status: zod
+    .enum(["active", "inactive"])
+    .default(editStockProductBodyStatusDefault),
+});
+
+export const editStockProductResponseMembersItemQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const EditStockProductResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  deletedAt: zod.union([zod.coerce.date(), zod.null()]),
+  id: zod.string().uuid(),
+  members: zod.array(
+    zod.object({
+      allergenId: zod.string().uuid(),
+      available: zod.boolean(),
+      name: zod.string(),
+      quantity: zod
+        .string()
+        .max(editStockProductResponseMembersItemQuantityMax)
+        .regex(editStockProductResponseMembersItemQuantityRegExp),
+      unit: zod.string(),
+    }),
+  ),
+  mrp: zod.string(),
+  name: zod.string(),
+  sellingPrice: zod.string(),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Activity
+ */
+export const GetStockProductActivityParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const GetStockProductActivityQueryParams = zod.object({
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(getStockProductActivityQueryOffsetMin)
+    .max(getStockProductActivityQueryOffsetMax)
+    .default(getStockProductActivityQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getStockProductActivityQueryLimitMax)
+    .default(getStockProductActivityQueryLimitDefault),
+});
+
+export const getStockProductActivityResponseItemsItemAfterMembersItemQuantityRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+
+export const getStockProductActivityResponseItemsItemBeforeOneMembersItemQuantityRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+
+export const GetStockProductActivityResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      action: zod.string(),
+      actor: zod.string(),
+      after: zod.object({
+        createdAt: zod.coerce.date(),
+        createdBy: zod.string(),
+        deletedAt: zod.union([zod.coerce.date(), zod.null()]),
+        id: zod.string().uuid(),
+        members: zod.array(
+          zod.object({
+            allergenId: zod.string().uuid(),
+            available: zod.boolean(),
+            name: zod.string(),
+            quantity: zod
+              .string()
+              .max(
+                getStockProductActivityResponseItemsItemAfterMembersItemQuantityMax,
+              )
+              .regex(
+                getStockProductActivityResponseItemsItemAfterMembersItemQuantityRegExp,
+              ),
+            unit: zod.string(),
+          }),
+        ),
+        mrp: zod.string(),
+        name: zod.string(),
+        sellingPrice: zod.string(),
+        status: zod.enum(["active", "inactive"]),
+        updatedAt: zod.coerce.date(),
+        updatedBy: zod.string(),
+        version: zod.number().int(),
+      }),
+      at: zod.coerce.date(),
+      before: zod.union([
+        zod.object({
+          createdAt: zod.coerce.date(),
+          createdBy: zod.string(),
+          deletedAt: zod.union([zod.coerce.date(), zod.null()]),
+          id: zod.string().uuid(),
+          members: zod.array(
+            zod.object({
+              allergenId: zod.string().uuid(),
+              available: zod.boolean(),
+              name: zod.string(),
+              quantity: zod
+                .string()
+                .max(
+                  getStockProductActivityResponseItemsItemBeforeOneMembersItemQuantityMax,
+                )
+                .regex(
+                  getStockProductActivityResponseItemsItemBeforeOneMembersItemQuantityRegExp,
+                ),
+              unit: zod.string(),
+            }),
+          ),
+          mrp: zod.string(),
+          name: zod.string(),
+          sellingPrice: zod.string(),
+          status: zod.enum(["active", "inactive"]),
+          updatedAt: zod.coerce.date(),
+          updatedBy: zod.string(),
+          version: zod.number().int(),
+        }),
+        zod.null(),
+      ]),
+      id: zod.string().uuid(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+});
+
+/**
+ * @summary Analytics
+ */
+export const GetStockProductAnalyticsParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const GetStockProductAnalyticsResponse = zod.object({
+  assembled: zod.array(
+    zod.object({
+      locationId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      locationName: zod.union([zod.string(), zod.null()]).optional(),
+      productId: zod.string().uuid(),
+      productName: zod.string(),
+      quantity: zod.string(),
+      unit: zod.string(),
+    }),
+  ),
+  assemblies: zod.number().int(),
+  products: zod.number().int(),
+  remaining: zod.array(
+    zod.object({
+      locationId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      locationName: zod.union([zod.string(), zod.null()]).optional(),
+      productId: zod.string().uuid(),
+      productName: zod.string(),
+      quantity: zod.string(),
+      unit: zod.string(),
+    }),
+  ),
+  scope: zod.string(),
+});
+
+/**
+ * @summary Assemblies
+ */
+export const GetStockProductAssembliesParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const GetStockProductAssembliesQueryParams = zod.object({
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(getStockProductAssembliesQueryOffsetMin)
+    .max(getStockProductAssembliesQueryOffsetMax)
+    .default(getStockProductAssembliesQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getStockProductAssembliesQueryLimitMax)
+    .default(getStockProductAssembliesQueryLimitDefault),
+});
+
+export const getStockProductAssembliesResponseItemsItemMembersItemQuantityRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+
+export const GetStockProductAssembliesResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      activity: zod.array(
+        zod.object({
+          action: zod.string(),
+          actor: zod.string(),
+          at: zod.coerce.date(),
+          requestId: zod.union([zod.string(), zod.null()]),
+        }),
+      ),
+      actor: zod.string(),
+      actorId: zod.string().uuid(),
+      batchNo: zod.string(),
+      components: zod.array(
+        zod.object({
+          after: zod.string(),
+          batchNo: zod.union([zod.string(), zod.null()]),
+          before: zod.string(),
+          expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+          lineId: zod.union([zod.string().uuid(), zod.null()]),
+          lotId: zod.string().uuid(),
+          productId: zod.string().uuid(),
+          productName: zod.string(),
+          productVersion: zod.number().int(),
+          quantity: zod.string(),
+          receiptId: zod.union([zod.string().uuid(), zod.null()]),
+          receiptNumber: zod.union([zod.string(), zod.null()]),
+          receivedDate: zod.union([zod.coerce.date(), zod.null()]),
+          unit: zod.string(),
+        }),
+      ),
+      createdAt: zod.coerce.date(),
+      expiryDate: zod.coerce.date(),
+      id: zod.string().uuid(),
+      location: zod.object({
+        address: zod.string(),
+        city: zod.string(),
+        countryCode: zod.string(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        pincode: zod.string(),
+        state: zod.string(),
+        version: zod.number().int(),
+      }),
+      lotId: zod.string().uuid(),
+      members: zod.array(
+        zod.object({
+          allergenId: zod.string().uuid(),
+          available: zod.boolean(),
+          name: zod.string(),
+          quantity: zod
+            .string()
+            .max(
+              getStockProductAssembliesResponseItemsItemMembersItemQuantityMax,
+            )
+            .regex(
+              getStockProductAssembliesResponseItemsItemMembersItemQuantityRegExp,
+            ),
+          unit: zod.string(),
+        }),
+      ),
+      mrp: zod.string(),
+      outputAfter: zod.string(),
+      outputBefore: zod.string(),
+      productId: zod.string().uuid(),
+      productName: zod.string(),
+      quantity: zod.number().int(),
+      sellingPrice: zod.string(),
+      unit: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+});
+
+/**
+ * @summary Status
+ */
+export const SetStockProductStatusParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const SetStockProductStatusBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  idempotencyKey: zod.string().uuid(),
+  status: zod.enum(["active", "inactive"]),
+});
+
+export const setStockProductStatusResponseMembersItemQuantityRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+
+export const SetStockProductStatusResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  deletedAt: zod.union([zod.coerce.date(), zod.null()]),
+  id: zod.string().uuid(),
+  members: zod.array(
+    zod.object({
+      allergenId: zod.string().uuid(),
+      available: zod.boolean(),
+      name: zod.string(),
+      quantity: zod
+        .string()
+        .max(setStockProductStatusResponseMembersItemQuantityMax)
+        .regex(setStockProductStatusResponseMembersItemQuantityRegExp),
+      unit: zod.string(),
+    }),
+  ),
+  mrp: zod.string(),
+  name: zod.string(),
+  sellingPrice: zod.string(),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Listing
+ */
 export const listPurchaseOrdersQueryQueryDefault = ``;
 
 export const listPurchaseOrdersQueryStatusDefault = `open`;
@@ -17998,6 +19476,8 @@ export const RecordBrowserActivityBody = zod.object({
           "staff",
           "product_category",
           "allergen",
+          "product",
+          "product_assembly",
           "vendor",
           "sales_target",
           "opening_balance",

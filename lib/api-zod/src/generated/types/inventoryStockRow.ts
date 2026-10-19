@@ -6,11 +6,13 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { InventoryLotView } from "./inventoryLotView";
+import type { InventoryStockRowItemKind } from "./inventoryStockRowItemKind";
 
 export interface InventoryStockRow {
   category: string;
-  categoryId: string;
+  categoryId: string | null;
   concentration: string;
+  itemKind?: InventoryStockRowItemKind;
   lots: InventoryLotView[];
   name: string;
   productId: string;

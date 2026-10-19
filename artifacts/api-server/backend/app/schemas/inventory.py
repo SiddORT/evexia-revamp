@@ -52,15 +52,54 @@ class InventoryCoverage(BaseModel):
     openings: str
 
 
-class InventoryLotView(BaseModel):
-    receiptId: uuid.UUID
-    receiptNumber: str
-    lineId: uuid.UUID
+class InventoryComponentProvenance(BaseModel):
+    lotId: uuid.UUID
+    receiptId: uuid.UUID | None
+    receiptNumber: str | None
+    lineId: uuid.UUID | None
     productId: uuid.UUID
     productName: str
-    batchNo: str
-    expiryDate: date
-    receivedDate: date
+    batchNo: str | None
+    expiryDate: date | None
+    unit: str
+    quantity: str
+    before: str
+    after: str
+
+
+class InventoryRecipeMember(BaseModel):
+    allergenId: uuid.UUID
+    name: str
+    quantity: str
+    unit: str
+    available: bool
+
+
+class InventoryRecipeSnapshot(BaseModel):
+    version: int
+    members: list[InventoryRecipeMember]
+
+
+class InventoryProvenance(BaseModel):
+    itemKind: Literal["allergen", "combo"] = "allergen"
+    assemblyId: uuid.UUID | None = None
+    comboProductId: uuid.UUID | None = None
+    assembledQuantity: str | None = None
+    recipe: InventoryRecipeSnapshot | None = None
+    sourceComponents: list[InventoryComponentProvenance] | None = None
+    mrp: str | None = None
+    sellingPrice: str | None = None
+
+
+class InventoryLotView(InventoryProvenance):
+    receiptId: uuid.UUID | None
+    receiptNumber: str | None
+    lineId: uuid.UUID | None
+    productId: uuid.UUID
+    productName: str
+    batchNo: str | None
+    expiryDate: date | None
+    receivedDate: date | None
     originalCreatedAt: str
     unit: str
     lotId: uuid.UUID
@@ -70,10 +109,11 @@ class InventoryLotView(BaseModel):
 
 
 class InventoryStockRow(BaseModel):
+    itemKind: Literal["allergen", "combo"] = "allergen"
     productId: uuid.UUID
     name: str
     category: str
-    categoryId: uuid.UUID
+    categoryId: uuid.UUID | None
     concentration: str
     sellingPrice: str | None
     quantity: str
@@ -104,15 +144,15 @@ class MovementLocation(BaseModel):
     version: int
 
 
-class MovementLineView(BaseModel):
-    receiptId: uuid.UUID
-    receiptNumber: str
-    lineId: uuid.UUID
+class MovementLineView(InventoryProvenance):
+    receiptId: uuid.UUID | None
+    receiptNumber: str | None
+    lineId: uuid.UUID | None
     productId: uuid.UUID
     productName: str
-    batchNo: str
-    expiryDate: date
-    receivedDate: date
+    batchNo: str | None
+    expiryDate: date | None
+    receivedDate: date | None
     originalCreatedAt: str
     unit: str
     lotId: uuid.UUID
@@ -177,7 +217,9 @@ class MovementReconciliation(BaseModel):
     movement: MovementSaved | None
 
 
-class InventoryReference(BaseModel):
+class InventoryReference(InventoryProvenance):
+    # Location/Staff choices must stay minimal; provenance applies only to lots.
+    itemKind: Literal["allergen", "combo"] | None = None
     id: uuid.UUID
     name: str
     available: str | None = None

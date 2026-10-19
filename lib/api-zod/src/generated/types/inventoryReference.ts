@@ -5,16 +5,27 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { InventoryComponentProvenance } from "./inventoryComponentProvenance";
+import type { InventoryRecipeSnapshot } from "./inventoryRecipeSnapshot";
+import type { InventoryReferenceItemKind } from "./inventoryReferenceItemKind";
 
 export interface InventoryReference {
+  assembledQuantity?: string | null;
+  assemblyId?: string | null;
   available?: string | null;
   batchNo?: string | null;
+  comboProductId?: string | null;
   expiryDate?: Date | null;
   id: string;
+  itemKind?: InventoryReferenceItemKind;
+  mrp?: string | null;
   name: string;
   productId?: string | null;
   productName?: string | null;
   receiptId?: string | null;
   receiptNumber?: string | null;
+  recipe?: InventoryRecipeSnapshot | null;
+  sellingPrice?: string | null;
+  sourceComponents?: InventoryComponentProvenance[] | null;
   unit?: string | null;
 }

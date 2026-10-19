@@ -5,23 +5,34 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { InventoryComponentProvenance } from "./inventoryComponentProvenance";
+import type { InventoryRecipeSnapshot } from "./inventoryRecipeSnapshot";
+import type { MovementLineViewItemKind } from "./movementLineViewItemKind";
 
 export interface MovementLineView {
-  batchNo: string;
+  assembledQuantity?: string | null;
+  assemblyId?: string | null;
+  batchNo: string | null;
+  comboProductId?: string | null;
   destinationAfter: string;
   destinationBefore: string;
-  expiryDate: Date;
-  lineId: string;
+  expiryDate: Date | null;
+  itemKind?: MovementLineViewItemKind;
+  lineId: string | null;
   lotId: string;
+  mrp?: string | null;
   originalCreatedAt: string;
   productId: string;
   productName: string;
   productVersion: number;
   quantity: string;
-  receiptId: string;
-  receiptNumber: string;
-  receivedDate: Date;
+  receiptId: string | null;
+  receiptNumber: string | null;
+  receivedDate: Date | null;
+  recipe?: InventoryRecipeSnapshot | null;
+  sellingPrice?: string | null;
   sourceAfter: string;
   sourceBefore: string;
+  sourceComponents?: InventoryComponentProvenance[] | null;
   unit: string;
 }

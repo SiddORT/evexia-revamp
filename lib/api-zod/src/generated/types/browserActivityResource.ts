@@ -23,6 +23,8 @@ export const BrowserActivityResource = {
   staff: "staff",
   product_category: "product_category",
   allergen: "allergen",
+  product: "product",
+  product_assembly: "product_assembly",
   vendor: "vendor",
   sales_target: "sales_target",
   opening_balance: "opening_balance",

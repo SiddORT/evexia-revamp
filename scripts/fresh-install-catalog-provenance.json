@@ -1,23 +1,24 @@
 {
   "format": 1,
-  "target": "0045_pr_batch_numbers",
+  "target": "0049_product_language_merge",
   "evidence_kind": "reproduced_disposable_postgresql_catalog_observation",
-  "source_commit": "fcc60aed0e00b5b5879c4e864bf0481d8de3db3d",
+  "source_state": "working tree bound to unchanged historical migrations and the explicit successor below",
   "postgresql_version": "17.5",
-  "catalog_sha256": "46b994805bc60ecbbb149144b6ea63a0c7e6c25ab89cd23680b42cd135c671e8",
-  "public_table_count": 46,
-  "collector_sha256": "a8e5790fa0aa540b657cf34f75f11c3dbb6e70f867362e3f45c794c3d89d6b66",
-  "source_inventory_sha256": "eebfb351c7e24a216f20cd2b3940d2eab1185564b7a080797c91be12b0f5743a",
+  "catalog_sha256": "3566c9c7bd8c54ab49101510993b5c41df6f7c556a9a84fa873c9e1907b1b3d1",
+  "public_table_count": 59,
+  "collector_sha256": "f76860c06eb8ea7f1915117571452c539135931d1b2aebf262bda3a285489165",
+  "source_inventory_sha256": "ce5651a59c1fe4200030481870bf85236cc2ecdd4ddb65200fbc7bfdecba1c15",
+  "source_inventory_method": "SHA256 of compact sorted JSON mapping repository-relative Alembic migration paths to their SHA256",
   "observations": {
     "first": {
-      "observed_at": "2026-10-19T05:41:35.984014+00:00",
-      "system_identifier": "7698249948948136253",
-      "file_sha256": "cbbec95a1389d67058fba2c1989ad37061790a017b40b76890c63f8f6c5e9b30"
+      "observed_at": "2026-10-19T08:31:49.314108+00:00",
+      "system_identifier": "7698293824602299220",
+      "file_sha256": "8d2bab6d40cf6197213e6eb76abe61a2386c8bd4437b128cf911b80d8163a289"
     },
     "independent": {
-      "observed_at": "2026-10-19T05:41:41.909715+00:00",
-      "system_identifier": "7698249974317089116",
-      "file_sha256": "f43346fe596b7b9dc6dde3be9177e0ac5296f6475cb6bf0c86a4dc1e6df128ee"
+      "observed_at": "2026-10-19T08:31:54.055527+00:00",
+      "system_identifier": "7698293845913926511",
+      "file_sha256": "8d2bab6d40cf6197213e6eb76abe61a2386c8bd4437b128cf911b80d8163a289"
     }
   },
   "source_bindings": {
@@ -26,9 +27,15 @@
     "artifacts/api-server/backend/app/services/fresh_catalog.py": "25c32d43095de45f5f927d0587de6df93f2a9b8b3b61ea795e99295cad1e3747",
     "artifacts/api-server/backend/alembic/versions/0043_email_templates.py": "68d4b9e98bfb2a61f631840403e4de00b36634b9a0a9582528e67a4e980d034e",
     "artifacts/api-server/backend/alembic/versions/0044_purchase_received.py": "e269aec87496d6720dc8537d9c2bc602df58742105b8d4fcdb3195b57bc7a467",
-    "artifacts/api-server/backend/alembic/versions/0045_pr_batch_numbers.py": "bcdf222f4ef8f60e9c01bb3f37558fd75fe331e828f17398bdaae1681d4923ef"
+    "artifacts/api-server/backend/alembic/versions/0045_pr_batch_numbers.py": "bcdf222f4ef8f60e9c01bb3f37558fd75fe331e828f17398bdaae1681d4923ef",
+    "artifacts/api-server/backend/alembic/versions/0046_live_inventory.py": "9e160bbbe9f28d35f3d4adcd64f7fef7214a5f9befd9a7d77185b9225f84786c",
+    "artifacts/api-server/backend/alembic/versions/0047_stock_products.py": "3cd9b38e2083c8aae342dca948fcb6939e02f49e12b179f7e6f0d96f78774a07",
+    "artifacts/api-server/backend/alembic/versions/0047_languages.py": "26942dc312ad8296fd1bb19cf72fc5d4417d8cb3ebeadfa7548b9d281ee25b65",
+    "artifacts/api-server/backend/alembic/versions/0048_language_unicode.py": "ab05ed872997325db1ef3ec8e8232d67c2060e3d69c4707f49d91c457c550aab",
+    "artifacts/api-server/backend/alembic/versions/0049_product_language_merge.py": "f9aefdd62ad3904102b814f9b569eb9b222b1f0bec63f1e6fc14f8b04436cc9d"
   },
-  "scope": "Two separately initialized private Unix-socket clusters; no inherited credentials, network listeners, existing databases, bootstrap or installer finalization. Original migrations and the unchanged initializer empty-retirement function produced both observations. All historical migration bytes remain unchanged. The two complete projections match; the observed 0042 baseline matches its unchanged historical digest.",
-  "evidence_reference": "generated-artifacts/ci-schema-catalog-0045/0045-catalog-evidence.zip",
+  "scope": "Two separately initialized private Unix-socket PostgreSQL 17.5 clusters with independent synthetic credentials. Original Alembic migrations, including their existing test-only empty-data guards, ran only on disposable databases. First cluster followed the preserved stock-product branch; the independent cluster followed main's Unicode language branch. Both normal upgrade paths converged to the complete identical 0049 catalog. The existing 0045, 0046, 0047 stock and 0048 language digests/table sets reproduced exactly. No historical source rewrites, bootstrap, installer finalization, existing database access or network listener.",
+  "evidence_reference": "generated-artifacts/stock-products/observations.json and catalog-{1,2}-0049_product_language_merge.json (ignored local generation outputs)",
+  "observations_file_sha256": "d226d8ced7b22e454974e449bab278709ec7b4644c52a91dc902a7f52de7eaf7",
   "limitations": "Catalog observation only. Not a passing test, successful fresh installation, restoration rehearsal, signed release evidence, protected-migration approval or CI success. The same operator collected both independent-cluster observations; no separate human reviewer attestation is claimed."
 }

@@ -9,6 +9,9 @@ import { downloadReportingCSV } from '../../services/reportingCSV.js';
 import '../../activityLogs.css';
 
 const browserActions = {
+  product_create: 'Product combo created', product_edit: 'Product combo recipe or prices updated',
+  product_status: 'Product combo status changed', product_delete: 'Product combo deleted',
+  product_assembled: 'Product combo assembled', inventory_moved: 'Stock transferred',
   opening_balance_create: 'Opening balance created', opening_balance_edit: 'Opening balance updated',
   opening_balance_status: 'Opening balance status changed', opening_balance_delete: 'Opening balance deleted',
   headquarter_create: 'Headquarter created', headquarter_edit: 'Headquarter updated',
@@ -47,6 +50,7 @@ const endingReason = (s) => {
   return '—';
 };
 const resourceNames = {
+  product: 'Product Master', product_assembly: 'Product Assembly', inventory_movement: 'Move Stocks',
   dashboard: 'Dashboard', zone: 'Zone Master', language: 'Language Master', courier_partner: 'Courier Partner',
   storage_location: 'Storage Location', headquarter: 'Headquarter Master', product_category: 'Product Category Master',
   mr: 'MR Master', doctor: 'Doctor Master', patient: 'Patient Master',

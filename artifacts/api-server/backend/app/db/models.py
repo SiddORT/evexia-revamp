@@ -1,3 +1,4 @@
+from app.db import product_models  # noqa: F401 - register forward inventory FK targets
 import secrets
 import uuid
 from datetime import datetime

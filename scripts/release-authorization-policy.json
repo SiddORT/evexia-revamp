@@ -5,7 +5,7 @@
   "existing_database": "automatic_migrations_with_embedded_guards",
   "prepare_target": "0031_role_hostnames",
   "retirement_cap": "0034_shared_phone_countries",
-  "final_target": "0048_language_unicode",
+  "final_target": "0049_product_language_merge",
   "validation_commands": [
     [
       "pnpm",

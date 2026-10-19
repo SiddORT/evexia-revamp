@@ -26,6 +26,11 @@ import type {
   AllergenReview,
   AllergenStatus,
   AllergenVersion,
+  AssemblyCreate,
+  AssemblyInput,
+  AssemblyPage,
+  AssemblyReview,
+  AssemblySaved,
   AssignPatientRequest,
   BrowserActivityBatch,
   ChangePasswordRequest,
@@ -139,6 +144,9 @@ import type {
   GetPurchaseReceivedFiltersParams,
   GetPurchaseReceivedSourceParams,
   GetSalesTargetChoicesParams,
+  GetStockProductActivityParams,
+  GetStockProductAssembliesParams,
+  GetStockProductReferencesParams,
   HeadquarterEdit,
   HeadquarterFields,
   HeadquarterImportResult,
@@ -192,6 +200,7 @@ import type {
   ListReportingUsersParams,
   ListSalesTargetsParams,
   ListStaffParams,
+  ListStockProductsParams,
   ListStorageLocationsParams,
   ListVendorsParams,
   ListZonesParams,
@@ -291,6 +300,16 @@ import type {
   ProductCategoryReview,
   ProductCategoryStatus,
   ProductCategoryVersion,
+  ProductCreate,
+  ProductDelete,
+  ProductEdit,
+  ProductHistoryPage,
+  ProductPage,
+  ProductReconciliation,
+  ProductReferencePage,
+  ProductStatus,
+  ProductSummary,
+  ProductView,
   ProvisionMRRequest,
   RecoveryRequest,
   RecoveryResponse,
@@ -15180,6 +15199,1520 @@ export const useSetProductCategoryStatus = <
   TContext
 > => {
   return useMutation(getSetProductCategoryStatusMutationOptions(options));
+};
+
+export const getListStockProductsUrl = (params?: ListStockProductsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/products?${stringifiedParams}`
+    : `/api/v1/admin/products`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listStockProducts = async (
+  params?: ListStockProductsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ProductPage> => {
+  return customFetch<ProductPage>(getListStockProductsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListStockProductsQueryKey = (
+  params?: ListStockProductsParams,
+) => {
+  return [`/api/v1/admin/products`, ...(params ? [params] : [])] as const;
+};
+
+export const getListStockProductsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listStockProducts>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListStockProductsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStockProducts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListStockProductsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listStockProducts>>
+  > = ({ signal }) => listStockProducts(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listStockProducts>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListStockProductsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listStockProducts>>
+>;
+export type ListStockProductsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListStockProducts<
+  TData = Awaited<ReturnType<typeof listStockProducts>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListStockProductsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStockProducts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListStockProductsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateStockProductUrl = () => {
+  return `/api/v1/admin/products`;
+};
+
+/**
+ * @summary Create
+ */
+export const createStockProduct = async (
+  productCreate: ProductCreate,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ProductView> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ProductView>(getCreateStockProductUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(productCreate),
+  });
+};
+
+export const getCreateStockProductMutationKey = () =>
+  ["createStockProduct"] as const;
+
+export const getCreateStockProductMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createStockProduct>>,
+    TError,
+    CreateStockProductMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createStockProduct>>,
+  TError,
+  CreateStockProductMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateStockProductMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createStockProduct>>,
+    CreateStockProductMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createStockProduct(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateStockProductMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createStockProduct>>
+>;
+export type CreateStockProductMutationBody = BodyType<ProductCreate>;
+export type CreateStockProductMutationError = ErrorType<ErrorEnvelope>;
+export type CreateStockProductMutationVariables = {
+  data: BodyType<ProductCreate>;
+};
+
+/**
+ * @summary Create
+ */
+export const useCreateStockProduct = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createStockProduct>>,
+    TError,
+    CreateStockProductMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createStockProduct>>,
+  TError,
+  CreateStockProductMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateStockProductMutationOptions(options));
+};
+
+export const getAssembleStockProductUrl = () => {
+  return `/api/v1/admin/products/assemblies`;
+};
+
+/**
+ * @summary Assemble
+ */
+export const assembleStockProduct = async (
+  assemblyCreate: AssemblyCreate,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AssemblySaved> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<AssemblySaved>(getAssembleStockProductUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(assemblyCreate),
+  });
+};
+
+export const getAssembleStockProductMutationKey = () =>
+  ["assembleStockProduct"] as const;
+
+export const getAssembleStockProductMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof assembleStockProduct>>,
+    TError,
+    AssembleStockProductMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof assembleStockProduct>>,
+  TError,
+  AssembleStockProductMutationVariables,
+  TContext
+> => {
+  const mutationKey = getAssembleStockProductMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof assembleStockProduct>>,
+    AssembleStockProductMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return assembleStockProduct(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AssembleStockProductMutationResult = NonNullable<
+  Awaited<ReturnType<typeof assembleStockProduct>>
+>;
+export type AssembleStockProductMutationBody = BodyType<AssemblyCreate>;
+export type AssembleStockProductMutationError = ErrorType<ErrorEnvelope>;
+export type AssembleStockProductMutationVariables = {
+  data: BodyType<AssemblyCreate>;
+};
+
+/**
+ * @summary Assemble
+ */
+export const useAssembleStockProduct = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof assembleStockProduct>>,
+    TError,
+    AssembleStockProductMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof assembleStockProduct>>,
+  TError,
+  AssembleStockProductMutationVariables,
+  TContext
+> => {
+  return useMutation(getAssembleStockProductMutationOptions(options));
+};
+
+export const getPreviewProductAssemblyUrl = () => {
+  return `/api/v1/admin/products/assemblies/preview`;
+};
+
+/**
+ * @summary Preview
+ */
+export const previewProductAssembly = async (
+  assemblyInput: AssemblyInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AssemblyReview> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<AssemblyReview>(getPreviewProductAssemblyUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(assemblyInput),
+  });
+};
+
+export const getPreviewProductAssemblyMutationKey = () =>
+  ["previewProductAssembly"] as const;
+
+export const getPreviewProductAssemblyMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewProductAssembly>>,
+    TError,
+    PreviewProductAssemblyMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof previewProductAssembly>>,
+  TError,
+  PreviewProductAssemblyMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPreviewProductAssemblyMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof previewProductAssembly>>,
+    PreviewProductAssemblyMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return previewProductAssembly(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PreviewProductAssemblyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof previewProductAssembly>>
+>;
+export type PreviewProductAssemblyMutationBody = BodyType<AssemblyInput>;
+export type PreviewProductAssemblyMutationError = ErrorType<ErrorEnvelope>;
+export type PreviewProductAssemblyMutationVariables = {
+  data: BodyType<AssemblyInput>;
+};
+
+/**
+ * @summary Preview
+ */
+export const usePreviewProductAssembly = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewProductAssembly>>,
+    TError,
+    PreviewProductAssemblyMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof previewProductAssembly>>,
+  TError,
+  PreviewProductAssemblyMutationVariables,
+  TContext
+> => {
+  return useMutation(getPreviewProductAssemblyMutationOptions(options));
+};
+
+export const getGetProductAssemblyUrl = (recordId: string) => {
+  return `/api/v1/admin/products/assemblies/${recordId}`;
+};
+
+/**
+ * @summary Assembly
+ */
+export const getProductAssembly = async (
+  recordId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AssemblySaved> => {
+  return customFetch<AssemblySaved>(getGetProductAssemblyUrl(recordId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetProductAssemblyQueryKey = (recordId: string) => {
+  return [`/api/v1/admin/products/assemblies/${recordId}`] as const;
+};
+
+export const getGetProductAssemblyQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProductAssembly>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProductAssembly>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetProductAssemblyQueryKey(recordId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProductAssembly>>
+  > = ({ signal }) =>
+    getProductAssembly(recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProductAssembly>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProductAssemblyQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProductAssembly>>
+>;
+export type GetProductAssemblyQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Assembly
+ */
+
+export function useGetProductAssembly<
+  TData = Awaited<ReturnType<typeof getProductAssembly>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProductAssembly>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProductAssemblyQueryOptions(recordId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetStockProductReferencesUrl = (
+  params?: GetStockProductReferencesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/products/references?${stringifiedParams}`
+    : `/api/v1/admin/products/references`;
+};
+
+/**
+ * @summary References
+ */
+export const getStockProductReferences = async (
+  params?: GetStockProductReferencesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ProductReferencePage> => {
+  return customFetch<ProductReferencePage>(
+    getGetStockProductReferencesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetStockProductReferencesQueryKey = (
+  params?: GetStockProductReferencesParams,
+) => {
+  return [
+    `/api/v1/admin/products/references`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetStockProductReferencesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStockProductReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: GetStockProductReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStockProductReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetStockProductReferencesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStockProductReferences>>
+  > = ({ signal }) =>
+    getStockProductReferences(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStockProductReferences>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStockProductReferencesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStockProductReferences>>
+>;
+export type GetStockProductReferencesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary References
+ */
+
+export function useGetStockProductReferences<
+  TData = Awaited<ReturnType<typeof getStockProductReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: GetStockProductReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStockProductReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStockProductReferencesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getReconcileStockProductRequestUrl = (key: string) => {
+  return `/api/v1/admin/products/requests/${key}`;
+};
+
+/**
+ * @summary Reconcile
+ */
+export const reconcileStockProductRequest = async (
+  key: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ProductReconciliation> => {
+  return customFetch<ProductReconciliation>(
+    getReconcileStockProductRequestUrl(key),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getReconcileStockProductRequestQueryKey = (key: string) => {
+  return [`/api/v1/admin/products/requests/${key}`] as const;
+};
+
+export const getReconcileStockProductRequestQueryOptions = <
+  TData = Awaited<ReturnType<typeof reconcileStockProductRequest>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  key: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof reconcileStockProductRequest>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getReconcileStockProductRequestQueryKey(key);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof reconcileStockProductRequest>>
+  > = ({ signal }) =>
+    reconcileStockProductRequest(key, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: key !== null && key !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof reconcileStockProductRequest>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ReconcileStockProductRequestQueryResult = NonNullable<
+  Awaited<ReturnType<typeof reconcileStockProductRequest>>
+>;
+export type ReconcileStockProductRequestQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Reconcile
+ */
+
+export function useReconcileStockProductRequest<
+  TData = Awaited<ReturnType<typeof reconcileStockProductRequest>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  key: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof reconcileStockProductRequest>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getReconcileStockProductRequestQueryOptions(
+    key,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDeleteStockProductUrl = (recordId: string) => {
+  return `/api/v1/admin/products/${recordId}`;
+};
+
+/**
+ * @summary Delete
+ */
+export const deleteStockProduct = async (
+  recordId: string,
+  productDelete: ProductDelete,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ProductView> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ProductView>(getDeleteStockProductUrl(recordId), {
+    ...options,
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(productDelete),
+  });
+};
+
+export const getDeleteStockProductMutationKey = () =>
+  ["deleteStockProduct"] as const;
+
+export const getDeleteStockProductMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteStockProduct>>,
+    TError,
+    DeleteStockProductMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteStockProduct>>,
+  TError,
+  DeleteStockProductMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteStockProductMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteStockProduct>>,
+    DeleteStockProductMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return deleteStockProduct(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteStockProductMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteStockProduct>>
+>;
+export type DeleteStockProductMutationBody = BodyType<ProductDelete>;
+export type DeleteStockProductMutationError = ErrorType<ErrorEnvelope>;
+export type DeleteStockProductMutationVariables = {
+  recordId: string;
+  data: BodyType<ProductDelete>;
+};
+
+/**
+ * @summary Delete
+ */
+export const useDeleteStockProduct = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteStockProduct>>,
+    TError,
+    DeleteStockProductMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteStockProduct>>,
+  TError,
+  DeleteStockProductMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteStockProductMutationOptions(options));
+};
+
+export const getGetStockProductUrl = (recordId: string) => {
+  return `/api/v1/admin/products/${recordId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getStockProduct = async (
+  recordId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ProductView> => {
+  return customFetch<ProductView>(getGetStockProductUrl(recordId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetStockProductQueryKey = (recordId: string) => {
+  return [`/api/v1/admin/products/${recordId}`] as const;
+};
+
+export const getGetStockProductQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStockProduct>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStockProduct>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetStockProductQueryKey(recordId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getStockProduct>>> = ({
+    signal,
+  }) => getStockProduct(recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStockProduct>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStockProductQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStockProduct>>
+>;
+export type GetStockProductQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetStockProduct<
+  TData = Awaited<ReturnType<typeof getStockProduct>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStockProduct>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStockProductQueryOptions(recordId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getEditStockProductUrl = (recordId: string) => {
+  return `/api/v1/admin/products/${recordId}`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editStockProduct = async (
+  recordId: string,
+  productEdit: ProductEdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ProductView> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ProductView>(getEditStockProductUrl(recordId), {
+    ...options,
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(productEdit),
+  });
+};
+
+export const getEditStockProductMutationKey = () =>
+  ["editStockProduct"] as const;
+
+export const getEditStockProductMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editStockProduct>>,
+    TError,
+    EditStockProductMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editStockProduct>>,
+  TError,
+  EditStockProductMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditStockProductMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editStockProduct>>,
+    EditStockProductMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return editStockProduct(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditStockProductMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editStockProduct>>
+>;
+export type EditStockProductMutationBody = BodyType<ProductEdit>;
+export type EditStockProductMutationError = ErrorType<ErrorEnvelope>;
+export type EditStockProductMutationVariables = {
+  recordId: string;
+  data: BodyType<ProductEdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditStockProduct = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editStockProduct>>,
+    TError,
+    EditStockProductMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editStockProduct>>,
+  TError,
+  EditStockProductMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditStockProductMutationOptions(options));
+};
+
+export const getGetStockProductActivityUrl = (
+  recordId: string,
+  params?: GetStockProductActivityParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/products/${recordId}/activity?${stringifiedParams}`
+    : `/api/v1/admin/products/${recordId}/activity`;
+};
+
+/**
+ * @summary Activity
+ */
+export const getStockProductActivity = async (
+  recordId: string,
+  params?: GetStockProductActivityParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ProductHistoryPage> => {
+  return customFetch<ProductHistoryPage>(
+    getGetStockProductActivityUrl(recordId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetStockProductActivityQueryKey = (
+  recordId: string,
+  params?: GetStockProductActivityParams,
+) => {
+  return [
+    `/api/v1/admin/products/${recordId}/activity`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetStockProductActivityQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStockProductActivity>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  params?: GetStockProductActivityParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStockProductActivity>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetStockProductActivityQueryKey(recordId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStockProductActivity>>
+  > = ({ signal }) =>
+    getStockProductActivity(recordId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStockProductActivity>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStockProductActivityQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStockProductActivity>>
+>;
+export type GetStockProductActivityQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Activity
+ */
+
+export function useGetStockProductActivity<
+  TData = Awaited<ReturnType<typeof getStockProductActivity>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  params?: GetStockProductActivityParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStockProductActivity>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStockProductActivityQueryOptions(
+    recordId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetStockProductAnalyticsUrl = (recordId: string) => {
+  return `/api/v1/admin/products/${recordId}/analytics`;
+};
+
+/**
+ * @summary Analytics
+ */
+export const getStockProductAnalytics = async (
+  recordId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ProductSummary> => {
+  return customFetch<ProductSummary>(getGetStockProductAnalyticsUrl(recordId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetStockProductAnalyticsQueryKey = (recordId: string) => {
+  return [`/api/v1/admin/products/${recordId}/analytics`] as const;
+};
+
+export const getGetStockProductAnalyticsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStockProductAnalytics>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStockProductAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetStockProductAnalyticsQueryKey(recordId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStockProductAnalytics>>
+  > = ({ signal }) =>
+    getStockProductAnalytics(recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStockProductAnalytics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStockProductAnalyticsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStockProductAnalytics>>
+>;
+export type GetStockProductAnalyticsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Analytics
+ */
+
+export function useGetStockProductAnalytics<
+  TData = Awaited<ReturnType<typeof getStockProductAnalytics>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStockProductAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStockProductAnalyticsQueryOptions(
+    recordId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetStockProductAssembliesUrl = (
+  recordId: string,
+  params?: GetStockProductAssembliesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/products/${recordId}/assemblies?${stringifiedParams}`
+    : `/api/v1/admin/products/${recordId}/assemblies`;
+};
+
+/**
+ * @summary Assemblies
+ */
+export const getStockProductAssemblies = async (
+  recordId: string,
+  params?: GetStockProductAssembliesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AssemblyPage> => {
+  return customFetch<AssemblyPage>(
+    getGetStockProductAssembliesUrl(recordId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetStockProductAssembliesQueryKey = (
+  recordId: string,
+  params?: GetStockProductAssembliesParams,
+) => {
+  return [
+    `/api/v1/admin/products/${recordId}/assemblies`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetStockProductAssembliesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStockProductAssemblies>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  params?: GetStockProductAssembliesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStockProductAssemblies>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetStockProductAssembliesQueryKey(recordId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStockProductAssemblies>>
+  > = ({ signal }) =>
+    getStockProductAssemblies(recordId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStockProductAssemblies>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStockProductAssembliesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStockProductAssemblies>>
+>;
+export type GetStockProductAssembliesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Assemblies
+ */
+
+export function useGetStockProductAssemblies<
+  TData = Awaited<ReturnType<typeof getStockProductAssemblies>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  params?: GetStockProductAssembliesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStockProductAssemblies>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStockProductAssembliesQueryOptions(
+    recordId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getSetStockProductStatusUrl = (recordId: string) => {
+  return `/api/v1/admin/products/${recordId}/status`;
+};
+
+/**
+ * @summary Status
+ */
+export const setStockProductStatus = async (
+  recordId: string,
+  productStatus: ProductStatus,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ProductView> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ProductView>(getSetStockProductStatusUrl(recordId), {
+    ...options,
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(productStatus),
+  });
+};
+
+export const getSetStockProductStatusMutationKey = () =>
+  ["setStockProductStatus"] as const;
+
+export const getSetStockProductStatusMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setStockProductStatus>>,
+    TError,
+    SetStockProductStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setStockProductStatus>>,
+  TError,
+  SetStockProductStatusMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSetStockProductStatusMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setStockProductStatus>>,
+    SetStockProductStatusMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return setStockProductStatus(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetStockProductStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setStockProductStatus>>
+>;
+export type SetStockProductStatusMutationBody = BodyType<ProductStatus>;
+export type SetStockProductStatusMutationError = ErrorType<ErrorEnvelope>;
+export type SetStockProductStatusMutationVariables = {
+  recordId: string;
+  data: BodyType<ProductStatus>;
+};
+
+/**
+ * @summary Status
+ */
+export const useSetStockProductStatus = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setStockProductStatus>>,
+    TError,
+    SetStockProductStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setStockProductStatus>>,
+  TError,
+  SetStockProductStatusMutationVariables,
+  TContext
+> => {
+  return useMutation(getSetStockProductStatusMutationOptions(options));
 };
 
 export const getListPurchaseOrdersUrl = (params?: ListPurchaseOrdersParams) => {

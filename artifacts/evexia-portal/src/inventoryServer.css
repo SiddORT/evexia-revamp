@@ -1,3 +1,4 @@
+.combo-provenance { min-width: 0; overflow-wrap: anywhere; }
 .inv-banner{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
 .inv-banner p{margin:0}
 .inv-scroll{overflow-x:auto}

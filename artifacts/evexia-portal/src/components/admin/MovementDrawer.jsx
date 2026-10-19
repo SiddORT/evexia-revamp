@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
+import ComboProvenance from './ComboProvenance.jsx';
 import { X } from 'lucide-react';
 import { getMovement } from '../../services/serverInventory.js';
 import { useAdminDateFormatters } from './adminPreferences.js';
@@ -53,8 +54,9 @@ export default function MovementDrawer({ id, onClose }) {
         </dl>
         <section className="inv-drawer-section"><h3>Items</h3>
           <div className="inv-scroll"><table className="inv-lines"><thead><tr><th scope="col">Product</th><th scope="col">Batch / receipt</th><th scope="col">Quantity</th><th scope="col">Source before / after</th><th scope="col">Destination before / after</th></tr></thead>
-            <tbody>{m.lines.map((l) => <tr key={l.lotId}><td>{l.productName}</td><td>{l.batchNo}<span className="stock-sub">{l.receiptNumber} · exp {date(l.expiryDate)}</span></td>
-              <td className="inv-mono">{l.quantity}</td><td className="inv-mono">{l.sourceBefore} to {l.sourceAfter}</td><td className="inv-mono">{l.destinationBefore} to {l.destinationAfter}</td></tr>)}</tbody></table></div>
+            <tbody>{m.lines.map((l) => <Fragment key={l.lotId}><tr><td>{l.productName}{l.itemKind === 'combo' && <span className="stock-sub">Assembled combo</span>}</td><td>{l.batchNo || 'Batch unavailable'}<span className="stock-sub">{l.receiptNumber || 'Receipt unavailable'} · exp {l.expiryDate ? date(l.expiryDate) : 'unavailable'}</span></td>
+              <td className="inv-mono">{l.quantity}</td><td className="inv-mono">{l.sourceBefore} to {l.sourceAfter}</td><td className="inv-mono">{l.destinationBefore} to {l.destinationAfter}</td></tr>
+              {l.itemKind === 'combo' && <tr><td colSpan={5}><ComboProvenance item={l} /></td></tr>}</Fragment>)}</tbody></table></div>
           <p className="mr-form__hint">Units: procurement quantity units. Quantities are not summed across products.</p>
         </section>
         <section className="inv-drawer-section"><h3>Server activity</h3>

@@ -1,5 +1,8 @@
 """Explicit UI label aliases for safe activity reporting search."""
 BROWSER_ACTIONS = {
+    "product_create": "Product combo created", "product_edit": "Product combo recipe or prices updated",
+    "product_status": "Product combo status changed", "product_delete": "Product combo deleted",
+    "product_assembled": "Product combo assembled", "inventory_moved": "Stock transferred",
     "language_create": "Language created", "language_edit": "Language updated",
     "language_delete": "Language deleted",
     "allergen_create": "Allergen product created", "allergen_edit": "Allergen product updated",
@@ -27,6 +30,7 @@ BROWSER_ACTIONS = {
     "browser_settings_changed": "Settings changed",
 }
 RESOURCE_NAMES = {
+    "product": "Product Master", "product_assembly": "Product Assembly", "inventory_movement": "Move Stocks",
     "dashboard": "Dashboard", "zone": "Zone Master", "language": "Language Master", "courier_partner": "Courier Partner",
     "storage_location": "Storage Location", "headquarter": "Headquarter Master", "product_category": "Product Category Master",
     "mr": "MR Master", "doctor": "Doctor Master", "patient": "Patient Master",

@@ -18,6 +18,7 @@ from app.db.purchase_received_models import PurchaseReceipt as Receipt
 from app.db.purchase_received_models import ReceiptSource
 from app.db.location_models import StorageLocation
 from app.db.allergen_models import AllergenProduct
+from app.db.product_models import ComboProduct
 from app.db.staff_models import StaffProfile
 from app.services.purchase_received_crypto import ReceiptCrypto, PRError
 from app.services.staff_crypto import StaffCrypto
@@ -26,7 +27,8 @@ from app.services import purchase_received as receipts
 
 LIMIT = 2000
 LOCK = 145573
-COVERAGE = ("Server accepted receipts only; procurement quantity units, exact to 0.001. "
+COVERAGE = ("Individual stock originates only in server accepted receipts, exact to 0.001 procurement quantity units. "
+            "Reviewed assemblies consume those components and create separate whole-combo lots in this same ledger. "
             "No pack conversions. Stock carries across financial years. Pre-system openings, "
             "browser/demo data, sales, reservations and in-transit shipping are outside coverage.")
 
@@ -130,9 +132,10 @@ def reconcile_receipt(db, actor, data, initializing=False):
         else:
             old = crypto.open(lot.id, "lot", lot.payload_ciphertext)
             changed = metadata and any(old[k] != metadata[k] for k in ("productId", "batchNo", "expiryDate"))
-            moved = db.scalar(select(Posting.id).where(Posting.lot_id == lot.id, Posting.movement_id.is_not(None)).limit(1))
+            moved = db.scalar(select(Posting.id).where(Posting.lot_id == lot.id,
+                or_(Posting.movement_id.is_not(None), Posting.source_key.startswith("assembly:"))).limit(1))
             if changed and moved:
-                raise PRError("This receipt lot has committed transfers; its product, batch and expiry cannot change.", 409, "inventory_lot_retained")
+                raise PRError("This receipt lot has committed transfers or assembly consumption; its product, batch and expiry cannot change.", 409, "inventory_lot_retained")
             if metadata:
                 lot.payload_ciphertext = crypto.seal(lot.id, "lot", metadata)
         # Reductions occur ONLY at original receipt location, never at a destination.
@@ -252,9 +255,11 @@ def receipt_evidence(db, row, data):
                 raise PRError("Ledger and balance reconciliation differs.", 409, "inventory_reconciliation")
         expected = quantity(line["acceptedQty"]) if data["status"] == "active" else Decimal(0)
         balance = sum((a.quantity for a in amounts), Decimal(0))
+        consumed = -sum((p.delta for p in ledger if p.source_key.startswith("assembly:")), Decimal(0))
         evidence.append(dict(lineId=line["lineId"], productId=line["productId"],
             accepted=q(expected), posted=q(lot.accepted) if lot else "0.000",
-            onHand=q(balance), matches=bool((lot.accepted if lot else Decimal(0)) == expected == balance)))
+            consumedInAssemblies=q(consumed), onHand=q(balance),
+            matches=bool((lot.accepted if lot else Decimal(0)) == expected and expected - consumed == balance)))
     return evidence
 
 
@@ -265,23 +270,31 @@ def stock(db, actor, params):
             return dict(items=[], filtered=0, total=0, coverage=context, asOf=utcnow().isoformat(),
                         limit=params["limit"], offset=params["offset"])
         products = bounded(db, select(AllergenProduct).where(AllergenProduct.deleted_at.is_(None)).order_by(AllergenProduct.name, AllergenProduct.id))
+        combos = bounded(db, select(ComboProduct).where(ComboProduct.deleted_at.is_(None)).order_by(ComboProduct.id))
         lots = bounded(db, select(Lot).order_by(Lot.id))
         balances = bounded(db, select(Balance).order_by(Balance.lot_id, Balance.location_id))
         locations = {}
         result = {}
         for product in products:
-            result[str(product.id)] = dict(productId=str(product.id), name=product.name,
+            result[str(product.id)] = dict(itemKind="allergen", productId=str(product.id), name=product.name,
                 category=product.category_name, categoryId=str(product.category_id), concentration=product.concentration,
                 sellingPrice=str(product.selling_price) if product.selling_price is not None else None,
                 quantity="0.000", unit="procurement quantity units", lots=[], history=[], state="catalogue_zero")
+        for product in combos:
+            meta = crypto.open(product.id, "product", product.payload_ciphertext)
+            result[str(product.id)] = dict(itemKind="combo", productId=str(product.id), name=meta["name"],
+                category="Assembled combos", categoryId=None, concentration="", sellingPrice=meta["sellingPrice"],
+                quantity="0.000", unit="whole combos", lots=[], history=[], state="catalogue_zero")
         for lot in lots:
             meta = crypto.open(lot.id, "lot", lot.payload_ciphertext)
             # Retained stock remains visible even after catalogue soft deletion.
-            pid = str(lot.product_id)
+            pid = str(lot.combo_id or lot.product_id)
             if pid not in result:
-                product = db.get(AllergenProduct, lot.product_id)
-                result[pid] = dict(productId=pid, name=meta["productName"], category=product.category_name,
-                    categoryId=str(product.category_id), concentration=product.concentration, sellingPrice=None,
+                product = db.get(AllergenProduct, lot.product_id) if lot.product_id else None
+                result[pid] = dict(itemKind="combo" if lot.combo_id else "allergen",
+                    productId=pid, name=meta["productName"], category=product.category_name if product else "Assembled combos",
+                    categoryId=str(product.category_id) if product else None,
+                    concentration=product.concentration if product else "", sellingPrice=None,
                     quantity="0.000", unit=meta["unit"], lots=[], history=[], state="retained_product")
             item = result[pid]
             for balance in (b for b in balances if b.lot_id == lot.id and b.quantity):
@@ -292,7 +305,7 @@ def stock(db, actor, params):
                 item["lots"].append(dict(**meta, lotId=str(lot.id), locationId=lid,
                                          locationName=locations[lid], quantity=q(balance.quantity)))
                 item["quantity"] = q(Decimal(item["quantity"]) + balance.quantity)
-                item["state"] = "receipt_backed"
+                item["state"] = "assembled" if lot.combo_id else "receipt_backed"
         rows = list(result.values())
         total = len(rows)
         term = params.get("query", "").strip().casefold()
@@ -301,6 +314,8 @@ def stock(db, actor, params):
         rows = [r for r in rows if (not term or term in " ".join([r["name"], r["concentration"], r["category"], r["productId"]]).casefold())
                 and (not params.get("category_id") or r["categoryId"] == str(params["category_id"]))
                 and (not selected or r["productId"] in selected)]
+        if len(rows) > LIMIT:
+            raise PRError("Combined stock scope exceeds the bounded inventory limit. Narrow the scope.", 422, "inventory_scope")
         # Snapshot contains every matching row for report/CSV. Pagination is a
         # projection of this same transaction-held snapshot, never another read.
         return dict(items=rows[params["offset"]:params["offset"] + params["limit"]],
@@ -313,7 +328,7 @@ def stock(db, actor, params):
 def stock_history(db, actor, product_id, from_date=None, to_date=None, offset=0, limit=25):
     def work(_, crypto):
         require_complete(db)
-        statement = select(Posting).join(Lot, Lot.id == Posting.lot_id).where(Lot.product_id == product_id)
+        statement = select(Posting).join(Lot, Lot.id == Posting.lot_id).where(or_(Lot.product_id == product_id, Lot.combo_id == product_id))
         if from_date:
             statement = statement.where(Posting.created_at >= from_date)
         if to_date:
@@ -324,7 +339,7 @@ def stock_history(db, actor, product_id, from_date=None, to_date=None, offset=0,
              delta=q(r.delta), before=q(r.before), after=q(r.after), actor=label(db, r.actor_id),
              source=r.source_key) for r in rows[offset:offset + limit]],
              filtered=len(rows), offset=offset, limit=limit,
-             scope="Posting time, not inferred historical activity. Period changes history only, never on-hand.")
+             scope="Recorded receipt, assembly consumption/output and transfer posting times, not inferred historical activity. Period changes history only, never on-hand.")
     return transaction(db, actor, work)
 
 
@@ -346,7 +361,8 @@ def references(db, actor, kind, query="", offset=0, limit=25, source_id=None):
             for balance in balances:
                 lot = db.get(Lot, balance.lot_id)
                 meta = crypto.open(lot.id, "lot", lot.payload_ciphertext)
-                data.append(dict(id=str(lot.id), name=f"{meta['productName']} · {meta['batchNo']} · {meta['receiptNumber']}",
+                meta.setdefault("itemKind", "combo" if lot.combo_id else "allergen")
+                data.append(dict(id=str(lot.id), name=f"{meta['productName']} · {meta.get('batchNo') or 'Batch unavailable'} · {meta.get('receiptNumber') or 'Assembled combo'}",
                                  **meta, available=q(balance.quantity)))
         data = sorted([r for r in data if query.strip().casefold() in r["name"].casefold()], key=lambda r: (r["name"], r["id"]))
         return dict(items=data[offset:offset + limit], filtered=len(data), offset=offset, limit=limit)
@@ -383,9 +399,11 @@ def review_move(db, crypto, body):
         balance = db.get(Balance, (line.lotId, body.sourceId))
         if not lot or not balance or balance.quantity < Decimal(line.quantity):
             raise PRError("Available source stock changed. Review the retained draft again.", 409, "inventory_insufficient")
-        product = db.get(AllergenProduct, lot.product_id)
-        if not product or product.status != "active" or product.deleted_at:
+        product = db.get(ComboProduct, lot.combo_id) if lot.combo_id else db.get(AllergenProduct, lot.product_id)
+        if not product or (not lot.combo_id and (product.status != "active" or product.deleted_at)):
             raise PRError("The selected product is no longer active.", 409, "inventory_product")
+        if lot.combo_id and quantity(line.quantity) != Decimal(line.quantity).to_integral_value():
+            raise PRError("Assembled products move only as positive whole combos.", 422, "inventory_combo_quantity")
         destination = db.get(Balance, (lot.id, body.destinationId))
         src, dst, amount = balance.quantity, destination.quantity if destination else Decimal(0), quantity(line.quantity)
         lines.append(dict(**crypto.open(lot.id, "lot", lot.payload_ciphertext), lotId=str(lot.id),
