@@ -1,5 +1,69 @@
 # Development schema recovery: single activation handoff
 
+## Original-development 0045 activation completed — 2026-10-19
+
+The user separately approved only `0044_purchase_received` →
+`0045_pr_batch_numbers`, including private backup and independent restoration
+verification. The fixed-path operator command
+`scripts/activate-development-0045.py` verified the original workspace and
+`helium` / `heliumdb`, cluster `7689828272860483604`, OID `16384`, primary,
+PostgreSQL 16.10. This is not production/VPS approval.
+
+Before the live upgrade, development services were stopped. Under advisory lock
+`145002` and SHARE locks on all predecessor tables, a full exported-snapshot
+archive was retained in private App Storage. Its authenticated readback matched
+SHA-256 `8f5d47df03d23c599621b6a99b446438908936d5f58b6bf8dde267afcf1e8856`;
+anonymous access was denied. The restricted object is:
+
+```text
+.private/operator-recovery/development-0045/evexia-development-0045-t9v5z7xr/before-0045.dump
+```
+
+Actual restoration used a separate private-socket PostgreSQL 16.10 cluster,
+with no TCP listener. Complete restored data matched all **43 predecessor
+tables / 2,199 rows**. Schema definitions matched the independently replayed
+original schema SQL under the existing strict same-major canonical comparison;
+no SQL definitions or constraints were stripped or altered. The unchanged
+0045 migration and real application readiness then passed on that restoration.
+Separate private `recovery.json` and `activation.json` records retain the proof.
+
+Only then did the original database transaction upgrade to exactly 0045.
+Every original business row and column compared unchanged afterward. The only
+new state was:
+
+- `pr_batch_settings`: exactly `(id=1, version=1, payload_ciphertext=NULL)`,
+  the explicit initial Manual marker.
+- `pr_batch_counters`: empty.
+- `pr_batch_allocations`: empty.
+
+The existing PR keyring validated without rekeying or changing secrets.
+Previously confirmed separate key recovery remained a prerequisite. Both
+development services were restarted. Running frontend/backend identities,
+served assets and database readiness passed `pnpm verify:development`.
+The focused activation/recovery/policy checks passed **75 tests**; this is not
+a full-project release-gate result.
+
+Historical invocation, with the matching PostgreSQL 16 tools on `PATH`:
+
+```sh
+APP_ENV=development PYTHONPATH=artifacts/api-server/backend \
+python -B scripts/activate-development-0045.py \
+  --approve-0044-to-0045 --attest-key-recovery --writers-stopped
+```
+
+**Do not replay this command on the now-upgraded database.** It requires exact
+predecessor 0044, rejects successor/partial state, pins source and recovery
+tooling, and has no target override. Do not supply its attestations without
+the corresponding independently established facts.
+
+Failures before commit roll back the original transaction. Loss of commit
+acknowledgement, interruption, or failure retaining final evidence requires
+read-only reconciliation of the exact database identity/revision before any
+next action; it is not proof of rollback. There is no automatic replay,
+downgrade, restoration, stamp or policy reclassification. The migration remains
+operator-only. Restoration requires separately reviewed recovery coordination
+and the independently recoverable matching encryption/signing keys.
+
 ## Original-development activation completed — 2026-10-17
 
 The separately approved recovery task executed only the documented

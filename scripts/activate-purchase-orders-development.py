@@ -67,7 +67,8 @@ class PrivateRecovery:
     """Use existing Replit sidecar credentials; never print or persist credentials."""
     def __init__(self, scope="purchase-orders"):
         import httpx
-        require(scope in ("purchase-orders", "development-0044"), "Unknown recovery scope")
+        require(scope in ("purchase-orders", "development-0044", "development-0045"),
+                "Unknown recovery scope")
         self.scope = scope
         self.client = httpx.Client(verify=ssl.create_default_context(), timeout=90)
         directory = os.environ.get("PRIVATE_OBJECT_DIR", "").strip("/")
