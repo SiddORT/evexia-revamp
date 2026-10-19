@@ -1,7 +1,7 @@
 import { formatRate } from '../../services/rates.js';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowLeft, ClipboardList, Plus, X } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Plus, Trash2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import PurchaseOrderReferenceSelect from '../../components/admin/PurchaseOrderReferenceSelect.jsx';
@@ -271,17 +271,19 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
         <div className="po-new-main">
           {(errors.lines || hasErrors) && <div id="po-form-errors" className="admin-feedback admin-feedback--error" role="alert">{errors.lines || 'Check the highlighted fields before continuing.'}</div>}
           <fieldset className="po-group" disabled={locked}><legend>Vendor and delivery</legend>
-            <div className="po-group__grid">
+            <div className="po-group__vendor">
               <Field id="po-vendor" label="Vendor" error={errors.vendorId}>
                 <PurchaseOrderReferenceSelect id="po-vendor" kind="vendors" label="Vendor" selected={values.vendor} placeholder="Select vendor" invalid={errors.vendorId} describedBy={errors.vendorId ? 'po-vendor-error' : undefined} onChange={(item) => edit({ vendor: editing && order.taxBasis && item?.id === order.vendorId ? fromSaved(order).vendor : item }, ['vendorId', 'placeOfSupplyCode'])} />
               </Field>
+            </div>
+            <div className="po-group__delivery">
               <Field id="po-location" label="Storage location" error={errors.locationId}>
                 <PurchaseOrderReferenceSelect id="po-location" kind="locations" label="Storage location" selected={values.location} placeholder="Select storage location" invalid={errors.locationId} describedBy={errors.locationId ? 'po-location-error' : undefined} onChange={selectLocation} />
               </Field>
+              <Field id="po-place-of-supply" label="Place of supply (State/UT)" error={errors.placeOfSupplyCode}>
+                <SearchableSelect id="po-place-of-supply" label="Place of supply (State/UT)" value={values.placeOfSupplyCode || ''} options={GST_STATES.map((state) => ({ value: state.code, label: `${state.name} (${state.code})` }))} onChange={(code) => edit({ placeOfSupplyCode: code, supplySource: 'manual' }, ['placeOfSupplyCode'])} placeholder="Select applicable State/UT" invalid={errors.placeOfSupplyCode} describedBy={`po-supply-help${errors.placeOfSupplyCode ? ' po-place-of-supply-error' : ''}`} disabled={locked} />
+              </Field>
             </div>
-            <Field id="po-place-of-supply" label="Place of supply (State/UT)" error={errors.placeOfSupplyCode}>
-              <SearchableSelect id="po-place-of-supply" label="Place of supply (State/UT)" value={values.placeOfSupplyCode || ''} options={GST_STATES.map((state) => ({ value: state.code, label: `${state.name} (${state.code})` }))} onChange={(code) => edit({ placeOfSupplyCode: code, supplySource: 'manual' }, ['placeOfSupplyCode'])} placeholder="Select applicable State/UT" invalid={errors.placeOfSupplyCode} describedBy={`po-supply-help${errors.placeOfSupplyCode ? ' po-place-of-supply-error' : ''}`} disabled={locked} />
-            </Field>
             <div className="po-group__dates">
               <Field id="po-date" label="PO date" error={errors.poDate}><input id="po-date" className="mr-form__control" type="date" value={values.poDate} onChange={(e) => edit({ poDate: e.target.value }, ['poDate'])} aria-invalid={Boolean(errors.poDate)} aria-describedby={errors.poDate ? 'po-date-error' : undefined} data-testid="input-po-date" /></Field>
               <Field id="po-expected-date" label="Expected delivery" error={errors.expectedDate}><input id="po-expected-date" className="mr-form__control" type="date" min={values.poDate} value={values.expectedDate} onChange={(e) => edit({ expectedDate: e.target.value }, ['expectedDate'])} aria-invalid={Boolean(errors.expectedDate)} aria-describedby={errors.expectedDate ? 'po-expected-date-error' : undefined} data-testid="input-po-expected-date" /></Field>
@@ -292,7 +294,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
               const product = line.product;
               return <div className="po-new-line" key={line.key}>
                 <div className="po-new-line__top"><strong>Item {String(index + 1).padStart(2, '0')}</strong>
-                  <button type="button" className="po-action po-action--danger" disabled={values.lines.length === 1 || locked} onClick={() => { edit({ lines: values.lines.filter((_, i) => i !== index) }); setErrors({}); }} data-testid={`button-remove-po-line-${index}`}><X size={14} aria-hidden="true" /> Remove</button></div>
+                  <button type="button" className="admin-icon-button admin-icon-button--danger po-new-line__remove" aria-label={`Remove product line ${index + 1}${product ? `: ${product.name}` : ''}`} title={`Remove product line ${index + 1}`} disabled={values.lines.length === 1 || locked} onClick={() => { edit({ lines: values.lines.filter((_, i) => i !== index) }); setErrors({}); }} data-testid={`button-remove-po-line-${index}`}><Trash2 size={16} aria-hidden="true" /></button></div>
                 <div className="po-new-line__fields">
                   <div className="po-new-line__product"><Field id={`po-product-${index}`} label="Product" error={errors[`lines.${index}.productId`]}>
                     <PurchaseOrderReferenceSelect id={`po-product-${index}`} kind="products" label="Product" selected={product} placeholder="Select product" invalid={errors[`lines.${index}.productId`]} describedBy={errors[`lines.${index}.productId`] ? `po-product-${index}-error` : undefined} onChange={(item) => {
