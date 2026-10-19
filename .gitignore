@@ -18,6 +18,7 @@ __pycache__/
 .env
 
 # IDEs and editors
+/scripts/tests/.*~
 /.idea
 .project
 .classpath
