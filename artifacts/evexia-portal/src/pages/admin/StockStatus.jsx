@@ -103,13 +103,13 @@ export default function StockStatus() {
     { key: 'c', label: 'Concentration', render: (r) => r.concentration },
     { key: 'k', label: 'Category', render: (r) => r.category },
     { key: 's', label: 'Selling Price', render: (r) => formatPrice(r.sellingPrice) },
-    { key: 'q', label: 'Quantity', render: (r) => <><strong className="inv-mono">{r.quantity} {r.unit}</strong>{r.state === 'catalogue_zero' && <span className="stock-sub">No receipt-backed stock</span>}{r.state === 'retained_product' && <span className="stock-sub">Retained product</span>}</> },
+    { key: 'q', label: 'Quantity', render: (r) => <><strong className="inv-mono">{r.quantity} {r.unit}</strong>{r.state === 'catalogue_zero' && <span className="stock-sub">No stock on hand</span>}{Number(r.unallocatedQuantity) > 0 && <span className="stock-sub">Unallocated: {r.unallocatedQuantity} {r.unit}</span>}{r.state === 'retained_product' && <span className="stock-sub">Retained product</span>}</> },
     { key: 'v', label: 'View', render: (r) => <button type="button" className="admin-button admin-button--secondary stock-view" onClick={() => setDetail({ row: r, asOf: snap.asOf })} aria-label={`View ${r.name} ${r.concentration}`} data-testid={`button-view-stock-${r.productId}`}><Eye size={14} /> View</button> },
   ];
   const filtersCurrent = Boolean(snap) && search.trim() === appliedSearch && snap.filters === filters;
   const disabled = loading || silent || Boolean(loadError) || !snap || unavailable || !filtersCurrent;
   return <AdminLayout title="Stock Status"><div className="stock-page">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Stock</p><h1>Stock status</h1><p className="admin-page-head__description">Current receipt-backed stock from accepted purchase receipts and committed transfers.</p></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Stock</p><h1>Stock status</h1><p className="admin-page-head__description">Current stock from accepted receipts, assemblies, opening stock and committed transfers. Unallocated opening stock is shown separately.</p></div>
       <div className="stock-actions">
         <button type="button" className="admin-button admin-button--secondary" onClick={refresh} disabled={loading} data-testid="button-refresh-stock"><RefreshCw size={15} /> Refresh</button>
         <button type="button" className="admin-button admin-button--secondary" onClick={exportCsv} disabled={disabled} data-testid="button-export-stock"><FileDown size={15} /> Export</button>

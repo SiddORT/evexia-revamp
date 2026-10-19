@@ -429,6 +429,7 @@ export const getInventoryReferencesQueryOffsetMin = 0;
 export const getInventoryReferencesQueryOffsetMax = 1000000;
 export const getInventoryReferencesQueryLimitDefault = 25;
 export const getInventoryReferencesQueryLimitMax = 100;
+export const getInventoryReferencesQueryUnallocatedDefault = false;
 export const listInventoryStockQueryQueryMax = 200;
 export const listInventoryStockQueryProductIdsMax = 4000;
 export const listInventoryStockQuerySnapshotDefault = false;
@@ -719,6 +720,41 @@ export const setOpeningBalanceStatusResponseEndYearMin = 1901;
 export const setOpeningBalanceStatusResponseEndYearMax = 9999;
 export const setOpeningBalanceStatusResponseStartYearMin = 1900;
 export const setOpeningBalanceStatusResponseStartYearMax = 9998;
+export const listOpeningStockQueryQueryMax = 200;
+export const listOpeningStockQueryOffsetDefault = 0;
+export const listOpeningStockQueryOffsetMin = 0;
+export const listOpeningStockQueryOffsetMax = 1000000;
+export const listOpeningStockQueryLimitDefault = 25;
+export const listOpeningStockQueryLimitMax = 100;
+export const listOpeningStockResponseItemsItemQuantityMax = 11;
+export const listOpeningStockResponseItemsItemUnitRateMax = 64;
+export const createOpeningStockBodyRowsItemQuantityMax = 11;
+export const createOpeningStockBodyRowsItemUnitRateMax = 64;
+export const createOpeningStockBodyRowsMax = 1000;
+export const createOpeningStockResponseRecordsItemQuantityMax = 11;
+export const createOpeningStockResponseRecordsItemUnitRateMax = 64;
+export const exportOpeningStockQueryQueryMax = 200;
+export const reviewOpeningStockImportQueryFilenameMax = 200;
+export const reviewOpeningStockImportResponseCommandOneRowsItemQuantityMax = 11;
+export const reviewOpeningStockImportResponseCommandOneRowsItemUnitRateMax = 64;
+export const reviewOpeningStockImportResponseCommandOneRowsMax = 1000;
+export const reviewOpeningStockImportResponseRowsItemValuesOneQuantityMax = 11;
+export const reviewOpeningStockImportResponseRowsItemValuesOneUnitRateMax = 64;
+export const previewOpeningStockBodyRowsItemQuantityMax = 11;
+export const previewOpeningStockBodyRowsItemUnitRateMax = 64;
+export const previewOpeningStockBodyRowsMax = 1000;
+export const previewOpeningStockResponseRowsItemQuantityMax = 11;
+export const previewOpeningStockResponseRowsItemUnitRateMax = 64;
+export const getOpeningStockItemsQueryQueryMax = 200;
+export const getOpeningStockItemsQueryOffsetDefault = 0;
+export const getOpeningStockItemsQueryOffsetMin = 0;
+export const getOpeningStockItemsQueryOffsetMax = 1000000;
+export const getOpeningStockItemsQueryLimitDefault = 25;
+export const getOpeningStockItemsQueryLimitMax = 100;
+export const reconcileOpeningStockRequestResponseResultOneRecordsItemQuantityMax = 11;
+export const reconcileOpeningStockRequestResponseResultOneRecordsItemUnitRateMax = 64;
+export const getOpeningStockResponseQuantityMax = 11;
+export const getOpeningStockResponseUnitRateMax = 64;
 export const listPatientDirectoryQueryQueryMax = 200;
 export const listPatientDirectoryQueryZoneIdMax = 36;
 export const listPatientDirectoryQueryMrIdMax = 36;
@@ -7393,7 +7429,7 @@ export const ListInventoryMovementsResponse = zod.object({
         address: zod.string(),
         city: zod.string(),
         countryCode: zod.string(),
-        id: zod.string().uuid(),
+        id: zod.union([zod.string().uuid(), zod.null()]),
         name: zod.string(),
         pincode: zod.string(),
         state: zod.string(),
@@ -7411,6 +7447,7 @@ export const ListInventoryMovementsResponse = zod.object({
           destinationAfter: zod.string(),
           destinationBefore: zod.string(),
           expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+          historicalData: zod.union([zod.string(), zod.null()]).optional(),
           itemKind: zod
             .enum(["allergen", "combo"])
             .default(
@@ -7419,6 +7456,11 @@ export const ListInventoryMovementsResponse = zod.object({
           lineId: zod.union([zod.string().uuid(), zod.null()]),
           lotId: zod.string().uuid(),
           mrp: zod.union([zod.string(), zod.null()]).optional(),
+          openingId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          openingLocation: zod
+            .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+            .optional(),
+          openingValue: zod.union([zod.string(), zod.null()]).optional(),
           originalCreatedAt: zod.string(),
           productId: zod.string().uuid(),
           productName: zod.string(),
@@ -7444,7 +7486,9 @@ export const ListInventoryMovementsResponse = zod.object({
               zod.null(),
             ])
             .optional(),
+          recordedDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
           sellingPrice: zod.union([zod.string(), zod.null()]).optional(),
+          source: zod.union([zod.string(), zod.null()]).optional(),
           sourceAfter: zod.string(),
           sourceBefore: zod.string(),
           sourceComponents: zod
@@ -7469,13 +7513,14 @@ export const ListInventoryMovementsResponse = zod.object({
             ])
             .optional(),
           unit: zod.string(),
+          unitRate: zod.union([zod.string(), zod.null()]).optional(),
         }),
       ),
       source: zod.object({
         address: zod.string(),
         city: zod.string(),
         countryCode: zod.string(),
-        id: zod.string().uuid(),
+        id: zod.union([zod.string().uuid(), zod.null()]),
         name: zod.string(),
         pincode: zod.string(),
         state: zod.string(),
@@ -7536,7 +7581,7 @@ export const CreateInventoryMovementBody = zod.object({
     ])
     .optional(),
   reviewToken: zod.string().regex(createInventoryMovementBodyReviewTokenRegExp),
-  sourceId: zod.string().uuid(),
+  sourceId: zod.union([zod.string().uuid(), zod.null()]),
   staffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
 });
 
@@ -7562,7 +7607,7 @@ export const CreateInventoryMovementResponse = zod.object({
     address: zod.string(),
     city: zod.string(),
     countryCode: zod.string(),
-    id: zod.string().uuid(),
+    id: zod.union([zod.string().uuid(), zod.null()]),
     name: zod.string(),
     pincode: zod.string(),
     state: zod.string(),
@@ -7578,12 +7623,18 @@ export const CreateInventoryMovementResponse = zod.object({
       destinationAfter: zod.string(),
       destinationBefore: zod.string(),
       expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+      historicalData: zod.union([zod.string(), zod.null()]).optional(),
       itemKind: zod
         .enum(["allergen", "combo"])
         .default(createInventoryMovementResponseLinesItemItemKindDefault),
       lineId: zod.union([zod.string().uuid(), zod.null()]),
       lotId: zod.string().uuid(),
       mrp: zod.union([zod.string(), zod.null()]).optional(),
+      openingId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      openingLocation: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
+      openingValue: zod.union([zod.string(), zod.null()]).optional(),
       originalCreatedAt: zod.string(),
       productId: zod.string().uuid(),
       productName: zod.string(),
@@ -7609,7 +7660,9 @@ export const CreateInventoryMovementResponse = zod.object({
           zod.null(),
         ])
         .optional(),
+      recordedDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
       sellingPrice: zod.union([zod.string(), zod.null()]).optional(),
+      source: zod.union([zod.string(), zod.null()]).optional(),
       sourceAfter: zod.string(),
       sourceBefore: zod.string(),
       sourceComponents: zod
@@ -7634,13 +7687,14 @@ export const CreateInventoryMovementResponse = zod.object({
         ])
         .optional(),
       unit: zod.string(),
+      unitRate: zod.union([zod.string(), zod.null()]).optional(),
     }),
   ),
   source: zod.object({
     address: zod.string(),
     city: zod.string(),
     countryCode: zod.string(),
-    id: zod.string().uuid(),
+    id: zod.union([zod.string().uuid(), zod.null()]),
     name: zod.string(),
     pincode: zod.string(),
     state: zod.string(),
@@ -7685,7 +7739,7 @@ export const PreviewInventoryMovementBody = zod.object({
       zod.null(),
     ])
     .optional(),
-  sourceId: zod.string().uuid(),
+  sourceId: zod.union([zod.string().uuid(), zod.null()]),
   staffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
 });
 
@@ -7700,7 +7754,7 @@ export const PreviewInventoryMovementResponse = zod.object({
       address: zod.string(),
       city: zod.string(),
       countryCode: zod.string(),
-      id: zod.string().uuid(),
+      id: zod.union([zod.string().uuid(), zod.null()]),
       name: zod.string(),
       pincode: zod.string(),
       state: zod.string(),
@@ -7715,6 +7769,7 @@ export const PreviewInventoryMovementResponse = zod.object({
         destinationAfter: zod.string(),
         destinationBefore: zod.string(),
         expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+        historicalData: zod.union([zod.string(), zod.null()]).optional(),
         itemKind: zod
           .enum(["allergen", "combo"])
           .default(
@@ -7723,6 +7778,11 @@ export const PreviewInventoryMovementResponse = zod.object({
         lineId: zod.union([zod.string().uuid(), zod.null()]),
         lotId: zod.string().uuid(),
         mrp: zod.union([zod.string(), zod.null()]).optional(),
+        openingId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        openingLocation: zod
+          .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+          .optional(),
+        openingValue: zod.union([zod.string(), zod.null()]).optional(),
         originalCreatedAt: zod.string(),
         productId: zod.string().uuid(),
         productName: zod.string(),
@@ -7748,7 +7808,9 @@ export const PreviewInventoryMovementResponse = zod.object({
             zod.null(),
           ])
           .optional(),
+        recordedDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
         sellingPrice: zod.union([zod.string(), zod.null()]).optional(),
+        source: zod.union([zod.string(), zod.null()]).optional(),
         sourceAfter: zod.string(),
         sourceBefore: zod.string(),
         sourceComponents: zod
@@ -7773,13 +7835,14 @@ export const PreviewInventoryMovementResponse = zod.object({
           ])
           .optional(),
         unit: zod.string(),
+        unitRate: zod.union([zod.string(), zod.null()]).optional(),
       }),
     ),
     source: zod.object({
       address: zod.string(),
       city: zod.string(),
       countryCode: zod.string(),
-      id: zod.string().uuid(),
+      id: zod.union([zod.string().uuid(), zod.null()]),
       name: zod.string(),
       pincode: zod.string(),
       state: zod.string(),
@@ -7820,7 +7883,7 @@ export const GetInventoryMovementResponse = zod.object({
     address: zod.string(),
     city: zod.string(),
     countryCode: zod.string(),
-    id: zod.string().uuid(),
+    id: zod.union([zod.string().uuid(), zod.null()]),
     name: zod.string(),
     pincode: zod.string(),
     state: zod.string(),
@@ -7836,12 +7899,18 @@ export const GetInventoryMovementResponse = zod.object({
       destinationAfter: zod.string(),
       destinationBefore: zod.string(),
       expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+      historicalData: zod.union([zod.string(), zod.null()]).optional(),
       itemKind: zod
         .enum(["allergen", "combo"])
         .default(getInventoryMovementResponseLinesItemItemKindDefault),
       lineId: zod.union([zod.string().uuid(), zod.null()]),
       lotId: zod.string().uuid(),
       mrp: zod.union([zod.string(), zod.null()]).optional(),
+      openingId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      openingLocation: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
+      openingValue: zod.union([zod.string(), zod.null()]).optional(),
       originalCreatedAt: zod.string(),
       productId: zod.string().uuid(),
       productName: zod.string(),
@@ -7867,7 +7936,9 @@ export const GetInventoryMovementResponse = zod.object({
           zod.null(),
         ])
         .optional(),
+      recordedDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
       sellingPrice: zod.union([zod.string(), zod.null()]).optional(),
+      source: zod.union([zod.string(), zod.null()]).optional(),
       sourceAfter: zod.string(),
       sourceBefore: zod.string(),
       sourceComponents: zod
@@ -7892,13 +7963,14 @@ export const GetInventoryMovementResponse = zod.object({
         ])
         .optional(),
       unit: zod.string(),
+      unitRate: zod.union([zod.string(), zod.null()]).optional(),
     }),
   ),
   source: zod.object({
     address: zod.string(),
     city: zod.string(),
     countryCode: zod.string(),
-    id: zod.string().uuid(),
+    id: zod.union([zod.string().uuid(), zod.null()]),
     name: zod.string(),
     pincode: zod.string(),
     state: zod.string(),
@@ -7970,6 +8042,9 @@ export const GetInventoryReferencesQueryParams = zod.object({
     .min(1)
     .max(getInventoryReferencesQueryLimitMax)
     .default(getInventoryReferencesQueryLimitDefault),
+  unallocated: zod.coerce
+    .boolean()
+    .default(getInventoryReferencesQueryUnallocatedDefault),
 });
 
 export const GetInventoryReferencesResponse = zod.object({
@@ -7982,12 +8057,18 @@ export const GetInventoryReferencesResponse = zod.object({
       batchNo: zod.union([zod.string(), zod.null()]).optional(),
       comboProductId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      historicalData: zod.union([zod.string(), zod.null()]).optional(),
       id: zod.string().uuid(),
       itemKind: zod
         .union([zod.enum(["allergen", "combo"]), zod.null()])
         .optional(),
       mrp: zod.union([zod.string(), zod.null()]).optional(),
       name: zod.string(),
+      openingId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      openingLocation: zod
+        .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+        .optional(),
+      openingValue: zod.union([zod.string(), zod.null()]).optional(),
       productId: zod.union([zod.string().uuid(), zod.null()]).optional(),
       productName: zod.union([zod.string(), zod.null()]).optional(),
       receiptId: zod.union([zod.string().uuid(), zod.null()]).optional(),
@@ -8009,7 +8090,9 @@ export const GetInventoryReferencesResponse = zod.object({
           zod.null(),
         ])
         .optional(),
+      recordedDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
       sellingPrice: zod.union([zod.string(), zod.null()]).optional(),
+      source: zod.union([zod.string(), zod.null()]).optional(),
       sourceComponents: zod
         .union([
           zod.array(
@@ -8032,6 +8115,7 @@ export const GetInventoryReferencesResponse = zod.object({
         ])
         .optional(),
       unit: zod.union([zod.string(), zod.null()]).optional(),
+      unitRate: zod.union([zod.string(), zod.null()]).optional(),
     }),
   ),
   limit: zod.number().int(),
@@ -8069,7 +8153,7 @@ export const ReconcileInventoryMovementResponse = zod.object({
         address: zod.string(),
         city: zod.string(),
         countryCode: zod.string(),
-        id: zod.string().uuid(),
+        id: zod.union([zod.string().uuid(), zod.null()]),
         name: zod.string(),
         pincode: zod.string(),
         state: zod.string(),
@@ -8087,6 +8171,7 @@ export const ReconcileInventoryMovementResponse = zod.object({
           destinationAfter: zod.string(),
           destinationBefore: zod.string(),
           expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+          historicalData: zod.union([zod.string(), zod.null()]).optional(),
           itemKind: zod
             .enum(["allergen", "combo"])
             .default(
@@ -8095,6 +8180,11 @@ export const ReconcileInventoryMovementResponse = zod.object({
           lineId: zod.union([zod.string().uuid(), zod.null()]),
           lotId: zod.string().uuid(),
           mrp: zod.union([zod.string(), zod.null()]).optional(),
+          openingId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          openingLocation: zod
+            .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+            .optional(),
+          openingValue: zod.union([zod.string(), zod.null()]).optional(),
           originalCreatedAt: zod.string(),
           productId: zod.string().uuid(),
           productName: zod.string(),
@@ -8120,7 +8210,9 @@ export const ReconcileInventoryMovementResponse = zod.object({
               zod.null(),
             ])
             .optional(),
+          recordedDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
           sellingPrice: zod.union([zod.string(), zod.null()]).optional(),
+          source: zod.union([zod.string(), zod.null()]).optional(),
           sourceAfter: zod.string(),
           sourceBefore: zod.string(),
           sourceComponents: zod
@@ -8145,13 +8237,14 @@ export const ReconcileInventoryMovementResponse = zod.object({
             ])
             .optional(),
           unit: zod.string(),
+          unitRate: zod.union([zod.string(), zod.null()]).optional(),
         }),
       ),
       source: zod.object({
         address: zod.string(),
         city: zod.string(),
         countryCode: zod.string(),
-        id: zod.string().uuid(),
+        id: zod.union([zod.string().uuid(), zod.null()]),
         name: zod.string(),
         pincode: zod.string(),
         state: zod.string(),
@@ -8206,8 +8299,10 @@ export const ListInventoryStockQueryParams = zod.object({
 
 export const listInventoryStockResponseItemsItemItemKindDefault = `allergen`;
 export const listInventoryStockResponseItemsItemLotsItemItemKindDefault = `allergen`;
+export const listInventoryStockResponseItemsItemUnallocatedQuantityDefault = `0.000`;
 export const listInventoryStockResponseSnapshotOneItemItemKindDefault = `allergen`;
 export const listInventoryStockResponseSnapshotOneItemLotsItemItemKindDefault = `allergen`;
+export const listInventoryStockResponseSnapshotOneItemUnallocatedQuantityDefault = `0.000`;
 
 export const ListInventoryStockResponse = zod.object({
   asOf: zod.coerce.date(),
@@ -8236,16 +8331,22 @@ export const ListInventoryStockResponse = zod.object({
             .union([zod.string().uuid(), zod.null()])
             .optional(),
           expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+          historicalData: zod.union([zod.string(), zod.null()]).optional(),
           itemKind: zod
             .enum(["allergen", "combo"])
             .default(
               listInventoryStockResponseItemsItemLotsItemItemKindDefault,
             ),
           lineId: zod.union([zod.string().uuid(), zod.null()]),
-          locationId: zod.string().uuid(),
+          locationId: zod.union([zod.string().uuid(), zod.null()]),
           locationName: zod.string(),
           lotId: zod.string().uuid(),
           mrp: zod.union([zod.string(), zod.null()]).optional(),
+          openingId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          openingLocation: zod
+            .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+            .optional(),
+          openingValue: zod.union([zod.string(), zod.null()]).optional(),
           originalCreatedAt: zod.string(),
           productId: zod.string().uuid(),
           productName: zod.string(),
@@ -8270,7 +8371,9 @@ export const ListInventoryStockResponse = zod.object({
               zod.null(),
             ])
             .optional(),
+          recordedDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
           sellingPrice: zod.union([zod.string(), zod.null()]).optional(),
+          source: zod.union([zod.string(), zod.null()]).optional(),
           sourceComponents: zod
             .union([
               zod.array(
@@ -8293,6 +8396,7 @@ export const ListInventoryStockResponse = zod.object({
             ])
             .optional(),
           unit: zod.string(),
+          unitRate: zod.union([zod.string(), zod.null()]).optional(),
         }),
       ),
       name: zod.string(),
@@ -8300,6 +8404,9 @@ export const ListInventoryStockResponse = zod.object({
       quantity: zod.string(),
       sellingPrice: zod.union([zod.string(), zod.null()]),
       state: zod.string(),
+      unallocatedQuantity: zod
+        .string()
+        .default(listInventoryStockResponseItemsItemUnallocatedQuantityDefault),
       unit: zod.string(),
     }),
   ),
@@ -8328,16 +8435,24 @@ export const ListInventoryStockResponse = zod.object({
                 .union([zod.string().uuid(), zod.null()])
                 .optional(),
               expiryDate: zod.union([zod.coerce.date(), zod.null()]),
+              historicalData: zod.union([zod.string(), zod.null()]).optional(),
               itemKind: zod
                 .enum(["allergen", "combo"])
                 .default(
                   listInventoryStockResponseSnapshotOneItemLotsItemItemKindDefault,
                 ),
               lineId: zod.union([zod.string().uuid(), zod.null()]),
-              locationId: zod.string().uuid(),
+              locationId: zod.union([zod.string().uuid(), zod.null()]),
               locationName: zod.string(),
               lotId: zod.string().uuid(),
               mrp: zod.union([zod.string(), zod.null()]).optional(),
+              openingId: zod
+                .union([zod.string().uuid(), zod.null()])
+                .optional(),
+              openingLocation: zod
+                .union([zod.record(zod.string(), zod.unknown()), zod.null()])
+                .optional(),
+              openingValue: zod.union([zod.string(), zod.null()]).optional(),
               originalCreatedAt: zod.string(),
               productId: zod.string().uuid(),
               productName: zod.string(),
@@ -8362,7 +8477,11 @@ export const ListInventoryStockResponse = zod.object({
                   zod.null(),
                 ])
                 .optional(),
+              recordedDate: zod
+                .union([zod.coerce.date(), zod.null()])
+                .optional(),
               sellingPrice: zod.union([zod.string(), zod.null()]).optional(),
+              source: zod.union([zod.string(), zod.null()]).optional(),
               sourceComponents: zod
                 .union([
                   zod.array(
@@ -8385,6 +8504,7 @@ export const ListInventoryStockResponse = zod.object({
                 ])
                 .optional(),
               unit: zod.string(),
+              unitRate: zod.union([zod.string(), zod.null()]).optional(),
             }),
           ),
           name: zod.string(),
@@ -8392,6 +8512,11 @@ export const ListInventoryStockResponse = zod.object({
           quantity: zod.string(),
           sellingPrice: zod.union([zod.string(), zod.null()]),
           state: zod.string(),
+          unallocatedQuantity: zod
+            .string()
+            .default(
+              listInventoryStockResponseSnapshotOneItemUnallocatedQuantityDefault,
+            ),
           unit: zod.string(),
         }),
       ),
@@ -8435,7 +8560,7 @@ export const GetInventoryStockHistoryResponse = zod.object({
       before: zod.string(),
       delta: zod.string(),
       id: zod.string().uuid(),
-      locationId: zod.string().uuid(),
+      locationId: zod.union([zod.string().uuid(), zod.null()]),
       lotId: zod.string().uuid(),
       movementId: zod.union([zod.string().uuid(), zod.null()]),
       source: zod.string(),
@@ -13216,6 +13341,691 @@ export const SetOpeningBalanceStatusResponse = zod.object({
 /**
  * @summary Listing
  */
+export const listOpeningStockQueryQueryDefault = ``;
+
+export const ListOpeningStockQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listOpeningStockQueryQueryMax)
+    .default(listOpeningStockQueryQueryDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listOpeningStockQueryOffsetMin)
+    .max(listOpeningStockQueryOffsetMax)
+    .default(listOpeningStockQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listOpeningStockQueryLimitMax)
+    .default(listOpeningStockQueryLimitDefault),
+});
+
+export const listOpeningStockResponseItemsItemQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const ListOpeningStockResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      activity: zod.array(
+        zod.object({
+          action: zod.string(),
+          actor: zod.string(),
+          at: zod.coerce.date(),
+          requestId: zod.union([zod.string(), zod.null()]),
+        }),
+      ),
+      actor: zod.string(),
+      actorId: zod.string().uuid(),
+      after: zod.string(),
+      appendOnly: zod.boolean(),
+      before: zod.string(),
+      createdAt: zod.coerce.date(),
+      historicalData: zod.string(),
+      id: zod.string().uuid(),
+      itemId: zod.string().uuid(),
+      itemKind: zod.enum(["allergen", "combo"]),
+      itemVersion: zod.number().int(),
+      location: zod.object({
+        address: zod.string(),
+        city: zod.string(),
+        countryCode: zod.string(),
+        id: zod.union([zod.string().uuid(), zod.null()]),
+        name: zod.string(),
+        pincode: zod.string(),
+        state: zod.string(),
+        version: zod.number().int(),
+      }),
+      locationId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      lotId: zod.string().uuid(),
+      mode: zod.enum(["manual", "import"]),
+      openingValue: zod.string(),
+      productName: zod.string(),
+      quantity: zod
+        .string()
+        .max(listOpeningStockResponseItemsItemQuantityMax)
+        .regex(listOpeningStockResponseItemsItemQuantityRegExp),
+      recordedDate: zod.coerce.date(),
+      rowId: zod.string().uuid(),
+      source: zod.literal("opening"),
+      sourceId: zod.string().uuid(),
+      state: zod.enum(["ready", "skipped", "already_imported"]),
+      unit: zod.string(),
+      unitRate: zod.string().max(listOpeningStockResponseItemsItemUnitRateMax),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  summary: zod.object({
+    breakdown: zod.array(
+      zod.object({
+        itemId: zod.string().uuid(),
+        itemKind: zod.enum(["allergen", "combo"]),
+        locationId: zod.union([zod.string().uuid(), zod.null()]),
+        locationName: zod.string(),
+        openingValue: zod.string(),
+        productName: zod.string(),
+        quantity: zod.string(),
+        unit: zod.string(),
+      }),
+    ),
+    imports: zod.number().int(),
+    records: zod.number().int(),
+    scope: zod.string(),
+  }),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+export const createOpeningStockBodyReviewTokenRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const createOpeningStockBodyRowsItemQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const CreateOpeningStockBody = zod.object({
+  idempotencyKey: zod.string().uuid(),
+  mode: zod.enum(["manual", "import"]),
+  recordedDate: zod.coerce.date(),
+  reviewToken: zod.string().regex(createOpeningStockBodyReviewTokenRegExp),
+  rows: zod
+    .array(
+      zod.object({
+        itemId: zod.string().uuid(),
+        itemKind: zod.enum(["allergen", "combo"]),
+        locationId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        quantity: zod
+          .string()
+          .max(createOpeningStockBodyRowsItemQuantityMax)
+          .regex(createOpeningStockBodyRowsItemQuantityRegExp),
+        rowId: zod.string().uuid(),
+        sourceId: zod.string().uuid(),
+        unitRate: zod.string().max(createOpeningStockBodyRowsItemUnitRateMax),
+      }),
+    )
+    .min(1)
+    .max(createOpeningStockBodyRowsMax),
+});
+
+export const createOpeningStockResponseRecordsItemQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const CreateOpeningStockResponse = zod.object({
+  alreadyImportedCount: zod.number().int(),
+  postedCount: zod.number().int(),
+  records: zod.array(
+    zod.object({
+      activity: zod.array(
+        zod.object({
+          action: zod.string(),
+          actor: zod.string(),
+          at: zod.coerce.date(),
+          requestId: zod.union([zod.string(), zod.null()]),
+        }),
+      ),
+      actor: zod.string(),
+      actorId: zod.string().uuid(),
+      after: zod.string(),
+      appendOnly: zod.boolean(),
+      before: zod.string(),
+      createdAt: zod.coerce.date(),
+      historicalData: zod.string(),
+      id: zod.string().uuid(),
+      itemId: zod.string().uuid(),
+      itemKind: zod.enum(["allergen", "combo"]),
+      itemVersion: zod.number().int(),
+      location: zod.object({
+        address: zod.string(),
+        city: zod.string(),
+        countryCode: zod.string(),
+        id: zod.union([zod.string().uuid(), zod.null()]),
+        name: zod.string(),
+        pincode: zod.string(),
+        state: zod.string(),
+        version: zod.number().int(),
+      }),
+      locationId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      lotId: zod.string().uuid(),
+      mode: zod.enum(["manual", "import"]),
+      openingValue: zod.string(),
+      productName: zod.string(),
+      quantity: zod
+        .string()
+        .max(createOpeningStockResponseRecordsItemQuantityMax)
+        .regex(createOpeningStockResponseRecordsItemQuantityRegExp),
+      recordedDate: zod.coerce.date(),
+      rowId: zod.string().uuid(),
+      source: zod.literal("opening"),
+      sourceId: zod.string().uuid(),
+      state: zod.enum(["ready", "skipped", "already_imported"]),
+      unit: zod.string(),
+      unitRate: zod
+        .string()
+        .max(createOpeningStockResponseRecordsItemUnitRateMax),
+    }),
+  ),
+  summary: zod.object({
+    breakdown: zod.array(
+      zod.object({
+        itemId: zod.string().uuid(),
+        itemKind: zod.enum(["allergen", "combo"]),
+        locationId: zod.union([zod.string().uuid(), zod.null()]),
+        locationName: zod.string(),
+        openingValue: zod.string(),
+        productName: zod.string(),
+        quantity: zod.string(),
+        unit: zod.string(),
+      }),
+    ),
+    imports: zod.number().int(),
+    records: zod.number().int(),
+    scope: zod.string(),
+  }),
+});
+
+/**
+ * @summary Export
+ */
+export const exportOpeningStockQueryQueryDefault = ``;
+
+export const exportOpeningStockQueryFormatDefault = `csv`;
+
+export const ExportOpeningStockQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(exportOpeningStockQueryQueryMax)
+    .default(exportOpeningStockQueryQueryDefault),
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(exportOpeningStockQueryFormatDefault),
+});
+
+export const ExportOpeningStockHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const ExportOpeningStockResponse = zod.unknown();
+
+/**
+ * @summary Import Review
+ */
+
+export const ReviewOpeningStockImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(reviewOpeningStockImportQueryFilenameMax),
+});
+
+export const ReviewOpeningStockImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const reviewOpeningStockImportResponseCommandOneRowsItemQuantityRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+
+export const reviewOpeningStockImportResponseRowsItemValuesOneQuantityRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+
+export const ReviewOpeningStockImportResponse = zod.object({
+  alreadyImportedCount: zod.number().int(),
+  command: zod.union([
+    zod.object({
+      mode: zod.enum(["manual", "import"]),
+      recordedDate: zod.coerce.date(),
+      rows: zod
+        .array(
+          zod.object({
+            itemId: zod.string().uuid(),
+            itemKind: zod.enum(["allergen", "combo"]),
+            locationId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+            quantity: zod
+              .string()
+              .max(
+                reviewOpeningStockImportResponseCommandOneRowsItemQuantityMax,
+              )
+              .regex(
+                reviewOpeningStockImportResponseCommandOneRowsItemQuantityRegExp,
+              ),
+            rowId: zod.string().uuid(),
+            sourceId: zod.string().uuid(),
+            unitRate: zod
+              .string()
+              .max(
+                reviewOpeningStockImportResponseCommandOneRowsItemUnitRateMax,
+              ),
+          }),
+        )
+        .min(1)
+        .max(reviewOpeningStockImportResponseCommandOneRowsMax),
+    }),
+    zod.null(),
+  ]),
+  invalidCount: zod.number().int(),
+  reviewToken: zod.union([zod.string(), zod.null()]),
+  rows: zod.array(
+    zod.object({
+      errors: zod.array(zod.string()),
+      row: zod.number().int(),
+      state: zod.enum(["ready", "skipped", "already_imported"]),
+      values: zod.union([
+        zod.object({
+          itemId: zod.string().uuid(),
+          itemKind: zod.enum(["allergen", "combo"]),
+          locationId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          quantity: zod
+            .string()
+            .max(reviewOpeningStockImportResponseRowsItemValuesOneQuantityMax)
+            .regex(
+              reviewOpeningStockImportResponseRowsItemValuesOneQuantityRegExp,
+            ),
+          rowId: zod.string().uuid(),
+          sourceId: zod.string().uuid(),
+          unitRate: zod
+            .string()
+            .max(reviewOpeningStockImportResponseRowsItemValuesOneUnitRateMax),
+        }),
+        zod.null(),
+      ]),
+    }),
+  ),
+  skippedCount: zod.number().int(),
+  summary: zod.object({
+    breakdown: zod.array(
+      zod.object({
+        itemId: zod.string().uuid(),
+        itemKind: zod.enum(["allergen", "combo"]),
+        locationId: zod.union([zod.string().uuid(), zod.null()]),
+        locationName: zod.string(),
+        openingValue: zod.string(),
+        productName: zod.string(),
+        quantity: zod.string(),
+        unit: zod.string(),
+      }),
+    ),
+    imports: zod.number().int(),
+    records: zod.number().int(),
+    scope: zod.string(),
+  }),
+  valid: zod.boolean(),
+  validCount: zod.number().int(),
+});
+
+/**
+ * @summary Preview
+ */
+
+export const previewOpeningStockBodyRowsItemQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const PreviewOpeningStockBody = zod.object({
+  mode: zod.enum(["manual", "import"]),
+  recordedDate: zod.coerce.date(),
+  rows: zod
+    .array(
+      zod.object({
+        itemId: zod.string().uuid(),
+        itemKind: zod.enum(["allergen", "combo"]),
+        locationId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        quantity: zod
+          .string()
+          .max(previewOpeningStockBodyRowsItemQuantityMax)
+          .regex(previewOpeningStockBodyRowsItemQuantityRegExp),
+        rowId: zod.string().uuid(),
+        sourceId: zod.string().uuid(),
+        unitRate: zod.string().max(previewOpeningStockBodyRowsItemUnitRateMax),
+      }),
+    )
+    .min(1)
+    .max(previewOpeningStockBodyRowsMax),
+});
+
+export const previewOpeningStockResponseRowsItemQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const PreviewOpeningStockResponse = zod.object({
+  reviewToken: zod.string(),
+  rows: zod.array(
+    zod.object({
+      itemId: zod.string().uuid(),
+      itemKind: zod.enum(["allergen", "combo"]),
+      itemVersion: zod.number().int(),
+      location: zod.object({
+        address: zod.string(),
+        city: zod.string(),
+        countryCode: zod.string(),
+        id: zod.union([zod.string().uuid(), zod.null()]),
+        name: zod.string(),
+        pincode: zod.string(),
+        state: zod.string(),
+        version: zod.number().int(),
+      }),
+      locationId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      openingValue: zod.string(),
+      productName: zod.string(),
+      quantity: zod
+        .string()
+        .max(previewOpeningStockResponseRowsItemQuantityMax)
+        .regex(previewOpeningStockResponseRowsItemQuantityRegExp),
+      rowId: zod.string().uuid(),
+      sourceId: zod.string().uuid(),
+      state: zod.enum(["ready", "skipped", "already_imported"]),
+      unit: zod.string(),
+      unitRate: zod
+        .string()
+        .max(previewOpeningStockResponseRowsItemUnitRateMax),
+    }),
+  ),
+  summary: zod.object({
+    breakdown: zod.array(
+      zod.object({
+        itemId: zod.string().uuid(),
+        itemKind: zod.enum(["allergen", "combo"]),
+        locationId: zod.union([zod.string().uuid(), zod.null()]),
+        locationName: zod.string(),
+        openingValue: zod.string(),
+        productName: zod.string(),
+        quantity: zod.string(),
+        unit: zod.string(),
+      }),
+    ),
+    imports: zod.number().int(),
+    records: zod.number().int(),
+    scope: zod.string(),
+  }),
+});
+
+/**
+ * @summary References
+ */
+export const getOpeningStockItemsQueryQueryDefault = ``;
+
+export const GetOpeningStockItemsQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(getOpeningStockItemsQueryQueryMax)
+    .default(getOpeningStockItemsQueryQueryDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(getOpeningStockItemsQueryOffsetMin)
+    .max(getOpeningStockItemsQueryOffsetMax)
+    .default(getOpeningStockItemsQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getOpeningStockItemsQueryLimitMax)
+    .default(getOpeningStockItemsQueryLimitDefault),
+});
+
+export const GetOpeningStockItemsResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      itemKind: zod.enum(["allergen", "combo"]),
+      name: zod.string(),
+      unit: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+});
+
+/**
+ * @summary Reconcile
+ */
+export const ReconcileOpeningStockRequestParams = zod.object({
+  key: zod.coerce.string().uuid(),
+});
+
+export const reconcileOpeningStockRequestResponseResultOneRecordsItemQuantityRegExp =
+  new RegExp("^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$");
+
+export const ReconcileOpeningStockRequestResponse = zod.object({
+  result: zod.union([
+    zod.object({
+      alreadyImportedCount: zod.number().int(),
+      postedCount: zod.number().int(),
+      records: zod.array(
+        zod.object({
+          activity: zod.array(
+            zod.object({
+              action: zod.string(),
+              actor: zod.string(),
+              at: zod.coerce.date(),
+              requestId: zod.union([zod.string(), zod.null()]),
+            }),
+          ),
+          actor: zod.string(),
+          actorId: zod.string().uuid(),
+          after: zod.string(),
+          appendOnly: zod.boolean(),
+          before: zod.string(),
+          createdAt: zod.coerce.date(),
+          historicalData: zod.string(),
+          id: zod.string().uuid(),
+          itemId: zod.string().uuid(),
+          itemKind: zod.enum(["allergen", "combo"]),
+          itemVersion: zod.number().int(),
+          location: zod.object({
+            address: zod.string(),
+            city: zod.string(),
+            countryCode: zod.string(),
+            id: zod.union([zod.string().uuid(), zod.null()]),
+            name: zod.string(),
+            pincode: zod.string(),
+            state: zod.string(),
+            version: zod.number().int(),
+          }),
+          locationId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          lotId: zod.string().uuid(),
+          mode: zod.enum(["manual", "import"]),
+          openingValue: zod.string(),
+          productName: zod.string(),
+          quantity: zod
+            .string()
+            .max(
+              reconcileOpeningStockRequestResponseResultOneRecordsItemQuantityMax,
+            )
+            .regex(
+              reconcileOpeningStockRequestResponseResultOneRecordsItemQuantityRegExp,
+            ),
+          recordedDate: zod.coerce.date(),
+          rowId: zod.string().uuid(),
+          source: zod.literal("opening"),
+          sourceId: zod.string().uuid(),
+          state: zod.enum(["ready", "skipped", "already_imported"]),
+          unit: zod.string(),
+          unitRate: zod
+            .string()
+            .max(
+              reconcileOpeningStockRequestResponseResultOneRecordsItemUnitRateMax,
+            ),
+        }),
+      ),
+      summary: zod.object({
+        breakdown: zod.array(
+          zod.object({
+            itemId: zod.string().uuid(),
+            itemKind: zod.enum(["allergen", "combo"]),
+            locationId: zod.union([zod.string().uuid(), zod.null()]),
+            locationName: zod.string(),
+            openingValue: zod.string(),
+            productName: zod.string(),
+            quantity: zod.string(),
+            unit: zod.string(),
+          }),
+        ),
+        imports: zod.number().int(),
+        records: zod.number().int(),
+        scope: zod.string(),
+      }),
+    }),
+    zod.null(),
+  ]),
+  state: zod.enum(["committed", "not_committed"]),
+});
+
+/**
+ * @summary Sample
+ */
+export const downloadOpeningStockSampleQueryFormatDefault = `csv`;
+
+export const DownloadOpeningStockSampleQueryParams = zod.object({
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(downloadOpeningStockSampleQueryFormatDefault),
+});
+
+export const DownloadOpeningStockSampleHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const DownloadOpeningStockSampleResponse = zod.unknown();
+
+/**
+ * @summary Detail
+ */
+export const GetOpeningStockParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const getOpeningStockResponseQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const GetOpeningStockResponse = zod.object({
+  activity: zod.array(
+    zod.object({
+      action: zod.string(),
+      actor: zod.string(),
+      at: zod.coerce.date(),
+      requestId: zod.union([zod.string(), zod.null()]),
+    }),
+  ),
+  actor: zod.string(),
+  actorId: zod.string().uuid(),
+  after: zod.string(),
+  appendOnly: zod.boolean(),
+  before: zod.string(),
+  createdAt: zod.coerce.date(),
+  historicalData: zod.string(),
+  id: zod.string().uuid(),
+  itemId: zod.string().uuid(),
+  itemKind: zod.enum(["allergen", "combo"]),
+  itemVersion: zod.number().int(),
+  location: zod.object({
+    address: zod.string(),
+    city: zod.string(),
+    countryCode: zod.string(),
+    id: zod.union([zod.string().uuid(), zod.null()]),
+    name: zod.string(),
+    pincode: zod.string(),
+    state: zod.string(),
+    version: zod.number().int(),
+  }),
+  locationId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  lotId: zod.string().uuid(),
+  mode: zod.enum(["manual", "import"]),
+  openingValue: zod.string(),
+  productName: zod.string(),
+  quantity: zod
+    .string()
+    .max(getOpeningStockResponseQuantityMax)
+    .regex(getOpeningStockResponseQuantityRegExp),
+  recordedDate: zod.coerce.date(),
+  rowId: zod.string().uuid(),
+  source: zod.literal("opening"),
+  sourceId: zod.string().uuid(),
+  state: zod.enum(["ready", "skipped", "already_imported"]),
+  unit: zod.string(),
+  unitRate: zod.string().max(getOpeningStockResponseUnitRateMax),
+});
+
+/**
+ * @summary Activity
+ */
+export const GetOpeningStockActivityParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const GetOpeningStockActivityResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      action: zod.string(),
+      actor: zod.string(),
+      at: zod.coerce.date(),
+      requestId: zod.union([zod.string(), zod.null()]),
+    }),
+  ),
+});
+
+/**
+ * @summary Analytics
+ */
+export const GetOpeningStockAnalyticsParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const GetOpeningStockAnalyticsResponse = zod.object({
+  breakdown: zod.array(
+    zod.object({
+      itemId: zod.string().uuid(),
+      itemKind: zod.enum(["allergen", "combo"]),
+      locationId: zod.union([zod.string().uuid(), zod.null()]),
+      locationName: zod.string(),
+      openingValue: zod.string(),
+      productName: zod.string(),
+      quantity: zod.string(),
+      unit: zod.string(),
+    }),
+  ),
+  imports: zod.number().int(),
+  records: zod.number().int(),
+  scope: zod.string(),
+});
+
+/**
+ * @summary Listing
+ */
 export const listPatientDirectoryQueryQueryDefault = ``;
 
 export const listPatientDirectoryQueryStatusDefault = `all`;
@@ -16605,7 +17415,7 @@ export const AssembleStockProductResponse = zod.object({
     address: zod.string(),
     city: zod.string(),
     countryCode: zod.string(),
-    id: zod.string().uuid(),
+    id: zod.union([zod.string().uuid(), zod.null()]),
     name: zod.string(),
     pincode: zod.string(),
     state: zod.string(),
@@ -16696,7 +17506,7 @@ export const PreviewProductAssemblyResponse = zod.object({
       address: zod.string(),
       city: zod.string(),
       countryCode: zod.string(),
-      id: zod.string().uuid(),
+      id: zod.union([zod.string().uuid(), zod.null()]),
       name: zod.string(),
       pincode: zod.string(),
       state: zod.string(),
@@ -16775,7 +17585,7 @@ export const GetProductAssemblyResponse = zod.object({
     address: zod.string(),
     city: zod.string(),
     countryCode: zod.string(),
-    id: zod.string().uuid(),
+    id: zod.union([zod.string().uuid(), zod.null()]),
     name: zod.string(),
     pincode: zod.string(),
     state: zod.string(),
@@ -16924,7 +17734,7 @@ export const ReconcileStockProductRequestResponse = zod.object({
         address: zod.string(),
         city: zod.string(),
         countryCode: zod.string(),
-        id: zod.string().uuid(),
+        id: zod.union([zod.string().uuid(), zod.null()]),
         name: zod.string(),
         pincode: zod.string(),
         state: zod.string(),
@@ -17309,7 +18119,7 @@ export const GetStockProductAssembliesResponse = zod.object({
         address: zod.string(),
         city: zod.string(),
         countryCode: zod.string(),
-        id: zod.string().uuid(),
+        id: zod.union([zod.string().uuid(), zod.null()]),
         name: zod.string(),
         pincode: zod.string(),
         state: zod.string(),
@@ -19579,6 +20389,7 @@ export const RecordBrowserActivityBody = zod.object({
           "allergen",
           "product",
           "product_assembly",
+          "opening_stock",
           "vendor",
           "sales_target",
           "opening_balance",

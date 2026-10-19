@@ -3,7 +3,7 @@ const listeners = new Set();
 const resources = new Set([
   'dashboard', 'language', 'zone', 'courier_partner', 'storage_location', 'headquarter',
   'mr', 'doctor', 'patient', 'designation', 'staff', 'product_category',
-  'allergen', 'product', 'product_assembly', 'vendor', 'sales_target', 'opening_balance', 'purchase_order',
+  'allergen', 'product', 'product_assembly', 'vendor', 'sales_target', 'opening_balance', 'opening_stock', 'purchase_order',
   'purchase_received', 'communication', 'message_template', 'invoice_template',
   'receipt_template', 'settings', 'roles_permissions', 'activity_logs', 'masters',
 ]);

@@ -36,6 +36,7 @@ const MASTER_GROUPS = [
     { label: 'Product Category', href: '/admin/masters/product-categories', testId: 'link-admin-product-categories', Icon: Boxes, nested: true },
     { label: 'Allergen Master', href: '/admin/masters/allergens', testId: 'link-admin-allergens', Icon: FlaskConical, nested: true },
     { label: 'Product Master', href: '/admin/masters/products', testId: 'link-admin-products', Icon: Layers, nested: true, superOnly: true },
+    { label: 'Opening Stock', href: '/admin/masters/opening-stock', testId: 'link-admin-opening-stock', Icon: Layers, nested: true, superOnly: true },
     { label: 'Vendor Master', href: '/admin/masters/vendors', testId: 'link-admin-vendors', Icon: BriefcaseBusiness },
   ] },
   { label: 'Finance & Performance', links: [

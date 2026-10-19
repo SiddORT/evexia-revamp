@@ -37,6 +37,19 @@ activation/recovery handoff; process repair is not live email recovery.
 
 # EVEXIA Portal
 
+- Opening Stock is physical pre-system initialization, not Doctor financial
+  Opening Balance. It uses the shared allergen/product ledger with immutable
+  opening-source lots, explicit NULL-location Unallocated stock and reviewed
+  Move Stocks allocation. Finished-product openings never consume components.
+  Independent exact unit rates are entered, never inferred from MRP/selling
+  prices. Durable source/row identities make CSV/XLSX re-upload and backup
+  re-import safe without name deduplication. `0050_opening_stock` follows
+  `0049_product_language_merge` through normal automatic lifecycle. Fork work
+  cannot establish post-merge original database/API/frontend alignment.
+  Only focused operations are authorized for this feature:
+  `sh scripts/test-opening-stock-operations.sh`; no release/regression/broad,
+  development-validation or browser suites. See `docs/opening-stock.md`.
+
 - Language Master is a shared, name-only protected Super Admin catalogue under
   Masters / Geography & Logistics. Its own Actions drawer shows retained
   chronological server history and whole-record committed action totals.

@@ -18,6 +18,6 @@ export interface MoveInput {
    */
   lines: MoveLine[];
   otherName?: string | null;
-  sourceId: string;
+  sourceId: string | null;
   staffId?: string | null;
 }

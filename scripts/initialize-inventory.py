@@ -29,7 +29,7 @@ from app.services.purchase_received_crypto import ReceiptCrypto, PRError
 
 # Same reviewed receipt initialization operation, on the explicitly reviewed
 # product successor. No future schema or copied-target identity is accepted.
-REVISION = "0049_product_language_merge"
+REVISION = "0050_opening_stock"
 
 
 def require(value, message):

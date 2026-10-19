@@ -17,7 +17,8 @@ class InventoryLot(Base):
     product_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("allergen_products.id"), index=True)
     combo_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("combo_products.id"), index=True)
     assembly_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("product_assemblies.id"), unique=True)
-    origin_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("storage_locations.id"))
+    opening_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("opening_stock.id"), unique=True)
+    origin_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("storage_locations.id"))
     accepted: Mapped[Decimal] = mapped_column(Numeric())
     payload_ciphertext: Mapped[str] = mapped_column(Text)
 
@@ -25,8 +26,9 @@ class InventoryLot(Base):
 class InventoryBalance(Base):
     __tablename__ = "inventory_balances"
     __table_args__ = (CheckConstraint("quantity >= 0 AND quantity <= 1000000 AND quantity = round(quantity,3)", name="ck_inventory_nonnegative"),)
-    lot_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inventory_lots.id"), primary_key=True)
-    location_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("storage_locations.id"), primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    lot_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inventory_lots.id"))
+    location_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("storage_locations.id"))
     quantity: Mapped[Decimal] = mapped_column(Numeric())
 
 
@@ -41,7 +43,7 @@ class InventoryMovement(Base):
     __tablename__ = "inventory_movements"
     __table_args__ = (CheckConstraint("source_id <> destination_id", name="ck_inventory_distinct_locations"),)
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
-    source_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("storage_locations.id"), index=True)
+    source_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("storage_locations.id"), index=True)
     destination_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("storage_locations.id"), index=True)
     actor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     event_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("audit_events.id"), unique=True)
@@ -59,7 +61,7 @@ class InventoryPosting(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     source_key: Mapped[str] = mapped_column(String(100))
     lot_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inventory_lots.id"), index=True)
-    location_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("storage_locations.id"))
+    location_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("storage_locations.id"))
     movement_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("inventory_movements.id"), index=True)
     actor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

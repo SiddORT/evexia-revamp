@@ -22,4 +22,5 @@ export type GetInventoryReferencesParams = {
    * @maximum 100
    */
   limit?: number;
+  unallocated?: boolean;
 };

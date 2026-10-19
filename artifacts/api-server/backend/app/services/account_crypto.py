@@ -116,6 +116,8 @@ def ready(db):
         # Reviewed product-only branch and its language-history merge preserve
         # all account ciphertext/anchors. No arbitrary future schemas accepted.
         ["0047_stock_products"], ["0049_product_language_merge"],
+        # Physical opening sources preserve account encryption and anchors.
+        ["0050_opening_stock"],
     ):
         raise AccountCryptoError()
     current = crypto()

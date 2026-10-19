@@ -21,6 +21,6 @@ export interface MoveCreate {
   otherName?: string | null;
   /** @pattern ^[0-9a-f]{64}$ */
   reviewToken: string;
-  sourceId: string;
+  sourceId: string | null;
   staffId?: string | null;
 }

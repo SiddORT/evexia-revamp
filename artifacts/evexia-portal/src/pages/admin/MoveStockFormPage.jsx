@@ -48,7 +48,7 @@ export default function MoveStockFormPage() {
     try {
       const all = []; let filtered = 0;
       do {
-        const d = await listReference('lots', { source_id: id, offset: all.length, limit: 100 });
+        const d = await listReference('lots', id === 'unallocated' ? { unallocated: true, offset: all.length, limit: 100 } : { source_id: id, offset: all.length, limit: 100 });
         if (mine !== lotSeq.current) return;
         all.push(...d.items); filtered = d.filtered;
         if (!d.items.length) break;
@@ -132,7 +132,7 @@ export default function MoveStockFormPage() {
     selectedLines.forEach(({ lot, quantity }) => { if (lot.itemKind === 'combo' && !e[lot.id] && !/^[1-9]\d*(?:\.0{1,3})?$/.test(quantity.trim())) e[lot.id] = 'Assembled combos move only as positive whole combos.'; });
     return e;
   }
-  const buildBody = () => ({ sourceId: source.value, destinationId: destination.value, date,
+  const buildBody = () => ({ sourceId: source.value === 'unallocated' ? null : source.value, destinationId: destination.value, date,
     deliveryMode: by.value === OTHER ? 'other' : 'staff', staffId: by.value === OTHER ? null : by.value,
     otherName: by.value === OTHER ? otherName.trim() : null,
     lines: selectedLines.map(({ lot, quantity }) => ({ lotId: lot.id, quantity: quantity.trim() })) });
@@ -181,6 +181,7 @@ export default function MoveStockFormPage() {
   }
 
   const err = (k) => errors[k] && <p id={`ms-${k}-error`} className="mr-form__error" role="alert">{errors[k]}</p>;
+  const UNALLOCATED_SOURCE = [{ value: 'unallocated', label: 'Unallocated (opening stock, no location)' }];
   const staffFetch = (kind, params) => listReference(kind, params);
   const hasUnavailable = unavailable.length > 0;
 
@@ -197,9 +198,9 @@ export default function MoveStockFormPage() {
         <div className="ms-form-body">
           <div className="ms-fields">
             <div className="ms-field"><label htmlFor="ms-source">Source location <span className="mr-form__required">*</span></label>
-              <ReferenceSelect id="ms-source" label="Source location" kind="locations" fetchPage={staffFetch} value={sourceId} selected={source} onChange={changeSource} disabled={locked} placeholder="Select source" invalid={Boolean(errors.sourceId)} describedBy={errors.sourceId ? 'ms-sourceId-error' : undefined} />{err('sourceId')}</div>
+              <ReferenceSelect id="ms-source" label="Source location" kind="locations" fetchPage={staffFetch} pinned={UNALLOCATED_SOURCE} value={sourceId} selected={source} onChange={changeSource} disabled={locked} placeholder="Select source" invalid={Boolean(errors.sourceId)} describedBy={errors.sourceId ? 'ms-sourceId-error' : undefined} />{err('sourceId')}</div>
             <div className="ms-field"><label htmlFor="ms-dest">Destination location <span className="mr-form__required">*</span></label>
-              <ReferenceSelect id="ms-dest" label="Destination location" kind="locations" fetchPage={staffFetch} value={destination?.value || ''} selected={destination} exclude={sourceId} disabled={locked} onChange={(_v, o) => { setDestination(o ? { value: o.value, label: o.label } : null); clear('destinationId'); }} placeholder="Select destination" invalid={Boolean(errors.destinationId)} describedBy={errors.destinationId ? 'ms-destinationId-error' : undefined} />{err('destinationId')}</div>
+              <ReferenceSelect id="ms-dest" label="Destination location" kind="locations" fetchPage={staffFetch} value={destination?.value || ''} selected={destination} exclude={sourceId === 'unallocated' ? '' : sourceId} disabled={locked} onChange={(_v, o) => { setDestination(o ? { value: o.value, label: o.label } : null); clear('destinationId'); }} placeholder="Select destination" invalid={Boolean(errors.destinationId)} describedBy={errors.destinationId ? 'ms-destinationId-error' : undefined} />{err('destinationId')}</div>
             <div className="ms-field"><label htmlFor="ms-date">Date <span className="mr-form__required">*</span></label>
               <input id="ms-date" type="date" className="mr-form__control" value={date} onChange={(e) => { setDate(e.target.value); clear('date'); }} aria-invalid={Boolean(errors.date)} aria-describedby={errors.date ? 'ms-date-error' : undefined} data-testid="input-move-date" />{err('date')}</div>
             <div className="ms-field"><label htmlFor="ms-by">Delivered by <span className="mr-form__required">*</span></label>
@@ -214,7 +215,7 @@ export default function MoveStockFormPage() {
             {sourceId && <div className="inv-more"><button type="button" className="admin-button admin-button--secondary" disabled={lots.loading} onClick={() => loadLots(sourceId)} data-testid="button-refresh-lots">{lots.loading ? 'Refreshing…' : 'Refresh balances'}</button><span>{pickedList.length} of {MAX_LOTS} lots selected. Selections and typed quantities are kept on refresh.</span></div>}
             {lots.error && <div className="admin-feedback admin-feedback--error inv-banner" role="alert"><p>{lots.error}</p><button type="button" className="admin-button admin-button--secondary" onClick={() => loadLots(sourceId)}>Retry</button></div>}
             {hasUnavailable && <div className="admin-feedback admin-feedback--error" role="alert">{unavailable.length} selected lot{unavailable.length === 1 ? ' is' : 's are'} no longer available at this source. Remove {unavailable.length === 1 ? 'it' : 'them'} to continue.</div>}
-            {!sourceId ? <div className="admin-empty" role="status"><strong>Select a source location</strong><p>Receipt lots with stock there will be listed.</p></div>
+            {!sourceId ? <div className="admin-empty" role="status"><strong>Select a source location</strong><p>Available receipt, opening and assembly lots at that source will be listed. Select Unallocated to allocate opening stock.</p></div>
               : lots.loading && !lots.items.length && !pickedList.length ? <div className="admin-empty" role="status"><strong>Loading lots…</strong></div>
               : !lots.items.length && !pickedList.length && !lots.error ? <div className="admin-empty" role="status" data-testid="text-move-empty-source"><strong>No stock at this source</strong><p>Choose another source that holds stock, or confirm inventory is initialized.</p></div>
               : <div className="admin-table-scroll ms-stock-table" role="region" aria-label="Source lots" tabIndex={0} aria-busy={lots.loading}><table className="admin-table"><thead><tr><th scope="col">Select</th><th scope="col">Product / batch</th><th scope="col">Available (unit)</th><th scope="col">Quantity to move</th></tr></thead><tbody>{[...unavailable.map((p) => ({ lot: p.lot, gone: true })), ...lots.items.map((lot) => ({ lot, gone: false }))].map(({ lot: l, gone }) => { const on = l.id in picked; return <tr key={l.id}>
@@ -232,7 +233,7 @@ export default function MoveStockFormPage() {
         </div>
         </fieldset>
         {review && <div className="ms-form-body" data-testid="panel-move-review"><h2 className="ms-section-title">Review before saving</h2>
-          <p>{review.movement.source.name} to {review.movement.destination.name} on {displayDate(review.movement.date)}. Delivered by {review.movement.deliveredBy}.</p>
+          <p>{review.movement.source?.name || 'Unallocated'} to {review.movement.destination.name} on {displayDate(review.movement.date)}. Delivered by {review.movement.deliveredBy}.</p>
           <div className="inv-scroll"><table className="inv-lines"><thead><tr><th scope="col">Product / batch</th><th scope="col">Quantity (unit)</th><th scope="col">Source before / after</th><th scope="col">Destination before / after</th></tr></thead>
             <tbody>{review.movement.lines.map((l) => <tr key={l.lotId}><td>{l.productName}<span className="stock-sub">{l.productId} · {l.batchNo} · {l.receiptNumber}</span></td><td className="inv-mono">{l.quantity} {l.unit}</td><td className="inv-mono">{l.sourceBefore} to {l.sourceAfter}</td><td className="inv-mono">{l.destinationBefore} to {l.destinationAfter}</td></tr>)}</tbody></table></div></div>}
         <div className="ms-footer"><span>{review ? 'Nothing is saved until you confirm.' : 'Saves to the server after review.'}</span><div className="ms-head-actions">

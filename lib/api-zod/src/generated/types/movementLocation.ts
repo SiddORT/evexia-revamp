@@ -10,7 +10,7 @@ export interface MovementLocation {
   address: string;
   city: string;
   countryCode: string;
-  id: string;
+  id: string | null;
   name: string;
   pincode: string;
   state: string;

@@ -13,7 +13,7 @@ export interface InventoryHistoryItem {
   before: string;
   delta: string;
   id: string;
-  locationId: string;
+  locationId: string | null;
   lotId: string;
   movementId: string | null;
   source: string;

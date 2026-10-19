@@ -8,6 +8,7 @@
 import type { InventoryComponentProvenance } from "./inventoryComponentProvenance";
 import type { InventoryRecipeSnapshot } from "./inventoryRecipeSnapshot";
 import type { InventoryReferenceItemKind } from "./inventoryReferenceItemKind";
+import type { InventoryReferenceOpeningLocation } from "./inventoryReferenceOpeningLocation";
 
 export interface InventoryReference {
   assembledQuantity?: string | null;
@@ -16,16 +17,23 @@ export interface InventoryReference {
   batchNo?: string | null;
   comboProductId?: string | null;
   expiryDate?: Date | null;
+  historicalData?: string | null;
   id: string;
   itemKind?: InventoryReferenceItemKind;
   mrp?: string | null;
   name: string;
+  openingId?: string | null;
+  openingLocation?: InventoryReferenceOpeningLocation;
+  openingValue?: string | null;
   productId?: string | null;
   productName?: string | null;
   receiptId?: string | null;
   receiptNumber?: string | null;
   recipe?: InventoryRecipeSnapshot | null;
+  recordedDate?: Date | null;
   sellingPrice?: string | null;
+  source?: string | null;
   sourceComponents?: InventoryComponentProvenance[] | null;
   unit?: string | null;
+  unitRate?: string | null;
 }

@@ -1,5 +1,11 @@
 # Live Stock Inventory — merge handoff
 
+Opening Stock extends this same ledger with opening-source allergen and
+finished-product lots and a genuine Unallocated bucket. Its append-only,
+allocation, import/retry, exact-rate and successor-migration contracts are in
+[`opening-stock.md`](opening-stock.md). Older implementation observations below
+are historical, not evidence of the new successor's runtime activation.
+
 ## Current handoff: automatic migration, final acceptance after merge
 
 The latest main-workspace source has been integrated. Inventory is the single

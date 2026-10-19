@@ -19,5 +19,6 @@ export interface InventoryStockRow {
   quantity: string;
   sellingPrice: string | null;
   state: string;
+  unallocatedQuantity?: string;
   unit: string;
 }

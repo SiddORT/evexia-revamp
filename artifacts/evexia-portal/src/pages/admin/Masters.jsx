@@ -81,6 +81,11 @@ export default function Masters() {
           <span className="admin-master-link__text"><strong>Patient Master</strong><small>Manage browser-local preview patients and CSV records.</small></span>
           <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
         </Link>
+        <Link href="/admin/masters/opening-stock" className="admin-master-link" data-testid="link-master-opening-stock">
+          <span className="admin-master-link__icon"><Landmark size={20} aria-hidden="true" /></span>
+          <span className="admin-master-link__text"><strong>Opening Stock</strong><small>Record pre-system physical stock with exact quantities and unit rates. Append-only.</small></span>
+          <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
+        </Link>
         <Link href="/admin/masters/opening-balances" className="admin-master-link" data-testid="link-master-opening-balances">
           <span className="admin-master-link__icon"><Landmark size={20} aria-hidden="true" /></span>
           <span className="admin-master-link__text"><strong>Opening Balance Master</strong><small>Maintain doctor balances by financial year, with CSV review and export.</small></span>

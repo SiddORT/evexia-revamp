@@ -1,5 +1,8 @@
 """Explicit UI label aliases for safe activity reporting search."""
 BROWSER_ACTIONS = {
+    "opening_stock_created": "Opening stock recorded",
+    "opening_stock_imported": "Opening stock imported",
+    "inventory_allocated": "Unallocated opening stock allocated",
     "product_create": "Product combo created", "product_edit": "Product combo recipe or prices updated",
     "product_status": "Product combo status changed", "product_delete": "Product combo deleted",
     "product_assembled": "Product combo assembled", "inventory_moved": "Stock transferred",
@@ -30,6 +33,7 @@ BROWSER_ACTIONS = {
     "browser_settings_changed": "Settings changed",
 }
 RESOURCE_NAMES = {
+    "opening_stock": "Opening Stock",
     "product": "Product Master", "product_assembly": "Product Assembly", "inventory_movement": "Move Stocks",
     "dashboard": "Dashboard", "zone": "Zone Master", "language": "Language Master", "courier_partner": "Courier Partner",
     "storage_location": "Storage Location", "headquarter": "Headquarter Master", "product_category": "Product Category Master",

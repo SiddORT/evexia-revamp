@@ -27,11 +27,11 @@ export default function ReferenceSelect({ id, label, kind, extra, value, selecte
   const options = useMemo(() => {
     const map = new Map();
     pinned.forEach((o) => map.set(o.value, o));
-    if (selected) map.set(selected.value, { value: selected.value, label: selected.label });
-    state.items.forEach((i) => { if (!map.has(i.id)) map.set(i.id, { value: i.id, label: i.name }); });
+    if (selected) map.set(selected.value, { ...selected });
+    state.items.forEach((i) => { const typedItem = kind === 'items' && i.itemKind; const k = typedItem ? `${i.itemKind}:${i.id}` : i.id; if (!map.has(k)) map.set(k, typedItem ? { value: k, itemId: i.id, label: `${i.name} (${i.itemKind === 'combo' ? 'Product' : 'Allergen'}, ${i.unit}; ${i.id})`, itemKind: i.itemKind, unit: i.unit } : { value: i.id, label: i.name }); });
     if (exclude) map.delete(exclude);
     return [...map.values()];
-  }, [state.items, selected, exclude, pinned]);
+  }, [state.items, selected, exclude, pinned, kind]);
   const hasMore = state.items.length < state.filtered;
   return <div>
     <SearchableSelect id={id} label={label} value={value} options={options} searchOptions={() => options} onSearch={setQuery} onChange={(v) => { if (!disabled) onChange(v, options.find((o) => o.value === v)); }} placeholder={placeholder} invalid={invalid} describedBy={describedBy} disabled={disabled} />

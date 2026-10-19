@@ -27,9 +27,9 @@ from app.services import purchase_received as receipts
 
 LIMIT = 2000
 LOCK = 145573
-COVERAGE = ("Individual stock originates only in server accepted receipts, exact to 0.001 procurement quantity units. "
+COVERAGE = ("Stock originates in server accepted receipts and reviewed pre-system openings, exact to 0.001 procurement quantity units. "
             "Reviewed assemblies consume those components and create separate whole-combo lots in this same ledger. "
-            "No pack conversions. Stock carries across financial years. Pre-system openings, "
+            "Opening finished products do not consume components. Unallocated stock needs explicit allocation. No pack conversions. Stock carries across financial years. "
             "browser/demo data, sales, reservations and in-transit shipping are outside coverage.")
 
 
@@ -83,9 +83,14 @@ def q(value):
     return format(value, ".3f")
 
 
+def balance_at(db, lot_id, location):
+    return db.scalar(select(Balance).where(Balance.lot_id == lot_id, Balance.location_id == location))
+
+
 def post(db, lot, location, delta, source, actor, movement=None):
-    key = (lot.id, location)
-    row = db.get(Balance, key)
+    if location is None and not lot.opening_id:
+        raise PRError("Only opening stock can be Unallocated.", 409, "inventory_unallocated")
+    row = balance_at(db, lot.id, location)
     if not row:
         row = Balance(lot_id=lot.id, location_id=location, quantity=Decimal(0))
         db.add(row)
@@ -156,7 +161,7 @@ def coverage(db):
         ReceiptState, ReceiptState.receipt_id == Receipt.id).where(
             or_(ReceiptState.receipt_id.is_(None), ReceiptState.version != Receipt.version)))
     return dict(complete=missing == 0, pendingReceipts=missing, contract=COVERAGE,
-                sales="unavailable: no server sales backend", openings="outside coverage")
+                sales="unavailable: no server sales backend", openings="Reviewed server openings; Unallocated included separately")
 
 
 def require_complete(db):
@@ -298,14 +303,16 @@ def stock(db, actor, params):
                     quantity="0.000", unit=meta["unit"], lots=[], history=[], state="retained_product")
             item = result[pid]
             for balance in (b for b in balances if b.lot_id == lot.id and b.quantity):
-                lid = str(balance.location_id)
+                lid = str(balance.location_id) if balance.location_id else None
                 if lid not in locations:
-                    location = db.get(StorageLocation, balance.location_id)
-                    locations[lid] = location.name
+                    location = db.get(StorageLocation, balance.location_id) if balance.location_id else None
+                    locations[lid] = location.name if location else "Unallocated"
                 item["lots"].append(dict(**meta, lotId=str(lot.id), locationId=lid,
                                          locationName=locations[lid], quantity=q(balance.quantity)))
                 item["quantity"] = q(Decimal(item["quantity"]) + balance.quantity)
-                item["state"] = "assembled" if lot.combo_id else "receipt_backed"
+                item["state"] = "opening_backed" if lot.opening_id else ("assembled" if lot.combo_id else "receipt_backed")
+        for item in result.values():
+            item["unallocatedQuantity"] = q(sum((Decimal(l["quantity"]) for l in item["lots"] if l["locationId"] is None), Decimal(0)))
         rows = list(result.values())
         total = len(rows)
         term = params.get("query", "").strip().casefold()
@@ -335,15 +342,15 @@ def stock_history(db, actor, product_id, from_date=None, to_date=None, offset=0,
             statement = statement.where(Posting.created_at < to_date)
         rows = bounded(db, statement.order_by(Posting.created_at.desc(), Posting.id))
         return dict(items=[dict(id=str(r.id), at=r.created_at.isoformat(), lotId=str(r.lot_id),
-             locationId=str(r.location_id), movementId=str(r.movement_id) if r.movement_id else None,
+             locationId=str(r.location_id) if r.location_id else None, movementId=str(r.movement_id) if r.movement_id else None,
              delta=q(r.delta), before=q(r.before), after=q(r.after), actor=label(db, r.actor_id),
              source=r.source_key) for r in rows[offset:offset + limit]],
              filtered=len(rows), offset=offset, limit=limit,
-             scope="Recorded receipt, assembly consumption/output and transfer posting times, not inferred historical activity. Period changes history only, never on-hand.")
+             scope="Recorded receipt, opening, assembly and transfer/allocation posting times, not inferred historical activity. Period changes history only, never on-hand.")
     return transaction(db, actor, work)
 
 
-def references(db, actor, kind, query="", offset=0, limit=25, source_id=None):
+def references(db, actor, kind, query="", offset=0, limit=25, source_id=None, unallocated=False):
     def work(_, crypto):
         if kind == "staff":
             rows = bounded(db, select(StaffProfile).where(StaffProfile.status == "active", StaffProfile.deleted_at.is_(None)).order_by(StaffProfile.id))
@@ -354,15 +361,18 @@ def references(db, actor, kind, query="", offset=0, limit=25, source_id=None):
             data = [dict(id=str(r.id), name=r.name) for r in rows]
         else:
             require_complete(db)
-            if not source_id:
+            if not source_id and not unallocated:
                 return dict(items=[], filtered=0, offset=offset, limit=limit)
+            if source_id and unallocated:
+                raise PRError("Choose a real source or Unallocated, not both.", 422, "inventory_source")
             balances = bounded(db, select(Balance).where(Balance.location_id == source_id, Balance.quantity > 0).order_by(Balance.lot_id))
             data = []
             for balance in balances:
                 lot = db.get(Lot, balance.lot_id)
                 meta = crypto.open(lot.id, "lot", lot.payload_ciphertext)
                 meta.setdefault("itemKind", "combo" if lot.combo_id else "allergen")
-                data.append(dict(id=str(lot.id), name=f"{meta['productName']} · {meta.get('batchNo') or 'Batch unavailable'} · {meta.get('receiptNumber') or 'Assembled combo'}",
+                provenance = ("Opening stock " + meta["openingId"]) if lot.opening_id else (meta.get("receiptNumber") or "Assembled combo")
+                data.append(dict(id=str(lot.id), name=f"{meta['productName']} · {meta.get('batchNo') or 'Batch unavailable'} · {provenance}",
                                  **meta, available=q(balance.quantity)))
         data = sorted([r for r in data if query.strip().casefold() in r["name"].casefold()], key=lambda r: (r["name"], r["id"]))
         return dict(items=data[offset:offset + limit], filtered=len(data), offset=offset, limit=limit)
@@ -374,10 +384,16 @@ def location_snapshot(row):
                 countryCode=row.countryCode, state=row.state, city=row.city, version=row.version)
 
 
+def unallocated_snapshot():
+    return dict(id=None, name="Unallocated", address="", pincode="", countryCode="", state="", city="", version=0)
+
+
 def review_move(db, crypto, body):
     require_complete(db)
     locations = {}
-    for key in sorted((body.sourceId, body.destinationId)):
+    if body.sourceId is None:
+        locations[None] = unallocated_snapshot()
+    for key in sorted(k for k in (body.sourceId, body.destinationId) if k is not None):
         row = db.scalar(select(StorageLocation).where(StorageLocation.id == key).with_for_update())
         if not row or row.status != "active" or row.deleted_at:
             raise PRError("Choose two available active locations.", 409, "inventory_location")
@@ -396,7 +412,7 @@ def review_move(db, crypto, body):
             raise PRError("Each lot must occur once with a positive quantity.", 422, "inventory_line")
         seen.add(line.lotId)
         lot = db.get(Lot, line.lotId)
-        balance = db.get(Balance, (line.lotId, body.sourceId))
+        balance = balance_at(db, line.lotId, body.sourceId)
         if not lot or not balance or balance.quantity < Decimal(line.quantity):
             raise PRError("Available source stock changed. Review the retained draft again.", 409, "inventory_insufficient")
         product = db.get(ComboProduct, lot.combo_id) if lot.combo_id else db.get(AllergenProduct, lot.product_id)
@@ -404,7 +420,7 @@ def review_move(db, crypto, body):
             raise PRError("The selected product is no longer active.", 409, "inventory_product")
         if lot.combo_id and quantity(line.quantity) != Decimal(line.quantity).to_integral_value():
             raise PRError("Assembled products move only as positive whole combos.", 422, "inventory_combo_quantity")
-        destination = db.get(Balance, (lot.id, body.destinationId))
+        destination = balance_at(db, lot.id, body.destinationId)
         src, dst, amount = balance.quantity, destination.quantity if destination else Decimal(0), quantity(line.quantity)
         lines.append(dict(**crypto.open(lot.id, "lot", lot.payload_ciphertext), lotId=str(lot.id),
             quantity=q(amount), sourceBefore=q(src), sourceAfter=q(src - amount),
@@ -433,7 +449,8 @@ def create(db, actor, body):
             raise PRError("Stock or reference choices changed. Review your preserved draft again.", 409, "inventory_review_stale")
         now, mid = utcnow(), uuid.uuid4()
         event = AuditEvent(actor_id=current.user.id, session_id=current.session_id,
-            action="inventory_moved", resource_type="inventory_movement", resource_id=mid,
+            action="inventory_allocated" if body.sourceId is None else "inventory_moved",
+            resource_type="inventory_movement", resource_id=mid,
             outcome="success", request_id=db.info.get("request_id"), created_at=now)
         db.add(event)
         db.flush()

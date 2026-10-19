@@ -783,6 +783,77 @@ export const openingBalanceRequest = (path, options) => masterRequest('opening-b
 export const purchaseReceivedRequest = (path, options) => purchaseOrderRequest(path, options, 'purchase-received');
 export const inventoryRequest = (path, options) => purchaseOrderRequest(path, options, 'inventory');
 
+
+/** Opening Stock transport: JSON, multipart review and logged blob downloads. */
+export async function openingStockRequest(path = '', { body, params = {}, signal, method, file, download } = {}) {
+  const uid = '[0-9a-f-]{36}';
+  const ok = new RegExp(`^(?:|/references/items|/preview|/sample|/export|/import/review|/requests/${uid}|/${uid}(?:/(?:activity|analytics))?)$`, 'i');
+  if (!ok.test(path)) throw new SessionError('Unsupported opening stock operation.');
+  const writing = body !== undefined || file !== undefined;
+  const mutation = writing && path !== '/preview' && path !== '/import/review';
+  const epoch = generation; const owner = state.user?.id;
+  const check = () => {
+    signal?.throwIfAborted();
+    if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
+      const e = new SessionError('Your session changed. Your draft is preserved; sign in again before retrying.', 401); e.ambiguous = mutation; throw e;
+    }
+    if (state.user.identity_kind !== 'super_admin' || !state.user.permissions.includes('admin.access')) throw new SessionError('Opening stock is restricted to the protected Super Admin.', 403);
+  };
+  if (pending) await pending;
+  else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true, 'admin');
+  check();
+  const downloadKey = `opening-stock/${path}/${params.format || 'csv'}/${params.query || ''}`;
+  const initiation = download ? (serverInitiations.get(downloadKey) || crypto.randomUUID()) : null;
+  if (download) serverInitiations.set(downloadKey, initiation);
+  const downloadGuard = reportingIdentityGuard();
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v !== '' && v != null) search.set(k, String(v)); });
+  let form;
+  if (file !== undefined) { form = new FormData(); form.append('file', file); }
+  let response, data;
+  try {
+    response = await fetch(`/api/v1/admin/opening-stock${path}${search.size ? `?${search}` : ''}`, {
+      method: writing ? 'POST' : (method || 'GET'), credentials: 'same-origin', cache: 'no-store',
+      headers: { Authorization: `Bearer ${token}`, ...(download ? { 'X-Download-Initiation': initiation } : {}), ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}) },
+      ...(form ? { body: form } : body !== undefined ? { body: JSON.stringify(body) } : {}),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(60000)]) : AbortSignal.timeout(60000),
+    });
+    data = response.ok && download ? await response.blob() : await response.json();
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    const e = new SessionError(mutation ? 'Save outcome is unconfirmed. Your draft is preserved; check the outcome before saving again.' : 'Opening stock could not be loaded. Check your connection and retry.');
+    e.ambiguous = mutation; throw e;
+  }
+  if (pending) await pending;
+  try { check(); } catch (e) { e.ambiguous = mutation; throw e; }
+  if (!response.ok) {
+    if (response.status === 401) { await verifySession(true, 'admin'); const e = new SessionError('Session checked. Your draft is preserved; retry explicitly.', 401); e.ambiguous = mutation; throw e; }
+    const e = new SessionError(response.status === 403 ? 'Opening stock is restricted to the protected Super Admin.'
+      : response.status >= 500 ? 'Opening stock service is unavailable. Your draft is preserved; check the outcome before saving again.'
+      : typeof data?.error?.message === 'string' ? data.error.message : 'Opening stock fields are invalid. Check quantities, rates and references.', response.status);
+    e.code = data?.error?.code; e.fields = data?.error?.fields; e.ambiguous = mutation && response.status >= 500; throw e;
+  }
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (mutation) {
+    const expected = new Set((body?.rows || []).map((r) => `${r.sourceId}:${r.rowId}`));
+    const returned = new Set((data?.records || []).map((r) => `${r.sourceId}:${r.rowId}`));
+    if (!Array.isArray(data?.records) || !Number.isSafeInteger(data.postedCount) || data.postedCount < 0
+        || !Number.isSafeInteger(data.alreadyImportedCount) || data.alreadyImportedCount < 0
+        || data.postedCount + data.alreadyImportedCount !== data.records.length
+        || returned.size !== data.records.length
+        || data.records.some((r) => !uuidPattern.test(r.id) || !uuidPattern.test(r.lotId)
+          || !expected.has(`${r.sourceId}:${r.rowId}`) || r.source !== 'opening'
+          || !/^\d+\.\d{3}$/.test(r.quantity) || !/^\d+\.\d{2}$/.test(r.unitRate))) {
+      const e = new SessionError('The server save response is incomplete. Keep this draft and check the save outcome before another save.');
+      e.ambiguous = true; throw e;
+    }
+  }
+  if (download) {
+    if (!/^[0-9a-f-]{36}$/i.test(response.headers.get('X-Download-Log') || '')) throw new SessionError('Download logging could not be confirmed. No file was released. Retry.');
+    serverDownloads.set(data, downloadGuard); serverInitiations.delete(downloadKey);
+  }
+  return data;
+}
 export const productMasterRequest = (path, options) => purchaseOrderRequest(path, options, 'products');
 export async function purchaseOrderRequest(path = '', { body, params = {}, signal, method } = {}, resource = 'purchase-orders') {
   const allowed = resource === 'products'

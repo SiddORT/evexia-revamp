@@ -8,6 +8,7 @@
 import type { InventoryComponentProvenance } from "./inventoryComponentProvenance";
 import type { InventoryRecipeSnapshot } from "./inventoryRecipeSnapshot";
 import type { MovementLineViewItemKind } from "./movementLineViewItemKind";
+import type { MovementLineViewOpeningLocation } from "./movementLineViewOpeningLocation";
 
 export interface MovementLineView {
   assembledQuantity?: string | null;
@@ -17,10 +18,14 @@ export interface MovementLineView {
   destinationAfter: string;
   destinationBefore: string;
   expiryDate: Date | null;
+  historicalData?: string | null;
   itemKind?: MovementLineViewItemKind;
   lineId: string | null;
   lotId: string;
   mrp?: string | null;
+  openingId?: string | null;
+  openingLocation?: MovementLineViewOpeningLocation;
+  openingValue?: string | null;
   originalCreatedAt: string;
   productId: string;
   productName: string;
@@ -30,9 +35,12 @@ export interface MovementLineView {
   receiptNumber: string | null;
   receivedDate: Date | null;
   recipe?: InventoryRecipeSnapshot | null;
+  recordedDate?: Date | null;
   sellingPrice?: string | null;
+  source?: string | null;
   sourceAfter: string;
   sourceBefore: string;
   sourceComponents?: InventoryComponentProvenance[] | null;
   unit: string;
+  unitRate?: string | null;
 }

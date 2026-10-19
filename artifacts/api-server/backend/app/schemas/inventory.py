@@ -13,7 +13,7 @@ class MoveLine(BaseModel):
 
 class MoveInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    sourceId: uuid.UUID
+    sourceId: uuid.UUID | None
     destinationId: uuid.UUID
     date: date
     deliveryMode: Literal["staff", "other"]
@@ -81,6 +81,13 @@ class InventoryRecipeSnapshot(BaseModel):
 
 
 class InventoryProvenance(BaseModel):
+    source: str | None = None
+    openingId: uuid.UUID | None = None
+    unitRate: str | None = None
+    openingValue: str | None = None
+    openingLocation: dict | None = None
+    recordedDate: date | None = None
+    historicalData: str | None = None
     itemKind: Literal["allergen", "combo"] = "allergen"
     assemblyId: uuid.UUID | None = None
     comboProductId: uuid.UUID | None = None
@@ -103,12 +110,13 @@ class InventoryLotView(InventoryProvenance):
     originalCreatedAt: str
     unit: str
     lotId: uuid.UUID
-    locationId: uuid.UUID
+    locationId: uuid.UUID | None
     locationName: str
     quantity: str
 
 
 class InventoryStockRow(BaseModel):
+    unallocatedQuantity: str = "0.000"
     itemKind: Literal["allergen", "combo"] = "allergen"
     productId: uuid.UUID
     name: str
@@ -134,7 +142,7 @@ class InventoryStockPage(BaseModel):
 
 
 class MovementLocation(BaseModel):
-    id: uuid.UUID
+    id: uuid.UUID | None
     name: str
     address: str
     pincode: str
@@ -243,7 +251,7 @@ class InventoryHistoryItem(BaseModel):
     id: uuid.UUID
     at: datetime
     lotId: uuid.UUID
-    locationId: uuid.UUID
+    locationId: uuid.UUID | None
     movementId: uuid.UUID | None
     delta: str
     before: str

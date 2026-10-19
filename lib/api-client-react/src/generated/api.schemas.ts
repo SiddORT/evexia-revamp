@@ -299,7 +299,7 @@ export interface MovementLocation {
   address: string;
   city: string;
   countryCode: string;
-  id: string;
+  id: string | null;
   name: string;
   pincode: string;
   state: string;
@@ -404,6 +404,7 @@ export const BrowserActivityResource = {
   allergen: "allergen",
   product: "product",
   product_assembly: "product_assembly",
+  opening_stock: "opening_stock",
   vendor: "vendor",
   sales_target: "sales_target",
   opening_balance: "opening_balance",
@@ -2503,7 +2504,7 @@ export interface InventoryHistoryItem {
   before: string;
   delta: string;
   id: string;
-  locationId: string;
+  locationId: string | null;
   lotId: string;
   movementId: string | null;
   source: string;
@@ -2555,6 +2556,8 @@ export const InventoryLotViewItemKind = {
   combo: "combo",
 } as const;
 
+export type InventoryLotViewOpeningLocation = { [key: string]: unknown } | null;
+
 export interface InventoryRecipeMember {
   allergenId: string;
   available: boolean;
@@ -2574,12 +2577,16 @@ export interface InventoryLotView {
   batchNo: string | null;
   comboProductId?: string | null;
   expiryDate: string | null;
+  historicalData?: string | null;
   itemKind?: InventoryLotViewItemKind;
   lineId: string | null;
-  locationId: string;
+  locationId: string | null;
   locationName: string;
   lotId: string;
   mrp?: string | null;
+  openingId?: string | null;
+  openingLocation?: InventoryLotViewOpeningLocation;
+  openingValue?: string | null;
   originalCreatedAt: string;
   productId: string;
   productName: string;
@@ -2588,9 +2595,12 @@ export interface InventoryLotView {
   receiptNumber: string | null;
   receivedDate: string | null;
   recipe?: InventoryRecipeSnapshot | null;
+  recordedDate?: string | null;
   sellingPrice?: string | null;
+  source?: string | null;
   sourceComponents?: InventoryComponentProvenance[] | null;
   unit: string;
+  unitRate?: string | null;
 }
 
 export type InventoryReferenceItemKind =
@@ -2602,6 +2612,10 @@ export const InventoryReferenceItemKind = {
   combo: "combo",
 } as const;
 
+export type InventoryReferenceOpeningLocation = {
+  [key: string]: unknown;
+} | null;
+
 export interface InventoryReference {
   assembledQuantity?: string | null;
   assemblyId?: string | null;
@@ -2609,18 +2623,25 @@ export interface InventoryReference {
   batchNo?: string | null;
   comboProductId?: string | null;
   expiryDate?: string | null;
+  historicalData?: string | null;
   id: string;
   itemKind?: InventoryReferenceItemKind;
   mrp?: string | null;
   name: string;
+  openingId?: string | null;
+  openingLocation?: InventoryReferenceOpeningLocation;
+  openingValue?: string | null;
   productId?: string | null;
   productName?: string | null;
   receiptId?: string | null;
   receiptNumber?: string | null;
   recipe?: InventoryRecipeSnapshot | null;
+  recordedDate?: string | null;
   sellingPrice?: string | null;
+  source?: string | null;
   sourceComponents?: InventoryComponentProvenance[] | null;
   unit?: string | null;
+  unitRate?: string | null;
 }
 
 export interface InventoryReferencePage {
@@ -2649,6 +2670,7 @@ export interface InventoryStockRow {
   quantity: string;
   sellingPrice: string | null;
   state: string;
+  unallocatedQuantity?: string;
   unit: string;
 }
 
@@ -4106,7 +4128,7 @@ export interface MoveCreate {
   otherName?: string | null;
   /** @pattern ^[0-9a-f]{64}$ */
   reviewToken: string;
-  sourceId: string;
+  sourceId: string | null;
   staffId?: string | null;
 }
 
@@ -4128,7 +4150,7 @@ export interface MoveInput {
    */
   lines: MoveLine[];
   otherName?: string | null;
-  sourceId: string;
+  sourceId: string | null;
   staffId?: string | null;
 }
 
@@ -4140,6 +4162,8 @@ export const MovementLineViewItemKind = {
   combo: "combo",
 } as const;
 
+export type MovementLineViewOpeningLocation = { [key: string]: unknown } | null;
+
 export interface MovementLineView {
   assembledQuantity?: string | null;
   assemblyId?: string | null;
@@ -4148,10 +4172,14 @@ export interface MovementLineView {
   destinationAfter: string;
   destinationBefore: string;
   expiryDate: string | null;
+  historicalData?: string | null;
   itemKind?: MovementLineViewItemKind;
   lineId: string | null;
   lotId: string;
   mrp?: string | null;
+  openingId?: string | null;
+  openingLocation?: MovementLineViewOpeningLocation;
+  openingValue?: string | null;
   originalCreatedAt: string;
   productId: string;
   productName: string;
@@ -4161,11 +4189,14 @@ export interface MovementLineView {
   receiptNumber: string | null;
   receivedDate: string | null;
   recipe?: InventoryRecipeSnapshot | null;
+  recordedDate?: string | null;
   sellingPrice?: string | null;
+  source?: string | null;
   sourceAfter: string;
   sourceBefore: string;
   sourceComponents?: InventoryComponentProvenance[] | null;
   unit: string;
+  unitRate?: string | null;
 }
 
 export type MovementSavedDeliveryMode =
@@ -4244,6 +4275,11 @@ export interface MovementSnapshot {
 export interface MovementReview {
   movement: MovementSnapshot;
   reviewToken: string;
+}
+
+export interface OpeningActivityPage {
+  filtered: number;
+  items: MovementActivity[];
 }
 
 export interface OpeningBalanceDoctorChoice {
@@ -4405,6 +4441,277 @@ export interface OpeningBalanceStatus {
 export interface OpeningBalanceVersion {
   /** @minimum 1 */
   expected_version: number;
+}
+
+export type OpeningBreakdownItemKind =
+  (typeof OpeningBreakdownItemKind)[keyof typeof OpeningBreakdownItemKind];
+
+export const OpeningBreakdownItemKind = {
+  allergen: "allergen",
+  combo: "combo",
+} as const;
+
+export interface OpeningBreakdown {
+  itemId: string;
+  itemKind: OpeningBreakdownItemKind;
+  locationId: string | null;
+  locationName: string;
+  openingValue: string;
+  productName: string;
+  quantity: string;
+  unit: string;
+}
+
+export type OpeningCreateMode =
+  (typeof OpeningCreateMode)[keyof typeof OpeningCreateMode];
+
+export const OpeningCreateMode = {
+  manual: "manual",
+  import: "import",
+} as const;
+
+export type OpeningRowItemKind =
+  (typeof OpeningRowItemKind)[keyof typeof OpeningRowItemKind];
+
+export const OpeningRowItemKind = {
+  allergen: "allergen",
+  combo: "combo",
+} as const;
+
+export interface OpeningRow {
+  itemId: string;
+  itemKind: OpeningRowItemKind;
+  locationId?: string | null;
+  /**
+   * @maxLength 11
+   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   */
+  quantity: string;
+  rowId: string;
+  sourceId: string;
+  /** @maxLength 64 */
+  unitRate: string;
+}
+
+export interface OpeningCreate {
+  idempotencyKey: string;
+  mode: OpeningCreateMode;
+  recordedDate: string;
+  /** @pattern ^[0-9a-f]{64}$ */
+  reviewToken: string;
+  /**
+   * @minItems 1
+   * @maxItems 1000
+   */
+  rows: OpeningRow[];
+}
+
+export type OpeningInputMode =
+  (typeof OpeningInputMode)[keyof typeof OpeningInputMode];
+
+export const OpeningInputMode = {
+  manual: "manual",
+  import: "import",
+} as const;
+
+export interface OpeningInput {
+  mode: OpeningInputMode;
+  recordedDate: string;
+  /**
+   * @minItems 1
+   * @maxItems 1000
+   */
+  rows: OpeningRow[];
+}
+
+export type OpeningImportRowState =
+  (typeof OpeningImportRowState)[keyof typeof OpeningImportRowState];
+
+export const OpeningImportRowState = {
+  ready: "ready",
+  skipped: "skipped",
+  already_imported: "already_imported",
+} as const;
+
+export interface OpeningImportRow {
+  errors: string[];
+  row: number;
+  state: OpeningImportRowState;
+  values: OpeningRow | null;
+}
+
+export interface OpeningSummary {
+  breakdown: OpeningBreakdown[];
+  imports: number;
+  records: number;
+  scope: string;
+}
+
+export interface OpeningImportReview {
+  alreadyImportedCount: number;
+  command: OpeningInput | null;
+  invalidCount: number;
+  reviewToken: string | null;
+  rows: OpeningImportRow[];
+  skippedCount: number;
+  summary: OpeningSummary;
+  valid: boolean;
+  validCount: number;
+}
+
+export type OpeningSavedItemKind =
+  (typeof OpeningSavedItemKind)[keyof typeof OpeningSavedItemKind];
+
+export const OpeningSavedItemKind = {
+  allergen: "allergen",
+  combo: "combo",
+} as const;
+
+export type OpeningSavedMode =
+  (typeof OpeningSavedMode)[keyof typeof OpeningSavedMode];
+
+export const OpeningSavedMode = {
+  manual: "manual",
+  import: "import",
+} as const;
+
+export type OpeningSavedState =
+  (typeof OpeningSavedState)[keyof typeof OpeningSavedState];
+
+export const OpeningSavedState = {
+  ready: "ready",
+  skipped: "skipped",
+  already_imported: "already_imported",
+} as const;
+
+export interface OpeningSaved {
+  activity: MovementActivity[];
+  actor: string;
+  actorId: string;
+  after: string;
+  appendOnly: boolean;
+  before: string;
+  createdAt: string;
+  historicalData: string;
+  id: string;
+  itemId: string;
+  itemKind: OpeningSavedItemKind;
+  itemVersion: number;
+  location: MovementLocation;
+  locationId?: string | null;
+  lotId: string;
+  mode: OpeningSavedMode;
+  openingValue: string;
+  productName: string;
+  /**
+   * @maxLength 11
+   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   */
+  quantity: string;
+  recordedDate: string;
+  rowId: string;
+  source: "opening";
+  sourceId: string;
+  state: OpeningSavedState;
+  unit: string;
+  /** @maxLength 64 */
+  unitRate: string;
+}
+
+export interface OpeningPage {
+  filtered: number;
+  items: OpeningSaved[];
+  limit: number;
+  offset: number;
+  summary: OpeningSummary;
+  total: number;
+}
+
+export type OpeningReconciliationState =
+  (typeof OpeningReconciliationState)[keyof typeof OpeningReconciliationState];
+
+export const OpeningReconciliationState = {
+  committed: "committed",
+  not_committed: "not_committed",
+} as const;
+
+export interface OpeningResult {
+  alreadyImportedCount: number;
+  postedCount: number;
+  records: OpeningSaved[];
+  summary: OpeningSummary;
+}
+
+export interface OpeningReconciliation {
+  result: OpeningResult | null;
+  state: OpeningReconciliationState;
+}
+
+export type OpeningReferenceItemKind =
+  (typeof OpeningReferenceItemKind)[keyof typeof OpeningReferenceItemKind];
+
+export const OpeningReferenceItemKind = {
+  allergen: "allergen",
+  combo: "combo",
+} as const;
+
+export interface OpeningReference {
+  id: string;
+  itemKind: OpeningReferenceItemKind;
+  name: string;
+  unit: string;
+  version: number;
+}
+
+export interface OpeningReferencePage {
+  filtered: number;
+  items: OpeningReference[];
+  limit: number;
+  offset: number;
+}
+
+export type OpeningReviewedRowItemKind =
+  (typeof OpeningReviewedRowItemKind)[keyof typeof OpeningReviewedRowItemKind];
+
+export const OpeningReviewedRowItemKind = {
+  allergen: "allergen",
+  combo: "combo",
+} as const;
+
+export type OpeningReviewedRowState =
+  (typeof OpeningReviewedRowState)[keyof typeof OpeningReviewedRowState];
+
+export const OpeningReviewedRowState = {
+  ready: "ready",
+  skipped: "skipped",
+  already_imported: "already_imported",
+} as const;
+
+export interface OpeningReviewedRow {
+  itemId: string;
+  itemKind: OpeningReviewedRowItemKind;
+  itemVersion: number;
+  location: MovementLocation;
+  locationId?: string | null;
+  openingValue: string;
+  productName: string;
+  /**
+   * @maxLength 11
+   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   */
+  quantity: string;
+  rowId: string;
+  sourceId: string;
+  state: OpeningReviewedRowState;
+  unit: string;
+  /** @maxLength 64 */
+  unitRate: string;
+}
+
+export interface OpeningReview {
+  reviewToken: string;
+  rows: OpeningReviewedRow[];
+  summary: OpeningSummary;
 }
 
 export interface POActivityEvent {
@@ -9661,6 +9968,7 @@ export type GetInventoryReferencesParams = {
    * @maximum 100
    */
   limit?: number;
+  unallocated?: boolean;
 };
 
 export type ListInventoryStockParams = {
@@ -10052,6 +10360,80 @@ export type DownloadOpeningBalanceSampleFormat =
   (typeof DownloadOpeningBalanceSampleFormat)[keyof typeof DownloadOpeningBalanceSampleFormat];
 
 export const DownloadOpeningBalanceSampleFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type ListOpeningStockParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type ExportOpeningStockParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  format?: ExportOpeningStockFormat;
+};
+
+export type ExportOpeningStockFormat =
+  (typeof ExportOpeningStockFormat)[keyof typeof ExportOpeningStockFormat];
+
+export const ExportOpeningStockFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type ReviewOpeningStockImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+};
+
+export type ReviewOpeningStockImportBodyTwo = {
+  file: Blob | File;
+};
+
+export type GetOpeningStockItemsParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type DownloadOpeningStockSampleParams = {
+  format?: DownloadOpeningStockSampleFormat;
+};
+
+export type DownloadOpeningStockSampleFormat =
+  (typeof DownloadOpeningStockSampleFormat)[keyof typeof DownloadOpeningStockSampleFormat];
+
+export const DownloadOpeningStockSampleFormat = {
   csv: "csv",
   xlsx: "xlsx",
 } as const;

@@ -41,8 +41,8 @@ def invalid(message):
     raise allergens.AllergenError(message, 422, "allergen_invalid_file")
 
 
-def exact_workbook_rows(data):
-    rows = workbook_rows(data, max_columns=13)
+def exact_workbook_rows(data, *, max_columns=13, numeric_columns=None):
+    rows = workbook_rows(data, max_columns=max_columns)
     # Retain original numeric XML lexemes for all decimal columns. Excel numeric
     # cells can already be rounded by their producer; text cells are recommended.
     try:
@@ -56,7 +56,7 @@ def exact_workbook_rows(data):
             if not path.startswith("xl/worksheets/"):
                 invalid("Unsupported worksheet location.")
             root = ElementTree.fromstring(archive.read(path))
-            columns = {"C": 2, "D": 3, "G": 6}
+            columns = numeric_columns if numeric_columns is not None else {"C": 2, "D": 3, "G": 6}
             for cell in root.iter():
                 if cell.tag.rsplit("}", 1)[-1] != "c" or cell.attrib.get("t", "n") != "n":
                     continue

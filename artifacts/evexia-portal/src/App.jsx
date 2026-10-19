@@ -40,6 +40,9 @@ const DesignationMaster = lazyRoute(() => import('./pages/admin/DesignationMaste
 const DesignationFormPage = lazyRoute(() => import('./pages/admin/DesignationFormPage.jsx'));
 const PatientMaster = lazyRoute(() => import('./pages/admin/PatientMaster.jsx'));
 const PatientFormPage = lazyRoute(() => import('./pages/admin/PatientFormPage.jsx'));
+const OpeningStockMaster = lazyRoute(() => import('./pages/admin/OpeningStockMaster.jsx'));
+const OpeningStockFormPage = lazyRoute(() => import('./pages/admin/OpeningStockFormPage.jsx'));
+const OpeningStockImportPage = lazyRoute(() => import('./pages/admin/OpeningStockImportPage.jsx'));
 const PatientImportPage = lazyRoute(() => import('./pages/admin/PatientImportPage.jsx'));
 const AllergenMaster = lazyRoute(() => import('./pages/admin/AllergenMaster.jsx'));
 const ProductMaster = lazyRoute(() => import('./pages/admin/ProductMaster.jsx'));
@@ -133,6 +136,9 @@ function App() {
       <Route path="/admin/masters/designations" component={DesignationMaster} />
       <Route path="/admin/masters/designations/new">{() => <DesignationFormPage />}</Route>
       <Route path="/admin/masters/designations/:id">{(params) => <DesignationFormPage id={params.id} />}</Route>
+      <Route path="/admin/masters/opening-stock" component={OpeningStockMaster} />
+      <Route path="/admin/masters/opening-stock/new" component={OpeningStockFormPage} />
+      <Route path="/admin/masters/opening-stock/import" component={OpeningStockImportPage} />
       <Route path="/admin/masters/products" component={ProductMaster} />
       <Route path="/admin/masters/products/new">{() => <ProductFormPage />}</Route>
       <Route path="/admin/masters/products/assemble" component={ProductAssemblyPage} />

@@ -1,5 +1,12 @@
 # Stock-enabled Product Master
 
+Pre-existing finished-product stock is recorded separately through the shared
+ledger's Opening Stock source, without consuming component allergens or
+fabricating assembly/expiry history. See [`opening-stock.md`](opening-stock.md)
+for its exact rates, Unallocated stock/allocation and automatic successor
+handoff. Existing assembly and historical migration contracts below remain
+unchanged.
+
 ## Scope and authority
 
 Products & Supply now includes Product Master. It uses the existing singleton

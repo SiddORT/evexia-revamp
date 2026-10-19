@@ -44,9 +44,9 @@ def initialization(offset: int = Query(0, ge=0, le=1000000), limit: int = Query(
 @router.get("/references/{kind}", response_model=InventoryReferencePage, response_model_exclude_none=True, operation_id="getInventoryReferences")
 def references(kind: Literal["locations", "staff", "lots"], query: str = Query("", max_length=200),
                source_id: uuid.UUID | None = None, offset: int = Query(0, ge=0, le=1000000),
-               limit: int = Query(25, ge=1, le=100),
+               limit: int = Query(25, ge=1, le=100), unallocated: bool = False,
                actor: Identity = Depends(manager), db: Session = Depends(get_db)):
-    return service.references(db, actor, kind, query, offset, limit, source_id)
+    return service.references(db, actor, kind, query, offset, limit, source_id, unallocated)
 
 
 @router.get("/movements", response_model=MovementPage, operation_id="listInventoryMovements")

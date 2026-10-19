@@ -17,3 +17,7 @@ import handlers could review them.
 the ordinary request limit, exactly at the file limit, and just beyond it.
 Cover raw and multipart review/commit through the full authenticated API,
 including actual imported counts and unchanged records on rejection.
+New import routes need the same explicit ingress allowance even when they reuse
+an existing bounded file reader; reusing the parser does not inherit its route's
+request-size policy. Raw transfer fixtures must use the endpoint's documented
+media type, not assume that a CSV filename implies `text/csv` support.

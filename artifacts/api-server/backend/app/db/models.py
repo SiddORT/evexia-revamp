@@ -1,4 +1,5 @@
 from app.db import product_models  # noqa: F401 - register forward inventory FK targets
+from app.db import opening_stock_models  # noqa: F401 - register opening source FK
 import secrets
 import uuid
 from datetime import datetime

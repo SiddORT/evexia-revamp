@@ -7,6 +7,7 @@
  */
 import type { InventoryComponentProvenance } from "./inventoryComponentProvenance";
 import type { InventoryLotViewItemKind } from "./inventoryLotViewItemKind";
+import type { InventoryLotViewOpeningLocation } from "./inventoryLotViewOpeningLocation";
 import type { InventoryRecipeSnapshot } from "./inventoryRecipeSnapshot";
 
 export interface InventoryLotView {
@@ -15,12 +16,16 @@ export interface InventoryLotView {
   batchNo: string | null;
   comboProductId?: string | null;
   expiryDate: Date | null;
+  historicalData?: string | null;
   itemKind?: InventoryLotViewItemKind;
   lineId: string | null;
-  locationId: string;
+  locationId: string | null;
   locationName: string;
   lotId: string;
   mrp?: string | null;
+  openingId?: string | null;
+  openingLocation?: InventoryLotViewOpeningLocation;
+  openingValue?: string | null;
   originalCreatedAt: string;
   productId: string;
   productName: string;
@@ -29,7 +34,10 @@ export interface InventoryLotView {
   receiptNumber: string | null;
   receivedDate: Date | null;
   recipe?: InventoryRecipeSnapshot | null;
+  recordedDate?: Date | null;
   sellingPrice?: string | null;
+  source?: string | null;
   sourceComponents?: InventoryComponentProvenance[] | null;
   unit: string;
+  unitRate?: string | null;
 }

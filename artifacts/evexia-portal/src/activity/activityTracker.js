@@ -5,7 +5,7 @@ const resources = {
   languages: 'language', zones: 'zone', 'courier-partners': 'courier_partner', 'storage-locations': 'storage_location',
   headquarters: 'headquarter', mrs: 'mr', doctors: 'doctor', patients: 'patient',
   designations: 'designation', 'product-categories': 'product_category', allergens: 'allergen', products: 'product',
-  vendors: 'vendor', 'sales-targets': 'sales_target', 'opening-balances': 'opening_balance',
+  vendors: 'vendor', 'sales-targets': 'sales_target', 'opening-balances': 'opening_balance', 'opening-stock': 'opening_stock',
 };
 export function pageResource(path) {
   // Never transmit paths, query/fragment strings, names, record IDs or form data.

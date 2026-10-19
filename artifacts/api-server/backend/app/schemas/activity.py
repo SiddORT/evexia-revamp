@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 ActivityResource = Literal[
     "dashboard", "zone", "language", "courier_partner", "storage_location", "headquarter",
     "mr", "doctor", "patient", "designation", "staff", "product_category",
-    "allergen", "product", "product_assembly", "vendor", "sales_target", "opening_balance", "purchase_order",
+    "allergen", "product", "product_assembly", "opening_stock", "vendor", "sales_target", "opening_balance", "purchase_order",
     "purchase_received", "communication", "message_template", "invoice_template",
     "receipt_template", "settings", "roles_permissions", "activity_logs", "masters",
 ]

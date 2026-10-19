@@ -161,9 +161,9 @@ def summary(db, crypto, products):
         key = (lot_products[row.lot_id], row.location_id)
         quantities[key] = quantities.get(key, Decimal(0)) + row.quantity
     for (pid, lid), amount in quantities.items():
-        location = db.get(StorageLocation, lid)
-        remaining.append(dict(productId=pid, productName=names[pid], locationId=str(lid),
-            locationName=location.name if location else "Unavailable location", unit=COMBO_UNIT, quantity=inv.q(amount)))
+        location = db.get(StorageLocation, lid) if lid else None
+        remaining.append(dict(productId=pid, productName=names[pid], locationId=str(lid) if lid else None,
+            locationName=location.name if location else "Unallocated", unit=COMBO_UNIT, quantity=inv.q(amount)))
     return dict(products=len(products), assemblies=len(assemblies),
         assembled=[dict(productId=pid, productName=names[pid], unit=COMBO_UNIT, quantity=inv.q(Decimal(amount)))
                    for pid, amount in assembled.items()], remaining=remaining,
@@ -234,7 +234,7 @@ def review_assembly(db, crypto, body):
         lot = db.get(Lot, allocation.lotId)
         if not lot or lot.combo_id or lot.product_id not in requirements:
             raise PRError("Source lots must be individual allergens in this recipe, never assembled combos.", 409, "assembly_source")
-        balance = db.get(Balance, (lot.id, body.locationId))
+        balance = inv.balance_at(db, lot.id, body.locationId)
         amount = inv.quantity(allocation.quantity)
         if not balance or balance.quantity < amount:
             raise PRError("Insufficient component stock at the selected location. Review your retained draft.", 409, "assembly_insufficient")
