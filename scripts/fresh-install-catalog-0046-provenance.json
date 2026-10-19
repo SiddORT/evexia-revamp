@@ -1,0 +1,21 @@
+{
+  "revision": "0046_live_inventory",
+  "postgresql_version": "17.5",
+  "catalog_sha256": "64feb05d4b101517cb2f07b444b99e8818cb5fecf697fb4f99fcf44b2d83a412",
+  "public_table_count": 52,
+  "migration_sha256": "9e160bbbe9f28d35f3d4adcd64f7fef7214a5f9befd9a7d77185b9225f84786c",
+  "collector_sha256": "b2a7592400197323b1095b4c99c1bbcbfc07c2fcce39e5a2ec88b13f7338b901",
+  "observations": {
+    "first": {
+      "system_identifier": "7698290282748235665",
+      "file_sha256": "07f1a19f46bc02065adc6230948a971f1ecd94236af6d375bc9b82e2c614ee41"
+    },
+    "independent": {
+      "system_identifier": "7698290283839451052",
+      "file_sha256": "7de42b041df5dc9d4e9463a665eaa76599e33a1c7682fb62f87508a87beb5de6"
+    }
+  },
+  "evidence_directory": "generated-artifacts/ci-schema-catalog-0046",
+  "scope": "Two separately initialized private Unix-socket PostgreSQL clusters with synthetic test credentials. Original migrations produced both matching complete projections. Each empty disposable inventory schema was then downgraded only to 0045 using its original guards, and its predecessor catalog was checked against the unchanged frozen 0045 catalog. No historical migration or predecessor catalog was rewritten.",
+  "limitations": "Catalog observation only, not installation, restoration, CI success or managed activation evidence. Both observations were collected by the same operator; no independent human review is claimed. No managed database or configuration was changed."
+}

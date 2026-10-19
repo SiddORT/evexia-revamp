@@ -27,7 +27,11 @@ RUNTIME_REVISIONS = frozenset({PRIVACY_REVISION, "0037_domain_admission", "0038_
     "0043_email_templates", "0044_purchase_received", "0045_pr_batch_numbers",
     # Inventory uses independent receipt payloads; encrypted directory contracts
     # and maintenance anchors are unchanged.
-    "0046_live_inventory"})
+    "0046_live_inventory",
+    # Languages and its Unicode indexes are independent of directory ciphertext.
+    "0047_languages", "0048_language_unicode",
+    # Stock products extend the independent inventory ledger, not directories.
+    "0047_stock_products", "0049_product_language_merge"})
 SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations",
     "0033_merge_directory_branches", PHONE_REVISION, "0035_account_identifiers"}) | RUNTIME_REVISIONS
 COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS

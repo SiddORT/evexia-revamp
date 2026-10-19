@@ -54,7 +54,10 @@ def databases():
 
 
 def test_review_covers_every_revision_and_policy():
-    assert len(fresh.reviewed_graph()) == 50
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+    graph = ScriptDirectory.from_config(Config(str(fresh.BACKEND / "alembic.ini")))
+    assert set(fresh.reviewed_graph()) == {node.revision for node in graph.walk_revisions()}
 
 
 def simple_initialize(source, settings=None, **overrides):
@@ -521,7 +524,7 @@ def test_preparation_stops_and_original_production_retirement_guard_survives(dat
 @pytest.mark.parametrize("stage", [
     "0034_shared_phone_countries", "0035_account_identifiers", "0036_reference_privacy",
     "0037_domain_admission", "0038_purchase_orders", "0039_communication", "0040_po_tax_basis",
-    "0041_location_geography", "0042_rate_hundredths", "0045_pr_batch_numbers",
+    "0041_location_geography", "0042_rate_hundredths", "0045_pr_batch_numbers", "0046_live_inventory",
 ])
 def test_independent_restore_then_real_guarded_continuation_and_atomic_bootstrap(databases, tmp_path, monkeypatch, stage):
     from app.services import organization_retirement as recovery

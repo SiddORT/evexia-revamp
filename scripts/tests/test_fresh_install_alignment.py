@@ -29,11 +29,13 @@ class FreshInstallAlignmentTests(unittest.TestCase):
         self.policy = runner.load_policy(ROOT / "scripts/migration-policy.json")
 
     def test_reviewed_single_head_matches_application_and_release_target(self):
-        self.assertEqual(fresh.FINAL_TARGET, "0045_pr_batch_numbers")
+        declaration = json.loads((ROOT / "development-contract.json").read_text())
+        self.assertEqual(fresh.FINAL_TARGET, declaration["schema"])
         self.assertEqual(fresh.PREPARE_TARGET, "0031_role_hostnames")
         self.assertEqual({key: vars(value) for key, value in fresh.reviewed_graph().items()},
                          {key: vars(value) for key, value in self.graph.items()})
-        self.assertEqual(self.graph[fresh.FINAL_TARGET].down_revision, ("0044_purchase_received",))
+        parents = {p for node in self.graph.values() for p in node.down_revision}
+        self.assertEqual(set(self.graph) - parents, {fresh.FINAL_TARGET})
         self.assertEqual(
             json.loads((ROOT / "scripts/release-authorization-policy.json").read_text())["final_target"],
             fresh.FINAL_TARGET)
@@ -62,7 +64,8 @@ class FreshInstallAlignmentTests(unittest.TestCase):
                                      fresh.FINAL_TARGET)["result"], "READY")
 
     def test_current_path_is_automatic_and_uses_exact_target(self):
-        protected = ["0043_email_templates", "0044_purchase_received", "0045_pr_batch_numbers"]
+        predecessors = set(runner.ordered_ancestors(self.graph, "0042_rate_hundredths"))
+        protected = [r for r in runner.ordered_ancestors(self.graph, fresh.FINAL_TARGET) if r not in predecessors]
         for revision in protected:
             self.assertEqual(self.policy[revision], "automatic")
         with patch.object(runner, "applied_revisions",
@@ -124,7 +127,7 @@ class FreshInstallAlignmentTests(unittest.TestCase):
 
     def test_new_revision_is_included_in_exact_source_hash_review(self):
         # The source review includes the original downgrade guard as well.
-        path = BACKEND / "alembic/versions/0045_pr_batch_numbers.py"
+        path = BACKEND / f"alembic/versions/{fresh.FINAL_TARGET}.py"
         review = json.loads((ROOT / "scripts/fresh-install-review.json").read_text())
         self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),
                          review["revisions"][fresh.FINAL_TARGET])
@@ -146,7 +149,12 @@ class FreshInstallAlignmentTests(unittest.TestCase):
         self.assertEqual(set(stage["tables"]) - set(self.catalog["0042_rate_hundredths"]["tables"]),
                          {"email_templates", "purchase_receipts", "purchase_receipt_sources",
                           "purchase_receipt_history", "purchase_receipt_requests",
-                          "pr_batch_settings", "pr_batch_counters", "pr_batch_allocations"})
+                      "pr_batch_settings", "pr_batch_counters", "pr_batch_allocations",
+                      "inventory_lots", "inventory_balances", "inventory_receipt_states",
+                      "inventory_movements", "inventory_postings", "inventory_requests",
+                      "languages", "language_changes", "combo_products",
+                      "combo_product_members", "combo_product_revisions",
+                      "product_assemblies", "product_requests"})
 
 
 if __name__ == "__main__":
