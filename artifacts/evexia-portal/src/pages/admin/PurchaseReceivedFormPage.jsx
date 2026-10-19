@@ -4,6 +4,7 @@ import { ArrowLeft, ClipboardCheck, Download, Eye, History, Pencil, RefreshCw, T
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { useAdminDateFormatters, getAdminDisplayPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
+import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
 import ReceiptReferenceSelect from '../../components/admin/ReceiptReferenceSelect.jsx';
 import ReceiptRetryRecovery from '../../components/admin/ReceiptRetryRecovery.jsx';
 import { setNavigationGuard, interceptNavigation } from '../../auth/navigationGuard.js';
@@ -58,6 +59,7 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
   const [sourceLoading, setSourceLoading] = useState(false);
   const [confirmRefresh, setConfirmRefresh] = useState(false);
   const po = orders.find((o) => o.id === values.poId);
+  const vendorPhone = receipt ? receipt.vendorPhone : snapshot.refs.vendors.find((v) => v.id === po?.vendorId)?.phoneNo;
   const balances = po?.balances || {};
   const dirty = JSON.stringify(values) !== baseline.current;
 
@@ -173,7 +175,7 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
 
   return <section className="admin-panel" aria-label={isNew ? 'New purchase received' : 'Edit purchase received'}>
     {otherPending && <ReceiptRetryRecovery pending={otherPending} onResolved={resolvedOther} />}
-    <div className="po-form-intro"><div><h2>{review ? 'Review before saving' : 'Receipt details'}</h2><p>{review ? 'Nothing has been saved yet. Check batches, quantities and balances.' : 'Required fields are marked *. Receipts are saved on the server after confirmation.'}</p></div><ClipboardCheck size={21} color="var(--admin-accent)" aria-hidden="true" /></div>
+    <div className="po-form-intro"><div><h2>{review ? 'Review before saving' : 'Receipt details'}</h2>{review && <p>Nothing has been saved yet. Check batches, quantities and balances.</p>}</div><ClipboardCheck size={21} color="var(--admin-accent)" aria-hidden="true" /></div>
     {saveError && <div className="admin-feedback admin-feedback--error" role="alert" style={{ margin: 18 }}>{saveError} <button type="button" className="po-link" onClick={requestRefresh} data-testid="button-refresh-pr-draft">Refresh records</button></div>}
     {review ? <>
       <div className="po-review"><p className="po-review__note">Server-reviewed receipt. Confirming saves receiving only; it does not update a stock ledger or notify a supplier.</p>
@@ -186,20 +188,22 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
       <fieldset className="po-form-body pr-editor-fields" disabled={busy || uncertain || !!otherPending}>
         {(errors.form || errors.lines || Object.keys(errors).some((k) => errors[k] && k.startsWith('lines.'))) && <div id="pr-form-errors" className="admin-feedback admin-feedback--error" role="alert">{errors.form || errors.lines || 'Check the highlighted receipt rows before continuing.'}</div>}
         <h3 className="po-section-title">01 / Receipt information <span>Linked purchase order and receiver</span></h3>
-        <div className="po-fields">
+        <div className="po-fields pr-receipt-fields">
           <div className="po-field"><label htmlFor="pr-po">Purchase order <span className="mr-form__required">*</span></label>
             {isNew ? <ReceiptReferenceSelect id="pr-po" kind="orders" label="Purchase order" selected={values.poId ? { id: values.poId, name: po?.number || 'Loading source…' } : null} onChange={choosePo} placeholder="Select purchase order" invalid={Boolean(errors.poId)} describedBy={errors.poId ? 'pr-po-error' : undefined} disabled={busy || uncertain} /> : <input id="pr-po" className="mr-form__control" value={po?.number || receipt.poNumber} readOnly aria-readonly="true" />}
-            {errors.poId && <p id="pr-po-error" className="mr-form__error" role="alert">{errors.poId}</p>}{!isNew && <p className="mr-form__hint">The linked PO is fixed.</p>}{isNew && !po && <p className="mr-form__hint" role="status" data-testid="text-pr-no-eligible">Search saved open POs with remaining acceptance capacity.</p>}</div>
+            {errors.poId && <p id="pr-po-error" className="mr-form__error" role="alert">{errors.poId}</p>}{!isNew && <p className="mr-form__hint">The linked PO is fixed.</p>}</div>
           <div className="po-field"><label htmlFor="pr-date">Received date <span className="mr-form__required">*</span></label><input id="pr-date" type="date" className="mr-form__control" min={po?.poDate} value={values.receivedDate} onChange={(e) => { setValues((c) => ({ ...c, receivedDate: e.target.value })); clear('receivedDate'); }} aria-invalid={Boolean(errors.receivedDate)} aria-describedby={errors.receivedDate ? 'pr-date-error' : undefined} data-testid="input-pr-date" />{errors.receivedDate && <p id="pr-date-error" className="mr-form__error" role="alert">{errors.receivedDate}</p>}</div>
-          <div className="po-field"><label htmlFor="pr-by">Received by <span className="mr-form__required">*</span></label>
+          <div className="po-field">
+            <InfoDisclosure id="pr-receiver-info" title="Received by" text="Named receiver only. The authenticated person saving this receipt is recorded separately."><label htmlFor="pr-by">Received by <span className="mr-form__required">*</span></label></InfoDisclosure>
             <ReceiptReferenceSelect id="pr-by" kind="staff" label="Staff receiver or Others" selected={values.receiverMode === 'other' ? { id: 'other', name: 'Others' } : values.staff} placeholder="Search staff or select Others" disabled={busy || uncertain}
+              invalid={values.receiverMode === 'staff' && Boolean(errors.receivedBy)} describedBy={values.receiverMode === 'staff' && errors.receivedBy ? 'pr-by-error' : undefined}
               onChange={(staff) => { setValues((c) => ({ ...c, receiverMode: staff?.id === 'other' ? 'other' : 'staff', staff: staff?.id === 'other' ? null : staff, otherName: '' })); clear('receivedBy'); }} />
-            {values.receiverMode === 'other' && <><label htmlFor="pr-other">Person’s name *</label><input id="pr-other" className="mr-form__control" required maxLength={120} value={values.otherName} onChange={(e) => { setValues((c) => ({ ...c, otherName: e.target.value, staff: null })); clear('receivedBy'); }} /></>}
-            {errors.receivedBy && <p id="pr-by-error" className="mr-form__error" role="alert">{errors.receivedBy}</p>}
-            <p className="mr-form__hint">Named receiver only. The authenticated person saving this receipt is recorded separately.</p></div>
+            {values.receiverMode === 'staff' && errors.receivedBy && <p id="pr-by-error" className="mr-form__error" role="alert">{errors.receivedBy}</p>}</div>
+          {values.receiverMode === 'other' && <div className="po-field"><label htmlFor="pr-other">Person’s name <span className="mr-form__required">*</span></label><input id="pr-other" className="mr-form__control" required maxLength={120} value={values.otherName} aria-invalid={Boolean(errors.receivedBy)} aria-describedby={errors.receivedBy ? 'pr-by-error' : undefined} onChange={(e) => { setValues((c) => ({ ...c, otherName: e.target.value, staff: null })); clear('receivedBy'); }} />
+            {errors.receivedBy && <p id="pr-by-error" className="mr-form__error" role="alert">{errors.receivedBy}</p>}</div>}
         </div>
         {poProblem && !po && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="text-pr-po-problem">{poProblem}</div>}
-        {po && <dl className="pr-ctx"><div><dt>Vendor</dt><dd>{receipt ? receipt.vendorName : po.vendorName}<span className="po-secondary">{(receipt ? receipt.vendorPhone : snapshot.refs.vendors.find((v) => v.id === po.vendorId)?.phoneNo) || 'No mobile on record'}</span></dd></div><div><dt>Deliver to</dt><dd>{receipt ? receipt.locationName : po.locationName}</dd></div><div><dt>PO date</dt><dd>{displayDate(po.poDate)} <span className={fclass(getPOFulfillment(po, activeReceipts))}>{getPOFulfillment(po, activeReceipts)}</span></dd></div></dl>}
+        {po && <dl className="pr-ctx"><div><dt>Vendor</dt><dd>{receipt ? receipt.vendorName : po.vendorName}{(vendorPhone || !isNew) && <span className="po-secondary">{vendorPhone || 'No mobile on record'}</span>}</dd></div><div><dt>Deliver to</dt><dd>{receipt ? receipt.locationName : po.locationName}</dd></div><div><dt>PO date</dt><dd>{displayDate(po.poDate)} <span className={fclass(getPOFulfillment(po, activeReceipts))}>{getPOFulfillment(po, activeReceipts)}</span></dd></div></dl>}
         {sourceLoading && <p role="status">Loading server PO and available quantities…</p>}
         <hr className="po-divider" />
         <h3 className="po-section-title">02 / Product rows <span>Leave received blank or zero to skip a row</span></h3>
