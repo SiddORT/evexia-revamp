@@ -3,8 +3,9 @@ import InfoDisclosure from './InfoDisclosure.jsx';
 import MRReferenceSelect from './MRReferenceSelect.jsx';
 import MRFormCombobox from './MRFormCombobox.jsx';
 import PhoneInput from './PhoneInput.jsx';
+import useAddressSelection from './useAddressSelection.js';
+import { GeographyControl, PostalSelection, useAddressCatalogue } from './AddressGeography.jsx';
 import { emptyMRValues, generateMRUsername, lookupPincode, MR_FIELDS as FIELDS, payloadFromValues, validateMRValues } from '../../services/serverMRs.js';
-import { getSession, subscribeSession } from '../../auth/adminSession.js';
 import '../../mr.css';
 
 const OPTIONAL = new Set(['reportingManagerId', 'addressLine2', 'paymentLimit', 'doctorDaysLimit']);
@@ -37,11 +38,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
   const [passwordVisible, setPasswordVisible] = useState(true);
   const [copyFeedback, setCopyFeedback] = useState('');
   const copySequence = useRef(0);
-  const [postal, setPostal] = useState({ status: '', choices: [] });
   const [usernamePending, setUsernamePending] = useState(false);
-  const manual = useRef(new Set());
-  const lookedUp = useRef(mr?.pincode || '');
-  const lookupSeq = useRef(0);
   const [errors, setErrors] = useState({});
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -50,6 +47,13 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
   const formRef = useRef(null);
   const tabRefs = useRef([]);
   const pendingFocus = useRef(null);
+  const address = useAddressSelection({ values, onChange: patchAddress, lookupPIN: lookupPincode, editing: Boolean(mr), disabled: saving });
+  const catalogue = useAddressCatalogue(address);
+  function patchAddress(patch) {
+    setValues((current) => ({ ...current, ...patch }));
+    setErrors((current) => ({ ...current, ...Object.fromEntries(Object.keys(patch).map((key) => [key, undefined])) }));
+    setSaveError('');
+  }
   useEffect(() => {
     if (pendingFocus.current) {
       formRef.current?.elements.namedItem(pendingFocus.current)?.focus();
@@ -57,39 +61,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
     }
   }, [activeTab, errors]);
 
-  useEffect(() => {
-    const owner = getSession().user?.id;
-    return subscribeSession(() => { if (getSession().user?.id !== owner) lookupSeq.current++; });
-  }, []);
-  useEffect(() => () => { lookupSeq.current++; copySequence.current++; }, []);
-  useEffect(() => {
-    const pin = values.pincode.trim();
-    if (!/^[1-9][0-9]{5}$/.test(pin) || pin === lookedUp.current) { if (!/^[1-9][0-9]{5}$/.test(pin)) { lookupSeq.current++; setPostal({ status: '', choices: [] }); } return undefined; }
-    const current = ++lookupSeq.current;
-    const controller = new AbortController();
-    setPostal({ status: 'Looking up pincode…', choices: [] });
-    const timer = setTimeout(() => {
-      lookupPincode(pin, controller.signal, mr ? 'edit' : 'add').then((result) => {
-        if (current !== lookupSeq.current) return;
-        lookedUp.current = pin;
-        const choices = Array.isArray(result?.choices) ? result.choices : [];
-        if (choices.length === 1) { applyChoice(choices[0]); setPostal({ status: 'City, state and country filled from the pincode. You can still edit them.', choices: [] }); }
-        else if (choices.length > 1) setPostal({ status: 'Several places share this pincode. Choose one or enter the address manually.', choices });
-        else setPostal({ status: result?.message || 'No place found for this pincode. Enter city, state and country manually.', choices: [] });
-      }).catch((cause) => {
-        if (current === lookupSeq.current && !controller.signal.aborted) setPostal({ status: `Pincode lookup is unavailable (${cause.message || 'error'}). Enter city, state and country manually.`, choices: [] });
-      });
-    }, 450);
-    return () => { clearTimeout(timer); controller.abort(); };
-  }, [values.pincode]);
-
-  function applyChoice(choice) {
-    setValues((current) => {
-      const next = { ...current };
-      for (const key of ['city', 'state', 'country']) if (!manual.current.has(key) && choice[key]) next[key] = choice[key];
-      return next;
-    });
-  }
+  useEffect(() => () => { copySequence.current++; }, []);
   async function generateUsername() {
     setUsernamePending(true);
     try { const result = await generateMRUsername(); change('userId', result.userId); }
@@ -108,15 +80,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
   }
 
   function change(key, value) {
-    if (['city', 'state', 'country'].includes(key)) manual.current.add(key);
-    setValues((current) => ({ ...current, [key]: value }));
-    setErrors((current) => {
-      if (!current[key]) return current;
-      const next = { ...current };
-      delete next[key];
-      return next;
-    });
-    setSaveError('');
+    address.change(key, value);
   }
 
   function clearCredentialErrors() {
@@ -207,7 +171,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
         step={step}
         aria-required={required}
         aria-invalid={Boolean(errors[key])}
-         aria-describedby={errors[key] ? errorId : undefined}
+         aria-describedby={[errors[key] && errorId, key === 'pincode' && address.postal.message && 'mr-pin-feedback'].filter(Boolean).join(' ') || undefined}
         data-testid={`input-mr-${key}`}
       />
     );
@@ -216,7 +180,9 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
          {info ? <InfoDisclosure id={hintId} title={label} text={info} testId={`button-mr-${key}-info`}>
             <label className="mr-form__label" htmlFor={id}>{label} {required && <span className="mr-form__required" aria-hidden="true">*</span>}</label>
           </InfoDisclosure> : <label className="mr-form__label" htmlFor={id}>{label} {required && <span className="mr-form__required" aria-hidden="true">*</span>}</label>}
-        {customControl ? customControl : selectOptions ? (
+        {['country', 'state', 'city'].includes(key) ? <GeographyControl address={address} catalogue={catalogue}
+          field={key} id={id} label={label} required={required} invalid={Boolean(errors[key])}
+          describedBy={errors[key] ? errorId : undefined} /> : customControl ? customControl : selectOptions ? (
           <select
             id={id}
             name={key}
@@ -255,6 +221,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
     const nextErrors = validateMRValues(cleaned, {
       creating: !mr, password: credentials?.password || '', confirm: credentials?.confirmPassword || '',
     });
+    if (address.postal.required) nextErrors.pincode = 'Choose a PIN location or confirm catalogue selection.';
     if (mr && warnings.deleted.length) nextErrors.zoneId = nextErrors.zoneId || '';
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
@@ -264,6 +231,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
       return;
     }
     setSaveError('');
+    address.pause();
     setSaving(true);
     try {
       const result = await onSave(payloadFromValues(cleaned), mr ? null : credentials.password || null);
@@ -336,8 +304,8 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
           <section className="mr-form__section" id="mr-panel-address" role="tabpanel" aria-labelledby="mr-tab-address" tabIndex={0} hidden={activeTab !== 'address'}>
             <div className="mr-form__section-head"><h3 id="mr-address-title" className="mr-form__section-title">Address</h3></div>
             <div className="mr-form__grid mr-form__grid--address">
-                {renderField('pincode', 'Pincode', { placeholder: '6-digit pincode', inputMode: 'numeric', autoComplete: 'postal-code', info: 'A complete pincode fills City, State and Country automatically. Anything you type yourself is kept.' })}
-              {(postal.status || postal.choices.length > 0) && <div className="mr-form__field mr-form__field--wide" role="status" data-testid="status-mr-postal"><p className="mr-form__section-note">{postal.status}</p>{postal.choices.length > 0 && <div className="mr-form__postal-choices">{postal.choices.map((choice, index) => <button type="button" key={index} className="admin-button admin-button--secondary" onClick={() => { applyChoice(choice); setPostal({ status: 'Place applied. You can still edit it.', choices: [] }); }} data-testid={`button-postal-choice-${index}`}>{[choice.city, choice.state, choice.country].filter(Boolean).join(', ')}</button>)}</div>}</div>}
+                {renderField('pincode', 'Pincode', { placeholder: '6-digit pincode', inputMode: 'numeric', autoComplete: 'postal-code', info: 'A complete Indian PIN fills City, State and Country. Multiple matches require selection. Later address changes cancel pending lookup.' })}
+              <PostalSelection address={address} prefix="mr" />
               {renderField('addressLine1', 'Address line 1', { placeholder: 'Street address', span: true, autoComplete: 'address-line1' })}
               {renderField('addressLine2', 'Address line 2', { placeholder: 'Apartment, suite or area', span: true, autoComplete: 'address-line2' })}
               {renderField('landmark', 'Landmark', { placeholder: 'Nearby landmark' })}

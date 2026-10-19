@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import DoctorMRSelect from './DoctorMRSelect.jsx';
 import InfoDisclosure from './InfoDisclosure.jsx';
 import PhoneInput from './PhoneInput.jsx';
+import useAddressSelection from './useAddressSelection.js';
+import { GeographyControl, PostalSelection, useAddressCatalogue } from './AddressGeography.jsx';
 import { dialCountry, normalizePhone } from '../../services/phoneCountries.js';
 import { lookupDoctorPIN } from '../../services/serverDoctors.js';
 import { discountRate, roundRate } from '../../services/rates.js';
@@ -28,7 +30,7 @@ const FIELD_INFO = {
   phone: 'Select the phone country and enter its national number. The selection is saved and also applies to the alternate phone.',
   daysLimit: 'Saved business setting only. No payment ledger, order placement or overdue-payment blocking engine is connected.',
   gstNumber: 'GST Number is required for GST invoices. For Indian addresses, enter a 15-character GSTIN.',
-  pincode: 'Entering a six-digit Indian PIN automatically fills country, state and city. District is used as city when no city is returned. Other postal codes use manual entry.',
+  pincode: 'A six-digit Indian PIN fills country, state and city when exactly one place matches. Multiple places require selection. District is used as city when no city is returned. Other countries use the geography catalogue.',
 };
 const PASSWORD_INFO = 'Passwords cannot be entered, generated, saved or exported. No doctor login is created.';
 
@@ -104,18 +106,20 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('identity');
-  const [pinState, setPinState] = useState({ status: 'idle', localities: [], error: '' });
-  const [selectedLocality, setSelectedLocality] = useState('');
   const formRef = useRef(null);
   const tabRefs = useRef([]);
   const pendingFocus = useRef(null);
-  const pinRequest = useRef(0);
   const selectedMR = [...hydratedMRs, ...mrs].find((mr) => String(mr.id) === values.mrId);
   const activeMRs = mrs.filter((mr) => mr.usable);
   const mrOptions = selectedMR && !activeMRs.includes(selectedMR) ? [...activeMRs, selectedMR] : activeMRs;
   const missingMR = Boolean(values.mrId) && (!selectedMR || selectedMR.deleted || !selectedMR.zoneId);
-  const addressRevision = useRef(0);
-  const pinEdited = useRef(false);
+  const address = useAddressSelection({ values, onChange: patchAddress, lookupPIN: lookupDoctorPIN, editing: Boolean(doctor), disabled: blocked || saving });
+  const catalogue = useAddressCatalogue(address);
+  function patchAddress(patch) {
+    setValues((current) => ({ ...current, ...patch }));
+    setErrors((current) => ({ ...current, ...Object.fromEntries(Object.keys(patch).map((key) => [key, undefined])) }));
+    setSaveError('');
+  }
 
   useEffect(() => {
     if (pendingFocus.current) {
@@ -123,39 +127,6 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
       pendingFocus.current = null;
     }
   }, [activeTab, errors]);
-
-  useEffect(() => {
-    const request = ++pinRequest.current;
-    if (!pinEdited.current || !/^[1-9]\d{5}$/.test(values.pincode)) {
-      setPinState({ status: 'idle', localities: [], error: '' });
-      setSelectedLocality('');
-      return undefined;
-    }
-    const controller = new AbortController();
-    const addressAtStart = addressRevision.current;
-    setPinState({ status: 'loading', localities: [], error: '' });
-    setSelectedLocality('');
-    const timer = window.setTimeout(async () => {
-      try {
-        const result = await lookupDoctorPIN(values.pincode, controller.signal, doctor ? 'edit' : 'add');
-        if (controller.signal.aborted || request !== pinRequest.current) return;
-        const unique = result.choices.map((item) => ({ ...item, name: item.city }));
-        setPinState(unique.length
-          ? { status: 'ready', localities: unique, error: '' }
-          : { status: 'empty', localities: [], error: result.message || 'No localities were found. Enter the address manually.' });
-        if (unique.length && addressAtStart === addressRevision.current) {
-          setSelectedLocality('0');
-          const first = unique[0];
-          setValues((current) => ({ ...current, city: first.city, state: first.state, country: first.country }));
-          setErrors((current) => { const next = { ...current }; delete next.city; delete next.state; delete next.country; return next; });
-        }
-      } catch (error) {
-        if (error.name === 'AbortError' || request !== pinRequest.current) return;
-        setPinState({ status: 'error', localities: [], error: 'Pincode lookup is offline or unavailable. You can enter the address manually.' });
-      }
-    }, 250);
-    return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [values.pincode]);
 
   function handleTabKey(event, index) {
     const next = event.key === 'ArrowRight' ? (index + 1) % TABS.length
@@ -168,29 +139,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
   }
 
   function change(key, value) {
-    if (key === 'pincode') { pinEdited.current = true; pinRequest.current++; }
-    if (['addressLine1', 'addressLine2', 'landmark', 'country', 'state', 'city'].includes(key)) addressRevision.current++;
-    setValues((current) => ({ ...current, [key]: value }));
-    setErrors((current) => {
-      if (!current[key]) return current;
-      const next = { ...current };
-      delete next[key];
-      return next;
-    });
-    setSaveError('');
-  }
-
-  function applyLocality(index) {
-    const locality = pinState.localities[Number(index)];
-    if (!locality) return;
-    addressRevision.current++;
-    setSelectedLocality(index);
-    setValues((current) => ({ ...current, city: locality.city, state: locality.state, country: locality.country }));
-    setErrors((current) => {
-      const next = { ...current };
-      delete next.city; delete next.state; delete next.country;
-      return next;
-    });
+    address.change(key, value);
   }
 
   function renderField(key, label, options = {}) {
@@ -198,7 +147,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
     const errorId = `doctor-${key}-error`;
     const id = `doctor-${key}`;
     const required = REQUIRED.has(key) || (['phone', 'email'].includes(key) && values.contactRequirement === 'required') || (key === 'gstNumber' && values.invoiceType === 'gst');
-    const describedBy = errors[key] ? errorId : undefined;
+    const describedBy = [errors[key] && errorId, key === 'pincode' && address.postal.message && 'doctor-pin-feedback'].filter(Boolean).join(' ') || undefined;
     const common = {
       id, name: key, className: 'doctor-form__control', value: values[key],
       onChange: (event) => change(key, event.target.value), autoComplete: autoComplete || 'off',
@@ -211,7 +160,10 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
       'aria-describedby': describedBy, 'data-testid': `input-doctor-${key}`,
     };
     let input = <input {...common} type={type} placeholder={placeholder} inputMode={inputMode} min={min} step={step} />;
-    if (selectOptions) {
+    if (['country', 'state', 'city'].includes(key)) {
+      input = <GeographyControl address={address} catalogue={catalogue} field={key} id={id} label={label}
+        required={required} invalid={Boolean(errors[key])} describedBy={describedBy} />;
+    } else if (selectOptions) {
       input = <select {...common} data-testid={`select-doctor-${key}`}>
         <option value="">{placeholder || 'Select an option'}</option>
         {selectOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -240,6 +192,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
     if (saving || blocked) return;
     const cleaned = Object.fromEntries(FIELDS.map((key) => [key, values[key].trim()]));
     const nextErrors = validate(cleaned);
+    if (address.postal.required) nextErrors.pincode = 'Choose a PIN location or confirm catalogue selection.';
     if (cleaned.mrId && (!selectedMR || selectedMR.deleted || !selectedMR.zoneId || (!selectedMR.usable && cleaned.mrId !== doctor?.mrId))) nextErrors.mrId = 'Select an active server MR with a usable Zone.';
     const normalizedReg = cleaned.registrationNumber.toLocaleLowerCase();
     if (normalizedReg && records.some((record) => String(record.id) !== String(doctor?.id) && String(record.registrationNumber).toLocaleLowerCase() === normalizedReg)) {
@@ -253,6 +206,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
       return;
     }
     setSaveError('');
+    address.pause();
     setSaving(true);
     try {
       const result = await onSave({
@@ -346,21 +300,8 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
         <div className="doctor-form__section-head"><h3 className="doctor-form__section-title">Address</h3></div>
         <div className="doctor-form__grid doctor-form__grid--address">
            {renderField('pincode', 'Pincode', { placeholder: 'Pincode', inputMode: 'numeric', autoComplete: 'postal-code' })}
-          {pinState.status !== 'idle' && <div className="doctor-form__lookup" role="status" aria-live="polite">
-            {pinState.status === 'loading' && <p className="doctor-form__hint">Looking up pincode…</p>}
-            {pinState.error && <p className="doctor-form__hint">{pinState.error}</p>}
-            {pinState.localities.length > 0 && <>
-               <InfoDisclosure id="doctor-locality-help" title="Pincode localities"
-                  text="Country, state and city are filled automatically unless you edited the address while lookup was pending. District is used as city when no city is returned. Choose another returned location to correct it, or edit manually."
-                  testId="button-doctor-locality-info"><label className="doctor-form__label" htmlFor="doctor-locality">PIN locations</label></InfoDisclosure>
-              <div className="doctor-form__input-row">
-                <select id="doctor-locality" className="doctor-form__control" value={selectedLocality} onChange={(event) => applyLocality(event.target.value)} data-testid="select-doctor-locality">
-                  <option value="">Choose a locality suggestion</option>
-                  {pinState.localities.map((item, index) => <option key={`${item.name}-${item.city}-${item.state}`} value={String(index)}>{item.name} — {item.city}, {item.state}</option>)}
-                </select>
-              </div>
-            </>}
-          </div>}
+          <PostalSelection address={address} prefix="doctor" fieldClass="doctor-form__lookup doctor-form__field"
+            labelClass="doctor-form__label" hintClass="doctor-form__hint" />
           {renderField('addressLine1', 'Address Line 1', { placeholder: 'Address line 1', span: true, autoComplete: 'address-line1' })}
           {renderField('addressLine2', 'Address Line 2', { placeholder: 'Address line 2', span: true, autoComplete: 'address-line2' })}
           {renderField('landmark', 'Landmark', { placeholder: 'Nearby landmark' })}

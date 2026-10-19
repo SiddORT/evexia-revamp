@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import PhoneInput from './PhoneInput.jsx';
 import SearchableControl from './SearchableControl.jsx';
 import PatientDoctorSelect from './PatientDoctorSelect.jsx';
+import useAddressSelection from './useAddressSelection.js';
+import { GeographyControl, PostalSelection, useAddressCatalogue } from './AddressGeography.jsx';
 import { dialCountry, normalizePhone } from '../../services/phoneCountries.js';
 import { businessToday, patientAge } from '../../services/serverPatients.js';
 import { lookupPatientPIN } from '../../services/serverPatients.js';
@@ -83,34 +85,13 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
   const tabRefs = useRef([]);
   const pendingFocus = useRef(null);
 
-  const [pinState, setPinState] = useState({ choices: [], message: '' });
-  const pinEdited = useRef(false);
-  const addressRevision = useRef(0);
-  const pinRequest = useRef(0);
-  useEffect(() => {
-    const request = ++pinRequest.current;
-    if (!pinEdited.current || blocked || saving || values.country.toLowerCase() !== 'india' || !/^[1-9]\d{5}$/.test(values.pincode)) {
-      setPinState({ choices: [], message: '' });
-      return;
-    }
-    const controller = new AbortController();
-    const revision = addressRevision.current;
-    setPinState({ choices: [], message: 'Looking up PIN…' });
-    const timer = setTimeout(async () => {
-      try {
-        const result = await lookupPatientPIN(values.pincode, controller.signal, patient ? 'edit' : 'add');
-        if (controller.signal.aborted || request !== pinRequest.current || revision !== addressRevision.current || saving) return;
-        setPinState({ choices: result.choices, message: result.choices.length > 1 ? 'Choose a PIN location or enter manually.' : result.message || '' });
-        if (result.choices.length === 1) {
-          const item = result.choices[0];
-          setValues((old) => ({ ...old, country: item.country, state: item.state, city: item.city }));
-        }
-      } catch {
-        if (!controller.signal.aborted && request === pinRequest.current) setPinState({ choices: [], message: 'PIN lookup unavailable. Enter the location manually.' });
-      }
-    }, 250);
-    return () => { clearTimeout(timer); controller.abort(); };
-  }, [values.pincode, values.country, blocked, saving]);
+  const address = useAddressSelection({ values, onChange: patchAddress, lookupPIN: lookupPatientPIN, editing: Boolean(patient), disabled: blocked || saving });
+  const catalogue = useAddressCatalogue(address);
+  function patchAddress(patch) {
+    setValues((current) => ({ ...current, ...patch }));
+    setErrors((current) => ({ ...current, ...Object.fromEntries(Object.keys(patch).map((key) => [key, undefined])) }));
+    setSaveError('');
+  }
 
   useEffect(() => {
     if (pendingFocus.current) {
@@ -120,19 +101,7 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
   }, [activeTab, errors]);
 
   function change(key, value) {
-    if (key === 'pincode') pinEdited.current = true;
-    if (['addressLine1', 'addressLine2', 'landmark', 'city', 'state', 'country'].includes(key)) {
-      addressRevision.current++; pinRequest.current++;
-      setPinState({ choices: [], message: '' });
-    }
-    setValues((current) => ({ ...current, [key]: value }));
-    setErrors((current) => {
-      if (!current[key]) return current;
-      const next = { ...current };
-      delete next[key];
-      return next;
-    });
-    setSaveError('');
+    address.change(key, value);
   }
 
   function handleTabKey(event, index) {
@@ -150,7 +119,7 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
     const id = `patient-${key}`;
     const errorId = `${id}-error`;
     const hintId = `${id}-hint`;
-    const describedBy = [errors[key] && errorId, hint && hintId].filter(Boolean).join(' ') || undefined;
+    const describedBy = [errors[key] && errorId, hint && hintId, key === 'pincode' && address.postal.message && 'patient-pin-feedback'].filter(Boolean).join(' ') || undefined;
     const shared = {
       id, name: key, className: 'mr-form__control', value: values[key],
       onChange: (event) => change(key, event.target.value),
@@ -164,7 +133,9 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
         <label className="mr-form__label" htmlFor={id}>
           {label} {!OPTIONAL.has(key) && <span className="mr-form__required" aria-hidden="true">*</span>}
         </label>
-        {searchable ? (
+        {['country', 'state', 'city'].includes(key) ? <GeographyControl address={address} catalogue={catalogue}
+          field={key} id={id} label={label} required={!OPTIONAL.has(key)} invalid={Boolean(errors[key])}
+          describedBy={describedBy} /> : searchable ? (
           <SearchableControl id={id} name={key} label={label} required
             value={values[key]} selectedLabel={values[key]} choices={selectOptions}
             onChange={(value) => change(key, value)} disabled={blocked || saving}
@@ -195,6 +166,7 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
     if (saving || blocked) return;
     const cleaned = Object.fromEntries(FIELDS.map((key) => [key, values[key].trim()]));
     const nextErrors = validate(cleaned);
+    if (address.postal.required) nextErrors.pincode = 'Choose a PIN location or confirm catalogue selection.';
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
       const first = FIELDS.find((key) => nextErrors[key]);
@@ -203,8 +175,7 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
       return;
     }
     setSaveError('');
-    pinEdited.current = false;
-    pinRequest.current++;
+    address.pause();
     setSaving(true);
     try {
       const result = await onSave({ ...cleaned, phone: normalizePhone(cleaned.phone, cleaned.dialCountry, 'patient') });
@@ -216,7 +187,6 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
     }
   }
 
-  const selectedPin = pinState.choices.find((item) => item.city === values.city && item.state === values.state && item.country === values.country);
   return (
     <form className="mr-form patient-form" ref={formRef} onSubmit={handleSubmit}
       onFocusCapture={(event) => {
@@ -284,13 +254,7 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
             <div className="patient-form__pincode-row">
               {renderField('pincode', 'Pincode', { placeholder: '6-digit pincode for India', inputMode: 'numeric', autoComplete: 'postal-code' })}
             </div>
-            {pinState.message && <p className="patient-form__pin-feedback" role="status">{pinState.message}</p>}
-            {pinState.choices.length > 1 && <div className="mr-form__field patient-form__pin-choices"><label htmlFor="patient-pin-location">PIN locations</label><select id="patient-pin-location" className="mr-form__control" aria-describedby={selectedPin ? 'patient-pin-selection' : undefined} defaultValue="" onChange={(event) => {
-              const item = pinState.choices[Number(event.target.value)];
-              if (item) { addressRevision.current++; pinRequest.current++; setValues((old) => ({ ...old, city: item.city, state: item.state, country: item.country })); }
-            }}><option value="">Select a location</option>{pinState.choices.map((item, index) => <option value={index} key={index}>{item.city}, {item.state}, {item.country}</option>)}</select>
-              {selectedPin && <p id="patient-pin-selection" className="mr-form__hint">{selectedPin.city}, {selectedPin.state}, {selectedPin.country}</p>}
-            </div>}
+            <PostalSelection address={address} prefix="patient" fieldClass="mr-form__field patient-form__pin-choices" />
             {renderField('addressLine1', 'Address line 1', { placeholder: 'Street address', span: true, autoComplete: 'address-line1' })}
             {renderField('addressLine2', 'Address line 2', { placeholder: 'Apartment, suite or area', span: true, autoComplete: 'address-line2' })}
             {renderField('landmark', 'Landmark', { placeholder: 'Nearby landmark' })}

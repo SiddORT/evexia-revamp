@@ -58,6 +58,7 @@
     "wouter": "^3.3.5"
   },
   "dependencies": {
+    "country-state-city": "3.2.1",
     "libphonenumber-js": "^1.13.15"
   }
 }

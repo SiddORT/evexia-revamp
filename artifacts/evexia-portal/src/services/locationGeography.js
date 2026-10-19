@@ -2,7 +2,9 @@ import { GST_STATES } from './serverPurchaseOrders.js';
 import { dialCountry } from './phoneCountries.js';
 
 const key = (value) => value.toLowerCase().replaceAll('&', 'and').replace(/[^a-z0-9]/g, '');
-const aliases = { orissa: '21', uttaranchal: '05', pondicherry: '34', nctofdelhi: '07', dadraandnagarhaveli: '26', damananddiu: '26' };
+const aliases = { orissa: '21', uttaranchal: '05', pondicherry: '34', nctofdelhi: '07',
+  andamanandnicobarislands: '35', dadraandnagarhavelianddamananddiu: '26',
+  dadraandnagarhaveli: '26', damananddiu: '26' };
 export const indianLocationState = (value = '') => GST_STATES.find((item) => item.code === value || key(item.name) === key(value) || item.code === aliases[key(value)]);
 export const locationSuggestion = (location) => location?.countryCode === 'IN'
   ? GST_STATES.find((item) => item.code === location.stateCode)?.code || '' : '';
