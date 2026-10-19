@@ -117,10 +117,10 @@ class SourceContractTests(unittest.TestCase):
 
     def test_current_head_and_protected_path_ignore_stale_production_review(self):
         runner, graph, policy, target, _ = review.review()
-        self.assertEqual(target, "0044_purchase_received")
+        self.assertEqual(target, "0045_pr_batch_numbers")
         result = runner.plan(graph, policy, ["0040_po_tax_basis"], target)
         expected = ["0041_location_geography", "0042_rate_hundredths",
-                    "0043_email_templates", "0044_purchase_received"]
+                    "0043_email_templates", "0044_purchase_received", "0045_pr_batch_numbers"]
         self.assertEqual(result["pending"], expected)
         self.assertEqual(result["operator_only"], expected)
         # Stale production approval must never be consulted by development.
@@ -134,7 +134,7 @@ class SourceContractTests(unittest.TestCase):
     def test_metadata_drift_and_unreviewed_bytes_fail_offline(self):
         mutations = [
             ("development-contract.json", lambda p: p.write_text(p.read_text().replace(
-                "0044_purchase_received", "0043_email_templates"))),
+                "0045_pr_batch_numbers", "0043_email_templates"))),
             ("artifacts/api-server/backend/app/core/schema.py", lambda p: p.write_text("SCHEMA_REVISION='0043_email_templates'")),
             ("scripts/migration-policy.json", lambda p: p.write_text(p.read_text().replace('"0042_rate_hundredths": "operator_only"', '"0042_rate_hundredths": "automatic"'))),
             ("artifacts/api-server/backend/alembic/versions/0044_purchase_received.py", lambda p: p.write_text(p.read_text() + "\n# tampered\n")),
@@ -341,9 +341,9 @@ class TransactionTests(unittest.TestCase):
             self.assertEqual(self.run_sync(), 42)
         report = json.loads(output.getvalue())
         self.assertEqual(report["current"], ["0040_po_tax_basis"])
-        self.assertEqual(report["required"], "0044_purchase_received")
+        self.assertEqual(report["required"], "0045_pr_batch_numbers")
         self.assertEqual(report["pending"], report["operator_only"])
-        self.assertEqual(len(report["pending"]), 4)
+        self.assertEqual(len(report["pending"]), 5)
         self.assertEqual(report["migrations_applied"], 0)
         self.assertIn("docs/development-schema-activation.md", report["action"])
         self.assertEqual(self.state(), ("0040_po_tax_basis", None))

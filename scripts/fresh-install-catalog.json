@@ -1,4 +1,8 @@
 {
+  "0045_pr_batch_numbers": {
+    "sha256": "46b994805bc60ecbbb149144b6ea63a0c7e6c25ab89cd23680b42cd135c671e8",
+    "tables": ["account_crypto_state", "account_identifier_reservations", "alembic_version", "allergen_products", "audit_events", "auth_sessions", "communication_channels", "communication_configurations", "courier_partners", "custom_roles", "designations", "directory_crypto_stage", "doctor_directory", "domain_policies", "download_grants", "download_logs", "email_templates", "files", "headquarters", "login_attempts", "mr_directory", "mr_profiles", "opening_balance_import_reviews", "opening_balances", "patient_directory", "patients", "pr_batch_allocations", "pr_batch_counters", "pr_batch_settings", "product_categories", "purchase_order_audit", "purchase_order_lines", "purchase_order_requests", "purchase_orders", "purchase_receipt_history", "purchase_receipt_requests", "purchase_receipt_sources", "purchase_receipts", "refresh_sessions", "role_hostnames", "sales_targets", "staff_profiles", "storage_locations", "users", "vendors", "zones"]
+  },
   "0034_shared_phone_countries": {
     "sha256": "d0a340d4ed3c09136c7bb60e4600f2faa1ead7aa4bbbc1c7eb795527c7dd5b78",
     "tables": ["account_identifier_reservations", "alembic_version", "allergen_products", "audit_events", "auth_sessions", "courier_partners", "custom_roles", "designations", "directory_crypto_stage", "doctor_directory", "download_grants", "download_logs", "files", "headquarters", "login_attempts", "mr_directory", "mr_profiles", "opening_balance_import_reviews", "opening_balances", "patient_directory", "patients", "product_categories", "refresh_sessions", "role_hostnames", "sales_targets", "staff_profiles", "storage_locations", "users", "vendors", "zones"]

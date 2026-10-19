@@ -56,3 +56,17 @@ mtime_ms = 1792233480137
 storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0/b79439ae-8ae6-49e5-a53b-5bceb0e92617/9b827926-2cc1-4da9-a1aa-a7cdf4b985c6"
 storage_version_token = "1792233547810063"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "V8PqyDZSD7fi6Txg4DDgW"
+uri = "file://generated-artifacts/ci-schema-catalog-0045/0045-catalog-evidence.zip"
+type = "unspecified"
+title = "0045 PostgreSQL catalog evidence"
+description = "Matching observations from two disposable PostgreSQL 17.5 clusters, frozen source inventory and collection procedure. Catalog evidence only—not passing test or release evidence."
+logical_id = "099bb9d2-8c82-4808-8e7c-d84334a49d85"
+content_hash = "sha256:e60f865ee2f7671cec2b7f2c651ae90fc381c423cfbe9e7a435c945b2606e1f2"
+size = 520797
+mtime_ms = 1792388860014
+storage_uri = "gcs://replit-rams-assets-sisko/rams/assets/repl:9bd1d1ea-b7fe-4e8b-8aa6-02e5591a96a0/099bb9d2-8c82-4808-8e7c-d84334a49d85/ecbf0c67-25d6-44fb-aa16-8fcf08253b59"
+storage_version_token = "1792388946649855"
+content_type = "application/octet-stream"

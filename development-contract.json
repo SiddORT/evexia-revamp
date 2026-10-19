@@ -1,5 +1,5 @@
 {
   "format": 1,
   "contract": "evexia-preview-2026-10",
-  "schema": "0044_purchase_received"
+  "schema": "0045_pr_batch_numbers"
 }

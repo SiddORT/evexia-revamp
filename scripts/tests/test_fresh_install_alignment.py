@@ -29,31 +29,48 @@ class FreshInstallAlignmentTests(unittest.TestCase):
         self.policy = runner.load_policy(ROOT / "scripts/migration-policy.json")
 
     def test_reviewed_single_head_matches_application_and_release_target(self):
-        self.assertEqual(fresh.FINAL_TARGET, "0042_rate_hundredths")
+        self.assertEqual(fresh.FINAL_TARGET, "0045_pr_batch_numbers")
         self.assertEqual(fresh.PREPARE_TARGET, "0031_role_hostnames")
         self.assertEqual({key: vars(value) for key, value in fresh.reviewed_graph().items()},
                          {key: vars(value) for key, value in self.graph.items()})
-        self.assertEqual(self.graph[fresh.FINAL_TARGET].down_revision, ("0041_location_geography",))
+        self.assertEqual(self.graph[fresh.FINAL_TARGET].down_revision, ("0044_purchase_received",))
         self.assertEqual(
             json.loads((ROOT / "scripts/release-authorization-policy.json").read_text())["final_target"],
             fresh.FINAL_TARGET)
 
     def test_existing_0041_upgrade_stays_blocked_and_executes_nothing(self):
-        self.assertEqual(self.policy[fresh.FINAL_TARGET], "operator_only")
+        # Keep the historical rate conversion case pinned to its own target.
+        target = "0042_rate_hundredths"
+        self.assertEqual(self.policy[target], "operator_only")
+        historical_graph = {r: self.graph[r] for r in runner.ordered_ancestors(self.graph, target)}
+        historical_policy = {r: self.policy[r] for r in historical_graph}
         # Reclassifying the revision is not a safe shortcut: its locks, rewrites
         # and type/constraint replacements are outside the automatic DDL allowlist.
         with self.assertRaises(runner.PolicyError):
-            runner.validate_additive(BACKEND, [fresh.FINAL_TARGET])
+            runner.validate_additive(BACKEND, [target])
         with patch.object(runner, "applied_revisions", return_value=["0041_location_geography"]), \
                 patch.object(runner.subprocess, "run") as execute:
-            result = runner.execute_plan(object(), self.graph, self.policy, BACKEND,
-                                         fresh.FINAL_TARGET, True)
+            result = runner.execute_plan(object(), historical_graph, historical_policy, BACKEND,
+                                         target, True)
         self.assertEqual(result["result"], "OPERATOR_MIGRATION_REQUIRED")
-        self.assertEqual(result["operator_only"], [fresh.FINAL_TARGET])
+        self.assertEqual(result["operator_only"], [target])
         self.assertEqual(result["migrations_applied"], 0)
         execute.assert_not_called()
         self.assertEqual(runner.plan(self.graph, self.policy, [fresh.FINAL_TARGET],
                                      fresh.FINAL_TARGET)["result"], "READY")
+
+    def test_current_protected_path_stays_blocked_and_executes_nothing(self):
+        protected = ["0043_email_templates", "0044_purchase_received", "0045_pr_batch_numbers"]
+        for revision in protected:
+            self.assertEqual(self.policy[revision], "operator_only")
+        with patch.object(runner, "applied_revisions", return_value=["0042_rate_hundredths"]), \
+                patch.object(runner.subprocess, "run") as execute:
+            result = runner.execute_plan(object(), self.graph, self.policy, BACKEND,
+                                         fresh.FINAL_TARGET, True)
+        self.assertEqual(result["result"], "OPERATOR_MIGRATION_REQUIRED")
+        self.assertEqual(result["operator_only"], protected)
+        self.assertEqual(result["migrations_applied"], 0)
+        execute.assert_not_called()
 
     def test_catalog_extends_0040_without_changing_predecessor_tables(self):
         self.assertEqual(self.stage["base_revision"], "0040_po_tax_basis")
@@ -102,19 +119,29 @@ class FreshInstallAlignmentTests(unittest.TestCase):
 
     def test_new_revision_is_included_in_exact_source_hash_review(self):
         # The source review includes the original downgrade guard as well.
-        path = BACKEND / "alembic/versions/0042_rate_hundredths.py"
+        path = BACKEND / "alembic/versions/0045_pr_batch_numbers.py"
         review = json.loads((ROOT / "scripts/fresh-install-review.json").read_text())
         self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),
                          review["revisions"][fresh.FINAL_TARGET])
 
     def test_rate_catalog_is_a_full_snapshot_not_an_additive_exception(self):
-        stage = self.catalog[fresh.FINAL_TARGET]
+        stage = self.catalog["0042_rate_hundredths"]
         self.assertEqual(set(stage), {"sha256", "tables"})
         self.assertRegex(stage["sha256"], r"^[0-9a-f]{64}$")
         self.assertNotEqual(stage["sha256"], self.catalog["0037_domain_admission"]["sha256"])
         self.assertEqual(stage["tables"], self.stage["tables"])
         self.assertEqual(self.policy["0041_location_geography"], "operator_only")
         self.assertEqual(self.policy[fresh.FINAL_TARGET], "operator_only")
+
+    def test_current_catalog_is_a_full_snapshot_with_receipt_and_batch_tables(self):
+        stage = self.catalog[fresh.FINAL_TARGET]
+        self.assertEqual(set(stage), {"sha256", "tables"})
+        self.assertRegex(stage["sha256"], r"^[0-9a-f]{64}$")
+        self.assertNotEqual(stage["sha256"], self.catalog["0042_rate_hundredths"]["sha256"])
+        self.assertEqual(set(stage["tables"]) - set(self.catalog["0042_rate_hundredths"]["tables"]),
+                         {"email_templates", "purchase_receipts", "purchase_receipt_sources",
+                          "purchase_receipt_history", "purchase_receipt_requests",
+                          "pr_batch_settings", "pr_batch_counters", "pr_batch_allocations"})
 
 
 if __name__ == "__main__":

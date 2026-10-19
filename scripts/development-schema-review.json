@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "target": "0044_purchase_received",
+  "target": "0045_pr_batch_numbers",
   "policy_sha256": "55372bfed15f1dac861f1fab4d68dfd19571f6e0381a16db901e38ec1dccf688",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",

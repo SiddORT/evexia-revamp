@@ -1,3 +1,19 @@
+# Current source-review candidate and evidence boundary
+
+The selected source candidate is `0045_pr_batch_numbers`; authorization policy,
+application/development revision and the reviewed migration manifest now name
+that same boundary. Existing operator-only migration classifications and all
+signed recovery/approval requirements are unchanged.
+
+The new catalog expectation comes from separately authorized disposable
+PostgreSQL 17.5 collection, reproduced in two independently initialized
+clusters. See `scripts/fresh-install-catalog-provenance.json` and
+[the CI metadata repair handoff](ci-schema-metadata-repair.md) for source and
+observation hashes, both original job URLs and remaining validation handoff.
+No test suite, schema checker, Docker harness, CI run, push or deployment was
+executed for this repair. Catalog observations are not release-validation
+receipts or permission to migrate an existing database.
+
 # Release authorization: automatic safe cases, protected existing databases
 
 **Current default:** see [installation and automatic patches](installation.md).

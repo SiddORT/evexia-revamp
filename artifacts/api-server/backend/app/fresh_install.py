@@ -135,6 +135,10 @@ def catalog(connection, revision):
         if connection.execute(text(
                 "SELECT last_value,is_called FROM purchase_order_number_seq")).one() != (1, False):
             raise FreshInstallBlocked("Purchase Order sequence is not unused; operator review required.")
+    if "purchase_receipts" in expected["tables"]:
+        if connection.execute(text(
+                "SELECT last_value,is_called FROM purchase_receipt_number_seq")).one() != (1, False):
+            raise FreshInstallBlocked("Purchase Receipt sequence is not unused; operator review required.")
     return set(expected["tables"])
 
 
@@ -256,11 +260,10 @@ def finalize(connection, settings, hostname=None):
     connection.execute(text("LOCK TABLE " + ", ".join('public.' + quote(t) for t in sorted(expected)) +
                             " IN ACCESS EXCLUSIVE MODE NOWAIT"))
     catalog(connection, revisions[0])
-    if "communication_channels" in expected:
-        communication_channels(connection)
+    migration_owned = migration_owned_tables(connection, expected)
     for table in tables:
-        if table == "communication_channels":
-            continue  # Only the exact migration-owned constants verified above.
+        if table in migration_owned:
+            continue  # Only exact migration-owned constants verified under locks.
         if connection.scalar(text(f"SELECT EXISTS(SELECT 1 FROM public.{quote(table)})")):
             raise FreshInstallBlocked("Installation already contains records; no accounts or credentials changed.")
     if revisions in predecessors:
@@ -271,7 +274,7 @@ def finalize(connection, settings, hostname=None):
     if connection.execute(text("SELECT version_num FROM alembic_version")).scalars().all() != [FINAL_TARGET]:
         raise FreshInstallBlocked("Unexpected final revision; transaction rolled back.")
     catalog(connection, FINAL_TARGET)
-    communication_channels(connection)
+    migration_owned_tables(connection, expected | set(stages[FINAL_TARGET]["tables"]))
     with Session(bind=connection) as db:
         result = bootstrap_super_admin(db, settings.super_admin_initial_password)
         if hostname is not None:
@@ -298,13 +301,45 @@ def communication_channels(connection):
         raise FreshInstallBlocked("Communication channel state is not pristine; operator review required.")
 
 
+def migration_owned_tables(connection, tables):
+    """Verify every seed field and row count; never exempt arbitrary table data."""
+    verified = set()
+    if "communication_channels" in tables:
+        communication_channels(connection)
+        verified.add("communication_channels")
+    if "email_templates" in tables:
+        # The original migration source is hash-bound by reviewed_graph().
+        # Use its frozen seed, never the mutable runtime template or ORM defaults.
+        from alembic.script import ScriptDirectory
+        script = ScriptDirectory.from_config(alembic_config(connection))
+        seed = script.get_revision("0043_email_templates").module.SEED
+        rows = [dict(row) for row in connection.execute(text("""
+            SELECT id::text AS id, name, description, subject, html, text,
+                   version, event_key, provenance, created_by, updated_by,
+                   created_at = updated_at AS timestamps_unchanged
+            FROM email_templates LIMIT 2
+        """)).mappings()]
+        if rows != [{**seed, "version": 1, "event_key": "password_recovery",
+                     "provenance": "migration_seed", "created_by": None,
+                     "updated_by": None, "timestamps_unchanged": True}]:
+            raise FreshInstallBlocked("Recovery email template is not pristine; operator review required.")
+        verified.add("email_templates")
+    if "pr_batch_settings" in tables:
+        if connection.execute(text(
+                "SELECT id, version, payload_ciphertext FROM pr_batch_settings"
+        )).all() != [(1, 1, None)]:
+            raise FreshInstallBlocked("Batch settings are not pristine; operator review required.")
+        verified.add("pr_batch_settings")
+    return verified
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=("prepare", "finalize"))
     parser.add_argument("--approve-fresh-install", action="store_true",
                         help="Approve reviewed history only through 0031_role_hostnames on a proven pristine DB.")
     parser.add_argument("--approve-bootstrap", action="store_true",
-                        help="Approve empty-only finalization through 0039 and atomic protected bootstrap.")
+                        help=f"Approve empty-only finalization through {FINAL_TARGET} and atomic protected bootstrap.")
     parser.add_argument("--writers-stopped", action="store_true")
     approval = parser.add_mutually_exclusive_group(required=True)
     approval.add_argument("--approve-release",

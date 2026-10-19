@@ -5,7 +5,7 @@
   "existing_database": "operator_approval_for_protected_revisions_and_bootstrap",
   "prepare_target": "0031_role_hostnames",
   "retirement_cap": "0034_shared_phone_countries",
-  "final_target": "0043_email_templates",
+  "final_target": "0045_pr_batch_numbers",
   "validation_commands": [
     [
       "pnpm",

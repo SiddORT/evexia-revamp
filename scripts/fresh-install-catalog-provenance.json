@@ -1,0 +1,34 @@
+{
+  "format": 1,
+  "target": "0045_pr_batch_numbers",
+  "evidence_kind": "reproduced_disposable_postgresql_catalog_observation",
+  "source_commit": "fcc60aed0e00b5b5879c4e864bf0481d8de3db3d",
+  "postgresql_version": "17.5",
+  "catalog_sha256": "46b994805bc60ecbbb149144b6ea63a0c7e6c25ab89cd23680b42cd135c671e8",
+  "public_table_count": 46,
+  "collector_sha256": "a8e5790fa0aa540b657cf34f75f11c3dbb6e70f867362e3f45c794c3d89d6b66",
+  "source_inventory_sha256": "eebfb351c7e24a216f20cd2b3940d2eab1185564b7a080797c91be12b0f5743a",
+  "observations": {
+    "first": {
+      "observed_at": "2026-10-19T05:41:35.984014+00:00",
+      "system_identifier": "7698249948948136253",
+      "file_sha256": "cbbec95a1389d67058fba2c1989ad37061790a017b40b76890c63f8f6c5e9b30"
+    },
+    "independent": {
+      "observed_at": "2026-10-19T05:41:41.909715+00:00",
+      "system_identifier": "7698249974317089116",
+      "file_sha256": "f43346fe596b7b9dc6dde3be9177e0ac5296f6475cb6bf0c86a4dc1e6df128ee"
+    }
+  },
+  "source_bindings": {
+    "artifacts/api-server/backend/alembic/env.py": "53ebac96cb7e80536bb993f17652dfc65a3e5c68b9efbcecc343571fd544e354",
+    "artifacts/api-server/backend/app/initialize_database.py": "7fc60a86e189cfe2f65dece45856f2f6353c4c212500347446b2e190adb95325",
+    "artifacts/api-server/backend/app/services/fresh_catalog.py": "25c32d43095de45f5f927d0587de6df93f2a9b8b3b61ea795e99295cad1e3747",
+    "artifacts/api-server/backend/alembic/versions/0043_email_templates.py": "68d4b9e98bfb2a61f631840403e4de00b36634b9a0a9582528e67a4e980d034e",
+    "artifacts/api-server/backend/alembic/versions/0044_purchase_received.py": "e269aec87496d6720dc8537d9c2bc602df58742105b8d4fcdb3195b57bc7a467",
+    "artifacts/api-server/backend/alembic/versions/0045_pr_batch_numbers.py": "bcdf222f4ef8f60e9c01bb3f37558fd75fe331e828f17398bdaae1681d4923ef"
+  },
+  "scope": "Two separately initialized private Unix-socket clusters; no inherited credentials, network listeners, existing databases, bootstrap or installer finalization. Original migrations and the unchanged initializer empty-retirement function produced both observations. All historical migration bytes remain unchanged. The two complete projections match; the observed 0042 baseline matches its unchanged historical digest.",
+  "evidence_reference": "generated-artifacts/ci-schema-catalog-0045/0045-catalog-evidence.zip",
+  "limitations": "Catalog observation only. Not a passing test, successful fresh installation, restoration rehearsal, signed release evidence, protected-migration approval or CI success. The same operator collected both independent-cluster observations; no separate human reviewer attestation is claimed."
+}

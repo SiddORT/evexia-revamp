@@ -224,6 +224,17 @@ Supported sequence:
 | Empty PO stage | 0038_purchase_orders | 36 | present |
 | Empty finalization + bootstrap | 0041_location_geography | 38 | present |
 
+The current reviewed source candidate is `0045_pr_batch_numbers`. Its full
+PostgreSQL 17.5 catalog was reproduced on two independently initialized
+disposable clusters; provenance and limits are recorded in
+`scripts/fresh-install-catalog-provenance.json` and
+[the CI metadata repair handoff](ci-schema-metadata-repair.md).
+This catalog collection is not a passing installation, restoration, test or
+CI result. The old stage table above is historical, not the current target.
+At 0045, exact original recovery-template and batch-settings seed rows are
+verified rather than treated as user records; any edits or extra rows block.
+Both PO and receipt number sequences must be unused.
+
 `scripts/fresh-install-catalog.json` contains frozen PostgreSQL **17** projections
 for every supported 0034–0041 finalization start. These are not derived from the
 current ORM. They bind relations, columns/defaults, constraints, indexes,
