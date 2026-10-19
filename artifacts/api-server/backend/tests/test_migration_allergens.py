@@ -38,7 +38,7 @@ def setup_refs(engine, actor_id):
 
 
 def fields(c, l, name="Reagent"):
-    return AllergenFields(name=name, category_id=c, storage_location_id=l, selling_price="999999999999.999999",
+    return AllergenFields(name=name, category_id=c, storage_location_id=l, selling_price="999999999999.99",
                           gst="0", concentration="1:10", threshold_limit=None, mix=True, status="active")
 
 

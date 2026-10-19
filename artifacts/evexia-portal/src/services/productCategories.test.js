@@ -18,7 +18,7 @@ test.beforeEach(() => {
   window.localStorage.setItem(CATEGORY_STORAGE_KEY, '[]');
 });
 
-test('first load saves distinct valid samples once and refresh keeps the same records', () => {
+test('first load returns distinct valid samples without writing and refresh is stable', () => {
   window.localStorage = storage();
   const samples = loadCategories();
   assert.ok(samples.length >= 3);
@@ -28,7 +28,7 @@ test('first load saves distinct valid samples once and refresh keeps the same re
     !Number.isNaN(Date.parse(createdAt)) && createdAt === updatedAt && createdBy && updatedBy));
   assert.deepEqual(new Set(samples.map(({ status }) => status)), new Set(['active', 'inactive']));
   const saved = window.localStorage.getItem(CATEGORY_STORAGE_KEY);
-  assert.deepEqual(JSON.parse(saved), samples);
+  assert.equal(saved, null);
   assert.deepEqual(loadCategories(), samples);
   assert.equal(window.localStorage.getItem(CATEGORY_STORAGE_KEY), saved);
 });
@@ -52,7 +52,7 @@ test('samples can be edited, filtered by status, exported and imported alongside
   assert.deepEqual(exported.map(({ fields }) => fields.name), inactive.map(({ name }) => name));
   const edited = updateCategory(samples, samples[0].id, { ...category(samples[0].name, '99'), description: 'Edited example' });
   assert.equal(edited[0].createdAt, samples[0].createdAt);
-  assert.equal(edited[0].unitPrice, 99);
+  assert.equal(edited[0].unitPrice, '99.00');
   const toggled = setCategoryStatus(edited, samples[0].id, 'inactive');
   assert.equal(toggled[0].status, 'inactive');
   const entries = reviewCategoryCSV('Product Category Name,Description,Unit Price,Status\nAdded example,Imported,12,active\n', toggled);
@@ -65,7 +65,7 @@ test('samples can be edited, filtered by status, exported and imported alongside
   assert.match(duplicate[0].errors.join(' '), /already exists/);
 });
 
-test('seeding does not overwrite a collection saved between reads', () => {
+test('a read-only sample snapshot cannot overwrite a collection saved by another tab', () => {
   let reads = 0;
   const replacement = storage();
   replacement.setItem(CATEGORY_STORAGE_KEY, '[]');
@@ -73,12 +73,17 @@ test('seeding does not overwrite a collection saved between reads', () => {
     getItem(key) { return ++reads === 1 ? null : replacement.getItem(key); },
     setItem() { assert.fail('Must not overwrite the other tab'); },
   };
+  const samples = loadCategories();
+  assert.ok(samples.length >= 3);
+  assert.throws(() => createCategory(samples, category('New')), /changed in another tab/);
   assert.deepEqual(loadCategories(), []);
 });
 
-test('failed first-time sample writes and unavailable storage surface errors', () => {
+test('read-only samples need no write access; explicit writes and unavailable storage surface errors', () => {
   window.localStorage = { getItem: () => null, setItem: () => { throw new Error('quota'); } };
-  assert.throws(() => loadCategories(), /Sample product categories could not be saved/);
+  const samples = loadCategories();
+  assert.ok(samples.length >= 3);
+  assert.throws(() => createCategory(samples, category('New')), /could not be saved/);
   window.localStorage = { getItem() { throw new Error('blocked'); } };
   assert.throws(() => loadCategories(), /unavailable/);
 });
@@ -94,7 +99,7 @@ test('create, edit and status changes preserve created audit while updating the 
   assert.equal(edited[0].createdAt, created[0].createdAt);
   assert.equal(edited[0].createdBy, created[0].createdBy);
   assert.notEqual(edited[0].updatedAt, created[0].updatedAt);
-  assert.equal(edited[0].unitPrice, 0);
+  assert.equal(edited[0].unitPrice, '0.00');
   const inactive = setCategoryStatus(edited, created[0].id, 'inactive');
   assert.equal(inactive[0].status, 'inactive');
   assert.equal(inactive[0].updatedBy, 'Admin User');
@@ -140,7 +145,8 @@ test('valid batch commits together with audit details; a failed storage write co
   assert.ok(entries.every((entry) => entry.errors.length === 0));
   const saved = importCategories(entries, []);
   assert.equal(saved.length, 2);
-  assert.equal(saved[1].unitPrice, 1e-7);
+  assert.equal(saved[0].unitPrice, '0.00');
+  assert.equal(saved[1].unitPrice, '0.00');
   assert.equal(saved[0].createdAt, saved[1].createdAt);
   assert.equal(saved[0].updatedBy, 'Admin User');
   assert.deepEqual(reviewCategoryCSV(exportCategoryCSV(saved), []).map((entry) => entry.errors), [[], []]);

@@ -37,7 +37,10 @@ class LocalReleaseChecksTest(unittest.TestCase):
     def test_preview_partition_is_an_exact_disjoint_cover(self):
         original = checks.default_specs()
         groups = checks.preview_groups(original)
-        self.assertEqual(len(original), 42)
+        # New preview specs expand the inventory without changing the partition
+        # contract: every discovered spec must occur exactly once.
+        self.assertTrue(original)
+        self.assertEqual(len(original), len(set(original)))
         self.assertEqual(sorted(original), sorted(s for group in groups for s in group))
         for group in groups:
             if len(group) > 1:

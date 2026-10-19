@@ -254,7 +254,8 @@ def export(db, actor, query="", status="all", zone_id="", mr_id="", state="", fo
             mr = db.get(MRDirectory, row.mrId)
             profile = db.get(MRProfile, row.mrId)
             # Explicit durable server reference, not a potentially ambiguous display label.
-            values["mrId"] = "user:" + db.get(User, profile.user_id).username if mr and not mr.deleted_at and profile else str(row.mrId)
+            account = db.get(User, profile.user_id) if mr and not mr.deleted_at and profile else None
+            values["mrId"] = "user:" + account.username if account and account.username else str(row.mrId)
             values["dialCode"] = DIAL[row.dialCountry]
             for key in ("orderDiscount", "paymentLimit"):
                 values[key] = display_rate(values[key])

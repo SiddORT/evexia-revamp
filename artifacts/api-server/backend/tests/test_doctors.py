@@ -96,7 +96,7 @@ def test_all_fields_audit_persist_and_version_conflict(client):
     {"contactRequirement": "required", "phone": ""}, {"alternatePhone": "123"}, {"dialCountry": "ZZ"},
     {"email": "bad"}, {"dateOfJoining": "2099-01-01"}, {"dateOfJoining": "2020-02-30"},
     {"invoiceType": "gst", "gstNumber": ""}, {"gstNumber": "bad"},
-    {"orderDiscount": "100.01"}, {"orderDiscount": "1.001"}, {"paymentLimit": "1e3"},
+    {"orderDiscount": "100.01"}, {"orderDiscount": "1.0000001"}, {"paymentLimit": "1e3"},
     {"paymentLimit": "12345678901234.00"}, {"paymentLimit": "-1"},
     {"paymentLimit": 9999999999999.991}, {"paymentLimit": True}, {"daysLimit": 1.2},
     {"daysLimit": True}, {"daysLimit": 2147483648}, {"pincode": "ABC"},

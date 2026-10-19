@@ -96,7 +96,9 @@ def test_populated_previous_schema_preservation_generated_values_and_safe_refusa
     with engine.connect() as connection:
         installed_head = connection.scalar(text("SELECT version_num FROM alembic_version"))
         assert installed_head == ScriptDirectory.from_config(config).get_current_head()
-    with pytest.raises(RuntimeError, match="Populated privacy downgrade refused"):
+    # The later forward-only template migration must refuse before an older
+    # privacy downgrade is reached; no migration-owned template may be erased.
+    with pytest.raises(RuntimeError, match="Email template removal requires an approved coordinated restore"):
         command.downgrade(config, "0025_vendor_phone")
     with engine.connect() as connection:
         assert connection.scalar(text("SELECT version_num FROM alembic_version")) == installed_head

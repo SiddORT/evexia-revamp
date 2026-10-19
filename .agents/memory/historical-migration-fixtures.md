@@ -64,3 +64,15 @@ instead of the intended historical schema and make a rehearsal appear valid.
 **How to apply:** Preserve namespace options when cloning test connections;
 escape URL percent signs for Alembic ConfigParser. Keep the historical source
 unchanged for its recovery tests rather than weakening later forward-only guards.
+
+Service-test isolation must preserve protected migration-owned seeds. Prefer an
+outer rollback transaction with savepoint-backed sessions over cascading
+truncation when tests need to call commit.
+
+**Why:** A cascade from identity cleanup can attempt to delete protected recovery
+templates. Disabling the protection to clean up a fixture would hide a real
+production invariant.
+
+**How to apply:** Keep seed rows installed by migrations and roll back test-owned
+changes. Tests that genuinely require independent committed transactions should
+use a separate disposable database instead.

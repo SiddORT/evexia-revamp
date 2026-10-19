@@ -2,6 +2,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 import threading
+import re
 import uuid
 
 import jwt
@@ -22,6 +23,13 @@ HEADERS = {"Origin": "http://testserver"}
 NEW = "new fictional password 12345"
 
 
+def rendered_token(message):
+    """Delivery receives rendered source; assertions still exercise real tokens."""
+    match = re.search(r"#token=([A-Za-z0-9._-]+)", message.text)
+    assert match, "Rendered recovery message must contain its reset link"
+    return match.group(1)
+
+
 @pytest.fixture
 def configured(client, monkeypatch):
     api, db, settings = client
@@ -31,7 +39,7 @@ def configured(client, monkeypatch):
     })
     app.dependency_overrides[get_settings] = lambda: settings
     sent = []
-    monkeypatch.setattr(recovery_mail, "send", lambda _settings, email, token: sent.append((email, token)))
+    monkeypatch.setattr(recovery_mail, "send", lambda _settings, email, message: sent.append((email, rendered_token(message))))
     return api, db, settings, sent
 
 
@@ -272,9 +280,12 @@ def test_successful_password_change_invalidates_recovery_link(configured):
 def test_concurrent_reset_exactly_one_winner(monkeypatch):
     factory = session_factory()
     assert factory.kw["bind"].url.query["host"].startswith("/tmp/evexia-api-test.")
-    settings = get_settings()
+    settings = get_settings().model_copy(update={
+        "password_recovery_url": "https://portal.example.com/reset-password",
+        "smtp_host": "smtp.example.com", "smtp_from": "support@example.com",
+    })
     sent = []
-    monkeypatch.setattr(recovery_mail, "send", lambda _s, _e, token: sent.append(token))
+    monkeypatch.setattr(recovery_mail, "send", lambda _s, _e, message: sent.append(rendered_token(message)))
     key = "concurrent-" + uuid.uuid4().hex[:12]
     with factory() as db:
         user, _ = create_user(db, key + "@example.com")
@@ -355,14 +366,17 @@ def test_smtp_requires_verified_tls_before_credentials(configured, monkeypatch, 
             events.append("tls")
         def login(self, *args): events.append("login")
         def send_message(self, message):
-            assert "#token=synthetic-token" in message.get_content()
-            assert "15 minutes" in message.get_content()
+            assert "#token=synthetic-token" in message.get_body(preferencelist=("plain",)).get_content()
+            assert "15 minutes" in message.get_body(preferencelist=("plain",)).get_content()
             events.append("send")
     monkeypatch.setattr(recovery_mail.smtplib, "SMTP_SSL" if implicit else "SMTP", SMTP)
     # Bypass the fixture's application delivery stub, not transport validation.
     from importlib import reload
     mail = reload(recovery_mail)
     monkeypatch.setattr(mail.smtplib, "SMTP_SSL" if implicit else "SMTP", SMTP)
-    mail.send(settings, "person@example.com", "synthetic-token")
+    from app.services.email_rendering import RenderedEmail
+    mail.send(settings, "person@example.com", RenderedEmail(
+        "Reset password", "https://portal.example.com/reset-password#token=synthetic-token expires in 15 minutes",
+        "<p>https://portal.example.com/reset-password#token=synthetic-token</p>"))
     assert events == (["connect", "login", "send"] if implicit
                       else ["connect", "ehlo", "tls", "ehlo", "login", "send"])

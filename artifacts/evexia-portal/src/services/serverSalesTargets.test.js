@@ -9,7 +9,7 @@ test('sales target amounts are exact BigInt values', () => {
   assert.equal(parseCents('-1'), null);
   assert.equal(formatAmount('999999999999.99'), '₹9,99,99,99,99,999.99');
   assert.equal(formatAmount('invalid'), '—');
-  assert.equal(formatCents(sumDraft({ q1: '0.10', q2: '0.20', q3: '0', q4: '0' })), '₹0.3');
+  assert.equal(formatCents(sumDraft({ q1: '0.10', q2: '0.20', q3: '0', q4: '0' })), '₹0.30');
   assert.deepEqual(targetDraftErrors({ mrId: 'a', startYear: '2025', endYear: '2026', q1: '1', q2: '2', q3: '3', q4: '4.5', status: 'active' }), {});
   assert.ok(targetDraftErrors({ mrId: 'a', startYear: '2025', endYear: '2027', q1: '1', q2: '2', q3: '3', q4: '4', status: 'active' }).endYear);
 });

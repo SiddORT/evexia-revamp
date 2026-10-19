@@ -21,6 +21,8 @@ export APP_ENV=test
 # distinct synthetic key in this disposable fixture, never an ambient live key.
 export COMMUNICATION_ENCRYPTION_KEYS='{"primary":"RkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkY="}'
 export COMMUNICATION_ENCRYPTION_KEY_ID=primary
+export PR_ENCRYPTION_KEYS='{"primary":"R0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0c="}'
+export PR_ENCRYPTION_KEY_ID=primary
 export PORTAL_BOOTSTRAP_HOSTS= TRUSTED_PROXY_PEERS=
 export STAFF_ENCRYPTION_KEYS='{"primary":"QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE="}'
 export STAFF_ENCRYPTION_KEY_ID=primary

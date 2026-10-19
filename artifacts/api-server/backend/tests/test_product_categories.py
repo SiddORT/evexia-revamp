@@ -93,7 +93,7 @@ def test_exact_prices(client, price, expected):
     assert db.get(ProductCategory, uuid.UUID(row["id"])).unit_price == Decimal(expected)
 
 
-@pytest.mark.parametrize("price", ["-1", "-0", "NaN", "Infinity", "1e2", "1.0000000", "1000000000000", "999999999999.999999", "", "1,000", "0.0000001", 125.5, 0, True, None])
+@pytest.mark.parametrize("price", ["-1", "-0", "NaN", "Infinity", "1e2", "1.0000000", "1000000000000", "999999999999.999999", "999999999999.995", "", "1,000", "0.0000001", 125.5, 0, True, None])
 def test_price_rejection_without_rounding(client, price):
     api, db, _ = client
     headers, _ = admin_headers(api, db)
@@ -240,10 +240,11 @@ def test_numeric_workbook_prices_use_original_xml_not_binary_floats():
     data = workbook([transfer.HEADERS[:4], ["Numeric", "", 125.5, "active"]])
     assert transfer.parse(data, "numeric.xlsx")[0]["unit_price"] == "125.50"
     for lexeme, expected in [("999999999999.994999", "999999999999.99"),
-                             ("1e-06", "0.00"), ("125.500001", "125.50"), ("1.005", "1.01")]:
+                             ("1e-06", "0.00"), ("125.500001", "125.50"), ("1.005", "1.01"),
+                             ("125.505001", "125.51")]:
         changed = replace_zip(data, "xl/worksheets/sheet1.xml", lambda content: content.replace(b"<v>125.5</v>", f"<v>{lexeme}</v>".encode()))
         assert transfer.parse(changed, "numeric.xlsx")[0]["unit_price"] == expected
-    for lexeme in ("125.5000001", "1000000000000", "999999999999.999999", "-1", "NaN"):
+    for lexeme in ("125.5000001", "1000000000000", "999999999999.999999", "999999999999.995", "-1", "NaN"):
         changed = replace_zip(data, "xl/worksheets/sheet1.xml", lambda content: content.replace(b"<v>125.5</v>", f"<v>{lexeme}</v>".encode()))
         try:
             assert transfer.parse(changed, "numeric.xlsx")[0]["errors"]

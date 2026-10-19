@@ -12,8 +12,6 @@ requested through its generated asset URL as JavaScript. The build succeeded
 but opening the license returned an error and could trigger the development
 error overlay.
 
-**How to apply:** A raw-text import exposed through a lifecycle-managed Blob URL
-with a plain-text content type avoids that ambiguity without depending on an
-external license host. Check Blob resources in the page's browser context and
-verify a real link opens the readable license; server-side HTTP clients cannot
-resolve browser-owned Blob URLs.
+**How to apply:** Verify the actual user-facing navigation, not just bundling
+or link presence. Browser-owned resources must be checked in their browser
+context; a server-side HTTP client cannot prove that they open correctly.

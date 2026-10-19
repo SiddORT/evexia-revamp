@@ -57,7 +57,7 @@ def commit(api, headers, data, digest, filename="allergens.csv"):
 
 
 def data(c, l, name="Import reagent", legacy=False, mix="Mix"):
-    cells = [name, c["name"], "999999999999.999999", "100.000000", l["name"], "10 mg/mL", "0", "inactive", mix]
+    cells = [name, c["name"], "999999999999.99", "100.000000", l["name"], "10 mg/mL", "0", "inactive", mix]
     if legacy:
         cells.insert(7, "HSN deliberately discarded")
         cells[-1] = "Allergens" if mix == "Mix" else "No Mix"
@@ -70,14 +70,14 @@ def test_crud_versions_audit_and_soft_deletion(client):
     c, l = references(api, headers)
     assert api.get(BASE, headers=headers).json()["total"] == 0
     row = add(api, headers, c, l, name="  Diagnostic   reagent ", selling_price="0", mix=True)
-    assert row["mix"] is True and row["selling_price"] == "0.000000" and row["threshold_limit"] is None
+    assert row["mix"] is True and row["selling_price"] == "0.00" and row["threshold_limit"] is None
     assert row["name"] == "Diagnostic reagent"
     assert row["createdBy"] == row["updatedBy"] == "Super Admin"
     assert row["createdAt"] == row["updatedAt"]
     assert api.get(BASE + "/" + row["id"], headers=headers).json() == row
     assert api.post(BASE, headers=headers, json=fields(c, l, name="DIAGNOSTIC reagent")).status_code == 409
     edited = api.post(f"{BASE}/{row['id']}/edit", headers=headers, json={
-        **fields(c, l, name="Changed", mix=False, selling_price="999999999999.999999"), "expected_version": 1})
+        **fields(c, l, name="Changed", mix=False, selling_price="999999999999.99"), "expected_version": 1})
     assert edited.status_code == 200, edited.text
     changed = edited.json()
     assert changed["mix"] is False and changed["version"] == 2
@@ -152,11 +152,11 @@ def test_all_combinable_filters_literal_search_pagination_null_vs_zero(client):
     api, db, _ = client
     headers, _ = admin_headers(api, db)
     c, l = references(api, headers)
-    for index, price in enumerate((None, "0", "0.000001", "999999999999.999999")):
+    for index, price in enumerate((None, "0", "0.01", "999999999999.99")):
         add(api, headers, c, l, name=f"Product {index}", selling_price=price, mix=index % 2 == 1)
     add(api, headers, c, l, name="Inactive", status="inactive", mix=True, concentration="Unique concentrate")
     params = {"query": "%", "status": "active", "category_id": c["id"], "storage_location_id": l["id"],
-              "mix": "mix", "min_price": "0", "max_price": "999999999999.999999", "limit": 1}
+              "mix": "mix", "min_price": "0", "max_price": "999999999999.99", "limit": 1}
     result = api.get(BASE, headers=headers, params=params).json()
     assert result["total"] == 5 and result["filtered"] == 2 and len(result["items"]) == 1
     other = api.get(BASE, headers=headers, params={**params, "offset": 1}).json()
@@ -180,7 +180,7 @@ def test_exact_full_field_export_reimport_and_durable_downloads(client, fmt, mix
     api, db, _ = client
     headers, _ = admin_headers(api, db)
     c, l = references(api, headers)
-    row = add(api, headers, c, l, name="=SUM(1,2)", selling_price="999999999999.999999",
+    row = add(api, headers, c, l, name="=SUM(1,2)", selling_price="999999999999.99",
               gst="99.123456", threshold_limit="0.000001", concentration="'quoted", mix=mix)
     initiation = str(uuid.uuid4())
     extra = {**headers, "X-Download-Initiation": initiation}
@@ -194,12 +194,12 @@ def test_exact_full_field_export_reimport_and_durable_downloads(client, fmt, mix
     db.expire_all()
     assert db.scalar(select(func.count()).select_from(DownloadLog).where(DownloadLog.source == "allergen")) == 1
     parsed = transfer.parse(exported.content, f"backup.{fmt}")[0]
-    assert not parsed["errors"] and parsed["selling_price"] == "999999999999.999999"
+    assert not parsed["errors"] and parsed["selling_price"] == "999999999999.99"
     assert parsed["concentration"] == "'quoted" and parsed["mix"] == ("Mix" if mix else "No Mix")
     if fmt == "xlsx":
         book = load_workbook(io.BytesIO(exported.content), data_only=False)
         assert book.active["C2"].data_type == "s" and book.active["A2"].data_type == "s"
-        assert book.active["C2"].value == "999999999999.999999"
+        assert book.active["C2"].value == "999999999999.99"
         book.close()
     report = review(api, headers, exported.content, f"backup.{fmt}").json()
     assert not report["valid"]
@@ -351,7 +351,7 @@ def test_original_numeric_workbook_lexemes_and_legacy_apostrophes(client):
                 root = ElementTree.fromstring(payload)
                 for cell in root.iter():
                     coordinate = cell.attrib.get("r")
-                    lexemes = {"C2": "9.99999999999999999E11", "D2": "9.9123456E1", "G2": "1E-6"}
+                    lexemes = {"C2": "9.99999999999994999E11", "D2": "9.9123456E1", "G2": "1E-6"}
                     if coordinate in lexemes:
                         cell.attrib["t"] = "n"
                         for child in list(cell):
@@ -360,7 +360,7 @@ def test_original_numeric_workbook_lexemes_and_legacy_apostrophes(client):
                 payload = ElementTree.tostring(root)
             target.writestr(entry, payload)
     parsed = transfer.parse(output.getvalue(), "numeric.xlsx")[0]
-    assert parsed["selling_price"] == "999999999999.999999" and parsed["gst"] == "99.123456" and parsed["threshold_limit"] == "0.000001"
+    assert parsed["selling_price"] == "999999999999.99" and parsed["gst"] == "99.12" and parsed["threshold_limit"] == "0.000001"
     report = review(api, headers, output.getvalue(), "numeric.xlsx").json()
     assert report["valid"]
     assert commit(api, headers, output.getvalue(), report["digest"], "numeric.xlsx").status_code == 200

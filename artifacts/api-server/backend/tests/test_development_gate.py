@@ -137,6 +137,8 @@ def test_actual_managed_startup_without_preflight_and_security_failure(developme
     files = set(review["release_sources"]) | {
         "scripts/fresh-install-review.json", "scripts/fresh-install-catalog.json",
         "scripts/migration-policy.json", "scripts/development-preflight.sh",
+        "scripts/review-development-schema.py", "scripts/development-sync.py",
+        "scripts/deploy-migrations.py", "development-contract.json",
         "pyproject.toml", "uv.lock", "artifacts/api-server/backend/alembic.ini"}
     for name in files:
         destination = root / name
@@ -155,6 +157,10 @@ def test_actual_managed_startup_without_preflight_and_security_failure(developme
                    "database": info.dbname, "cluster": cluster, "oid": oid}
     (root / "scripts/development-database.json").write_text(json.dumps(binding))
     subprocess.run([sys.executable, "-B", str(root / "scripts/review-schema-release.py"), "--refresh"],
+                   check=True, stdout=subprocess.DEVNULL)
+    # The clone uses a newly bound disposable database. Review its exact
+    # development execution sources instead of borrowing the workspace binding.
+    subprocess.run([sys.executable, "-B", str(root / "scripts/review-development-schema.py"), "--refresh"],
                    check=True, stdout=subprocess.DEVNULL)
     with socket.socket() as reservation:
         reservation.bind(("127.0.0.1", 0))

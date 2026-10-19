@@ -3,17 +3,17 @@ import test from 'node:test';
 import { validCategoryPrice, validateProductCategory } from './productCategoryValidation.js';
 
 test('exact plain category price validation never uses binary floats', () => {
-  for (const value of ['0', '125.5', '0.000001', '999999999999.999999']) assert.equal(validCategoryPrice(value), true);
-  for (const value of ['-1', 'NaN', 'Infinity', '1e2', '1000000000000', '0.0000001', '', 125.5]) assert.equal(validCategoryPrice(value), false);
+  for (const value of ['0', '125.5', '0.000001', '999999999999.994999']) assert.equal(validCategoryPrice(value), true);
+  for (const value of ['-1', 'NaN', 'Infinity', '1e2', '1000000000000', '999999999999.995', '0.0000001', '', 125.5]) assert.equal(validCategoryPrice(value), false);
   assert.deepEqual(validateProductCategory({ name: 'Name', description: '', unit_price: '125.5', status: 'active' }), {});
 });
 
-test('Category authenticated transport versions, transfers, uncertain writes and identity decoding guards', async () => {
+test('Category authenticated transport versions, transfers, uncertain writes and identity decoding guards', async (t) => {
   globalThis.BroadcastChannel = undefined;
   Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { locks: { request: async (_key, work) => work() } } });
   const user = { id: 'synthetic-admin', email: 'synthetic@example.test', system_role: 'super_admin', permissions: ['admin.access'] };
   const calls = [];
-  const record = { id: '00000000-0000-0000-0000-000000000001', name: 'City', description: '', unit_price: '125.500000', status: 'active', version: 4 };
+  const record = { id: '00000000-0000-0000-0000-000000000001', name: 'City', description: '', unit_price: '125.50', status: 'active', version: 4 };
   let mode = '';
   let release, arrived;
   globalThis.fetch = async (url, options) => {
@@ -31,15 +31,16 @@ test('Category authenticated transport versions, transfers, uncertain writes and
       { status: url.endsWith('/logout') ? 204 : 200 });
   };
   const session = await import('../auth/adminSession.js');
+  t.after(() => session.logoutAdmin());
   const service = await import('./serverProductCategories.js');
   await session.loginAdmin(user.email, 'synthetic-password', false);
   assert.equal((await service.listProductCategories({ query: 'CI', status: 'inactive', min_price: '0', max_price: '125.5', limit: 2, offset: 2 })).filtered, 2);
   assert.match(calls[0].url, /query=CI&status=inactive&min_price=0&max_price=125.5&limit=2&offset=2/);
-  await service.createProductCategory({ name: 'New', status: 'active' });
-  assert.deepEqual(JSON.parse(calls[1].options.body), { name: 'New', status: 'active' });
+  await service.createProductCategory({ name: 'New', unit_price: '1.005', status: 'active' });
+  assert.deepEqual(JSON.parse(calls[1].options.body), { name: 'New', unit_price: '1.01', status: 'active' });
   await service.getProductCategory(record.id);
-  await service.editProductCategory(record, { name: 'Revised', description: 'Description', unit_price: '999999999999.999999', status: 'inactive' });
-  assert.deepEqual(JSON.parse(calls[3].options.body), { name: 'Revised', description: 'Description', unit_price: '999999999999.999999', status: 'inactive', expected_version: 4 });
+  await service.editProductCategory(record, { name: 'Revised', description: 'Description', unit_price: '999999999999.99', status: 'inactive' });
+  assert.deepEqual(JSON.parse(calls[3].options.body), { name: 'Revised', description: 'Description', unit_price: '999999999999.99', status: 'inactive', expected_version: 4 });
   await service.statusProductCategory(record, 'inactive');
   assert.deepEqual(JSON.parse(calls[4].options.body), { status: 'inactive', expected_version: 4 });
   await service.deleteProductCategory(record);
@@ -64,7 +65,7 @@ test('Category authenticated transport versions, transfers, uncertain writes and
   }
   mode = 'uncertain';
   const before = calls.length;
-  await assert.rejects(service.editProductCategory(record, { name: 'Unsure', status: 'active' }), (error) => error.ambiguous);
+  await assert.rejects(service.editProductCategory(record, { name: 'Unsure', unit_price: '1.00', status: 'active' }), (error) => error.ambiguous);
   assert.equal(calls.length, before + 1, 'Never replay an uncertain write');
   mode = 'invalid-json';
   await assert.rejects(service.deleteProductCategory(record), (error) => error.ambiguous);

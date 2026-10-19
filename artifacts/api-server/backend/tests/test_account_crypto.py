@@ -16,14 +16,17 @@ from app.services import auth
 @pytest.fixture
 def db():
     engine = sa.create_engine(get_settings().database_url, hide_parameters=True)
-    with engine.begin() as connection:
-        connection.execute(sa.text("TRUNCATE users CASCADE"))
-    with Session(engine, expire_on_commit=False) as session:
-        yield session
-        session.rollback()
-    with engine.begin() as connection:
-        connection.execute(sa.text("TRUNCATE users CASCADE"))
-    engine.dispose()
+    connection = engine.connect()
+    outer = connection.begin()
+    try:
+        # Keep protected migration seeds intact; tests may commit their own
+        # writes, but cannot commit past this disposable outer transaction.
+        with Session(bind=connection, expire_on_commit=False, join_transaction_mode="create_savepoint") as session:
+            yield session
+    finally:
+        outer.rollback()
+        connection.close()
+        engine.dispose()
 
 
 def account(db, email="Case.Person@example.test", username="case.person", password="synthetic-password-123"):
@@ -124,7 +127,7 @@ def test_account_readiness_rejects_sql_logging(db, logger_name):
 
 
 def test_account_readiness_rejects_engine_echo(db, monkeypatch):
-    monkeypatch.setattr(db.get_bind(), "echo", True)
+    monkeypatch.setattr(db.get_bind().engine, "echo", True)
     with pytest.raises(encrypted.AccountCryptoError):
         encrypted.ready(db)
 
@@ -265,6 +268,6 @@ def test_invalid_account_configuration_fails_closed(db, monkeypatch, setting):
         encrypted.ready(db)
 
 def test_account_readiness_rejects_engine_echo(db, monkeypatch):
-    monkeypatch.setattr(db.get_bind(), "echo", True)
+    monkeypatch.setattr(db.get_bind().engine, "echo", True)
     with pytest.raises(encrypted.AccountCryptoError):
         encrypted.ready(db)

@@ -126,7 +126,7 @@ test('CSV rejects malformed rows, duplicate names, inactive or ambiguous referen
   assert.deepEqual(loadAllergens(), []);
 });
 
-test('seeding race and failed browser write never overwrite another collection', () => {
+test('read-only samples cannot overwrite another collection and explicit failed writes surface errors', () => {
   loadCategories(); loadStorageLocations();
   let reads = 0;
   const data = window.localStorage;
@@ -134,7 +134,12 @@ test('seeding race and failed browser write never overwrite another collection',
     getItem(key) { if (key === ALLERGEN_KEY && ++reads === 1) return null; return key === ALLERGEN_KEY ? '[]' : data.getItem(key); },
     setItem() { assert.fail('must not overwrite'); },
   };
+  const samples = loadAllergens();
+  const refs = loadAllergenReferences();
+  assert.ok(samples.length > 0);
+  assert.throws(() => createAllergen(samples, refs, fields(refs)), /changed in another tab/);
   assert.deepEqual(loadAllergens(), []);
   window.localStorage = { getItem: (key) => key === ALLERGEN_KEY ? null : data.getItem(key), setItem() { throw Error('quota'); } };
-  assert.throws(() => loadAllergens(), /could not be saved/);
+  assert.ok(loadAllergens().length > 0);
+  assert.throws(() => createAllergen(samples, refs, fields(refs)), /could not be saved/);
 });
