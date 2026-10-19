@@ -49,6 +49,72 @@ def copy_source(root):
 
 
 class SourceContractTests(unittest.TestCase):
+    def test_staged_unknown_dependencies_and_unclassified_revisions_fail_offline(self):
+        for classify, dependency in ((False, None), (True, "missing_dependency")):
+            with self.subTest(classify=classify, dependency=dependency), \
+                    tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                backend = copy_source(root)
+                runner, _, _, _, _ = review.source(root)
+                full_graph = runner.load_graph(backend / "alembic/versions")
+                head, = set(full_graph) - {
+                    p for node in full_graph.values() for p in node.down_revision}
+                (backend / "alembic/versions/staged.py").write_text(
+                    f"revision='staged'\ndown_revision={head!r}\n"
+                    f"depends_on={dependency!r}\n")
+                if classify:
+                    path = root / "scripts/migration-policy.json"
+                    policy = json.loads(path.read_text())
+                    policy["revisions"]["staged"] = "operator_only"
+                    path.write_text(json.dumps(policy))
+                with patch("sqlalchemy.create_engine",
+                           side_effect=AssertionError("must stay offline")) as connect:
+                    expected_error = ("UNKNOWN_REVISION_OR_DEPENDENCY" if classify
+                                      else "UNKNOWN_OR_UNCLASSIFIED_MIGRATION")
+                    # refresh reloads the planner; its exception class is distinct.
+                    with self.assertRaisesRegex(Exception, f"^{expected_error}$"):
+                        review.refresh(root)
+                connect.assert_not_called()
+
+    def test_staged_operator_revision_is_reviewed_but_never_planned(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            backend = copy_source(root)
+            runner, _, _, target, _ = review.source(root)
+            full_graph = runner.load_graph(backend / "alembic/versions")
+            head, = set(full_graph) - {
+                p for node in full_graph.values() for p in node.down_revision}
+            staged = backend / "alembic/versions/staged.py"
+            staged.write_text(
+                f"revision='staged'\ndown_revision={head!r}\ndepends_on=None\n")
+            policy_path = root / "scripts/migration-policy.json"
+            policy_data = json.loads(policy_path.read_text())
+            policy_data["revisions"]["staged"] = "operator_only"
+            policy_path.write_text(json.dumps(policy_data))
+            # Source updates still require explicit offline integrity review.
+            with self.assertRaises(review.ReviewBlocked):
+                review.review(root)
+            review.refresh(root)
+            runner, graph, policy, same_target, reviewed_paths = review.review(root)
+            self.assertEqual(same_target, target)
+            self.assertIn("staged", reviewed_paths)
+            self.assertNotIn("staged", graph)
+            self.assertNotIn("staged", policy)
+            plan = runner.plan(graph, policy, [target], target)
+            self.assertEqual(plan["result"], "READY")
+            self.assertEqual(plan["pending"], [])
+            with self.assertRaises(runner.PolicyError):
+                runner.plan(graph, policy, ["staged"], target)
+            # Production still refuses the same staged repository/application
+            # mismatch; development scoping never changes that planner.
+            with self.assertRaises(runner.PolicyError):
+                runner.plan(runner.load_graph(backend / "alembic/versions"),
+                            runner.load_policy(policy_path), [target], target)
+            # Even changes beyond the contract must invalidate the review.
+            staged.write_text(staged.read_text() + "\n# changed\n")
+            with self.assertRaises(review.ReviewBlocked):
+                review.review(root)
+
     def test_current_head_and_protected_path_ignore_stale_production_review(self):
         runner, graph, policy, target, _ = review.review()
         self.assertEqual(target, "0044_purchase_received")

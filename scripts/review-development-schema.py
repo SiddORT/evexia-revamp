@@ -46,9 +46,20 @@ def source(root):
     target = declaration["schema"]
     graph = runner.load_graph(backend / "alembic/versions")
     policy = runner.load_policy(root / "scripts/migration-policy.json")
-    runner.plan(graph, policy, [target], target)
+    # A merged, classified migration may be staged beyond the approved development
+    # contract. Validate the ENTIRE graph first, including its single head, policy,
+    # dependencies and target ancestry. Do not advance the contract or authorize
+    # those staged migrations. Production's strict source-head planner is unchanged.
+    heads = set(graph) - {p for node in graph.values() for p in node.down_revision}
+    if len(heads) != 1:
+        raise ReviewBlocked("MULTIPLE_OR_MISSING_SOURCE_HEADS")
+    runner.plan(graph, policy, [target], next(iter(heads)))
     paths = {runner.literal_assignments(p, {"revision"})["revision"]: p
              for p in (backend / "alembic/versions").glob("*.py") if p.name != "__init__.py"}
+    approved_path = set(runner.ordered_ancestors(graph, target))
+    graph = {r: node for r, node in graph.items() if r in approved_path}
+    policy = {r: classification for r, classification in policy.items()
+              if r in approved_path}
     return runner, graph, policy, target, paths
 
 

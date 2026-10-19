@@ -16,6 +16,19 @@ Keep the independently approved additive synchronization boundary separate
 from compatibility diagnostics. Keep destructive/operator-only and production
 approvals separate; successful development checks never imply production permission.
 
+Operator-only migrations can be merged before their development activation is
+approved. Such staged source must not implicitly advance the approved contract
+or prevent restarting the already-approved application.
+
+**Why:** A staged operator migration made the production source-head invariant
+block development setup even though the approved database needed no upgrade.
+
+**How to apply:** Validate the complete source graph, classifications and hashes
+before planning only the approved development ancestry. Reject unknown, tampered,
+divergent or ahead-of-contract database states. Keep production's strict
+source-head requirement unchanged; successful development setup is not release
+approval or permission to apply staged migrations.
+
 Approved routine additive development synchronization must not depend on the
 freshness of unrelated production fresh-install review evidence.
 
