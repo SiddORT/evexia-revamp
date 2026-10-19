@@ -51,15 +51,16 @@ export default function StorageLocationAddress({ values, errors, onChange, onCho
     onChange(field === 'countryCode' ? { countryCode: value, state: '', city: '' } : { [field]: value });
   };
   const field = (name, label, control) => <div className={`mr-form__field${name === 'pincode' ? ' mr-form__field--wide' : ''}`} key={name}>
-    <label htmlFor={`storage-${name}`}>{label}</label>{control}
+    {name === 'pincode' && <p id="storage-geography-guidance" className="admin-storage-form__geography-guidance">Geography is optional for legacy records. Incomplete addresses require explicit PO destination selection.</p>}
+    <label className="mr-form__label" htmlFor={`storage-${name}`}>{label}</label>{control}
+    {name === 'pincode' && <p id="storage-pin-feedback" className="mr-form__hint admin-storage-form__pin-feedback" role="status">{lookup.message}</p>}
     {errors[name] && <p id={`storage-${name}-error`} className="mr-form__error" role="alert">{errors[name]}</p>}
   </div>;
   const props = (name) => ({ id: `storage-${name}`, className: 'mr-form__control', value: values[name] || '', disabled,
-    'aria-invalid': Boolean(errors[name]), 'aria-describedby': errors[name] ? `storage-${name}-error` : name === 'pincode' ? 'storage-pin-feedback' : undefined,
+    'aria-invalid': Boolean(errors[name]), 'aria-describedby': [name === 'pincode' && 'storage-geography-guidance storage-pin-feedback', errors[name] && `storage-${name}-error`].filter(Boolean).join(' ') || undefined,
     onChange: (event) => change(name, event.target.value) });
   return <>
     {field('pincode', 'PIN / Postal code', <input {...props('pincode')} maxLength={20} autoComplete="postal-code" placeholder="Six-digit PIN for India" />)}
-    <p id="storage-pin-feedback" className="mr-form__field--wide" role="status">{lookup.message || 'Geography is optional for legacy records. Incomplete addresses require explicit PO destination selection.'}</p>
     {lookup.choices.length > 1 && <>{field('pin-choice', 'PIN locations', <select id="storage-pin-choice" className="mr-form__control" disabled={disabled} defaultValue="" onChange={(event) => { const choice = lookup.choices[Number(event.target.value)]; if (event.target.value !== '' && choice) apply(choice); }}>
       <option value="">Choose a location</option>{lookup.choices.map((choice, index) => <option value={index} key={index}>{choice.city}, {choice.state}, {choice.country}</option>)}
     </select>)}<button type="button" className="admin-button admin-button--secondary" disabled={disabled} onClick={() => { sequence.current++; setEditedPIN(false); onChoiceRequired(false); setLookup({ choices: [], message: 'Manual entry selected. Review country, State/UT and city before saving.' }); }}>Use manual address entry</button></>}

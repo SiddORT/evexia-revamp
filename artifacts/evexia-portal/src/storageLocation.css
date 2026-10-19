@@ -6,6 +6,8 @@
 .admin-storage-address { display: block; max-width: 440px; color: var(--admin-text-soft); white-space: pre-wrap; overflow-wrap: anywhere; }
 .admin-storage-mobile { display: none; }
 .admin-storage-form textarea.mr-form__control { min-height: 128px; }
+.admin-storage-form .admin-storage-form__geography-guidance { margin: 0 0 2px; color: var(--admin-text-soft); font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.admin-storage-form .admin-storage-form__pin-feedback:empty { display: none; }
 @media (max-width: 900px) {
   .admin-storage-desktop { display: none; }
   .admin-storage-mobile { display: grid; gap: 10px; padding: 12px; }
