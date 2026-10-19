@@ -20,6 +20,18 @@ original workspace executes the authorized migration path and verifies actual
 database/backend/frontend agreement before reporting full closure. Do not
 equate merge readiness with successful live activation or bypass fork guards.
 
+Keep shared release-check repairs with one active owner. If an isolated task
+is already repairing its completion blockers, main must not start the same
+repairs and test run in parallel.
+
+**Why:** The user pointed out duplicated release-repair work between main and
+an already active task agent.
+
+**How to apply:** Check ownership before broadening a diagnostic into repairs.
+Hand existing findings and patches to the active owner, stop overlapping runs,
+and compare preserved changes at integration rather than discarding either
+workspace's work.
+
 For staged security migrations, also reconcile the accepted migration graph
 after synchronization and before freezing writers. Verify one forward head and
 the exact staging revision, including upgrades from newly accepted operational

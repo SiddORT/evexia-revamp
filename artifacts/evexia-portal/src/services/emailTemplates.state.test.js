@@ -28,7 +28,7 @@ async function fixture(name, api) {
         }));
         b.onLoad({ filter: /.*/, namespace: 'fixture' }, (args) => ({
           contents: args.path === 'hooks'
-            ? 'export const {useState,useEffect,useMemo,useRef}=globalThis.__emailHooks;'
+            ? 'export const {useState,useEffect,useMemo,useRef,useCallback,useId}=globalThis.__emailHooks;'
             : 'export const EMAIL_VARIABLES=[]; export const {loadEmailTemplates,getEmailTemplate,saveEmailTemplate,deleteEmailTemplate}=globalThis.__emailApi;',
         }));
       },
@@ -39,6 +39,13 @@ async function fixture(name, api) {
   const changed = (a, b) => !a || !b || a.length !== b.length || a.some((v, i) => !Object.is(v, b[i]));
   globalThis.__emailApi = api;
   globalThis.__emailHooks = {
+    useCallback(callback, deps) {
+      return globalThis.__emailHooks.useMemo(() => callback, deps);
+    },
+    useId() {
+      const i = index++;
+      return slots[i] ||= `email-fixture-${i}`;
+    },
     useState(value) {
       const i = index++;
       if (!(i in slots)) slots[i] = typeof value === 'function' ? value() : value;

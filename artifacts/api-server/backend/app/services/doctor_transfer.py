@@ -19,6 +19,7 @@ from app.db.mr_models import MRDirectory
 from app.db.models import MRProfile, User
 from app.db.zone_models import Zone
 from app.schemas.doctors import DoctorFields
+from app.schemas.rates import display_rate
 from app.services import doctors, mrs
 from app.services.mr_transfer import resolve_manager
 from app.services.zone_transfer import workbook_rows, safe_text, UNSAFE
@@ -256,7 +257,7 @@ def export(db, actor, query="", status="all", zone_id="", mr_id="", state="", fo
             values["mrId"] = "user:" + db.get(User, profile.user_id).username if mr and not mr.deleted_at and profile else str(row.mrId)
             values["dialCode"] = DIAL[row.dialCountry]
             for key in ("orderDiscount", "paymentLimit"):
-                values[key] = format(Decimal(values[key]), ".2f")
+                values[key] = display_rate(values[key])
             result.append([str(values[key]) if values[key] is not None else "" for key, _ in CURRENT_COLUMNS] +
                           [str(values[key]) for key in ("createdBy", "createdAt", "updatedBy", "updatedAt")])
         db.commit()

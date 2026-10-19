@@ -37,7 +37,7 @@ class LocalReleaseChecksTest(unittest.TestCase):
     def test_preview_partition_is_an_exact_disjoint_cover(self):
         original = checks.default_specs()
         groups = checks.preview_groups(original)
-        self.assertEqual(len(original), 41)
+        self.assertEqual(len(original), 42)
         self.assertEqual(sorted(original), sorted(s for group in groups for s in group))
         for group in groups:
             if len(group) > 1:

@@ -1,6 +1,7 @@
 """Synthetic fixtures only; no managed database or account credentials."""
 import io
 import uuid
+from decimal import Decimal
 import pytest
 from openpyxl import load_workbook
 from sqlalchemy import func, select
@@ -39,13 +40,13 @@ def test_crud_audit_soft_deletion_and_versions(client):
     assert api.get(BASE, headers=headers).json()["total"] == 0
     row = add(api, headers, "  Diagnostic   reagents  ", description="  Example  ")
     assert row["name"] == "Diagnostic reagents" and row["description"] == "Example"
-    assert row["unit_price"] == "125.500000"
+    assert row["unit_price"] == "125.50"
     assert row["createdBy"] == row["updatedBy"] == "Super Admin"
     assert row["createdAt"] == row["updatedAt"]
     assert api.post(BASE, headers=headers, json={
         "name": "DIAGNOSTIC reagents", "unit_price": "0", "status": "inactive"}).status_code == 409
     assert api.get(BASE + "/" + row["id"], headers=headers).json() == row
-    body = dict(name="Updated", description="", unit_price="999999999999.999999", status="inactive", expected_version=1)
+    body = dict(name="Updated", description="", unit_price="999999999999.99", status="inactive", expected_version=1)
     changed = api.post(f"{BASE}/{row['id']}/edit", headers=headers, json=body).json()
     assert changed["version"] == 2 and changed["unit_price"] == body["unit_price"]
     assert changed["createdAt"] == row["createdAt"] and changed["updatedAt"] > row["updatedAt"]
@@ -77,17 +78,22 @@ def test_crud_audit_soft_deletion_and_versions(client):
     assert all(e.actor_id == actor.id and e.session_id and e.request_id for e in events)
 
 
-@pytest.mark.parametrize("price", ["0", "0.000001", "125.5", "999999999999.999999", "000125.500000"])
-def test_exact_prices(client, price):
+@pytest.mark.parametrize(("price", "expected"), [
+    ("0", "0.00"), ("0.000001", "0.00"), ("125.5", "125.50"),
+    ("999999999999.994999", "999999999999.99"),
+    ("000125.500000", "125.50"), ("1.005", "1.01"),
+])
+def test_exact_prices(client, price, expected):
     api, db, _ = client
     headers, _ = admin_headers(api, db)
     row = add(api, headers, price=price)
-    assert row["unit_price"] == ProductCategoryFields(name="X", unit_price=price, status="active").unit_price
+    assert row["unit_price"] == expected
+    assert ProductCategoryFields(name="X", unit_price=price, status="active").unit_price == expected
     db.expire_all()
-    assert format(db.get(ProductCategory, uuid.UUID(row["id"])).unit_price, ".6f") == row["unit_price"]
+    assert db.get(ProductCategory, uuid.UUID(row["id"])).unit_price == Decimal(expected)
 
 
-@pytest.mark.parametrize("price", ["-1", "-0", "NaN", "Infinity", "1e2", "1.0000000", "1000000000000", "", "1,000", "0.0000001", 125.5, 0, True, None])
+@pytest.mark.parametrize("price", ["-1", "-0", "NaN", "Infinity", "1e2", "1.0000000", "1000000000000", "999999999999.999999", "", "1,000", "0.0000001", 125.5, 0, True, None])
 def test_price_rejection_without_rounding(client, price):
     api, db, _ = client
     headers, _ = admin_headers(api, db)
@@ -112,7 +118,7 @@ def test_names_text_forgery_and_version_validation(client):
 def test_combined_price_status_search_pagination_and_export(client):
     api, db, _ = client
     headers, _ = admin_headers(api, db)
-    for index, price in enumerate(("0", "0.000001", "125.5", "999999999999.999999")):
+    for index, price in enumerate(("0", "0.01", "125.5", "999999999999.99")):
         add(api, headers, f"Search {index}", price, description="Shared literal %")
     add(api, headers, "Inactive", "125.5", "inactive")
     params = {"query": "shared", "status": "active", "min_price": "0", "max_price": "125.5", "limit": 1}
@@ -161,7 +167,7 @@ def test_permission_denials_at_routes_and_service_boundaries(client):
 def test_import_bytes_session_audit_ownership_and_atomic_conflicts(client):
     api, db, _ = client
     headers, actor = admin_headers(api, db)
-    data = b"Product Category Name,Description,Unit Price,Status,Created By,Created At,Updated By,Updated At\nImport A,,999999999999.999999,Active,Forged,1900,Forged,1900\nImport B,Description,0,Inactive,Forged,1900,Forged,1900"
+    data = b"Product Category Name,Description,Unit Price,Status,Created By,Created At,Updated By,Updated At\nImport A,,999999999999.99,Active,Forged,1900,Forged,1900\nImport B,Description,0,Inactive,Forged,1900,Forged,1900"
     result = review(api, headers, data).json()
     assert result["valid"] and db.scalar(select(func.count()).select_from(ProductCategory)) == 0
     assert commit(api, headers, data + b"\n", result["digest"]).status_code == 409
@@ -196,13 +202,13 @@ def test_csv_xlsx_old_current_roundtrips_exact_prices_and_download_ledger(client
     api, db, _ = client
     headers, _ = admin_headers(api, db)
     for fmt in ("csv", "xlsx"):
-        row = add(api, headers, "=Literal", "999999999999.999999", description="'=authored")
+        row = add(api, headers, "=Literal", "999999999999.99", description="'=authored")
         response = api.get(BASE + "/export", headers=headers, params={"format": fmt})
         assert response.status_code == 200 and response.headers["x-download-log"]
         assert f'evexia-product-category-master.{fmt}' in response.headers["content-disposition"]
         parsed = transfer.parse(response.content, "backup." + fmt)
         assert parsed[0]["name"] == "=Literal" and parsed[0]["description"] == "'=authored"
-        assert parsed[0]["unit_price"] == "999999999999.999999"
+        assert parsed[0]["unit_price"] == "999999999999.99"
         if fmt == "xlsx":
             book = load_workbook(io.BytesIO(response.content), data_only=False)
             assert all(c.data_type == "s" for c in book.active[2])
@@ -218,11 +224,11 @@ def test_csv_xlsx_old_current_roundtrips_exact_prices_and_download_ledger(client
         report = review(api, headers, old, "old." + fmt).json()
         assert commit(api, headers, old, report["digest"], "old." + fmt).json()["imported"] == 1
         current = api.get(BASE, headers=headers).json()["items"][0]
-        assert current["unit_price"] == "125.500000"
+        assert current["unit_price"] == "125.50"
         api.post(f"{BASE}/{current['id']}/delete", headers=headers, json={"expected_version": 1})
         sample = api.get(BASE + "/sample", headers=headers, params={"format": fmt})
         assert sample.status_code == 200 and sample.headers["x-download-log"]
-        assert transfer.parse(sample.content, "sample." + fmt)[0]["unit_price"] == "125.500000"
+        assert transfer.parse(sample.content, "sample." + fmt)[0]["unit_price"] == "125.50"
     def fail(*args, **kwargs):
         raise service.ProductCategoryError("Ledger unavailable")
     monkeypatch.setattr("app.api.v1.product_categories.server_record", fail)
@@ -232,12 +238,12 @@ def test_csv_xlsx_old_current_roundtrips_exact_prices_and_download_ledger(client
 def test_numeric_workbook_prices_use_original_xml_not_binary_floats():
     from test_zones import replace_zip
     data = workbook([transfer.HEADERS[:4], ["Numeric", "", 125.5, "active"]])
-    assert transfer.parse(data, "numeric.xlsx")[0]["unit_price"] == "125.500000"
-    for lexeme, expected in [("999999999999.999999", "999999999999.999999"),
-                             ("1e-06", "0.000001"), ("125.500001", "125.500001")]:
+    assert transfer.parse(data, "numeric.xlsx")[0]["unit_price"] == "125.50"
+    for lexeme, expected in [("999999999999.994999", "999999999999.99"),
+                             ("1e-06", "0.00"), ("125.500001", "125.50"), ("1.005", "1.01")]:
         changed = replace_zip(data, "xl/worksheets/sheet1.xml", lambda content: content.replace(b"<v>125.5</v>", f"<v>{lexeme}</v>".encode()))
         assert transfer.parse(changed, "numeric.xlsx")[0]["unit_price"] == expected
-    for lexeme in ("125.5000001", "1000000000000", "-1", "NaN"):
+    for lexeme in ("125.5000001", "1000000000000", "999999999999.999999", "-1", "NaN"):
         changed = replace_zip(data, "xl/worksheets/sheet1.xml", lambda content: content.replace(b"<v>125.5</v>", f"<v>{lexeme}</v>".encode()))
         try:
             assert transfer.parse(changed, "numeric.xlsx")[0]["errors"]

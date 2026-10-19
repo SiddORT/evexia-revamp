@@ -95,6 +95,11 @@ def main():
                 assert connection.scalar(text("SELECT count(*) FROM synthetic_rows")) == 0
             engine.dispose()
             assert (fixtures[1] / "data/base").stat().st_ino != (fixtures[2] / "data/base").stat().st_ino
+            for name in ("PR_ENCRYPTION_KEYS", "PR_ENCRYPTION_KEY_ID"):
+                previous = os.environ[name]
+                os.environ[name] = "synthetic-changed"
+                assert action("restore", fixtures[0]) == "miss"
+                os.environ[name] = previous
             os.environ["DIRECTORY_ENCRYPTION_KEYS"] = "synthetic-changed"
             assert action("restore", fixtures[0]) == "miss"
             print("PASS: concurrent clones have independent data, socket-only listeners and no authenticated history.")
