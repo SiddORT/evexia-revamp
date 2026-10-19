@@ -271,6 +271,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
         <div className="po-new-main">
           {(errors.lines || hasErrors) && <div id="po-form-errors" className="admin-feedback admin-feedback--error" role="alert">{errors.lines || 'Check the highlighted fields before continuing.'}</div>}
           <fieldset className="po-group" disabled={locked}><legend>Vendor and delivery</legend>
+            <div className={editing ? undefined : 'po-group__references'}>
             <div className="po-group__vendor">
               <Field id="po-vendor" label="Vendor" error={errors.vendorId}>
                 <PurchaseOrderReferenceSelect id="po-vendor" kind="vendors" label="Vendor" selected={values.vendor} placeholder="Select vendor" invalid={errors.vendorId} describedBy={errors.vendorId ? 'po-vendor-error' : undefined} onChange={(item) => edit({ vendor: editing && order.taxBasis && item?.id === order.vendorId ? fromSaved(order).vendor : item }, ['vendorId', 'placeOfSupplyCode'])} />
@@ -283,6 +284,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
               <Field id="po-place-of-supply" label="Place of supply (State/UT)" error={errors.placeOfSupplyCode}>
                 <SearchableSelect id="po-place-of-supply" label="Place of supply (State/UT)" value={values.placeOfSupplyCode || ''} options={GST_STATES.map((state) => ({ value: state.code, label: `${state.name} (${state.code})` }))} onChange={(code) => edit({ placeOfSupplyCode: code, supplySource: 'manual' }, ['placeOfSupplyCode'])} placeholder="Select applicable State/UT" invalid={errors.placeOfSupplyCode} describedBy={`po-supply-help${errors.placeOfSupplyCode ? ' po-place-of-supply-error' : ''}`} disabled={locked} />
               </Field>
+            </div>
             </div>
             <div className="po-group__dates">
               <Field id="po-date" label="PO date" error={errors.poDate}><input id="po-date" className="mr-form__control" type="date" value={values.poDate} onChange={(e) => edit({ poDate: e.target.value }, ['poDate'])} aria-invalid={Boolean(errors.poDate)} aria-describedby={errors.poDate ? 'po-date-error' : undefined} data-testid="input-po-date" /></Field>
