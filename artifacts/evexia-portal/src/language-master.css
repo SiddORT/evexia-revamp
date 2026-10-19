@@ -1,0 +1,10 @@
+.language-master-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .language-master-actions { width: 100%; }
+  .language-master-actions .admin-button { flex: 1 1 auto; }
+}

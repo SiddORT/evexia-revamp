@@ -18,6 +18,7 @@ const titleTransformer: InputTransformerFn = (config) => {
   for (const route of ["/v1/admin/courier-partners/import/review", "/v1/admin/courier-partners/import/commit",
     "/v1/admin/storage-locations/import/review", "/v1/admin/storage-locations/import/commit",
     "/v1/admin/designations/import/review", "/v1/admin/designations/import/commit",
+    "/v1/admin/languages/import/review", "/v1/admin/languages/import/commit",
     "/v1/admin/vendors/import/review", "/v1/admin/vendors/import/commit",
     "/v1/admin/sales-targets/import/review", "/v1/admin/sales-targets/import/commit",
     "/v1/admin/headquarters/import/review", "/v1/admin/headquarters/import/commit",
@@ -52,6 +53,12 @@ export default defineConfig({
       clean: true,
       prettier: true,
       override: {
+        operations: {
+          // Both media types represent file downloads. The shared custom
+          // fetcher's auto mode otherwise decodes CSV as text despite Blob types.
+          exportLanguages: { requestOptions: { responseType: "blob" } },
+          downloadLanguageSample: { requestOptions: { responseType: "blob" } },
+        },
         fetch: {
           includeHttpResponseReturnType: false,
         },

@@ -451,6 +451,9 @@ export const listLanguagesQueryOffsetMax = 1000000;
 export const listLanguagesResponseItemsItemNameMax = 200;
 export const createLanguageBodyNameMax = 200;
 export const createLanguageResponseNameMax = 200;
+export const exportLanguagesQueryQueryMax = 200;
+export const commitLanguageImportQueryFilenameMax = 200;
+export const reviewLanguageImportQueryFilenameMax = 200;
 export const getLanguageResponseNameMax = 200;
 export const deleteLanguageResponseNameMax = 200;
 export const editLanguageBodyNameMax = 200;
@@ -8506,6 +8509,104 @@ export const CreateLanguageResponse = zod.object({
   updatedBy: zod.string(),
   version: zod.number().int(),
 });
+
+/**
+ * @summary Export
+ */
+export const exportLanguagesQueryQueryDefault = ``;
+
+export const exportLanguagesQueryFormatDefault = `csv`;
+
+export const ExportLanguagesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(exportLanguagesQueryQueryMax)
+    .default(exportLanguagesQueryQueryDefault),
+  format: zod.enum(["csv", "xlsx"]).default(exportLanguagesQueryFormatDefault),
+});
+
+export const ExportLanguagesHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const ExportLanguagesResponse = zod.unknown();
+
+/**
+ * @summary Commit
+ */
+
+export const commitLanguageImportQueryDigestRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const CommitLanguageImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(commitLanguageImportQueryFilenameMax),
+  digest: zod.coerce.string().regex(commitLanguageImportQueryDigestRegExp),
+  confirm: zod.coerce.boolean(),
+});
+
+export const CommitLanguageImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const CommitLanguageImportResponse = zod.object({
+  imported: zod.number().int(),
+});
+
+/**
+ * @summary Review
+ */
+
+export const ReviewLanguageImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(reviewLanguageImportQueryFilenameMax),
+});
+
+export const ReviewLanguageImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const ReviewLanguageImportResponse = zod.object({
+  digest: zod.string(),
+  invalidCount: zod.number().int(),
+  rows: zod.array(
+    zod.object({
+      errors: zod.array(zod.string()),
+      row: zod.number().int(),
+      values: zod.object({
+        name: zod.string(),
+      }),
+    }),
+  ),
+  valid: zod.boolean(),
+  validCount: zod.number().int(),
+});
+
+/**
+ * @summary Sample
+ */
+export const downloadLanguageSampleQueryFormatDefault = `csv`;
+
+export const DownloadLanguageSampleQueryParams = zod.object({
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(downloadLanguageSampleQueryFormatDefault),
+});
+
+export const DownloadLanguageSampleHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const DownloadLanguageSampleResponse = zod.unknown();
 
 /**
  * @summary Detail

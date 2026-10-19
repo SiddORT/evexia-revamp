@@ -35,3 +35,7 @@ export * from "./generated/types/emailTemplateEvent";
 export * from "./generated/types/emailTemplateList";
 export * from "./generated/types/emailTemplateRecord";
 export * from "./generated/types/emailTemplateVersion";
+export * from "./generated/types/languageImportResult";
+export * from "./generated/types/languageReview";
+export * from "./generated/types/languageReviewRow";
+export * from "./generated/types/languageReviewValues";

@@ -51,6 +51,18 @@ activation/recovery handoff; process repair is not live email recovery.
    permission domains are unchanged. Fork results are not original-runtime alignment.
   See `docs/language-master.md` and `sh scripts/test-language-crud.sh`.
 
+- Language Master transfers use authenticated name-only CSV/XLSX samples,
+  review/atomic confirmation and all-name-search-match exports (2 MiB/1,000 import
+  records; 1,000-match export bound, explicit rejection not truncation). The
+  shared import Language tab is server-only. PostgreSQL Unicode comparison,
+  retained create history/audits and existing patient choices remain unchanged.
+  An uncertain confirmation keeps its selected file and blocks resubmission;
+  a fresh conflict-free review is not reconciliation. This transfer extension
+  is implementation-only at the user's request: do not run any tests, browser
+  checks, builds or broad validation/test-triggering wrappers. Only narrow
+  contract generation, documentation and source reading are authorized.
+  See `docs/language-master.md` for portable escaping and uncertainty limits.
+
 EVEXIA Life Sciences portal with protected Admin and MR workspaces, a separate fictional IMMUNO Doctor demo, browser-local demonstration masters, and a FastAPI authentication/API service. Admin/MR authentication, Staff Management, Roles, Zone, Courier Partner, Storage Location, Designation, Headquarter, Product Category, Allergen, MR, Doctor, Patient, Vendor and Sales Target Masters use the backend; unrelated masters remain browser-local.
 
 ## Run & operate

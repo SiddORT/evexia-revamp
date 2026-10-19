@@ -219,7 +219,8 @@ def create_app() -> FastAPI:
             fields = [{"field": item["field"] if item["field"] in locations else "body",
                        "code": item["code"]} for item in fields]
         if request.url.path.startswith("/api/v1/admin/languages"):
-            allowed = {"name", "expected_version", "query", "limit", "offset", "language_id"}
+            allowed = {"name", "expected_version", "query", "limit", "offset", "language_id",
+                       "format", "filename", "digest", "confirm"}
             locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
             fields = [{"field": item["field"] if item["field"] in locations else "body",
                        "code": item["code"]} for item in fields]

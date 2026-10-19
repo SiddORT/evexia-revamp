@@ -20,12 +20,14 @@ import ProductCategoryImportPage from './ProductCategoryImportPage.jsx';
 import AllergenImportPage from './AllergenImportPage.jsx';
 import OpeningBalanceImportPage from './OpeningBalanceImportPage.jsx';
 import DesignationImportPage from './DesignationImportPage.jsx';
+import LanguageImportPage from './LanguageImportPage.jsx';
 import VendorImportPage from './VendorImportPage.jsx';
 import SalesTargetImportPage from './SalesTargetImportPage.jsx';
 
 const routes = { zone: '/admin/masters/zones', 'courier-partner': '/admin/masters/courier-partners', mr: '/admin/masters/mrs', doctor: '/admin/masters/doctors' };
 
 export default function MasterExcelImportPage({ kind }) {
+  if (kind === 'language') return <LanguageImportPage />;
   if (kind === 'opening-balance') return <OpeningBalanceImportPage />;
   return kind === 'patient' ? <PatientImportPage /> : kind === 'product-category' ? <ProductCategoryImportPage /> : kind === 'zone' ? <ZoneImportGate /> : kind === 'courier-partner' ? <CourierImportPage /> : kind === 'storage-location' ? <StorageLocationImportPage /> : kind === 'allergen' ? <AllergenImportPage /> : kind === 'designation' ? <DesignationImportPage /> : kind === 'vendor' ? <VendorImportPage /> : kind === 'sales-target' ? <SalesTargetImportPage /> : kind === 'headquarter' ? <HeadquarterImportPage /> : kind === 'mr' ? <MRImportPage /> : kind === 'doctor' ? <DoctorImportPage /> : <PreviewExcelImportPage kind={kind} />;
 }

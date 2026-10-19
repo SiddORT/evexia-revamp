@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
-import { Languages, Pencil, Plus, ScrollText, Search, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { useLocation } from 'wouter';
+import { Download, Languages, Pencil, Plus, ScrollText, Search, Trash2, Upload } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
-import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
+import { useAdminDateFormatters, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
@@ -11,6 +13,9 @@ import LanguageDrawer from '../../components/admin/LanguageDrawer.jsx';
 import AccessDenied from '../../components/admin/AccessDenied.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import useLanguages from '../../hooks/useLanguages.js';
+import { exportLanguages, downloadLanguageFile } from '../../services/serverLanguages.js';
+import { reportingIdentityGuard } from '../../auth/adminSession.js';
+import '../../language-master.css';
 
 function details(by, at, timestamp) {
   return <span className="admin-table__details"><strong>{by}</strong><small>{timestamp(at)}</small></span>;
@@ -19,11 +24,22 @@ function details(by, at, timestamp) {
 export default function LanguageMaster() {
   const { user } = useAdminSession();
   if (user?.identity_kind !== 'super_admin' || !user.permissions.includes('admin.access')) return <AccessDenied title="Language Master" heading="Language Master is not available" testId="status-language-denied" message="Language Master is restricted to the protected Super Admin." />;
-  return <LanguageWorkspace />;
+  return <LanguageWorkspace key={user.id} />;
 }
 
 function LanguageWorkspace() {
+  const [, navigate] = useLocation();
+  const { theme, appearance } = useAdminPreferences();
   const { timestamp } = useAdminDateFormatters();
+  const [exporting, setExporting] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const exportBusy = useRef(false);
+  const exportMounted = useRef(true);
+  const exportController = useRef(null);
+  useEffect(() => {
+    exportMounted.current = true;
+    return () => { exportMounted.current = false; exportController.current?.abort(); };
+  }, []);
   const [deleted, setDeleted] = useState(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -64,6 +80,27 @@ function LanguageWorkspace() {
   }
   function requestDelete(language) { clearFeedback(); setActionError(''); setBlocked(false); setConfirming(language); }
 
+  async function exportMatching(format) {
+    if (error || loading || exportBusy.current) return;
+    exportBusy.current = true;
+    setActionError('');
+    setExporting(true);
+    const guard = reportingIdentityGuard();
+    const controller = new AbortController();
+    exportController.current = controller;
+    try {
+      const blob = await exportLanguages(search, format, controller.signal);
+      guard();
+      if (exportMounted.current) downloadLanguageFile(blob, format);
+    } catch (cause) {
+      try { guard(); } catch { return; }
+      if (exportMounted.current) setActionError(`Export failed (${format === 'xlsx' ? 'Excel' : 'CSV'}). ${cause.message || 'Retry this download.'}`);
+    } finally {
+      exportBusy.current = false;
+      if (exportMounted.current) setExporting(false);
+    }
+  }
+
   function renderActions(language, mobile = false) {
     const cls = mobile ? 'admin-zone-card__action' : 'admin-icon-button';
     const size = mobile ? 14 : 16;
@@ -86,8 +123,23 @@ function LanguageWorkspace() {
     <AdminLayout title="Language Master">
       <div className="admin-page-head">
         <div><p className="admin-page-head__eyebrow">Masters / Geography & Logistics</p><h1>Language Master</h1></div>
-        <div className="admin-mr-head-actions"><button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); setEditing('new'); }} data-testid="button-add-language"><Plus size={16} aria-hidden="true" /> Add language</button></div>
+        <div className="language-master-actions">
+          <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/language')} data-testid="button-import-languages"><Upload size={16} aria-hidden="true" /> Import data</button>
+          <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>
+            <DropdownMenu.Trigger asChild>
+              <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(error) || loading} aria-disabled={exporting || undefined} data-testid="button-export-languages"><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content className="admin-profile__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} style={{ maxWidth: 'calc(100vw - 24px)' }} aria-label="Language export format">
+                <DropdownMenu.Item className="admin-profile__settings" disabled={exporting} onSelect={() => void exportMatching('csv')}>CSV</DropdownMenu.Item>
+                <DropdownMenu.Item className="admin-profile__settings" disabled={exporting} onSelect={() => void exportMatching('xlsx')}>Excel (.xlsx)</DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
+          <button type="button" className="admin-button" disabled={Boolean(error)} onClick={() => { clearFeedback(); setEditing('new'); }} data-testid="button-add-language"><Plus size={16} aria-hidden="true" /> Add language</button>
+        </div>
       </div>
+      {exporting && <p role="status">Preparing all matching languages across every page…</p>}
       {feedback && <div className="admin-feedback" role="status" data-testid="status-language-feedback">{feedback}{deleted && feedback.startsWith('Language deleted') && <> <button type="button" className="admin-button admin-button--secondary" onClick={() => setDrawer(deleted)} data-testid="button-view-deleted-language-history">View deleted language history</button></>}</div>}
       {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-language-action-error">{actionError}</div>}
       <section className="admin-panel" aria-label="Language list">

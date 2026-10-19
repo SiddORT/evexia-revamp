@@ -2734,12 +2734,34 @@ export interface LanguageHistory {
   total: number;
 }
 
+export interface LanguageImportResult {
+  imported: number;
+}
+
 export interface LanguagePage {
   filtered: number;
   items: LanguageResponse[];
   limit: number;
   offset: number;
   total: number;
+}
+
+export interface LanguageReviewValues {
+  name: string;
+}
+
+export interface LanguageReviewRow {
+  errors: string[];
+  row: number;
+  values: LanguageReviewValues;
+}
+
+export interface LanguageReview {
+  digest: string;
+  invalidCount: number;
+  rows: LanguageReviewRow[];
+  valid: boolean;
+  validCount: number;
 }
 
 export interface LanguageVersion {
@@ -9695,6 +9717,63 @@ export type ListLanguagesParams = {
    */
   offset?: number;
 };
+
+export type ExportLanguagesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  format?: ExportLanguagesFormat;
+};
+
+export type ExportLanguagesFormat =
+  (typeof ExportLanguagesFormat)[keyof typeof ExportLanguagesFormat];
+
+export const ExportLanguagesFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type CommitLanguageImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+  /**
+   * @pattern ^[0-9a-f]{64}$
+   */
+  digest: string;
+  confirm: boolean;
+};
+
+export type CommitLanguageImportBody = {
+  file: Blob | File;
+};
+
+export type ReviewLanguageImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+};
+
+export type ReviewLanguageImportBody = {
+  file: Blob | File;
+};
+
+export type DownloadLanguageSampleParams = {
+  format?: DownloadLanguageSampleFormat;
+};
+
+export type DownloadLanguageSampleFormat =
+  (typeof DownloadLanguageSampleFormat)[keyof typeof DownloadLanguageSampleFormat];
+
+export const DownloadLanguageSampleFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
 
 export type GetLanguageHistoryParams = {
   /**

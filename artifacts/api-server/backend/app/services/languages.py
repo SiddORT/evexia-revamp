@@ -98,16 +98,22 @@ def record_change(db, actor, row, action, before):
 def create(db, actor, body):
     def work():
         current = authorize(db, actor)
-        now = utcnow()
-        row = Language(name=body.name, created_by=current.user.id, updated_by=current.user.id,
-                       created_at=now, updated_at=now)
-        db.add(row)
-        db.flush()
-        record_change(db, current, row, "create", None)
+        row = insert(db, current, body)
         result = projection(db, row)
         db.commit()
         return result
     return transaction(db, work)
+
+
+def insert(db, actor, body):
+    """Caller owns authorization and the encompassing atomic transaction."""
+    now = utcnow()
+    row = Language(name=body.name, created_by=actor.user.id, updated_by=actor.user.id,
+                   created_at=now, updated_at=now)
+    db.add(row)
+    db.flush()
+    record_change(db, actor, row, "create", None)
+    return row
 
 
 def mutate(db, actor, record_id, body, operation):

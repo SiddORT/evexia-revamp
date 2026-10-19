@@ -1,4 +1,5 @@
 import { languageRequest, SessionError } from '../auth/adminSession.js';
+import { downloadServerBlob } from './downloads.js';
 
 const uuid = (value) => typeof value === 'string' && /^[0-9a-f-]{36}$/i.test(value);
 const count = (value) => Number.isSafeInteger(value) && value >= 0;
@@ -14,7 +15,7 @@ async function request(path, options, valid) {
   const data = await languageRequest(path, options);
   if (!valid(data)) {
     const error = new SessionError('Language response could not be confirmed. Your draft is preserved; review current server records before retrying.');
-    error.ambiguous = Boolean(options?.body);
+    error.ambiguous = Boolean(options?.body || path === '/import/commit');
     throw error;
   }
   return data;
@@ -37,3 +38,23 @@ export const getLanguageHistory = (id, { limit = 10, offset = 0 } = {}, signal) 
     && ['creates', 'edits', 'deletes', 'total'].every((key) => count(p.summary[key]))
     && p.summary.total === p.total && p.summary.creates + p.summary.edits + p.summary.deletes === p.total
     && (p.summary.latestChange === null || date(p.summary.latestChange)));
+
+export const reviewLanguages = (file) => request('/import/review', { file, params: { filename: file.name } },
+  (p) => p && Array.isArray(p.rows) && p.rows.length >= 1 && p.rows.length <= 1000
+    && p.rows.every((row, index) => row.row === index + 2 && typeof row.values?.name === 'string'
+      && Array.isArray(row.errors) && row.errors.every((error) => typeof error === 'string'))
+    && typeof p.valid === 'boolean' && /^[0-9a-f]{64}$/.test(p.digest)
+    && count(p.validCount) && count(p.invalidCount) && p.validCount + p.invalidCount === p.rows.length
+    && p.invalidCount === p.rows.filter((row) => row.errors.length).length && p.valid === (p.invalidCount === 0));
+export const importLanguages = (file, digest, expectedCount) => {
+  if (!/^[0-9a-f]{64}$/.test(digest || '') || !count(expectedCount) || expectedCount < 1 || expectedCount > 1000) {
+    throw new Error('Review this file before confirming import.');
+  }
+  return request('/import/commit', { file, params: { filename: file.name, digest, confirm: true } },
+    (p) => p && p.imported === expectedCount);
+};
+export const exportLanguages = (query, format, signal) => languageRequest('/export', { params: { query, format }, download: true, signal });
+export const sampleLanguages = (format, signal) => languageRequest('/sample', { params: { format }, download: true, signal });
+export function downloadLanguageFile(blob, format, sample = false) {
+  downloadServerBlob(blob, `evexia-language-${sample ? 'template' : 'master'}.${format}`);
+}

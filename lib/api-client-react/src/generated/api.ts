@@ -44,6 +44,8 @@ import type {
   CommitDoctorImportParams,
   CommitHeadquarterImportBody,
   CommitHeadquarterImportParams,
+  CommitLanguageImportBody,
+  CommitLanguageImportParams,
   CommitLocationImportBody,
   CommitLocationImportParams,
   CommitMRImportBody,
@@ -104,6 +106,7 @@ import type {
   DownloadEvidence,
   DownloadHeadquarterSampleParams,
   DownloadInitiation,
+  DownloadLanguageSampleParams,
   DownloadMRSampleParams,
   DownloadOpeningBalanceSampleParams,
   DownloadPage,
@@ -125,6 +128,7 @@ import type {
   ExportDesignationsParams,
   ExportDoctorDirectoryParams,
   ExportHeadquartersParams,
+  ExportLanguagesParams,
   ExportMRDirectoryParams,
   ExportOpeningBalancesParams,
   ExportPatientDirectoryParams,
@@ -163,8 +167,10 @@ import type {
   LanguageEdit,
   LanguageFields,
   LanguageHistory,
+  LanguageImportResult,
   LanguagePage,
   LanguageResponse,
+  LanguageReview,
   LanguageVersion,
   ListAllergenReferencesParams,
   ListAllergensParams,
@@ -330,6 +336,8 @@ import type {
   ReviewHeadquarterImportBody,
   ReviewHeadquarterImportParams,
   ReviewInventoryInitializationParams,
+  ReviewLanguageImportBody,
+  ReviewLanguageImportParams,
   ReviewLocationImportBody,
   ReviewLocationImportParams,
   ReviewMRImportBody,
@@ -9127,6 +9135,430 @@ export const useCreateLanguage = <
 > => {
   return useMutation(getCreateLanguageMutationOptions(options));
 };
+
+export const getExportLanguagesUrl = (params?: ExportLanguagesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/languages/export?${stringifiedParams}`
+    : `/api/v1/admin/languages/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportLanguages = async (
+  params?: ExportLanguagesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<Blob> => {
+  return customFetch<Blob>(getExportLanguagesUrl(params), {
+    responseType: "blob",
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportLanguagesQueryKey = (params?: ExportLanguagesParams) => {
+  return [
+    `/api/v1/admin/languages/export`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getExportLanguagesQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportLanguages>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportLanguagesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportLanguages>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getExportLanguagesQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof exportLanguages>>> = ({
+    signal,
+  }) => exportLanguages(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportLanguages>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportLanguagesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportLanguages>>
+>;
+export type ExportLanguagesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportLanguages<
+  TData = Awaited<ReturnType<typeof exportLanguages>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportLanguagesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportLanguages>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportLanguagesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCommitLanguageImportUrl = (
+  params: CommitLanguageImportParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/languages/import/commit?${stringifiedParams}`
+    : `/api/v1/admin/languages/import/commit`;
+};
+
+/**
+ * @summary Commit
+ */
+export const commitLanguageImport = async (
+  commitLanguageImportBody: CommitLanguageImportBody,
+  params: CommitLanguageImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LanguageImportResult> => {
+  const formData = new FormData();
+  formData.append(`file`, commitLanguageImportBody.file);
+
+  return customFetch<LanguageImportResult>(getCommitLanguageImportUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getCommitLanguageImportMutationKey = () =>
+  ["commitLanguageImport"] as const;
+
+export const getCommitLanguageImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitLanguageImport>>,
+    TError,
+    CommitLanguageImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof commitLanguageImport>>,
+  TError,
+  CommitLanguageImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCommitLanguageImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof commitLanguageImport>>,
+    CommitLanguageImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return commitLanguageImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CommitLanguageImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof commitLanguageImport>>
+>;
+export type CommitLanguageImportMutationBody =
+  BodyType<CommitLanguageImportBody>;
+export type CommitLanguageImportMutationError = ErrorType<ErrorEnvelope>;
+export type CommitLanguageImportMutationVariables = {
+  data: BodyType<CommitLanguageImportBody>;
+  params: CommitLanguageImportParams;
+};
+
+/**
+ * @summary Commit
+ */
+export const useCommitLanguageImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitLanguageImport>>,
+    TError,
+    CommitLanguageImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof commitLanguageImport>>,
+  TError,
+  CommitLanguageImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getCommitLanguageImportMutationOptions(options));
+};
+
+export const getReviewLanguageImportUrl = (
+  params: ReviewLanguageImportParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/languages/import/review?${stringifiedParams}`
+    : `/api/v1/admin/languages/import/review`;
+};
+
+/**
+ * @summary Review
+ */
+export const reviewLanguageImport = async (
+  reviewLanguageImportBody: ReviewLanguageImportBody,
+  params: ReviewLanguageImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LanguageReview> => {
+  const formData = new FormData();
+  formData.append(`file`, reviewLanguageImportBody.file);
+
+  return customFetch<LanguageReview>(getReviewLanguageImportUrl(params), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getReviewLanguageImportMutationKey = () =>
+  ["reviewLanguageImport"] as const;
+
+export const getReviewLanguageImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewLanguageImport>>,
+    TError,
+    ReviewLanguageImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewLanguageImport>>,
+  TError,
+  ReviewLanguageImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReviewLanguageImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewLanguageImport>>,
+    ReviewLanguageImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return reviewLanguageImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewLanguageImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewLanguageImport>>
+>;
+export type ReviewLanguageImportMutationBody =
+  BodyType<ReviewLanguageImportBody>;
+export type ReviewLanguageImportMutationError = ErrorType<ErrorEnvelope>;
+export type ReviewLanguageImportMutationVariables = {
+  data: BodyType<ReviewLanguageImportBody>;
+  params: ReviewLanguageImportParams;
+};
+
+/**
+ * @summary Review
+ */
+export const useReviewLanguageImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewLanguageImport>>,
+    TError,
+    ReviewLanguageImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewLanguageImport>>,
+  TError,
+  ReviewLanguageImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getReviewLanguageImportMutationOptions(options));
+};
+
+export const getDownloadLanguageSampleUrl = (
+  params?: DownloadLanguageSampleParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/languages/sample?${stringifiedParams}`
+    : `/api/v1/admin/languages/sample`;
+};
+
+/**
+ * @summary Sample
+ */
+export const downloadLanguageSample = async (
+  params?: DownloadLanguageSampleParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<Blob> => {
+  return customFetch<Blob>(getDownloadLanguageSampleUrl(params), {
+    responseType: "blob",
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getDownloadLanguageSampleQueryKey = (
+  params?: DownloadLanguageSampleParams,
+) => {
+  return [
+    `/api/v1/admin/languages/sample`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getDownloadLanguageSampleQueryOptions = <
+  TData = Awaited<ReturnType<typeof downloadLanguageSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadLanguageSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadLanguageSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getDownloadLanguageSampleQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof downloadLanguageSample>>
+  > = ({ signal }) =>
+    downloadLanguageSample(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof downloadLanguageSample>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type DownloadLanguageSampleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof downloadLanguageSample>>
+>;
+export type DownloadLanguageSampleQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Sample
+ */
+
+export function useDownloadLanguageSample<
+  TData = Awaited<ReturnType<typeof downloadLanguageSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadLanguageSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadLanguageSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getDownloadLanguageSampleQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export const getGetLanguageUrl = (languageId: string) => {
   return `/api/v1/admin/languages/${languageId}`;

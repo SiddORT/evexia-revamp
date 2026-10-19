@@ -76,3 +76,27 @@ class LanguageHistory(BaseModel):
     limit: int
     offset: int
     summary: LanguageSummary
+
+
+class LanguageReviewValues(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str
+
+
+class LanguageReviewRow(BaseModel):
+    row: int
+    # Invalid names must remain displayable in the review, not fail response validation.
+    values: LanguageReviewValues
+    errors: list[str]
+
+
+class LanguageReview(BaseModel):
+    rows: list[LanguageReviewRow]
+    valid: bool
+    digest: str
+    validCount: int
+    invalidCount: int
+
+
+class LanguageImportResult(BaseModel):
+    imported: int
