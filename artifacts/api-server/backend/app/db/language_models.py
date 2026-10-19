@@ -25,7 +25,7 @@ class Language(Timestamps, Base):
     deleted_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
 
 
-# PostgreSQL 17's builtin Unicode collation does not depend on initdb/OS locale.
+# PG17 uses its builtin; the migration supplies an ICU-root alias on PG16.
 Index("uq_languages_live_name", func.lower(Language.name.collate("pg_c_utf8")), unique=True,
       postgresql_where=Language.deleted_at.is_(None))
 

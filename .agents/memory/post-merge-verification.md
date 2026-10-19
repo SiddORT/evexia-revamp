@@ -32,6 +32,19 @@ Hand existing findings and patches to the active owner, stop overlapping runs,
 and compare preserved changes at integration rather than discarding either
 workspace's work.
 
+Verify migration capabilities against the actual development PostgreSQL major,
+not only the default disposable test engine.
+
+**Why:** Unicode catalogue migration tests passed on PostgreSQL 17 while the
+original development database used PostgreSQL 16 and lacked a newer builtin
+collation. Transactional rollback correctly left the preceding schema intact.
+
+**How to apply:** Check the real server version, exercise supported older-engine
+upgrades in disposable clusters, and preserve Unicode uniqueness rather than
+substituting ASCII behavior. Keep the separate PostgreSQL-17-only production
+fresh-catalog review guard intact; development compatibility does not broaden
+the production fresh-install contract.
+
 For staged security migrations, also reconcile the accepted migration graph
 after synchronization and before freezing writers. Verify one forward head and
 the exact staging revision, including upgrades from newly accepted operational
