@@ -281,7 +281,10 @@ class MigrationPolicyTests(unittest.TestCase):
         self.assertEqual(privacy_blocked["operator_only"], [])
         batch_blocked = runner.plan(graph, policy, ["0044_purchase_received"], target)
         self.assertEqual(batch_blocked["result"], "READY")
-        self.assertEqual(batch_blocked["pending"], ["0045_pr_batch_numbers"])
+        predecessors = set(runner.ordered_ancestors(graph, "0044_purchase_received"))
+        expected = [r for r in runner.ordered_ancestors(graph, target) if r not in predecessors]
+        self.assertEqual(expected[0], "0045_pr_batch_numbers")
+        self.assertEqual(batch_blocked["pending"], expected)
         self.assertEqual(batch_blocked["operator_only"], [])
         self.assertEqual(batch_blocked["migrations_applied"], 0)
         ready = runner.plan(graph, policy, [target], target)
