@@ -15,8 +15,8 @@ import { ORDER_DESTINATIONS } from '../../config/orders.js';
 
 const SIDEBAR_PREFERENCE_KEY = 'evexia.admin.sidebar.collapsed';
 const isDesignationPath = (path) => path === '/admin/masters/designations' || path.startsWith('/admin/masters/designations/') || path === '/admin/masters/import/designation';
-const isUserManagementPath = (path) => path.startsWith('/admin/staff') || path === '/admin/roles-permissions' || isDesignationPath(path);
-const isMastersPath = (path) => path.startsWith('/admin/masters') && !isDesignationPath(path);
+const isUserManagementPath = (path) => path.startsWith('/admin/staff') || path === '/admin/roles-permissions';
+const isMastersPath = (path) => path.startsWith('/admin/masters');
 const isOrdersPath = (path) => path === '/admin/orders' || path.startsWith('/admin/orders/');
 const MASTER_GROUPS = [
   { label: 'Geography & Logistics', links: [
@@ -26,6 +26,7 @@ const MASTER_GROUPS = [
     { label: 'Headquarter Master', href: '/admin/masters/headquarters', testId: 'link-admin-headquarters', Icon: Building2, nested: true },
   ] },
   { label: 'People & Organization', links: [
+    { label: 'Designation Master', href: '/admin/masters/designations', testId: 'link-admin-designations', Icon: BriefcaseBusiness },
     { label: 'MR Master', href: '/admin/masters/mrs', testId: 'link-admin-mrs', Icon: UsersRound },
     { label: 'Doctor Master', href: '/admin/masters/doctors', testId: 'link-admin-doctors', Icon: Stethoscope, nested: true },
     { label: 'Patient Master', href: '/admin/masters/patients', testId: 'link-admin-patients', Icon: HeartPulse, nested: true },
@@ -81,8 +82,7 @@ export default function AdminLayout({ title, children }) {
   const showDashboard = !staff && (!searching || 'dashboard'.includes(query));
   const showStaff = !staff && (!searching || 'user management'.includes(query) || 'staff management'.includes(query));
   const showRoles = !staff && (!searching || 'user management'.includes(query) || 'roles & permissions roles and permissions'.includes(query));
-  const showDesignations = !staff && (!searching || 'user management'.includes(query) || 'designation master'.includes(query));
-  const showUserManagement = showStaff || showRoles || showDesignations;
+  const showUserManagement = showStaff || showRoles;
   const showAllMasters = !staff && (!searching || 'all masters'.includes(query));
   const showPO = !staff && (!searching || 'inventory purchase orders po'.includes(query));
   const showPR = !staff && (!searching || 'inventory purchase received pr receipts'.includes(query));
@@ -156,7 +156,6 @@ export default function AdminLayout({ title, children }) {
     setSearch('');
     setSearchExpanded(false);
     if (isMastersPath(location)) setMastersOpen(true);
-    if (isDesignationPath(location)) setMastersOpen(false);
     if (location.startsWith('/admin/inventory')) setInventoryOpen(true);
     if (isOrdersPath(location)) setOrdersOpen(true);
     if (isUserManagementPath(location)) setUserManagementOpen(true);
@@ -240,7 +239,7 @@ export default function AdminLayout({ title, children }) {
                 <section className="admin-nav__group" aria-label={group.label} key={group.label}>
                   <h2 className="admin-nav__group-heading">{group.label}</h2>
                   {group.links.map(({ label, href, testId, Icon, nested }) => {
-                    const active = nested ? location.startsWith(href) : location === href;
+                    const active = href === '/admin/masters/designations' ? isDesignationPath(location) : nested ? location.startsWith(href) : location === href;
                     return <Link key={href} href={href} className={`admin-nav__item${active ? ' admin-nav__item--active' : ''}`} aria-label={label} title={isCollapsed ? label : undefined} aria-current={location === href ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid={testId}><Icon size={16} aria-hidden="true" /><span className="admin-nav__label">{label}</span></Link>;
                   })}
                 </section>
@@ -275,9 +274,6 @@ export default function AdminLayout({ title, children }) {
             </Link>}
             {showRoles && <Link href="/admin/roles-permissions" className={`admin-nav__item${location === '/admin/roles-permissions' ? ' admin-nav__item--active' : ''}`} aria-label="Roles & Permissions" aria-current={location === '/admin/roles-permissions' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-roles-permissions">
               <ShieldCheck size={16} aria-hidden="true" /><span className="admin-nav__label">Roles & Permissions</span>
-            </Link>}
-            {showDesignations && <Link href="/admin/masters/designations" className={`admin-nav__item${isDesignationPath(location) ? ' admin-nav__item--active' : ''}`} aria-label="Designation Master" aria-current={location === '/admin/masters/designations' ? 'page' : undefined} onClick={() => closeDrawer(false)} data-testid="link-admin-designations">
-              <BriefcaseBusiness size={16} aria-hidden="true" /><span className="admin-nav__label">Designation Master</span>
             </Link>}
           </div>
           {searching && !showDashboard && !showUserManagement && !showMasters && !showInventory && !showOrders && <p className="admin-nav__empty" role="status" data-testid="status-navigation-empty">No navigation results. Try another search.</p>}

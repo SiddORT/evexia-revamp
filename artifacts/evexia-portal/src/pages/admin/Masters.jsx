@@ -21,6 +21,11 @@ export default function Masters() {
           <span className="admin-master-link__text"><strong>Courier Partner Master</strong><small>Manage shared courier partner records and authenticated audit history.</small></span>
           <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
         </Link>
+        <Link href="/admin/masters/designations" className="admin-master-link" data-testid="link-master-designations">
+          <span className="admin-master-link__icon"><BriefcaseBusiness size={20} aria-hidden="true" /></span>
+          <span className="admin-master-link__text"><strong>Designation Master</strong><small>Manage designation names, short names and status in shared server records.</small></span>
+          <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
+        </Link>
         <Link href="/admin/masters/mrs" className="admin-master-link" data-testid="link-master-mrs">
           <span className="admin-master-link__icon"><UsersRound size={20} aria-hidden="true" /></span>
           <span className="admin-master-link__text"><strong>MR Master</strong><small>Manage MR profiles and zone assignments in this browser.</small></span>
