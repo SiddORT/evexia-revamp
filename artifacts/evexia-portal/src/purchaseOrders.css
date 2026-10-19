@@ -163,14 +163,11 @@
 .po-group__dates, .po-new .po-group__delivery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 12px; }
 .po-new .po-group__vendor { margin-bottom: 12px; }
 .po-new .po-group__delivery label, .po-new .po-group__delivery .mr-form__error { overflow-wrap: anywhere; }
-.po-new .po-group__delivery > .po-field > label { min-height: 2.8em; line-height: 1.4; }
 .po-new .po-group__references { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 12px; }
 .po-new .po-group__references > :is(.po-group__vendor, .po-group__delivery) { display: contents; }
-.po-new .po-group__references .po-field > label { min-height: 2.8em; line-height: 1.4; }
 .po-new .po-group__references :is(label, .mr-form__error) { overflow-wrap: anywhere; }
 @media (max-width: 760px) {
   .po-new .po-group__references { grid-template-columns: minmax(0, 1fr); }
-  .po-new .po-group__references .po-field > label { min-height: 0; }
 }
 .po-new .searchable-select--open { z-index: 20; }
 .po-new-lines { display: grid; gap: 10px; }
@@ -194,7 +191,7 @@
 .po-new-summary p { margin: 14px 0 0; font-size: 11px; line-height: 1.5; color: var(--admin-text-soft); }
 .po-new-summary--review { position: static; margin: 16px 26px 20px auto; max-width: 320px; }
 @media (max-width: 1250px) { .po-new-layout { grid-template-columns: minmax(0, 1fr); } .po-new-line__fields { grid-template-columns: repeat(3, minmax(0, 1fr)); } .po-new-line__product { grid-column: 1 / -1; } }
-@media (max-width: 600px) { .po-new-layout { padding: 14px; } .po-group { padding: 12px; } .po-new .po-group__delivery, .po-group__dates, .po-new-line__fields { grid-template-columns: minmax(0, 1fr); } .po-new .po-group__delivery > .po-field > label { min-height: 0; } .po-new-line__totals { justify-content: space-between; } .po-new-summary--review { margin: 14px 18px; max-width: none; } }
+@media (max-width: 600px) { .po-new-layout { padding: 14px; } .po-group { padding: 12px; } .po-new .po-group__delivery, .po-group__dates, .po-new-line__fields { grid-template-columns: minmax(0, 1fr); } .po-new-line__totals { justify-content: space-between; } .po-new-summary--review { margin: 14px 18px; max-width: none; } }
 @media (max-width: 420px) { .po-new .po-form-footer .po-actions { grid-template-columns: minmax(0, 1fr); } .po-new .po-detail-grid { grid-template-columns: minmax(0, 1fr); } }
 
 
