@@ -17,6 +17,9 @@ export const savePR = (input, token, key, receipt) => request(receipt ? `/${rece
 } });
 export const removePR = (receipt, key) => request(`/${receipt.id}/delete`, { body: { expected_version: receipt.version, idempotencyKey: key } });
 export const reconcilePR = (key) => request(`/requests/${key}`);
+export const loadPRBatchSettings = () => request('/batch-settings');
+export const savePRBatchSettings = (body) => request('/batch-settings', { body });
+export const allocatePRBatches = (body) => request('/batch-allocations', { body });
 export const getPOFulfillment = (po) => po?.fulfillment || 'Open';
 export const isSamplePR = () => false;
 export const ownerPR = () => String(getSession()?.user?.id || '');
@@ -85,7 +88,7 @@ export function validateDraftPR(values, po, receipt) {
     const old = milli(receipt?.lines.find((l) => l.lineId === r.lineId)?.receivedQty ?? '0');
     if (received !== null && available !== null && received > (old > available ? old : available)) key('receivedQty', 'Quantity exceeds current or retained historical allowance.');
     if (accepted !== null && available !== null && accepted > available) key('acceptedQty', 'Acceptance exceeds the balance after other active receipts.');
-    if (!r.batchNo.trim()) key('batchNo', 'Batch number is required.');
+    if (!r.batchNo.trim() || r.batchNo.length > 120) key('batchNo', 'Enter a batch number up to 120 characters.');
     if (!validDate(r.expiryDate) || r.expiryDate < values.receivedDate) key('expiryDate', 'Enter an expiry on or after receiving.');
   });
   if (!positive) errors.lines = 'Enter at least one positive received quantity.';

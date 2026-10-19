@@ -228,6 +228,10 @@ import type {
   POReview,
   PRActivityPage,
   PRAnalytics,
+  PRBatchAllocationInput,
+  PRBatchAllocationView,
+  PRBatchSettingsView,
+  PRBatchSettingsWrite,
   PRCreate,
   PRDelete,
   PREdit,
@@ -14938,6 +14942,313 @@ export function useGetPurchaseReceivedAnalytics<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getAllocatePRBatchesUrl = () => {
+  return `/api/v1/admin/purchase-received/batch-allocations`;
+};
+
+/**
+ * @summary Allocate Batches
+ */
+export const allocatePRBatches = async (
+  pRBatchAllocationInput: PRBatchAllocationInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PRBatchAllocationView> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<PRBatchAllocationView>(getAllocatePRBatchesUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(pRBatchAllocationInput),
+  });
+};
+
+export const getAllocatePRBatchesMutationKey = () =>
+  ["allocatePRBatches"] as const;
+
+export const getAllocatePRBatchesMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof allocatePRBatches>>,
+    TError,
+    AllocatePRBatchesMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof allocatePRBatches>>,
+  TError,
+  AllocatePRBatchesMutationVariables,
+  TContext
+> => {
+  const mutationKey = getAllocatePRBatchesMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof allocatePRBatches>>,
+    AllocatePRBatchesMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return allocatePRBatches(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AllocatePRBatchesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof allocatePRBatches>>
+>;
+export type AllocatePRBatchesMutationBody = BodyType<PRBatchAllocationInput>;
+export type AllocatePRBatchesMutationError = ErrorType<ErrorEnvelope>;
+export type AllocatePRBatchesMutationVariables = {
+  data: BodyType<PRBatchAllocationInput>;
+};
+
+/**
+ * @summary Allocate Batches
+ */
+export const useAllocatePRBatches = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof allocatePRBatches>>,
+    TError,
+    AllocatePRBatchesMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof allocatePRBatches>>,
+  TError,
+  AllocatePRBatchesMutationVariables,
+  TContext
+> => {
+  return useMutation(getAllocatePRBatchesMutationOptions(options));
+};
+
+export const getGetPRBatchSettingsUrl = () => {
+  return `/api/v1/admin/purchase-received/batch-settings`;
+};
+
+/**
+ * @summary Batch Settings
+ */
+export const getPRBatchSettings = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PRBatchSettingsView> => {
+  return customFetch<PRBatchSettingsView>(getGetPRBatchSettingsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPRBatchSettingsQueryKey = () => {
+  return [`/api/v1/admin/purchase-received/batch-settings`] as const;
+};
+
+export const getGetPRBatchSettingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPRBatchSettings>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPRBatchSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPRBatchSettingsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPRBatchSettings>>
+  > = ({ signal }) => getPRBatchSettings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPRBatchSettings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPRBatchSettingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPRBatchSettings>>
+>;
+export type GetPRBatchSettingsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Batch Settings
+ */
+
+export function useGetPRBatchSettings<
+  TData = Awaited<ReturnType<typeof getPRBatchSettings>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPRBatchSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPRBatchSettingsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getSavePRBatchSettingsUrl = () => {
+  return `/api/v1/admin/purchase-received/batch-settings`;
+};
+
+/**
+ * @summary Save Batch Settings
+ */
+export const savePRBatchSettings = async (
+  pRBatchSettingsWrite: PRBatchSettingsWrite,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PRBatchSettingsView> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<PRBatchSettingsView>(getSavePRBatchSettingsUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(pRBatchSettingsWrite),
+  });
+};
+
+export const getSavePRBatchSettingsMutationKey = () =>
+  ["savePRBatchSettings"] as const;
+
+export const getSavePRBatchSettingsMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof savePRBatchSettings>>,
+    TError,
+    SavePRBatchSettingsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof savePRBatchSettings>>,
+  TError,
+  SavePRBatchSettingsMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSavePRBatchSettingsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof savePRBatchSettings>>,
+    SavePRBatchSettingsMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return savePRBatchSettings(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SavePRBatchSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof savePRBatchSettings>>
+>;
+export type SavePRBatchSettingsMutationBody = BodyType<PRBatchSettingsWrite>;
+export type SavePRBatchSettingsMutationError = ErrorType<ErrorEnvelope>;
+export type SavePRBatchSettingsMutationVariables = {
+  data: BodyType<PRBatchSettingsWrite>;
+};
+
+/**
+ * @summary Save Batch Settings
+ */
+export const useSavePRBatchSettings = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof savePRBatchSettings>>,
+    TError,
+    SavePRBatchSettingsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof savePRBatchSettings>>,
+  TError,
+  SavePRBatchSettingsMutationVariables,
+  TContext
+> => {
+  return useMutation(getSavePRBatchSettingsMutationOptions(options));
+};
 
 export const getExportPurchaseReceivedUrl = (
   params?: ExportPurchaseReceivedParams,

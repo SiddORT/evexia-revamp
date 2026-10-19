@@ -1,7 +1,7 @@
 {
   "version": 1,
   "target": "0044_purchase_received",
-  "policy_sha256": "02d4786bfae331a86de937f0afda40a4e7f354ee1ad75b321f18ba9fb7bd44b3",
+  "policy_sha256": "55372bfed15f1dac861f1fab4d68dfd19571f6e0381a16db901e38ec1dccf688",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
     "0002_username": "c4b52063617232dd5ad196a4f351228a0af080542682742e3096fe5b02dda01f",
@@ -51,7 +51,8 @@
     "0041_location_geography": "fc231db1c58f90d9727ee93af259ca320cb07e17a1cebed3b58b42b2c8da7e37",
     "0042_rate_hundredths": "e8eceb75617e7b0620beaaf7930424cd253b8a8a612aed50f35e16a57f94cab0",
     "0043_email_templates": "68d4b9e98bfb2a61f631840403e4de00b36634b9a0a9582528e67a4e980d034e",
-    "0044_purchase_received": "e269aec87496d6720dc8537d9c2bc602df58742105b8d4fcdb3195b57bc7a467"
+    "0044_purchase_received": "e269aec87496d6720dc8537d9c2bc602df58742105b8d4fcdb3195b57bc7a467",
+    "0045_pr_batch_numbers": "bcdf222f4ef8f60e9c01bb3f37558fd75fe331e828f17398bdaae1681d4923ef"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "712763aa1c7ea0294059eafaa487efe1e6b18bd324e8203a0e2af0ec13e4ecd2",

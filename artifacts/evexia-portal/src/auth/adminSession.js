@@ -763,7 +763,7 @@ export const openingBalanceRequest = (path, options) => masterRequest('opening-b
 export const purchaseReceivedRequest = (path, options) => purchaseOrderRequest(path, options, 'purchase-received');
 export async function purchaseOrderRequest(path = '', { body, params = {}, signal } = {}, resource = 'purchase-orders') {
   const allowed = resource === 'purchase-received'
-    ? /^(?:|\/(?:export|activity|analytics|preview|filter-options)|\/references\/(?:staff|orders)|\/(?:sources|requests)\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete))?)$/i
+    ? /^(?:|\/(?:export|activity|analytics|preview|filter-options|batch-settings|batch-allocations)|\/references\/(?:staff|orders)|\/(?:sources|requests)\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete))?)$/i
     : /^(?:|\/(?:overview|activity|analytics|preview)|\/(?:references|filter-options)\/(?:vendors|locations|products)|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete))?)$/i;
   if (!allowed.test(path)) {
     throw new SessionError('Unsupported purchase order operation.');
@@ -771,6 +771,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   const epoch = generation;
   const owner = state.user?.id;
   const mutation = body !== undefined && !path.endsWith('/preview');
+  const batchOperation = resource === 'purchase-received' && ['/batch-settings', '/batch-allocations'].includes(path);
   const check = () => {
     signal?.throwIfAborted();
     if (epoch !== generation || !owner || state.user?.id !== owner || state.status !== 'authenticated' || !token) {
@@ -784,7 +785,9 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true, 'admin');
   check();
   const uncertain = () => {
-    const error = new SessionError(mutation
+    const error = new SessionError(batchOperation
+      ? 'Batch settings or allocation could not be confirmed. Your draft is preserved. Retry the same allocation, or load saved settings before saving again.'
+      : mutation
       ? 'Save outcome is unconfirmed. Retry the same reviewed order to check or finish this save safely.'
       : 'Unable to load purchase orders. Check your connection and retry.');
     error.ambiguous = mutation;
@@ -812,14 +815,21 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       throw error;
     }
     const error = new SessionError(response.status === 403 ? 'Purchase orders are restricted to the protected Super Admin.'
-      : response.status >= 500 ? uncertain().message
+      : response.status >= 500 && !(batchOperation && typeof data?.error?.message === 'string') ? uncertain().message
       : typeof data?.error?.message === 'string' ? data.error.message
       : 'Purchase order fields are invalid. Check dates, quantities and current references.', response.status);
     error.code = data?.error?.code;
     error.ambiguous = mutation && response.status >= 500;
     throw error;
   }
-  if (mutation && (!data?.id || !data?.number || !Array.isArray(data.lines))) throw uncertain();
+  if (batchOperation) {
+    if (path === '/batch-settings') {
+      if (!['manual', 'system', 'product'].includes(data?.mode) || !Number.isSafeInteger(data?.version) || data.version < 1
+        || typeof data.prefix !== 'string' || !/^[A-Za-z0-9._-]{0,64}$/.test(data.prefix) || typeof data.policyToken !== 'string' || !data.policyToken) throw uncertain();
+    } else if (data?.idempotencyKey !== body?.idempotencyKey || !Array.isArray(data.lines)
+      || data.lines.length !== body.lineIds.length || new Set(data.lines.map((line) => line?.lineId)).size !== body.lineIds.length
+      || data.lines.some((line) => !line || !body.lineIds.includes(line.lineId) || typeof line.batchNo !== 'string' || !line.batchNo.trim() || line.batchNo.length > 120)) throw uncertain();
+  } else if (mutation && (!data?.id || !data?.number || !Array.isArray(data.lines))) throw uncertain();
   return data;
 }
 

@@ -173,7 +173,9 @@ def create_app() -> FastAPI:
         # Do not echo invalid bodies: they may contain passwords or other sensitive values.
         fields = [{"field": ".".join(str(part) for part in err["loc"] if isinstance(part, (str, int))),
                    "code": err["type"]} for err in exc.errors()[:20]]
-        if request.url.path.startswith(("/api/v1/admin/communication", "/api/v1/admin/email-templates")):
+        if request.url.path.startswith(("/api/v1/admin/communication", "/api/v1/admin/email-templates",
+                                        "/api/v1/admin/purchase-received/batch-settings",
+                                        "/api/v1/admin/purchase-received/batch-allocations")):
             # Unknown property names can themselves contain a credential.
             fields = [{"field": "body", "code": "invalid_configuration"}]
         if request.url.path.startswith("/api/v1/admin/sales-targets"):

@@ -1,5 +1,10 @@
 # Purchase Received server persistence
 
+Batch Number Settings and server-reserved editable defaults are documented in
+[`pr-batch-number-settings.md`](pr-batch-number-settings.md). This separate
+operator-only additive feature has **source review only**: none of the earlier
+verification evidence below verifies batch allocation, settings or UI behavior.
+
 ## Delivery versus activation
 
 This code replaces the live PR routes' browser-local data source. It does not

@@ -235,6 +235,24 @@ See the coordinated `0028_directory_soft_delete` rollout in the backend README.
 
 ## Grants and failure boundaries
 
+### PR batch numbering
+
+Shared PR batch defaults and actual reservations use the operator-only additive
+`0045_pr_batch_numbers` successor. Protected Super Admin access is revalidated
+for reads, versioned settings writes and bounded actor/request-bound allocations.
+Source PO-line membership and catalogue product scope are derived on the server;
+counter locks and encrypted retry persistence share one transaction. No browser
+counter, global uniqueness rule on supplier batches, PR document renumbering,
+stock posting, local import or managed activation is introduced.
+
+Saved settings and complete allocation requests/results use independent PR
+ciphertext with distinct AAD purposes. Plaintext is limited to singleton/version,
+request/actor identity and operational scope/next-unused counters. Retain old PR
+keys for these new payloads and active draft policy tokens as well as existing
+receipt/history/retry data; do not modify historical encryption inventories.
+See `docs/pr-batch-number-settings.md` for the forward inventory, suffix format,
+gap semantics, source-only review limits and exact operator handoff.
+
 Email template source is stored separately in `email_templates` (revision
 `0043_email_templates`), not inside encrypted Communication transport rows or
 browser storage. Source fields are bounded (name 100, description 500, subject

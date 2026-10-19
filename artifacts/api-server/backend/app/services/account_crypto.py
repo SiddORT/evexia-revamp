@@ -105,6 +105,8 @@ def ready(db):
         ["0043_email_templates"],
         # Additive PR tables leave the account ciphertext/index anchors unchanged.
         ["0044_purchase_received"],
+        # Batch-only additive policy/counters do not change account encryption.
+        ["0045_pr_batch_numbers"],
     ):
         raise AccountCryptoError()
     current = crypto()

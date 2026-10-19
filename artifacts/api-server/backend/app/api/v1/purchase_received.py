@@ -11,9 +11,26 @@ from app.schemas.purchase_received import (
 )
 from app.services.auth import Identity
 from app.services import purchase_received as service
+from app.services import pr_batches
+from app.schemas.pr_batches import PRBatchSettingsWrite, PRBatchSettingsView, PRBatchAllocationInput, PRBatchAllocationView
 
 router = APIRouter(prefix="/admin/purchase-received", tags=["Purchase Received"])
 manager = require_permissions("admin.access")
+
+
+@router.get("/batch-settings", response_model=PRBatchSettingsView, operation_id="getPRBatchSettings")
+def batch_settings(actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return pr_batches.read_settings(db, actor)
+
+
+@router.post("/batch-settings", response_model=PRBatchSettingsView, operation_id="savePRBatchSettings")
+def save_batch_settings(body: PRBatchSettingsWrite, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return pr_batches.write_settings(db, actor, body)
+
+
+@router.post("/batch-allocations", response_model=PRBatchAllocationView, operation_id="allocatePRBatches")
+def allocate_batches(body: PRBatchAllocationInput, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return pr_batches.allocate(db, actor, body)
 
 
 def filters(query: str = Query("", max_length=200), status: Literal["active", "deleted", "all"] = "active",

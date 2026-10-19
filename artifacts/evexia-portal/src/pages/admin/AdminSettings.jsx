@@ -40,7 +40,7 @@ export default function AdminSettings() {
   };
   const Active = active.Component;
   return <AdminLayout title="Settings">
-    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Admin / {isSuper ? 'Shared Settings and Browser Preferences' : 'Browser Preferences'}</p><h1>Settings</h1><p className="admin-page-head__description">Most choices personalize this browser’s Admin preview and are not synced to an account or other devices.{isSuper ? ' Role URLs and Communication are shared settings managed by Super Admin.' : ''}</p></div></div>
+    <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Admin / {isSuper ? 'Shared Settings and Browser Preferences' : 'Browser Preferences'}</p><h1>Settings</h1><p className="admin-page-head__description">Most choices personalize this browser’s Admin preview and are not synced to an account or other devices.{isSuper ? ' Role URLs, Communication and Batch Number Settings are shared settings managed by Super Admin.' : ''}</p></div></div>
     <div className="admin-settings-layout">
       <nav className="admin-settings-nav" aria-label="Settings categories">
         <div className="admin-settings-nav__search">

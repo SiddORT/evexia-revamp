@@ -126,6 +126,16 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a separate f
 
 ## Purchase Received persistence
 
+- PR Batch Number Settings are shared protected Super Admin configuration, not
+  browser-local preferences. Operator-only `0045_pr_batch_numbers` follows
+  `0044_purchase_received`; it authorizes no managed migration, key change,
+  deployment or broader predecessor activation. Manual is initially required;
+  automatic numbers use at least eight digits and real server reservations,
+  which may leave gaps. See `docs/pr-batch-number-settings.md` for the encrypted
+  forward inventory and explicit handoff. This feature was source-reviewed only:
+  no tests, automation, builds, diagnostics or release gates are authorized by
+  its delivery; runtime behavior remains unverified.
+
 - Live PR screens use protected server receipts, never local demo data. The additive
   `0044_purchase_received` migration and independent `PR_ENCRYPTION_KEYS` /
   `PR_ENCRYPTION_KEY_ID` need separate operator activation; delivery is not approval

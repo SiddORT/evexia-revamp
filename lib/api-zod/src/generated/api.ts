@@ -887,6 +887,11 @@ export const getPurchaseReceivedAnalyticsQueryOffsetDefault = 0;
 export const getPurchaseReceivedAnalyticsQueryOffsetMin = 0;
 export const getPurchaseReceivedAnalyticsQueryOffsetMax = 1000000;
 export const getPurchaseReceivedAnalyticsQueryActivityQueryMax = 200;
+export const allocatePRBatchesBodyLineIdsMax = 100;
+export const allocatePRBatchesBodyPolicyTokenMax = 2048;
+export const getPRBatchSettingsResponsePrefixMax = 64;
+export const savePRBatchSettingsBodyPrefixMax = 64;
+export const savePRBatchSettingsResponsePrefixMax = 64;
 export const exportPurchaseReceivedQueryQueryMax = 200;
 export const exportPurchaseReceivedQueryReceiverMax = 50;
 export const exportPurchaseReceivedQueryLimitDefault = 10;
@@ -16080,6 +16085,87 @@ export const GetPurchaseReceivedAnalyticsResponse = zod.object({
   lines: zod.number().int(),
   receipts: zod.number().int(),
   scope: zod.string(),
+});
+
+/**
+ * @summary Allocate Batches
+ */
+
+export const AllocatePRBatchesBody = zod.object({
+  idempotencyKey: zod.string().uuid(),
+  lineIds: zod
+    .array(zod.string().uuid())
+    .min(1)
+    .max(allocatePRBatchesBodyLineIdsMax),
+  poId: zod.string().uuid(),
+  policyToken: zod.string().min(1).max(allocatePRBatchesBodyPolicyTokenMax),
+});
+
+export const AllocatePRBatchesResponse = zod.object({
+  idempotencyKey: zod.string().uuid(),
+  lines: zod.array(
+    zod.object({
+      batchNo: zod.string(),
+      lineId: zod.string().uuid(),
+    }),
+  ),
+});
+
+/**
+ * @summary Batch Settings
+ */
+export const getPRBatchSettingsResponsePrefixDefault = ``;
+
+export const getPRBatchSettingsResponsePrefixRegExp = new RegExp(
+  "^[A-Za-z0-9._-]*$",
+);
+
+export const GetPRBatchSettingsResponse = zod.object({
+  mode: zod.enum(["manual", "system", "product"]),
+  policyToken: zod.string(),
+  prefix: zod
+    .string()
+    .max(getPRBatchSettingsResponsePrefixMax)
+    .regex(getPRBatchSettingsResponsePrefixRegExp)
+    .default(getPRBatchSettingsResponsePrefixDefault),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Save Batch Settings
+ */
+
+export const savePRBatchSettingsBodyPrefixDefault = ``;
+
+export const savePRBatchSettingsBodyPrefixRegExp = new RegExp(
+  "^[A-Za-z0-9._-]*$",
+);
+
+export const SavePRBatchSettingsBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  mode: zod.enum(["manual", "system", "product"]),
+  prefix: zod
+    .string()
+    .max(savePRBatchSettingsBodyPrefixMax)
+    .regex(savePRBatchSettingsBodyPrefixRegExp)
+    .default(savePRBatchSettingsBodyPrefixDefault),
+});
+
+export const savePRBatchSettingsResponsePrefixDefault = ``;
+
+export const savePRBatchSettingsResponsePrefixRegExp = new RegExp(
+  "^[A-Za-z0-9._-]*$",
+);
+
+export const SavePRBatchSettingsResponse = zod.object({
+  mode: zod.enum(["manual", "system", "product"]),
+  policyToken: zod.string(),
+  prefix: zod
+    .string()
+    .max(savePRBatchSettingsResponsePrefixMax)
+    .regex(savePRBatchSettingsResponsePrefixRegExp)
+    .default(savePRBatchSettingsResponsePrefixDefault),
+  version: zod.number().int(),
 });
 
 /**

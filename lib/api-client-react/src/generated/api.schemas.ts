@@ -4064,6 +4064,71 @@ export interface PRAnalytics {
   scope: string;
 }
 
+export interface PRBatchAllocatedLine {
+  batchNo: string;
+  lineId: string;
+}
+
+export interface PRBatchAllocationInput {
+  idempotencyKey: string;
+  /**
+   * @minItems 1
+   * @maxItems 100
+   */
+  lineIds: string[];
+  poId: string;
+  /**
+   * @minLength 1
+   * @maxLength 2048
+   */
+  policyToken: string;
+}
+
+export interface PRBatchAllocationView {
+  idempotencyKey: string;
+  lines: PRBatchAllocatedLine[];
+}
+
+export type PRBatchSettingsViewMode =
+  (typeof PRBatchSettingsViewMode)[keyof typeof PRBatchSettingsViewMode];
+
+export const PRBatchSettingsViewMode = {
+  manual: "manual",
+  system: "system",
+  product: "product",
+} as const;
+
+export interface PRBatchSettingsView {
+  mode: PRBatchSettingsViewMode;
+  policyToken: string;
+  /**
+   * @maxLength 64
+   * @pattern ^[A-Za-z0-9._-]*$
+   */
+  prefix?: string;
+  version: number;
+}
+
+export type PRBatchSettingsWriteMode =
+  (typeof PRBatchSettingsWriteMode)[keyof typeof PRBatchSettingsWriteMode];
+
+export const PRBatchSettingsWriteMode = {
+  manual: "manual",
+  system: "system",
+  product: "product",
+} as const;
+
+export interface PRBatchSettingsWrite {
+  /** @minimum 1 */
+  expected_version: number;
+  mode: PRBatchSettingsWriteMode;
+  /**
+   * @maxLength 64
+   * @pattern ^[A-Za-z0-9._-]*$
+   */
+  prefix?: string;
+}
+
 export type PRCreateReceiverMode =
   (typeof PRCreateReceiverMode)[keyof typeof PRCreateReceiverMode];
 

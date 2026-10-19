@@ -37,6 +37,9 @@ def readiness(db: Session = Depends(get_db)):
             # PR is an explicit additive successor, not an automatic migration
             # target or authorization to activate it on a managed database.
             accepted.append(["0044_purchase_received"])
+        if SCHEMA_REVISION == "0044_purchase_received":
+            # Explicit additive batch successor, never automatic activation.
+            accepted.append(["0045_pr_batch_numbers"])
         if revisions not in accepted:
             raise RuntimeError("Coordinated schema release required")
         from app.services.directory_runtime import ready
@@ -46,10 +49,14 @@ def readiness(db: Session = Depends(get_db)):
         from app.core.config import get_settings
         from app.services.communication_crypto import CommunicationCrypto
         CommunicationCrypto(get_settings())
-        if revisions == ["0044_purchase_received"]:
+        if revisions in (["0044_purchase_received"], ["0045_pr_batch_numbers"]):
             from app.services.purchase_received_crypto import ReceiptCrypto
             ReceiptCrypto(get_settings())
             db.execute(text("SELECT payload_ciphertext FROM purchase_receipts LIMIT 0"))
+        if revisions == ["0045_pr_batch_numbers"]:
+            db.execute(text("SELECT id, version, payload_ciphertext FROM pr_batch_settings WHERE id=1")).one()
+            db.execute(text("SELECT scope, value FROM pr_batch_counters LIMIT 0"))
+            db.execute(text("SELECT key, actor_id, payload_ciphertext FROM pr_batch_allocations LIMIT 0"))
         db.execute(text("SELECT channel, version FROM communication_channels LIMIT 0"))
         db.execute(text("SELECT id, channel, type, version, is_default, payload_ciphertext, secret_ciphertext, created_by, updated_by FROM communication_configurations LIMIT 0"))
         db.execute(text(

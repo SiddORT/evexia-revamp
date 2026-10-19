@@ -6,6 +6,7 @@ import { useAdminDateFormatters, getAdminDisplayPreferences } from '../../compon
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import { usePlatformConfirm } from '../../components/PlatformConfirmation.jsx';
 import useConfirmedNavigation from '../../auth/useConfirmedNavigation.js';
+import usePRBatchDefaults from '../../hooks/usePRBatchDefaults.js';
 import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
 import ReceiptReferenceSelect from '../../components/admin/ReceiptReferenceSelect.jsx';
 import ReceiptRetryRecovery from '../../components/admin/ReceiptRetryRecovery.jsx';
@@ -60,6 +61,8 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
   const owner = useRef(ownerPR());
   const sourceSeq = useRef(0);
   const [sourceLoading, setSourceLoading] = useState(false);
+  const removedRows = useRef(new Map());
+  const batchDefaults = usePRBatchDefaults({ poId: values.poId, rows: values.rows, receipt, sourceLoading, setValues, owner: owner.current });
   const [confirmRefresh, setConfirmRefresh] = useState(false);
   const po = orders.find((o) => o.id === values.poId);
   const vendorPhone = receipt ? receipt.vendorPhone : snapshot.refs.vendors.find((v) => v.id === po?.vendorId)?.phoneNo;
@@ -71,12 +74,13 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
   async function choosePo(item) {
     if (busy || uncertain || otherPending) return;
     const seq = ++sourceSeq.current;
+    batchDefaults.invalidate(); removedRows.current.clear();
     setSourceLoading(true); setReview(null); setErrors({}); setSaveError('');
     setValues((c) => ({ ...c, poId: item?.id || '', rows: [] }));
     try {
       if (!item) return;
       const next = await sourcePR(item.id);
-      if (seq !== sourceSeq.current) return;
+      if (seq !== sourceSeq.current || ownerPR() !== owner.current) return;
       setOrders([next]);
       setValues((c) => ({ ...c, poId: next.id, rows: rowsFor(next, null) }));
     } catch (cause) { if (seq === sourceSeq.current) setSaveError(cause.message); }
@@ -85,17 +89,19 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
   const missingRows = po ? po.lines.filter((l) => !values.rows.some((r) => r.lineId === l.id)) : [];
   function restoreRows() {
     const fresh = rowsFor(po, receipt);
-    setValues((c) => ({ ...c, rows: po.lines.map((l) => c.rows.find((r) => r.lineId === l.id) || fresh.find((r) => r.lineId === l.id)) }));
+    setValues((c) => ({ ...c, rows: po.lines.map((l) => c.rows.find((r) => r.lineId === l.id)
+      || batchDefaults.restore(removedRows.current.get(l.id) || fresh.find((r) => r.lineId === l.id))) }));
     setErrors({}); setSaveError('');
   }
   function setRow(i, field, value) {
+    if (field === 'batchNo') batchDefaults.touch(values.rows[i].lineId);
     setValues((c) => ({ ...c, rows: c.rows.map((r, k) => k === i ? { ...r, [field]: value } : r) }));
     clear(`lines.${i}.${field}`, 'lines');
   }
   const payload = () => inputPR(values);
   async function prepare(e) {
     e.preventDefault();
-    if (saveBlocked || busyRef.current || uncertain || otherPending || sourceLoading) return;
+    if (saveBlocked || busyRef.current || uncertain || otherPending || sourceLoading || batchDefaults.blocked) return;
     const errors = validateDraftPR(values, po, receipt);
     setErrors(errors);
     if (Object.keys(errors).length) { document.getElementById('pr-form-errors')?.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
@@ -204,6 +210,9 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
         {poProblem && !po && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="text-pr-po-problem">{poProblem}</div>}
         {po && <dl className="pr-ctx"><div><dt>Vendor</dt><dd>{receipt ? receipt.vendorName : po.vendorName}{(vendorPhone || !isNew) && <span className="po-secondary">{vendorPhone || 'No mobile on record'}</span>}</dd></div><div><dt>Deliver to</dt><dd>{receipt ? receipt.locationName : po.locationName}</dd></div><div><dt>PO date</dt><dd>{displayDate(po.poDate)} <span className={fclass(getPOFulfillment(po, activeReceipts))}>{getPOFulfillment(po, activeReceipts)}</span></dd></div></dl>}
         {sourceLoading && <p role="status">Loading server PO and available quantities…</p>}
+        {['loading', 'allocating'].includes(batchDefaults.phase) && <p role="status">{batchDefaults.phase === 'loading' ? 'Loading shared batch defaults…' : 'Allocating server batch numbers…'} You can keep editing the rows.</p>}
+        {batchDefaults.phase === 'error' && <div className="admin-feedback admin-feedback--error" role="alert">{batchDefaults.message} <button type="button" className="po-link" onClick={batchDefaults.retry}>Retry batch defaults</button></div>}
+        {batchDefaults.phase === 'ready' && batchDefaults.mode && <p className="mr-form__hint">{batchDefaults.mode === 'manual' ? 'Manual batch mode: enter a batch for every received row.' : 'Server batch defaults allocated. You can replace any batch with the supplier’s value. Unused allocations may leave gaps.'}</p>}
         <hr className="po-divider" />
         <h3 className="po-section-title">02 / Product rows <span>Leave received blank or zero to skip a row</span></h3>
         {!isNew && <p className="mr-form__hint" role="note">If later receipts accepted previously rejected units, you can retain or reduce this receipt’s historical received quantity when correcting it. Accepted quantity still cannot exceed the balance after other active receipts; new or increased receiving remains limited by that balance.</p>}
@@ -215,15 +224,15 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
               const rej = num(r.receivedQty) - num(r.acceptedQty);
               return <tr key={r.lineId}><td>{i + 1}</td><td><strong>{line?.productName}</strong>{err(i, 'lineId') && <p className="mr-form__error" role="alert">{err(i, 'lineId')}</p>}</td><td>{line?.quantity}</td>
                 <td><strong>{q3(avail)}</strong><small>After: {q3(avail - num(r.acceptedQty))}</small></td>
-                <td><input className="mr-form__control" value={r.batchNo} onChange={(e) => setRow(i, 'batchNo', e.target.value)} aria-label={`Batch number, row ${i + 1}`} aria-invalid={Boolean(err(i, 'batchNo'))} data-testid={`input-pr-batch-${i}`} />{err(i, 'batchNo') && <p className="mr-form__error" role="alert">{err(i, 'batchNo')}</p>}</td>
+                <td><input className="mr-form__control" maxLength={120} value={r.batchNo} onChange={(e) => setRow(i, 'batchNo', e.target.value)} aria-label={`Batch number, row ${i + 1}`} aria-invalid={Boolean(err(i, 'batchNo'))} data-testid={`input-pr-batch-${i}`} />{err(i, 'batchNo') && <p className="mr-form__error" role="alert">{err(i, 'batchNo')}</p>}</td>
                 <td><input className="mr-form__control" type="number" min="0" step="0.001" value={r.receivedQty} onChange={(e) => setRow(i, 'receivedQty', e.target.value)} aria-label={`Received quantity, row ${i + 1}`} aria-invalid={Boolean(err(i, 'receivedQty'))} data-testid={`input-pr-received-${i}`} />{err(i, 'receivedQty') && <p className="mr-form__error" role="alert">{err(i, 'receivedQty')}</p>}</td>
                 <td><input className="mr-form__control" type="number" min="0" step="0.001" value={r.acceptedQty} onChange={(e) => setRow(i, 'acceptedQty', e.target.value)} aria-label={`Accepted quantity, row ${i + 1}`} aria-invalid={Boolean(err(i, 'acceptedQty'))} data-testid={`input-pr-accepted-${i}`} />{err(i, 'acceptedQty') && <p className="mr-form__error" role="alert">{err(i, 'acceptedQty')}</p>}</td>
                 <td><input className="mr-form__control" type="date" value={r.expiryDate} min={values.receivedDate} onChange={(e) => setRow(i, 'expiryDate', e.target.value)} aria-label={`Expiry date, row ${i + 1}`} aria-invalid={Boolean(err(i, 'expiryDate'))} data-testid={`input-pr-expiry-${i}`} />{err(i, 'expiryDate') && <p className="mr-form__error" role="alert">{err(i, 'expiryDate')}</p>}</td>
                 <td><strong>{q3(rej)}</strong><small>Stays outstanding</small></td>
-                <td><button type="button" className="po-action po-action--danger" onClick={() => { setValues((c) => ({ ...c, rows: c.rows.filter((_, k) => k !== i) })); setErrors({}); }} aria-label={`Remove row ${i + 1}`} data-testid={`button-remove-pr-line-${i}`}><X size={14} /></button></td></tr>;
+                <td><button type="button" className="po-action po-action--danger" onClick={() => { removedRows.current.set(r.lineId, { ...r }); setValues((c) => ({ ...c, rows: c.rows.filter((_, k) => k !== i) })); setErrors({}); }} aria-label={`Remove row ${i + 1}`} data-testid={`button-remove-pr-line-${i}`}><X size={14} /></button></td></tr>;
             })}</tbody></table></div>}
       </fieldset>
-       <div className="po-form-footer"><span>Review the receipt before it is saved.</span><div className="po-actions"><button type="button" className="admin-button admin-button--secondary" disabled={busy || uncertain} onClick={requestRefresh} data-testid="button-refresh-pr-form"><RefreshCw size={14} /> Refresh</button><button type="button" className="admin-button admin-button--secondary" disabled={busy || uncertain} onClick={cancel} data-testid="button-cancel-pr">Cancel</button><button type="submit" className="admin-button" disabled={saveBlocked || busy || uncertain || sourceLoading} data-testid="button-review-pr">{busy ? 'Reviewing…' : 'Review receipt'}</button></div></div>
+       <div className="po-form-footer"><span>Review the receipt before it is saved.</span><div className="po-actions"><button type="button" className="admin-button admin-button--secondary" disabled={busy || uncertain} onClick={requestRefresh} data-testid="button-refresh-pr-form"><RefreshCw size={14} /> Refresh</button><button type="button" className="admin-button admin-button--secondary" disabled={busy || uncertain} onClick={cancel} data-testid="button-cancel-pr">Cancel</button><button type="submit" className="admin-button" disabled={saveBlocked || busy || uncertain || sourceLoading || batchDefaults.blocked} data-testid="button-review-pr">{busy ? 'Reviewing…' : 'Review receipt'}</button></div></div>
     </form>}
     {confirmRefresh && <ConfirmationDialog title="Discard this draft?" description="Refreshing reloads saved purchase orders and receipts and discards everything you have entered here. Use it only if the data is stale." actionLabel="Refresh and discard" destructive onConfirm={onRefresh} onClose={() => setConfirmRefresh(false)} />}
   </section>;

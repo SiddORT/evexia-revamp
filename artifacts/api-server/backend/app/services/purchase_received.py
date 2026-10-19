@@ -118,7 +118,7 @@ def review_data(db, crypto, body, existing=None):
         after = available - accepted if not old else historic
         lines.append(dict(lineId=line_id, productId=src["productId"], productName=prior["productName"] if prior else src["productName"],
             orderedQty=prior["orderedQty"] if prior else src["quantity"], receivedQty=str(received), acceptedQty=str(accepted),
-            rejectedQty=str(received - accepted), batchNo=line.batchNo.strip(), expiryDate=line.expiryDate.isoformat(),
+            rejectedQty=str(received - accepted), batchNo=line.batchNo, expiryDate=line.expiryDate.isoformat(),
             balanceAfterQty=str(after) if after is not None and after >= 0 else None))
     if old:
         data = {k: old[k] for k in ("poId", "poNumber", "poDate", "vendorId", "vendorName", "vendorPhone", "vendorAddress", "vendorGstNo", "locationId", "locationName")}
