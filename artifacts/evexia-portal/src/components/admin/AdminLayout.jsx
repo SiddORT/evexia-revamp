@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Landmark, LayoutDashboard, LayoutGrid, LogOut, MapPinned, FileDown, ScrollText, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
+import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Landmark, Languages, LayoutDashboard, LayoutGrid, LogOut, MapPinned, FileDown, ScrollText, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { MASTER_CATALOGUE, canViewMaster, isStaffIdentity } from '../../auth/capabilities.js';
@@ -16,11 +16,12 @@ import { ORDER_DESTINATIONS } from '../../config/orders.js';
 const SIDEBAR_PREFERENCE_KEY = 'evexia.admin.sidebar.collapsed';
 const isDesignationPath = (path) => path === '/admin/masters/designations' || path.startsWith('/admin/masters/designations/') || path === '/admin/masters/import/designation';
 const isUserManagementPath = (path) => path.startsWith('/admin/staff') || path === '/admin/roles-permissions';
-const isMastersPath = (path) => path.startsWith('/admin/masters');
+const isMastersPath = (path) => path.startsWith('/admin/masters') || path === '/admin/languages';
 const isOrdersPath = (path) => path === '/admin/orders' || path.startsWith('/admin/orders/');
 const MASTER_GROUPS = [
   { label: 'Geography & Logistics', links: [
     { label: 'Zone Master', href: '/admin/masters/zones', testId: 'link-admin-zones', Icon: MapPinned },
+    { label: 'Language Master', href: '/admin/languages', testId: 'link-admin-languages', Icon: Languages },
     { label: 'Courier Partner', href: '/admin/masters/courier-partners', testId: 'link-admin-courier-partners', Icon: Truck },
     { label: 'Storage Location', href: '/admin/masters/storage-locations', testId: 'link-admin-storage-locations', Icon: Warehouse, nested: true },
     { label: 'Headquarter Master', href: '/admin/masters/headquarters', testId: 'link-admin-headquarters', Icon: Building2, nested: true },

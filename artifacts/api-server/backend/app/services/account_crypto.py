@@ -109,6 +109,10 @@ def ready(db):
         ["0045_pr_batch_numbers"],
         # Additive inventory has no account fields or configuration anchors.
         ["0046_live_inventory"],
+        # Name-only language catalogue/history leave account anchors unchanged.
+        ["0047_languages"],
+        # Language Unicode index only; no account storage/anchor changes.
+        ["0048_language_unicode"],
     ):
         raise AccountCryptoError()
     current = crypto()

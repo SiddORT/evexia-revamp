@@ -236,6 +236,7 @@ export type BrowserActivityResource =
 export const BrowserActivityResource = {
   dashboard: "dashboard",
   zone: "zone",
+  language: "language",
   courier_partner: "courier_partner",
   storage_location: "storage_location",
   headquarter: "headquarter",
@@ -2433,6 +2434,90 @@ export interface InventoryStockPage {
   offset: number;
   snapshot?: InventoryStockRow[] | null;
   total: number;
+}
+
+export type LanguageChangeResponseAction =
+  (typeof LanguageChangeResponseAction)[keyof typeof LanguageChangeResponseAction];
+
+export const LanguageChangeResponseAction = {
+  create: "create",
+  edit: "edit",
+  delete: "delete",
+} as const;
+
+export interface LanguageChangeResponse {
+  action: LanguageChangeResponseAction;
+  actor: string;
+  afterName: string;
+  at: string;
+  beforeName: string | null;
+  id: string;
+  version: number;
+}
+
+export interface LanguageEdit {
+  /** @minimum 1 */
+  expected_version: number;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+}
+
+export interface LanguageFields {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+}
+
+export interface LanguageResponse {
+  createdAt: string;
+  createdBy: string;
+  deletedAt: string | null;
+  deletedBy: string | null;
+  id: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  updatedAt: string;
+  updatedBy: string;
+  version: number;
+}
+
+export interface LanguageSummary {
+  creates: number;
+  deletes: number;
+  edits: number;
+  latestChange: string | null;
+  scope: string;
+  total: number;
+}
+
+export interface LanguageHistory {
+  items: LanguageChangeResponse[];
+  limit: number;
+  offset: number;
+  record: LanguageResponse;
+  summary: LanguageSummary;
+  total: number;
+}
+
+export interface LanguagePage {
+  filtered: number;
+  items: LanguageResponse[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export interface LanguageVersion {
+  /** @minimum 1 */
+  expected_version: number;
 }
 
 export type LocationEditStatus =
@@ -9183,6 +9268,36 @@ export type GetInventoryStockHistoryParams = {
    * @maximum 100
    */
   limit?: number;
+};
+
+export type ListLanguagesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
+
+export type GetLanguageHistoryParams = {
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
 };
 
 export type ListMRDirectoryParams = {

@@ -1,7 +1,7 @@
 // Observations only. No record values, identifiers or names leave this module.
 const listeners = new Set();
 const resources = new Set([
-  'dashboard', 'zone', 'courier_partner', 'storage_location', 'headquarter',
+  'dashboard', 'language', 'zone', 'courier_partner', 'storage_location', 'headquarter',
   'mr', 'doctor', 'patient', 'designation', 'staff', 'product_category',
   'allergen', 'vendor', 'sales_target', 'opening_balance', 'purchase_order',
   'purchase_received', 'communication', 'message_template', 'invoice_template',

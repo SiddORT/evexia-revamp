@@ -1,5 +1,5 @@
 {
   "format": 1,
   "contract": "evexia-preview-2026-10",
-  "schema": "0046_live_inventory"
+  "schema": "0048_language_unicode"
 }

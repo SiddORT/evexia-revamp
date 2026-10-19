@@ -37,6 +37,17 @@ activation/recovery handoff; process repair is not live email recovery.
 
 # EVEXIA Portal
 
+- Language Master is a shared, name-only protected Super Admin catalogue under
+  Masters / Geography & Logistics. Its own Actions drawer shows retained
+  chronological server history and whole-record committed action totals.
+  `0047_languages` follows the single checkout head `0046_live_inventory`;
+  `0048_language_unicode` then adds locale-independent Unicode name uniqueness.
+  reconcile concurrent schema branches before automatic post-merge activation.
+  Verify only focused Language CRUD and narrow revision/readiness observations;
+  no regression/release checks. Patient language values and Staff permission
+  domains are unchanged. Fork results are not original-runtime alignment.
+  See `docs/language-master.md` and `sh scripts/test-language-crud.sh`.
+
 EVEXIA Life Sciences portal with protected Admin and MR workspaces, a separate fictional IMMUNO Doctor demo, browser-local demonstration masters, and a FastAPI authentication/API service. Admin/MR authentication, Staff Management, Roles, Zone, Courier Partner, Storage Location, Designation, Headquarter, Product Category, Allergen, MR, Doctor, Patient, Vendor and Sales Target Masters use the backend; unrelated masters remain browser-local.
 
 ## Run & operate

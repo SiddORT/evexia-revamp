@@ -1,5 +1,7 @@
 """Explicit UI label aliases for safe activity reporting search."""
 BROWSER_ACTIONS = {
+    "language_create": "Language created", "language_edit": "Language updated",
+    "language_delete": "Language deleted",
     "allergen_create": "Allergen product created", "allergen_edit": "Allergen product updated",
     "allergen_status": "Allergen product status changed", "allergen_delete": "Allergen product deleted",
     "opening_balance_create": "Opening balance created", "opening_balance_edit": "Opening balance updated",
@@ -25,7 +27,7 @@ BROWSER_ACTIONS = {
     "browser_settings_changed": "Settings changed",
 }
 RESOURCE_NAMES = {
-    "dashboard": "Dashboard", "zone": "Zone Master", "courier_partner": "Courier Partner",
+    "dashboard": "Dashboard", "zone": "Zone Master", "language": "Language Master", "courier_partner": "Courier Partner",
     "storage_location": "Storage Location", "headquarter": "Headquarter Master", "product_category": "Product Category Master",
     "mr": "MR Master", "doctor": "Doctor Master", "patient": "Patient Master",
     "designation": "Designation Master", "staff": "Staff",

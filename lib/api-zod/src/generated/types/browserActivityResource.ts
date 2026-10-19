@@ -12,6 +12,7 @@ export type BrowserActivityResource =
 export const BrowserActivityResource = {
   dashboard: "dashboard",
   zone: "zone",
+  language: "language",
   courier_partner: "courier_partner",
   storage_location: "storage_location",
   headquarter: "headquarter",

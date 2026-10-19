@@ -201,3 +201,4 @@ from app.db import communication_models as _communication_models  # noqa: E402,F
 from app.db import email_template_models as _email_template_models  # noqa: E402,F401
 from app.db import purchase_received_models as _purchase_received_models  # noqa: E402,F401
 from app.db import pr_batch_models as _pr_batch_models  # noqa: E402,F401
+from app.db import language_models as _language_models  # noqa: E402,F401

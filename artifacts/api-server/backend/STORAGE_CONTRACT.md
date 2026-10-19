@@ -1,5 +1,16 @@
 # Communication configuration storage
 
+## Language catalogue
+
+Language Master is protected singleton-only and outside assignable Staff
+permissions. Its sole business value is a 200-character trimmed Unicode name,
+stored as a non-personal catalogue label like Zone. Server actor/time/version and
+soft-deletion evidence are retained. Name snapshots in append-only
+`language_changes` and metadata-only success audits commit atomically with every
+mutation. PostgreSQL live-name uniqueness and expected-version checks arbitrate
+concurrency; deleted history remains protected/readable. No patient values,
+local datasets or credentials are copied. See `docs/language-master.md`.
+
 ## Live inventory successor (activation pending)
 
 `0046_live_inventory` is an automatic successor to accepted `0045_pr_batch_numbers`. Accepted server

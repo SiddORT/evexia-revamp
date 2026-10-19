@@ -40,6 +40,21 @@ concealing the actual protected pending path behind a generic installation failu
 Preserve independent target binding and atomicity. Advancing the source target
 does not prove the live database or running services have advanced.
 
+An uncommitted newly authored migration is not necessarily still unapplied:
+managed preview startup can occur independently while implementation is in
+progress. Check the actual revision before revising a new migration's DDL.
+
+**Why:** A narrow runtime/catalog observation found an initial catalogue
+migration already activated while its author was refining Unicode uniqueness.
+The correction had to become a forward successor rather than change the
+already-applied definition.
+
+**How to apply:** Preserve the observed applied migration bytes and append a
+successor for corrections. Keep source completion distinct from runtime
+acceptance. If a task fork's connection matches the original development
+binding, do not invoke an automatic-migration startup there merely to obtain
+alignment evidence; leave that execution to the authorized original lifecycle.
+
 For EVEXIA, a genuinely pristine database should have a single initialization
 command, without external signed release/recovery files or a restoration
 rehearsal. Routine patches should get their validation automatically from CI,

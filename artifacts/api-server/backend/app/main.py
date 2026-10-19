@@ -28,6 +28,8 @@ from app.api.v1.reporting import router as reporting_router
 from app.api.v1.staff import router as staff_router
 from app.api.v1.zones import router as zones_router
 from app.services.zones import ZoneError
+from app.api.v1.languages import router as languages_router
+from app.services.languages import LanguageError
 from app.api.v1.couriers import router as couriers_router
 from app.services.couriers import CourierError
 from app.api.v1.locations import router as locations_router
@@ -214,6 +216,11 @@ def create_app() -> FastAPI:
             locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
             fields = [{"field": item["field"] if item["field"] in locations else "body",
                        "code": item["code"]} for item in fields]
+        if request.url.path.startswith("/api/v1/admin/languages"):
+            allowed = {"name", "expected_version", "query", "limit", "offset", "language_id"}
+            locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
+            fields = [{"field": item["field"] if item["field"] in locations else "body",
+                       "code": item["code"]} for item in fields]
         if request.url.path.startswith("/api/v1/admin/mrs"):
             from app.schemas.mrs import MRFields
             allowed = set(MRFields.model_fields) | {"expected_version", "initialPassword", "mr_id", "pin",
@@ -252,6 +259,10 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(ZoneError)
     async def zone_error(request: Request, exc: ZoneError):
+        return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
+
+    @app.exception_handler(LanguageError)
+    async def language_error(request: Request, exc: LanguageError):
         return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
 
     @app.exception_handler(CourierError)
@@ -334,6 +345,7 @@ def create_app() -> FastAPI:
     app.include_router(reporting_router, prefix="/api/v1")
     app.include_router(staff_router, prefix="/api/v1")
     app.include_router(zones_router, prefix="/api/v1")
+    app.include_router(languages_router, prefix="/api/v1")
     app.include_router(couriers_router, prefix="/api/v1")
     app.include_router(locations_router, prefix="/api/v1")
     app.include_router(designations_router, prefix="/api/v1")

@@ -1,4 +1,4 @@
-import { ArrowUpRight, Boxes, BriefcaseBusiness, Building2, FlaskConical, HeartPulse, Landmark, MapPinned, Stethoscope, Target, Truck, Upload, UsersRound, Warehouse } from 'lucide-react';
+import { ArrowUpRight, Boxes, BriefcaseBusiness, Building2, FlaskConical, HeartPulse, Landmark, Languages, MapPinned, Stethoscope, Target, Truck, Upload, UsersRound, Warehouse } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 
@@ -14,6 +14,11 @@ export default function Masters() {
         <Link href="/admin/masters/zones" className="admin-master-link" data-testid="link-master-zones">
           <span className="admin-master-link__icon"><MapPinned size={20} aria-hidden="true" /></span>
           <span className="admin-master-link__text"><strong>Zone Master</strong><small>Manage the zones used within EVEXIA.</small></span>
+          <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
+        </Link>
+        <Link href="/admin/languages" className="admin-master-link" data-testid="link-master-languages">
+          <span className="admin-master-link__icon"><Languages size={20} aria-hidden="true" /></span>
+          <span className="admin-master-link__text"><strong>Language Master</strong><small>Manage language names in shared server records.</small></span>
           <ArrowUpRight className="admin-master-link__arrow" size={19} aria-hidden="true" />
         </Link>
         <Link href="/admin/masters/courier-partners" className="admin-master-link" data-testid="link-master-courier-partners">

@@ -442,6 +442,25 @@ export const getInventoryStockHistoryQueryOffsetMin = 0;
 export const getInventoryStockHistoryQueryOffsetMax = 1000000;
 export const getInventoryStockHistoryQueryLimitDefault = 25;
 export const getInventoryStockHistoryQueryLimitMax = 100;
+export const listLanguagesQueryQueryMax = 200;
+export const listLanguagesQueryLimitDefault = 10;
+export const listLanguagesQueryLimitMax = 100;
+export const listLanguagesQueryOffsetDefault = 0;
+export const listLanguagesQueryOffsetMin = 0;
+export const listLanguagesQueryOffsetMax = 1000000;
+export const listLanguagesResponseItemsItemNameMax = 200;
+export const createLanguageBodyNameMax = 200;
+export const createLanguageResponseNameMax = 200;
+export const getLanguageResponseNameMax = 200;
+export const deleteLanguageResponseNameMax = 200;
+export const editLanguageBodyNameMax = 200;
+export const editLanguageResponseNameMax = 200;
+export const getLanguageHistoryQueryLimitDefault = 10;
+export const getLanguageHistoryQueryLimitMax = 100;
+export const getLanguageHistoryQueryOffsetDefault = 0;
+export const getLanguageHistoryQueryOffsetMin = 0;
+export const getLanguageHistoryQueryOffsetMax = 1000000;
+export const getLanguageHistoryResponseRecordNameMax = 200;
 export const listMRDirectoryQueryQueryMax = 200;
 export const listMRDirectoryQueryLimitDefault = 10;
 export const listMRDirectoryQueryLimitMax = 100;
@@ -7952,6 +7971,194 @@ export const GetInventoryStockHistoryResponse = zod.object({
   limit: zod.number().int(),
   offset: zod.number().int(),
   scope: zod.string(),
+});
+
+/**
+ * @summary Listing
+ */
+export const listLanguagesQueryQueryDefault = ``;
+
+export const ListLanguagesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listLanguagesQueryQueryMax)
+    .default(listLanguagesQueryQueryDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listLanguagesQueryLimitMax)
+    .default(listLanguagesQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listLanguagesQueryOffsetMin)
+    .max(listLanguagesQueryOffsetMax)
+    .default(listLanguagesQueryOffsetDefault),
+});
+
+export const ListLanguagesResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      createdAt: zod.coerce.date(),
+      createdBy: zod.string(),
+      deletedAt: zod.union([zod.coerce.date(), zod.null()]),
+      deletedBy: zod.union([zod.string(), zod.null()]),
+      id: zod.string().uuid(),
+      name: zod.string().min(1).max(listLanguagesResponseItemsItemNameMax),
+      updatedAt: zod.coerce.date(),
+      updatedBy: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+
+export const CreateLanguageBody = zod.object({
+  name: zod.string().min(1).max(createLanguageBodyNameMax),
+});
+
+export const CreateLanguageResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  deletedAt: zod.union([zod.coerce.date(), zod.null()]),
+  deletedBy: zod.union([zod.string(), zod.null()]),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(createLanguageResponseNameMax),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Detail
+ */
+export const GetLanguageParams = zod.object({
+  language_id: zod.coerce.string().uuid(),
+});
+
+export const GetLanguageResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  deletedAt: zod.union([zod.coerce.date(), zod.null()]),
+  deletedBy: zod.union([zod.string(), zod.null()]),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(getLanguageResponseNameMax),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Delete
+ */
+export const DeleteLanguageParams = zod.object({
+  language_id: zod.coerce.string().uuid(),
+});
+
+export const DeleteLanguageBody = zod.object({
+  expected_version: zod.number().int().min(1),
+});
+
+export const DeleteLanguageResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  deletedAt: zod.union([zod.coerce.date(), zod.null()]),
+  deletedBy: zod.union([zod.string(), zod.null()]),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(deleteLanguageResponseNameMax),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditLanguageParams = zod.object({
+  language_id: zod.coerce.string().uuid(),
+});
+
+export const EditLanguageBody = zod.object({
+  expected_version: zod.number().int().min(1),
+  name: zod.string().min(1).max(editLanguageBodyNameMax),
+});
+
+export const EditLanguageResponse = zod.object({
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  deletedAt: zod.union([zod.coerce.date(), zod.null()]),
+  deletedBy: zod.union([zod.string(), zod.null()]),
+  id: zod.string().uuid(),
+  name: zod.string().min(1).max(editLanguageResponseNameMax),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary History
+ */
+export const GetLanguageHistoryParams = zod.object({
+  language_id: zod.coerce.string().uuid(),
+});
+
+export const GetLanguageHistoryQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getLanguageHistoryQueryLimitMax)
+    .default(getLanguageHistoryQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(getLanguageHistoryQueryOffsetMin)
+    .max(getLanguageHistoryQueryOffsetMax)
+    .default(getLanguageHistoryQueryOffsetDefault),
+});
+
+export const GetLanguageHistoryResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      action: zod.enum(["create", "edit", "delete"]),
+      actor: zod.string(),
+      afterName: zod.string(),
+      at: zod.coerce.date(),
+      beforeName: zod.union([zod.string(), zod.null()]),
+      id: zod.string().uuid(),
+      version: zod.number().int(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  record: zod.object({
+    createdAt: zod.coerce.date(),
+    createdBy: zod.string(),
+    deletedAt: zod.union([zod.coerce.date(), zod.null()]),
+    deletedBy: zod.union([zod.string(), zod.null()]),
+    id: zod.string().uuid(),
+    name: zod.string().min(1).max(getLanguageHistoryResponseRecordNameMax),
+    updatedAt: zod.coerce.date(),
+    updatedBy: zod.string(),
+    version: zod.number().int(),
+  }),
+  summary: zod.object({
+    creates: zod.number().int(),
+    deletes: zod.number().int(),
+    edits: zod.number().int(),
+    latestChange: zod.union([zod.coerce.date(), zod.null()]),
+    scope: zod.string(),
+    total: zod.number().int(),
+  }),
+  total: zod.number().int(),
 });
 
 /**
@@ -17739,6 +17946,7 @@ export const RecordBrowserActivityBody = zod.object({
         resource: zod.enum([
           "dashboard",
           "zone",
+          "language",
           "courier_partner",
           "storage_location",
           "headquarter",

@@ -47,7 +47,7 @@ const endingReason = (s) => {
   return '—';
 };
 const resourceNames = {
-  dashboard: 'Dashboard', zone: 'Zone Master', courier_partner: 'Courier Partner',
+  dashboard: 'Dashboard', zone: 'Zone Master', language: 'Language Master', courier_partner: 'Courier Partner',
   storage_location: 'Storage Location', headquarter: 'Headquarter Master', product_category: 'Product Category Master',
   mr: 'MR Master', doctor: 'Doctor Master', patient: 'Patient Master',
    designation: 'Designation Master', staff: 'Staff',

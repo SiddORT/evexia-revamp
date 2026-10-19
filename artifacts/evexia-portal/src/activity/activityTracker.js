@@ -2,7 +2,7 @@ import { getSession, reportingRequest, subscribeSession } from '../auth/adminSes
 import { subscribeLocalActivity, recordLocalAction } from '../services/localActivity.js';
 
 const resources = {
-  zones: 'zone', 'courier-partners': 'courier_partner', 'storage-locations': 'storage_location',
+  languages: 'language', zones: 'zone', 'courier-partners': 'courier_partner', 'storage-locations': 'storage_location',
   headquarters: 'headquarter', mrs: 'mr', doctors: 'doctor', patients: 'patient',
   designations: 'designation', 'product-categories': 'product_category', allergens: 'allergen',
   vendors: 'vendor', 'sales-targets': 'sales_target', 'opening-balances': 'opening_balance',
@@ -17,6 +17,7 @@ export function pageResource(path) {
   if (parts[1] === 'inventory') return parts[2] === 'purchase-orders' ? 'purchase_order' : parts[2] === 'purchase-received' ? 'purchase_received' : null;
   if (parts[1] === 'staff') return 'staff';
   if (parts[1] === 'roles-permissions') return 'roles_permissions';
+  if (parts[1] === 'languages') return 'language';
   if (parts[1] === 'activity-logs') return 'activity_logs';
   if (parts[1] === 'settings') {
     if (parts[2] === 'communication') return 'communication';

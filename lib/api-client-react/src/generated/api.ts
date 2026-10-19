@@ -134,6 +134,7 @@ import type {
   FileResponse,
   GetInventoryReferencesParams,
   GetInventoryStockHistoryParams,
+  GetLanguageHistoryParams,
   GetPurchaseReceivedAnalyticsParams,
   GetPurchaseReceivedFiltersParams,
   GetPurchaseReceivedSourceParams,
@@ -151,6 +152,12 @@ import type {
   InventoryInitializationPage,
   InventoryReferencePage,
   InventoryStockPage,
+  LanguageEdit,
+  LanguageFields,
+  LanguageHistory,
+  LanguagePage,
+  LanguageResponse,
+  LanguageVersion,
   ListAllergenReferencesParams,
   ListAllergensParams,
   ListCourierPartnersParams,
@@ -163,6 +170,7 @@ import type {
   ListHeadquartersParams,
   ListInventoryMovementsParams,
   ListInventoryStockParams,
+  ListLanguagesParams,
   ListMRAssociatedDoctorChoicesParams,
   ListMRDirectoryParams,
   ListMRReferenceChoicesParams,
@@ -8879,6 +8887,656 @@ export function useGetInventoryStockHistory<
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetInventoryStockHistoryQueryOptions(
     productId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListLanguagesUrl = (params?: ListLanguagesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/languages?${stringifiedParams}`
+    : `/api/v1/admin/languages`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listLanguages = async (
+  params?: ListLanguagesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LanguagePage> => {
+  return customFetch<LanguagePage>(getListLanguagesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListLanguagesQueryKey = (params?: ListLanguagesParams) => {
+  return [`/api/v1/admin/languages`, ...(params ? [params] : [])] as const;
+};
+
+export const getListLanguagesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLanguages>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListLanguagesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLanguages>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListLanguagesQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listLanguages>>> = ({
+    signal,
+  }) => listLanguages(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLanguages>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListLanguagesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLanguages>>
+>;
+export type ListLanguagesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListLanguages<
+  TData = Awaited<ReturnType<typeof listLanguages>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListLanguagesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listLanguages>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListLanguagesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateLanguageUrl = () => {
+  return `/api/v1/admin/languages`;
+};
+
+/**
+ * @summary Create
+ */
+export const createLanguage = async (
+  languageFields: LanguageFields,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LanguageResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<LanguageResponse>(getCreateLanguageUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(languageFields),
+  });
+};
+
+export const getCreateLanguageMutationKey = () => ["createLanguage"] as const;
+
+export const getCreateLanguageMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLanguage>>,
+    TError,
+    CreateLanguageMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createLanguage>>,
+  TError,
+  CreateLanguageMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateLanguageMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createLanguage>>,
+    CreateLanguageMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createLanguage(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateLanguageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createLanguage>>
+>;
+export type CreateLanguageMutationBody = BodyType<LanguageFields>;
+export type CreateLanguageMutationError = ErrorType<ErrorEnvelope>;
+export type CreateLanguageMutationVariables = {
+  data: BodyType<LanguageFields>;
+};
+
+/**
+ * @summary Create
+ */
+export const useCreateLanguage = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLanguage>>,
+    TError,
+    CreateLanguageMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createLanguage>>,
+  TError,
+  CreateLanguageMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateLanguageMutationOptions(options));
+};
+
+export const getGetLanguageUrl = (languageId: string) => {
+  return `/api/v1/admin/languages/${languageId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getLanguage = async (
+  languageId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LanguageResponse> => {
+  return customFetch<LanguageResponse>(getGetLanguageUrl(languageId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetLanguageQueryKey = (languageId: string) => {
+  return [`/api/v1/admin/languages/${languageId}`] as const;
+};
+
+export const getGetLanguageQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLanguage>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  languageId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLanguage>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetLanguageQueryKey(languageId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getLanguage>>> = ({
+    signal,
+  }) => getLanguage(languageId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: languageId !== null && languageId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLanguage>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLanguageQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLanguage>>
+>;
+export type GetLanguageQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetLanguage<
+  TData = Awaited<ReturnType<typeof getLanguage>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  languageId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLanguage>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLanguageQueryOptions(languageId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDeleteLanguageUrl = (languageId: string) => {
+  return `/api/v1/admin/languages/${languageId}/delete`;
+};
+
+/**
+ * @summary Delete
+ */
+export const deleteLanguage = async (
+  languageId: string,
+  languageVersion: LanguageVersion,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LanguageResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<LanguageResponse>(getDeleteLanguageUrl(languageId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(languageVersion),
+  });
+};
+
+export const getDeleteLanguageMutationKey = () => ["deleteLanguage"] as const;
+
+export const getDeleteLanguageMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteLanguage>>,
+    TError,
+    DeleteLanguageMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteLanguage>>,
+  TError,
+  DeleteLanguageMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeleteLanguageMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteLanguage>>,
+    DeleteLanguageMutationVariables
+  > = (props) => {
+    const { languageId, data } = props ?? {};
+
+    return deleteLanguage(languageId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteLanguageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteLanguage>>
+>;
+export type DeleteLanguageMutationBody = BodyType<LanguageVersion>;
+export type DeleteLanguageMutationError = ErrorType<ErrorEnvelope>;
+export type DeleteLanguageMutationVariables = {
+  languageId: string;
+  data: BodyType<LanguageVersion>;
+};
+
+/**
+ * @summary Delete
+ */
+export const useDeleteLanguage = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteLanguage>>,
+    TError,
+    DeleteLanguageMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteLanguage>>,
+  TError,
+  DeleteLanguageMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeleteLanguageMutationOptions(options));
+};
+
+export const getEditLanguageUrl = (languageId: string) => {
+  return `/api/v1/admin/languages/${languageId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editLanguage = async (
+  languageId: string,
+  languageEdit: LanguageEdit,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LanguageResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<LanguageResponse>(getEditLanguageUrl(languageId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(languageEdit),
+  });
+};
+
+export const getEditLanguageMutationKey = () => ["editLanguage"] as const;
+
+export const getEditLanguageMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editLanguage>>,
+    TError,
+    EditLanguageMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editLanguage>>,
+  TError,
+  EditLanguageMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditLanguageMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editLanguage>>,
+    EditLanguageMutationVariables
+  > = (props) => {
+    const { languageId, data } = props ?? {};
+
+    return editLanguage(languageId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditLanguageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editLanguage>>
+>;
+export type EditLanguageMutationBody = BodyType<LanguageEdit>;
+export type EditLanguageMutationError = ErrorType<ErrorEnvelope>;
+export type EditLanguageMutationVariables = {
+  languageId: string;
+  data: BodyType<LanguageEdit>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditLanguage = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editLanguage>>,
+    TError,
+    EditLanguageMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editLanguage>>,
+  TError,
+  EditLanguageMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditLanguageMutationOptions(options));
+};
+
+export const getGetLanguageHistoryUrl = (
+  languageId: string,
+  params?: GetLanguageHistoryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/languages/${languageId}/history?${stringifiedParams}`
+    : `/api/v1/admin/languages/${languageId}/history`;
+};
+
+/**
+ * @summary History
+ */
+export const getLanguageHistory = async (
+  languageId: string,
+  params?: GetLanguageHistoryParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<LanguageHistory> => {
+  return customFetch<LanguageHistory>(
+    getGetLanguageHistoryUrl(languageId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetLanguageHistoryQueryKey = (
+  languageId: string,
+  params?: GetLanguageHistoryParams,
+) => {
+  return [
+    `/api/v1/admin/languages/${languageId}/history`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetLanguageHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLanguageHistory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  languageId: string,
+  params?: GetLanguageHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLanguageHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetLanguageHistoryQueryKey(languageId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLanguageHistory>>
+  > = ({ signal }) =>
+    getLanguageHistory(languageId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: languageId !== null && languageId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLanguageHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLanguageHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLanguageHistory>>
+>;
+export type GetLanguageHistoryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary History
+ */
+
+export function useGetLanguageHistory<
+  TData = Awaited<ReturnType<typeof getLanguageHistory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  languageId: string,
+  params?: GetLanguageHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLanguageHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLanguageHistoryQueryOptions(
+    languageId,
     params,
     options,
   );

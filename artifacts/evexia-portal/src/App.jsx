@@ -21,6 +21,7 @@ const KitsOrderFormPage = lazyRoute(() => import('./pages/admin/KitsOrderFormPag
 const LupinOrders = lazyRoute(() => import('./pages/admin/LupinOrders.jsx'));
 const LupinOrderFormPage = lazyRoute(() => import('./pages/admin/LupinOrderFormPage.jsx'));
 import Masters from './pages/admin/Masters.jsx';
+import LanguageMaster from './pages/admin/LanguageMaster.jsx';
 import ZoneMaster from './pages/admin/ZoneMaster.jsx';
 const CourierPartnerMaster = lazyRoute(() => import('./pages/admin/CourierPartnerMaster.jsx'));
 const MRMaster = lazyRoute(() => import('./pages/admin/MRMaster.jsx'));
@@ -106,6 +107,7 @@ function App() {
       ))}
       <Route path="/admin/masters" component={Masters} />
       <Route path="/admin/masters/import/:kind">{(params) => <MasterExcelImportPage key={params.kind} kind={params.kind} />}</Route>
+      <Route path="/admin/languages" component={LanguageMaster} />
       <Route path="/admin/masters/zones" component={ZoneMaster} />
       <Route path="/admin/masters/courier-partners" component={CourierPartnerMaster} />
       <Route path="/admin/masters/sales-targets" component={SalesTargetMaster} />
