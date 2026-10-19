@@ -107,6 +107,8 @@ def ready(db):
         ["0044_purchase_received"],
         # Batch-only additive policy/counters do not change account encryption.
         ["0045_pr_batch_numbers"],
+        # Additive inventory has no account fields or configuration anchors.
+        ["0046_live_inventory"],
     ):
         raise AccountCryptoError()
     current = crypto()

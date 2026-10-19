@@ -1,4 +1,4 @@
-"""Authoritative receiving. No local data, stock posting or financial mutations."""
+"""Authoritative receiving and atomic accepted-quantity inventory reconciliation."""
 import uuid
 from decimal import Decimal
 from sqlalchemy import select, text, func
@@ -139,6 +139,10 @@ def preview(db, actor, body, record_id=None):
 
 def mutation(db, actor, body, record_id=None, operation="created"):
     def work(current, crypto):
+        from app.services import inventory
+        # Always before PO locks: transfer and initialization writers use this
+        # same lock, including before receipt source reads or retry resolution.
+        inventory.lock(db)
         digest_data = [operation, str(record_id), body.model_dump(mode="json")]
         hashes = crypto.digests(digest_data)
         db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": body.idempotencyKey.int % (2**63 - 1)})
@@ -175,6 +179,7 @@ def mutation(db, actor, body, record_id=None, operation="created"):
                     source="server", createdAt=before["createdAt"] if before else now.isoformat(), updatedAt=now.isoformat())
         row.payload_ciphertext = crypto.seal(row.id, "receipt", data)
         db.flush()
+        inventory.reconcile_receipt(db, current, data)
         # References are retained, including removed/deleted receipt lines.
         for line in data["lines"]:
             if not db.get(ReceiptSource, (row.id, uuid.UUID(line["lineId"]))):

@@ -2315,6 +2315,126 @@ export const HealthStatusValue = {
 } as const;
 export type HealthStatus = typeof HealthStatusValue;
 
+export interface InventoryCoverage {
+  complete: boolean;
+  contract: string;
+  openings: string;
+  pendingReceipts: number;
+  sales: string;
+}
+
+export interface InventoryHistoryItem {
+  actor: string;
+  after: string;
+  at: string;
+  before: string;
+  delta: string;
+  id: string;
+  locationId: string;
+  lotId: string;
+  movementId: string | null;
+  source: string;
+}
+
+export interface InventoryHistoryPage {
+  filtered: number;
+  items: InventoryHistoryItem[];
+  limit: number;
+  offset: number;
+  scope: string;
+}
+
+export type InventoryInitializationItemReconciliation =
+  { [key: string]: string | boolean }[] | null;
+
+export type InventoryInitializationItemState =
+  (typeof InventoryInitializationItemState)[keyof typeof InventoryInitializationItemState];
+
+export const InventoryInitializationItemState = {
+  eligible: "eligible",
+  current: "current",
+  unavailable: "unavailable",
+} as const;
+
+export interface InventoryInitializationItem {
+  historicalLocationGeography?: string | null;
+  initializedAt?: string | null;
+  originalCreatedAt?: string | null;
+  receiptId: string;
+  reconciliation?: InventoryInitializationItemReconciliation;
+  reviewToken: string | null;
+  state: InventoryInitializationItemState;
+  version?: number | null;
+}
+
+export interface InventoryInitializationPage {
+  coverage: InventoryCoverage;
+  items: InventoryInitializationItem[];
+  limit: number;
+  offset: number;
+}
+
+export interface InventoryLotView {
+  batchNo: string;
+  expiryDate: string;
+  lineId: string;
+  locationId: string;
+  locationName: string;
+  lotId: string;
+  originalCreatedAt: string;
+  productId: string;
+  productName: string;
+  quantity: string;
+  receiptId: string;
+  receiptNumber: string;
+  receivedDate: string;
+  unit: string;
+}
+
+export interface InventoryReference {
+  available?: string | null;
+  batchNo?: string | null;
+  expiryDate?: string | null;
+  id: string;
+  name: string;
+  productId?: string | null;
+  productName?: string | null;
+  receiptId?: string | null;
+  receiptNumber?: string | null;
+  unit?: string | null;
+}
+
+export interface InventoryReferencePage {
+  filtered: number;
+  items: InventoryReference[];
+  limit: number;
+  offset: number;
+}
+
+export interface InventoryStockRow {
+  category: string;
+  categoryId: string;
+  concentration: string;
+  lots: InventoryLotView[];
+  name: string;
+  productId: string;
+  quantity: string;
+  sellingPrice: string | null;
+  state: string;
+  unit: string;
+}
+
+export interface InventoryStockPage {
+  asOf: string;
+  coverage: InventoryCoverage;
+  filtered: number;
+  items: InventoryStockRow[];
+  limit: number;
+  offset: number;
+  snapshot?: InventoryStockRow[] | null;
+  total: number;
+}
+
 export type LocationEditStatus =
   (typeof LocationEditStatus)[keyof typeof LocationEditStatus];
 
@@ -3629,6 +3749,178 @@ export interface MRUsername {
 export interface MRVersion {
   /** @minimum 1 */
   expected_version: number;
+}
+
+export type MoveCreateDeliveryMode =
+  (typeof MoveCreateDeliveryMode)[keyof typeof MoveCreateDeliveryMode];
+
+export const MoveCreateDeliveryMode = {
+  staff: "staff",
+  other: "other",
+} as const;
+
+export interface MoveLine {
+  lotId: string;
+  /**
+   * @maxLength 11
+   * @pattern ^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$
+   */
+  quantity: string;
+}
+
+export interface MoveCreate {
+  date: string;
+  deliveryMode: MoveCreateDeliveryMode;
+  destinationId: string;
+  idempotencyKey: string;
+  /**
+   * @minItems 1
+   * @maxItems 100
+   */
+  lines: MoveLine[];
+  otherName?: string | null;
+  /** @pattern ^[0-9a-f]{64}$ */
+  reviewToken: string;
+  sourceId: string;
+  staffId?: string | null;
+}
+
+export type MoveInputDeliveryMode =
+  (typeof MoveInputDeliveryMode)[keyof typeof MoveInputDeliveryMode];
+
+export const MoveInputDeliveryMode = {
+  staff: "staff",
+  other: "other",
+} as const;
+
+export interface MoveInput {
+  date: string;
+  deliveryMode: MoveInputDeliveryMode;
+  destinationId: string;
+  /**
+   * @minItems 1
+   * @maxItems 100
+   */
+  lines: MoveLine[];
+  otherName?: string | null;
+  sourceId: string;
+  staffId?: string | null;
+}
+
+export interface MovementActivity {
+  action: string;
+  actor: string;
+  at: string;
+  requestId: string | null;
+}
+
+export interface MovementLineView {
+  batchNo: string;
+  destinationAfter: string;
+  destinationBefore: string;
+  expiryDate: string;
+  lineId: string;
+  lotId: string;
+  originalCreatedAt: string;
+  productId: string;
+  productName: string;
+  productVersion: number;
+  quantity: string;
+  receiptId: string;
+  receiptNumber: string;
+  receivedDate: string;
+  sourceAfter: string;
+  sourceBefore: string;
+  unit: string;
+}
+
+export interface MovementLocation {
+  address: string;
+  city: string;
+  countryCode: string;
+  id: string;
+  name: string;
+  pincode: string;
+  state: string;
+  version: number;
+}
+
+export type MovementSavedDeliveryMode =
+  (typeof MovementSavedDeliveryMode)[keyof typeof MovementSavedDeliveryMode];
+
+export const MovementSavedDeliveryMode = {
+  staff: "staff",
+  other: "other",
+} as const;
+
+export interface MovementSummary {
+  lots: number;
+  movements: number;
+  scope: string;
+}
+
+export interface MovementSaved {
+  activity: MovementActivity[];
+  actor: string;
+  actorId: string;
+  appendOnly: boolean;
+  createdAt: string;
+  date: string;
+  deliveredBy: string;
+  deliveryMode: MovementSavedDeliveryMode;
+  destination: MovementLocation;
+  id: string;
+  lines: MovementLineView[];
+  source: MovementLocation;
+  staffId: string | null;
+  staffVersion: number | null;
+  summary: MovementSummary;
+}
+
+export interface MovementPage {
+  filtered: number;
+  items: MovementSaved[];
+  limit: number;
+  offset: number;
+  summary: MovementSummary;
+  total: number;
+}
+
+export type MovementReconciliationState =
+  (typeof MovementReconciliationState)[keyof typeof MovementReconciliationState];
+
+export const MovementReconciliationState = {
+  committed: "committed",
+  not_committed: "not_committed",
+} as const;
+
+export interface MovementReconciliation {
+  movement: MovementSaved | null;
+  state: MovementReconciliationState;
+}
+
+export type MovementSnapshotDeliveryMode =
+  (typeof MovementSnapshotDeliveryMode)[keyof typeof MovementSnapshotDeliveryMode];
+
+export const MovementSnapshotDeliveryMode = {
+  staff: "staff",
+  other: "other",
+} as const;
+
+export interface MovementSnapshot {
+  date: string;
+  deliveredBy: string;
+  deliveryMode: MovementSnapshotDeliveryMode;
+  destination: MovementLocation;
+  lines: MovementLineView[];
+  source: MovementLocation;
+  staffId: string | null;
+  staffVersion: number | null;
+}
+
+export interface MovementReview {
+  movement: MovementSnapshot;
+  reviewToken: string;
 }
 
 export interface OpeningBalanceDoctorChoice {
@@ -8806,6 +9098,92 @@ export const DownloadHeadquarterSampleFormat = {
   csv: "csv",
   xlsx: "xlsx",
 } as const;
+
+export type ReviewInventoryInitializationParams = {
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type ListInventoryMovementsParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type GetInventoryReferencesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  source_id?: string | null;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type ListInventoryStockParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  category_id?: string | null;
+  /**
+   * @maxLength 4000
+   */
+  product_ids?: string;
+  snapshot?: boolean;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type GetInventoryStockHistoryParams = {
+  from_date?: string | null;
+  to_date?: string | null;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
 
 export type ListMRDirectoryParams = {
   /**

@@ -1,5 +1,11 @@
 # Purchase Received server persistence
 
+The pending Live Inventory successor now adds atomic accepted-quantity stock
+posting to receipt CRUD. The historical receiving-only statement below
+describes its original `0044` contract; it must not be used as the current stock
+contract. See [`live-inventory.md`](live-inventory.md) for `0046`, quantity/lot
+identity, initialization, encryption and the still-blocked live activation.
+
 Batch Number Settings and server-reserved editable defaults are documented in
 [`pr-batch-number-settings.md`](pr-batch-number-settings.md). This separate
 operator-only additive feature has **source review only**: none of the earlier
@@ -10,7 +16,8 @@ verification evidence below verifies batch allocation, settings or UI behavior.
 This code replaces the live PR routes' browser-local data source. It does not
 import, clear, mirror or seed any legacy PR/PO/master browser storage. The legacy
 service remains for old isolated consumers and historical tests, not as a live
-fallback. Nothing posts inventory, changes PO tax/money, or sends notifications.
+fallback. The original `0044` receipt domain does not post inventory; pending
+`0046` adds that posting without changing PO tax/money or sending notifications.
 
 `0044_purchase_received` is additive and **operator-only**, descending from
 `0043_email_templates`. It follows the independently merged email-template

@@ -761,8 +761,11 @@ export const productCategoryRequest = (path, options) => masterRequest('product-
 export const openingBalanceRequest = (path, options) => masterRequest('opening-balances', path, options);
 
 export const purchaseReceivedRequest = (path, options) => purchaseOrderRequest(path, options, 'purchase-received');
+export const inventoryRequest = (path, options) => purchaseOrderRequest(path, options, 'inventory');
 export async function purchaseOrderRequest(path = '', { body, params = {}, signal } = {}, resource = 'purchase-orders') {
-  const allowed = resource === 'purchase-received'
+  const allowed = resource === 'inventory'
+    ? /^\/(?:stock(?:\/[0-9a-f-]{36}\/history)?|initialization|references\/(?:locations|staff|lots)|requests\/[0-9a-f-]{36}|movements(?:\/preview|\/[0-9a-f-]{36}(?:\/(?:activity|analytics))?)?)$/i
+    : resource === 'purchase-received'
     ? /^(?:|\/(?:export|activity|analytics|preview|filter-options|batch-settings|batch-allocations)|\/references\/(?:staff|orders)|\/(?:sources|requests)\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete))?)$/i
     : /^(?:|\/(?:overview|activity|analytics|preview)|\/(?:references|filter-options)\/(?:vendors|locations|products)|\/[0-9a-f-]{36}(?:\/(?:preview|edit|delete))?)$/i;
   if (!allowed.test(path)) {
@@ -829,7 +832,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     } else if (data?.idempotencyKey !== body?.idempotencyKey || !Array.isArray(data.lines)
       || data.lines.length !== body.lineIds.length || new Set(data.lines.map((line) => line?.lineId)).size !== body.lineIds.length
       || data.lines.some((line) => !line || !body.lineIds.includes(line.lineId) || typeof line.batchNo !== 'string' || !line.batchNo.trim() || line.batchNo.length > 120)) throw uncertain();
-  } else if (mutation && (!data?.id || !data?.number || !Array.isArray(data.lines))) throw uncertain();
+  } else if (mutation && (!data?.id || (resource !== 'inventory' && !data?.number) || !Array.isArray(data.lines))) throw uncertain();
   return data;
 }
 

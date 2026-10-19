@@ -1,5 +1,21 @@
 # Communication configuration storage
 
+## Live inventory successor (activation pending)
+
+`0046_live_inventory` is an automatic successor to accepted `0045_pr_batch_numbers`. Accepted server
+receipt quantities post atomically into receipt/PO-line-specific lots and exact
+nonnegative location balances; movements are immediate append-only paired
+postings. Stock never comes from browser/demo data or catalogue locations.
+Protected singleton authorization is repeated inside transactions. Inventory
+descriptive payloads, immutable movement history and retry results use independent
+PR keys with forward `inventory:*` AAD purposes. Operational UUIDs, exact
+quantities, posting correlations and timestamps remain plaintext for integrity.
+Retain old PR keys for these new surfaces; historical encryption inventories
+remain unchanged. Quantity/coverage, forward rotation scope, initialization
+procedure, observed blockers and separate activation gates are in
+[`docs/live-inventory.md`](../../../docs/live-inventory.md). Source changes and
+focused disposable CRUD are not managed activation approval.
+
 `communication_configurations` encrypts **all** user-entered values in authenticated
 payload/credential ciphertexts, bound to record/channel/type/purpose with versioned
 independent operator keys. Only structural UUIDs, channel/type, default/version,

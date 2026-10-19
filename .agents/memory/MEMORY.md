@@ -1,7 +1,7 @@
 - [GitHub API redirects](github-api-redirects.md) — renamed repository paths can return proxy Forbidden despite healthy credentials; use the canonical API path.
 - [Platform message boundary](platform-message-boundary.md) — application choices must use platform popups; tab close/reload cannot show replacement HTML confirmations.
 - [Address data authority](address-data-authority.md) — catalogue assistance must not replace historical or postal-only address meanings; Storage geography remains optional.
-- [Development release policy](development-release-policy.md) — routine additive dev updates need no repeated approval; verify actual running releases, not Git alone.
+- [Development release policy](development-release-policy.md) — user says migrations are now automatic; obtain the updated implementation and verify actual running revisions.
 - [Docker initialization CI boundary](docker-initialization-ci-boundary.md) — local Docker build/run support does not prove canonical-path or namespace-entry capability.
 - [Browser response audits](browser-response-audits.md) — exact API pathname boundaries keep Vite source modules out of JSON/credential audits without hiding malformed API responses.
 - [Development runtime subprocesses](development-runtime-subprocesses.md) — test real managed working directories without harness import paths; parent preflight success does not prove child readiness.

@@ -49,14 +49,21 @@ def readiness(db: Session = Depends(get_db)):
         from app.core.config import get_settings
         from app.services.communication_crypto import CommunicationCrypto
         CommunicationCrypto(get_settings())
-        if revisions in (["0044_purchase_received"], ["0045_pr_batch_numbers"]):
+        if revisions in (["0044_purchase_received"], ["0045_pr_batch_numbers"], ["0046_live_inventory"]):
             from app.services.purchase_received_crypto import ReceiptCrypto
             ReceiptCrypto(get_settings())
             db.execute(text("SELECT payload_ciphertext FROM purchase_receipts LIMIT 0"))
-        if revisions == ["0045_pr_batch_numbers"]:
+        if revisions in (["0045_pr_batch_numbers"], ["0046_live_inventory"]):
             db.execute(text("SELECT id, version, payload_ciphertext FROM pr_batch_settings WHERE id=1")).one()
             db.execute(text("SELECT scope, value FROM pr_batch_counters LIMIT 0"))
             db.execute(text("SELECT key, actor_id, payload_ciphertext FROM pr_batch_allocations LIMIT 0"))
+        if revisions == ["0046_live_inventory"]:
+            db.execute(text("SELECT id, receipt_id, line_id, product_id, origin_id, accepted, payload_ciphertext FROM inventory_lots LIMIT 0"))
+            db.execute(text("SELECT lot_id, location_id, quantity FROM inventory_balances LIMIT 0"))
+            db.execute(text("SELECT receipt_id, version, initialized_at FROM inventory_receipt_states LIMIT 0"))
+            db.execute(text("SELECT id, source_id, destination_id, actor_id, event_id, created_at, payload_ciphertext FROM inventory_movements LIMIT 0"))
+            db.execute(text("SELECT id, source_key, lot_id, location_id, movement_id, actor_id, created_at, delta, before, after FROM inventory_postings LIMIT 0"))
+            db.execute(text("SELECT key, actor_id, digest, payload_ciphertext FROM inventory_requests LIMIT 0"))
         db.execute(text("SELECT channel, version FROM communication_channels LIMIT 0"))
         db.execute(text("SELECT id, channel, type, version, is_default, payload_ciphertext, secret_ciphertext, created_by, updated_by FROM communication_configurations LIMIT 0"))
         db.execute(text(

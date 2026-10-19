@@ -406,6 +406,42 @@ export const editHeadquarterBodyNameMax = 200;
 export const editHeadquarterBodyStateCodeOneMax = 16;
 export const editHeadquarterResponseNameMax = 200;
 export const setHeadquarterStatusResponseNameMax = 200;
+export const reviewInventoryInitializationQueryOffsetDefault = 0;
+export const reviewInventoryInitializationQueryOffsetMin = 0;
+export const reviewInventoryInitializationQueryOffsetMax = 1000000;
+export const reviewInventoryInitializationQueryLimitDefault = 25;
+export const reviewInventoryInitializationQueryLimitMax = 100;
+export const listInventoryMovementsQueryQueryMax = 200;
+export const listInventoryMovementsQueryOffsetDefault = 0;
+export const listInventoryMovementsQueryOffsetMin = 0;
+export const listInventoryMovementsQueryOffsetMax = 1000000;
+export const listInventoryMovementsQueryLimitDefault = 10;
+export const listInventoryMovementsQueryLimitMax = 100;
+export const createInventoryMovementBodyLinesItemQuantityMax = 11;
+export const createInventoryMovementBodyLinesMax = 100;
+export const createInventoryMovementBodyOtherNameOneMax = 120;
+export const previewInventoryMovementBodyLinesItemQuantityMax = 11;
+export const previewInventoryMovementBodyLinesMax = 100;
+export const previewInventoryMovementBodyOtherNameOneMax = 120;
+export const getInventoryReferencesQueryQueryMax = 200;
+export const getInventoryReferencesQueryOffsetDefault = 0;
+export const getInventoryReferencesQueryOffsetMin = 0;
+export const getInventoryReferencesQueryOffsetMax = 1000000;
+export const getInventoryReferencesQueryLimitDefault = 25;
+export const getInventoryReferencesQueryLimitMax = 100;
+export const listInventoryStockQueryQueryMax = 200;
+export const listInventoryStockQueryProductIdsMax = 4000;
+export const listInventoryStockQuerySnapshotDefault = false;
+export const listInventoryStockQueryOffsetDefault = 0;
+export const listInventoryStockQueryOffsetMin = 0;
+export const listInventoryStockQueryOffsetMax = 1000000;
+export const listInventoryStockQueryLimitDefault = 25;
+export const listInventoryStockQueryLimitMax = 100;
+export const getInventoryStockHistoryQueryOffsetDefault = 0;
+export const getInventoryStockHistoryQueryOffsetMin = 0;
+export const getInventoryStockHistoryQueryOffsetMax = 1000000;
+export const getInventoryStockHistoryQueryLimitDefault = 25;
+export const getInventoryStockHistoryQueryLimitMax = 100;
 export const listMRDirectoryQueryQueryMax = 200;
 export const listMRDirectoryQueryLimitDefault = 10;
 export const listMRDirectoryQueryLimitMax = 100;
@@ -7173,6 +7209,749 @@ export const SetHeadquarterStatusResponse = zod.object({
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
   version: zod.number().int(),
+});
+
+/**
+ * @summary Initialization
+ */
+
+export const ReviewInventoryInitializationQueryParams = zod.object({
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(reviewInventoryInitializationQueryOffsetMin)
+    .max(reviewInventoryInitializationQueryOffsetMax)
+    .default(reviewInventoryInitializationQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(reviewInventoryInitializationQueryLimitMax)
+    .default(reviewInventoryInitializationQueryLimitDefault),
+});
+
+export const ReviewInventoryInitializationResponse = zod.object({
+  coverage: zod.object({
+    complete: zod.boolean(),
+    contract: zod.string(),
+    openings: zod.string(),
+    pendingReceipts: zod.number().int(),
+    sales: zod.string(),
+  }),
+  items: zod.array(
+    zod.object({
+      historicalLocationGeography: zod
+        .union([zod.string(), zod.null()])
+        .optional(),
+      initializedAt: zod.union([zod.string(), zod.null()]).optional(),
+      originalCreatedAt: zod.union([zod.string(), zod.null()]).optional(),
+      receiptId: zod.string().uuid(),
+      reconciliation: zod
+        .union([
+          zod.array(
+            zod.record(zod.string(), zod.union([zod.string(), zod.boolean()])),
+          ),
+          zod.null(),
+        ])
+        .optional(),
+      reviewToken: zod.union([zod.string(), zod.null()]),
+      state: zod.enum(["eligible", "current", "unavailable"]),
+      version: zod.union([zod.number().int(), zod.null()]).optional(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+});
+
+/**
+ * @summary Listing
+ */
+export const listInventoryMovementsQueryQueryDefault = ``;
+
+export const ListInventoryMovementsQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listInventoryMovementsQueryQueryMax)
+    .default(listInventoryMovementsQueryQueryDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listInventoryMovementsQueryOffsetMin)
+    .max(listInventoryMovementsQueryOffsetMax)
+    .default(listInventoryMovementsQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listInventoryMovementsQueryLimitMax)
+    .default(listInventoryMovementsQueryLimitDefault),
+});
+
+export const ListInventoryMovementsResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      activity: zod.array(
+        zod.object({
+          action: zod.string(),
+          actor: zod.string(),
+          at: zod.coerce.date(),
+          requestId: zod.union([zod.string(), zod.null()]),
+        }),
+      ),
+      actor: zod.string(),
+      actorId: zod.string().uuid(),
+      appendOnly: zod.boolean(),
+      createdAt: zod.coerce.date(),
+      date: zod.coerce.date(),
+      deliveredBy: zod.string(),
+      deliveryMode: zod.enum(["staff", "other"]),
+      destination: zod.object({
+        address: zod.string(),
+        city: zod.string(),
+        countryCode: zod.string(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        pincode: zod.string(),
+        state: zod.string(),
+        version: zod.number().int(),
+      }),
+      id: zod.string().uuid(),
+      lines: zod.array(
+        zod.object({
+          batchNo: zod.string(),
+          destinationAfter: zod.string(),
+          destinationBefore: zod.string(),
+          expiryDate: zod.coerce.date(),
+          lineId: zod.string().uuid(),
+          lotId: zod.string().uuid(),
+          originalCreatedAt: zod.string(),
+          productId: zod.string().uuid(),
+          productName: zod.string(),
+          productVersion: zod.number().int(),
+          quantity: zod.string(),
+          receiptId: zod.string().uuid(),
+          receiptNumber: zod.string(),
+          receivedDate: zod.coerce.date(),
+          sourceAfter: zod.string(),
+          sourceBefore: zod.string(),
+          unit: zod.string(),
+        }),
+      ),
+      source: zod.object({
+        address: zod.string(),
+        city: zod.string(),
+        countryCode: zod.string(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        pincode: zod.string(),
+        state: zod.string(),
+        version: zod.number().int(),
+      }),
+      staffId: zod.union([zod.string().uuid(), zod.null()]),
+      staffVersion: zod.union([zod.number().int(), zod.null()]),
+      summary: zod.object({
+        lots: zod.number().int(),
+        movements: zod.number().int(),
+        scope: zod.string(),
+      }),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  summary: zod.object({
+    lots: zod.number().int(),
+    movements: zod.number().int(),
+    scope: zod.string(),
+  }),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+
+export const createInventoryMovementBodyLinesItemQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const createInventoryMovementBodyReviewTokenRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const CreateInventoryMovementBody = zod.object({
+  date: zod.coerce.date(),
+  deliveryMode: zod.enum(["staff", "other"]),
+  destinationId: zod.string().uuid(),
+  idempotencyKey: zod.string().uuid(),
+  lines: zod
+    .array(
+      zod.object({
+        lotId: zod.string().uuid(),
+        quantity: zod
+          .string()
+          .max(createInventoryMovementBodyLinesItemQuantityMax)
+          .regex(createInventoryMovementBodyLinesItemQuantityRegExp),
+      }),
+    )
+    .min(1)
+    .max(createInventoryMovementBodyLinesMax),
+  otherName: zod
+    .union([
+      zod.string().max(createInventoryMovementBodyOtherNameOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  reviewToken: zod.string().regex(createInventoryMovementBodyReviewTokenRegExp),
+  sourceId: zod.string().uuid(),
+  staffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+});
+
+export const CreateInventoryMovementResponse = zod.object({
+  activity: zod.array(
+    zod.object({
+      action: zod.string(),
+      actor: zod.string(),
+      at: zod.coerce.date(),
+      requestId: zod.union([zod.string(), zod.null()]),
+    }),
+  ),
+  actor: zod.string(),
+  actorId: zod.string().uuid(),
+  appendOnly: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  date: zod.coerce.date(),
+  deliveredBy: zod.string(),
+  deliveryMode: zod.enum(["staff", "other"]),
+  destination: zod.object({
+    address: zod.string(),
+    city: zod.string(),
+    countryCode: zod.string(),
+    id: zod.string().uuid(),
+    name: zod.string(),
+    pincode: zod.string(),
+    state: zod.string(),
+    version: zod.number().int(),
+  }),
+  id: zod.string().uuid(),
+  lines: zod.array(
+    zod.object({
+      batchNo: zod.string(),
+      destinationAfter: zod.string(),
+      destinationBefore: zod.string(),
+      expiryDate: zod.coerce.date(),
+      lineId: zod.string().uuid(),
+      lotId: zod.string().uuid(),
+      originalCreatedAt: zod.string(),
+      productId: zod.string().uuid(),
+      productName: zod.string(),
+      productVersion: zod.number().int(),
+      quantity: zod.string(),
+      receiptId: zod.string().uuid(),
+      receiptNumber: zod.string(),
+      receivedDate: zod.coerce.date(),
+      sourceAfter: zod.string(),
+      sourceBefore: zod.string(),
+      unit: zod.string(),
+    }),
+  ),
+  source: zod.object({
+    address: zod.string(),
+    city: zod.string(),
+    countryCode: zod.string(),
+    id: zod.string().uuid(),
+    name: zod.string(),
+    pincode: zod.string(),
+    state: zod.string(),
+    version: zod.number().int(),
+  }),
+  staffId: zod.union([zod.string().uuid(), zod.null()]),
+  staffVersion: zod.union([zod.number().int(), zod.null()]),
+  summary: zod.object({
+    lots: zod.number().int(),
+    movements: zod.number().int(),
+    scope: zod.string(),
+  }),
+});
+
+/**
+ * @summary Preview
+ */
+
+export const previewInventoryMovementBodyLinesItemQuantityRegExp = new RegExp(
+  "^(?:0|[1-9]\\d{0,6})(?:\\.\\d{1,3})?$",
+);
+
+export const PreviewInventoryMovementBody = zod.object({
+  date: zod.coerce.date(),
+  deliveryMode: zod.enum(["staff", "other"]),
+  destinationId: zod.string().uuid(),
+  lines: zod
+    .array(
+      zod.object({
+        lotId: zod.string().uuid(),
+        quantity: zod
+          .string()
+          .max(previewInventoryMovementBodyLinesItemQuantityMax)
+          .regex(previewInventoryMovementBodyLinesItemQuantityRegExp),
+      }),
+    )
+    .min(1)
+    .max(previewInventoryMovementBodyLinesMax),
+  otherName: zod
+    .union([
+      zod.string().max(previewInventoryMovementBodyOtherNameOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  sourceId: zod.string().uuid(),
+  staffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+});
+
+export const PreviewInventoryMovementResponse = zod.object({
+  movement: zod.object({
+    date: zod.coerce.date(),
+    deliveredBy: zod.string(),
+    deliveryMode: zod.enum(["staff", "other"]),
+    destination: zod.object({
+      address: zod.string(),
+      city: zod.string(),
+      countryCode: zod.string(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      pincode: zod.string(),
+      state: zod.string(),
+      version: zod.number().int(),
+    }),
+    lines: zod.array(
+      zod.object({
+        batchNo: zod.string(),
+        destinationAfter: zod.string(),
+        destinationBefore: zod.string(),
+        expiryDate: zod.coerce.date(),
+        lineId: zod.string().uuid(),
+        lotId: zod.string().uuid(),
+        originalCreatedAt: zod.string(),
+        productId: zod.string().uuid(),
+        productName: zod.string(),
+        productVersion: zod.number().int(),
+        quantity: zod.string(),
+        receiptId: zod.string().uuid(),
+        receiptNumber: zod.string(),
+        receivedDate: zod.coerce.date(),
+        sourceAfter: zod.string(),
+        sourceBefore: zod.string(),
+        unit: zod.string(),
+      }),
+    ),
+    source: zod.object({
+      address: zod.string(),
+      city: zod.string(),
+      countryCode: zod.string(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      pincode: zod.string(),
+      state: zod.string(),
+      version: zod.number().int(),
+    }),
+    staffId: zod.union([zod.string().uuid(), zod.null()]),
+    staffVersion: zod.union([zod.number().int(), zod.null()]),
+  }),
+  reviewToken: zod.string(),
+});
+
+/**
+ * @summary Detail
+ */
+export const GetInventoryMovementParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const GetInventoryMovementResponse = zod.object({
+  activity: zod.array(
+    zod.object({
+      action: zod.string(),
+      actor: zod.string(),
+      at: zod.coerce.date(),
+      requestId: zod.union([zod.string(), zod.null()]),
+    }),
+  ),
+  actor: zod.string(),
+  actorId: zod.string().uuid(),
+  appendOnly: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  date: zod.coerce.date(),
+  deliveredBy: zod.string(),
+  deliveryMode: zod.enum(["staff", "other"]),
+  destination: zod.object({
+    address: zod.string(),
+    city: zod.string(),
+    countryCode: zod.string(),
+    id: zod.string().uuid(),
+    name: zod.string(),
+    pincode: zod.string(),
+    state: zod.string(),
+    version: zod.number().int(),
+  }),
+  id: zod.string().uuid(),
+  lines: zod.array(
+    zod.object({
+      batchNo: zod.string(),
+      destinationAfter: zod.string(),
+      destinationBefore: zod.string(),
+      expiryDate: zod.coerce.date(),
+      lineId: zod.string().uuid(),
+      lotId: zod.string().uuid(),
+      originalCreatedAt: zod.string(),
+      productId: zod.string().uuid(),
+      productName: zod.string(),
+      productVersion: zod.number().int(),
+      quantity: zod.string(),
+      receiptId: zod.string().uuid(),
+      receiptNumber: zod.string(),
+      receivedDate: zod.coerce.date(),
+      sourceAfter: zod.string(),
+      sourceBefore: zod.string(),
+      unit: zod.string(),
+    }),
+  ),
+  source: zod.object({
+    address: zod.string(),
+    city: zod.string(),
+    countryCode: zod.string(),
+    id: zod.string().uuid(),
+    name: zod.string(),
+    pincode: zod.string(),
+    state: zod.string(),
+    version: zod.number().int(),
+  }),
+  staffId: zod.union([zod.string().uuid(), zod.null()]),
+  staffVersion: zod.union([zod.number().int(), zod.null()]),
+  summary: zod.object({
+    lots: zod.number().int(),
+    movements: zod.number().int(),
+    scope: zod.string(),
+  }),
+});
+
+/**
+ * @summary Activity
+ */
+export const GetInventoryMovementActivityParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const GetInventoryMovementActivityResponseItem = zod.object({
+  action: zod.string(),
+  actor: zod.string(),
+  at: zod.coerce.date(),
+  requestId: zod.union([zod.string(), zod.null()]),
+});
+export const GetInventoryMovementActivityResponse = zod.array(
+  GetInventoryMovementActivityResponseItem,
+);
+
+/**
+ * @summary Analytics
+ */
+export const GetInventoryMovementAnalyticsParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const GetInventoryMovementAnalyticsResponse = zod.object({
+  lots: zod.number().int(),
+  movements: zod.number().int(),
+  scope: zod.string(),
+});
+
+/**
+ * @summary References
+ */
+export const GetInventoryReferencesParams = zod.object({
+  kind: zod.enum(["locations", "staff", "lots"]),
+});
+
+export const getInventoryReferencesQueryQueryDefault = ``;
+
+export const GetInventoryReferencesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(getInventoryReferencesQueryQueryMax)
+    .default(getInventoryReferencesQueryQueryDefault),
+  source_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(getInventoryReferencesQueryOffsetMin)
+    .max(getInventoryReferencesQueryOffsetMax)
+    .default(getInventoryReferencesQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getInventoryReferencesQueryLimitMax)
+    .default(getInventoryReferencesQueryLimitDefault),
+});
+
+export const GetInventoryReferencesResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      available: zod.union([zod.string(), zod.null()]).optional(),
+      batchNo: zod.union([zod.string(), zod.null()]).optional(),
+      expiryDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      productId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      productName: zod.union([zod.string(), zod.null()]).optional(),
+      receiptId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      receiptNumber: zod.union([zod.string(), zod.null()]).optional(),
+      unit: zod.union([zod.string(), zod.null()]).optional(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+});
+
+/**
+ * @summary Reconcile
+ */
+export const ReconcileInventoryMovementParams = zod.object({
+  key: zod.coerce.string().uuid(),
+});
+
+export const ReconcileInventoryMovementResponse = zod.object({
+  movement: zod.union([
+    zod.object({
+      activity: zod.array(
+        zod.object({
+          action: zod.string(),
+          actor: zod.string(),
+          at: zod.coerce.date(),
+          requestId: zod.union([zod.string(), zod.null()]),
+        }),
+      ),
+      actor: zod.string(),
+      actorId: zod.string().uuid(),
+      appendOnly: zod.boolean(),
+      createdAt: zod.coerce.date(),
+      date: zod.coerce.date(),
+      deliveredBy: zod.string(),
+      deliveryMode: zod.enum(["staff", "other"]),
+      destination: zod.object({
+        address: zod.string(),
+        city: zod.string(),
+        countryCode: zod.string(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        pincode: zod.string(),
+        state: zod.string(),
+        version: zod.number().int(),
+      }),
+      id: zod.string().uuid(),
+      lines: zod.array(
+        zod.object({
+          batchNo: zod.string(),
+          destinationAfter: zod.string(),
+          destinationBefore: zod.string(),
+          expiryDate: zod.coerce.date(),
+          lineId: zod.string().uuid(),
+          lotId: zod.string().uuid(),
+          originalCreatedAt: zod.string(),
+          productId: zod.string().uuid(),
+          productName: zod.string(),
+          productVersion: zod.number().int(),
+          quantity: zod.string(),
+          receiptId: zod.string().uuid(),
+          receiptNumber: zod.string(),
+          receivedDate: zod.coerce.date(),
+          sourceAfter: zod.string(),
+          sourceBefore: zod.string(),
+          unit: zod.string(),
+        }),
+      ),
+      source: zod.object({
+        address: zod.string(),
+        city: zod.string(),
+        countryCode: zod.string(),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        pincode: zod.string(),
+        state: zod.string(),
+        version: zod.number().int(),
+      }),
+      staffId: zod.union([zod.string().uuid(), zod.null()]),
+      staffVersion: zod.union([zod.number().int(), zod.null()]),
+      summary: zod.object({
+        lots: zod.number().int(),
+        movements: zod.number().int(),
+        scope: zod.string(),
+      }),
+    }),
+    zod.null(),
+  ]),
+  state: zod.enum(["committed", "not_committed"]),
+});
+
+/**
+ * @summary Stock
+ */
+export const listInventoryStockQueryQueryDefault = ``;
+
+export const listInventoryStockQueryProductIdsDefault = ``;
+
+export const ListInventoryStockQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listInventoryStockQueryQueryMax)
+    .default(listInventoryStockQueryQueryDefault),
+  category_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  product_ids: zod.coerce
+    .string()
+    .max(listInventoryStockQueryProductIdsMax)
+    .default(listInventoryStockQueryProductIdsDefault),
+  snapshot: zod.coerce
+    .boolean()
+    .default(listInventoryStockQuerySnapshotDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listInventoryStockQueryOffsetMin)
+    .max(listInventoryStockQueryOffsetMax)
+    .default(listInventoryStockQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listInventoryStockQueryLimitMax)
+    .default(listInventoryStockQueryLimitDefault),
+});
+
+export const ListInventoryStockResponse = zod.object({
+  asOf: zod.coerce.date(),
+  coverage: zod.object({
+    complete: zod.boolean(),
+    contract: zod.string(),
+    openings: zod.string(),
+    pendingReceipts: zod.number().int(),
+    sales: zod.string(),
+  }),
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      category: zod.string(),
+      categoryId: zod.string().uuid(),
+      concentration: zod.string(),
+      lots: zod.array(
+        zod.object({
+          batchNo: zod.string(),
+          expiryDate: zod.coerce.date(),
+          lineId: zod.string().uuid(),
+          locationId: zod.string().uuid(),
+          locationName: zod.string(),
+          lotId: zod.string().uuid(),
+          originalCreatedAt: zod.string(),
+          productId: zod.string().uuid(),
+          productName: zod.string(),
+          quantity: zod.string(),
+          receiptId: zod.string().uuid(),
+          receiptNumber: zod.string(),
+          receivedDate: zod.coerce.date(),
+          unit: zod.string(),
+        }),
+      ),
+      name: zod.string(),
+      productId: zod.string().uuid(),
+      quantity: zod.string(),
+      sellingPrice: zod.union([zod.string(), zod.null()]),
+      state: zod.string(),
+      unit: zod.string(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  snapshot: zod
+    .union([
+      zod.array(
+        zod.object({
+          category: zod.string(),
+          categoryId: zod.string().uuid(),
+          concentration: zod.string(),
+          lots: zod.array(
+            zod.object({
+              batchNo: zod.string(),
+              expiryDate: zod.coerce.date(),
+              lineId: zod.string().uuid(),
+              locationId: zod.string().uuid(),
+              locationName: zod.string(),
+              lotId: zod.string().uuid(),
+              originalCreatedAt: zod.string(),
+              productId: zod.string().uuid(),
+              productName: zod.string(),
+              quantity: zod.string(),
+              receiptId: zod.string().uuid(),
+              receiptNumber: zod.string(),
+              receivedDate: zod.coerce.date(),
+              unit: zod.string(),
+            }),
+          ),
+          name: zod.string(),
+          productId: zod.string().uuid(),
+          quantity: zod.string(),
+          sellingPrice: zod.union([zod.string(), zod.null()]),
+          state: zod.string(),
+          unit: zod.string(),
+        }),
+      ),
+      zod.null(),
+    ])
+    .optional(),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary History
+ */
+export const GetInventoryStockHistoryParams = zod.object({
+  product_id: zod.coerce.string().uuid(),
+});
+
+export const GetInventoryStockHistoryQueryParams = zod.object({
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(getInventoryStockHistoryQueryOffsetMin)
+    .max(getInventoryStockHistoryQueryOffsetMax)
+    .default(getInventoryStockHistoryQueryOffsetDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(getInventoryStockHistoryQueryLimitMax)
+    .default(getInventoryStockHistoryQueryLimitDefault),
+});
+
+export const GetInventoryStockHistoryResponse = zod.object({
+  filtered: zod.number().int(),
+  items: zod.array(
+    zod.object({
+      actor: zod.string(),
+      after: zod.string(),
+      at: zod.coerce.date(),
+      before: zod.string(),
+      delta: zod.string(),
+      id: zod.string().uuid(),
+      locationId: zod.string().uuid(),
+      lotId: zod.string().uuid(),
+      movementId: zod.union([zod.string().uuid(), zod.null()]),
+      source: zod.string(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  scope: zod.string(),
 });
 
 /**

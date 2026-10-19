@@ -1,5 +1,15 @@
 # Managed development compatibility
 
+Live Inventory uses automatic successor `0046_live_inventory`
+after accepted `0045_pr_batch_numbers`. Receipt CRUD now reconciles accepted
+quantities atomically with the ledger; stock and movements use protected
+singleton APIs. This source is not activated: the observed development database
+was observed at `0044_purchase_received`; main subsequently reported its original
+target ready at `0045_pr_batch_numbers`. Final `0046` activation and running-service
+alignment belong to the post-merge main-workspace lifecycle and remain unverified.
+See [Live Inventory](../../../docs/live-inventory.md) for exact units/coverage,
+initialization, encrypted storage, focused CRUD evidence and activation blockers.
+
 See [development release gate](../../../docs/development-release-gate.md).
 The managed development command runs a read-only preflight before Uvicorn.
 After separately approved setup and restart, verify browser-facing ingress with

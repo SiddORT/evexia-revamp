@@ -132,6 +132,8 @@ import type {
   ExportVendorsParams,
   ExportZonesParams,
   FileResponse,
+  GetInventoryReferencesParams,
+  GetInventoryStockHistoryParams,
   GetPurchaseReceivedAnalyticsParams,
   GetPurchaseReceivedFiltersParams,
   GetPurchaseReceivedSourceParams,
@@ -145,6 +147,10 @@ import type {
   HeadquarterStatus,
   HeadquarterVersion,
   HealthStatus,
+  InventoryHistoryPage,
+  InventoryInitializationPage,
+  InventoryReferencePage,
+  InventoryStockPage,
   ListAllergenReferencesParams,
   ListAllergensParams,
   ListCourierPartnersParams,
@@ -155,6 +161,8 @@ import type {
   ListDoctorMRChoicesParams,
   ListDownloadLogsParams,
   ListHeadquartersParams,
+  ListInventoryMovementsParams,
+  ListInventoryStockParams,
   ListMRAssociatedDoctorChoicesParams,
   ListMRDirectoryParams,
   ListMRReferenceChoicesParams,
@@ -205,6 +213,14 @@ import type {
   MRStatus,
   MRUsername,
   MRVersion,
+  MoveCreate,
+  MoveInput,
+  MovementActivity,
+  MovementPage,
+  MovementReconciliation,
+  MovementReview,
+  MovementSaved,
+  MovementSummary,
   OpeningBalanceDoctorChoicesParams,
   OpeningBalanceDoctorPage,
   OpeningBalanceEdit,
@@ -284,6 +300,7 @@ import type {
   ReviewDoctorImportParams,
   ReviewHeadquarterImportBody,
   ReviewHeadquarterImportParams,
+  ReviewInventoryInitializationParams,
   ReviewLocationImportBody,
   ReviewLocationImportParams,
   ReviewMRImportBody,
@@ -7715,6 +7732,1163 @@ export const useSetHeadquarterStatus = <
 > => {
   return useMutation(getSetHeadquarterStatusMutationOptions(options));
 };
+
+export const getReviewInventoryInitializationUrl = (
+  params?: ReviewInventoryInitializationParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/inventory/initialization?${stringifiedParams}`
+    : `/api/v1/admin/inventory/initialization`;
+};
+
+/**
+ * @summary Initialization
+ */
+export const reviewInventoryInitialization = async (
+  params?: ReviewInventoryInitializationParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<InventoryInitializationPage> => {
+  return customFetch<InventoryInitializationPage>(
+    getReviewInventoryInitializationUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getReviewInventoryInitializationQueryKey = (
+  params?: ReviewInventoryInitializationParams,
+) => {
+  return [
+    `/api/v1/admin/inventory/initialization`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getReviewInventoryInitializationQueryOptions = <
+  TData = Awaited<ReturnType<typeof reviewInventoryInitialization>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ReviewInventoryInitializationParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof reviewInventoryInitialization>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getReviewInventoryInitializationQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof reviewInventoryInitialization>>
+  > = ({ signal }) =>
+    reviewInventoryInitialization(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof reviewInventoryInitialization>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ReviewInventoryInitializationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof reviewInventoryInitialization>>
+>;
+export type ReviewInventoryInitializationQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Initialization
+ */
+
+export function useReviewInventoryInitialization<
+  TData = Awaited<ReturnType<typeof reviewInventoryInitialization>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ReviewInventoryInitializationParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof reviewInventoryInitialization>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getReviewInventoryInitializationQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListInventoryMovementsUrl = (
+  params?: ListInventoryMovementsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/inventory/movements?${stringifiedParams}`
+    : `/api/v1/admin/inventory/movements`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listInventoryMovements = async (
+  params?: ListInventoryMovementsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MovementPage> => {
+  return customFetch<MovementPage>(getListInventoryMovementsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListInventoryMovementsQueryKey = (
+  params?: ListInventoryMovementsParams,
+) => {
+  return [
+    `/api/v1/admin/inventory/movements`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListInventoryMovementsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listInventoryMovements>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListInventoryMovementsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInventoryMovements>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListInventoryMovementsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listInventoryMovements>>
+  > = ({ signal }) =>
+    listInventoryMovements(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listInventoryMovements>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListInventoryMovementsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listInventoryMovements>>
+>;
+export type ListInventoryMovementsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListInventoryMovements<
+  TData = Awaited<ReturnType<typeof listInventoryMovements>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListInventoryMovementsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInventoryMovements>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListInventoryMovementsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateInventoryMovementUrl = () => {
+  return `/api/v1/admin/inventory/movements`;
+};
+
+/**
+ * @summary Create
+ */
+export const createInventoryMovement = async (
+  moveCreate: MoveCreate,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MovementSaved> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<MovementSaved>(getCreateInventoryMovementUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(moveCreate),
+  });
+};
+
+export const getCreateInventoryMovementMutationKey = () =>
+  ["createInventoryMovement"] as const;
+
+export const getCreateInventoryMovementMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInventoryMovement>>,
+    TError,
+    CreateInventoryMovementMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createInventoryMovement>>,
+  TError,
+  CreateInventoryMovementMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateInventoryMovementMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createInventoryMovement>>,
+    CreateInventoryMovementMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createInventoryMovement(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateInventoryMovementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createInventoryMovement>>
+>;
+export type CreateInventoryMovementMutationBody = BodyType<MoveCreate>;
+export type CreateInventoryMovementMutationError = ErrorType<ErrorEnvelope>;
+export type CreateInventoryMovementMutationVariables = {
+  data: BodyType<MoveCreate>;
+};
+
+/**
+ * @summary Create
+ */
+export const useCreateInventoryMovement = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInventoryMovement>>,
+    TError,
+    CreateInventoryMovementMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createInventoryMovement>>,
+  TError,
+  CreateInventoryMovementMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateInventoryMovementMutationOptions(options));
+};
+
+export const getPreviewInventoryMovementUrl = () => {
+  return `/api/v1/admin/inventory/movements/preview`;
+};
+
+/**
+ * @summary Preview
+ */
+export const previewInventoryMovement = async (
+  moveInput: MoveInput,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MovementReview> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<MovementReview>(getPreviewInventoryMovementUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(moveInput),
+  });
+};
+
+export const getPreviewInventoryMovementMutationKey = () =>
+  ["previewInventoryMovement"] as const;
+
+export const getPreviewInventoryMovementMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewInventoryMovement>>,
+    TError,
+    PreviewInventoryMovementMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof previewInventoryMovement>>,
+  TError,
+  PreviewInventoryMovementMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPreviewInventoryMovementMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof previewInventoryMovement>>,
+    PreviewInventoryMovementMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return previewInventoryMovement(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PreviewInventoryMovementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof previewInventoryMovement>>
+>;
+export type PreviewInventoryMovementMutationBody = BodyType<MoveInput>;
+export type PreviewInventoryMovementMutationError = ErrorType<ErrorEnvelope>;
+export type PreviewInventoryMovementMutationVariables = {
+  data: BodyType<MoveInput>;
+};
+
+/**
+ * @summary Preview
+ */
+export const usePreviewInventoryMovement = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewInventoryMovement>>,
+    TError,
+    PreviewInventoryMovementMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof previewInventoryMovement>>,
+  TError,
+  PreviewInventoryMovementMutationVariables,
+  TContext
+> => {
+  return useMutation(getPreviewInventoryMovementMutationOptions(options));
+};
+
+export const getGetInventoryMovementUrl = (recordId: string) => {
+  return `/api/v1/admin/inventory/movements/${recordId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getInventoryMovement = async (
+  recordId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MovementSaved> => {
+  return customFetch<MovementSaved>(getGetInventoryMovementUrl(recordId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetInventoryMovementQueryKey = (recordId: string) => {
+  return [`/api/v1/admin/inventory/movements/${recordId}`] as const;
+};
+
+export const getGetInventoryMovementQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInventoryMovement>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryMovement>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetInventoryMovementQueryKey(recordId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInventoryMovement>>
+  > = ({ signal }) =>
+    getInventoryMovement(recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInventoryMovement>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetInventoryMovementQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInventoryMovement>>
+>;
+export type GetInventoryMovementQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetInventoryMovement<
+  TData = Awaited<ReturnType<typeof getInventoryMovement>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryMovement>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetInventoryMovementQueryOptions(recordId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetInventoryMovementActivityUrl = (recordId: string) => {
+  return `/api/v1/admin/inventory/movements/${recordId}/activity`;
+};
+
+/**
+ * @summary Activity
+ */
+export const getInventoryMovementActivity = async (
+  recordId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MovementActivity[]> => {
+  return customFetch<MovementActivity[]>(
+    getGetInventoryMovementActivityUrl(recordId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetInventoryMovementActivityQueryKey = (recordId: string) => {
+  return [`/api/v1/admin/inventory/movements/${recordId}/activity`] as const;
+};
+
+export const getGetInventoryMovementActivityQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInventoryMovementActivity>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryMovementActivity>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetInventoryMovementActivityQueryKey(recordId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInventoryMovementActivity>>
+  > = ({ signal }) =>
+    getInventoryMovementActivity(recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInventoryMovementActivity>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetInventoryMovementActivityQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInventoryMovementActivity>>
+>;
+export type GetInventoryMovementActivityQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Activity
+ */
+
+export function useGetInventoryMovementActivity<
+  TData = Awaited<ReturnType<typeof getInventoryMovementActivity>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryMovementActivity>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetInventoryMovementActivityQueryOptions(
+    recordId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetInventoryMovementAnalyticsUrl = (recordId: string) => {
+  return `/api/v1/admin/inventory/movements/${recordId}/analytics`;
+};
+
+/**
+ * @summary Analytics
+ */
+export const getInventoryMovementAnalytics = async (
+  recordId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MovementSummary> => {
+  return customFetch<MovementSummary>(
+    getGetInventoryMovementAnalyticsUrl(recordId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetInventoryMovementAnalyticsQueryKey = (recordId: string) => {
+  return [`/api/v1/admin/inventory/movements/${recordId}/analytics`] as const;
+};
+
+export const getGetInventoryMovementAnalyticsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInventoryMovementAnalytics>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryMovementAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetInventoryMovementAnalyticsQueryKey(recordId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInventoryMovementAnalytics>>
+  > = ({ signal }) =>
+    getInventoryMovementAnalytics(recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInventoryMovementAnalytics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetInventoryMovementAnalyticsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInventoryMovementAnalytics>>
+>;
+export type GetInventoryMovementAnalyticsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Analytics
+ */
+
+export function useGetInventoryMovementAnalytics<
+  TData = Awaited<ReturnType<typeof getInventoryMovementAnalytics>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryMovementAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetInventoryMovementAnalyticsQueryOptions(
+    recordId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetInventoryReferencesUrl = (
+  kind: "locations" | "staff" | "lots",
+  params?: GetInventoryReferencesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/inventory/references/${kind}?${stringifiedParams}`
+    : `/api/v1/admin/inventory/references/${kind}`;
+};
+
+/**
+ * @summary References
+ */
+export const getInventoryReferences = async (
+  kind: "locations" | "staff" | "lots",
+  params?: GetInventoryReferencesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<InventoryReferencePage> => {
+  return customFetch<InventoryReferencePage>(
+    getGetInventoryReferencesUrl(kind, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetInventoryReferencesQueryKey = (
+  kind: "locations" | "staff" | "lots",
+  params?: GetInventoryReferencesParams,
+) => {
+  return [
+    `/api/v1/admin/inventory/references/${kind}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetInventoryReferencesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInventoryReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "locations" | "staff" | "lots",
+  params?: GetInventoryReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetInventoryReferencesQueryKey(kind, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInventoryReferences>>
+  > = ({ signal }) =>
+    getInventoryReferences(kind, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: kind !== null && kind !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInventoryReferences>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetInventoryReferencesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInventoryReferences>>
+>;
+export type GetInventoryReferencesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary References
+ */
+
+export function useGetInventoryReferences<
+  TData = Awaited<ReturnType<typeof getInventoryReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "locations" | "staff" | "lots",
+  params?: GetInventoryReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetInventoryReferencesQueryOptions(
+    kind,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getReconcileInventoryMovementUrl = (key: string) => {
+  return `/api/v1/admin/inventory/requests/${key}`;
+};
+
+/**
+ * @summary Reconcile
+ */
+export const reconcileInventoryMovement = async (
+  key: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MovementReconciliation> => {
+  return customFetch<MovementReconciliation>(
+    getReconcileInventoryMovementUrl(key),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getReconcileInventoryMovementQueryKey = (key: string) => {
+  return [`/api/v1/admin/inventory/requests/${key}`] as const;
+};
+
+export const getReconcileInventoryMovementQueryOptions = <
+  TData = Awaited<ReturnType<typeof reconcileInventoryMovement>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  key: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof reconcileInventoryMovement>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getReconcileInventoryMovementQueryKey(key);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof reconcileInventoryMovement>>
+  > = ({ signal }) =>
+    reconcileInventoryMovement(key, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: key !== null && key !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof reconcileInventoryMovement>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ReconcileInventoryMovementQueryResult = NonNullable<
+  Awaited<ReturnType<typeof reconcileInventoryMovement>>
+>;
+export type ReconcileInventoryMovementQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Reconcile
+ */
+
+export function useReconcileInventoryMovement<
+  TData = Awaited<ReturnType<typeof reconcileInventoryMovement>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  key: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof reconcileInventoryMovement>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getReconcileInventoryMovementQueryOptions(key, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListInventoryStockUrl = (params?: ListInventoryStockParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/inventory/stock?${stringifiedParams}`
+    : `/api/v1/admin/inventory/stock`;
+};
+
+/**
+ * @summary Stock
+ */
+export const listInventoryStock = async (
+  params?: ListInventoryStockParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<InventoryStockPage> => {
+  return customFetch<InventoryStockPage>(getListInventoryStockUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListInventoryStockQueryKey = (
+  params?: ListInventoryStockParams,
+) => {
+  return [
+    `/api/v1/admin/inventory/stock`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListInventoryStockQueryOptions = <
+  TData = Awaited<ReturnType<typeof listInventoryStock>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListInventoryStockParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInventoryStock>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListInventoryStockQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listInventoryStock>>
+  > = ({ signal }) => listInventoryStock(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listInventoryStock>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListInventoryStockQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listInventoryStock>>
+>;
+export type ListInventoryStockQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Stock
+ */
+
+export function useListInventoryStock<
+  TData = Awaited<ReturnType<typeof listInventoryStock>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListInventoryStockParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInventoryStock>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListInventoryStockQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetInventoryStockHistoryUrl = (
+  productId: string,
+  params?: GetInventoryStockHistoryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/inventory/stock/${productId}/history?${stringifiedParams}`
+    : `/api/v1/admin/inventory/stock/${productId}/history`;
+};
+
+/**
+ * @summary History
+ */
+export const getInventoryStockHistory = async (
+  productId: string,
+  params?: GetInventoryStockHistoryParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<InventoryHistoryPage> => {
+  return customFetch<InventoryHistoryPage>(
+    getGetInventoryStockHistoryUrl(productId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetInventoryStockHistoryQueryKey = (
+  productId: string,
+  params?: GetInventoryStockHistoryParams,
+) => {
+  return [
+    `/api/v1/admin/inventory/stock/${productId}/history`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetInventoryStockHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInventoryStockHistory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  productId: string,
+  params?: GetInventoryStockHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryStockHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetInventoryStockHistoryQueryKey(productId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInventoryStockHistory>>
+  > = ({ signal }) =>
+    getInventoryStockHistory(productId, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: productId !== null && productId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInventoryStockHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetInventoryStockHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInventoryStockHistory>>
+>;
+export type GetInventoryStockHistoryQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary History
+ */
+
+export function useGetInventoryStockHistory<
+  TData = Awaited<ReturnType<typeof getInventoryStockHistory>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  productId: string,
+  params?: GetInventoryStockHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getInventoryStockHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetInventoryStockHistoryQueryOptions(
+    productId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export const getListMRDirectoryUrl = (params?: ListMRDirectoryParams) => {
   const normalizedParams = new URLSearchParams();

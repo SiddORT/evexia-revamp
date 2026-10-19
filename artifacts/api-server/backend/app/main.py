@@ -69,6 +69,7 @@ from app.services.purchase_orders import POError
 from app.api.v1.opening_balances import router as opening_balances_router
 from app.services.opening_balances import OpeningBalanceError
 from app.api.v1.purchase_received import router as purchase_received_router
+from app.api.v1.inventory import router as inventory_router
 from app.services.purchase_received_crypto import PRError
 
 
@@ -347,6 +348,7 @@ def create_app() -> FastAPI:
     app.include_router(allergens_router, prefix="/api/v1")
     app.include_router(purchase_orders_router, prefix="/api/v1")
     app.include_router(purchase_received_router, prefix="/api/v1")
+    app.include_router(inventory_router, prefix="/api/v1")
     app.include_router(roles_router, prefix="/api/v1")
     app.include_router(role_urls_router, prefix="/api/v1")
     app.include_router(communication_router, prefix="/api/v1")

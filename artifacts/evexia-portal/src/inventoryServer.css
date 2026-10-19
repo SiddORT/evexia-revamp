@@ -1,0 +1,12 @@
+.inv-banner{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.inv-banner p{margin:0}
+.inv-scroll{overflow-x:auto}
+.inv-lines{width:100%;border-collapse:collapse;font-size:.85rem}
+.inv-lines th,.inv-lines td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--admin-border,rgba(0,0,0,.12));vertical-align:top}
+.inv-mono{font-variant-numeric:tabular-nums}
+.ms-delivery-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
+.ms-delivery-row>*{flex:1 1 220px;min-width:0}
+.inv-more{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px;font-size:.8rem}
+.inv-drawer-section{margin-top:18px}
+.inv-drawer-section h3{margin:0 0 8px;font-size:.95rem}
+.inv-period{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:12px}

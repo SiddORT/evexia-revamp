@@ -1,5 +1,31 @@
 # Development schema recovery: single activation handoff
 
+
+## Pending inventory successor handoff — not activated
+
+The separately authorized inventory handoff targets only `0044` → accepted
+`0045_pr_batch_numbers` → `0046_live_inventory`. Development source review has
+been refreshed through the established tool. Actual database observation remains
+`0044_purchase_received`; the managed API restart refused both protected
+successors with zero applied migrations. Frontend development identity serves
+`0046_live_inventory`, but API version/readiness return HTTP 502. This is **not**
+application/database alignment.
+
+The prepared `scripts/activate-inventory-development.py` is a separate fixed-path
+operator command, not a change to the completed `0040` → `0044` runner. If accepted
+`0045` is independently activated first, it permits only the remaining `0046`.
+It requires independent original-target confirmation, separate current key-custody
+attestation, stopped writers and a newly retained/restored complete private backup
+before live DDL. No rehearsals, mutation probes or broad test harnesses run.
+The user confirmed the original target and current private key recovery. The
+command was attempted but refused this fork's different workspace before any
+database connection, backup or mutation. A fresh read still reports `0044`.
+It must be run by an authorized operator from the confirmed original workspace;
+do not substitute the fork identity. Receipt initialization has not run. See
+[`live-inventory.md`](live-inventory.md) for the exact prerequisites, current
+evidence and still-blocking mandatory completion gate. Earlier approvals and
+archive/key reports below are not silently renewed by this source handoff.
+
 ## Current execution policy
 
 Replit development and VPS deployment now use automatic migrations without
