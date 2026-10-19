@@ -1,6 +1,6 @@
 import { lookupLocationPIN } from '../../services/serverLocations.js';
 import useAddressSelection from './useAddressSelection.js';
-import { GeographyControl, PostalSelection, useAddressCatalogue } from './AddressGeography.jsx';
+import { GeographyControl, GeographyLabel, PostalSelection, useAddressCatalogue } from './AddressGeography.jsx';
 
 export default function StorageLocationAddress({ values, errors, onChange, onChoiceRequired, disabled, editing }) {
   const address = useAddressSelection({ values, onChange, lookupPIN: lookupLocationPIN,
@@ -22,7 +22,7 @@ export default function StorageLocationAddress({ values, errors, onChange, onCho
     <PostalSelection address={address} prefix="storage" />
     {[['countryCode', 'Country'], ['state', 'State/UT'], ['city', 'City']].map(([field, label]) =>
       <div className="mr-form__field" key={field}>
-        <label className="mr-form__label" htmlFor={`storage-${field}`}>{label}</label>
+        <GeographyLabel field={field} id={`storage-${field}`} label={label} className="mr-form__label" />
         <GeographyControl address={address} catalogue={catalogue} field={field} id={`storage-${field}`}
           label={label} invalid={Boolean(errors[field])} describedBy={errors[field] ? `storage-${field}-error` : undefined} />
         {errors[field] && <p id={`storage-${field}-error`} className="mr-form__error" role="alert">{errors[field]}</p>}

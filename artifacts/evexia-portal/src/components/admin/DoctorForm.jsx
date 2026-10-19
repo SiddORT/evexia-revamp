@@ -3,7 +3,7 @@ import DoctorMRSelect from './DoctorMRSelect.jsx';
 import InfoDisclosure from './InfoDisclosure.jsx';
 import PhoneInput from './PhoneInput.jsx';
 import useAddressSelection from './useAddressSelection.js';
-import { GeographyControl, PostalSelection, useAddressCatalogue } from './AddressGeography.jsx';
+import { GeographyControl, GeographyLabel, PostalSelection, useAddressCatalogue } from './AddressGeography.jsx';
 import { dialCountry, normalizePhone } from '../../services/phoneCountries.js';
 import { lookupDoctorPIN } from '../../services/serverDoctors.js';
 import { discountRate, roundRate } from '../../services/rates.js';
@@ -178,7 +178,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
       </div>;
     }
     return <div className={`doctor-form__field${span ? ' doctor-form__field--wide' : ''}${key === 'pincode' ? ' doctor-form__field--pincode' : ''}`} key={key}>
-       {FIELD_INFO[key] ? <InfoDisclosure id={`doctor-${key}-help`} title={label} text={FIELD_INFO[key]} testId={`button-doctor-${key}-info`}>
+       {['country', 'state', 'city'].includes(key) ? <GeographyLabel field={key} id={id} label={label} required={required} className="doctor-form__label" /> : FIELD_INFO[key] ? <InfoDisclosure id={`doctor-${key}-help`} title={label} text={FIELD_INFO[key]} testId={`button-doctor-${key}-info`}>
          <label className="doctor-form__label" htmlFor={id}>{label} {required && <span className="doctor-form__required" aria-hidden="true">*</span>}</label>
        </InfoDisclosure> : <label className="doctor-form__label" htmlFor={id}>{label} {required && <span className="doctor-form__required" aria-hidden="true">*</span>}</label>}
       {input}

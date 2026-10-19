@@ -3,7 +3,7 @@ import PhoneInput from './PhoneInput.jsx';
 import PatientLanguageSelect from './PatientLanguageSelect.jsx';
 import PatientDoctorSelect from './PatientDoctorSelect.jsx';
 import useAddressSelection from './useAddressSelection.js';
-import { GeographyControl, PostalSelection, useAddressCatalogue } from './AddressGeography.jsx';
+import { GeographyControl, GeographyLabel, PostalSelection, useAddressCatalogue } from './AddressGeography.jsx';
 import { dialCountry, normalizePhone } from '../../services/phoneCountries.js';
 import { businessToday, patientAge } from '../../services/serverPatients.js';
 import { lookupPatientPIN } from '../../services/serverPatients.js';
@@ -129,9 +129,10 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
     };
     return (
       <div className={`mr-form__field${span ? ' mr-form__field--wide' : ''}`} key={key}>
-        <label className="mr-form__label" htmlFor={id}>
+        {['country', 'state', 'city'].includes(key) ? <GeographyLabel field={key} id={id} label={label}
+          required={!OPTIONAL.has(key)} className="mr-form__label" /> : <label className="mr-form__label" htmlFor={id}>
           {label} {!OPTIONAL.has(key) && <span className="mr-form__required" aria-hidden="true">*</span>}
-        </label>
+        </label>}
         {['country', 'state', 'city'].includes(key) ? <GeographyControl address={address} catalogue={catalogue}
           field={key} id={id} label={label} required={!OPTIONAL.has(key)} invalid={Boolean(errors[key])}
           describedBy={describedBy} /> : selectOptions ? (

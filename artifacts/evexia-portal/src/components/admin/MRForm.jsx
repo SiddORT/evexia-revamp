@@ -4,7 +4,7 @@ import MRReferenceSelect from './MRReferenceSelect.jsx';
 import MRFormCombobox from './MRFormCombobox.jsx';
 import PhoneInput from './PhoneInput.jsx';
 import useAddressSelection from './useAddressSelection.js';
-import { GeographyControl, PostalSelection, useAddressCatalogue } from './AddressGeography.jsx';
+import { GeographyControl, GeographyLabel, PostalSelection, useAddressCatalogue } from './AddressGeography.jsx';
 import { emptyMRValues, generateMRUsername, lookupPincode, MR_FIELDS as FIELDS, payloadFromValues, validateMRValues } from '../../services/serverMRs.js';
 import '../../mr.css';
 
@@ -177,7 +177,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
     );
     return (
       <div className={`mr-form__field${span ? ' mr-form__field--wide' : ''}${key === 'pincode' ? ' mr-form__field--pincode' : ''}`} key={key}>
-         {info ? <InfoDisclosure id={hintId} title={label} text={info} testId={`button-mr-${key}-info`}>
+         {['country', 'state', 'city'].includes(key) ? <GeographyLabel field={key} id={id} label={label} required={required} className="mr-form__label" /> : info ? <InfoDisclosure id={hintId} title={label} text={info} testId={`button-mr-${key}-info`}>
             <label className="mr-form__label" htmlFor={id}>{label} {required && <span className="mr-form__required" aria-hidden="true">*</span>}</label>
           </InfoDisclosure> : <label className="mr-form__label" htmlFor={id}>{label} {required && <span className="mr-form__required" aria-hidden="true">*</span>}</label>}
         {['country', 'state', 'city'].includes(key) ? <GeographyControl address={address} catalogue={catalogue}

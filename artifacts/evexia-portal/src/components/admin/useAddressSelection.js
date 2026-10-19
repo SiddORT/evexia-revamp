@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { getSession, subscribeSession } from '../../auth/adminSession.js';
 import * as geography from '../../services/addressGeography.js';
+import { postalFailure } from '../../services/postalFeedback.js';
 
 const emptyPostal = () => ({ choices: [], message: '', required: false });
 const ADDRESS_FIELDS = new Set(['pincode', 'country', 'countryCode', 'state', 'city', 'address', 'addressLine1', 'addressLine2', 'landmark']);
@@ -59,6 +60,12 @@ export default function useAddressSelection({ values, onChange, lookupPIN, editi
     invalidate(); confirm(false);
     setPostal({ choices: [], required: false, message: 'Catalogue selection confirmed. Review country, state and city before saving.' });
   }
+  function retryPostal() {
+    if (latest.current.disabled || !latest.current.postal.retryable) return;
+    invalidate();
+    edited.current = true;
+    setPinRevision((n) => n + 1);
+  }
   useEffect(() => {
     const owner = getSession().user?.id;
     const unsubscribe = subscribeSession(() => {
@@ -102,14 +109,14 @@ export default function useAddressSelection({ values, onChange, lookupPIN, editi
             ? 'Several places share this PIN. Choose a location or explicitly confirm catalogue selection.'
             : result.message || 'No PIN location found. Your draft is retained; select from the geography catalogue.' });
         }
-      } catch {
+      } catch (error) {
         if (current()) {
           edited.current = false;
-          setPostal({ choices: [], required: false, message: 'PIN lookup unavailable. Your draft is retained; select from the geography catalogue.' });
+          setPostal({ choices: [], required: false, ...postalFailure(error) });
         }
       }
     }, 300);
     return () => { clearTimeout(timer); controller.abort(); };
   }, [values.pincode, values[countryField], disabled, editing, pinRevision, lookupPIN]);
-  return { values, countryField, countryCodes, disabled, change, apply, manual, postal, retainedAddresses, pause: invalidate };
+  return { values, countryField, countryCodes, disabled, change, apply, manual, retryPostal, postal, retainedAddresses, pause: invalidate };
 }

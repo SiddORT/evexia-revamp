@@ -649,7 +649,12 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
     ? /^(?:|\/trash|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|restore))?)$/
     : /^(?:|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/;
   if (!route.test(path) && !(resource === 'patients' && path === '/language-choices' && body === undefined && file === undefined)
+      && !(resource === 'storage-locations' && /^\/postal\/[1-9][0-9]{5}$/.test(path))
       && !(['vendors', 'designations', 'headquarters', 'product-categories', 'opening-balances'].includes(resource) && path === '/sample') && !(resource === 'opening-balances' && path === '/references')) {
+    throw new SessionError(`Unsupported ${label} operation.`);
+  }
+  if (path.startsWith('/postal/') && (body !== undefined || file !== undefined || download
+      || Object.keys(params).some((key) => key !== 'action') || !['add', 'edit'].includes(params.action || 'add'))) {
     throw new SessionError(`Unsupported ${label} operation.`);
   }
   const epoch = generation;

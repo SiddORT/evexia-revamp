@@ -432,8 +432,10 @@ def test_postal_unambiguous_choices_manual_failure_and_revocation(client, monkey
         raise TimeoutError()
     monkeypatch.setattr(mr_postal, "lookup", lambda db, actor, pin, **policy: original(db, actor, pin, failed, **policy))
     response = api.get(BASE + "/postal/110002", headers=headers)
-    assert response.status_code == 200 and response.json()["choices"] == []
-    assert "manually" in response.json()["message"]
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "mr_pin_unavailable"
+    # A failed provider result must not become a cached false "no match".
+    assert "110002" not in mr_postal._cache
 
 
 def test_auth_anonymous_and_email_optional_disabled_create(client):
@@ -490,6 +492,24 @@ def test_actual_postal_fixed_provider_district_dedupe_and_payload_guards(monkeyp
     monkeypatch.setattr(mr_postal.httpx, "Client", lambda **options: original(**options, transport=httpx.MockTransport(unsafe)))
     with pytest.raises(Exception):
         mr_postal.provider("110001")
+
+
+@pytest.mark.parametrize("payload,empty", [
+    ([{"Status": "Error", "Message": "No records found", "PostOffice": None}], True),
+    ([{"Status": "Error", "Message": "Service unavailable", "PostOffice": None}], False),
+    ([{"Status": "Unknown"}], False),
+])
+def test_postal_provider_empty_results_are_not_operational_errors(monkeypatch, payload, empty):
+    import httpx
+    original = httpx.Client
+    transport = httpx.MockTransport(lambda request: httpx.Response(
+        200, stream=httpx.ByteStream(json.dumps(payload).encode())))
+    monkeypatch.setattr(mr_postal.httpx, "Client", lambda **options: original(**options, transport=transport))
+    if empty:
+        assert mr_postal.provider("110001") == []
+    else:
+        with pytest.raises(ValueError):
+            mr_postal.provider("110001")
 
 
 def test_parser_record_cell_macro_external_and_audit_bounds():

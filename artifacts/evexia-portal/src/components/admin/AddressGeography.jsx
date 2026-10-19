@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import SearchableControl from './SearchableControl.jsx';
+import InfoDisclosure from './InfoDisclosure.jsx';
 import * as geography from '../../services/addressGeography.js';
 import { dialCountry } from '../../services/phoneCountries.js';
-import geographyLicenseUrl from 'country-state-city/LICENSE?url';
+import geographyLicenseText from 'country-state-city/LICENSE?raw';
 import './addressGeography.css';
 
 function useCatalogue(loader, parent) {
@@ -27,6 +28,27 @@ export function useAddressCatalogue(address) {
   const state = geography.findState(stateList.rows, address.values.state, country?.code);
   const cityList = useCatalogue(() => geography.cities(country.code, state.code, state.cityStateCodes), country && state ? `${country.code}/${state.code}` : null);
   return { countryList, stateList, cityList };
+}
+
+export function GeographyLabel({ field, id, label, required, className }) {
+  const [licenseUrl, setLicenseUrl] = useState('');
+  useEffect(() => {
+    if (!['state', 'city'].includes(field)) return undefined;
+    // The package's extensionless LICENSE is transformed as JavaScript by the
+    // development server when opened directly. A typed local Blob works offline
+    // in preview and builds, and contains the actual bundled package license.
+    const url = URL.createObjectURL(new Blob([geographyLicenseText], { type: 'text/plain;charset=utf-8' }));
+    setLicenseUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [field]);
+  const content = <label className={className} htmlFor={id}>{label}
+    {required && <span className={className?.replace('__label', '__required')} aria-hidden="true"> *</span>}</label>;
+  if (!['state', 'city'].includes(field)) return content;
+  return <InfoDisclosure id={`${id}-help`} title={label} testId={`button-${id}-info`} interactive
+    text={<>{field === 'state' ? 'Select a country first.' : 'Select a country and state first.'}
+      {' '}Geography: <a href="https://github.com/harpreetkhalsagtbit/country-state-city"
+        target="_blank" rel="noreferrer">country-state-city</a> · <a href={licenseUrl || undefined}
+        target="_blank" rel="noreferrer">GPL-3.0 license</a></>}>{content}</InfoDisclosure>;
 }
 
 // Names are the save contract; dataset IDs are only selection identities.
@@ -60,13 +82,12 @@ export function GeographyControl({ address, catalogue, field, id, label, require
   const retained = { value: `retained:${field}:${selected}`, label: selected, name: selected };
   const choices = [{ value: '', label: `Clear ${label.toLowerCase()}` }, ...rows];
   if (selected && !match) choices.push(retained);
-  const guidance = parentMissing ? `Select ${field === 'state' ? 'a country' : 'a country and state'} first.`
-    : result.error || (result.loading ? `Loading ${label.toLowerCase()} choices…`
+  const guidance = parentMissing ? '' : result.error || (result.loading ? `Loading ${label.toLowerCase()} choices…`
       : !rows.length ? `No catalogue ${label.toLowerCase()} choices for this parent. Saved and PIN-derived values can be retained.` : '');
   return <>
     <SearchableControl id={id} name={field} label={label} required={required}
       value={selected ? match?.value || retained.value : ''} selectedLabel={selected} choices={choices}
-      placeholder={parentMissing ? guidance : `Select ${label.toLowerCase()}`} disabled={address.disabled || parentMissing}
+       placeholder={`Select ${label.toLowerCase()}`} disabled={address.disabled || parentMissing}
       invalid={invalid} describedBy={[describedBy, guidance && `${id}-guidance`].filter(Boolean).join(' ') || undefined}
       loading={result.loading} feedback={guidance}
       action={result.error ? { label: 'Retry geography catalogue', run: result.retry } : undefined}
@@ -80,8 +101,6 @@ export function GeographyControl({ address, catalogue, field, id, label, require
         address.change(field, value ? (country && address.countryCodes ? row.code || selected : row.name) : '');
       }} />
     {guidance && <p className="address-geography__hint" id={`${id}-guidance`} role="status">{guidance}</p>}
-    {field === 'city' && <p className="address-geography__hint">Geography: <a href="https://github.com/harpreetkhalsagtbit/country-state-city"
-      target="_blank" rel="noreferrer">country-state-city</a> · <a href={geographyLicenseUrl} target="_blank" rel="noreferrer">GPL-3.0</a></p>}
   </>;
 }
 
@@ -90,6 +109,9 @@ export function PostalSelection({ address, prefix, fieldClass = 'mr-form__field 
   if (!postal.message && !postal.choices.length) return null;
   return <div className={fieldClass}>
     <p className={hintClass} id={`${prefix}-pin-feedback`} role="status">{postal.message}</p>
+    {postal.retryable && <button type="button" className="admin-button admin-button--secondary"
+      disabled={address.disabled} aria-describedby={`${prefix}-pin-feedback`}
+      onClick={address.retryPostal}>Retry PIN lookup</button>}
     {postal.choices.length > 1 && <>
       <label className={labelClass} htmlFor={`${prefix}-pin-choice`}>PIN locations</label>
       <SearchableControl id={`${prefix}-pin-choice`} label="PIN locations" value="" selectedLabel=""

@@ -44,7 +44,9 @@ def provider(pin):
         raise ValueError("postal shape")
     offices = data[0].get("PostOffice") or []
     if data[0].get("Status") != "Success":
-        return []
+        if data[0].get("Status") == "Error" and data[0].get("Message") == "No records found":
+            return []
+        raise ValueError("postal provider failure")
     if not isinstance(offices, list) or len(offices) > 250:
         raise ValueError("postal offices bound")
     for office in offices:
@@ -83,6 +85,7 @@ def lookup(db, actor, pin, fetcher=provider, *, resource="mr", action="add"):
             choices = None
             _cache.pop(pin, None)
     message = "District is the city suggestion when the provider supplies no city."
+    provider_failed = False
     if choices is None:
         if not _network.acquire(blocking=False):
             raise mrs.MRError("PIN lookup is busy. Enter the address manually.", 429, "mr_pin_busy")
@@ -91,7 +94,7 @@ def lookup(db, actor, pin, fetcher=provider, *, resource="mr", action="add"):
                 choices = fetcher(pin)
             except Exception:
                 choices = []
-                message = "Postal provider is unavailable. Enter the address manually."
+                provider_failed = True
             else:
                 with _mutex:
                     _cache[pin] = (now + CACHE_SECONDS, choices)
@@ -106,5 +109,8 @@ def lookup(db, actor, pin, fetcher=provider, *, resource="mr", action="add"):
         authorize_master(db, actor, resource, action, lock=False)
         db.commit()
     mrs.transaction(db, finish)
+    if provider_failed:
+        raise mrs.MRError("Postal provider is unavailable. Retry later or use the geography catalogue.",
+                          503, "mr_pin_unavailable")
     return dict(pincode=pin, choices=choices, message=message if choices else
                 (message if "unavailable" in message else "No matching location. Enter the address manually."))

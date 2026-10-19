@@ -241,8 +241,8 @@ def test_location_pin_provider_failure_leaves_saved_geography_unchanged(client, 
     monkeypatch.setattr(mr_postal, "lookup", lambda db, actor, pin, **policy:
                         lookup(db, actor, pin, unavailable, **policy))
     response = api.get(BASE + "/postal/411001?action=edit", headers=headers)
-    assert response.status_code == 200
-    assert response.json()["choices"] == [] and "unavailable" in response.json()["message"]
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "mr_pin_unavailable"
     assert api.get(f"{BASE}/{saved['id']}", headers=headers).json() == saved
 
 
