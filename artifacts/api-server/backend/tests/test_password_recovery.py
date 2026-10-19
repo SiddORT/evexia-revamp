@@ -1,8 +1,9 @@
 """Real authentication/SMTP-boundary tests; disposable PostgreSQL only."""
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
-import threading
 import re
+import ssl
+import threading
 import uuid
 
 import jwt
@@ -17,17 +18,24 @@ from app.db.models import AuditEvent, User
 from app.db.session import session_factory
 from app.main import app
 from app.services import auth, password_recovery as recovery, recovery_mail
+from app.services import email_templates
+from app.services.email_rendering import LOGO_CID, RenderedEmail, render_recovery
 from test_api import client, create_user, login, PASSWORD
 
 HEADERS = {"Origin": "http://testserver"}
 NEW = "new fictional password 12345"
+SEND_RECOVERY_MAIL = recovery_mail.send
 
 
-def rendered_token(message):
-    """Delivery receives rendered source; assertions still exercise real tokens."""
-    match = re.search(r"#token=([A-Za-z0-9._-]+)", message.text)
-    assert match, "Rendered recovery message must contain its reset link"
-    return match.group(1)
+def delivered_token(rendered):
+    """Consume the real rendered message, never a mocked token issuer."""
+    assert isinstance(rendered, RenderedEmail)
+    text_tokens = re.findall(r"#token=([A-Za-z0-9_.-]+)", rendered.text)
+    html_tokens = re.findall(r"#token=([A-Za-z0-9_.-]+)", rendered.html)
+    assert text_tokens and html_tokens
+    assert len(set(text_tokens + html_tokens)) == 1
+    assert "{{" not in rendered.subject + rendered.text + rendered.html
+    return text_tokens[0]
 
 
 @pytest.fixture
@@ -39,7 +47,8 @@ def configured(client, monkeypatch):
     })
     app.dependency_overrides[get_settings] = lambda: settings
     sent = []
-    monkeypatch.setattr(recovery_mail, "send", lambda _settings, email, message: sent.append((email, rendered_token(message))))
+    monkeypatch.setattr(recovery_mail, "send",
+                        lambda _settings, email, rendered: sent.append((email, delivered_token(rendered))))
     return api, db, settings, sent
 
 
@@ -285,7 +294,8 @@ def test_concurrent_reset_exactly_one_winner(monkeypatch):
         "smtp_host": "smtp.example.com", "smtp_from": "support@example.com",
     })
     sent = []
-    monkeypatch.setattr(recovery_mail, "send", lambda _s, _e, message: sent.append(rendered_token(message)))
+    monkeypatch.setattr(recovery_mail, "send",
+                        lambda _s, _e, rendered: sent.append(delivered_token(rendered)))
     key = "concurrent-" + uuid.uuid4().hex[:12]
     with factory() as db:
         user, _ = create_user(db, key + "@example.com")
@@ -349,7 +359,7 @@ def test_missing_configuration_diagnostic_is_safe_and_precedes_identity_lookup(c
 
 @pytest.mark.parametrize("implicit", [False, True])
 def test_smtp_requires_verified_tls_before_credentials(configured, monkeypatch, implicit):
-    _, _, settings, _ = configured
+    _, db, settings, _ = configured
     settings = settings.model_copy(update={"smtp_implicit_tls": implicit, "smtp_username": "test",
                                           "smtp_password": SecretStr("synthetic-password")})
     events = []
@@ -357,26 +367,38 @@ def test_smtp_requires_verified_tls_before_credentials(configured, monkeypatch, 
         def __init__(self, *args, **kwargs):
             if implicit:
                 assert kwargs["context"].check_hostname
+                assert kwargs["context"].verify_mode == ssl.CERT_REQUIRED
             events.append("connect")
         def __enter__(self): return self
         def __exit__(self, *args): pass
         def ehlo(self): events.append("ehlo")
         def starttls(self, context):
             assert context.check_hostname
+            assert context.verify_mode == ssl.CERT_REQUIRED
             events.append("tls")
         def login(self, *args): events.append("login")
         def send_message(self, message):
-            assert "#token=synthetic-token" in message.get_body(preferencelist=("plain",)).get_content()
-            assert "15 minutes" in message.get_body(preferencelist=("plain",)).get_content()
+            assert message["Subject"] == rendered.subject
+            assert message["To"] == "person@example.com"
+            assert message["From"] == settings.smtp_from
+            assert message.get_content_type() == "multipart/alternative"
+            plain = message.get_body(preferencelist=("plain",)).get_content()
+            html = message.get_body(preferencelist=("html",)).get_content()
+            assert "#token=synthetic-token" in plain and "#token=synthetic-token" in html
+            assert "15 minutes" in plain
+            logo = [part for part in message.walk()
+                    if part.get("Content-ID") == f"<{LOGO_CID}>"]
+            assert len(logo) == 1 and logo[0].get_content_type() == "image/png"
+            assert logo[0].get_payload(decode=True)
             events.append("send")
     monkeypatch.setattr(recovery_mail.smtplib, "SMTP_SSL" if implicit else "SMTP", SMTP)
-    # Bypass the fixture's application delivery stub, not transport validation.
-    from importlib import reload
-    mail = reload(recovery_mail)
-    monkeypatch.setattr(mail.smtplib, "SMTP_SSL" if implicit else "SMTP", SMTP)
-    from app.services.email_rendering import RenderedEmail
-    mail.send(settings, "person@example.com", RenderedEmail(
-        "Reset password", "https://portal.example.com/reset-password#token=synthetic-token expires in 15 minutes",
-        "<p>https://portal.example.com/reset-password#token=synthetic-token</p>"))
+    rendered = render_recovery(
+        email_templates.resolve_recovery(db), recipient_name="there",
+        reset_url=settings.password_recovery_url + "#token=synthetic-token",
+        expiry_minutes=15,
+    )
+    # Exercise the real sender with its current multipart-message contract;
+    # only the SMTP transport is replaced, never TLS validation or rendering.
+    SEND_RECOVERY_MAIL(settings, "person@example.com", rendered)
     assert events == (["connect", "login", "send"] if implicit
                       else ["connect", "ehlo", "tls", "ehlo", "login", "send"])

@@ -7,7 +7,7 @@
   "policy_sha256": "5ef7fef4610e6f1fb722c01f5508b8b52ae827d5dd29051f1833c2a4e99045d9",
   "release_sources": {
     "artifacts/api-server/backend/app/services/initialization_diagnostics.py": "9732dd29159788eb77976a7ed70635e49ca76d2982e0c42fafcb99ed2ff04a6f",
-    "artifacts/api-server/backend/app/fresh_install.py": "4c7564e5c7a1454d17de62c52bf55e041f7f4848121242dbe84a3c4b747d27dd",
+    "artifacts/api-server/backend/app/fresh_install.py": "2296d591de00d9976c806cabe2279189fba5e27d5d7e8091c8db0f7a9679f210",
     "artifacts/api-server/backend/app/services/release_authorization.py": "35e5d197660405ce3be22eff58ed21c967e9fd7a3f4ad03f2864607f5b05879f",
     "scripts/validate-release-artifact.py": "cf4f0962f660e37d99580babb7c9dd5e50539e685baa662166355396944d020f",
     "scripts/release-authorization-policy.json": "89ac2b8c40aa91b04e340d119796bf7a64e5b41ec1a55fa9f25aaf06566e540e",
@@ -45,9 +45,9 @@
     "scripts/fresh-install-catalog-provenance.json": "1599d427e44aa78dcfe881ee535d050694a525d472be0b023f54f8e2b3d21fd5",
     "docs/ci-schema-metadata-repair.md": "cd00ccc456d76ab9d0ebcf4cfc90e888168517ce04ce25e9a200fc1b301854f2",
     ".github/workflows/docker-initialization.yml": "d5f9d7b81ac30e72b932dedfc2e339f267c50e7114e3e45bd7b6c1df2a14ab36",
-    "scripts/test-docker-initialization.py": "427be94ac2ee1600272d44e3b59755f190a330b6d43feaa50c929b168a7db972",
+    "scripts/test-docker-initialization.py": "fcd66a86ce5c67860754bec7c82d103c89085e5b969fa310400ef9d0c90396af",
     "scripts/tests/test_fresh_install_alignment.py": "9392f73bd72e42766f9734773c2d9ccb0f8246defcc8ec9086d1bdcc2caf13e9",
-    "artifacts/api-server/backend/tests/test_fresh_install.py": "f91b26dff69f9fd44a766cc23879b1aec4ea9fcb73257fc6c47041f765ca86fd"
+    "artifacts/api-server/backend/tests/test_fresh_install.py": "9ee5fe1e5b74b4cb44a7bf6e7716b3ab48b15f690f900205b3f9845f9b7032cd"
   },
   "guard_sources": {
     "app/core/config.py": "3fe8a93628727547f3002d4021ff529933a625e7738f1640f07f1b5b6b359901",
@@ -115,8 +115,8 @@
     "0045_pr_batch_numbers": "bcdf222f4ef8f60e9c01bb3f37558fd75fe331e828f17398bdaae1681d4923ef",
     "0046_live_inventory": "9e160bbbe9f28d35f3d4adcd64f7fef7214a5f9befd9a7d77185b9225f84786c",
     "0047_languages": "26942dc312ad8296fd1bb19cf72fc5d4417d8cb3ebeadfa7548b9d281ee25b65",
-    "0047_stock_products": "3cd9b38e2083c8aae342dca948fcb6939e02f49e12b179f7e6f0d96f78774a07",
     "0048_language_unicode": "31a407a1b18316313fee1b87c98505ebe2289abd0047f98dbbfbd3f6bafb70a5",
+    "0047_stock_products": "3cd9b38e2083c8aae342dca948fcb6939e02f49e12b179f7e6f0d96f78774a07",
     "0049_product_language_merge": "f9aefdd62ad3904102b814f9b569eb9b222b1f0bec63f1e6fc14f8b04436cc9d"
   }
 }

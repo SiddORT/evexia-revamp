@@ -80,3 +80,19 @@ class DockerSmokeSafetyTests(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "printed a synthetic credential") as error:
             fixture.check_output("synthetic-sensitive-value")
         self.assertNotIn("synthetic-sensitive-value", str(error.exception))
+
+    def test_failed_marker_requires_observed_empty_database_before_removal(self):
+        fixture = self.make_smoke()
+        root = Path(fixture.scratch)
+        (root / ".deploy.lock").touch()
+        marker = root / ".operator-maintenance"
+        marker.write_text('{"operation":"empty-database-initialization"}')
+        with patch.object(smoke, "ACTIVE", root):
+            for state in (["f"], ["t", "1"], ["t", "0", "1"]):
+                with patch.object(fixture, "sql", side_effect=state):
+                    with self.assertRaisesRegex(AssertionError, "maintenance retained"):
+                        fixture.clear_failed_marker()
+                self.assertTrue(marker.is_file())
+            with patch.object(fixture, "sql", side_effect=["t", "0", "0"]):
+                fixture.clear_failed_marker()
+            self.assertFalse(marker.exists())

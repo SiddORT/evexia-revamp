@@ -151,6 +151,16 @@ def configuration(settings):
     DirectoryCrypto(settings)
     from app.services.communication_crypto import CommunicationCrypto
     CommunicationCrypto(settings)
+    # Receipt/inventory readiness requires its independent keyring too. Reject
+    # missing/reused material before running any DDL, rather than discovering
+    # it through the intentionally opaque public readiness HTTP 503 at the end.
+    from app.services.purchase_received_crypto import ReceiptCrypto, PRError
+    try:
+        ReceiptCrypto(settings)
+    except PRError:
+        raise FreshInstallBlocked(
+            "Valid independent PR encryption configuration is required before initialization."
+        ) from None
     password = settings.super_admin_initial_password
     if password is None or not 12 <= len(password.get_secret_value()) <= 128:
         raise FreshInstallBlocked("A valid SUPER_ADMIN_INITIAL_PASSWORD is required before initialization.")

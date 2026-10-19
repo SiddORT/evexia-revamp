@@ -58,6 +58,7 @@ def test_review_covers_every_revision_and_policy():
     from alembic.script import ScriptDirectory
     graph = ScriptDirectory.from_config(Config(str(fresh.BACKEND / "alembic.ini")))
     assert set(fresh.reviewed_graph()) == {node.revision for node in graph.walk_revisions()}
+    assert set(graph.get_heads()) == {fresh.FINAL_TARGET}
 
 
 def simple_initialize(source, settings=None, **overrides):
@@ -99,6 +100,34 @@ def test_simple_install_runs_real_history_atomically_without_receipts(databases)
         assert read(user.id, "email", user.email_ciphertext, user.email_index) == SUPER_ADMIN_EMAIL
     with pytest.raises(fresh.FreshInstallBlocked, match="not pristine"):
         simple_initialize(source)
+
+
+@pytest.mark.parametrize("keyring", [None, SecretStr("invalid-synthetic-keyring")])
+def test_simple_install_missing_pr_configuration_is_explicit_and_pristine(databases, keyring):
+    source, _, _ = databases
+    settings = get_settings().model_copy(update={"pr_encryption_keys": keyring})
+    with pytest.raises(fresh.FreshInstallBlocked, match="independent PR encryption"):
+        simple_initialize(source, settings=settings)
+    with source.connect() as connection:
+        assert connection.scalar(text("SELECT to_regclass('public.alembic_version')")) is None
+        fresh.pristine(connection)
+
+
+def test_readiness_missing_pr_keyring_is_the_initialization_503_cause(databases):
+    from fastapi import HTTPException
+    from app.api.v1.system import readiness
+    from app.services.purchase_received_crypto import PRError
+    source, _, _ = databases
+    simple_initialize(source)
+    missing = get_settings().model_copy(update={"pr_encryption_keys": None})
+    with Session(source) as db:
+        assert readiness(db) == {"status": "ready"}
+        with patch("app.core.config.get_settings", return_value=missing):
+            with pytest.raises(HTTPException) as error:
+                readiness(db)
+        assert error.value.status_code == 503
+        assert error.value.detail == "Service unavailable"
+        assert isinstance(error.value.__context__, PRError)
 
 
 @pytest.mark.parametrize("mutation", [

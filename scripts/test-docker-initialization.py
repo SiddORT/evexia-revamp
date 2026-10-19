@@ -94,7 +94,7 @@ class Smoke:
             "STAFF_EMAIL_INDEX_KEY": key(),
             "DIRECTORY_INDEX_KEY": key(),
         }
-        for prefix in ("STAFF", "DIRECTORY", "COMMUNICATION"):
+        for prefix in ("STAFF", "DIRECTORY", "COMMUNICATION", "PR"):
             settings[f"{prefix}_ENCRYPTION_KEYS"] = json.dumps({"primary": key()})
             settings[f"{prefix}_ENCRYPTION_KEY_ID"] = "primary"
         # Bare URL deliberately exercises the installed Psycopg 3 conversion.
@@ -210,6 +210,17 @@ class Smoke:
             marker = ACTIVE / ".operator-maintenance"
             require(json.loads(marker.read_text()) == {"operation": "empty-database-initialization"},
                     "Refusing to clear an unknown maintenance marker.")
+            # Reconcile on a fresh connection before any test-only retry.
+            # A nonzero initializer result alone does not establish rollback.
+            require(self.sql("SELECT to_regclass('public.alembic_version') IS NULL") == "t",
+                    "Revision exists after failed initialization; maintenance retained.")
+            require(self.sql("SELECT count(*) FROM pg_class c JOIN pg_namespace n "
+                             "ON n.oid=c.relnamespace WHERE n.nspname='public' "
+                             "AND c.relkind IN ('r','p','v','m','S','f')") == "0",
+                    "Initialization objects remain; maintenance retained.")
+            require(self.sql("SELECT count(*) FROM pg_namespace WHERE nspname !~ '^pg_' "
+                             "AND nspname NOT IN ('public','information_schema')") == "0",
+                    "Initialization schemas remain; maintenance retained.")
             marker.unlink()
 
     def lock_and_atomic_failure(self):
@@ -328,8 +339,9 @@ print("CI_IMPORTS_OK")
             if "existing_app" in create:
                 require(self.sql("SELECT count(*) FROM pg_namespace WHERE nspname='existing_app'") == "1",
                         "Existing schema was removed.")
-            self.clear_failed_marker()
             self.sql(drop)  # Only synthetic objects created immediately above.
+            self.pristine()
+            self.clear_failed_marker()
         self.lock_and_atomic_failure()
         self.invoke(expected=True, message="INITIALIZATION_COMPLETE")
         require("CI_READY_OK" in self.tool(f"""
@@ -365,7 +377,10 @@ print("CI_READY_OK")
         self.invoke(expected=False, message="Database is not pristine")
         require(self.sql("SELECT id::text || password_hash || email FROM users") == before,
                 "Repeat initialization changed account credentials.")
-        self.clear_failed_marker()
+        # This is a deliberately initialized database, not an empty rollback.
+        # Preserve the failed-repeat marker until disposable fixture cleanup.
+        require((ACTIVE / ".operator-maintenance").is_file(),
+                "Failed repeat must retain maintenance for inspection.")
         self.preserved()
 
     def cleanup(self):
