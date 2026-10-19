@@ -48,6 +48,16 @@ def copy_source(root):
     return backend
 
 
+def explicit_legacy_policy(policy, graph):
+    """Materialize the default before removing it in a legacy-policy fixture."""
+    policy["revisions"] = {
+        r: policy["revisions"].get(r, policy.get("default")) for r in graph
+    }
+    policy["version"] = 1
+    policy.pop("default", None)
+    return policy
+
+
 class SourceContractTests(unittest.TestCase):
     def test_future_revision_needs_no_new_policy_classification(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -84,8 +94,7 @@ class SourceContractTests(unittest.TestCase):
                     f"depends_on={dependency!r}\n")
                 path = root / "scripts/migration-policy.json"
                 policy = json.loads(path.read_text())
-                policy["version"] = 1
-                policy.pop("default", None)
+                explicit_legacy_policy(policy, full_graph)
                 if classify:
                     policy["revisions"]["staged"] = "operator_only"
                 path.write_text(json.dumps(policy))
@@ -111,8 +120,7 @@ class SourceContractTests(unittest.TestCase):
                 f"revision='staged'\ndown_revision={head!r}\ndepends_on=None\n")
             policy_path = root / "scripts/migration-policy.json"
             policy_data = json.loads(policy_path.read_text())
-            policy_data["version"] = 1
-            policy_data.pop("default", None)
+            explicit_legacy_policy(policy_data, full_graph)
             policy_data["revisions"]["staged"] = "operator_only"
             policy_path.write_text(json.dumps(policy_data))
             # Source updates still require explicit offline integrity review.
@@ -141,10 +149,12 @@ class SourceContractTests(unittest.TestCase):
 
     def test_current_head_and_protected_path_ignore_stale_production_review(self):
         runner, graph, policy, target, _ = review.review()
-        self.assertEqual(target, "0045_pr_batch_numbers")
+        self.assertEqual(target, json.loads((ROOT / "development-contract.json").read_text())["schema"])
         result = runner.plan(graph, policy, ["0040_po_tax_basis"], target)
-        expected = ["0041_location_geography", "0042_rate_hundredths",
-                    "0043_email_templates", "0044_purchase_received", "0045_pr_batch_numbers"]
+        predecessors = set(runner.ordered_ancestors(graph, "0040_po_tax_basis"))
+        expected = [r for r in runner.ordered_ancestors(graph, target) if r not in predecessors]
+        self.assertEqual(expected[:5], ["0041_location_geography", "0042_rate_hundredths",
+                                       "0043_email_templates", "0044_purchase_received", "0045_pr_batch_numbers"])
         self.assertEqual(result["pending"], expected)
         self.assertEqual(result["operator_only"], [])
         self.assertEqual(result["result"], "READY")
@@ -158,8 +168,8 @@ class SourceContractTests(unittest.TestCase):
 
     def test_metadata_drift_and_unreviewed_bytes_fail_offline(self):
         mutations = [
-            ("development-contract.json", lambda p: p.write_text(p.read_text().replace(
-                "0045_pr_batch_numbers", "0043_email_templates"))),
+            ("development-contract.json", lambda p: p.write_text(json.dumps({
+                **json.loads(p.read_text()), "schema": "0043_email_templates"}))),
             ("artifacts/api-server/backend/app/core/schema.py", lambda p: p.write_text("SCHEMA_REVISION='0043_email_templates'")),
             ("scripts/migration-policy.json", lambda p: p.write_text(p.read_text().replace('"0042_rate_hundredths": "automatic"', '"0042_rate_hundredths": "operator_only"'))),
             ("artifacts/api-server/backend/alembic/versions/0044_purchase_received.py", lambda p: p.write_text(p.read_text() + "\n# tampered\n")),
@@ -380,8 +390,8 @@ class TransactionTests(unittest.TestCase):
         # Explicit legacy-policy fixture; the real repository is now automatic.
         policy_path = self.root / "scripts/migration-policy.json"
         legacy = json.loads(policy_path.read_text())
-        legacy["version"] = 1
-        legacy.pop("default", None)
+        runner, graph, _, target, _ = review.source(self.root)
+        explicit_legacy_policy(legacy, graph)
         legacy["revisions"] = {r: "operator_only" for r in legacy["revisions"]}
         policy_path.write_text(json.dumps(legacy))
         (self.root / "scripts/fresh-install-review.json").write_text('{"status":"stale"}')
@@ -394,9 +404,10 @@ class TransactionTests(unittest.TestCase):
             self.assertEqual(self.run_sync(), 42)
         report = json.loads(output.getvalue())
         self.assertEqual(report["current"], ["0040_po_tax_basis"])
-        self.assertEqual(report["required"], "0045_pr_batch_numbers")
+        self.assertEqual(report["required"], target)
         self.assertEqual(report["pending"], report["operator_only"])
-        self.assertEqual(len(report["pending"]), 5)
+        predecessors = set(runner.ordered_ancestors(graph, "0040_po_tax_basis"))
+        self.assertEqual(report["pending"], [r for r in runner.ordered_ancestors(graph, target) if r not in predecessors])
         self.assertEqual(report["migrations_applied"], 0)
         self.assertIn("docs/development-schema-activation.md", report["action"])
         self.assertEqual(self.state(), ("0040_po_tax_basis", None))
