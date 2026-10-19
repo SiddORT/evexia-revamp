@@ -30,7 +30,7 @@ export default function EmailTemplateLibrary({ guard, onDirtyChange, onBusyChang
     }
   };
   const select = async (row, editing, discardConfirmed = false) => {
-    if (locked.current || (!discardConfirmed && !guard())) return;
+    if (locked.current || (!discardConfirmed && !await guard()) || !alive.current || locked.current) return;
     const n = ++selection.current; setError('');
     locked.current = true; setBusy(true); onBusyChange(true);
     // Keep the existing editor mounted until a complete detail read succeeds.
@@ -43,13 +43,13 @@ export default function EmailTemplateLibrary({ guard, onDirtyChange, onBusyChang
     } catch (e) { if (alive.current && n === selection.current) setError(e.message); }
     finally { if (alive.current && n === selection.current) { locked.current = false; setBusy(false); onBusyChange(false); } }
   };
-  const blank = () => {
-    if (locked.current || !guard()) return;
+  const blank = async () => {
+    if (locked.current || !await guard() || !alive.current || locked.current) return;
     selection.current += 1; setView(null); setDel(null); setStatus('');
     onDirtyChange(false);
     setEditor({ key: crypto.randomUUID(), draft: { id: null, creationId: crypto.randomUUID(), channel: 'email', eventKey: null, name: '', description: '', content: { subject: '', html: '', text: '' } } });
   };
-  const close = () => { if (locked.current || !guard()) return; selection.current += 1; onDirtyChange(false); setEditor(null); setView(null); };
+  const close = async () => { if (locked.current || !await guard() || !alive.current || locked.current) return; selection.current += 1; onDirtyChange(false); setEditor(null); setView(null); };
   const saved = (latest) => { request.current += 1; setLoading(false); onDirtyChange(false); setSnap(latest); setEditor(null); setView(null); setStatus('Email template saved to the shared database.'); };
   const remove = async () => {
     if (locked.current || uncertainDelete) return;
@@ -78,7 +78,7 @@ export default function EmailTemplateLibrary({ guard, onDirtyChange, onBusyChang
         <h3>{t.name}</h3><p>{t.description}</p><div className="mt-row">
           <button type="button" disabled={busy || loading} onClick={() => select(t, false)} data-testid={`button-preview-template-${t.id}`}>Preview</button>
           <button type="button" disabled={busy || loading} onClick={() => select(t, true)} data-testid={`button-edit-template-${t.id}`}>Edit</button>
-          {!t.protected && <button type="button" disabled={busy || loading} onClick={() => { if (guard()) { selection.current += 1; onDirtyChange(false); setEditor(null); setView(null); setDel(t); setDelError(''); setUncertainDelete(false); } }} data-testid={`button-delete-template-${t.id}`}>Delete</button>}</div></li>)}</ul></>}
+          {!t.protected && <button type="button" disabled={busy || loading} onClick={async () => { if (await guard() && alive.current && !locked.current) { selection.current += 1; onDirtyChange(false); setEditor(null); setView(null); setDel(t); setDelError(''); setUncertainDelete(false); } }} data-testid={`button-delete-template-${t.id}`}>Delete</button>}</div></li>)}</ul></>}
     {del && <div role="alertdialog" aria-labelledby="mt-del-h" className="admin-feedback mt-del"><strong id="mt-del-h">Delete {del.name}?</strong> This removes the shared database template for all browsers.
       {delError && <p role="alert">{delError}</p>}<div className="mt-row"><button type="button" disabled={busy || uncertainDelete} onClick={remove} data-testid="button-confirm-delete-template">Delete</button>
         <button type="button" disabled={busy} onClick={() => setDel(null)}>Cancel</button>{delError && <button type="button" disabled={busy || loading} onClick={refresh}>Load latest before retrying</button>}</div></div>}

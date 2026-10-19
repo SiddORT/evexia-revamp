@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import MessageTemplatePreview from './MessageTemplatePreview.jsx';
+import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
 import { LIMITS, loadMessageTemplates, saveMessageTemplate, validateMessageTemplate } from '../../services/messageTemplates.js';
 import { SUPPORTED_TOKENS, readHtmlFile } from '../../services/messageTemplatePreview.js';
 import { EMAIL_VARIABLES, saveEmailTemplate, loadEmailTemplates } from '../../services/emailTemplates.js';
@@ -17,6 +18,7 @@ const toInput = (channel, f) => channel === 'email'
 
 /** Email is API-backed; SMS retains its existing browser snapshot contract. */
 export default function MessageTemplateEditor({ draft, baseline, loadError, latestRevision, externalBusy = false, events = [], onClose, onSaved, onReopenLatest, onDirtyChange, onBusyChange }) {
+  const confirm = usePlatformConfirm();
   const channel = draft.channel;
   const initial = useRef(flat(draft)).current;
   const [f, setF] = useState(initial);
@@ -61,7 +63,7 @@ export default function MessageTemplateEditor({ draft, baseline, loadError, late
     working(true);
     try {
       const html = await readHtmlFile(file);
-      if (htmlRef.current.trim() && !window.confirm('Replace the current HTML draft with the imported file? This is not saved until you save the template.')) return;
+      if (htmlRef.current.trim() && !await confirm('Replace the current HTML draft with the imported file? This is not saved until you save the template.', { title: 'Replace HTML draft?', actionLabel: 'Replace draft' })) return;
       set('html', html); setBanner(''); setInfo(`Imported ${file.name} into the draft. Not saved yet.`);
     } catch (e) { setBanner(e?.message || 'File could not be imported. Your draft is unchanged.'); }
     finally { working(false); }
@@ -127,8 +129,8 @@ export default function MessageTemplateEditor({ draft, baseline, loadError, late
     finally { working(false); }
   };
   const retryStorage = () => { try { loadMessageTemplates(); setRecovered(true); setBanner(''); setInfo('Storage is readable. You can save this draft as a new template; existing saved templates will not be overwritten.'); } catch (e) { setBanner(e?.message || 'Storage still cannot be read.'); } };
-  const close = () => { if (busy || (dirty && !window.confirm('Discard unsaved changes?'))) return; dirtyRef.current?.(false); onClose(); };
-  const reopen = () => { if (busy || !window.confirm('Discard your draft and open the latest saved version?')) return; onReopenLatest?.(draft.id); };
+  const close = async () => { if (busy || (dirty && !await confirm('Discard unsaved changes?'))) return; if (running.current) return; dirtyRef.current?.(false); onClose(); };
+  const reopen = async () => { if (busy || !await confirm('Discard your draft and open the latest saved version?', { actionLabel: 'Discard and reopen' })) return; if (running.current) return; onReopenLatest?.(draft.id); };
   const field = ([k, label, max, kind]) => {
     const common = { id: `mt-${k}`, value: f[k], disabled: busy, maxLength: max, autoFocus: channel === 'email' && k === 'name', 'aria-invalid': !!errors[k], 'aria-describedby': `mt-${k}-h`, 'data-testid': `input-template-${k}`,
       ref: (el) => { refs.current[k] = el; }, onFocus: () => { if (['subject', 'html', 'text', 'body'].includes(k)) lastFocus.current = k; }, onChange: (e) => set(k, e.target.value) };

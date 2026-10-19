@@ -2,6 +2,7 @@ import { Globe2, LifeBuoy, ShieldCheck } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAdminDateFormatters } from './adminPreferences.js';
 import { roleUrlRequest } from '../../auth/adminSession.js';
+import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
 
 const past = (v) => { const t = v ? new Date(v).getTime() : NaN; return !Number.isNaN(t) && t <= Date.now(); };
 
@@ -14,6 +15,7 @@ function label(d) {
 }
 
 export default function PrimaryDomainPanel({ items, domains, bootstrapHosts, listReady, onReload, onDomainUpdate, onSaved, onDirtyChange, parentBusy, onBusyChange }) {
+  const confirm = usePlatformConfirm();
   const { timestamp } = useAdminDateFormatters();
   const fmt = (value) => timestamp(value, true);
   const primary = useMemo(() => domains.find((d) => d.kind === 'primary') || null, [domains]);
@@ -74,15 +76,15 @@ export default function PrimaryDomainPanel({ items, domains, bootstrapHosts, lis
   };
   const review = () => { base.current = current; expected.current = { hostname: primary?.hostname || null, version: primary?.version || 0 }; setStale(false); setNotice('Current primary reviewed. Your draft is kept; saving will use the reviewed version.'); };
   const startDraft = () => { base.current = current; expected.current = { hostname: primary?.hostname || null, version: primary?.version || 0 }; setDraft(current); setError(''); setNotice(''); };
-  const cancel = () => {
-    if (dirty && !window.confirm('Discard unsaved Role URL changes?')) return;
+  const cancel = async () => {
+    if (busy || (dirty && !await confirm('Discard unsaved Role URL changes?'))) return;
     setDraft(null); setStale(false); setError('');
   };
 
   const act = async (row, action) => {
     if (locked) return;
     const key = `${row.hostname}:${action}`;
-    if (action === 'revoke' && !window.confirm(`Revoke ${row.hostname}? Ownership and admission will be removed.`)) return;
+    if (action === 'revoke' && !await confirm(`Revoke ${row.hostname}? Ownership and admission will be removed.`, { title: 'Revoke hostname?', actionLabel: 'Revoke hostname' })) return;
     setPendingKey(key); setBusy(true); setRowMsg((m) => ({ ...m, [row.hostname]: '' })); setNotice('');
     try {
       const d = await roleUrlRequest('/domain-action', { hostname: row.hostname, version: row.domain?.version || 0, action });

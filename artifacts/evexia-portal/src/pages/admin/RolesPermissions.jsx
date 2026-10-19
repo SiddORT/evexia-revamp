@@ -6,7 +6,7 @@ import Dialog from '../../components/admin/Dialog.jsx';
 import { formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ZonePermissionMatrix, { countLabel } from '../../components/admin/ZonePermissionMatrix.jsx';
 import { MASTER_KEYS as ZONE_KEYS } from '../../auth/capabilities.js';
-import { setNavigationGuard } from '../../auth/navigationGuard.js';
+import { continueNavigation, setNavigationGuard } from '../../auth/navigationGuard.js';
 import { getSession, subscribeSession } from '../../auth/adminSession.js';
 import { listRoles, getRole, createRole, updateRole, deleteRole, setRolePermissions, samePermissions, validateRoleName, validateRoleDescription, ROLE_NAME_LIMIT, ROLE_DESCRIPTION_LIMIT } from '../../services/rolePermissions.js';
 import '../../roles-permissions.css';
@@ -322,25 +322,17 @@ export default function RolesPermissions() {
     });
   };
   const proceed = () => {
+    if (busyRef.current || !leave) return;
     const l = leave; setLeave(null); setDraft(null);
     if (l.kind === 'role') { setSelectedId(l.id); setNotice(''); }
-    else if (l.kind === 'run') l.run();
-    else if (l.kind === 'raw') window.history.pushState(null, '', l.href);
-    else navigate(l.href);
+    else continueNavigation(l, navigate);
   };
   useEffect(() => {
     if (!guarded) return undefined;
-    const release = setNavigationGuard((request) => { setLeave(request); return true; });
-    const onClick = (e) => {
-      const a = e.target?.closest?.('a[href]');
-      if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || a.target === '_blank') return;
-      const href = a.getAttribute('href');
-      if (!href || !href.startsWith('/')) return;
-      e.preventDefault(); e.stopPropagation(); setLeave({ kind: 'href', href });
-    };
-    const unload = (e) => { e.preventDefault(); e.returnValue = ''; };
-    document.addEventListener('click', onClick, true); window.addEventListener('beforeunload', unload);
-    return () => { release(); document.removeEventListener('click', onClick, true); window.removeEventListener('beforeunload', unload); };
+    return setNavigationGuard((request) => {
+      if (!busyRef.current) setLeave((current) => current || request);
+      return true;
+    });
   }, [guarded]);
   const edit = (selected) => setDraft((d) => {
     const snapshot = d && d.roleId === role.id ? d : { roleId: role.id, role, base: role.version, error: null };

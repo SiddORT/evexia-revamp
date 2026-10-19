@@ -6,7 +6,7 @@ import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import PhoneInput from '../../components/admin/PhoneInput.jsx';
 import ImmDialog from '../../components/immunotherapy/ImmDialog.jsx';
 import { StatusPill } from './ImmunotherapyOrders.jsx';
-import { setNavigationGuard } from '../../auth/navigationGuard.js';
+import { continueNavigation, setNavigationGuard } from '../../auth/navigationGuard.js';
 import { ALLERGENS, DOCTORS, DOSES, GENDERS, MRS, STATUSES, demoStore, groupingError, money, newGroup, nextDose, parseAmount, shippingRecipient, totalMinor, validateAttachments } from '../../services/immunotherapyDemo.js';
 import '../../immunotherapy.css';
 
@@ -55,20 +55,7 @@ function Editor({ order, mode, snap }) {
 
   useEffect(() => {
     if (readOnly) return undefined;
-    const release = setNavigationGuard((request) => { if (!dirtyRef.current) return false; setLeave(request); return true; });
-    const warn = (e) => { if (dirtyRef.current) { e.preventDefault(); e.returnValue = ''; } };
-    const interceptLink = (e) => {
-      if (!dirtyRef.current || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      const link = e.target.closest?.('a[href]');
-      if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
-      const target = new URL(link.href, window.location.href);
-      if (target.href === window.location.href) return;
-      e.preventDefault(); e.stopPropagation();
-      setLeave({ kind: 'raw', href: target.href });
-    };
-    document.addEventListener('click', interceptLink, true);
-    window.addEventListener('beforeunload', warn);
-    return () => { release(); window.removeEventListener('beforeunload', warn); document.removeEventListener('click', interceptLink, true); };
+    return setNavigationGuard((request) => { if (!dirtyRef.current) return false; setLeave((current) => current || request); return true; });
   }, [readOnly]);
 
   useEffect(() => { if (regOpen) regNameRef.current?.focus(); }, [regOpen]);
@@ -143,14 +130,9 @@ function Editor({ order, mode, snap }) {
     return saved;
   }
   const proceed = () => {
+    if (!leave) return;
     const r = leave; setLeave(null); dirtyRef.current = false; initial.current = v;
-    if (r?.kind === 'run') r.run();
-    else if (r?.kind === 'raw' && r.href) {
-      const target = new URL(r.href, window.location.href);
-      if (target.origin === window.location.origin) navigate(`${target.pathname}${target.search}${target.hash}`);
-      else window.location.assign(target.href);
-    }
-    else if (r?.href) navigate(r.href);
+    continueNavigation(r, navigate);
   };
   const errList = Object.entries(errors);
   const gIndex = (gid) => v.groups.findIndex((g) => g.id === gid);

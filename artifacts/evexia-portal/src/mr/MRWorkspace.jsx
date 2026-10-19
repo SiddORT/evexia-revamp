@@ -83,8 +83,11 @@ function Shell() {
     document.addEventListener('mousedown', down); document.addEventListener('keydown', key);
     return () => { document.removeEventListener('mousedown', down); document.removeEventListener('keydown', key); };
   }, [menu]);
-  async function signOut() {
-    if (interceptNavigation({ kind: 'href', href: '/mr' })) return;
+  function signOut() {
+    if (interceptNavigation({ kind: 'run', run: signOutNow })) return;
+    return signOutNow();
+  }
+  async function signOutNow() {
     await logoutAdmin();
     navigate('/mr', { replace: true });
   }

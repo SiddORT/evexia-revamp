@@ -6,6 +6,7 @@ import { formatAdminTimestamp, useAdminPreferences } from '../../components/admi
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import OpeningBalanceDoctorSelect from '../../components/admin/OpeningBalanceDoctorSelect.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
+import { usePlatformConfirm } from '../../components/PlatformConfirmation.jsx';
 import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
 import { createOpeningBalance, editOpeningBalance, getOpeningBalance } from '../../services/serverOpeningBalances.js';
 import { validateBalance, formatBalance } from '../../services/openingBalanceValidation.js';
@@ -44,6 +45,7 @@ function YearField({ field, values, errors, onChange, disabled }) {
 }
 
 function BalanceForm({ record, onSave, onCancel, onReload, onPendingChange }) {
+  const confirm = usePlatformConfirm();
   useAdminPreferences();
   const [values, setValues] = useState(() => record ? fields(record) : empty());
   const [errors, setErrors] = useState({});
@@ -79,7 +81,8 @@ function BalanceForm({ record, onSave, onCancel, onReload, onPendingChange }) {
   }
   async function reload() {
     if (busy.current) return;
-    if (!window.confirm('Discard this draft and load current server details? If a save outcome was uncertain, inspect the list first.')) return;
+    if (!await confirm('Discard this draft and load current server details? If a save outcome was uncertain, inspect the list first.', { actionLabel: 'Discard and reload' })) return;
+    if (busy.current || !alive.current) return;
     const guard = reportingIdentityGuard();
     busy.current = true; setPending(true); onPendingChange(true);
     try {

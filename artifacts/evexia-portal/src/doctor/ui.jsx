@@ -16,13 +16,13 @@ export function useFmt() {
 }
 
 /** Registers unsaved-draft state with the portal guard. */
-export function useDirty(dirty, nativeConfirmation = false) {
+export function useDirty(dirty, layeredConfirmation = false) {
   const guard = useGuard();
   useEffect(() => {
     guard.dirtyRef.current = Boolean(dirty);
-    guard.nativeConfirmRef.current = nativeConfirmation && Boolean(dirty);
-  }, [dirty, nativeConfirmation, guard]);
-  useEffect(() => () => { guard.dirtyRef.current = false; guard.nativeConfirmRef.current = false; }, [guard]);
+    guard.layeredConfirmRef.current = layeredConfirmation && Boolean(dirty);
+  }, [dirty, layeredConfirmation, guard]);
+  useEffect(() => () => { guard.dirtyRef.current = false; guard.layeredConfirmRef.current = false; }, [guard]);
 }
 
 export function A({ to, children, className, ...rest }) {

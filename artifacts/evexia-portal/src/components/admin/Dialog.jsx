@@ -1,18 +1,20 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { X } from 'lucide-react';
 import InfoDisclosure from './InfoDisclosure.jsx';
+import { enterModal, isTopModal } from '../modalLayers.js';
 
 export default function Dialog({ title, eyebrow, description, titleInfo, onClose, children, footer, className = '' }) {
+  const id = useId();
   const closeRef = useRef(null);
   const dialogRef = useRef(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   useEffect(() => {
     const previouslyFocused = document.activeElement;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const leaveLayer = enterModal(dialogRef.current);
     closeRef.current?.focus();
     function handleKey(event) {
+      if (!isTopModal(dialogRef.current)) return;
       if (event.key === 'Escape' && document.activeElement?.closest?.('.searchable-select--open')) return;
       const activeControl = document.activeElement?.closest?.('.searchable-control--open');
       const portal = document.activeElement?.closest?.('[data-searchable-owner]');
@@ -38,21 +40,21 @@ export default function Dialog({ title, eyebrow, description, titleInfo, onClose
     }
     document.addEventListener('keydown', handleKey, true);
     return () => {
-      document.body.style.overflow = previousOverflow;
+      leaveLayer();
       document.removeEventListener('keydown', handleKey, true);
-      previouslyFocused?.focus?.();
+      if (previouslyFocused?.isConnected && !document.querySelector('[data-platform-confirmation]')) previouslyFocused.focus();
     };
   }, []);
   return (
     <div className="admin-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className={`admin-dialog ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby="admin-dialog-title" aria-describedby={description ? 'admin-dialog-description' : undefined} ref={dialogRef}>
+      <section className={`admin-dialog ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} aria-describedby={description ? `${id}-description` : undefined} ref={dialogRef}>
         <div className="admin-dialog__top">
            <div><p className="admin-dialog__eyebrow">{eyebrow || 'Zone Master'}</p>
-             {titleInfo ? <InfoDisclosure id="admin-dialog-title-help" title={title} text={titleInfo} testId="button-zone-info"><h2 id="admin-dialog-title">{title}</h2></InfoDisclosure> : <h2 id="admin-dialog-title">{title}</h2>}
+             {titleInfo ? <InfoDisclosure id={`${id}-help`} title={title} text={titleInfo} testId="button-zone-info"><h2 id={`${id}-title`}>{title}</h2></InfoDisclosure> : <h2 id={`${id}-title`}>{title}</h2>}
            </div>
           <button type="button" ref={closeRef} className="admin-icon-button" aria-label="Close dialog" onClick={onClose} data-testid="button-close-dialog"><X size={18} /></button>
         </div>
-        {description && <p className="admin-dialog__description" id="admin-dialog-description">{description}</p>}
+        {description && <p className="admin-dialog__description" id={`${id}-description`}>{description}</p>}
         {children}
         {footer && <div className="admin-dialog__actions">{footer}</div>}
       </section>

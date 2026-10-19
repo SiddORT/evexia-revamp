@@ -1,0 +1,9 @@
+.platform-confirm-backdrop { position: fixed; inset: 0; z-index: 2147483000; background: #07121c99; display: grid; place-items: center; padding: 16px; overscroll-behavior: contain; }
+.platform-confirm { box-sizing: border-box; width: min(100%, 470px); max-height: calc(100dvh - 32px); overflow: auto; border-radius: 16px; padding: 24px; background: var(--admin-surface, #fff); color: var(--admin-text, #172b3a); box-shadow: 0 24px 80px #0005; border: 1px solid var(--admin-border, #d8e2e7); overflow-wrap: anywhere; }
+.platform-confirm h2 { font-size: 1.25rem; margin: 8px 0 12px; color: inherit; }
+.platform-confirm p { line-height: 1.6; color: inherit; }
+.platform-confirm__eyebrow { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; }
+.platform-confirm__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+.platform-confirm button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--admin-border, #c7d5dd); background: var(--admin-surface, #fff); color: inherit; padding: 10px 16px; min-height: 44px; }
+.platform-confirm button.platform-confirm__danger { background: #b42332; border-color: #b42332; color: #fff; }
+.platform-confirm button:focus-visible { outline: 3px solid var(--admin-accent, #2685ba); outline-offset: 3px; }

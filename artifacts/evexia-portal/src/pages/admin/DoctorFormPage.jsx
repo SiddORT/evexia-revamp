@@ -3,12 +3,14 @@ import { useLocation } from 'wouter';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import DoctorForm from '../../components/admin/DoctorForm.jsx';
+import { usePlatformConfirm } from '../../components/PlatformConfirmation.jsx';
 import useDoctors from '../../hooks/useDoctors.js';
 import '../../doctor-form.css';
 
 const LIST_PATH = '/admin/masters/doctors';
 
 export default function DoctorFormPage({ id }) {
+  const confirm = usePlatformConfirm();
   const [, navigate] = useLocation();
   const { records, mrs, error, loading, retry, add, edit } = useDoctors({}, id || null);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -23,8 +25,8 @@ export default function DoctorFormPage({ id }) {
   const doctor = id ? records.find((record) => String(record.id) === String(id)) : null;
   const title = id ? 'Edit Doctor record' : 'Add Doctor record';
 
-  function refresh() {
-    if (hasLoaded && !window.confirm('Reload the current saved record and discard changes in this form?')) return;
+  async function refresh() {
+    if (hasLoaded && !await confirm('Reload the current saved record and discard changes in this form?', { actionLabel: 'Discard and reload' })) return;
     refreshing.current = true;
     retry();
   }

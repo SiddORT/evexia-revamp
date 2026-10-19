@@ -7,9 +7,11 @@ import { useAdminDateFormatters } from '../../components/admin/adminPreferences.
 import PurchaseOrderReferenceSelect from '../../components/admin/PurchaseOrderReferenceSelect.jsx';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
+import { usePlatformConfirm } from '../../components/PlatformConfirmation.jsx';
+import useConfirmedNavigation from '../../auth/useConfirmedNavigation.js';
 import { locationSuggestion } from '../../services/locationGeography.js';
 import { TaxAmounts, TaxBasis, LineTax } from '../../components/admin/PurchaseOrderTaxSummary.jsx';
-import { interceptNavigation, setNavigationGuard } from '../../auth/navigationGuard.js';
+import { interceptNavigation } from '../../auth/navigationGuard.js';
 import {
   MAX_LINES, MAX_TOTAL_PAISE, clearPending, computeLine, computeTotals, createPurchaseOrder, describeError, formatPaise, isStaleReview,
   isUncertain, loadPending, markSaved, newKey, parseQuantity, previewPurchaseOrder, savePending, trimDecimal, validDate,
@@ -82,6 +84,7 @@ const fromSaved = (order) => ({
 });
 
 export function Editor({ order, onCancel, onSaved, onReload }) {
+  const confirm = usePlatformConfirm();
   const { date: displayDate } = useAdminDateFormatters();
   const editing = Boolean(order);
   const [loaded] = useState(() => editing ? loadOrderMutation(order.id) : loadPending());
@@ -118,30 +121,15 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
   const hasErrors = Object.values(errors).some(Boolean);
   const navigation = useRef({});
   navigation.current = { busy, dirty: JSON.stringify(values) !== baseline.current || Boolean(review), uncertain };
-  useEffect(() => {
-    const canLeave = () => {
-      const state = navigation.current;
-      if (state.busy) return false;
-      return !(state.dirty || state.uncertain) || window.confirm(state.uncertain
-        ? 'This save is unconfirmed. Leave now? Reopen this order to retry the same request.'
-        : 'Discard the unsaved purchase order changes?');
-    };
-    const release = setNavigationGuard(() => {
-      if (canLeave()) return false;
-      return true;
-    });
-    const warn = (event) => { if (navigation.current.busy || navigation.current.dirty || navigation.current.uncertain) { event.preventDefault(); event.returnValue = ''; } };
-    const links = (event) => {
-      const anchor = event.target.closest?.('a[href]');
-      if (anchor && !event.defaultPrevented && !canLeave()) { event.preventDefault(); event.stopPropagation(); }
-    };
-    window.addEventListener('beforeunload', warn);
-    document.addEventListener('click', links, true);
-    return () => { release(); window.removeEventListener('beforeunload', warn); document.removeEventListener('click', links, true); };
-  }, []);
-  const cancel = () => {
+  useConfirmedNavigation(() => ({ ...navigation.current, busy: busyRef.current }), (state) => state.uncertain
+    ? 'This save is unconfirmed. Leave now? Reopen this order to retry the same request.'
+    : 'Discard the unsaved purchase order changes?');
+  const cancel = async () => {
     if (busyRef.current) return;
-    if (JSON.stringify(values) !== baseline.current && !window.confirm('Discard the unsaved purchase order changes?')) return;
+    if ((navigation.current.dirty || navigation.current.uncertain) && !await confirm(navigation.current.uncertain
+      ? 'This save is unconfirmed. Leave now? Reopen this order to retry the same request.'
+      : 'Discard the unsaved purchase order changes?')) return;
+    if (busyRef.current) return;
     navigation.current = {};
     onCancel();
   };
@@ -249,7 +237,7 @@ export function Editor({ order, onCancel, onSaved, onReload }) {
     {blocked && <div className="admin-feedback admin-feedback--error" role="alert" style={{ margin: 18 }}>{blocked}</div>}
     {saveError && <div className="admin-feedback admin-feedback--error" role="alert" style={{ margin: 18 }}>{saveError}</div>}
     {editing && <p className="po-review__note" style={{ margin: 18 }}>Retained products keep their saved names, prices and GST, even if their master records are no longer available. Newly selected products use the current catalogue.</p>}
-    {conflict && <button type="button" className="admin-button" onClick={() => { if (window.confirm('Discard this draft and reload the latest saved order?')) { navigation.current = {}; onReload(); } }}>Reload latest order</button>}
+    {conflict && <button type="button" className="admin-button" onClick={async () => { if (await confirm('Discard this draft and reload the latest saved order?', { actionLabel: 'Discard and reload' }) && !busyRef.current) { navigation.current = {}; onReload(); } }}>Reload latest order</button>}
     {review ? <>
       <div className="po-review"><p className="po-review__note">Confirming saves this order on the server. It does not send an order to a supplier.</p>
         <dl className="po-detail-grid"><div><dt>Vendor</dt><dd>{review.order.vendorName}</dd></div><div><dt>Storage location</dt><dd>{review.order.locationName}</dd></div><div><dt>PO date</dt><dd>{displayDate(review.order.poDate)}</dd></div><div><dt>Expected delivery</dt><dd>{displayDate(review.order.expectedDate)}</dd></div></dl>

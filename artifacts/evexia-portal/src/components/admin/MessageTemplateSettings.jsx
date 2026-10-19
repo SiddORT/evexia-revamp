@@ -3,6 +3,7 @@ import './messageTemplates.css';
 import MessageTemplateEditor from './MessageTemplateEditor.jsx';
 import MessageTemplatePreview from './MessageTemplatePreview.jsx';
 import EmailTemplateLibrary from './EmailTemplateLibrary.jsx';
+import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
 import { MESSAGE_TEMPLATES_KEY, SYSTEM_TEMPLATES, deleteMessageTemplate, loadMessageTemplates } from '../../services/messageTemplates.js';
 
 function loadSms() {
@@ -12,33 +13,22 @@ function loadSms() {
 const CHANNELS = [['email', 'Email'], ['sms', 'SMS']];
 
 export default function MessageTemplateSettings({ onGuardChange }) {
+  const confirm = usePlatformConfirm();
   const [channel, setChannel] = useState('email');
   const dirty = useRef(false);
   const busy = useRef(false);
-  const guard = useCallback(() => {
+  const guard = useCallback(async () => {
     if (busy.current) return false;
-    if (dirty.current && !window.confirm('You have unsaved template changes. Discard them?')) return false;
-    return true;
-  }, []);
+    if (dirty.current && !await confirm('You have unsaved template changes. Discard them?')) return false;
+    return !busy.current;
+  }, [confirm]);
   const parentGuard = useRef(onGuardChange); parentGuard.current = onGuardChange;
   useEffect(() => { parentGuard.current?.(guard); return () => parentGuard.current?.(null); }, [guard]);
-  useEffect(() => {
-    const unload = (e) => { if (dirty.current || busy.current) { e.preventDefault(); e.returnValue = ''; } };
-    const click = (e) => {
-      if ((!dirty.current && !busy.current) || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      const a = e.target.closest?.('a[href]');
-      if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download') || a.origin !== window.location.origin ||
-          (a.pathname === window.location.pathname && a.search === window.location.search)) return;
-      if (!guard()) { e.preventDefault(); e.stopPropagation(); }
-    };
-    window.addEventListener('beforeunload', unload); document.addEventListener('click', click, true);
-    return () => { window.removeEventListener('beforeunload', unload); document.removeEventListener('click', click, true); };
-  }, [guard]);
-  const choose = (c) => { if (c !== channel && guard()) { dirty.current = false; busy.current = false; setChannel(c); } };
-  const keyboard = (e, i) => {
+  const choose = async (c) => { if (c !== channel && await guard()) { dirty.current = false; busy.current = false; setChannel(c); return true; } return false; };
+  const keyboard = async (e, i) => {
     const next = ['ArrowRight', 'ArrowLeft'].includes(e.key) ? (i + 1) % 2 : e.key === 'Home' ? 0 : e.key === 'End' ? 1 : null;
     if (next === null) return;
-    e.preventDefault(); choose(CHANNELS[next][0]); document.getElementById(`mt-tab-${CHANNELS[next][0]}`)?.focus();
+    e.preventDefault(); if (await choose(CHANNELS[next][0])) document.getElementById(`mt-tab-${CHANNELS[next][0]}`)?.focus();
   };
   return <section className="admin-panel admin-settings__section mt" aria-labelledby="mt-heading">
     <h2 id="mt-heading">Email and SMS templates</h2>
@@ -61,7 +51,7 @@ function SmsLibrary({ guard, onDirtyChange, onBusyChange }) {
     const storage = (e) => { if (e.key === null || e.key === MESSAGE_TEMPLATES_KEY) setLib(loadSms()); };
     window.addEventListener('storage', storage); return () => window.removeEventListener('storage', storage);
   }, []);
-  const open = (draft) => { if (!guard()) return; const l = loadSms(); onDirtyChange(false); setEditor({ key: Date.now(), draft, baseline: l.snap, loadError: l.error }); setView(null); setDel(null); setStatus(''); };
+  const open = async (draft) => { if (!await guard()) return; const l = loadSms(); onDirtyChange(false); setEditor({ key: Date.now(), draft, baseline: l.snap, loadError: l.error }); setView(null); setDel(null); setStatus(''); };
   const close = () => { onDirtyChange(false); setEditor(null); setLib(loadSms()); };
   const all = [...SYSTEM_TEMPLATES, ...(lib.snap?.record.templates || [])].filter((t) => t.channel === 'sms');
   const items = all.filter((t) => (source === 'all' || source === t.source) && t.name.toLowerCase().includes(q.trim().toLowerCase()));

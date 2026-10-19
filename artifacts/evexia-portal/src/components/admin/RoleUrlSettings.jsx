@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link2, Plus, RefreshCw, Search, SearchX } from 'lucide-react';
 import '../../roleUrlSettings.css';
-import { setNavigationGuard } from '../../auth/navigationGuard.js';
+import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { roleUrlRequest } from '../../auth/adminSession.js';
 import PrimaryDomainPanel from './PrimaryDomainPanel.jsx';
@@ -10,6 +10,7 @@ const EMPTY = { hostname: '', role: 'admin', enabled: true };
 const same = (a, b) => a.hostname === b.hostname && a.role === b.role && a.enabled === b.enabled;
 
 export default function RoleUrlSettings({ onGuardChange }) {
+  const confirm = usePlatformConfirm();
   const session = useAdminSession();
   const allowed = session?.user?.identity_kind === 'super_admin';
   const [items, setItems] = useState([]);
@@ -33,7 +34,7 @@ export default function RoleUrlSettings({ onGuardChange }) {
   const [domainBusy, setDomainBusy] = useState(false);
   const busy = roleBusy || domainBusy;
   const dirtyRef = useRef(false);
-  dirtyRef.current = dirty || primaryDirty;
+  dirtyRef.current = { dirty: dirty || primaryDirty, busy };
   const patchDomain = useCallback((d) => setDomains((list) => [...list.filter((x) => x.hostname !== d.hostname && !(d.kind === 'primary' && x.kind === 'primary')), d]), []);
 
   const load = useCallback(async () => {
@@ -49,15 +50,13 @@ export default function RoleUrlSettings({ onGuardChange }) {
   }, []);
   useEffect(() => { if (allowed) load(); }, [allowed, load]);
   useEffect(() => {
-    onGuardChange?.(() => !dirtyRef.current || window.confirm('Discard unsaved Role URL changes?'));
+    onGuardChange?.(async () => {
+      if (dirtyRef.current.busy) return false;
+      const accepted = !dirtyRef.current.dirty || await confirm('Discard unsaved Role URL changes?');
+      return accepted && !dirtyRef.current.busy;
+    });
     return () => onGuardChange?.(null);
-  }, [onGuardChange]);
-  useEffect(() => {
-    const h = (e) => { if (dirtyRef.current) { e.preventDefault(); e.returnValue = ''; } };
-    window.addEventListener('beforeunload', h);
-    return () => window.removeEventListener('beforeunload', h);
-  }, []);
-  useEffect(() => setNavigationGuard(() => dirtyRef.current && !window.confirm('Discard unsaved Role URL changes?')), []);
+  }, [onGuardChange, confirm]);
   useEffect(() => {
     if (removing) dialogRef.current?.showModal();
   }, [removing]);
@@ -69,12 +68,12 @@ export default function RoleUrlSettings({ onGuardChange }) {
 
   if (!allowed) return <section className="admin-panel admin-settings__section"><h2>Role URLs</h2><p role="alert">Only Super Admins can view or change Role URLs.</p></section>;
 
-  const open = (item) => {
-    if (dirty && !window.confirm('Discard unsaved Role URL changes?')) return;
+  const open = async (item) => {
+    if (busy || (dirty && !await confirm('Discard unsaved Role URL changes?')) || dirtyRef.current.busy) return;
     const base = item ? { hostname: item.hostname, role: item.role, enabled: item.enabled } : EMPTY;
     setEditing({ id: item?.id || null, version: item?.version, base }); setDraft(base); setError(''); setBlocked(false); setNotice('');
   };
-  const cancel = () => { if (dirty && !window.confirm('Discard unsaved Role URL changes?')) return; setEditing(null); setError(''); setBlocked(false); };
+  const cancel = async () => { if (busy || (dirty && !await confirm('Discard unsaved Role URL changes?')) || dirtyRef.current.busy) return; setEditing(null); setError(''); setBlocked(false); };
   const fail = (e) => {
     if (e?.status === 409) { setBlocked(true); setError('Another change was saved first. Your draft is kept. Reload and review the current list before saving again.'); }
     else if (e?.ambiguous) { setBlocked(true); setError('The result of this save is uncertain. It will not be retried automatically. Reload to check whether it was saved.'); }

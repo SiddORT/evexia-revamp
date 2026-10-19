@@ -1,7 +1,7 @@
-import { createContext, useContext, useEffect, useRef } from 'react';
+import { createContext, useContext } from 'react';
 import { Link } from 'wouter';
 import { Lock } from 'lucide-react';
-import { setNavigationGuard } from '../auth/navigationGuard.js';
+import useConfirmedNavigation from '../auth/useConfirmedNavigation.js';
 import { formatAdminDate, useAdminPreferences } from '../components/admin/adminPreferences.js';
 
 export const WsContext = createContext(null);
@@ -12,22 +12,9 @@ export function useDate() {
   return (value) => formatAdminDate(value, prefs);
 }
 
-// Warns for menu/link clicks, browser back (history guard) and tab close.
+// In-app menu/link and history confirmation; tab close cannot use custom HTML.
 export function useDirtyGuard(dirty) {
-  const ref = useRef(dirty);
-  ref.current = dirty;
-  useEffect(() => {
-    const ask = () => ref.current && !window.confirm('Discard your unsaved changes? This demo form is not saved anywhere.');
-    const release = setNavigationGuard(() => ask());
-    const warn = (event) => { if (ref.current) { event.preventDefault(); event.returnValue = ''; } };
-    const click = (event) => {
-      const anchor = event.target.closest?.('a[href]');
-      if (anchor && !event.defaultPrevented && ask()) { event.preventDefault(); event.stopPropagation(); }
-    };
-    window.addEventListener('beforeunload', warn);
-    document.addEventListener('click', click, true);
-    return () => { release(); window.removeEventListener('beforeunload', warn); document.removeEventListener('click', click, true); };
-  }, []);
+  useConfirmedNavigation({ dirty }, 'Discard your unsaved changes? This demo form is not saved anywhere.');
 }
 
 export function Head({ eyebrow, title, text, children }) {

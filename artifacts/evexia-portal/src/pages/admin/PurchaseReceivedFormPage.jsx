@@ -4,6 +4,8 @@ import { ArrowLeft, ClipboardCheck, Download, Eye, History, Pencil, RefreshCw, T
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { useAdminDateFormatters, getAdminDisplayPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
+import { usePlatformConfirm } from '../../components/PlatformConfirmation.jsx';
+import useConfirmedNavigation from '../../auth/useConfirmedNavigation.js';
 import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
 import ReceiptReferenceSelect from '../../components/admin/ReceiptReferenceSelect.jsx';
 import ReceiptRetryRecovery from '../../components/admin/ReceiptRetryRecovery.jsx';
@@ -30,6 +32,7 @@ function rowsFor(po, receipt) {
 }
 
 function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, onDraftDirty, onSaveStateChange, saveBlocked }) {
+  const confirm = usePlatformConfirm();
   const { date: displayDate } = useAdminDateFormatters();
   const isNew = !receipt;
   const [orders, setOrders] = useState(snapshot.poRecord.orders);
@@ -144,20 +147,15 @@ function Editor({ snapshot, receipt, initialPoId, onSaved, onCancel, onRefresh, 
     finally { busyRef.current = false; setBusy(false); onSaveStateChange(Boolean(attempt.current)); }
   }
   const navigation = useRef({});
-  navigation.current = { busy, uncertain: uncertain || !!otherPending, dirty };
-  useEffect(() => {
-    const guard = () => navigation.current.busy || navigation.current.uncertain || (navigation.current.dirty && !window.confirm('Discard unsaved receipt changes?'));
-    const release = setNavigationGuard(guard);
-    const unload = (e) => { if (Object.values(navigation.current).some(Boolean)) { e.preventDefault(); e.returnValue = ''; } };
-    const links = (e) => { if (e.target.closest?.('a[href]') && guard()) { e.preventDefault(); e.stopPropagation(); } };
-    window.addEventListener('beforeunload', unload); document.addEventListener('click', links, true);
-    return () => { release(); window.removeEventListener('beforeunload', unload); document.removeEventListener('click', links, true); sourceSeq.current++; };
-  }, []);
+  navigation.current = { busy, uncertain: uncertain || !!otherPending, dirty: dirty || !!review };
+  useConfirmedNavigation(() => ({ ...navigation.current, busy: busyRef.current, blocked: navigation.current.uncertain }), 'Discard unsaved receipt changes?', () => onDraftDirty(false));
+  useEffect(() => () => { sourceSeq.current++; }, []);
   useEffect(() => { onSaveStateChange(busy || uncertain || !!otherPending); }, [busy, uncertain, otherPending]);
   function requestRefresh() { if (busy || uncertain || otherPending) return; if (dirty || review) setConfirmRefresh(true); else onRefresh(); }
-  function cancel() {
+  async function cancel() {
     if (busy || uncertain || otherPending) return;
-    if (dirty && !window.confirm('Discard unsaved receipt changes?')) return;
+    if ((dirty || review) && !await confirm('Discard unsaved receipt changes?')) return;
+    if (busyRef.current || navigation.current.uncertain) return;
     navigation.current = {}; onCancel();
   }
   const err = (i, f) => errors[`lines.${i}.${f}`];
@@ -264,9 +262,7 @@ export default function PurchaseReceivedFormPage({ id }) {
   useEffect(() => {
     if (isNew || editing) return;
     const release = setNavigationGuard(() => leaving.current.deleting || leaving.current.unresolved);
-    const unload = (e) => { if (leaving.current.deleting || leaving.current.unresolved) { e.preventDefault(); e.returnValue = ''; } };
-    window.addEventListener('beforeunload', unload);
-    return () => { release(); window.removeEventListener('beforeunload', unload); };
+    return release;
   }, [isNew, editing]);
   function go(path) { if (!interceptNavigation({ kind: 'href', href: path })) navigate(path); }
 

@@ -6,7 +6,8 @@ import Dialog from '../components/admin/Dialog.jsx';
 import { ADMIN_APPEARANCES, ADMIN_THEMES } from '../components/admin/adminTheme.js';
 import { setAdminPreference, useAdminPreferences } from '../components/admin/adminPreferences.js';
 import { resetDemo, doctor } from './doctorStore.js';
-import { setNavigationGuard } from '../auth/navigationGuard.js';
+import { continueNavigation, setNavigationGuard } from '../auth/navigationGuard.js';
+import { usePlatformConfirm } from '../components/PlatformConfirmation.jsx';
 import '../admin.css';
 import { A, GuardContext } from './ui.jsx';
 import { Forgot, Login } from './Entry.jsx';
@@ -82,7 +83,8 @@ export default function DoctorPortal() {
   const [path, setLoc] = useLocation();
   const prefs = useAdminPreferences();
   const dirtyRef = useRef(false);
-  const nativeConfirmRef = useRef(false);
+  const confirmDraft = usePlatformConfirm();
+  const layeredConfirmRef = useRef(false);
   const [pending, setPending] = useState(null);
   const [navOpen, setNavOpen] = useState(false);
   const [compact, setCompact] = useState(() => window.matchMedia('(max-width: 860px)').matches);
@@ -92,42 +94,43 @@ export default function DoctorPortal() {
   locRef.current = setLoc;
   const guard = useMemo(() => ({
     dirtyRef,
-    nativeConfirmRef,
-    go(to, force) {
+    layeredConfirmRef,
+    async go(to, force) {
       if (!force && dirtyRef.current) {
-        if (!nativeConfirmRef.current) { setPending({ to }); return; }
-        if (!window.confirm('Discard this unsaved demo payment draft?')) return;
+        if (!layeredConfirmRef.current) { setPending((current) => current || { to }); return; }
+        if (!await confirmDraft('Discard this unsaved demo payment draft?')) return;
       }
       dirtyRef.current = false; locRef.current(to);
     },
-    run(action) {
+    async run(action) {
       if (dirtyRef.current) {
-        if (!nativeConfirmRef.current) { setPending({ action }); return; }
-        if (!window.confirm('Discard this unsaved demo payment draft?')) return;
+        if (!layeredConfirmRef.current) { setPending((current) => current || { action }); return; }
+        if (!await confirmDraft('Discard this unsaved demo payment draft?')) return;
         dirtyRef.current = false;
       }
       action();
     },
-  }), []);
+  }), [confirmDraft]);
   const go = (to) => guard.go(to, true);
 
   useEffect(() => {
-    const before = (e) => { if (dirtyRef.current) { e.preventDefault(); e.returnValue = ''; } };
     // The shared navigation infrastructure installs its history listener before
     // Wouter. It contains no authentication or business data.
     const release = setNavigationGuard((request) => {
       if (!dirtyRef.current) return false;
-      // A payment already lives in a dialog. Use native confirmation rather
-      // than stack two modal focus traps or discard its entered amount.
-      if (nativeConfirmRef.current) {
-        if (!window.confirm('Discard this unsaved demo payment draft?')) return true;
-        dirtyRef.current = false; return false;
+      // Payment editors keep their own dialog mounted under the topmost choice.
+      if (layeredConfirmRef.current) {
+        void confirmDraft('Discard this unsaved demo payment draft?').then((accepted) => {
+          if (!accepted) return;
+          dirtyRef.current = false;
+          continueNavigation(request, locRef.current);
+        });
+        return true;
       }
-      setPending({ request }); return true;
+      setPending((current) => current || { request }); return true;
     });
-    window.addEventListener('beforeunload', before);
-    return () => { release(); window.removeEventListener('beforeunload', before); };
-  }, [path]);
+    return release;
+  }, [path, confirmDraft]);
 
   useEffect(() => {
     setNavOpen(false);
@@ -176,11 +179,8 @@ export default function DoctorPortal() {
             <button type="button" className="admin-button admin-button--danger" onClick={() => {
               const next = pending; setPending(null); dirtyRef.current = false;
               if (next.action) next.action();
-              else if (next.request?.kind === 'raw') {
-                window.history.pushState(null, '', next.request.href);
-                window.dispatchEvent(new PopStateEvent('popstate'));
-              } else if (next.request?.kind === 'run') next.request.run();
-              else setLoc(next.to || next.request?.href);
+              else if (next.request) continueNavigation(next.request, setLoc);
+              else setLoc(next.to);
             }}>Discard and leave</button></>}><span /></Dialog>}
       </div>
     </GuardContext.Provider>

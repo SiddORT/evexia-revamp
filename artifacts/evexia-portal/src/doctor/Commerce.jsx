@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useSearch } from 'wouter';
 import { Plus, Search, Printer, Trash2 } from 'lucide-react';
 import Dialog from '../components/admin/Dialog.jsx';
+import { usePlatformConfirm } from '../components/PlatformConfirmation.jsx';
 import SearchableSelect from '../components/admin/SearchableSelect.jsx';
 import * as store from './doctorStore.js';
 import { pname, patientOptions } from './Care.jsx';
@@ -157,6 +158,7 @@ export function Payments() {
 }
 
 function PayDialog({ order, onClose, onDone }) {
+  const confirmDraft = usePlatformConfirm();
   const S = useDemo();
   const [amount, setAmount] = useState('');
   const [step, setStep] = useState(0);
@@ -179,11 +181,11 @@ function PayDialog({ order, onClose, onDone }) {
     catch (e) { busy.current = false; setError(msg(e)); }
   }
   return (
-    <Dialog eyebrow="Demo payment" title={`Pay order ${order.id}`} description={`Balance ${money(bal)}. DEMO: no payment credentials are collected.`} onClose={() => {
-      if (!amount || window.confirm('Discard this unsaved demo payment draft?')) onClose();
+    <Dialog eyebrow="Demo payment" title={`Pay order ${order.id}`} description={`Balance ${money(bal)}. DEMO: no payment credentials are collected.`} onClose={async () => {
+      if (!busy.current && (!amount || await confirmDraft('Discard this unsaved demo payment draft?'))) onClose();
     }}
-      footer={step === 0 ? <><button type="button" className="admin-button admin-button--secondary" onClick={() => {
-        if (!amount || window.confirm('Discard this unsaved demo payment draft?')) onClose();
+      footer={step === 0 ? <><button type="button" className="admin-button admin-button--secondary" onClick={async () => {
+        if (!busy.current && (!amount || await confirmDraft('Discard this unsaved demo payment draft?'))) onClose();
       }}>Cancel</button><button type="button" className="admin-button" onClick={() => { if (check()) setStep(1); }}>Review</button></> :
         <><button type="button" className="admin-button admin-button--secondary" onClick={() => setStep(0)}>Back</button><button type="button" className="admin-button" onClick={confirm}>Confirm demo payment</button></>}>
       {step === 0 ? <div className="dr-form">

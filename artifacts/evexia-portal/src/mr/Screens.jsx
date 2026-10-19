@@ -83,7 +83,8 @@ export function Settings() {
     } catch (error) { setMessage(error.message); }
     finally { setBusy(false); setCurrent(''); setNext(''); setConfirm(''); }
   }
-  async function signOut() { if (interceptNavigation({ kind: 'href', href: '/mr' })) return; await logoutAdmin(); navigate('/mr', { replace: true }); }
+  async function signOutNow() { await logoutAdmin(); navigate('/mr', { replace: true }); }
+  function signOut() { if (!interceptNavigation({ kind: 'run', run: signOutNow })) return signOutNow(); }
   const choice = (key, map) => <div className="mrw-choice" role="group" aria-label={key === 'theme' ? 'Theme' : 'Appearance'}>{Object.entries(map).map(([v, l]) => <button key={v} type="button" aria-pressed={prefs[key] === v} onClick={() => pref(key, v)} data-testid={`button-${key}-${v}`}>{l}</button>)}</div>;
   return <>
     <Head eyebrow="Settings" title="Settings" text={`Signed in as ${user?.username || user?.email}`} />

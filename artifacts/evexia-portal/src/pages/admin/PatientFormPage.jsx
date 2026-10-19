@@ -3,11 +3,13 @@ import { useLocation } from 'wouter';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import PatientForm from '../../components/admin/PatientForm.jsx';
+import { usePlatformConfirm } from '../../components/PlatformConfirmation.jsx';
 import usePatients from '../../hooks/usePatients.js';
 import '../../mr.css';
 
 const LIST = '/admin/masters/patients';
 export default function PatientFormPage({ id }) {
+  const confirm = usePlatformConfirm();
   const [, navigate] = useLocation();
   const { records, error, loading, retry, add, edit, sessionEpoch } = usePatients({}, id || null);
   const [loaded, setLoaded] = useState(false);
@@ -21,8 +23,8 @@ export default function PatientFormPage({ id }) {
   }, [loading, error]);
   const patient = id ? records.find((record) => record.id === id) : null;
   const title = id ? 'Edit Patient record' : 'Add Patient record';
-  function refresh() {
-    if (loaded && !window.confirm('Discard this draft and load the latest saved Patient?')) return;
+  async function refresh() {
+    if (loaded && !await confirm('Discard this draft and load the latest saved Patient?', { actionLabel: 'Discard and reload' })) return;
     refreshing.current = true;
     retry();
   }
