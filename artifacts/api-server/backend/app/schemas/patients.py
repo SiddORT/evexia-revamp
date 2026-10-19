@@ -19,7 +19,7 @@ class PatientFields(BaseModel):
     email: str = Field(default="", max_length=320)
     dateOfBirth: date
     doctorId: uuid.UUID
-    instructionsLanguage: str = Field(min_length=1, max_length=100)
+    instructionsLanguage: str = Field(min_length=1, max_length=200)
     status: Literal["active", "inactive"] = "active"
     addressLine1: str = Field(min_length=1, max_length=300)
     addressLine2: str = Field(default="", max_length=300)
@@ -106,6 +106,16 @@ class PatientChoices(SearchSection):
     total: int | None
     limit: int
     offset: int
+
+
+class PatientLanguageChoice(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+
+
+class PatientLanguageChoices(BaseModel):
+    items: list[PatientLanguageChoice]
+    limit: int = Field(ge=1, le=100)
+    nextCursor: uuid.UUID | None
 
 
 class PatientFilterMR(BaseModel):

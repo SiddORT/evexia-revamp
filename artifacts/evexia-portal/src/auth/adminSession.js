@@ -633,6 +633,7 @@ function masterAllowed(user, resource, path, writing, params = {}) {
     : /^\/account\//.test(path) ? 'add'
     : /^\/[0-9a-f-]{36}\/doctors$/.test(path) && resource === 'mrs' ? null
     : /^\/postal\//.test(path) ? (params.action || 'add')
+    : path === '/language-choices' && resource === 'patients' && !writing ? null
     : ['/references', '/filters'].includes(path) ? null : undefined;
   if (need === undefined) return false;
   return need ? hasMasterPermission(user, master.key, need) : canViewMaster(user, master.key);
@@ -647,7 +648,8 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
   const route = resource === 'languages' ? /^(?:|\/[0-9a-f-]{36}(?:\/(?:edit|delete|history))?)$/ : resource === 'sales-targets' ? /^(?:|\/choices|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/ : resource === 'allergens' ? /^(?:|\/references\/(?:categories|locations)|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/ : resource === 'patients' ? /^(?:|\/references|\/filters|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/ : resource === 'doctors' ? /^(?:|\/references|\/filters|\/bulk|\/postal\/[1-9][0-9]{5}|\/sample|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|contact|delete))?)$/ : resource === 'mrs' ? mrRoute : zone
     ? /^(?:|\/trash|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|restore))?)$/
     : /^(?:|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/;
-  if (!route.test(path) && !(['vendors', 'designations', 'headquarters', 'product-categories', 'opening-balances'].includes(resource) && path === '/sample') && !(resource === 'opening-balances' && path === '/references')) {
+  if (!route.test(path) && !(resource === 'patients' && path === '/language-choices' && body === undefined && file === undefined)
+      && !(['vendors', 'designations', 'headquarters', 'product-categories', 'opening-balances'].includes(resource) && path === '/sample') && !(resource === 'opening-balances' && path === '/references')) {
     throw new SessionError(`Unsupported ${label} operation.`);
   }
   const epoch = generation;

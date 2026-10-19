@@ -5112,7 +5112,7 @@ export interface PatientDirectoryResponse {
   id: string;
   /**
    * @minLength 1
-   * @maxLength 100
+   * @maxLength 200
    */
   instructionsLanguage: string;
   /**
@@ -5447,7 +5447,7 @@ export interface PatientEdit {
   gender: PatientEditGender;
   /**
    * @minLength 1
-   * @maxLength 100
+   * @maxLength 200
    */
   instructionsLanguage: string;
   /**
@@ -5773,7 +5773,7 @@ export interface PatientFields {
   gender: PatientFieldsGender;
   /**
    * @minLength 1
-   * @maxLength 100
+   * @maxLength 200
    */
   instructionsLanguage: string;
   /**
@@ -5834,6 +5834,24 @@ export interface PatientImportRow {
   errors: string[];
   name: string;
   row: number;
+}
+
+export interface PatientLanguageChoice {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+}
+
+export interface PatientLanguageChoices {
+  items: PatientLanguageChoice[];
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit: number;
+  nextCursor: string | null;
 }
 
 export interface PatientPage {
@@ -9665,6 +9683,19 @@ export type ReviewPatientImportParams = {
 
 export type ReviewPatientImportBody = {
   file: Blob | File;
+};
+
+export type ListPatientLanguageChoicesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  cursor?: string | null;
 };
 
 export type LookupPatientPincodeParams = {

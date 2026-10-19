@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import PhoneInput from './PhoneInput.jsx';
-import SearchableControl from './SearchableControl.jsx';
+import PatientLanguageSelect from './PatientLanguageSelect.jsx';
 import PatientDoctorSelect from './PatientDoctorSelect.jsx';
 import useAddressSelection from './useAddressSelection.js';
 import { GeographyControl, PostalSelection, useAddressCatalogue } from './AddressGeography.jsx';
@@ -21,7 +21,6 @@ const TABS = [
   { id: 'care', label: 'Care & assignment', fields: ['doctorId', 'instructionsLanguage', 'status'] },
   { id: 'address', label: 'Address', fields: ['addressLine1', 'addressLine2', 'landmark', 'pincode', 'city', 'state', 'country'] },
 ];
-const LANGUAGES = ['English', 'Hindi', 'Bengali', 'Gujarati', 'Kannada', 'Malayalam', 'Marathi', 'Odia', 'Punjabi', 'Tamil', 'Telugu', 'Urdu'];
 
 function initialValues(patient) {
   return Object.fromEntries(FIELDS.map((key) => [
@@ -115,7 +114,7 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
   }
 
   function renderField(key, label, options = {}) {
-    const { type = 'text', placeholder, autoComplete, span, hint, inputMode, selectOptions, searchable = false } = options;
+    const { type = 'text', placeholder, autoComplete, span, hint, inputMode, selectOptions } = options;
     const id = `patient-${key}`;
     const errorId = `${id}-error`;
     const hintId = `${id}-hint`;
@@ -135,13 +134,7 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
         </label>
         {['country', 'state', 'city'].includes(key) ? <GeographyControl address={address} catalogue={catalogue}
           field={key} id={id} label={label} required={!OPTIONAL.has(key)} invalid={Boolean(errors[key])}
-          describedBy={describedBy} /> : searchable ? (
-          <SearchableControl id={id} name={key} label={label} required
-            value={values[key]} selectedLabel={values[key]} choices={selectOptions}
-            onChange={(value) => change(key, value)} disabled={blocked || saving}
-            invalid={Boolean(errors[key])} describedBy={describedBy}
-            placeholder="Select a language" testId={`select-patient-${key}`} />
-        ) : selectOptions ? (
+          describedBy={describedBy} /> : selectOptions ? (
           <select {...shared} data-testid={`select-patient-${key}`}>
             <option value="">{placeholder || 'Select an option'}</option>
             {selectOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -241,10 +234,9 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
           <div className="mr-form__section-head"><h3 className="mr-form__section-title">Care & assignment</h3></div>
           <div className="mr-form__grid patient-form__care-grid">
             <PatientDoctorSelect value={values.doctorId} original={patient?.doctorId} savedName={patient?.doctorName} blocked={blocked || saving} error={errors.doctorId} onChange={(value) => change('doctorId', value)} />
-            {renderField('instructionsLanguage', 'Instructions language', {
-              searchable: true,
-              selectOptions: [...new Set([...LANGUAGES, patient?.instructionsLanguage].filter(Boolean))].map((language) => ({ value: language, label: language })),
-            })}
+            <PatientLanguageSelect value={values.instructionsLanguage} original={patient?.instructionsLanguage}
+              blocked={blocked || saving} error={errors.instructionsLanguage}
+              onChange={(value) => change('instructionsLanguage', value)} />
             {renderField('status', 'Status', { selectOptions: [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }] })}
           </div>
         </section>

@@ -6,6 +6,17 @@ export const listPatients = (params, signal) => patientRequest('', { params: cle
 export const getPatient = (id, signal) => patientRequest(`/${id}`, { signal });
 export const lookupPatientPIN = (pin, signal, action = 'add') => patientRequest(`/postal/${pin}`, { signal, params: { action } });
 export const patientDoctorChoices = (params, signal) => patientRequest('/references', { params: clean(params), signal });
+export async function patientLanguageChoices(params, signal) {
+  const data = await patientRequest('/language-choices', { params: clean(params), signal });
+  if (!data || !Array.isArray(data.items) || !Number.isInteger(data.limit) || data.limit < 1 || data.limit > 100
+      || data.items.length > data.limit
+      || !(data.nextCursor === null || (typeof data.nextCursor === 'string' && /^[0-9a-f-]{36}$/i.test(data.nextCursor)))
+      || data.items.some((item) => typeof item?.name !== 'string' || item.name.trim() !== item.name
+        || [...item.name].length < 1 || [...item.name].length > 200)) {
+    throw new Error('Language choices could not be confirmed. Your patient draft is preserved. Retry languages.');
+  }
+  return data;
+}
 export async function patientMRChoices(signal) {
   const result = await patientRequest('/filters', { signal });
   if (!Array.isArray(result.items) || !Number.isInteger(result.limit) || result.limit < 1 || result.items.length > result.limit) {

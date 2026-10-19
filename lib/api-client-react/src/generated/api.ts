@@ -178,6 +178,7 @@ import type {
   ListOwnSessionsParams,
   ListPatientDirectoryParams,
   ListPatientDoctorChoicesParams,
+  ListPatientLanguageChoicesParams,
   ListProductCategoriesParams,
   ListPurchaseOrderActivityParams,
   ListPurchaseOrderFilterOptionsParams,
@@ -274,6 +275,7 @@ import type {
   PatientFields,
   PatientFilterChoices,
   PatientImportResult,
+  PatientLanguageChoices,
   PatientPage,
   PatientResponse,
   PatientReview,
@@ -13173,6 +13175,115 @@ export const useReviewPatientImport = <
 > => {
   return useMutation(getReviewPatientImportMutationOptions(options));
 };
+
+export const getListPatientLanguageChoicesUrl = (
+  params?: ListPatientLanguageChoicesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/patients/language-choices?${stringifiedParams}`
+    : `/api/v1/admin/patients/language-choices`;
+};
+
+/**
+ * @summary Language Choices
+ */
+export const listPatientLanguageChoices = async (
+  params?: ListPatientLanguageChoicesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PatientLanguageChoices> => {
+  return customFetch<PatientLanguageChoices>(
+    getListPatientLanguageChoicesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListPatientLanguageChoicesQueryKey = (
+  params?: ListPatientLanguageChoicesParams,
+) => {
+  return [
+    `/api/v1/admin/patients/language-choices`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListPatientLanguageChoicesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPatientLanguageChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListPatientLanguageChoicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPatientLanguageChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListPatientLanguageChoicesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPatientLanguageChoices>>
+  > = ({ signal }) =>
+    listPatientLanguageChoices(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPatientLanguageChoices>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPatientLanguageChoicesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPatientLanguageChoices>>
+>;
+export type ListPatientLanguageChoicesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Language Choices
+ */
+
+export function useListPatientLanguageChoices<
+  TData = Awaited<ReturnType<typeof listPatientLanguageChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListPatientLanguageChoicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listPatientLanguageChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPatientLanguageChoicesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export const getLookupPatientPincodeUrl = (
   pin: string,

@@ -37,7 +37,7 @@ export interface PatientEdit {
   gender: PatientEditGender;
   /**
    * @minLength 1
-   * @maxLength 100
+   * @maxLength 200
    */
   instructionsLanguage: string;
   /**

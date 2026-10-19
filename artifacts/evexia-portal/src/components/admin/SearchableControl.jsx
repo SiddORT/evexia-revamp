@@ -9,7 +9,7 @@ import './searchableControl.css';
 // search text is never a submitted value.
 export default function SearchableControl({ id, name, label, value, selectedLabel, choices, onChange, onSearch,
   placeholder, required, invalid, describedBy, feedback, loading, action, testId, onDismiss,
-  disabled = false, className = '', searchText, displayLabel, minimumMenuWidth = 220 }) {
+  disabled = false, className = '', searchText, displayLabel, minimumMenuWidth = 220, searchMaxLength = 100 }) {
   const { theme, appearance } = useAdminPreferences();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -123,7 +123,7 @@ export default function SearchableControl({ id, name, label, value, selectedLabe
         aria-controls={open ? `${id}-options` : undefined}
         aria-activedescendant={open && active >= 0 && matches[active] ? `${id}-option-${active}` : undefined}
         aria-required={Boolean(required)} aria-invalid={Boolean(invalid)} aria-describedby={describedBy}
-        aria-busy={Boolean(loading)} autoComplete="off" maxLength={100} disabled={disabled}
+        aria-busy={Boolean(loading)} autoComplete="off" maxLength={searchMaxLength} disabled={disabled}
         value={open ? query : displayLabel ?? selectedLabel ?? ''} title={selectedLabel || ''}
         placeholder={open ? `Search ${label.toLowerCase()}…` : placeholder}
         onClick={openMenu} onChange={(event) => {

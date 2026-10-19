@@ -22,6 +22,8 @@ export * from "./generated/types/patientEdit";
 export * from "./generated/types/patientStatus";
 export * from "./generated/types/patientPage";
 export * from "./generated/types/patientChoices";
+export * from "./generated/types/patientLanguageChoice";
+export * from "./generated/types/patientLanguageChoices";
 export * from "./generated/types/patientReview";
 export * from "./generated/types/patientImportResult";
 export * from "./generated/types/provisionMRRequest";

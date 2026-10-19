@@ -729,7 +729,7 @@ export const listPatientDirectoryResponseItemsItemAddressLine2Max = 300;
 export const listPatientDirectoryResponseItemsItemCityMax = 100;
 export const listPatientDirectoryResponseItemsItemCountryMax = 100;
 export const listPatientDirectoryResponseItemsItemEmailMax = 320;
-export const listPatientDirectoryResponseItemsItemInstructionsLanguageMax = 100;
+export const listPatientDirectoryResponseItemsItemInstructionsLanguageMax = 200;
 export const listPatientDirectoryResponseItemsItemLandmarkMax = 200;
 export const listPatientDirectoryResponseItemsItemNameMax = 200;
 export const listPatientDirectoryResponseItemsItemPhoneMax = 20;
@@ -745,7 +745,7 @@ export const createPatientDirectoryBodyAddressLine2Max = 300;
 export const createPatientDirectoryBodyCityMax = 100;
 export const createPatientDirectoryBodyCountryMax = 100;
 export const createPatientDirectoryBodyEmailMax = 320;
-export const createPatientDirectoryBodyInstructionsLanguageMax = 100;
+export const createPatientDirectoryBodyInstructionsLanguageMax = 200;
 export const createPatientDirectoryBodyLandmarkMax = 200;
 export const createPatientDirectoryBodyNameMax = 200;
 export const createPatientDirectoryBodyPhoneMax = 20;
@@ -757,7 +757,7 @@ export const createPatientDirectoryResponseAddressLine2Max = 300;
 export const createPatientDirectoryResponseCityMax = 100;
 export const createPatientDirectoryResponseCountryMax = 100;
 export const createPatientDirectoryResponseEmailMax = 320;
-export const createPatientDirectoryResponseInstructionsLanguageMax = 100;
+export const createPatientDirectoryResponseInstructionsLanguageMax = 200;
 export const createPatientDirectoryResponseLandmarkMax = 200;
 export const createPatientDirectoryResponseNameMax = 200;
 export const createPatientDirectoryResponsePhoneMax = 20;
@@ -769,6 +769,11 @@ export const exportPatientDirectoryQueryZoneIdMax = 36;
 export const exportPatientDirectoryQueryMrIdMax = 36;
 export const commitPatientImportQueryFilenameMax = 200;
 export const reviewPatientImportQueryFilenameMax = 200;
+export const listPatientLanguageChoicesQueryQueryMax = 200;
+export const listPatientLanguageChoicesQueryLimitDefault = 50;
+export const listPatientLanguageChoicesQueryLimitMax = 100;
+export const listPatientLanguageChoicesResponseItemsItemNameMax = 200;
+export const listPatientLanguageChoicesResponseLimitMax = 100;
 export const listPatientDoctorChoicesQueryQueryMax = 200;
 export const listPatientDoctorChoicesQueryLimitDefault = 100;
 export const listPatientDoctorChoicesQueryLimitMax = 100;
@@ -784,7 +789,7 @@ export const getPatientDirectoryResponseAddressLine2Max = 300;
 export const getPatientDirectoryResponseCityMax = 100;
 export const getPatientDirectoryResponseCountryMax = 100;
 export const getPatientDirectoryResponseEmailMax = 320;
-export const getPatientDirectoryResponseInstructionsLanguageMax = 100;
+export const getPatientDirectoryResponseInstructionsLanguageMax = 200;
 export const getPatientDirectoryResponseLandmarkMax = 200;
 export const getPatientDirectoryResponseNameMax = 200;
 export const getPatientDirectoryResponsePhoneMax = 20;
@@ -796,7 +801,7 @@ export const deletePatientDirectoryResponseAddressLine2Max = 300;
 export const deletePatientDirectoryResponseCityMax = 100;
 export const deletePatientDirectoryResponseCountryMax = 100;
 export const deletePatientDirectoryResponseEmailMax = 320;
-export const deletePatientDirectoryResponseInstructionsLanguageMax = 100;
+export const deletePatientDirectoryResponseInstructionsLanguageMax = 200;
 export const deletePatientDirectoryResponseLandmarkMax = 200;
 export const deletePatientDirectoryResponseNameMax = 200;
 export const deletePatientDirectoryResponsePhoneMax = 20;
@@ -808,7 +813,7 @@ export const editPatientDirectoryBodyAddressLine2Max = 300;
 export const editPatientDirectoryBodyCityMax = 100;
 export const editPatientDirectoryBodyCountryMax = 100;
 export const editPatientDirectoryBodyEmailMax = 320;
-export const editPatientDirectoryBodyInstructionsLanguageMax = 100;
+export const editPatientDirectoryBodyInstructionsLanguageMax = 200;
 export const editPatientDirectoryBodyLandmarkMax = 200;
 export const editPatientDirectoryBodyNameMax = 200;
 export const editPatientDirectoryBodyPhoneMax = 20;
@@ -820,7 +825,7 @@ export const editPatientDirectoryResponseAddressLine2Max = 300;
 export const editPatientDirectoryResponseCityMax = 100;
 export const editPatientDirectoryResponseCountryMax = 100;
 export const editPatientDirectoryResponseEmailMax = 320;
-export const editPatientDirectoryResponseInstructionsLanguageMax = 100;
+export const editPatientDirectoryResponseInstructionsLanguageMax = 200;
 export const editPatientDirectoryResponseLandmarkMax = 200;
 export const editPatientDirectoryResponseNameMax = 200;
 export const editPatientDirectoryResponsePhoneMax = 20;
@@ -832,7 +837,7 @@ export const setPatientDirectoryStatusResponseAddressLine2Max = 300;
 export const setPatientDirectoryStatusResponseCityMax = 100;
 export const setPatientDirectoryStatusResponseCountryMax = 100;
 export const setPatientDirectoryStatusResponseEmailMax = 320;
-export const setPatientDirectoryStatusResponseInstructionsLanguageMax = 100;
+export const setPatientDirectoryStatusResponseInstructionsLanguageMax = 200;
 export const setPatientDirectoryStatusResponseLandmarkMax = 200;
 export const setPatientDirectoryStatusResponseNameMax = 200;
 export const setPatientDirectoryStatusResponsePhoneMax = 20;
@@ -13724,6 +13729,42 @@ export const ReviewPatientImportResponse = zod.object({
     }),
   ),
   valid: zod.boolean(),
+});
+
+/**
+ * @summary Language Choices
+ */
+export const listPatientLanguageChoicesQueryQueryDefault = ``;
+
+export const ListPatientLanguageChoicesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listPatientLanguageChoicesQueryQueryMax)
+    .default(listPatientLanguageChoicesQueryQueryDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listPatientLanguageChoicesQueryLimitMax)
+    .default(listPatientLanguageChoicesQueryLimitDefault),
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+});
+
+export const ListPatientLanguageChoicesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      name: zod
+        .string()
+        .min(1)
+        .max(listPatientLanguageChoicesResponseItemsItemNameMax),
+    }),
+  ),
+  limit: zod
+    .number()
+    .int()
+    .min(1)
+    .max(listPatientLanguageChoicesResponseLimitMax),
+  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
 });
 
 /**

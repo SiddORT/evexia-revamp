@@ -8,6 +8,7 @@ from app.db.patient_models import PatientDirectory as Directory
 from app.db.doctor_models import DoctorDirectory as Doctor
 from app.db.mr_models import MRDirectory
 from app.db.zone_models import Zone
+from app.db.language_models import Language
 from app.schemas.patients import PatientFields
 from app.services import doctors, mrs, domain
 from app.services import directory_runtime as encrypted
@@ -190,6 +191,25 @@ def choices(db, actor, query="", limit=100, offset=0, include_saved=None, cursor
                               zoneName=zone.name if zone and not zone.deleted_at else ""))
         db.commit()
         return dict(items=items, total=total, limit=limit, offset=offset, **meta)
+    return transaction(db, work)
+
+
+def language_choices(db, actor, query="", limit=50, cursor=None):
+    """Patient-authorized name-only read; no catalogue administration/history."""
+    def work():
+        authorize(db, actor, lock=False)
+        clauses = [Language.deleted_at.is_(None)]
+        if query.strip():
+            escaped = query.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            clauses.append(Language.name.collate("pg_c_utf8").ilike("%" + escaped + "%", escape="\\"))
+        if cursor is not None:
+            clauses.append(Language.id > cursor)
+        rows = list(db.execute(select(Language.id, Language.name).where(*clauses)
+                               .order_by(Language.id).limit(limit + 1)))
+        result = dict(items=[dict(name=row.name) for row in rows[:limit]], limit=limit,
+                      nextCursor=rows[limit - 1].id if len(rows) > limit else None)
+        db.commit()
+        return result
     return transaction(db, work)
 
 
