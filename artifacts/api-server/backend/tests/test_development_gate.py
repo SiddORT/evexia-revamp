@@ -139,6 +139,7 @@ def test_actual_managed_startup_without_preflight_and_security_failure(developme
         "scripts/migration-policy.json", "scripts/development-preflight.sh",
         "scripts/review-development-schema.py", "scripts/development-sync.py",
         "scripts/deploy-migrations.py", "development-contract.json",
+        "scripts/development-schema-review.json",
         "pyproject.toml", "uv.lock", "artifacts/api-server/backend/alembic.ini"}
     for name in files:
         destination = root / name
