@@ -5,6 +5,21 @@ description: Setup reconciliation success is not proof that restarted services a
 
 After post-merge setup reports success, verify API readiness and inspect workflow logs before declaring recovery complete.
 
+An isolated task's readiness for merge and its original-development live
+acceptance are separate stages. Keep mandatory original-database activation and
+running-service alignment as post-merge acceptance conditions, not prerequisites
+for submitting isolated source for merge.
+
+**Why:** Requiring a task copy to prove original-database activation before
+submitting its migration creates a circular dependency while its correct
+workspace-identity guard prevents that activation.
+
+**How to apply:** Let the task finish isolated implementation and permitted
+checks with an explicit handoff of unverified live behavior. After merge, the
+original workspace executes the authorized migration path and verifies actual
+database/backend/frontend agreement before reporting full closure. Do not
+equate merge readiness with successful live activation or bypass fork guards.
+
 For staged security migrations, also reconcile the accepted migration graph
 after synchronization and before freezing writers. Verify one forward head and
 the exact staging revision, including upgrades from newly accepted operational
