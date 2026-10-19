@@ -31,7 +31,12 @@ export default function BatchNumberSettings({ onGuardChange }) {
       if (!keepDraft) setDraft({ mode: next.mode, prefix: next.prefix });
       setBlocked(false);
       if (keepDraft) setNotice('Saved settings loaded. Your edits are kept; compare and save against this version, or cancel to use saved settings.');
-    } catch (cause) { if (seq === sequence.current) setError(cause.message); }
+    } catch (cause) {
+      if (seq === sequence.current) {
+        setError(cause.message);
+        setBlocked(true);
+      }
+    }
     finally { if (seq === sequence.current) setBusy(false); }
   }
   useEffect(() => {
@@ -66,13 +71,14 @@ export default function BatchNumberSettings({ onGuardChange }) {
     } finally { if (seq === sequence.current) setBusy(false); }
   }
   if (!allowed) return <section className="admin-panel admin-settings__section"><h2>Batch Number Settings</h2><p role="alert">Only the protected Super Admin can manage batch numbering.</p></section>;
-  return <section className="admin-panel admin-settings__section">
+  return <section className="admin-panel admin-settings__section batch-settings" aria-busy={busy}>
     <h2>Batch Number Settings</h2>
-    <p className="mr-form__hint">Shared defaults for new Purchase Received rows in all authenticated browsers. Every batch remains editable. PR document numbering is separate.</p>
+    <p>Shared defaults for new Purchase Received rows in all authenticated browsers. Every batch remains editable. PR document numbering is separate.</p>
     {busy && <p role="status">Loading or saving shared batch settings…</p>}
     {error && <div className="admin-feedback admin-feedback--error" role="alert">{error}</div>}
     {notice && <p className="admin-feedback" role="status">{notice}</p>}
-    {saved && <p className="mr-form__hint">Loaded server version {saved.version}: {({ manual: 'Manual', system: 'System sequence', product: 'Product-based' })[saved.mode]}{saved.mode === 'system' ? ` · Prefix: ${saved.prefix || '(none)'}` : ''}. The controls below are your editable draft.</p>}
+    {saved && <p className="batch-settings-help">Last loaded server version {saved.version}: {({ manual: 'Manual', system: 'System sequence', product: 'Product-based' })[saved.mode]}{saved.mode === 'system' ? ` · Prefix: ${saved.prefix || '(none)'}` : ''}. The controls below are your editable draft.</p>}
+    {!draft && !busy && <p role="status">No saved batch mode has been loaded. Manual is not assumed. Load saved settings to enable editing.</p>}
     <form onSubmit={save}>
       <fieldset disabled={busy || !draft} className="batch-settings-fields">
         <legend>Default batch mode</legend>
@@ -80,17 +86,17 @@ export default function BatchNumberSettings({ onGuardChange }) {
           ['system', 'System sequence', 'One shared counter across all products.'],
           ['product', 'Product-based', 'An independent sequence for each stable catalogue product UUID, across POs and PRs.']].map(([value, label, help]) =>
           <label className="batch-settings-choice" key={value}><input type="radio" name="pr-batch-mode" value={value} checked={draft?.mode === value} onChange={() => setDraft((d) => ({ ...d, mode: value }))} /><span><strong>{label}</strong><small>{help}</small></span></label>)}
-        {draft?.mode === 'system' && <div className="po-field">
+        {draft?.mode === 'system' && <div className="batch-settings-prefix">
           <label htmlFor="pr-batch-prefix">Prefix (optional)</label>
-          <input id="pr-batch-prefix" className="mr-form__control" value={draft.prefix} maxLength={64} onChange={(e) => setDraft((d) => ({ ...d, prefix: e.target.value }))} aria-describedby="pr-batch-prefix-help" />
-          <p id="pr-batch-prefix-help" className="mr-form__hint">Up to 64 letters, digits, dots, underscores or hyphens. Include a separator if wanted.</p>
-          <p>Format example: <code className="batch-settings-example">{draft.prefix}00000001</code> (not a reservation or the next available number).</p>
+          <input id="pr-batch-prefix" value={draft.prefix} maxLength={64} onChange={(e) => setDraft((d) => ({ ...d, prefix: e.target.value }))} aria-describedby="pr-batch-prefix-help" spellCheck={false} />
+          <p id="pr-batch-prefix-help" className="batch-settings-help">Up to 64 letters, digits, dots, underscores or hyphens. Include a separator if wanted.</p>
+          <p className="batch-settings-help">Format example: <code className="batch-settings-example">{draft.prefix}00000001</code> (not a reservation or the next available number).</p>
         </div>}
-        {draft?.mode === 'product' && <p>Format: <code className="batch-settings-example">P-{'<32-character product UUID>'}-00000001</code>. The full UUID code remains stable when a product is renamed.</p>}
+        {draft?.mode === 'product' && <p className="batch-settings-help">Format: <code className="batch-settings-example">P-{'<32-character product UUID>'}-00000001</code>. The full UUID code remains stable when a product is renamed.</p>}
       </fieldset>
-      <p className="mr-form__hint">Automatic suffixes start at 1 with at least eight digits, growing when needed. Changing mode or prefix never resets a counter. Unused allocations—including removed rows, abandoned drafts and manual overrides—can leave gaps. Numbering is not gapless. Reused supplier batches are allowed.</p>
+      <p className="batch-settings-help">Automatic suffixes start at 1 with at least eight digits, growing when needed. Changing mode or prefix never resets a counter. Unused allocations—including removed rows, abandoned drafts and manual overrides—can leave gaps. Numbering is not gapless. Reused supplier batches are allowed.</p>
       {blocked && <p role="alert">Load saved settings before saving again. Your edits will be kept for comparison.</p>}
-      <div className="po-actions batch-settings-actions">
+      <div className="batch-settings-actions">
         <button type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={() => load(Boolean(draft))}>Load saved settings</button>
         <button type="button" className="admin-button admin-button--secondary" disabled={busy || !saved} onClick={() => { setDraft({ mode: saved.mode, prefix: saved.prefix }); setNotice('Unsaved edits cancelled.'); setError(''); }}>Cancel edits</button>
         <button type="submit" className="admin-button" disabled={busy || !dirty || blocked}>Save batch settings</button>

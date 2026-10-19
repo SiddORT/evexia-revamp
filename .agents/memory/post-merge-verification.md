@@ -81,3 +81,17 @@ can then leave portalled menus without their palette or item styling.
 **How to apply:** Search the full frontend for retired class names after the
 merge, update newly introduced consumers while preserving their sizes and
 behavior, and check affected surfaces rather than only the original page.
+
+Separate main-workspace activation evidence from task-fork observations.
+Matching recorded host/database/cluster identifiers in a fork does not by itself
+prove that the connection reaches the original resource rather than a copy.
+
+**Why:** The main workspace completed a protected migration while a task fork
+still reported its predecessor with the same stored target binding. Treating the
+fork observation as failure of the main operation would encourage migration replay.
+
+**How to apply:** When directed to use an updated main-workspace handoff, read
+that version explicitly, label its evidence separately from local observations,
+and never rerun a reported committed migration to make the fork resemble main.
+Record inaccessible or non-JSON main-preview probes as unverified, not failed
+application readiness or evidence of rollback.

@@ -1,10 +1,20 @@
-.admin-settings-body .batch-settings-fields { border: 0; padding: 0; margin: 20px 0; min-width: 0; }
-.admin-settings-body .batch-settings-choice { display: flex; align-items: flex-start; gap: 10px; margin: 16px 0; cursor: pointer; }
-.admin-settings-body .batch-settings-choice input { margin-top: 4px; flex: 0 0 auto; accent-color: var(--admin-accent); }
-.admin-settings-body .batch-settings-choice span { min-width: 0; }
-.admin-settings-body .batch-settings-choice small { display: block; margin-top: 4px; color: var(--admin-muted); }
-.admin-settings-body .batch-settings-example { overflow-wrap: anywhere; }
-.admin-settings-body .batch-settings-actions { flex-wrap: wrap; margin-top: 20px; }
+.admin-settings-body .batch-settings { font-size: 13px; line-height: 1.5; }
+.batch-settings .batch-settings-fields { border: 0; padding: 0; margin: 20px 0; min-width: 0; }
+.batch-settings-fields legend { padding: 0; color: var(--admin-text); font-size: 13px; font-weight: 700; }
+.batch-settings .batch-settings-choice { display: flex; align-items: flex-start; gap: 10px; margin: 16px 0; cursor: pointer; }
+.batch-settings-choice input { width: 16px; height: 16px; margin: 2px 0 0; flex: 0 0 auto; accent-color: var(--admin-accent); }
+.batch-settings-choice span { min-width: 0; }
+.batch-settings-choice strong { color: var(--admin-text); font-size: 13px; font-weight: 700; }
+.batch-settings-choice small { display: block; margin-top: 4px; color: var(--admin-text-soft); font-size: 12px; line-height: 1.45; }
+.batch-settings .batch-settings-help { margin: 6px 0 12px; color: var(--admin-text-soft); font-size: 12px; line-height: 1.45; }
+.batch-settings-prefix { display: grid; gap: 8px; min-width: 0; margin-top: 20px; }
+.batch-settings-prefix label { color: var(--admin-text); font-size: 13px; font-weight: 700; }
+.batch-settings-prefix input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 40px; padding: 10px 12px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-surface); color: var(--admin-text); font: inherit; font-size: 13px; }
+.batch-settings :is(input, button):focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 3px; }
+.batch-settings .batch-settings-example { white-space: normal; overflow-wrap: anywhere; font-size: inherit; }
+.batch-settings .admin-feedback { font-size: 12px; line-height: 1.5; }
+.batch-settings .batch-settings-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.batch-settings-actions .admin-button { min-width: 0; max-width: 100%; font-family: inherit; }
 .admin-settings-layout { min-width: 0; }
 /* The portal's global 320px minimum exceeds the available width when a
    non-overlay vertical scrollbar occupies part of a 320px viewport. */

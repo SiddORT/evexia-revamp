@@ -823,6 +823,15 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       : 'Purchase order fields are invalid. Check dates, quantities and current references.', response.status);
     error.code = data?.error?.code;
     error.ambiguous = mutation && response.status >= 500;
+    if (batchOperation && path === '/batch-settings') {
+      if (response.status === 422) {
+        error.message = mutation
+          ? 'Batch settings validation failed. Check the mode and prefix (up to 64 letters, digits, dots, underscores or hyphens). Your edits are preserved.'
+          : 'The API rejected the batch settings read, which sends no fields. Ask the operator to check the running API version and route. No saved mode was loaded.';
+      } else if ([404, 405].includes(response.status)) {
+        error.message = 'The running API does not provide this batch settings operation. Ask the operator to align the API and development schema. Your edits are preserved.';
+      }
+    }
     throw error;
   }
   if (batchOperation) {

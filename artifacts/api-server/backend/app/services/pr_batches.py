@@ -12,23 +12,35 @@ from app.services import purchase_orders as orders
 MAX_COUNTER = 9223372036854775807
 
 
+def require_schema(db):
+    tables = ("pr_batch_settings", "pr_batch_counters", "pr_batch_allocations")
+    if not all(db.scalar(text("SELECT to_regclass(:table) IS NOT NULL"),
+                         {"table": f"public.{table}"}) for table in tables):
+        raise PRError(
+            "Batch Number Settings schema is not activated. Ask the operator to activate the reviewed development revision; your draft is preserved.",
+            503, "pr_batch_schema_unavailable")
+
+
 def settings_row(db, lock=False):
+    require_schema(db)
     statement = select(PRBatchSettings).where(PRBatchSettings.id == 1)
     row = db.scalar(statement.with_for_update() if lock else statement)
     if row is None:
-        raise PRError("Batch Number Settings schema is not initialized. Contact the operator; your draft is preserved.")
+        raise PRError("Batch Number Settings configuration is missing. Contact the operator; your draft is preserved.",
+                      503, "pr_batch_configuration_unavailable")
     return row
 
 
 def policy_data(row, crypto):
-    if row.payload_ciphertext is None:
-        if row.version != 1:
-            raise PRError()
-        return dict(mode="manual", prefix="")
     try:
+        if row.payload_ciphertext is None:
+            if row.version != 1:
+                raise ValueError()
+            return dict(mode="manual", prefix="")
         return PRBatchPolicy.model_validate(crypto.open(1, "batch-settings", row.payload_ciphertext)).model_dump()
-    except ValueError:
-        raise PRError("Saved batch settings are unreadable. Contact the operator; your draft is preserved.") from None
+    except (ValueError, PRError):
+        raise PRError("Saved batch settings are unreadable. Contact the operator; your draft is preserved.",
+                      503, "pr_batch_configuration_unavailable") from None
 
 
 def view(row, crypto, actor_id):

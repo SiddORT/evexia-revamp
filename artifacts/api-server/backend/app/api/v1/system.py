@@ -54,7 +54,12 @@ def readiness(db: Session = Depends(get_db)):
             ReceiptCrypto(get_settings())
             db.execute(text("SELECT payload_ciphertext FROM purchase_receipts LIMIT 0"))
         if revisions in (["0045_pr_batch_numbers"], ["0046_live_inventory"]):
-            db.execute(text("SELECT id, version, payload_ciphertext FROM pr_batch_settings WHERE id=1")).one()
+            from app.services.pr_batches import settings_row, policy_data
+            # Presence alone cannot establish readiness: verify the explicit
+            # initial marker or a readable, valid saved policy without writing,
+            # allocating numbers or issuing a policy token. Inventory retains
+            # this feature and must validate it at its successor revision.
+            policy_data(settings_row(db), ReceiptCrypto(get_settings()))
             db.execute(text("SELECT scope, value FROM pr_batch_counters LIMIT 0"))
             db.execute(text("SELECT key, actor_id, payload_ciphertext FROM pr_batch_allocations LIMIT 0"))
         if revisions == ["0046_live_inventory"]:
