@@ -147,8 +147,77 @@ not run; its target, recovery, writer-exclusion and review safeguards remain.
 ### Verification and runtime handoff
 
 Focused command: `sh scripts/test-opening-stock-operations.sh`.
-It runs only `tests/test_opening_stock_operations.py` in a private-socket
-disposable PostgreSQL cluster with synthetic independent configuration. First
+It runs `tests/test_opening_stock_operations.py` and
+`tests/test_opening_stock_concurrency.py` in a private-socket disposable
+PostgreSQL cluster with synthetic independent configuration. It is explicit-only:
+no default release manifest, validation registration or workflow was extended.
+Future release integration requires separate explicit authorization.
+
+#### Concurrent retry regression checks
+
+The concurrency module uses a freshly migrated, separately named disposable
+database and newly bootstrapped synthetic protected actor for **each case**.
+The singleton Super Admin policy remains intact: contenders intentionally share
+that case's actor/session, not identities from another test or preview.
+HTTP setup/review/reconciliation/replay uses in-process TestClient transport
+(no TCP listener). Workers use independent committed SQLAlchemy connections,
+not the functional fixture's rollback-only Session or shared savepoints.
+The fixture refuses configured/network databases and requires the explicit
+test harness's private `/tmp/evexia-api-test.*` socket and test environment.
+Databases are dropped on teardown; no original development migration or
+application workflow restart is part of this command.
+
+The first contender pauses **after acquiring the real inventory advisory lock**,
+while the second starts its normal authorized transaction. An independent
+observer requires `pg_blocking_pids` to identify the first transaction as the
+second's actual blocker before releasing it. The existing User/session →
+inventory → reference lock order is not replaced. Polling and worker waits have
+bounded deadlines; no sleep is taken as evidence that a race occurred.
+
+Coverage:
+
+- Concurrent identical-key manual and import commits, each with both Unallocated
+  and located rows: identical durable results, one request result, one opening
+  credit and one successful saving AuditEvent per durable source/row.
+- Separate CSV/XLSX reviews of the same durable rows with different request keys:
+  one commits, the stale review conflicts, its absent key is durably closed,
+  and an explicit fresh review returns already imported without new credits,
+  records or success AuditEvents. No silent stale-review acceptance is expected.
+- Absent-key reconciliation winning against a delayed writer: durable
+  `not_committed`, closed-key rejection and no stock or saving AuditEvents.
+  The reverse ordering returns the writer's committed outcome, never a false
+  negative or a cancellation overwriting success.
+- Competing Unallocated allocations to different destinations whose combined
+  demand exceeds available stock: one succeeds, the other conflicts; replay of
+  the winner creates no second movement or successful allocation AuditEvent.
+
+Assertions reconcile each lot's exact balance against its postings (including
+the SQL NULL location), conserve the original accepted quantity, require
+nonnegative historical/current balances and exactly paired movement postings,
+and compare original source/rate/location/value snapshots. Allocation additionally
+requires original opening and lot ciphertext to remain byte-for-byte unchanged.
+Raw service retry results are compared exactly; HTTP comparisons use the existing
+response models' canonical datetime/provenance representation.
+
+The focused command passed **13 checks** (seven existing operations checks and
+six concurrency cases). Existing Starlette TestClient and Alembic configuration
+deprecation warnings remain. No browser automation, live acceptance,
+permission/expiry/opening-adjustment change or production activation is claimed.
+
+The subsequent automatic completion gate ran the existing configured non-browser
+release checks and did **not** pass. Its failures were outside the new tests:
+`python3 -B scripts/local-release-checks.py run services` rejected the existing
+Opening Stock currency formatter in the date-display guard;
+`python3 -B scripts/local-release-checks.py run api-sales-targets` expected an
+older downgrade-refusal message rather than the Opening Stock recovery guard;
+`python3 -B scripts/local-release-checks.py run policy-03` expected a table
+inventory without `opening_stock` and `opening_stock_requests`.
+Those checks were not weakened or changed in this concurrency-only work.
+The focused pass is not evidence that this broader completion gate passed.
+
+#### Original implementation verification
+
+The following observations predate the concurrency coverage above. First
 pass: **6 passed**, one existing Starlette TestClient deprecation warning.
 Coverage includes allergen/product openings, Unallocated/located stock,
 allocation/transfer and retained evidence, exact rounding/value, no component
