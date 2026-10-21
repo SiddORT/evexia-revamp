@@ -154,7 +154,9 @@ class FreshInstallAlignmentTests(unittest.TestCase):
                       "inventory_movements", "inventory_postings", "inventory_requests",
                       "languages", "language_changes", "combo_products",
                       "combo_product_members", "combo_product_revisions",
-                      "product_assemblies", "product_requests"})
+                  "product_assemblies", "product_requests",
+                  "opening_stock", "opening_stock_requests",
+                  "mr_zone_assignments", "headquarter_areas"})
 
 
 if __name__ == "__main__":

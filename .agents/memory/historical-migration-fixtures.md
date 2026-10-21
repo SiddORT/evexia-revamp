@@ -76,3 +76,14 @@ production invariant.
 **How to apply:** Keep seed rows installed by migrations and roll back test-owned
 changes. Tests that genuinely require independent committed transactions should
 use a separate disposable database instead.
+
+Do not assume a full-release downgrade reaches an older migration's refusal.
+Newer forward-only stages can correctly block the path first.
+
+**Why:** A preservation test expected a historical template/privacy refusal even
+though a later stock safeguard stopped the downgrade earlier, as intended.
+
+**How to apply:** Keep historical guard assertions at their own revision before
+upgrading to the declared current schema for service tests. Separately verify
+the current path's first actual refusal and retained revision/data; do not
+weaken guards or drop the earlier protection assertion to obtain a passing test.

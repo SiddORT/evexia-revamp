@@ -126,8 +126,9 @@ def test_designation_import_ambiguity_and_hash_phase_revalidation(client, monkey
 def setup(api, db):
     headers, actor = admin_headers(api, db)
     seed_designation(db, actor.id)
-    hq = api.post("/api/v1/admin/headquarters", headers=headers, json={"name": "HQ for MRs", "status": "active"}).json()["id"]
     zone = api.post("/api/v1/admin/zones", headers=headers, json={"name": "Zone for MRs", "status": "active"}).json()["id"]
+    hq = api.post("/api/v1/admin/headquarters", headers=headers,
+                  json={"name": "HQ for MRs", "status": "active", "zone_id": zone}).json()["id"]
     return headers, actor, hq, zone
 
 

@@ -46,7 +46,7 @@
     "docs/ci-schema-metadata-repair.md": "cd00ccc456d76ab9d0ebcf4cfc90e888168517ce04ce25e9a200fc1b301854f2",
     ".github/workflows/docker-initialization.yml": "d5f9d7b81ac30e72b932dedfc2e339f267c50e7114e3e45bd7b6c1df2a14ab36",
     "scripts/test-docker-initialization.py": "fcd66a86ce5c67860754bec7c82d103c89085e5b969fa310400ef9d0c90396af",
-    "scripts/tests/test_fresh_install_alignment.py": "9392f73bd72e42766f9734773c2d9ccb0f8246defcc8ec9086d1bdcc2caf13e9",
+    "scripts/tests/test_fresh_install_alignment.py": "31c3eba0610e0773daf3bd978a200d5260a00e20e2fcb4912a33506c4bcd8650",
     "artifacts/api-server/backend/tests/test_fresh_install.py": "9ee5fe1e5b74b4cb44a7bf6e7716b3ab48b15f690f900205b3f9845f9b7032cd"
   },
   "guard_sources": {

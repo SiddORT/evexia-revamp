@@ -10,7 +10,8 @@ from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from app.db.models import User, MRProfile, AuditEvent
-from app.db.mr_models import MRDirectory
+from app.db.mr_models import MRDirectory, MRZoneAssignment
+from app.core.schema import SCHEMA_REVISION
 from app.db.zone_models import Zone
 from app.db.headquarter_models import Headquarter
 from app.db.sales_target_models import SalesTarget
@@ -25,8 +26,15 @@ from test_sales_targets import fields, HEADER
 
 def seed(db, actor_id, historical=False):
     zone = Zone(name="Migration zone", status="active", created_by=actor_id, updated_by=actor_id)
-    hq = Headquarter(name="Migration HQ", state_code="MH", status="active", created_by=actor_id, updated_by=actor_id)
-    db.add_all([zone, hq])
+    hq = Headquarter(id=uuid.uuid4(), name="Migration HQ", state_code="MH", status="active")
+    db.add(zone)
+    # This fixture also runs before HQ geography exists. Insert the original
+    # contract rather than letting today's ORM emit later zone/sequence fields.
+    db.execute(text("""
+        INSERT INTO headquarters
+            (id,name,state_code,status,version,created_by,updated_by,created_at,updated_at)
+        VALUES (:id,:name,'MH','active',1,:actor,:actor,now(),now())
+    """), dict(id=hq.id, name=hq.name, actor=actor_id))
     if historical:
         # Revision 0022 has only plaintext identifiers; current User writes
         # require the later account-encryption schema.
@@ -76,6 +84,8 @@ def seed(db, actor_id, historical=False):
         db.execute(text(f"INSERT INTO mr_directory ({columns}) VALUES ({parameters})"), values)
     else:
         db.add(mr)
+        db.flush()
+        db.add(MRZoneAssignment(mr_id=mr.id, zone_id=zone.id, position=0, zone_name=zone.name))
     db.commit()
     return {"id": str(mr.id)}
 
@@ -87,6 +97,11 @@ def test_empty_migration_preserves_prior_records_rejects_rounding_and_keeps_hist
         mr = seed(db, actor_id, historical=True)
     from directory_test_data import approved_historical_upgrade
     approved_historical_upgrade(engine, config, target_revision="0036_reference_privacy")
+    # Verify the historical protection at its own revision, before invoking
+    # current services whose models require the coordinated current schema.
+    with pytest.raises(RuntimeError, match="Populated privacy downgrade refused"):
+        command.downgrade(config, "0022_allergen_catalogue")
+    command.upgrade(config, SCHEMA_REVISION)
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(SalesTarget)) == 0
         assert db.get(User, actor_id).is_protected_system_admin
@@ -103,7 +118,7 @@ def test_empty_migration_preserves_prior_records_rejects_rounding_and_keeps_hist
                 with db.begin_nested():
                     db.execute(text(sql))
         sales_targets.mutate(db, actor, row["id"], SalesTargetVersion(expected_version=1), "delete")
-    with pytest.raises(RuntimeError, match="Populated privacy downgrade refused"):
+    with pytest.raises(RuntimeError, match=r"^Opening stock downgrade requires independently reviewed external recovery\.$"):
         command.downgrade(config, "0022_allergen_catalogue")
     with Session(engine) as db:
         assert db.get(SalesTarget, row["id"]).deleted_by == actor_id
@@ -111,7 +126,7 @@ def test_empty_migration_preserves_prior_records_rejects_rounding_and_keeps_hist
 
 def test_duplicate_races_inactive_uniqueness_and_stale_mutation(migration_db):
     engine, config, actor_id, session_id = prepare(migration_db)
-    command.upgrade(config, "0036_reference_privacy")
+    command.upgrade(config, SCHEMA_REVISION)
     with Session(engine) as db:
         mr = seed(db, actor_id)
     barrier = Barrier(2)
@@ -148,7 +163,7 @@ def test_duplicate_races_inactive_uniqueness_and_stale_mutation(migration_db):
 
 def test_concurrent_import_conflicts_roll_back_complete_batch(migration_db):
     engine, config, actor_id, session_id = prepare(migration_db)
-    command.upgrade(config, "0036_reference_privacy")
+    command.upgrade(config, SCHEMA_REVISION)
     with Session(engine) as db:
         seed(db, actor_id)
     data = (HEADER + "RACE-MR,2030,2031,1,2,3,4,active\nRACE-MR,2032,2033,1,2,3,4,inactive").encode()
