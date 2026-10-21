@@ -13,6 +13,7 @@ import re
 import stat
 import subprocess
 import sys
+import sysconfig
 
 from hostname_recovery import ScopeError, canonical_digest, verified_recovery
 
@@ -141,6 +142,27 @@ def migration_command():
             "upgrade", TARGET]
 
 
+def migration_environment():
+    """Carry installed dependencies, never the parent's arbitrary source paths."""
+    env = dict(os.environ)
+    active = {Path(entry).resolve() for entry in sys.path if entry and Path(entry).is_absolute()}
+    # The CI interpreter is outside uv's locked project environment. Its
+    # sysconfig paths alone therefore do not include the installed dependencies.
+    installed = [
+        Path(sysconfig.get_path("purelib")),
+        Path(sysconfig.get_path("platlib")),
+        ROOT / ".pythonlibs" / "lib"
+        / f"python{sys.version_info.major}.{sys.version_info.minor}" / "site-packages",
+    ]
+    paths = [BACKEND.resolve()]
+    for candidate in installed:
+        candidate = candidate.resolve()
+        if candidate in active and candidate.is_dir() and candidate not in paths:
+            paths.append(candidate)
+    env["PYTHONPATH"] = os.pathsep.join(map(str, paths))
+    return env
+
+
 def verify_result(connection, runner):
     from sqlalchemy import inspect, text
     with connection.begin():
@@ -189,8 +211,7 @@ def execute_scoped(connection, runner, args, plan, progress=None):
         verify_source(args.release_sha)
         if inspect_database(connection, runner, args.release_sha) != plan:
             raise ScopeError("PLAN_CHANGED")
-        env = dict(os.environ)
-        env["PYTHONPATH"] = str(BACKEND)
+        env = migration_environment()
         # Time bounds fail closed. A timeout is an unconfirmed outcome, never
         # permission to retry automatically, downgrade, stamp, or reopen traffic.
         progress["attempted"] = True

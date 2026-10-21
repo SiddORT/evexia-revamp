@@ -31,6 +31,7 @@
 - [Receipt PDF text geometry](receipt-pdf-text-geometry.md) — SVG collapses whitespace before character indexing; measure displayed characters, not raw textContent.
 - [Message preview boundary](message-preview-boundary.md) — preserve authored source, but keep previews offline and inert after literal substitution; never relax isolation for inbox fidelity.
 - [Isolated Python parsers](isolated-python-parsers.md) — test child imports explicitly; isolated Python does not inherit Replit's package search path.
+- [Migration child dependencies](migration-child-dependencies.md) — Replit startup hooks can mask lost CI dependency paths; verify external-interpreter children.
 - [Auth renewal and drafts](auth-renewal-drafts.md) — fail-closed session checks must not discard already-mounted browser-local editor drafts.
 - [Session rollout compatibility](session-rollout.md) — preserve revoked legacy credential history; require fresh login at a new session-binding boundary.
 - [Session replacement notices](session-replacement-notices.md) — show only credential-bound replacement evidence to a previously verified tab; never restore a known replaced bearer.

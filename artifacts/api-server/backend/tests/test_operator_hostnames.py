@@ -28,9 +28,13 @@ def predecessor(monkeypatch):
     url = make_url(os.environ["TEST_DATABASE_URL"])
     assert "test" in url.database and get_settings().app_env == "test"
     schema = "hostname_operator_" + uuid.uuid4().hex
+    unrelated = "hostname_unrelated_" + uuid.uuid4().hex
     admin = sa.create_engine(url, hide_parameters=True)
     with admin.begin() as db:
         db.execute(sa.text(f'CREATE SCHEMA "{schema}"'))
+        db.execute(sa.text(f'CREATE SCHEMA "{unrelated}"'))
+        db.execute(sa.text(f'CREATE TABLE "{unrelated}".retained (id integer PRIMARY KEY, value text NOT NULL)'))
+        db.execute(sa.text(f"""INSERT INTO "{unrelated}".retained VALUES (1, 'Synthetic unrelated data')"""))
     isolated = url.set(query={**url.query, "options": f"-csearch_path={schema}"})
     monkeypatch.setenv("DATABASE_URL", isolated.render_as_string(hide_password=False))
     get_settings.cache_clear()
@@ -48,7 +52,12 @@ def predecessor(monkeypatch):
         engine.dispose()
         get_settings.cache_clear()
         with admin.begin() as db:
+            assert db.execute(sa.text(f'SELECT id,value FROM "{unrelated}".retained')).all() == [
+                (1, "Synthetic unrelated data")]
+            assert projection(db, unrelated) == [
+                ("retained", "id", "integer", "NO"), ("retained", "value", "text", "NO")]
             db.execute(sa.text(f'DROP SCHEMA "{schema}" CASCADE'))
+            db.execute(sa.text(f'DROP SCHEMA "{unrelated}" CASCADE'))
         admin.dispose()
 
 
@@ -102,6 +111,7 @@ def test_real_scoped_upgrade_changes_only_hostname_schema(predecessor, reviewed_
                 patch.object(scope.subprocess, "run", wraps=real_run) as run:
             result = scope.execute_scoped(db, runner, args, plan)
             run.assert_called_once()
+            assert run.call_args.args[0] == scope.migration_command()
             assert run.call_args.args[0][-2:] == ["upgrade", "0031_role_hostnames"]
         with db.begin():
             assert projection(db, schema) == before
@@ -111,6 +121,43 @@ def test_real_scoped_upgrade_changes_only_hostname_schema(predecessor, reviewed_
             assert db.scalar(sa.text("SELECT role FROM role_hostnames WHERE hostname='synthetic.example.com'")) is None
         assert result["migrations_applied"] == 1
         assert result["full_release_readiness"] == "not_established"
+
+
+def test_missing_child_dependencies_fail_closed_without_changing_predecessor(predecessor, reviewed_runner):
+    engine, schema = predecessor
+    @contextmanager
+    def synthetic_recovery(*args):
+        yield {}
+    real_run = scope.subprocess.run
+    def without_dependencies(command, **kwargs):
+        # Synthetic failure injection only: disable automatic site loading and
+        # omit installed packages. Never change the production command/diagnostics.
+        assert command == scope.migration_command()
+        kwargs["env"] = {**kwargs["env"], "PYTHONPATH": str(scope.BACKEND)}
+        return real_run([*command[:2], "-S", *command[2:]], **kwargs)
+    with engine.connect() as db:
+        plan = scope.inspect_database(db, reviewed_runner, "a" * 40)
+        with db.begin():
+            before = projection(db, schema)
+            retained = db.execute(sa.text("SELECT id,name FROM organizations ORDER BY id")).all()
+        args = SimpleNamespace(approve_hostnames=True, writers_stopped=True, recovery_reviewed=True,
+                               approval=scope.canonical_digest(plan), release_sha="a" * 40,
+                               backup="synthetic-only", recovery_evidence="synthetic-only")
+        progress = {"attempted": False}
+        with patch.object(scope, "verified_recovery", synthetic_recovery), \
+                patch.object(scope, "require_host_interlock"), patch.object(scope, "verify_source"), \
+                patch.object(scope, "verify_result") as verified, \
+                patch.object(scope.subprocess, "run", side_effect=without_dependencies) as run:
+            with pytest.raises(scope.ScopeError, match="^MIGRATION_FAILED_OR_UNCONFIRMED_KEEP_MAINTENANCE$"):
+                scope.execute_scoped(db, reviewed_runner, args, plan, progress)
+            run.assert_called_once()
+            verified.assert_not_called()
+        assert progress["attempted"]
+        with db.begin():
+            assert db.scalar(sa.text("SELECT version_num FROM alembic_version")) == scope.PREDECESSOR
+            assert db.scalar(sa.text("SELECT to_regclass('role_hostnames')")) is None
+            assert projection(db, schema) == before
+            assert db.execute(sa.text("SELECT id,name FROM organizations ORDER BY id")).all() == retained
 
 
 @pytest.mark.parametrize("revision", [

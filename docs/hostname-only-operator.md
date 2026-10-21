@@ -219,13 +219,55 @@ resume command and claims no live recovery.
 ## Focused verification
 
 ```sh
-python -B -m unittest discover -s scripts/tests -p 'test_operator_hostnames.py' -v
-bash scripts/test-api-foundation.sh tests/test_operator_hostnames.py
+sh scripts/test-operator-hostnames.sh
+# For the CI-style external interpreter, point to that Python 3.13 executable:
+HOSTNAME_TEST_PYTHON=/absolute/path/to/python3.13 sh scripts/test-operator-hostnames.sh
 ```
 
-The first suite covers fixed targets, graph/policy drift, approval/recovery gates,
+This focused runner executes only hostname unit and integration tests; it does
+not migrate to head or invoke release wrappers. It uses a fresh, private-socket
+PostgreSQL database and synthetic keys, with no managed target access. Its
+predecessor fixture applies historical migrations only in disposable schemas.
+The installed project dependencies must already match `uv.lock`.
+
+The unit suite covers fixed targets, graph/policy drift, approval/recovery gates,
 digest/permission/symlink validation, real inherited exclusive locks, timeouts and
-non-continuation. The second uses only disposable schemas: real 0030 → 0031 DDL,
+non-continuation. A real child resolves Alembic/SQLAlchemy from the locked
+`.pythonlibs/lib/python<major>.<minor>/site-packages` layout and the intended
+backend without inheriting unrelated source directories. Replit-only package
+startup hooks are removed so they cannot hide the CI import-path failure.
+The integration suite uses only disposable schemas: real 0030 → 0031 DDL,
 retained organization rows and predecessor projections, and rejection of later/
-inconsistent revisions and conflicting relations. Synthetic test artifacts and
+inconsistent revisions and conflicting relations. It also checks unrelated
+schema/data preservation and failure without changes when child dependencies
+are deliberately unavailable. Synthetic test artifacts and
 mocked attestations are explicitly **not live backup/rehearsal evidence**.
+
+The operator child retains only active interpreter installation locations
+(`sysconfig` purelib/platlib) and the active, version-matched project `.pythonlibs`
+installation, with the intended backend first. It does not concatenate arbitrary
+inherited `PYTHONPATH` entries. The command, literal target, timeout, suppressed
+output and all source/approval/recovery/lock gates remain unchanged.
+
+### Local subprocess repair evidence
+
+The original scoped integration test was reproduced against disposable
+PostgreSQL 17.5 using an external CPython 3.13.11 interpreter and locked
+dependencies exposed through `PYTHONPATH`. Capturing child stderr **only in that
+synthetic reproduction** showed `No module named alembic.__main__`: the backend's
+migration directory was found after the installed Alembic package path was lost.
+No production diagnostic output was enabled.
+
+`uv sync --frozen --check` reported the existing 51-package environment matched
+the lock without changes. After repair, running
+`HOSTNAME_TEST_PYTHON=/nix/store/qzc04a3npl70cyyy6flnnrb2ig3kayxm-python3-3.13.11/bin/python3 sh scripts/test-operator-hostnames.sh`
+passed 22 unit tests and 9 disposable integration cases. The real child import
+probe confirmed Alembic/SQLAlchemy came from the locked installation and app
+models from the intended backend, with an unrelated source directory excluded.
+The existing Alembic `path_separator` deprecation warning remains; the reviewed
+configuration/environment and historical migrations were not modified.
+
+This is local CI-layout evidence, not an exact-commit GitHub validation result,
+live recovery evidence, or authorization to deploy or resume traffic. No broad
+release wrapper, Docker initialization, managed database, VPS operation, Git
+push or deployment was run for this repair.

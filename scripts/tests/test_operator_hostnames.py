@@ -157,11 +157,76 @@ class FixedScopeTests(unittest.TestCase):
             run.assert_called_once()
             self.assertEqual(run.call_args.args[0], scope.migration_command())
             self.assertEqual(run.call_args.args[0][-1], scope.TARGET)
-            self.assertEqual(run.call_args.kwargs["env"]["PYTHONPATH"], str(scope.BACKEND))
+            self.assertEqual(run.call_args.kwargs["env"], scope.migration_environment())
+            self.assertEqual(run.call_args.kwargs["cwd"], scope.BACKEND)
+            self.assertEqual(run.call_args.kwargs["timeout"], 120)
+            self.assertEqual(run.call_args.kwargs["stdout"], subprocess.DEVNULL)
             self.assertEqual(run.call_args.kwargs["stderr"], subprocess.DEVNULL)
             verified.assert_called_once()
         self.assertTrue(progress["attempted"])
         self.assertEqual(result["migrations_applied"], 1)
+
+    def test_environment_allowlists_only_active_installed_locations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            backend = root / "backend"
+            locked = root / ".pythonlibs/lib" / f"python{sys.version_info.major}.{sys.version_info.minor}/site-packages"
+            system = root / "system/site-packages"
+            unrelated = root / "unrelated/site-packages"
+            for path in (backend, locked, system, unrelated):
+                path.mkdir(parents=True)
+            with patch.object(scope, "ROOT", root), patch.object(scope, "BACKEND", backend), \
+                    patch.object(scope.sysconfig, "get_path", return_value=str(system)), \
+                    patch.object(sys, "path", ["", ".", str(unrelated), str(locked), str(system), str(locked)]), \
+                    patch.dict(os.environ, {"PYTHONPATH": f":.:{unrelated}:{locked}"}):
+                self.assertEqual(scope.migration_environment()["PYTHONPATH"].split(os.pathsep),
+                                 list(map(str, (backend, system, locked))))
+                # An existing but inactive installation is not silently enabled.
+                with patch.object(sys, "path", [str(unrelated)]):
+                    self.assertEqual(scope.migration_environment()["PYTHONPATH"], str(backend))
+
+    def test_real_ci_layout_child_resolves_dependencies_and_excludes_unrelated_sources(self):
+        locked = scope.ROOT / ".pythonlibs/lib" / f"python{sys.version_info.major}.{sys.version_info.minor}/site-packages"
+        self.assertTrue(locked.is_dir(), "Run with the project's locked dependency layout")
+        with tempfile.TemporaryDirectory() as directory:
+            unrelated = Path(directory)
+            (unrelated / "unintended_operator_source.py").write_text("raise RuntimeError('must not load')")
+            env = dict(os.environ)
+            # Replit's Python startup hooks otherwise mask the CI failure.
+            for key in ("REPLIT_PYTHONPATH", "PYTHONUSERBASE", "NIX_PYTHONPATH",
+                        "NIX_PYTHONEXECUTABLE", "NIX_PYTHONPREFIX"):
+                env.pop(key, None)
+            env["PYTHONPATH"] = os.pathsep.join(map(str, (scope.BACKEND, locked, unrelated)))
+            bootstrap = """
+import importlib.util, json, subprocess, sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+spec = importlib.util.spec_from_file_location("scope", Path(sys.argv[1]) / "operator-hostnames.py")
+scope = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(scope)
+probe = '''
+import importlib.util, json, sys
+import alembic, sqlalchemy, app.db.models
+print(json.dumps({"alembic": alembic.__file__, "sqlalchemy": sqlalchemy.__file__,
+                  "backend": app.db.models.__file__,
+                  "unrelated": importlib.util.find_spec("unintended_operator_source") is not None,
+                  "paths": sys.path}))
+'''
+result = subprocess.run([sys.executable, "-B", "-c", probe], cwd=scope.BACKEND,
+                        env=scope.migration_environment(), capture_output=True, text=True, timeout=30)
+sys.stdout.write(result.stdout)
+sys.stderr.write(result.stderr)
+sys.exit(result.returncode)
+"""
+            result = subprocess.run([sys._base_executable, "-B", "-S", "-c", bootstrap, str(SCRIPTS)],
+                                    env=env, capture_output=True, text=True, timeout=45)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            resolved = json.loads(result.stdout)
+            for dependency in ("alembic", "sqlalchemy"):
+                self.assertTrue(Path(resolved[dependency]).is_relative_to(locked))
+            self.assertTrue(Path(resolved["backend"]).is_relative_to(scope.BACKEND))
+            self.assertFalse(resolved["unrelated"])
+            self.assertNotIn(str(unrelated), resolved["paths"])
 
     def test_every_missing_approval_and_stale_plan_blocks_before_subprocess(self):
         for key in ("approve_hostnames", "writers_stopped", "recovery_reviewed", "backup", "recovery_evidence", "approval"):
@@ -218,6 +283,45 @@ class FixedScopeTests(unittest.TestCase):
                 patch.object(scope, "verify_source", side_effect=ValueError("SECRET_URL_MUST_NOT_APPEAR")), redirect_stdout(output):
             self.assertEqual(scope.main(["--inspect", "--release-sha", "a" * 40]), 1)
         self.assertNotIn("SECRET_URL", output.getvalue())
+
+    def test_public_child_failure_and_uncertain_outcomes_are_redacted(self):
+        @contextmanager
+        def connection(*args):
+            yield object()
+        @contextmanager
+        def valid(*args):
+            yield {}
+        runner = SimpleNamespace(production_connection=connection)
+        options = ["--execute", "--release-sha", "a" * 40, "--approval", self.args.approval,
+                   "--approve-hostnames", "--writers-stopped", "--recovery-reviewed",
+                   "--backup", "synthetic-only", "--recovery-evidence", "synthetic-only"]
+        for effect in (
+            SimpleNamespace(returncode=1),
+            subprocess.TimeoutExpired("PRIVATE_DATABASE_URL", 120,
+                                      output="PRIVATE_STDOUT", stderr="PRIVATE_STDERR"),
+            OSError("PRIVATE_DATABASE_URL"),
+        ):
+            output = io.StringIO()
+            with patch.dict(os.environ, {"APP_ENV": "production"}), \
+                    patch.object(scope, "runner_module", return_value=runner), \
+                    patch.object(scope, "verified_recovery", valid), \
+                    patch.object(scope, "verify_source"), patch.object(scope, "require_host_interlock"), \
+                    patch.object(scope, "inspect_database", return_value=self.plan), \
+                    patch.object(scope, "verify_result") as verified, \
+                    patch.object(scope.subprocess, "run") as run, redirect_stdout(output):
+                if isinstance(effect, Exception):
+                    run.side_effect = effect
+                else:
+                    run.return_value = effect
+                self.assertEqual(scope.main(options), 1)
+                run.assert_called_once()
+                verified.assert_not_called()
+            report = json.loads(output.getvalue())
+            self.assertEqual(report["result"], "SCOPED_OPERATOR_BLOCKED_OR_UNCONFIRMED")
+            self.assertEqual(report["mutation_outcome"], "unconfirmed")
+            self.assertEqual(report["action"], "keep_existing_maintenance_and_review_private_evidence")
+            for private in ("PRIVATE_DATABASE_URL", "PRIVATE_STDOUT", "PRIVATE_STDERR"):
+                self.assertNotIn(private, output.getvalue())
 
     def test_inspect_main_only_returns_a_read_only_plan_and_missing_execute_gates_never_connect(self):
         @contextmanager
