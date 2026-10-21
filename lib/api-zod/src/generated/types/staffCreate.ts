@@ -5,16 +5,17 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
-import type { StaffFieldsDialCountry } from "./staffFieldsDialCountry";
-import type { StaffFieldsRole } from "./staffFieldsRole";
-import type { StaffFieldsStatus } from "./staffFieldsStatus";
+import type { StaffCreateDialCountry } from "./staffCreateDialCountry";
+import type { StaffCreateRole } from "./staffCreateRole";
+import type { StaffCreateStatus } from "./staffCreateStatus";
 
-export interface StaffFields {
+export interface StaffCreate {
   dateOfJoining: Date;
   designation_id: string;
-  dialCountry?: StaffFieldsDialCountry;
+  dialCountry?: StaffCreateDialCountry;
   /** @maxLength 320 */
   email: string;
+  initialPassword?: string | null;
   /**
    * @minLength 1
    * @maxLength 200
@@ -25,6 +26,6 @@ export interface StaffFields {
    * @maxLength 30
    */
   phone: string;
-  role: StaffFieldsRole;
-  status: StaffFieldsStatus;
+  role: StaffCreateRole;
+  status: StaffCreateStatus;
 }

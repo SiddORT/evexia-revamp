@@ -1,5 +1,32 @@
 # Password recovery
 
+## Invitation and Email Logs extension
+
+The same transport, literal database template renderer and password-change
+transaction now support a separate `account_invitation` purpose. Recovery still
+uses only `password_recovery`, the original signing domain/audience and edited
+Forgot password template. Super Admin remains excluded and public responses
+remain generic and rate limited. MR Forgot password accepts the real MR identity,
+sends the recovery event, and the new password signs into the MR portal.
+
+All eligible recovery dispatches now pass through the encrypted persistent
+Email Logs ledger before rendering/SMTP. A bad global SMTP configuration gives
+the same 503 for every identifier and records only an anonymous configuration
+failure. No submitted unknown identifier is persisted as an outgoing recipient.
+Pending/sending attempts interrupted beyond two minutes become unknown, never
+automatically retried. SMTP acceptance means submission, not inbox delivery.
+Passwords, reset URLs/tokens, rendered messages and SMTP secrets never enter
+audit/operational evidence or browser storage.
+
+New accounts with no chosen initial password require successful password setup;
+recovery may satisfy that requirement without granting staff workspace access
+or changing MR identity/eligibility. Both purposes revalidate eligibility and
+atomically revoke old credentials/sessions on consumption. Wrong-purpose links
+cannot be interchanged. See [invitations](email-invitations.md) for the current
+schema, focused captured-mail evidence and explicit post-merge runtime boundary.
+Historical verification/activation notes below do not override the current
+automatic development migration policy.
+
 Recovery does not enable public registration. Existing account encryption remains
 required. Recovery email content now comes exclusively from the dedicated
 `email_templates` table at `0043_email_templates`; see [Email templates](email-templates.md)

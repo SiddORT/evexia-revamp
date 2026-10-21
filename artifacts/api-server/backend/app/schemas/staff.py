@@ -1,9 +1,9 @@
 import re
 import uuid
 from datetime import date, datetime, timezone
-from typing import Literal
+from typing import Literal, Annotated
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, field_validator, model_validator
 
 from app.schemas.phone import DialCountry, normalize_phone
 
@@ -46,6 +46,16 @@ class StaffFields(BaseModel):
 
 class StaffEdit(StaffFields):
     expected_version: int = Field(ge=1)
+
+
+class StaffCreate(StaffFields):
+    # Preserve spaces exactly, as in MR credentials; never strip passwords.
+    initialPassword: Annotated[str, StringConstraints(strip_whitespace=False, min_length=12, max_length=128)] | None = None
+
+    @field_validator("initialPassword", mode="before")
+    @classmethod
+    def exact_password(cls, value):
+        return value
 
 
 class StaffStatus(BaseModel):

@@ -116,6 +116,8 @@ import type {
   DownloadSalesTargetSampleParams,
   DownloadURLResponse,
   DownloadVendorSampleParams,
+  EmailLogFilters,
+  EmailLogPage,
   EmailTemplateCreate,
   EmailTemplateEdit,
   EmailTemplateEvent,
@@ -168,6 +170,8 @@ import type {
   InventoryInitializationPage,
   InventoryReferencePage,
   InventoryStockPage,
+  InvitationRequest,
+  InvitationResult,
   LanguageEdit,
   LanguageFields,
   LanguageHistory,
@@ -396,10 +400,10 @@ import type {
   SessionPage,
   SessionResponse,
   StaffAccess,
+  StaffCreate,
   StaffCreated,
   StaffDeletion,
   StaffEdit,
-  StaffFields,
   StaffPage,
   StaffResponse,
   StaffSearch,
@@ -21835,6 +21839,121 @@ export const useRecordDownloadInitiation = <
   return useMutation(getRecordDownloadInitiationMutationOptions(options));
 };
 
+export const getListEmailLogsUrl = () => {
+  return `/api/v1/admin/reporting/emails`;
+};
+
+/**
+ * @summary Email Logs
+ */
+export const listEmailLogs = async (
+  emailLogFilters: EmailLogFilters,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<EmailLogPage> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<EmailLogPage>(getListEmailLogsUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(emailLogFilters),
+  });
+};
+
+export const getListEmailLogsMutationKey = () => ["listEmailLogs"] as const;
+
+export const getListEmailLogsMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof listEmailLogs>>,
+    TError,
+    ListEmailLogsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof listEmailLogs>>,
+  TError,
+  ListEmailLogsMutationVariables,
+  TContext
+> => {
+  const mutationKey = getListEmailLogsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof listEmailLogs>>,
+    ListEmailLogsMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return listEmailLogs(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ListEmailLogsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof listEmailLogs>>
+>;
+export type ListEmailLogsMutationBody = BodyType<EmailLogFilters>;
+export type ListEmailLogsMutationError = ErrorType<ErrorEnvelope>;
+export type ListEmailLogsMutationVariables = {
+  data: BodyType<EmailLogFilters>;
+};
+
+/**
+ * @summary Email Logs
+ */
+export const useListEmailLogs = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof listEmailLogs>>,
+    TError,
+    ListEmailLogsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof listEmailLogs>>,
+  TError,
+  ListEmailLogsMutationVariables,
+  TContext
+> => {
+  return useMutation(getListEmailLogsMutationOptions(options));
+};
+
 export const getListReportingEventsUrl = (
   params?: ListReportingEventsParams,
 ) => {
@@ -22042,6 +22161,125 @@ export function useExportReportingEvents<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getInviteAccountUrl = (kind: "staff" | "mr", recordId: string) => {
+  return `/api/v1/admin/reporting/invitations/${kind}/${recordId}`;
+};
+
+/**
+ * @summary Invite Account
+ */
+export const inviteAccount = async (
+  kind: "staff" | "mr",
+  recordId: string,
+  invitationRequest: InvitationRequest,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<InvitationResult> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<InvitationResult>(getInviteAccountUrl(kind, recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(invitationRequest),
+  });
+};
+
+export const getInviteAccountMutationKey = () => ["inviteAccount"] as const;
+
+export const getInviteAccountMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof inviteAccount>>,
+    TError,
+    InviteAccountMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof inviteAccount>>,
+  TError,
+  InviteAccountMutationVariables,
+  TContext
+> => {
+  const mutationKey = getInviteAccountMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof inviteAccount>>,
+    InviteAccountMutationVariables
+  > = (props) => {
+    const { kind, recordId, data } = props ?? {};
+
+    return inviteAccount(kind, recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type InviteAccountMutationResult = NonNullable<
+  Awaited<ReturnType<typeof inviteAccount>>
+>;
+export type InviteAccountMutationBody = BodyType<InvitationRequest>;
+export type InviteAccountMutationError = ErrorType<ErrorEnvelope>;
+export type InviteAccountMutationVariables = {
+  kind: "staff" | "mr";
+  recordId: string;
+  data: BodyType<InvitationRequest>;
+};
+
+/**
+ * @summary Invite Account
+ */
+export const useInviteAccount = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof inviteAccount>>,
+    TError,
+    InviteAccountMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof inviteAccount>>,
+  TError,
+  InviteAccountMutationVariables,
+  TContext
+> => {
+  return useMutation(getInviteAccountMutationOptions(options));
+};
 
 export const getListReportingSessionsUrl = (
   params?: ListReportingSessionsParams,
@@ -25029,7 +25267,7 @@ export const getCreateStaffUrl = () => {
  * @summary Create Staff
  */
 export const createStaff = async (
-  staffFields: StaffFields,
+  staffCreate: StaffCreate,
   options?: Parameters<typeof customFetch>[1],
 ): Promise<StaffCreated> => {
   const getHeaders = (
@@ -25060,7 +25298,7 @@ export const createStaff = async (
       "Content-Type": "application/json",
       ...getHeaders(options?.headers),
     },
-    body: JSON.stringify(staffFields),
+    body: JSON.stringify(staffCreate),
   });
 };
 
@@ -25107,9 +25345,9 @@ export const getCreateStaffMutationOptions = <
 export type CreateStaffMutationResult = NonNullable<
   Awaited<ReturnType<typeof createStaff>>
 >;
-export type CreateStaffMutationBody = BodyType<StaffFields>;
+export type CreateStaffMutationBody = BodyType<StaffCreate>;
 export type CreateStaffMutationError = ErrorType<ErrorEnvelope>;
-export type CreateStaffMutationVariables = { data: BodyType<StaffFields> };
+export type CreateStaffMutationVariables = { data: BodyType<StaffCreate> };
 
 /**
  * @summary Create Staff
@@ -30142,6 +30380,131 @@ export function useListOwnSessions<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getSetInvitedPasswordApiV1AuthSetPasswordPostUrl = () => {
+  return `/api/v1/auth/set-password`;
+};
+
+/**
+ * @summary Set Invited Password
+ */
+export const setInvitedPasswordApiV1AuthSetPasswordPost = async (
+  resetPasswordRequest: ResetPasswordRequest,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ResetPasswordResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ResetPasswordResponse>(
+    getSetInvitedPasswordApiV1AuthSetPasswordPostUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(resetPasswordRequest),
+    },
+  );
+};
+
+export const getSetInvitedPasswordApiV1AuthSetPasswordPostMutationKey = () =>
+  ["setInvitedPasswordApiV1AuthSetPasswordPost"] as const;
+
+export const getSetInvitedPasswordApiV1AuthSetPasswordPostMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setInvitedPasswordApiV1AuthSetPasswordPost>>,
+    TError,
+    SetInvitedPasswordApiV1AuthSetPasswordPostMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setInvitedPasswordApiV1AuthSetPasswordPost>>,
+  TError,
+  SetInvitedPasswordApiV1AuthSetPasswordPostMutationVariables,
+  TContext
+> => {
+  const mutationKey =
+    getSetInvitedPasswordApiV1AuthSetPasswordPostMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setInvitedPasswordApiV1AuthSetPasswordPost>>,
+    SetInvitedPasswordApiV1AuthSetPasswordPostMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return setInvitedPasswordApiV1AuthSetPasswordPost(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetInvitedPasswordApiV1AuthSetPasswordPostMutationResult =
+  NonNullable<
+    Awaited<ReturnType<typeof setInvitedPasswordApiV1AuthSetPasswordPost>>
+  >;
+export type SetInvitedPasswordApiV1AuthSetPasswordPostMutationBody =
+  BodyType<ResetPasswordRequest>;
+export type SetInvitedPasswordApiV1AuthSetPasswordPostMutationError =
+  ErrorType<ErrorEnvelope>;
+export type SetInvitedPasswordApiV1AuthSetPasswordPostMutationVariables = {
+  data: BodyType<ResetPasswordRequest>;
+};
+
+/**
+ * @summary Set Invited Password
+ */
+export const useSetInvitedPasswordApiV1AuthSetPasswordPost = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setInvitedPasswordApiV1AuthSetPasswordPost>>,
+    TError,
+    SetInvitedPasswordApiV1AuthSetPasswordPostMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setInvitedPasswordApiV1AuthSetPasswordPost>>,
+  TError,
+  SetInvitedPasswordApiV1AuthSetPasswordPostMutationVariables,
+  TContext
+> => {
+  return useMutation(
+    getSetInvitedPasswordApiV1AuthSetPasswordPostMutationOptions(options),
+  );
+};
 
 export const getProvisionMRUrl = () => {
   return `/api/v1/domain/mrs`;

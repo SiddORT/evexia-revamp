@@ -15,6 +15,10 @@ import { activeDesignationChoices } from '../../services/serverDesignations.js';
 import { getSession, subscribeSession, reportingIdentityGuard } from '../../auth/adminSession.js';
 import { STAFF_COLUMNS, STAFF_ROLES, loadStaff, searchStaff, getStaff, validateStaff, createStaff, updateStaff, setStaffStatus, deleteStaff, exportStaffCSV } from '../../services/staff.js';
 import '../../staff.css';
+import '../../mr.css';
+import { initialCredentials } from '../../services/initialCredentials.js';
+import { validateReset } from '../../services/passwordRecovery.js';
+import InviteAccountButton from '../../components/admin/InviteAccountButton.jsx';
 
 const FIELDS = ['name', 'phone', 'dialCountry', 'userId', 'email', 'status', 'role', 'designation_id', 'dateOfJoining'];
 const LABELS = Object.fromEntries(STAFF_COLUMNS);
@@ -34,6 +38,8 @@ function StaffPhone({ record, mobile = false }) {
 }
 
 function StaffForm({ record, designations, choiceError, choicesLoading, onRetryChoices, onSave, onClose }) {
+  const [credentials, setCredentials] = useState(() => ({ password: '', confirmPassword: '', generationError: '' }));
+  const [visible, setVisible] = useState(false);
   const [values, setValues] = useState(() => record ? safeFields(record) : { ...INITIAL });
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState('');
@@ -56,6 +62,10 @@ function StaffForm({ record, designations, choiceError, choicesLoading, onRetryC
     event.preventDefault();
     if (gate.current || uncertain || conflicted || choiceError || choicesLoading) return;
     const result = validateStaff(values, record ? [record] : [], record?.id, designations);
+    if (!record && (credentials.password || credentials.confirmPassword)) {
+      const problem = validateReset(credentials.password, credentials.confirmPassword);
+      if (problem) result.errors.password = problem;
+    }
     setErrors(result.errors);
     if (Object.keys(result.errors).length) {
       const first = Object.keys(result.errors)[0];
@@ -66,7 +76,7 @@ function StaffForm({ record, designations, choiceError, choicesLoading, onRetryC
     setSaving(true);
     setMessage('');
     try {
-      await onSave(result.fields, record);
+      await onSave({ ...result.fields, ...(!record && credentials.password ? { initialPassword: credentials.password } : {}) }, record);
     } catch (cause) {
       setMessage(cause.message || 'Save failed. Your draft is still here.');
       setUncertain(Boolean(cause.ambiguous));
@@ -102,7 +112,26 @@ function StaffForm({ record, designations, choiceError, choicesLoading, onRetryC
       {choicesLoading && <p role="status">Loading designation choices…</p>}
       {choiceError && <div className="admin-feedback admin-feedback--error" role="alert">{choiceError}<button type="button" className="admin-button admin-button--secondary" onClick={onRetryChoices}>Retry designation choices (keep draft)</button></div>}
       <label className="admin-staff-field"><span>Date of joining <span aria-hidden="true">*</span></span><input type="date" value={values.dateOfJoining} onChange={(event) => change('dateOfJoining', event.target.value)} disabled={saving} data-testid="input-staff-dateOfJoining" />{errors.dateOfJoining && <span className="admin-staff-field__error" role="alert">{errors.dateOfJoining}</span>}</label>
-      <div className="admin-staff-field admin-staff-form__wide"><strong>Password</strong><span className="admin-staff-field__hint">{record ? 'Editing does not change or reveal the password.' : 'A strong initial password is generated automatically and shown once after successful creation for manual handoff. No email is sent; workspace login stays off until a Super Admin enables it.'}</span></div>
+      {record ? <div className="admin-staff-field admin-staff-form__wide"><strong>Password</strong><span className="admin-staff-field__hint">Editing does not change or reveal the password.</span></div> :
+        <div className="admin-staff-form__wide mr-form__password-note">
+          <div className="admin-staff-form">{[['password', 'Password (optional)'], ['confirmPassword', 'Confirm password']].map(([key, label]) =>
+            <div className="mr-form__field" key={key}><label className="mr-form__label" htmlFor={`staff-${key}`}>{label}</label>
+              <div className="mr-form__input-row"><input id={`staff-${key}`} className="mr-form__control" name={key}
+                type={visible ? 'text' : 'password'} autoComplete="new-password" spellCheck={false}
+                autoCapitalize="none" autoCorrect="off" value={credentials[key]} disabled={saving}
+                aria-describedby="staff-password-help" aria-invalid={Boolean(errors.password)}
+                data-testid={`input-staff-${key}`} onChange={(event) => setCredentials((old) => ({ ...old, [key]: event.target.value }))} />
+                <button type="button" className="mr-form__preview-action mr-form__credential-action"
+                  disabled={saving} aria-controls={`staff-${key}`} aria-pressed={visible}
+                  onClick={() => setVisible((old) => !old)}>{visible ? 'Hide' : 'Show'}</button></div></div>)}</div>
+          <button type="button" className="admin-button admin-button--secondary" disabled={saving} onClick={() => {
+            const next = initialCredentials();
+            setCredentials((old) => next.generationError ? { ...old, generationError: next.generationError } : next);
+          }} data-testid="button-generate-staff-password">Auto-generate password</button>
+          <p id="staff-password-help" className="admin-staff-field__hint">Use 12–128 characters, confirming spaces exactly. Generated candidates populate both fields. If both are blank, the server generates a password and requires email password setup before login. No email is sent by saving. Workspace access must be configured separately.</p>
+          {credentials.generationError && <p role="alert">{credentials.generationError}</p>}
+          {errors.password && <p role="alert" className="admin-staff-field__error">{errors.password}</p>}
+        </div>}
       {!active.length && <div className="admin-feedback admin-staff-form__wide" role="status">No active designations are available. <Link href="/admin/masters/designations">Manage designations</Link> before adding staff.</div>}
       {message && <div className="admin-feedback admin-feedback--error admin-staff-form__wide" role="alert" data-testid="status-staff-save-error">{message}</div>}
       {uncertain && <div className="admin-feedback admin-staff-form__wide">Do not repeat this submission. Close this form and refresh the directory to confirm whether it saved. A lost initial password cannot be retrieved.</div>}
@@ -118,7 +147,7 @@ function Credentials({ credentials, onClose }) {
     try { await navigator.clipboard.writeText(`User ID: ${credentials.userId}\nInitial password: ${credentials.password}`); setMessage('Credentials copied for manual handoff. Clear the clipboard after use.'); }
     catch { setMessage('Clipboard unavailable. Reveal and copy the credentials manually.'); }
   }
-  return <Dialog title="One-time staff credentials" eyebrow="Staff Management" description="Shown only now. Closing or leaving this page clears the password. No invitation is sent." onClose={onClose}
+  return <Dialog title="One-time staff credentials" eyebrow="Staff Management" description="Shown only now. Closing or leaving clears the password. No invitation was sent. If both password inputs were blank, email password setup is required before login. Configure Access, then use Invite / send again." onClose={onClose}
     footer={<><button type="button" className="admin-button admin-button--secondary" onClick={onClose} data-testid="button-close-staff-credentials">Dismiss</button><button type="button" className="admin-button" onClick={copy} data-testid="button-copy-staff-credentials">Copy credentials</button></>}>
     <div className="admin-staff-form"><label className="admin-staff-field"><span>User ID</span><input value={credentials.userId} readOnly data-testid="text-staff-credential-id" /></label>
       <label className="admin-staff-field"><span>Initial password</span><input type={reveal ? 'text' : 'password'} value={credentials.password} readOnly autoComplete="off" data-testid="text-staff-credential-password" /></label>
@@ -272,7 +301,7 @@ export default function StaffManagement() {
       }
     } finally { mutationGate.current = false; if (alive.current) setBusy(false); }
   }
-  const rowActions = (record, mobile = false) => <><button type="button" className="admin-icon-button" title={`Edit ${record.name}`} aria-label={`Edit ${record.name}`} disabled={blocked || Boolean(designationError)} onClick={() => edit(record)} data-testid={`button-edit-staff-${mobile ? 'mobile-' : ''}${record.id}`}><Pencil size={16} aria-hidden="true" /></button><button type="button" className="admin-icon-button" title={`Access for ${record.name}`} aria-label={`Access for ${record.name}`} disabled={blocked} onClick={() => { setFeedback(''); setActionError(''); setAccessFor(record); }} data-testid={`button-access-staff-${mobile ? 'mobile-' : ''}${record.id}`}><KeyRound size={16} aria-hidden="true" /></button><button type="button" className="admin-icon-button" title={`Delete ${record.name}`} aria-label={`Delete ${record.name}`} disabled={blocked} onClick={() => { setDeleteError(''); setDeleteUncertain(false); setDeleteFor(record); }} data-testid={`button-delete-staff-${mobile ? 'mobile-' : ''}${record.id}`}><Trash2 size={16} aria-hidden="true" /></button></>;
+  const rowActions = (record, mobile = false) => <><InviteAccountButton kind="staff" record={record} disabled={blocked} /><button type="button" className="admin-icon-button" title={`Edit ${record.name}`} aria-label={`Edit ${record.name}`} disabled={blocked || Boolean(designationError)} onClick={() => edit(record)} data-testid={`button-edit-staff-${mobile ? 'mobile-' : ''}${record.id}`}><Pencil size={16} aria-hidden="true" /></button><button type="button" className="admin-icon-button" title={`Access for ${record.name}`} aria-label={`Access for ${record.name}`} disabled={blocked} onClick={() => { setFeedback(''); setActionError(''); setAccessFor(record); }} data-testid={`button-access-staff-${mobile ? 'mobile-' : ''}${record.id}`}><KeyRound size={16} aria-hidden="true" /></button><button type="button" className="admin-icon-button" title={`Delete ${record.name}`} aria-label={`Delete ${record.name}`} disabled={blocked} onClick={() => { setDeleteError(''); setDeleteUncertain(false); setDeleteFor(record); }} data-testid={`button-delete-staff-${mobile ? 'mobile-' : ''}${record.id}`}><Trash2 size={16} aria-hidden="true" /></button></>;
   const columns = [
     { key: 'serial', label: 'Sr No.', render: (_, index) => <span className="admin-table__serial">{index + 1}</span> },
     { key: 'name', label: 'Name', render: (record) => <span className="admin-staff-identity"><strong data-testid={`text-staff-name-${record.id}`}>{record.name}</strong></span> },

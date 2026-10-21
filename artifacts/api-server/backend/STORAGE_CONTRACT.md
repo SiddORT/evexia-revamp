@@ -283,22 +283,36 @@ gap semantics, source-only review limits and exact operator handoff.
 Email template source is stored separately in `email_templates` (revision
 `0043_email_templates`), not inside encrypted Communication transport rows or
 browser storage. Source fields are bounded (name 100, description 500, subject
-200, HTML 100,000, text 20,000 characters); the library is capped at 100.
+200, HTML 100,000, text 20,000 characters); the library is capped at 101.
 Case-insensitive names and event assignments are database-unique. Super Admin
 management repeats live identity authorization, serializes mutations, requires
 optimistic versions and commits metadata-only audit/provenance with the write.
 The migration seed has no invented human creator; administrator writes use the
 verified user. Creation identities make explicit lost-response retries safe.
 
-The immutable recovery identity is assigned to `password_recovery`; database
+The immutable recovery identity is assigned to `password_recovery` and a separate
+required invitation identity is assigned to `account_invitation`; database
 constraints/triggers and APIs protect its event/identity from removal, reassignment
 or truncation while allowing direct content edits. Recovery snapshots and validates
 the stored content, substitutes only literal event variables, and releases the
 read transaction before sending multipart text/HTML with a fixed owned inline
 MIME logo through approved environment-configured TLS SMTP. It never persists
-rendered URLs, tokens or recipient data, consults Communication defaults, or falls
+rendered URLs or tokens, consults Communication defaults, or falls
 back to hardcoded email content. See `docs/email-templates.md` for delivery HTML
 validation versus inert preview and the separate migration/activation boundary.
+
+`email_attempts` stores encrypted historical recipients using the existing
+directory key custody but mail-specific row/field AAD and equality-index domains.
+Clear operational metadata is limited to purpose/portal, account/actor/template
+references, template version, times, status and a fixed failure category.
+Authorized Super Admin display decrypts the recipient; exact keyed search leaks
+only equality, not substring indexes. Do not remove historical directory keys:
+existing directory/account rotation inventories do not rewrite mail snapshots.
+No rendered bodies, secrets, token hashes/URLs or raw SMTP exceptions are stored.
+`users.password_setup_required` is non-secret onboarding state; successful
+invitation/recovery setup clears it atomically with version/session revocation.
+SMTP acceptance is not inbox delivery, uncertain sends are not retried, and no
+delivery/open/click analytics are fabricated. See `docs/email-invitations.md`.
 
 Local grants contain no path/key, have bounded expiry and identity/version
 binding, and are reauthorized against live database state on redemption.

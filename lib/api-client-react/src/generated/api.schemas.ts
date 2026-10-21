@@ -2170,11 +2170,109 @@ export interface DownloadURLResponse {
   url: string;
 }
 
+export type EmailLogFiltersPurpose =
+  (typeof EmailLogFiltersPurpose)[keyof typeof EmailLogFiltersPurpose] | null;
+
+export const EmailLogFiltersPurpose = {
+  password_recovery: "password_recovery",
+  account_invitation: "account_invitation",
+} as const;
+
+export type EmailLogFiltersStatus =
+  (typeof EmailLogFiltersStatus)[keyof typeof EmailLogFiltersStatus] | null;
+
+export const EmailLogFiltersStatus = {
+  pending: "pending",
+  sending: "sending",
+  smtp_accepted: "smtp_accepted",
+  failed: "failed",
+  unknown: "unknown",
+} as const;
+
+export interface EmailLogFilters {
+  end?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 10000
+   */
+  offset?: number;
+  purpose?: EmailLogFiltersPurpose;
+  /** @maxLength 320 */
+  recipient?: string;
+  start?: string | null;
+  status?: EmailLogFiltersStatus;
+}
+
+export type EmailLogPageCounts = { [key: string]: number };
+
+export type EmailLogRecordPortal =
+  (typeof EmailLogRecordPortal)[keyof typeof EmailLogRecordPortal];
+
+export const EmailLogRecordPortal = {
+  admin: "admin",
+  mr: "mr",
+} as const;
+
+export type EmailLogRecordPurpose =
+  (typeof EmailLogRecordPurpose)[keyof typeof EmailLogRecordPurpose];
+
+export const EmailLogRecordPurpose = {
+  password_recovery: "password_recovery",
+  account_invitation: "account_invitation",
+} as const;
+
+export type EmailLogRecordStatus =
+  (typeof EmailLogRecordStatus)[keyof typeof EmailLogRecordStatus];
+
+export const EmailLogRecordStatus = {
+  pending: "pending",
+  sending: "sending",
+  smtp_accepted: "smtp_accepted",
+  failed: "failed",
+  unknown: "unknown",
+} as const;
+
+export interface EmailLogRecord {
+  actor_id: string | null;
+  created_at: string;
+  failure_category: string | null;
+  id: string;
+  origin: string;
+  portal: EmailLogRecordPortal;
+  purpose: EmailLogRecordPurpose;
+  recipient: string | null;
+  status: EmailLogRecordStatus;
+  template_id: string | null;
+  template_version: number | null;
+}
+
+export interface EmailLogPage {
+  counts: EmailLogPageCounts;
+  items: EmailLogRecord[];
+  limit: number;
+  offset: number;
+  total: number;
+}
+
+export type EmailTemplateCreateEventKey =
+  | (typeof EmailTemplateCreateEventKey)[keyof typeof EmailTemplateCreateEventKey]
+  | null;
+
+export const EmailTemplateCreateEventKey = {
+  password_recovery: "password_recovery",
+  account_invitation: "account_invitation",
+} as const;
+
 export interface EmailTemplateCreate {
   creation_id: string;
   /** @maxLength 500 */
   description?: string;
-  event_key?: "password_recovery" | null;
+  event_key?: EmailTemplateCreateEventKey;
   /**
    * @minLength 1
    * @maxLength 100000
@@ -2197,10 +2295,19 @@ export interface EmailTemplateCreate {
   text: string;
 }
 
+export type EmailTemplateEditEventKey =
+  | (typeof EmailTemplateEditEventKey)[keyof typeof EmailTemplateEditEventKey]
+  | null;
+
+export const EmailTemplateEditEventKey = {
+  password_recovery: "password_recovery",
+  account_invitation: "account_invitation",
+} as const;
+
 export interface EmailTemplateEdit {
   /** @maxLength 500 */
   description?: string;
-  event_key?: "password_recovery" | null;
+  event_key?: EmailTemplateEditEventKey;
   /**
    * @minLength 1
    * @maxLength 100000
@@ -2228,17 +2335,34 @@ export interface EmailTemplateEdit {
   version: number;
 }
 
+export type EmailTemplateEventKey =
+  (typeof EmailTemplateEventKey)[keyof typeof EmailTemplateEventKey];
+
+export const EmailTemplateEventKey = {
+  password_recovery: "password_recovery",
+  account_invitation: "account_invitation",
+} as const;
+
 export interface EmailTemplateEvent {
-  key: "password_recovery";
+  key: EmailTemplateEventKey;
   label: string;
   required: boolean;
   variables: string[];
 }
 
+export type EmailTemplateRecordEventKey =
+  | (typeof EmailTemplateRecordEventKey)[keyof typeof EmailTemplateRecordEventKey]
+  | null;
+
+export const EmailTemplateRecordEventKey = {
+  password_recovery: "password_recovery",
+  account_invitation: "account_invitation",
+} as const;
+
 export interface EmailTemplateRecord {
   /** @maxLength 500 */
   description?: string;
-  event_key?: "password_recovery" | null;
+  event_key?: EmailTemplateRecordEventKey;
   /**
    * @minLength 1
    * @maxLength 100000
@@ -2266,7 +2390,7 @@ export interface EmailTemplateRecord {
 
 export interface EmailTemplateList {
   events: EmailTemplateEvent[];
-  /** @maxItems 100 */
+  /** @maxItems 101 */
   items: EmailTemplateRecord[];
 }
 
@@ -2738,6 +2862,28 @@ export interface InventoryStockPage {
   offset: number;
   snapshot?: InventoryStockRow[] | null;
   total: number;
+}
+
+export interface InvitationRequest {
+  /** @minimum 1 */
+  expected_version: number;
+}
+
+export type InvitationResultStatus =
+  (typeof InvitationResultStatus)[keyof typeof InvitationResultStatus];
+
+export const InvitationResultStatus = {
+  pending: "pending",
+  sending: "sending",
+  smtp_accepted: "smtp_accepted",
+  failed: "failed",
+  unknown: "unknown",
+} as const;
+
+export interface InvitationResult {
+  id: string;
+  message: string;
+  status: InvitationResultStatus;
 }
 
 export type LanguageChangeResponseAction =
@@ -7395,6 +7541,298 @@ export interface StaffAccess {
   workspace_login_enabled: boolean;
 }
 
+export type StaffCreateDialCountry =
+  (typeof StaffCreateDialCountry)[keyof typeof StaffCreateDialCountry];
+
+export const StaffCreateDialCountry = {
+  AC: "AC",
+  AD: "AD",
+  AE: "AE",
+  AF: "AF",
+  AG: "AG",
+  AI: "AI",
+  AL: "AL",
+  AM: "AM",
+  AO: "AO",
+  AR: "AR",
+  AS: "AS",
+  AT: "AT",
+  AU: "AU",
+  AW: "AW",
+  AX: "AX",
+  AZ: "AZ",
+  BA: "BA",
+  BB: "BB",
+  BD: "BD",
+  BE: "BE",
+  BF: "BF",
+  BG: "BG",
+  BH: "BH",
+  BI: "BI",
+  BJ: "BJ",
+  BL: "BL",
+  BM: "BM",
+  BN: "BN",
+  BO: "BO",
+  BQ: "BQ",
+  BR: "BR",
+  BS: "BS",
+  BT: "BT",
+  BW: "BW",
+  BY: "BY",
+  BZ: "BZ",
+  CA: "CA",
+  CC: "CC",
+  CD: "CD",
+  CF: "CF",
+  CG: "CG",
+  CH: "CH",
+  CI: "CI",
+  CK: "CK",
+  CL: "CL",
+  CM: "CM",
+  CN: "CN",
+  CO: "CO",
+  CR: "CR",
+  CU: "CU",
+  CV: "CV",
+  CW: "CW",
+  CX: "CX",
+  CY: "CY",
+  CZ: "CZ",
+  DE: "DE",
+  DJ: "DJ",
+  DK: "DK",
+  DM: "DM",
+  DO: "DO",
+  DZ: "DZ",
+  EC: "EC",
+  EE: "EE",
+  EG: "EG",
+  EH: "EH",
+  ER: "ER",
+  ES: "ES",
+  ET: "ET",
+  FI: "FI",
+  FJ: "FJ",
+  FK: "FK",
+  FM: "FM",
+  FO: "FO",
+  FR: "FR",
+  GA: "GA",
+  GB: "GB",
+  GD: "GD",
+  GE: "GE",
+  GF: "GF",
+  GG: "GG",
+  GH: "GH",
+  GI: "GI",
+  GL: "GL",
+  GM: "GM",
+  GN: "GN",
+  GP: "GP",
+  GQ: "GQ",
+  GR: "GR",
+  GT: "GT",
+  GU: "GU",
+  GW: "GW",
+  GY: "GY",
+  HK: "HK",
+  HN: "HN",
+  HR: "HR",
+  HT: "HT",
+  HU: "HU",
+  ID: "ID",
+  IE: "IE",
+  IL: "IL",
+  IM: "IM",
+  IN: "IN",
+  IO: "IO",
+  IQ: "IQ",
+  IR: "IR",
+  IS: "IS",
+  IT: "IT",
+  JE: "JE",
+  JM: "JM",
+  JO: "JO",
+  JP: "JP",
+  KE: "KE",
+  KG: "KG",
+  KH: "KH",
+  KI: "KI",
+  KM: "KM",
+  KN: "KN",
+  KP: "KP",
+  KR: "KR",
+  KW: "KW",
+  KY: "KY",
+  KZ: "KZ",
+  LA: "LA",
+  LB: "LB",
+  LC: "LC",
+  LI: "LI",
+  LK: "LK",
+  LR: "LR",
+  LS: "LS",
+  LT: "LT",
+  LU: "LU",
+  LV: "LV",
+  LY: "LY",
+  MA: "MA",
+  MC: "MC",
+  MD: "MD",
+  ME: "ME",
+  MF: "MF",
+  MG: "MG",
+  MH: "MH",
+  MK: "MK",
+  ML: "ML",
+  MM: "MM",
+  MN: "MN",
+  MO: "MO",
+  MP: "MP",
+  MQ: "MQ",
+  MR: "MR",
+  MS: "MS",
+  MT: "MT",
+  MU: "MU",
+  MV: "MV",
+  MW: "MW",
+  MX: "MX",
+  MY: "MY",
+  MZ: "MZ",
+  NA: "NA",
+  NC: "NC",
+  NE: "NE",
+  NF: "NF",
+  NG: "NG",
+  NI: "NI",
+  NL: "NL",
+  NO: "NO",
+  NP: "NP",
+  NR: "NR",
+  NU: "NU",
+  NZ: "NZ",
+  OM: "OM",
+  PA: "PA",
+  PE: "PE",
+  PF: "PF",
+  PG: "PG",
+  PH: "PH",
+  PK: "PK",
+  PL: "PL",
+  PM: "PM",
+  PR: "PR",
+  PS: "PS",
+  PT: "PT",
+  PW: "PW",
+  PY: "PY",
+  QA: "QA",
+  RE: "RE",
+  RO: "RO",
+  RS: "RS",
+  RU: "RU",
+  RW: "RW",
+  SA: "SA",
+  SB: "SB",
+  SC: "SC",
+  SD: "SD",
+  SE: "SE",
+  SG: "SG",
+  SH: "SH",
+  SI: "SI",
+  SJ: "SJ",
+  SK: "SK",
+  SL: "SL",
+  SM: "SM",
+  SN: "SN",
+  SO: "SO",
+  SR: "SR",
+  SS: "SS",
+  ST: "ST",
+  SV: "SV",
+  SX: "SX",
+  SY: "SY",
+  SZ: "SZ",
+  TA: "TA",
+  TC: "TC",
+  TD: "TD",
+  TG: "TG",
+  TH: "TH",
+  TJ: "TJ",
+  TK: "TK",
+  TL: "TL",
+  TM: "TM",
+  TN: "TN",
+  TO: "TO",
+  TR: "TR",
+  TT: "TT",
+  TV: "TV",
+  TW: "TW",
+  TZ: "TZ",
+  UA: "UA",
+  UG: "UG",
+  US: "US",
+  UY: "UY",
+  UZ: "UZ",
+  VA: "VA",
+  VC: "VC",
+  VE: "VE",
+  VG: "VG",
+  VI: "VI",
+  VN: "VN",
+  VU: "VU",
+  WF: "WF",
+  WS: "WS",
+  XK: "XK",
+  YE: "YE",
+  YT: "YT",
+  ZA: "ZA",
+  ZM: "ZM",
+  ZW: "ZW",
+} as const;
+
+export type StaffCreateRole =
+  (typeof StaffCreateRole)[keyof typeof StaffCreateRole];
+
+export const StaffCreateRole = {
+  Staff: "Staff",
+  Manager: "Manager",
+  Accountant: "Accountant",
+  Back_End: "Back End",
+  Sub_Admin: "Sub Admin",
+  Super_Admin: "Super Admin",
+} as const;
+
+export type StaffCreateStatus =
+  (typeof StaffCreateStatus)[keyof typeof StaffCreateStatus];
+
+export const StaffCreateStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface StaffCreate {
+  dateOfJoining: string;
+  designation_id: string;
+  dialCountry?: StaffCreateDialCountry;
+  /** @maxLength 320 */
+  email: string;
+  initialPassword?: string | null;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  /**
+   * @minLength 1
+   * @maxLength 30
+   */
+  phone: string;
+  role: StaffCreateRole;
+  status: StaffCreateStatus;
+}
+
 export type StaffResponseDialCountry =
   (typeof StaffResponseDialCountry)[keyof typeof StaffResponseDialCountry];
 
@@ -7998,297 +8436,6 @@ export interface StaffEdit {
   phone: string;
   role: StaffEditRole;
   status: StaffEditStatus;
-}
-
-export type StaffFieldsDialCountry =
-  (typeof StaffFieldsDialCountry)[keyof typeof StaffFieldsDialCountry];
-
-export const StaffFieldsDialCountry = {
-  AC: "AC",
-  AD: "AD",
-  AE: "AE",
-  AF: "AF",
-  AG: "AG",
-  AI: "AI",
-  AL: "AL",
-  AM: "AM",
-  AO: "AO",
-  AR: "AR",
-  AS: "AS",
-  AT: "AT",
-  AU: "AU",
-  AW: "AW",
-  AX: "AX",
-  AZ: "AZ",
-  BA: "BA",
-  BB: "BB",
-  BD: "BD",
-  BE: "BE",
-  BF: "BF",
-  BG: "BG",
-  BH: "BH",
-  BI: "BI",
-  BJ: "BJ",
-  BL: "BL",
-  BM: "BM",
-  BN: "BN",
-  BO: "BO",
-  BQ: "BQ",
-  BR: "BR",
-  BS: "BS",
-  BT: "BT",
-  BW: "BW",
-  BY: "BY",
-  BZ: "BZ",
-  CA: "CA",
-  CC: "CC",
-  CD: "CD",
-  CF: "CF",
-  CG: "CG",
-  CH: "CH",
-  CI: "CI",
-  CK: "CK",
-  CL: "CL",
-  CM: "CM",
-  CN: "CN",
-  CO: "CO",
-  CR: "CR",
-  CU: "CU",
-  CV: "CV",
-  CW: "CW",
-  CX: "CX",
-  CY: "CY",
-  CZ: "CZ",
-  DE: "DE",
-  DJ: "DJ",
-  DK: "DK",
-  DM: "DM",
-  DO: "DO",
-  DZ: "DZ",
-  EC: "EC",
-  EE: "EE",
-  EG: "EG",
-  EH: "EH",
-  ER: "ER",
-  ES: "ES",
-  ET: "ET",
-  FI: "FI",
-  FJ: "FJ",
-  FK: "FK",
-  FM: "FM",
-  FO: "FO",
-  FR: "FR",
-  GA: "GA",
-  GB: "GB",
-  GD: "GD",
-  GE: "GE",
-  GF: "GF",
-  GG: "GG",
-  GH: "GH",
-  GI: "GI",
-  GL: "GL",
-  GM: "GM",
-  GN: "GN",
-  GP: "GP",
-  GQ: "GQ",
-  GR: "GR",
-  GT: "GT",
-  GU: "GU",
-  GW: "GW",
-  GY: "GY",
-  HK: "HK",
-  HN: "HN",
-  HR: "HR",
-  HT: "HT",
-  HU: "HU",
-  ID: "ID",
-  IE: "IE",
-  IL: "IL",
-  IM: "IM",
-  IN: "IN",
-  IO: "IO",
-  IQ: "IQ",
-  IR: "IR",
-  IS: "IS",
-  IT: "IT",
-  JE: "JE",
-  JM: "JM",
-  JO: "JO",
-  JP: "JP",
-  KE: "KE",
-  KG: "KG",
-  KH: "KH",
-  KI: "KI",
-  KM: "KM",
-  KN: "KN",
-  KP: "KP",
-  KR: "KR",
-  KW: "KW",
-  KY: "KY",
-  KZ: "KZ",
-  LA: "LA",
-  LB: "LB",
-  LC: "LC",
-  LI: "LI",
-  LK: "LK",
-  LR: "LR",
-  LS: "LS",
-  LT: "LT",
-  LU: "LU",
-  LV: "LV",
-  LY: "LY",
-  MA: "MA",
-  MC: "MC",
-  MD: "MD",
-  ME: "ME",
-  MF: "MF",
-  MG: "MG",
-  MH: "MH",
-  MK: "MK",
-  ML: "ML",
-  MM: "MM",
-  MN: "MN",
-  MO: "MO",
-  MP: "MP",
-  MQ: "MQ",
-  MR: "MR",
-  MS: "MS",
-  MT: "MT",
-  MU: "MU",
-  MV: "MV",
-  MW: "MW",
-  MX: "MX",
-  MY: "MY",
-  MZ: "MZ",
-  NA: "NA",
-  NC: "NC",
-  NE: "NE",
-  NF: "NF",
-  NG: "NG",
-  NI: "NI",
-  NL: "NL",
-  NO: "NO",
-  NP: "NP",
-  NR: "NR",
-  NU: "NU",
-  NZ: "NZ",
-  OM: "OM",
-  PA: "PA",
-  PE: "PE",
-  PF: "PF",
-  PG: "PG",
-  PH: "PH",
-  PK: "PK",
-  PL: "PL",
-  PM: "PM",
-  PR: "PR",
-  PS: "PS",
-  PT: "PT",
-  PW: "PW",
-  PY: "PY",
-  QA: "QA",
-  RE: "RE",
-  RO: "RO",
-  RS: "RS",
-  RU: "RU",
-  RW: "RW",
-  SA: "SA",
-  SB: "SB",
-  SC: "SC",
-  SD: "SD",
-  SE: "SE",
-  SG: "SG",
-  SH: "SH",
-  SI: "SI",
-  SJ: "SJ",
-  SK: "SK",
-  SL: "SL",
-  SM: "SM",
-  SN: "SN",
-  SO: "SO",
-  SR: "SR",
-  SS: "SS",
-  ST: "ST",
-  SV: "SV",
-  SX: "SX",
-  SY: "SY",
-  SZ: "SZ",
-  TA: "TA",
-  TC: "TC",
-  TD: "TD",
-  TG: "TG",
-  TH: "TH",
-  TJ: "TJ",
-  TK: "TK",
-  TL: "TL",
-  TM: "TM",
-  TN: "TN",
-  TO: "TO",
-  TR: "TR",
-  TT: "TT",
-  TV: "TV",
-  TW: "TW",
-  TZ: "TZ",
-  UA: "UA",
-  UG: "UG",
-  US: "US",
-  UY: "UY",
-  UZ: "UZ",
-  VA: "VA",
-  VC: "VC",
-  VE: "VE",
-  VG: "VG",
-  VI: "VI",
-  VN: "VN",
-  VU: "VU",
-  WF: "WF",
-  WS: "WS",
-  XK: "XK",
-  YE: "YE",
-  YT: "YT",
-  ZA: "ZA",
-  ZM: "ZM",
-  ZW: "ZW",
-} as const;
-
-export type StaffFieldsRole =
-  (typeof StaffFieldsRole)[keyof typeof StaffFieldsRole];
-
-export const StaffFieldsRole = {
-  Staff: "Staff",
-  Manager: "Manager",
-  Accountant: "Accountant",
-  Back_End: "Back End",
-  Sub_Admin: "Sub Admin",
-  Super_Admin: "Super Admin",
-} as const;
-
-export type StaffFieldsStatus =
-  (typeof StaffFieldsStatus)[keyof typeof StaffFieldsStatus];
-
-export const StaffFieldsStatus = {
-  active: "active",
-  inactive: "inactive",
-} as const;
-
-export interface StaffFields {
-  dateOfJoining: string;
-  designation_id: string;
-  dialCountry?: StaffFieldsDialCountry;
-  /** @maxLength 320 */
-  email: string;
-  /**
-   * @minLength 1
-   * @maxLength 200
-   */
-  name: string;
-  /**
-   * @minLength 1
-   * @maxLength 30
-   */
-  phone: string;
-  role: StaffFieldsRole;
-  status: StaffFieldsStatus;
 }
 
 export interface StaffPage {

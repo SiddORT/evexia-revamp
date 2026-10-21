@@ -23,7 +23,9 @@ async function send(path, body) {
   }
   const data = await response.json().catch(() => null);
   if (!response.ok) {
-    const message = path === 'reset-password' && response.status === 400
+    const message = path === 'set-password' && response.status === 400
+      ? 'This invitation link is invalid, expired or already used. Ask your administrator for a new invitation.'
+      : path === 'reset-password' && response.status === 400
       && (data?.error?.message ?? data?.detail) === 'Choose a password different from your current password.'
       ? 'Choose a password different from your current password.'
       : response.status === 429 ? 'Too many attempts. Try again later.'
@@ -34,7 +36,7 @@ async function send(path, body) {
     throw new Error(message);
   }
   if (!data || typeof data.message !== 'string'
-      || (path === 'reset-password' && !['admin', 'mr'].includes(data.identity_kind))) {
+      || (['reset-password', 'set-password'].includes(path) && !['admin', 'mr'].includes(data.identity_kind))) {
     throw new Error('Password recovery returned an unexpected response. Please try again.');
   }
   return data;
@@ -44,3 +46,5 @@ export const requestRecovery = (identifier, identityKind) =>
   send('forgot-password', { identifier: identifier.trim(), identity_kind: identityKind });
 export const resetPassword = (token, newPassword) =>
   send('reset-password', { token, new_password: newPassword });
+export const setInvitedPassword = (token, newPassword) =>
+  send('set-password', { token, new_password: newPassword });

@@ -11,7 +11,7 @@ from app.schemas.auth import ChangePasswordRequest, CurrentUser, LoginRequest, T
 from app.repositories import sessions as repository
 from app.services import auth as service
 from app.services.auth import Identity
-from app.services import password_recovery, recovery_mail
+from app.services import password_recovery, recovery_mail, email_delivery
 from app.schemas.auth import RecoveryRequest, RecoveryResponse, ResetPasswordRequest, ResetPasswordResponse
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -23,17 +23,22 @@ def forgot_password(body: RecoveryRequest, request: Request, response: Response,
                     tasks: BackgroundTasks, db: Session = Depends(get_db),
                     settings: Settings = Depends(get_settings)):
     response.headers["Cache-Control"] = "no-store"
+    ip = request.client.host if request.client else "unknown"
+    ip_allowed = password_recovery.rate_limit(db, settings, "request-ip", [ip], 30)
+    identifier_allowed = password_recovery.rate_limit(
+        db, settings, "request-identifier", [body.identifier], 5)
     try:
         recovery_mail.validate_configuration(settings)
     except recovery_mail.RecoveryUnavailable as error:
         # Only fixed category codes, not exception text or configuration values.
         password_recovery.logger.error("Password recovery configuration unavailable: %s",
                                        ", ".join(error.issues))
+        if ip_allowed and identifier_allowed:
+            # Configuration fails before identity lookup: no account enumeration
+            # and no raw identifier in the ledger or operational diagnostics.
+            attempt_id = email_delivery.record(db, settings, "password_recovery", body.identity_kind)
+            email_delivery.outcome(db, attempt_id, "failed", "configuration")
         raise HTTPException(503, "Password recovery is unavailable. Contact your administrator.") from None
-    ip = request.client.host if request.client else "unknown"
-    ip_allowed = password_recovery.rate_limit(db, settings, "request-ip", [ip], 30)
-    identifier_allowed = password_recovery.rate_limit(
-        db, settings, "request-identifier", [body.identifier], 5)
     if ip_allowed and identifier_allowed:
         tasks.add_task(password_recovery.deliver, db.get_bind(), settings,
                        body.identifier, body.identity_kind)
@@ -57,6 +62,24 @@ def reset_password(body: ResetPasswordRequest, request: Request, response: Respo
     clear_refresh_cookie(response, settings)
     return {"message": "Password reset. Sign in with your new password.",
             "identity_kind": kind}
+
+
+@router.post("/set-password", response_model=ResetPasswordResponse,
+             dependencies=[Depends(require_cookie_origin)])
+def set_invited_password(body: ResetPasswordRequest, request: Request, response: Response,
+                         db: Session = Depends(get_db), settings: Settings = Depends(get_settings)):
+    response.headers["Cache-Control"] = "no-store"
+    ip = request.client.host if request.client else "unknown"
+    if not password_recovery.rate_limit(db, settings, "reset-ip", [ip], 30):
+        raise HTTPException(429, "Too many attempts. Try again later.")
+    try:
+        kind = password_recovery.reset(db, settings, body.token, body.new_password,
+            request.state.request_id, purpose="account_invitation")
+    except service.AuthError:
+        db.rollback()
+        raise HTTPException(400, "This invitation link is invalid, expired or already used. Ask your administrator for a new invitation.") from None
+    clear_refresh_cookie(response, settings)
+    return {"message": "Password set. Sign in with your new password.", "identity_kind": kind}
 
 
 def set_refresh_cookie(response: Response, token: str, settings: Settings,

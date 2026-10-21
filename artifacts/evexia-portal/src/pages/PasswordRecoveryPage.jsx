@@ -4,7 +4,7 @@ import BrandMark from '../components/BrandMark.jsx';
 import Field from '../components/auth/Field.jsx';
 import { useAdminPreferences } from '../components/admin/adminPreferences.js';
 import { forgetSessionAfterPasswordReset } from '../auth/adminSession.js';
-import { recoveryToken, requestRecovery, resetPassword, validateReset } from '../services/passwordRecovery.js';
+import { recoveryToken, requestRecovery, resetPassword, setInvitedPassword, validateReset } from '../services/passwordRecovery.js';
 import '../entryTheme.css';
 import '../recovery.css';
 
@@ -13,6 +13,7 @@ function scrubFragment() {
 }
 
 export default function PasswordRecoveryPage({ reset = false }) {
+  const invitation = reset && new URLSearchParams(window.location.search).get('invitation') === '1';
   const { theme } = useAdminPreferences();
   const [token, setToken] = useState(() => reset ? recoveryToken(window.location.hash) : '');
   const generation = useRef(0);
@@ -28,7 +29,7 @@ export default function PasswordRecoveryPage({ reset = false }) {
   const isSuperAdminRecovery = !reset && kind === 'admin'
     && identifier.trim().toLowerCase() === 'crm-admin@allergyevexia.in';
   useEffect(() => {
-    document.title = `${reset ? 'Reset password' : 'Forgot password'} — EVEXIA`;
+    document.title = `${invitation ? 'Set password' : reset ? 'Reset password' : 'Forgot password'} — EVEXIA`;
     function acceptLink() {
       if (!reset) return;
       const next = recoveryToken(window.location.hash);
@@ -66,7 +67,7 @@ export default function PasswordRecoveryPage({ reset = false }) {
     const epoch = generation.current;
     setMessage(''); setFailed(false); setBusy(true);
     try {
-      const result = reset ? await resetPassword(token, password)
+      const result = reset ? await (invitation ? setInvitedPassword : resetPassword)(token, password)
         : await requestRecovery(identifier, kind);
       if (epoch !== generation.current) return;
       if (reset) {
@@ -91,7 +92,7 @@ export default function PasswordRecoveryPage({ reset = false }) {
         alt="" aria-hidden="true" />
       <section className="recovery-card" aria-labelledby="recovery-title">
         <BrandMark />
-        <h1 id="recovery-title">{reset ? 'Reset password' : 'Forgot password'}</h1>
+        <h1 id="recovery-title">{invitation ? 'Set your EVEXIA password' : reset ? 'Reset password' : 'Forgot password'}</h1>
         <p className="auth-form-wrap__intro">
           {reset ? 'Choose a new password. All existing sessions will be signed out.'
             : 'Enter your current account email or User ID. Staff should use their issued User ID.'}
@@ -104,7 +105,7 @@ export default function PasswordRecoveryPage({ reset = false }) {
         {invalidLink ? (
           <div className="recovery-alert" role="alert">
             <strong>Link missing or invalid</strong>
-            This recovery link is missing or invalid. Request a new link.
+            {invitation ? 'This invitation is missing or invalid. Ask your administrator for a new invitation.' : 'This recovery link is missing or invalid. Request a new link.'}
           </div>
         ) : !done && (
           <form className="auth-form" onSubmit={submit} noValidate aria-busy={busy} data-testid="form-password-recovery">
@@ -118,7 +119,7 @@ export default function PasswordRecoveryPage({ reset = false }) {
             </> : <Field id="recovery-identifier" label="Email or User ID" autoComplete="username"
               value={identifier} onChange={event => setIdentifier(event.target.value)} />}
             <button className="submit-button" disabled={busy} type="submit">
-              {busy ? 'Please wait…' : reset ? 'Reset password' : 'Send recovery link'}
+              {busy ? 'Please wait…' : invitation ? 'Set password' : reset ? 'Reset password' : 'Send recovery link'}
             </button>
           </form>
         )}
@@ -144,7 +145,8 @@ export default function PasswordRecoveryPage({ reset = false }) {
         <nav className="recovery-links" aria-label="Recovery navigation">
           {done && !reset && <button className="auth-back recovery-retry" type="button"
             onClick={() => { setDone(false); setMessage(''); }}>Request another link</button>}
-          {reset && <Link className="auth-back" href={`/forgot-password?portal=${kind}`}>Request a new recovery link</Link>}
+          {reset && !invitation && <Link className="auth-back" href={`/forgot-password?portal=${kind}`}>Request a new recovery link</Link>}
+          {invitation && <p className="recovery-note">Need another invitation? Ask your administrator to send a new link.</p>}
           <Link className="auth-back" href={kind === 'mr' ? '/mr' : '/admin/login'}>Back to sign in</Link>
         </nav>
       </section>

@@ -4,6 +4,7 @@ import { useLocation } from 'wouter';
 import { CirclePower, Download, KeyRound, Pencil, Plus, Search, Trash2, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
+import InviteAccountButton from '../../components/admin/InviteAccountButton.jsx';
 import { formatAdminDate, formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import ContactRequirementButton from '../../components/admin/ContactRequirementButton.jsx';
@@ -133,6 +134,7 @@ export default function MRMaster() {
   function actions(record, compact = false) {
     const cls = compact ? 'admin-mr-card__action' : 'admin-icon-button';
     return <fieldset disabled={pending} style={{ border: 0, margin: 0, padding: 0 }} className={compact ? 'admin-mr-card__actions' : 'admin-table__actions'}>
+      {can.protected && <InviteAccountButton kind="mr" record={record} disabled={pending} className={cls} />}
       {can.edit && <ContactRequirementButton record={record} kind="mr" compact={compact} onClick={() => request(record, 'contact')} />}
       <button type="button" className={cls} aria-label={`View doctors for ${record.name}`} title="View doctors" onClick={() => setDoctorView(record)} data-testid={`button-doctors-mr-${record.id}`}><UsersRound size={16} aria-hidden="true" />{compact && 'Doctors'}</button>
       {can.edit && <button type="button" className={cls} aria-label={`Edit ${record.name}`} title="Edit" onClick={() => { setFeedback(''); navigate(`/admin/masters/mrs/${encodeURIComponent(record.id)}`); }} data-testid={`button-edit-mr-${record.id}`}><Pencil size={16} aria-hidden="true" />{compact && 'Edit'}</button>}

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import require_permissions
 from app.core.config import Settings, get_settings
 from app.db.session import get_db
-from app.schemas.staff import StaffCreated, StaffEdit, StaffFields, StaffPage, StaffResponse, StaffStatus, StaffSearch, StaffSearchPage, StaffAccess, StaffDeletion
+from app.schemas.staff import StaffCreated, StaffCreate, StaffEdit, StaffFields, StaffPage, StaffResponse, StaffStatus, StaffSearch, StaffSearchPage, StaffAccess, StaffDeletion
 from app.services.auth import Identity
 from app.services import staff as service
 
@@ -22,7 +22,7 @@ def list_staff(limit: int = Query(20, ge=1, le=100), offset: int = Query(0, ge=0
 
 
 @router.post("", response_model=StaffCreated, status_code=201)
-def create_staff(body: StaffFields, actor: Identity = Depends(manager),
+def create_staff(body: StaffCreate, actor: Identity = Depends(manager),
                  db: Session = Depends(get_db), settings: Settings = Depends(get_settings)):
     return service.create(db, actor, body, settings)
 

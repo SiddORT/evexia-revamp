@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "target": "0052_hq_mr_zones_merge",
-  "policy_sha256": "5ef7fef4610e6f1fb722c01f5508b8b52ae827d5dd29051f1833c2a4e99045d9",
+  "target": "0053_email_invitations",
+  "policy_sha256": "e198dc9af9bea0e8529bd1e529a893c6178228fcb76b28bf412422b7412ece39",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
     "0002_username": "c4b52063617232dd5ad196a4f351228a0af080542682742e3096fe5b02dda01f",
@@ -61,7 +61,8 @@
     "0050_opening_stock": "b07b0332979c6d06ae3f35e32254761618029935dec78430964a85d69134be95",
     "0051_headquarter_areas": "f081cde303abf3a53611d13f59a90116c501778be9e06b1aeb572059e9e96449",
     "0051_mr_zones": "7719d3d20d94d893efc4ea475f90157f84cebf230608239dab09552c45dcfa7d",
-    "0052_hq_mr_zones_merge": "1123674f7d9d2fbcf72189f631dd464b64963dcbe3e75aa0ae39e05ea7bf92b8"
+    "0052_hq_mr_zones_merge": "1123674f7d9d2fbcf72189f631dd464b64963dcbe3e75aa0ae39e05ea7bf92b8",
+    "0053_email_invitations": "e4b4313b8299b312ef23646f151e44bf2486ea2d5018ef437c2c95bf72fd43bc"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

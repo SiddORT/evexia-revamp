@@ -90,13 +90,15 @@ def create(db, actor, body, settings):
         current, crypto = authorize(db, actor, settings)
         validate_designation(db, body.designation_id)
         # 120 random bits in a 32-character username, independent of personal data.
-        password = secrets.token_urlsafe(24)
+        chosen = getattr(body, "initialPassword", None)
+        password = chosen if chosen is not None else secrets.token_urlsafe(24)
         encoded_password = hash_password(password)
         for attempt in range(5):
             try:
                 with db.begin_nested():
                     user = User(id=uuid.uuid4(), username="st_" + secrets.token_hex(14), email=None,
-                                password_hash=encoded_password, system_role=None)
+                                password_hash=encoded_password, system_role=None,
+                                password_setup_required=chosen is None)
                     db.add(user)
                     db.flush()
                 break

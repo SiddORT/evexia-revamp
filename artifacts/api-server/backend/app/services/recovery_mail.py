@@ -69,11 +69,21 @@ def send(settings, recipient, rendered):
                                      timeout=10, context=context)
     else:
         connection = smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=10)
-    with connection as smtp:
-        if not settings.smtp_implicit_tls:
-            smtp.ehlo()
-            smtp.starttls(context=context)  # No plaintext or downgrade fallback.
-            smtp.ehlo()
-        if settings.smtp_username:
-            smtp.login(settings.smtp_username, settings.smtp_password.get_secret_value())
-        smtp.send_message(message)
+    accepted = False
+    try:
+        with connection as smtp:
+            if not settings.smtp_implicit_tls:
+                smtp.ehlo()
+                smtp.starttls(context=context)  # No plaintext or downgrade fallback.
+                smtp.ehlo()
+            if settings.smtp_username:
+                smtp.login(settings.smtp_username, settings.smtp_password.get_secret_value())
+            refused = smtp.send_message(message)
+            if refused:
+                raise smtplib.SMTPRecipientsRefused(refused)
+            accepted = True
+    except Exception:
+        # A disconnect during QUIT cannot erase an already observed DATA
+        # acceptance. Before that point, propagate only to the sanitizing sender.
+        if not accepted:
+            raise

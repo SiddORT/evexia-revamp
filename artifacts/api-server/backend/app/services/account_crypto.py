@@ -122,6 +122,8 @@ def ready(db):
         ["0051_headquarter_areas"],
         # MR assignment links and the no-op reconciliation preserve anchors too.
         ["0051_mr_zones"], ["0052_hq_mr_zones_merge"],
+        # Email evidence uses its own AAD/index domain and unchanged account keys.
+        ["0053_email_invitations"],
     ):
         raise AccountCryptoError()
     current = crypto()

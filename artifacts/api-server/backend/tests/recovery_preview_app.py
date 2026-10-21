@@ -65,7 +65,7 @@ recovery_mail.smtplib.SMTP = CapturingSMTP
 def seed():
     from app.db.designation_models import Designation
     from app.db.staff_models import StaffProfile
-    from app.schemas.staff import StaffFields
+    from app.schemas.staff import StaffCreate
     from app.services import staff
 
     with session_factory()() as db:
@@ -76,7 +76,8 @@ def seed():
                                   status="active", created_by=owner.id, updated_by=owner.id)
         db.add(designation)
         db.commit()
-        result = staff.create(db, actor, StaffFields(
+        result = staff.create(db, actor, StaffCreate(
+            initialPassword="Synthetic recovery fixture password",
             name="Synthetic Recovery Staff", email="staff-recovery@example.com",
             phone="9876543210", dialCountry="IN", role="Staff",
             designation_id=designation.id, dateOfJoining="2025-01-15", status="active",

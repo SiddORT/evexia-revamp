@@ -180,6 +180,14 @@ if [ "$#" -eq 1 ] && [ "$1" = "artifacts/evexia-portal/tests/password-recovery.p
   python3 -B -m recovery_preview_app
   API_APP=recovery_preview_app:app
 fi
+if [ "$#" -eq 1 ] && [ "$1" = "artifacts/evexia-portal/tests/email-invitations.preview.spec.mjs" ]; then
+  export PASSWORD_RECOVERY_URL=https://portal.example.com/reset-password
+  export SMTP_HOST=smtp.example.com SMTP_FROM=recovery@example.com
+  export EVEXIA_INVITATION_OUTBOX="$PGROOT/invitation-outbox.jsonl"
+  export PYTHONPATH="$ROOT/artifacts/api-server/backend/tests:$PYTHONPATH"
+  python3 -B -m invitation_preview_app
+  API_APP=invitation_preview_app:app
+fi
 python3 -m uvicorn "$API_APP" --host 127.0.0.1 --port "$API_PORT" --no-access-log --no-proxy-headers \
   >"$PGROOT/api.log" 2>&1 &
 API_PID=$!

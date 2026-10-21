@@ -7,6 +7,8 @@ export const SUPPORTED_TOKENS = Object.freeze([
   'company_name',
   'reset_url',
   'expiry_minutes',
+  'portal_name',
+  'login_id',
 ]);
 
 export const SAMPLE_VALUES = Object.freeze({
@@ -16,6 +18,8 @@ export const SAMPLE_VALUES = Object.freeze({
   company_name: 'EVEXIA LIFE SCIENCES (Demo)',
   reset_url: 'https://preview.example.invalid/reset-password/fictional-not-a-token',
   expiry_minutes: '15 (fictional)',
+  portal_name: 'MR (fictional)',
+  login_id: 'mr.fictional',
 });
 
 const SUPPORTED_TOKEN_SET = new Set(SUPPORTED_TOKENS);

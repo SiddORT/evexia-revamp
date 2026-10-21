@@ -23,6 +23,27 @@ Database = Annotated[Session, Depends(get_db)]
 from app.schemas.downloads import DownloadInitiation, DownloadEvidence, DownloadPage
 from app.services import downloads as download_service
 from app.repositories import downloads as download_reporting
+from app.core.config import get_settings, Settings
+from app.schemas.email_delivery import EmailLogPage, EmailLogFilters, InvitationRequest, InvitationResult, Purpose, MailStatus
+from app.services import email_delivery, invitations
+
+
+@router.post("/emails", response_model=EmailLogPage, operation_id="listEmailLogs",
+             dependencies=[Depends(require_cookie_origin)])
+def email_logs(body: EmailLogFilters, identity: Admin, db: Database, response: Response,
+               settings: Settings = Depends(get_settings)):
+    filters(start=body.start, end=body.end)
+    response.headers["Cache-Control"] = "no-store"
+    return email_delivery.report(db, identity, settings, **body.model_dump())
+
+
+@router.post("/invitations/{kind}/{record_id}", response_model=InvitationResult,
+             operation_id="inviteAccount", dependencies=[Depends(require_cookie_origin)])
+def invite_account(kind: Literal["staff", "mr"], record_id: uuid.UUID, body: InvitationRequest,
+                   identity: Admin, db: Database, response: Response,
+                   settings: Settings = Depends(get_settings)):
+    response.headers["Cache-Control"] = "no-store"
+    return invitations.invite(db, identity, settings, kind, record_id, body.expected_version)
 
 
 @router.post("/downloads/initiate", response_model=DownloadEvidence, operation_id="recordDownloadInitiation",

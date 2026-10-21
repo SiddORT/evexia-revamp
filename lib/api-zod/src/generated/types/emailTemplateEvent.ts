@@ -5,9 +5,10 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { EmailTemplateEventKey } from "./emailTemplateEventKey";
 
 export interface EmailTemplateEvent {
-  key: "password_recovery";
+  key: EmailTemplateEventKey;
   label: string;
   required: boolean;
   variables: string[];

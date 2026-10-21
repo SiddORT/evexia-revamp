@@ -956,7 +956,8 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
 }
 
 export async function reportingRequest(resource, params = {}, { signal } = {}) {
-  if (!['summary', 'users', 'sessions', 'events', 'activity', 'sessions/export', 'events/export', 'downloads', 'downloads/initiate'].includes(resource)) {
+  const invitation = /^invitations\/(staff|mr)\/[0-9a-f-]{36}$/i.test(resource);
+  if (!invitation && !['emails', 'summary', 'users', 'sessions', 'events', 'activity', 'sessions/export', 'events/export', 'downloads', 'downloads/initiate'].includes(resource)) {
     throw new SessionError('Unsupported report.');
   }
   if (state.user?.identity_kind === 'mr') throw new SessionError('Reporting access denied.', 403);
@@ -980,8 +981,9 @@ export async function reportingRequest(resource, params = {}, { signal } = {}) {
   else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true);
   check();
   const query = new URLSearchParams();
-  const writing = resource === 'activity' || resource === 'downloads/initiate';
-  const keys = resource === 'downloads/initiate' ? ['initiation_id', 'source', 'kind', 'format']
+  const writing = invitation || resource === 'emails' || resource === 'activity' || resource === 'downloads/initiate';
+  const keys = invitation ? ['expected_version'] : resource === 'emails' ? ['start', 'end', 'purpose', 'status', 'recipient', 'limit', 'offset']
+    : resource === 'downloads/initiate' ? ['initiation_id', 'source', 'kind', 'format']
     : resource === 'downloads' ? ['q', 'user_id', 'start', 'end', 'format', 'limit', 'offset']
     : writing ? ['events'] : resource === 'users' ? ['q', 'limit', 'offset']
     : resource === 'summary' ? [] : resource === 'sessions/export'
@@ -1020,9 +1022,13 @@ export async function reportingRequest(resource, params = {}, { signal } = {}) {
     if (pending) await pending;
     else if (token === original) await verifySession(true);
     check();
-    response = await load(token); // one retry only
+    if (!invitation) response = await load(token); // never replay an invitation mutation
   }
   if (!response.ok) {
+    if (invitation && ![401, 403].includes(response.status)) {
+      const data = await response.json().catch(() => null);
+      throw new SessionError(data?.error?.message || data?.detail || 'Invitation could not complete. Check Email Logs before trying again.', response.status);
+    }
     if (response.status === 401 || (response.status === 403 && state.user?.identity_kind !== 'staff')) clear();
     else if (response.status === 403 && state.user?.identity_kind === 'staff') await verifySession();
     throw new SessionError(

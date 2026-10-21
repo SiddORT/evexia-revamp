@@ -3,7 +3,7 @@ import MessageTemplatePreview from './MessageTemplatePreview.jsx';
 import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
 import { LIMITS, loadMessageTemplates, saveMessageTemplate, validateMessageTemplate } from '../../services/messageTemplates.js';
 import { SUPPORTED_TOKENS, readHtmlFile } from '../../services/messageTemplatePreview.js';
-import { EMAIL_VARIABLES, saveEmailTemplate, loadEmailTemplates } from '../../services/emailTemplates.js';
+import { EMAIL_VARIABLES, INVITATION_VARIABLES, saveEmailTemplate, loadEmailTemplates } from '../../services/emailTemplates.js';
 import './messageTemplates.css';
 
 const isStale = (e) => e?.code === 'conflict' || e?.code === 'stale' || /\b(changed|stale|conflict|revision)\b/i.test(e?.message || '');
@@ -167,7 +167,7 @@ export default function MessageTemplateEditor({ draft, baseline, loadError, late
           <button type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={() => fileRef.current?.click()} data-testid="button-template-import">Import HTML file</button>
           <small className="mt-note">Loads into the draft only. Max {LIMITS.fileBytes} bytes, UTF-8.</small></div>}
         <fieldset className="mt-tokens"><legend>Insert token at cursor</legend>
-          <div className="mt-row">{(channel === 'email' ? EMAIL_VARIABLES : SUPPORTED_TOKENS).map((t) => <button type="button" disabled={busy} key={t} className="mt-chip" onMouseDown={(e) => e.preventDefault()} onClick={() => insert(t)} data-testid={`button-token-${t}`}>{`{{${t}}}`}</button>)}</div>
+          <div className="mt-row">{(channel === 'email' ? f.eventKey === 'account_invitation' ? INVITATION_VARIABLES : EMAIL_VARIABLES : SUPPORTED_TOKENS).map((t) => <button type="button" disabled={busy} key={t} className="mt-chip" onMouseDown={(e) => e.preventDefault()} onClick={() => insert(t)} data-testid={`button-token-${t}`}>{`{{${t}}}`}</button>)}</div>
           <small className="mt-note">Inserts into the last focused {channel === 'email' ? 'subject, HTML or text' : 'body'} field.</small></fieldset>
         <div className="mt-row">
           <button type="submit" className="admin-button" disabled={busy || !!loadError || isStaleNow || uncertain} data-testid="button-template-save">{busy ? 'Saving' : 'Save template'}</button>

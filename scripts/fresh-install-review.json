@@ -1,29 +1,29 @@
 {
   "status": "reviewed_candidate_requires_release_policy",
-  "review_scope": "Pinned PostgreSQL 17 fresh path through 0052_hq_mr_zones_merge. Empty-only atomic initialization requires live target identity, pristine catalog, valid encryption configuration and exact final catalog/readiness checks; it does not require external recovery receipts. Routine deployment requires complete exact-commit CI validation and graph-validated automatic migrations. No separate per-migration human approval is required. Embedded historical migration guards remain authoritative and are never bypassed. Legacy signed staged initialization remains available. This manifest alone is not evidence of passing validation or authorization to modify an existing database.",
-  "authorization_policy_sha256": "ef935c11d9b14df9f221c75eb56bf92e8529204d3ede5c2f074676eca46be0c6",
-  "target": "0052_hq_mr_zones_merge",
+  "review_scope": "Pinned PostgreSQL 17 fresh path through 0053_email_invitations. Empty-only atomic initialization requires live target identity, pristine catalog, valid encryption configuration and exact final catalog/readiness checks; it does not require external recovery receipts. Routine deployment requires complete exact-commit CI validation and graph-validated automatic migrations. No separate per-migration human approval is required. Embedded historical migration guards remain authoritative and are never bypassed. Legacy signed staged initialization remains available. This manifest alone is not evidence of passing validation or authorization to modify an existing database.",
+  "authorization_policy_sha256": "221b3d66e393bf0cf1938978d97c0c5f9314c5d2cb1df6adaa30145fd4346e94",
+  "target": "0053_email_invitations",
   "prepare_target": "0031_role_hostnames",
-  "policy_sha256": "5ef7fef4610e6f1fb722c01f5508b8b52ae827d5dd29051f1833c2a4e99045d9",
+  "policy_sha256": "e198dc9af9bea0e8529bd1e529a893c6178228fcb76b28bf412422b7412ece39",
   "release_sources": {
     "artifacts/api-server/backend/app/services/initialization_diagnostics.py": "9732dd29159788eb77976a7ed70635e49ca76d2982e0c42fafcb99ed2ff04a6f",
     "artifacts/api-server/backend/app/fresh_install.py": "2296d591de00d9976c806cabe2279189fba5e27d5d7e8091c8db0f7a9679f210",
     "artifacts/api-server/backend/app/services/release_authorization.py": "35e5d197660405ce3be22eff58ed21c967e9fd7a3f4ad03f2864607f5b05879f",
     "scripts/validate-release-artifact.py": "cf4f0962f660e37d99580babb7c9dd5e50539e685baa662166355396944d020f",
-    "scripts/release-authorization-policy.json": "ef935c11d9b14df9f221c75eb56bf92e8529204d3ede5c2f074676eca46be0c6",
+    "scripts/release-authorization-policy.json": "221b3d66e393bf0cf1938978d97c0c5f9314c5d2cb1df6adaa30145fd4346e94",
     ".github/workflows/deploy.yml": "38e5ddd8c41f4cf52996259726fdaa9b8c2cd7b2e42f7d720fb3c4663833cd68",
     ".github/workflows/release-validation.yml": "0e6e9c616236d85c175878dd3636eacb5a4de71ffae79ce4a05690ca01f25eba",
     "artifacts/api-server/backend/app/services/fresh_catalog.py": "25c32d43095de45f5f927d0587de6df93f2a9b8b3b61ea795e99295cad1e3747",
     "artifacts/api-server/backend/app/services/fresh_recovery.py": "af8e518d8427f3bbc5d18607f8a11bc39a9761b6330b52a762d63c3d6b690681",
-    "scripts/fresh-install-catalog.json": "214d521472ee438cded34c8222d7dc3634e02c4688c4436cd6c26d4a1b1b712f",
+    "scripts/fresh-install-catalog.json": "ffa60f5f3c6d3bac077eacbfc6fd1d07e14789bc221464961fb48bdf23d408a6",
     "scripts/operator-retirement.sh": "07c315caab994b0315b78272763d91b71b18744c83b5ac3c46880961a5bbb505",
     "scripts/deploy-migrations.py": "44d404c3f367b96150db76092ad150545f784b6010526edb5c38d59e44776995",
     "scripts/initialize-api.sh": "4e46f0ef6f47a04d43eafb27fd111943e319a8cff2108291d2af6fc2a2461142",
-    "artifacts/api-server/backend/app/core/schema.py": "0a9c19e51c7951178fd969f5b6549f073e61d9d7cef5432eed9392a24d2e3531",
-    "artifacts/api-server/backend/app/db/models.py": "c0e7f19f1a8939f0a58d5cf786d14bf2cc57afab93f0ac877e168f43042397b4",
+    "artifacts/api-server/backend/app/core/schema.py": "8459f846d1483a3d5be7044e2b107a789ebf5e790c16a86d69d5a175dc7eeb58",
+    "artifacts/api-server/backend/app/db/models.py": "459871963e674d368df782c9fe6f6502a73ff9ed20810d6173c66a88e4ace9d5",
     "artifacts/api-server/backend/app/bootstrap.py": "0b70826aff0832e265804081f64686497b2fcf9a7c8a81198536ed2ee2a79131",
-    "artifacts/api-server/backend/app/api/v1/system.py": "89c92f1f65f707fada368d43e4ff8e4c38876d9fe37209f031b3f3855e8e8681",
-    "development-contract.json": "6c3f5f6a849843ad645435e3268ce2a0e5d8d0ef8229b35660abfdba498bddd5",
+    "artifacts/api-server/backend/app/api/v1/system.py": "87879baffa4b4839cb33ecb5fe66ebc0a0e6418c4d0d1253b825179924684ed1",
+    "development-contract.json": "d269feb40465a20e3c1f0cf54d7c7c9ec87d9eacec911382310bf781a91b8172",
     "scripts/review-schema-release.py": "ea49cf0dd4980c74708d8df2590b2e3268a1388e796da5740bf2de74f0540f5d",
     "scripts/development-sync.py": "e5cb7ef935ecc35bf5213a0d94b452ff65acad37aa92c852a909c221035beb69",
     "scripts/frontend-runtime.mjs": "89e1998bea39facc318e3e13e1381fe32fbdf80b4ed376c17f8d31d6785dacab",
@@ -59,7 +59,7 @@
     "app/services/organization_retirement.py": "d4a45ffdd20d754da002943b0b877e08c275b41ed9418034a4e132345789732c",
     "app/services/role_attribution.py": "ba3fc9fe0d0c51389e73fce573b74492ce9f2c47d649deab7bd9aab3ec9268e2",
     "app/services/staff_designation_mapping.py": "453a8e3e5a233e4bd1fd1f5e434f4534842ce144a8ce9a43209904f4b01bac56",
-    "app/services/account_crypto.py": "d27b0ba9f2fc4d11993f5f8d8c588e3012b0157f9177beef276c2f548835c3cc",
+    "app/services/account_crypto.py": "2dc0d0eb3a3f033652c6947891ed3bf5c622934cbe7f0b3c5636101b205341df",
     "app/services/account_migration.py": "fedc3b2a121e207be409bac87e05aa184e45aca61a5325ad87ebb11b25848904"
   },
   "revisions": {
@@ -121,6 +121,7 @@
     "0050_opening_stock": "b07b0332979c6d06ae3f35e32254761618029935dec78430964a85d69134be95",
     "0051_mr_zones": "7719d3d20d94d893efc4ea475f90157f84cebf230608239dab09552c45dcfa7d",
     "0051_headquarter_areas": "f081cde303abf3a53611d13f59a90116c501778be9e06b1aeb572059e9e96449",
-    "0052_hq_mr_zones_merge": "1123674f7d9d2fbcf72189f631dd464b64963dcbe3e75aa0ae39e05ea7bf92b8"
+    "0052_hq_mr_zones_merge": "1123674f7d9d2fbcf72189f631dd464b64963dcbe3e75aa0ae39e05ea7bf92b8",
+    "0053_email_invitations": "e4b4313b8299b312ef23646f151e44bf2486ea2d5018ef437c2c95bf72fd43bc"
   }
 }

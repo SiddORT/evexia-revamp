@@ -490,7 +490,8 @@ def prepare_passwords(db, actor, passwords, action="add", protected=False):
 def insert(db, actor, body, prepared, profile_id=None):
     active = body.status == "active"
     user = User(email=body.email or None, username=body.userId, password_hash=prepared[1],
-                system_role="mr", is_active=active, identity_version=1, token_version=0)
+                system_role="mr", is_active=active, identity_version=1, token_version=0,
+                password_setup_required=body.initialPassword is None)
     db.add(user)
     db.flush()
     profile = MRProfile(id=profile_id or uuid.uuid4(), user_id=user.id, is_active=active)
@@ -583,6 +584,7 @@ def mutate(db, actor, record_id, body, operation):
             revoke = True
         elif operation == "reset":
             user.password_hash = prepared[1]
+            user.password_setup_required = False
             revoke = True
         else:
             raise MRError("Unsupported operation", 422, "invalid_request")

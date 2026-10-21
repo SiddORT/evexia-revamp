@@ -133,10 +133,10 @@ def register(*_args, **_kwargs):
     raise RegistrationUnavailable()
 
 
-def _load_identity(db: Session, user: User, lock: bool = False) -> Identity:
+def _load_identity(db: Session, user: User, lock: bool = False, allow_password_setup: bool = False) -> Identity:
     from app.services.account_crypto import ready
     ready(db)
-    if not user.is_active:
+    if not user.is_active or (user.password_setup_required and not allow_password_setup):
         raise AuthError()
     if (user.system_role == "super_admin") != user.is_protected_system_admin:
         raise AuthError()

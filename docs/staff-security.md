@@ -1,5 +1,21 @@
 # Staff Management: scope, configuration and operations
 
+## Initial credentials and email invitations
+
+Add Staff accepts Password and Confirm password with visibility and Auto generate,
+using the MR 12–128-character policy. Exact password text is not trimmed.
+Generation fills both inputs. No password is emailed or redisplayed later; only
+hashes persist. If no password is supplied, the server creates an unguessable
+credential and requires password setup before login. Access/role assignment
+remains an explicit, separate action.
+
+Protected Super Admin can invite eligible saved staff/MRs using the required
+database invitation template. Sending never grants permissions or changes a
+current password/session before acceptance. A 15-minute single-use credential
+binds identity, recipient, purpose and versions; atomic acceptance revokes old
+sessions. See [email invitations](email-invitations.md) for full eligibility,
+encrypted Email Logs and focused verification/rollout boundaries.
+
 ## Boundary
 
 Only the protected system Super Admin has `staff.manage`. Business role labels,

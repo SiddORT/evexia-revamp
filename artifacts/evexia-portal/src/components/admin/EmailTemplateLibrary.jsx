@@ -61,10 +61,10 @@ export default function EmailTemplateLibrary({ guard, onDirtyChange, onBusyChang
   const all = snap?.record.templates || [];
   const items = all.filter((t) => (source === 'all' || t.source === source) && t.name.toLowerCase().includes(q.trim().toLowerCase()));
   return <>
-    <div className="mt-head"><p className="mt-note">Email templates are shared database records. Eligible staff/MR recovery requests automatically use the password_recovery template through the approved SMTP server.</p>
+    <div className="mt-head"><p className="mt-note">Email templates are shared database records. Staff/MR invitations use account_invitation; recovery requests use password_recovery through the approved SMTP server.</p>
       <div className="mt-row"><button type="button" className="admin-button" onClick={blank} disabled={!snap || loading || busy} data-testid="button-template-new">New email template</button>
         <button type="button" className="admin-button admin-button--secondary" onClick={refresh} disabled={loading || busy}>Load latest</button></div></div>
-    <p className="mt-note">Unassigned templates are not triggered. The required password recovery identity and event cannot be removed or reassigned. Browser-local email records are not imported or erased.</p>
+    <p className="mt-note">Unassigned templates are not triggered. Required invitation and recovery templates cannot be removed or reassigned. Saved edits apply to subsequent sends. Browser-local email records are not imported or erased.</p>
     <p className="mt-note">Delivery accepts only supported literal variables and safe formatting. Use {'{{reset_url}}'} for every recovery link and {'{{expiry_minutes}}'} in HTML and text. Previews remain offline and links are inert; preview samples are fictional.</p>
     {loading && <p role="status">Loading email templates…</p>}
     {error && <div role="alert" className="admin-feedback admin-feedback--error">{error}<button type="button" onClick={refresh} disabled={loading}>Retry loading</button></div>}

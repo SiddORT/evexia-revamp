@@ -2,6 +2,7 @@
   "version": 2,
   "default": "automatic",
   "revisions": {
+    "0053_email_invitations": "automatic",
     "0001_identity": "automatic",
     "0002_username": "automatic",
     "0003_system_domain": "automatic",

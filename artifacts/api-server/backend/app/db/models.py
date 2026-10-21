@@ -47,6 +47,7 @@ class User(Timestamps, Base):
     email_index: Mapped[str | None] = mapped_column(String(64), unique=True)
     username_index: Mapped[str | None] = mapped_column(String(64), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    password_setup_required: Mapped[bool] = mapped_column(default=False, nullable=False, server_default=text("false"))
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     token_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     # Old organization-scoped accounts remain unmapped until an operator explicitly

@@ -37,6 +37,15 @@ activation/recovery handoff; process repair is not live email recovery.
 
 # EVEXIA Portal
 
+## Transactional onboarding email
+
+Staff/MR invitation and recovery share the approved environment TLS SMTP sender
+and protected database templates; do not activate Communication defaults or email
+passwords. Invitations never grant staff access or convert business MR labels
+to identities. Email Logs report SMTP acceptance, not inbox delivery; uncertain
+submissions are not automatically replayed. See `docs/email-invitations.md` for
+eligibility, encrypted recipient/key custody and focused post-merge acceptance.
+
 - Live MR Master supports ordered shared multi-zone assignments. Its list zone
   filter uses any-zone matching; empty/Select all is unrestricted. Form Select all
   loads a complete active saved-zone snapshot, retains existing unavailable

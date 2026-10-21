@@ -5,11 +5,12 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { EmailTemplateRecordEventKey } from "./emailTemplateRecordEventKey";
 
 export interface EmailTemplateRecord {
   /** @maxLength 500 */
   description?: string;
-  event_key?: "password_recovery" | null;
+  event_key?: EmailTemplateRecordEventKey;
   /**
    * @minLength 1
    * @maxLength 100000

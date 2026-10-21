@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type StaffFieldsRole =
-  (typeof StaffFieldsRole)[keyof typeof StaffFieldsRole];
+export type StaffCreateRole =
+  (typeof StaffCreateRole)[keyof typeof StaffCreateRole];
 
-export const StaffFieldsRole = {
+export const StaffCreateRole = {
   Staff: "Staff",
   Manager: "Manager",
   Accountant: "Accountant",

@@ -67,6 +67,7 @@ const MoveStocks = lazyRoute(() => import('./pages/admin/MoveStocks.jsx'));
 const MoveStockFormPage = lazyRoute(() => import('./pages/admin/MoveStockFormPage.jsx'));
 const ActivityLogs = lazyRoute(() => import('./pages/admin/ActivityLogs.jsx'));
 const DownloadLogs = lazyRoute(() => import('./pages/admin/DownloadLogs.jsx'));
+const EmailLogs = lazyRoute(() => import('./pages/admin/EmailLogs.jsx'));
 
 function App() {
   const [path] = useLocation();
@@ -82,6 +83,7 @@ function App() {
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/activity-logs" component={ActivityLogs} />
       <Route path="/admin/download-logs" component={DownloadLogs} />
+      <Route path="/admin/email-logs" component={EmailLogs} />
       <Route path="/admin/staff" component={StaffManagement} />
       <Route path="/admin/roles-permissions" component={RolesPermissions} />
       <Route path="/admin/inventory/purchase-orders" component={PurchaseOrders} />

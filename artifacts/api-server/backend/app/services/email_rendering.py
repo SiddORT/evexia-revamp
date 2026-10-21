@@ -6,6 +6,7 @@ from html.parser import HTMLParser
 from urllib.parse import urlsplit
 
 VARIABLES = ("recipient_name", "company_name", "reset_url", "expiry_minutes")
+INVITATION_VARIABLES = (*VARIABLES, "portal_name", "login_id")
 TOKEN = re.compile(r"\{\{([a-z][a-z0-9_]*)\}\}")
 LOGO_CID = "evexia-logo@evexia"
 LOGO_SOURCE = "/images/evexia-logo.png"
@@ -99,11 +100,12 @@ class DeliveryHTML(HTMLParser):
 
 
 def validate_template(subject, html, text, event_key):
-    if event_key not in (None, "password_recovery"):
+    if event_key not in (None, "password_recovery", "account_invitation"):
         raise ValueError("Unsupported backend event.")
-    tokens(subject, VARIABLES)
-    tokens(html, VARIABLES)
-    tokens(text, VARIABLES)
+    allowed = INVITATION_VARIABLES if event_key == "account_invitation" else VARIABLES
+    tokens(subject, allowed)
+    tokens(html, allowed)
+    tokens(text, allowed)
     if re.search(r"[\r\n\x00-\x1f\x7f-\x9f]", subject):
         raise ValueError("Invalid subject header.")
     parsed = DeliveryHTML(html)
@@ -112,6 +114,10 @@ def validate_template(subject, html, text, event_key):
         if (not parsed.links or "{{reset_url}}" not in visible or "{{reset_url}}" not in text
                 or "{{expiry_minutes}}" not in text or "{{expiry_minutes}}" not in visible):
             raise ValueError("Recovery requires a reset link, visible fallback URL and expiry in both HTML and plain text.")
+        if event_key == "account_invitation" and any(
+                "{{" + field + "}}" not in source
+                for source in (visible, text) for field in ("portal_name", "login_id", "company_name")):
+            raise ValueError("Invitation HTML and text require portal, User ID and EVEXIA branding variables.")
         # Prevent author-supplied fallback destinations, including encoded URLs.
         if re.search(r"(?:https?|javascript|data|vbscript|file):|www\.", unescape(text + html), re.I):
             raise ValueError("Use {{reset_url}}, not an authored URL.")
@@ -125,11 +131,12 @@ class RenderedEmail:
     html: str
 
 
-def render_recovery(template, *, recipient_name, reset_url, expiry_minutes):
-    if template.event_key != "password_recovery":
+def render_recovery(template, *, recipient_name, reset_url, expiry_minutes, portal_name=None, login_id=None):
+    if template.event_key not in ("password_recovery", "account_invitation"):
         raise ValueError("Recovery event mapping unavailable.")
     url = urlsplit(reset_url)
-    if (url.scheme != "https" or not url.hostname or url.username or url.password or url.query
+    expected_queries = ("invitation=1&portal=admin", "invitation=1&portal=mr") if template.event_key == "account_invitation" else ("",)
+    if (url.scheme != "https" or not url.hostname or url.username or url.password or url.query not in expected_queries
             or url.path.rstrip("/") != "/reset-password"
             or not re.fullmatch(r"token=[A-Za-z0-9_.-]+", url.fragment)
             or re.search(r"[\s\\<>\"']", reset_url)):
@@ -139,6 +146,8 @@ def render_recovery(template, *, recipient_name, reset_url, expiry_minutes):
     greeting = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", greeting) or "there"
     values = dict(recipient_name=greeting, company_name="EVEXIA LIFE SCIENCES",
                   reset_url=reset_url, expiry_minutes=str(expiry_minutes))
+    if template.event_key == "account_invitation":
+        values.update(portal_name=portal_name, login_id=login_id)
     html = validate_template(template.subject, template.html, template.text, template.event_key)
     def sub(source, html=False):
         return TOKEN.sub(lambda m: escape(values[m[1]], quote=True) if html else values[m[1]], source)

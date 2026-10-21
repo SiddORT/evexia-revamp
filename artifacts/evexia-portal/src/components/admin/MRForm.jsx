@@ -8,6 +8,7 @@ import useAddressSelection from './useAddressSelection.js';
 import { GeographyControl, GeographyLabel, PostalSelection, useAddressCatalogue } from './AddressGeography.jsx';
 import { emptyMRValues, generateMRUsername, lookupPincode, MR_FIELDS as FIELDS, payloadFromValues, validateMRValues } from '../../services/serverMRs.js';
 import '../../mr.css';
+import { initialCredentials } from '../../services/initialCredentials.js';
 
 const OPTIONAL = new Set(['reportingManagerId', 'addressLine2', 'paymentLimit', 'doctorDaysLimit']);
 const TABS = [
@@ -17,20 +18,6 @@ const TABS = [
 ];
 const ORDER = [...FIELDS.slice(0, 6), 'password', 'confirmPassword', ...FIELDS.slice(6)];
 const STATUS_CHOICES = [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }];
-
-function initialCredentials() {
-  try {
-    const bytes = new Uint8Array(24);
-    globalThis.crypto.getRandomValues(bytes);
-    const password = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
-    return { password, confirmPassword: password, generationError: '' };
-  } catch {
-    return {
-      password: '', confirmPassword: '',
-      generationError: 'Secure generation is unavailable. Type and confirm a password, or leave both fields blank for server generation after creation.',
-    };
-  }
-}
 
 export default function MRForm({ mr, onSave, onClose, onRefresh }) {
   const [values, setValues] = useState(() => emptyMRValues(mr));
@@ -278,7 +265,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
                   <button type="button" className="mr-form__preview-action mr-form__credential-action"
                     disabled={saving} onClick={generatePassword} data-testid="button-generate-mr-password">Auto-generate password</button>
                 </div>
-                <p id="mr-password-help" className="mr-form__hint">This is a pre-save candidate, not an account credential yet. Keep it or type your own 12–128-character password and confirm it exactly, including spaces. Clear both fields to have the server generate a password after successful creation. Copy the actual login credentials from the one-time confirmation screen before closing it.</p>
+                <p id="mr-password-help" className="mr-form__hint">This is a pre-save candidate, not an account credential yet. Keep it or type your own 12–128-character password and confirm it exactly, including spaces. Clear both fields for server generation; that account requires email password setup before login. After saving, use Invite / send again to send a set-password link. Saving alone sends no email.</p>
                 {credentials.generationError && <p className="mr-form__error" role="alert">{credentials.generationError}</p>}
                 <p className="mr-form__hint" role="status" aria-live="polite" aria-atomic="true">{copyFeedback}</p>
               </div> : <div className="mr-form__field mr-form__field--wide"><p className="mr-form__section-note" data-testid="text-mr-password-note">Passwords are not shown or edited here. Use Reset password in MR Master to issue a new one-time password.</p></div>}

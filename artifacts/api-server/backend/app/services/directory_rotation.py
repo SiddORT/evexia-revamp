@@ -33,7 +33,8 @@ RUNTIME_REVISIONS = frozenset({PRIVACY_REVISION, "0037_domain_admission", "0038_
     # Stock products extend the independent inventory ledger, not directories.
     "0047_stock_products", "0049_product_language_merge", "0050_opening_stock",
     # HQ zone/area metadata leaves encrypted directory fields unchanged.
-    "0051_headquarter_areas", "0051_mr_zones", "0052_hq_mr_zones_merge"})
+    "0051_headquarter_areas", "0051_mr_zones", "0052_hq_mr_zones_merge",
+    "0053_email_invitations"})
 SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations",
     "0033_merge_directory_branches", PHONE_REVISION, "0035_account_identifiers"}) | RUNTIME_REVISIONS
 COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS

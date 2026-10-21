@@ -1,0 +1,10 @@
+{
+  "format": 1,
+  "revision": "0053_email_invitations",
+  "evidence_kind": "reproduced_disposable_postgresql_catalog_observation",
+  "postgresql": "17.5",
+  "catalog_sha256": "e97acecca71e14625ddca26069684ce286b75d0593cb47bf139ed9f9d177876f",
+  "command": "sh scripts/test-api-foundation.sh tests/test_email_invitations.py",
+  "scope": "Original Alembic migration graph on a private socket-only PostgreSQL fixture with synthetic keys and captured SMTP. Catalog observation is a full public schema projection after the real migration chain, not an ORM guess. Historical test-only empty-data guards remain unchanged. This evidence is not a production installation rehearsal, release validation, actual SMTP delivery or post-merge original-development acceptance.",
+  "evidence_reference": "generated-artifacts/email-invitations/catalog-observation.json"
+}

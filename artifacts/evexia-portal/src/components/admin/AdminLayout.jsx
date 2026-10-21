@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Layers, Landmark, Languages, LayoutDashboard, LayoutGrid, LogOut, MapPinned, FileDown, ScrollText, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
+import { Boxes, BriefcaseBusiness, Building2, ChevronDown, ClipboardList, FlaskConical, HeartPulse, Layers, Landmark, Languages, LayoutDashboard, LayoutGrid, LogOut, Mail, MapPinned, FileDown, ScrollText, Menu, PanelLeftClose, PanelLeftOpen, PanelsTopLeft, Search, Settings, ShieldCheck, Stethoscope, Target, Truck, UsersRound, Warehouse, X } from 'lucide-react';
 import BrandMark from '../BrandMark.jsx';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { MASTER_CATALOGUE, canViewMaster, isStaffIdentity } from '../../auth/capabilities.js';
@@ -317,6 +317,9 @@ export default function AdminLayout({ title, children }) {
                   <DropdownMenu.Item className="admin-dropdown__item" onSelect={() => go('/admin/download-logs')} data-testid="link-admin-download-logs">
                     <FileDown size={15} aria-hidden="true" /> Download Logs
                   </DropdownMenu.Item>
+                  {user?.identity_kind === 'super_admin' && <DropdownMenu.Item className="admin-dropdown__item" onSelect={() => go('/admin/email-logs')} data-testid="link-admin-email-logs">
+                    <Mail size={15} aria-hidden="true" /> Email Logs
+                  </DropdownMenu.Item>}
                   </>}
                   <DropdownMenu.Item className="admin-dropdown__item admin-dropdown__item--danger" onSelect={() => void signOut()} data-testid="link-admin-sign-out">
                     <LogOut size={15} aria-hidden="true" /> Log Out

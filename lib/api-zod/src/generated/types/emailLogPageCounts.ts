@@ -6,10 +6,4 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type StaffFieldsStatus =
-  (typeof StaffFieldsStatus)[keyof typeof StaffFieldsStatus];
-
-export const StaffFieldsStatus = {
-  active: "active",
-  inactive: "inactive",
-} as const;
+export type EmailLogPageCounts = { [key: string]: number };
