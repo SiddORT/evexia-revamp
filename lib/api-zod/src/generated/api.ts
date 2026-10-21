@@ -394,14 +394,26 @@ export const listHeadquartersQueryOffsetDefault = 0;
 export const listHeadquartersQueryOffsetMin = 0;
 export const listHeadquartersQueryOffsetMax = 1000000;
 export const listHeadquartersResponseItemsItemNameMax = 200;
+export const createHeadquarterBodyAreasItemCodeOneMax = 32;
+export const createHeadquarterBodyAreasItemNameMax = 200;
+export const createHeadquarterBodyAreasMax = 200;
 export const createHeadquarterBodyNameMax = 200;
 export const createHeadquarterBodyStateCodeOneMax = 16;
 export const createHeadquarterResponseNameMax = 200;
 export const exportHeadquartersQueryQueryMax = 200;
 export const commitHeadquarterImportQueryFilenameMax = 200;
 export const reviewHeadquarterImportQueryFilenameMax = 200;
+export const listHeadquarterZoneChoicesQueryQueryMax = 200;
+export const listHeadquarterZoneChoicesQueryLimitDefault = 100;
+export const listHeadquarterZoneChoicesQueryLimitMax = 100;
+export const listHeadquarterZoneChoicesQueryOffsetDefault = 0;
+export const listHeadquarterZoneChoicesQueryOffsetMin = 0;
+export const listHeadquarterZoneChoicesQueryOffsetMax = 1000000;
 export const getHeadquarterResponseNameMax = 200;
 export const deleteHeadquarterResponseNameMax = 200;
+export const editHeadquarterBodyAreasItemCodeOneMax = 32;
+export const editHeadquarterBodyAreasItemNameMax = 200;
+export const editHeadquarterBodyAreasMax = 200;
 export const editHeadquarterBodyNameMax = 200;
 export const editHeadquarterBodyStateCodeOneMax = 16;
 export const editHeadquarterResponseNameMax = 200;
@@ -7101,15 +7113,35 @@ export const ListHeadquartersResponse = zod.object({
   filtered: zod.number().int(),
   items: zod.array(
     zod.object({
+      area_count: zod.number().int(),
+      areas: zod.array(
+        zod.object({
+          code: zod.string(),
+          id: zod.string().uuid(),
+          name: zod.string(),
+          sequence: zod.union([zod.number().int(), zod.null()]),
+        }),
+      ),
       createdAt: zod.coerce.date(),
       createdBy: zod.string(),
       id: zod.string().uuid(),
       name: zod.string().min(1).max(listHeadquartersResponseItemsItemNameMax),
+      next_area_sequence: zod.number().int(),
       state_code: zod.string(),
       status: zod.enum(["active", "inactive"]),
       updatedAt: zod.coerce.date(),
       updatedBy: zod.string(),
       version: zod.number().int(),
+      zone: zod.union([
+        zod.object({
+          deleted: zod.boolean(),
+          id: zod.string().uuid(),
+          name: zod.string(),
+          status: zod.enum(["active", "inactive"]),
+        }),
+        zod.null(),
+      ]),
+      zone_id: zod.union([zod.string().uuid(), zod.null()]),
     }),
   ),
   limit: zod.number().int(),
@@ -7122,6 +7154,21 @@ export const ListHeadquartersResponse = zod.object({
  */
 
 export const CreateHeadquarterBody = zod.object({
+  areas: zod
+    .array(
+      zod.object({
+        code: zod
+          .union([
+            zod.string().min(1).max(createHeadquarterBodyAreasItemCodeOneMax),
+            zod.null(),
+          ])
+          .optional(),
+        id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        name: zod.string().min(1).max(createHeadquarterBodyAreasItemNameMax),
+      }),
+    )
+    .max(createHeadquarterBodyAreasMax)
+    .optional(),
   name: zod.string().min(1).max(createHeadquarterBodyNameMax),
   state_code: zod
     .union([
@@ -7130,18 +7177,39 @@ export const CreateHeadquarterBody = zod.object({
     ])
     .optional(),
   status: zod.enum(["active", "inactive"]),
+  zone_id: zod.string().uuid(),
 });
 
 export const CreateHeadquarterResponse = zod.object({
+  area_count: zod.number().int(),
+  areas: zod.array(
+    zod.object({
+      code: zod.string(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      sequence: zod.union([zod.number().int(), zod.null()]),
+    }),
+  ),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(createHeadquarterResponseNameMax),
+  next_area_sequence: zod.number().int(),
   state_code: zod.string(),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
   version: zod.number().int(),
+  zone: zod.union([
+    zod.object({
+      deleted: zod.boolean(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.enum(["active", "inactive"]),
+    }),
+    zod.null(),
+  ]),
+  zone_id: zod.union([zod.string().uuid(), zod.null()]),
 });
 
 /**
@@ -7247,6 +7315,42 @@ export const DownloadHeadquarterSampleHeader = zod.object({
 export const DownloadHeadquarterSampleResponse = zod.unknown();
 
 /**
+ * @summary Zone Choices
+ */
+export const listHeadquarterZoneChoicesQueryQueryDefault = ``;
+
+export const ListHeadquarterZoneChoicesQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(listHeadquarterZoneChoicesQueryQueryMax)
+    .default(listHeadquarterZoneChoicesQueryQueryDefault),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listHeadquarterZoneChoicesQueryLimitMax)
+    .default(listHeadquarterZoneChoicesQueryLimitDefault),
+  offset: zod.coerce
+    .number()
+    .int()
+    .min(listHeadquarterZoneChoicesQueryOffsetMin)
+    .max(listHeadquarterZoneChoicesQueryOffsetMax)
+    .default(listHeadquarterZoneChoicesQueryOffsetDefault),
+});
+
+export const ListHeadquarterZoneChoicesResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+    }),
+  ),
+  limit: zod.number().int(),
+  offset: zod.number().int(),
+  total: zod.number().int(),
+});
+
+/**
  * @summary Detail
  */
 export const GetHeadquarterParams = zod.object({
@@ -7254,15 +7358,35 @@ export const GetHeadquarterParams = zod.object({
 });
 
 export const GetHeadquarterResponse = zod.object({
+  area_count: zod.number().int(),
+  areas: zod.array(
+    zod.object({
+      code: zod.string(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      sequence: zod.union([zod.number().int(), zod.null()]),
+    }),
+  ),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(getHeadquarterResponseNameMax),
+  next_area_sequence: zod.number().int(),
   state_code: zod.string(),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
   version: zod.number().int(),
+  zone: zod.union([
+    zod.object({
+      deleted: zod.boolean(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.enum(["active", "inactive"]),
+    }),
+    zod.null(),
+  ]),
+  zone_id: zod.union([zod.string().uuid(), zod.null()]),
 });
 
 /**
@@ -7277,15 +7401,35 @@ export const DeleteHeadquarterBody = zod.object({
 });
 
 export const DeleteHeadquarterResponse = zod.object({
+  area_count: zod.number().int(),
+  areas: zod.array(
+    zod.object({
+      code: zod.string(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      sequence: zod.union([zod.number().int(), zod.null()]),
+    }),
+  ),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(deleteHeadquarterResponseNameMax),
+  next_area_sequence: zod.number().int(),
   state_code: zod.string(),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
   version: zod.number().int(),
+  zone: zod.union([
+    zod.object({
+      deleted: zod.boolean(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.enum(["active", "inactive"]),
+    }),
+    zod.null(),
+  ]),
+  zone_id: zod.union([zod.string().uuid(), zod.null()]),
 });
 
 /**
@@ -7296,6 +7440,20 @@ export const EditHeadquarterParams = zod.object({
 });
 
 export const EditHeadquarterBody = zod.object({
+  areas: zod
+    .array(
+      zod.object({
+        code: zod
+          .union([
+            zod.string().min(1).max(editHeadquarterBodyAreasItemCodeOneMax),
+            zod.null(),
+          ])
+          .optional(),
+        id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        name: zod.string().min(1).max(editHeadquarterBodyAreasItemNameMax),
+      }),
+    )
+    .max(editHeadquarterBodyAreasMax),
   expected_version: zod.number().int().min(1),
   name: zod.string().min(1).max(editHeadquarterBodyNameMax),
   state_code: zod
@@ -7305,18 +7463,39 @@ export const EditHeadquarterBody = zod.object({
     ])
     .optional(),
   status: zod.enum(["active", "inactive"]),
+  zone_id: zod.string().uuid(),
 });
 
 export const EditHeadquarterResponse = zod.object({
+  area_count: zod.number().int(),
+  areas: zod.array(
+    zod.object({
+      code: zod.string(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      sequence: zod.union([zod.number().int(), zod.null()]),
+    }),
+  ),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(editHeadquarterResponseNameMax),
+  next_area_sequence: zod.number().int(),
   state_code: zod.string(),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
   version: zod.number().int(),
+  zone: zod.union([
+    zod.object({
+      deleted: zod.boolean(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.enum(["active", "inactive"]),
+    }),
+    zod.null(),
+  ]),
+  zone_id: zod.union([zod.string().uuid(), zod.null()]),
 });
 
 /**
@@ -7332,15 +7511,35 @@ export const SetHeadquarterStatusBody = zod.object({
 });
 
 export const SetHeadquarterStatusResponse = zod.object({
+  area_count: zod.number().int(),
+  areas: zod.array(
+    zod.object({
+      code: zod.string(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      sequence: zod.union([zod.number().int(), zod.null()]),
+    }),
+  ),
   createdAt: zod.coerce.date(),
   createdBy: zod.string(),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(setHeadquarterStatusResponseNameMax),
+  next_area_sequence: zod.number().int(),
   state_code: zod.string(),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
   version: zod.number().int(),
+  zone: zod.union([
+    zod.object({
+      deleted: zod.boolean(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.enum(["active", "inactive"]),
+    }),
+    zod.null(),
+  ]),
+  zone_id: zod.union([zod.string().uuid(), zod.null()]),
 });
 
 /**

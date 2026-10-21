@@ -56,7 +56,50 @@ class HeadquarterFields(BaseModel):
 
 
 class HeadquarterEdit(HeadquarterFields):
+    zone_id: uuid.UUID
+    areas: list["HeadquarterAreaInput"] = Field(max_length=200)
     expected_version: int = Field(ge=1, strict=True)
+
+
+class HeadquarterAreaInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: uuid.UUID | None = None
+    name: str = Field(min_length=1, max_length=200)
+    code: str | None = Field(default=None, min_length=1, max_length=32)
+    normalize_name = field_validator("name", mode="before")(HeadquarterFields.normalize_name.__func__)
+    normalize_code = field_validator("code", mode="before")(HeadquarterFields.normalize_code.__func__)
+    printable = field_validator("name", "code")(HeadquarterFields.printable.__func__)
+
+
+class HeadquarterCreate(HeadquarterFields):
+    zone_id: uuid.UUID
+    areas: list[HeadquarterAreaInput] = Field(default_factory=list, max_length=200)
+
+
+class HeadquarterAreaResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    code: str
+    sequence: int | None
+
+
+class HeadquarterZone(BaseModel):
+    id: uuid.UUID
+    name: str
+    status: Literal["active", "inactive"]
+    deleted: bool
+
+
+class HeadquarterZoneChoice(BaseModel):
+    id: uuid.UUID
+    name: str
+
+
+class HeadquarterZonePage(BaseModel):
+    items: list[HeadquarterZoneChoice]
+    total: int
+    limit: int
+    offset: int
 
 
 class HeadquarterVersion(BaseModel):
@@ -69,6 +112,11 @@ class HeadquarterStatus(HeadquarterVersion):
 
 
 class HeadquarterResponse(HeadquarterFields):
+    zone_id: uuid.UUID | None
+    zone: HeadquarterZone | None
+    areas: list[HeadquarterAreaResponse]
+    area_count: int
+    next_area_sequence: int
     state_code: str
     id: uuid.UUID
     version: int

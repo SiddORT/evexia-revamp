@@ -26,3 +26,68 @@ export function validateHeadquarter(values) {
   if (!['active', 'inactive'].includes(values.status)) errors.status = 'Select a status.';
   return errors;
 }
+
+const printableBad = (value) => /[\p{C}\uFFFE\uFFFF]/u.test(value);
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+export const MAX_AREAS = 200;
+export const newAreaRow = () => ({ key: `n${Date.now()}${Math.random().toString(36).slice(2)}`, id: null, name: '', code: '', manual: false });
+export const savedAreaRow = (area) => ({ key: area.id, id: area.id, name: area.name, code: area.code, manual: true });
+
+/** Derive suggested codes for new automatic rows (never stored; submitted omitted). */
+export function suggestCodes(rows, prefix, base) {
+  const p = normalizeCode(prefix || '');
+  const digits = p ? new RegExp(`^${escapeRe(p)}(\\d+)$`) : null;
+  const explicit = new Set();
+  let floor = Math.max(1, Number(base) || 1);
+  for (const row of rows) {
+    if (row.id || row.manual) {
+      const code = normalizeCode(row.code || '');
+      if (code) explicit.add(code);
+      const hit = digits && digits.exec(code);
+      if (hit && Number(hit[1]) <= 2147483646) floor = Math.max(floor, Number(hit[1]) + 1);
+    }
+  }
+  const result = {};
+  let seq = floor;
+  for (const row of rows) {
+    if (row.id || row.manual) continue;
+    while (explicit.has(`${p}${seq}`)) seq += 1;
+    result[row.key] = seq <= 2147483646 ? `${p}${seq}` : '';
+    seq += 1;
+  }
+  return result;
+}
+
+export function validateAreas(rows, suggestions) {
+  const errors = {};
+  const names = new Map();
+  const codes = new Map();
+  if (rows.length > MAX_AREAS) errors._ = `A headquarter can have at most ${MAX_AREAS} areas.`;
+  for (const row of rows) {
+    const name = normalizeName(row.name);
+    const auto = !row.id && !row.manual;
+    const code = normalizeCode(auto ? suggestions[row.key] || '' : row.code || '');
+    const list = [];
+    const blank = !name && (auto || !trimText(row.code || ''));
+    if (blank && auto) list.push('Enter an area name or remove this row.');
+    else {
+      if (!name || Array.from(name).length > 200 || printableBad(name)) list.push('Area name: use 1-200 printable characters.');
+      if (!auto && (!code || Array.from(code).length > 32 || printableBad(code))) list.push('Area code: use 1-32 printable characters.');
+      if (auto && (!code || Array.from(code).length > 32 || printableBad(code))) list.push('Suggested numbering is unavailable; enter a manual code.');
+      if (name) { const k = name.toLowerCase(); if (names.has(k)) list.push('Duplicate area name in this headquarter.'); names.set(k, true); }
+      if (code) { const k = code.toLowerCase(); if (codes.has(k)) list.push('Duplicate area code in this headquarter.'); codes.set(k, true); }
+    }
+    if (list.length) errors[row.key] = list.join(' ');
+  }
+  return errors;
+}
+
+export function areaPayload(rows, suggestions) {
+  return rows.map((row) => {
+    const auto = !row.id && !row.manual;
+    const item = { name: normalizeName(row.name) };
+    if (row.id) item.id = row.id;
+    if (!auto) item.code = normalizeCode(row.code);
+    return item;
+  });
+}

@@ -5,14 +5,13 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
-import type { HeadquarterFieldsStatus } from "./headquarterFieldsStatus";
 
-export interface HeadquarterFields {
+export interface HeadquarterAreaInput {
+  code?: string | null;
+  id?: string | null;
   /**
    * @minLength 1
    * @maxLength 200
    */
   name: string;
-  state_code?: string | null;
-  status: HeadquarterFieldsStatus;
 }

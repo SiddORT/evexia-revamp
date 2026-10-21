@@ -5,9 +5,13 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { HeadquarterAreaResponse } from "./headquarterAreaResponse";
 import type { HeadquarterResponseStatus } from "./headquarterResponseStatus";
+import type { HeadquarterZone } from "./headquarterZone";
 
 export interface HeadquarterResponse {
+  area_count: number;
+  areas: HeadquarterAreaResponse[];
   createdAt: Date;
   createdBy: string;
   id: string;
@@ -16,9 +20,12 @@ export interface HeadquarterResponse {
    * @maxLength 200
    */
   name: string;
+  next_area_sequence: number;
   state_code: string;
   status: HeadquarterResponseStatus;
   updatedAt: Date;
   updatedBy: string;
   version: number;
+  zone: HeadquarterZone | null;
+  zone_id: string | null;
 }

@@ -17,6 +17,11 @@ import '../../mr.css';
 import '../../category.css';
 import '../../headquarter.css';
 
+function zoneLabel(record) {
+  const z = record.zone;
+  if (!z) return 'No zone assigned';
+  return z.deleted ? `${z.name} (deleted)` : z.status === 'inactive' ? `${z.name} (inactive)` : z.name;
+}
 const LIST = '/admin/masters/headquarters';
 function details(by, at) {
   return <span className="admin-table__details"><strong>{by}</strong><small>{formatAdminTimestamp(at)}</small></span>;
@@ -86,7 +91,9 @@ export default function HeadquarterMaster() {
   const columns = [
     { key: 'serial', label: 'Sr No', render: (_record, index) => index + 1 },
     { key: 'name', label: 'HQ Name', render: (record) => <strong>{record.name}</strong> },
+    { key: 'zone', label: 'Zone', render: (record) => zoneLabel(record) },
     { key: 'state_code', label: 'State Code', render: (record) => record.state_code },
+    { key: 'areas', label: 'Areas', render: (record) => record.area_count ?? 0 },
     { key: 'status', label: 'Status', render: (record) => <StatusBadge status={record.status} id={record.id} /> },
     { key: 'created', label: 'Created details', render: (record) => details(record.createdBy, record.createdAt) },
     { key: 'updated', label: 'Updated details', render: (record) => details(record.updatedBy, record.updatedAt) },
@@ -123,7 +130,7 @@ export default function HeadquarterMaster() {
       {loading ? <p className="admin-empty" role="status">Loading shared headquarters…</p> : error ? <div className="admin-empty" role="alert"><strong>Headquarters could not be loaded</strong><p>{error}</p><button className="admin-button" onClick={retry}>Try again</button></div> : <>
         {records.length ? cardView ? <div className="admin-zone-cards" role="list" aria-label="Headquarter records">{records.map((record, index) => <article className="admin-zone-card" role="listitem" key={record.id}>
           <div className="admin-zone-card__heading"><div className="admin-zone-card__title"><span className="admin-zone-card__serial">#{(page - 1) * pageSize + index + 1}</span><h2>{record.name}</h2></div><StatusBadge status={record.status} id={record.id} /></div>
-          <p>State Code: <strong>{record.state_code}</strong></p><dl className="admin-zone-card__meta"><div><dt>Created</dt><dd>{details(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated</dt><dd>{details(record.updatedBy, record.updatedAt)}</dd></div></dl>{actions(record, true)}
+          <p>Zone: <strong>{zoneLabel(record)}</strong></p><p>State Code: <strong>{record.state_code}</strong> | Areas: <strong>{record.area_count ?? 0}</strong></p><dl className="admin-zone-card__meta"><div><dt>Created</dt><dd>{details(record.createdBy, record.createdAt)}</dd></div><div><dt>Updated</dt><dd>{details(record.updatedBy, record.updatedAt)}</dd></div></dl>{actions(record, true)}
         </article>)}</div> : <DataTable columns={columns} rows={records} rowOffset={(page - 1) * pageSize} rowKey={(record) => record.id} /> : <div className="admin-empty"><strong>{total ? 'No matching headquarters' : 'No headquarters yet'}</strong><p>{total ? 'Try another name, code or status filter.' : 'Add your first shared headquarter.'}</p></div>}
         <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={filtered} total={total} label="headquarters" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} testId="text-headquarter-count" />
       </>}

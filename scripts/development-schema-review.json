@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "target": "0051_mr_zones",
+  "target": "0052_hq_mr_zones_merge",
   "policy_sha256": "5ef7fef4610e6f1fb722c01f5508b8b52ae827d5dd29051f1833c2a4e99045d9",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
@@ -59,7 +59,9 @@
     "0048_language_unicode": "31a407a1b18316313fee1b87c98505ebe2289abd0047f98dbbfbd3f6bafb70a5",
     "0049_product_language_merge": "f9aefdd62ad3904102b814f9b569eb9b222b1f0bec63f1e6fc14f8b04436cc9d",
     "0050_opening_stock": "b07b0332979c6d06ae3f35e32254761618029935dec78430964a85d69134be95",
-    "0051_mr_zones": "7719d3d20d94d893efc4ea475f90157f84cebf230608239dab09552c45dcfa7d"
+    "0051_headquarter_areas": "f081cde303abf3a53611d13f59a90116c501778be9e06b1aeb572059e9e96449",
+    "0051_mr_zones": "7719d3d20d94d893efc4ea475f90157f84cebf230608239dab09552c45dcfa7d",
+    "0052_hq_mr_zones_merge": "1123674f7d9d2fbcf72189f631dd464b64963dcbe3e75aa0ae39e05ea7bf92b8"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

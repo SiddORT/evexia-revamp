@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type HeadquarterFieldsStatus =
-  (typeof HeadquarterFieldsStatus)[keyof typeof HeadquarterFieldsStatus];
+export type HeadquarterZoneStatus =
+  (typeof HeadquarterZoneStatus)[keyof typeof HeadquarterZoneStatus];
 
-export const HeadquarterFieldsStatus = {
+export const HeadquarterZoneStatus = {
   active: "active",
   inactive: "inactive",
 } as const;

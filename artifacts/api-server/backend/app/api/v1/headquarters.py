@@ -2,12 +2,13 @@ import uuid
 from typing import Literal
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
-from app.api.deps import master_router
+from app.api.deps import master_router, require_master
 from app.api.v1.locations import read_file as read_master_file, UPLOAD
 from app.db.session import get_db
 from app.schemas.headquarters import (
     HeadquarterFields, HeadquarterEdit, HeadquarterVersion, HeadquarterStatus,
     HeadquarterResponse, HeadquarterPage, HeadquarterReview, HeadquarterImportResult,
+    HeadquarterCreate, HeadquarterZonePage,
 )
 from app.services.auth import Identity
 from app.services import headquarters, headquarter_transfer
@@ -29,7 +30,7 @@ def listing(query: str = Query("", max_length=200), status: Literal["all", "acti
 
 
 @router.post("", response_model=HeadquarterResponse, status_code=201, operation_id="createHeadquarter")
-def create(body: HeadquarterFields, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+def create(body: HeadquarterCreate, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
     return headquarters.create(db, actor, body)
 
 
@@ -77,6 +78,13 @@ async def commit(request: Request, filename: str = Query(min_length=1, max_lengt
     if not confirm:
         raise headquarters.HeadquarterError("Explicit confirmation is required.", 422, "headquarter_confirmation_required")
     return headquarter_transfer.transfer(db, actor, await read_file(request), filename, confirm, digest)
+
+
+@router.get("/zone-choices", response_model=HeadquarterZonePage, operation_id="listHeadquarterZoneChoices")
+def zone_choices(query: str = Query("", max_length=200), limit: int = Query(100, ge=1, le=100),
+                 offset: int = Query(0, ge=0, le=1000000),
+                 actor: Identity = Depends(require_master("headquarter")), db: Session = Depends(get_db)):
+    return headquarters.zone_choices(db, actor, query, limit, offset)
 
 
 @router.get("/{headquarter_id}", response_model=HeadquarterResponse, operation_id="getHeadquarter")

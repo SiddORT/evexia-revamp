@@ -118,8 +118,10 @@ def ready(db):
         ["0047_stock_products"], ["0049_product_language_merge"],
         # Physical opening sources preserve account encryption and anchors.
         ["0050_opening_stock"],
-        # Ordered MR-zone links preserve identifiers, encryption and anchors.
-        ["0051_mr_zones"],
+        # Nullable HQ zone links and child areas change no account anchors.
+        ["0051_headquarter_areas"],
+        # MR assignment links and the no-op reconciliation preserve anchors too.
+        ["0051_mr_zones"], ["0052_hq_mr_zones_merge"],
     ):
         raise AccountCryptoError()
     current = crypto()

@@ -154,14 +154,15 @@ import type {
   GetStockProductActivityParams,
   GetStockProductAssembliesParams,
   GetStockProductReferencesParams,
+  HeadquarterCreate,
   HeadquarterEdit,
-  HeadquarterFields,
   HeadquarterImportResult,
   HeadquarterPage,
   HeadquarterResponse,
   HeadquarterReview,
   HeadquarterStatus,
   HeadquarterVersion,
+  HeadquarterZonePage,
   HealthStatus,
   InventoryHistoryPage,
   InventoryInitializationPage,
@@ -184,6 +185,7 @@ import type {
   ListDoctorDirectoryParams,
   ListDoctorMRChoicesParams,
   ListDownloadLogsParams,
+  ListHeadquarterZoneChoicesParams,
   ListHeadquartersParams,
   ListInventoryMovementsParams,
   ListInventoryStockParams,
@@ -6798,7 +6800,7 @@ export const getCreateHeadquarterUrl = () => {
  * @summary Create
  */
 export const createHeadquarter = async (
-  headquarterFields: HeadquarterFields,
+  headquarterCreate: HeadquarterCreate,
   options?: Parameters<typeof customFetch>[1],
 ): Promise<HeadquarterResponse> => {
   const getHeaders = (
@@ -6829,7 +6831,7 @@ export const createHeadquarter = async (
       "Content-Type": "application/json",
       ...getHeaders(options?.headers),
     },
-    body: JSON.stringify(headquarterFields),
+    body: JSON.stringify(headquarterCreate),
   });
 };
 
@@ -6877,10 +6879,10 @@ export const getCreateHeadquarterMutationOptions = <
 export type CreateHeadquarterMutationResult = NonNullable<
   Awaited<ReturnType<typeof createHeadquarter>>
 >;
-export type CreateHeadquarterMutationBody = BodyType<HeadquarterFields>;
+export type CreateHeadquarterMutationBody = BodyType<HeadquarterCreate>;
 export type CreateHeadquarterMutationError = ErrorType<ErrorEnvelope>;
 export type CreateHeadquarterMutationVariables = {
-  data: BodyType<HeadquarterFields>;
+  data: BodyType<HeadquarterCreate>;
 };
 
 /**
@@ -7326,6 +7328,115 @@ export function useDownloadHeadquarterSample<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getDownloadHeadquarterSampleQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListHeadquarterZoneChoicesUrl = (
+  params?: ListHeadquarterZoneChoicesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/headquarters/zone-choices?${stringifiedParams}`
+    : `/api/v1/admin/headquarters/zone-choices`;
+};
+
+/**
+ * @summary Zone Choices
+ */
+export const listHeadquarterZoneChoices = async (
+  params?: ListHeadquarterZoneChoicesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<HeadquarterZonePage> => {
+  return customFetch<HeadquarterZonePage>(
+    getListHeadquarterZoneChoicesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListHeadquarterZoneChoicesQueryKey = (
+  params?: ListHeadquarterZoneChoicesParams,
+) => {
+  return [
+    `/api/v1/admin/headquarters/zone-choices`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListHeadquarterZoneChoicesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listHeadquarterZoneChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListHeadquarterZoneChoicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listHeadquarterZoneChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListHeadquarterZoneChoicesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listHeadquarterZoneChoices>>
+  > = ({ signal }) =>
+    listHeadquarterZoneChoices(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listHeadquarterZoneChoices>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListHeadquarterZoneChoicesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listHeadquarterZoneChoices>>
+>;
+export type ListHeadquarterZoneChoicesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Zone Choices
+ */
+
+export function useListHeadquarterZoneChoices<
+  TData = Awaited<ReturnType<typeof listHeadquarterZoneChoices>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListHeadquarterZoneChoicesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listHeadquarterZoneChoices>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListHeadquarterZoneChoicesQueryOptions(
     params,
     options,
   );

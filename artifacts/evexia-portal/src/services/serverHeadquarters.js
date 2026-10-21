@@ -12,3 +12,4 @@ export const importHeadquarters = (file, digest) => headquarterRequest('/import/
 export const exportHeadquarters = (params, format, signal) => headquarterRequest('/export', { params: { ...params, format }, download: true, signal });
 export const sampleHeadquarters = (format, signal) => headquarterRequest('/sample', { params: { format }, download: true, signal });
 export const downloadHeadquarterFile = (blob, format, sample = false) => downloadServerBlob(blob, `evexia-headquarter-${sample ? 'template' : 'master'}.${format}`);
+export const listZoneChoices = (params, signal) => headquarterRequest('/zone-choices', { params: { limit: 100, ...params }, signal });

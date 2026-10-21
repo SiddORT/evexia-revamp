@@ -5,9 +5,12 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { HeadquarterAreaInput } from "./headquarterAreaInput";
 import type { HeadquarterEditStatus } from "./headquarterEditStatus";
 
 export interface HeadquarterEdit {
+  /** @maxItems 200 */
+  areas: HeadquarterAreaInput[];
   /** @minimum 1 */
   expected_version: number;
   /**
@@ -17,4 +20,5 @@ export interface HeadquarterEdit {
   name: string;
   state_code?: string | null;
   status: HeadquarterEditStatus;
+  zone_id: string;
 }

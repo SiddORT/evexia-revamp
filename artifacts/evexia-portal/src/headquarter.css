@@ -14,3 +14,13 @@
   .admin-hq-desktop { display: none; }
   .admin-hq-mobile { display: grid; gap: 10px; padding: 12px; }
 }
+.admin-hq-areas { display: grid; gap: 10px; margin: 18px 0 0; padding: 0; border: 0; min-width: 0; }
+.admin-hq-areas__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.admin-hq-area { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto; gap: 8px; align-items: start; }
+.admin-hq-area__error { grid-column: 1 / -1; margin: 0; }
+.admin-hq-area__hint { font-size: 12px; opacity: .75; }
+.admin-hq-zone-picker { display: grid; gap: 6px; }
+.admin-hq-review { margin-top: 10px; padding: 10px; border: 1px solid currentColor; border-radius: 8px; display: grid; gap: 6px; overflow-wrap: anywhere; }
+.admin-hq-review ul { margin: 0; padding-left: 18px; }
+.admin-hq-zone-cell small { display: block; opacity: .75; }
+@media (max-width: 700px) { .admin-hq-area { grid-template-columns: 1fr; } }

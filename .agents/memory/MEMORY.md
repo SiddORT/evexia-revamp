@@ -6,6 +6,7 @@
 - [Docker initialization CI boundary](docker-initialization-ci-boundary.md) — local Docker build/run support does not prove canonical-path or namespace-entry capability.
 - [Browser response audits](browser-response-audits.md) — exact API pathname boundaries keep Vite source modules out of JSON/credential audits without hiding malformed API responses.
 - [Development runtime subprocesses](development-runtime-subprocesses.md) — test real managed working directories without harness import paths; parent preflight success does not prove child readiness.
+- [Manual-only preview workflows](manual-only-preview-workflows.md) — restoring a preview can start preconfigured release checks and automatic API migrations; inspect and stop unexpected checks.
 - [Master seeding scope](master-seeding-scope.md) — master samples mean linked directories/catalogues, not stock transactions or Purchase Orders activation.
 - [Restored catalog fidelity](restored-catalog-fidelity.md) — pg_restore can reserialize CHECK expressions; rerun strict retirement preflight on the actual restored catalog.
 - [Development preview origins](development-preview-origins.md) — forked preview login can fail before password checking when its origin allowlist still names the previous workspace.

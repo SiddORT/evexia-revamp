@@ -2362,6 +2362,44 @@ export interface FileResponse {
   version: number;
 }
 
+export interface HeadquarterAreaInput {
+  code?: string | null;
+  id?: string | null;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+}
+
+export interface HeadquarterAreaResponse {
+  code: string;
+  id: string;
+  name: string;
+  sequence: number | null;
+}
+
+export type HeadquarterCreateStatus =
+  (typeof HeadquarterCreateStatus)[keyof typeof HeadquarterCreateStatus];
+
+export const HeadquarterCreateStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface HeadquarterCreate {
+  /** @maxItems 200 */
+  areas?: HeadquarterAreaInput[];
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  name: string;
+  state_code?: string | null;
+  status: HeadquarterCreateStatus;
+  zone_id: string;
+}
+
 export type HeadquarterEditStatus =
   (typeof HeadquarterEditStatus)[keyof typeof HeadquarterEditStatus];
 
@@ -2371,6 +2409,8 @@ export const HeadquarterEditStatus = {
 } as const;
 
 export interface HeadquarterEdit {
+  /** @maxItems 200 */
+  areas: HeadquarterAreaInput[];
   /** @minimum 1 */
   expected_version: number;
   /**
@@ -2380,24 +2420,7 @@ export interface HeadquarterEdit {
   name: string;
   state_code?: string | null;
   status: HeadquarterEditStatus;
-}
-
-export type HeadquarterFieldsStatus =
-  (typeof HeadquarterFieldsStatus)[keyof typeof HeadquarterFieldsStatus];
-
-export const HeadquarterFieldsStatus = {
-  active: "active",
-  inactive: "inactive",
-} as const;
-
-export interface HeadquarterFields {
-  /**
-   * @minLength 1
-   * @maxLength 200
-   */
-  name: string;
-  state_code?: string | null;
-  status: HeadquarterFieldsStatus;
+  zone_id: string;
 }
 
 export interface HeadquarterImportResult {
@@ -2420,7 +2443,24 @@ export const HeadquarterResponseStatus = {
   inactive: "inactive",
 } as const;
 
+export type HeadquarterZoneStatus =
+  (typeof HeadquarterZoneStatus)[keyof typeof HeadquarterZoneStatus];
+
+export const HeadquarterZoneStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface HeadquarterZone {
+  deleted: boolean;
+  id: string;
+  name: string;
+  status: HeadquarterZoneStatus;
+}
+
 export interface HeadquarterResponse {
+  area_count: number;
+  areas: HeadquarterAreaResponse[];
   createdAt: string;
   createdBy: string;
   id: string;
@@ -2429,11 +2469,14 @@ export interface HeadquarterResponse {
    * @maxLength 200
    */
   name: string;
+  next_area_sequence: number;
   state_code: string;
   status: HeadquarterResponseStatus;
   updatedAt: string;
   updatedBy: string;
   version: number;
+  zone: HeadquarterZone | null;
+  zone_id: string | null;
 }
 
 export interface HeadquarterPage {
@@ -2467,6 +2510,18 @@ export interface HeadquarterStatus {
 export interface HeadquarterVersion {
   /** @minimum 1 */
   expected_version: number;
+}
+
+export interface HeadquarterZoneChoice {
+  id: string;
+  name: string;
+}
+
+export interface HeadquarterZonePage {
+  items: HeadquarterZoneChoice[];
+  limit: number;
+  offset: number;
+  total: number;
 }
 
 export const HealthStatusValue = {
@@ -9926,6 +9981,23 @@ export const DownloadHeadquarterSampleFormat = {
   csv: "csv",
   xlsx: "xlsx",
 } as const;
+
+export type ListHeadquarterZoneChoicesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+};
 
 export type ReviewInventoryInitializationParams = {
   /**

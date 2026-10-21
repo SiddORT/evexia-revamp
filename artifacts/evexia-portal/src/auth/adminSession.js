@@ -649,6 +649,7 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
     ? /^(?:|\/trash|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete|restore))?)$/
     : /^(?:|\/export|\/import\/(?:review|commit)|\/[0-9a-f-]{36}(?:\/(?:edit|status|delete))?)$/;
   if (!route.test(path) && !(resource === 'patients' && path === '/language-choices' && body === undefined && file === undefined)
+      && !(resource === 'headquarters' && path === '/zone-choices' && body === undefined && file === undefined)
       && !(resource === 'storage-locations' && /^\/postal\/[1-9][0-9]{5}$/.test(path))
       && !(['vendors', 'designations', 'headquarters', 'product-categories', 'opening-balances'].includes(resource) && path === '/sample') && !(resource === 'opening-balances' && path === '/references')) {
     throw new SessionError(`Unsupported ${label} operation.`);
@@ -728,6 +729,12 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
       ? `${label} service is unavailable. Your draft is preserved. Retry later; inspect records first if a save was pending.`
       : data?.error?.message || `${label} request failed. Review the details and retry.`, response.status);
     error.code = data?.error?.code;
+    if (resource === 'headquarters' && response.status === 422 && data?.error?.fields?.length) {
+      error.fields = Object.fromEntries(data.error.fields
+        .filter((item) => /^body\.(?:name|state_code|status|zone_id|areas(?:\.\d+\.(?:name|code|id))?)$/.test(item.field))
+        .map((item) => [item.field.replace(/^body\./, ''), item.message || 'Check this field.']));
+      error.message = 'Headquarter validation failed. Check the marked fields; nothing was saved.';
+    }
     if (resource === 'vendors' && response.status === 422 && data?.error?.fields?.length) {
       error.fields = Object.fromEntries(data.error.fields.filter((item) => /^body\.[A-Za-z]+$/.test(item.field))
         .map((item) => [item.field.replace(/^body\./, ''), 'Check this required field, format and length.']));
@@ -743,7 +750,7 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
     }
     // A Language commit can have an uncertain outcome even when its safe
     // database error was mapped to "unavailable". Never encourage create replay.
-    error.ambiguous = writing && path !== '/import/review' && response.status >= 500 && (resource === 'languages' || error.code !== unavailable);
+    error.ambiguous = writing && path !== '/import/review' && response.status >= 500 && (['languages', 'headquarters'].includes(resource) || error.code !== unavailable);
     // The server may have revoked one action without ending the staff session.
     // Refresh the authoritative matrix; never replay the denied operation.
     if (response.status === 403 && zone && state.user?.identity_kind === 'staff') await verifySession();
