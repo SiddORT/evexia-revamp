@@ -1,0 +1,91 @@
+unpacking 'https://github.com/NixOS/nixpkgs/archive/26f4107e47e3ad0ffd0db220469ba83b6f6d96e8.tar.gz' into the Git cache...
+these 120 paths will be fetched (573.2 MiB download, 2.3 GiB unpacked):
+  /nix/store/j7gw09i8msa13fvpv20j98hp6id9k2ql-acl-2.4.0
+  /nix/store/zfsvnb0vxwck1hq55j4900f7rrpm5y9y-attr-2.6.0
+  /nix/store/pdhhq7bk4i1qyspahiy1v618qrmhplxj-audit-4.2.1-lib
+  /nix/store/jnyfsf2mp08d1xyz2m72ic2vz2kcx0sd-bash-5.3p9
+  /nix/store/pwxj9ycwqd117yra6czifh3xfx5p88lh-bash-interactive-5.3p9
+  /nix/store/g2i5zxslx9msaqjy14hdp2af064i9pbv-binutils-2.46
+  /nix/store/znsjfmcnjvwvj3ccm7zkhaksg6r2yj8m-binutils-2.46-lib
+  /nix/store/2gjbrb8nwqf1225n3zhca56s2rxrqqhx-binutils-wrapper-2.46
+  /nix/store/7yaq6zpgwizygk1gayplhd259sr092y9-bison-3.8.2
+  /nix/store/pddqhhpjip4p5l93nxdkvbmm23fp7fd9-bzip2-1.0.8
+  /nix/store/a7501p1w90nhbln9259viwql8m4mnbx5-bzip2-1.0.8-bin
+  /nix/store/jskv39ga5njhv0hwv5yxjq56dmc5jjm8-clang-21.1.8
+  /nix/store/7wxvhkgxnzarwzbc2vp1yzzwh2741xfn-clang-21.1.8-lib
+  /nix/store/3wa0qi7awp5jq7n8iyvb493dp359rnaq-clang-wrapper-21.1.8
+  /nix/store/9lpm7myk677ml4fx8dizn0j9nb930qxf-compiler-rt-libc-21.1.8
+  /nix/store/m83p0g6bjz0d0xaix9052r22zh8x36l4-compiler-rt-libc-21.1.8-dev
+  /nix/store/bhv6xyvqw6gjs3j488gi1z6wdv18bdpa-coreutils-9.11
+  /nix/store/shnzdlh3h2brh0c755yp0n9bglb0np1j-db-4.8.30
+  /nix/store/aqq53g5lgr9n9hxzmbblpfzds5z067ca-diffutils-3.12
+  /nix/store/3bvj5yzgwsf4dcl9cwnq81d94a3qs759-ed-1.22.5
+  /nix/store/qbixmcwf0zrv46w8c260aw1dv2hj76ki-expand-response-params
+  /nix/store/vamvnrq8rdxgfqrqky2qlfwwldwkg8mx-expand-response-params
+  /nix/store/b56ind0m3byv7pzby5mwsn5qsy1g6lqf-expat-2.8.5
+  /nix/store/24ppwxxymwv6p22ag41mk4vvb79cmr0k-file-5.47
+  /nix/store/4khybwqcyla8cnn8pxbr723ar9gl404m-find-xml-catalogs-hook
+RELEASE_TIMING {"label": "gate:sh scripts/test-api-foundation.sh tests/test_role_urls.py tests/test_domain_admission.py tests/test_migration_domain_admission.py tests/test_nginx_domain_admission.py tests/test_proxy_client_identity.py tests/test_operator_hostnames.py", "seconds": 24.035, "returncode": 0}
+TAP version 13
+# Traceback (most recent call last):
+#   File "<string>", line 1, in <module>
+#     import json; from app.schemas.phone import DIAL; print(json.dumps(DIAL))
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#   File "/home/runner/work/evexia-revamp/evexia-revamp/artifacts/api-server/backend/app/schemas/phone.py", line 3, in <module>
+#     import phonenumbers
+# ModuleNotFoundError: No module named 'phonenumbers'
+# Subtest: complete maintained JavaScript/Python region and calling-code parity
+not ok 1 - complete maintained JavaScript/Python region and calling-code parity
+  ---
+  duration_ms: 39.075959
+  type: 'test'
+  location: '/home/runner/work/evexia-revamp/evexia-revamp/artifacts/evexia-portal/src/services/phoneCountries.test.js:6:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Command failed: python3 -c import json; from app.schemas.phone import DIAL; print(json.dumps(DIAL))
+    Traceback (most recent call last):
+      File "<string>", line 1, in <module>
+        import json; from app.schemas.phone import DIAL; print(json.dumps(DIAL))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/home/runner/work/evexia-revamp/evexia-revamp/artifacts/api-server/backend/app/schemas/phone.py", line 3, in <module>
+        import phonenumbers
+    ModuleNotFoundError: No module named 'phonenumbers'
+    
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    genericNodeError (node:internal/errors:983:15)
+    wrappedFn (node:internal/errors:537:14)
+    checkExecSyncError (node:child_process:916:11)
+    execFileSync (node:child_process:952:15)
+    TestContext.<anonymous> (file:///home/runner/work/evexia-revamp/evexia-revamp/artifacts/evexia-portal/src/services/phoneCountries.test.js:7:29)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: international national storage, shared-code identities and legacy policies agree
+ok 2 - international national storage, shared-code identities and legacy policies agree
+  ---
+  duration_ms: 10.63416
+  type: 'test'
+  ...
+# Subtest: every maintained region has a usable example matching server validation
+ok 3 - every maintained region has a usable example matching server validation
+  ---
+  duration_ms: 340.034674
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 2
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 528.440819
+RELEASE_TIMING {"label": "gate:node --test artifacts/evexia-portal/src/services/phoneCountries.test.js", "seconds": 0.568, "returncode": 1}
+ ELIFECYCLE  Command failed with exit code 1.
+RELEASE_TIMING {"label": "release:pnpm run validate:release", "seconds": 79.378, "returncode": 1}
+RELEASE_VALIDATION_FAILED: no automatic authorization issued.
+Error: Process completed with exit code 1.
