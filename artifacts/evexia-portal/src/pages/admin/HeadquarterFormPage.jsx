@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { ArrowLeft, Building2, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import SearchableControl from '../../components/admin/SearchableControl.jsx';
 import { createHeadquarter, editHeadquarter, getHeadquarter, listHeadquarters, listZoneChoices } from '../../services/serverHeadquarters.js';
 import { abbreviation, normalizeName, normalizeCode, validateHeadquarter, validateAreas, suggestCodes, areaPayload, newAreaRow, savedAreaRow, MAX_AREAS } from '../../services/headquarterCode.js';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
@@ -28,6 +29,12 @@ function ZonePicker({ value, record, onChange, invalid, disabled }) {
   const gen = useRef(0);
   const mounted = useRef(true);
   const known = useRef(new Map());
+  const moreFlight = useRef(null);
+  function search(next) {
+    gen.current += 1;
+    setItems([]); setTotal(0); setLoading(true); setError('');
+    setQuery(next); setTick((v) => v + 1);
+  }
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; gen.current += 1; }; }, []);
   useEffect(() => {
     const controller = new AbortController();
@@ -43,30 +50,36 @@ function ZonePicker({ value, record, onChange, invalid, disabled }) {
     return () => { clearTimeout(timer); controller.abort(); };
   }, [query, tick]);
   async function more() {
+    if (disabled || loading || moreFlight.current === gen.current) return;
     const guard = reportingIdentityGuard();
     const mine = gen.current;
-    setLoading(true);
+    moreFlight.current = mine;
+    setLoading(true); setError('');
     try {
       const r = await listZoneChoices({ query: query.trim(), limit: 100, offset: items.length });
       guard();
       if (!mounted.current || gen.current !== mine) return;
       r.items.forEach((z) => known.current.set(z.id, z));
       setItems((cur) => [...cur, ...r.items.filter((x) => !cur.some((y) => y.id === x.id))]); setTotal(r.total);
-    } catch (c) { try { guard(); } catch { return; } if (mounted.current && gen.current === mine) setError(c.message); } finally { if (mounted.current && gen.current === mine) setLoading(false); }
+    } catch (c) { try { guard(); } catch { return; } if (mounted.current && gen.current === mine) setError(c.message); } finally { if (moreFlight.current === mine) moreFlight.current = null; if (mounted.current && gen.current === mine) setLoading(false); }
   }
   const current = value ? (known.current.get(value) || (record?.zone?.id === value ? record.zone : null)) : null;
   const keep = current && !items.some((x) => x.id === current.id) ? current : null;
-  return <div className="admin-hq-zone-picker">
-    <input className="mr-form__control" type="search" maxLength={200} value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search active zones" aria-label="Search zones" disabled={disabled} />
-    <select id="headquarter-zone" className="mr-form__control" value={value} onChange={(e) => onChange(e.target.value)} aria-invalid={invalid} disabled={disabled} data-testid="select-headquarter-zone">
-      <option value="" disabled>{loading && !items.length ? 'Loading zones…' : 'Select zone'}</option>
-      {keep && <option value={keep.id}>{zoneText(keep)} - currently assigned</option>}
-      {items.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
-    </select>
-    <span className="admin-hq-area__hint" role="status">Showing {items.length} of {total} active zones{loading ? '…' : ''}</span>
-    {items.length < total && <button type="button" className="admin-button admin-button--secondary" disabled={loading || disabled} onClick={more}>Load more zones</button>}
-    {error && <p className="mr-form__error" role="alert">{error} <button type="button" className="admin-button admin-button--secondary" onClick={() => setTick((v) => v + 1)}>Retry</button></p>}
-  </div>;
+  // The choices endpoint returns only active, live zones (ID and name).
+  // A saved reference outside those results is display-only, never a new assignment.
+  const choices = items.map((z) => ({ value: z.id, label: z.name }));
+  if (keep) choices.unshift({ value: keep.id, label: `${zoneText(keep)} - currently assigned`, disabled: true });
+  return <SearchableControl id="headquarter-zone" label="Zone" value={value}
+    selectedLabel={current ? zoneText(current) : value ? 'Saved zone (unavailable)' : ''}
+    choices={choices} onChange={onChange} onSearch={search} searchMaxLength={200}
+    placeholder="Select zone" required invalid={invalid} disabled={disabled}
+    describedBy={invalid ? 'headquarter-zone-error' : undefined} loading={loading}
+    testId="select-headquarter-zone"
+    feedback={error ? `Zones could not be loaded. ${error}` : loading ? 'Loading zones…'
+      : `Showing ${items.length} of ${total} active zones${!items.length ? (query.trim() ? '. No matches found.' : '. No active zones available.') : '.'}`}
+    action={error ? { label: items.length ? 'Retry load more zones' : 'Retry', pending: loading || disabled,
+      run: items.length ? more : () => search(query) }
+      : items.length < total ? { label: loading ? 'Loading…' : 'Load more zones', pending: loading || disabled, run: more } : null} />;
 }
 
 function HeadquarterForm({ record, onSave, onCancel, onRefresh }) {
@@ -164,29 +177,30 @@ function HeadquarterForm({ record, onSave, onCancel, onRefresh }) {
         {review?.kind === 'existing' ? <><button type="button" className="admin-button" onClick={onCancel}>Return to list to inspect it</button></>
           : !review && <button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={reconcile}><RefreshCw size={16} /> Review current server details (keep draft)</button>}</div>}
       <div className="mr-form__grid">
-        <div className="mr-form__field"><label className="mr-form__label" htmlFor="headquarter-zone">Zone *</label><ZonePicker value={values.zone_id} record={record} onChange={(v) => update('zone_id', v)} invalid={Boolean(errors.zone_id)} disabled={pending} />{errors.zone_id && <p className="mr-form__error" role="alert">{errors.zone_id}</p>}</div>
+        <div className="mr-form__field"><label className="mr-form__label" htmlFor="headquarter-zone">Zone *</label><ZonePicker value={values.zone_id} record={record} onChange={(v) => update('zone_id', v)} invalid={Boolean(errors.zone_id)} disabled={pending} />{errors.zone_id && <p id="headquarter-zone-error" className="mr-form__error" role="alert">{errors.zone_id}</p>}</div>
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="headquarter-name">HQ Name *</label><input id="headquarter-name" className="mr-form__control" value={values.name} onChange={(event) => update('name', event.target.value)} disabled={pending} placeholder="e.g. North Mumbai" aria-invalid={Boolean(errors.name)} data-testid="input-headquarter-name" />{errors.name && <p className="mr-form__error" role="alert">{errors.name}</p>}</div>
-        <div className="mr-form__field"><label className="mr-form__label" htmlFor="headquarter-state-code">State Code *</label><input id="headquarter-state-code" className="mr-form__control admin-hq-code-input" value={values.state_code} onChange={(event) => update('state_code', event.target.value.toUpperCase())} disabled={pending} aria-invalid={Boolean(errors.state_code)} data-testid="input-headquarter-state-code" />
-          <button type="button" className="admin-button admin-button--secondary" onClick={regenerate} disabled={pending}><RefreshCw size={16} /> Regenerate from HQ name</button>
+        <div className="mr-form__field"><label className="mr-form__label" htmlFor="headquarter-state-code">State Code *</label><div className="admin-hq-code-row"><input id="headquarter-state-code" className="mr-form__control admin-hq-code-input" value={values.state_code} onChange={(event) => update('state_code', event.target.value.toUpperCase())} disabled={pending} aria-invalid={Boolean(errors.state_code)} data-testid="input-headquarter-state-code" />
+          <button type="button" className="admin-hq-regenerate" onClick={regenerate} disabled={pending} aria-label="Regenerate from HQ name" title="Regenerate from HQ name"><RefreshCw size={14} aria-hidden="true" /> Regenerate</button></div>
           {errors.state_code && <p className="mr-form__error" role="alert">{errors.state_code}</p>}
         </div>
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="headquarter-status">Status *</label><select id="headquarter-status" className="mr-form__control" value={values.status} onChange={(event) => update('status', event.target.value)} disabled={pending} aria-invalid={Boolean(errors.status)} data-testid="select-headquarter-status"><option value="" disabled>Select status</option><option value="active">Active</option><option value="inactive">Inactive</option></select>{errors.status && <p className="mr-form__error" role="alert">{errors.status}</p>}</div>
       </div>
-      <fieldset className="admin-hq-areas" aria-label="Areas" disabled={pending} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
-        <div className="admin-hq-areas__head"><h3>Areas ({rows.length}/{MAX_AREAS})</h3><button type="button" className="admin-button admin-button--secondary" onClick={addRow} disabled={pending || rows.length >= MAX_AREAS}><Plus size={16} /> Add area</button></div>
+      <fieldset className="admin-hq-areas" aria-label="Areas" disabled={pending}>
+        <div className="admin-hq-areas__head"><h3 className="mr-form__section-title">Areas ({rows.length}/{MAX_AREAS})</h3><button type="button" className="admin-button admin-button--secondary" onClick={addRow} disabled={pending || rows.length >= MAX_AREAS}><Plus size={16} /> Add area</button></div>
         {areaErrors._ && <p className="mr-form__error" role="alert">{areaErrors._}</p>}
         {!rows.length && <p className="admin-hq-area__hint">No areas. Areas are optional.</p>}
-        {rows.map((row, i) => {
+        <div className="admin-hq-areas__rows">{rows.map((row, i) => {
           const auto = !row.id && !row.manual;
+          const fieldId = `headquarter-area-${row.key}`;
           return <div className="admin-hq-area" key={row.key}>
-            <input className="mr-form__control" value={row.name} onChange={(e) => patchRow(row.key, { name: e.target.value })} placeholder="Area name" aria-label={`Area ${i + 1} name`} aria-invalid={Boolean(areaErrors[row.key])} disabled={row.removedOnServer} />
-            <div><input className="mr-form__control admin-hq-code-input" value={auto ? suggestions[row.key] || '' : row.code} onChange={(e) => patchRow(row.key, { code: e.target.value.toUpperCase(), manual: true })} placeholder="Code" aria-label={`Area ${i + 1} code`} aria-invalid={Boolean(areaErrors[row.key])} disabled={row.removedOnServer} />
-              {auto && <span className="admin-hq-area__hint">Suggested; assigned by server</span>}</div>
-            <button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Remove area ${i + 1}`} onClick={() => removeRow(row.key)}><Trash2 size={16} /></button>
+            <div className="mr-form__field"><label className="mr-form__label" htmlFor={`${fieldId}-name`}>Area name</label><input id={`${fieldId}-name`} className="mr-form__control" value={row.name} onChange={(e) => patchRow(row.key, { name: e.target.value })} placeholder="Area name" aria-label={`Area ${i + 1} name`} aria-invalid={Boolean(areaErrors[row.key])} disabled={row.removedOnServer} /></div>
+            <div className="mr-form__field"><label className="mr-form__label" htmlFor={`${fieldId}-code`}>Area code</label><input id={`${fieldId}-code`} className="mr-form__control admin-hq-code-input" value={auto ? suggestions[row.key] || '' : row.code} onChange={(e) => patchRow(row.key, { code: e.target.value.toUpperCase(), manual: true })} placeholder="Code" aria-label={`Area ${i + 1} code`} aria-invalid={Boolean(areaErrors[row.key])} aria-describedby={auto ? `${fieldId}-hint` : undefined} disabled={row.removedOnServer} />
+              {auto && <span id={`${fieldId}-hint`} className="admin-hq-area__hint">Suggested; assigned by server</span>}</div>
+            <button type="button" className="admin-icon-button admin-icon-button--danger admin-hq-area__remove" aria-label={`Remove area ${i + 1}`} onClick={() => removeRow(row.key)}><Trash2 size={16} /></button>
             {row.removedOnServer && <p className="mr-form__error admin-hq-area__error" role="alert">This saved area was removed on the server. <button type="button" className="admin-button admin-button--secondary" onClick={() => patchRow(row.key, { id: null, manual: true, removedOnServer: false })}>Re-add as new area</button> or remove the row.</p>}
             {areaErrors[row.key] && <p className="mr-form__error admin-hq-area__error" role="alert">{areaErrors[row.key]}</p>}
           </div>;
-        })}
+        })}</div>
       </fieldset>
     </div>
     <div className="mr-form__footer"><div className="mr-form__actions"><button type="button" disabled={pending} className="admin-button admin-button--secondary" onClick={onCancel}>Cancel</button><button type="submit" disabled={pending || blocked} className="admin-button" data-testid="button-save-headquarter">{pending ? 'Saving…' : record ? 'Save changes' : 'Save headquarter'}</button></div></div>
