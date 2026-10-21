@@ -1,3 +1,4 @@
+@import './components/admin/masterImportTabs.css';
 .excel-import { display: grid; gap: 22px; min-width: 0; padding-bottom: 48px; overflow-wrap: anywhere; }
 .excel-import :is(.excel-import__card, .excel-import__report, .excel-import__report-head > div, .admin-page-head > div) { min-width: 0; }
 .excel-import :is(.admin-button, .excel-import__tab, .excel-import__back) { max-width: 100%; height: auto; padding-block: 8px; white-space: normal; overflow-wrap: anywhere; }
@@ -7,9 +8,6 @@
 .excel-import__back { display: inline-flex; align-items: center; gap: 7px; justify-self: start; padding: 0; border: 0; background: none; color: var(--accent); cursor: pointer; font: inherit; font-size: 12px; font-weight: 700; }
 .excel-import__back:hover { text-decoration: underline; }
 .excel-import__mock { align-self: center; border: 1px solid var(--admin-border); border-radius: 40px; padding: 8px 13px; color: var(--admin-text-soft); background: var(--surface); font-size: 11px; font-weight: 700; }
-.excel-import__tabs { display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--admin-border); padding-bottom: 12px; }
-.excel-import__tab { border: 1px solid var(--admin-border); border-radius: 8px; background: var(--surface); color: var(--admin-text-soft); padding: 10px 15px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
-.excel-import__tab--active { border-color: var(--accent); background: var(--accent); color: white; }
 .excel-import__steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .excel-import__card, .excel-import__report { position: relative; border: 1px solid var(--admin-border); border-radius: 12px; background: var(--surface); padding: 24px; }
 .excel-import__card { display: flex; flex-direction: column; align-items: flex-start; gap: 13px; min-height: 340px; }

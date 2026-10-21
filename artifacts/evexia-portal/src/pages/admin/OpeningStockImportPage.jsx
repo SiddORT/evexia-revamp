@@ -12,6 +12,7 @@ import { downloadServerBlob } from '../../services/downloads.js';
 import '../../mr.css';
 import '../../moveStocks.css';
 import '../../inventoryServer.css';
+import '../../openingStock.css';
 
 const BASE = '/admin/masters/opening-stock';
 async function loadAll(fetchPage, kind) {
@@ -116,7 +117,7 @@ export default function OpeningStockImportPage() {
       else { keyRef.current = null; setMessage(`${e.message || 'Nothing was imported.'} The file and review are kept.`); }
     } finally { lock.current = false; setBusy(''); }
   }
-  return <AdminLayout title="Import opening stock"><div className="move-stocks-page">
+  return <AdminLayout title="Import opening stock"><div className="move-stocks-page opening-stock-import">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Import</p><h1>Import opening stock</h1><p className="admin-page-head__description">Download the sample catalogue, fill quantity, unit rate and optional location for the rows you need, then review before committing.</p></div>
       <div className="ms-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => leaveGuard(BASE)}><ArrowLeft size={16} /> All opening stock</button></div></div>
     <MasterImportTabs kind="opening-stock" />

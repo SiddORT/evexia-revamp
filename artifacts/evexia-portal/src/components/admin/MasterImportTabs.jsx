@@ -1,4 +1,5 @@
 import { useLocation } from 'wouter';
+import './masterImportTabs.css';
 import { EXCEL_TEMPLATES } from '../../services/mockExcelImport.js';
 import { useAdminSession } from '../../auth/AdminBoundary.jsx';
 import { MASTER_CATALOGUE, hasMasterPermission, isStaffIdentity } from '../../auth/capabilities.js';

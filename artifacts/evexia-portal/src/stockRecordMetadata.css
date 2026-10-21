@@ -1,0 +1,6 @@
+/* Shared inventory labels and record details must work on cold lazy routes. */
+.stock-sub { display: block; color: var(--admin-muted); font-size: 11px; margin-top: 2px; }
+.stock-report__meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 10px; margin: 0 0 16px; }
+.stock-report__meta > div { min-width: 0; }
+.stock-report__meta dt { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--admin-muted); font-weight: 700; }
+.stock-report__meta dd { margin: 2px 0 0; font-size: 12px; overflow-wrap: anywhere; }

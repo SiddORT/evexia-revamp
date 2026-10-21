@@ -1,3 +1,4 @@
+@import './stockRecordMetadata.css';
 .stock-page { min-width: 0; }
 .stock-page .admin-page-head { align-items: flex-start; flex-wrap: wrap; }
 .stock-actions { display: flex; gap: 9px; flex-wrap: wrap; padding-top: 4px; }
@@ -34,7 +35,6 @@
 .stock-scope p { margin: 0; }
 .stock-scope p + p { margin-top: 3px; font-size: 11px; }
 .stock-scope strong { color: var(--admin-text); }
-.stock-sub { display: block; color: var(--admin-muted); font-size: 11px; margin-top: 2px; }
 .stock-view { min-height: 34px; padding: 0 10px; white-space: nowrap; }
 /* Only stock identities/dates override the shared serial-number column. */
 :is(.stock-list-table, .stock-history-table) .admin-table { table-layout: fixed; }
@@ -71,9 +71,6 @@
 .stock-report-dialog { width: min(100%, 900px); }
 .stock-report { color: var(--admin-text); }
 .stock-report h1 { font-size: 20px; margin: 0 0 12px; }
-.stock-report__meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 0 0 16px; }
-.stock-report__meta dt { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--admin-muted); font-weight: 700; }
-.stock-report__meta dd { margin: 2px 0 0; font-size: 12px; overflow-wrap: anywhere; }
 .stock-report-scroll { width: 100%; overflow-x: auto; }
 .stock-report-scroll:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: -2px; }
 .stock-report table { width: 100%; min-width: 660px; border-collapse: collapse; font-size: 12px; }

@@ -26,6 +26,7 @@ export default function OpeningStockMaster() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [viewing, setViewing] = useState(null);
+  const viewTrigger = useRef(null);
   const [tick, setTick] = useState(0);
   const [exporting, setExporting] = useState('');
   const [exportMsg, setExportMsg] = useState('');
@@ -67,7 +68,7 @@ export default function OpeningStockMaster() {
     { key: 'loc', label: 'Location', render: (r) => locationLabel(r.location) },
     { key: 'date', label: 'Recorded', render: (r) => <>{date(r.recordedDate)}<span className="stock-sub">{r.actor}</span></> },
     { key: 'act', label: 'Actions', render: (r) => <div className="admin-table__actions">
-      <button type="button" className="admin-icon-button" aria-label={`View details, ${r.productName}`} title="Details, activity and totals" onClick={() => { setViewing(r.id); recordLocalAction('opening_stock', 'page_view'); }} data-testid={`button-view-opening-${r.id}`}><Eye size={16} /></button></div> },
+      <button id={`opening-view-${r.id}`} type="button" className="admin-icon-button" aria-label={`View details, ${r.productName}`} title="Details, activity and totals" onClick={(event) => { viewTrigger.current = event.currentTarget; setViewing(r.id); recordLocalAction('opening_stock', 'page_view'); }} data-testid={`button-view-opening-${r.id}`}><Eye size={16} /></button></div> },
   ];
   const sum = data?.summary;
   return <AdminLayout title="Opening Stock"><div>
@@ -90,6 +91,6 @@ export default function OpeningStockMaster() {
           empty={<div className="admin-empty"><strong>{applied ? 'No opening stock matches' : 'No opening stock yet'}</strong><p>{applied ? 'Clear the search.' : 'Add opening stock for an existing allergen or product, or import a filled sample.'}</p></div>} />
         <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={filtered} total={data?.total ?? 0} label="opening stock records" onPageChange={setPage} onPageSizeChange={(n) => { setPageSize(n); setPage(1); }} testId="text-opening-count" /></>}
     </section>
-    {viewing && <OpeningDrawer id={viewing} onClose={() => setViewing(null)} />}
+    {viewing && <OpeningDrawer id={viewing} returnFocusTo={viewTrigger.current} onClose={() => setViewing(null)} />}
   </div></AdminLayout>;
 }

@@ -1,24 +1,29 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import ComboProvenance from './ComboProvenance.jsx';
 import { X } from 'lucide-react';
+import { containDialogTab } from './dialogKeyboard.js';
 import { getMovement } from '../../services/serverInventory.js';
 import { useAdminDateFormatters } from './adminPreferences.js';
 import '../../poActivityDrawer.css';
 import '../../inventoryServer.css';
 
-export default function MovementDrawer({ id, onClose }) {
+export default function MovementDrawer({ id, onClose, returnFocusTo }) {
   const { date, timestamp } = useAdminDateFormatters();
   const dialogRef = useRef(null);
   const [state, setState] = useState({ data: null, loading: true, error: '' });
   const [tick, setTick] = useState(0);
   useEffect(() => {
     const dialog = dialogRef.current;
-    const previousFocus = document.activeElement;
+    const previousFocus = returnFocusTo || document.activeElement;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     dialog.showModal();
-    return () => { dialog.close(); document.body.style.overflow = previousOverflow; if (previousFocus?.isConnected) previousFocus.focus(); };
-  }, []);
+    return () => {
+      dialog.close(); document.body.style.overflow = previousOverflow;
+      const target = previousFocus?.isConnected ? previousFocus : previousFocus?.id ? document.getElementById(previousFocus.id) : null;
+      target?.focus();
+    };
+  }, [returnFocusTo]);
   useEffect(() => {
     const c = new AbortController();
     setState({ data: null, loading: true, error: '' });
@@ -34,12 +39,12 @@ export default function MovementDrawer({ id, onClose }) {
   const m = state.data;
   const place = (p) => [p.address, p.city, p.state, p.pincode, p.countryCode].filter(Boolean).join(', ');
   return <dialog ref={dialogRef} className="po-activity-drawer" aria-labelledby="move-drawer-heading" aria-describedby="move-drawer-description"
-    onCancel={(e) => { e.preventDefault(); onClose(); }} onClick={closeOnBackdrop} data-testid="drawer-move-detail">
+    onKeyDown={containDialogTab} onCancel={(e) => { e.preventDefault(); onClose(); }} onClick={closeOnBackdrop} data-testid="drawer-move-detail">
     <header className="po-activity-drawer__header">
       <div><p className="po-activity-drawer__number">{m ? `${m.source?.name || 'Unallocated'} to ${m.destination.name}` : 'Stock movement'}</p><h2 id="move-drawer-heading">Movement details</h2></div>
       <button type="button" className="po-action po-activity-drawer__close" onClick={onClose} autoFocus aria-label="Close movement details" title="Close movement details" data-testid="button-close-move-detail"><X size={20} aria-hidden="true" /></button>
     </header>
-    <div className="po-activity-drawer__body">
+    <div className="po-activity-drawer__body" tabIndex={0} role="region" aria-label="Movement detail content">
       <p id="move-drawer-description" className="po-activity-drawer__description">Append-only server record. It cannot be edited or deleted; before and after quantities are saved as of the transfer.</p>
       {state.loading && <div role="status" className="admin-empty"><strong>Loading movement…</strong></div>}
       {state.error && <div className="admin-feedback admin-feedback--error inv-banner" role="alert"><p>{state.error}</p><button type="button" className="admin-button admin-button--secondary" onClick={() => setTick((t) => t + 1)}>Retry</button></div>}

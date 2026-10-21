@@ -28,7 +28,7 @@ for tool in initdb pg_ctl createdb python3 curl node pnpm; do
 done
 if [ "${EVEXIA_NIX_DOWNLOAD_ENGINES:-}" = "1" ]; then
   case "$*" in
-    ""|*download-logs.preview.spec.mjs*|*patients-layout.preview.spec.mjs*|*roles-permissions.preview.spec.mjs*|*sales-targets-backend.preview.spec.mjs*|*portal-responsive.preview.spec.mjs*)
+    ""|*download-logs.preview.spec.mjs*|*patients-layout.preview.spec.mjs*|*roles-permissions.preview.spec.mjs*|*sales-targets-backend.preview.spec.mjs*|*portal-responsive.preview.spec.mjs*|*opening-stock.preview.spec.mjs*)
       (cd "$ROOT" && node scripts/prepare-nix-download-browsers.mjs) ;;
   esac
 fi
@@ -276,6 +276,7 @@ echo "Running authenticated browser previews against an isolated synthetic Postg
 # release path. Keep unrelated specs in their existing Chromium configuration.
 # Run sequentially: concurrent projects would replace the synthetic session.
 OTHER_SPECS=
+OPENING_STOCK=0
 RESPONSIVE=0
 DOWNLOADS=0
 PATIENT_LAYOUT=0
@@ -296,6 +297,7 @@ for spec in $SPECS; do
 done
 for spec in $SPECS; do
   case "$spec" in
+    */opening-stock.preview.spec.mjs) OPENING_STOCK=1 ;;
     */role-lifecycle.preview.spec.mjs)
       # This fixture intentionally retains a Staff identity and role history.
       # Never contaminate Roles' empty-state baseline or Staff batch counts.
@@ -348,6 +350,10 @@ for spec in $SPECS; do
 done
 if [ "$RESPONSIVE" -eq 1 ]; then
   EVEXIA_RESPONSIVE_RESULT="$RESULTS/responsive-summary.json" timed preview:responsive pnpm exec playwright test --config=playwright.responsive.config.mjs --workers=1 --output="$RESULTS/portal-responsive"
+fi
+if [ "$OPENING_STOCK" -eq 1 ]; then
+  echo "Opening Stock focused gate: Chromium, Firefox and WebKit; disposable server data, no original-target migration."
+  timed preview:opening-stock-matrix pnpm exec playwright test --config=playwright.opening-stock.config.mjs --workers=1 --output="$RESULTS/opening-stock-matrix"
 fi
 if [ -n "$OTHER_SPECS" ] && [ "${EVEXIA_ROLES_LAYOUT_ONLY:-}" != "1" ] && [ "${EVEXIA_SALES_TARGET_LAYOUT_ONLY:-}" != "1" ]; then
   # shellcheck disable=SC2086

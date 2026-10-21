@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import { useLocation } from 'wouter';
 import { ArrowLeftRight, Eye, Plus } from 'lucide-react';
@@ -17,6 +17,7 @@ export default function MoveStocks() {
   const [, navigate] = useLocation();
   const m = useMoveStocks();
   const [viewing, setViewing] = useState(null);
+  const viewTrigger = useRef(null);
 
   const columns = [
     { key: 'sr', label: 'Sr. No.', render: (_r, i) => <span className="admin-table__serial">{i + 1}</span> },
@@ -25,7 +26,7 @@ export default function MoveStocks() {
     { key: 'date', label: 'Date', render: (r) => displayDate(r.date) },
     { key: 'by', label: 'Delivered by', render: (r) => r.deliveredBy },
     { key: 'items', label: 'Items', render: (r) => `${r.lines.length} lot${r.lines.length === 1 ? '' : 's'}` },
-    { key: 'act', label: 'Actions', render: (r) => <button type="button" className="admin-button admin-button--secondary" onClick={() => setViewing(r.id)} aria-label={`View details, ${r.source.name} to ${r.destination.name}, ${displayDate(r.date)}`} title="View movement details" data-testid={`button-view-move-${r.id}`}><Eye size={14} aria-hidden="true" /></button> },
+    { key: 'act', label: 'Actions', render: (r) => <button id={`movement-view-${r.id}`} type="button" className="admin-button admin-button--secondary" onClick={(event) => { viewTrigger.current = event.currentTarget; setViewing(r.id); }} aria-label={`View details, ${r.source.name} to ${r.destination.name}, ${displayDate(r.date)}`} title="View movement details" data-testid={`button-view-move-${r.id}`}><Eye size={14} aria-hidden="true" /></button> },
   ];
 
   return <AdminLayout title="Move Stocks"><div className="move-stocks-page">
@@ -43,6 +44,6 @@ export default function MoveStocks() {
       </div>
       {!m.error && <TablePagination page={m.page} pageCount={m.pageCount} pageSize={m.pageSize} filtered={m.filtered} total={m.total} label={m.filtered === 1 ? 'movement' : 'movements'} onPageChange={m.setPage} onPageSizeChange={m.setPageSize} testId="text-move-count" />}
     </section>
-    {viewing && <MovementDrawer id={viewing} onClose={() => setViewing(null)} />}
+    {viewing && <MovementDrawer id={viewing} returnFocusTo={viewTrigger.current} onClose={() => setViewing(null)} />}
   </div></AdminLayout>;
 }

@@ -1,0 +1,8 @@
+/* Keep reviewed tables inside their own horizontal scrollers, not the grid's
+   intrinsic minimum width. Other inventory workflows retain their styling. */
+.opening-stock-import,
+.opening-stock-import .admin-panel,
+.opening-stock-import .ms-form-body,
+.opening-stock-import .ms-form-body > * { min-width: 0; }
+.opening-stock-import .admin-button { max-width: 100%; height: auto; white-space: normal; overflow-wrap: anywhere; }
+.opening-stock-import .mr-form__control { min-height: 42px; height: auto; padding-block: 8px; }

@@ -1,20 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
+import { containDialogTab } from './dialogKeyboard.js';
 import { getOpening, openingActivity, openingAnalytics, money, valueMoney, locationLabel } from '../../services/openingStock.js';
 import { useAdminDateFormatters } from './adminPreferences.js';
 import '../../poActivityDrawer.css';
 import '../../inventoryServer.css';
 
-export default function OpeningDrawer({ id, onClose }) {
+export default function OpeningDrawer({ id, onClose, returnFocusTo }) {
   const { date, timestamp } = useAdminDateFormatters();
   const dialogRef = useRef(null);
   const [state, setState] = useState({ data: null, activity: [], summary: null, loading: true, error: '' });
   const [tick, setTick] = useState(0);
   useEffect(() => {
-    const dialog = dialogRef.current; const prev = document.activeElement; const overflow = document.body.style.overflow;
+    // React autofocus may already have moved focus before this effect runs.
+    const dialog = dialogRef.current; const prev = returnFocusTo || document.activeElement; const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden'; dialog.showModal();
-    return () => { dialog.close(); document.body.style.overflow = overflow; if (prev?.isConnected) prev.focus(); };
-  }, []);
+    return () => {
+      dialog.close(); document.body.style.overflow = overflow;
+      // Search/freshness requests can replace the table row while modal.
+      const target = prev?.isConnected ? prev : prev?.id ? document.getElementById(prev.id) : null;
+      target?.focus();
+    };
+  }, [returnFocusTo]);
   useEffect(() => {
     const c = new AbortController();
     setState({ data: null, activity: [], summary: null, loading: true, error: '' });
@@ -29,12 +36,12 @@ export default function OpeningDrawer({ id, onClose }) {
     if (event.clientX < b.left || event.clientX > b.right || event.clientY < b.top || event.clientY > b.bottom) onClose();
   }
   const o = state.data; const s = state.summary;
-  return <dialog ref={dialogRef} className="po-activity-drawer" aria-labelledby="opening-drawer-heading" onCancel={(e) => { e.preventDefault(); onClose(); }} onClick={backdrop} data-testid="drawer-opening-detail">
+  return <dialog ref={dialogRef} className="po-activity-drawer" aria-labelledby="opening-drawer-heading" onKeyDown={containDialogTab} onCancel={(e) => { e.preventDefault(); onClose(); }} onClick={backdrop} data-testid="drawer-opening-detail">
     <header className="po-activity-drawer__header">
       <div><p className="po-activity-drawer__number">{o ? o.productName : 'Opening stock'}</p><h2 id="opening-drawer-heading">Opening stock details</h2></div>
       <button type="button" className="po-action po-activity-drawer__close" onClick={onClose} autoFocus aria-label="Close opening stock details" data-testid="button-close-opening-detail"><X size={20} aria-hidden="true" /></button>
     </header>
-    <div className="po-activity-drawer__body">
+    <div className="po-activity-drawer__body" tabIndex={0} role="region" aria-label="Opening stock detail content">
       <p className="po-activity-drawer__description">Append-only stock initialization record. It cannot be edited or deleted. Later movements are recorded in Move Stocks.</p>
       {state.loading && <div role="status" className="admin-empty"><strong>Loading opening stock…</strong></div>}
       {state.error && <div className="admin-feedback admin-feedback--error inv-banner" role="alert"><p>{state.error}</p><button type="button" className="admin-button admin-button--secondary" onClick={() => setTick((t) => t + 1)}>Retry</button></div>}

@@ -197,3 +197,82 @@ verify the authenticated master. The normal API startup was deliberately not
 run because it invokes automatic database synchronization against the original
 configured target. **Live three-way alignment and activation remain unverified
 and are not claimed as complete.**
+
+### Focused cross-browser regression command
+
+Run `pnpm --filter @workspace/evexia-portal run test:opening-stock:browser`.
+This is an explicitly selected suite, not an addition to the default broad
+release run. The runner starts a private socket-only disposable PostgreSQL
+database, migrates only that empty fixture to the repository revision, bootstraps
+a synthetic account, and starts separate API and Vite listeners. Its cleanup
+removes the database and services. It must not start the managed development API
+against the original configured target merely to obtain browser evidence.
+
+The matrix requires Chromium, Firefox and the matching Playwright WebKit engine;
+an unavailable engine fails rather than silently substituting Chromium.
+WebKit evidence does not establish native Safari/macOS file-picker behavior.
+The existing Nix adapter supplies runtime dependencies without substituting an
+older engine executable.
+
+The focused spec is `artifacts/evexia-portal/tests/opening-stock.preview.spec.mjs`;
+its configuration is `playwright.opening-stock.config.mjs`. Real authentication,
+catalogue references, reviews, commits, reconciliation, reads, CSV/XLSX transfer
+and movement details use the disposable server. Delayed/failed refresh calls
+and lost replies are explicit fault injection around those real requests, not
+mocked successful stock writes. Layout measurements and screenshots are
+presentation evidence only, never proof of production authorization or
+main-workspace activation.
+
+The suite checks typed allergen/product choices, optional Unallocated location,
+whole-product quantity validation, manual/import review and cancelled/accepted
+leave prompts, mounted drafts through renewal and retry, committed versus
+not-committed recovery, canonical two-decimal rates and exact opening values,
+trusted-click CSV/XLSX downloads, exported-backup re-import without duplication,
+Opening/Movement drawer Tab containment, Escape and focus return. It measures
+390/768/1440-pixel layouts with actual doubled computed text sizes and checks
+deliberate table scrolling separately from page overflow. Per-run screenshots
+and diagnostics remain in ignored `test-results/evexia-auth-preview.*/`.
+
+### Browser evidence and remaining activation boundary (2026-10-19)
+
+All nine scenario/engine combinations completed across the interrupted focused
+matrix and its targeted continuations:
+
+| Engine | Completed scenarios | Evidence directory suffix |
+| --- | --- | --- |
+| Chromium | Manual entry/recovery/drawers; typed product/location | `Uj6X4n` |
+| Chromium | Import/download/export re-import | `LDMBpv` |
+| Firefox | All three scenarios | `LDMBpv` |
+| WebKit | All three scenarios after explicit Tab containment fix | `7ilFBN` |
+
+Each suffix belongs to `test-results/evexia-auth-preview.<suffix>/opening-stock-matrix/`.
+The WebKit-only continuation reported **3 passed in 25.7 seconds**. Earlier
+passes were not rerun merely for a single green combined summary. The final
+cross-engine Tab-cycle implementation also passed
+`node --test artifacts/evexia-portal/src/components/admin/dialogKeyboard.test.js`;
+its browser follow-up covered the failing WebKit flow. Six changed JSX modules,
+the new browser spec/config, and the shell harness passed focused syntax checks.
+No broad release/default/API regression suite was run.
+
+Actual browser findings fixed here:
+- Drawer focus return now captures the invoking control before autofocus and
+  resolves its stable identity if asynchronous list refresh replaces the row.
+- Both drawers explicitly cycle Tab/Shift+Tab and expose a labelled,
+  keyboard-scrollable content region; Escape and close-button return remain.
+- Import tabs own their styles on cold routes. The Opening Stock import grid
+  keeps review tables within their deliberate scrollers at doubled text sizes.
+- Screenshot inspection also found stock metadata styles depended on first
+  visiting Stock Status. Those existing styles now live in an explicitly shared
+  stylesheet, with minimum-width protection for drawer metadata. This last
+  stylesheet extraction was checked through Vite serving, not another browser
+  matrix; the captured browser screenshots predate that style-only extraction.
+
+The managed **frontend only** was restarted successfully. Routed frontend
+`/release-runtime.json` returned **200**, declaring **0050_opening_stock**.
+Routed API readiness and version remained **502** with the managed API stopped.
+The public capture still stopped at portal lookup, so it does not verify these
+protected screens. The browser evidence above comes from real authenticated
+disposable API/database fixtures, not from this public capture or synthetic
+success-response stubs. Normal main-workspace synchronization/readiness remains
+an activation prerequisite; no original database migration or production access
+was performed or implied by these results.
