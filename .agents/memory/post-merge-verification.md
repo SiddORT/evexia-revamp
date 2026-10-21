@@ -45,6 +45,30 @@ substituting ASCII behavior. Keep the separate PostgreSQL-17-only production
 fresh-catalog review guard intact; development compatibility does not broaden
 the production fresh-install contract.
 
+Treat a new schema target as a runtime compatibility change as well as a
+migration change. Review revision-gated crypto checks and retained feature
+readiness together.
+
+**Why:** An MR-only successor preserved account storage but failed a legacy
+crypto revision allowlist; its new revision also skipped existing inventory
+and opening-stock probes.
+
+**How to apply:** Test the declared current schema as healthy, each inherited
+feature as required, stale application pins as rejected, and unknown account
+revisions as rejected. Update reviewed compatibility explicitly rather than
+accepting arbitrary future revisions or bypassing readiness.
+
+Workflow reconciliation can leave older development listeners outside the
+new workflow's tracked process tree.
+
+**Why:** Setup committed successfully while managed restarts failed on occupied
+ports; the surviving API still reported its previous loaded schema identity.
+
+**How to apply:** Identify port owners and verify their UID, working directory
+and command before terminating only confirmed stale development listeners.
+Restart the exact managed services, then verify loaded identity and ingress
+readiness. Do not kill unrelated processes or change ports to hide the conflict.
+
 For staged security migrations, also reconcile the accepted migration graph
 after synchronization and before freezing writers. Verify one forward head and
 the exact staging revision, including upgrades from newly accepted operational

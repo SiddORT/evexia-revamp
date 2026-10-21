@@ -61,7 +61,8 @@ def test_designation_identity_lifecycle_names_and_transfer_revalidation(client):
         parsed = mr_transfer.parse(downloaded.content, "mrs." + format)
         assert parsed[0]["values"]["designation_id"] == designation.name
         imported = {**fields(hq, zone, code="IMPORT-" + format, username="import." + format),
-            "designation_id": "  RENAMED   Medical Representative ", "reportingManagerId": ""}
+            "designation_id": "  RENAMED   Medical Representative ", "reportingManagerId": "",
+            "zoneIds": json.dumps([zone])}
         data = mr_transfer.encode([[imported[key] for key, _ in mr_transfer.COLUMNS]], format)
         checked = review(api, headers, data, "mrs." + format).json()
         assert checked["valid"], checked
@@ -167,6 +168,7 @@ def csv_data(bodies, headers=None):
     writer.writerow(headers)
     for body in bodies:
         values = dict(body, hq="HQ for MRs", zoneId="Zone for MRs",
+                      zoneIds=json.dumps(body.get("zoneIds") or ["Zone for MRs"]),
                       reportingManagerId=body["reportingManagerId"] or "")
         writer.writerow([values[key] for key, title in mr_transfer.COLUMNS if title in headers])
     return stream.getvalue().encode()

@@ -85,15 +85,25 @@ def predicates(query="", status="all", zone_id=None, hq_id=None):
 PROJECTION_BATCH_SIZE = 500
 
 
-def zone_members(db, rows):
+def zone_members(db, rows, *, with_catalog=False):
+    """Optionally load lifecycle labels in the same bounded membership query."""
     result = {row.id: [] for row in rows}
+    catalog = {}
     keys = list(result)
     for start in range(0, len(keys), PROJECTION_BATCH_SIZE):
-        for member in db.scalars(select(MRZoneAssignment).where(
+        statement = select(MRZoneAssignment).where(
                 MRZoneAssignment.mr_id.in_(keys[start:start + PROJECTION_BATCH_SIZE]))
-                .order_by(MRZoneAssignment.position)):
-            result[member.mr_id].append(member)
-    return result
+        statement = statement.order_by(MRZoneAssignment.position)
+        if with_catalog:
+            for member, key, name, status, deleted_at in db.execute(statement.add_columns(
+                    Zone.id, Zone.name, Zone.status, Zone.deleted_at
+            ).join(Zone, Zone.id == MRZoneAssignment.zone_id)):
+                result[member.mr_id].append(member)
+                catalog[key] = SimpleNamespace(id=key, name=name, status=status, deleted_at=deleted_at)
+        else:
+            for member in db.scalars(statement):
+                result[member.mr_id].append(member)
+    return (result, catalog) if with_catalog else result
 
 
 def selected_zones(db, body, existing=None):
@@ -152,9 +162,7 @@ def projection_context(db, rows, manager_accounts=False):
         for key, value in accounts.items()}
     headquarters = _bulk(db, (row.hq for row in rows), lambda ids: select(
         Headquarter.id, Headquarter.name, Headquarter.status, Headquarter.deleted_at).where(Headquarter.id.in_(ids)))
-    assignments = zone_members(db, rows)
-    zones = _bulk(db, (member.zone_id for members in assignments.values() for member in members), lambda ids: select(
-        Zone.id, Zone.name, Zone.status, Zone.deleted_at).where(Zone.id.in_(ids)))
+    assignments, zones = zone_members(db, rows, with_catalog=True)
     designations = _bulk(db, (row.designation_id for row in rows), lambda ids: select(
         Designation.id, Designation.name, Designation.status, Designation.deleted_at).where(Designation.id.in_(ids)))
     managers = _bulk(db, (row.reportingManagerId for row in rows), lambda ids: select(

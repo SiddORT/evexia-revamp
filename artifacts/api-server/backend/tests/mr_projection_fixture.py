@@ -8,7 +8,7 @@ from decimal import Decimal
 from sqlalchemy import event, insert, text
 from app.core.security import utcnow
 from app.db.models import User, MRProfile
-from app.db.mr_models import MRDirectory
+from app.db.mr_models import MRDirectory, MRZoneAssignment
 from app.db.headquarter_models import Headquarter
 from app.db.zone_models import Zone
 from app.db.designation_models import Designation
@@ -62,6 +62,11 @@ def seed_directory(db, actor_id, size):
             deleted_at=now if i == size else None, deleted_by=actor_id if i == size else None))
     from directory_test_data import encrypted_values
     db.execute(insert(MRDirectory), [encrypted_values(db, "mr_directory", row) for row in records])
+    # Match the primary-zone backfill performed by 0051 for historical MRs.
+    db.execute(insert(MRZoneAssignment), [
+        dict(mr_id=row["id"], zone_id=row["zoneId"], position=0, zone_name=row["zone_name"])
+        for row in records
+    ])
     # First row retains a deleted manager; all others form an acyclic chain.
     # Saved references are intentionally inactive/deleted, not new assignments.
     from app.services.directory_runtime import crypto as directory_cipher

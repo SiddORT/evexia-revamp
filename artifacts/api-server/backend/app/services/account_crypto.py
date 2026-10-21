@@ -118,6 +118,8 @@ def ready(db):
         ["0047_stock_products"], ["0049_product_language_merge"],
         # Physical opening sources preserve account encryption and anchors.
         ["0050_opening_stock"],
+        # Ordered MR-zone links preserve identifiers, encryption and anchors.
+        ["0051_mr_zones"],
     ):
         raise AccountCryptoError()
     current = crypto()
