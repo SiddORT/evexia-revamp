@@ -77,6 +77,18 @@ production invariant.
 changes. Tests that genuinely require independent committed transactions should
 use a separate disposable database instead.
 
+Authentication fixtures must distinguish invited accounts from activated accounts.
+Tests of existing login, permissions, or session revocation should explicitly
+provision activated credentials through the supported account-creation path.
+
+**Why:** A generated provisional password does not establish completed password
+setup. Invitation safeguards can correctly reject login before an unrelated
+authorization or revocation test reaches its intended assertions.
+
+**How to apply:** Keep invitation tests passwordless and assert login refusal.
+For activated-account tests, supply an explicit valid initial password; never
+clear setup requirements or weaken authentication solely to repair a fixture.
+
 Do not assume a full-release downgrade reaches an older migration's refusal.
 Newer forward-only stages can correctly block the path first.
 

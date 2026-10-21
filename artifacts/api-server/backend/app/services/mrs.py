@@ -491,7 +491,7 @@ def insert(db, actor, body, prepared, profile_id=None):
     active = body.status == "active"
     user = User(email=body.email or None, username=body.userId, password_hash=prepared[1],
                 system_role="mr", is_active=active, identity_version=1, token_version=0,
-                password_setup_required=body.initialPassword is None)
+                password_setup_required=getattr(body, "initialPassword", None) is None)
     db.add(user)
     db.flush()
     profile = MRProfile(id=profile_id or uuid.uuid4(), user_id=user.id, is_active=active)

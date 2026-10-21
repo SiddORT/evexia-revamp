@@ -9,7 +9,7 @@ from app.db.models import AuditEvent, AuthSession, User
 from app.db.staff_models import StaffProfile
 from app.db.download_models import DownloadLog
 from app.services.zone_policy import ZONE_ACTIONS
-from test_sessions import client, create_user, login
+from test_sessions import client, create_user, login, PASSWORD
 from test_staff import admin_headers
 from test_staff import BODY
 
@@ -25,7 +25,7 @@ def setup(api, db, grants=(), enabled=True):
     if grants:
         role = api.post(f"{ROLES}/{role['id']}/permissions", headers=admin,
                         json={"permissions": list(grants), "expected_version": role["version"]}).json()
-    created = api.post(STAFF, headers=admin, json=BODY).json()
+    created = api.post(STAFF, headers=admin, json={**BODY, "initialPassword": PASSWORD}).json()
     record = created["record"]
     assert not record["workspace_login_enabled"] and record["custom_role_id"] is None
     if enabled:

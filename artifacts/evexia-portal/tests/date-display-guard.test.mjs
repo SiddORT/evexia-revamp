@@ -20,6 +20,8 @@ const approved = new Map([
   ['pages/admin/ActivityLogs.jsx:new Date(t + DAY).toISOString()', 'Canonical inclusive-end UTC API filter'],
   ['pages/admin/DownloadLogs.jsx:new Date(`${v}T00:00:00Z`).toISOString()', 'UTC input validation'],
   ["pages/admin/DownloadLogs.jsx:new Date(Date.parse(`${f.end}T00:00:00Z`) + DAY).toISOString()", 'Canonical inclusive-end UTC API filter'],
+  ['pages/admin/EmailLogs.jsx:new Date(`${v}T00:00:00Z`).toISOString()', 'UTC input validation, not display'],
+  ["pages/admin/EmailLogs.jsx:new Date(Date.parse(`${f.end}T00:00:00Z`) + DAY).toISOString()", 'Canonical inclusive-end UTC API filter, not display'],
 ]);
 const dateProperty = /^(?:date|poDate|expectedDate|receivedDate|expiryDate|dateOfBirth|dateOfJoining|createdAt|updatedAt|deletedAt|expiresAt|created_at|updated_at|revoked_at|expires_at|last_refreshed_at|refreshed_at|verified_at|challenge_expires_at|verification_expires_at)$/;
 export function displayViolations(text, file) {
@@ -91,6 +93,19 @@ test('Opening Stock currency exception requires the exact reviewed file and expr
     const violations = displayViolations(`const group = (digits) => ${expression};`, 'services/openingStock.js');
     assert.equal(violations.length, 1, expression);
     assert.match(violations[0], /unapproved display primitive/);
+  }
+});
+test('Email Logs UTC exceptions permit only exact machine-filter expressions, never display formatting', () => {
+  const expressions = [
+    'new Date(`${v}T00:00:00Z`).toISOString()',
+    'new Date(Date.parse(`${f.end}T00:00:00Z`) + DAY).toISOString()',
+  ];
+  for (const expression of expressions) {
+    assert.deepEqual(displayViolations(`const filter = ${expression};`, 'pages/admin/EmailLogs.jsx'), []);
+    assert.equal(displayViolations(`const filter = ${expression};`, 'pages/admin/NewEmailLogs.jsx').length, 1);
+  }
+  for (const expression of ['new Date(value).toISOString()', 'new Date(value).toLocaleString()']) {
+    assert.equal(displayViolations(`const display = ${expression};`, 'pages/admin/EmailLogs.jsx').length, 1);
   }
 });
 test('Opening Stock numeric exception does not exempt nearby date presentation', () => {

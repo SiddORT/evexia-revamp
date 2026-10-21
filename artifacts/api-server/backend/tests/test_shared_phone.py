@@ -88,6 +88,13 @@ def test_all_five_create_edit_reload_and_transfers(client):
                 commit = api.post(base + "/import/commit", headers=request_headers,
                     content=payload, params={"filename": "roundtrip." + format, "digest": review.json()["digest"], "confirm": True})
                 assert commit.status_code == 200, commit.text
+                if kind == "mrs":
+                    # Imports have no operator-chosen password: provisioning
+                    # must succeed but generated credentials must remain gated.
+                    credential = commit.json()["credentials"][0]
+                    assert api.post("/api/v1/auth/login", headers={"Origin": "http://testserver"},
+                        json={"identifier": credential["userId"], "password": credential["password"],
+                              "identity_kind": "mr"}).status_code == 401
     cipher = db.execute(text('SELECT "dialCountry_ciphertext" FROM mr_directory WHERE id=:id'),
                         {"id": uuid.UUID(mr["id"])}).scalar_one()
     assert cipher.startswith("v1:") and cipher != "IT"

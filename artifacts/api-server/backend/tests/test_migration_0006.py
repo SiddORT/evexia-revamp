@@ -47,7 +47,7 @@ def migration_db(monkeypatch):
         admin_engine.dispose()
 
 
-def upgrade_with_retirement_recovery(engine, config, *, target_revision="0035_account_identifiers"):
+def upgrade_with_retirement_recovery(engine, config, *, target_revision="0035_account_identifiers", current_models=False):
     """Historical round-trips need original empty-scope recovery too.
 
     This helper is confined to the already-isolated migration fixture. It
@@ -81,6 +81,26 @@ def upgrade_with_retirement_recovery(engine, config, *, target_revision="0035_ac
     with rehearsed_account_approval(engine) as account_arguments:
         config.cmd_opts.x.extend(account_arguments)
         command.upgrade(config, "0035_account_identifiers")
+    if current_models:
+        continue_to_current_schema(engine, config)
+
+
+def continue_to_current_schema(engine, config):
+    """Opt operational tests into today's ORM, with real reference recovery."""
+    from app.core.schema import SCHEMA_REVISION
+    from test_reference_privacy_migration import evidence, approve
+    assert engine.url.query["host"].startswith("/tmp/evexia-api-test.")
+    with engine.connect() as db:
+        revisions = db.scalars(text("SELECT version_num FROM alembic_version")).all()
+    assert len(revisions) == 1 and revisions[0] in {
+        "0035_account_identifiers", "0036_reference_privacy", SCHEMA_REVISION
+    }, "Current-model continuation requires the completed historical fixture"
+    if revisions == ["0035_account_identifiers"]:
+        with tempfile.TemporaryDirectory(prefix="evexia-test-current-model-recovery-") as folder:
+            approve(config, evidence(engine, Path(folder) / "backup.dump"))
+            command.upgrade(config, SCHEMA_REVISION)
+    else:
+        command.upgrade(config, SCHEMA_REVISION)
 
 
 def test_0006_retires_existing_families_and_keeps_refresh_history(migration_db):

@@ -156,7 +156,7 @@ class FreshInstallAlignmentTests(unittest.TestCase):
                       "combo_product_members", "combo_product_revisions",
                   "product_assemblies", "product_requests",
                   "opening_stock", "opening_stock_requests",
-                  "mr_zone_assignments", "headquarter_areas"})
+                  "mr_zone_assignments", "headquarter_areas", "email_attempts"})
 
 
 if __name__ == "__main__":

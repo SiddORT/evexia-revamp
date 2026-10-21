@@ -21,7 +21,7 @@ from app.schemas.staff import StaffFields, StaffStatus
 from app.services.auth import Identity
 from app.services import staff
 from app.services.staff_crypto import StaffError
-from test_migration_0006 import migration_db, upgrade_with_retirement_recovery
+from test_migration_0006 import migration_db, upgrade_with_retirement_recovery, continue_to_current_schema
 from test_staff import BODY, seed_designation
 
 
@@ -63,6 +63,10 @@ def identity(db, user_id, session_id):
 def test_forward_staff_migration_preserves_accounts_sessions_history_and_constraints(migration_db):
     engine, config, admin_id, session_id, legacy_id = prepare(migration_db)
     upgrade_with_retirement_recovery(engine, config)
+    # Exercise the historical account guard before later forward-only stages.
+    with pytest.raises(RuntimeError, match="Ciphertext account downgrade is refused"):
+        command.downgrade(config, "0008_activity_search")
+    continue_to_current_schema(engine, config)
     with Session(engine, expire_on_commit=False) as db:
         seed_designation(db, admin_id)
         assert db.scalar(select(func.count()).select_from(StaffProfile)) == 0
@@ -91,13 +95,11 @@ def test_forward_staff_migration_preserves_accounts_sessions_history_and_constra
                 with db.begin_nested():
                     db.execute(text(sql), params)
                     db.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
-    with pytest.raises(RuntimeError, match="Ciphertext account downgrade is refused"):
-        command.downgrade(config, "0008_activity_search")
 
 
 def test_committed_duplicate_create_race_and_stale_status_use_independent_connections(migration_db):
     engine, _config, admin_id, session_id, _legacy_id = prepare(migration_db)
-    upgrade_with_retirement_recovery(engine, _config)
+    upgrade_with_retirement_recovery(engine, _config, current_models=True)
     with Session(engine) as db:
         seed_designation(db, admin_id)
     settings = get_settings()

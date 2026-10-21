@@ -7,7 +7,7 @@
   "policy_sha256": "e198dc9af9bea0e8529bd1e529a893c6178228fcb76b28bf412422b7412ece39",
   "release_sources": {
     "artifacts/api-server/backend/app/services/initialization_diagnostics.py": "9732dd29159788eb77976a7ed70635e49ca76d2982e0c42fafcb99ed2ff04a6f",
-    "artifacts/api-server/backend/app/fresh_install.py": "2296d591de00d9976c806cabe2279189fba5e27d5d7e8091c8db0f7a9679f210",
+    "artifacts/api-server/backend/app/fresh_install.py": "e28c8df9c1e642218155aea75a592c7748a7c96bc65d4f7a1234199ef89f0dda",
     "artifacts/api-server/backend/app/services/release_authorization.py": "35e5d197660405ce3be22eff58ed21c967e9fd7a3f4ad03f2864607f5b05879f",
     "scripts/validate-release-artifact.py": "cf4f0962f660e37d99580babb7c9dd5e50539e685baa662166355396944d020f",
     "scripts/release-authorization-policy.json": "221b3d66e393bf0cf1938978d97c0c5f9314c5d2cb1df6adaa30145fd4346e94",
@@ -46,8 +46,8 @@
     "docs/ci-schema-metadata-repair.md": "cd00ccc456d76ab9d0ebcf4cfc90e888168517ce04ce25e9a200fc1b301854f2",
     ".github/workflows/docker-initialization.yml": "d5f9d7b81ac30e72b932dedfc2e339f267c50e7114e3e45bd7b6c1df2a14ab36",
     "scripts/test-docker-initialization.py": "fcd66a86ce5c67860754bec7c82d103c89085e5b969fa310400ef9d0c90396af",
-    "scripts/tests/test_fresh_install_alignment.py": "31c3eba0610e0773daf3bd978a200d5260a00e20e2fcb4912a33506c4bcd8650",
-    "artifacts/api-server/backend/tests/test_fresh_install.py": "9ee5fe1e5b74b4cb44a7bf6e7716b3ab48b15f690f900205b3f9845f9b7032cd"
+    "scripts/tests/test_fresh_install_alignment.py": "fd2d8c551420151b1acf0f823cb6c8084b2ba4ee31e67bfbbe2dce137fd33b9f",
+    "artifacts/api-server/backend/tests/test_fresh_install.py": "c0e77cc986931d8e9e74d7ed9fa717b8fd338f7bc1055694903d4a1e2ef9db1f"
   },
   "guard_sources": {
     "app/core/config.py": "3fe8a93628727547f3002d4021ff529933a625e7738f1640f07f1b5b6b359901",

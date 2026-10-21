@@ -141,12 +141,17 @@ def test_invalid_link_never_changes_password(configured, problem):
 
 def test_delivery_failure_is_generic_and_never_logs_sensitive_data(configured, monkeypatch, caplog):
     api, db, _, _ = configured
+    from app.db.email_delivery_models import EmailAttempt
+    caplog.set_level("INFO", logger="app.services.email_delivery")
     create_user(db, "person@example.com")
     def failed(*args):
         raise RuntimeError("SECRET-TOKEN recipient@example.com")
     monkeypatch.setattr(recovery_mail, "send", failed)
     assert request(api).status_code == 202
-    assert "delivery failed" in caplog.text
+    attempt = db.scalar(select(EmailAttempt).where(EmailAttempt.purpose == "password_recovery"))
+    assert attempt.status == "unknown"
+    assert attempt.failure_category == "transport_uncertain"
+    assert "status=unknown category=transport_uncertain" in caplog.text
     assert "SECRET-TOKEN" not in caplog.text and "recipient@example.com" not in caplog.text
 
 
@@ -199,7 +204,8 @@ def test_enabled_staff_recovery_uses_encrypted_current_contact(configured):
     from test_staff import admin_headers, BODY, BASE
     api, db, settings, sent = configured
     headers, _ = admin_headers(api, db)
-    result = api.post(BASE, headers=headers, json=BODY)
+    # Recovery concerns an already activated account, not a new invitation.
+    result = api.post(BASE, headers=headers, json={**BODY, "initialPassword": PASSWORD})
     assert result.status_code == 201, result.text
     record = result.json()["record"]
     profile = db.get(StaffProfile, uuid.UUID(record["id"]))
@@ -316,7 +322,8 @@ def test_concurrent_reset_exactly_one_winner(monkeypatch):
             assert sorted(pool.map(lambda _: attempt(), range(2))) == ["rejected", "success"]
     finally:
         with factory() as db:
-            for table, column in [("audit_events", "actor_id"), ("refresh_sessions", "user_id"),
+            for table, column in [("email_attempts", "user_id"),
+                                  ("audit_events", "actor_id"), ("refresh_sessions", "user_id"),
                                   ("auth_sessions", "user_id"), ("mr_profiles", "user_id"),
                                   ("account_identifier_reservations", "user_id"), ("users", "id")]:
                 db.execute(text(f"DELETE FROM {table} WHERE {column}=:id"), {"id": owner})

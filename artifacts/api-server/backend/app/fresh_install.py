@@ -324,17 +324,23 @@ def migration_owned_tables(connection, tables):
         # Use its frozen seed, never the mutable runtime template or ORM defaults.
         from alembic.script import ScriptDirectory
         script = ScriptDirectory.from_config(alembic_config(connection))
-        seed = script.get_revision("0043_email_templates").module.SEED
+        seeds = [(script.get_revision("0043_email_templates").module.SEED, "password_recovery")]
+        if "email_attempts" in tables:
+            # 0053 adds a second required seed. Earlier installation stages
+            # must still accept exactly the original recovery seed only.
+            seeds.append((script.get_revision("0053_email_invitations").module.SEED, "account_invitation"))
         rows = [dict(row) for row in connection.execute(text("""
             SELECT id::text AS id, name, description, subject, html, text,
                    version, event_key, provenance, created_by, updated_by,
                    created_at = updated_at AS timestamps_unchanged
-            FROM email_templates LIMIT 2
-        """)).mappings()]
-        if rows != [{**seed, "version": 1, "event_key": "password_recovery",
+            FROM email_templates ORDER BY id LIMIT :limit
+        """), {"limit": len(seeds) + 1}).mappings()]
+        expected = [{**seed, "version": 1, "event_key": event,
                      "provenance": "migration_seed", "created_by": None,
-                     "updated_by": None, "timestamps_unchanged": True}]:
-            raise FreshInstallBlocked("Recovery email template is not pristine; operator review required.")
+                     "updated_by": None, "timestamps_unchanged": True}
+                    for seed, event in seeds]
+        if rows != sorted(expected, key=lambda row: row["id"]):
+            raise FreshInstallBlocked("Required email templates are not pristine; operator review required.")
         verified.add("email_templates")
     if "pr_batch_settings" in tables:
         if connection.execute(text(

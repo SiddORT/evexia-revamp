@@ -16,6 +16,7 @@ from app.schemas.allergens import AllergenFields, AllergenStatus, AllergenVersio
 from app.services import allergens, allergen_transfer
 from app.services.auth import AuthError
 from test_migration_0006 import migration_db
+from test_migration_0006 import continue_to_current_schema
 from test_migration_zones import prepare, identity
 
 
@@ -44,9 +45,9 @@ def fields(c, l, name="Reagent"):
 
 def prepare_catalogue(fixture):
     engine, config, actor_id, sid = prepare(fixture)
-    # These operational tests use today's complete location model. Keep the
+    # These operational tests use today's account/location models. Keep the
     # shared historical identity helper at its explicitly reviewed boundary.
-    command.upgrade(config, "0041_location_geography")
+    continue_to_current_schema(engine, config)
     return engine, config, actor_id, sid
 
 
@@ -57,6 +58,7 @@ def test_forward_empty_rollout_preserves_categories_locations_and_accounts(migra
     from directory_test_data import approved_historical_upgrade
     approved_historical_upgrade(engine, config)
     command.upgrade(config, "0036_reference_privacy")
+    continue_to_current_schema(engine, config)
     with Session(engine) as db:
         assert db.get(User, actor_id).is_protected_system_admin and db.get(AuthSession, sid).status == "ACTIVE"
         assert db.get(ProductCategory, c).name == "Shared category" and db.scalar(
@@ -64,7 +66,6 @@ def test_forward_empty_rollout_preserves_categories_locations_and_accounts(migra
         assert db.scalar(select(func.count()).select_from(AllergenProduct)) == 0
     # Preservation is asserted at the original historical boundary above;
     # only the current operational consumer needs the newer model contract.
-    command.upgrade(config, "0041_location_geography")
     with Session(engine) as db:
         row = allergens.create(db, identity(db, actor_id, sid), fields(c, l))
         for sql in ("UPDATE allergen_products SET name=' '", "UPDATE allergen_products SET concentration=''",

@@ -27,7 +27,7 @@ from test_staff import BODY, seed_designation
 
 def setup(migration_db):
     engine, config, admin, session, _ = prepare(migration_db)
-    upgrade_with_retirement_recovery(engine, config)
+    upgrade_with_retirement_recovery(engine, config, current_models=True)
     settings = get_settings().model_copy(update={
         "staff_encryption_keys": SecretStr(json.dumps({
             "primary": base64.b64encode(b"A" * 32).decode(),

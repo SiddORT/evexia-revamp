@@ -93,7 +93,8 @@ def test_management_rejects_mr_staff_and_missing_identity(client):
     api, db, _ = client
     from test_staff import admin_headers as staff_admin_headers, BODY
     admin, _ = staff_admin_headers(api, db)
-    created = api.post("/api/v1/admin/staff", headers=admin, json=BODY).json()
+    created = api.post("/api/v1/admin/staff", headers=admin,
+                       json={**BODY, "initialPassword": PASSWORD}).json()
     staff = created["record"]
     enabled = api.post(f"/api/v1/admin/staff/{staff['id']}/access", headers=admin,
                        json={"custom_role_id": None, "workspace_login_enabled": True, "expected_version": staff["version"]})

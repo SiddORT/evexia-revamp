@@ -1,9 +1,11 @@
 """New revision round trip preserves legacy routing rows without admission."""
 from alembic import command
-from sqlalchemy import select, inspect
+import uuid
+from sqlalchemy import select, inspect, text
 from sqlalchemy.orm import Session
-from pydantic import SecretStr
-from app.bootstrap import bootstrap_super_admin
+from app.core.config import get_settings
+from app.core.security import hash_password
+from app.services.account_crypto import AccountCrypto
 from app.db.role_url_models import RoleHostname
 from app.db.domain_models import DomainPolicy
 from test_migration_0006 import migration_db
@@ -14,7 +16,20 @@ def test_upgrade_downgrade_preserves_legacy_attribution(migration_db):
     engine, config = migration_db
     command.upgrade(config, "0036_reference_privacy")
     with Session(engine) as db:
-        actor = bootstrap_super_admin(db, SecretStr(PASSWORD)).user_id
+        # Frozen 0036 contract: current bootstrap/ORM includes columns added
+        # by later migrations, which this historical round-trip must not run.
+        actor = uuid.uuid4()
+        crypto = AccountCrypto(get_settings())
+        email = "crm-admin@allergyevexia.in"
+        db.execute(text("SELECT set_config('evexia.bootstrap_super_admin', 'on', true)"))
+        db.execute(text("""
+            INSERT INTO users(id, email, email_index, password_hash, system_role,
+                              is_active, token_version, identity_version,
+                              is_protected_system_admin)
+            VALUES (:id, :email, :index, :password, 'super_admin', true, 0, 0, true)
+        """), {"id": actor, "email": crypto.encrypt(actor, "email", email),
+               "index": crypto.lookup_index(email), "password": hash_password(PASSWORD)})
+        db.execute(text("SELECT set_config('evexia.bootstrap_super_admin', 'off', true)"))
         row = RoleHostname(hostname="legacy.allergyevexia.com", role="admin", enabled=True,
                            version=7, created_by=actor, updated_by=actor)
         db.add(row)

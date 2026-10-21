@@ -80,6 +80,10 @@ def test_simple_install_runs_real_history_atomically_without_receipts(databases)
         assert list(db.scalars(text("SELECT version_num FROM alembic_version"))) == [fresh.FINAL_TARGET]
         fresh.catalog(db, fresh.FINAL_TARGET)
         fresh.communication_channels(db)
+        fresh.migration_owned_tables(db, set(inspect(db).get_table_names()))
+        assert db.execute(text(
+            "SELECT event_key, version FROM email_templates ORDER BY event_key"
+        )).all() == [("account_invitation", 1), ("password_recovery", 1)]
         assert db.scalar(text("SELECT count(*) FROM users")) == 1
         assert db.scalar(text("SELECT to_regclass('organizations')")) is None
         assert db.scalar(text("SELECT to_regclass('memberships')")) is None
@@ -100,6 +104,39 @@ def test_simple_install_runs_real_history_atomically_without_receipts(databases)
         assert read(user.id, "email", user.email_ciphertext, user.email_index) == SUPER_ADMIN_EMAIL
     with pytest.raises(fresh.FreshInstallBlocked, match="not pristine"):
         simple_initialize(source)
+
+
+@pytest.mark.parametrize("event", ["password_recovery", "account_invitation"])
+@pytest.mark.parametrize("assignment", [
+    "name = name || ' changed'",
+    "html = html || '<p>changed</p>'",
+    "version = version + 1",
+])
+def test_fresh_template_exemption_rejects_modified_required_seeds(databases, event, assignment):
+    source, _, _ = databases
+    simple_initialize(source)
+    with source.begin() as connection:
+        connection.execute(text(
+            f"UPDATE email_templates SET {assignment} WHERE event_key = :event"
+        ), {"event": event})
+        with pytest.raises(fresh.FreshInstallBlocked, match="not pristine"):
+            fresh.migration_owned_tables(connection, set(inspect(connection).get_table_names()))
+
+
+def test_fresh_template_exemption_rejects_extra_administrator_template(databases):
+    source, _, _ = databases
+    simple_initialize(source)
+    with source.begin() as connection:
+        connection.execute(text("""
+            INSERT INTO email_templates
+                (id, name, description, subject, html, text, version, provenance, created_by)
+            SELECT 'e7e80000-0000-4000-8000-000000000003', 'Extra template',
+                   description, subject, html, text, 1, 'administrator',
+                   (SELECT id FROM users LIMIT 1)
+            FROM email_templates WHERE event_key = 'password_recovery'
+        """))
+        with pytest.raises(fresh.FreshInstallBlocked, match="not pristine"):
+            fresh.migration_owned_tables(connection, set(inspect(connection).get_table_names()))
 
 
 @pytest.mark.parametrize("keyring", [None, SecretStr("invalid-synthetic-keyring")])
@@ -148,7 +185,7 @@ def test_rate_catalog_rejects_missing_checks_changed_precision_and_extra_ddl(dat
 
 
 @pytest.mark.parametrize("mutation", [
-    "UPDATE email_templates SET name='Changed seed'",
+    "UPDATE email_templates SET name='Changed seed' WHERE event_key='password_recovery'",
     "UPDATE email_templates SET description='Changed seed'",
     "UPDATE email_templates SET subject='Changed seed'",
     "UPDATE email_templates SET html=html || ' '",
@@ -158,7 +195,7 @@ def test_rate_catalog_rejects_missing_checks_changed_precision_and_extra_ddl(dat
     "UPDATE email_templates SET updated_by=(SELECT id FROM users LIMIT 1)",
     "INSERT INTO email_templates "
     "(id,name,description,subject,html,text,event_key,version,created_by,updated_by,provenance) "
-    "SELECT 'e7e80000-0000-4000-8000-000000000002','Extra','Extra','Extra','Extra','Extra',"
+    "SELECT 'e7e80000-0000-4000-8000-000000000003','Extra','Extra','Extra','Extra','Extra',"
     "NULL,1,id,id,'administrator' FROM users LIMIT 1",
     "UPDATE pr_batch_settings SET version=2, payload_ciphertext='v1:changed'",
     "DELETE FROM pr_batch_settings",
@@ -168,10 +205,11 @@ def test_current_migration_owned_rows_require_exact_untouched_seeds(databases, m
     simple_initialize(source)
     tables = {"communication_channels", "email_templates", "pr_batch_settings"}
     with source.connect() as db:
-        assert fresh.migration_owned_tables(db, tables) == tables
+        catalog_tables = set(inspect(db).get_table_names())
+        assert fresh.migration_owned_tables(db, catalog_tables) == tables
     with pytest.raises(fresh.FreshInstallBlocked, match="not pristine"), source.begin() as db:
         db.execute(text(mutation))
-        fresh.migration_owned_tables(db, tables)
+        fresh.migration_owned_tables(db, catalog_tables)
 
 
 def test_current_catalog_rejects_used_receipt_number_sequence(databases):

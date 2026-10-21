@@ -16,7 +16,7 @@ from app.db.staff_models import StaffProfile
 from app.schemas.staff import StaffDeletion, StaffFields
 from app.services import staff
 from app.services.staff_crypto import StaffError
-from test_sessions import client
+from test_sessions import client, PASSWORD
 from test_staff import BASE, BODY, admin_headers, seed_designation
 from test_migration_0006 import migration_db, upgrade_with_retirement_recovery
 from test_migration_staff import prepare, identity
@@ -46,7 +46,7 @@ def test_uuid_assignments_derived_names_and_unchanged_unavailable_reference(clie
 def test_soft_deletion_retains_account_ciphertext_access_history_and_revokes_auth(client):
     api, db, settings = client
     headers, actor = admin_headers(api, db)
-    created = api.post(BASE, headers=headers, json=BODY).json()
+    created = api.post(BASE, headers=headers, json={**BODY, "initialPassword": PASSWORD}).json()
     row, password = created["record"], created["initial_password"]
     role = api.post("/api/v1/admin/roles", headers=headers, json={"name": "Retained deleted Staff role", "description": "synthetic"}).json()
     accessed = api.post(BASE + "/" + row["id"] + "/access", headers=headers,
@@ -104,7 +104,7 @@ def test_soft_deletion_retains_account_ciphertext_access_history_and_revokes_aut
 
 def test_concurrent_delete_preserves_first_attribution_and_single_audit(migration_db):
     engine, config, admin, sid, _ = prepare(migration_db)
-    upgrade_with_retirement_recovery(engine, config)
+    upgrade_with_retirement_recovery(engine, config, current_models=True)
     settings = get_settings()
     with Session(engine) as db:
         seed_designation(db, admin)
