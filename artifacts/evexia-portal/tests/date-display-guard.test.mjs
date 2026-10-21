@@ -15,6 +15,7 @@ const approved = new Map([
     [`services/${name}.js:${businessToday}`, 'Business-day validation; unchanged Kolkata boundary']),
   ...['sptOrdersDemo', 'lupinOrdersDemo', 'immunotherapyDemo'].map((name) =>
     [`services/${name}.js:(minor / 100n).toLocaleString('en-IN')`, 'Currency grouping, not a Date']),
+  ["services/openingStock.js:BigInt(digits).toLocaleString('en-IN')", 'Exact integer currency grouping, not date presentation'],
   ['pages/admin/ActivityLogs.jsx:new Date(`${value}T00:00:00Z`).toISOString()', 'UTC input validation'],
   ['pages/admin/ActivityLogs.jsx:new Date(t + DAY).toISOString()', 'Canonical inclusive-end UTC API filter'],
   ['pages/admin/DownloadLogs.jsx:new Date(`${v}T00:00:00Z`).toISOString()', 'UTC input validation'],
@@ -71,4 +72,43 @@ test('guard rejects newly introduced locale, ISO display, raw JSX and raw table 
     'const view = <p>{new Date(value).toISOString()}</p>;',
   ]) assert.ok(displayViolations(text, 'pages/new.jsx').length, text);
   assert.deepEqual(displayViolations('const input = <input type="date" value={row.date} min={row.poDate} />; const time = <time dateTime={row.createdAt}>{formatAdminTimestamp(row.createdAt)}</time>;', 'pages/new.jsx'), []);
+});
+test('Opening Stock currency exception requires the exact reviewed file and expression', () => {
+  const text = "const group = (digits) => BigInt(digits).toLocaleString('en-IN');";
+  assert.deepEqual(displayViolations(text, 'services/openingStock.js'), []);
+  for (const file of ['services/new.js', 'services/openingStockCopy.js', 'services/openingStock.jsx', 'pages/admin/OpeningStock.jsx']) {
+    const violations = displayViolations(text, file);
+    assert.equal(violations.length, 1, file);
+    assert.match(violations[0], /unapproved display primitive/);
+  }
+  for (const expression of [
+    "BigInt(digits).toLocaleString('en-US')",
+    'BigInt(digits).toLocaleString()',
+    "BigInt(digits).toLocaleString('en-IN', { useGrouping: true })",
+    "BigInt(otherDigits).toLocaleString('en-IN')",
+    "Number(digits).toLocaleString('en-IN')",
+  ]) {
+    const violations = displayViolations(`const group = (digits) => ${expression};`, 'services/openingStock.js');
+    assert.equal(violations.length, 1, expression);
+    assert.match(violations[0], /unapproved display primitive/);
+  }
+});
+test('Opening Stock numeric exception does not exempt nearby date presentation', () => {
+  const numeric = "const group = (digits) => BigInt(digits).toLocaleString('en-IN');";
+  for (const [text, reason] of [
+    ["const view = () => new Date(value).toLocaleString('en-IN');", /unapproved display primitive/],
+    ["const view = () => new Date(value).toLocaleDateString('en-IN');", /unapproved display primitive/],
+    ["const view = () => new Date(value).toLocaleTimeString('en-IN');", /unapproved display primitive/],
+    ["const view = () => new Intl.DateTimeFormat('en-IN').format(value);", /unapproved display primitive/],
+    ['const view = <p>{row.poDate}</p>;', /raw date in JSX/],
+    ['const columns = [{ render: (row) => row.date }];', /raw date table renderer/],
+  ]) {
+    const violations = displayViolations(`${numeric}\n${text}`, 'services/openingStock.js');
+    assert.equal(violations.length, 1, text);
+    assert.match(violations[0], reason);
+  }
+  // UI ISO detection remains scoped to JSX/TSX files, not canonical service serialization.
+  const violations = displayViolations('const view = <p>{new Date(value).toISOString()}</p>;', 'services/openingStock.jsx');
+  assert.equal(violations.length, 1);
+  assert.match(violations[0], /unapproved display primitive/);
 });

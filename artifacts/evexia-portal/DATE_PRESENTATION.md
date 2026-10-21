@@ -66,6 +66,16 @@ focused presentation guard, not a general data-flow proof. Review dynamic
 field maps and newly introduced helpers during code review rather than adding
 broad exemptions.
 
+Opening Stock has one reviewed numeric exception:
+`services/openingStock.js:BigInt(digits).toLocaleString('en-IN')`.
+It groups exact integer currency digits using Indian grouping, not dates. Only
+that file/expression pair is approved; changed receivers, arguments, locales or
+paths need separate review. Date locale calls, raw date JSX and bare date table
+renderers in that service remain subject to the guard. UI ISO rejection remains
+scoped to JSX/TSX files; canonical service serialization is unchanged. The
+exception does not change BigInt arithmetic, half-up two-place unit rates or
+unrounded opening values.
+
 ## Verification boundaries
 
 Pure tests cover every supported date format, both clocks, supported explicit
@@ -77,3 +87,23 @@ native ISO controls, stock history/report, UTC-filtered activity, browser-local
 receiving, accessible documents, searchable PDF dates, mounted preference updates,
 gallery changes and reload persistence. Firefox/native Safari behavior and OS
 print dialogs are not claimed by that focused Chromium check.
+
+### Source-only CI guard repair handoff
+
+The reported CI screenshot shows the date-preference command ending with 69
+tests, 68 passing and one failing, but omits the individual assertion. Source
+inspection identifies the previously unapproved Opening Stock numeric call as
+a guard violation; it does not confirm the exact CI failure. No exact-run log
+was available locally. The exception and focused boundary cases were reviewed
+as source only, without executing tests, builds or validation wrappers.
+
+Separate approval is required before executing either verification option:
+
+- Guard only (from the repository root):
+  `node --test artifacts/evexia-portal/tests/date-display-guard.test.mjs`
+- Existing date-preference suite:
+  `pnpm --filter @workspace/evexia-portal run test:date-preferences`
+
+Neither command was run for this repair. Full exact-commit release validation,
+CI reruns, pushes, publishing and deployment remain separately authorized work;
+this source change is not evidence of green CI or successful deployment.
