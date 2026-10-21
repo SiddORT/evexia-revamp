@@ -74,4 +74,5 @@ export interface MRCreate {
    */
   userId: string;
   zoneId: string;
+  zoneIds?: string[] | null;
 }

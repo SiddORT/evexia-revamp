@@ -23,6 +23,7 @@ class MRFields(BaseModel):
     contactRequirement: Literal["required", "optional"] = "required"
     hq: uuid.UUID
     zoneId: uuid.UUID
+    zoneIds: list[uuid.UUID] | None = Field(default=None, min_length=1, max_length=10000)
     employeeCode: str = Field(min_length=1, max_length=64)
     dateOfJoining: date
     designation_id: uuid.UUID
@@ -94,6 +95,11 @@ class MRFields(BaseModel):
 
     @model_validator(mode="after")
     def contact_rule(self):
+        if self.zoneIds is not None:
+            if len(set(self.zoneIds)) != len(self.zoneIds):
+                raise ValueError("Assigned zones must be distinct")
+            if self.zoneId not in self.zoneIds:
+                raise ValueError("Primary zone must be among assigned zones")
         if self.phone:
             self.phone = normalize_phone(self.phone, self.dialCountry, "mr")
         if self.contactRequirement == "required" and (not self.phone or not self.email):
@@ -129,6 +135,8 @@ class MRContact(MRVersion):
 
 
 class MRDirectoryResponse(MRFields):
+    zoneIds: list[uuid.UUID]
+    assignedZones: list["MRChoice"]
     designationName: str = Field(json_schema_extra={"readOnly": True})
     id: uuid.UUID
     version: int
@@ -184,6 +192,7 @@ class MRDoctorPage(BaseModel):
 
 
 class MRChoices(SearchSection):
+    catalogueVersion: str | None = None
     items: list[MRChoice]
     total: int | None
     limit: int

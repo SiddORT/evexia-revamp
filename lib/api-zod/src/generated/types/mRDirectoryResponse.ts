@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { MRChoice } from "./mRChoice";
 import type { MRDirectoryResponseContactRequirement } from "./mRDirectoryResponseContactRequirement";
 import type { MRDirectoryResponseDialCountry } from "./mRDirectoryResponseDialCountry";
 import type { MRDirectoryResponseStatus } from "./mRDirectoryResponseStatus";
@@ -17,6 +18,7 @@ export interface MRDirectoryResponse {
   addressLine1: string;
   /** @maxLength 300 */
   addressLine2?: string;
+  assignedZones: MRChoice[];
   assignmentWarnings: string[];
   /**
    * @minLength 1
@@ -84,5 +86,6 @@ export interface MRDirectoryResponse {
   userId: string;
   version: number;
   zoneId: string;
+  zoneIds: string[];
   zoneName: string;
 }

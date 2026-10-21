@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import InfoDisclosure from './InfoDisclosure.jsx';
 import MRReferenceSelect from './MRReferenceSelect.jsx';
+import MRZoneMultiSelect from './MRZoneMultiSelect.jsx';
 import MRFormCombobox from './MRFormCombobox.jsx';
 import PhoneInput from './PhoneInput.jsx';
 import useAddressSelection from './useAddressSelection.js';
@@ -11,7 +12,7 @@ import '../../mr.css';
 const OPTIONAL = new Set(['reportingManagerId', 'addressLine2', 'paymentLimit', 'doctorDaysLimit']);
 const TABS = [
   { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'dialCountry', 'userId', 'email', 'contactRequirement', 'password', 'confirmPassword'] },
-  { id: 'assignment', label: 'Assignment & work', fields: ['hq', 'zoneId', 'employeeCode', 'dateOfJoining', 'designation_id', 'reportingManagerId', 'paymentLimit', 'doctorDaysLimit', 'status'] },
+  { id: 'assignment', label: 'Assignment & work', fields: ['hq', 'zoneId', 'zoneIds', 'employeeCode', 'dateOfJoining', 'designation_id', 'reportingManagerId', 'paymentLimit', 'doctorDaysLimit', 'status'] },
   { id: 'address', label: 'Address', fields: ['pincode', 'addressLine1', 'addressLine2', 'landmark', 'city', 'state', 'country'] },
 ];
 const ORDER = [...FIELDS.slice(0, 6), 'password', 'confirmPassword', ...FIELDS.slice(6)];
@@ -42,6 +43,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
   const [errors, setErrors] = useState({});
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [zonesPending, setZonesPending] = useState(false);
   const warnings = { deleted: [] };
   const [activeTab, setActiveTab] = useState('identity');
   const formRef = useRef(null);
@@ -216,8 +218,8 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    if (saving) return;
-    const cleaned = Object.fromEntries(FIELDS.map((key) => [key, values[key].trim()]));
+    if (saving || zonesPending) return;
+    const cleaned = Object.fromEntries(FIELDS.map((key) => [key, key === 'zoneIds' ? [...values[key]] : values[key].trim()]));
     const nextErrors = validateMRValues(cleaned, {
       creating: !mr, password: credentials?.password || '', confirm: credentials?.confirmPassword || '',
     });
@@ -287,7 +289,10 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
             <div className="mr-form__section-head"><h3 id="mr-assignment-title" className="mr-form__section-title">Assignment & work</h3></div>
             <div className="mr-form__grid">
                {renderField('hq', 'HQ', { customControl: <MRReferenceSelect id="mr-hq" kind="headquarters" label="HQ" value={values.hq} savedName={mr?.hqName} onChange={(v) => change('hq', v)} placeholder="Select a headquarter" invalid={Boolean(errors.hq)} describedBy={errors.hq ? 'mr-hq-error' : undefined} required emptyGuidance="No headquarters exist yet. Add one in Headquarter Master first." /> })}
-              {renderField('zoneId', 'Assigned zone', { info: 'Only active zones can be newly assigned. A saved inactive zone can be kept with a warning; a deleted one must be replaced.', customControl: <MRReferenceSelect id="mr-zoneId" kind="zones" label="Assigned zone" value={values.zoneId} savedName={mr?.zoneName} onChange={(v) => change('zoneId', v)} placeholder="Select a zone" invalid={Boolean(errors.zoneId)} describedBy={errors.zoneId ? 'mr-zoneId-error' : undefined} required emptyGuidance="No zones exist yet. Add one in Zone Master first." /> })}
+              {renderField('zoneId', 'Assigned zone', { info: 'Select one or more zones. Primary remains unchanged while selected and is the single zone shown in Doctor, Patient and Sales Target. Saved inactive zones may be kept; remove deleted zones explicitly. Select all adds every currently active saved zone, not future zones.', customControl: <MRZoneMultiSelect id="mr-zoneId" values={values.zoneIds} primary={values.zoneId}
+                savedChoices={mr?.assignedZones || (mr?.zoneId ? [{ id: mr.zoneId, name: mr.zoneName }] : [])}
+                onChange={(zoneIds) => patchAddress({ zoneIds, zoneId: zoneIds.includes(mr?.zoneId) ? mr.zoneId : zoneIds.includes(values.zoneId) ? values.zoneId : zoneIds[0] || '' })}
+                onBusyChange={setZonesPending} disabled={saving} invalid={Boolean(errors.zoneId)} describedBy={errors.zoneId ? 'mr-zoneId-error' : undefined} /> })}
               {renderField('employeeCode', 'Employee code', { placeholder: 'Employee code' })}
               {renderField('dateOfJoining', 'Date of joining', { type: 'date' })}
               {renderField('designation_id', 'Designation', { info: 'Select an active catalogue designation. A saved inactive assignment can be retained; a deleted assignment must be replaced. Designations grant no permissions.', customControl: <MRReferenceSelect id="mr-designation_id" kind="designations" label="Designation" value={values.designation_id} savedName={mr?.designationName} onChange={(v) => change('designation_id', v)} placeholder="Select a designation" invalid={Boolean(errors.designation_id)} describedBy={errors.designation_id ? 'mr-designation_id-error' : undefined} required emptyGuidance="No designations exist yet. Add one in Designation Master first." /> })}
@@ -318,7 +323,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
         <div className="mr-form__footer">
           <div className="mr-form__actions">
             <button type="button" className="admin-button admin-button--secondary" onClick={onClose} disabled={saving} data-testid="button-cancel-mr">Cancel</button>
-            <button type="submit" className="admin-button" disabled={saving} data-testid="button-save-mr">{saving ? 'Saving…' : mr ? 'Save changes' : 'Add MR and create login'}</button>
+            <button type="submit" className="admin-button" disabled={saving || zonesPending} data-testid="button-save-mr">{saving ? 'Saving…' : mr ? 'Save changes' : 'Add MR and create login'}</button>
           </div>
         </div>
       </form>

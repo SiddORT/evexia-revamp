@@ -7182,6 +7182,17 @@
       },
       "MRChoices": {
         "properties": {
+          "catalogueVersion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalogueversion"
+          },
           "items": {
             "items": {
               "$ref": "#/components/schemas/MRChoice"
@@ -7675,6 +7686,23 @@
             "format": "uuid",
             "title": "Zoneid",
             "type": "string"
+          },
+          "zoneIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 10000,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zoneids"
           }
         },
         "required": [
@@ -7744,6 +7772,13 @@
             "maxLength": 300,
             "title": "Addressline2",
             "type": "string"
+          },
+          "assignedZones": {
+            "items": {
+              "$ref": "#/components/schemas/MRChoice"
+            },
+            "title": "Assignedzones",
+            "type": "array"
           },
           "assignmentWarnings": {
             "items": {
@@ -8166,6 +8201,14 @@
             "title": "Zoneid",
             "type": "string"
           },
+          "zoneIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Zoneids",
+            "type": "array"
+          },
           "zoneName": {
             "title": "Zonename",
             "type": "string"
@@ -8176,6 +8219,7 @@
           "userId",
           "hq",
           "zoneId",
+          "zoneIds",
           "employeeCode",
           "dateOfJoining",
           "designation_id",
@@ -8186,6 +8230,7 @@
           "city",
           "state",
           "country",
+          "assignedZones",
           "designationName",
           "id",
           "version",
@@ -8677,6 +8722,23 @@
             "format": "uuid",
             "title": "Zoneid",
             "type": "string"
+          },
+          "zoneIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 10000,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zoneids"
           }
         },
         "required": [
@@ -46999,7 +47061,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "format": "uuid",
+                  "maxLength": 128,
                   "type": "string"
                 },
                 {
@@ -47007,6 +47069,17 @@
                 }
               ],
               "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "zone_ids",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 370000,
+              "title": "Zone Ids",
+              "type": "string"
             }
           }
         ],
@@ -47891,6 +47964,17 @@
                 "xlsx"
               ],
               "title": "Format",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "zone_ids",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 370000,
+              "title": "Zone Ids",
               "type": "string"
             }
           },
@@ -49179,6 +49263,16 @@
                 }
               ],
               "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "active_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Active Only",
+              "type": "boolean"
             }
           }
         ],

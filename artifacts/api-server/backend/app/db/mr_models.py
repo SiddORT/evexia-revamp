@@ -41,6 +41,19 @@ class MRDirectory(Timestamps, Base):
 
 Index("uq_mr_directory_employee", func.lower(MRDirectory.employeeCode), unique=True)
 
+class MRZoneAssignment(Base):
+    """Ordered saved assignments; zoneId on the parent remains the primary."""
+    __tablename__ = "mr_zone_assignments"
+    __table_args__ = (
+        CheckConstraint("position >= 0", name="ck_mr_zone_position"),
+        Index("uq_mr_zone_position", "mr_id", "position", unique=True),
+        Index("ix_mr_zone_zone", "zone_id", "mr_id"),
+    )
+    mr_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("mr_directory.id", ondelete="CASCADE"), primary_key=True)
+    zone_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("zones.id", ondelete="RESTRICT"), primary_key=True)
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    zone_name: Mapped[str] = mapped_column(String(200), nullable=False)
+
 from app.db.directory_fields import install
 install(MRDirectory)
 

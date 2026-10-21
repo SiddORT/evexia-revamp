@@ -1,25 +1,27 @@
 """MR business directory. All mutations preserve User -> MRProfile lock order."""
 import secrets
+import hashlib
+import hmac
+import json
 from types import SimpleNamespace
 import time
 import uuid
 from contextlib import contextmanager
 from datetime import timedelta
 
-from sqlalchemy import func, or_, select, text
+from sqlalchemy import delete, func, or_, select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.core.security import hash_password, utcnow
 from app.bootstrap import SUPER_ADMIN_EMAIL
 from app.db.models import User, MRProfile, AuditEvent
 from app.services import account_crypto as account_encryption
-from app.db.mr_models import MRDirectory, AccountIdentifierReservation
+from app.db.mr_models import MRDirectory, MRZoneAssignment, AccountIdentifierReservation
 from app.db.headquarter_models import Headquarter
 from app.db.zone_models import Zone
 from app.db.designation_models import Designation
 from app.repositories.sessions import revoke_user_sessions
 from app.schemas.mrs import MRFields
 from app.services.auth import revalidate_identity
-from app.services.zones import label
 from app.services import directory_runtime as encrypted
 from types import SimpleNamespace
 
@@ -73,13 +75,53 @@ def predicates(query="", status="all", zone_id=None, hq_id=None):
     if status != "all":
         clauses.append(MRDirectory.status == status)
     if zone_id:
-        clauses.append(MRDirectory.zoneId == zone_id)
+        ids = zone_id if isinstance(zone_id, (list, tuple)) else [zone_id]
+        clauses.append(MRDirectory.id.in_(select(MRZoneAssignment.mr_id).where(MRZoneAssignment.zone_id.in_(ids))))
     if hq_id:
         clauses.append(MRDirectory.hq == hq_id)
     return clauses
 
 
 PROJECTION_BATCH_SIZE = 500
+
+
+def zone_members(db, rows):
+    result = {row.id: [] for row in rows}
+    keys = list(result)
+    for start in range(0, len(keys), PROJECTION_BATCH_SIZE):
+        for member in db.scalars(select(MRZoneAssignment).where(
+                MRZoneAssignment.mr_id.in_(keys[start:start + PROJECTION_BATCH_SIZE]))
+                .order_by(MRZoneAssignment.position)):
+            result[member.mr_id].append(member)
+    return result
+
+
+def selected_zones(db, body, existing=None):
+    saved = zone_members(db, [existing])[existing.id] if existing is not None else []
+    if body.zoneIds is None:
+        # Old clients may edit scalar fields, but must never erase extra members.
+        ids = [member.zone_id for member in saved]
+        if body.zoneId not in ids:
+            ids = [body.zoneId, *ids]
+    else:
+        ids = list(body.zoneIds)
+    if not ids:
+        ids = [body.zoneId]
+    if len(ids) > 10000:
+        raise MRError("At most 10,000 zones may be assigned. Existing assignments were not changed.", 422, "mr_assignment")
+    primary = (body.zoneId if existing is None else existing.zoneId) if (
+        (body.zoneId if existing is None else existing.zoneId) in ids) else ids[0]
+    return ids, primary, saved
+
+
+def write_zones(db, row, ids, saved=()):
+    names = {member.zone_id: member.zone_name for member in saved}
+    db.execute(delete(MRZoneAssignment).where(MRZoneAssignment.mr_id == row.id))
+    db.flush()
+    for position, key in enumerate(ids):
+        db.add(MRZoneAssignment(mr_id=row.id, zone_id=key, position=position,
+                               zone_name=names[key] if key in names else db.get(Zone, key).name))
+    db.flush()
 
 
 def _bulk(db, ids, statement):
@@ -110,7 +152,8 @@ def projection_context(db, rows, manager_accounts=False):
         for key, value in accounts.items()}
     headquarters = _bulk(db, (row.hq for row in rows), lambda ids: select(
         Headquarter.id, Headquarter.name, Headquarter.status, Headquarter.deleted_at).where(Headquarter.id.in_(ids)))
-    zones = _bulk(db, (row.zoneId for row in rows), lambda ids: select(
+    assignments = zone_members(db, rows)
+    zones = _bulk(db, (member.zone_id for members in assignments.values() for member in members), lambda ids: select(
         Zone.id, Zone.name, Zone.status, Zone.deleted_at).where(Zone.id.in_(ids)))
     designations = _bulk(db, (row.designation_id for row in rows), lambda ids: select(
         Designation.id, Designation.name, Designation.status, Designation.deleted_at).where(Designation.id.in_(ids)))
@@ -119,36 +162,36 @@ def projection_context(db, rows, manager_accounts=False):
     managers = {key: SimpleNamespace(**dict(value._mapping)) for key, value in managers.items()}
     authors = _bulk(db, (key for row in rows for key in (row.created_by, row.updated_by)),
                     lambda ids: select(User.id, User.is_protected_system_admin).where(User.id.in_(ids)))
-    return dict(accounts=accounts, headquarters=headquarters, zones=zones, managers=managers, designations=designations,
+    return dict(accounts=accounts, headquarters=headquarters, zones=zones, assignments=assignments, managers=managers, designations=designations,
                 labels={key: "Super Admin" if user.is_protected_system_admin else "Backend user"
                         for key, user in authors.items()})
 
 
 def projection(db, row, context=None):
-    if context is None:
-        profile = db.get(MRProfile, row.id)
-        username = db.get(User, profile.user_id).username
-        hq, zone = db.get(Headquarter, row.hq), db.get(Zone, row.zoneId)
-        designation = db.get(Designation, row.designation_id)
-        manager = db.get(MRDirectory, row.reportingManagerId) if row.reportingManagerId else None
-        created_by, updated_by = label(db, row.created_by), label(db, row.updated_by)
-    else:
-        username = context["accounts"][row.id].username
-        hq, zone = context["headquarters"][row.hq], context["zones"][row.zoneId]
-        designation = context["designations"][row.designation_id]
-        manager = context["managers"].get(row.reportingManagerId)
-        created_by = context["labels"].get(row.created_by, "Backend user")
-        updated_by = context["labels"].get(row.updated_by, "Backend user")
+    context = projection_context(db, [row]) if context is None else context
+    username = context["accounts"][row.id].username
+    hq = context["headquarters"][row.hq]
+    designation = context["designations"][row.designation_id]
+    manager = context["managers"].get(row.reportingManagerId)
+    created_by = context["labels"].get(row.created_by, "Backend user")
+    updated_by = context["labels"].get(row.updated_by, "Backend user")
     warnings = []
-    for title, assignment in (("Headquarter", hq), ("Zone", zone), ("Designation", designation), ("Reporting manager", manager)):
+    members = context["assignments"][row.id]
+    assigned = [dict(id=member.zone_id, name=member.zone_name,
+                     status=context["zones"][member.zone_id].status,
+                     deleted=bool(context["zones"][member.zone_id].deleted_at)) for member in members]
+    for title, assignment in (("Headquarter", hq), ("Designation", designation), ("Reporting manager", manager),
+                              *((f"Zone {member.zone_name}", context["zones"][member.zone_id]) for member in members)):
         if assignment is None:
             continue
         if assignment.deleted_at:
             warnings.append(f"{title} was deleted. Explicitly replace it before saving.")
         elif assignment.status == "inactive":
             warnings.append(f"{title} is inactive. You may retain the saved assignment.")
-    values = {key: getattr(row, key) for key in MRFields.model_fields if key != "userId"}
+    values = {key: getattr(row, key) for key in MRFields.model_fields if key not in ("userId", "zoneIds")}
+    values["zoneIds"] = [member.zone_id for member in members]
     return dict(**values, userId=username, id=row.id, version=row.version,
+                assignedZones=assigned,
                 hqName=row.hq_name, zoneName=row.zone_name, designationName=designation.name,
                 reportingManagerName=row.reporting_manager_name or "", assignmentWarnings=warnings,
                 createdBy=created_by, updatedBy=updated_by,
@@ -160,7 +203,8 @@ def search_matcher(db, query, rows, context=None):
     return lambda row: encrypted.match(query, row.name, row.employeeCode, row.email, row.phone,
                                       row.city, context["designations"][row.designation_id].name,
                                       context["accounts"][row.id].username,
-                                      row.hq_name, row.zone_name, row.reporting_manager_name)
+                                      row.hq_name, *(member.zone_name for member in context["assignments"][row.id]),
+                                      row.reporting_manager_name)
 
 
 def listing(db, actor, query="", status="all", zone_id=None, hq_id=None, limit=10, offset=0, cursor=None):
@@ -170,8 +214,27 @@ def listing(db, actor, query="", status="all", zone_id=None, hq_id=None, limit=1
         clauses = predicates("", status, zone_id, hq_id)
         meta = {}
         if query.strip():
-            rows, meta = encrypted.scan(db, MRDirectory, clauses, None, limit=limit, cursor=cursor,
+            from app.core.config import get_settings
+            selected = zone_id if isinstance(zone_id, (tuple, list)) else ([zone_id] if zone_id else [])
+            scope = json.dumps([str(actor.user.id), query.strip(), status, sorted(str(key) for key in selected),
+                                str(hq_id or ""), limit], separators=(",", ":"))
+            def signature(position):
+                return hmac.new(get_settings().signing_key.encode(), (scope + ":" + position).encode(),
+                                hashlib.sha256).hexdigest()
+            position = None
+            if cursor:
+                try:
+                    position, supplied = cursor.split(".")
+                    position = str(uuid.UUID(position))
+                    if not hmac.compare_digest(signature(position), supplied):
+                        raise ValueError()
+                except (ValueError, AttributeError):
+                    raise MRError("Search filters changed or continuation is invalid. Restart search.", 409, "mr_search_scope") from None
+            rows, meta = encrypted.scan(db, MRDirectory, clauses, None, limit=limit, cursor=position,
                                         prepare=lambda rows: search_matcher(db, query, rows))
+            if meta.get("nextCursor"):
+                position = meta["nextCursor"]
+                meta["nextCursor"] = position + "." + signature(position)
             filtered = None
         else:
             filtered = db.scalar(select(func.count()).select_from(MRDirectory).where(*clauses))
@@ -240,13 +303,34 @@ def associated_doctors(db, actor, record_id, limit, offset):
     return transaction(db, work)
 
 
-def references(db, actor, kind, query, limit, offset, include_saved=None, cursor=None):
+def references(db, actor, kind, query, limit, offset, include_saved=None, cursor=None, active_only=False):
     def work():
         authorize(db, actor, lock=False)
         model = {"zones": Zone, "headquarters": Headquarter, "managers": MRDirectory, "designations": Designation}[kind]
+        if kind == "zones" and active_only:
+            # One statement snapshot binds the page, count and catalogue revision.
+            snapshot = db.execute(text("""
+                WITH eligible AS MATERIALIZED (
+                  SELECT id, name, status, version FROM zones
+                  WHERE deleted_at IS NULL AND status='active'
+                ), page AS (
+                  SELECT id, name, status, false AS deleted FROM eligible
+                  ORDER BY lower(name), id LIMIT :limit OFFSET :offset
+                )
+                SELECT (SELECT count(*) FROM eligible) AS total,
+                       (SELECT md5(coalesce(string_agg(id::text || ':' || version::text, ',' ORDER BY id), ''))
+                        FROM eligible) AS revision,
+                       (SELECT coalesce(json_agg(page), '[]'::json) FROM page) AS items
+            """), {"limit": limit, "offset": offset}).one()
+            result = dict(items=snapshot._mapping["items"], total=snapshot.total, limit=limit, offset=offset,
+                          catalogueVersion=snapshot.revision)
+            db.commit()
+            return result
         # All nondeleted entries paginate explicitly; inactive entries are visible,
         # but the assignment validator permits only new active relationships.
         clauses = [model.deleted_at.is_(None)]
+        if active_only:
+            clauses.append(model.status == "active")
         meta = {}
         if kind == "managers":
             choices, meta = encrypted.scan(db, model, clauses, lambda row: encrypted.match(query, row.name),
@@ -286,6 +370,15 @@ def graph_lock(db):
 
 
 def validate_assignments(db, body, existing=None, batch=None):
+    ids, _, saved = selected_zones(db, body, existing)
+    retained = {member.zone_id for member in saved}
+    # Lock all selected zones deterministically through commit, including imports.
+    zones = list(db.scalars(select(Zone).where(Zone.id.in_(ids)).order_by(Zone.id)
+                           .execution_options(populate_existing=True).with_for_update(read=True)))
+    if len(zones) != len(ids) or any(zone.deleted_at for zone in zones):
+        raise MRError("An assigned zone is missing or deleted. Explicitly remove or replace it.", 409, "mr_assignment")
+    if any(zone.status != "active" and zone.id not in retained for zone in zones):
+        raise MRError("New zone assignments must be active.", 409, "mr_assignment")
     target = db.scalar(select(Designation).where(Designation.id == body.designation_id)
                        .execution_options(populate_existing=True).with_for_update(read=True))
     if not target or target.deleted_at:
@@ -293,7 +386,7 @@ def validate_assignments(db, body, existing=None, batch=None):
                       409, "mr_assignment")
     if target.status != "active" and (existing is None or existing.designation_id != target.id):
         raise MRError("New designation assignments must be active.", 409, "mr_assignment")
-    for field, model, title in (("hq", Headquarter, "Headquarter"), ("zoneId", Zone, "Zone")):
+    for field, model, title in (("hq", Headquarter, "Headquarter"),):
         target = db.get(model, getattr(body, field))
         if not target or target.deleted_at:
             raise MRError(f"{title} is missing or deleted. Set up an active {title.lower()} and explicitly select it.", 409, "mr_assignment")
@@ -395,12 +488,15 @@ def insert(db, actor, body, prepared, profile_id=None):
     profile = MRProfile(id=profile_id or uuid.uuid4(), user_id=user.id, is_active=active)
     db.add(profile)
     db.flush()
-    values = body.model_dump(exclude={"userId", "initialPassword", "expected_version"})
+    ids, primary, _ = selected_zones(db, body)
+    values = body.model_dump(exclude={"userId", "initialPassword", "expected_version", "zoneIds"})
+    values["zoneId"] = primary
     now = utcnow()
     row = MRDirectory(id=profile.id, **values, created_by=actor.user.id, updated_by=actor.user.id,
                       created_at=now, updated_at=now, version=1)
     db.add(row)
     db.flush()
+    write_zones(db, row, ids)
     audit(db, actor, row, "create")
     return row
 
@@ -452,13 +548,18 @@ def mutate(db, actor, record_id, body, operation):
         if operation == "edit":
             previous = {field: getattr(row, field) for field in ("hq", "zoneId", "reportingManagerId")}
             validate_assignments(db, body, row)
+            ids, primary, saved = selected_zones(db, body, row)
             identifiers_available(db, body, user.id, row.id)
             revoke = user.username != body.userId or (user.email or "") != body.email or row.status != body.status
-            for key, value in body.model_dump(exclude={"expected_version", "userId"}).items():
+            for key, value in body.model_dump(exclude={"expected_version", "userId", "zoneIds", "zoneId"}).items():
                 setattr(row, key, value)
+            row.zoneId = primary
             from app.services.reference_snapshots import capture_mr
             capture_mr(db, row, previous)
+            if primary in {member.zone_id for member in saved}:
+                row.zone_name = next(member.zone_name for member in saved if member.zone_id == primary)
             user.username, user.email = body.userId, body.email or None
+            write_zones(db, row, ids, saved)
         elif operation == "status":
             revoke = row.status != body.status
             row.status = body.status

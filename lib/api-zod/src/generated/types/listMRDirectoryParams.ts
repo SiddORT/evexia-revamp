@@ -26,4 +26,8 @@ export type ListMRDirectoryParams = {
    */
   offset?: number;
   cursor?: string | null;
+  /**
+   * @maxLength 370000
+   */
+  zone_ids?: string;
 };

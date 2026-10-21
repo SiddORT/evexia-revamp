@@ -75,4 +75,5 @@ export interface MREdit {
    */
   userId: string;
   zoneId: string;
+  zoneIds?: string[] | null;
 }

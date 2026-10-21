@@ -37,6 +37,16 @@ activation/recovery handoff; process repair is not live email recovery.
 
 # EVEXIA Portal
 
+- Live MR Master supports ordered shared multi-zone assignments. Its list zone
+  filter uses any-zone matching; empty/Select all is unrestricted. Form Select all
+  loads a complete active saved-zone snapshot, retains existing unavailable
+  choices and does not assign future zones. The retained primary alone feeds
+  Doctor/Patient/Sales Target. Forward `0051_mr_zones` follows `0050_opening_stock`.
+  This change is implementation-only: no tests, browser/manual scenarios, builds,
+  validation wrappers or migration execution. Development source metadata is
+  updated; fresh-install catalog/release evidence remains blocked pending a
+  separately authorized real catalog reproduction. See `docs/mr-master.md`.
+
 - Opening Stock is physical pre-system initialization, not Doctor financial
   Opening Balance. It uses the shared allergen/product ledger with immutable
   opening-source lots, explicit NULL-location Unallocated stock and reviewed

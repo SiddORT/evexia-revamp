@@ -9,6 +9,7 @@ import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import ContactRequirementButton from '../../components/admin/ContactRequirementButton.jsx';
 import CredentialReveal from '../../components/admin/CredentialReveal.jsx';
 import MRListFilter from '../../components/admin/MRListFilter.jsx';
+import MRZoneMultiSelect from '../../components/admin/MRZoneMultiSelect.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
 import MRDoctorAssignments from '../../components/admin/MRDoctorAssignments.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -24,6 +25,9 @@ import '../../mr.css';
 
 import { internationalPhone } from '../../services/phoneCountries.js';
 const STATUS_OPTIONS = [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }];
+const zoneLabels = (record) => record.assignedZones?.length
+  ? record.assignedZones.map((zone) => `${zone.name}${zone.id === record.zoneId ? ' (primary)' : ''}${zone.deleted ? ' (deleted)' : zone.status === 'inactive' ? ' (inactive)' : ''}`).join(', ')
+  : record.zoneName;
 function auditDetails(name, value) {
   return <span className="admin-mr-audit"><strong>{name}</strong><time dateTime={value}>{formatAdminTimestamp(value)}</time></span>;
 }
@@ -39,13 +43,13 @@ export default function MRMaster() {
   useEffect(() => { if (saveFeedback) window.history.replaceState(window.history.state, '', '/admin/masters/mrs'); }, [saveFeedback]);
   const [search, setSearch] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [zoneFilter, setZoneFilter] = useState('');
+  const [zoneFilter, setZoneFilter] = useState([]);
   const [hqFilter, setHqFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [data, setData] = useState({ items: [], total: 0, filtered: 0 });
-  const continuation = useDirectoryContinuation({ query: debounced, status: statusFilter, zone_id: zoneFilter, hq_id: hqFilter, limit: pageSize, offset: (page - 1) * pageSize });
+  const continuation = useDirectoryContinuation({ query: debounced, status: statusFilter, zone_ids: [...zoneFilter].sort().join(','), hq_id: hqFilter, limit: pageSize, offset: (page - 1) * pageSize });
   const searchKey = JSON.stringify(continuation.params);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -69,7 +73,7 @@ export default function MRMaster() {
   useEffect(() => {
     const owner = getSession().user?.id;
     return subscribeSession(() => {
-      if (getSession().user?.id !== owner) { setData({ items: [], total: 0, filtered: 0 }); setCredentials(null); setConfirming(null); }
+      if (getSession().user?.id !== owner) { setData({ items: [], total: 0, filtered: 0 }); setZoneFilter([]); setCredentials(null); setConfirming(null); }
     });
   }, []);
   useEffect(() => {
@@ -117,7 +121,7 @@ export default function MRMaster() {
     const controller = new AbortController();
     exportController.current = controller;
     try {
-      const blob = await exportMRs({ query: debounced, status: statusFilter, zone_id: zoneFilter, hq_id: hqFilter }, format, controller.signal);
+      const blob = await exportMRs({ query: debounced, status: statusFilter, zone_ids: [...zoneFilter].sort().join(','), hq_id: hqFilter }, format, controller.signal);
       guard();
       if (mounted.current) downloadMRFile(blob, format);
     } catch (cause) {
@@ -154,7 +158,7 @@ export default function MRMaster() {
     { key: 'address', label: 'Address', render: address },
     { key: 'designationName', label: 'Designation', render: (r) => r.designationName },
     { key: 'manager', label: 'Reporting manager', render: (r) => r.reportingManagerName || '—' },
-    { key: 'zone', label: 'HQ / zone', render: (r) => <span>{r.hqName} / {r.zoneName}{warn(r)}</span> },
+    { key: 'zone', label: 'HQ / zones', render: (r) => <span>{r.hqName} / {zoneLabels(r)}{warn(r)}</span> },
     { key: 'status', label: 'Status', render: (r) => <StatusBadge status={r.status} id={r.id} kind="mr" /> },
     { key: 'created', label: 'Created details', render: (r) => auditDetails(r.createdBy, r.createdAt) },
     { key: 'updated', label: 'Updated details', render: (r) => auditDetails(r.updatedBy, r.updatedAt) },
@@ -188,16 +192,16 @@ export default function MRMaster() {
       <div className="admin-toolbar admin-mr-toolbar master-filter-toolbar"><div className="admin-toolbar__fields">
         <button type="button" className="admin-button admin-button--secondary admin-mr-toolbar__refresh" disabled={loading} onClick={() => { retry(); setActionError(''); }} data-testid="button-refresh-mrs">Refresh records</button>
         <div className="admin-filter admin-mr-toolbar__search"><label htmlFor="mr-details-search">MR details</label><div className="admin-search"><Search size={16} aria-hidden="true" /><input id="mr-details-search" aria-label="Search MR details" maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search MR details" data-testid="input-search-mrs" /></div></div>
-        <div className="admin-filter"><label htmlFor="mr-zone-filter">Assigned zone</label><MRListFilter id="mr-zone-filter" kind="zones" label="Assigned zone" value={zoneFilter} onChange={(v) => { setZoneFilter(v); setPage(1); }} allLabel="All zones" emptyGuidance="No zones exist yet." /></div>
+        <div className="admin-filter"><label htmlFor="mr-zone-filter">Assigned zone</label><MRZoneMultiSelect id="mr-zone-filter" filter values={zoneFilter} onChange={(v) => { setZoneFilter(v); setPage(1); }} /></div>
         <div className="admin-filter"><label htmlFor="mr-hq-filter">Headquarter</label><MRListFilter id="mr-hq-filter" kind="headquarters" label="Headquarter" value={hqFilter} onChange={(v) => { setHqFilter(v); setPage(1); }} allLabel="All headquarters" emptyGuidance="No headquarters exist yet." /></div>
         <div className="admin-filter"><label htmlFor="mr-status-filter">Status</label><MRListFilter id="mr-status-filter" label="Status" value={statusFilter} onChange={(v) => { setStatusFilter(v); setPage(1); }} allLabel="All statuses" allValue="all" options={STATUS_OPTIONS} /></div>
-      </div><MasterFilterReset disabled={!search && !debounced && !zoneFilter && !hqFilter && statusFilter === 'all'} onClick={() => { setSearch(''); setDebounced(''); setZoneFilter(''); setHqFilter(''); setStatusFilter('all'); setPage(1); }} /></div>
+      </div><MasterFilterReset disabled={!search && !debounced && !zoneFilter.length && !hqFilter && statusFilter === 'all'} onClick={() => { setSearch(''); setDebounced(''); setZoneFilter([]); setHqFilter(''); setStatusFilter('all'); setPage(1); }} /></div>
       {loading ? <p className="admin-empty" role="status">Loading MRs…</p> : error ? <div className="admin-empty" role="alert"><span className="admin-empty__icon"><UsersRound size={21} /></span><strong>MR records could not be loaded</strong><p>{error}</p><button className="admin-button" type="button" onClick={retry} style={{ marginTop: 16 }} data-testid="button-retry-mrs">Try again</button></div> : <>
         {data.items.length ? <>
           <div className="admin-mr-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(r) => r.id} label="MR records" testIdPrefix="mr" /></div>
           <div className="admin-mr-mobile" role="list" aria-label="MR records">{data.items.map((r) => <article className="admin-record-card" role="listitem" key={r.id} data-testid={`card-mr-${r.id}`}>
             <div className="admin-record-card__head"><div className="admin-record-card__identity"><h2>{r.name}</h2><small>{r.designationName}</small></div><StatusBadge status={r.status} id={r.id} kind="mr" /></div>
-            <div className="admin-record-card__body">{details(r, false)}<dl><div><dt>Address</dt><dd>{address(r)}</dd></div><div><dt>Reporting manager</dt><dd>{r.reportingManagerName || '—'}</dd></div><div><dt>HQ / zone</dt><dd>{r.hqName} / {r.zoneName}{warn(r)}</dd></div><div><dt>Created by</dt><dd>{auditDetails(r.createdBy, r.createdAt)}</dd></div><div><dt>Updated by</dt><dd>{auditDetails(r.updatedBy, r.updatedAt)}</dd></div></dl></div>
+            <div className="admin-record-card__body">{details(r, false)}<dl><div><dt>Address</dt><dd>{address(r)}</dd></div><div><dt>Reporting manager</dt><dd>{r.reportingManagerName || '—'}</dd></div><div><dt>HQ / zones</dt><dd>{r.hqName} / {zoneLabels(r)}{warn(r)}</dd></div><div><dt>Created by</dt><dd>{auditDetails(r.createdBy, r.createdAt)}</dd></div><div><dt>Updated by</dt><dd>{auditDetails(r.updatedBy, r.updatedAt)}</dd></div></dl></div>
             {actions(r, true)}</article>)}</div>
         </> : <div className="admin-empty" data-testid="status-mrs-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{data.total ? 'No matching MRs' : 'No MR records yet'}</strong><p>{data.total ? 'Try different search or filters.' : 'Add an MR, or import a file. Headquarters and zones must exist first.'}</p></div>}
         {data.partial ? <DirectorySearchStatus count={data.items.length} scanned={data.scanned} nextCursor={data.nextCursor} loading={loading} onNext={() => continuation.next(data)} onRestart={() => { continuation.restart(); setRevision((n) => n + 1); }} /> : <TablePagination {...pagination} filtered={data.filtered} total={data.total} label={data.total === 1 ? 'MR' : 'MRs'} onPageChange={setPage} onPageSizeChange={pagination.setPageSize} testId="text-mr-count" />}

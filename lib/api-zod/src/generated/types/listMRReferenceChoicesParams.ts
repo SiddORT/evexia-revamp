@@ -25,4 +25,5 @@ export type ListMRReferenceChoicesParams = {
   offset?: number;
   include_saved?: string | null;
   cursor?: string | null;
+  active_only?: boolean;
 };

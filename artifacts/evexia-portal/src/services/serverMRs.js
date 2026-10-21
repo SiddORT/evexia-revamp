@@ -8,7 +8,7 @@ import { dialCountry, normalizePhone } from './phoneCountries.js';
 const clean = (params = {}) => Object.fromEntries(Object.entries(params)
   .filter(([, value]) => value !== undefined && value !== null && value !== '' && value !== 'all'));
 
-export const MR_FIELDS = ['name', 'phone', 'dialCountry', 'userId', 'email', 'contactRequirement', 'hq', 'zoneId', 'employeeCode',
+export const MR_FIELDS = ['name', 'phone', 'dialCountry', 'userId', 'email', 'contactRequirement', 'hq', 'zoneId', 'zoneIds', 'employeeCode',
   'dateOfJoining', 'designation_id', 'reportingManagerId', 'paymentLimit', 'doctorDaysLimit', 'status', 'pincode',
   'addressLine1', 'addressLine2', 'landmark', 'city', 'state', 'country'];
 export const MAX_LENGTH = { name: 200, employeeCode: 64, addressLine1: 300, addressLine2: 300, landmark: 200, city: 100, state: 100, country: 100, phone: 20, email: 320 };
@@ -19,8 +19,8 @@ export const listMRs = (params, signal) => mrRequest('', { params: clean(params)
 export const mrAssociatedDoctors = (id, params, signal) => mrRequest(`/${id}/doctors`, { params: clean(params), signal });
 export const getMR = (id, signal) => mrRequest(`/${id}`, { signal });
 export const resolveMRAccount = (username, signal) => mrRequest(`/account/${username}`, { signal });
-export const mrReferences = (kind, { query = '', limit = 100, offset = 0, includeSaved } = {}, signal) =>
-  mrRequest('/references', { params: clean({ kind, query, limit, offset, include_saved: includeSaved }), signal });
+export const mrReferences = (kind, { query = '', limit = 100, offset = 0, includeSaved, activeOnly } = {}, signal) =>
+  mrRequest('/references', { params: clean({ kind, query, limit, offset, include_saved: includeSaved, active_only: activeOnly }), signal });
 export const generateMRUsername = (signal) => mrRequest('/username', { signal });
 export const lookupPincode = (pin, signal, action = 'add') => mrRequest(`/postal/${pin}`, { signal, params: { action } });
 export const createMR = (values, initialPassword) => mrRequest('', { body: { ...values, initialPassword: initialPassword || null } });
@@ -40,7 +40,8 @@ export function downloadMRFile(blob, format, sample = false) {
 
 export function emptyMRValues(mr) {
   return Object.fromEntries(MR_FIELDS.map((key) => [key,
-    key === 'dialCountry' ? (mr?.dialCountry || 'IN')
+    key === 'zoneIds' ? [...(mr?.zoneIds || (mr?.zoneId ? [mr.zoneId] : []))]
+      : key === 'dialCountry' ? (mr?.dialCountry || 'IN')
       : key === 'contactRequirement' ? (mr?.contactRequirement || 'required')
       : key === 'status' ? (mr?.status || 'active')
       : key === 'country' ? (mr ? (mr.country ?? '') : 'India')
@@ -61,6 +62,7 @@ export function validateMRValues(values, { creating, password = '', confirm = ''
   const required = ['name', 'userId', 'hq', 'zoneId', 'employeeCode', 'dateOfJoining', 'designation_id', 'pincode', 'addressLine1', 'landmark', 'city', 'state', 'country'];
   if (!optionalContact) required.push('phone', 'email');
   required.forEach((key) => { if (!values[key].trim()) errors[key] = 'This field is required.'; });
+  if (!values.zoneIds.length || values.zoneIds.length > 10000 || values.zoneIds.some((id) => !UUID_PATTERN.test(id))) errors.zoneId = 'Select between 1 and 10,000 saved zones.';
   for (const [key, max] of Object.entries(MAX_LENGTH)) if (values[key].length > max) errors[key] = `Use at most ${max} characters.`;
   for (const key of MR_FIELDS) if (/\p{C}/u.test(values[key])) errors[key] = 'Control and invisible characters are not permitted.';
   if (!['required', 'optional'].includes(values.contactRequirement)) errors.contactRequirement = 'Choose a contact requirement.';
@@ -101,7 +103,8 @@ export function payloadFromValues(values) {
 }
 
 function normalizedValues(values) {
-  const normalized = Object.fromEntries(MR_FIELDS.map((key) => [key, String(values[key] ?? '').trim()]));
+  const normalized = Object.fromEntries(MR_FIELDS.map((key) => [key, key === 'zoneIds'
+    ? [...(values.zoneIds || (values.zoneId ? [values.zoneId] : []))] : String(values[key] ?? '').trim()]));
   normalized.userId = normalized.userId.toLowerCase();
   normalized.email = normalized.email.toLowerCase();
   normalized.dialCountry = String(values.dialCountry || 'IN');

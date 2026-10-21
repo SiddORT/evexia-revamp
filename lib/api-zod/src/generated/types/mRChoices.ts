@@ -8,6 +8,7 @@
 import type { MRChoice } from "./mRChoice";
 
 export interface MRChoices {
+  catalogueVersion?: string | null;
   items: MRChoice[];
   limit: number;
   nextCursor?: string | null;

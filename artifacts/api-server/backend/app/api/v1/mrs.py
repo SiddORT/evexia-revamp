@@ -20,14 +20,26 @@ router = APIRouter(prefix="/admin/mrs", tags=["MR Master"])
 manager = master_router("mr")
 provisioner = require_permissions("admin.access", "domain.provision")
 
+def zone_filter(zone_id, zone_ids):
+    if not zone_ids:
+        return zone_id
+    try:
+        ids = list(dict.fromkeys(uuid.UUID(value) for value in zone_ids.split(",")))
+    except ValueError:
+        raise mrs.MRError("Use comma-separated zone UUIDs.", 422, "mr_filter") from None
+    if len(ids) > 10000:
+        raise mrs.MRError("Select at most 10,000 zones or use Select all.", 422, "mr_filter")
+    return list(dict.fromkeys([*ids, *([zone_id] if zone_id else [])]))
+
 
 @router.get("", response_model=MRPage, operation_id="listMRDirectory")
 def listing(query: str = Query("", max_length=200), status: Literal["all", "active", "inactive"] = "all",
             zone_id: uuid.UUID | None = None, hq_id: uuid.UUID | None = None,
             limit: int = Query(10, ge=1, le=100), offset: int = Query(0, ge=0, le=1000000),
-            cursor: uuid.UUID | None = None,
+            cursor: str | None = Query(None, max_length=128),
+            zone_ids: str = Query("", max_length=370000),
             actor=Depends(manager), db: Session = Depends(get_db)):
-    return mrs.listing(db, actor, query, status, zone_id, hq_id, limit, offset, cursor)
+    return mrs.listing(db, actor, query, status, zone_filter(zone_id, zone_ids), hq_id, limit, offset, cursor)
 
 
 @router.post("", response_model=MRCreated, status_code=201, operation_id="createMRDirectory")
@@ -40,8 +52,9 @@ def references(kind: Literal["zones", "headquarters", "managers", "designations"
                query: str = Query("", max_length=200), limit: int = Query(100, ge=1, le=100),
                offset: int = Query(0, ge=0, le=1000000), include_saved: uuid.UUID | None = None,
                cursor: uuid.UUID | None = None,
+               active_only: bool = False,
                actor=Depends(manager), db: Session = Depends(get_db)):
-    return mrs.references(db, actor, kind, query, limit, offset, include_saved, cursor)
+    return mrs.references(db, actor, kind, query, limit, offset, include_saved, cursor, active_only)
 
 
 @router.get("/username", response_model=MRUsername, operation_id="generateMRUsername")
@@ -83,8 +96,9 @@ def sample(format: Literal["csv", "xlsx"] = "csv", actor=Depends(manager), db: S
 def export(query: str = Query("", max_length=200), status: Literal["all", "active", "inactive"] = "all",
            zone_id: uuid.UUID | None = None, hq_id: uuid.UUID | None = None,
            format: Literal["csv", "xlsx"] = "csv", actor=Depends(manager), db: Session = Depends(get_db),
+           zone_ids: str = Query("", max_length=370000),
            initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation")):
-    data = mr_transfer.export(db, actor, query, status, zone_id, hq_id, format)
+    data = mr_transfer.export(db, actor, query, status, zone_filter(zone_id, zone_ids), hq_id, format)
     return file_response(db, actor, data, format, initiation_id)
 
 

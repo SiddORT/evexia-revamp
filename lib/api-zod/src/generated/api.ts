@@ -471,8 +471,11 @@ export const listMRDirectoryQueryLimitMax = 100;
 export const listMRDirectoryQueryOffsetDefault = 0;
 export const listMRDirectoryQueryOffsetMin = 0;
 export const listMRDirectoryQueryOffsetMax = 1000000;
+export const listMRDirectoryQueryCursorOneMax = 128;
+export const listMRDirectoryQueryZoneIdsMax = 370000;
 export const listMRDirectoryResponseItemsItemAddressLine1Max = 300;
 export const listMRDirectoryResponseItemsItemAddressLine2Max = 300;
+export const listMRDirectoryResponseItemsItemAssignedZonesItemDeletedDefault = false;
 export const listMRDirectoryResponseItemsItemCityMax = 100;
 export const listMRDirectoryResponseItemsItemCountryMax = 100;
 export const listMRDirectoryResponseItemsItemDoctorDaysLimitDefault = 0;
@@ -509,8 +512,10 @@ export const createMRDirectoryBodyPhoneMax = 20;
 export const createMRDirectoryBodyStateMax = 100;
 export const createMRDirectoryBodyUserIdMin = 3;
 export const createMRDirectoryBodyUserIdMax = 32;
+export const createMRDirectoryBodyZoneIdsOneMax = 10000;
 export const createMRDirectoryResponseRecordAddressLine1Max = 300;
 export const createMRDirectoryResponseRecordAddressLine2Max = 300;
+export const createMRDirectoryResponseRecordAssignedZonesItemDeletedDefault = false;
 export const createMRDirectoryResponseRecordCityMax = 100;
 export const createMRDirectoryResponseRecordCountryMax = 100;
 export const createMRDirectoryResponseRecordDoctorDaysLimitDefault = 0;
@@ -526,6 +531,7 @@ export const createMRDirectoryResponseRecordUserIdMin = 3;
 export const createMRDirectoryResponseRecordUserIdMax = 32;
 export const resolveMRAccountResponseAddressLine1Max = 300;
 export const resolveMRAccountResponseAddressLine2Max = 300;
+export const resolveMRAccountResponseAssignedZonesItemDeletedDefault = false;
 export const resolveMRAccountResponseCityMax = 100;
 export const resolveMRAccountResponseCountryMax = 100;
 export const resolveMRAccountResponseDoctorDaysLimitDefault = 0;
@@ -540,6 +546,7 @@ export const resolveMRAccountResponseStateMax = 100;
 export const resolveMRAccountResponseUserIdMin = 3;
 export const resolveMRAccountResponseUserIdMax = 32;
 export const exportMRDirectoryQueryQueryMax = 200;
+export const exportMRDirectoryQueryZoneIdsMax = 370000;
 export const commitMRImportQueryFilenameMax = 200;
 export const reviewMRImportQueryFilenameMax = 200;
 export const listMRReferenceChoicesQueryQueryMax = 200;
@@ -548,6 +555,7 @@ export const listMRReferenceChoicesQueryLimitMax = 100;
 export const listMRReferenceChoicesQueryOffsetDefault = 0;
 export const listMRReferenceChoicesQueryOffsetMin = 0;
 export const listMRReferenceChoicesQueryOffsetMax = 1000000;
+export const listMRReferenceChoicesQueryActiveOnlyDefault = false;
 export const listMRReferenceChoicesResponseItemsItemDeletedDefault = false;
 export const listMRReferenceChoicesResponsePartialDefault = false;
 export const listMRReferenceChoicesResponseScannedDefault = 0;
@@ -555,6 +563,7 @@ export const listMRReferenceChoicesResponseScannedMin = 0;
 export const listMRReferenceChoicesResponseScannedMax = 500;
 export const getMRDirectoryResponseAddressLine1Max = 300;
 export const getMRDirectoryResponseAddressLine2Max = 300;
+export const getMRDirectoryResponseAssignedZonesItemDeletedDefault = false;
 export const getMRDirectoryResponseCityMax = 100;
 export const getMRDirectoryResponseCountryMax = 100;
 export const getMRDirectoryResponseDoctorDaysLimitDefault = 0;
@@ -570,6 +579,7 @@ export const getMRDirectoryResponseUserIdMin = 3;
 export const getMRDirectoryResponseUserIdMax = 32;
 export const setMRContactRequirementResponseAddressLine1Max = 300;
 export const setMRContactRequirementResponseAddressLine2Max = 300;
+export const setMRContactRequirementResponseAssignedZonesItemDeletedDefault = false;
 export const setMRContactRequirementResponseCityMax = 100;
 export const setMRContactRequirementResponseCountryMax = 100;
 export const setMRContactRequirementResponseDoctorDaysLimitDefault = 0;
@@ -585,6 +595,7 @@ export const setMRContactRequirementResponseUserIdMin = 3;
 export const setMRContactRequirementResponseUserIdMax = 32;
 export const deleteMRDirectoryResponseAddressLine1Max = 300;
 export const deleteMRDirectoryResponseAddressLine2Max = 300;
+export const deleteMRDirectoryResponseAssignedZonesItemDeletedDefault = false;
 export const deleteMRDirectoryResponseCityMax = 100;
 export const deleteMRDirectoryResponseCountryMax = 100;
 export const deleteMRDirectoryResponseDoctorDaysLimitDefault = 0;
@@ -620,8 +631,10 @@ export const editMRDirectoryBodyPhoneMax = 20;
 export const editMRDirectoryBodyStateMax = 100;
 export const editMRDirectoryBodyUserIdMin = 3;
 export const editMRDirectoryBodyUserIdMax = 32;
+export const editMRDirectoryBodyZoneIdsOneMax = 10000;
 export const editMRDirectoryResponseAddressLine1Max = 300;
 export const editMRDirectoryResponseAddressLine2Max = 300;
+export const editMRDirectoryResponseAssignedZonesItemDeletedDefault = false;
 export const editMRDirectoryResponseCityMax = 100;
 export const editMRDirectoryResponseCountryMax = 100;
 export const editMRDirectoryResponseDoctorDaysLimitDefault = 0;
@@ -637,6 +650,7 @@ export const editMRDirectoryResponseUserIdMin = 3;
 export const editMRDirectoryResponseUserIdMax = 32;
 export const resetMRPasswordResponseRecordAddressLine1Max = 300;
 export const resetMRPasswordResponseRecordAddressLine2Max = 300;
+export const resetMRPasswordResponseRecordAssignedZonesItemDeletedDefault = false;
 export const resetMRPasswordResponseRecordCityMax = 100;
 export const resetMRPasswordResponseRecordCountryMax = 100;
 export const resetMRPasswordResponseRecordDoctorDaysLimitDefault = 0;
@@ -652,6 +666,7 @@ export const resetMRPasswordResponseRecordUserIdMin = 3;
 export const resetMRPasswordResponseRecordUserIdMax = 32;
 export const setMRDirectoryStatusResponseAddressLine1Max = 300;
 export const setMRDirectoryStatusResponseAddressLine2Max = 300;
+export const setMRDirectoryStatusResponseAssignedZonesItemDeletedDefault = false;
 export const setMRDirectoryStatusResponseCityMax = 100;
 export const setMRDirectoryStatusResponseCountryMax = 100;
 export const setMRDirectoryStatusResponseDoctorDaysLimitDefault = 0;
@@ -8864,6 +8879,8 @@ export const listMRDirectoryQueryQueryDefault = ``;
 
 export const listMRDirectoryQueryStatusDefault = `all`;
 
+export const listMRDirectoryQueryZoneIdsDefault = ``;
+
 export const ListMRDirectoryQueryParams = zod.object({
   query: zod.coerce
     .string()
@@ -8886,7 +8903,16 @@ export const ListMRDirectoryQueryParams = zod.object({
     .min(listMRDirectoryQueryOffsetMin)
     .max(listMRDirectoryQueryOffsetMax)
     .default(listMRDirectoryQueryOffsetDefault),
-  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  cursor: zod
+    .union([
+      zod.coerce.string().max(listMRDirectoryQueryCursorOneMax),
+      zod.null(),
+    ])
+    .optional(),
+  zone_ids: zod.coerce
+    .string()
+    .max(listMRDirectoryQueryZoneIdsMax)
+    .default(listMRDirectoryQueryZoneIdsDefault),
 });
 
 export const listMRDirectoryResponseItemsItemAddressLine2Default = ``;
@@ -8923,6 +8949,18 @@ export const ListMRDirectoryResponse = zod.object({
         .string()
         .max(listMRDirectoryResponseItemsItemAddressLine2Max)
         .default(listMRDirectoryResponseItemsItemAddressLine2Default),
+      assignedZones: zod.array(
+        zod.object({
+          deleted: zod
+            .boolean()
+            .default(
+              listMRDirectoryResponseItemsItemAssignedZonesItemDeletedDefault,
+            ),
+          id: zod.string().uuid(),
+          name: zod.string(),
+          status: zod.string(),
+        }),
+      ),
       assignmentWarnings: zod.array(zod.string()),
       city: zod.string().min(1).max(listMRDirectoryResponseItemsItemCityMax),
       contactRequirement: zod
@@ -9234,6 +9272,7 @@ export const ListMRDirectoryResponse = zod.object({
         .regex(listMRDirectoryResponseItemsItemUserIdRegExp),
       version: zod.number().int(),
       zoneId: zod.string().uuid(),
+      zoneIds: zod.array(zod.string().uuid()),
       zoneName: zod.string(),
     }),
   ),
@@ -9582,6 +9621,15 @@ export const CreateMRDirectoryBody = zod.object({
     .max(createMRDirectoryBodyUserIdMax)
     .regex(createMRDirectoryBodyUserIdRegExp),
   zoneId: zod.string().uuid(),
+  zoneIds: zod
+    .union([
+      zod
+        .array(zod.string().uuid())
+        .min(1)
+        .max(createMRDirectoryBodyZoneIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
 });
 
 export const createMRDirectoryResponseRecordAddressLine2Default = ``;
@@ -9620,6 +9668,18 @@ export const CreateMRDirectoryResponse = zod.object({
       .string()
       .max(createMRDirectoryResponseRecordAddressLine2Max)
       .default(createMRDirectoryResponseRecordAddressLine2Default),
+    assignedZones: zod.array(
+      zod.object({
+        deleted: zod
+          .boolean()
+          .default(
+            createMRDirectoryResponseRecordAssignedZonesItemDeletedDefault,
+          ),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+      }),
+    ),
     assignmentWarnings: zod.array(zod.string()),
     city: zod.string().min(1).max(createMRDirectoryResponseRecordCityMax),
     contactRequirement: zod
@@ -9924,6 +9984,7 @@ export const CreateMRDirectoryResponse = zod.object({
       .regex(createMRDirectoryResponseRecordUserIdRegExp),
     version: zod.number().int(),
     zoneId: zod.string().uuid(),
+    zoneIds: zod.array(zod.string().uuid()),
     zoneName: zod.string(),
   }),
 });
@@ -9970,6 +10031,16 @@ export const ResolveMRAccountResponse = zod.object({
     .string()
     .max(resolveMRAccountResponseAddressLine2Max)
     .default(resolveMRAccountResponseAddressLine2Default),
+  assignedZones: zod.array(
+    zod.object({
+      deleted: zod
+        .boolean()
+        .default(resolveMRAccountResponseAssignedZonesItemDeletedDefault),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.string(),
+    }),
+  ),
   assignmentWarnings: zod.array(zod.string()),
   city: zod.string().min(1).max(resolveMRAccountResponseCityMax),
   contactRequirement: zod
@@ -10271,6 +10342,7 @@ export const ResolveMRAccountResponse = zod.object({
     .regex(resolveMRAccountResponseUserIdRegExp),
   version: zod.number().int(),
   zoneId: zod.string().uuid(),
+  zoneIds: zod.array(zod.string().uuid()),
   zoneName: zod.string(),
 });
 
@@ -10281,6 +10353,7 @@ export const exportMRDirectoryQueryQueryDefault = ``;
 
 export const exportMRDirectoryQueryStatusDefault = `all`;
 export const exportMRDirectoryQueryFormatDefault = `csv`;
+export const exportMRDirectoryQueryZoneIdsDefault = ``;
 
 export const ExportMRDirectoryQueryParams = zod.object({
   query: zod.coerce
@@ -10295,6 +10368,10 @@ export const ExportMRDirectoryQueryParams = zod.object({
   format: zod
     .enum(["csv", "xlsx"])
     .default(exportMRDirectoryQueryFormatDefault),
+  zone_ids: zod.coerce
+    .string()
+    .max(exportMRDirectoryQueryZoneIdsMax)
+    .default(exportMRDirectoryQueryZoneIdsDefault),
 });
 
 export const ExportMRDirectoryHeader = zod.object({
@@ -10406,9 +10483,13 @@ export const ListMRReferenceChoicesQueryParams = zod.object({
     .default(listMRReferenceChoicesQueryOffsetDefault),
   include_saved: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
   cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  active_only: zod.coerce
+    .boolean()
+    .default(listMRReferenceChoicesQueryActiveOnlyDefault),
 });
 
 export const ListMRReferenceChoicesResponse = zod.object({
+  catalogueVersion: zod.union([zod.string(), zod.null()]).optional(),
   items: zod.array(
     zod.object({
       deleted: zod
@@ -10491,6 +10572,16 @@ export const GetMRDirectoryResponse = zod.object({
     .string()
     .max(getMRDirectoryResponseAddressLine2Max)
     .default(getMRDirectoryResponseAddressLine2Default),
+  assignedZones: zod.array(
+    zod.object({
+      deleted: zod
+        .boolean()
+        .default(getMRDirectoryResponseAssignedZonesItemDeletedDefault),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.string(),
+    }),
+  ),
   assignmentWarnings: zod.array(zod.string()),
   city: zod.string().min(1).max(getMRDirectoryResponseCityMax),
   contactRequirement: zod
@@ -10789,6 +10880,7 @@ export const GetMRDirectoryResponse = zod.object({
     .regex(getMRDirectoryResponseUserIdRegExp),
   version: zod.number().int(),
   zoneId: zod.string().uuid(),
+  zoneIds: zod.array(zod.string().uuid()),
   zoneName: zod.string(),
 });
 
@@ -10835,6 +10927,18 @@ export const SetMRContactRequirementResponse = zod.object({
     .string()
     .max(setMRContactRequirementResponseAddressLine2Max)
     .default(setMRContactRequirementResponseAddressLine2Default),
+  assignedZones: zod.array(
+    zod.object({
+      deleted: zod
+        .boolean()
+        .default(
+          setMRContactRequirementResponseAssignedZonesItemDeletedDefault,
+        ),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.string(),
+    }),
+  ),
   assignmentWarnings: zod.array(zod.string()),
   city: zod.string().min(1).max(setMRContactRequirementResponseCityMax),
   contactRequirement: zod
@@ -11136,6 +11240,7 @@ export const SetMRContactRequirementResponse = zod.object({
     .regex(setMRContactRequirementResponseUserIdRegExp),
   version: zod.number().int(),
   zoneId: zod.string().uuid(),
+  zoneIds: zod.array(zod.string().uuid()),
   zoneName: zod.string(),
 });
 
@@ -11181,6 +11286,16 @@ export const DeleteMRDirectoryResponse = zod.object({
     .string()
     .max(deleteMRDirectoryResponseAddressLine2Max)
     .default(deleteMRDirectoryResponseAddressLine2Default),
+  assignedZones: zod.array(
+    zod.object({
+      deleted: zod
+        .boolean()
+        .default(deleteMRDirectoryResponseAssignedZonesItemDeletedDefault),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.string(),
+    }),
+  ),
   assignmentWarnings: zod.array(zod.string()),
   city: zod.string().min(1).max(deleteMRDirectoryResponseCityMax),
   contactRequirement: zod
@@ -11482,6 +11597,7 @@ export const DeleteMRDirectoryResponse = zod.object({
     .regex(deleteMRDirectoryResponseUserIdRegExp),
   version: zod.number().int(),
   zoneId: zod.string().uuid(),
+  zoneIds: zod.array(zod.string().uuid()),
   zoneName: zod.string(),
 });
 
@@ -11850,6 +11966,15 @@ export const EditMRDirectoryBody = zod.object({
     .max(editMRDirectoryBodyUserIdMax)
     .regex(editMRDirectoryBodyUserIdRegExp),
   zoneId: zod.string().uuid(),
+  zoneIds: zod
+    .union([
+      zod
+        .array(zod.string().uuid())
+        .min(1)
+        .max(editMRDirectoryBodyZoneIdsOneMax),
+      zod.null(),
+    ])
+    .optional(),
 });
 
 export const editMRDirectoryResponseAddressLine2Default = ``;
@@ -11880,6 +12005,16 @@ export const EditMRDirectoryResponse = zod.object({
     .string()
     .max(editMRDirectoryResponseAddressLine2Max)
     .default(editMRDirectoryResponseAddressLine2Default),
+  assignedZones: zod.array(
+    zod.object({
+      deleted: zod
+        .boolean()
+        .default(editMRDirectoryResponseAssignedZonesItemDeletedDefault),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.string(),
+    }),
+  ),
   assignmentWarnings: zod.array(zod.string()),
   city: zod.string().min(1).max(editMRDirectoryResponseCityMax),
   contactRequirement: zod
@@ -12178,6 +12313,7 @@ export const EditMRDirectoryResponse = zod.object({
     .regex(editMRDirectoryResponseUserIdRegExp),
   version: zod.number().int(),
   zoneId: zod.string().uuid(),
+  zoneIds: zod.array(zod.string().uuid()),
   zoneName: zod.string(),
 });
 
@@ -12228,6 +12364,18 @@ export const ResetMRPasswordResponse = zod.object({
       .string()
       .max(resetMRPasswordResponseRecordAddressLine2Max)
       .default(resetMRPasswordResponseRecordAddressLine2Default),
+    assignedZones: zod.array(
+      zod.object({
+        deleted: zod
+          .boolean()
+          .default(
+            resetMRPasswordResponseRecordAssignedZonesItemDeletedDefault,
+          ),
+        id: zod.string().uuid(),
+        name: zod.string(),
+        status: zod.string(),
+      }),
+    ),
     assignmentWarnings: zod.array(zod.string()),
     city: zod.string().min(1).max(resetMRPasswordResponseRecordCityMax),
     contactRequirement: zod
@@ -12529,6 +12677,7 @@ export const ResetMRPasswordResponse = zod.object({
       .regex(resetMRPasswordResponseRecordUserIdRegExp),
     version: zod.number().int(),
     zoneId: zod.string().uuid(),
+    zoneIds: zod.array(zod.string().uuid()),
     zoneName: zod.string(),
   }),
 });
@@ -12576,6 +12725,16 @@ export const SetMRDirectoryStatusResponse = zod.object({
     .string()
     .max(setMRDirectoryStatusResponseAddressLine2Max)
     .default(setMRDirectoryStatusResponseAddressLine2Default),
+  assignedZones: zod.array(
+    zod.object({
+      deleted: zod
+        .boolean()
+        .default(setMRDirectoryStatusResponseAssignedZonesItemDeletedDefault),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.string(),
+    }),
+  ),
   assignmentWarnings: zod.array(zod.string()),
   city: zod.string().min(1).max(setMRDirectoryStatusResponseCityMax),
   contactRequirement: zod
@@ -12877,6 +13036,7 @@ export const SetMRDirectoryStatusResponse = zod.object({
     .regex(setMRDirectoryStatusResponseUserIdRegExp),
   version: zod.number().int(),
   zoneId: zod.string().uuid(),
+  zoneIds: zod.array(zod.string().uuid()),
   zoneName: zod.string(),
 });
 

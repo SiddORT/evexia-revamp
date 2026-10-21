@@ -17,4 +17,8 @@ export type ExportMRDirectoryParams = {
   zone_id?: string | null;
   hq_id?: string | null;
   format?: ExportMRDirectoryFormat;
+  /**
+   * @maxLength 370000
+   */
+  zone_ids?: string;
 };

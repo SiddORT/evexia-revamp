@@ -41,6 +41,8 @@ COLUMNS = [
 ]
 OLD_HEADERS = [title for _, title in COLUMNS]
 COLUMNS = COLUMNS + [("dialCountry", "Dial Country")]
+SINGLE_HEADERS = [title for _, title in COLUMNS]
+COLUMNS = COLUMNS + [("zoneIds", "Assigned Zones JSON")]
 HEADERS = [title for _, title in COLUMNS]
 EXPORT_HEADERS = HEADERS + ["Reporting Manager Name"]
 AUDIT = ["Created By", "Created At", "Updated By", "Updated At"]
@@ -107,6 +109,8 @@ def parse(data, filename):
     else:
         invalid("Only CSV and genuine XLSX are supported; no XLS/macros.")
     if not rows or rows[0] not in (HEADERS, LEGACY, HEADERS + AUDIT, OLD_HEADERS, OLD_HEADERS + AUDIT,
+                                  SINGLE_HEADERS, SINGLE_HEADERS + AUDIT,
+                                  SINGLE_HEADERS + ["Reporting Manager Name"], SINGLE_HEADERS + ["Reporting Manager Name"] + AUDIT,
                                   EXPORT_HEADERS, EXPORT_HEADERS + AUDIT):
         invalid("Use the current MR schema or a previously exported MR backup. Password, identity-link, version, deletion and unknown columns are forbidden. The reduced six-column mock template is not a backup.")
     header = rows[0]
@@ -121,6 +125,8 @@ def parse(data, filename):
             if value.startswith("'") and (value[1:].startswith("'") or UNSAFE.match(value[1:])):
                 value = value[1:]
             values[key] = value
+        if "Assigned Zones JSON" in header and not values["zoneIds"]:
+            errors.append("Assigned Zones JSON is required in the multi-zone schema; use a nonempty JSON array.")
         values["contactRequirement"] = (values["contactRequirement"] or "required").lower()
         values["dialCountry"] = (values["dialCountry"] or "IN").upper()
         values["status"] = values["status"].lower()
@@ -212,6 +218,23 @@ def review_state(db, parsed):
         try:
             values["hq"] = resolve_catalog(db, Headquarter, values["hq"], "HQ")
             values["zoneId"] = resolve_catalog(db, Zone, values["zoneId"], "Assigned Zone")
+            encoded_zones = values.get("zoneIds", "")
+            if encoded_zones:
+                try:
+                    refs = json.loads(encoded_zones)
+                    if not isinstance(refs, list) or not refs or len(refs) > 10000 or any(
+                            not isinstance(ref, str) or not ref.strip() for ref in refs):
+                        raise ValueError()
+                    values["zoneIds"] = [resolve_catalog(db, Zone, ref, "Assigned Zones JSON") for ref in refs]
+                    if values["zoneId"] not in values["zoneIds"]:
+                        raise ValueError()
+                    if len(set(values["zoneIds"])) != len(refs):
+                        raise ValueError()
+                except (ValueError, TypeError):
+                    raise mrs.MRError("Assigned Zones JSON must be a nonempty JSON array of distinct zone names/UUIDs including Assigned Zone.",
+                                      422, "mr_assignment") from None
+            else:
+                values["zoneIds"] = [values["zoneId"]]
             values["designation_id"] = resolve_designation(db, values["designation_id"])
             values["reportingManagerId"] = resolve_manager(db, values["reportingManagerId"], batch)
             body = MRFields(**values)
@@ -241,7 +264,8 @@ def review_state(db, parsed):
     for record_id, body in bodies.items():
         # Assignment versions bind review to the actual resolved server catalogue.
         refs = []
-        for model, target in ((Headquarter, body.hq), (Zone, body.zoneId), (Designation, body.designation_id), (MRDirectory, body.reportingManagerId)):
+        for model, target in ((Headquarter, body.hq), *((Zone, key) for key in (body.zoneIds or [body.zoneId])),
+                              (Designation, body.designation_id), (MRDirectory, body.reportingManagerId)):
             if target and (model is not MRDirectory or target not in bodies):
                 entry = db.get(model, target)
                 refs.append((str(target), entry.version if entry else None,
@@ -304,6 +328,9 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
 
 
 def encode(rows, format, audit=False, snapshots=False):
+    if any(len(str(value)) > 10000 for row in rows for value in row):
+        raise mrs.MRError("An MR transfer cell exceeds the 10,000-character safe import/export bound. No assignments were omitted and nothing was downloaded.",
+                          409, "mr_export_limit")
     header = (EXPORT_HEADERS if snapshots else HEADERS) + (AUDIT if audit else [])
     if format == "csv":
         stream = io.StringIO()
@@ -327,7 +354,7 @@ def sample(format):
     # Explicit fictional labels are not silently created: operators replace them.
     values = dict(employeeCode="MR-001", name="Example MR", phone="", dialCountry="IN", userId="example.mr",
                   email="", contactRequirement="optional", hq="Replace with active HQ",
-                  zoneId="Replace with active Zone", dateOfJoining=date.today().isoformat(),
+                  zoneId="Replace with active Zone", zoneIds='["Replace with active Zone"]', dateOfJoining=date.today().isoformat(),
                   designation_id="Replace with active catalogue Designation name or UUID", reportingManagerId="", paymentLimit="0.00",
                   doctorDaysLimit="0", status="inactive", addressLine1="Example address", addressLine2="",
                   landmark="Example landmark", pincode="110001", city="Delhi", state="Delhi", country="India")
@@ -361,7 +388,10 @@ def export(db, actor, query, status, zone_id, hq_id, format):
             context = mrs.projection_context(db, records, manager_accounts=True)
         for record in records:
             values = mrs.projection(db, record, context)
-            values["hq"], values["zoneId"] = values["hqName"], values["zoneName"]
+            values["hq"] = values["hqName"]
+            # UUIDs avoid delimiter/name ambiguity and preserve tombstone identity.
+            values["zoneId"] = str(record.zoneId)
+            values["zoneIds"] = json.dumps([str(key) for key in values["zoneIds"]], separators=(",", ":"))
             values["designation_id"] = values["designationName"]
             if record.reportingManagerId:
                 values["reportingManagerId"] = "user:" + context["accounts"][record.reportingManagerId].username

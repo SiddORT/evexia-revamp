@@ -2971,6 +2971,7 @@ export interface MRChoice {
 }
 
 export interface MRChoices {
+  catalogueVersion?: string | null;
   items: MRChoice[];
   limit: number;
   nextCursor?: string | null;
@@ -3330,6 +3331,7 @@ export interface MRCreate {
    */
   userId: string;
   zoneId: string;
+  zoneIds?: string[] | null;
 }
 
 export interface MRCredentials {
@@ -3612,6 +3614,7 @@ export interface MRDirectoryResponse {
   addressLine1: string;
   /** @maxLength 300 */
   addressLine2?: string;
+  assignedZones: MRChoice[];
   assignmentWarnings: string[];
   /**
    * @minLength 1
@@ -3679,6 +3682,7 @@ export interface MRDirectoryResponse {
   userId: string;
   version: number;
   zoneId: string;
+  zoneIds: string[];
   zoneName: string;
 }
 
@@ -4043,6 +4047,7 @@ export interface MREdit {
    */
   userId: string;
   zoneId: string;
+  zoneIds?: string[] | null;
 }
 
 export interface MRImportResult {
@@ -10115,6 +10120,10 @@ export type ListMRDirectoryParams = {
    */
   offset?: number;
   cursor?: string | null;
+  /**
+   * @maxLength 370000
+   */
+  zone_ids?: string;
 };
 
 export type ListMRDirectoryStatus =
@@ -10135,6 +10144,10 @@ export type ExportMRDirectoryParams = {
   zone_id?: string | null;
   hq_id?: string | null;
   format?: ExportMRDirectoryFormat;
+  /**
+   * @maxLength 370000
+   */
+  zone_ids?: string;
 };
 
 export type ExportMRDirectoryStatus =
@@ -10213,6 +10226,7 @@ export type ListMRReferenceChoicesParams = {
   offset?: number;
   include_saved?: string | null;
   cursor?: string | null;
+  active_only?: boolean;
 };
 
 export type ListMRReferenceChoicesKind =

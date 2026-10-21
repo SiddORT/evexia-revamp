@@ -1,5 +1,104 @@
 # MR Master: identity, rollout and transfer contract
 
+## Multiple assigned zones
+
+MR Master now has two MR-scoped searchable multiselects: Assigned zone in the
+list and Assigned zone in Add/Edit. Both have checkmarked options, keyboard
+navigation, removable selected chips and Select all. At least one form zone is
+required. No HQ restriction, area assignment or browser-local migration is added.
+
+`0051_mr_zones` is the forward successor to source head `0050_opening_stock`.
+It backfills every existing MR (including inactive/deleted history) from its
+unchanged singular zone and saved zone label into an ordered MR→zone collection.
+Parent/member deferred integrity guards require the primary to remain a member;
+duplicate memberships/positions are rejected. Downgrade refuses records with
+additional memberships instead of discarding them. Applied migrations remain
+unchanged. The automatic migration policy in `replit.md` supersedes historical
+per-revision approval descriptions below.
+
+Protected MR responses include ordered `zoneIds` and `assignedZones` (saved
+label, status and deletion state), alongside existing `zoneId`/`zoneName`.
+Create/edit accepts an explicit nonempty, distinct `zoneIds` array (maximum
+10,000) plus compatibility `zoneId`. Existing primary remains primary while
+selected; removal chooses the first remaining member. Both the selected summary
+and listing mark **Primary**. New assignments must be active/non-deleted under
+transactional reference locks. Saved inactive memberships may be retained;
+deleted memberships require explicit removal or replacement. Parent expected
+version and existing authorization, account, graph, audit and uncertain-save
+boundaries remain in force. Old scalar-only edits preserve additional saved
+members, adding a newly requested zone if necessary, never replacing the entire
+collection implicitly.
+
+Doctor, Patient and Sales Target continue to derive their one zone from
+`zoneId`; they do not gain multizone assignment behavior. MR list/cards and MR
+search use every member, with saved labels and per-member lifecycle warnings.
+
+Form Select all traverses the MR-authorized reference endpoint without a search
+term using `active_only=true`, 100 choices per page. The zone endpoint returns
+each page, total and a catalogue-version fingerprint from one SQL snapshot.
+Every page must have the same total/fingerprint, unique active nondeleted IDs,
+and complete coverage before any selection is applied. Failure, cancellation,
+catalogue changes or the 10,000-choice bound leave the selection unchanged;
+retry is explicit and Save is blocked while selection is pending. Existing
+selections (including inactive/deleted ones) are retained, so Select all never
+silently removes an unavailable saved assignment. Future zones are not assigned
+automatically. Ordinary search/paging does not discard selected chips.
+
+List/export accept comma-separated UUIDs in `zone_ids`; legacy `zone_id`
+remains accepted, and when both are supplied they are combined. Matching is
+**any assigned zone**, using a membership subquery rather than a duplicating
+join. Empty/reset/Select all means no zone predicate, including unloaded,
+inactive and retained deleted assignments. Pagination/counts and CSV/XLSX use
+the same predicate. The browser sorts the selected set to bind/reset its search
+continuation, and server-issued MR search cursors are HMAC-bound to the actor,
+search, status, selected set, HQ and page size. Old unbound search cursors must
+restart after this rollout.
+
+### Portable multizone files
+
+The current sample adds **Assigned Zones JSON** immediately after Dial Country.
+It is a JSON array of distinct zone UUIDs or uniquely resolvable catalogue names,
+for example `["North","South"]`. JSON escaping, not commas/semicolons within
+names, defines member boundaries. The existing **Assigned Zone** column supplies
+the compatibility primary and must resolve to one member. Exports put UUIDs in
+both columns to avoid name ambiguity, preserving member ordering and primary
+independently. Export adds Reporting Manager Name as before; XLSX adds the
+four informational server audit columns. Current samples therefore have 23
+columns, CSV exports 24, and XLSX exports 28.
+
+Legacy 20/21-column files, Dial Country schemas (22 columns), and their previously
+accepted audit/manager-label variants remain accepted. An absent multizone column
+means a single assignment. An explicitly present but blank/malformed/duplicate
+array is rejected, not interpreted as permission to lose memberships.
+Review/HMAC/commit bind every resolved member and its version/lifecycle and
+revalidate after password work under locks. Import stays atomic and create-only;
+inactive/deleted references in a backup still need explicit active replacements.
+The existing 2 MiB/1,000-record upload and 5,000-match export budgets remain.
+Current XLSX coordinate allowance is 28,028 cells. A transfer cell over 10,000
+characters rejects the whole export explicitly; it never truncates a long zone
+array. Thus a very large valid API assignment may exceed portable-file bounds.
+
+### Implementation-only handoff
+
+For this change the user explicitly prohibited all tests, manual/browser
+scenarios, regression checks, benchmarks, builds and validation wrappers.
+Only source/diff inspection, offline OpenAPI/client generation and source
+integrity metadata generation were performed. No service restart, migration
+execution, real-record modification or production deployment was performed.
+The development declaration and generated source metadata target `0051_mr_zones`;
+this is **not** evidence that any running database or service has advanced.
+
+Fresh-install catalog/release evidence remains pinned to the previously observed
+`0050_opening_stock` catalog. It cannot honestly be advanced without executing
+the new schema and collecting a real PostgreSQL catalog, which was excluded here.
+The guarded fresh installer therefore remains blocked for this new source head
+until separately authorized catalog reproduction and release-metadata refresh.
+Do not invent a digest, weaken the installer guard or claim runtime acceptance.
+After merge, original development's existing automatic lifecycle owns migration
+activation and restart; its runtime state was not observed in this fork.
+Historical verification commands below are documentation, not commands run for
+the multizone implementation.
+
 ## Designation identity rollout
 
 Forward `0027_mr_designation_identity` follows the single reconciled
@@ -191,7 +290,7 @@ failure responses leave manual entry available, never block account creation.
 
 ## Transfer schemas and compatibility
 
-CSV export preserves this exact **21-column** order:
+The original, still accepted legacy **21-column** business schema is:
 
 `Employee Code, MR Name, Phone No., User ID, Email ID, Contact Requirement, HQ,
 Assigned Zone, Date of Joining, Designation, Reporting Manager, Payment Limit,
@@ -199,8 +298,9 @@ Doctor Days Limit, Status, Address Line 1, Address Line 2, Landmark, Pincode, Ci
 State, Country`
 
 Legacy 20-column exports missing only `Contact Requirement` default explicitly to
-**required**. Current CSV imports accept the 21 columns or the documented 25-column
-schema; current genuine XLSX samples/exports use those business columns plus
+**required**. Legacy 21-column and 25-column audit schemas remain accepted, as do
+the subsequent Dial Country and Reporting Manager Name variants. Current
+multi-zone formats are defined above. Genuine XLSX exports append
 `Created By, Created At, Updated By, Updated At`. Incoming audit values are ignored;
 the importer/server owns all evidence. The old reduced six-column mock Excel
 template is not a full backup and is rejected with schema-correction guidance.
@@ -235,7 +335,7 @@ client transfer requires its acknowledgement and a live identity guard.
 
 Uploads: 2 MiB content, 1,000 records, 15-second body deadline, with only a bounded
 64 KiB multipart overhead. XLSX: 100 archive members, 8 MiB aggregate decompressed,
-4 MiB/member, one worksheet, at most 25,025 cells and 10,000 characters per XML/cell
+4 MiB/member, one worksheet, at most 28,028 cells and 10,000 characters per XML/cell
 text; independent coordinates defeat false worksheet dimensions. Malformed/duplicate
 archives, macros, external links, formulas, encrypted/unsupported legacy files and
 unsafe XML are rejected before workbook loading, without network/evaluation.
@@ -260,7 +360,7 @@ survives a request or replaces live authorization checks. Ordering, combined
 filters, pagination, the 5,000-row cap (including a post-read overflow check), and
 download ledger acknowledgement are unchanged.
 
-## Verification
+## Historical verification guidance (not run for multizone)
 
 Run the isolated API harness, contract check, generated shared-client checks and
 `pnpm run validate:release`. The harness overrides all ambient DB/auth settings,
