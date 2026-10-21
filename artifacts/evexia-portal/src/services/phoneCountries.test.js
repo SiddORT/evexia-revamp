@@ -1,12 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { delimiter, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { DIAL_COUNTRIES, normalizePhone, internationalPhone } from './phoneCountries.js';
+
+const backendPath = fileURLToPath(new URL('../../../api-server/backend', import.meta.url));
+
+function backendPythonEnvironment(environment = process.env) {
+  // CI exposes locked packages through PYTHONPATH, not global site-packages.
+  // Do not append a separator for absent/empty values: it adds a cwd entry.
+  return {
+    ...environment,
+    PYTHONPATH: [backendPath, environment.PYTHONPATH].filter(Boolean).join(delimiter),
+  };
+}
 
 test('complete maintained JavaScript/Python region and calling-code parity', () => {
   const actual = JSON.parse(execFileSync('python3', ['-c',
     'import json; from app.schemas.phone import DIAL; print(json.dumps(DIAL))'],
-  { env: { ...process.env, PYTHONPATH: 'artifacts/api-server/backend' } }).toString());
+  { env: backendPythonEnvironment() }).toString());
   assert.deepEqual(Object.fromEntries(DIAL_COUNTRIES.map(({ value, code }) => [value, code])), actual);
   assert.ok(DIAL_COUNTRIES.length > 240);
   assert.equal(new Set(DIAL_COUNTRIES.map(({ value }) => value)).size, DIAL_COUNTRIES.length);
@@ -41,4 +56,55 @@ test('every maintained region has a usable example matching server validation', 
     }
   }
   assert.equal(normalizePhone('+1 2025550123', 'CA', 'mr'), null);
+});
+
+test('backend Python environment preserves dependency paths without adding cwd entries', async (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'phone-python-path-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const packagePaths = [join(root, 'locked packages'), join(root, 'additional packages')];
+  for (const [index, path] of packagePaths.entries()) {
+    mkdirSync(path);
+    writeFileSync(join(path, `phone_path_probe_${index}.py`), `VALUE = ${index}\n`);
+  }
+
+  for (const [name, inherited] of [
+    ['inherited package locations', packagePaths.join(delimiter)],
+    ['missing PYTHONPATH', undefined],
+    ['empty PYTHONPATH', ''],
+  ]) {
+    await t.test(name, () => {
+      const environment = { ...process.env, PHONE_PATH_SENTINEL: 'preserved' };
+      delete environment.PYTHONPATH;
+      if (inherited !== undefined) environment.PYTHONPATH = inherited;
+      const childEnvironment = backendPythonEnvironment(environment);
+      const expected = [backendPath, ...(inherited ? packagePaths : [])];
+      assert.deepEqual(childEnvironment.PYTHONPATH.split(delimiter), expected);
+      assert.equal(environment.PYTHONPATH, inherited, 'must not mutate the parent environment');
+
+      // -S removes global packages and Replit startup hooks; -P removes Python's
+      // implicit cwd entry so an empty PYTHONPATH component cannot go unnoticed.
+      const actual = JSON.parse(execFileSync('python3', ['-S', '-P', '-c', `
+import json, os, sys
+import app.schemas
+${inherited ? 'import phone_path_probe_0, phone_path_probe_1\nassert (phone_path_probe_0.VALUE, phone_path_probe_1.VALUE) == (0, 1)' : ''}
+assert sys.flags.no_site
+assert os.environ["PHONE_PATH_SENTINEL"] == "preserved"
+print(json.dumps({"schema": app.schemas.__file__, "paths": sys.path}))
+`], { env: childEnvironment, cwd: root }).toString());
+      assert.equal(actual.schema, join(backendPath, 'app', 'schemas', '__init__.py'));
+      assert.deepEqual(actual.paths.slice(0, expected.length), expected);
+      assert.ok(!actual.paths.includes('') && !actual.paths.includes(root));
+    });
+  }
+
+  await t.test('missing dependencies still fail closed', () => {
+    const child = spawnSync('python3', ['-S', '-P', '-c', 'from app.schemas.phone import DIAL'], {
+      env: backendPythonEnvironment({ ...process.env, PYTHONPATH: '' }),
+      cwd: root,
+      encoding: 'utf8',
+    });
+    assert.ifError(child.error);
+    assert.notEqual(child.status, 0);
+    assert.match(child.stderr, /ModuleNotFoundError: No module named 'phonenumbers'/);
+  });
 });
