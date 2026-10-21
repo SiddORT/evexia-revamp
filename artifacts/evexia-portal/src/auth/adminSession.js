@@ -588,7 +588,28 @@ export async function emailTemplateRequest(path = '', body, { signal } = {}) {
       signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
     });
     data = await response.json();
-  } catch { throw uncertain(); }
+  } catch (cause) {
+    const error = uncertain();
+    // Fixed categories only: never display exception messages, URLs, response
+    // bodies or credentials. A JSON parse failure is not a connection failure.
+    let detail;
+    if (cause?.name === 'TimeoutError') {
+      error.code = 'ET_TIMEOUT';
+      detail = 'The request timed out after 15 seconds.';
+    } else if (cause?.name === 'AbortError') {
+      error.code = 'ET_CANCELLED';
+      detail = 'The request was cancelled.';
+    } else if (response) {
+      const html = response.headers?.get?.('Content-Type')?.toLowerCase().includes('text/html');
+      error.code = html ? 'ET_HTML_RESPONSE' : 'ET_INVALID_JSON';
+      detail = `The server returned HTTP ${response.status} ${html ? 'HTML instead of JSON' : 'without readable JSON'}.`;
+    } else {
+      error.code = 'ET_NETWORK';
+      detail = 'The browser could not complete the connection to the template API.';
+    }
+    error.message += ` ${detail} [${error.code}]`;
+    throw error;
+  }
   if (pending) await pending;
   try { check(); } catch (error) { error.ambiguous = mutation; throw error; }
   if (!response.ok) {

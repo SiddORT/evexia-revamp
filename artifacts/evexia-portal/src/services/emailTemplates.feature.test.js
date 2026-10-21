@@ -84,6 +84,37 @@ test('invalid responses and stale saves never become local success', async (t) =
   assert.equal(calls.length, 2);
 });
 
+test('load failures distinguish connection, timeout, cancellation and invalid server bodies without leaking details', async (t) => {
+  const privateDetail = 'private-response-content-and-credentials';
+  for (const [code, work, message] of [
+    ['ET_NETWORK', async () => { throw new TypeError(privateDetail); }, /could not complete the connection/],
+    ['ET_TIMEOUT', async () => { throw new DOMException(privateDetail, 'TimeoutError'); }, /15 seconds/],
+    ['ET_CANCELLED', async () => { throw new DOMException(privateDetail, 'AbortError'); }, /cancelled/],
+    ['ET_HTML_RESPONSE', async () => ({ ...response(null), headers: new Headers({ 'Content-Type': 'text/html' }),
+      json: async () => { throw new SyntaxError(privateDetail); } }), /HTTP 200 HTML instead of JSON/],
+    ['ET_INVALID_JSON', async () => ({ ...response(null, 502), headers: new Headers({ 'Content-Type': 'application/json' }),
+      json: async () => { throw new SyntaxError(privateDetail); } }), /HTTP 502 without readable JSON/],
+  ]) {
+    await t.test(code, async (subtest) => {
+      const calls = await signedIn(subtest, work);
+      await assert.rejects(loadEmailTemplates, (error) => error.code === code
+        && error.ambiguous === false && message.test(error.message)
+        && !error.message.includes(privateDetail));
+      assert.equal(calls.length, 1, 'diagnosis must not replay the request');
+    });
+  }
+});
+
+test('unreadable mutation response stays uncertain without replay or leaked body', async (t) => {
+  const calls = await signedIn(t, async () => ({ ...response(null), headers: new Headers({ 'Content-Type': 'text/html' }),
+    json: async () => { throw new SyntaxError('private-server-response'); } }));
+  await assert.rejects(() => deleteEmailTemplate({ id: newId, version: 1 }),
+    (error) => error.ambiguous === true && error.code === 'ET_HTML_RESPONSE'
+      && /Save outcome could not be confirmed/.test(error.message)
+      && !error.message.includes('private-server-response'));
+  assert.equal(calls.length, 1);
+});
+
 test('collection/API absence is not a deleted record, even on a stale detail route', async (t) => {
   let code = 'not_found', status = 404;
   const calls = await signedIn(t, async () => response({ error: { code } }, status));
