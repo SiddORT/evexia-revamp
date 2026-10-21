@@ -92,7 +92,7 @@ export default function EmailTemplateLibrary({ guard, onDirtyChange, onBusyChang
           <div className="mt-seg" role="group" aria-label="View"><button type="button" aria-pressed={pane === 'code'} onClick={() => setPane('code')}>Code</button><button type="button" aria-pressed={pane === 'preview'} onClick={() => setPane('preview')}>Preview</button></div>
           <div className="mt-split" data-pane={pane}><div className="mt-pane mt-pane--code mt-field"><label htmlFor="mt-ro-html">HTML source (read-only)</label>
             <textarea id="mt-ro-html" className="mt-ro" readOnly value={view.content.html} data-testid="text-template-source" /></div>
-            <div className="mt-pane mt-pane--view"><MessageTemplatePreview channel="email" content={view.content} idPrefix="mtv" /></div></div></>}
+            <div className="mt-pane mt-pane--view"><MessageTemplatePreview channel="email" content={view.content} eventKey={view.eventKey} idPrefix="mtv" /></div></div></>}
     </MessageTemplateDrawer>}
   </>;
 }

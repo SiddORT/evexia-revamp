@@ -174,7 +174,7 @@ export default function MessageTemplateEditor({ draft, baseline, loadError, late
           {channel !== 'sms' || !draft.id || loadError ? null : <button type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={() => save(true)} data-testid="button-template-save-as-new">Save as new</button>}
           <button type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={close}>Cancel</button></div>
       </form>
-      <MessageTemplatePreview channel={channel} content={channel === 'email' ? { subject: f.subject, html: f.html, text: f.text } : { body: f.body, providerTemplateId: f.providerTemplateId }} idPrefix="mted" />
+      <MessageTemplatePreview channel={channel} eventKey={f.eventKey} content={channel === 'email' ? { subject: f.subject, html: f.html, text: f.text } : { body: f.body, providerTemplateId: f.providerTemplateId }} idPrefix="mted" />
     </div>
   </section>;
 }

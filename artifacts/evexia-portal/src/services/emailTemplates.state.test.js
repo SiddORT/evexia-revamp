@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { EMAIL_VARIABLES, INVITATION_VARIABLES, emailSnapshot } from './emailTemplates.js';
 
 const require = createRequire(new URL('../../package.json', import.meta.url));
 const { build } = createRequire(require.resolve('vite/package.json'))('esbuild');
@@ -29,7 +30,7 @@ async function fixture(name, api) {
         b.onLoad({ filter: /.*/, namespace: 'fixture' }, (args) => ({
           contents: args.path === 'hooks'
             ? 'export const {useState,useEffect,useMemo,useRef,useCallback,useId}=globalThis.__emailHooks;'
-            : 'export const EMAIL_VARIABLES=[]; export const {loadEmailTemplates,getEmailTemplate,saveEmailTemplate,deleteEmailTemplate}=globalThis.__emailApi;',
+            : `export const EMAIL_VARIABLES=${JSON.stringify(EMAIL_VARIABLES)}, INVITATION_VARIABLES=${JSON.stringify(INVITATION_VARIABLES)}; export const {loadEmailTemplates,getEmailTemplate,saveEmailTemplate,deleteEmailTemplate}=globalThis.__emailApi;`,
         }));
       },
     }],
@@ -97,7 +98,16 @@ const tick = () => new Promise((resolve) => setImmediate(resolve));
 const row = { id: 'e7e80000-0000-4000-8000-000000000001', version: 1, channel: 'email', source: 'system',
   protected: true, eventKey: 'password_recovery', name: 'Forgot password', description: 'Recovery',
   content: { subject: 'Reset password', html: '<p>{{reset_url}} {{expiry_minutes}}</p>', text: '{{reset_url}} {{expiry_minutes}}' } };
-const snapshot = { record: { templates: [row], events: [] } };
+const invitation = { ...row, id: 'e7e80000-0000-4000-8000-000000000002', name: 'Invite staff member',
+  eventKey: 'account_invitation', content: { subject: 'Join {{company_name}}',
+    html: '<p>{{portal_name}} {{login_id}} {{reset_url}} {{expiry_minutes}}</p>',
+    text: '{{portal_name}} {{login_id}} {{reset_url}} {{expiry_minutes}}' } };
+const events = [
+  { key: 'password_recovery', label: 'Password recovery', required: true, variables: EMAIL_VARIABLES },
+  { key: 'account_invitation', label: 'Staff / MR invitation', required: true, variables: INVITATION_VARIABLES },
+];
+const snapshot = { record: { templates: [row, invitation], events } };
+const predecessor = () => emailSnapshot({ items: [], events: events.slice(0, 1) });
 const unavailable = () => { throw new Error('Email template API is unavailable; your draft is kept.'); };
 
 test('library retains the last valid snapshot and the same editor identity after list/detail failure', async (t) => {
@@ -139,7 +149,7 @@ test('failed save and failed/different explicit reconciliation retain typed draf
   });
   t.after(() => component.close());
   let saved = 0;
-  const props = { draft: row, events: [], onSaved() { saved++; }, onDirtyChange() {}, onBusyChange() {} };
+  const props = { draft: row, events, onSaved() { saved++; }, onDirtyChange() {}, onBusyChange() {} };
   let tree = component.render(props);
   find(tree, 'input-template-subject').props.onChange({ target: { value: 'My unsaved subject' } });
   tree = component.render(props);
@@ -160,4 +170,77 @@ test('failed save and failed/different explicit reconciliation retain typed draf
   assert.equal(reads, 2);
   assert.equal(saves, 1, 'reconciliation never replays a mutation');
   assert.equal(saved, 0, 'different content is not claimed saved');
+});
+
+test('predecessor list retains both cards and the mounted editor identity', async (t) => {
+  let stale = false;
+  const component = await fixture('EmailTemplateLibrary', {
+    loadEmailTemplates: async () => stale ? predecessor() : snapshot,
+    getEmailTemplate: async () => invitation,
+  });
+  t.after(() => component.close());
+  const dirty = [], props = { guard: () => true, onDirtyChange: (v) => dirty.push(v), onBusyChange() {} };
+  component.render(props); await tick();
+  let tree = component.render(props);
+  await find(tree, `button-preview-template-${invitation.id}`).props.onClick();
+  tree = component.render(props);
+  assert.equal(nodes(tree).find((n) => n.type?.name === 'MessageTemplatePreview').props.eventKey, 'account_invitation');
+  await find(tree, 'button-drawer-edit-template').props.onClick();
+  tree = component.render(props);
+  const editor = nodes(tree).find((n) => n.type?.name === 'MessageTemplateEditor');
+  const count = dirty.length;
+  stale = true;
+  await button(tree, 'Load latest').props.onClick();
+  tree = component.render(props);
+  for (const item of [row, invitation]) assert.ok(find(tree, `card-template-${item.id}`));
+  const retained = nodes(tree).find((n) => n.type?.name === 'MessageTemplateEditor');
+  assert.equal(retained.key, editor.key);
+  assert.equal(retained.props.draft, invitation);
+  assert.equal(dirty.length, count);
+  assert.match(text(tree), /invalid response.*draft is kept/);
+});
+
+test('predecessor save/reconciliation preserve typed fields and block automatic replay', async (t) => {
+  let saves = 0, saved = 0;
+  const component = await fixture('MessageTemplateEditor', {
+    async saveEmailTemplate() { saves++; return predecessor(); },
+    async loadEmailTemplates() { return predecessor(); },
+  });
+  t.after(() => component.close());
+  const props = { draft: invitation, events, onSaved() { saved++; }, onDirtyChange() {}, onBusyChange() {} };
+  let tree = component.render(props);
+  find(tree, 'input-template-subject').props.onChange({ target: { value: 'Keep this invitation draft' } });
+  tree = component.render(props);
+  assert.equal(nodes(tree).find((n) => n.type?.name === 'MessageTemplatePreview').props.eventKey, 'account_invitation');
+  nodes(tree).find((n) => n.type === 'form').props.onSubmit({ preventDefault() {} });
+  await tick();
+  tree = component.render(props);
+  await button(tree, 'Load latest to reconcile (keep draft)').props.onClick();
+  tree = component.render(props);
+  assert.equal(find(tree, 'input-template-subject').props.value, 'Keep this invitation draft');
+  assert.equal(find(tree, 'button-template-save').props.disabled, true);
+  assert.equal(saves, 1);
+  assert.equal(saved, 0);
+  assert.match(text(tree), /invalid response.*draft is kept/);
+});
+
+test('both event previews expose only their variables and keep the iframe inert', async (t) => {
+  const component = await fixture('MessageTemplatePreview', {});
+  t.after(() => component.close());
+  for (const item of [row, invitation]) {
+    const props = { channel: 'email', content: item.content, eventKey: item.eventKey };
+    let tree = component.render(props);
+    find(tree, 'mtp-mode-sample').props.onClick();
+    tree = component.render(props);
+    const expected = item.eventKey === 'account_invitation' ? INVITATION_VARIABLES : EMAIL_VARIABLES;
+    for (const variable of INVITATION_VARIABLES) {
+      assert.equal(!!find(tree, `mtp-sample-${variable}`), expected.includes(variable));
+    }
+    assert.doesNotMatch(text(tree), /Unavailable for email delivery|Unknown tokens/);
+    const frame = find(tree, 'mtp-frame');
+    assert.equal(frame.props.sandbox, '');
+    assert.match(frame.props.srcDoc, /default-src 'none'/);
+    assert.doesNotMatch(frame.props.srcDoc, /<a\s|<script\b|<form\b|src=["']https?:/);
+    assert.doesNotMatch(frame.props.srcDoc, /\{\{(?:portal_name|login_id)\}\}/);
+  }
 });

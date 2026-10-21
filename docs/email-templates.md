@@ -83,3 +83,73 @@ post-merge/start lifecycle must apply the new revision, then independently verif
 actual database/running API declaration equality and frontend/API readiness.
 Do not migrate the original target from a task fork to obtain acceptance evidence.
 No production activation or real-recipient test is implied.
+
+### Focused runtime-recovery handoff
+
+On 2026-10-21, the isolated task workspace had already run the managed API
+startup before inspection. Its startup log reported automatic application of
+`0053_email_invitations`; the API process started at 07:03:37 UTC, after the
+email schema source update at 06:37:21 UTC. The predecessor process reported in
+the original workspace was not accessible here, so its mismatch was not
+independently reproduced or repaired.
+
+Read-only observations in this fork confirmed:
+
+- Actual `alembic_version`, application schema, development contract and loaded
+  `/api/v1/version` schema were all `0053_email_invitations`.
+- Normal same-origin `/api/v1/health/readiness` returned JSON `{"status":"ready"}`.
+- Live OpenAPI advertised both `password_recovery` and `account_invitation`,
+  `/api/v1/auth/set-password`, and the protected invitation route.
+- Both required saved records were present, protected and valid under current
+  source validation. This does not establish preservation of original-workspace
+  edits across the fork's already-completed migration.
+- Unauthenticated listing returned 401. No authenticated original-workspace
+  listing or browser acceptance is implied by these observations.
+
+The API was subsequently restarted through that same managed workflow. Startup
+reported `READY` at `0053_email_invitations` with no additional migrations.
+Private before/after comparisons confirmed that all saved template source,
+identity, assignment and version values were unchanged across this restart.
+Readiness and the current live OpenAPI contract were reconfirmed at the normal
+same-origin ingress. The portal workflow also restarted cleanly. A screenshot
+of the protected Settings route reached sign-in, not the template screen; it
+does not verify authenticated listing or previews. All 13 focused source checks
+below passed, including event-variable preview checks using deterministic hooks,
+not a browser session.
+
+Preconfigured release workflows were already running on entry and were stopped
+when discovered; the coverage registration audit had already finished, and an
+interrupted role-URL check showed failures without a final result. No release
+workflow was intentionally started or rerun for this task, and those unrelated
+outputs are not acceptance evidence. No real email was sent.
+
+After merge, in the **bound original workspace**, restart only the managed
+`artifacts/api-server: API Server` workflow, which uses
+`scripts/start-development-api.sh`. Do not run release workflows or compatibility
+suites. Normal startup performs automatic migration under its existing target,
+lock, integrity and transaction guards. Stop and report a historical guard or
+readiness failure; do not stamp, reset templates, change keys or replay a
+reported committed migration.
+
+Before restarting, keep any mounted editor draft open and record only private
+in-memory comparisons of saved content if authorized access is available.
+After startup, read the actual database revision independently and compare it
+with the contract and loaded version endpoint. Through the usual same-origin
+preview, verify readiness and the OpenAPI event enum/routes, then use the
+existing authorized Super Admin session to **Load latest** in Settings →
+Email & SMS Templates. Both protected templates must load without the invalid
+response banner. Open each read-only preview and verify its event-specific
+variables, fictional sample substitution and inert links; do not save or send.
+Compare saved content before/after without recording template bodies or
+token-bearing links. If no authorized session is available, report that
+authenticated listing and screen acceptance remain unverified.
+
+Focused source checks (no backend sends, live writes or broad suite):
+
+```sh
+node --test artifacts/evexia-portal/src/services/emailTemplates.feature.test.js artifacts/evexia-portal/src/services/emailTemplates.state.test.js
+```
+
+These cover the two-event catalog, rejection of HTTP-200 predecessor snapshots,
+retained mounted/typed drafts after failed loads/saves/reconciliation, and
+event-specific offline preview controls. They are not live acceptance evidence.

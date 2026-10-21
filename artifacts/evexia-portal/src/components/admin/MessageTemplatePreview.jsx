@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { SUPPORTED_TOKENS, SAMPLE_VALUES, inspectTokens, substituteTokens, buildEmailPreview } from '../../services/messageTemplatePreview.js';
 import './messageTemplates.css';
-import { EMAIL_VARIABLES } from '../../services/emailTemplates.js';
+import { EMAIL_VARIABLES, INVITATION_VARIABLES } from '../../services/emailTemplates.js';
 
 const tok = (t) => `{{${t}}}`;
-export default function MessageTemplatePreview({ channel, content, idPrefix = 'mtp' }) {
+export default function MessageTemplatePreview({ channel, content, eventKey = null, idPrefix = 'mtp' }) {
   const [mode, setMode] = useState('tokens');
   const [values, setValues] = useState({ ...SAMPLE_VALUES });
   const email = channel === 'email';
+  const variables = eventKey === 'account_invitation' ? INVITATION_VARIABLES : EMAIL_VARIABLES;
   const c = content || {};
   const fields = email ? [['subject', c.subject], ['html', c.html], ['text', c.text]] : [['body', c.body]];
   const report = useMemo(() => {
@@ -36,12 +37,12 @@ export default function MessageTemplatePreview({ channel, content, idPrefix = 'm
       </div>
     </div>
     {mode === 'sample' && <fieldset className="mt-prev__vals"><legend>Sample values (fictional)</legend>
-      {(email ? EMAIL_VARIABLES : SUPPORTED_TOKENS).map((t) => <label key={t} className="mt-field"><span>{tok(t)}</span>
+      {(email ? variables : SUPPORTED_TOKENS).map((t) => <label key={t} className="mt-field"><span>{tok(t)}</span>
         <input value={values[t] ?? ''} maxLength={200} onChange={(e) => setValues((v) => ({ ...v, [t]: e.target.value }))} data-testid={`${idPrefix}-sample-${t}`} /></label>)}
     </fieldset>}
     <div aria-live="polite" className="mt-prev__warns">
       {report.unknown.size > 0 && <p className="mt-warn" data-testid={`${idPrefix}-warn-unknown`}>Unknown tokens: {[...report.unknown].map(tok).join(', ')}. They are not replaced.</p>}
-      {email && [...report.tokens].some((t) => !EMAIL_VARIABLES.includes(t)) && <p className="mt-warn">Unavailable for email delivery: {[...report.tokens].filter((t) => !EMAIL_VARIABLES.includes(t)).map(tok).join(', ')}. Remove these variables before saving.</p>}
+      {email && [...report.tokens].some((t) => !variables.includes(t)) && <p className="mt-warn">Unavailable for email delivery: {[...report.tokens].filter((t) => !variables.includes(t)).map(tok).join(', ')}. Remove these variables before saving.</p>}
       {report.malformed > 0 && <p className="mt-warn" data-testid={`${idPrefix}-warn-malformed`}>Malformed token syntax found ({report.malformed}). Use the form {tok('name')}.</p>}
       {blocked && <p className="mt-warn" data-testid={`${idPrefix}-warn-blocked`}>Safety: scripts, frames, forms, event handlers and external resources are blocked. Only the bundled offline EVEXIA logo is allowed; links are inert.</p>}
       {report.tokens.size > 0 && <p className="mt-note">Tokens used: {[...report.tokens].map(tok).join(', ')}</p>}

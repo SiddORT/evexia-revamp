@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import { loginAdmin, logoutAdmin } from '../auth/adminSession.js';
-import { EMAIL_VARIABLES, loadEmailTemplates, getEmailTemplate, saveEmailTemplate, deleteEmailTemplate } from './emailTemplates.js';
+import { EMAIL_VARIABLES, INVITATION_VARIABLES, loadEmailTemplates, getEmailTemplate, saveEmailTemplate, deleteEmailTemplate } from './emailTemplates.js';
 import { buildEmailPreview } from './messageTemplatePreview.js';
 import { MESSAGE_TEMPLATES_KEY, loadMessageTemplates, saveMessageTemplate, deleteMessageTemplate } from './messageTemplates.js';
 
@@ -13,7 +13,12 @@ const id = 'e7e80000-0000-4000-8000-000000000001';
 const newId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const row = { id, protected: true, version: 1, name: 'Forgot password', description: 'Recovery',
   event_key: 'password_recovery', subject: 'Reset password', html: '<p>{{reset_url}}</p>', text: '{{reset_url}}' };
-const envelope = (items = [row]) => ({ items, events: [{ key: 'password_recovery', label: 'Password recovery', required: true, variables: EMAIL_VARIABLES }] });
+const invitation = { ...row, id: 'e7e80000-0000-4000-8000-000000000002', name: 'Invite staff member',
+  event_key: 'account_invitation', subject: 'Invitation', html: '<p>{{portal_name}} {{login_id}}</p>', text: '{{portal_name}} {{login_id}}' };
+const envelope = (items = [row, invitation]) => ({ items, events: [
+  { key: 'password_recovery', label: 'Password recovery', required: true, variables: EMAIL_VARIABLES },
+  { key: 'account_invitation', label: 'Staff / MR invitation', required: true, variables: INVITATION_VARIABLES },
+] });
 const response = (data, status = 200) => ({ ok: status < 400, status, json: async () => data, headers: new Headers() });
 
 async function signedIn(t, work) {
@@ -35,6 +40,8 @@ test('email list/detail/create/edit/delete use authenticated API and versioned s
   const calls = await signedIn(t, async (url) => response(url.endsWith(`/${id}`) ? row : envelope()));
   const snapshot = await loadEmailTemplates();
   assert.equal(snapshot.record.templates[0].eventKey, 'password_recovery');
+  assert.equal(snapshot.record.templates[1].eventKey, 'account_invitation');
+  assert.deepEqual(snapshot.record.events[1].variables, INVITATION_VARIABLES);
   const draft = await getEmailTemplate(id);
   const input = { ...draft, name: 'Edited recovery' };
   await saveEmailTemplate(draft, input);
@@ -55,6 +62,17 @@ test('lost email mutation response is uncertain and never automatically replayed
     ...row, eventKey: 'password_recovery', content: { subject: row.subject, html: row.html, text: row.text },
   }), (error) => error.ambiguous === true && /reconcile/.test(error.message));
   assert.equal(calls.length, 1);
+});
+
+test('HTTP 200 predecessor snapshots fail closed on reads and saves without replay', async (t) => {
+  const predecessor = { items: [row], events: [envelope().events[0]] };
+  const calls = await signedIn(t, async (url) => response(url.endsWith(`/${id}`) ? row : predecessor));
+  await assert.rejects(loadEmailTemplates, (e) => e.ambiguous === true && /invalid response.*draft is kept/.test(e.message));
+  const draft = await getEmailTemplate(id);
+  const before = structuredClone(draft);
+  await assert.rejects(() => saveEmailTemplate(draft, draft), (e) => e.ambiguous === true && /draft is kept/.test(e.message));
+  assert.deepEqual(draft, before);
+  assert.equal(calls.length, 3, 'one list, one detail and one explicit mutation only');
 });
 
 test('invalid responses and stale saves never become local success', async (t) => {
