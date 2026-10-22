@@ -1,5 +1,6 @@
 """Inert bounded transfers. Upload attribution is ignored, not restored."""
 import csv
+from app.services.export_presentation import present_export, normalized_import_dates
 import hashlib
 import hmac
 import io
@@ -86,6 +87,7 @@ def parse(data, filename):
             invalid(exc.message)
     else:
         invalid("Only UTF-8 .csv and genuine .xlsx are supported.")
+    rows = normalized_import_dates(rows, invalid)
     if not rows or rows[0] not in (HEADERS[:5], HEADERS):
         invalid("Use the exact five-column legacy/sample headers or nine-column server export headers.")
     reviewed = []
@@ -196,6 +198,7 @@ def sample(format):
         safe_text("-1250.50") if format == "csv" else "-1250.50", "active"]], format, "Opening Balances")
 
 
+@present_export
 def export(db, actor, query, status, format):
     def work():
         balances.authorize(db, actor)

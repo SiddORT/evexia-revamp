@@ -1,5 +1,6 @@
 """Inert bounded transfers. No uploaded bytes, legacy IDs or audit values saved."""
 import csv
+from app.services.export_presentation import present_export, normalized_import_dates
 import hashlib
 import hmac
 import io
@@ -104,6 +105,7 @@ def parse(data, filename):
             invalid(exc.message)
     else:
         invalid("Only UTF-8 .csv and genuine .xlsx are supported.")
+    rows = normalized_import_dates(rows, invalid)
     if not rows or rows[0] not in (HEADERS[:9], HEADERS, LEGACY):
         invalid("Use the nine-column sample, thirteen-column current export, or exact legacy CSV headers.")
     legacy = rows[0] == LEGACY
@@ -232,6 +234,7 @@ def sample(format):
                                 "Your active location", "10 mg/mL", "", "active", "Mix"]], format)
 
 
+@present_export
 def export(db, actor, query="", status="all", format="csv", **filters):
     def work():
         allergens.authorize(db, actor)

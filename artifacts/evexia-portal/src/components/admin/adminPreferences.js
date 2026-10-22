@@ -1,6 +1,7 @@
 import { recordLocalAction } from '../../services/localActivity.js';
 import { useSyncExternalStore } from 'react';
-import { DATE_FORMATS, CLOCK_FORMATS, TIME_ZONES, DISPLAY_DEFAULTS, displayPreferences, formatCalendarDate, formatTimestamp } from '../../services/datePresentation.js';
+import { DATE_FORMATS, CLOCK_FORMATS, TIME_ZONES, DISPLAY_DEFAULTS, formatCalendarDate, formatTimestamp } from '../../services/datePresentation.js';
+import { captureExportPreferences, setUnsavedExportPreference } from '../../services/exportPreferences.js';
 export { DATE_FORMATS, CLOCK_FORMATS, TIME_ZONES, DISPLAY_DEFAULTS } from '../../services/datePresentation.js';
 import { ADMIN_APPEARANCES, ADMIN_THEMES, readAdminAppearance, readAdminTheme, saveAdminAppearance, saveAdminTheme } from './adminTheme.js';
 
@@ -45,14 +46,17 @@ export function setAdminPreference(key, value, { recordActivity = true } = {}) {
   current = { ...snapshot(), [key]: value };
   if (key === 'theme') saveAdminTheme(value);
   else if (key === 'appearance') saveAdminAppearance(value);
-  else try { window.localStorage.setItem(DISPLAY_KEYS[key], value); }
-  catch { /* In-memory choice remains active for this visit. */ }
+  else try {
+    window.localStorage.setItem(DISPLAY_KEYS[key], value);
+    setUnsavedExportPreference(key, undefined);
+  }
+  catch { setUnsavedExportPreference(key, value); /* In-memory choice remains active for this visit. */ }
   if (recordActivity) recordLocalAction('settings', 'settings_changed');
   listeners.forEach((listener) => listener());
 }
 
 export function getAdminDisplayPreferences() {
-  return displayPreferences(snapshot());
+  return captureExportPreferences();
 }
 export function useAdminDateFormatters() {
   const preferences = useAdminPreferences();

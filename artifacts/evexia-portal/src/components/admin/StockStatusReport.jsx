@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { Printer } from 'lucide-react';
 import Dialog from './Dialog.jsx';
 import { formatPrice } from '../../services/serverInventory.js';
-import { useAdminDateFormatters } from './adminPreferences.js';
+import { useAdminPreferences } from './adminPreferences.js';
+import { exportDisplayPreferences, formatTimestamp, effectiveTimeZone } from '../../services/datePresentation.js';
 
 export default function StockStatusReport({ rows, asOf, coverage, search, category, allergenLabels, generatedAt, onClose }) {
-  const { timestamp } = useAdminDateFormatters();
+  const preferences = exportDisplayPreferences(useAdminPreferences());
+  const timestamp = (value) => formatTimestamp(value, preferences, true);
   const [error, setError] = useState('');
   function print() {
     setError('');
@@ -20,13 +22,13 @@ export default function StockStatusReport({ rows, asOf, coverage, search, catego
     <article className="stock-report" data-testid="stock-report">
       <h1>Inventory Report - Stock Status</h1>
       <dl className="stock-report__meta">
-        <div><dt>Snapshot as of</dt><dd>{timestamp(asOf)}</dd></div>
+        <div><dt>Snapshot as of ({effectiveTimeZone(preferences)})</dt><dd>{timestamp(asOf)}</dd></div>
         <div><dt>Search</dt><dd>{search || 'No search filter'}</dd></div>
         <div><dt>Product Category</dt><dd>{category || 'All categories'}</dd></div>
         <div><dt>Allergen scope (any selected)</dt><dd>{allergenLabels.length ? allergenLabels.join('; ') : 'All allergens'}</dd></div>
         <div><dt>Sales</dt><dd>{coverage?.sales || 'unavailable: no server sales backend'}</dd></div>
         <div><dt>Openings</dt><dd>{coverage?.openings || 'outside coverage'}</dd></div>
-        <div><dt>Generated</dt><dd>{timestamp(generatedAt)}</dd></div>
+        <div><dt>Generated ({effectiveTimeZone(preferences)})</dt><dd>{timestamp(generatedAt)}</dd></div>
       </dl>
       <div className="stock-report-scroll" role="region" aria-label="Inventory report table" tabIndex={0}>
         <table><thead><tr><th>Sr.</th><th>Product</th><th>Concentration</th><th>Category</th><th>Selling price</th><th>Quantity on hand</th></tr></thead>

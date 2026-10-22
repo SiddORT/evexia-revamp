@@ -1,5 +1,6 @@
 """Bounded, inert spreadsheet transfer. File bytes are never persisted."""
 import csv
+from app.services.export_presentation import present_export, normalized_import_dates
 import hashlib
 import io
 import re
@@ -125,6 +126,7 @@ def parse(data, filename):
         rows = workbook_rows(data)
     else:
         invalid("Only .csv and .xlsx are supported; .xls and macro-enabled files are not accepted.")
+    rows = normalized_import_dates(rows, invalid)
     if not rows:
         invalid("A header and at least one record are required.")
     headers = [cell.strip() for cell in rows[0]]
@@ -189,6 +191,7 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
     return zones.transaction(db, work)
 
 
+@present_export
 def export(db, actor, query, status, format):
     def work():
         zones.authorize(db, actor, "zone.export")

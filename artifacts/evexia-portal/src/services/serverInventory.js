@@ -1,3 +1,4 @@
+import { presentExportTable } from './exportDatePresentation.js';
 import { getSession, inventoryRequest as request } from '../auth/adminSession.js';
 
 export const UNIT = 'procurement quantity units';
@@ -85,9 +86,10 @@ const cell = (value) => {
   const safe = /^[\s\u0000-\u001f]*[=+\-@]/.test(text) ? `'${text}` : text;
   return `"${safe.replaceAll('"', '""')}"`;
 };
-export function exportStockCSV(rows, { asOf, coverage }) {
+export function exportStockCSV(rows, { asOf, coverage }, preferences) {
   const header = ['Product ID', 'Item type', 'Product', 'Concentration', 'Category', 'Catalogue selling price (INR)', 'Quantity', 'Unit', 'State', 'As of (UTC)', 'Sales', 'Openings'];
   const records = rows.map((r) => [r.productId, r.itemKind === 'combo' ? 'Assembled combo' : 'Individual allergen', r.name, r.concentration, r.category, r.sellingPrice ?? '', r.quantity, r.unit, r.state, asOf,
     coverage?.sales || 'unavailable', coverage?.openings || 'outside coverage']);
-  return '\uFEFF' + [header, ...records].map((c) => c.map(cell).join(',')).join('\r\n') + '\r\n';
+  return '\uFEFF' + presentExportTable(header, records, { timestampColumns: [9] }, preferences)
+    .map((c) => c.map(cell).join(',')).join('\r\n') + '\r\n';
 }

@@ -1,5 +1,6 @@
 """Bounded create-only Doctor transfers, identity/file/reference bound review."""
 import csv
+from app.services.export_presentation import present_export, normalized_import_dates
 import hashlib
 import hmac
 import io
@@ -101,6 +102,7 @@ def parse(data, filename):
             invalid(exc.message)
     else:
         invalid("Only UTF-8 CSV and genuine XLSX are supported.")
+    rows = normalized_import_dates(rows, invalid)
     if not rows or rows[0] not in (HEADERS, HEADERS + AUDIT, LEGACY, LEGACY + AUDIT, CURRENT_HEADERS, CURRENT_HEADERS + AUDIT):
         invalid("Use the full Doctor sample/export columns in their original order. Older full CSVs without Contact Requirement default to optional. Reduced mock templates, credentials, local IDs and unknown columns are not supported.")
     if len(rows) < 2:
@@ -235,6 +237,7 @@ def sample(format):
     return encode([[values[key] for key, _ in COLUMNS]], format)
 
 
+@present_export
 def export(db, actor, query="", status="all", zone_id="", mr_id="", state="", format="csv"):
     def work():
         doctors.authorize(db, actor, "export", lock=False)

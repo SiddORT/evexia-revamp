@@ -9,14 +9,32 @@ export const TIME_ZONES = {
 };
 export const DISPLAY_DEFAULTS = Object.freeze({ dateFormat: 'dd-mmm-yyyy', timeZone: 'browser', clock: '12' });
 export function displayPreferences(preferences = DISPLAY_DEFAULTS) {
-  return Object.freeze(Object.fromEntries(Object.entries({ dateFormat: DATE_FORMATS, timeZone: TIME_ZONES, clock: CLOCK_FORMATS })
-    .map(([key, options]) => [key, Object.hasOwn(options, preferences?.[key]) ? preferences[key] : DISPLAY_DEFAULTS[key]])));
+  const validated = Object.fromEntries(Object.entries({ dateFormat: DATE_FORMATS, timeZone: TIME_ZONES, clock: CLOCK_FORMATS })
+    .map(([key, options]) => [key, Object.hasOwn(options, preferences?.[key]) ? preferences[key] : DISPLAY_DEFAULTS[key]]));
+  if (validated.timeZone === 'browser' && typeof preferences?.resolvedTimeZone === 'string') {
+    // Export snapshots may resolve to any valid browser IANA zone, not only a
+    // named Settings option. Never let a changed browser zone alter that file.
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: preferences.resolvedTimeZone });
+      validated.resolvedTimeZone = preferences.resolvedTimeZone;
+    } catch { /* Invalid explicit zones are not trusted. */ }
+  }
+  return Object.freeze(validated);
+}
+export function exportDisplayPreferences(preferences = DISPLAY_DEFAULTS) {
+  const p = displayPreferences(preferences);
+  return Object.freeze({ ...p, resolvedTimeZone: p.timeZone === 'browser'
+    ? p.resolvedTimeZone || new Intl.DateTimeFormat().resolvedOptions().timeZone
+    : p.timeZone });
+}
+export function effectiveTimeZone(preferences) {
+  return preferences.timeZone === 'browser' ? preferences.resolvedTimeZone : preferences.timeZone;
 }
 function dateText(date, preferences, calendarOnly) {
-  const { dateFormat, timeZone } = preferences;
+  const { dateFormat } = preferences;
   const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
     year: 'numeric', month: dateFormat === 'dd-mmm-yyyy' ? 'short' : '2-digit', day: '2-digit',
-    ...(calendarOnly ? { timeZone: 'UTC' } : timeZone === 'browser' ? {} : { timeZone }),
+    ...(calendarOnly ? { timeZone: 'UTC' } : effectiveTimeZone(preferences) ? { timeZone: effectiveTimeZone(preferences) } : {}),
   }).formatToParts(date).map(({ type, value }) => [type, value]));
   const { year, month, day } = parts;
   if (dateFormat === 'yyyy-mm-dd') return `${year}-${month}-${day}`;
@@ -37,11 +55,15 @@ export function formatTimestamp(value, preferences = DISPLAY_DEFAULTS, seconds =
   const date = value instanceof Date ? value : new Date(value);
   if (!Number.isFinite(date.getTime())) return '—';
   if (typeof value === 'string' && formatCalendarDate(value.slice(0, 10)) === '—') return '—';
+  if (typeof value === 'string') {
+    const [hour, minute, second = '0'] = value.slice(11).split(/[:Z+-]/i);
+    if (+hour > 23 || +minute > 59 || +second >= 60) return '—';
+  }
   const p = displayPreferences(preferences);
   const time = new Intl.DateTimeFormat('en-US', {
     hour: '2-digit', minute: '2-digit', ...(seconds ? { second: '2-digit' } : {}),
     hourCycle: p.clock === '12' ? 'h12' : 'h23',
-    ...(p.timeZone === 'browser' ? {} : { timeZone: p.timeZone }),
+    ...(effectiveTimeZone(p) ? { timeZone: effectiveTimeZone(p) } : {}),
   }).format(date);
   return `${dateText(date, p, false)}, ${time}`;
 }

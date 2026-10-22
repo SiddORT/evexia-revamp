@@ -1,5 +1,6 @@
 // Tokens live only in this module's memory. No credential or identity storage.
 import { STAFF_VISIBLE_PERMISSIONS, MASTER_CATALOGUE, canViewMaster, hasMasterPermission } from './capabilities.js';
+import { captureExportPreferences, exportPreferenceHeader } from '../services/exportPreferences.js';
 const AUTH_URL = '/api/v1/auth';
 const LOCK_NAME = 'evexia-auth-cookie';
 const REPLACED_MESSAGE = 'Your Admin session ended because this account was signed in elsewhere. Please log in again.';
@@ -670,6 +671,7 @@ function attachMasterValidation(error, data, label) {
 }
 
 async function masterRequest(resource, path = '', { body, file, params = {}, download = false, signal } = {}) {
+  const exportDisplay = download && path === '/export' ? exportPreferenceHeader(captureExportPreferences()) : null;
   const zone = resource === 'zones';
   if (!['languages', 'allergens', 'vendors', 'opening-balances', 'zones', 'courier-partners', 'storage-locations', 'designations', 'headquarters', 'mrs', 'doctors', 'patients', 'product-categories', 'sales-targets'].includes(resource)) throw new SessionError('Unsupported master resource.');
   const label = resource === 'languages' ? 'Language' : resource === 'opening-balances' ? 'Opening balance' : resource === 'sales-targets' ? 'Sales target' : resource === 'allergens' ? 'Allergen' : resource === 'vendors' ? 'Vendor' : resource === 'patients' ? 'Patient' : resource === 'doctors' ? 'Doctor' : resource === 'mrs' ? 'MR' : resource === 'product-categories' ? 'Product category' : zone ? 'Zone' : resource === 'headquarters' ? 'Headquarter' : resource === 'designations' ? 'Designation' : resource === 'storage-locations' ? 'Storage location' : 'Courier partner';
@@ -716,7 +718,7 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
   const budget = resource === 'mrs' && path === '/import/commit' ? 150000 : 30000;
   const load = () => fetch(`/api/v1/admin/${resource}${path}?${new URLSearchParams(params)}`, {
     method: writing ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
-    headers: { Authorization: `Bearer ${token}`, ...(download ? { 'X-Download-Initiation': initiation } : {}), ...(writing ? { 'Content-Type': file ? 'application/octet-stream' : 'application/json' } : {}) },
+    headers: { Authorization: `Bearer ${token}`, ...(download ? { 'X-Download-Initiation': initiation } : {}), ...(exportDisplay ? { 'X-Evexia-Export-Display': exportDisplay } : {}), ...(writing ? { 'Content-Type': file ? 'application/octet-stream' : 'application/json' } : {}) },
     ...(writing ? { body: file || JSON.stringify(body) } : {}),
     signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(budget)]) : AbortSignal.timeout(budget),
   });
@@ -830,6 +832,7 @@ export const inventoryRequest = (path, options) => purchaseOrderRequest(path, op
 
 /** Opening Stock transport: JSON, multipart review and logged blob downloads. */
 export async function openingStockRequest(path = '', { body, params = {}, signal, method, file, download } = {}) {
+  const exportDisplay = download && path === '/export' ? exportPreferenceHeader(captureExportPreferences()) : null;
   const uid = '[0-9a-f-]{36}';
   const ok = new RegExp(`^(?:|/references/items|/preview|/sample|/export|/import/review|/requests/${uid}|/${uid}(?:/(?:activity|analytics))?)$`, 'i');
   if (!ok.test(path)) throw new SessionError('Unsupported opening stock operation.');
@@ -858,7 +861,7 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
   try {
     response = await fetch(`/api/v1/admin/opening-stock${path}${search.size ? `?${search}` : ''}`, {
       method: writing ? 'POST' : (method || 'GET'), credentials: 'same-origin', cache: 'no-store',
-      headers: { Authorization: `Bearer ${token}`, ...(download ? { 'X-Download-Initiation': initiation } : {}), ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}) },
+      headers: { Authorization: `Bearer ${token}`, ...(download ? { 'X-Download-Initiation': initiation } : {}), ...(exportDisplay ? { 'X-Evexia-Export-Display': exportDisplay } : {}), ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}) },
       ...(form ? { body: form } : body !== undefined ? { body: JSON.stringify(body) } : {}),
       signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(60000)]) : AbortSignal.timeout(60000),
     });

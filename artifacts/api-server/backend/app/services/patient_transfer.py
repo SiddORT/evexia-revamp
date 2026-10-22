@@ -1,5 +1,6 @@
 """Exact legacy 17-column compatibility and bounded modern transfers."""
 import csv
+from app.services.export_presentation import present_export, normalized_import_dates
 import hashlib
 import hmac
 import io
@@ -57,6 +58,7 @@ def parse(data, filename):
             invalid(exc.message)
     else:
         invalid("Only UTF-8 CSV and genuine XLSX are supported.")
+    rows = normalized_import_dates(rows, invalid)
     if not rows or rows[0] not in (LEGACY, HEADERS, CURRENT):
         invalid("Use the exact legacy 17-column or current Patient sample/export schema; unknown columns are rejected.")
     if len(rows) < 2:
@@ -194,6 +196,7 @@ def sample(format):
     return encode([[values[key] for key, _ in COLUMNS]], format)
 
 
+@present_export
 def export(db, actor, query="", status="all", zone_id="", mr_id="", format="csv"):
     def work():
         patients.authorize(db, actor, "export", lock=False)

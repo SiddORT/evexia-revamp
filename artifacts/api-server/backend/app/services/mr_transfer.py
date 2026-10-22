@@ -1,5 +1,6 @@
 """Account-producing transfer; create-only, reviewed exact bytes, bounded work."""
 import csv
+from app.services.export_presentation import present_export, normalized_import_dates
 import hashlib
 import hmac
 import io
@@ -108,6 +109,7 @@ def parse(data, filename):
             invalid(exc.message)
     else:
         invalid("Only CSV and genuine XLSX are supported; no XLS/macros.")
+    rows = normalized_import_dates(rows, invalid)
     if not rows or rows[0] not in (HEADERS, LEGACY, HEADERS + AUDIT, OLD_HEADERS, OLD_HEADERS + AUDIT,
                                   SINGLE_HEADERS, SINGLE_HEADERS + AUDIT,
                                   SINGLE_HEADERS + ["Reporting Manager Name"], SINGLE_HEADERS + ["Reporting Manager Name"] + AUDIT,
@@ -361,6 +363,7 @@ def sample(format):
     return encode([[values[key] for key, _ in COLUMNS]], format)
 
 
+@present_export
 def export(db, actor, query, status, zone_id, hq_id, format):
     def work():
         mrs.authorize(db, actor, action="export", lock=False)

@@ -1,5 +1,6 @@
 """Inert bounded CSV/XLSX review, explicit atomic create-only commit."""
 import csv
+from app.services.export_presentation import present_export, normalized_import_dates
 import hashlib
 import hmac
 import io
@@ -47,6 +48,7 @@ def parse(data, filename):
             invalid(exc.message)
     else:
         invalid("Only UTF-8 .csv and genuine .xlsx are supported. No .xls or macro-enabled files.")
+    rows = normalized_import_dates(rows, invalid)
     if not rows or rows[0] not in (HEADERS[:6], HEADERS[:8], HEADERS):
         invalid("Use the exact six legacy contact columns, eight business columns or twelve-column current export.")
     width = len(rows[0])
@@ -152,6 +154,7 @@ def sample(format):
                                 "Example contact", "contact@example.test", "9876543210", "IN", "active"]], format)
 
 
+@present_export
 def export(db, actor, query, status, format):
     def work():
         vendors.authorize(db, actor)

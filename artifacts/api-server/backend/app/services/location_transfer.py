@@ -1,5 +1,6 @@
 """Inert, create-only location transfer; no bytes or review records are persisted."""
 import csv
+from app.services.export_presentation import present_export, normalized_import_dates
 import hashlib
 import hmac
 import io
@@ -48,6 +49,7 @@ def parse(data, filename):
             invalid(exc.message)
     else:
         invalid("Only UTF-8 .csv and genuine .xlsx are supported. No .xls or macro-enabled files.")
+    rows = normalized_import_dates(rows, invalid)
     if not rows or rows[0] not in (LEGACY_HEADERS[:3], LEGACY_HEADERS, HEADERS[:7], HEADERS):
         invalid("Use the exact legacy three/seven-column or structured seven/eleven-column headers.")
     width = len(rows[0])
@@ -124,6 +126,7 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
     return locations.transaction(db, work)
 
 
+@present_export
 def export(db, actor, query, status, format):
     def work():
         locations.authorize(db, actor, "export")

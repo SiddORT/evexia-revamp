@@ -1,3 +1,4 @@
+import { presentExportTable } from './exportDatePresentation.js';
 // Isolated fictional evaluation state. Never read masters, storage or network.
 export const KIT_PRODUCTS = Object.freeze(['200', '250', '100', '85', '70', '58', 'Customized']);
 export const STATUSES = Object.freeze(['Confirmed', 'In process', 'Shipped', 'Delivered', 'Rejected', 'Returned']);
@@ -76,10 +77,11 @@ const csvCell = (value) => {
   const s = String(value ?? '');
   return `"${(/^[\s]*[=+\-@]/.test(s) ? "'" : '') + s.replaceAll('"', '""')}"`;
 };
-export function exportCsv(orders) {
+export function exportCsv(orders, preferences) {
   const rows = [['Order number', 'Date', 'Products', 'Order for', 'Doctor', 'MR', 'Order status', 'Payment status'],
     ...orders.map((o) => [o.number, o.date, productSummary(o), o.orderFor === 'mr' ? 'MR' : 'Doctor', o.billing.name, MRS.find((m) => m.id === o.mrId)?.name || '', o.status, o.paymentStatus])];
-  return rows.map((row) => row.map(csvCell).join(',')).join('\r\n');
+  return presentExportTable(rows[0], rows.slice(1), { calendarColumns: [1] }, preferences)
+    .map((row) => row.map(csvCell).join(',')).join('\r\n');
 }
 function snapshotOrder(v, n, date, status = 'Confirmed', paymentStatus = 'Mock unpaid') {
   // Explicitly project attachment metadata: never retain File instances/bytes.

@@ -4,7 +4,7 @@ import { downloadInvoiceDocument } from './poInvoicePdf.js';
 import { loadPRTemplatePreference, PR_TEMPLATES } from './prReceiptTemplates.js';
 import { normalizePRReceipt, makeSamplePRReceipt } from './prReceiptModel.js';
 import { renderPRReceiptPages } from './prReceiptRender.js';
-import { displayPreferences } from './datePresentation.js';
+import { exportDisplayPreferences } from './datePresentation.js';
 import { downloadSearchableReceipt } from './prReceiptPdf.js';
 
 /**
@@ -16,7 +16,7 @@ export function makePRDocument(receipt, templateId = loadPRTemplatePreference(),
     throw new Error('Choose a supported PR receipt template in Settings > Templates.');
   }
   const model = normalizePRReceipt(receipt);
-  const presentation = displayPreferences(preferences);
+  const presentation = exportDisplayPreferences(preferences);
   return { number: model.number, templateId, model, presentation, pages: renderPRReceiptPages(model, templateId, presentation) };
 }
 

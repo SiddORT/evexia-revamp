@@ -1,5 +1,6 @@
 """Bounded inert transfers with durable source/row identity, never name deduplication."""
 import csv
+from app.services.export_presentation import present_export, normalized_import_dates
 import io
 import uuid
 from datetime import date
@@ -48,6 +49,7 @@ def parse(data, filename):
             invalid(exc.message)
     else:
         invalid("Only UTF-8 CSV and genuine inert XLSX files are supported.")
+    rows = normalized_import_dates(rows, invalid)
     if not rows or rows[0] != HEADERS or len(rows) < 2:
         invalid("Use the unchanged 12-column Opening Stock sample or exported backup headers.")
     return rows[1:]
@@ -154,6 +156,7 @@ def sample(db, actor, format):
     return inv.transaction(db, actor, work)
 
 
+@present_export
 def export(db, actor, query, format):
     def work(_, crypto):
         rows, _ = service.matching(db, crypto, query)

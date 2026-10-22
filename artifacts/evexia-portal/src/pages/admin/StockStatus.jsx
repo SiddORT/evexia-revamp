@@ -1,3 +1,4 @@
+import { captureExportPreferences } from '../../services/exportPreferences.js';
 import { downloadBlob } from '../../services/downloads.js';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -82,10 +83,11 @@ export default function StockStatus() {
   function changeFilter(setter, value) { setter(value); pg.resetPage(); setNotice(''); setError(''); }
 
   async function exportCsv() {
+    const preferences = captureExportPreferences();
     setNotice(''); setError('');
     if (disabled || !rows.length) { setError('There are no rows to export. Change the filters and try again.'); return; }
     try {
-      const blob = new Blob([exportStockCSV(rows, { asOf: snap.asOf, coverage: snap.coverage })], { type: 'text/csv;charset=utf-8' });
+      const blob = new Blob([exportStockCSV(rows, { asOf: snap.asOf, coverage: snap.coverage }, preferences)], { type: 'text/csv;charset=utf-8' });
       await downloadBlob(blob, `stock-status-${snap.asOf.slice(0, 10)}.csv`, { source: 'stock_status', kind: 'export', format: 'CSV' });
       setNotice(`Initiated download of ${rows.length} row${rows.length === 1 ? '' : 's'} from the snapshot as of ${timestamp(snap.asOf)}.`);
     } catch (e) { setError(e.message || 'The CSV could not be downloaded.'); }

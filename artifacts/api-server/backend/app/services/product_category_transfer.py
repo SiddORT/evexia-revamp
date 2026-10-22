@@ -1,5 +1,6 @@
 """Bounded, inert, create-only transfer; reviewed bytes are never persisted."""
 import csv
+from app.services.export_presentation import present_export, normalized_import_dates
 import hashlib
 import hmac
 import io
@@ -86,6 +87,7 @@ def parse(data, filename):
             invalid(exc.message)
     else:
         invalid("Only UTF-8 .csv and genuine .xlsx are supported.")
+    rows = normalized_import_dates(rows, invalid)
     if not rows or rows[0] not in (HEADERS[:4], HEADERS):
         invalid("Use exact Product Category Name,Description,Unit Price,Status headers or the eight-column audit export schema.")
     width = len(rows[0])
@@ -180,6 +182,7 @@ def format_price(value):
     return display_rate(value)
 
 
+@present_export
 def export(db, actor, query, status, format, min_price=None, max_price=None):
     def work():
         product_categories.authorize(db, actor, "export")

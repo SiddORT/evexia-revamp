@@ -54,6 +54,7 @@ from app.services.roles import RoleError
 from app.services.staff_crypto import StaffError
 from app.core.config import get_settings
 from app.core.request_limits import RequestSizeLimit, RequestTooLarge, body_limit
+from app.services.export_presentation import ExportPreferencesMiddleware
 from app.services.auth import AuthError
 from app.services.file_policy import FileError
 from app.schemas.errors import ErrorEnvelope
@@ -117,6 +118,7 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST", "DELETE"], allow_headers=["Authorization", "Content-Type"],
     )
     app.add_middleware(RequestSizeLimit, max_upload_bytes=settings.max_upload_bytes)
+    app.add_middleware(ExportPreferencesMiddleware)
 
     @app.middleware("http")
     async def request_context(request: Request, call_next):

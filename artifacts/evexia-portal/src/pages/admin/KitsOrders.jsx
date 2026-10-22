@@ -1,3 +1,4 @@
+import { captureExportPreferences } from '../../services/exportPreferences.js';
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { Link } from 'wouter';
 import { Download, Eye, PackageOpen, Plus, Search } from 'lucide-react';
@@ -31,7 +32,7 @@ export default function KitsOrders() {
     try {
       // This deliberately fictional export is local-only, not a live-record
       // transfer. Reuse the shared handoff primitive without server initiation.
-      releaseBlob(new Blob([exportCsv(rows)], { type: 'text/csv;charset=utf-8' }), 'kits-consumables-orders.csv');
+      releaseBlob(new Blob([exportCsv(rows, captureExportPreferences())], { type: 'text/csv;charset=utf-8' }), 'kits-consumables-orders.csv');
     } catch {
       setExportError('The mock CSV download could not be started. Please retry Export.');
     }

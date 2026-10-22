@@ -1,4 +1,5 @@
 import { downloadCSV as loggedCSV } from '../../services/downloads.js';
+import { captureExportPreferences } from '../../services/exportPreferences.js';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
 import { Download, Eye, KeyRound, EyeOff, Pencil, Plus, RefreshCw, Search, Trash2, Upload, UsersRound } from 'lucide-react';
@@ -277,7 +278,8 @@ export default function StaffManagement() {
     catch (cause) { if (alive.current) setActionError(cause.message); }
   }
   async function exportRows() {
-    try { reportingIdentityGuard()(); await downloadCSV(exportStaffCSV(records)); }
+    const preferences = captureExportPreferences();
+    try { reportingIdentityGuard()(); await downloadCSV(exportStaffCSV(records, preferences)); }
     catch (cause) { setActionError(cause.message); }
   }
   async function confirmDelete() {

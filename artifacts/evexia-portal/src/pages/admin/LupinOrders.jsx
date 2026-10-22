@@ -1,3 +1,4 @@
+import { captureExportPreferences } from '../../services/exportPreferences.js';
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import { Link } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
@@ -31,7 +32,7 @@ export default function LupinOrders() {
     try {
       // This mock is deliberately offline: use only the local handoff primitive,
       // not the real exports/download-reporting API.
-      releaseBlob(new Blob([ordersCsv(rows)], { type: 'text/csv;charset=utf-8' }), 'lupin-orders.csv');
+      releaseBlob(new Blob([ordersCsv(rows, captureExportPreferences())], { type: 'text/csv;charset=utf-8' }), 'lupin-orders.csv');
     } catch {
       setExportError('The browser could not start this local CSV download. Try Export again.');
     }

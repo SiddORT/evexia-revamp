@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { useAdminDateFormatters } from '../admin/adminPreferences.js';
+import { useAdminPreferences } from '../admin/adminPreferences.js';
+import { exportDisplayPreferences, formatCalendarDate } from '../../services/datePresentation.js';
 import { createPortal } from 'react-dom';
 import { Printer } from 'lucide-react';
 import ImmDialog from './ImmDialog.jsx';
@@ -15,7 +16,8 @@ export const PRINT_KINDS = [
 const addressText = (a) => typeof a === 'string' ? a : a ? [a.line1, a.line2, a.landmark, a.city, a.state, a.pincode, a.country].filter(Boolean).join(', ') : '';
 
 export default function ImmPrintDialog({ kind, orders, snap, onClose, returnFocusRef }) {
-  const { date } = useAdminDateFormatters();
+  const preferences = exportDisplayPreferences(useAdminPreferences());
+  const date = (value) => formatCalendarDate(value, preferences);
   // This portal is outside the Admin shell. Copy its current semantic tokens,
   // rather than duplicating the palette or losing the selected appearance.
   const shell = document.querySelector('.admin-shell');

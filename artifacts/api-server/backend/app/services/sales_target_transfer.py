@@ -1,5 +1,6 @@
 """Inert bounded transfers, identity/file-bound reviews and atomic create-only commits."""
 import csv
+from app.services.export_presentation import present_export, normalized_import_dates
 import hashlib
 import hmac
 import io
@@ -90,6 +91,7 @@ def parse(data, filename):
             invalid(exc.message)
     else:
         invalid("Only UTF-8 .csv and genuine .xlsx are supported. No .xls or macro-enabled files.")
+    rows = normalized_import_dates(rows, invalid)
     if not rows or rows[0] not in (HEADERS[:7], HEADERS[:8], HEADERS):
         invalid("Use the seven-column legacy schema, eight business columns or twelve-column current export in exact order.")
     width = len(rows[0])
@@ -209,6 +211,7 @@ def sample(format):
                                  "100000.00", "100000.00", "100000.00", "100000.00", "active"]], format)
 
 
+@present_export
 def export(db, actor, filters, format):
     def work():
         sales_targets.authorize(db, actor)

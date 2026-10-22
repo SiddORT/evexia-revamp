@@ -1,5 +1,6 @@
 """Bounded inert transfers. No uploaded bytes or historical attribution persisted."""
 import csv
+from app.services.export_presentation import present_export, normalized_import_dates
 import hashlib
 import hmac
 import io
@@ -48,6 +49,7 @@ def parse(data, filename):
             invalid(exc.message)
     else:
         invalid("Only UTF-8 .csv and genuine .xlsx are supported. No .xls or macro-enabled files.")
+    rows = normalized_import_dates(rows, invalid)
     if not rows or rows[0] not in (HEADERS[:3], HEADERS, LEGACY_HEADERS[:10], LEGACY_HEADERS):
         invalid("Use the exact three/seven-column current schema or ten/fourteen-column legacy schema, in order.")
     width = len(rows[0])
@@ -141,6 +143,7 @@ def sample(format):
     return encode([HEADERS[:3], ["Example designation", "EX", "active"]], format)
 
 
+@present_export
 def export(db, actor, query, status, format):
     def work():
         designations.authorize(db, actor)

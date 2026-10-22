@@ -1,5 +1,6 @@
 """Bounded, inert, create-only transfer; reviewed bytes are never persisted."""
 import csv
+from app.services.export_presentation import present_export, normalized_import_dates
 import hashlib
 import hmac
 import io
@@ -43,6 +44,7 @@ def parse(data, filename):
             invalid(exc.message)
     else:
         invalid("Only UTF-8 .csv and genuine .xlsx are supported.")
+    rows = normalized_import_dates(rows, invalid)
     if not rows or rows[0] not in (HEADERS[:3], HEADERS):
         invalid("Use exact HQ Name,State Code,Status headers or the seven-column audit export schema.")
     width = len(rows[0])
@@ -133,6 +135,7 @@ def sample(format):
     return encode([HEADERS[:3], ["North Mumbai", "NM", "active"]], format)
 
 
+@present_export
 def export(db, actor, query, status, format):
     def work():
         headquarters.authorize(db, actor, "export")

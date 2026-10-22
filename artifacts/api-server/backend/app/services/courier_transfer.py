@@ -1,5 +1,6 @@
 """Inert, create-only courier transfer; no bytes or review records are persisted."""
 import csv
+from app.services.export_presentation import present_export, normalized_import_dates
 import hashlib
 import hmac
 import io
@@ -46,6 +47,7 @@ def parse(data, filename):
             invalid(exc.message)
     else:
         invalid("Only UTF-8 .csv and genuine .xlsx are supported. No .xls or macro-enabled files.")
+    rows = normalized_import_dates(rows, invalid)
     if not rows or [cell.strip() for cell in rows[0]] not in (HEADERS[:2], HEADERS):
         invalid("Use Courier Partner Name/Status or the six-column courier backup schema.")
     width = len(rows[0])
@@ -114,6 +116,7 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
     return couriers.transaction(db, work)
 
 
+@present_export
 def export(db, actor, query, status, format):
     def work():
         couriers.authorize(db, actor, "export")

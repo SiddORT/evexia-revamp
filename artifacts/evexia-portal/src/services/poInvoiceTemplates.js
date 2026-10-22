@@ -1,7 +1,7 @@
 import { recordLocalAction } from './localActivity.js';
 import { calculateLine, totals, validPODate } from './purchaseOrders.js';
 import { renderPOInvoicePages } from './poInvoiceRender.js';
-import { displayPreferences } from './datePresentation.js';
+import { exportDisplayPreferences } from './datePresentation.js';
 
 export const PO_TEMPLATE_KEY = 'evexia.admin.document-templates.v1';
 export const PO_TEMPLATES = [
@@ -72,7 +72,7 @@ function documentFromModel(model, templateId, preferences) {
     !validPODate(model.poDate) || !validPODate(model.expectedDate)) {
     throw new Error('This order contains invalid invoice figures or dates. Refresh purchase orders and try again.');
   }
-  const presentation = displayPreferences(preferences);
+  const presentation = exportDisplayPreferences(preferences);
   return { templateId, number: model.number, model, presentation, pages: renderPOInvoicePages(model, templateId, presentation) };
 }
 export function makePOInvoiceDocument(order, refs, templateId = loadPOTemplatePreference(), preferences) {

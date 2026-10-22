@@ -1,3 +1,4 @@
+import { presentExportTable } from './exportDatePresentation.js';
 import { recordLocalChanges, recordLocalAction, reportExport } from './localActivity.js';
 import { PO_KEY, eligibleSamplePOs, loadPOs, loadPOReferences, validPODate } from './purchaseOrders.js';
 import { PR_KEY, withPurchaseMutationLock } from './purchaseMutationLock.js';
@@ -565,14 +566,15 @@ const csvHeaders = ['Document Type', 'Record Context', 'PR Number', 'PR Status',
   'Ordered Qty', 'Received Qty', 'Accepted Qty', 'Rejected Qty', 'Expiry Date'];
 
 export function exportPRCSV(...args) { return reportExport('purchase_received', () => buildPRCSV(...args)); }
-function buildPRCSV(receipts, poRecord) {
+function buildPRCSV(receipts, poRecord, preferences) {
   const rows = (receipts || []).flatMap((receipt) => receipt.lines.map((line) => {
     return ['Purchase Received', receipt.source === 'server' ? 'Saved server receipt — not a financial invoice or stock-ledger entry' : `${isSamplePR(receipt) ? 'Sample · fictional · ' : ''}Local demo — not a financial invoice or stock-ledger entry`, receipt.number, receipt.status === 'deleted' ? 'Deleted' : 'Active',
       receipt.receivedDate, receipt.receivedBy, receipt.poNumber, receipt.poDate, receipt.vendorName,
       receipt.vendorPhone, receipt.locationName, line.productName, line.batchNo, line.orderedQty,
       line.receivedQty, line.acceptedQty, line.rejectedQty, line.expiryDate];
   }));
-  return '\uFEFF' + [csvHeaders, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n';
+  return '\uFEFF' + presentExportTable(csvHeaders, rows, { calendarColumns: [4, 7, 17] }, preferences)
+    .map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n';
 }
 
 export { PR_KEY };

@@ -1,3 +1,4 @@
+import { presentExportTable } from './exportDatePresentation.js';
 // Fictional, session-only data. No storage, master services, uploads or APIs.
 import { roundRate } from './rates.js';
 const freeze = (value) => {
@@ -74,10 +75,11 @@ const csvCell = (value) => {
   const safe = /^[\s\u0000-\u001f]*[=+\-@]/.test(text) ? `'${text}` : text;
   return `"${safe.replaceAll('"', '""')}"`;
 };
-export function ordersCsv(orders) {
+export function ordersCsv(orders, preferences) {
   const rows = [['Sr. No.', 'Order number', 'Date', 'Patients', 'Price per test (INR)', 'Total amount (INR)', 'Doctor', 'MR', 'Order status', 'Payment status'],
     ...orders.map((o, index) => [index + 1, o.number, o.date, o.patientCount, money(parsePrice(o.price)), money(totalMinor(o.patientCount, o.price)), o.doctorName, o.mrName, o.status, o.paymentStatus])];
-  return '\uFEFF' + rows.map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n';
+  return '\uFEFF' + presentExportTable(rows[0], rows.slice(1), { calendarColumns: [2] }, preferences)
+    .map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n';
 }
 const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 export function createDemoStore({ empty = false } = {}) {

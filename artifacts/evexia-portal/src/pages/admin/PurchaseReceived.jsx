@@ -1,3 +1,4 @@
+import { captureExportPreferences } from '../../services/exportPreferences.js';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { Activity, ArrowUpRight, BarChart3, ChevronDown, ClipboardCheck, Download, Eye, FileDown, Plus, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
@@ -63,23 +64,25 @@ export default function PurchaseReceived() {
   const canCreate = !poId || (source?.status === 'open' && source?.fulfillment !== 'Closed');
   const open = (r) => navigate(`${BASE}/${r.id}`);
   async function documentAction(r, pdf) {
+    const preferences = getAdminDisplayPreferences();
     if (busy) return;
     setBusy(true); setActionError('');
     try {
       const saved = await getPR(r.id);
-      const document = makePRDocument(saved, undefined, getAdminDisplayPreferences());
+      const document = makePRDocument(saved, undefined, preferences);
       if (pdf) await downloadPRDocument(document, `${saved.number}.pdf`, `${import.meta.env.BASE_URL}images/evexia-logo.png`);
       else setDoc(document);
     } catch (cause) { setActionError(cause.message); }
     finally { setBusy(false); }
   }
   async function csv() {
+    const preferences = captureExportPreferences();
     if (busy) return;
     setBusy(true); setActionError('');
     try {
       const result = await exportPR({ ...params, offset: 0 });
       if (result.items.length !== result.filtered) throw new Error('The complete filtered result was not returned. No CSV was downloaded.');
-      const csv = exportPRCSV(result.items, { orders: [] });
+      const csv = exportPRCSV(result.items, { orders: [] }, preferences);
       await downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'purchase-received.csv',
         { source: 'purchase_received', kind: 'export', format: 'CSV' });
     } catch (cause) { setActionError(cause.message); }

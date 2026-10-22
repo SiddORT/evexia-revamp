@@ -1,4 +1,5 @@
 import { staffRequest } from '../auth/adminSession.js';
+import { presentExportTable } from './exportDatePresentation.js';
 import { dialCountry, normalizePhone } from './phoneCountries.js';
 
 // Retained only as a legacy identifier. This module never reads or mutates it.
@@ -47,10 +48,11 @@ function csvCell(value) {
   const protectedText = /^[\s\u0000-\u001f]*[=+\-@]/.test(text) ? `'${text}` : text;
   return `"${protectedText.replaceAll('"', '""')}"`;
 }
-export function exportStaffCSV(records) {
+export function exportStaffCSV(records, preferences) {
   // Explicit allowlist excludes passwords, hashes, internal User/profile UUIDs and audit references.
-  return STAFF_COLUMNS.map(([, label]) => csvCell(label)).join(',') + '\r\n'
-    + records.map((row) => STAFF_COLUMNS.map(([key]) => csvCell(row[key])).join(',')).join('\r\n') + '\r\n';
+  const rows = presentExportTable(STAFF_COLUMNS.map(([, label]) => label),
+    records.map((row) => STAFF_COLUMNS.map(([key]) => row[key])), { calendarColumns: [8] }, preferences);
+  return rows.map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n';
 }
 
 // Explicit access assignment. Separate from metadata edits; never implied by labels.
