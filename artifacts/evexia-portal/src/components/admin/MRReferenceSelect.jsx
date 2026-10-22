@@ -89,7 +89,7 @@ export default function MRReferenceSelect({ id, kind, label, value, savedName, o
   const visible = state === 'ready' ? items.filter((item) => item.id !== excludeId
     && (item.id !== value || !query.trim() || item.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))) : [];
   const choices = visible.map((item) => ({ value: item.id, label: choiceLabel(item),
-    disabled: kind === 'designations' && (item.deleted || (item.status !== 'active' && item.id !== savedRef.current)) }));
+    disabled: ['designations', 'staff'].includes(kind) && (item.deleted || (item.status !== 'active' && item.id !== savedRef.current)) }));
   if (!required) choices.unshift({ value: '', label: placeholder });
   const chosen = items.find((item) => item.id === value) || (selected?.id === value ? selected : null);
   return <MRFormCombobox id={id} label={label} value={value}

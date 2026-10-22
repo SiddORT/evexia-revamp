@@ -30,6 +30,7 @@ class MRFields(MasterWriteFields):
     dateOfJoining: date
     designation_id: uuid.UUID
     reportingManagerId: uuid.UUID | None = None
+    reportingStaffId: uuid.UUID | None = None
     paymentLimit: Decimal = Field(default=Decimal("0.00"), ge=0, le=Decimal("999999999.99"), max_digits=11, decimal_places=2)
     doctorDaysLimit: int = Field(default=0, ge=0, le=3650, strict=True)
     status: Literal["active", "inactive"]
@@ -111,12 +112,16 @@ class MRFields(MasterWriteFields):
                 raise ValueError("Primary zone must be among assigned zones")
         if self.phone:
             self.phone = normalize_phone(self.phone, self.dialCountry, "mr")
-        if self.contactRequirement == "required" and (not self.phone or not self.email):
-            raise ValueError("Both phone and email are required")
+        if not self.phone and not self.email:
+            raise ValueError("Enter either a phone number or an email address.")
+        if self.reportingManagerId and self.reportingStaffId:
+            raise ValueError("Choose a Staff manager or retain the legacy MR assignment, not both.")
         return self
 
 
 class MRCreate(MRFields):
+    # Interactive creation owns the login identifier; imports still use MRFields.
+    userId: str = ""
     initialPassword: str | None = Field(default=None, min_length=12, max_length=128)
 
     @field_validator("initialPassword", mode="before")
@@ -153,6 +158,7 @@ class MRDirectoryResponse(MRFields):
     hqName: str
     zoneName: str
     reportingManagerName: str
+    reportingStaffName: str = ""
     assignmentWarnings: list[str]
     createdBy: str
     updatedBy: str

@@ -354,6 +354,7 @@ import type {
   ReportSummary,
   ResetPasswordRequest,
   ResetPasswordResponse,
+  ResolveCreatedMRParams,
   ResolvePortalHostnameParams,
   ReviewAllergenImportBody,
   ReviewAllergenImportParams,
@@ -374,7 +375,7 @@ import type {
   ReviewMRImportParams,
   ReviewOpeningBalanceImportBody,
   ReviewOpeningBalanceImportParams,
-  ReviewOpeningStockImportBodyTwo,
+  ReviewOpeningStockImportBody,
   ReviewOpeningStockImportParams,
   ReviewPatientImportBody,
   ReviewPatientImportParams,
@@ -10683,6 +10684,103 @@ export function useResolveMRAccount<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
+export const getResolveCreatedMRUrl = (params: ResolveCreatedMRParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/mrs/created?${stringifiedParams}`
+    : `/api/v1/admin/mrs/created`;
+};
+
+/**
+ * @summary Created
+ */
+export const resolveCreatedMR = async (
+  params: ResolveCreatedMRParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<MRDirectoryResponse> => {
+  return customFetch<MRDirectoryResponse>(getResolveCreatedMRUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getResolveCreatedMRQueryKey = (
+  params?: ResolveCreatedMRParams,
+) => {
+  return [`/api/v1/admin/mrs/created`, ...(params ? [params] : [])] as const;
+};
+
+export const getResolveCreatedMRQueryOptions = <
+  TData = Awaited<ReturnType<typeof resolveCreatedMR>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params: ResolveCreatedMRParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof resolveCreatedMR>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getResolveCreatedMRQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof resolveCreatedMR>>
+  > = ({ signal }) => resolveCreatedMR(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof resolveCreatedMR>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ResolveCreatedMRQueryResult = NonNullable<
+  Awaited<ReturnType<typeof resolveCreatedMR>>
+>;
+export type ResolveCreatedMRQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Created
+ */
+
+export function useResolveCreatedMR<
+  TData = Awaited<ReturnType<typeof resolveCreatedMR>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params: ResolveCreatedMRParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof resolveCreatedMR>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getResolveCreatedMRQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export const getExportMRDirectoryUrl = (params?: ExportMRDirectoryParams) => {
   const normalizedParams = new URLSearchParams();
 
@@ -13733,16 +13831,19 @@ export const getReviewOpeningStockImportUrl = (
  * @summary Import Review
  */
 export const reviewOpeningStockImport = async (
-  reviewOpeningStockImportBody: Blob | ReviewOpeningStockImportBodyTwo,
+  reviewOpeningStockImportBody: ReviewOpeningStockImportBody,
   params: ReviewOpeningStockImportParams,
   options?: Parameters<typeof customFetch>[1],
 ): Promise<OpeningImportReview> => {
+  const formData = new FormData();
+  formData.append(`file`, reviewOpeningStockImportBody.file);
+
   return customFetch<OpeningImportReview>(
     getReviewOpeningStockImportUrl(params),
     {
       ...options,
       method: "POST",
-      body: reviewOpeningStockImportBody,
+      body: formData,
     },
   );
 };
@@ -13791,12 +13892,11 @@ export const getReviewOpeningStockImportMutationOptions = <
 export type ReviewOpeningStockImportMutationResult = NonNullable<
   Awaited<ReturnType<typeof reviewOpeningStockImport>>
 >;
-export type ReviewOpeningStockImportMutationBody = BodyType<
-  Blob | ReviewOpeningStockImportBodyTwo
->;
+export type ReviewOpeningStockImportMutationBody =
+  BodyType<ReviewOpeningStockImportBody>;
 export type ReviewOpeningStockImportMutationError = ErrorType<ErrorEnvelope>;
 export type ReviewOpeningStockImportMutationVariables = {
-  data: BodyType<Blob | ReviewOpeningStockImportBodyTwo>;
+  data: BodyType<ReviewOpeningStockImportBody>;
   params: ReviewOpeningStockImportParams;
 };
 

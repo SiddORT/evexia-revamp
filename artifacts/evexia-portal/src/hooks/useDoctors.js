@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import useDirectoryContinuation from './useDirectoryContinuation.js';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../auth/adminSession.js';
-import { allDoctorMRChoices, bulkDoctors, contactDoctor, createDoctor, deleteDoctor, doctorFilters, editDoctor, getDoctor, listDoctors, statusDoctor } from '../services/serverDoctors.js';
+import { allDoctorMRChoices, bulkDoctors, createDoctor, deleteDoctor, doctorFilters, editDoctor, getDoctor, listDoctors, statusDoctor } from '../services/serverDoctors.js';
 
 export default function useDoctors(params = {}, detailId = null) {
   const [state, setState] = useState({ records: [], doctor: null, mrs: [], zones: [], states: [], total: 0, filtered: 0, loading: true, error: '', missingMR: false, missingZone: false });
@@ -75,7 +75,6 @@ export default function useDoctors(params = {}, detailId = null) {
     edit: (id, values) => apply(() => editDoctor(row(id), values), 'Doctor updated successfully.'),
     changeStatus: (id, status) => apply(() => statusDoctor(row(id), status), 'Doctor status updated.'),
     remove: (id) => apply(() => deleteDoctor(row(id)), 'Doctor removed from normal use. Stored relationships remain.'),
-    changeContactRequirement: (id, requirement) => apply(() => contactDoctor(row(id), requirement), 'Contact rule updated.'),
     changeVerification: (ids, value) => apply(() => bulkDoctors(selection(ids), 'verification', value), 'Verification updated.'),
     shiftMR: (ids, id) => apply(() => bulkDoctors(selection(ids), 'shift', id), 'MR assignment updated.'),
   };

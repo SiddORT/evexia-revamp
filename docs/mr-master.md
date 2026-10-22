@@ -1,5 +1,63 @@
 # MR Master: identity, rollout and transfer contract
 
+## Current contact, credentials and reporting-manager contract
+
+Live MR and Doctor creates, full edits and imports require **at least one of
+primary phone or email**. Both are allowed; neither is individually required.
+Whitespace-only values count as blank. Doctor alternate phone remains separate.
+Supplied contacts retain their existing format checks. `Contact Requirement`
+remains inert historical metadata for compatible reads/backups, not a configurable
+policy; legacy contact-toggle endpoints reject changes. Blank-contact history
+remains readable and supports unrelated administrative actions, but requires
+correction on the next full edit. No contact data is backfilled or rewritten.
+
+Interactive Add MR has no User ID input or candidate-generator call. The server
+chooses and reserves a unique `mr.` login identifier within account creation,
+using bounded secure candidates and collision retries against the encrypted
+shared account namespace. Import User IDs and existing edit identities retain
+their supported contracts. The existing one-time post-save presentation shows
+the committed identifier/password; uncertain creations reconcile by employee
+code with same-session creation evidence, not an unknown generated username.
+An absent email remains `None` on the account and blank on the business profile.
+
+Add MR password generation produces 15 characters with uppercase, lowercase,
+digits and special characters, using secure randomness and a shuffle. Manual
+passwords remain 12–128 characters. Blank enrollment fields preserve server
+generation and password-setup-required semantics. Staff creation, reset/recovery
+policies and existing passwords are unchanged. Plaintext credentials stay in
+request/browser memory, never logs or local persistence.
+
+Reporting manager choices now show **Staff names** through the existing searchable
+selector. The MR-authorized helper returns only reference/name/lifecycle fields,
+scans at most 500 candidates per request, and requires explicit continuation.
+It hydrates only the one selected ID; it grants no Staff Management permission.
+New Staff assignments must be active/nondeleted under transactional locks.
+Saved inactive Staff remain readable and may be retained.
+
+Forward migration `0055_mr_staff_managers` adds nullable `reportingStaffId` with
+a RESTRICT foreign key and an independently encrypted saved name. Historical
+`reportingManagerId` MR links and their encrypted labels stay separate and are
+shown as **legacy MR** assignments until explicitly replaced/cleared. No name-based
+mapping or MR cascade is introduced. Staff selection captures its current name
+once; retaining the same ID does not refresh the saved snapshot. Runtime rotation
+includes the new field only at the reviewed successor revision, while earlier
+inventories and migration sources remain frozen.
+
+Current files append **Reporting Staff ID** to the prior multizone columns;
+exports additionally carry **Reporting Manager Name** and **Reporting Staff Name**.
+Staff IDs are server UUIDs and saved-name columns are informational. Old header
+variants and old MR-manager references remain supported, without guessing Staff
+mappings. Old `required`/`optional` values never override the fixed contact rule.
+Current samples have 24 columns, CSV exports 26, XLSX exports 30. Existing file,
+row, export-result and cell-size limits are unchanged.
+
+This refinement was source-inspection-only apart from offline contract generation
+and static compilation/typechecking. No tests were added, modified or run.
+No browser scenarios, service restarts, database migrations, live mutations or
+production actions were performed. Automatic activation remains the existing
+post-merge lifecycle; no running revision or migration success is claimed here.
+Historical descriptions below describe earlier milestones, not current policy.
+
 ## Multiple assigned zones
 
 MR Master now has two MR-scoped searchable multiselects: Assigned zone in the

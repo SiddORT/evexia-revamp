@@ -6,6 +6,6 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type ReviewOpeningStockImportBodyTwo = {
+export type ReviewOpeningStockImportBody = {
   file: Blob | File;
 };

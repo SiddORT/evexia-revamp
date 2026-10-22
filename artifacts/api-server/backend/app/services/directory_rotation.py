@@ -15,7 +15,7 @@ from sqlalchemy import MetaData, String, Table, Uuid, column, func, or_, select,
 from app.core.config import Settings
 from app.db.session import session_factory
 from app.services.directory_crypto import DirectoryCrypto, canonical
-from app.services.directory_inventory import FIELDS as PHONE_FIELDS, RUNTIME_FIELDS as FIELDS, LEGACY_FIELDS, INDEX_COLUMNS, PRIVACY_REVISION
+from app.services.directory_inventory import FIELDS as PHONE_FIELDS, RUNTIME_FIELDS as FIELDS, LEGACY_FIELDS, INDEX_COLUMNS, PRIVACY_REVISION, REFERENCE_FIELDS, STAFF_MANAGER_REVISION
 from app.services import directory_staging as staging
 
 REVISION = "0030_directory_crypto_retirement"
@@ -34,7 +34,7 @@ RUNTIME_REVISIONS = frozenset({PRIVACY_REVISION, "0037_domain_admission", "0038_
     "0047_stock_products", "0049_product_language_merge", "0050_opening_stock",
     # HQ zone/area metadata leaves encrypted directory fields unchanged.
     "0051_headquarter_areas", "0051_mr_zones", "0052_hq_mr_zones_merge",
-    "0053_email_invitations"})
+    "0053_email_invitations", "0054_modern_email_tests", STAFF_MANAGER_REVISION})
 SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations",
     "0033_merge_directory_branches", PHONE_REVISION, "0035_account_identifiers"}) | RUNTIME_REVISIONS
 COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS
@@ -51,8 +51,10 @@ def _fields(db):
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
     if revision not in SUPPORTED_REVISIONS:
         raise RotationError()
-    if revision in RUNTIME_REVISIONS:
+    if revision == STAFF_MANAGER_REVISION:
         return FIELDS
+    if revision in RUNTIME_REVISIONS:
+        return REFERENCE_FIELDS
     return PHONE_FIELDS if revision in (PHONE_REVISION, "0035_account_identifiers") else LEGACY_FIELDS
 
 

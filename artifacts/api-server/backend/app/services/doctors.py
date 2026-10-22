@@ -244,9 +244,8 @@ def mutate(db, actor, record_id, body, operation):
         elif operation == "status":
             row.status = body.status
         elif operation == "contact":
-            if body.contactRequirement == "required" and (not row.phone or not row.email):
-                raise DoctorError("Add valid phone and email in Edit before making both required.", 422, "doctor_contact_required")
-            row.contactRequirement = body.contactRequirement
+            raise DoctorError("Contact rules are fixed. Enter either a phone number or an email address in Edit Doctor.",
+                              422, "doctor_contact_fixed")
         elif operation == "delete":
             row.deleted_at, row.deleted_by = utcnow(), current.user.id
         else:

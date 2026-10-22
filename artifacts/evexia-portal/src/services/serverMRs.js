@@ -10,7 +10,7 @@ const clean = (params = {}) => Object.fromEntries(Object.entries(params)
   .filter(([, value]) => value !== undefined && value !== null && value !== '' && value !== 'all'));
 
 export const MR_FIELDS = ['name', 'phone', 'dialCountry', 'userId', 'email', 'contactRequirement', 'hq', 'zoneId', 'zoneIds', 'employeeCode',
-  'dateOfJoining', 'designation_id', 'reportingManagerId', 'paymentLimit', 'doctorDaysLimit', 'status', 'pincode',
+  'dateOfJoining', 'designation_id', 'reportingManagerId', 'reportingStaffId', 'paymentLimit', 'doctorDaysLimit', 'status', 'pincode',
   'addressLine1', 'addressLine2', 'landmark', 'city', 'state', 'country'];
 export const MAX_LENGTH = { name: 200, employeeCode: 64, addressLine1: 300, addressLine2: 300, landmark: 200, city: 100, state: 100, country: 100, phone: 20, email: 320 };
 export const USERNAME_PATTERN = /^[a-z][a-z0-9._-]{2,31}$/;
@@ -20,11 +20,15 @@ export const listMRs = (params, signal) => mrRequest('', { params: clean(params)
 export const mrAssociatedDoctors = (id, params, signal) => mrRequest(`/${id}/doctors`, { params: clean(params), signal });
 export const getMR = (id, signal) => mrRequest(`/${id}`, { signal });
 export const resolveMRAccount = (username, signal) => mrRequest(`/account/${username}`, { signal });
-export const mrReferences = (kind, { query = '', limit = 100, offset = 0, includeSaved, activeOnly } = {}, signal) =>
-  mrRequest('/references', { params: clean({ kind, query, limit, offset, include_saved: includeSaved, active_only: activeOnly }), signal });
+export const resolveCreatedMR = (employeeCode, signal) => mrRequest('/created', { params: { employee_code: employeeCode }, signal });
+export const mrReferences = (kind, { query = '', limit = 100, offset = 0, cursor, includeSaved, activeOnly } = {}, signal) =>
+   mrRequest('/references', { params: clean({ kind, query, limit, offset, cursor, include_saved: includeSaved, active_only: activeOnly }), signal });
 export const generateMRUsername = (signal) => mrRequest('/username', { signal });
 export const lookupPincode = (pin, signal, action = 'add') => mrRequest(`/postal/${pin}`, { signal, params: { action } });
-export const createMR = (values, initialPassword) => mrRequest('', { body: { ...values, initialPassword: initialPassword || null } });
+export const createMR = (values, initialPassword) => {
+  const { userId: _serverGenerated, ...profile } = values;
+  return mrRequest('', { body: { ...profile, initialPassword: initialPassword || null } });
+};
 export const editMR = (record, values) => mrRequest(`/${record.id}/edit`, { body: { ...values, expected_version: record.version } });
 export const statusMR = (record, status) => mrRequest(`/${record.id}/status`, { body: { status, expected_version: record.version } });
 export const contactMR = (record, contactRequirement) => mrRequest(`/${record.id}/contact`, { body: { contactRequirement, expected_version: record.version } });
@@ -59,9 +63,11 @@ function istToday() {
 export function validateMRValues(values, { creating, password = '', confirm = '' } = {}) {
   values = normalizedValues(values);
   const errors = {};
-  const optionalContact = values.contactRequirement === 'optional';
-  const required = ['name', 'userId', 'hq', 'zoneId', 'employeeCode', 'dateOfJoining', 'designation_id', 'pincode', 'addressLine1', 'landmark', 'city', 'state', 'country'];
-  if (!optionalContact) required.push('phone', 'email');
+  const required = ['name', 'hq', 'zoneId', 'employeeCode', 'dateOfJoining', 'designation_id', 'pincode', 'addressLine1', 'landmark', 'city', 'state', 'country'];
+  if (!creating) required.push('userId');
+  if (!values.phone && !values.email) {
+    errors.phone = errors.email = 'Enter either a phone number or an email address.';
+  }
   required.forEach((key) => { if (!values[key].trim()) errors[key] = 'This field is required.'; });
   if (!values.zoneIds.length || values.zoneIds.length > 10000 || values.zoneIds.some((id) => !UUID_PATTERN.test(id))) errors.zoneId = 'Select between 1 and 10,000 saved zones.';
   for (const [key, max] of Object.entries(MAX_LENGTH)) if (textLength(values[key]) > max) errors[key] = `Use at most ${max} characters.`;
@@ -69,7 +75,6 @@ export function validateMRValues(values, { creating, password = '', confirm = ''
   const nameError = masterNameError(values.name, 'MR name', { personal: true });
   if (nameError) errors.name = nameError;
   if (new Set(values.zoneIds).size !== values.zoneIds.length || !values.zoneIds.includes(values.zoneId)) errors.zoneId = 'Select distinct zones and include the primary zone.';
-  if (!['required', 'optional'].includes(values.contactRequirement)) errors.contactRequirement = 'Choose a contact requirement.';
    if (!dialCountry(values.dialCountry)) errors.dialCountry = 'Choose a supported phone country.';
    if (values.phone && normalizePhone(values.phone, values.dialCountry, 'mr') === null) errors.phone = 'Enter a valid phone number for the selected country.';
   if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) errors.email = 'Enter a valid email address.';
@@ -84,7 +89,7 @@ export function validateMRValues(values, { creating, password = '', confirm = ''
   if (values.paymentLimit && (!/^\d{1,9}(\.\d{1,2})?$/.test(values.paymentLimit))) errors.paymentLimit = 'Enter an amount from 0 to 999999999.99 with up to 2 decimals.';
   if (values.doctorDaysLimit && (!/^\d{1,4}$/.test(values.doctorDaysLimit) || Number(values.doctorDaysLimit) > 3650)) errors.doctorDaysLimit = 'Enter a whole number from 0 to 3650.';
   if (!['active', 'inactive'].includes(values.status)) errors.status = 'Choose a valid status.';
-  for (const key of ['hq', 'zoneId', 'designation_id', 'reportingManagerId']) if (values[key] && !UUID_PATTERN.test(values[key])) errors[key] = 'Select a saved server record.';
+  for (const key of ['hq', 'zoneId', 'designation_id', 'reportingManagerId', 'reportingStaffId']) if (values[key] && !UUID_PATTERN.test(values[key])) errors[key] = 'Select a saved server record.';
   if (creating && (password || confirm)) {
     const length = Array.from(password).length;
     if (length < 12 || length > 128) errors.password = 'Use 12 to 128 characters, or leave both fields blank to generate one.';
@@ -101,6 +106,7 @@ export function payloadFromValues(values) {
     phone: trimmed.phone ? normalizePhone(trimmed.phone, trimmed.dialCountry, 'mr') : '',
     email: trimmed.email,
     reportingManagerId: trimmed.reportingManagerId || null,
+    reportingStaffId: trimmed.reportingStaffId || null,
     paymentLimit: trimmed.paymentLimit === '' ? '0.00' : /^\d{1,9}(?:\.\d{1,2})?$/.test(trimmed.paymentLimit) ? roundRate(trimmed.paymentLimit) : trimmed.paymentLimit,
     doctorDaysLimit: trimmed.doctorDaysLimit === '' ? 0 : Number(trimmed.doctorDaysLimit),
   };

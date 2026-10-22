@@ -61,18 +61,14 @@ export interface MRCreate {
   /** @pattern ^[1-9][0-9]{5}$ */
   pincode: string;
   reportingManagerId?: string | null;
+  reportingStaffId?: string | null;
   /**
    * @minLength 1
    * @maxLength 100
    */
   state: string;
   status: MRCreateStatus;
-  /**
-   * @minLength 3
-   * @maxLength 32
-   * @pattern ^[a-z][a-z0-9._-]{2,31}$
-   */
-  userId: string;
+  userId?: string;
   zoneId: string;
   zoneIds?: string[] | null;
 }

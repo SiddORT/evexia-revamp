@@ -6,28 +6,27 @@ import MRFormCombobox from './MRFormCombobox.jsx';
 import PhoneInput from './PhoneInput.jsx';
 import useAddressSelection from './useAddressSelection.js';
 import { GeographyControl, GeographyLabel, PostalSelection, useAddressCatalogue } from './AddressGeography.jsx';
-import { emptyMRValues, generateMRUsername, lookupPincode, MR_FIELDS as FIELDS, payloadFromValues, validateMRValues } from '../../services/serverMRs.js';
+import { emptyMRValues, lookupPincode, MR_FIELDS as FIELDS, payloadFromValues, validateMRValues } from '../../services/serverMRs.js';
 import '../../mr.css';
 import { initialCredentials } from '../../services/initialCredentials.js';
 import { presentMasterFailure } from '../../services/masterValidation.js';
 
-const OPTIONAL = new Set(['reportingManagerId', 'addressLine2', 'paymentLimit', 'doctorDaysLimit']);
+const OPTIONAL = new Set(['phone', 'email', 'reportingManagerId', 'reportingStaffId', 'addressLine2', 'paymentLimit', 'doctorDaysLimit']);
 const TABS = [
-  { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'dialCountry', 'userId', 'email', 'contactRequirement', 'password', 'confirmPassword'] },
-  { id: 'assignment', label: 'Assignment & work', fields: ['hq', 'zoneId', 'zoneIds', 'employeeCode', 'dateOfJoining', 'designation_id', 'reportingManagerId', 'paymentLimit', 'doctorDaysLimit', 'status'] },
+  { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'dialCountry', 'userId', 'email', 'password', 'confirmPassword'] },
+  { id: 'assignment', label: 'Assignment & work', fields: ['hq', 'zoneId', 'zoneIds', 'employeeCode', 'dateOfJoining', 'designation_id', 'reportingManagerId', 'reportingStaffId', 'paymentLimit', 'doctorDaysLimit', 'status'] },
   { id: 'address', label: 'Address', fields: ['pincode', 'addressLine1', 'addressLine2', 'landmark', 'city', 'state', 'country'] },
 ];
-const ORDER = [...FIELDS.slice(0, 6), 'password', 'confirmPassword', ...FIELDS.slice(6)];
+const ORDER = [...FIELDS.slice(0, 6), 'password', 'confirmPassword', ...FIELDS.slice(6)].filter((key) => key !== 'contactRequirement');
 const STATUS_CHOICES = [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }];
 
 export default function MRForm({ mr, onSave, onClose, onRefresh }) {
   const [values, setValues] = useState(() => emptyMRValues(mr));
   // Enrollment credentials are deliberately separate from the MR profile.
-  const [credentials, setCredentials] = useState(() => mr ? null : initialCredentials());
+  const [credentials, setCredentials] = useState(() => mr ? null : initialCredentials({ mr: true }));
   const [passwordVisible, setPasswordVisible] = useState(true);
   const [copyFeedback, setCopyFeedback] = useState('');
   const copySequence = useRef(0);
-  const [usernamePending, setUsernamePending] = useState(false);
   const [errors, setErrors] = useState({});
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -41,7 +40,15 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
   const catalogue = useAddressCatalogue(address);
   function patchAddress(patch) {
     setValues((current) => ({ ...current, ...patch }));
-    setErrors((current) => ({ ...current, ...Object.fromEntries(Object.keys(patch).map((key) => [key, undefined])) }));
+    setErrors((current) => {
+      const next = { ...current, ...Object.fromEntries(Object.keys(patch).map((key) => [key, undefined])) };
+      if ('phone' in patch || 'email' in patch) {
+        for (const key of ['phone', 'email']) {
+          if (next[key] === 'Enter either a phone number or an email address.') delete next[key];
+        }
+      }
+      return next;
+    });
     setSaveError('');
   }
   useEffect(() => {
@@ -52,12 +59,6 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
   }, [activeTab, errors]);
 
   useEffect(() => () => { copySequence.current++; }, []);
-  async function generateUsername() {
-    setUsernamePending(true);
-    try { const result = await generateMRUsername(); change('userId', result.userId); }
-    catch (cause) { setErrors((c) => ({ ...c, userId: cause.message || 'Could not generate a User ID.' })); }
-    finally { setUsernamePending(false); }
-  }
 
   function handleTabKey(event, index) {
     const next = event.key === 'ArrowRight' ? (index + 1) % TABS.length
@@ -93,7 +94,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
 
   function generatePassword() {
     if (saving || mr) return;
-    const next = initialCredentials();
+    const next = initialCredentials({ mr: true });
     copySequence.current++;
     setCopyFeedback('');
     // A failed generation must not destroy an existing manual candidate.
@@ -145,7 +146,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
     const errorId = `mr-${key}-error`;
     const hintId = `mr-${key}-help`;
     const id = `mr-${key}`;
-    const required = !OPTIONAL.has(key) && (!['phone', 'email'].includes(key) || values.contactRequirement === 'required');
+    const required = !OPTIONAL.has(key);
     const input = (
       <input
         id={id}
@@ -161,7 +162,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
         step={step}
         aria-required={required}
         aria-invalid={Boolean(errors[key])}
-         aria-describedby={[errors[key] && errorId, key === 'pincode' && address.postal.message && 'mr-pin-feedback'].filter(Boolean).join(' ') || undefined}
+         aria-describedby={[errors[key] && errorId, ['phone', 'email'].includes(key) && 'mr-contact-help', key === 'pincode' && address.postal.message && 'mr-pin-feedback'].filter(Boolean).join(' ') || undefined}
         data-testid={`input-mr-${key}`}
       />
     );
@@ -191,12 +192,6 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
           <PhoneInput prefix="mr" country={values.dialCountry} onCountryChange={(value) => change('dialCountry', value)}
             countryError={errors.dialCountry} controlClassName="mr-form__control"
             inputProps={{ ...input.props, disabled: saving }} />
-        ) : key === 'userId' ? (
-          <div className="mr-form__input-row">
-            {input}
-            <button type="button" className="mr-form__preview-action" disabled={usernamePending || Boolean(mr)} onClick={generateUsername}
-               data-testid="button-generate-mr-user-id">{usernamePending ? 'Generating…' : 'Auto-generate'}</button>
-          </div>
         ) : input}
         {errors[key] && <p id={errorId} className="mr-form__error" role="alert" data-testid={`error-mr-${key}`}>{errors[key]}</p>}
         {key === 'phone' && errors.dialCountry && <p id="mr-dialCountry-error" className="mr-form__error" role="alert">{errors.dialCountry}</p>}
@@ -236,7 +231,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
   return (
       <form className="mr-form" ref={formRef} onSubmit={handleSubmit} noValidate data-testid="form-mr">
         <div className="mr-form__about"><InfoDisclosure id="mr-form-about" title="this MR form"
-          text="MR records are shared server records. Adding an MR also creates a login account with the User ID. Editing never changes the password."
+           text="MR records are shared server records. Adding an MR creates a login account with a server-generated User ID, shown after saving. Editing never changes the password."
           testId="button-mr-form-info"><strong>About this form</strong></InfoDisclosure></div>
         <div className="mr-form__tabs" role="tablist" aria-label="MR profile sections">
           {TABS.map((tab, index) => <button key={tab.id} ref={(node) => { tabRefs.current[index] = node; }} type="button"
@@ -252,10 +247,10 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
           <section className="mr-form__section" id="mr-panel-identity" role="tabpanel" aria-labelledby="mr-tab-identity" tabIndex={0} hidden={activeTab !== 'identity'}>
             <div className="mr-form__section-head"><h3 id="mr-identity-title" className="mr-form__section-title">Identity & contact</h3><p className="mr-form__section-note">Fields marked * are required</p></div>
             <div className="mr-form__grid">
-               {renderField('contactRequirement', 'Phone and email', { selectOptions: [{ value: 'required', label: 'Both required' }, { value: 'optional', label: 'Both optional' }] })}
+               <p id="mr-contact-help" className="mr-form__hint">Enter either a phone number or an email address. Both are allowed.</p>
                {renderField('name', 'MR Name', { placeholder: 'MR Name', autoComplete: 'name' })}
                 {renderField('phone', 'Phone No.', { placeholder: 'National phone number', autoComplete: 'tel', inputMode: 'tel', info: 'Select the phone country and enter its national number. The country selection is saved with this MR.' })}
-               {renderField('userId', 'User ID', { placeholder: 'User ID', info: mr ? 'User ID is the MR login name. Changing it signs that MR out of existing sessions.' : 'This is the MR login name: lowercase letters, digits, dot, underscore or hyphen. Auto-generate suggests an available one.' })}
+               {mr && renderField('userId', 'User ID', { placeholder: 'User ID', info: 'User ID is the MR login name. Changing it signs that MR out of existing sessions.' })}
                {renderField('email', 'Email ID', { type: 'email', placeholder: 'name@company.com', autoComplete: 'email' })}
               {!mr ? <div className="mr-form__field mr-form__field--wide mr-form__password-note">
                 <div className="mr-form__credential-grid">
@@ -266,7 +261,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
                   <button type="button" className="mr-form__preview-action mr-form__credential-action"
                     disabled={saving} onClick={generatePassword} data-testid="button-generate-mr-password">Auto-generate password</button>
                 </div>
-                <p id="mr-password-help" className="mr-form__hint">This is a pre-save candidate, not an account credential yet. Keep it or type your own 12–128-character password and confirm it exactly, including spaces. Clear both fields for server generation; that account requires email password setup before login. After saving, use Invite / send again to send a set-password link. Saving alone sends no email.</p>
+                <p id="mr-password-help" className="mr-form__hint">Generated passwords have 15 characters. Manual passwords need 12–128 characters and matching confirmation. Blank fields use server generation and require email setup before login.</p>
                 {credentials.generationError && <p className="mr-form__error" role="alert">{credentials.generationError}</p>}
                 <p className="mr-form__hint" role="status" aria-live="polite" aria-atomic="true">{copyFeedback}</p>
               </div> : <div className="mr-form__field mr-form__field--wide"><p className="mr-form__section-note" data-testid="text-mr-password-note">Passwords are not shown or edited here. Use Reset password in MR Master to issue a new one-time password.</p></div>}
@@ -284,7 +279,8 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
               {renderField('employeeCode', 'Employee code', { placeholder: 'Employee code' })}
               {renderField('dateOfJoining', 'Date of joining', { type: 'date' })}
               {renderField('designation_id', 'Designation', { info: 'Select an active catalogue designation. A saved inactive assignment can be retained; a deleted assignment must be replaced. Designations grant no permissions.', customControl: <MRReferenceSelect id="mr-designation_id" kind="designations" label="Designation" value={values.designation_id} savedName={mr?.designationName} onChange={(v) => change('designation_id', v)} placeholder="Select a designation" invalid={Boolean(errors.designation_id)} describedBy={errors.designation_id ? 'mr-designation_id-error' : undefined} required emptyGuidance="No designations exist yet. Add one in Designation Master first." /> })}
-              {renderField('reportingManagerId', 'Reporting manager', { customControl: <MRReferenceSelect id="mr-reportingManagerId" kind="managers" label="Reporting manager" value={values.reportingManagerId} savedName={mr?.reportingManagerName} excludeId={mr?.id} onChange={(v) => change('reportingManagerId', v)} placeholder="No reporting manager" invalid={Boolean(errors.reportingManagerId)} describedBy={errors.reportingManagerId ? 'mr-reportingManagerId-error' : undefined} emptyGuidance="No other MRs exist yet." /> })}
+              {values.reportingManagerId && <div className="mr-form__field"><p className="mr-form__hint">Legacy MR manager: {mr?.reportingManagerName || 'Saved MR assignment'}. Retained until you select Staff or explicitly clear it.</p><button type="button" className="mr-form__preview-action" disabled={saving} onClick={() => change('reportingManagerId', '')}>Clear legacy manager</button></div>}
+              {renderField('reportingStaffId', 'Reporting manager (Staff)', { customControl: <MRReferenceSelect id="mr-reportingStaffId" kind="staff" label="Reporting manager (Staff)" value={values.reportingStaffId} savedName={mr?.reportingStaffName} onChange={(v) => patchAddress({ reportingStaffId: v, ...(v ? { reportingManagerId: '' } : {}) })} placeholder="No Staff manager" invalid={Boolean(errors.reportingStaffId)} describedBy={errors.reportingStaffId ? 'mr-reportingStaffId-error' : undefined} emptyGuidance="No active Staff match. Search by name." /> })}
               {renderField('paymentLimit', 'Payment limit', { type: 'number', min: '0', step: '0.01', placeholder: 'Defaults to 0.00', inputMode: 'decimal' })}
               {renderField('doctorDaysLimit', 'Doctor days limit', { type: 'number', min: '0', step: '1', placeholder: 'Defaults to 0', inputMode: 'numeric' })}
               {renderField('status', 'Status', { customControl: <MRFormCombobox id="mr-status" label="Status"

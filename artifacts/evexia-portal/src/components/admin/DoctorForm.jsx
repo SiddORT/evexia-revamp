@@ -16,12 +16,13 @@ const FIELDS = [
   'gstNumber', 'drugLicenceNumber', 'orderDiscount', 'daysLimit', 'paymentLimit',
   'status', 'addressLine1', 'addressLine2', 'landmark', 'pincode', 'country', 'state', 'city', 'contactRequirement',
 ];
+const ERROR_FIELDS = FIELDS.filter((key) => key !== 'contactRequirement');
 const REQUIRED = new Set([
   'name', 'registrationNumber', 'qualification', 'mrId', 'invoiceType',
   'status', 'addressLine1', 'landmark', 'pincode', 'city', 'state', 'country',
 ]);
 const TABS = [
-  { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'dialCountry', 'alternatePhone', 'email', 'contactRequirement', 'dateOfJoining', 'registrationNumber', 'qualification'] },
+  { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'dialCountry', 'alternatePhone', 'email', 'dateOfJoining', 'registrationNumber', 'qualification'] },
   { id: 'clinic', label: 'Clinic & assignment', fields: ['clinicName', 'mrId', 'status'] },
   { id: 'commercial', label: 'Commercial details', fields: ['invoiceType', 'gstNumber', 'drugLicenceNumber', 'orderDiscount', 'daysLimit', 'paymentLimit'] },
   { id: 'address', label: 'Address', fields: ['pincode', 'addressLine1', 'addressLine2', 'landmark', 'country', 'state', 'city'] },
@@ -65,9 +66,8 @@ function validate(values) {
   const nameError = masterNameError(values.name, 'doctor name', { personal: true });
   if (nameError) errors.name = nameError;
   for (const key of REQUIRED) if (!values[key]?.trim()) errors[key] = 'This field is required.';
-  if (!['required', 'optional'].includes(values.contactRequirement)) errors.contactRequirement = 'Choose a contact requirement.';
-  if (values.contactRequirement === 'required') {
-    for (const key of ['phone', 'email']) if (!values[key].trim()) errors[key] = 'This field is required.';
+  if (!values.phone.trim() && !values.email.trim()) {
+    errors.phone = errors.email = 'Enter either a phone number or an email address.';
   }
   const dial = dialCountry(values.dialCountry);
   if (!dial) errors.dialCountry = 'Choose a supported country code.';
@@ -126,7 +126,15 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
   const catalogue = useAddressCatalogue(address);
   function patchAddress(patch) {
     setValues((current) => ({ ...current, ...patch }));
-    setErrors((current) => ({ ...current, ...Object.fromEntries(Object.keys(patch).map((key) => [key, undefined])) }));
+    setErrors((current) => {
+      const next = { ...current, ...Object.fromEntries(Object.keys(patch).map((key) => [key, undefined])) };
+      if ('phone' in patch || 'email' in patch) {
+        for (const key of ['phone', 'email']) {
+          if (next[key] === 'Enter either a phone number or an email address.') delete next[key];
+        }
+      }
+      return next;
+    });
     setSaveError('');
   }
 
@@ -155,8 +163,8 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
     const { type = 'text', placeholder, autoComplete, span, inputMode, min, step, selectOptions } = options;
     const errorId = `doctor-${key}-error`;
     const id = `doctor-${key}`;
-    const required = REQUIRED.has(key) || (['phone', 'email'].includes(key) && values.contactRequirement === 'required') || (key === 'gstNumber' && values.invoiceType === 'gst');
-    const describedBy = [errors[key] && errorId, key === 'pincode' && address.postal.message && 'doctor-pin-feedback'].filter(Boolean).join(' ') || undefined;
+    const required = REQUIRED.has(key) || (key === 'gstNumber' && values.invoiceType === 'gst');
+    const describedBy = [errors[key] && errorId, ['phone', 'email'].includes(key) && 'doctor-contact-help', key === 'pincode' && address.postal.message && 'doctor-pin-feedback'].filter(Boolean).join(' ') || undefined;
     const common = {
       id, name: key, className: 'doctor-form__control', value: values[key],
       onChange: (event) => change(key, event.target.value), autoComplete: autoComplete || 'off',
@@ -210,7 +218,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
     }
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
-      const first = FIELDS.find((key) => nextErrors[key]);
+      const first = ERROR_FIELDS.find((key) => nextErrors[key]);
       pendingFocus.current = first;
       setActiveTab(TABS.find((tab) => tab.fields.includes(first)).id);
       return;
@@ -227,9 +235,9 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
         daysLimit: cleaned.daysLimit === '' ? 0 : Number(cleaned.daysLimit),
         paymentLimit: cleaned.paymentLimit === '' ? '0.00' : roundRate(cleaned.paymentLimit),
       });
-      if (!result?.success) presentMasterFailure(result, { fields: FIELDS, tabs: TABS, setErrors, setActiveTab, pendingFocus, setMessage: setSaveError, fallback: 'This doctor could not be saved. Your draft is preserved.' });
+      if (!result?.success) presentMasterFailure(result, { fields: ERROR_FIELDS, tabs: TABS, setErrors, setActiveTab, pendingFocus, setMessage: setSaveError, fallback: 'This doctor could not be saved. Your draft is preserved.' });
     } catch (error) {
-      presentMasterFailure(error, { fields: FIELDS, tabs: TABS, setErrors, setActiveTab, pendingFocus, setMessage: setSaveError, fallback: 'This doctor could not be saved. Your draft is preserved.' });
+      presentMasterFailure(error, { fields: ERROR_FIELDS, tabs: TABS, setErrors, setActiveTab, pendingFocus, setMessage: setSaveError, fallback: 'This doctor could not be saved. Your draft is preserved.' });
     } finally {
       setSaving(false);
     }
@@ -257,7 +265,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
       <section className="doctor-form__section" id="doctor-panel-identity" role="tabpanel" aria-labelledby="doctor-tab-identity" tabIndex={0} hidden={activeTab !== 'identity'}>
         <div className="doctor-form__section-head"><h3 className="doctor-form__section-title">Identity & contact</h3><p className="doctor-form__section-note">Fields marked * are required</p></div>
         <div className="doctor-form__grid">
-          {renderField('contactRequirement', 'Phone and email', { selectOptions: [{ value: 'required', label: 'Both required' }, { value: 'optional', label: 'Both optional' }] })}
+          <p id="doctor-contact-help" className="doctor-form__hint">Enter either a phone number or an email address. Both are allowed. Alternate phone is separate.</p>
           {renderField('name', 'Doctor Name', { placeholder: 'Doctor name', autoComplete: 'name' })}
           {renderField('phone', 'Phone No.', { placeholder: 'Phone number' })}
           {renderField('alternatePhone', 'Alternate Phone No.', { placeholder: 'Alternate phone number' })}

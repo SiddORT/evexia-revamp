@@ -19,6 +19,7 @@ from app.db.mr_models import MRDirectory, MRZoneAssignment, AccountIdentifierRes
 from app.db.headquarter_models import Headquarter
 from app.db.zone_models import Zone
 from app.db.designation_models import Designation
+from app.db.staff_models import StaffProfile
 from app.repositories.sessions import revoke_user_sessions
 from app.schemas.mrs import MRFields
 from app.services.auth import revalidate_identity
@@ -168,9 +169,11 @@ def projection_context(db, rows, manager_accounts=False):
     managers = _bulk(db, (row.reportingManagerId for row in rows), lambda ids: select(
         MRDirectory.id, MRDirectory.name_ciphertext, MRDirectory.status, MRDirectory.deleted_at).where(MRDirectory.id.in_(ids)))
     managers = {key: SimpleNamespace(**dict(value._mapping)) for key, value in managers.items()}
+    staff_managers = _bulk(db, (row.reportingStaffId for row in rows), lambda ids: select(
+        StaffProfile.id, StaffProfile.status, StaffProfile.deleted_at).where(StaffProfile.id.in_(ids)))
     authors = _bulk(db, (key for row in rows for key in (row.created_by, row.updated_by)),
                     lambda ids: select(User.id, User.is_protected_system_admin).where(User.id.in_(ids)))
-    return dict(accounts=accounts, headquarters=headquarters, zones=zones, assignments=assignments, managers=managers, designations=designations,
+    return dict(accounts=accounts, headquarters=headquarters, zones=zones, assignments=assignments, managers=managers, staff_managers=staff_managers, designations=designations,
                 labels={key: "Super Admin" if user.is_protected_system_admin else "Backend user"
                         for key, user in authors.items()})
 
@@ -181,6 +184,7 @@ def projection(db, row, context=None):
     hq = context["headquarters"][row.hq]
     designation = context["designations"][row.designation_id]
     manager = context["managers"].get(row.reportingManagerId)
+    staff_manager = context["staff_managers"].get(row.reportingStaffId)
     created_by = context["labels"].get(row.created_by, "Backend user")
     updated_by = context["labels"].get(row.updated_by, "Backend user")
     warnings = []
@@ -188,7 +192,8 @@ def projection(db, row, context=None):
     assigned = [dict(id=member.zone_id, name=member.zone_name,
                      status=context["zones"][member.zone_id].status,
                      deleted=bool(context["zones"][member.zone_id].deleted_at)) for member in members]
-    for title, assignment in (("Headquarter", hq), ("Designation", designation), ("Reporting manager", manager),
+    for title, assignment in (("Headquarter", hq), ("Designation", designation), ("Legacy MR manager", manager),
+                              ("Staff reporting manager", staff_manager),
                               *((f"Zone {member.zone_name}", context["zones"][member.zone_id]) for member in members)):
         if assignment is None:
             continue
@@ -202,6 +207,7 @@ def projection(db, row, context=None):
                 assignedZones=assigned,
                 hqName=row.hq_name, zoneName=row.zone_name, designationName=designation.name,
                 reportingManagerName=row.reporting_manager_name or "", assignmentWarnings=warnings,
+                reportingStaffName=row.reporting_staff_name or "",
                 createdBy=created_by, updatedBy=updated_by,
                 createdAt=row.created_at, updatedAt=row.updated_at)
 
@@ -212,7 +218,7 @@ def search_matcher(db, query, rows, context=None):
                                       row.city, context["designations"][row.designation_id].name,
                                       context["accounts"][row.id].username,
                                       row.hq_name, *(member.zone_name for member in context["assignments"][row.id]),
-                                      row.reporting_manager_name)
+                                      row.reporting_manager_name, row.reporting_staff_name)
 
 
 def listing(db, actor, query="", status="all", zone_id=None, hq_id=None, limit=10, offset=0, cursor=None):
@@ -272,16 +278,19 @@ def detail(db, actor, record_id):
     return transaction(db, work)
 
 
-def resolve_account(db, actor, username):
+def resolve_account(db, actor, username=None, employee_code=None):
     """Exact authoritative reconciliation after uncertain account-producing writes."""
     def work():
         current = authorize(db, actor, action="add", lock=False)
+        identifier = (func.lower(MRDirectory.employeeCode) == employee_code.strip().lower()
+                      if employee_code is not None else
+                      User.username_index == account_encryption.index(db, username.strip().lower()))
         row = db.scalar(select(MRDirectory).join(MRProfile, MRProfile.id == MRDirectory.id)
                         .join(User, User.id == MRProfile.user_id).where(
-                            User.username_index == account_encryption.index(db, username.strip().lower()), MRDirectory.deleted_at.is_(None)))
+                            identifier, MRDirectory.deleted_at.is_(None)))
         if row is None:
             raise MRError("No live MR directory account has this username.", 404, "not_found")
-        if current.staff is not None and not db.scalar(select(AuditEvent.id).where(
+        if (current.staff is not None or employee_code is not None) and not db.scalar(select(AuditEvent.id).where(
                 AuditEvent.actor_id == current.user.id, AuditEvent.session_id == current.session_id,
                 AuditEvent.resource_id == row.id, AuditEvent.action == "mr_directory_create",
                 AuditEvent.outcome == "success").limit(1)):
@@ -313,7 +322,15 @@ def associated_doctors(db, actor, record_id, limit, offset):
 
 def references(db, actor, kind, query, limit, offset, include_saved=None, cursor=None, active_only=False):
     def work():
-        authorize(db, actor, lock=False)
+        current = authorize(db, actor, lock=False)
+        if kind == "staff":
+            from app.services.master_policy import master_allowed
+            if not any(master_allowed(current, "mr", action) for action in ("add", "edit", "import")):
+                raise MRError("Access denied", 403, "access_denied")
+            from app.services.mr_staff_references import choices
+            result = choices(db, query, limit, cursor, include_saved)
+            db.commit()
+            return result
         model = {"zones": Zone, "headquarters": Headquarter, "managers": MRDirectory, "designations": Designation}[kind]
         if kind == "zones" and active_only:
             # One statement snapshot binds the page, count and catalogue revision.
@@ -373,11 +390,34 @@ def username(db, actor):
     return transaction(db, work)
 
 
+def available_username(db):
+    """Bounded secure candidates checked against accounts and immutable history."""
+    for _ in range(8):
+        candidate = "mr." + secrets.token_hex(8)
+        digest = account_encryption.index(db, candidate)
+        if (not db.get(AccountIdentifierReservation, digest) and not db.scalar(
+                select(User.id).where(or_(User.username_index == digest, User.email_index == digest)))):
+            return candidate
+    raise MRError("No available login identifier could be generated. Retry later.", 503, "mr_unavailable")
+
+
+def generated_add_password():
+    groups = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz", "0123456789", "!@#$%^&*_-+?")
+    characters = [secrets.choice(group) for group in groups]
+    alphabet = "".join(groups)
+    characters.extend(secrets.choice(alphabet) for _ in range(15 - len(characters)))
+    secrets.SystemRandom().shuffle(characters)
+    return "".join(characters)
+
+
 def graph_lock(db):
     db.execute(text("SELECT pg_advisory_xact_lock(73182452)"))
 
 
 def validate_assignments(db, body, existing=None, batch=None):
+    if body.reportingStaffId and body.reportingManagerId:
+        raise MRError("Choose a Staff manager or retain the legacy MR assignment, not both.",
+                      422, "mr_assignment")
     ids, _, saved = selected_zones(db, body, existing)
     retained = {member.zone_id for member in saved}
     # Lock all selected zones deterministically through commit, including imports.
@@ -400,7 +440,17 @@ def validate_assignments(db, body, existing=None, batch=None):
             raise MRError(f"{title} is missing or deleted. Set up an active {title.lower()} and explicitly select it.", 409, "mr_assignment")
         if target.status != "active" and (existing is None or getattr(existing, field) != target.id):
             raise MRError(f"New {title.lower()} assignments must be active.", 409, "mr_assignment")
+    if body.reportingStaffId:
+        with db.no_autoflush:
+            target = db.scalar(select(StaffProfile).where(StaffProfile.id == body.reportingStaffId)
+                               .execution_options(populate_existing=True).with_for_update(read=True))
+        retained_staff = existing is not None and getattr(existing, "reportingStaffId", None) == body.reportingStaffId
+        if not target or target.deleted_at or (target.status != "active" and not retained_staff):
+            raise MRError("Select an active Staff reporting manager. Saved inactive Staff may be retained.",
+                          409, "mr_assignment")
     if body.reportingManagerId:
+        if batch is None and (existing is None or existing.reportingManagerId != body.reportingManagerId):
+            raise MRError("New reporting managers must be selected from Staff.", 409, "mr_assignment")
         manager = (batch or {}).get(body.reportingManagerId) or db.get(MRDirectory, body.reportingManagerId)
         if not manager or getattr(manager, "deleted_at", None):
             raise MRError("Reporting manager is missing or deleted. Reassign to a saved server MR.", 409, "mr_assignment")
@@ -482,7 +532,8 @@ def prepare_passwords(db, actor, passwords, action="add", protected=False):
             if time.monotonic() - start > 120:
                 raise MRError("Credential processing exceeded 120 seconds. Split the file into smaller batches; nothing was imported.",
                               408, "mr_hash_timeout")
-            secret = supplied if supplied is not None else secrets.token_urlsafe(32)
+            secret = supplied if supplied is not None else (
+                generated_add_password() if action == "add" and not protected else secrets.token_urlsafe(32))
             result.append((secret, hash_password(secret)))
     return result
 
@@ -515,7 +566,7 @@ def create(db, actor, body):
     def preflight():
         authorize(db, actor, provision=True)
         validate_assignments(db, body)
-        identifiers_available(db, body)
+        identifiers_available(db, body.model_copy(update={"userId": available_username(db)}))
         db.commit()
     transaction(db, preflight)
     prepared = prepare_passwords(db, actor, [body.initialPassword])[0]
@@ -523,9 +574,23 @@ def create(db, actor, body):
         current = authorize(db, actor, provision=True)
         graph_lock(db)
         validate_assignments(db, body)
-        identifiers_available(db, body)
-        row = insert(db, current, body, prepared)
-        result = dict(record=projection(db, row), credentials=dict(userId=body.userId, password=prepared[0]))
+        for _ in range(8):
+            candidate = body.model_copy(update={"userId": available_username(db)})
+            identifiers_available(db, candidate)
+            try:
+                with db.begin_nested():
+                    row = insert(db, current, candidate, prepared)
+                break
+            except IntegrityError as exc:
+                # The database reservation trigger arbitrates concurrent writers.
+                # Only identifier collisions may generate a fresh candidate.
+                constraint = getattr(getattr(exc.orig, "diag", None), "constraint_name", "")
+                if constraint not in ("uq_users_login_namespace", "account_identifier_reservations_pkey", "uq_users_username_index",
+                                      "ix_users_username_index"):
+                    raise
+        else:
+            raise MRError("No available login identifier could be reserved. Nothing was created.", 409, "mr_identifier_reserved")
+        result = dict(record=projection(db, row), credentials=dict(userId=candidate.userId, password=prepared[0]))
         db.commit()
         return result
     return transaction(db, work)
@@ -555,27 +620,29 @@ def mutate(db, actor, record_id, body, operation):
         revoke = False
         now = utcnow()
         if operation == "edit":
-            previous = {field: getattr(row, field) for field in ("hq", "zoneId", "reportingManagerId")}
-            validate_assignments(db, body, row)
-            ids, primary, saved = selected_zones(db, body, row)
-            identifiers_available(db, body, user.id, row.id)
-            revoke = user.username != body.userId or (user.email or "") != body.email or row.status != body.status
-            for key, value in body.model_dump(exclude={"expected_version", "userId", "zoneIds", "zoneId"}).items():
+            # Older full-edit clients do not know the additive Staff field.
+            edit_body = body if "reportingStaffId" in body.model_fields_set else body.model_copy(
+                update={"reportingStaffId": row.reportingStaffId})
+            previous = {field: getattr(row, field) for field in ("hq", "zoneId", "reportingManagerId", "reportingStaffId")}
+            validate_assignments(db, edit_body, row)
+            ids, primary, saved = selected_zones(db, edit_body, row)
+            identifiers_available(db, edit_body, user.id, row.id)
+            revoke = user.username != edit_body.userId or (user.email or "") != edit_body.email or row.status != edit_body.status
+            for key, value in edit_body.model_dump(exclude={"expected_version", "userId", "zoneIds", "zoneId"}).items():
                 setattr(row, key, value)
             row.zoneId = primary
             from app.services.reference_snapshots import capture_mr
             capture_mr(db, row, previous)
             if primary in {member.zone_id for member in saved}:
                 row.zone_name = next(member.zone_name for member in saved if member.zone_id == primary)
-            user.username, user.email = body.userId, body.email or None
+            user.username, user.email = edit_body.userId, edit_body.email or None
             write_zones(db, row, ids, saved)
         elif operation == "status":
             revoke = row.status != body.status
             row.status = body.status
         elif operation == "contact":
-            if body.contactRequirement == "required" and (not row.phone or not row.email):
-                raise MRError("Edit the MR to add valid phone and email before requiring both.", 422, "mr_contact_required")
-            row.contactRequirement = body.contactRequirement
+            raise MRError("Contact rules are fixed. Enter either a phone number or an email address in Edit MR.",
+                          422, "mr_contact_fixed")
         elif operation == "delete":
             if db.scalar(select(MRDirectory.id).where(MRDirectory.reportingManagerId == row.id, MRDirectory.deleted_at.is_(None))):
                 raise MRError("Another live MR uses this reporting manager. Reassign those MRs before deletion.", 409, "mr_manager_in_use")

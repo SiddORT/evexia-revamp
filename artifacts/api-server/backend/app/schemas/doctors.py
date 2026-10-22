@@ -104,15 +104,15 @@ class DoctorFields(MasterWriteFields):
         return value
 
     @model_validator(mode="after")
-    def business(self):
+    def business(self, info):
         if self.master_read:
             return self
         for key in ("phone", "alternatePhone"):
             value = getattr(self, key)
             if value:
                 setattr(self, key, normalize_phone(value, self.dialCountry))
-        if self.contactRequirement == "required" and (not self.phone or not self.email):
-            raise ValueError("Both phone and email are required")
+        if not self.phone and not self.email and not (info.context or {}).get("allow_legacy_contact"):
+            raise ValueError("Enter either a phone number or an email address.")
         indian = self.country.lower() == "india"
         if not re.fullmatch(r"\d{6}" if indian else r"[a-zA-Z0-9][a-zA-Z0-9 -]{1,11}", self.pincode):
             raise ValueError("Invalid postal code")

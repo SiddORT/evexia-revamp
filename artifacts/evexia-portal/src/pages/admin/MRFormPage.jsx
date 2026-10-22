@@ -4,7 +4,7 @@ import { ArrowLeft, RefreshCw } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import MRForm from '../../components/admin/MRForm.jsx';
 import CredentialReveal from '../../components/admin/CredentialReveal.jsx';
-import { createMR, editMR, getMR, resolveMRAccount } from '../../services/serverMRs.js';
+import { createMR, editMR, getMR, resolveCreatedMR } from '../../services/serverMRs.js';
 import { getSession, subscribeSession } from '../../auth/adminSession.js';
 import '../../mr.css';
 
@@ -45,12 +45,14 @@ export default function MRFormPage({ id }) {
     busy.current = true;
     try {
       let record;
-      try { record = id ? await getMR(id) : await resolveMRAccount(writeBlocked.username); }
+      try { record = id ? await getMR(id) : await resolveCreatedMR(writeBlocked.employeeCode); }
       catch (cause) { if (cause.status !== 404 || id) throw cause; }
       if (!mounted.current) return;
       if (record && !id) {
         setRecovery('The account was created. Its initial password cannot be recovered. Open the saved record, then use Reset password in MR Master.');
         setWriteBlocked((current) => ({ ...current, record }));
+      } else if (!id) {
+        setRecovery('No creation in this session is confirmed yet. Inspect MR Master before attempting another Add; the earlier request may still finish. No write was retried.');
       } else {
         setWriteBlocked(null); setRecovery(id ? 'Latest saved version loaded. Review it before saving again.' : 'No saved account was found. You may explicitly submit again.');
         setRevision((n) => n + 1);
@@ -79,7 +81,8 @@ export default function MRFormPage({ id }) {
       // A corrected selection can retry with the same expected version; stale
       // versions and uncertain outcomes still require explicit reconciliation.
       const rejectedAssignment = cause.status === 409 && ['mr_assignment', 'mr_manager_cycle'].includes(cause.code);
-      if (mounted.current && !rejectedAssignment && (cause.ambiguous || cause.status === 409)) setWriteBlocked({ username: values.userId });
+      const rejectedCreate = !id && !cause.ambiguous && cause.status === 409;
+      if (mounted.current && !rejectedAssignment && !rejectedCreate && (cause.ambiguous || cause.status === 409)) setWriteBlocked({ employeeCode: values.employeeCode });
       const fields = { ...cause.fields };
       if (fields.initialPassword) { fields.password = fields.initialPassword; delete fields.initialPassword; }
       return { success: false, fields, error: `${cause.message}${cause.ambiguous ? ' Check MR Master before submitting again.' : ''}` };

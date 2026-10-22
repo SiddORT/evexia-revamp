@@ -18,6 +18,10 @@ class MRDirectory(Timestamps, Base):
         CheckConstraint('"reportingManagerId" IS NULL OR "reportingManagerId" <> id', name="ck_mr_directory_self_manager"),
         CheckConstraint('("reportingManagerId" IS NULL) = (reporting_manager_name_ciphertext IS NULL)',
                         name="ck_mr_manager_snapshot"),
+        CheckConstraint('("reportingStaffId" IS NULL) = (reporting_staff_name_ciphertext IS NULL)',
+                        name="ck_mr_staff_snapshot"),
+        CheckConstraint('"reportingManagerId" IS NULL OR "reportingStaffId" IS NULL',
+                        name="ck_mr_manager_kind"),
         CheckConstraint("(deleted_at IS NULL) = (deleted_by IS NULL)", name="ck_mr_directory_deletion"),
     )
     id: Mapped[uuid.UUID] = mapped_column(ForeignKey("mr_profiles.id"), primary_key=True)
@@ -29,6 +33,8 @@ class MRDirectory(Timestamps, Base):
     employeeCode: Mapped[str] = mapped_column(String(64))
     designation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("designations.id", ondelete="RESTRICT"), nullable=False)
     reportingManagerId: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mr_directory.id"), index=True)
+    reportingStaffId: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("staff_profiles.id", ondelete="RESTRICT"), index=True)
     paymentLimit: Mapped[Decimal] = mapped_column(Numeric(11, 2))
     doctorDaysLimit: Mapped[int] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(8))

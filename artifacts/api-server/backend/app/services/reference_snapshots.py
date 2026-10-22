@@ -26,3 +26,10 @@ def capture_mr(db, row, previous=None):
     if previous is None or previous["reportingManagerId"] != row.reportingManagerId:
         row.reporting_manager_name = (
             referenced(db, MRDirectory, row.reportingManagerId).name if row.reportingManagerId else None)
+    if previous is None or previous.get("reportingStaffId") != row.reportingStaffId:
+        from app.db.staff_models import StaffProfile
+        from app.services.staff_crypto import StaffCrypto
+        from app.core.config import get_settings
+        staff = referenced(db, StaffProfile, row.reportingStaffId) if row.reportingStaffId else None
+        row.reporting_staff_name = (StaffCrypto(get_settings()).decrypt(staff.id, "name", staff.name_ciphertext)
+                                    if staff else None)

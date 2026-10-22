@@ -70,6 +70,8 @@ export interface MRDirectoryResponse {
   pincode: string;
   reportingManagerId?: string | null;
   reportingManagerName: string;
+  reportingStaffId?: string | null;
+  reportingStaffName?: string;
   /**
    * @minLength 1
    * @maxLength 100

@@ -1,6 +1,6 @@
 """Ciphertext-only ORM persistence; plaintext exists only in request memory."""
 import uuid
-from sqlalchemy import String, Text, event, func, select
+from sqlalchemy import String, Text, event, func, select, inspect
 from sqlalchemy.orm import mapped_column, Session
 from app.services.directory_inventory import RUNTIME_FIELDS as FIELDS, INDEX_COLUMNS, RUNTIME_NULLABLE_FIELDS as NULLABLE_FIELDS, DirectoryCryptoError
 from app.services.directory_runtime import crypto
@@ -15,6 +15,7 @@ def install(model):
         if model.__tablename__ == "mr_directory":
             values.setdefault("dialCountry", "IN")
             values.setdefault("reporting_manager_name", None)
+            values.setdefault("reporting_staff_name", None)
         original_init(self, id=record_id, **values)
     model.__init__ = initialize
     table = model.__tablename__
@@ -50,7 +51,10 @@ def indexes(db, flush_context, instances):
         if table == "doctor_directory":
             from app.schemas.doctors import DoctorFields
             try:
-                DoctorFields(**{f: getattr(row, f) for f in DoctorFields.model_fields})
+                contact_changed = row in db.new or any(inspect(row).attrs[f + "_ciphertext"].history.has_changes()
+                                                       for f in ("phone", "email"))
+                DoctorFields.model_validate({f: getattr(row, f) for f in DoctorFields.model_fields},
+                                            context={"allow_legacy_contact": not contact_changed})
             except ValueError:
                 raise DirectoryCryptoError() from None
             row.state_index = current.doctor_state_index(values["state"])
@@ -72,8 +76,10 @@ def indexes(db, flush_context, instances):
             account = db.get(User, profile.user_id) if profile else None
             if account is None or (account.email or "") != values["email"]:
                 raise DirectoryCryptoError()
-            if row.contactRequirement == "required" and (not values["phone"] or not values["email"]):
-                raise ValueError("Required directory contact unavailable")
+            contact_changed = row in db.new or any(inspect(row).attrs[f + "_ciphertext"].history.has_changes()
+                                                   for f in ("phone", "email"))
+            if contact_changed and not (values["phone"].strip() or values["email"].strip()):
+                raise ValueError("Enter either a phone number or an email address.")
             row.name_index = current.mr_name_index(db.scalar(select(func.lower(values["name"]))))
         else:
             row.duplicate_identity_index = current.patient_identity_index(

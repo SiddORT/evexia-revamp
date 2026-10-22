@@ -140,6 +140,12 @@ def master_field_errors(path, errors):
         guidance[quarter] = "Enter a nonnegative plain amount with at most 12 integer and two fractional digits. Excess precision is rejected, not rounded."
     result = []
     for error in errors[:20]:
+        if (resource in ("mrs", "doctors") and error["type"] == "value_error"
+                and str(error.get("ctx", {}).get("error", "")) == "Enter either a phone number or an email address."):
+            result.extend({"field": "body." + field, "code": "value_error",
+                           "message": "Enter either a phone number or an email address."}
+                          for field in ("phone", "email"))
+            continue
         loc = tuple(error["loc"])
         parts = loc[1:] if loc and loc[0] == "body" else ()
         key = parts[0] if parts else None
@@ -167,8 +173,8 @@ def master_field_errors(path, errors):
             message = guidance.get(leaf, "Check this field's required value, supported format and length.")
             if not safe:
                 message = {
-                    "mrs": "Check required phone/email, distinct assigned zones and primary zone selection.",
-                    "doctors": "Check conditional phone/email, postal address and invoice/GST requirements.",
+                    "mrs": "Enter a phone number or email address; check distinct assigned zones and primary zone selection.",
+                    "doctors": "Enter a primary phone number or email address; check postal address and invoice/GST requirements.",
                     "patients": "Check the supported phone country and postal address.",
                     "sales-targets": "Financial end year must immediately follow start year.",
                     "opening-balances": "Financial end year must immediately follow start year.",

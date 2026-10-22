@@ -229,7 +229,7 @@ def encode(rows, format, audit=False):
 
 def sample(format):
     values = {key: "" for key, _ in COLUMNS}
-    values.update(name="Example Doctor", dialCountry="IN", dialCode="+91", contactRequirement="optional",
+    values.update(name="Example Doctor", phone="9876543210", dialCountry="IN", dialCode="+91", contactRequirement="optional",
                   registrationNumber="EXAMPLE-001", qualification="MBBS", mrId="user:replace.with.server.mr",
                   invoiceType="normal", orderDiscount="0.00", daysLimit="0", paymentLimit="0.00",
                   status="active", verification="unverified", addressLine1="Example Clinic Road",

@@ -8,7 +8,7 @@ import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth
 import { reviewMRs, importMRs, sampleMRs, downloadMRFile } from '../../services/serverMRs.js';
 import '../../excel-import.css';
 
-const COLUMNS = 'MR Name · Phone No. · User ID · Email ID · HQ · Assigned Zone · Employee Code · Date of Joining · Designation · Reporting Manager · Payment Limit · Doctor Days Limit · Status · Pincode · Address Line 1 · Address Line 2 · Landmark · City · State · Country · Contact Requirement';
+const COLUMNS = 'MR Name · Phone No. · User ID · Email ID · HQ · Assigned Zone · Assigned Zones JSON · Employee Code · Date of Joining · Designation · Reporting Manager (legacy MR) · Reporting Staff ID · Payment Limit · Doctor Days Limit · Status · Pincode · Address Line 1 · Address Line 2 · Landmark · City · State · Country · Dial Country · Contact Requirement (legacy metadata)';
 
 export default function MRImportPage() {
   const [, navigate] = useLocation();
@@ -115,8 +115,8 @@ export default function MRImportPage() {
           <h2 id="excel-sample-title">Download sample</h2>
           <p>Use the sample headers and exactly one worksheet. UTF-8 CSV and genuine .xlsx workbooks are supported.</p>
           <div className="excel-import__columns"><strong>Columns</strong><span>{COLUMNS}</span>
-            <strong>Backup schema</strong><span>The same columns, optionally followed by readable audit columns, which are ignored on import. A file without Contact Requirement is treated as required.</span></div>
-          <p>Passwords, hashes, identity links, versions and deletion columns are rejected. HQ, zone and manager labels must match exactly one existing record; reporting managers may also be MRs in the same file. Designation must be one active catalogue name or its existing UUID, not free text. Set up catalogue choices before review.</p>
+            <strong>Backup schema</strong><span>Previously exported headers remain supported. Saved manager-name and audit columns are informational. Contact Requirement is legacy metadata only: phone, email, or both must be supplied regardless of its value.</span></div>
+          <p>Passwords, hashes, identity links, versions and deletion columns are rejected. HQ and zone labels must resolve uniquely. Use Reporting Staff ID for an active Staff manager UUID; leave Reporting Manager blank for new Staff assignments. Historical Reporting Manager references still resolve to MRs, including same-file MRs, and are never converted to Staff. Designation must be one active catalogue name or UUID. Imports retain their supplied User IDs.</p>
           <div className="excel-import__sample-actions">
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('csv')} data-testid="button-sample-mr-csv">Download CSV sample</button>
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(samplePending)} onClick={() => sample('xlsx')} data-testid="button-sample-mr-xlsx"><Download size={16} aria-hidden="true" /> Download Excel sample</button>

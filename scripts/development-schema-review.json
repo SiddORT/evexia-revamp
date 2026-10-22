@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "target": "0054_modern_email_tests",
+  "target": "0055_mr_staff_managers",
   "policy_sha256": "e198dc9af9bea0e8529bd1e529a893c6178228fcb76b28bf412422b7412ece39",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
@@ -63,7 +63,8 @@
     "0051_mr_zones": "7719d3d20d94d893efc4ea475f90157f84cebf230608239dab09552c45dcfa7d",
     "0052_hq_mr_zones_merge": "1123674f7d9d2fbcf72189f631dd464b64963dcbe3e75aa0ae39e05ea7bf92b8",
     "0053_email_invitations": "e4b4313b8299b312ef23646f151e44bf2486ea2d5018ef437c2c95bf72fd43bc",
-    "0054_modern_email_tests": "18de6203f75befe0fe22a9ade76447d9e13a1d3db161c781623d3c0dddd4c6ad"
+    "0054_modern_email_tests": "18de6203f75befe0fe22a9ade76447d9e13a1d3db161c781623d3c0dddd4c6ad",
+    "0055_mr_staff_managers": "6d93216411e9f1d9575bb677f761856581fbd2169040ad7579afc39410f5f026"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

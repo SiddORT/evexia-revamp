@@ -62,6 +62,7 @@ export interface MREdit {
   /** @pattern ^[1-9][0-9]{5}$ */
   pincode: string;
   reportingManagerId?: string | null;
+  reportingStaffId?: string | null;
   /**
    * @minLength 1
    * @maxLength 100

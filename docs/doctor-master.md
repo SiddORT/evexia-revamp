@@ -1,5 +1,20 @@
 # Doctor Master: live directory and transfer contract
 
+## Current primary-contact rule
+
+Live Add/Edit and CSV/XLSX import require a primary phone number or an email
+address (both are allowed). Neither is individually mandatory; whitespace-only
+values are blank. The alternate phone does not satisfy this rule. Supplied
+contacts retain format validation. Forms/list actions no longer configure a
+contact policy, and the legacy contact endpoint rejects rule changes.
+`Contact Requirement` remains only compatible historical backup metadata.
+Historical blank-contact records stay readable and unrelated status,
+verification, assignment and deletion operations do not force contact changes.
+Their next full edit must supply a valid primary contact. No saved contact is
+fabricated or rewritten by migration. See `mr-master.md` for the shared rollout
+and source-only verification boundary. Historical sections below describe
+earlier milestones rather than overriding this rule.
+
 ## Live and local boundaries
 
 Doctor Master list, Add/Edit, prepared Doctor import, filtered exports and MR

@@ -45,7 +45,11 @@ COLUMNS = COLUMNS + [("dialCountry", "Dial Country")]
 SINGLE_HEADERS = [title for _, title in COLUMNS]
 COLUMNS = COLUMNS + [("zoneIds", "Assigned Zones JSON")]
 HEADERS = [title for _, title in COLUMNS]
-EXPORT_HEADERS = HEADERS + ["Reporting Manager Name"]
+MULTI_HEADERS = list(HEADERS)
+MULTI_EXPORT_HEADERS = HEADERS + ["Reporting Manager Name"]
+COLUMNS = COLUMNS + [("reportingStaffId", "Reporting Staff ID")]
+HEADERS = [title for _, title in COLUMNS]
+EXPORT_HEADERS = HEADERS + ["Reporting Manager Name", "Reporting Staff Name"]
 AUDIT = ["Created By", "Created At", "Updated By", "Updated At"]
 LEGACY = [title for title in OLD_HEADERS if title != "Contact Requirement"]
 
@@ -113,6 +117,8 @@ def parse(data, filename):
     if not rows or rows[0] not in (HEADERS, LEGACY, HEADERS + AUDIT, OLD_HEADERS, OLD_HEADERS + AUDIT,
                                   SINGLE_HEADERS, SINGLE_HEADERS + AUDIT,
                                   SINGLE_HEADERS + ["Reporting Manager Name"], SINGLE_HEADERS + ["Reporting Manager Name"] + AUDIT,
+                                  MULTI_HEADERS, MULTI_HEADERS + AUDIT,
+                                  MULTI_EXPORT_HEADERS, MULTI_EXPORT_HEADERS + AUDIT,
                                   EXPORT_HEADERS, EXPORT_HEADERS + AUDIT):
         invalid("Use the current MR schema or a previously exported MR backup. Password, identity-link, version, deletion and unknown columns are forbidden. The reduced six-column mock template is not a backup.")
     header = rows[0]
@@ -239,6 +245,7 @@ def review_state(db, parsed):
                 values["zoneIds"] = [values["zoneId"]]
             values["designation_id"] = resolve_designation(db, values["designation_id"])
             values["reportingManagerId"] = resolve_manager(db, values["reportingManagerId"], batch)
+            values["reportingStaffId"] = values["reportingStaffId"] or None
             body = MRFields(**values)
             mrs.identifiers_available(db, body)
             bodies[record_id] = body
@@ -250,8 +257,12 @@ def review_state(db, parsed):
             identifiers.update(keys)
             codes.add(body.employeeCode.lower())
         except ValidationError as exc:
-            names = sorted({str(e["loc"][0]) if e["loc"] else "contact rule" for e in exc.errors()})
-            errors.append("Invalid business fields: " + ", ".join(names) + ". Use the documented bounds.")
+            if any(str(e.get("ctx", {}).get("error", "")) == "Enter either a phone number or an email address."
+                   for e in exc.errors()):
+                errors.append("Enter either a phone number or an email address.")
+            else:
+                names = sorted({str(e["loc"][0]) if e["loc"] else "contact or assignment rule" for e in exc.errors()})
+                errors.append("Invalid business fields: " + ", ".join(names) + ". Use the documented bounds.")
         except mrs.MRError as exc:
             errors.append(exc.message)
         reviewed.append(dict(row=row["row"], name=source["name"], userId=source["userId"], errors=errors))
@@ -267,7 +278,8 @@ def review_state(db, parsed):
         # Assignment versions bind review to the actual resolved server catalogue.
         refs = []
         for model, target in ((Headquarter, body.hq), *((Zone, key) for key in (body.zoneIds or [body.zoneId])),
-                              (Designation, body.designation_id), (MRDirectory, body.reportingManagerId)):
+                              (Designation, body.designation_id), (MRDirectory, body.reportingManagerId),
+                              (mrs.StaffProfile, body.reportingStaffId)):
             if target and (model is not MRDirectory or target not in bodies):
                 entry = db.get(model, target)
                 refs.append((str(target), entry.version if entry else None,
@@ -354,10 +366,10 @@ def encode(rows, format, audit=False, snapshots=False):
 
 def sample(format):
     # Explicit fictional labels are not silently created: operators replace them.
-    values = dict(employeeCode="MR-001", name="Example MR", phone="", dialCountry="IN", userId="example.mr",
+    values = dict(employeeCode="MR-001", name="Example MR", phone="9876543210", dialCountry="IN", userId="example.mr",
                   email="", contactRequirement="optional", hq="Replace with active HQ",
                   zoneId="Replace with active Zone", zoneIds='["Replace with active Zone"]', dateOfJoining=date.today().isoformat(),
-                  designation_id="Replace with active catalogue Designation name or UUID", reportingManagerId="", paymentLimit="0.00",
+                  designation_id="Replace with active catalogue Designation name or UUID", reportingManagerId="", reportingStaffId="", paymentLimit="0.00",
                   doctorDaysLimit="0", status="inactive", addressLine1="Example address", addressLine2="",
                   landmark="Example landmark", pincode="110001", city="Delhi", state="Delhi", country="India")
     return encode([[values[key] for key, _ in COLUMNS]], format)
@@ -402,7 +414,8 @@ def export(db, actor, query, status, zone_id, hq_id, format):
                 values["reportingManagerId"] = ""
             # Saved human label is informational on import, never trusted as
             # an assignment. Existing manager account references remain intact.
-            rows.append([str(values[key]) for key, _ in COLUMNS] + [values["reportingManagerName"]] +
+            values["reportingStaffId"] = str(record.reportingStaffId) if record.reportingStaffId else ""
+            rows.append([str(values[key]) for key, _ in COLUMNS] + [values["reportingManagerName"], values["reportingStaffName"]] +
                         ([str(values[key]) for key in ("createdBy", "createdAt", "updatedBy", "updatedAt")] if format == "xlsx" else []))
         db.commit()
         return encode(rows, format, audit=format == "xlsx", snapshots=True)

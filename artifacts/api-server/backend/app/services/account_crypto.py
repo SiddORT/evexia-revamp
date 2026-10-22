@@ -127,6 +127,8 @@ def ready(db):
         # Reviewed template presentation/test-evidence successor changes no
         # account ciphertext, blind indexes, reservations or encryption anchors.
         ["0054_modern_email_tests"],
+        # Nullable Staff manager references/snapshots leave account anchors intact.
+        ["0055_mr_staff_managers"],
     ):
         raise AccountCryptoError()
     current = crypto()

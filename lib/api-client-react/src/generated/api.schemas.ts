@@ -3563,18 +3563,14 @@ export interface MRCreate {
   /** @pattern ^[1-9][0-9]{5}$ */
   pincode: string;
   reportingManagerId?: string | null;
+  reportingStaffId?: string | null;
   /**
    * @minLength 1
    * @maxLength 100
    */
   state: string;
   status: MRCreateStatus;
-  /**
-   * @minLength 3
-   * @maxLength 32
-   * @pattern ^[a-z][a-z0-9._-]{2,31}$
-   */
-  userId: string;
+  userId?: string;
   zoneId: string;
   zoneIds?: string[] | null;
 }
@@ -3911,6 +3907,8 @@ export interface MRDirectoryResponse {
   pincode: string;
   reportingManagerId?: string | null;
   reportingManagerName: string;
+  reportingStaffId?: string | null;
+  reportingStaffName?: string;
   /**
    * @minLength 1
    * @maxLength 100
@@ -4279,6 +4277,7 @@ export interface MREdit {
   /** @pattern ^[1-9][0-9]{5}$ */
   pincode: string;
   reportingManagerId?: string | null;
+  reportingStaffId?: string | null;
   /**
    * @minLength 1
    * @maxLength 100
@@ -10443,6 +10442,13 @@ export const ListMRDirectoryStatus = {
   inactive: "inactive",
 } as const;
 
+export type ResolveCreatedMRParams = {
+  /**
+   * @minLength 1
+   * @maxLength 64
+   */
+  employee_code: string;
+};
 export type ExportMRDirectoryParams = {
   /**
    * @maxLength 200
@@ -10545,6 +10551,7 @@ export const ListMRReferenceChoicesKind = {
   headquarters: "headquarters",
   managers: "managers",
   designations: "designations",
+  staff: "staff",
 } as const;
 
 export type DownloadMRSampleParams = {
@@ -10727,10 +10734,12 @@ export type ReviewOpeningStockImportParams = {
   filename: string;
 };
 
-export type ReviewOpeningStockImportBodyTwo = {
+export type ReviewOpeningStockImportBody = {
   file: Blob | File;
 };
-
+export type ReviewOpeningStockImportBody = {
+  file: Blob | File;
+};
 export type GetOpeningStockItemsParams = {
   /**
    * @maxLength 200

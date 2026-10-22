@@ -7,7 +7,6 @@ import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import InviteAccountButton from '../../components/admin/InviteAccountButton.jsx';
 import { formatAdminDate, formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
-import ContactRequirementButton from '../../components/admin/ContactRequirementButton.jsx';
 import CredentialReveal from '../../components/admin/CredentialReveal.jsx';
 import MRListFilter from '../../components/admin/MRListFilter.jsx';
 import MRZoneMultiSelect from '../../components/admin/MRZoneMultiSelect.jsx';
@@ -19,7 +18,7 @@ import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import DirectorySearchStatus from '../../components/admin/DirectorySearchStatus.jsx';
 import useDirectoryContinuation from '../../hooks/useDirectoryContinuation.js';
-import { contactMR, deleteMR, downloadMRFile, exportMRs, listMRs, resetMRPassword, statusMR } from '../../services/serverMRs.js';
+import { deleteMR, downloadMRFile, exportMRs, listMRs, resetMRPassword, statusMR } from '../../services/serverMRs.js';
 import { getSession, reportingIdentityGuard, subscribeSession } from '../../auth/adminSession.js';
 import { useMasterActions } from '../../auth/useMasterActions.js';
 import '../../mr.css';
@@ -101,12 +100,11 @@ export default function MRMaster() {
       let result = null;
       if (type === 'delete') await deleteMR(record);
       else if (type === 'reset') result = await resetMRPassword(record);
-      else if (type === 'contact') await contactMR(record, record.contactRequirement === 'required' ? 'optional' : 'required');
       else await statusMR(record, record.status === 'active' ? 'inactive' : 'active');
       if (!mounted.current || getSession().user?.id !== owner) return;
       if (result?.credentials) setCredentials([result.credentials]);
       setConfirming(null);
-      setFeedback({ delete: 'MR deleted. Login access is disabled and history is retained.', reset: 'Password reset. Existing sessions were revoked.', contact: 'Contact rule updated.' }[type] || 'MR status updated.');
+      setFeedback({ delete: 'MR deleted. Login access is disabled and history is retained.', reset: 'Password reset. Existing sessions were revoked.' }[type] || 'MR status updated.');
       retry();
     } catch (cause) {
       if (!mounted.current) return;
@@ -135,7 +133,6 @@ export default function MRMaster() {
     const cls = compact ? 'admin-mr-card__action' : 'admin-icon-button';
     return <fieldset disabled={pending} style={{ border: 0, margin: 0, padding: 0 }} className={compact ? 'admin-mr-card__actions' : 'admin-table__actions'}>
       {can.protected && <InviteAccountButton kind="mr" record={record} disabled={pending} className={cls} />}
-      {can.edit && <ContactRequirementButton record={record} kind="mr" compact={compact} onClick={() => request(record, 'contact')} />}
       <button type="button" className={cls} aria-label={`View doctors for ${record.name}`} title="View doctors" onClick={() => setDoctorView(record)} data-testid={`button-doctors-mr-${record.id}`}><UsersRound size={16} aria-hidden="true" />{compact && 'Doctors'}</button>
       {can.edit && <button type="button" className={cls} aria-label={`Edit ${record.name}`} title="Edit" onClick={() => { setFeedback(''); navigate(`/admin/masters/mrs/${encodeURIComponent(record.id)}`); }} data-testid={`button-edit-mr-${record.id}`}><Pencil size={16} aria-hidden="true" />{compact && 'Edit'}</button>}
       {can.edit && <button type="button" className={cls} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} title={record.status === 'active' ? 'Inactivate' : 'Activate'} onClick={() => request(record, 'status')} data-testid={`button-toggle-mr-${record.id}`}><CirclePower size={16} aria-hidden="true" />{compact && (record.status === 'active' ? 'Inactivate' : 'Activate')}</button>}
@@ -159,7 +156,7 @@ export default function MRMaster() {
     { key: 'details', label: 'Employee details', render: (r) => details(r) },
     { key: 'address', label: 'Address', render: address },
     { key: 'designationName', label: 'Designation', render: (r) => r.designationName },
-    { key: 'manager', label: 'Reporting manager', render: (r) => r.reportingManagerName || '—' },
+    { key: 'manager', label: 'Reporting manager', render: (r) => r.reportingStaffName || (r.reportingManagerName ? `${r.reportingManagerName} (legacy MR)` : '—') },
     { key: 'zone', label: 'HQ / zones', render: (r) => <span>{r.hqName} / {zoneLabels(r)}{warn(r)}</span> },
     { key: 'status', label: 'Status', render: (r) => <StatusBadge status={r.status} id={r.id} kind="mr" /> },
     { key: 'created', label: 'Created details', render: (r) => auditDetails(r.createdBy, r.createdAt) },
@@ -171,7 +168,6 @@ export default function MRMaster() {
   const copy = !rec ? {} : type === 'delete'
     ? { title: 'Delete MR?', description: `Delete “${rec.name}”? Their login is disabled and sessions end immediately. The record leaves lists; history is retained. Blocked while another MR reports to them.`, label: 'Delete MR' }
     : type === 'reset' ? { title: 'Reset password?', description: `Generate a new one-time password for “${rec.name}”? Their current password stops working and all sessions are revoked. The new password is shown once.`, label: 'Reset password' }
-    : type === 'contact' ? { title: `Make phone and email ${rec.contactRequirement === 'required' ? 'optional' : 'required'}?`, description: `Change the contact rule for “${rec.name}”? ${rec.contactRequirement === 'optional' ? 'Both fields must be filled before they can be required.' : 'Supplied phone and email must still have valid formats.'}`, label: `Make both ${rec.contactRequirement === 'required' ? 'optional' : 'required'}` }
     : { title: `${rec.status === 'active' ? 'Inactivate' : 'Activate'} MR?`, description: `Change “${rec.name}” to ${rec.status === 'active' ? 'inactive' : 'active'}? ${rec.status === 'active' ? 'Their login is disabled and sessions end.' : 'Their login is enabled; previously revoked sessions stay revoked.'}`, label: `${rec.status === 'active' ? 'Inactivate' : 'Activate'} MR` };
   return <AdminLayout title="MR Master">
     <div className="admin-page-head">
@@ -203,7 +199,7 @@ export default function MRMaster() {
           <div className="admin-mr-desktop"><DataTable columns={columns} rows={pagination.pageRows} rowOffset={pagination.startIndex} rowKey={(r) => r.id} label="MR records" testIdPrefix="mr" /></div>
           <div className="admin-mr-mobile" role="list" aria-label="MR records">{data.items.map((r) => <article className="admin-record-card" role="listitem" key={r.id} data-testid={`card-mr-${r.id}`}>
             <div className="admin-record-card__head"><div className="admin-record-card__identity"><h2>{r.name}</h2><small>{r.designationName}</small></div><StatusBadge status={r.status} id={r.id} kind="mr" /></div>
-            <div className="admin-record-card__body">{details(r, false)}<dl><div><dt>Address</dt><dd>{address(r)}</dd></div><div><dt>Reporting manager</dt><dd>{r.reportingManagerName || '—'}</dd></div><div><dt>HQ / zones</dt><dd>{r.hqName} / {zoneLabels(r)}{warn(r)}</dd></div><div><dt>Created by</dt><dd>{auditDetails(r.createdBy, r.createdAt)}</dd></div><div><dt>Updated by</dt><dd>{auditDetails(r.updatedBy, r.updatedAt)}</dd></div></dl></div>
+            <div className="admin-record-card__body">{details(r, false)}<dl><div><dt>Address</dt><dd>{address(r)}</dd></div><div><dt>Reporting manager</dt><dd>{r.reportingStaffName || (r.reportingManagerName ? `${r.reportingManagerName} (legacy MR)` : '—')}</dd></div><div><dt>HQ / zones</dt><dd>{r.hqName} / {zoneLabels(r)}{warn(r)}</dd></div><div><dt>Created by</dt><dd>{auditDetails(r.createdBy, r.createdAt)}</dd></div><div><dt>Updated by</dt><dd>{auditDetails(r.updatedBy, r.updatedAt)}</dd></div></dl></div>
             {actions(r, true)}</article>)}</div>
         </> : <div className="admin-empty" data-testid="status-mrs-empty"><span className="admin-empty__icon"><UsersRound size={21} aria-hidden="true" /></span><strong>{data.total ? 'No matching MRs' : 'No MR records yet'}</strong><p>{data.total ? 'Try different search or filters.' : 'Add an MR, or import a file. Headquarters and zones must exist first.'}</p></div>}
         {data.partial ? <DirectorySearchStatus count={data.items.length} scanned={data.scanned} nextCursor={data.nextCursor} loading={loading} onNext={() => continuation.next(data)} onRestart={() => { continuation.restart(); setRevision((n) => n + 1); }} /> : <TablePagination {...pagination} filtered={data.filtered} total={data.total} label={data.total === 1 ? 'MR' : 'MRs'} onPageChange={setPage} onPageSizeChange={pagination.setPageSize} testId="text-mr-count" />}

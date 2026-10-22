@@ -14,4 +14,5 @@ export const ListMRReferenceChoicesKind = {
   headquarters: "headquarters",
   managers: "managers",
   designations: "designations",
+  staff: "staff",
 } as const;

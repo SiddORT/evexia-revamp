@@ -19,15 +19,21 @@ FIELDS = {**LEGACY_FIELDS, "mr_directory": (*LEGACY_FIELDS["mr_directory"], "dia
 PRIVACY_REVISION = "0036_reference_privacy"
 VENDOR_FIELDS = ("registeredAddress", "contactPersonName", "emailId", "phoneNo", "dialCountry")
 # FIELDS is the frozen phone-era inventory, also used by predecessor tooling.
-RUNTIME_FIELDS = {
+REFERENCE_FIELDS = {
     **FIELDS,
     "mr_directory": (*FIELDS["mr_directory"], "reporting_manager_name"),
     "vendors": VENDOR_FIELDS,
 }
+STAFF_MANAGER_REVISION = "0055_mr_staff_managers"
+RUNTIME_FIELDS = {
+    **REFERENCE_FIELDS,
+    "mr_directory": (*REFERENCE_FIELDS["mr_directory"], "reporting_staff_name"),
+}
 DATE_FIELDS = {("doctor_directory", "dateOfJoining"), ("mr_directory", "dateOfJoining"),
                ("patient_directory", "dateOfBirth")}
 NULLABLE_FIELDS = {("doctor_directory", "dateOfJoining")}
-RUNTIME_NULLABLE_FIELDS = NULLABLE_FIELDS | {("mr_directory", "reporting_manager_name")}
+RUNTIME_NULLABLE_FIELDS = NULLABLE_FIELDS | {
+    ("mr_directory", "reporting_manager_name"), ("mr_directory", "reporting_staff_name")}
 INDEX_COLUMNS = {
     "doctor_directory": ("state_index",),
     "mr_directory": ("name_index",),

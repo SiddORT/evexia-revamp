@@ -6,7 +6,6 @@ import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import { formatAdminDate, formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
-import ContactRequirementButton from '../../components/admin/ContactRequirementButton.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import RecordDetails from '../../components/admin/RecordDetails.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
@@ -51,7 +50,7 @@ export default function DoctorMaster() {
   useEffect(() => () => exportController.current?.abort(), []);
   const filters = { query: debounced, zone_id: zoneFilter, mr_id: mrFilter, state: stateFilter, status: statusFilter };
   const normalizedFilters = Object.fromEntries(Object.entries(filters).map(([key, value]) => [key, value === 'all' ? '' : value]));
-  const { records, mrs: initialMRs, zones, states, missingMR, missingZone, total, filtered, partial, scanned, nextCursor, continueSearch, restartSearch, loading, pending, error, feedback, retry, clearFeedback, changeStatus, changeVerification, shiftMR, changeContactRequirement, remove } = useDoctors({ ...normalizedFilters, limit: pageSize, offset: (page - 1) * pageSize });
+  const { records, mrs: initialMRs, zones, states, missingMR, missingZone, total, filtered, partial, scanned, nextCursor, continueSearch, restartSearch, loading, pending, error, feedback, retry, clearFeedback, changeStatus, changeVerification, shiftMR, remove } = useDoctors({ ...normalizedFilters, limit: pageSize, offset: (page - 1) * pageSize });
   const [hydratedMRs, setHydratedMRs] = useState([]);
   const mrs = [...hydratedMRs, ...initialMRs.filter((row) => !hydratedMRs.some((item) => item.id === row.id))];
   const hydrateMRs = (items) => setHydratedMRs((old) => [...items, ...old.filter((row) => !items.some((item) => item.id === row.id))]);
@@ -104,7 +103,6 @@ export default function DoctorMaster() {
     let result;
     if (confirming.type === 'status') result = await changeStatus(confirming.snapshots[0], confirming.value);
     if (confirming.type === 'delete') result = await remove(confirming.snapshots[0]);
-    if (confirming.type === 'contact') result = await changeContactRequirement(confirming.snapshots[0], confirming.value);
     if (confirming.type === 'verification') result = await changeVerification(confirming.snapshots, confirming.value);
     if (confirming.type === 'shift') {
       if (!targetMR || !mrById.get(targetMR)?.usable) { setActionError('Choose an available active MR and Zone.'); return; }
@@ -139,7 +137,7 @@ export default function DoctorMaster() {
     const suffix = `${compact ? 'mobile-' : ''}${record.id}`;
     return <fieldset disabled={pending || loading || Boolean(error)} style={{ border: 0, padding: 0, margin: 0 }} className="doctor-master__actions">
       {can.protected && <button type="button" className="doctor-master__payment-action" aria-label={`Payment history for ${record.name}`} onClick={() => navigate(`/admin/masters/doctors/${encodeURIComponent(record.id)}/payments`)} data-testid={`button-payments-doctor-${suffix}`}><ReceiptText size={15} aria-hidden="true" /> Payment history</button>}
-      {can.edit && <><ContactRequirementButton record={record} kind="doctor" compact={compact} onClick={() => openConfirmation({ type: 'contact', id: record.id, name: record.name, value: record.contactRequirement === 'required' ? 'optional' : 'required' })} />
+      {can.edit && <>
       <button type="button" className="admin-icon-button" title="Edit doctor" aria-label={`Edit ${record.name}`} onClick={() => { clearFeedback(); navigate(`/admin/masters/doctors/${encodeURIComponent(record.id)}`); }} data-testid={`button-edit-doctor-${suffix}`}><Pencil size={16} aria-hidden="true" /></button>
       <button type="button" className="admin-icon-button" title={record.verification === 'verified' ? 'Unverify' : 'Verify'} aria-label={`${record.verification === 'verified' ? 'Unverify' : 'Verify'} ${record.name}`} onClick={() => openConfirmation({ type: 'verification', ids: [record.id], value: record.verification === 'verified' ? 'unverified' : 'verified' })} data-testid={`button-verification-doctor-${suffix}`}>{record.verification === 'verified' ? <ShieldX size={16} aria-hidden="true" /> : <ShieldCheck size={16} aria-hidden="true" />}</button>
       <button type="button" className="admin-icon-button" title={record.status === 'active' ? 'Inactivate' : 'Activate'} aria-label={`${record.status === 'active' ? 'Inactivate' : 'Activate'} ${record.name}`} onClick={() => openConfirmation({ type: 'status', id: record.id, name: record.name, value: record.status === 'active' ? 'inactive' : 'active' })} data-testid={`button-toggle-doctor-${suffix}`}><CirclePower size={16} aria-hidden="true" /></button>
@@ -237,7 +235,6 @@ export default function DoctorMaster() {
       </section>
       {confirming?.type === 'delete' && <ConfirmationDialog destructive pending={pending} blocked={loading || Boolean(error)} title="Delete doctor?" description={`Remove “${confirming.name}” from normal use? Stored relationships, Patients and Opening Balances remain. This does not change business status or reassign records.`} actionLabel="Delete doctor" onConfirm={handleConfirm} onClose={closeConfirmation} error={actionError} />}
       {confirming?.type === 'status' && <ConfirmationDialog pending={pending} blocked={Boolean(error)} title={`${confirming.value === 'active' ? 'Activate' : 'Inactivate'} doctor?`} description={`Change “${confirming.name}” to ${confirming.value}? Verification is separate and this change does not create login access.`} actionLabel={confirming.value === 'active' ? 'Activate doctor' : 'Inactivate doctor'} onConfirm={handleConfirm} onClose={closeConfirmation} error={actionError} />}
-      {confirming?.type === 'contact' && <ConfirmationDialog pending={pending} blocked={Boolean(error)} title={`Make phone and email ${confirming.value}?`} description={`Change the contact rule for “${confirming.name}”? ${confirming.value === 'required' ? 'Both fields must be filled before they can be required.' : 'Supplied phone and email must still have valid formats.'}`} actionLabel={`Make both ${confirming.value}`} onConfirm={handleConfirm} onClose={closeConfirmation} error={actionError} />}
       {confirming?.type === 'verification' && <ConfirmationDialog pending={pending} blocked={Boolean(error)} title={`${confirming.value === 'verified' ? 'Verify' : 'Unverify'} ${count === 1 ? 'doctor' : `${count} doctors`}?`} description={`Set verification to ${confirming.value} for ${count} selected ${count === 1 ? 'doctor' : 'doctors'}? This does not change active status or create login access.`} actionLabel={confirming.value === 'verified' ? 'Confirm verification' : 'Confirm unverification'} onConfirm={handleConfirm} onClose={closeConfirmation} error={actionError} />}
       {confirming?.type === 'shift' && <Dialog title={`Shift ${count === 1 ? 'doctor' : `${count} doctors`} to another MR?`} eyebrow="Confirm assignment" description="The selected doctors will be assigned to the chosen MR and inherit that MR’s zone." onClose={closeConfirmation} footer={<><button type="button" className="admin-button admin-button--secondary" disabled={pending} onClick={closeConfirmation} data-testid="button-cancel-shift-doctors">Cancel</button><button type="button" className="admin-button" onClick={handleConfirm} disabled={!targetMR || pending || Boolean(error)} data-testid="button-confirm-shift-doctors">{pending ? 'Saving…' : 'Shift MR'}</button></>}>
         <label className="doctor-master__dialog-field" htmlFor="doctor-target-mr">New MR<DoctorMRSelect id="doctor-target-mr" testId="select-shift-doctor-mr" value={targetMR} onHydrate={hydrateMRs} onChange={(value) => { setTargetMR(value); setActionError(''); }} /></label>

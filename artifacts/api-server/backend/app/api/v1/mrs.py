@@ -48,7 +48,7 @@ def create(body: MRCreate, actor=Depends(manager), db: Session = Depends(get_db)
 
 
 @router.get("/references", response_model=MRChoices, operation_id="listMRReferenceChoices")
-def references(kind: Literal["zones", "headquarters", "managers", "designations"],
+def references(kind: Literal["zones", "headquarters", "managers", "designations", "staff"],
                query: str = Query("", max_length=200), limit: int = Query(100, ge=1, le=100),
                offset: int = Query(0, ge=0, le=1000000), include_saved: uuid.UUID | None = None,
                cursor: uuid.UUID | None = None,
@@ -124,6 +124,12 @@ async def commit(request: Request, filename: str = Query(min_length=1, max_lengt
         raise mrs.MRError("Explicit confirmation is required.", 422, "mr_confirmation_required")
     data = await read_file(request)
     return await run_in_threadpool(mr_transfer.transfer, db, actor, data, filename, True, digest)
+
+
+@router.get("/created", response_model=MRDirectoryResponse, operation_id="resolveCreatedMR")
+def created(employee_code: str = Query(min_length=1, max_length=64),
+            actor=Depends(require_master("mr", "add")), db: Session = Depends(get_db)):
+    return mrs.resolve_account(db, actor, employee_code=employee_code)
 
 
 @router.get("/{mr_id}", response_model=MRDirectoryResponse, operation_id="getMRDirectory")

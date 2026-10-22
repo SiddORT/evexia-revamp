@@ -526,8 +526,8 @@ export const createMRDirectoryBodyPaymentLimitOneMin = 0;
 export const createMRDirectoryBodyPaymentLimitOneMax = 999999999.99;
 export const createMRDirectoryBodyPhoneMax = 20;
 export const createMRDirectoryBodyStateMax = 100;
-export const createMRDirectoryBodyUserIdMin = 3;
-export const createMRDirectoryBodyUserIdMax = 32;
+export const resolveCreatedMRResponseUserIdMin = 3;
+export const resolveCreatedMRResponseUserIdMax = 32;
 export const createMRDirectoryBodyZoneIdsOneMax = 10000;
 export const createMRDirectoryResponseRecordAddressLine1Max = 300;
 export const createMRDirectoryResponseRecordAddressLine2Max = 300;
@@ -561,6 +561,8 @@ export const resolveMRAccountResponsePhoneMax = 20;
 export const resolveMRAccountResponseStateMax = 100;
 export const resolveMRAccountResponseUserIdMin = 3;
 export const resolveMRAccountResponseUserIdMax = 32;
+
+export const resolveCreatedMRQueryEmployeeCodeMax = 64;
 export const exportMRDirectoryQueryQueryMax = 200;
 export const exportMRDirectoryQueryZoneIdsMax = 370000;
 export const commitMRImportQueryFilenameMax = 200;
@@ -9298,6 +9300,7 @@ export const listMRDirectoryResponseItemsItemPincodeRegExp = new RegExp(
   "^[1-9][0-9]{5}$",
 );
 
+export const listMRDirectoryResponseItemsItemReportingStaffNameDefault = ``;
 export const listMRDirectoryResponseItemsItemUserIdRegExp = new RegExp(
   "^[a-z][a-z0-9._-]{2,31}$",
 );
@@ -9626,6 +9629,10 @@ export const ListMRDirectoryResponse = zod.object({
         .union([zod.string().uuid(), zod.null()])
         .optional(),
       reportingManagerName: zod.string(),
+      reportingStaffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      reportingStaffName: zod
+        .string()
+        .default(listMRDirectoryResponseItemsItemReportingStaffNameDefault),
       state: zod.string().min(1).max(listMRDirectoryResponseItemsItemStateMax),
       status: zod.enum(["active", "inactive"]),
       updatedAt: zod.coerce.date(),
@@ -9674,10 +9681,10 @@ export const createMRDirectoryBodyPhoneDefault = ``;
 
 export const createMRDirectoryBodyPincodeRegExp = new RegExp("^[1-9][0-9]{5}$");
 
-export const createMRDirectoryBodyUserIdRegExp = new RegExp(
+export const createMRDirectoryBodyUserIdDefault = ``;
+export const resolveCreatedMRResponseUserIdRegExp = new RegExp(
   "^[a-z][a-z0-9._-]{2,31}$",
 );
-
 export const CreateMRDirectoryBody = zod.object({
   addressLine1: zod.string().min(1).max(createMRDirectoryBodyAddressLine1Max),
   addressLine2: zod
@@ -9978,13 +9985,10 @@ export const CreateMRDirectoryBody = zod.object({
     .default(createMRDirectoryBodyPhoneDefault),
   pincode: zod.string().regex(createMRDirectoryBodyPincodeRegExp),
   reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  reportingStaffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
   state: zod.string().min(1).max(createMRDirectoryBodyStateMax),
   status: zod.enum(["active", "inactive"]),
-  userId: zod
-    .string()
-    .min(createMRDirectoryBodyUserIdMin)
-    .max(createMRDirectoryBodyUserIdMax)
-    .regex(createMRDirectoryBodyUserIdRegExp),
+  userId: zod.string().default(createMRDirectoryBodyUserIdDefault),
   zoneId: zod.string().uuid(),
   zoneIds: zod
     .union([
@@ -10015,6 +10019,7 @@ export const createMRDirectoryResponseRecordPincodeRegExp = new RegExp(
   "^[1-9][0-9]{5}$",
 );
 
+export const createMRDirectoryResponseRecordReportingStaffNameDefault = ``;
 export const createMRDirectoryResponseRecordUserIdRegExp = new RegExp(
   "^[a-z][a-z0-9._-]{2,31}$",
 );
@@ -10338,6 +10343,10 @@ export const CreateMRDirectoryResponse = zod.object({
     pincode: zod.string().regex(createMRDirectoryResponseRecordPincodeRegExp),
     reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
     reportingManagerName: zod.string(),
+    reportingStaffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    reportingStaffName: zod
+      .string()
+      .default(createMRDirectoryResponseRecordReportingStaffNameDefault),
     state: zod.string().min(1).max(createMRDirectoryResponseRecordStateMax),
     status: zod.enum(["active", "inactive"]),
     updatedAt: zod.coerce.date(),
@@ -10383,6 +10392,7 @@ export const resolveMRAccountResponsePincodeRegExp = new RegExp(
   "^[1-9][0-9]{5}$",
 );
 
+export const resolveMRAccountResponseReportingStaffNameDefault = ``;
 export const resolveMRAccountResponseUserIdRegExp = new RegExp(
   "^[a-z][a-z0-9._-]{2,31}$",
 );
@@ -10696,6 +10706,10 @@ export const ResolveMRAccountResponse = zod.object({
   pincode: zod.string().regex(resolveMRAccountResponsePincodeRegExp),
   reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
   reportingManagerName: zod.string(),
+  reportingStaffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  reportingStaffName: zod
+    .string()
+    .default(resolveMRAccountResponseReportingStaffNameDefault),
   state: zod.string().min(1).max(resolveMRAccountResponseStateMax),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
@@ -10711,6 +10725,16 @@ export const ResolveMRAccountResponse = zod.object({
   zoneName: zod.string(),
 });
 
+/**
+ * @summary Created
+ */
+
+export const ResolveCreatedMRQueryParams = zod.object({
+  employee_code: zod.coerce
+    .string()
+    .min(1)
+    .max(resolveCreatedMRQueryEmployeeCodeMax),
+});
 /**
  * @summary Export
  */
@@ -10829,7 +10853,13 @@ export const LookupMRPincodeResponse = zod.object({
 export const listMRReferenceChoicesQueryQueryDefault = ``;
 
 export const ListMRReferenceChoicesQueryParams = zod.object({
-  kind: zod.enum(["zones", "headquarters", "managers", "designations"]),
+  kind: zod.enum([
+    "zones",
+    "headquarters",
+    "managers",
+    "designations",
+    "staff",
+  ]),
   query: zod.coerce
     .string()
     .max(listMRReferenceChoicesQueryQueryMax)
@@ -10927,6 +10957,7 @@ export const getMRDirectoryResponsePincodeRegExp = new RegExp(
   "^[1-9][0-9]{5}$",
 );
 
+export const getMRDirectoryResponseReportingStaffNameDefault = ``;
 export const getMRDirectoryResponseUserIdRegExp = new RegExp(
   "^[a-z][a-z0-9._-]{2,31}$",
 );
@@ -11234,6 +11265,10 @@ export const GetMRDirectoryResponse = zod.object({
   pincode: zod.string().regex(getMRDirectoryResponsePincodeRegExp),
   reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
   reportingManagerName: zod.string(),
+  reportingStaffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  reportingStaffName: zod
+    .string()
+    .default(getMRDirectoryResponseReportingStaffNameDefault),
   state: zod.string().min(1).max(getMRDirectoryResponseStateMax),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
@@ -11279,6 +11314,7 @@ export const setMRContactRequirementResponsePincodeRegExp = new RegExp(
   "^[1-9][0-9]{5}$",
 );
 
+export const setMRContactRequirementResponseReportingStaffNameDefault = ``;
 export const setMRContactRequirementResponseUserIdRegExp = new RegExp(
   "^[a-z][a-z0-9._-]{2,31}$",
 );
@@ -11594,6 +11630,10 @@ export const SetMRContactRequirementResponse = zod.object({
   pincode: zod.string().regex(setMRContactRequirementResponsePincodeRegExp),
   reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
   reportingManagerName: zod.string(),
+  reportingStaffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  reportingStaffName: zod
+    .string()
+    .default(setMRContactRequirementResponseReportingStaffNameDefault),
   state: zod.string().min(1).max(setMRContactRequirementResponseStateMax),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
@@ -11638,6 +11678,7 @@ export const deleteMRDirectoryResponsePincodeRegExp = new RegExp(
   "^[1-9][0-9]{5}$",
 );
 
+export const deleteMRDirectoryResponseReportingStaffNameDefault = ``;
 export const deleteMRDirectoryResponseUserIdRegExp = new RegExp(
   "^[a-z][a-z0-9._-]{2,31}$",
 );
@@ -11951,6 +11992,10 @@ export const DeleteMRDirectoryResponse = zod.object({
   pincode: zod.string().regex(deleteMRDirectoryResponsePincodeRegExp),
   reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
   reportingManagerName: zod.string(),
+  reportingStaffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  reportingStaffName: zod
+    .string()
+    .default(deleteMRDirectoryResponseReportingStaffNameDefault),
   state: zod.string().min(1).max(deleteMRDirectoryResponseStateMax),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
@@ -12323,6 +12368,7 @@ export const EditMRDirectoryBody = zod.object({
     .default(editMRDirectoryBodyPhoneDefault),
   pincode: zod.string().regex(editMRDirectoryBodyPincodeRegExp),
   reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  reportingStaffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
   state: zod.string().min(1).max(editMRDirectoryBodyStateMax),
   status: zod.enum(["active", "inactive"]),
   userId: zod
@@ -12360,6 +12406,7 @@ export const editMRDirectoryResponsePincodeRegExp = new RegExp(
   "^[1-9][0-9]{5}$",
 );
 
+export const editMRDirectoryResponseReportingStaffNameDefault = ``;
 export const editMRDirectoryResponseUserIdRegExp = new RegExp(
   "^[a-z][a-z0-9._-]{2,31}$",
 );
@@ -12667,6 +12714,10 @@ export const EditMRDirectoryResponse = zod.object({
   pincode: zod.string().regex(editMRDirectoryResponsePincodeRegExp),
   reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
   reportingManagerName: zod.string(),
+  reportingStaffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  reportingStaffName: zod
+    .string()
+    .default(editMRDirectoryResponseReportingStaffNameDefault),
   state: zod.string().min(1).max(editMRDirectoryResponseStateMax),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
@@ -12711,6 +12762,7 @@ export const resetMRPasswordResponseRecordPincodeRegExp = new RegExp(
   "^[1-9][0-9]{5}$",
 );
 
+export const resetMRPasswordResponseRecordReportingStaffNameDefault = ``;
 export const resetMRPasswordResponseRecordUserIdRegExp = new RegExp(
   "^[a-z][a-z0-9._-]{2,31}$",
 );
@@ -13031,6 +13083,10 @@ export const ResetMRPasswordResponse = zod.object({
     pincode: zod.string().regex(resetMRPasswordResponseRecordPincodeRegExp),
     reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
     reportingManagerName: zod.string(),
+    reportingStaffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+    reportingStaffName: zod
+      .string()
+      .default(resetMRPasswordResponseRecordReportingStaffNameDefault),
     state: zod.string().min(1).max(resetMRPasswordResponseRecordStateMax),
     status: zod.enum(["active", "inactive"]),
     updatedAt: zod.coerce.date(),
@@ -13077,6 +13133,7 @@ export const setMRDirectoryStatusResponsePincodeRegExp = new RegExp(
   "^[1-9][0-9]{5}$",
 );
 
+export const setMRDirectoryStatusResponseReportingStaffNameDefault = ``;
 export const setMRDirectoryStatusResponseUserIdRegExp = new RegExp(
   "^[a-z][a-z0-9._-]{2,31}$",
 );
@@ -13390,6 +13447,10 @@ export const SetMRDirectoryStatusResponse = zod.object({
   pincode: zod.string().regex(setMRDirectoryStatusResponsePincodeRegExp),
   reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
   reportingManagerName: zod.string(),
+  reportingStaffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  reportingStaffName: zod
+    .string()
+    .default(setMRDirectoryStatusResponseReportingStaffNameDefault),
   state: zod.string().min(1).max(setMRDirectoryStatusResponseStateMax),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
@@ -29485,3 +29546,389 @@ export const ResolvePortalHostnameResponse = zod.object({
  * @summary Version
  */
 export const GetVersionResponse = zod.unknown();
+
+export const resolveCreatedMRResponseEmployeeCodeMax = 64;
+
+export const resolveCreatedMRResponsePhoneMax = 20;
+
+export const resolveCreatedMRResponseUserIdRegExp = new RegExp(
+  "^[a-z][a-z0-9._-]{2,31}$",
+);
+
+export const resolveCreatedMRResponseNameMax = 200;
+
+export const resolveCreatedMRResponseEmailDefault = ``;
+
+export const resolveCreatedMRResponsePhoneDefault = ``;
+
+export const ResolveCreatedMRResponse = zod.object({
+  addressLine1: zod
+    .string()
+    .min(1)
+    .max(resolveCreatedMRResponseAddressLine1Max),
+  addressLine2: zod
+    .string()
+    .max(resolveCreatedMRResponseAddressLine2Max)
+    .default(resolveCreatedMRResponseAddressLine2Default),
+  assignedZones: zod.array(
+    zod.object({
+      deleted: zod
+        .boolean()
+        .default(resolveCreatedMRResponseAssignedZonesItemDeletedDefault),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.string(),
+    }),
+  ),
+  assignmentWarnings: zod.array(zod.string()),
+  city: zod.string().min(1).max(resolveCreatedMRResponseCityMax),
+  contactRequirement: zod
+    .enum(["required", "optional"])
+    .default(resolveCreatedMRResponseContactRequirementDefault),
+  country: zod.string().min(1).max(resolveCreatedMRResponseCountryMax),
+  createdAt: zod.coerce.date(),
+  createdBy: zod.string(),
+  dateOfJoining: zod.coerce.date(),
+  designationName: zod.string(),
+  designation_id: zod.string().uuid(),
+  dialCountry: zod
+    .enum([
+      "AC",
+      "AD",
+      "AE",
+      "AF",
+      "AG",
+      "AI",
+      "AL",
+      "AM",
+      "AO",
+      "AR",
+      "AS",
+      "AT",
+      "AU",
+      "AW",
+      "AX",
+      "AZ",
+      "BA",
+      "BB",
+      "BD",
+      "BE",
+      "BF",
+      "BG",
+      "BH",
+      "BI",
+      "BJ",
+      "BL",
+      "BM",
+      "BN",
+      "BO",
+      "BQ",
+      "BR",
+      "BS",
+      "BT",
+      "BW",
+      "BY",
+      "BZ",
+      "CA",
+      "CC",
+      "CD",
+      "CF",
+      "CG",
+      "CH",
+      "CI",
+      "CK",
+      "CL",
+      "CM",
+      "CN",
+      "CO",
+      "CR",
+      "CU",
+      "CV",
+      "CW",
+      "CX",
+      "CY",
+      "CZ",
+      "DE",
+      "DJ",
+      "DK",
+      "DM",
+      "DO",
+      "DZ",
+      "EC",
+      "EE",
+      "EG",
+      "EH",
+      "ER",
+      "ES",
+      "ET",
+      "FI",
+      "FJ",
+      "FK",
+      "FM",
+      "FO",
+      "FR",
+      "GA",
+      "GB",
+      "GD",
+      "GE",
+      "GF",
+      "GG",
+      "GH",
+      "GI",
+      "GL",
+      "GM",
+      "GN",
+      "GP",
+      "GQ",
+      "GR",
+      "GT",
+      "GU",
+      "GW",
+      "GY",
+      "HK",
+      "HN",
+      "HR",
+      "HT",
+      "HU",
+      "ID",
+      "IE",
+      "IL",
+      "IM",
+      "IN",
+      "IO",
+      "IQ",
+      "IR",
+      "IS",
+      "IT",
+      "JE",
+      "JM",
+      "JO",
+      "JP",
+      "KE",
+      "KG",
+      "KH",
+      "KI",
+      "KM",
+      "KN",
+      "KP",
+      "KR",
+      "KW",
+      "KY",
+      "KZ",
+      "LA",
+      "LB",
+      "LC",
+      "LI",
+      "LK",
+      "LR",
+      "LS",
+      "LT",
+      "LU",
+      "LV",
+      "LY",
+      "MA",
+      "MC",
+      "MD",
+      "ME",
+      "MF",
+      "MG",
+      "MH",
+      "MK",
+      "ML",
+      "MM",
+      "MN",
+      "MO",
+      "MP",
+      "MQ",
+      "MR",
+      "MS",
+      "MT",
+      "MU",
+      "MV",
+      "MW",
+      "MX",
+      "MY",
+      "MZ",
+      "NA",
+      "NC",
+      "NE",
+      "NF",
+      "NG",
+      "NI",
+      "NL",
+      "NO",
+      "NP",
+      "NR",
+      "NU",
+      "NZ",
+      "OM",
+      "PA",
+      "PE",
+      "PF",
+      "PG",
+      "PH",
+      "PK",
+      "PL",
+      "PM",
+      "PR",
+      "PS",
+      "PT",
+      "PW",
+      "PY",
+      "QA",
+      "RE",
+      "RO",
+      "RS",
+      "RU",
+      "RW",
+      "SA",
+      "SB",
+      "SC",
+      "SD",
+      "SE",
+      "SG",
+      "SH",
+      "SI",
+      "SJ",
+      "SK",
+      "SL",
+      "SM",
+      "SN",
+      "SO",
+      "SR",
+      "SS",
+      "ST",
+      "SV",
+      "SX",
+      "SY",
+      "SZ",
+      "TA",
+      "TC",
+      "TD",
+      "TG",
+      "TH",
+      "TJ",
+      "TK",
+      "TL",
+      "TM",
+      "TN",
+      "TO",
+      "TR",
+      "TT",
+      "TV",
+      "TW",
+      "TZ",
+      "UA",
+      "UG",
+      "US",
+      "UY",
+      "UZ",
+      "VA",
+      "VC",
+      "VE",
+      "VG",
+      "VI",
+      "VN",
+      "VU",
+      "WF",
+      "WS",
+      "XK",
+      "YE",
+      "YT",
+      "ZA",
+      "ZM",
+      "ZW",
+    ])
+    .default(resolveCreatedMRResponseDialCountryDefault),
+  doctorDaysLimit: zod
+    .number()
+    .int()
+    .min(resolveCreatedMRResponseDoctorDaysLimitMin)
+    .max(resolveCreatedMRResponseDoctorDaysLimitMax)
+    .default(resolveCreatedMRResponseDoctorDaysLimitDefault),
+  email: zod
+    .string()
+    .max(resolveCreatedMRResponseEmailMax)
+    .default(resolveCreatedMRResponseEmailDefault),
+  employeeCode: zod
+    .string()
+    .min(1)
+    .max(resolveCreatedMRResponseEmployeeCodeMax),
+  hq: zod.string().uuid(),
+  hqName: zod.string(),
+  id: zod.string().uuid(),
+  landmark: zod.string().min(1).max(resolveCreatedMRResponseLandmarkMax),
+  name: zod.string().min(1).max(resolveCreatedMRResponseNameMax),
+  paymentLimit: zod
+    .string()
+    .regex(resolveCreatedMRResponsePaymentLimitRegExp)
+    .default(resolveCreatedMRResponsePaymentLimitDefault),
+  phone: zod
+    .string()
+    .max(resolveCreatedMRResponsePhoneMax)
+    .default(resolveCreatedMRResponsePhoneDefault),
+  pincode: zod.string().regex(resolveCreatedMRResponsePincodeRegExp),
+  reportingManagerId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  reportingManagerName: zod.string(),
+  reportingStaffId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  reportingStaffName: zod
+    .string()
+    .default(resolveCreatedMRResponseReportingStaffNameDefault),
+  state: zod.string().min(1).max(resolveCreatedMRResponseStateMax),
+  status: zod.enum(["active", "inactive"]),
+  updatedAt: zod.coerce.date(),
+  updatedBy: zod.string(),
+  userId: zod
+    .string()
+    .min(resolveCreatedMRResponseUserIdMin)
+    .max(resolveCreatedMRResponseUserIdMax)
+    .regex(resolveCreatedMRResponseUserIdRegExp),
+  version: zod.number().int(),
+  zoneId: zod.string().uuid(),
+  zoneIds: zod.array(zod.string().uuid()),
+  zoneName: zod.string(),
+});
+
+export const resolveCreatedMRResponseContactRequirementDefault = `required`;
+
+export const resolveCreatedMRResponsePincodeRegExp = new RegExp(
+  "^[1-9][0-9]{5}$",
+);
+
+export const resolveCreatedMRResponseEmailMax = 320;
+
+export const resolveCreatedMRResponseUserIdMin = 3;
+
+export const resolveCreatedMRResponseAddressLine2Default = ``;
+
+export const resolveCreatedMRResponsePaymentLimitRegExp = new RegExp(
+  "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,9}|(?=[\\d.]{1,12}0*$)\\d{0,9}\\.\\d{0,2}0*$)",
+);
+
+export const resolveCreatedMRResponseAssignedZonesItemDeletedDefault = false;
+
+export const resolveCreatedMRResponseAddressLine2Max = 300;
+
+export const resolveCreatedMRResponseDialCountryDefault = `IN`;
+
+export const resolveCreatedMRResponseCityMax = 100;
+
+export const resolveCreatedMRResponseDoctorDaysLimitMin = 0;
+
+export const resolveCreatedMRResponseDoctorDaysLimitDefault = 0;
+
+export const resolveCreatedMRResponseUserIdMax = 32;
+
+export const resolveCreatedMRResponseCountryMax = 100;
+
+export const resolveCreatedMRResponsePaymentLimitDefault = `0.00`;
+
+export const resolveCreatedMRResponseAddressLine1Max = 300;
+
+export const resolveCreatedMRResponseStateMax = 100;
+
+export const resolveCreatedMRResponseDoctorDaysLimitMax = 3650;
+
+export const resolveCreatedMRResponseLandmarkMax = 200;
+
+export const resolveCreatedMRResponseReportingStaffNameDefault = ``;

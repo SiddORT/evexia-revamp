@@ -3,6 +3,18 @@ name: MR account and legacy boundary
 description: Product scope requires real MR credentials without promotion or mixing of old identities.
 ---
 
+## Reporting-manager identity
+
+Live MR reporting managers are selected from Staff, not from MR records. Never
+infer a Staff identity from a historical MR manager name or account.
+
+**Why:** The user requires historical MR links and saved labels to remain intact
+without guessing Staff mappings.
+
+**How to apply:** Keep old assignments explicitly labeled as legacy until an
+administrator replaces or clears them; a similarly named Staff record is not
+evidence that it is the intended manager.
+
 MR Master includes working MR login accounts. Do not silently migrate browser-local
 MR records, attach existing identity-only MRProfiles, or rewrite downstream local
 Doctor/Patient/Sales Target/payment references when extending it.
