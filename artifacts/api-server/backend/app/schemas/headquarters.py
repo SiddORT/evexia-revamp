@@ -3,6 +3,7 @@ import unicodedata
 from datetime import datetime
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from app.schemas.master_validation import MasterWriteFields
 
 
 def abbreviation(name):
@@ -23,7 +24,8 @@ def abbreviation(name):
     return "".join(letters).upper()[:16]
 
 
-class HeadquarterFields(BaseModel):
+class HeadquarterFields(MasterWriteFields):
+    master_names = {"name": ("headquarter name", False)}
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
     state_code: str | None = Field(default=None, min_length=1, max_length=16)
@@ -32,19 +34,22 @@ class HeadquarterFields(BaseModel):
     @field_validator("name", mode="before")
     @classmethod
     def normalize_name(cls, value):
-        return " ".join(value.split()) if isinstance(value, str) else value
+        return value  # MasterWriteFields normalizes explicit writes only.
 
     @field_validator("state_code", mode="before")
     @classmethod
     def normalize_code(cls, value):
+        if cls.master_read:
+            return value
         return value.strip().upper() if isinstance(value, str) else value
 
     @field_validator("name", "state_code")
     @classmethod
-    def printable(cls, value):
+    def printable(cls, value, info):
         if value is None:
             raise ValueError("Explicit null is not a code; omit to generate or preserve")
-        if any(unicodedata.category(char).startswith("C") or char in "\ufffe\uffff" for char in value):
+        if any((unicodedata.category(char).startswith("C") and
+                not (info.field_name == "name" and char in "\u200c\u200d")) or char in "\ufffe\uffff" for char in value):
             raise ValueError("Unsupported characters")
         return value
 
@@ -61,7 +66,8 @@ class HeadquarterEdit(HeadquarterFields):
     expected_version: int = Field(ge=1, strict=True)
 
 
-class HeadquarterAreaInput(BaseModel):
+class HeadquarterAreaInput(MasterWriteFields):
+    master_names = {"name": ("area name", False)}
     model_config = ConfigDict(extra="forbid")
     id: uuid.UUID | None = None
     name: str = Field(min_length=1, max_length=200)
@@ -112,6 +118,7 @@ class HeadquarterStatus(HeadquarterVersion):
 
 
 class HeadquarterResponse(HeadquarterFields):
+    master_read = True
     zone_id: uuid.UUID | None
     zone: HeadquarterZone | None
     areas: list[HeadquarterAreaResponse]

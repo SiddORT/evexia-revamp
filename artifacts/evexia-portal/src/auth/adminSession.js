@@ -660,6 +660,15 @@ function masterAllowed(user, resource, path, writing, params = {}) {
   return need ? hasMasterPermission(user, master.key, need) : canViewMaster(user, master.key);
 }
 
+function attachMasterValidation(error, data, label) {
+  const fields = (Array.isArray(data?.error?.fields) ? data.error.fields : [])
+    .filter((item) => /^body(?:\.[A-Za-z_][A-Za-z_0-9]*(?:\.\d+\.[A-Za-z_][A-Za-z_0-9]*)?)?$/.test(item.field));
+  if (!fields.length) return;
+  error.fields = Object.fromEntries(fields.filter((item) => item.field !== 'body')
+    .map((item) => [item.field.slice(5), item.message || 'Check this field.']));
+  error.message = [...new Set(fields.map((item) => `${item.field === 'body' ? label : item.field.slice(5)}: ${item.message || 'Check this field.'}`))].join(' ');
+}
+
 async function masterRequest(resource, path = '', { body, file, params = {}, download = false, signal } = {}) {
   const zone = resource === 'zones';
   if (!['languages', 'allergens', 'vendors', 'opening-balances', 'zones', 'courier-partners', 'storage-locations', 'designations', 'headquarters', 'mrs', 'doctors', 'patients', 'product-categories', 'sales-targets'].includes(resource)) throw new SessionError('Unsupported master resource.');
@@ -769,6 +778,13 @@ async function masterRequest(resource, path = '', { body, file, params = {}, dow
       const fields = [...new Set(data.error.fields.map((item) => item.field.replace(/^body\./, '')))];
       error.message = `${label} validation failed: ${fields.join(', ')}. Check required fields, formats and the documented limits. Nothing was saved.`;
     }
+    if (response.status === 422 && data?.error?.fields?.length && [
+      'zones', 'languages', 'courier-partners', 'designations', 'mrs', 'doctors', 'patients',
+      'vendors', 'product-categories', 'storage-locations', 'headquarters', 'products',
+      'allergens', 'sales-targets', 'opening-balances', 'opening-stock',
+    ].includes(resource)) {
+      attachMasterValidation(error, data, label);
+    }
     // A Language commit can have an uncertain outcome even when its safe
     // database error was mapped to "unavailable". Never encourage create replay.
     error.ambiguous = writing && path !== '/import/review' && response.status >= 500 && (['languages', 'headquarters'].includes(resource) || error.code !== unavailable);
@@ -859,7 +875,9 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
     const e = new SessionError(response.status === 403 ? 'Opening stock is restricted to the protected Super Admin.'
       : response.status >= 500 ? 'Opening stock service is unavailable. Your draft is preserved; check the outcome before saving again.'
       : typeof data?.error?.message === 'string' ? data.error.message : 'Opening stock fields are invalid. Check quantities, rates and references.', response.status);
-    e.code = data?.error?.code; e.fields = data?.error?.fields; e.ambiguous = mutation && response.status >= 500; throw e;
+    e.code = data?.error?.code;
+    if (response.status === 422) attachMasterValidation(e, data, 'Opening stock');
+    e.ambiguous = mutation && response.status >= 500; throw e;
   }
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (mutation) {
@@ -952,6 +970,7 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       : 'Purchase order fields are invalid. Check dates, quantities and current references.', response.status);
     error.code = data?.error?.code;
     error.ambiguous = mutation && response.status >= 500;
+    if (resource === 'products' && response.status === 422) attachMasterValidation(error, data, 'Product');
     if (batchOperation && path === '/batch-settings') {
       if (response.status === 422) {
         error.message = mutation

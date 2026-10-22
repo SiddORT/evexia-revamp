@@ -1,4 +1,5 @@
 import { vendorCountry, normalizeVendorPhone } from './vendorPhone.js';
+import { masterNameError, normalizeMasterName, textLength } from './masterValidation.js';
 // Pure field metadata for the shared-server Vendor Master (no browser storage).
 export const VENDOR_COLUMNS = [
   ['vendorName', 'Vendor Name'], ['gstNo', 'GST No.'], ['registeredAddress', 'Registered Address'],
@@ -11,8 +12,14 @@ export const VENDOR_LENGTHS = { vendorName: 200, gstNo: 15, registeredAddress: 2
 export function vendorDraftErrors(values) {
   const errors = {};
   const trimmed = Object.fromEntries(VENDOR_COLUMNS.map(([key]) => [key, String(values[key] ?? '').trim()]));
+  trimmed.vendorName = normalizeMasterName(values.vendorName);
+  trimmed.contactPersonName = normalizeMasterName(values.contactPersonName);
   for (const [key, label] of VENDOR_COLUMNS) if (!trimmed[key]) errors[key] = `${label} is required.`;
-  for (const [key, label] of VENDOR_COLUMNS) if (trimmed[key].length > VENDOR_LENGTHS[key]) errors[key] = `${label} must be at most ${VENDOR_LENGTHS[key]} characters.`;
+  for (const [key, label] of VENDOR_COLUMNS) if (textLength(trimmed[key]) > VENDOR_LENGTHS[key]) errors[key] = `${label} must be at most ${VENDOR_LENGTHS[key]} characters.`;
+  for (const [key, label, personal] of [['vendorName', 'vendor name', false], ['contactPersonName', 'contact person name', true]]) {
+    const error = masterNameError(values[key], label, { personal });
+    if (error) errors[key] = error;
+  }
   if (trimmed.gstNo && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(trimmed.gstNo.toUpperCase())) errors.gstNo = 'Enter a valid 15-character GST number.';
   if (trimmed.emailId && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed.emailId)) errors.emailId = 'Enter a valid email address.';
   if (!vendorCountry(values.dialCountry)) errors.dialCountry = 'Choose a supported phone country.';

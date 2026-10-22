@@ -35,6 +35,7 @@ function DesignationForm({ record, onSave, onCancel, onRefresh }) {
     try {
       await onSave(result.fields);
     } catch (cause) {
+      if (cause.fields) setErrors((current) => ({ ...current, ...cause.fields }));
       setServerError(cause.message || 'Designation could not be saved.');
       setBlocked(cause.code === 'designation_stale' || Boolean(cause.ambiguous));
     } finally { busy.current = false; setPending(false); }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { getZone } from '../../services/serverZones.js';
 import Field from '../auth/Field.jsx';
 import Dialog from './Dialog.jsx';
+import { masterNameError, normalizeMasterName } from '../../services/masterValidation.js';
 
 export default function ZoneForm({ zone, onSave, onClose, canSave = true }) {
   const [name, setName] = useState(zone?.name || '');
@@ -14,11 +15,12 @@ export default function ZoneForm({ zone, onSave, onClose, canSave = true }) {
   async function handleSubmit(event) {
     event.preventDefault();
     if (pending || blocked || !canSave) return;
-    if (!name.trim()) { setError('Zone name is required.'); return; }
-    if (name.trim().length > 200) { setError('Zone name must be at most 200 characters.'); return; }
+    const nameError = masterNameError(name, 'zone name');
+    if (nameError) { setError(nameError); return; }
+    if (!['active', 'inactive'].includes(status)) { setError('Select Active or Inactive.'); return; }
     setPending(true);
     try {
-      const result = await onSave({ name: name.trim(), status }, current || zone);
+      const result = await onSave({ name: normalizeMasterName(name), status }, current || zone);
       if (!result.success) { setError(result.error); setBlocked(result.code === 'zone_stale' || Boolean(result.ambiguous)); }
     } finally { setPending(false); }
   }

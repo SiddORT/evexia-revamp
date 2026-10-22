@@ -80,7 +80,9 @@ export default function MRFormPage({ id }) {
       // versions and uncertain outcomes still require explicit reconciliation.
       const rejectedAssignment = cause.status === 409 && ['mr_assignment', 'mr_manager_cycle'].includes(cause.code);
       if (mounted.current && !rejectedAssignment && (cause.ambiguous || cause.status === 409)) setWriteBlocked({ username: values.userId });
-      return { success: false, error: `${cause.message}${cause.ambiguous ? ' Check MR Master before submitting again.' : ''}` };
+      const fields = { ...cause.fields };
+      if (fields.initialPassword) { fields.password = fields.initialPassword; delete fields.initialPassword; }
+      return { success: false, fields, error: `${cause.message}${cause.ambiguous ? ' Check MR Master before submitting again.' : ''}` };
     } finally { busy.current = false; }
   }
 

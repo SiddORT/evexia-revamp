@@ -1,3 +1,4 @@
+import { masterNameError, normalizeMasterName } from './masterValidation.js';
 export function abbreviation(name) {
   const words = [];
   let word = [];
@@ -14,14 +15,15 @@ export function abbreviation(name) {
 // Python str.split/strip whitespace, explicit to avoid JS's extra BOM rule.
 const whitespace = '[\\u0009-\\u000d\\u001c-\\u0020\\u0085\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000]';
 export const trimText = (text) => text.replace(new RegExp(`^${whitespace}+|${whitespace}+$`, 'gu'), '');
-export const normalizeName = (name) => trimText(name).replace(new RegExp(`${whitespace}+`, 'gu'), ' ');
+export const normalizeName = normalizeMasterName;
 export const normalizeCode = (code) => trimText(code).toUpperCase();
 export function validateHeadquarter(values) {
   const errors = {};
   const name = normalizeName(values.name);
   const code = normalizeCode(values.state_code);
   const invalid = (value) => /[\p{C}\uFFFE\uFFFF]/u.test(value);
-  if (!name || Array.from(name).length > 200 || invalid(name)) errors.name = 'Use 1–200 printable characters.';
+  const nameError = masterNameError(name, 'headquarter name');
+  if (nameError) errors.name = nameError;
   if (!code || Array.from(code).length > 16 || invalid(code)) errors.state_code = 'Use 1–16 printable characters. Names without letters need a manual code.';
   if (!['active', 'inactive'].includes(values.status)) errors.status = 'Select a status.';
   return errors;
@@ -71,7 +73,8 @@ export function validateAreas(rows, suggestions) {
     const blank = !name && (auto || !trimText(row.code || ''));
     if (blank && auto) list.push('Enter an area name or remove this row.');
     else {
-      if (!name || Array.from(name).length > 200 || printableBad(name)) list.push('Area name: use 1-200 printable characters.');
+      const nameError = masterNameError(name, 'area name');
+      if (nameError) list.push(nameError);
       if (!auto && (!code || Array.from(code).length > 32 || printableBad(code))) list.push('Area code: use 1-32 printable characters.');
       if (auto && (!code || Array.from(code).length > 32 || printableBad(code))) list.push('Suggested numbering is unavailable; enter a manual code.');
       if (name) { const k = name.toLowerCase(); if (names.has(k)) list.push('Duplicate area name in this headquarter.'); names.set(k, true); }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Field from '../auth/Field.jsx';
 import Dialog from './Dialog.jsx';
+import { masterNameError, normalizeMasterName } from '../../services/masterValidation.js';
 import { getCourier } from '../../services/serverCouriers.js';
 
 export default function CourierPartnerForm({ partner, onSave, onClose }) {
@@ -13,11 +14,12 @@ export default function CourierPartnerForm({ partner, onSave, onClose }) {
   async function submit(event) {
     event.preventDefault();
     if (pending || blocked) return;
-    if (!name.trim()) { setError('Courier partner name is required.'); return; }
-    if (name.trim().length > 200) { setError('Name must be at most 200 characters.'); return; }
+    const nameError = masterNameError(name, 'courier partner name');
+    if (nameError) { setError(nameError); return; }
+    if (!['active', 'inactive'].includes(status)) { setError('Select Active or Inactive.'); return; }
     setPending(true);
     try {
-      const result = await onSave({ name: name.trim(), status }, current || partner);
+      const result = await onSave({ name: normalizeMasterName(name), status }, current || partner);
       if (!result.success) { setError(result.error); setBlocked(result.code === 'courier_stale' || Boolean(result.ambiguous)); }
     } finally { setPending(false); }
   }

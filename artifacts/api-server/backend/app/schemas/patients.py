@@ -8,9 +8,11 @@ from zoneinfo import ZoneInfo
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from app.schemas.doctors import DoctorFields, DoctorVersion
 from app.schemas.phone import DialCountry, normalize_phone
+from app.schemas.master_validation import MasterWriteFields
 
 
-class PatientFields(BaseModel):
+class PatientFields(MasterWriteFields):
+    master_names = {"name": ("patient name", True)}
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
     gender: Literal["male", "female", "other", "prefer not to say"]
@@ -50,6 +52,8 @@ class PatientFields(BaseModel):
 
     @model_validator(mode="after")
     def business(self):
+        if self.master_read:
+            return self
         self.phone = normalize_phone(self.phone, self.dialCountry, "patient")
         if not re.fullmatch(r"\d{6}" if self.country.lower() == "india" else r"[a-zA-Z0-9][a-zA-Z0-9 -]{1,11}", self.pincode):
             raise ValueError("Invalid postal code")
@@ -68,6 +72,7 @@ class PatientDeletion(DoctorVersion):
 
 
 class PatientDirectoryResponse(PatientFields):
+    master_read = True
     id: uuid.UUID
     code: str
     version: int

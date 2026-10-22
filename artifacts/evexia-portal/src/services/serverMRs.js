@@ -2,6 +2,7 @@ import { roundRate } from './rates.js';
 import { mrRequest } from '../auth/adminSession.js';
 import { downloadServerBlob } from './downloads.js';
 import { dialCountry, normalizePhone } from './phoneCountries.js';
+import { masterNameError, normalizeMasterName, textLength } from './masterValidation.js';
 
 // Server-backed MR Master. Separate from services/mrs.js, which serves the
 // browser-local demo consumers and must stay untouched.
@@ -63,8 +64,11 @@ export function validateMRValues(values, { creating, password = '', confirm = ''
   if (!optionalContact) required.push('phone', 'email');
   required.forEach((key) => { if (!values[key].trim()) errors[key] = 'This field is required.'; });
   if (!values.zoneIds.length || values.zoneIds.length > 10000 || values.zoneIds.some((id) => !UUID_PATTERN.test(id))) errors.zoneId = 'Select between 1 and 10,000 saved zones.';
-  for (const [key, max] of Object.entries(MAX_LENGTH)) if (values[key].length > max) errors[key] = `Use at most ${max} characters.`;
-  for (const key of MR_FIELDS) if (/\p{C}/u.test(values[key])) errors[key] = 'Control and invisible characters are not permitted.';
+  for (const [key, max] of Object.entries(MAX_LENGTH)) if (textLength(values[key]) > max) errors[key] = `Use at most ${max} characters.`;
+  for (const key of MR_FIELDS) if (key !== 'name' && /\p{C}/u.test(values[key])) errors[key] = 'Control and invisible characters are not permitted.';
+  const nameError = masterNameError(values.name, 'MR name', { personal: true });
+  if (nameError) errors.name = nameError;
+  if (new Set(values.zoneIds).size !== values.zoneIds.length || !values.zoneIds.includes(values.zoneId)) errors.zoneId = 'Select distinct zones and include the primary zone.';
   if (!['required', 'optional'].includes(values.contactRequirement)) errors.contactRequirement = 'Choose a contact requirement.';
    if (!dialCountry(values.dialCountry)) errors.dialCountry = 'Choose a supported phone country.';
    if (values.phone && normalizePhone(values.phone, values.dialCountry, 'mr') === null) errors.phone = 'Enter a valid phone number for the selected country.';
@@ -106,6 +110,7 @@ function normalizedValues(values) {
   const normalized = Object.fromEntries(MR_FIELDS.map((key) => [key, key === 'zoneIds'
     ? [...(values.zoneIds || (values.zoneId ? [values.zoneId] : []))] : String(values[key] ?? '').trim()]));
   normalized.userId = normalized.userId.toLowerCase();
+  normalized.name = normalizeMasterName(normalized.name);
   normalized.email = normalized.email.toLowerCase();
   normalized.dialCountry = String(values.dialCountry || 'IN');
   return normalized;

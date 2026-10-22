@@ -72,7 +72,7 @@ export default function SalesTargetForm({ record, onSave, onClose }) {
     } finally { busy.current = false; setPending(false); }
   }
   const total = sumDraft(values);
-  const err = (key) => errors[key] && <span className="admin-target-form__error" id={`target-error-${key}`}>{errors[key]}</span>;
+  const err = (key) => errors[key] && <span className="admin-target-form__error" id={`target-error-${key}`} role="alert">{errors[key]}</span>;
   const savedMr = record && !mr ? null : mr;
   return <Dialog className="admin-target-dialog" eyebrow="Sales Target Master" title={record ? 'Edit sales target' : 'Add sales target'} description="Set the quarterly budget for one MR and financial year. Amounts are in Indian rupees; totals are computed by the server on save." onClose={pending ? () => {} : onClose}>
     <form className="admin-target-form" onSubmit={submit} noValidate>

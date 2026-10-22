@@ -58,8 +58,8 @@ def parse(data, filename):
         status = cells[1].strip().lower() if len(cells) > 1 else ""
         try:
             name = CourierFields(name=name, status=status).name
-        except ValidationError:
-            errors.append("Name must be 1–200 characters and status Active or Inactive.")
+        except ValidationError as exc:
+            errors.extend(f"{'.'.join(map(str, e['loc']))}: {e['msg']}" for e in exc.errors(include_input=False))
         reviewed.append(dict(row=number, name=name, status=status, errors=errors))
     if not reviewed:
         invalid("At least one record is required.")

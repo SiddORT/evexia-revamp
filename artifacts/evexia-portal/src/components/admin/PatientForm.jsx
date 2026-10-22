@@ -7,6 +7,7 @@ import { GeographyControl, GeographyLabel, PostalSelection, useAddressCatalogue 
 import { dialCountry, normalizePhone } from '../../services/phoneCountries.js';
 import { businessToday, patientAge } from '../../services/serverPatients.js';
 import { lookupPatientPIN } from '../../services/serverPatients.js';
+import { masterNameError, masterLengthErrors, normalizeMasterName, presentMasterFailure } from '../../services/masterValidation.js';
 import '../../mr.css';
 import '../../patient.css';
 
@@ -50,7 +51,12 @@ function ageFromDate(value) {
 }
 
 function validate(values) {
-  const errors = {};
+  const errors = masterLengthErrors(values, {
+    phone: 20, email: 320, instructionsLanguage: 200, addressLine1: 300,
+    addressLine2: 300, landmark: 200, pincode: 12, city: 100, state: 100, country: 100,
+  });
+  const nameError = masterNameError(values.name, 'patient name', { personal: true });
+  if (nameError) errors.name = nameError;
   FIELDS.forEach((key) => {
     if (!OPTIONAL.has(key) && !values[key].trim()) errors[key] = 'This field is required.';
   });
@@ -159,6 +165,7 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
     event.preventDefault();
     if (saving || blocked) return;
     const cleaned = Object.fromEntries(FIELDS.map((key) => [key, values[key].trim()]));
+    cleaned.name = normalizeMasterName(values.name);
     const nextErrors = validate(cleaned);
     if (address.postal.required) nextErrors.pincode = 'Choose a PIN location or confirm catalogue selection.';
     setErrors(nextErrors);
@@ -173,9 +180,9 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
     setSaving(true);
     try {
       const result = await onSave({ ...cleaned, phone: normalizePhone(cleaned.phone, cleaned.dialCountry, 'patient') });
-      if (!result?.success) setSaveError(result?.error || 'This patient could not be saved. Please try again.');
+      if (!result?.success) presentMasterFailure(result, { fields: FIELDS, tabs: TABS, setErrors, setActiveTab, pendingFocus, setMessage: setSaveError, fallback: 'This patient could not be saved. Your draft is preserved.' });
     } catch (error) {
-      setSaveError(error?.message || 'This patient could not be saved. Please try again.');
+      presentMasterFailure(error, { fields: FIELDS, tabs: TABS, setErrors, setActiveTab, pendingFocus, setMessage: setSaveError, fallback: 'This patient could not be saved. Your draft is preserved.' });
     } finally {
       setSaving(false);
     }

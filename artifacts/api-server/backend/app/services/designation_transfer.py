@@ -67,8 +67,8 @@ def parse(data, filename):
         try:
             fields = DesignationFields(**values)
             values = fields.model_dump(mode="json")
-        except ValidationError:
-            errors.append("Name 1–200, short name 1–50; status Active/Inactive.")
+        except ValidationError as exc:
+            errors.extend(f"{'.'.join(map(str, e['loc']))}: {e['msg']}" for e in exc.errors(include_input=False))
         reviewed.append(dict(row=number, values=values, errors=errors))
     if not reviewed:
         invalid("At least one record is required.")

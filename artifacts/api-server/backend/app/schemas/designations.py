@@ -3,11 +3,13 @@ from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from app.schemas.master_validation import MasterWriteFields
 
 BUSINESS_FIELDS = ("name", "shortName", "status")
 
 
-class DesignationFields(BaseModel):
+class DesignationFields(MasterWriteFields):
+    master_names = {"name": ("designation name", False), "shortName": ("designation short name", False)}
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
     shortName: str = Field(min_length=1, max_length=50)
@@ -16,7 +18,7 @@ class DesignationFields(BaseModel):
     @field_validator("name", "shortName", mode="before")
     @classmethod
     def normalize(cls, value):
-        return " ".join(value.split()) if isinstance(value, str) else value
+        return value  # MasterWriteFields normalizes explicit writes only.
 
     @field_validator("name", "shortName")
     @classmethod
@@ -39,6 +41,7 @@ class DesignationStatus(DesignationVersion):
 
 
 class DesignationResponse(DesignationFields):
+    master_read = True
     id: uuid.UUID
     version: int
     createdBy: str

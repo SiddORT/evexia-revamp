@@ -114,6 +114,7 @@ def review_state(db, parsed):
             doctor = resolve_doctor(db, values["doctorId"], registration)
             values["doctorId"] = doctor.id
             body = PatientFields(**values)
+            patients.validate_language(db, body)
             _, mr, zone = patients.assignment(db, doctor.id)
             patients.unique(db, body, code)
             key = (body.name.lower(), body.dialCountry, body.phone, body.dateOfBirth)

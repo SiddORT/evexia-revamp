@@ -9,6 +9,7 @@ import { GeographyControl, GeographyLabel, PostalSelection, useAddressCatalogue 
 import { emptyMRValues, generateMRUsername, lookupPincode, MR_FIELDS as FIELDS, payloadFromValues, validateMRValues } from '../../services/serverMRs.js';
 import '../../mr.css';
 import { initialCredentials } from '../../services/initialCredentials.js';
+import { presentMasterFailure } from '../../services/masterValidation.js';
 
 const OPTIONAL = new Set(['reportingManagerId', 'addressLine2', 'paymentLimit', 'doctorDaysLimit']);
 const TABS = [
@@ -224,9 +225,9 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
     setSaving(true);
     try {
       const result = await onSave(payloadFromValues(cleaned), mr ? null : credentials.password || null);
-      if (!result?.success) setSaveError(result?.error || 'This MR could not be saved. Please try again.');
+      if (!result?.success) presentMasterFailure(result, { fields: ORDER, tabs: TABS, setErrors, setActiveTab, pendingFocus, setMessage: setSaveError, fallback: 'This MR could not be saved. Your draft is preserved.' });
     } catch (error) {
-      setSaveError(error?.message || 'This MR could not be saved. Please try again.');
+      presentMasterFailure(error, { fields: ORDER, tabs: TABS, setErrors, setActiveTab, pendingFocus, setMessage: setSaveError, fallback: 'This MR could not be saved. Your draft is preserved.' });
     } finally {
       setSaving(false);
     }

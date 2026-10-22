@@ -103,8 +103,8 @@ def parse(data, filename):
         try:
             fields = ProductCategoryFields(name=name, description=description, unit_price=price, status=status)
             name, description, price = fields.name, fields.description, fields.unit_price
-        except ValidationError:
-            errors.append("Name must be 1–200 characters, description at most 2,000, status Active/Inactive and price a non-negative plain decimal with at most 12 integer and 6 fractional digits.")
+        except ValidationError as exc:
+            errors.extend(f"{'.'.join(map(str, e['loc']))}: {e['msg']}" for e in exc.errors(include_input=False))
         reviewed.append(dict(row=number, name=name, description=description, unit_price=price, status=status, errors=errors))
     if not reviewed:
         invalid("At least one record is required.")

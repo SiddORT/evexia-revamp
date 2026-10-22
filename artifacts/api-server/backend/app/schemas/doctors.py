@@ -11,9 +11,11 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from email_validator import validate_email, EmailNotValidError
 from app.schemas.phone import DialCountry, normalize_phone
 from app.schemas.rates import rate
+from app.schemas.master_validation import MasterWriteFields
 
 
-class DoctorFields(BaseModel):
+class DoctorFields(MasterWriteFields):
+    master_names = {"name": ("doctor name", True)}
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
     phone: str = Field(default="", max_length=20)
@@ -43,10 +45,13 @@ class DoctorFields(BaseModel):
 
     @field_validator("*", mode="before")
     @classmethod
-    def trim(cls, value):
+    def trim(cls, value, info):
+        if cls.master_read or info.field_name == "name":
+            return value
         if isinstance(value, str):
             value = value.strip()
-            if any(unicodedata.category(c).startswith("C") or c in "\ufffe\uffff" for c in value):
+            if any((unicodedata.category(c).startswith("C") and
+                    not (info.field_name == "name" and c in "\u200c\u200d")) or c in "\ufffe\uffff" for c in value):
                 raise ValueError("Unsupported characters")
         return value
 
@@ -55,7 +60,9 @@ class DoctorFields(BaseModel):
     def joining(cls, value):
         if value == "":
             return None
-        if isinstance(value, str) and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+        if value is not None and (isinstance(value, datetime) or not (
+            isinstance(value, date) or isinstance(value, str) and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value)
+        )):
             raise ValueError("Use an ISO calendar date")
         return value
 
@@ -98,6 +105,8 @@ class DoctorFields(BaseModel):
 
     @model_validator(mode="after")
     def business(self):
+        if self.master_read:
+            return self
         for key in ("phone", "alternatePhone"):
             value = getattr(self, key)
             if value:
@@ -160,6 +169,7 @@ class DoctorBulk(BaseModel):
 
 
 class DoctorResponse(DoctorFields):
+    master_read = True
     id: uuid.UUID
     version: int
     verification: Literal["verified", "unverified"]

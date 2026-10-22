@@ -5,6 +5,7 @@ from typing import Literal
 from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from app.schemas.rates import rate
+from app.schemas.master_validation import MasterWriteFields
 from app.schemas.inventory import MoveLine, MovementLocation, MovementActivity
 
 
@@ -21,7 +22,8 @@ class ProductMemberInput(BaseModel):
         return value
 
 
-class ProductFields(BaseModel):
+class ProductFields(MasterWriteFields):
+    master_names = {"name": ("product name", False)}
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
     mrp: str
@@ -32,9 +34,7 @@ class ProductFields(BaseModel):
     @field_validator("name")
     @classmethod
     def name_trim(cls, value):
-        value = " ".join(value.split())
-        if not value:
-            raise ValueError("Enter a product name.")
+        # Already normalized/validated by the write-only field base.
         return value
 
     @field_validator("mrp", "sellingPrice")
@@ -44,6 +44,8 @@ class ProductFields(BaseModel):
 
     @model_validator(mode="after")
     def valid(self):
+        if any(not member.quantity.isascii() for member in self.members):
+            raise ValueError("Use ASCII digits and a decimal point for member quantities.")
         if len({m.allergenId for m in self.members}) != len(self.members):
             raise ValueError("Choose at least two distinct allergens, each only once.")
         if Decimal(self.sellingPrice) > Decimal(self.mrp):

@@ -50,7 +50,10 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
     try { await onSave(allergenPayload(values)); }
     catch (cause) {
       try { guard(); } catch { return; }
-      if (alive.current) { setServerError(cause.message); setBlocked(/stale|conflict/.test(cause.code || '') || Boolean(cause.ambiguous) || cause.code === 'not_found'); }
+      if (alive.current) {
+        if (cause.fields) setErrors((current) => ({ ...current, ...cause.fields }));
+        setServerError(cause.message); setBlocked(/stale|conflict/.test(cause.code || '') || Boolean(cause.ambiguous) || cause.code === 'not_found');
+      }
     } finally { busy.current = false; if (alive.current) setPending(false); }
   }
   async function reconcile() {
@@ -63,6 +66,7 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
       setServerError(current ? `Current server record: ${summary(current)}. Your draft is retained. Compare these details before saving again.` : 'No matching record exists. Your draft is retained; review before retrying.');
       setBlocked(false);
     } catch (cause) {
+      if (cause.fields) setErrors((current) => ({ ...current, ...cause.fields }));
       try { guard(); } catch { return; }
       if (alive.current) setServerError(cause.message);
     } finally { busy.current = false; if (alive.current) setPending(false); }

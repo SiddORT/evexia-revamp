@@ -1,14 +1,16 @@
 """Opening quantities and rates never cross JSON binary floating point."""
 import uuid
+import re
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Literal
+from typing import ClassVar, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from app.schemas.rates import rate
 from app.schemas.inventory import MovementLocation, MovementActivity
 
 
 class OpeningRow(BaseModel):
+    read_snapshot: ClassVar[bool] = False
     model_config = ConfigDict(extra="forbid")
     sourceId: uuid.UUID
     rowId: uuid.UUID
@@ -25,6 +27,8 @@ class OpeningRow(BaseModel):
 
     @model_validator(mode="after")
     def valid(self):
+        if not self.read_snapshot and not self.quantity.isascii():
+            raise ValueError("Use ASCII digits and a decimal point for quantity.")
         amount = Decimal(self.quantity)
         if amount > 1000000:
             raise ValueError("Quantity cannot exceed 1000000.")
@@ -38,6 +42,15 @@ class OpeningInput(BaseModel):
     rows: list[OpeningRow] = Field(min_length=1, max_length=1000)
     recordedDate: date
     mode: Literal["manual", "import"]
+
+    @field_validator("recordedDate", mode="before")
+    @classmethod
+    def recorded_date(cls, value):
+        if isinstance(value, datetime) or not (
+            isinstance(value, date) or isinstance(value, str) and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value)
+        ):
+            raise ValueError("Use a real recorded date in YYYY-MM-DD format, not a timestamp or number.")
+        return value
 
     @model_validator(mode="after")
     def unique_rows(self):
@@ -54,6 +67,7 @@ class OpeningCreate(OpeningInput):
 
 
 class OpeningReviewedRow(OpeningRow):
+    read_snapshot = True
     productName: str
     unit: str
     location: MovementLocation

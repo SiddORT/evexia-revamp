@@ -57,8 +57,8 @@ def parse(data, filename):
             name = name[1:]
         try:
             name = LanguageFields(name=name).name
-        except ValidationError:
-            errors.append("Language name must contain 1–200 Unicode characters without unsupported control characters.")
+        except ValidationError as exc:
+            errors.extend(f"Language name: {e['msg']}" for e in exc.errors(include_input=False))
         # Sanitize invalid surrogate/noncharacter text so even an invalid review
         # can be safely serialized; these rows remain ineligible for insertion.
         display = "".join("\ufffd" if 0xD800 <= ord(char) <= 0xDFFF or char in "\ufffe\uffff" else char for char in name)

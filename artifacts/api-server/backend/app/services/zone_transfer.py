@@ -142,9 +142,9 @@ def parse(data, filename):
             name = name[1:]
         status = cells[1].strip().lower() if len(cells) > 1 else ""
         try:
-            ZoneFields(name=name, status=status)
-        except ValidationError:
-            errors.append("Name must be 1–200 characters and status Active or Inactive.")
+            name = ZoneFields(name=name, status=status).name
+        except ValidationError as exc:
+            errors.extend(f"{'.'.join(map(str, e['loc']))}: {e['msg']}" for e in exc.errors(include_input=False))
         key = name.lower()
         if key in seen:
             errors.append("Duplicate name within this file.")
@@ -163,7 +163,9 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
     def work():
         current = zones.authorize(db, actor, "zone.import")
         # Match exactly the database lower() uniqueness semantics.
-        names = [row["name"] for row in rows]
+        # Invalid names (including NUL) must not be sent to PostgreSQL while
+        # preparing a row-level review. Confirmation still rejects all errors.
+        names = [row["name"] if not row["errors"] else "" for row in rows]
         normalized = list(db.scalars(select(func.lower(func.unnest(cast(names, ARRAY(Text)))))))
         seen = set()
         existing = set(db.scalars(select(func.lower(Zone.name)).where(

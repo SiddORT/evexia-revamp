@@ -7,6 +7,7 @@ import { GeographyControl, GeographyLabel, PostalSelection, useAddressCatalogue 
 import { dialCountry, normalizePhone } from '../../services/phoneCountries.js';
 import { lookupDoctorPIN } from '../../services/serverDoctors.js';
 import { discountRate, roundRate } from '../../services/rates.js';
+import { masterNameError, masterLengthErrors, normalizeMasterName, presentMasterFailure } from '../../services/masterValidation.js';
 import '../../doctor-form.css';
 
 const FIELDS = [
@@ -55,7 +56,14 @@ function validDate(value) {
 }
 
 function validate(values) {
-  const errors = {};
+  const errors = masterLengthErrors(values, {
+    phone: 20, alternatePhone: 20, email: 320, registrationNumber: 100,
+    qualification: 200, clinicName: 200, gstNumber: 20, drugLicenceNumber: 100,
+    pincode: 12, addressLine1: 300, addressLine2: 300, landmark: 200,
+    country: 100, state: 100, city: 100,
+  });
+  const nameError = masterNameError(values.name, 'doctor name', { personal: true });
+  if (nameError) errors.name = nameError;
   for (const key of REQUIRED) if (!values[key]?.trim()) errors[key] = 'This field is required.';
   if (!['required', 'optional'].includes(values.contactRequirement)) errors.contactRequirement = 'Choose a contact requirement.';
   if (values.contactRequirement === 'required') {
@@ -70,7 +78,8 @@ function validate(values) {
     errors.alternatePhone = `Enter a valid alternate phone number for ${dial.name}.`;
   }
   if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) errors.email = 'Enter a valid email address.';
-  if (values.dateOfJoining && (!validDate(values.dateOfJoining) || new Date(`${values.dateOfJoining}T00:00:00`).getTime() > Date.now())) {
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  if (values.dateOfJoining && (!validDate(values.dateOfJoining) || values.dateOfJoining > today)) {
     errors.dateOfJoining = 'Enter a valid joining date that is not in the future.';
   }
   if (values.pincode && values.country.toLocaleLowerCase() === 'india' && !/^\d{6}$/.test(values.pincode)) {
@@ -191,6 +200,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
     event.preventDefault();
     if (saving || blocked) return;
     const cleaned = Object.fromEntries(FIELDS.map((key) => [key, values[key].trim()]));
+    cleaned.name = normalizeMasterName(values.name);
     const nextErrors = validate(cleaned);
     if (address.postal.required) nextErrors.pincode = 'Choose a PIN location or confirm catalogue selection.';
     if (cleaned.mrId && (!selectedMR || selectedMR.deleted || !selectedMR.zoneId || (!selectedMR.usable && cleaned.mrId !== doctor?.mrId))) nextErrors.mrId = 'Select an active server MR with a usable Zone.';
@@ -217,9 +227,9 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
         daysLimit: cleaned.daysLimit === '' ? 0 : Number(cleaned.daysLimit),
         paymentLimit: cleaned.paymentLimit === '' ? '0.00' : roundRate(cleaned.paymentLimit),
       });
-      if (!result?.success) setSaveError(result?.error || 'This doctor could not be saved. Please try again.');
+      if (!result?.success) presentMasterFailure(result, { fields: FIELDS, tabs: TABS, setErrors, setActiveTab, pendingFocus, setMessage: setSaveError, fallback: 'This doctor could not be saved. Your draft is preserved.' });
     } catch (error) {
-      setSaveError(error?.message || 'This doctor could not be saved. Please try again.');
+      presentMasterFailure(error, { fields: FIELDS, tabs: TABS, setErrors, setActiveTab, pendingFocus, setMessage: setSaveError, fallback: 'This doctor could not be saved. Your draft is preserved.' });
     } finally {
       setSaving(false);
     }

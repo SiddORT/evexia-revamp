@@ -247,6 +247,10 @@ def create_app() -> FastAPI:
                          "limit", "offset", "format", "filename", "digest", "confirm", "include_saved", "zone_id", "mr_id"}
             locations = {f"{scope}.{name}" for scope in ("body", "query", "path") for name in allowed}
             fields = [{"field": item["field"] if item["field"] in locations else "body", "code": item["code"]} for item in fields]
+        from app.schemas.master_validation import master_field_errors
+        master_fields = master_field_errors(request.url.path, exc.errors())
+        if master_fields is not None:
+            fields = master_fields
         return JSONResponse(error_body(request, 422, "Invalid request", fields=fields), status_code=422)
 
     @app.exception_handler(FileError)

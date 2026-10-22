@@ -15,3 +15,13 @@ actions each and no automatic account or grant upgrades.
 **How to apply:** Keep reference helpers minimal and authorize the consuming
 workflow. Obtain explicit scope approval before adding permission domains,
 generic provisioning powers or new recovery/deletion workflows.
+
+The user's Masters validation scope is all 16 entries in the Masters directory,
+not only the eight assignable staff resources. Validation across those entries
+must not expand the staff permission catalogue.
+
+**Why:** The user explicitly distinguished full-directory validation from
+assignable authorization scope.
+
+**How to apply:** Inventory the directory for validation work, but preserve the
+existing authorization and account-provisioning boundaries for each master.

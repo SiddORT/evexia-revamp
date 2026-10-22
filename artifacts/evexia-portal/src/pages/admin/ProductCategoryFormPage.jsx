@@ -47,7 +47,10 @@ function CategoryForm({ record, onSave, onCancel, onRefresh }) {
       await onSave({ name: normalizeName(values.name), description: values.description.trim(), unit_price: values.unit_price.trim(), status: values.status });
     } catch (cause) {
       try { guard(); } catch { return; }
-      if (alive.current) { setServerError(cause.message); setBlocked(cause.code === 'product_category_stale' || Boolean(cause.ambiguous) || cause.code === 'not_found'); }
+      if (alive.current) {
+        if (cause.fields) setErrors((current) => ({ ...current, ...cause.fields }));
+        setServerError(cause.message); setBlocked(cause.code === 'product_category_stale' || Boolean(cause.ambiguous) || cause.code === 'not_found');
+      }
     } finally { busy.current = false; if (alive.current) setPending(false); }
   }
   async function reconcile() {

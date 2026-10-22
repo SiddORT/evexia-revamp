@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.schemas.rates import rate, source_decimal
+from app.schemas.master_validation import MasterWriteFields
 
 
 def exact_price(value):
@@ -15,7 +16,8 @@ def exact_quantity(value):
     return format(source_decimal(value), ".6f")
 
 
-class ProductCategoryFields(BaseModel):
+class ProductCategoryFields(MasterWriteFields):
+    master_names = {"name": ("product category name", False)}
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
     description: str = Field(default="", max_length=2000)
@@ -25,12 +27,15 @@ class ProductCategoryFields(BaseModel):
     @field_validator("name", "description", mode="before")
     @classmethod
     def normalize(cls, value):
-        return " ".join(value.split()) if isinstance(value, str) else value
+        # Names are normalized by the write-only base; descriptions are free
+        # text, not business keys. Keep their whitespace and line breaks.
+        return value
 
     @field_validator("name", "description")
     @classmethod
-    def printable(cls, value):
-        if any(ord(char) < 32 or 0xD800 <= ord(char) <= 0xDFFF or char in "\ufffe\uffff" for char in value):
+    def printable(cls, value, info):
+        allowed = "\n\r\t" if info.field_name == "description" else ""
+        if any((ord(char) < 32 and char not in allowed) or 0xD800 <= ord(char) <= 0xDFFF or char in "\ufffe\uffff" for char in value):
             raise ValueError("Unsupported characters")
         return value
 
@@ -54,6 +59,7 @@ class ProductCategoryStatus(ProductCategoryVersion):
 
 
 class ProductCategoryResponse(ProductCategoryFields):
+    master_read = True
     id: uuid.UUID
     version: int
     createdBy: str

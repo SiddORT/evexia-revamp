@@ -3,16 +3,18 @@ from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from app.schemas.master_validation import MasterWriteFields
 
 
-class LanguageFields(BaseModel):
+class LanguageFields(MasterWriteFields):
+    master_names = {"name": ("language name", False)}
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
 
     @field_validator("name", mode="before")
     @classmethod
     def trim(cls, value):
-        return value.strip() if isinstance(value, str) else value
+        return value  # MasterWriteFields normalizes explicit writes only.
 
     @field_validator("name")
     @classmethod
@@ -32,6 +34,7 @@ class LanguageEdit(LanguageFields, LanguageVersion):
 
 
 class LanguageResponse(LanguageFields):
+    master_read = True
     id: uuid.UUID
     version: int
     createdBy: str

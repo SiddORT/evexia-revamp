@@ -1,6 +1,7 @@
 import { allergenRequest } from '../auth/adminSession.js';
 import { downloadServerBlob } from './downloads.js';
 import { catalogueRate } from './rates.js';
+import { masterNameError, normalizeMasterName, textLength } from './masterValidation.js';
 
 export const DECIMAL_RE = /^(?:0|[1-9][0-9]{0,11})(?:\.[0-9]{1,6})?$/;
 export const listAllergens = (params, signal) => allergenRequest('', { params, signal });
@@ -35,8 +36,8 @@ export function validatePriceBounds(min, max) {
 }
 export function validateAllergen(v) {
   const e = {};
-  const name = v.name.trim().replace(/\s+/g, ' ');
-  if (!name) e.name = 'Product name is required.'; else if (name.length > 200) e.name = 'Product name must be 200 characters or fewer.';
+  const nameError = masterNameError(v.name, 'allergen name');
+  if (nameError) e.name = nameError;
   if (!v.category_id) e.category_id = 'Select a product category.';
   if (!v.storage_location_id) e.storage_location_id = 'Select a storage location.';
   const price = v.selling_price.trim();
@@ -44,10 +45,11 @@ export function validateAllergen(v) {
   const gst = v.gst.trim();
   if (!gst) e.gst = 'GST is required.'; else if (!/^(?:0|[1-9][0-9]{0,2})(?:\.[0-9]{1,6})?$/.test(gst) || compareDecimal(gst, '100') > 0) e.gst = 'GST must be between 0 and 100 with up to 6 decimals.';
   const conc = v.concentration.trim();
-  if (!conc) e.concentration = 'Concentration is required.'; else if (conc.length > 200) e.concentration = 'Concentration must be 200 characters or fewer.';
+  if (!conc) e.concentration = 'Concentration is required.'; else if (textLength(conc) > 200) e.concentration = 'Concentration must be 200 characters or fewer.';
   const th = v.threshold_limit.trim();
   if (th && !DECIMAL_RE.test(th)) e.threshold_limit = 'Enter a plain nonnegative decimal (12 integer, 6 fractional digits max).';
   if (!['active', 'inactive'].includes(v.status)) e.status = 'Select a status.';
+  if (typeof v.mix !== 'boolean') e.mix = 'Select Mix or No Mix.';
   return e;
 }
-export const allergenPayload = (v) => ({ name: v.name.trim().replace(/\s+/g, ' '), category_id: v.category_id, storage_location_id: v.storage_location_id, selling_price: v.selling_price.trim() ? catalogueRate(v.selling_price) : null, gst: catalogueRate(v.gst, true), concentration: v.concentration.trim(), threshold_limit: v.threshold_limit.trim() || null, status: v.status, mix: v.mix === true });
+export const allergenPayload = (v) => ({ name: normalizeMasterName(v.name), category_id: v.category_id, storage_location_id: v.storage_location_id, selling_price: v.selling_price.trim() ? catalogueRate(v.selling_price) : null, gst: catalogueRate(v.gst, true), concentration: v.concentration.trim(), threshold_limit: v.threshold_limit.trim() || null, status: v.status, mix: v.mix });

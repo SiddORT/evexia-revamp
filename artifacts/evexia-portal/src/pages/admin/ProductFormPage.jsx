@@ -11,6 +11,7 @@ import '../../inventoryServer.css';
 import { usePlatformConfirm } from '../../components/PlatformConfirmation.jsx';
 import useProductDraftNavigation from '../../hooks/useProductDraftNavigation.js';
 import { MAX_MILLI, milli } from '../../services/serverInventory.js';
+import { masterNameError, normalizeMasterName } from '../../services/masterValidation.js';
 
 const BASE = '/admin/masters/products';
 const qtyRe = /^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$/;
@@ -74,12 +75,14 @@ export default function ProductFormPage({ id }) {
   const clear = (k) => { keyRef.current = null; setErrors((e) => ({ ...e, [k]: undefined })); };
   function validate() {
     const e = {};
-    if (!name.trim() || name.trim().length > 200) e.name = 'Enter a name up to 200 characters.';
+    const nameError = masterNameError(name, 'product name');
+    if (nameError) e.name = nameError;
+    if (!['active', 'inactive'].includes(status)) e.status = 'Select Active or Inactive.';
     const mc = toCents(mrp), sc = toCents(sellingPrice);
     if (mc === null) e.mrp = 'Enter a non-negative amount.';
     if (sc === null) e.sellingPrice = 'Enter a non-negative amount.';
     else if (mc !== null && sc > mc) e.sellingPrice = 'Selling price cannot exceed MRP (compared after rounding to two decimals).';
-    if (rows.length < 2) e.members = 'A combo needs at least two allergens.';
+    if (rows.length < 2 || rows.length > 100) e.members = 'A combo needs 2–100 distinct allergens.';
     const seen = new Set();
     rows.forEach((r) => {
       if (!r.allergen) e[r.rid] = 'Select an allergen.';
@@ -96,13 +99,22 @@ export default function ProductFormPage({ id }) {
     if (Object.keys(e).length) return;
     lock.current = true; setBusy(true);
     const key = keyRef.current || (keyRef.current = newKey());
-    const body = { idempotencyKey: key, name: name.trim(), mrp: mrp.trim(), sellingPrice: sellingPrice.trim(), status,
+    const body = { idempotencyKey: key, name: normalizeMasterName(name), mrp: mrp.trim(), sellingPrice: sellingPrice.trim(), status,
       members: rows.map((r) => ({ allergenId: r.allergen.value, quantity: r.quantity.trim() })) };
     try {
       await journaled(key, () => (isNew ? createProduct(body) : updateProduct(id, { ...body, expected_version: version })));
       keyRef.current = null; navigate(BASE);
     } catch (err) {
       if (!mounted.current) return;
+      if (err.fields) {
+        const next = {};
+        for (const [field, message] of Object.entries(err.fields)) {
+          const member = /^members\.(\d+)\.(allergenId|quantity)$/.exec(field);
+          if (member && rows[Number(member[1])]) next[rows[Number(member[1])].rid] = message;
+          else if (['name', 'mrp', 'sellingPrice', 'status', 'members'].includes(field)) next[field] = message;
+        }
+        setErrors((current) => ({ ...current, ...next }));
+      }
       if (err.uncertain) { setBlocked(true); setTick((t) => t + 1); setMessage(`${err.message || 'The save outcome is unknown.'} Check the save outcome before saving again. Your draft is preserved.`); }
       else { keyRef.current = null; setMessage(`${err.message || 'Nothing was saved.'} Your draft is preserved.`); }
     } finally { lock.current = false; if (mounted.current) setBusy(false); }
@@ -128,7 +140,7 @@ export default function ProductFormPage({ id }) {
           <div className="ms-field"><label htmlFor="pf-mrp">MRP per combo <span className="mr-form__required">*</span></label><input id="pf-mrp" className="mr-form__control" inputMode="decimal" value={mrp} onChange={(e) => { setMrp(e.target.value); clear('mrp'); clear('sellingPrice'); }} aria-invalid={Boolean(errors.mrp)} aria-describedby={errors.mrp ? 'pf-mrp-error' : 'pf-price-hint'} data-testid="input-product-mrp" />{err('mrp')}</div>
           <div className="ms-field"><label htmlFor="pf-sp">Selling price per combo <span className="mr-form__required">*</span></label><input id="pf-sp" className="mr-form__control" inputMode="decimal" value={sellingPrice} onChange={(e) => { setSellingPrice(e.target.value); clear('sellingPrice'); }} aria-invalid={Boolean(errors.sellingPrice)} aria-describedby={errors.sellingPrice ? 'pf-sellingPrice-error' : 'pf-price-hint'} data-testid="input-product-selling-price" />{err('sellingPrice')}
             <p id="pf-price-hint" className="mr-form__hint">Independent of component prices. Rounded half-up to two decimals by the server. Selling price must not exceed MRP.</p></div>
-          <div className="ms-field"><label htmlFor="pf-status">Status</label><select id="pf-status" className="mr-form__control" value={status} onChange={(e) => { setStatus(e.target.value); keyRef.current = null; }} data-testid="select-product-form-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+          <div className="ms-field"><label htmlFor="pf-status">Status</label><select id="pf-status" className="mr-form__control" value={status} onChange={(e) => { setStatus(e.target.value); keyRef.current = null; clear('status'); }} aria-invalid={Boolean(errors.status)} aria-describedby={errors.status ? 'pf-status-error' : undefined} data-testid="select-product-form-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>{err('status')}</div>
         </div>
         <fieldset className="ms-products"><legend className="ms-legend">Allergen members <span className="mr-form__required">*</span></legend>
           {rows.map((r, i) => <div key={r.rid} className="ms-fields" style={{ alignItems: 'start' }}>
@@ -139,7 +151,7 @@ export default function ProductFormPage({ id }) {
             <button type="button" className="admin-button admin-button--secondary" style={{ marginTop: 24 }} disabled={rows.length <= 2} aria-label={`Remove allergen ${i + 1}`} onClick={() => { keyRef.current = null; setRows((x) => x.filter((y) => y.rid !== r.rid)); }}><Trash2 size={14} /></button>
           </div>)}
           {err('members')}
-          <button type="button" className="admin-button admin-button--secondary" onClick={() => { keyRef.current = null; setRows((x) => [...x, blank()]); }} data-testid="button-add-member"><Plus size={14} /> Add allergen</button>
+          <button type="button" className="admin-button admin-button--secondary" disabled={rows.length >= 100} onClick={() => { keyRef.current = null; setRows((x) => x.length < 100 ? [...x, blank()] : x); }} data-testid="button-add-member"><Plus size={14} /> Add allergen</button>
         </fieldset>
       </div></fieldset>
       <div className="ms-footer"><span>Saving the master does not create stock or change allergen prices.</span><div className="ms-head-actions">

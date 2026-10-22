@@ -18,7 +18,11 @@ const UNALLOCATED = { value: 'unallocated', label: 'Unallocated (no physical loc
 const MAX_ROWS = 50;
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const blankRow = () => ({ rowId: newId(), item: null, quantity: '', unitRate: '', location: UNALLOCATED });
-const validDay = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(`${v}T00:00:00Z`));
+const validDay = (v) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  const parsed = new Date(`${v}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === v && !v.startsWith('0000');
+};
 
 export default function OpeningStockFormPage() {
   const [, navigate] = useLocation();
@@ -50,6 +54,7 @@ export default function OpeningStockFormPage() {
   function validate() {
     const e = {};
     if (!validDay(draft.recordedDate)) e.date = 'Enter a valid recorded date.';
+    if (!draft.rows.length || draft.rows.length > MAX_ROWS) e.rows = `Enter 1–${MAX_ROWS} manual rows.`;
     draft.rows.forEach((r, i) => {
       const m = [];
       if (!r.item) m.push('Select an allergen or product.');
@@ -63,6 +68,17 @@ export default function OpeningStockFormPage() {
     sourceId: draft.sourceId, rowId: r.rowId, itemKind: r.item.itemKind, itemId: r.item.itemId,
     quantity: r.quantity.trim(), unitRate: r.unitRate.trim(), locationId: r.location.value === 'unallocated' ? null : r.location.value })) });
 
+  function showFieldErrors(error) {
+    const next = {};
+    for (const [field, message] of Object.entries(error.fields || {})) {
+      const row = /^rows\.(\d+)\.(?:quantity|unitRate|itemId|itemKind|locationId|sourceId|rowId)$/.exec(field);
+      if (row && draft.rows[Number(row[1])]) next[row[1]] = message;
+      else if (field === 'recordedDate') next.date = message;
+      else if (field === 'rows') next.rows = message;
+    }
+    setErrors((current) => ({ ...current, ...next }));
+  }
+
   async function submitReview(ev) {
     ev.preventDefault();
     if (lock.current || locked) return;
@@ -72,7 +88,12 @@ export default function OpeningStockFormPage() {
     try {
       const b = body(); const r = await previewOpening(b);
       if (mounted.current) setReview({ body: b, rows: r.rows, token: r.reviewToken, summary: r.summary });
-    } catch (err) { if (mounted.current) setMessage(`${err.message || 'The opening stock could not be reviewed.'} Your draft is preserved.`); }
+    } catch (err) {
+      if (mounted.current) {
+        showFieldErrors(err);
+        setMessage(`${err.message || 'The opening stock could not be reviewed.'} Your draft is preserved.`);
+      }
+    }
     finally { lock.current = false; if (mounted.current) setBusy(''); }
   }
   async function confirm() {
@@ -84,6 +105,7 @@ export default function OpeningStockFormPage() {
       keyRef.current = null; recordLocalAction('opening_stock', 'created'); setDone(true);
     } catch (err) {
       if (!mounted.current) return;
+      showFieldErrors(err);
       if (err.uncertain) { setBlocked(true); setTick((t) => t + 1); setMessage(`${err.message || 'The save outcome is unknown.'} Check the save outcome before saving again. Your draft and identities are preserved.`); }
       else { keyRef.current = null; setMessage(`${err.message || 'Nothing was saved.'} Your draft is preserved.`); }
     } finally { lock.current = false; if (mounted.current) setBusy(''); }
@@ -101,15 +123,16 @@ export default function OpeningStockFormPage() {
     <section className="admin-panel" aria-label="New opening stock"><form onSubmit={submitReview} noValidate>
       <fieldset disabled={locked} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}><div className="ms-form-body">
         <div className="ms-fields"><div className="ms-field"><label htmlFor="os-date">Recorded date <span className="mr-form__required">*</span></label>
-          <input id="os-date" type="date" className="mr-form__control" value={draft.recordedDate} onChange={(e) => { reset(); setDraft((d) => ({ ...d, recordedDate: e.target.value })); setErrors((x) => ({ ...x, date: undefined })); }} aria-invalid={Boolean(errors.date)} data-testid="input-opening-date" />{err('date')}</div></div>
+          <input id="os-date" type="date" className="mr-form__control" value={draft.recordedDate} onChange={(e) => { reset(); setDraft((d) => ({ ...d, recordedDate: e.target.value })); setErrors((x) => ({ ...x, date: undefined })); }} aria-invalid={Boolean(errors.date)} aria-describedby={errors.date ? 'os-date-error' : undefined} data-testid="input-opening-date" />{err('date')}</div></div>
         <h2 className="ms-section-title">Items</h2>
+        {err('rows')}
         {draft.rows.map((r, i) => <div key={r.rowId} className="ms-fields" data-testid={`row-opening-${i}`} style={{ borderTop: '1px solid var(--admin-border, #ddd)', paddingTop: 12 }}>
           <div className="ms-field"><label htmlFor={`os-item-${i}`}>Allergen or product <span className="mr-form__required">*</span></label>
             <ReferenceSelect id={`os-item-${i}`} label="Item" kind="items" fetchPage={listItemReferences} value={r.item ? r.item.value : ''} selected={r.item} placeholder="Select item" invalid={Boolean(errors[i])}
               onChange={(_v, o) => patchRow(i, { item: o ? { value: o.value, label: o.label, itemKind: o.itemKind, itemId: o.itemId, unit: o.unit } : null })} />
             {r.item && <span className="mr-form__hint">{r.item.itemKind === 'combo' ? 'Product, whole units only' : 'Allergen, up to 3 decimals'}{r.item.unit ? ` · ${r.item.unit}` : ''}</span>}</div>
-          <div className="ms-field"><label htmlFor={`os-qty-${i}`}>Quantity <span className="mr-form__required">*</span></label><input id={`os-qty-${i}`} className="mr-form__control" inputMode="decimal" autoComplete="off" value={r.quantity} onChange={(e) => patchRow(i, { quantity: e.target.value })} aria-invalid={Boolean(errors[i])} data-testid={`input-opening-qty-${i}`} /></div>
-          <div className="ms-field"><label htmlFor={`os-rate-${i}`}>Unit rate <span className="mr-form__required">*</span></label><input id={`os-rate-${i}`} className="mr-form__control" inputMode="decimal" autoComplete="off" value={r.unitRate} onChange={(e) => patchRow(i, { unitRate: e.target.value })} aria-invalid={Boolean(errors[i])} data-testid={`input-opening-rate-${i}`} /><span className="mr-form__hint">Entered cost per unit, not MRP or selling price.</span></div>
+          <div className="ms-field"><label htmlFor={`os-qty-${i}`}>Quantity <span className="mr-form__required">*</span></label><input id={`os-qty-${i}`} className="mr-form__control" inputMode="decimal" autoComplete="off" value={r.quantity} onChange={(e) => patchRow(i, { quantity: e.target.value })} aria-invalid={Boolean(errors[i])} aria-describedby={errors[i] ? `os-${i}-error` : undefined} data-testid={`input-opening-qty-${i}`} /></div>
+          <div className="ms-field"><label htmlFor={`os-rate-${i}`}>Unit rate <span className="mr-form__required">*</span></label><input id={`os-rate-${i}`} className="mr-form__control" inputMode="decimal" autoComplete="off" value={r.unitRate} onChange={(e) => patchRow(i, { unitRate: e.target.value })} aria-invalid={Boolean(errors[i])} aria-describedby={errors[i] ? `os-${i}-error` : undefined} data-testid={`input-opening-rate-${i}`} /><span className="mr-form__hint">Entered cost per unit, not MRP or selling price.</span></div>
           <div className="ms-field"><label htmlFor={`os-loc-${i}`}>Storage location</label>
             <ReferenceSelect id={`os-loc-${i}`} label="Storage location" kind="locations" fetchPage={listReference} pinned={[UNALLOCATED]} value={r.location.value} selected={r.location} placeholder="Unallocated"
               onChange={(_v, o) => patchRow(i, { location: o ? { value: o.value, label: o.label } : UNALLOCATED })} /></div>

@@ -11,9 +11,11 @@ from zoneinfo import ZoneInfo
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from email_validator import validate_email, EmailNotValidError
 from app.schemas.phone import DialCountry, normalize_phone
+from app.schemas.master_validation import MasterWriteFields
 
 
-class MRFields(BaseModel):
+class MRFields(MasterWriteFields):
+    master_names = {"name": ("MR name", True)}
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
     phone: str = Field(default="", max_length=20)
@@ -42,17 +44,20 @@ class MRFields(BaseModel):
     @field_validator("*", mode="before")
     @classmethod
     def trim(cls, value, info):
-        if info.field_name == "initialPassword":
+        if cls.master_read or info.field_name in ("initialPassword", "name"):
             return value
         if isinstance(value, str):
             value = value.strip()
-            if any(unicodedata.category(c).startswith("C") or c in "\ufffe\uffff" for c in value):
+            if any((unicodedata.category(c).startswith("C") and
+                    not (info.field_name == "name" and c in "\u200c\u200d")) or c in "\ufffe\uffff" for c in value):
                 raise ValueError("Unsupported characters")
         return value
 
     @field_validator("userId", "email", mode="before")
     @classmethod
     def identifier(cls, value):
+        if cls.master_read:
+            return value
         return value.strip().lower() if isinstance(value, str) else value
 
     @field_validator("email")
@@ -68,7 +73,9 @@ class MRFields(BaseModel):
     @field_validator("dateOfJoining", mode="before")
     @classmethod
     def joining_date(cls, value):
-        if isinstance(value, str) and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+        if isinstance(value, datetime) or not (
+            isinstance(value, date) or isinstance(value, str) and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value)
+        ):
             raise ValueError("Use a real ISO calendar date")
         return value
 
@@ -84,7 +91,7 @@ class MRFields(BaseModel):
     def exact_amount(cls, value):
         if value is None or value == "":
             return Decimal("0.00")
-        if isinstance(value, bool) or not re.fullmatch(r"\d{1,9}(?:\.\d{1,2})?", str(value)):
+        if isinstance(value, (float, bool)) or not re.fullmatch(r"\d{1,9}(?:\.\d{1,2})?", str(value)):
             raise ValueError("Use a nonnegative exact amount with at most two places")
         return Decimal(str(value)).quantize(Decimal("0.01"))
 
@@ -95,6 +102,8 @@ class MRFields(BaseModel):
 
     @model_validator(mode="after")
     def contact_rule(self):
+        if self.master_read:
+            return self
         if self.zoneIds is not None:
             if len(set(self.zoneIds)) != len(self.zoneIds):
                 raise ValueError("Assigned zones must be distinct")
@@ -135,6 +144,7 @@ class MRContact(MRVersion):
 
 
 class MRDirectoryResponse(MRFields):
+    master_read = True
     zoneIds: list[uuid.UUID]
     assignedZones: list["MRChoice"]
     designationName: str = Field(json_schema_extra={"readOnly": True})

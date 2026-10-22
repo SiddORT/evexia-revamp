@@ -60,8 +60,8 @@ def parse(data, filename):
         try:
             fields = HeadquarterFields(name=name, status=status, **({"state_code": code} if code else {}))
             name, code = fields.name, fields.state_code or abbreviation(fields.name)
-        except ValidationError:
-            errors.append("Name must be 1–200 printable characters, code 1–16 and status Active or Inactive. Names without letters need a code.")
+        except ValidationError as exc:
+            errors.extend(f"{'.'.join(map(str, e['loc']))}: {e['msg']}" for e in exc.errors(include_input=False))
         reviewed.append(dict(row=number, name=name, state_code=code, status=status, errors=errors))
     if not reviewed:
         invalid("At least one record is required.")

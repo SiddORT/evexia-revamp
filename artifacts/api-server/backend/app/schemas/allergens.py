@@ -5,12 +5,14 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.schemas.product_categories import exact_price, exact_quantity
 from app.schemas.rates import rate
+from app.schemas.master_validation import MasterWriteFields
 
 BUSINESS_FIELDS = ("name", "category_id", "storage_location_id", "selling_price", "gst",
                    "concentration", "threshold_limit", "status", "mix")
 
 
-class AllergenFields(BaseModel):
+class AllergenFields(MasterWriteFields):
+    master_names = {"name": ("allergen name", False)}
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
     category_id: uuid.UUID
@@ -24,7 +26,9 @@ class AllergenFields(BaseModel):
 
     @field_validator("name", "concentration", mode="before")
     @classmethod
-    def normalize(cls, value):
+    def normalize(cls, value, info):
+        if cls.master_read or info.field_name == "name":
+            return value
         return " ".join(value.split()) if isinstance(value, str) else value
 
     @field_validator("name", "concentration")
@@ -64,6 +68,7 @@ class AllergenStatus(AllergenVersion):
 
 
 class AllergenResponse(AllergenFields):
+    master_read = True
     id: uuid.UUID
     version: int
     category_name: str

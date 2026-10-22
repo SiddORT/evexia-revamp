@@ -2,9 +2,11 @@ import uuid
 from datetime import datetime
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from app.schemas.master_validation import MasterWriteFields
 
 
-class CourierFields(BaseModel):
+class CourierFields(MasterWriteFields):
+    master_names = {"name": ("courier partner name", False)}
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
     status: Literal["active", "inactive"]
@@ -12,7 +14,7 @@ class CourierFields(BaseModel):
     @field_validator("name", mode="before")
     @classmethod
     def normalize(cls, value):
-        return " ".join(value.split()) if isinstance(value, str) else value
+        return value  # MasterWriteFields normalizes explicit writes only.
 
     @field_validator("name")
     @classmethod
@@ -36,6 +38,7 @@ class CourierStatus(CourierVersion):
 
 
 class CourierResponse(CourierFields):
+    master_read = True
     id: uuid.UUID
     version: int
     createdBy: str

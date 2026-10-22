@@ -72,7 +72,7 @@ def parse(data, filename):
             for error in exc.errors(include_input=False):
                 field = error["loc"][0] if error["loc"] else None
                 if field in LABELS:
-                    errors.append(f"{LABELS[field]}: required and must meet the documented format/length.")
+                    errors.append(f"{LABELS[field]}: {error['msg']}")
                 else:
                     errors.append("Required vendor fields must meet the documented formats and limits.")
         reviewed.append(dict(row=number, values=values, errors=errors))

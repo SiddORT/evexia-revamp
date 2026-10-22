@@ -5,6 +5,7 @@ import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import StorageLocationAddress from '../../components/admin/StorageLocationAddress.jsx';
 import { locationGeographyLabel, validateLocationGeography } from '../../services/locationGeography.js';
 import { createLocation, editLocation, getLocation, listLocations } from '../../services/serverLocations.js';
+import { masterNameError, normalizeMasterName } from '../../services/masterValidation.js';
 import '../../mr.css';
 import '../../category.css';
 import '../../storageLocation.css';
@@ -14,8 +15,8 @@ const emptyValues = { name: '', address: '', status: '', pincode: '', countryCod
 
 function validate(values) {
   const errors = validateLocationGeography(values);
-  if (!values.name.trim()) errors.name = 'Storage location name is required.';
-  if (values.name.trim().length > 200) errors.name = 'Use no more than 200 characters.';
+  const nameError = masterNameError(values.name, 'storage location name');
+  if (nameError) errors.name = nameError;
   if (!values.address.trim()) errors.address = 'Address is required.';
   if (values.address.trim().length > 2000) errors.address = 'Use no more than 2,000 characters.';
   if (!['active', 'inactive'].includes(values.status)) errors.status = 'Select a status.';
@@ -52,8 +53,9 @@ function StorageLocationForm({ record, onSave, onCancel, onRefresh }) {
     busy.current = true;
     setPending(true);
     try {
-      await onSave({ ...values, name: values.name.trim(), address: values.address.trim() });
+      await onSave({ ...values, name: normalizeMasterName(values.name), address: values.address.trim() });
     } catch (cause) {
+      if (cause.fields) setErrors((current) => ({ ...current, ...cause.fields }));
       setServerError(cause.message || 'The location could not be saved.');
       setBlocked(cause.code === 'location_stale' || Boolean(cause.ambiguous));
     } finally { busy.current = false; setPending(false); }

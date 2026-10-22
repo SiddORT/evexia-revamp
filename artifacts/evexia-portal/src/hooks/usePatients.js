@@ -81,7 +81,7 @@ export default function usePatients(params = {}, detailId = null) {
     } catch (cause) {
       try { guard(); } catch { return { success: false, error: 'Session changed.' }; }
       if (alive.current && (cause.status === 409 || cause.ambiguous)) setState((old) => ({ ...old, error: `${cause.message} Review current server records before retrying; your draft is preserved.` }));
-      return { success: false, error: cause.message };
+      return { success: false, error: cause.message, fields: cause.fields };
     } finally { busy.current = false; if (alive.current) setPending(false); }
   }
   const row = (id) => typeof id === 'object' ? id : state.records.find((record) => record.id === id);

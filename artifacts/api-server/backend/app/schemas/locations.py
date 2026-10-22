@@ -4,9 +4,11 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from app.schemas.phone import COUNTRIES
 from app.services.location_geography import indian_state
+from app.schemas.master_validation import MasterWriteFields
 
 
-class LocationFields(BaseModel):
+class LocationFields(MasterWriteFields):
+    master_names = {"name": ("storage location name", False)}
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
     address: str = Field(min_length=1, max_length=2000)
@@ -18,18 +20,25 @@ class LocationFields(BaseModel):
 
     @field_validator("name", "address", "pincode", "countryCode", "state", "city", mode="before")
     @classmethod
-    def normalize(cls, value):
+    def normalize(cls, value, info):
+        if cls.master_read or info.field_name in ("name", "address"):
+            return value
         return " ".join(value.split()) if isinstance(value, str) else value
 
     @field_validator("name", "address", "pincode", "countryCode", "state", "city")
     @classmethod
-    def printable(cls, value):
-        if any(ord(char) < 32 or 0xD800 <= ord(char) <= 0xDFFF or char in "\ufffe\uffff" for char in value):
+    def printable(cls, value, info):
+        if info.field_name == "address" and not cls.master_read and not value.strip():
+            raise ValueError("Storage location address is required.")
+        allowed = "\n\r\t" if info.field_name == "address" else ""
+        if any((ord(char) < 32 and char not in allowed) or 0xD800 <= ord(char) <= 0xDFFF or char in "\ufffe\uffff" for char in value):
             raise ValueError("Unsupported characters")
         return value
 
     @model_validator(mode="after")
     def geography(self):
+        if self.master_read:
+            return self
         if self.countryCode and self.countryCode not in COUNTRIES:
             raise ValueError("Select a supported ISO country code.")
         if (self.pincode or self.state or self.city) and not self.countryCode:
@@ -60,6 +69,7 @@ class LocationStatus(LocationVersion):
 
 
 class LocationResponse(LocationFields):
+    master_read = True
     stateCode: str | None = None
     id: uuid.UUID
     version: int

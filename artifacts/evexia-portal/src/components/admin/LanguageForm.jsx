@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { getLanguage, listLanguages } from '../../services/serverLanguages.js';
 import Field from '../auth/Field.jsx';
 import Dialog from './Dialog.jsx';
+import { masterNameError, normalizeMasterName } from '../../services/masterValidation.js';
 
 const isConflict = (r) => (r.status === 409 && r.code !== 'language_duplicate') || /stale/.test(r.code || '');
 
@@ -19,9 +20,9 @@ export default function LanguageForm({ language, onSave, onClose, canSave = true
   async function handleSubmit(event) {
     event.preventDefault();
     if (pending || blocked || !canSave) return;
-    const trimmed = name.trim();
-    if (!trimmed) { setError('Language name is required.'); return; }
-    if ([...trimmed].length > 200) { setError('Language name must be at most 200 characters.'); return; }
+    const trimmed = normalizeMasterName(name);
+    const nameError = masterNameError(name, 'language name');
+    if (nameError) { setError(nameError); return; }
     setPending(true);
     try {
       const result = await onSave({ name: trimmed }, current || language);

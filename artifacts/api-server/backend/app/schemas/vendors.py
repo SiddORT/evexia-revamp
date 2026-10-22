@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.schemas.vendor_phone import VENDOR_COUNTRIES, normalize_vendor_phone
+from app.schemas.master_validation import MasterWriteFields
 
 VendorCountry = Literal[*VENDOR_COUNTRIES]
 
@@ -12,7 +13,8 @@ BUSINESS_FIELDS = ("vendorName", "gstNo", "registeredAddress", "contactPersonNam
                    "emailId", "phoneNo", "dialCountry", "status")
 
 
-class VendorFields(BaseModel):
+class VendorFields(MasterWriteFields):
+    master_names = {"vendorName": ("vendor name", False), "contactPersonName": ("contact person name", True)}
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     vendorName: str = Field(min_length=1, max_length=200)
     gstNo: str = Field(min_length=15, max_length=15)
@@ -26,7 +28,7 @@ class VendorFields(BaseModel):
     @field_validator("vendorName", "contactPersonName", mode="before")
     @classmethod
     def normalize(cls, value):
-        return " ".join(value.split()) if isinstance(value, str) else value
+        return value  # MasterWriteFields normalizes explicit writes only.
 
     @field_validator("gstNo", mode="before")
     @classmethod
@@ -76,6 +78,8 @@ class VendorStatus(VendorVersion):
 
 
 class VendorResponse(VendorFields):
+    master_read = True
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=False)
     id: uuid.UUID
     version: int
     createdBy: str

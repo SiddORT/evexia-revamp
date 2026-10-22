@@ -1,3 +1,4 @@
+import { masterNameError, normalizeMasterName } from './masterValidation.js';
 export const DESIGNATION_COLUMNS = [
   ['name', 'Designation Name'], ['shortName', 'Short Name'], ['status', 'Status'],
 ];
@@ -5,12 +6,14 @@ export const DESIGNATION_COLUMNS = [
 export function validateServerDesignation(values) {
   const errors = {};
   const fields = {
-    name: values.name.trim().replace(/\s+/g, ' '),
-    shortName: values.shortName.trim().replace(/\s+/g, ' '),
+    name: normalizeMasterName(values.name),
+    shortName: normalizeMasterName(values.shortName),
     status: values.status,
   };
-  if (!fields.name || fields.name.length > 200) errors.name = 'Use a designation name of 1–200 characters.';
-  if (!fields.shortName || fields.shortName.length > 50) errors.shortName = 'Use a short name of 1–50 characters.';
+  const nameError = masterNameError(fields.name, 'designation name');
+  const shortError = masterNameError(fields.shortName, 'designation short name', { max: 50 });
+  if (nameError) errors.name = nameError;
+  if (shortError) errors.shortName = shortError;
   if (!['active', 'inactive'].includes(fields.status)) errors.status = 'Select Active or Inactive.';
   return { fields, errors };
 }

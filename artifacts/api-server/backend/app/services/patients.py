@@ -237,6 +237,21 @@ def filters(db, actor):
     return transaction(db, work)
 
 
+def validate_language(db, body, existing=None):
+    # Patient language is an independent saved text snapshot. An unchanged
+    # historical label survives catalogue rename/deletion; new assignments must
+    # come from the current protected catalogue. Lock through the mutation so
+    # deletion/rename cannot race a successful new assignment.
+    if existing is not None and body.instructionsLanguage == existing.instructionsLanguage:
+        return
+    language = db.scalar(select(Language).where(
+        Language.deleted_at.is_(None), Language.name == body.instructionsLanguage
+    ).with_for_update(read=True))
+    if language is None:
+        raise PatientError("Instructions language: select a current saved language. An unchanged historical selection may be retained.",
+                           422, "patient_language")
+
+
 def unique(db, body, code=None, except_id=None):
     query = select(Directory.id).where(or_(Directory.code == code, Directory.duplicate_identity_index == encrypted.exact_identity(db, body)))
     if except_id:
@@ -255,6 +270,7 @@ def insert(db, actor, body, code=None):
     from app.services.master_policy import master_allowed
     if not (master_allowed(actor, "patient", "add") or master_allowed(actor, "patient", "import")):
         raise PatientError("Access denied", 403, "access_denied")
+    validate_language(db, body)
     doctor, mr, _ = assignment(db, body.doctorId)
     domain._lock_mrs(db, {mr.id})
     owner = Patient(assigned_mr_id=mr.id, is_active=body.status == "active", version=1)
@@ -307,6 +323,7 @@ def mutate(db, actor, record_id, body, operation):
         if owner.version != body.expected_version:
             raise PatientError("Patient changed. Refresh to review before retrying.", 409, "patient_stale")
         if operation == "edit":
+            validate_language(db, body, row)
             unique(db, body, except_id=row.id)
             for key, value in body.model_dump(exclude={"expected_version"}).items():
                 setattr(row, key, value)
