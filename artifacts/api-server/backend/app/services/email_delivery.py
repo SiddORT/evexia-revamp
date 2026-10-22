@@ -9,7 +9,7 @@ from app.db.email_delivery_models import EmailAttempt
 from app.db.models import AuditEvent
 from app.services.account_crypto import AccountCrypto
 from app.services.staff_crypto import StaffCrypto
-from app.services import recovery_mail, email_templates, auth
+from app.services import recovery_mail, email_templates, auth, template_test_mail
 
 logger = logging.getLogger(__name__)
 
@@ -66,13 +66,18 @@ def preparation_interrupted(db, attempt_id):
 def dispatch(db, settings, attempt_id, recipient, render, *, event=None, snapshot=None):
     """One explicit submission. Network loss after handoff is not definite failure."""
     category, submitting = "configuration", False
+    test_transport = None
     try:
-        recovery_mail.validate_configuration(settings)
         row = db.get(EmailAttempt, attempt_id, populate_existing=True, with_for_update=True)
         if row.status != "pending":
             return  # Never replay accepted, failed or uncertain work.
+        is_test = row.purpose == "template_test"
+        if is_test:
+            test_transport = template_test_mail.resolve(db, settings)
+        else:
+            recovery_mail.validate_configuration(settings)
         category = "template"
-        if row.purpose == "template_test":
+        if is_test:
             if snapshot is None:
                 raise ValueError("Saved test snapshot required.")
             template, template_id, version = snapshot
@@ -92,7 +97,11 @@ def dispatch(db, settings, attempt_id, recipient, render, *, event=None, snapsho
         rendered = render(template)
         outcome(db, attempt_id, "sending")
         submitting = True
-        recovery_mail.send(settings, recipient, rendered)
+        if is_test:
+            recovery_mail.send_smtp(test_transport, recipient, rendered,
+                                    sender_name=test_transport.sender_name)
+        else:
+            recovery_mail.send(settings, recipient, rendered)
     except Exception as error:
         db.rollback()
         if submitting:
@@ -104,8 +113,13 @@ def dispatch(db, settings, attempt_id, recipient, render, *, event=None, snapsho
             category = "smtp_rejected" if definitive else "transport_uncertain"
         else:
             status = "failed"
+            if isinstance(error, template_test_mail.SavedSMTPUnavailable):
+                category = error.category
         outcome(db, attempt_id, status, category)
         return
+    finally:
+        # Do not retain a decrypted transport beyond this explicit attempt.
+        test_transport = None
     outcome(db, attempt_id, "smtp_accepted")
 
 

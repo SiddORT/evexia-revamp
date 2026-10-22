@@ -92,7 +92,7 @@ export default function CommunicationSettings() {
       <div><h2 id="comm-heading">Communication</h2><p>Shared encrypted sender configurations for Email, SMS and WABA.</p></div>
       <div className="comm__actions">{retryBtn}<button type="button" className="admin-button" disabled={!snapshot || busy || loading || blocked || !!editor || !!del} onClick={() => open()} data-testid="button-add-communication">Add configuration</button></div>
     </div>
-    <p className="comm__notice">Configuration details and credentials are encrypted in shared storage. Saved credentials are write-only. A default selects a configuration only; it does not activate a provider, verify connectivity or send messages. Password-recovery SMTP remains separately environment-configured.</p>
+    <p className="comm__notice">Configuration details and credentials are encrypted in shared storage. Saved credentials are write-only. Saving or selecting a default does not verify connectivity or send messages. Explicit template test emails use the saved default Email SMTP configuration, including its credential and sender, with STARTTLS or TLS only. Missing, unreadable or invalid settings, API/Platform defaults and security set to none prevent test sending without environment fallback. Password recovery and invitations remain separately environment-configured. API/Platform, SMS and WhatsApp delivery are not activated.</p>
     {loading && <p role="status">Loading Communication settings…</p>}
     <div aria-live="polite">{status && <div className="admin-feedback" data-testid="text-communication-status">{status}</div>}</div>
     {error && <div className="admin-feedback admin-feedback--error" role="alert">{error} {retryBtn}</div>}

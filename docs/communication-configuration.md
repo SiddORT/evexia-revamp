@@ -6,8 +6,14 @@ Settings → Email templates uses its own PostgreSQL `email_templates` table and
 Super Admin APIs, described in [Email templates](email-templates.md). Eligible
 password recovery reads the protected `password_recovery` template automatically,
 but still sends through the existing environment-configured verified-TLS SMTP
-transport. Neither template edits nor Communication defaults change SMTP provider,
-sender, credentials or trusted recovery origin. SMS templates retain their local
+transport. Neither template edits nor Communication defaults change the recovery
+or invitation SMTP provider, sender, credentials or trusted recovery origin.
+Explicit template test sends are the exception: they use only the saved default
+Email SMTP configuration, including its encrypted credential and sender, with
+verified STARTTLS or implicit TLS. Missing/unreadable/invalid settings, API/Platform
+defaults and security `none` prevent test sending without environment fallback.
+See [template test transport](email-templates.md#explicit-saved-version-test-emails).
+SMS templates retain their local
 storage and preview-only behavior. No browser-local email records are imported
 or erased.
 
@@ -85,10 +91,11 @@ integrity remain enforced. See
 
 Settings → Communication is restricted to the protected system Super Admin.
 It manages Email (SMTP, API and Platform), SMS and WABA records centrally.
-It does **not** send messages, probe providers, onboard OAuth accounts, verify
-credentials, or activate delivery. Default means selected configuration only.
-The existing environment-configured password-recovery SMTP transport is unchanged;
-neither that sender nor any other sender reads these tables.
+Saving or selecting a default does **not** send messages, probe providers, onboard
+OAuth accounts or verify credentials. The separate, explicitly submitted template
+test action reads the default Email SMTP configuration. API/Platform, SMS and
+WhatsApp delivery are not activated. Existing environment-configured
+password-recovery and invitation SMTP transport and validation remain unchanged.
 
 ## Current migration and key-provisioning policy
 

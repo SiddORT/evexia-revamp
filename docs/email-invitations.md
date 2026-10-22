@@ -89,6 +89,11 @@ retain the selected ID/version before SMTP, with fictional role-appropriate
 samples and a nonfunctional reserved-domain action URL. Historical invitation
 records keep their existing purpose and selected shared-template ID/version;
 they are not rewritten to imply the new MR template was used historically.
+Only template tests use the saved default Email SMTP configuration in
+Settings → Communication (STARTTLS or implicit TLS, including the saved
+credential and sender). Invitation and password-recovery sends continue using
+environment-configured SMTP and existing recovery-URL validation. No saved
+configuration activates or replaces that transport.
 
 Statuses mean:
 

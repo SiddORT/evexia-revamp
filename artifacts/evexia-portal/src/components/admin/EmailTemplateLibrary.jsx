@@ -63,7 +63,7 @@ export default function EmailTemplateLibrary({ guard, onDirtyChange, onBusyChang
   const all = snap?.record.templates || [];
   const items = all.filter((t) => (source === 'all' || t.source === source) && t.name.toLowerCase().includes(q.trim().toLowerCase()));
   return <>
-    <div className="mt-head"><p className="mt-note">Email templates are shared database records. Staff invitations use the Admin workspace template; MR invitations use their separate MR portal template. Recovery uses its own template. All sends use the approved SMTP sender.</p>
+    <div className="mt-head"><p className="mt-note">Email templates are shared database records. Staff invitations use the Admin workspace template; MR invitations use their separate MR portal template. Recovery uses its own template. Template tests use the default Email SMTP configuration saved in Settings → Communication, with its saved credential and sender. Password recovery and invitations retain their separately environment-configured SMTP transport.</p>
       <div className="mt-row"><button type="button" className="admin-button" onClick={blank} disabled={!snap || loading || busy} data-testid="button-template-new">New email template</button>
         <button type="button" className="admin-button admin-button--secondary" onClick={refresh} disabled={loading || busy}>Load latest</button></div></div>
     <p className="mt-note">Unassigned templates are not triggered. Required invitation and recovery templates cannot be removed or reassigned. Saved edits apply to subsequent sends. Browser-local email records are not imported or erased.</p>

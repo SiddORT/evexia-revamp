@@ -51,7 +51,8 @@ export default function EmailTemplateTestDialog({ template, onClose, onBusyChang
     onKeyDown={trap} onCancel={(e) => { e.preventDefault(); close(); }}>
     <div className="mt">
       <h2 id={`${id}-title`}>Send test email</h2>
-      <p id={`${id}-help`}>Send <strong>{template.name}</strong>, saved version <strong>{template.version}</strong>, to one To address using the approved SMTP sender. No unsaved draft is included.</p>
+      <p id={`${id}-help`}>Send <strong>{template.name}</strong>, saved version <strong>{template.version}</strong>, to one To address using the default Email SMTP configuration saved in Settings → Communication, including its saved credential and sender. No unsaved draft is included.</p>
+      <p>The Email default must be SMTP with STARTTLS or TLS. API, Platform, security set to none, or unavailable settings prevent sending; there is no environment fallback. Password recovery and invitations still use the separately environment-configured SMTP transport.</p>
       <p>Server-controlled fictional samples are used. The subject is labelled TEST and action links cannot activate or recover accounts. SMTP acceptance does not confirm inbox delivery.</p>
       <form onSubmit={submit}>
         <label className="mt-field" htmlFor={`${id}-to`}><span>To email address</span>

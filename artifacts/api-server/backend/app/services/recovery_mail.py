@@ -2,6 +2,7 @@
 import smtplib
 import ssl
 from email.message import EmailMessage
+from email.headerregistry import Address
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -27,6 +28,12 @@ def configuration_issues(settings):
             raise ValueError()
     except Exception:
         issues.append("PASSWORD_RECOVERY_URL:missing_or_invalid")
+    return tuple(issues) + transport_configuration_issues(settings)
+
+
+def transport_configuration_issues(settings):
+    """SMTP-only preflight; template tests have no recovery URL or live token."""
+    issues = []
     try:
         if (not settings.smtp_host or any(c.isspace() for c in settings.smtp_host)
                 or any(c in settings.smtp_host for c in "/@?#")):
@@ -51,10 +58,20 @@ def validate_configuration(settings):
 
 
 def send(settings, recipient, rendered):
+    # Recovery/invitations retain full environment and recovery-URL validation.
     validate_configuration(settings)
+    send_smtp(settings, recipient, rendered)
+
+
+def send_smtp(settings, recipient, rendered, *, sender_name=None):
+    """Verified TLS transport shared without recovery-only configuration."""
+    issues = transport_configuration_issues(settings)
+    if issues:
+        raise RecoveryUnavailable(issues)
     message = EmailMessage()
     message["Subject"] = rendered.subject
-    message["From"] = settings.smtp_from
+    message["From"] = (settings.smtp_from if sender_name is None else
+                       Address(display_name=sender_name, addr_spec=settings.smtp_from))
     message["To"] = TypeAdapter(EmailStr).validate_python(recipient)
     message.set_content(rendered.text)
     message.add_alternative(rendered.html, subtype="html")

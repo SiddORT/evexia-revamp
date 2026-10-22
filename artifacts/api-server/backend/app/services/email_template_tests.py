@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from app.db.email_template_models import EmailTemplate
 from app.db.models import AuditEvent
 from app.schemas.email_templates import EmailTemplateInput
-from app.services import auth, email_delivery, password_recovery
+from app.services import auth, email_delivery, password_recovery, template_test_mail
 from app.services.email_rendering import render_test
 
 
@@ -38,8 +38,10 @@ def send_test(db, actor, settings, template_id, body):
     attempt = db.get(EmailAttempt, attempt_id, populate_existing=True)
     messages = {
         "smtp_accepted": "Test email accepted by SMTP. This does not confirm inbox delivery.",
-        "failed": "Test email was not sent. Check Email Logs and configuration before a new explicit submission.",
+        "failed": "Test email was not sent. Check Email Logs and the default Email SMTP configuration in Settings → Communication before a new explicit submission.",
         "unknown": "Test submission outcome is uncertain. Do not automatically resend. Check Email Logs.",
     }
+    guidance = (template_test_mail.CONFIGURATION_GUIDANCE.get(attempt.failure_category)
+                if attempt.status == "failed" else None)
     return dict(id=attempt_id, status=attempt.status,
-                message=messages.get(attempt.status, "Test attempt recorded. Check Email Logs; do not resubmit while pending."))
+                message=guidance or messages.get(attempt.status, "Test attempt recorded. Check Email Logs; do not resubmit while pending."))

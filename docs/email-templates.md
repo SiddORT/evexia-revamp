@@ -123,7 +123,21 @@ creates an account token, changes passwords or calls live invitation/recovery
 workflows. Live rendering still requires the trusted set-password/recovery URL
 shape and the correct portal query.
 
-Tests use the same approved TLS SMTP sender and no-replay lifecycle as real mail.
+Tests use only the **default Email** configuration saved in
+**Settings → Communication** when its type is SMTP. One server-only per-attempt
+snapshot decrypts and validates the saved host, port, security, username, app
+password, sender name and sender email. `starttls` requires verified STARTTLS;
+`tls` requires implicit TLS with certificate/hostname verification. Security
+`none`, missing/invalid/unreadable settings and API/Platform defaults fail closed
+before network submission, with sanitized guidance and a recorded failure
+category. There is no environment fallback, alternate SMTP selection, plaintext
+credential cache or configuration lock held during network work.
+
+Template tests do not require `PASSWORD_RECOVERY_URL` or environment SMTP
+credentials. Recovery and invitations retain their existing environment SMTP and
+recovery-URL validation; their transport selection is unchanged.
+
+Tests retain the same no-replay lifecycle as real mail.
 Pending, SMTP-accepted, failed and uncertain results are reported honestly;
 acceptance is not inbox delivery. An unreadable response, lost connection or
 timeout blocks resubmission in the dialog and directs the administrator to
@@ -145,6 +159,14 @@ post-merge/start lifecycle must apply the new revision, then independently verif
 actual database/running API declaration equality and frontend/API readiness.
 Do not migrate the original target from a task fork to obtain acceptance evidence.
 No production activation or real-recipient test is implied.
+
+### Saved SMTP transport handoff — source only
+
+The test-only transport change was inspected in source only. No tests (automated,
+manual, browser, smoke or SMTP), runtime requests, builds, workflow restarts,
+migrations, credential changes or email sends were performed. Runtime behavior
+has not been tested, at the user's request. Historical verification elsewhere
+does not validate this saved-SMTP path.
 
 ### Implementation handoff — untested
 
