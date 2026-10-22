@@ -141,11 +141,23 @@ class HeadquarterPage(BaseModel):
     offset: int
 
 
+class HeadquarterTransferArea(BaseModel):
+    row: int
+    name: str
+    code: str
+    generated: bool
+
+
 class HeadquarterImportRow(BaseModel):
     row: int
     name: str
     state_code: str
     status: str
+    source_rows: list[int]
+    zone_id: str
+    zone_name: str
+    legacy: bool
+    areas: list[HeadquarterTransferArea]
     errors: list[str]
 
 
@@ -153,7 +165,9 @@ class HeadquarterReview(BaseModel):
     rows: list[HeadquarterImportRow]
     valid: bool
     digest: str
+    area_count: int
 
 
 class HeadquarterImportResult(BaseModel):
     imported: int
+    imported_areas: int

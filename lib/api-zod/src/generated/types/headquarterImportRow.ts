@@ -5,11 +5,17 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { HeadquarterTransferArea } from "./headquarterTransferArea";
 
 export interface HeadquarterImportRow {
+  areas: HeadquarterTransferArea[];
   errors: string[];
+  legacy: boolean;
   name: string;
   row: number;
+  source_rows: number[];
   state_code: string;
   status: string;
+  zone_id: string;
+  zone_name: string;
 }

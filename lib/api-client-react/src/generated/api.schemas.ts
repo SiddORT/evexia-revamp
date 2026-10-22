@@ -2569,14 +2569,27 @@ export interface HeadquarterEdit {
 
 export interface HeadquarterImportResult {
   imported: number;
+  imported_areas: number;
+}
+
+export interface HeadquarterTransferArea {
+  code: string;
+  generated: boolean;
+  name: string;
+  row: number;
 }
 
 export interface HeadquarterImportRow {
+  areas: HeadquarterTransferArea[];
   errors: string[];
+  legacy: boolean;
   name: string;
   row: number;
+  source_rows: number[];
   state_code: string;
   status: string;
+  zone_id: string;
+  zone_name: string;
 }
 
 export type HeadquarterResponseStatus =
@@ -2632,6 +2645,7 @@ export interface HeadquarterPage {
 }
 
 export interface HeadquarterReview {
+  area_count: number;
   digest: string;
   rows: HeadquarterImportRow[];
   valid: boolean;

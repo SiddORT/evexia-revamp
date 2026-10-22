@@ -84,9 +84,10 @@ def comparison_keys(db, values):
     return list(db.scalars(select(normalized_name(func.unnest(cast(values, ARRAY(Text)))))))
 
 
-def save_areas(db, actor, row, inputs):
-    existing = list(db.scalars(select(HeadquarterArea).where(
-        HeadquarterArea.headquarter_id == row.id, HeadquarterArea.deleted_at.is_(None)).with_for_update()))
+def plan_areas(db, row, inputs, existing=(), historical_codes=()):
+    """Read-only validation/allocation shared by live writes and transfer review."""
+    if len(inputs) > 200:
+        raise HeadquarterError("At most 200 areas are allowed per headquarter.", 422, "headquarter_area_invalid")
     by_id = {area.id: area for area in existing}
     ids = [area.id for area in inputs if area.id is not None]
     if len(ids) != len(set(ids)) or any(area_id not in by_id for area_id in ids):
@@ -111,8 +112,7 @@ def save_areas(db, actor, row, inputs):
         raise HeadquarterError("Area codes must be unique within this headquarter (ignoring case).", 422, "headquarter_area_duplicate")
     # Include retained removals when allocating suggestions, including codes
     # entered manually under an earlier prefix.
-    historical_codes = list(db.scalars(select(HeadquarterArea.code).where(HeadquarterArea.headquarter_id == row.id)))
-    used = set(comparison_keys(db, historical_codes + explicit))
+    used = set(comparison_keys(db, list(historical_codes) + explicit))
     planned = []
     for position, body in enumerate(inputs):
         area = by_id.get(body.id)
@@ -132,6 +132,14 @@ def save_areas(db, actor, row, inputs):
             else:
                 raise HeadquarterError("Area numbering is exhausted; use a manual area code.", 422, "headquarter_area_sequence")
         planned.append((area, body, code, sequence, position))
+    return planned, next_sequence
+
+
+def save_areas(db, actor, row, inputs):
+    existing = list(db.scalars(select(HeadquarterArea).where(
+        HeadquarterArea.headquarter_id == row.id, HeadquarterArea.deleted_at.is_(None)).with_for_update()))
+    historical_codes = list(db.scalars(select(HeadquarterArea.code).where(HeadquarterArea.headquarter_id == row.id)))
+    planned, next_sequence = plan_areas(db, row, inputs, existing, historical_codes)
     now = utcnow()
     # Temporarily release partial unique indexes inside this transaction so
     # name/code swaps are atomic too. Removed rows retain these tombstones.

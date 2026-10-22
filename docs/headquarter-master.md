@@ -135,42 +135,84 @@ Ordering is creation time descending then UUID descending. Lists accept
 focus, and offers explicit refresh. Offset pagination is stable for unchanged
 data; concurrent catalogue changes can change page composition.
 
-Exact legacy CSV/XLSX headers:
+Two exact legacy CSV/XLSX header forms remain accepted:
 
 `HQ Name,State Code,Status`
 
+`HQ Name,State Code,Status,Created By,Created At,Updated By,Updated At`
+
+Exact current CSV/XLSX sample headers:
+
+`HQ Name,State Code,Status,Zone ID,Zone Name,Area Name,Area Code`
+
 Exact current CSV/XLSX export headers:
 
-`HQ Name,State Code,Status,Created By,Created At,Updated By,Updated At`
+`HQ Name,State Code,Status,Zone ID,Zone Name,Area Name,Area Code,Created By,Created At,Updated By,Updated At`
 
 Status is active/inactive (case-insensitive on import). Current export audit
 values are readable actor labels and ISO UTC timestamps. Imports ignore them
-and attribute all new rows to the authenticated importer/current server time;
+and attribute all new HQ/area rows to the authenticated importer/current server time;
 this is not historical audit restoration. Arbitrary extra/reordered/ID/version/
-deletion columns are rejected. Current exports apostrophe-escape spreadsheet
-unsafe name/code/actor cells; decoding this convention is limited to the exact
-current schema so legacy literal apostrophes are preserved. XLSX cells are
-explicit string cells. New exports and old backups round-trip into an empty
-collection without restoring IDs, versions or audit history.
+deletion columns are rejected except the specified Zone ID reference.
+Audit export schemas (both old and current) apostrophe-escape spreadsheet-unsafe
+text and literal leading apostrophes; only these exact audit schemas decode that
+convention. Basic sample schemas preserve literal apostrophes. XLSX cells are
+explicit strings, never executable formulas.
 
-These transfer schemas intentionally remain unchanged. They do **not** include
-Zone or areas and are not a backup/restore format for those additions. Every
-legacy/current import creates an HQ with explicit no-zone/no-area defaults and
-sequence 1. Its first subsequent full edit must select a Zone. Status/delete
-remain available without selecting one. No zone inference or seeding occurs.
+Current files use one row per area with the same normalized HQ name, State Code,
+status, Zone ID and Zone Name on every row for that HQ. Grouping uses the same
+PostgreSQL name comparison as live uniqueness, including non-adjacent repeated
+rows. Inconsistent parent fields are errors. HQ groups retain first-appearance
+order; areas retain source-row order. Exactly one row with **both** area cells
+empty represents an empty area list. Mixing empty/populated area rows, multiple
+empty rows, or a code without a name is invalid, never silently dropped.
 
-`GET /sample?format=csv|xlsx` supplies compatible inert templates.
-`POST /import/review?filename=...` returns row errors, normalized/generated codes,
-validity and a server HMAC. Review saves no catalogue records or upload bytes.
+Zone ID is a saved UUID, not an imported identity to create. Zone Name is a
+readable label only; review displays the current saved name for the authoritative
+ID. The import page's read-only, searchable, explicitly paged reference panel
+uses the existing Headquarter-authorized active Zone choices endpoint (not Zone
+administration grants). Replace sample UUID placeholders using those references.
+Current imports require an active, non-deleted saved Zone; review/commit lock
+selected Zones in UUID order and recheck availability. Exports preserve historical
+Zone IDs, label inactive/deleted links visibly and show “No zone assigned” for
+legacy empty links. Such files cannot newly assign unavailable links: select an
+active saved ID in the reference panel, update every row for that HQ and review
+again. No zone inference, new catalogue row or geography lookup occurs.
+
+Area names/codes reuse live validators and the shared read-only allocation plan:
+normalized printable names, uppercase supplied codes, case-insensitive per-HQ
+name/code uniqueness and at most 200 areas. A named row with blank Area Code
+explicitly requests the existing automatic rule. All supplied codes reserve their
+numeric suffixes first; automatic allocations follow file order from sequence 1.
+Review shows final allocated codes; commit uses the same plan under the new
+parent's transaction. Uploaded codes are never replaced by State Code suggestions.
+Export reads each live area's saved code, not a recomputation; removed areas stay
+excluded. Retained sequence/removal history and area UUIDs are not restored.
+
+The exact legacy three/seven-column forms deliberately create no zone, no areas
+and sequence 1. Their first full edit must select a Zone; status/delete still do
+not force backfill. Repeated legacy HQ names remain errors, not grouped additions.
+
+`GET /sample?format=csv|xlsx` supplies inert current templates with two areas on
+one HQ (one supplied code, one automatic) and an empty-area HQ.
+`POST /import/review?filename=...` returns grouped `rows`, source row numbers,
+Zone identity/current label, every area's normalized name and code, `generated`
+flags, group errors, `area_count`, validity and a server HMAC.
+Review saves no catalogue records, counters, audit events or upload bytes.
 `POST /import/commit?filename=...&digest=...&confirm=true` resubmits the exact
 reviewed bytes. The HMAC binds resource, filename, bytes, authenticated importer
 and session (same-session token renewal remains compatible). Commit rechecks
-current identity/conflicts; duplicate names within the file or existing live
-names reject the entire batch. Database uniqueness resolves concurrent races
-and rolls back records and audit events together.
+current identity/conflicts, Zone availability and area validation. Existing live
+HQ names reject the entire batch: import never appends areas to an existing HQ,
+changes its zone or upserts it. One parent is inserted per valid group; the
+parent, Zone link, ordered areas, counter and authenticated audit records commit
+together. A new uniqueness conflict or any write error rolls everything back.
+Success returns both `imported` HQ count and `imported_areas`.
 
 Files: non-empty UTF-8 CSV or genuine single-sheet `.xlsx`, at most **2 MiB**,
-**1,000 rows**, **7 columns**, **10,000 characters per cell**. Raw
+**1,000 total data rows** (including repeated HQ/blank-area rows),
+**11 columns**, **10,000 characters per cell**. Grouping cannot bypass these
+physical bounds or the 200-area per-HQ limit. Raw
 `application/octet-stream` or exactly one multipart `file` part is accepted.
 Actual streamed request bytes are bounded to 2 MiB raw or 2 MiB + **64 KiB**
 multipart overhead, with an independent 2 MiB extracted-file limit and
@@ -181,8 +223,14 @@ encrypted archives, formulas, macros, embedded objects, external links and
 unsupported formats without evaluation or network access.
 
 `GET /export?query=...&status=...&format=csv|xlsx` exports all matching live
-records, not only the current page. More than **5,000** matches fails explicitly
-without truncation; narrow filters. Attachments use
+records, not only the current page. Parent shared locks keep each area's read
+consistent with its HQ while live editors use their existing parent lock.
+More than **5,000** HQ matches or **10,000 expanded data rows** fails explicitly
+without truncating a parent or its areas; narrow filters. Output is independently
+bounded to **8 MiB** after date presentation; XLSX also has an **8 MiB**
+decompressed/ **4 MiB** per-member limit. Large exports can exceed import's
+1,000-row/2-MiB bounds; select narrower HQ filters or split into complete HQ groups
+before import. Attachments use
 `evexia-headquarter-master.csv|xlsx` and sample `evexia-headquarter-template.*`.
 All actual downloads use mandatory durable ledger acceptance
 (`headquarter`, `export|template`, `CSV|XLSX`), initiation keys and
@@ -197,8 +245,9 @@ cards and separate valid/invalid upload-summary sections. CSV and genuine Excel
 sample buttons call the authenticated sample endpoints separately; neither
 sample nor export has a standalone format selector. The list's Export data
 menu offers CSV/Excel only after selection, uses the current Admin palette and
-keeps its pending trigger focusable for keyboard focus return. Reviewed rows
-display the server-normalized/generated State Code, not a client suggestion.
+keeps its pending trigger focusable for keyboard focus return. Reviewed groups
+display the server-normalized/generated State Code, assigned Zone and every
+included area with its saved or planned code, not client suggestions.
 Replacing a file invalidates pending review/sample results and the prior
 summary, but cannot remove an unresolved commit's reconciliation requirement.
 
@@ -222,10 +271,18 @@ of an HQ's Zone selection.
 Downgrade refuses any populated zone/area/counter history; use a reviewed
 forward fix rather than discard retained data.
 
-For this extension, verification is **manual disposable CRUD only**. Do not run
+The earlier Zone/area editor extension allowed **manual disposable CRUD only**. Do not run
 automated tests, suites, regression/release checks, builds, benchmarks or broad
 wrappers. API export, direct Orval generation/formatting and schema metadata
 generation are separate narrow implementation steps, not evidence of tests.
 See `docs/headquarter-areas-catalog.md` for catalog generation provenance.
 Original development and production activation remain unverified from a fork;
 do not start an original-target migration simply to obtain fork evidence.
+
+For the subsequent area/Zone **transfer** extension, the user explicitly required
+**source inspection only**. No tests (unit, integration, browser or manual
+scenarios), builds, validation/release wrappers, migrations, live data writes,
+service restarts or deployment were run. Narrow offline OpenAPI export, direct
+Orval generation and generated-source formatting only were used to align the
+shared contracts; no chained typecheck/codegen wrapper was invoked. This is an
+implementation, not runtime acceptance evidence.

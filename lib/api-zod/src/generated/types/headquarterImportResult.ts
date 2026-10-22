@@ -8,4 +8,5 @@
 
 export interface HeadquarterImportResult {
   imported: number;
+  imported_areas: number;
 }

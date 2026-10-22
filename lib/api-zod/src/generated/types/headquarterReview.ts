@@ -8,6 +8,7 @@
 import type { HeadquarterImportRow } from "./headquarterImportRow";
 
 export interface HeadquarterReview {
+  area_count: number;
   digest: string;
   rows: HeadquarterImportRow[];
   valid: boolean;

@@ -7365,6 +7365,7 @@ export const CommitHeadquarterImportBody = zod.object({
 
 export const CommitHeadquarterImportResponse = zod.object({
   imported: zod.number().int(),
+  imported_areas: zod.number().int(),
 });
 
 /**
@@ -7383,14 +7384,27 @@ export const ReviewHeadquarterImportBody = zod.object({
 });
 
 export const ReviewHeadquarterImportResponse = zod.object({
+  area_count: zod.number().int(),
   digest: zod.string(),
   rows: zod.array(
     zod.object({
+      areas: zod.array(
+        zod.object({
+          code: zod.string(),
+          generated: zod.boolean(),
+          name: zod.string(),
+          row: zod.number().int(),
+        }),
+      ),
       errors: zod.array(zod.string()),
+      legacy: zod.boolean(),
       name: zod.string(),
       row: zod.number().int(),
+      source_rows: zod.array(zod.number().int()),
       state_code: zod.string(),
       status: zod.string(),
+      zone_id: zod.string(),
+      zone_name: zod.string(),
     }),
   ),
   valid: zod.boolean(),

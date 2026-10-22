@@ -5290,22 +5290,38 @@
           "imported": {
             "title": "Imported",
             "type": "integer"
+          },
+          "imported_areas": {
+            "title": "Imported Areas",
+            "type": "integer"
           }
         },
         "required": [
-          "imported"
+          "imported",
+          "imported_areas"
         ],
         "title": "HeadquarterImportResult",
         "type": "object"
       },
       "HeadquarterImportRow": {
         "properties": {
+          "areas": {
+            "items": {
+              "$ref": "#/components/schemas/HeadquarterTransferArea"
+            },
+            "title": "Areas",
+            "type": "array"
+          },
           "errors": {
             "items": {
               "type": "string"
             },
             "title": "Errors",
             "type": "array"
+          },
+          "legacy": {
+            "title": "Legacy",
+            "type": "boolean"
           },
           "name": {
             "title": "Name",
@@ -5315,12 +5331,27 @@
             "title": "Row",
             "type": "integer"
           },
+          "source_rows": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Source Rows",
+            "type": "array"
+          },
           "state_code": {
             "title": "State Code",
             "type": "string"
           },
           "status": {
             "title": "Status",
+            "type": "string"
+          },
+          "zone_id": {
+            "title": "Zone Id",
+            "type": "string"
+          },
+          "zone_name": {
+            "title": "Zone Name",
             "type": "string"
           }
         },
@@ -5329,6 +5360,11 @@
           "name",
           "state_code",
           "status",
+          "source_rows",
+          "zone_id",
+          "zone_name",
+          "legacy",
+          "areas",
           "errors"
         ],
         "title": "HeadquarterImportRow",
@@ -5477,6 +5513,10 @@
       },
       "HeadquarterReview": {
         "properties": {
+          "area_count": {
+            "title": "Area Count",
+            "type": "integer"
+          },
           "digest": {
             "title": "Digest",
             "type": "string"
@@ -5496,7 +5536,8 @@
         "required": [
           "rows",
           "valid",
-          "digest"
+          "digest",
+          "area_count"
         ],
         "title": "HeadquarterReview",
         "type": "object"
@@ -5523,6 +5564,34 @@
           "status"
         ],
         "title": "HeadquarterStatus",
+        "type": "object"
+      },
+      "HeadquarterTransferArea": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "generated": {
+            "title": "Generated",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "row": {
+            "title": "Row",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "row",
+          "name",
+          "code",
+          "generated"
+        ],
+        "title": "HeadquarterTransferArea",
         "type": "object"
       },
       "HeadquarterVersion": {
