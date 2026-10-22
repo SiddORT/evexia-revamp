@@ -17,3 +17,72 @@
 .opening-stock-import .ms-form-body > * { min-width: 0; }
 .opening-stock-import .admin-button { max-width: 100%; height: auto; white-space: normal; overflow-wrap: anywhere; }
 .opening-stock-import .mr-form__control { min-height: 42px; height: auto; padding-block: 8px; }
+
+/* Only manual opening-stock rows share label/control tracks. Selector feedback
+   stays intact below its control; the remove action starts at control height. */
+.opening-stock-form__row {
+  container-type: inline-size;
+  min-width: 0;
+  border-top: 1px solid var(--admin-border, #ddd);
+  padding-top: 12px;
+}
+.opening-stock-form .opening-stock-form__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px 16px;
+}
+.opening-stock-form .opening-stock-form__controls--removable {
+  grid-template-columns: minmax(0, 1fr) 42px;
+}
+.opening-stock-form .opening-stock-form__controls > .ms-field {
+  grid-column: 1;
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+}
+.opening-stock-form .opening-stock-form__controls .searchable-select__control {
+  height: 42px;
+}
+.opening-stock-form .opening-stock-form__remove {
+  grid-column: 2;
+  grid-row: 8;
+  align-self: start;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+}
+@container (min-width: 550px) {
+  .opening-stock-form .opening-stock-form__controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .opening-stock-form .opening-stock-form__controls--removable {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) 42px;
+  }
+  .opening-stock-form .opening-stock-form__controls > .ms-field:nth-child(odd) {
+    grid-column: 1;
+  }
+  .opening-stock-form .opening-stock-form__controls > .ms-field:nth-child(even) {
+    grid-column: 2;
+  }
+  .opening-stock-form .opening-stock-form__remove {
+    grid-column: 3;
+    grid-row: 4;
+  }
+}
+@container (min-width: 1000px) {
+  .opening-stock-form .opening-stock-form__controls {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .opening-stock-form .opening-stock-form__controls--removable {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) 42px;
+  }
+  .opening-stock-form .opening-stock-form__controls > .ms-field:nth-child(3) {
+    grid-column: 3;
+  }
+  .opening-stock-form .opening-stock-form__controls > .ms-field:nth-child(4) {
+    grid-column: 4;
+  }
+  .opening-stock-form .opening-stock-form__remove {
+    grid-column: 5;
+    grid-row: 2;
+  }
+}
