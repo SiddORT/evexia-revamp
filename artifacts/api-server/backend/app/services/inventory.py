@@ -284,11 +284,13 @@ def stock(db, actor, params):
             result[str(product.id)] = dict(itemKind="allergen", productId=str(product.id), name=product.name,
                 category=product.category_name, categoryId=str(product.category_id), concentration=product.concentration,
                 sellingPrice=str(product.selling_price) if product.selling_price is not None else None,
+                thresholdLimit=str(product.threshold_limit) if product.threshold_limit is not None else None,
                 quantity="0.000", unit="procurement quantity units", lots=[], history=[], state="catalogue_zero")
         for product in combos:
             meta = crypto.open(product.id, "product", product.payload_ciphertext)
             result[str(product.id)] = dict(itemKind="combo", productId=str(product.id), name=meta["name"],
                 category="Assembled combos", categoryId=None, concentration="", sellingPrice=meta["sellingPrice"],
+                thresholdLimit=None,
                 quantity="0.000", unit="whole combos", lots=[], history=[], state="catalogue_zero")
         for lot in lots:
             meta = crypto.open(lot.id, "lot", lot.payload_ciphertext)
@@ -300,6 +302,7 @@ def stock(db, actor, params):
                     productId=pid, name=meta["productName"], category=product.category_name if product else "Assembled combos",
                     categoryId=str(product.category_id) if product else None,
                     concentration=product.concentration if product else "", sellingPrice=None,
+                    thresholdLimit=str(product.threshold_limit) if product and product.threshold_limit is not None else None,
                     quantity="0.000", unit=meta["unit"], lots=[], history=[], state="retained_product")
             item = result[pid]
             for balance in (b for b in balances if b.lot_id == lot.id and b.quantity):
@@ -315,19 +318,36 @@ def stock(db, actor, params):
             item["unallocatedQuantity"] = q(sum((Decimal(l["quantity"]) for l in item["lots"] if l["locationId"] is None), Decimal(0)))
         rows = list(result.values())
         total = len(rows)
+        choices = [{key: row[key] for key in ("productId", "name", "concentration", "category", "categoryId")}
+                   for row in rows]
+        status = params.get("stock_status", "all")
+        if status not in {"all", "in_stock", "out_of_stock", "stock_alert"}:
+            raise PRError("Choose a valid stock status.", 422, "inventory_filter")
+
+        def matches_status(row):
+            amount = Decimal(row["quantity"])
+            if status == "in_stock":
+                return amount > 0
+            if status == "out_of_stock":
+                return amount == 0
+            if status == "stock_alert":
+                return (row["itemKind"] == "allergen" and row["thresholdLimit"] is not None
+                        and amount <= Decimal(row["thresholdLimit"]))
+            return True
+
         term = params.get("query", "").strip().casefold()
         ids = params.get("product_ids", "")
         selected = set(ids.split(",")) if ids else set()
         rows = [r for r in rows if (not term or term in " ".join([r["name"], r["concentration"], r["category"], r["productId"]]).casefold())
                 and (not params.get("category_id") or r["categoryId"] == str(params["category_id"]))
-                and (not selected or r["productId"] in selected)]
+                and (not selected or r["productId"] in selected) and matches_status(r)]
         if len(rows) > LIMIT:
             raise PRError("Combined stock scope exceeds the bounded inventory limit. Narrow the scope.", 422, "inventory_scope")
         # Snapshot contains every matching row for report/CSV. Pagination is a
         # projection of this same transaction-held snapshot, never another read.
         return dict(items=rows[params["offset"]:params["offset"] + params["limit"]],
                     snapshot=rows if params.get("snapshot") else None,
-                    filtered=len(rows), total=total, limit=params["limit"], offset=params["offset"],
+                    filterOptions=choices, filtered=len(rows), total=total, limit=params["limit"], offset=params["offset"],
                     asOf=utcnow().isoformat(), coverage=context)
     return transaction(db, actor, work)
 

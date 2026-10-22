@@ -2,6 +2,12 @@ import { presentExportTable } from './exportDatePresentation.js';
 import { getSession, inventoryRequest as request } from '../auth/adminSession.js';
 
 export const UNIT = 'procurement quantity units';
+export const STOCK_STATUSES = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'in_stock', label: 'In stock' },
+  { value: 'out_of_stock', label: 'Out of stock' },
+  { value: 'stock_alert', label: 'Stock alert' },
+];
 const clean = (params) => Object.fromEntries(Object.entries(params || {}).filter(([, v]) => v !== '' && v != null && !(Array.isArray(v) && !v.length)));
 
 export const listStock = (params, signal) => request('/stock', { params: clean({ ...params, product_ids: params?.product_ids?.join?.(',') ?? params?.product_ids }), signal });

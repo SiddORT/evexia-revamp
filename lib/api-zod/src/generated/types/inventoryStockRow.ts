@@ -19,6 +19,7 @@ export interface InventoryStockRow {
   quantity: string;
   sellingPrice: string | null;
   state: string;
+  thresholdLimit?: string | null;
   unallocatedQuantity?: string;
   unit: string;
 }

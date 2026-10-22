@@ -15,7 +15,7 @@ const LIST = '/admin/masters/allergens';
 const empty = () => ({ name: '', category_id: '', storage_location_id: '', selling_price: '', gst: '', concentration: '', threshold_limit: '', status: 'active', mix: false });
 const fromRecord = (r) => ({ name: r.name, category_id: r.category_id, storage_location_id: r.storage_location_id, selling_price: r.selling_price ?? '', gst: r.gst, concentration: r.concentration, threshold_limit: r.threshold_limit ?? '', status: r.status, mix: r.mix === true });
 const norm = (v) => v.trim().replace(/\s+/g, ' ').toLowerCase();
-const summary = (r) => `${r.name}; ${r.category_name}; ${r.storage_location_name}; price ${r.selling_price ?? 'none'}; GST ${r.gst}; ${r.concentration}; threshold ${r.threshold_limit ?? 'none'}; ${r.mix ? 'Mix' : 'No Mix'}; ${r.status}`;
+const summary = (r) => `${r.name}; ${r.category_name}; ${r.storage_location_name}; price ${r.selling_price ?? 'none'}; GST ${r.gst}; ${r.concentration}; low stock alert ${r.threshold_limit ?? 'none'}; ${r.mix ? 'Mix' : 'No Mix'}; ${r.status}`;
 
 function AllergenForm({ record, onSave, onCancel, onRefresh }) {
   const [values, setValues] = useState(() => record ? fromRecord(record) : empty());
@@ -72,11 +72,12 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
     } finally { busy.current = false; if (alive.current) setPending(false); }
   }
   const err = (name) => errors[name] && <p className="mr-form__error" id={`allergen-${name}-error`} role="alert">{errors[name]}</p>;
-  const text = (name, label, { optional = false, info, numeric = false, max } = {}) => {
+  const text = (name, label, { optional = false, info, hint, numeric = false, max } = {}) => {
     const fieldLabel = <label className="mr-form__label" htmlFor={`allergen-${name}`}>{label} {optional ? <span className="mr-form__hint">(optional)</span> : <span className="mr-form__required">*</span>}</label>;
     return <div className="mr-form__field">
     {info ? <InfoDisclosure id={`allergen-${name}-help`} title={label} text={info} testId={`button-allergen-${name}-info`}>{fieldLabel}</InfoDisclosure> : fieldLabel}
-    <input id={`allergen-${name}`} className="mr-form__control" inputMode={numeric ? 'decimal' : undefined} maxLength={max} value={values[name]} onChange={(e) => update(name, e.target.value)} onBlur={() => { if (['selling_price', 'gst'].includes(name) && values[name]) { try { update(name, catalogueRate(values[name], name === 'gst')); } catch { /* Preserve invalid drafts for correction. */ } } }} aria-invalid={Boolean(errors[name])} aria-describedby={errors[name] ? `allergen-${name}-error` : undefined} data-testid={`input-allergen-${name}`} />
+    <input id={`allergen-${name}`} className="mr-form__control" inputMode={numeric ? 'decimal' : undefined} maxLength={max} value={values[name]} onChange={(e) => update(name, e.target.value)} onBlur={() => { if (['selling_price', 'gst'].includes(name) && values[name]) { try { update(name, catalogueRate(values[name], name === 'gst')); } catch { /* Preserve invalid drafts for correction. */ } } }} aria-invalid={Boolean(errors[name])} aria-describedby={[hint && `allergen-${name}-hint`, errors[name] && `allergen-${name}-error`].filter(Boolean).join(' ') || undefined} data-testid={`input-allergen-${name}`} />
+    {hint && <p id={`allergen-${name}-hint`} className="mr-form__hint">{hint}</p>}
     {err(name)}
   </div>;
   };
@@ -98,7 +99,7 @@ function AllergenForm({ record, onSave, onCancel, onRefresh }) {
         {text('selling_price', 'Selling price', { optional: true, numeric: true, info: decimalHint })}
         {text('gst', 'GST (%)', { numeric: true, info: 'Original value must be 0 to 100, up to 6 source fractional digits. Rounded half-up to two places on save.' })}
         {text('concentration', 'Concentration', { max: 200 })}
-        {text('threshold_limit', 'Threshold limit', { optional: true, numeric: true, info: 'Stock threshold, not a rate. Up to 12 integer and 6 fractional digits; retained without rounding.' })}
+         {text('threshold_limit', 'Low stock alert', { optional: true, numeric: true, info: 'Stock threshold, not a rate. Up to 12 integer and 6 fractional digits; retained without rounding.', hint: 'In procurement quantity units. Blank disables alerts; 0 alerts only at zero stock. Stock alert includes quantities at or below this value.' })}
         <div className="mr-form__field"><label className="mr-form__label" htmlFor="allergen-status">Status <span className="mr-form__required">*</span></label><AllergenSearchableSelect id="allergen-status" label="Status" value={values.status} disabled={pending} placeholder="Select status" invalid={Boolean(errors.status)} describedBy={errors.status ? 'allergen-status-error' : undefined} testId="select-allergen-status" options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} onChange={(value) => update('status', value)} />{err('status')}</div>
         <div className="mr-form__field"><span className="mr-form__label" id="allergen-mix-label">Mix / No Mix</span>
           <button type="button" role="switch" aria-checked={values.mix} aria-labelledby="allergen-mix-label allergen-mix-state" className="admin-allergen-switch" onClick={() => update('mix', !values.mix)} data-testid="switch-allergen-mix">

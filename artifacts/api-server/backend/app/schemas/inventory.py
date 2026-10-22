@@ -116,6 +116,7 @@ class InventoryLotView(InventoryProvenance):
 
 
 class InventoryStockRow(BaseModel):
+    thresholdLimit: str | None = None
     unallocatedQuantity: str = "0.000"
     itemKind: Literal["allergen", "combo"] = "allergen"
     productId: uuid.UUID
@@ -130,7 +131,16 @@ class InventoryStockRow(BaseModel):
     state: str
 
 
+class InventoryStockChoice(BaseModel):
+    productId: uuid.UUID
+    name: str
+    concentration: str
+    category: str
+    categoryId: uuid.UUID | None
+
+
 class InventoryStockPage(BaseModel):
+    filterOptions: list[InventoryStockChoice] = Field(default_factory=list)
     items: list[InventoryStockRow]
     snapshot: list[InventoryStockRow] | None = None
     filtered: int

@@ -111,7 +111,7 @@ export default function AllergenMaster() {
     { key: 'gst', label: 'GST (%)', render: (r) => <span className="admin-allergen-number">{r.gst}</span> },
     { key: 'location', label: 'Storage location', render: (r) => refName(r.storage_location_name, r.storage_location_status) },
     { key: 'concentration', label: 'Concentration', render: (r) => r.concentration },
-    { key: 'threshold', label: 'Threshold limit', render: (r) => <span className="admin-allergen-number">{dash(r.threshold_limit)}</span> },
+    { key: 'threshold', label: 'Low stock alert', render: (r) => <span className="admin-allergen-number">{dash(r.threshold_limit)}</span> },
     { key: 'mix', label: 'Mix / No Mix', render: (r) => r.mix ? 'Mix' : 'No Mix' },
     { key: 'status', label: 'Status', render: (r) => <StatusBadge status={r.status} id={r.id} kind="allergen" /> },
     { key: 'created', label: 'Created details', render: (r) => audit(r.createdBy, r.createdAt) },
@@ -169,7 +169,7 @@ export default function AllergenMaster() {
             <div className="admin-allergen-mobile" role="list" aria-label="Allergen records">{records.map((r, index) => <article className="admin-zone-card" role="listitem" key={r.id} data-testid={`card-allergen-${r.id}`}>
               <div className="admin-zone-card__heading"><div className="admin-zone-card__title"><span className="admin-zone-card__serial">#{(page - 1) * pageSize + index + 1}</span><h2 data-testid={`text-allergen-name-${r.id}`}>{r.name}</h2></div><StatusBadge status={r.status} id={`m-${r.id}`} kind="allergen" /></div>
               <p>{refName(r.category_name, r.category_status)} · {refName(r.storage_location_name, r.storage_location_status)}</p>
-              <p>Price {dash(r.selling_price)} · GST {r.gst}% · {r.concentration} · Threshold {dash(r.threshold_limit)} · <strong>{r.mix ? 'Mix' : 'No Mix'}</strong></p>
+               <p>Price {dash(r.selling_price)} · GST {r.gst}% · {r.concentration} · Low stock alert {dash(r.threshold_limit)} · <strong>{r.mix ? 'Mix' : 'No Mix'}</strong></p>
               <dl className="admin-zone-card__meta"><div><dt>Created</dt><dd>{audit(r.createdBy, r.createdAt)}</dd></div><div><dt>Updated</dt><dd>{audit(r.updatedBy, r.updatedAt)}</dd></div></dl>{actions(r, true)}
             </article>)}</div></>
             : <div className="admin-empty"><strong>{total ? 'No matching products' : 'No allergen products yet'}</strong><p>{total ? 'Try other search text or clear a filter.' : 'Add your first shared product.'}</p></div>}

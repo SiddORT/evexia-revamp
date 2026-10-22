@@ -8632,6 +8632,8 @@ export const listInventoryStockQueryQueryDefault = ``;
 
 export const listInventoryStockQueryProductIdsDefault = ``;
 
+export const listInventoryStockQueryStockStatusDefault = `all`;
+
 export const ListInventoryStockQueryParams = zod.object({
   query: zod.coerce
     .string()
@@ -8645,6 +8647,9 @@ export const ListInventoryStockQueryParams = zod.object({
   snapshot: zod.coerce
     .boolean()
     .default(listInventoryStockQuerySnapshotDefault),
+  stock_status: zod
+    .enum(["all", "in_stock", "out_of_stock", "stock_alert"])
+    .default(listInventoryStockQueryStockStatusDefault),
   offset: zod.coerce
     .number()
     .int()
@@ -8675,6 +8680,17 @@ export const ListInventoryStockResponse = zod.object({
     pendingReceipts: zod.number().int(),
     sales: zod.string(),
   }),
+  filterOptions: zod
+    .array(
+      zod.object({
+        category: zod.string(),
+        categoryId: zod.union([zod.string().uuid(), zod.null()]),
+        concentration: zod.string(),
+        name: zod.string(),
+        productId: zod.string().uuid(),
+      }),
+    )
+    .optional(),
   filtered: zod.number().int(),
   items: zod.array(
     zod.object({
@@ -8766,6 +8782,7 @@ export const ListInventoryStockResponse = zod.object({
       quantity: zod.string(),
       sellingPrice: zod.union([zod.string(), zod.null()]),
       state: zod.string(),
+      thresholdLimit: zod.union([zod.string(), zod.null()]).optional(),
       unallocatedQuantity: zod
         .string()
         .default(listInventoryStockResponseItemsItemUnallocatedQuantityDefault),
@@ -8874,6 +8891,7 @@ export const ListInventoryStockResponse = zod.object({
           quantity: zod.string(),
           sellingPrice: zod.union([zod.string(), zod.null()]),
           state: zod.string(),
+          thresholdLimit: zod.union([zod.string(), zod.null()]).optional(),
           unallocatedQuantity: zod
             .string()
             .default(

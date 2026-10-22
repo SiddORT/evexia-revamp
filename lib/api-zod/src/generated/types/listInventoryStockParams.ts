@@ -5,6 +5,7 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { ListInventoryStockStockStatus } from "./listInventoryStockStockStatus";
 
 export type ListInventoryStockParams = {
   /**
@@ -17,6 +18,7 @@ export type ListInventoryStockParams = {
    */
   product_ids?: string;
   snapshot?: boolean;
+  stock_status?: ListInventoryStockStockStatus;
   /**
    * @minimum 0
    * @maximum 1000000

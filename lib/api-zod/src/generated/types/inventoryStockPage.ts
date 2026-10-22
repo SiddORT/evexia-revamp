@@ -6,11 +6,13 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { InventoryCoverage } from "./inventoryCoverage";
+import type { InventoryStockChoice } from "./inventoryStockChoice";
 import type { InventoryStockRow } from "./inventoryStockRow";
 
 export interface InventoryStockPage {
   asOf: Date;
   coverage: InventoryCoverage;
+  filterOptions?: InventoryStockChoice[];
   filtered: number;
   items: InventoryStockRow[];
   limit: number;

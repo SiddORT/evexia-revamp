@@ -16,6 +16,12 @@ their existing semantics.
 before rounding, exact decimal/workbook arithmetic, and post-round overflow
 checks. Keep historical snapshots/audits immutable and local/shared datasets
 separate. Never turn a load or render into a persisted normalization operation.
+For Stock Status alerts, reuse the existing optional allergen threshold and its
+backup transfer contract; do not introduce a second threshold or round it as a rate.
+
+**Why:** The user explicitly requested preserving existing saved threshold values
+and allergen backup compatibility when introducing Low stock alert filtering.
+
 Two-place money fields with a rejection contract still reject extra precision;
 display formatting does not expand those input contracts. Split tax rates may
 need more internal digits than their two-place presentation.

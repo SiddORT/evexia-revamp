@@ -6770,6 +6770,48 @@
         "title": "InventoryReferencePage",
         "type": "object"
       },
+      "InventoryStockChoice": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "categoryId": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoryid"
+          },
+          "concentration": {
+            "title": "Concentration",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "productId": {
+            "format": "uuid",
+            "title": "Productid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "productId",
+          "name",
+          "concentration",
+          "category",
+          "categoryId"
+        ],
+        "title": "InventoryStockChoice",
+        "type": "object"
+      },
       "InventoryStockPage": {
         "properties": {
           "asOf": {
@@ -6779,6 +6821,13 @@
           },
           "coverage": {
             "$ref": "#/components/schemas/InventoryCoverage"
+          },
+          "filterOptions": {
+            "items": {
+              "$ref": "#/components/schemas/InventoryStockChoice"
+            },
+            "title": "Filteroptions",
+            "type": "array"
           },
           "filtered": {
             "title": "Filtered",
@@ -6895,6 +6944,17 @@
           "state": {
             "title": "State",
             "type": "string"
+          },
+          "thresholdLimit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thresholdlimit"
           },
           "unallocatedQuantity": {
             "default": "0.000",
@@ -45087,6 +45147,22 @@
               "default": false,
               "title": "Snapshot",
               "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "stock_status",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "enum": [
+                "all",
+                "in_stock",
+                "out_of_stock",
+                "stock_alert"
+              ],
+              "title": "Stock Status",
+              "type": "string"
             }
           },
           {

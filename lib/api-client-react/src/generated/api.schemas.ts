@@ -2864,6 +2864,14 @@ export interface InventoryReferencePage {
   offset: number;
 }
 
+export interface InventoryStockChoice {
+  category: string;
+  categoryId: string | null;
+  concentration: string;
+  name: string;
+  productId: string;
+}
+
 export type InventoryStockRowItemKind =
   (typeof InventoryStockRowItemKind)[keyof typeof InventoryStockRowItemKind];
 
@@ -2883,6 +2891,7 @@ export interface InventoryStockRow {
   quantity: string;
   sellingPrice: string | null;
   state: string;
+  thresholdLimit?: string | null;
   unallocatedQuantity?: string;
   unit: string;
 }
@@ -2890,6 +2899,7 @@ export interface InventoryStockRow {
 export interface InventoryStockPage {
   asOf: string;
   coverage: InventoryCoverage;
+  filterOptions?: InventoryStockChoice[];
   filtered: number;
   items: InventoryStockRow[];
   limit: number;
@@ -10274,6 +10284,7 @@ export type ListInventoryStockParams = {
    */
   product_ids?: string;
   snapshot?: boolean;
+  stock_status?: ListInventoryStockStockStatus;
   /**
    * @minimum 0
    * @maximum 1000000
@@ -10285,6 +10296,16 @@ export type ListInventoryStockParams = {
    */
   limit?: number;
 };
+
+export type ListInventoryStockStockStatus =
+  (typeof ListInventoryStockStockStatus)[keyof typeof ListInventoryStockStockStatus];
+
+export const ListInventoryStockStockStatus = {
+  all: "all",
+  in_stock: "in_stock",
+  out_of_stock: "out_of_stock",
+  stock_alert: "stock_alert",
+} as const;
 
 export type GetInventoryStockHistoryParams = {
   from_date?: string | null;

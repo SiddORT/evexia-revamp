@@ -20,10 +20,11 @@ manager = require_permissions("admin.access")
 @router.get("/stock", response_model=InventoryStockPage, operation_id="listInventoryStock")
 def stock(query: str = Query("", max_length=200), category_id: uuid.UUID | None = None,
           product_ids: str = Query("", max_length=4000), snapshot: bool = False,
+          stock_status: Literal["all", "in_stock", "out_of_stock", "stock_alert"] = "all",
           offset: int = Query(0, ge=0, le=1000000), limit: int = Query(25, ge=1, le=100),
           actor: Identity = Depends(manager), db: Session = Depends(get_db)):
     return service.stock(db, actor, dict(query=query, category_id=category_id, product_ids=product_ids,
-        snapshot=snapshot, offset=offset, limit=limit))
+        stock_status=stock_status, snapshot=snapshot, offset=offset, limit=limit))
 
 
 @router.get("/stock/{product_id}/history", response_model=InventoryHistoryPage, operation_id="getInventoryStockHistory")
