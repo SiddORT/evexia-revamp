@@ -6,6 +6,7 @@ not evidence generated from the database being modified. No API session is forge
 The OS operator and protected ownership anchor are recorded separately.
 """
 import argparse
+import ast
 import hashlib
 import json
 import os
@@ -19,6 +20,7 @@ sys.path.insert(0, str(ROOT / "artifacts/api-server/backend"))
 from sqlalchemy import select, text
 from sqlalchemy.engine import make_url
 from app.core.config import get_settings
+from app.core.schema import SCHEMA_REVISION
 from app.core.security import utcnow
 from app.db.session import session_factory
 from app.db.models import User, AuditEvent
@@ -27,9 +29,10 @@ from app.db.inventory_models import InventoryReceiptState
 from app.services import inventory, account_crypto
 from app.services.purchase_received_crypto import ReceiptCrypto, PRError
 
-# Same reviewed receipt initialization operation, on the explicitly reviewed
-# product successor. No future schema or copied-target identity is accepted.
-REVISION = "0053_email_invitations"
+# Explicit compatibility review: 0054 changes email templates/attempts only;
+# receipt provenance, ciphertext, ledger and locking contracts are unchanged.
+# Never derive this authorization from head or the mutable release manifest.
+REVISION = "0054_modern_email_tests"
 
 
 def require(value, message):
@@ -79,13 +82,21 @@ def write_private(path, data):
 
 def source_review():
     review = json_file(ROOT / "scripts/development-schema-review.json")
-    require(review["target"] == REVISION, "Inventory source review is still pending")
-    for revision, checksum in review["revisions"].items():
-        paths = list((ROOT / "artifacts/api-server/backend/alembic/versions").glob(f"{revision}.py"))
-        # Some historical filenames differ from literal revision names.
-        if not paths:
-            continue
-        require(hashlib.sha256(paths[0].read_bytes()).hexdigest() == checksum, "Reviewed migration changed")
+    contract = json_file(ROOT / "development-contract.json")
+    require(review["target"] == contract["schema"] == SCHEMA_REVISION == REVISION,
+            "Inventory source review is still pending")
+    # Resolve literal revision IDs without importing/executing migration code.
+    # Historical filenames do not always match their declared revision IDs.
+    actual = {}
+    for path in (ROOT / "artifacts/api-server/backend/alembic/versions").glob("*.py"):
+        tree = ast.parse(path.read_bytes())
+        ids = [ast.literal_eval(node.value) for node in tree.body
+               if isinstance(node, ast.Assign)
+               and any(isinstance(name, ast.Name) and name.id == "revision" for name in node.targets)]
+        require(len(ids) == 1 and isinstance(ids[0], str) and ids[0] not in actual,
+                "Migration revision identity is unavailable or ambiguous")
+        actual[ids[0]] = hashlib.sha256(path.read_bytes()).hexdigest()
+    require(actual == review["revisions"], "Reviewed migration inventory changed")
 
 
 def main():

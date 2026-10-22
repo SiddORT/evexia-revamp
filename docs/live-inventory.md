@@ -6,7 +6,47 @@ allocation, import/retry, exact-rate and successor-migration contracts are in
 [`opening-stock.md`](opening-stock.md). Older implementation observations below
 are historical, not evidence of the new successor's runtime activation.
 
-## Current handoff: automatic migration, final acceptance after merge
+## Current supported receipt initialization: reviewed release 0054
+
+The development receipt initializer is explicitly reviewed for **exactly
+`0054_modern_email_tests`**. It no longer accepts `0053_email_invitations` or
+the original `0046_live_inventory` release. No older, multiple-head, or unknown
+future revision is accepted, even if a future release manifest is updated.
+The initializer never migrates, stamps, starts/stops services or restores backups.
+
+Compatibility review: `0054` follows `0053_email_invitations` and changes
+`email_templates` constraints/seed content and `email_attempts` constraints/
+template foreign-key retention only. It does not change receipt ciphertext or
+versioning, PO-line provenance, inventory lots/ledger/state, the shared inventory
+lock, or the protected ownership anchor. The current
+`app/services/inventory.py` still validates retained receipt/line/location
+evidence, checks the keyed review token, reconciles ledger quantities, and makes
+already-current receipts safe to resume. Opening Stock and stock-enabled
+products remain separate sources; initializing receipts does not rebuild their
+stock or infer historical recipes.
+
+The checked-in `scripts/development-schema-review.json` already reviews `0054`;
+its checksums and migration policy are unchanged by this tooling update.
+Before connecting, the initializer requires its fixed revision to match that
+review, `development-contract.json`, and the API source revision. It checks the
+complete migration inventory by declared revision ID and checksum, including
+historical files with nonmatching filenames. A missing, added or modified
+migration blocks execution. Each database transaction independently checks the
+actual target identity and exact single database revision.
+
+**Source/tooling support is not execution approval or live acceptance.** This
+update performs no database initialization, migration, service restart, recovery
+execution, or live alignment verification. An authorized operator must obtain
+separate approval for the exact target and batch, independently confirmed
+workspace/network/database identity, stopped writers, a current privately
+restored backup, and recoverable keys. Use the
+[controlled procedure below](#controlled-receipt-initialization-operator-procedure).
+Do not execute the historical activation commands retained below.
+
+<details>
+<summary>Historical initial merge handoff — not current operator instructions</summary>
+
+## Original handoff: automatic migration, final acceptance after merge
 
 The latest main-workspace source has been integrated. Inventory is the single
 `0046_live_inventory` successor to accepted `0045_pr_batch_numbers`, using main's
@@ -40,6 +80,8 @@ key/historical guards, or claim source-only agreement as live success.
 reviewed receipt initialization and final three-way alignment. The fork's earlier
 `0044`/API-502 observations below are historical, not the current original target.
 No original database migration or receipt initialization was run from this task.
+
+</details>
 
 <details>
 <summary>Historical pre-handoff observations — superseded, not current activation instructions</summary>
@@ -259,6 +301,8 @@ postings. Historical full address/geography is explicitly unavailable:
 receipts retained only the original location ID/name. Today's geography is
 not passed off as receipt-time history.
 
+### Controlled receipt initialization operator procedure
+
 `scripts/initialize-inventory.py` provides a separate, explicit development
 operator procedure, not an HTTP mutation/startup hook. No account or web session
 is created or impersonated. The existing protected singleton is only the
@@ -269,11 +313,15 @@ authorized.
 Before using it, independently review and confirm a private target JSON with
 exact keys `workspace`, `host`, `port`, `database`, `cluster`, `oid`. Never fill
 those expected fields automatically from the database being initialized.
-Schema must already be exactly `0046_live_inventory`; the command never
-migrates or stamps.
+Schema must already be exactly `0054_modern_email_tests`; the command never
+migrates or stamps. Confirm the current checkout's API source, release contract
+and schema review agree on this exact revision before proceeding. Old report
+files bearing `0046` or `0053` cannot be applied: generate fresh `0054` reports.
+Do not edit their schema/target fields or copy tokens from older reports.
 
 1. Stop writers and retain a current full private archive plus independently
-   verified restoration/content evidence and separate recoverable PR keys.
+   verified restoration/content evidence and separate recoverable PR keys
+   (including every key ID still needed by retained ciphertext).
    Existing recovery approvals for a predecessor are not reused as permission.
 2. Authorize this exact target and receipt initialization separately. The
    operator flags are explicit attestations of independent evidence, **not**
@@ -296,6 +344,45 @@ migrates or stamps.
 6. Continue reviewed pages until the global pending-receipt count is zero.
    Retain all review/commit reports in approved private durable recovery storage,
    separately from keys. Only then expose receipt-backed stock as complete.
+
+From the reviewed checkout, using the approved backend Python environment
+(with its existing dependencies and operator-managed configuration), the
+commands are:
+
+```sh
+python3 -B scripts/initialize-inventory.py --report \
+  --target-confirmation /private/operator/target.json \
+  --output /private/operator/review-page-001.json --limit 100
+
+# Only after independent review and explicit batch/recovery approval:
+python3 -B scripts/initialize-inventory.py \
+  --apply-reviewed /private/operator/review-page-001.json \
+  --target-confirmation /private/operator/target.json \
+  --output /private/operator/commit-page-001.json \
+  --approve-initialization --attest-restored-private-backup \
+  --attest-key-recovery --writers-stopped
+```
+
+Paths above are placeholders, not commands to run as part of source delivery.
+The target document uses string `workspace`, `host`, `database`, `cluster` and
+integer `port`, `oid`; obtain them from independently approved target records,
+not the connection's environment or a query used to fill in its own confirmation.
+An identical cluster identifier on a clone is not proof of the approved host.
+Keep documents in an operator-owned private directory outside the repository
+and public/shared artifact paths; never paste keyed review tokens, receipt
+payloads, keys or connection credentials into chat, logs or task attachments.
+New output files are exclusive-create mode 0600, not overwritten.
+
+For subsequent pages, pass the previous report's `after` receipt UUID with
+`--after`, use new output paths, and review each page separately. An empty page
+is not an apply batch. Remove unavailable candidates only through an explicitly
+reviewed new batch; never relabel them eligible. No complete coverage is claimed
+while any receipt remains pending. A `batch_committed` result proves that batch,
+not global completion. Following `incomplete`, retain the failure/commit
+evidence and resolve the cause before resuming the same approved file with a
+new output path; prior commits are not rolled back. If the receipt, target,
+schema, or approved recovery context changes, stop and obtain fresh review and
+approval instead of bypassing a failed prerequisite.
 
 ## API/UI scope
 
