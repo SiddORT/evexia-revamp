@@ -42727,6 +42727,61 @@
               "title": "Limit",
               "type": "integer"
             }
+          },
+          {
+            "in": "query",
+            "name": "source_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "destination_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Destination Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unallocated",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Unallocated",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "allergen_ids",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 4000,
+              "title": "Allergen Ids",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -44374,7 +44429,10 @@
               "enum": [
                 "locations",
                 "staff",
-                "lots"
+                "lots",
+                "movement-sources",
+                "movement-destinations",
+                "movement-allergens"
               ],
               "title": "Kind",
               "type": "string"

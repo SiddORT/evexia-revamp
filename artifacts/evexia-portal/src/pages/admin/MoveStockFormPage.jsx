@@ -3,8 +3,9 @@ import { useLocation } from 'wouter';
 import { ArrowLeft } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ReferenceSelect from '../../components/admin/ReferenceSelect.jsx';
+import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
-import { forgetMove, listReference, milli, newKey, pendingMove, previewMovement, reconcileMovement, rememberMove, saveMovement, sumMilli, validateLines } from '../../services/serverInventory.js';
+import { forgetMove, INVENTORY_INITIALIZATION_GUIDANCE, listReference, milli, newKey, pendingMove, previewMovement, reconcileMovement, rememberMove, saveMovement, sumMilli, validateLines } from '../../services/serverInventory.js';
 import '../../mr.css';
 import '../../moveStocks.css';
 import '../../inventoryServer.css';
@@ -37,6 +38,7 @@ export default function MoveStockFormPage() {
   const [busy, setBusy] = useState('');
   const [review, setReview] = useState(null);
   const [uncertainKey, setUncertainKey] = useState(null);
+  const [initializationBlocked, setInitializationBlocked] = useState(false);
   const sourceId = source?.value || '';
 
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; lotSeq.current++; }; }, []);
@@ -53,8 +55,16 @@ export default function MoveStockFormPage() {
         all.push(...d.items); filtered = d.filtered;
         if (!d.items.length) break;
       } while (all.length < filtered);
+      setInitializationBlocked(false);
       setLots({ items: all, loading: false, error: '', loadedFor: id });
-    } catch (e) { if (mine === lotSeq.current) setLots((s) => ({ ...s, loading: false, error: e.message || 'Lots could not be loaded.' })); }
+    } catch (e) {
+      if (mine !== lotSeq.current) return;
+      if (e.code === 'inventory_uninitialized') {
+        setInitializationBlocked(true);
+        setReview(null);
+        setLots((s) => ({ ...s, loading: false, error: '', loadedFor: '' }));
+      } else setLots((s) => ({ ...s, loading: false, error: e.message || 'Lots could not be loaded.' }));
+    }
   }, []);
   useEffect(() => { loadLots(sourceId); }, [sourceId, loadLots]);
 
@@ -87,7 +97,7 @@ export default function MoveStockFormPage() {
 
   const pickedList = Object.values(picked);
   const listed = new Map(lots.items.map((l) => [l.id, l]));
-  const fresh = lots.loadedFor === sourceId && !lots.loading && !lots.error;
+  const fresh = lots.loadedFor === sourceId && !lots.loading && !lots.error && !initializationBlocked;
   const unavailable = fresh ? pickedList.filter((p) => !listed.has(p.lot.id)) : [];
   // Current balances win when the lot is still listed; otherwise the retained metadata is validated as unavailable.
   const selectedLines = pickedList.map((p) => ({ lot: listed.get(p.lot.id) || p.lot, quantity: p.quantity }));
@@ -139,7 +149,7 @@ export default function MoveStockFormPage() {
 
   async function submitReview(ev) {
     ev.preventDefault();
-    if (lock.current || locked) return;
+    if (lock.current || locked || initializationBlocked) return;
     const e = validate(); setErrors(e); setMessage('');
     if (Object.keys(e).length) return;
     lock.current = true; setBusy('preview');
@@ -153,11 +163,19 @@ export default function MoveStockFormPage() {
       const r = await previewMovement(body);
       if (!mounted.current) return;
       setReview({ body, movement: r.movement, token: r.reviewToken });
-    } catch (err) { if (mounted.current) { setMessage(err.message || 'The movement could not be reviewed. Your draft is preserved.'); if (/stock|source|available/i.test(err.message || '')) loadLots(sourceId); } }
+    } catch (err) {
+      if (mounted.current) {
+        if (err.code === 'inventory_uninitialized') { setInitializationBlocked(true); setReview(null); }
+        else {
+          setMessage(err.message || 'The movement could not be reviewed. Your draft is preserved.');
+          if (/stock|source|available/i.test(err.message || '')) loadLots(sourceId);
+        }
+      }
+    }
     finally { lock.current = false; if (mounted.current) setBusy(''); }
   }
   async function confirm() {
-    if (lock.current || !review || busy || uncertainKey) return;
+    if (lock.current || !review || busy || uncertainKey || initializationBlocked) return;
     lock.current = true; setBusy('save'); setMessage('');
     const key = keyRef.current || (keyRef.current = newKey());
     let journaled = false;
@@ -172,10 +190,11 @@ export default function MoveStockFormPage() {
       navigate(BASE);
     } catch (err) {
       if (!mounted.current) return;
+      if (err.code === 'inventory_uninitialized') { setInitializationBlocked(true); setReview(null); }
       if (journaled) {
         // Sent or journaled: stay pending until /requests reconciliation closes or confirms it.
         setUncertainKey(key);
-        setMessage(`${err.message || 'The save outcome is unknown.'} Check the save outcome before saving again. Your draft is preserved.`);
+        setMessage(`${err.code === 'inventory_uninitialized' ? 'Inventory initialization is required.' : err.message || 'The save outcome is unknown.'} Check the save outcome before saving again. Your draft is preserved.`);
       } else { keyRef.current = null; setMessage(`${err.message || 'Nothing was sent.'} Your draft is preserved.`); }
     } finally { lock.current = false; if (mounted.current) setBusy(''); }
   }
@@ -190,6 +209,10 @@ export default function MoveStockFormPage() {
       <div className="ms-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(BASE)} data-testid="button-back-move"><ArrowLeft size={16} /> All movements</button></div></div>
     <div className="admin-feedback ms-note" role="note" data-testid="text-move-guidance">Saved movements are append-only and cannot be edited or deleted. You review the exact result before it is committed.</div>
     {message && <div className="admin-feedback admin-feedback--error" role="alert">{message}</div>}
+    {initializationBlocked && <div className="admin-feedback admin-feedback--error inv-banner" role="alert">
+      <div><strong>Receipt initialization review required</strong><p>{INVENTORY_INITIALIZATION_GUIDANCE}</p><p>Review and saving are blocked. After the operator confirms complete initialization, check the status here to reload balances.</p></div>
+      <button type="button" className="admin-button admin-button--secondary" disabled={!sourceId || lots.loading || Boolean(busy)} onClick={() => loadLots(sourceId)}>{lots.loading ? 'Checking…' : 'Check initialization status'}</button>
+    </div>}
     {uncertainKey && <div className="admin-feedback admin-feedback--error inv-banner" role="alert"><p>A previous save has an unchecked outcome. New saves are blocked until it is checked.</p>
       <button type="button" className="admin-button" disabled={Boolean(busy)} onClick={() => explicitReconcile(uncertainKey)}>{busy === 'reconcile' ? 'Checking…' : 'Check save outcome'}</button></div>}
     <section className="admin-panel" aria-label="New stock movement">
@@ -198,30 +221,31 @@ export default function MoveStockFormPage() {
         <div className="ms-form-body">
           <div className="ms-fields">
             <div className="ms-field"><label htmlFor="ms-source">Source location <span className="mr-form__required">*</span></label>
-              <ReferenceSelect id="ms-source" label="Source location" kind="locations" fetchPage={staffFetch} pinned={UNALLOCATED_SOURCE} value={sourceId} selected={source} onChange={changeSource} disabled={locked} placeholder="Select source" invalid={Boolean(errors.sourceId)} describedBy={errors.sourceId ? 'ms-sourceId-error' : undefined} />{err('sourceId')}</div>
+              <ReferenceSelect id="ms-source" label="Source location" kind="locations" fetchPage={staffFetch} showResultHint={false} pinned={UNALLOCATED_SOURCE} value={sourceId} selected={source} onChange={changeSource} disabled={locked} placeholder="Select source" invalid={Boolean(errors.sourceId)} describedBy={errors.sourceId ? 'ms-sourceId-error' : undefined} />{err('sourceId')}</div>
             <div className="ms-field"><label htmlFor="ms-dest">Destination location <span className="mr-form__required">*</span></label>
-              <ReferenceSelect id="ms-dest" label="Destination location" kind="locations" fetchPage={staffFetch} value={destination?.value || ''} selected={destination} exclude={sourceId === 'unallocated' ? '' : sourceId} disabled={locked} onChange={(_v, o) => { setDestination(o ? { value: o.value, label: o.label } : null); clear('destinationId'); }} placeholder="Select destination" invalid={Boolean(errors.destinationId)} describedBy={errors.destinationId ? 'ms-destinationId-error' : undefined} />{err('destinationId')}</div>
+              <ReferenceSelect id="ms-dest" label="Destination location" kind="locations" fetchPage={staffFetch} showResultHint={false} value={destination?.value || ''} selected={destination} exclude={sourceId === 'unallocated' ? '' : sourceId} disabled={locked} onChange={(_v, o) => { setDestination(o ? { value: o.value, label: o.label } : null); clear('destinationId'); }} placeholder="Select destination" invalid={Boolean(errors.destinationId)} describedBy={errors.destinationId ? 'ms-destinationId-error' : undefined} />{err('destinationId')}</div>
             <div className="ms-field"><label htmlFor="ms-date">Date <span className="mr-form__required">*</span></label>
               <input id="ms-date" type="date" className="mr-form__control" value={date} onChange={(e) => { setDate(e.target.value); clear('date'); }} aria-invalid={Boolean(errors.date)} aria-describedby={errors.date ? 'ms-date-error' : undefined} data-testid="input-move-date" />{err('date')}</div>
-            <div className="ms-field"><label htmlFor="ms-by">Delivered by <span className="mr-form__required">*</span></label>
+            <div className="ms-field"><InfoDisclosure id="ms-by-info" title="Delivered by" text="Recorded delivery name only. It is not proof of who saved the movement; the server records the actor separately."><label htmlFor="ms-by">Delivered by <span className="mr-form__required">*</span></label></InfoDisclosure>
               <div className="ms-delivery-row">
-                <ReferenceSelect id="ms-by" label="Delivered by" kind="staff" fetchPage={staffFetch} pinned={OTHER_OPTION} value={by?.value || ''} selected={by} disabled={locked} onChange={(_v, o) => { setBy(o ? { value: o.value, label: o.label } : null); clear('deliveredBy'); }} placeholder="Select active staff or Other" invalid={Boolean(errors.deliveredBy)} describedBy={errors.deliveredBy ? 'ms-deliveredBy-error' : 'ms-by-hint'} />
-                {by?.value === OTHER && <div><input id="ms-other" className="mr-form__control" aria-label="Delivery name" placeholder="Name of person delivering" value={otherName} maxLength={120} onChange={(e) => { setOtherName(e.target.value); clear('deliveredBy'); }} aria-invalid={Boolean(errors.deliveredBy)} data-testid="input-move-delivered-by" /></div>}
+                <ReferenceSelect id="ms-by" label="Delivered by" kind="staff" fetchPage={staffFetch} pinned={OTHER_OPTION} value={by?.value || ''} selected={by} disabled={locked} onChange={(_v, o) => { setBy(o ? { value: o.value, label: o.label } : null); clear('deliveredBy'); }} placeholder="Select active staff or Other" invalid={Boolean(errors.deliveredBy)} describedBy={errors.deliveredBy ? 'ms-deliveredBy-error' : undefined} />
+                {by?.value === OTHER && <div><input id="ms-other" className="mr-form__control" aria-label="Delivery name" placeholder="Name of person delivering" value={otherName} maxLength={120} onChange={(e) => { setOtherName(e.target.value); clear('deliveredBy'); }} aria-invalid={Boolean(errors.deliveredBy)} aria-describedby={errors.deliveredBy ? 'ms-deliveredBy-error' : undefined} data-testid="input-move-delivered-by" /></div>}
               </div>
-              {errors.deliveredBy ? err('deliveredBy') : <p id="ms-by-hint" className="mr-form__hint">Recorded delivery name only. It is not proof of who saved the movement; the server records the actor separately.</p>}</div>
+              {err('deliveredBy')}</div>
           </div>
           <fieldset className="ms-products" aria-describedby={errors.lines ? 'ms-lines-error' : undefined}>
             <legend className="ms-legend">Lots to move <span className="mr-form__required">*</span></legend>
-            {sourceId && <div className="inv-more"><button type="button" className="admin-button admin-button--secondary" disabled={lots.loading} onClick={() => loadLots(sourceId)} data-testid="button-refresh-lots">{lots.loading ? 'Refreshing…' : 'Refresh balances'}</button><span>{pickedList.length} of {MAX_LOTS} lots selected. Selections and typed quantities are kept on refresh.</span></div>}
+            {sourceId && <div className="inv-more"><button type="button" className="admin-button admin-button--secondary" disabled={lots.loading || initializationBlocked} onClick={() => loadLots(sourceId)} data-testid="button-refresh-lots">{lots.loading ? 'Refreshing…' : 'Refresh balances'}</button><span>{pickedList.length} of {MAX_LOTS} lots selected. Selections and typed quantities are kept on refresh.</span></div>}
             {lots.error && <div className="admin-feedback admin-feedback--error inv-banner" role="alert"><p>{lots.error}</p><button type="button" className="admin-button admin-button--secondary" onClick={() => loadLots(sourceId)}>Retry</button></div>}
             {hasUnavailable && <div className="admin-feedback admin-feedback--error" role="alert">{unavailable.length} selected lot{unavailable.length === 1 ? ' is' : 's are'} no longer available at this source. Remove {unavailable.length === 1 ? 'it' : 'them'} to continue.</div>}
             {!sourceId ? <div className="admin-empty" role="status"><strong>Select a source location</strong><p>Available receipt, opening and assembly lots at that source will be listed. Select Unallocated to allocate opening stock.</p></div>
+              : initializationBlocked && !pickedList.length ? <div className="admin-empty" role="status"><strong>Balances unavailable pending receipt initialization review</strong><p>No partial balances can be used.</p></div>
               : lots.loading && !lots.items.length && !pickedList.length ? <div className="admin-empty" role="status"><strong>Loading lots…</strong></div>
               : !lots.items.length && !pickedList.length && !lots.error ? <div className="admin-empty" role="status" data-testid="text-move-empty-source"><strong>No stock at this source</strong><p>Choose another source that holds stock, or confirm inventory is initialized.</p></div>
               : <div className="admin-table-scroll ms-stock-table" role="region" aria-label="Source lots" tabIndex={0} aria-busy={lots.loading}><table className="admin-table"><thead><tr><th scope="col">Select</th><th scope="col">Product / batch</th><th scope="col">Available (unit)</th><th scope="col">Quantity to move</th></tr></thead><tbody>{[...unavailable.map((p) => ({ lot: p.lot, gone: true })), ...lots.items.map((lot) => ({ lot, gone: false }))].map(({ lot: l, gone }) => { const on = l.id in picked; return <tr key={l.id}>
-                <td><input type="checkbox" id={`ms-p-${l.id}`} checked={on} onChange={() => togglePick(l)} aria-label={`Select ${l.name}`} data-testid={`checkbox-move-lot-${l.id}`} /></td>
+                <td><input type="checkbox" id={`ms-p-${l.id}`} checked={on} disabled={initializationBlocked} onChange={() => togglePick(l)} aria-label={`Select ${l.name}`} data-testid={`checkbox-move-lot-${l.id}`} /></td>
                 <td><label htmlFor={`ms-p-${l.id}`} className="ms-product__name">{l.productName}</label><span className="stock-sub">{l.itemKind === 'combo' ? 'Assembled combo, whole combos only · ' : ''}{l.batchNo ? `Batch ${l.batchNo}` : 'Batch unavailable'} · {l.receiptNumber || (l.itemKind === 'combo' ? 'Assembled' : 'Receipt unavailable')} · exp {l.expiryDate ? displayDate(l.expiryDate) : 'unavailable'}{l.itemKind === 'combo' ? ` · assembly ${l.assemblyId || 'link unavailable'}${l.recipe ? ` · recipe v${l.recipe.version}` : ''}${l.mrp != null ? ` · MRP ${l.mrp}, selling ${l.sellingPrice}` : ''}` : ''}</span>{gone && <span className="mr-form__error">No longer available at this source</span>}</td>
-                <td className="inv-mono" data-testid={`text-move-available-${l.id}`}>{gone ? 'Unavailable' : `${l.available} ${l.unit}`}</td>
+                <td className="inv-mono" data-testid={`text-move-available-${l.id}`}>{gone || initializationBlocked ? 'Unavailable' : `${l.available} ${l.unit}`}</td>
                 <td>{on ? <div className="ms-qty"><label htmlFor={`ms-q-${l.id}`}>Quantity ({l.unit}{l.itemKind === 'combo' ? ', whole number' : ''})</label>
                   <input id={`ms-q-${l.id}`} className="mr-form__control" type="text" inputMode={l.itemKind === 'combo' ? 'numeric' : 'decimal'} autoComplete="off" value={picked[l.id].quantity} onChange={(e) => { const v = e.target.value; setPicked((p) => (l.id in p ? { ...p, [l.id]: { ...p[l.id], quantity: v } } : p)); clear(l.id); clear('lines'); }} aria-invalid={Boolean(errors[l.id])} aria-describedby={errors[l.id] ? `ms-q-${l.id}-error` : undefined} data-testid={`input-move-qty-${l.id}`} />
                   {errors[l.id] && <p id={`ms-q-${l.id}-error`} className="mr-form__error" role="alert">{errors[l.id]}</p>}</div> : <span className="mr-form__hint">Select lot first</span>}</td>
@@ -240,8 +264,8 @@ export default function MoveStockFormPage() {
           <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(BASE)} disabled={busy === 'save'} data-testid="button-cancel-move">Cancel</button>
           {review ? <>
             <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(busy) || Boolean(uncertainKey)} onClick={() => setReview(null)}>Back to edit</button>
-            <button type="button" className="admin-button" disabled={Boolean(busy) || Boolean(uncertainKey)} onClick={confirm} data-testid="button-save-move">{busy === 'save' ? 'Saving…' : 'Confirm and move stock'}</button></>
-            : <button type="submit" className="admin-button" disabled={locked} data-testid="button-save-move">{busy === 'preview' ? 'Reviewing…' : 'Review movement'}</button>}</div></div>
+            <button type="button" className="admin-button" disabled={Boolean(busy) || Boolean(uncertainKey) || initializationBlocked} onClick={confirm} data-testid="button-save-move">{busy === 'save' ? 'Saving…' : 'Confirm and move stock'}</button></>
+            : <button type="submit" className="admin-button" disabled={locked || initializationBlocked} data-testid="button-save-move">{busy === 'preview' ? 'Reviewing…' : 'Review movement'}</button>}</div></div>
       </form>
     </section>
   </div></AdminLayout>;

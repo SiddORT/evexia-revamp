@@ -352,7 +352,22 @@ def stock_history(db, actor, product_id, from_date=None, to_date=None, offset=0,
 
 def references(db, actor, kind, query="", offset=0, limit=25, source_id=None, unallocated=False):
     def work(_, crypto):
-        if kind == "staff":
+        if kind.startswith("movement-"):
+            # Historical choices must not disappear when a catalogue row is
+            # renamed, inactivated or deleted. Latest saved label per ID wins.
+            rows = bounded(db, select(Movement).order_by(Movement.created_at.desc(), Movement.id))
+            choices = {}
+            for row in rows:
+                movement = crypto.open(row.id, "movement", row.payload_ciphertext)
+                if kind == "movement-allergens":
+                    for key, name in movement_allergens(movement).items():
+                        choices.setdefault(key, name)
+                else:
+                    location = movement["source" if kind == "movement-sources" else "destination"]
+                    if location["id"] is not None:
+                        choices.setdefault(str(location["id"]), location["name"])
+            data = [dict(id=key, name=name) for key, name in choices.items()]
+        elif kind == "staff":
             rows = bounded(db, select(StaffProfile).where(StaffProfile.status == "active", StaffProfile.deleted_at.is_(None)).order_by(StaffProfile.id))
             sc = StaffCrypto(get_settings())
             data = [dict(id=str(r.id), name=sc.decrypt(r.id, "name", r.name_ciphertext)) for r in rows]
@@ -487,7 +502,24 @@ def reconcile(db, actor, key):
     return transaction(db, actor, work)
 
 
-def movements(db, actor, query="", offset=0, limit=10, record_id=None, section=None):
+def movement_allergens(movement):
+    """Match saved allergen IDs, including the assembly's historical recipe.
+
+    Finished-product openings without recipe evidence are not attributed to a
+    current recipe: doing so would invent historical component provenance.
+    """
+    result = {}
+    for line in movement["lines"]:
+        if line.get("itemKind") == "combo" or line.get("comboProductId"):
+            for member in (line.get("recipe") or {}).get("members", []):
+                result.setdefault(str(member["allergenId"]), member["name"])
+        else:
+            result.setdefault(str(line["productId"]), line["productName"])
+    return result
+
+
+def movements(db, actor, query="", offset=0, limit=10, record_id=None, section=None,
+              source_id=None, destination_id=None, unallocated=False, allergen_ids=None):
     def work(_, crypto):
         statement = select(Movement)
         if record_id:
@@ -498,7 +530,12 @@ def movements(db, actor, query="", offset=0, limit=10, record_id=None, section=N
             if not data:
                 raise PRError("Movement not found.", 404, "inventory_not_found")
             return data[0][section] if section else data[0]
-        data = [r for r in data if query.strip().casefold() in " ".join([
+        data = [r for r in data
+            if (not source_id or str(r["source"]["id"]) == str(source_id))
+            and (not unallocated or r["source"]["id"] is None)
+            and (not destination_id or str(r["destination"]["id"]) == str(destination_id))
+            and (not allergen_ids or allergen_ids.intersection(movement_allergens(r)))
+            and query.strip().casefold() in " ".join([
             r["source"]["name"], r["destination"]["name"], r["deliveredBy"],
             *[l["productName"] for l in r["lines"]]]).casefold()]
         return dict(items=data[offset:offset + limit], filtered=len(data), total=len(rows), limit=limit, offset=offset,

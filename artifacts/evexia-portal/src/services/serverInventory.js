@@ -7,11 +7,13 @@ const clean = (params) => Object.fromEntries(Object.entries(params || {}).filter
 export const listStock = (params, signal) => request('/stock', { params: clean({ ...params, product_ids: params?.product_ids?.join?.(',') ?? params?.product_ids }), signal });
 export const stockHistory = (id, params, signal) => request(`/stock/${id}/history`, { params: clean(params), signal });
 export const listReference = (kind, params, signal) => request(`/references/${kind}`, { params: clean(params), signal });
-export const listMovements = (params, signal) => request('/movements', { params: clean(params), signal });
+export const listMovements = (params, signal) => request('/movements', { params: clean({ ...params, allergen_ids: params?.allergen_ids?.join?.(',') ?? params?.allergen_ids }), signal });
 export const getMovement = (id, signal) => request(`/movements/${id}`, { signal });
 export const previewMovement = (body) => request('/movements/preview', { body });
 export const saveMovement = (body) => request('/movements', { body });
 export const reconcileMovement = (key) => request(`/requests/${key}`);
+
+export const INVENTORY_INITIALIZATION_GUIDANCE = 'Receipt initialization needs administrator/operator review before inventory can be used. Ask an administrator to have the operator review the read-only initialization report and follow the controlled receipt-initialization procedure in docs/live-inventory.md. Retrying does not initialize receipts. Your draft is preserved; keep this page open.';
 
 export const newKey = () => globalThis.crypto.randomUUID();
 export const ownerMove = () => String(getSession()?.user?.id || '');

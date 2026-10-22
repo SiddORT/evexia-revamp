@@ -42,7 +42,7 @@ def initialization(offset: int = Query(0, ge=0, le=1000000), limit: int = Query(
 
 
 @router.get("/references/{kind}", response_model=InventoryReferencePage, response_model_exclude_none=True, operation_id="getInventoryReferences")
-def references(kind: Literal["locations", "staff", "lots"], query: str = Query("", max_length=200),
+def references(kind: Literal["locations", "staff", "lots", "movement-sources", "movement-destinations", "movement-allergens"], query: str = Query("", max_length=200),
                source_id: uuid.UUID | None = None, offset: int = Query(0, ge=0, le=1000000),
                limit: int = Query(25, ge=1, le=100), unallocated: bool = False,
                actor: Identity = Depends(manager), db: Session = Depends(get_db)):
@@ -51,8 +51,20 @@ def references(kind: Literal["locations", "staff", "lots"], query: str = Query("
 
 @router.get("/movements", response_model=MovementPage, operation_id="listInventoryMovements")
 def listing(query: str = Query("", max_length=200), offset: int = Query(0, ge=0, le=1000000),
-            limit: int = Query(10, ge=1, le=100), actor: Identity = Depends(manager), db: Session = Depends(get_db)):
-    return service.movements(db, actor, query, offset, limit)
+            limit: int = Query(10, ge=1, le=100), source_id: uuid.UUID | None = None,
+            destination_id: uuid.UUID | None = None, unallocated: bool = False,
+            allergen_ids: str = Query("", max_length=4000),
+            actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    if source_id and unallocated:
+        raise service.PRError("Choose a real source or Unallocated, not both.", 422, "inventory_source")
+    try:
+        selected = {str(uuid.UUID(key)) for key in allergen_ids.split(",")} if allergen_ids else set()
+        if len(selected) > 100:
+            raise ValueError()
+    except ValueError:
+        raise service.PRError("Choose up to 100 valid allergen identifiers.", 422, "inventory_filter") from None
+    return service.movements(db, actor, query, offset, limit, source_id=source_id,
+        destination_id=destination_id, unallocated=unallocated, allergen_ids=selected)
 
 
 @router.get("/requests/{key}", response_model=MovementReconciliation, operation_id="reconcileInventoryMovement")

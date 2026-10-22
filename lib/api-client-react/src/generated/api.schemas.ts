@@ -10235,6 +10235,13 @@ export type ListInventoryMovementsParams = {
    * @maximum 100
    */
   limit?: number;
+  source_id?: string | null;
+  destination_id?: string | null;
+  unallocated?: boolean;
+  /**
+   * @maxLength 4000
+   */
+  allergen_ids?: string;
 };
 
 export type GetInventoryReferencesParams = {

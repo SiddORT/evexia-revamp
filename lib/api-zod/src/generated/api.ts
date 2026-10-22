@@ -431,6 +431,8 @@ export const listInventoryMovementsQueryOffsetMin = 0;
 export const listInventoryMovementsQueryOffsetMax = 1000000;
 export const listInventoryMovementsQueryLimitDefault = 10;
 export const listInventoryMovementsQueryLimitMax = 100;
+export const listInventoryMovementsQueryUnallocatedDefault = false;
+export const listInventoryMovementsQueryAllergenIdsMax = 4000;
 export const createInventoryMovementBodyLinesItemQuantityMax = 11;
 export const createInventoryMovementBodyLinesMax = 100;
 export const createInventoryMovementBodyOtherNameOneMax = 120;
@@ -7725,6 +7727,8 @@ export const ReviewInventoryInitializationResponse = zod.object({
  */
 export const listInventoryMovementsQueryQueryDefault = ``;
 
+export const listInventoryMovementsQueryAllergenIdsDefault = ``;
+
 export const ListInventoryMovementsQueryParams = zod.object({
   query: zod.coerce
     .string()
@@ -7742,6 +7746,17 @@ export const ListInventoryMovementsQueryParams = zod.object({
     .min(1)
     .max(listInventoryMovementsQueryLimitMax)
     .default(listInventoryMovementsQueryLimitDefault),
+  source_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  destination_id: zod
+    .union([zod.coerce.string().uuid(), zod.null()])
+    .optional(),
+  unallocated: zod.coerce
+    .boolean()
+    .default(listInventoryMovementsQueryUnallocatedDefault),
+  allergen_ids: zod.coerce
+    .string()
+    .max(listInventoryMovementsQueryAllergenIdsMax)
+    .default(listInventoryMovementsQueryAllergenIdsDefault),
 });
 
 export const listInventoryMovementsResponseItemsItemLinesItemItemKindDefault = `allergen`;
@@ -8359,7 +8374,14 @@ export const GetInventoryMovementAnalyticsResponse = zod.object({
  * @summary References
  */
 export const GetInventoryReferencesParams = zod.object({
-  kind: zod.enum(["locations", "staff", "lots"]),
+  kind: zod.enum([
+    "locations",
+    "staff",
+    "lots",
+    "movement-sources",
+    "movement-destinations",
+    "movement-allergens",
+  ]),
 });
 
 export const getInventoryReferencesQueryQueryDefault = ``;

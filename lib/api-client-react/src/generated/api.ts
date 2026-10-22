@@ -8851,7 +8851,13 @@ export function useGetInventoryMovementAnalytics<
 }
 
 export const getGetInventoryReferencesUrl = (
-  kind: "locations" | "staff" | "lots",
+  kind:
+    | "locations"
+    | "staff"
+    | "lots"
+    | "movement-sources"
+    | "movement-destinations"
+    | "movement-allergens",
   params?: GetInventoryReferencesParams,
 ) => {
   const normalizedParams = new URLSearchParams();
@@ -8873,7 +8879,13 @@ export const getGetInventoryReferencesUrl = (
  * @summary References
  */
 export const getInventoryReferences = async (
-  kind: "locations" | "staff" | "lots",
+  kind:
+    | "locations"
+    | "staff"
+    | "lots"
+    | "movement-sources"
+    | "movement-destinations"
+    | "movement-allergens",
   params?: GetInventoryReferencesParams,
   options?: Parameters<typeof customFetch>[1],
 ): Promise<InventoryReferencePage> => {
@@ -8887,7 +8899,13 @@ export const getInventoryReferences = async (
 };
 
 export const getGetInventoryReferencesQueryKey = (
-  kind: "locations" | "staff" | "lots",
+  kind:
+    | "locations"
+    | "staff"
+    | "lots"
+    | "movement-sources"
+    | "movement-destinations"
+    | "movement-allergens",
   params?: GetInventoryReferencesParams,
 ) => {
   return [
@@ -8900,7 +8918,13 @@ export const getGetInventoryReferencesQueryOptions = <
   TData = Awaited<ReturnType<typeof getInventoryReferences>>,
   TError = ErrorType<ErrorEnvelope>,
 >(
-  kind: "locations" | "staff" | "lots",
+  kind:
+    | "locations"
+    | "staff"
+    | "lots"
+    | "movement-sources"
+    | "movement-destinations"
+    | "movement-allergens",
   params?: GetInventoryReferencesParams,
   options?: {
     query?: UseQueryOptions<
@@ -8946,7 +8970,13 @@ export function useGetInventoryReferences<
   TData = Awaited<ReturnType<typeof getInventoryReferences>>,
   TError = ErrorType<ErrorEnvelope>,
 >(
-  kind: "locations" | "staff" | "lots",
+  kind:
+    | "locations"
+    | "staff"
+    | "lots"
+    | "movement-sources"
+    | "movement-destinations"
+    | "movement-allergens",
   params?: GetInventoryReferencesParams,
   options?: {
     query?: UseQueryOptions<
