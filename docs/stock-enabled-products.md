@@ -1,5 +1,45 @@
 # Stock-enabled Product Master
 
+## Product controls refinement: source-only delivery
+
+The listing has Category, searchable multi-select Allergens and Status filters,
+combined with combo-name search. Empty choices are unrestricted. Allergen
+choices match **any** selected current recipe member; Category matches any
+current member's current shared Allergen category identity, independently of
+the allergen selection. Products have no independent category field. Renaming
+or reassigning a shared Allergen does not rewrite saved recipe snapshots.
+Inactive shared directory records remain selectable for filtering retained
+recipes; soft-deleted records are not offered as new filter choices.
+
+List counts, matching summaries and CSV/XLSX recipe exports use the same
+full-authorized-catalogue predicate before pagination. Optional `category_id`
+is a UUID; repeated `allergen_ids` query parameters accept at most 100 UUIDs.
+Matching retains the existing bounded catalogue read and stable created-at/ID
+order. Current member lookups are batched, not one query per product/member.
+Export still rejects more than 500 products or 1,000 recipe rows, never truncates.
+Filter directories use authorized, server-searched pages of at most 100 records
+(the selector requests 50), with Load more, errors and retry. Selected identities
+and labels remain pinned across directory searches.
+
+Only the standalone Assemble combos toolbar button is removed; per-product
+assembly actions and assembly routes are unchanged. Reset clears name, category,
+allergen and status filters and returns to page one.
+
+Add/Edit pricing guidance uses label-adjacent accessible info help. Member rows
+use a flexible selector, bounded quantity input and icon-sized removal action;
+Add allergen sits beside the heading. Minimum/maximum recipe sizes, numeric
+validation, save reconciliation and draft protection remain unchanged. Only
+Product form member selectors opt out of successful result-count/search hints.
+Search, loading, errors, retry and Load more remain present; other consumers
+retain the default hint.
+
+This refinement was inspected in source only. Narrow OpenAPI export, client/Zod
+generation and generated-source formatting were performed without test/build
+wrappers. **Runtime behavior and layout were not verified.** No tests, builds,
+browser/manual scenarios, service restarts, migrations, release validation or
+live-data mutations were performed. Historical verification notes below do not
+verify this refinement.
+
 Pre-existing finished-product stock is recorded separately through the shared
 ledger's Opening Stock source, without consuming component allergens or
 fabricating assembly/expiry history. See [`opening-stock.md`](opening-stock.md)

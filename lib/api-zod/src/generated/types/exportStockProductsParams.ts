@@ -14,5 +14,7 @@ export type ExportStockProductsParams = {
    */
   query?: string;
   status?: ExportStockProductsStatus;
+  category_id?: string | null;
+  allergen_ids?: string[] | null;
   format?: ExportStockProductsFormat;
 };

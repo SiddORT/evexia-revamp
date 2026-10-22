@@ -3,7 +3,7 @@ import { Check, ChevronDown, X } from 'lucide-react';
 import './searchableSelect.css';
 import useSelectViewportMenu from './useSelectViewportMenu.js';
 
-export default function SearchableSelect({ id, label, value, options, onChange, placeholder, invalid, describedBy, searchOptions, onSearch, preserveSearch = false, disabled = false, viewportMenu = false }) {
+export default function SearchableSelect({ id, label, value, options, onChange, placeholder, invalid, describedBy, searchOptions, onSearch, preserveSearch = false, disabled = false, viewportMenu = false, multiple = false, values = [] }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(-1);
@@ -37,9 +37,10 @@ export default function SearchableSelect({ id, label, value, options, onChange, 
   }, [active, id, open]);
 
   function choose(option) {
+    if (disabled || !option) return;
     onChange(option.value);
-    setOpen(false);
-    setQuery('');
+    setOpen(multiple);
+    if (!multiple) setQuery('');
     setActive(-1);
     inputRef.current?.focus();
   }
@@ -96,7 +97,7 @@ export default function SearchableSelect({ id, label, value, options, onChange, 
         aria-describedby={describedBy}
         autoComplete="off"
         disabled={disabled}
-        value={open ? query : selected?.label || ''}
+        value={open ? query : multiple ? (values.length ? `${values.length} selected` : '') : selected?.label || ''}
         placeholder={open ? `Search ${label.toLowerCase()}…` : placeholder}
         onFocus={openMenu}
         onClick={() => { if (!open) openMenu(); }}
@@ -104,19 +105,19 @@ export default function SearchableSelect({ id, label, value, options, onChange, 
         onKeyDown={handleKeyDown}
         data-testid={`select-${id}`}
       />
-      {value && <button type="button" disabled={disabled} className="searchable-select__clear" aria-label={`Clear ${label.toLowerCase()}`} onClick={() => { onChange(''); setQuery(''); setActive(-1); inputRef.current?.focus(); }}><X size={14} aria-hidden="true" /></button>}
+      {!multiple && value && <button type="button" disabled={disabled} className="searchable-select__clear" aria-label={`Clear ${label.toLowerCase()}`} onClick={() => { onChange(''); setQuery(''); setActive(-1); inputRef.current?.focus(); }}><X size={14} aria-hidden="true" /></button>}
       <ChevronDown size={16} className="searchable-select__chevron" aria-hidden="true" onClick={() => { inputRef.current?.focus(); openMenu(); }} />
     </div>
-    {open && <div ref={menuRef} style={viewportMenu ? menuStyle : undefined} id={`${id}-options`} role="listbox" aria-label={label} className="searchable-select__menu">
+    {open && <div ref={menuRef} style={viewportMenu ? menuStyle : undefined} id={`${id}-options`} role="listbox" aria-label={label} aria-multiselectable={multiple || undefined} className="searchable-select__menu">
       {matches.length ? matches.map((option, index) => <div
         key={option.value}
         id={`${id}-option-${index}`}
         role="option"
-        aria-selected={option.value === value}
+        aria-selected={multiple ? values.includes(option.value) : option.value === value}
         className={`searchable-select__option${index === active ? ' searchable-select__option--active' : ''}`}
         onMouseDown={(event) => event.preventDefault()}
         onClick={() => choose(option)}
-      >{option.label}{option.value === value && <Check size={15} aria-hidden="true" />}</div>) : <div className="searchable-select__empty" role="status">No matches found</div>}
+      >{option.label}{(multiple ? values.includes(option.value) : option.value === value) && <Check size={15} aria-hidden="true" />}</div>) : <div className="searchable-select__empty" role="status">No matches found</div>}
     </div>}
   </div>;
 }

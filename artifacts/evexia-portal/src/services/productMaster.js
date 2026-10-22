@@ -6,6 +6,10 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const listProducts = (params, signal) => request('', { params: clean(params), signal });
 export const listMemberReferences = (_kind, params, signal) => request('/references', { params: clean(params), signal });
+export const listProductFilterReferences = (kind, params, signal) => {
+  if (!['categories', 'allergens'].includes(kind)) throw new Error('Unsupported product filter directory.');
+  return request(`/filter-references/${kind}`, { params: clean(params), signal });
+};
 export const getProduct = (id, signal) => request(`/${id}`, { signal });
 export const createProduct = (body) => request('', { body });
 export const updateProduct = (id, body) => request(`/${id}`, { body, method: 'PUT' });

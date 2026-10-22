@@ -1,0 +1,39 @@
+.product-master-page .product-master-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(130px, .6fr);
+  align-items: start;
+}
+.product-master-page .product-master-filters > .admin-filter { min-width: 0; }
+.product-master-page .product-filter-selections { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.product-master-page .product-filter-selections > span { flex-basis: 100%; }
+.product-master-page .product-filter-selections button { max-width: 100%; white-space: normal; text-align: start; overflow-wrap: anywhere; }
+.product-master-page .product-filter-selections button span { min-width: 0; }
+.product-master-page .product-filter-selections button svg { flex: none; }
+.product-form-page .product-members__heading { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; }
+.product-form-page .product-members__heading h2 { margin: 0; }
+.product-form-page .product-member-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(140px, 190px) 40px;
+  gap: 10px 14px;
+  align-items: start;
+}
+.product-form-page .product-member-remove {
+  width: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 8px;
+  margin-top: 22px;
+}
+.product-form-page .product-member-remove:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 3px; }
+.product-form-page .product-members .inv-more:empty { display: none; }
+.product-form-page .admin-info__row { display: flex; align-items: center; min-width: 0; }
+.product-form-page .admin-info__row label { min-width: 0; overflow-wrap: anywhere; }
+.product-form-page .admin-info__button { flex: none; height: 16px; }
+@media (max-width: 700px) {
+  .product-master-page .product-master-filters { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) {
+  .product-form-page .product-member-row { grid-template-columns: minmax(0, 1fr) 40px; }
+  .product-form-page .product-member-row > .ms-field:first-child { grid-column: 1 / -1; }
+  .product-form-page .product-member-row > .ms-field:nth-child(2) { max-width: 240px; }
+}

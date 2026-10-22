@@ -6956,6 +6956,27 @@ export interface ProductImportResult {
   kind: "product_import";
   memberRows: number;
 }
+
+export interface ProductImportRow {
+  allergenId: string;
+  allergenName: string;
+  errors: string[];
+  mrp: string;
+  name: string;
+  quantity: string;
+  row: number;
+  sellingPrice: string;
+  status: string;
+}
+
+export interface ProductImportReview {
+  digest: string;
+  memberRows: number;
+  products: number;
+  rows: ProductImportRow[];
+  valid: boolean;
+}
+
 export interface ProductQuantitySummary {
   locationId?: string | null;
   locationName?: string | null;
@@ -10970,6 +10991,8 @@ export type ListStockProductsParams = {
    */
   query?: string;
   status?: ListStockProductsStatus;
+  category_id?: string | null;
+  allergen_ids?: string[] | null;
   /**
    * @minimum 0
    * @maximum 1000000
@@ -10997,8 +11020,75 @@ export type ExportStockProductsParams = {
    */
   query?: string;
   status?: ExportStockProductsStatus;
+  category_id?: string | null;
+  allergen_ids?: string[] | null;
   format?: ExportStockProductsFormat;
 };
+
+export type ExportStockProductsStatus =
+  (typeof ExportStockProductsStatus)[keyof typeof ExportStockProductsStatus];
+
+export const ExportStockProductsStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ExportStockProductsFormat =
+  (typeof ExportStockProductsFormat)[keyof typeof ExportStockProductsFormat];
+
+export const ExportStockProductsFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type GetStockProductFilterReferencesParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  /**
+   * @minimum 0
+   * @maximum 1000000
+   */
+  offset?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type CommitStockProductImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+  /**
+   * @pattern ^[0-9a-f]{64}$
+   */
+  digest: string;
+  confirm: boolean;
+  idempotency_key: string;
+};
+
+export type CommitStockProductImportBody = {
+  file: Blob | File;
+};
+
+export type ReviewStockProductImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+};
+
+export type ReviewStockProductImportBody = {
+  file: Blob | File;
+};
+
 export type GetStockProductReferencesParams = {
   /**
    * @maxLength 200
@@ -11019,6 +11109,15 @@ export type GetStockProductReferencesParams = {
 export type DownloadStockProductSampleParams = {
   format?: DownloadStockProductSampleFormat;
 };
+
+export type DownloadStockProductSampleFormat =
+  (typeof DownloadStockProductSampleFormat)[keyof typeof DownloadStockProductSampleFormat];
+
+export const DownloadStockProductSampleFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
 export type GetStockProductActivityParams = {
   /**
    * @minimum 0
@@ -12091,79 +12190,4 @@ export type ResolvePortalHostnameParams = {
    * @maxLength 253
    */
   hostname: string;
-};
-
-export const ExportStockProductsFormat = {
-  csv: "csv",
-  xlsx: "xlsx",
-} as const;
-
-export const ExportStockProductsStatus = {
-  all: "all",
-  active: "active",
-  inactive: "inactive",
-} as const;
-
-export interface ProductImportReview {
-  digest: string;
-  memberRows: number;
-  products: number;
-  rows: ProductImportRow[];
-  valid: boolean;
-}
-
-export type ExportStockProductsFormat =
-  (typeof ExportStockProductsFormat)[keyof typeof ExportStockProductsFormat];
-
-export type ReviewStockProductImportBody = {
-  file: Blob | File;
-};
-
-export interface ProductImportRow {
-  allergenId: string;
-  allergenName: string;
-  errors: string[];
-  mrp: string;
-  name: string;
-  quantity: string;
-  row: number;
-  sellingPrice: string;
-  status: string;
-}
-
-export type CommitStockProductImportBody = {
-  file: Blob | File;
-};
-
-export type DownloadStockProductSampleFormat =
-  (typeof DownloadStockProductSampleFormat)[keyof typeof DownloadStockProductSampleFormat];
-
-export const DownloadStockProductSampleFormat = {
-  csv: "csv",
-  xlsx: "xlsx",
-} as const;
-
-export type ExportStockProductsStatus =
-  (typeof ExportStockProductsStatus)[keyof typeof ExportStockProductsStatus];
-
-export type ReviewStockProductImportParams = {
-  /**
-   * @minLength 1
-   * @maxLength 200
-   */
-  filename: string;
-};
-
-export type CommitStockProductImportParams = {
-  /**
-   * @minLength 1
-   * @maxLength 200
-   */
-  filename: string;
-  /**
-   * @pattern ^[0-9a-f]{64}$
-   */
-  digest: string;
-  confirm: boolean;
-  idempotency_key: string;
 };

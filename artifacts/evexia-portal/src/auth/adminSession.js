@@ -913,7 +913,7 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
 export const productMasterRequest = (path, options) => purchaseOrderRequest(path, options, 'products');
 export async function purchaseOrderRequest(path = '', { body, params = {}, signal, method, file, download } = {}, resource = 'purchase-orders') {
   const allowed = resource === 'products'
-    ? /^(?:|\/sample|\/export|\/import\/(?:review|commit)|\/references|\/assemblies(?:\/preview|\/[0-9a-f-]{36})?|\/requests\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:status|activity|analytics|assemblies))?)$/i
+    ? /^(?:|\/sample|\/export|\/import\/(?:review|commit)|\/references|\/filter-references\/(?:categories|allergens)|\/assemblies(?:\/preview|\/[0-9a-f-]{36})?|\/requests\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:status|activity|analytics|assemblies))?)$/i
     : resource === 'inventory'
     ? /^\/(?:stock(?:\/[0-9a-f-]{36}\/history)?|initialization|references\/(?:locations|staff|lots)|requests\/[0-9a-f-]{36}|movements(?:\/preview|\/[0-9a-f-]{36}(?:\/(?:activity|analytics))?)?)$/i
     : resource === 'purchase-received'
@@ -965,7 +965,11 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     return error;
   };
   const search = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => { if (value !== '' && value != null) search.set(key, String(value)); });
+  Object.entries(params).forEach(([key, value]) => {
+    if (resource === 'products' && key === 'allergen_ids' && Array.isArray(value)) {
+      value.forEach((id) => search.append(key, String(id)));
+    } else if (value !== '' && value != null) search.set(key, String(value));
+  });
   let response, data;
   try {
     response = await fetch(`/api/v1/admin/${resource}${path}${search.size ? `?${search}` : ''}`, {

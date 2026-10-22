@@ -3,17 +3,20 @@ import { useLocation } from 'wouter';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ReferenceSelect from '../../components/admin/ReferenceSelect.jsx';
+import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
 import ProductPendingBanner from '../../components/admin/ProductPendingBanner.jsx';
 import { createProduct, getProduct, journaled, listMemberReferences, newKey, pendingProduct, toCents, updateProduct } from '../../services/productMaster.js';
 import '../../mr.css';
 import '../../moveStocks.css';
 import '../../inventoryServer.css';
+import '../../productMaster.css';
 import { usePlatformConfirm } from '../../components/PlatformConfirmation.jsx';
 import useProductDraftNavigation from '../../hooks/useProductDraftNavigation.js';
 import { MAX_MILLI, milli } from '../../services/serverInventory.js';
 import { masterNameError, normalizeMasterName } from '../../services/masterValidation.js';
 
 const BASE = '/admin/masters/products';
+const PRICE_HELP = 'Independent of component prices. Rounded half-up to two decimals by the server. Selling price must not exceed MRP.';
 const qtyRe = /^(?:0|[1-9]\d{0,6})(?:\.\d{1,3})?$/;
 let rowSeq = 0;
 const blank = () => ({ rid: ++rowSeq, allergen: null, quantity: '' });
@@ -120,7 +123,7 @@ export default function ProductFormPage({ id }) {
     } finally { lock.current = false; if (mounted.current) setBusy(false); }
   }
   const err = (k) => errors[k] && <p id={`pf-${k}-error`} className="mr-form__error" role="alert">{errors[k]}</p>;
-    return <AdminLayout title={isNew ? 'Add product' : 'Edit product'}><div className="move-stocks-page">
+    return <AdminLayout title={isNew ? 'Add product' : 'Edit product'}><div className="move-stocks-page product-form-page">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Product Master / {isNew ? 'New' : 'Edit'}</p><h1>{isNew ? 'Add product' : 'Edit product'}</h1><p className="admin-page-head__description">Quantities are for one whole combo, in each allergen's stock unit. Edits affect future assemblies only.</p></div>
       <div className="ms-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => leave(BASE)} data-testid="button-back-products"><ArrowLeft size={16} /> All products</button></div></div>
     <ProductPendingBanner refreshSignal={tick} onResolved={(r) => { keyRef.current = null; if (r.state === 'committed') { navigate(BASE); return; } setMessage('The earlier save was not committed. Your draft is preserved; save again to retry.'); setTick((t) => t + 1); }} />
@@ -137,21 +140,22 @@ export default function ProductFormPage({ id }) {
       <fieldset disabled={busy} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}><div className="ms-form-body">
         <div className="ms-fields">
           <div className="ms-field"><label htmlFor="pf-name">Combo name <span className="mr-form__required">*</span></label><input id="pf-name" className="mr-form__control" maxLength={200} value={name} onChange={(e) => { setName(e.target.value); clear('name'); }} aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? 'pf-name-error' : undefined} data-testid="input-product-name" />{err('name')}</div>
-          <div className="ms-field"><label htmlFor="pf-mrp">MRP per combo <span className="mr-form__required">*</span></label><input id="pf-mrp" className="mr-form__control" inputMode="decimal" value={mrp} onChange={(e) => { setMrp(e.target.value); clear('mrp'); clear('sellingPrice'); }} aria-invalid={Boolean(errors.mrp)} aria-describedby={errors.mrp ? 'pf-mrp-error' : 'pf-price-hint'} data-testid="input-product-mrp" />{err('mrp')}</div>
-          <div className="ms-field"><label htmlFor="pf-sp">Selling price per combo <span className="mr-form__required">*</span></label><input id="pf-sp" className="mr-form__control" inputMode="decimal" value={sellingPrice} onChange={(e) => { setSellingPrice(e.target.value); clear('sellingPrice'); }} aria-invalid={Boolean(errors.sellingPrice)} aria-describedby={errors.sellingPrice ? 'pf-sellingPrice-error' : 'pf-price-hint'} data-testid="input-product-selling-price" />{err('sellingPrice')}
-            <p id="pf-price-hint" className="mr-form__hint">Independent of component prices. Rounded half-up to two decimals by the server. Selling price must not exceed MRP.</p></div>
+          <div className="ms-field"><InfoDisclosure id="pf-mrp-help" title="MRP per combo" text={PRICE_HELP}><label htmlFor="pf-mrp">MRP per combo <span className="mr-form__required">*</span></label></InfoDisclosure><input id="pf-mrp" className="mr-form__control" inputMode="decimal" value={mrp} onChange={(e) => { setMrp(e.target.value); clear('mrp'); clear('sellingPrice'); }} aria-invalid={Boolean(errors.mrp)} aria-describedby={errors.mrp ? 'pf-mrp-error' : undefined} data-testid="input-product-mrp" />{err('mrp')}</div>
+          <div className="ms-field"><InfoDisclosure id="pf-sp-help" title="Selling price per combo" text={PRICE_HELP}><label htmlFor="pf-sp">Selling price per combo <span className="mr-form__required">*</span></label></InfoDisclosure><input id="pf-sp" className="mr-form__control" inputMode="decimal" value={sellingPrice} onChange={(e) => { setSellingPrice(e.target.value); clear('sellingPrice'); }} aria-invalid={Boolean(errors.sellingPrice)} aria-describedby={errors.sellingPrice ? 'pf-sellingPrice-error' : undefined} data-testid="input-product-selling-price" />{err('sellingPrice')}</div>
           <div className="ms-field"><label htmlFor="pf-status">Status</label><select id="pf-status" className="mr-form__control" value={status} onChange={(e) => { setStatus(e.target.value); keyRef.current = null; clear('status'); }} aria-invalid={Boolean(errors.status)} aria-describedby={errors.status ? 'pf-status-error' : undefined} data-testid="select-product-form-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>{err('status')}</div>
         </div>
-        <fieldset className="ms-products"><legend className="ms-legend">Allergen members <span className="mr-form__required">*</span></legend>
-          {rows.map((r, i) => <div key={r.rid} className="ms-fields" style={{ alignItems: 'start' }}>
+        <fieldset className="ms-products product-members" aria-labelledby="pf-members-heading">
+          <div className="product-members__heading"><h2 id="pf-members-heading" className="ms-legend">Allergen members <span className="mr-form__required">*</span></h2>
+            <button type="button" className="admin-button admin-button--secondary" disabled={busy || rows.length >= 100} onClick={() => { keyRef.current = null; setRows((x) => x.length < 100 ? [...x, blank()] : x); }} data-testid="button-add-member"><Plus size={14} aria-hidden="true" /> Add allergen</button>
+          </div>
+          {rows.map((r, i) => <div key={r.rid} className="product-member-row">
             <div className="ms-field"><label htmlFor={`pf-a-${r.rid}`}>Allergen {i + 1}</label>
-              <ReferenceSelect id={`pf-a-${r.rid}`} label={`Allergen ${i + 1}`} kind="allergens" fetchPage={listMemberReferences} value={r.allergen?.value || ''} selected={r.allergen} onChange={(_v, o) => patchRow(r.rid, { allergen: o ? { value: o.value, label: o.label } : null })} placeholder="Select allergen" invalid={Boolean(errors[r.rid])} />
+              <ReferenceSelect id={`pf-a-${r.rid}`} label={`Allergen ${i + 1}`} kind="allergens" fetchPage={listMemberReferences} value={r.allergen?.value || ''} selected={r.allergen} onChange={(_v, o) => patchRow(r.rid, { allergen: o ? { value: o.value, label: o.label } : null })} placeholder="Select allergen" invalid={Boolean(errors[r.rid])} describedBy={errors[r.rid] ? `pf-${r.rid}-error` : undefined} showResultHint={false} disabled={busy} />
 </div>
             <div className="ms-field"><label htmlFor={`pf-q-${r.rid}`}>Quantity per combo</label><input id={`pf-q-${r.rid}`} className="mr-form__control" inputMode="decimal" autoComplete="off" value={r.quantity} onChange={(e) => patchRow(r.rid, { quantity: e.target.value })} aria-invalid={Boolean(errors[r.rid])} aria-describedby={errors[r.rid] ? `pf-${r.rid}-error` : undefined} data-testid={`input-member-qty-${i}`} />{err(r.rid)}</div>
-            <button type="button" className="admin-button admin-button--secondary" style={{ marginTop: 24 }} disabled={rows.length <= 2} aria-label={`Remove allergen ${i + 1}`} onClick={() => { keyRef.current = null; setRows((x) => x.filter((y) => y.rid !== r.rid)); }}><Trash2 size={14} /></button>
+            <button type="button" className="admin-button admin-button--secondary product-member-remove" disabled={busy || rows.length <= 2} aria-label={`Remove allergen ${i + 1}${r.allergen ? `, ${r.allergen.label}` : ''}`} title={`Remove allergen ${i + 1}${r.allergen ? `, ${r.allergen.label}` : ''}`} onClick={() => { keyRef.current = null; setRows((x) => x.filter((y) => y.rid !== r.rid)); }}><Trash2 size={16} aria-hidden="true" /></button>
           </div>)}
           {err('members')}
-          <button type="button" className="admin-button admin-button--secondary" disabled={rows.length >= 100} onClick={() => { keyRef.current = null; setRows((x) => x.length < 100 ? [...x, blank()] : x); }} data-testid="button-add-member"><Plus size={14} /> Add allergen</button>
         </fieldset>
       </div></fieldset>
       <div className="ms-footer"><span>Saving the master does not create stock or change allergen prices.</span><div className="ms-head-actions">

@@ -228,7 +228,13 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a separate f
   snapshots through edits, deactivation/deletion and transfers. No clinical
   semantics, unit conversions, disassembly or component re-debit on transfer.
   See `docs/stock-enabled-products.md`.
-- Product verification is focused synthetic isolated CRUD/assembly only:
+- Product Master controls and form refinements are source-inspection-only:
+  no tests, builds, browser/manual scenarios, validation/release wrappers,
+  service restarts, migrations or live mutations. Narrow contract generation
+  and source/documentation review are allowed, not runtime verification.
+  Category filters current recipe members' shared Allergen category identities;
+  products have no independent category assignment.
+- Historical Product verification was focused synthetic isolated CRUD/assembly only:
   `sh scripts/test-products-crud.sh` explicitly names the changed product
   operations and directly affected inventory/receipt resources. No broad,
   default, regression, release or browser harness, build, original-target

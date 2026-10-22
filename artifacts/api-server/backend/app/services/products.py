@@ -2,12 +2,13 @@
 import uuid
 from datetime import date
 from decimal import Decimal
-from sqlalchemy import select
+from sqlalchemy import func, select
 from app.core.security import utcnow
 from app.db.models import AuditEvent
 from app.db.product_models import ComboProduct as Product, ProductRevision as Revision, ProductMember as Member, ProductAssembly as Assembly, ProductRequest as Retry
 from app.db.inventory_models import InventoryLot as Lot, InventoryBalance as Balance
 from app.db.allergen_models import AllergenProduct
+from app.db.product_category_models import ProductCategory
 from app.db.location_models import StorageLocation
 from app.services import inventory as inv
 from app.services.purchase_received_crypto import PRError
@@ -181,14 +182,44 @@ def summary(db, crypto, products):
         scope="All matching products and committed assemblies, not the table page. Whole-combo quantities grouped by product/location; prices are not realized revenue.")
 
 
-def listing(db, actor, query="", status="all", offset=0, limit=25):
+def matching_products(db, crypto, query="", status="all", category_id=None, allergen_ids=None, refresh=False):
+    """One full-catalogue predicate for list, counts, summary and recipe exports."""
+    rows = inv.bounded(db, select(Product).where(Product.deleted_at.is_(None))
+                       .order_by(Product.created_at.desc(), Product.id))
+    data = [projection(db, crypto, row, False) for row in rows]
+    term = normalized(query)
+    selected = {str(key) for key in (allergen_ids or [])}
+    candidates = [p for p in data if (status == "all" or p["status"] == status)
+                  and term in normalized(p["name"])
+                  and (not selected or any(m["allergenId"] in selected for m in p["members"]))]
+    # Use current member identities, never historical category labels or revisions.
+    # Chunk the bounded candidate recipes rather than issuing a query per member.
+    members = {}
+    if refresh or category_id:
+        ids = sorted({uuid.UUID(m["allergenId"]) for p in candidates for m in p["members"]})
+        for start in range(0, len(ids), 500):
+            for row in inv.bounded(db, select(AllergenProduct).where(AllergenProduct.id.in_(ids[start:start + 500]))
+                                   .order_by(AllergenProduct.id)):
+                members[str(row.id)] = row
+    matches = []
+    for product in candidates:
+        if category_id and not any(
+            (member := members.get(m["allergenId"])) is not None and member.category_id == category_id
+            for m in product["members"]
+        ):
+            continue
+        if refresh:
+            for m in product["members"]:
+                member = members.get(m["allergenId"])
+                m["available"] = bool(member and not member.deleted_at and member.status == "active")
+        matches.append(product)
+    return matches, len(data)
+
+
+def listing(db, actor, query="", status="all", offset=0, limit=25, category_id=None, allergen_ids=None):
     def work(_, crypto):
-        rows = inv.bounded(db, select(Product).where(Product.deleted_at.is_(None)).order_by(Product.created_at.desc(), Product.id))
-        data = [projection(db, crypto, r) for r in rows]
-        term = normalized(query)
-        matches = [r for r in data if (status == "all" or r["status"] == status)
-                   and (not term or term in normalized(r["name"]))]
-        return dict(items=matches[offset:offset + limit], total=len(data), filtered=len(matches),
+        matches, total = matching_products(db, crypto, query, status, category_id, allergen_ids, refresh=True)
+        return dict(items=matches[offset:offset + limit], total=total, filtered=len(matches),
                     offset=offset, limit=limit, summary=summary(db, crypto, matches))
     return inv.transaction(db, actor, work)
 
@@ -217,6 +248,23 @@ def references(db, actor, query="", offset=0, limit=25):
         data = [dict(id=str(r.id), name=f"{r.name} · {r.concentration}", version=r.version, unit=UNIT)
                 for r in rows if normalized(query) in normalized(f"{r.name} {r.concentration}")]
         return dict(items=data[offset:offset + limit], filtered=len(data), offset=offset, limit=limit)
+    return inv.transaction(db, actor, work)
+
+
+def filter_references(db, actor, kind, query="", offset=0, limit=25):
+    def work(_, crypto):
+        model = ProductCategory if kind == "categories" else AllergenProduct
+        conditions = [model.deleted_at.is_(None)]
+        if query.strip():
+            term = query.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            searchable = model.name if kind == "categories" else model.name + " · " + model.concentration
+            conditions.append(searchable.ilike("%" + term + "%", escape="\\"))
+        count = db.scalar(select(func.count()).select_from(model).where(*conditions))
+        rows = db.scalars(select(model).where(*conditions).order_by(model.name, model.id).offset(offset).limit(limit))
+        data = [dict(id=str(row.id),
+                     name=row.name if kind == "categories" else f"{row.name} · {row.concentration}",
+                     version=row.version, unit="") for row in rows]
+        return dict(items=data, filtered=count, offset=offset, limit=limit)
     return inv.transaction(db, actor, work)
 
 

@@ -42,9 +42,12 @@ def sample(format: Literal["csv", "xlsx"] = "csv", actor: Identity = Depends(man
 
 @router.get("/export", operation_id="exportStockProducts", responses=DOWNLOAD)
 def export(query: str = Query("", max_length=200), status: Literal["all", "active", "inactive"] = "all",
+           category_id: uuid.UUID | None = Query(None),
+           allergen_ids: list[uuid.UUID] | None = Query(None, max_length=100),
            format: Literal["csv", "xlsx"] = "csv", actor: Identity = Depends(manager), db: Session = Depends(get_db),
            initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation")):
-    return release(db, actor, initiation_id, format, "export", product_transfer.export(db, actor, query, status, format))
+    return release(db, actor, initiation_id, format, "export",
+                   product_transfer.export(db, actor, query, status, format, category_id, allergen_ids))
 
 
 @router.post("/import/review", response_model=ProductImportReview, operation_id="reviewStockProductImport", openapi_extra=UPLOAD)
@@ -72,9 +75,11 @@ async def read_product_file(request):
 
 @router.get("", response_model=ProductPage, operation_id="listStockProducts")
 def listing(query: str = Query("", max_length=200), status: Literal["all", "active", "inactive"] = "all",
+            category_id: uuid.UUID | None = Query(None),
+            allergen_ids: list[uuid.UUID] | None = Query(None, max_length=100),
             offset: int = Query(0, ge=0, le=1000000), limit: int = Query(25, ge=1, le=100),
             actor: Identity = Depends(manager), db: Session = Depends(get_db)):
-    return service.listing(db, actor, query, status, offset, limit)
+    return service.listing(db, actor, query, status, offset, limit, category_id, allergen_ids)
 
 
 @router.get("/references", response_model=ProductReferencePage, operation_id="getStockProductReferences")
@@ -86,6 +91,13 @@ def references(query: str = Query("", max_length=200), offset: int = Query(0, ge
 @router.get("/requests/{key}", response_model=ProductReconciliation, operation_id="reconcileStockProductRequest")
 def reconcile(key: uuid.UUID, actor: Identity = Depends(manager), db: Session = Depends(get_db)):
     return service.reconcile(db, actor, key)
+
+
+@router.get("/filter-references/{kind}", response_model=ProductReferencePage, operation_id="getStockProductFilterReferences")
+def filter_references(kind: Literal["categories", "allergens"], query: str = Query("", max_length=200),
+                      offset: int = Query(0, ge=0, le=1000000), limit: int = Query(25, ge=1, le=100),
+                      actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return service.filter_references(db, actor, kind, query, offset, limit)
 
 
 @router.post("/assemblies/preview", response_model=AssemblyReview, operation_id="previewProductAssembly")

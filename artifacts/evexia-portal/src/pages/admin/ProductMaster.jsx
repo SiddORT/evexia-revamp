@@ -3,6 +3,7 @@ import { useLocation, useSearch } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { ChevronDown, CirclePower, Download, Eye, Filter, Layers, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react';
 import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
+import ReferenceSelect from '../../components/admin/ReferenceSelect.jsx';
 import { useAdminPreferences } from '../../components/admin/adminPreferences.js';
 import { reportingIdentityGuard } from '../../auth/adminSession.js';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
@@ -12,11 +13,12 @@ import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import ProductDrawer from '../../components/admin/ProductDrawer.jsx';
 import ProductPendingBanner from '../../components/admin/ProductPendingBanner.jsx';
-import { deleteProduct, downloadProductFile, exportProducts, journaled, listProducts, newKey, setProductStatus } from '../../services/productMaster.js';
+import { deleteProduct, downloadProductFile, exportProducts, journaled, listProducts, listProductFilterReferences, newKey, setProductStatus } from '../../services/productMaster.js';
 import { formatPrice } from '../../services/serverInventory.js';
 import '../../mr.css';
 import '../../inventoryServer.css';
 import '../../allergen.css';
+import '../../productMaster.css';
 
 const BASE = '/admin/masters/products';
 
@@ -27,6 +29,10 @@ export default function ProductMaster() {
   const [search, setSearch] = useState('');
   const [applied, setApplied] = useState('');
   const [status, setStatus] = useState('all');
+  const [category, setCategory] = useState(null);
+  const [allergens, setAllergens] = useState([]);
+  const activeFilters = Number(status !== 'all') + Number(Boolean(category)) + Number(allergens.length > 0);
+  const filterParams = { query: applied, status, category_id: category?.value, allergen_ids: allergens.map((o) => o.value) };
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [data, setData] = useState(null);
@@ -51,7 +57,7 @@ export default function ProductMaster() {
     const guard = reportingIdentityGuard();
     exportController.current = new AbortController();
     try {
-      const blob = await exportProducts({ query: applied, status }, format, exportController.current.signal);
+      const blob = await exportProducts(filterParams, format, exportController.current.signal);
       guard();
       if (alive.current) downloadProductFile(blob, format);
     } catch (cause) {
@@ -68,11 +74,11 @@ export default function ProductMaster() {
   useEffect(() => {
     const id = ++seq.current; const c = new AbortController();
     setLoading(true); setError('');
-    listProducts({ query: applied, status, offset: (page - 1) * pageSize, limit: pageSize }, c.signal)
+    listProducts({ query: applied, status, category_id: category?.value, allergen_ids: allergens.map((o) => o.value), offset: (page - 1) * pageSize, limit: pageSize }, c.signal)
       .then((d) => { if (id === seq.current) { setData(d); setLoading(false); } })
       .catch((e) => { if (id === seq.current && !c.signal.aborted) { setError(e.message || 'Products could not be loaded.'); setLoading(false); } });
     return () => c.abort();
-  }, [applied, status, page, pageSize, tick]);
+  }, [applied, status, category, allergens, page, pageSize, tick]);
 
   const items = data?.items || [];
   const filtered = data?.filtered ?? 0;
@@ -110,7 +116,7 @@ export default function ProductMaster() {
     </div>; } },
   ];
   const name = confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'activate' ? 'Activate' : 'Inactivate';
-  return <AdminLayout title="Product Master"><div>
+  return <AdminLayout title="Product Master"><div className="product-master-page">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Products & Supply</p><h1>Product Master</h1><p className="admin-page-head__description">Named combos of existing allergens with their own MRP and selling price. Saving a combo never creates stock.</p></div>
       <div className="admin-mr-head-actions">
         <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/product')} data-testid="button-import-products"><Upload size={16} aria-hidden="true" /> Import data</button>
@@ -131,16 +137,19 @@ export default function ProductMaster() {
             <button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={load}>Refresh records</button>
             <div className="admin-filter admin-allergen-filters__search"><label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search products by combo name</span><input id="product-search" type="search" maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search combo name" data-testid="input-search-products" /></label></div>
           </div>
-          <MasterFilterReset disabled={!search && status === 'all'} onClick={() => { setSearch(''); setApplied(''); setStatus('all'); setPage(1); }} />
+          <MasterFilterReset disabled={!search && !activeFilters} onClick={() => { setSearch(''); setApplied(''); setStatus('all'); setCategory(null); setAllergens([]); setPage(1); }} />
         </div>
-        <details className="admin-allergen-filter-disclosure"><summary><Filter size={15} aria-hidden="true" /> Filter records{status !== 'all' && ' · 1 active'}<ChevronDown size={15} aria-hidden="true" /></summary>
-          <div className="admin-allergen-filters"><div className="admin-filter"><label htmlFor="product-status">Status</label><select id="product-status" className="admin-select" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} data-testid="select-product-status"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div></div>
+        <details className="admin-allergen-filter-disclosure"><summary><Filter size={15} aria-hidden="true" /> Filter records{activeFilters > 0 && ` · ${activeFilters} active`}<ChevronDown size={15} aria-hidden="true" /></summary>
+          <div className="admin-allergen-filters product-master-filters">
+            <div className="admin-filter"><label htmlFor="product-category">Category</label><ReferenceSelect id="product-category" label="Category" kind="categories" fetchPage={listProductFilterReferences} value={category?.value || ''} selected={category} onChange={(_v, option) => { setCategory(option || null); setPage(1); }} placeholder="All categories" /></div>
+            <div className="admin-filter"><label htmlFor="product-allergens">Allergens</label><ReferenceSelect id="product-allergens" label="Allergens" kind="allergens" fetchPage={listProductFilterReferences} multiple selections={allergens} onChange={(options) => { setAllergens(options); setPage(1); }} placeholder="All allergens — search to select" /></div>
+            <div className="admin-filter"><label htmlFor="product-status">Status</label><select id="product-status" className="admin-select" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} data-testid="select-product-status"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+          </div>
         </details>
-        <div><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(`${BASE}/assemble`)} data-testid="button-assemble"><Layers size={16} aria-hidden="true" /> Assemble combos</button></div>
       </div>
       {error ? <div className="admin-empty" role="alert"><strong>Products could not be loaded</strong><p>{error}</p><button type="button" className="admin-button" onClick={load}>Try again</button></div> : <>
         <DataTable columns={columns} rows={items} rowOffset={(page - 1) * pageSize} rowKey={(r) => r.id} label="Products" testIdPrefix="product" loading={loading}
-          empty={<div className="admin-empty"><strong>{applied || status !== 'all' ? 'No products match' : 'No products yet'}</strong><p>{applied || status !== 'all' ? 'Clear the search or status filter.' : 'Add your first combo of at least two allergens.'}</p></div>} />
+          empty={<div className="admin-empty"><strong>{applied || activeFilters ? 'No products match' : 'No products yet'}</strong><p>{applied || activeFilters ? 'Clear the search, category, selected allergens or status filter. All filters apply together; category matches any current recipe member.' : 'Add your first combo of at least two allergens.'}</p></div>} />
         <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={filtered} total={data?.total ?? 0} label="products" onPageChange={setPage} onPageSizeChange={(n) => { setPageSize(n); setPage(1); }} testId="text-product-count" /></>}
     </section>
     {viewing && <ProductDrawer id={viewing} onClose={() => setViewing(null)} />}

@@ -13,6 +13,8 @@ export type ListStockProductsParams = {
    */
   query?: string;
   status?: ListStockProductsStatus;
+  category_id?: string | null;
+  allergen_ids?: string[] | null;
   /**
    * @minimum 0
    * @maximum 1000000

@@ -161,6 +161,7 @@ import type {
   GetSalesTargetChoicesParams,
   GetStockProductActivityParams,
   GetStockProductAssembliesParams,
+  GetStockProductFilterReferencesParams,
   GetStockProductReferencesParams,
   HeadquarterCreate,
   HeadquarterEdit,
@@ -17112,6 +17113,15 @@ export const getListStockProductsUrl = (params?: ListStockProductsParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
+    const explodeParameters = ["allergen_ids"];
+
+    if (Array.isArray(value) && explodeParameters.includes(key)) {
+      value.forEach((v) => {
+        normalizedParams.append(key, v === null ? "null" : String(v));
+      });
+      return;
+    }
+
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? "null" : String(value));
     }
@@ -17648,6 +17658,15 @@ export const getExportStockProductsUrl = (
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
+    const explodeParameters = ["allergen_ids"];
+
+    if (Array.isArray(value) && explodeParameters.includes(key)) {
+      value.forEach((v) => {
+        normalizedParams.append(key, v === null ? "null" : String(v));
+      });
+      return;
+    }
+
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? "null" : String(value));
     }
@@ -17738,6 +17757,131 @@ export function useExportStockProducts<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getExportStockProductsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetStockProductFilterReferencesUrl = (
+  kind: "categories" | "allergens",
+  params?: GetStockProductFilterReferencesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/products/filter-references/${kind}?${stringifiedParams}`
+    : `/api/v1/admin/products/filter-references/${kind}`;
+};
+
+/**
+ * @summary Filter References
+ */
+export const getStockProductFilterReferences = async (
+  kind: "categories" | "allergens",
+  params?: GetStockProductFilterReferencesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ProductReferencePage> => {
+  return customFetch<ProductReferencePage>(
+    getGetStockProductFilterReferencesUrl(kind, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetStockProductFilterReferencesQueryKey = (
+  kind: "categories" | "allergens",
+  params?: GetStockProductFilterReferencesParams,
+) => {
+  return [
+    `/api/v1/admin/products/filter-references/${kind}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetStockProductFilterReferencesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStockProductFilterReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "categories" | "allergens",
+  params?: GetStockProductFilterReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStockProductFilterReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetStockProductFilterReferencesQueryKey(kind, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStockProductFilterReferences>>
+  > = ({ signal }) =>
+    getStockProductFilterReferences(kind, params, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: kind !== null && kind !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStockProductFilterReferences>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStockProductFilterReferencesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStockProductFilterReferences>>
+>;
+export type GetStockProductFilterReferencesQueryError =
+  ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Filter References
+ */
+
+export function useGetStockProductFilterReferences<
+  TData = Awaited<ReturnType<typeof getStockProductFilterReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "categories" | "allergens",
+  params?: GetStockProductFilterReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStockProductFilterReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStockProductFilterReferencesQueryOptions(
+    kind,
+    params,
+    options,
+  );
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

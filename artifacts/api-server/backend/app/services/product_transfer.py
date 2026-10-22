@@ -172,14 +172,11 @@ def sample(format):
         ["Example combo", "150.00", "125.50", "active", "00000000-0000-4000-8000-000000000002", "Replace with another saved allergen", "0.125"]], format, "ProductRecipes")
 
 
-def export(db, actor, query, status, format):
+def export(db, actor, query, status, format, category_id=None, allergen_ids=None):
     def work(_, crypto):
-        saved = inv.bounded(db, select(products.Product).where(products.Product.deleted_at.is_(None))
-                           .order_by(products.Product.created_at.desc(), products.Product.id))
-        matches = [p for p in (products.projection(db, crypto, r, False) for r in saved)
-                   if (status == "all" or p["status"] == status) and products.normalized(query) in products.normalized(p["name"])]
+        matches, _ = products.matching_products(db, crypto, query, status, category_id, allergen_ids)
         if len(matches) > MAX_PRODUCTS or sum(len(p["members"]) for p in matches) > MAX_ROWS:
-            raise PRError("Export exceeds 500 products or 1,000 member rows. Narrow search/status filters; no partial file is returned.", 422, "product_export_limit")
+            raise PRError("Export exceeds 500 products or 1,000 member rows. Narrow the search or filters; no partial file is returned.", 422, "product_export_limit")
         rows = [EXPORT_HEADERS]
         for product in matches:
             for member in product["members"]:
