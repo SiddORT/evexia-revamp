@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { emptyMRValues, payloadFromValues, validateMRValues } from './serverMRs.js';
 import { CSV_COLUMNS as LEGACY_COLUMNS } from './mrs.js';
 
-const values = { ...emptyMRValues(), name: 'Synthetic MR', phone: '', email: '', contactRequirement: 'optional',
+const values = { ...emptyMRValues(), name: 'Synthetic MR', phone: '9000000001', email: '', contactRequirement: 'required',
   userId: 'synthetic.mr', employeeCode: 'MR-01', hq: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
   zoneId: 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb', dateOfJoining: '2020-01-01', designation_id: 'cccccccc-cccc-4ccc-cccc-cccccccccccc',
   addressLine1: 'Synthetic address', landmark: 'Synthetic landmark', pincode: '110001',
@@ -16,7 +16,11 @@ test('MR bounded frontend/business validation agrees with authoritative Python d
   const headers = execFileSync('python3', ['-c',
     'import sys,json;sys.path.insert(0,"artifacts/api-server/backend");from app.services.mr_transfer import HEADERS;print(json.dumps(HEADERS))'],
     pythonOptions);
-  assert.deepEqual(LEGACY_COLUMNS.map(([, label]) => label), JSON.parse(headers).filter((title) => title !== 'Dial Country'), 'Preserve the exact shipped legacy CSV header');
+  const additions = ['Dial Country', 'Assigned Zones JSON', 'Reporting Staff ID'];
+  const currentHeaders = JSON.parse(headers);
+  for (const title of additions) assert.equal(currentHeaders.filter((value) => value === title).length, 1);
+  assert.deepEqual(LEGACY_COLUMNS.map(([, label]) => label),
+    currentHeaders.filter((title) => !additions.includes(title)), 'Preserve every legacy column alongside explicit new transfer fields');
   const cases = [values, ...[
     ['name', ''], ['name', 'x'.repeat(201)], ['userId', 'a@b.com'], ['email', 'bad'], ['phone', '123'],
     ['dateOfJoining', '2020-02-30'], ['pincode', '012345'], ['paymentLimit', '-1'], ['paymentLimit', '1.001'],

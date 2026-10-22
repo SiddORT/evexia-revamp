@@ -9,12 +9,14 @@ test('Unicode abbreviation and validation match backend including overrides and 
     'import sys,json;sys.path.insert(0,"artifacts/api-server/backend");from app.schemas.headquarters import abbreviation;print(json.dumps([abbreviation(n) for n in json.loads(sys.argv[1])]))',
     JSON.stringify(names)], { encoding: 'utf8' });
   assert.deepEqual(names.map(abbreviation), JSON.parse(python));
-  assert.equal(normalizeName('\u0085 A\tB\u001c'), 'A B');
+  // Disallowed controls must survive normalization so validation rejects them,
+  // rather than silently converting an invalid identifier to a different name.
+  assert.equal(normalizeName('\u0085 A\tB\u001c'), 'A B\u001c');
   assert.equal(normalizeCode(' ß '), 'SS');
   const good = { name: 'HQ', state_code: 'h', status: 'active' };
   assert.deepEqual(validateHeadquarter(good), {});
   for (const bad of [{ name: '' }, { name: 'x'.repeat(201) }, { state_code: '' },
-    { state_code: 'x'.repeat(17) }, { name: '\uFEFF' }, { state_code: 'a\nb' }, { status: 'unknown' }]) {
+    { state_code: 'x'.repeat(17) }, { name: '\uFEFF' }, { name: 'A B\u001c' }, { state_code: 'a\nb' }, { status: 'unknown' }]) {
     assert.ok(Object.keys(validateHeadquarter({ ...good, ...bad })).length);
   }
 });

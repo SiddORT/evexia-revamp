@@ -9,6 +9,8 @@ const root = new URL('../src/', import.meta.url);
 const businessDate = "new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })";
 const businessToday = "new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' })";
 const approved = new Map([
+  [`components/admin/DoctorForm.jsx:${businessToday}`, 'Joining-date validation against the Kolkata business day, not display'],
+  ['pages/admin/OpeningStockFormPage.jsx:parsed.toISOString()', 'Round-trip validation of a UTC calendar input, not display'],
   ...['sptOrdersDemo', 'lupinOrdersDemo', 'kitsOrdersDemo', 'immunotherapyDemo'].map((name) =>
     [`services/${name}.js:${businessDate}`, 'Existing business-date generation, not presentation']),
   ...['serverMRs', 'serverPatients'].map((name) =>
@@ -62,6 +64,12 @@ test('portal display formatting uses the shared contract, with narrowly reviewed
   }
   scan(root);
   assert.deepEqual(violations, []);
+});
+test('form business-day/input validation exceptions do not exempt date display', () => {
+  assert.deepEqual(displayViolations(`const today = ${businessToday}.format(new Date());`, 'components/admin/DoctorForm.jsx'), []);
+  assert.deepEqual(displayViolations('const valid = parsed.toISOString().slice(0,10) === value;', 'pages/admin/OpeningStockFormPage.jsx'), []);
+  assert.equal(displayViolations('const view = <p>{value.toISOString()}</p>;', 'pages/admin/OpeningStockFormPage.jsx').length, 1);
+  assert.equal(displayViolations('const view = new Intl.DateTimeFormat().format(value);', 'components/admin/DoctorForm.jsx').length, 1);
 });
 test('guard rejects newly introduced locale, ISO display, raw JSX and raw table bypasses', () => {
   for (const text of [

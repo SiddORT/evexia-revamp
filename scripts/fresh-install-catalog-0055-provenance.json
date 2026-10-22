@@ -1,0 +1,10 @@
+{
+  "format": 1,
+  "revision": "0055_mr_staff_managers",
+  "evidence_kind": "reproduced_disposable_postgresql_catalog_observation",
+  "postgresql": "17.5",
+  "catalog_sha256": "e49087f12e08c4f42b36d4d1232e6319cc7176952e685eb5aad25c5239f37803",
+  "command": "sh scripts/test-api-foundation.sh tests/test_email_invitations.py::test_observe_actual_disposable_catalog",
+  "scope": "Observed the original migration graph on a private socket-only PostgreSQL fixture with synthetic keys. This catalog observation is not production installation approval, release validation, recovery evidence, live SMTP delivery or evidence about a managed database. Production-mode fresh-install tests must independently verify the supported initializer and its guards.",
+  "evidence_reference": "generated-artifacts/catalog-0055_mr_staff_managers/catalog-observation.json"
+}

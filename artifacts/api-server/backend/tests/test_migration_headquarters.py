@@ -2,6 +2,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 import pytest
+import uuid
 from alembic import command
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError, DataError
@@ -10,11 +11,28 @@ from app.db.models import User, AuthSession, AuditEvent
 from app.db.headquarter_models import Headquarter
 from app.db.designation_models import Designation
 from app.schemas.designations import DesignationFields
-from app.schemas.headquarters import HeadquarterFields, HeadquarterStatus, HeadquarterVersion
+from app.schemas.headquarters import HeadquarterCreate, HeadquarterStatus, HeadquarterVersion
+from app.db.zone_models import Zone
 from app.services import headquarters, headquarter_transfer, designations
 from app.services.auth import AuthError
 from test_migration_0006 import migration_db
-from test_migration_zones import prepare, identity
+from test_migration_zones import prepare as prepare_zones, identity
+
+HQ_ZONE_ID = uuid.UUID("ebad0000-0000-4000-8000-000000000001")
+
+
+def prepare(*args, **kwargs):
+    result = prepare_zones(*args, **kwargs)
+    engine, _, actor_id, _ = result
+    with Session(engine) as db:
+        db.add(Zone(id=HQ_ZONE_ID, name="HQ migration zone", status="active",
+                    created_by=actor_id, updated_by=actor_id))
+        db.commit()
+    return result
+
+
+def hq_fields(**values):
+    return HeadquarterCreate(zone_id=HQ_ZONE_ID, **values)
 
 
 def test_forward_empty_migration_preserves_foundations(migration_db):
@@ -32,7 +50,7 @@ def test_forward_empty_migration_preserves_foundations(migration_db):
         db.add(AuditEvent(actor_id=actor_id, session_id=session_id, action="designation_create", outcome="success"))
         db.commit()
     from directory_test_data import approved_historical_upgrade
-    approved_historical_upgrade(engine, config)
+    approved_historical_upgrade(engine, config, current_models=True)
     with Session(engine) as db:
         assert db.get(Designation, existing["id"]).name == "Preserved"
         assert db.get(User, actor_id).is_protected_system_admin
@@ -40,7 +58,7 @@ def test_forward_empty_migration_preserves_foundations(migration_db):
         assert db.scalar(select(AuditEvent.id).where(AuditEvent.action == "designation_create"))
         assert db.scalar(select(func.count()).select_from(Headquarter)) == 0
         actor = identity(db, actor_id, session_id)
-        row = headquarters.create(db, actor, HeadquarterFields(name="History", status="active"))
+        row = headquarters.create(db, actor, hq_fields(name="History", status="active"))
         for sql in ("UPDATE headquarters SET version=0", "UPDATE headquarters SET status='unknown'",
                     "UPDATE headquarters SET name=' '", "UPDATE headquarters SET state_code='lower'",
                     "UPDATE headquarters SET state_code=''", "UPDATE headquarters SET state_code=repeat('A',17)",
@@ -63,7 +81,7 @@ def test_duplicate_create_and_stale_status_delete_race(migration_db):
             actor = identity(db, actor_id, session_id)
             barrier.wait(timeout=10)
             try:
-                return headquarters.create(db, actor, HeadquarterFields(name="North City" if index else " north   CITY ", status="inactive"))
+                return headquarters.create(db, actor, hq_fields(name="North City" if index else " north   CITY ", status="inactive"))
             except headquarters.HeadquarterError as exc:
                 return exc.code
     with ThreadPoolExecutor(max_workers=2) as pool:
@@ -113,7 +131,7 @@ def test_concurrent_imports_and_transactional_rollback(migration_db, monkeypatch
         def conflict(db, actor, body):
             nonlocal calls
             calls += 1
-            return original(db, actor, body if calls == 1 else HeadquarterFields(name=" first ", status="active"))
+            return original(db, actor, body if calls == 1 else hq_fields(name=" first ", status="active"))
         monkeypatch.setattr(headquarters, "insert", conflict)
         with pytest.raises(headquarters.HeadquarterError):
             headquarter_transfer.transfer(db, actor, data, "batch.csv", True, review["digest"])

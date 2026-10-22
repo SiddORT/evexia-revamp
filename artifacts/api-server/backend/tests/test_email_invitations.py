@@ -297,14 +297,18 @@ def test_concurrent_single_use_actual_committed_database(configured):
 def test_observe_actual_disposable_catalog(client):
     _api, db, _settings = client
     root = Path(__file__).resolve().parents[4]
-    output = root / "generated-artifacts/email-invitations"
+    from app.core.schema import SCHEMA_REVISION
+    # Keep the original invitation-release observation intact. Each later
+    # schema gets its own observed evidence; never relabel old evidence.
+    output = root / "generated-artifacts" / f"catalog-{SCHEMA_REVISION}"
     output.mkdir(parents=True, exist_ok=True)
     conn = db.connection()
     projection = fresh_catalog.projection(conn)
     result = {"revision": db.scalar(text("SELECT version_num FROM alembic_version")),
+              "postgresql": db.scalar(text("SHOW server_version")),
               "sha256": fresh_catalog.digest(conn),
               "tables": sorted(row[0] for row in projection["relations"] if row[1] in ("r", "p"))}
-    assert result["revision"] == "0053_email_invitations" and "email_attempts" in result["tables"]
+    assert result["revision"] == SCHEMA_REVISION and "email_attempts" in result["tables"]
     (output / "catalog-observation.json").write_text(json.dumps(result, indent=2) + "\n")
 
 

@@ -83,7 +83,7 @@ def test_simple_install_runs_real_history_atomically_without_receipts(databases)
         fresh.migration_owned_tables(db, set(inspect(db).get_table_names()))
         assert db.execute(text(
             "SELECT event_key, version FROM email_templates ORDER BY event_key"
-        )).all() == [("account_invitation", 1), ("password_recovery", 1)]
+        )).all() == [("account_invitation", 1), ("mr_invitation", 1), ("password_recovery", 1)]
         assert db.scalar(text("SELECT count(*) FROM users")) == 1
         assert db.scalar(text("SELECT to_regclass('organizations')")) is None
         assert db.scalar(text("SELECT to_regclass('memberships')")) is None
@@ -130,7 +130,7 @@ def test_fresh_template_exemption_rejects_extra_administrator_template(databases
         connection.execute(text("""
             INSERT INTO email_templates
                 (id, name, description, subject, html, text, version, provenance, created_by)
-            SELECT 'e7e80000-0000-4000-8000-000000000003', 'Extra template',
+            SELECT 'e7e80000-0000-4000-8000-000000000004', 'Extra template',
                    description, subject, html, text, 1, 'administrator',
                    (SELECT id FROM users LIMIT 1)
             FROM email_templates WHERE event_key = 'password_recovery'
@@ -195,7 +195,7 @@ def test_rate_catalog_rejects_missing_checks_changed_precision_and_extra_ddl(dat
     "UPDATE email_templates SET updated_by=(SELECT id FROM users LIMIT 1)",
     "INSERT INTO email_templates "
     "(id,name,description,subject,html,text,event_key,version,created_by,updated_by,provenance) "
-    "SELECT 'e7e80000-0000-4000-8000-000000000003','Extra','Extra','Extra','Extra','Extra',"
+    "SELECT 'e7e80000-0000-4000-8000-000000000004','Extra','Extra','Extra','Extra','Extra',"
     "NULL,1,id,id,'administrator' FROM users LIMIT 1",
     "UPDATE pr_batch_settings SET version=2, payload_ciphertext='v1:changed'",
     "DELETE FROM pr_batch_settings",

@@ -14,6 +14,16 @@ exist in their intentionally historical schemas.
 old rows with bounded SQL, upgrade, then assert them using current models; do not
 weaken production queries or skip the preservation assertions.
 
+Alembic logging configuration can disable application loggers in the shared
+test process. Restore their prior disabled state when a migration fixture ends.
+
+**Why:** Recovery diagnostics and SQL-logging protection tests can pass alone
+but fail after historical migrations, even though the application behavior is
+unchanged. A disabled logger is not an enabled SQL logger merely set to INFO.
+
+**How to apply:** Isolate logging side effects in test fixtures; do not weaken
+encryption readiness or delivery diagnostics to accommodate leaked test state.
+
 Raw inserts must supply historical NOT NULL values whose defaults existed only
 in the ORM; do not assume those are SQL defaults. Seed valid historical names
 that satisfy the catalogue's checks when testing normalization or reused names.

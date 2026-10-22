@@ -21,9 +21,14 @@ def historical(fixture, labels, catalogue):
     )
     command.downgrade(config, "0026_designation_target")
     with Session(engine) as db:
-        hq = Headquarter(name="Historical HQ", state_code="HH", status="active", created_by=actor, updated_by=actor)
+        # The current HQ model contains later zone/area columns, absent here.
+        from types import SimpleNamespace
+        hq = SimpleNamespace(id=uuid.uuid4())
+        db.execute(text("""INSERT INTO headquarters (id,name,state_code,status,version,created_by,updated_by)
+            VALUES (:id,'Historical HQ','HH','active',1,:actor,:actor)"""),
+            {"id": hq.id, "actor": actor})
         zone = Zone(name="Historical Zone", status="active", created_by=actor, updated_by=actor)
-        db.add_all([hq, zone])
+        db.add(zone)
         keys = []
         for name, status, deleted in catalogue:
             row = Designation(name=name, shortName="MR", status=status, created_by=actor, updated_by=actor)
@@ -36,19 +41,24 @@ def historical(fixture, labels, catalogue):
         for n, label in enumerate(labels):
             user_id, username = uuid.uuid4(), f"history.mr.{n}"
             db.execute(text("""INSERT INTO users
-                (id,username,password_hash,is_active,token_version,system_role,
+                (id,username,email,password_hash,is_active,token_version,system_role,
                  identity_version,is_protected_system_admin)
-                VALUES (:id,:username,'inert-historical-fixture',:active,0,'mr',1,false)"""),
-                {"id": user_id, "username": username, "active": n == 0})
+                VALUES (:id,:username,:email,'inert-historical-fixture',:active,0,'mr',1,false)"""),
+                {"id": user_id, "username": username, "email": f"history.mr.{n}@example.org",
+                 "active": n == 0})
             profile = MRProfile(user_id=user_id, is_active=n == 0)
             db.add(profile); db.flush()
             values = fields(hq.id, zone.id, code=f"HIST-{n}", username=username)
             # This fixture predates persisted MR phone countries.
             values.pop("dialCountry")
             values.pop("userId"); values.pop("designation_id")
+            values.pop("zoneIds", None)
+            values.pop("managerStaffId", None)
+            values.pop("reportingStaffId", None)
             values.update(id=profile.id, designation=label, created_by=actor, updated_by=actor,
                           version=n + 7, paymentLimit="123.45", doctorDaysLimit=42,
-                          dateOfJoining="2020-01-01", status="active" if n == 0 else "inactive")
+                          dateOfJoining="2020-01-01", status="active" if n == 0 else "inactive",
+                          email=f"history.mr.{n}@example.org")
             if n == 2:
                 values.update(deleted_at="2020-01-01T00:00:00Z", deleted_by=actor)
             columns = ", ".join(f'"{k}"' for k in values)

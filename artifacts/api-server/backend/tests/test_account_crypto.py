@@ -114,9 +114,10 @@ def test_invalid_account_configuration_fails_closed(db, monkeypatch, setting):
 
 
 @pytest.mark.parametrize("logger_name", ["sqlalchemy.engine", "sqlalchemy.engine.Engine"])
-def test_account_readiness_rejects_sql_logging(db, logger_name):
+def test_account_readiness_rejects_sql_logging(db, logger_name, monkeypatch):
     import logging
     logger = logging.getLogger(logger_name)
+    monkeypatch.setattr(logger, "disabled", False)
     previous = logger.level
     try:
         logger.setLevel(logging.INFO)
@@ -246,9 +247,10 @@ def test_account_anchors_fail_closed(db, anchor):
         encrypted.ready(db)
 
 @pytest.mark.parametrize("logger_name", ["sqlalchemy.engine", "sqlalchemy.engine.Engine"])
-def test_account_readiness_rejects_sql_logging(db, logger_name):
+def test_account_readiness_rejects_sql_logging(db, logger_name, monkeypatch):
     import logging
     logger = logging.getLogger(logger_name)
+    monkeypatch.setattr(logger, "disabled", False)
     previous = logger.level
     try:
         logger.setLevel(logging.INFO)

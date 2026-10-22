@@ -5,7 +5,7 @@
   "existing_database": "automatic_migrations_with_embedded_guards",
   "prepare_target": "0031_role_hostnames",
   "retirement_cap": "0034_shared_phone_countries",
-  "final_target": "0053_email_invitations",
+  "final_target": "0055_mr_staff_managers",
   "validation_commands": [
     [
       "pnpm",

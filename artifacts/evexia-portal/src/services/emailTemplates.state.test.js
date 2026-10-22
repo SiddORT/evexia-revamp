@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { EMAIL_VARIABLES, INVITATION_VARIABLES, emailSnapshot } from './emailTemplates.js';
+import * as emailApi from './emailTemplates.js';
 
 const require = createRequire(new URL('../../package.json', import.meta.url));
 const { build } = createRequire(require.resolve('vite/package.json'))('esbuild');
@@ -30,7 +31,7 @@ async function fixture(name, api) {
         b.onLoad({ filter: /.*/, namespace: 'fixture' }, (args) => ({
           contents: args.path === 'hooks'
             ? 'export const {useState,useEffect,useMemo,useRef,useCallback,useId}=globalThis.__emailHooks;'
-            : `export const EMAIL_VARIABLES=${JSON.stringify(EMAIL_VARIABLES)}, INVITATION_VARIABLES=${JSON.stringify(INVITATION_VARIABLES)}; export const {loadEmailTemplates,getEmailTemplate,saveEmailTemplate,deleteEmailTemplate}=globalThis.__emailApi;`,
+            : `export const {${Object.keys(emailApi).join(',')}}=globalThis.__emailApi;`,
         }));
       },
     }],
@@ -38,7 +39,14 @@ async function fixture(name, api) {
   const slots = [], effects = [], cleanups = [];
   let index = 0;
   const changed = (a, b) => !a || !b || a.length !== b.length || a.some((v, i) => !Object.is(v, b[i]));
-  globalThis.__emailApi = api;
+  const unexpected = async () => { throw new Error('Unexpected email transport in isolated fixture'); };
+  globalThis.__emailApi = {
+    ...emailApi,
+    loadEmailTemplates: unexpected, getEmailTemplate: unexpected,
+    saveEmailTemplate: unexpected, deleteEmailTemplate: unexpected,
+    getModernEmailLayout: unexpected, sendEmailTemplateTest: unexpected,
+    ...api,
+  };
   globalThis.__emailHooks = {
     useCallback(callback, deps) {
       return globalThis.__emailHooks.useMemo(() => callback, deps);
@@ -102,11 +110,14 @@ const invitation = { ...row, id: 'e7e80000-0000-4000-8000-000000000002', name: '
   eventKey: 'account_invitation', content: { subject: 'Join {{company_name}}',
     html: '<p>{{portal_name}} {{login_id}} {{reset_url}} {{expiry_minutes}}</p>',
     text: '{{portal_name}} {{login_id}} {{reset_url}} {{expiry_minutes}}' } };
+const mrInvitation = { ...invitation, id: 'e7e80000-0000-4000-8000-000000000003',
+  name: 'Invite MR', eventKey: 'mr_invitation' };
 const events = [
   { key: 'password_recovery', label: 'Password recovery', required: true, variables: EMAIL_VARIABLES },
-  { key: 'account_invitation', label: 'Staff / MR invitation', required: true, variables: INVITATION_VARIABLES },
+  { key: 'account_invitation', label: 'Staff invitation', required: true, variables: INVITATION_VARIABLES },
+  { key: 'mr_invitation', label: 'MR invitation', required: true, variables: INVITATION_VARIABLES },
 ];
-const snapshot = { record: { templates: [row, invitation], events } };
+const snapshot = { record: { templates: [row, invitation, mrInvitation], events } };
 const predecessor = () => emailSnapshot({ items: [], events: events.slice(0, 1) });
 const unavailable = () => { throw new Error('Email template API is unavailable; your draft is kept.'); };
 
@@ -224,15 +235,15 @@ test('predecessor save/reconciliation preserve typed fields and block automatic 
   assert.match(text(tree), /invalid response.*draft is kept/);
 });
 
-test('both event previews expose only their variables and keep the iframe inert', async (t) => {
+test('all three event previews expose only their variables and keep the iframe inert', async (t) => {
   const component = await fixture('MessageTemplatePreview', {});
   t.after(() => component.close());
-  for (const item of [row, invitation]) {
+  for (const item of [row, invitation, mrInvitation]) {
     const props = { channel: 'email', content: item.content, eventKey: item.eventKey };
     let tree = component.render(props);
     find(tree, 'mtp-mode-sample').props.onClick();
     tree = component.render(props);
-    const expected = item.eventKey === 'account_invitation' ? INVITATION_VARIABLES : EMAIL_VARIABLES;
+    const expected = emailApi.isInvitationEvent(item.eventKey) ? INVITATION_VARIABLES : EMAIL_VARIABLES;
     for (const variable of INVITATION_VARIABLES) {
       assert.equal(!!find(tree, `mtp-sample-${variable}`), expected.includes(variable));
     }

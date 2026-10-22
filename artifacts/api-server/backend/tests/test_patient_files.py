@@ -49,6 +49,8 @@ def setup_graph(env):
         from directory_test_data import initialize_empty_metadata_fixture
         initialize_empty_metadata_fixture(db)
         actor = env["admin"].id
+        from test_patients import seed_patient_language
+        seed_patient_language(db, actor)
         seed_designation(db, actor)
         zone = Zone(name="File Patient Zone", status="active", created_by=actor, updated_by=actor)
         hq = Headquarter(name="File Patient HQ", state_code="FPH", status="active", created_by=actor, updated_by=actor)
@@ -56,7 +58,8 @@ def setup_graph(env):
         for profile, code in ((env["owner_mr"], "OWNER"), (env["replacement_mr"], "TARGET")):
             body = MRFields(**mr_fields(hq.id, zone.id, code=code, username=code.lower()))
             body.email = db.get(User, profile.user_id).email or ""
-            db.add(MRDirectory(id=profile.id, **body.model_dump(exclude={"userId"}), created_by=actor, updated_by=actor))
+            values = body.model_dump(exclude={"userId", "zoneIds"})
+            db.add(MRDirectory(id=profile.id, **values, created_by=actor, updated_by=actor))
         db.flush()
         doctors = []
         for profile, code in ((env["owner_mr"], "REG-OWNER"), (env["replacement_mr"], "REG-TARGET")):

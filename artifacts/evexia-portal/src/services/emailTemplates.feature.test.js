@@ -15,9 +15,12 @@ const row = { id, protected: true, version: 1, name: 'Forgot password', descript
   event_key: 'password_recovery', subject: 'Reset password', html: '<p>{{reset_url}}</p>', text: '{{reset_url}}' };
 const invitation = { ...row, id: 'e7e80000-0000-4000-8000-000000000002', name: 'Invite staff member',
   event_key: 'account_invitation', subject: 'Invitation', html: '<p>{{portal_name}} {{login_id}}</p>', text: '{{portal_name}} {{login_id}}' };
-const envelope = (items = [row, invitation]) => ({ items, events: [
+const mrInvitation = { ...invitation, id: 'e7e80000-0000-4000-8000-000000000003',
+  name: 'Invite MR', event_key: 'mr_invitation' };
+const envelope = (items = [row, invitation, mrInvitation]) => ({ items, events: [
   { key: 'password_recovery', label: 'Password recovery', required: true, variables: EMAIL_VARIABLES },
-  { key: 'account_invitation', label: 'Staff / MR invitation', required: true, variables: INVITATION_VARIABLES },
+  { key: 'account_invitation', label: 'Staff invitation', required: true, variables: INVITATION_VARIABLES },
+  { key: 'mr_invitation', label: 'MR invitation', required: true, variables: INVITATION_VARIABLES },
 ] });
 const response = (data, status = 200) => ({ ok: status < 400, status, json: async () => data, headers: new Headers() });
 

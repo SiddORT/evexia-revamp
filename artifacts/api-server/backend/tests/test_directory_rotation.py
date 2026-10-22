@@ -53,8 +53,15 @@ def test_paused_rotation_can_finish_across_exact_geography_successor(migration_d
     from app.core.config import get_settings
     from app.services.directory_inventory import RUNTIME_FIELDS
     from test_migration_zones import prepare
-    engine, config, *_ = prepare(migration_db)
-    command.upgrade(config, "0040_po_tax_basis")
+    engine, config, *_ = prepare(migration_db, target_revision="0035_account_identifiers")
+    # This case deliberately exercises 0040 -> 0041, not the current ORM
+    # release. Cross reference privacy with the real isolated recovery evidence.
+    from pathlib import Path
+    from tempfile import TemporaryDirectory
+    from test_reference_privacy_migration import evidence, approve
+    with TemporaryDirectory(prefix="evexia-test-geography-recovery-") as folder:
+        approve(config, evidence(engine, Path(folder) / "backup.dump"))
+        command.upgrade(config, "0040_po_tax_basis")
     # The historical upgrade's temporary runtime login is already gone.
     # Bind this fixture to a real, independently privilege-checked login.
     with runtime(engine) as (role, _):

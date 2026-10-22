@@ -43,16 +43,12 @@ def initialize_empty_metadata_fixture(db):
 
 def prepare_current_directory(fixture, *, target_revision=None):
     """Opt current-model tests into reference snapshots, not historical tests."""
-    from alembic import command
     from test_migration_zones import prepare
-    if target_revision is not None:
-        return prepare(fixture, target_revision=target_revision)
-    engine, config, actor_id, sid = prepare(fixture)
-    command.upgrade(config, "0036_reference_privacy")
-    return engine, config, actor_id, sid
+    return prepare(fixture, target_revision=target_revision)
 
 
-def approved_historical_upgrade(engine, config, *, target_revision="0035_account_identifiers"):
+def approved_historical_upgrade(engine, config, *, target_revision="0035_account_identifiers",
+                                current_models=False):
     """Exercise the actual gates with synthetic attestations in disposable PG."""
     if target_revision not in ("0035_account_identifiers", "0036_reference_privacy"):
         raise ValueError("Unsupported historical upgrade target")
@@ -76,3 +72,6 @@ def approved_historical_upgrade(engine, config, *, target_revision="0035_account
         with TemporaryDirectory(prefix="evexia-test-reference-recovery-") as folder:
             approve(config, evidence(engine, Path(folder) / "backup.dump"))
             command.upgrade(config, target_revision)
+    if current_models:
+        from test_migration_0006 import continue_to_current_schema
+        continue_to_current_schema(engine, config)

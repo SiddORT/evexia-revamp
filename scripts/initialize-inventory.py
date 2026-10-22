@@ -32,7 +32,7 @@ from app.services.purchase_received_crypto import ReceiptCrypto, PRError
 # Explicit compatibility review: 0054 changes email templates/attempts only;
 # receipt provenance, ciphertext, ledger and locking contracts are unchanged.
 # Never derive this authorization from head or the mutable release manifest.
-REVISION = "0054_modern_email_tests"
+REVISION = "0055_mr_staff_managers"
 
 
 def require(value, message):

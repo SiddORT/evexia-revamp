@@ -36,8 +36,8 @@ class SourceReviewTests(unittest.TestCase):
     def setUp(self):
         self.fn = functions()
 
-    def test_checked_in_source_is_explicitly_reviewed_at_0054(self):
-        self.assertEqual(REVISION, "0054_modern_email_tests")
+    def test_checked_in_source_is_explicitly_reviewed_at_0055(self):
+        self.assertEqual(REVISION, "0055_mr_staff_managers")
         schema = ast.parse((ROOT / "artifacts/api-server/backend/app/core/schema.py").read_text())
         self.fn["SCHEMA_REVISION"] = next(ast.literal_eval(n.value) for n in schema.body
                                          if isinstance(n, ast.Assign)

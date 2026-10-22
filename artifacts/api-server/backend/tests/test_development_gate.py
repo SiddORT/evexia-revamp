@@ -158,8 +158,8 @@ def test_actual_managed_startup_without_preflight_and_security_failure(developme
         binding = {"version": 1, "host": info.host, "port": info.port,
                    "database": info.dbname, "cluster": cluster, "oid": oid}
     (root / "scripts/development-database.json").write_text(json.dumps(binding))
-    subprocess.run([sys.executable, "-B", str(root / "scripts/review-schema-release.py"), "--refresh"],
-                   check=True, stdout=subprocess.DEVNULL)
+    # This is a development-startup fixture, not production catalog review.
+    # Keep the production review unmodified; bind/review only this private clone.
     # The clone uses a newly bound disposable database. Review its exact
     # development execution sources instead of borrowing the workspace binding.
     subprocess.run([sys.executable, "-B", str(root / "scripts/review-development-schema.py"), "--refresh"],

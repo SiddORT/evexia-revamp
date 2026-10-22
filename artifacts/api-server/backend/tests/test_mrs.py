@@ -133,7 +133,7 @@ def setup(api, db):
 
 
 def fields(hq, zone, name="Synthetic MR", code="MR-01", username="synthetic.mr", **changes):
-    return dict(name=name, employeeCode=code, userId=username, phone="", dialCountry="IN", email="", contactRequirement="optional",
+    return dict(name=name, employeeCode=code, userId=username, phone="9000000001", dialCountry="IN", email="", contactRequirement="optional",
                 hq=hq, zoneId=zone, dateOfJoining="2020-01-01", designation_id=str(DESIGNATION_ID),
                 reportingManagerId=None, paymentLimit="", doctorDaysLimit="", status="active",
                 pincode="110001", addressLine1="Synthetic address", addressLine2="", landmark="Synthetic landmark",
@@ -170,7 +170,8 @@ def csv_data(bodies, headers=None):
     for body in bodies:
         values = dict(body, hq="HQ for MRs", zoneId="Zone for MRs",
                       zoneIds=json.dumps(body.get("zoneIds") or ["Zone for MRs"]),
-                      reportingManagerId=body["reportingManagerId"] or "")
+                      reportingManagerId=body["reportingManagerId"] or "",
+                      reportingStaffId=body.get("reportingStaffId") or "")
         writer.writerow([values[key] for key, title in mr_transfer.COLUMNS if title in headers])
     return stream.getvalue().encode()
 

@@ -1,5 +1,6 @@
 """Actual migration, committed races and identity/session/history preservation."""
 import uuid
+import json
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 
@@ -13,7 +14,7 @@ from app.db.models import User, MRProfile, Patient, AuthSession, AuditEvent
 from app.db.mr_models import MRDirectory
 from app.schemas.mrs import MRCreate, MREdit, MRVersion, MRStatus
 from app.schemas.zones import ZoneFields
-from app.schemas.headquarters import HeadquarterFields
+from app.schemas.headquarters import HeadquarterCreate
 from app.services import mrs, zones, headquarters, mr_transfer
 from app.services.auth import AuthError
 from test_migration_0006 import migration_db
@@ -23,14 +24,14 @@ from test_mrs import fields, csv_data, seed_designation
 
 def setup(fixture):
     engine, config, actor_id, session_id = prepare(fixture)
-    # Operational MR fixtures require saved reference/manager snapshots.
-    # Do not advance the shared historical migration helper for other suites.
-    command.upgrade(config, "0036_reference_privacy")
+    # Default preparation uses the supported current-model continuation;
+    # historical tests below still supply their explicit predecessor.
     with Session(engine) as db:
         actor = identity(db, actor_id, session_id)
         seed_designation(db, actor_id)
-        hq = headquarters.create(db, actor, HeadquarterFields(name="HQ for MRs", status="active"))["id"]
         zone = zones.create(db, actor, ZoneFields(name="Zone for MRs", status="active"))["id"]
+        hq = headquarters.create(db, actor, HeadquarterCreate(
+            name="HQ for MRs", status="active", zone_id=zone))["id"]
     return engine, config, actor_id, session_id, hq, zone
 
 
@@ -52,7 +53,7 @@ def test_empty_migration_preserves_identity_patient_and_session_history(migratio
         db.commit()
         ids = user_id, profile.id, patient.id
     from directory_test_data import approved_historical_upgrade
-    approved_historical_upgrade(engine, config)
+    approved_historical_upgrade(engine, config, current_models=True)
     with Session(engine) as db:
         assert db.get(User, ids[0]).username == "identity.only"
         assert db.get(MRProfile, ids[1]).is_active
@@ -86,7 +87,7 @@ def test_case_insensitive_account_and_employee_races(migration_db):
         assert db.scalar(select(func.count()).select_from(AuditEvent).where(AuditEvent.action == "mr_directory_create")) == 1
 
 
-def test_competing_manager_updates_cannot_create_cycle(migration_db):
+def test_competing_updates_cannot_introduce_legacy_mr_manager_assignments(migration_db):
     engine, _, actor_id, session_id, hq, zone = setup(migration_db)
     with Session(engine, expire_on_commit=False) as db:
         actor = identity(db, actor_id, session_id)
@@ -106,7 +107,14 @@ def test_competing_manager_updates_cannot_create_cycle(migration_db):
                 return exc.code
     with ThreadPoolExecutor(max_workers=2) as pool:
         results = list(pool.map(change, range(2)))
-    assert sum(isinstance(result, dict) for result in results) == 1 and "mr_manager_cycle" in results
+    # New assignments now reference Staff, not other MRs. Both attempts must
+    # fail atomically; silently accepting either would resurrect the old graph.
+    assert results == ["mr_assignment", "mr_assignment"]
+    with Session(engine) as db:
+        for record in (a, b):
+            saved = db.get(MRDirectory, record["id"])
+            assert saved.reportingManagerId is None and saved.reportingStaffId is None
+            assert saved.version == 1
 
 
 def test_import_conflict_provisioning_failure_rolls_back_whole_batch(migration_db, monkeypatch):
@@ -190,7 +198,13 @@ def test_maximum_exports_bulk_queries_exact_rows_caps_and_revocation(migration_d
                 data = mr_transfer.export(db, actor, "Bulk MR", "all", None, None, format)
             record_property(f"mr_{format}_queries", len(metric["statements"]))
             record_property(f"mr_{format}_seconds", metric["seconds"])
-            assert len(metric["statements"]) <= 48
+            # Multi-zone projection adds exactly one bounded assignment query
+            # per 500 records. Preserve the original budget for all other work;
+            # do not allow per-record lookups or simply raise the blanket cap.
+            zone_queries = [statement for statement in metric["statements"]
+                            if "FROM mr_zone_assignments" in statement]
+            assert len(zone_queries) == (len(ids) + 499) // 500
+            assert len(metric["statements"]) - len(zone_queries) <= 48
             assert max(metric["bind_counts"]) <= 500
             assert metric["seconds"] < (6 if format == "csv" else 12)
             if format == "csv":
@@ -207,16 +221,20 @@ def test_maximum_exports_bulk_queries_exact_rows_caps_and_revocation(migration_d
                 MRDirectory.id)))
             for record, cells in zip(rows, exported[1:]):
                 index = int(record.employeeCode.removeprefix("FIX-"))
-                values = {key: getattr(record, key) for key, _ in mr_transfer.COLUMNS if key != "userId"}
+                values = {key: getattr(record, key) for key, _ in mr_transfer.COLUMNS
+                          if key not in ("userId", "zoneIds")}
                 values.update(designation_id=f"Fixture designations {index % 110}", userId=f"fixture.mr.{index}", hq=f"Fixture headquarters {index % 110}",
-                              zoneId=f"Fixture zones {index % 110}",
+                              zoneId=str(record.zoneId),
+                              zoneIds=json.dumps([str(record.zoneId)], separators=(",", ":")),
+                              reportingStaffId="",
                               reportingManagerId=f"user:fixture.mr.{index - 1 if index else 5000}",
                               createdBy="Super Admin", updatedBy="Backend user",
                               createdAt=record.created_at, updatedAt=record.updated_at)
                 # The privacy release appends the saved human label without
                 # replacing the original manager-account import reference.
                 expected = [str(values[key]) for key, _ in mr_transfer.COLUMNS] + [
-                    f"Bulk MR {index - 1:05}" if index else "Deleted manager"]
+                    f"Bulk MR {index - 1:05}" if index else "Deleted manager",
+                    ""]  # This fixture retains legacy MR managers, not Staff managers.
                 if format == "xlsx":
                     expected += [str(values[key]) for key in ("createdBy", "createdAt", "updatedBy", "updatedAt")]
                     expected = [value if value else None for value in expected]

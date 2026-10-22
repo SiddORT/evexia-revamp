@@ -21,7 +21,11 @@ from app.services import zones, zone_transfer
 from test_migration_0006 import migration_db, upgrade_with_retirement_recovery
 
 
-def prepare(fixture, *, target_revision="0035_account_identifiers"):
+def prepare(fixture, *, target_revision=None):
+    # Service/ORM scenarios need today's schema. Explicit historical targets
+    # retain their original boundary and never acquire a current-model upgrade.
+    current_models = target_revision is None
+    target_revision = target_revision or "0035_account_identifiers"
     engine, config = fixture
     command.upgrade(config, "0009_staff")
     with Session(engine) as db:
@@ -41,7 +45,8 @@ def prepare(fixture, *, target_revision="0035_account_identifiers"):
         db.commit()
         session_id = session.id
     if target_revision in ("0034_shared_phone_countries", "0035_account_identifiers"):
-        upgrade_with_retirement_recovery(engine, config, target_revision=target_revision)
+        upgrade_with_retirement_recovery(engine, config, target_revision=target_revision,
+                                         current_models=current_models)
     else:
         # Only explicitly named pre-retirement boundaries are accepted here.
         from alembic.script import ScriptDirectory

@@ -9,6 +9,7 @@ from sqlalchemy import select, text
 from app.db.models import AuditEvent, Patient, MRProfile
 from app.db.patient_models import PatientDirectory
 from app.db.doctor_models import DoctorDirectory
+from app.db.language_models import Language
 from app.schemas.patients import PatientFields
 from app.services import patient_transfer
 from test_sessions import client
@@ -16,6 +17,12 @@ from test_doctors import setup_doctor, fields as doctor_fields, add as add_docto
 from test_mrs import fields as mr_fields, add as add_mr
 
 BASE = "/api/v1/admin/patients"
+
+def seed_patient_language(db, actor_id):
+    """Nonempty selections require a real saved language, not a free-text label."""
+    if not db.scalar(select(Language.id).where(Language.name == "Hindi")):
+        db.add(Language(name="Hindi", version=1, created_by=actor_id, updated_by=actor_id))
+        db.commit()
 
 
 def fields(doctor, **changes):
@@ -27,6 +34,7 @@ def fields(doctor, **changes):
 
 def setup_patient(api, db):
     headers, actor, mr, zone = setup_doctor(api, db)
+    seed_patient_language(db, actor.id)
     doctor = add_doctor(api, headers, doctor_fields(mr))
     return headers, actor, mr, zone, doctor
 
@@ -158,7 +166,8 @@ def test_shift_status_domain_guard_and_current_zone_filters(client):
     assert str(owner.assigned_mr_id) == mr["id"] and not owner.is_active and owner.version == 4
     new_zone = api.post("/api/v1/admin/zones", headers=headers, json={"name": "Current Patient Zone", "status": "active"}).json()
     shifted_mr = api.post("/api/v1/admin/mrs/" + mr["id"] + "/edit", headers=headers,
-                          json={**mr_fields(str(source.hq), new_zone["id"]), "expected_version": mr["version"]})
+                          json={**mr_fields(str(source.hq), new_zone["id"]),
+                                "zoneIds": [new_zone["id"]], "expected_version": mr["version"]})
     assert shifted_mr.status_code == 200, shifted_mr.text
     assert api.get(BASE, headers=headers, params={"zone_id": zone}).json()["filtered"] == 0
     assert api.get(BASE, headers=headers, params={"zone_id": new_zone["id"]}).json()["filtered"] == 1

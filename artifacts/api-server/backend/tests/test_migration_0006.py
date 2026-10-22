@@ -17,6 +17,12 @@ from app.core.config import get_settings
 
 @pytest.fixture
 def migration_db(monkeypatch):
+    # Alembic's fileConfig disables loggers already created by application
+    # imports. Do not let that test-process side effect leak into later
+    # delivery-diagnostic or encryption-readiness tests.
+    import logging
+    disabled = {name: logger.disabled for name, logger in logging.Logger.manager.loggerDict.items()
+                if isinstance(logger, logging.Logger)}
     database_url = os.environ.get("TEST_DATABASE_URL")
     if not database_url:
         pytest.skip("requires isolated TEST_DATABASE_URL")
@@ -45,6 +51,9 @@ def migration_db(monkeypatch):
         with admin_engine.begin() as connection:
             connection.execute(text(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))
         admin_engine.dispose()
+        for name, logger in logging.Logger.manager.loggerDict.items():
+            if isinstance(logger, logging.Logger):
+                logger.disabled = disabled.get(name, False)
 
 
 def upgrade_with_retirement_recovery(engine, config, *, target_revision="0035_account_identifiers", current_models=False):

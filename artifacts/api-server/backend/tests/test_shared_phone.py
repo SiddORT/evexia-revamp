@@ -9,7 +9,7 @@ from app.services import mr_transfer, doctor_transfer, patient_transfer
 from test_sessions import client
 from test_mrs import setup, fields as mr_fields, add as add_mr
 from test_doctors import fields as doctor_fields, add as add_doctor
-from test_patients import fields as patient_fields, add as add_patient
+from test_patients import fields as patient_fields, add as add_patient, seed_patient_language
 from test_staff import BODY as STAFF_BODY
 from test_vendors import FIELDS as VENDOR_BODY
 
@@ -33,6 +33,7 @@ def test_international_and_legacy_validation(master):
 def test_all_five_create_edit_reload_and_transfers(client):
     api, db, _ = client
     headers, actor, hq, zone = setup(api, db)
+    seed_patient_language(db, actor.id)
     mr_body = {**mr_fields(hq, zone), "phone": "81234567", "dialCountry": "SG"}
     mr = add_mr(api, headers, mr_body)["record"]
     doctor_body = doctor_fields(mr, phone="81234567", alternatePhone="91234567", dialCountry="SG")
