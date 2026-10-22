@@ -110,6 +110,15 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a separate f
 
 ## Run & operate
 
+- Product Master CSV/XLSX transfers are catalogue-recipe-only, protected Super
+  Admin create-only review/atomic confirmation with actor-bound durable retry
+  outcomes. Exports cover every search/status match or reject above 500 products /
+  1,000 member rows; imports additionally cap files at 2 MiB. Saved Allergen UUIDs
+  are authoritative. No stock/assemblies, uploaded history or Staff grants.
+  Implementation is source-inspection-only: the user explicitly prohibited tests,
+  manual/browser scenarios, builds and validation/release wrappers. See
+  `docs/product-master-transfers.md`; no runtime verification is claimed.
+
 - Fictional development master samples use `scripts/seed-master-data.py` with an independently confirmed development fingerprint. The seed reuses linked demo Allergens/MRs/Doctors and adds fictional Vendors, fixed 2026–2027 Sales Targets and signed Doctor Opening Balances atomically; exact matches skip and conflicting history blocks. It never resets identities, migrates, activates Purchase Orders or writes stock/payment transactions. Coverage, safe rerun command and actual execution evidence: `docs/development-master-seed.md`.
 
 - Legacy organization retirement uses `0031_remove_organizations` after the

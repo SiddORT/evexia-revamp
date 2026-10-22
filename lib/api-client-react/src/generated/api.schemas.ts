@@ -6950,6 +6950,12 @@ export interface ProductHistoryPage {
   offset: number;
 }
 
+export interface ProductImportResult {
+  id: string;
+  imported: number;
+  kind: "product_import";
+  memberRows: number;
+}
 export interface ProductQuantitySummary {
   locationId?: string | null;
   locationName?: string | null;
@@ -6985,7 +6991,7 @@ export const ProductReconciliationState = {
 } as const;
 
 export interface ProductReconciliation {
-  result: ProductView | AssemblySaved | null;
+  result: ProductView | AssemblySaved | ProductImportResult | null;
   state: ProductReconciliationState;
 }
 
@@ -10985,6 +10991,14 @@ export const ListStockProductsStatus = {
   inactive: "inactive",
 } as const;
 
+export type ExportStockProductsParams = {
+  /**
+   * @maxLength 200
+   */
+  query?: string;
+  status?: ExportStockProductsStatus;
+  format?: ExportStockProductsFormat;
+};
 export type GetStockProductReferencesParams = {
   /**
    * @maxLength 200
@@ -11002,6 +11016,9 @@ export type GetStockProductReferencesParams = {
   limit?: number;
 };
 
+export type DownloadStockProductSampleParams = {
+  format?: DownloadStockProductSampleFormat;
+};
 export type GetStockProductActivityParams = {
   /**
    * @minimum 0
@@ -12074,4 +12091,79 @@ export type ResolvePortalHostnameParams = {
    * @maxLength 253
    */
   hostname: string;
+};
+
+export const ExportStockProductsFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export const ExportStockProductsStatus = {
+  all: "all",
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface ProductImportReview {
+  digest: string;
+  memberRows: number;
+  products: number;
+  rows: ProductImportRow[];
+  valid: boolean;
+}
+
+export type ExportStockProductsFormat =
+  (typeof ExportStockProductsFormat)[keyof typeof ExportStockProductsFormat];
+
+export type ReviewStockProductImportBody = {
+  file: Blob | File;
+};
+
+export interface ProductImportRow {
+  allergenId: string;
+  allergenName: string;
+  errors: string[];
+  mrp: string;
+  name: string;
+  quantity: string;
+  row: number;
+  sellingPrice: string;
+  status: string;
+}
+
+export type CommitStockProductImportBody = {
+  file: Blob | File;
+};
+
+export type DownloadStockProductSampleFormat =
+  (typeof DownloadStockProductSampleFormat)[keyof typeof DownloadStockProductSampleFormat];
+
+export const DownloadStockProductSampleFormat = {
+  csv: "csv",
+  xlsx: "xlsx",
+} as const;
+
+export type ExportStockProductsStatus =
+  (typeof ExportStockProductsStatus)[keyof typeof ExportStockProductsStatus];
+
+export type ReviewStockProductImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+};
+
+export type CommitStockProductImportParams = {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  filename: string;
+  /**
+   * @pattern ^[0-9a-f]{64}$
+   */
+  digest: string;
+  confirm: boolean;
+  idempotency_key: string;
 };

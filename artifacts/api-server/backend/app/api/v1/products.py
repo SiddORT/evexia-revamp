@@ -1,6 +1,6 @@
 import uuid
 from typing import Literal
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
 from app.api.deps import require_permissions
 from app.db.session import get_db
@@ -8,12 +8,66 @@ from app.schemas.products import (
     ProductCreate, ProductEdit, ProductDelete, ProductStatus, ProductView, ProductPage,
     ProductHistoryPage, ProductSummary, ProductReferencePage, ProductReconciliation,
     AssemblyInput, AssemblyCreate, AssemblyReview, AssemblySaved, AssemblyPage,
+    ProductImportReview, ProductImportResult,
 )
 from app.services.auth import Identity
 from app.services import products as service
+from app.services import product_transfer
+from app.api.v1.locations import read_file, UPLOAD
+from app.api.v1.product_categories import DOWNLOAD
+from app.services.downloads import server_record
+from app.services.purchase_received_crypto import PRError
+from app.services.allergens import authorize
+from app.services.locations import LocationError
 
 router = APIRouter(prefix="/admin/products", tags=["Products"])
 manager = require_permissions("admin.access")
+
+
+def release(db, actor, initiation_id, format, operation, data):
+    evidence = server_record(db, actor, initiation_id, "product", operation, format.upper())
+    return Response(data, media_type="text/csv; charset=utf-8" if format == "csv" else
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": f'attachment; filename="evexia-product-{"master" if operation == "export" else "template"}.{format}"',
+                             "X-Download-Log": str(evidence["id"]), "Cache-Control": "no-store",
+                             "X-Content-Type-Options": "nosniff"})
+
+
+@router.get("/sample", operation_id="downloadStockProductSample", responses=DOWNLOAD)
+def sample(format: Literal["csv", "xlsx"] = "csv", actor: Identity = Depends(manager), db: Session = Depends(get_db),
+           initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation")):
+    authorize(db, actor)
+    return release(db, actor, initiation_id, format, "template", product_transfer.sample(format))
+
+
+@router.get("/export", operation_id="exportStockProducts", responses=DOWNLOAD)
+def export(query: str = Query("", max_length=200), status: Literal["all", "active", "inactive"] = "all",
+           format: Literal["csv", "xlsx"] = "csv", actor: Identity = Depends(manager), db: Session = Depends(get_db),
+           initiation_id: uuid.UUID | None = Header(None, alias="X-Download-Initiation")):
+    return release(db, actor, initiation_id, format, "export", product_transfer.export(db, actor, query, status, format))
+
+
+@router.post("/import/review", response_model=ProductImportReview, operation_id="reviewStockProductImport", openapi_extra=UPLOAD)
+async def review_import(request: Request, filename: str = Query(min_length=1, max_length=200),
+                        actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    return product_transfer.transfer(db, actor, await read_product_file(request), filename)
+
+
+@router.post("/import/commit", response_model=ProductImportResult, operation_id="commitStockProductImport", openapi_extra=UPLOAD)
+async def commit_import(request: Request, filename: str = Query(min_length=1, max_length=200),
+                        digest: str = Query(pattern=r"^[0-9a-f]{64}$"), confirm: bool = Query(),
+                        idempotency_key: uuid.UUID = Query(),
+                        actor: Identity = Depends(manager), db: Session = Depends(get_db)):
+    if not confirm:
+        raise PRError("Explicit all-or-nothing confirmation is required.", 422, "product_confirmation_required")
+    return product_transfer.transfer(db, actor, await read_product_file(request), filename, True, digest, idempotency_key)
+
+
+async def read_product_file(request):
+    try:
+        return await read_file(request)
+    except LocationError as exc:
+        raise PRError(exc.message, exc.status, exc.code.replace("location_", "product_")) from None
 
 
 @router.get("", response_model=ProductPage, operation_id="listStockProducts")

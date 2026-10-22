@@ -227,6 +227,33 @@ class AssemblyPage(BaseModel):
     limit: int
 
 
+class ProductImportResult(BaseModel):
+    id: uuid.UUID
+    kind: Literal["product_import"]
+    imported: int
+    memberRows: int
+
+
+class ProductImportRow(BaseModel):
+    row: int
+    name: str
+    mrp: str
+    sellingPrice: str
+    status: str
+    allergenId: str
+    allergenName: str
+    quantity: str
+    errors: list[str]
+
+
+class ProductImportReview(BaseModel):
+    rows: list[ProductImportRow]
+    products: int
+    memberRows: int
+    valid: bool
+    digest: str
+
+
 class ProductReconciliation(BaseModel):
     state: Literal["committed", "not_committed"]
-    result: ProductView | AssemblySaved | None
+    result: ProductView | AssemblySaved | ProductImportResult | None

@@ -6,10 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { AssemblySaved } from "./assemblySaved";
+import type { ProductImportResult } from "./productImportResult";
 import type { ProductReconciliationState } from "./productReconciliationState";
 import type { ProductView } from "./productView";
 
 export interface ProductReconciliation {
-  result: ProductView | AssemblySaved | null;
+  result: ProductView | AssemblySaved | ProductImportResult | null;
   state: ProductReconciliationState;
 }

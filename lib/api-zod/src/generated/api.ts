@@ -974,6 +974,8 @@ export const previewProductAssemblyBodyBatchNoMax = 80;
 export const previewProductAssemblyBodyQuantityMax = 1000000;
 export const previewProductAssemblyResponseAssemblyMembersItemQuantityMax = 11;
 export const getProductAssemblyResponseMembersItemQuantityMax = 11;
+
+export const exportStockProductsQueryQueryMax = 200;
 export const getStockProductReferencesQueryQueryMax = 200;
 export const getStockProductReferencesQueryOffsetDefault = 0;
 export const getStockProductReferencesQueryOffsetMin = 0;
@@ -18090,6 +18092,10 @@ export const GetProductAssemblyResponse = zod.object({
 });
 
 /**
+ * @summary Export
+ */
+export const exportStockProductsQueryQueryDefault = ``;
+/**
  * @summary References
  */
 export const getStockProductReferencesQueryQueryDefault = ``;
@@ -18241,11 +18247,21 @@ export const ReconcileStockProductRequestResponse = zod.object({
       unit: zod.string(),
       version: zod.number().int(),
     }),
+    zod.object({
+      id: zod.string().uuid(),
+      imported: zod.number().int(),
+      kind: zod.literal("product_import"),
+      memberRows: zod.number().int(),
+    }),
     zod.null(),
   ]),
   state: zod.enum(["committed", "not_committed"]),
 });
 
+/**
+ * @summary Sample
+ */
+export const downloadStockProductSampleQueryFormatDefault = `csv`;
 /**
  * @summary Delete
  */
@@ -29255,3 +29271,110 @@ export const ResolvePortalHostnameResponse = zod.object({
  * @summary Version
  */
 export const GetVersionResponse = zod.unknown();
+
+export const commitStockProductImportQueryFilenameMax = 200;
+
+export const DownloadStockProductSampleQueryParams = zod.object({
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(downloadStockProductSampleQueryFormatDefault),
+});
+
+export const ExportStockProductsHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const ExportStockProductsResponse = zod.unknown();
+
+export const DownloadStockProductSampleHeader = zod.object({
+  "X-Download-Initiation": zod
+    .union([zod.string().uuid(), zod.null()])
+    .optional(),
+});
+
+export const DownloadStockProductSampleResponse = zod.unknown();
+
+export const reviewStockProductImportQueryFilenameMax = 200;
+
+/**
+ * @summary Commit Import
+ */
+
+export const commitStockProductImportQueryDigestRegExp = new RegExp(
+  "^[0-9a-f]{64}$",
+);
+
+export const ReviewStockProductImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+/**
+ * @summary Review Import
+ */
+
+export const ReviewStockProductImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(reviewStockProductImportQueryFilenameMax),
+});
+
+export const exportStockProductsQueryFormatDefault = `csv`;
+
+export const CommitStockProductImportQueryParams = zod.object({
+  filename: zod.coerce
+    .string()
+    .min(1)
+    .max(commitStockProductImportQueryFilenameMax),
+  digest: zod.coerce.string().regex(commitStockProductImportQueryDigestRegExp),
+  confirm: zod.coerce.boolean(),
+  idempotency_key: zod.coerce.string().uuid(),
+});
+
+export const ReviewStockProductImportResponse = zod.object({
+  digest: zod.string(),
+  memberRows: zod.number().int(),
+  products: zod.number().int(),
+  rows: zod.array(
+    zod.object({
+      allergenId: zod.string(),
+      allergenName: zod.string(),
+      errors: zod.array(zod.string()),
+      mrp: zod.string(),
+      name: zod.string(),
+      quantity: zod.string(),
+      row: zod.number().int(),
+      sellingPrice: zod.string(),
+      status: zod.string(),
+    }),
+  ),
+  valid: zod.boolean(),
+});
+
+export const exportStockProductsQueryStatusDefault = `all`;
+
+export const ExportStockProductsQueryParams = zod.object({
+  query: zod.coerce
+    .string()
+    .max(exportStockProductsQueryQueryMax)
+    .default(exportStockProductsQueryQueryDefault),
+  status: zod
+    .enum(["all", "active", "inactive"])
+    .default(exportStockProductsQueryStatusDefault),
+  format: zod
+    .enum(["csv", "xlsx"])
+    .default(exportStockProductsQueryFormatDefault),
+});
+
+export const CommitStockProductImportResponse = zod.object({
+  id: zod.string().uuid(),
+  imported: zod.number().int(),
+  kind: zod.literal("product_import"),
+  memberRows: zod.number().int(),
+});
+
+export const CommitStockProductImportBody = zod.object({
+  file: zod.instanceof(Blob),
+});

@@ -911,9 +911,9 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
   return data;
 }
 export const productMasterRequest = (path, options) => purchaseOrderRequest(path, options, 'products');
-export async function purchaseOrderRequest(path = '', { body, params = {}, signal, method } = {}, resource = 'purchase-orders') {
+export async function purchaseOrderRequest(path = '', { body, params = {}, signal, method, file, download } = {}, resource = 'purchase-orders') {
   const allowed = resource === 'products'
-    ? /^(?:|\/references|\/assemblies(?:\/preview|\/[0-9a-f-]{36})?|\/requests\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:status|activity|analytics|assemblies))?)$/i
+    ? /^(?:|\/sample|\/export|\/import\/(?:review|commit)|\/references|\/assemblies(?:\/preview|\/[0-9a-f-]{36})?|\/requests\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:status|activity|analytics|assemblies))?)$/i
     : resource === 'inventory'
     ? /^\/(?:stock(?:\/[0-9a-f-]{36}\/history)?|initialization|references\/(?:locations|staff|lots)|requests\/[0-9a-f-]{36}|movements(?:\/preview|\/[0-9a-f-]{36}(?:\/(?:activity|analytics))?)?)$/i
     : resource === 'purchase-received'
@@ -922,15 +922,20 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   if (!allowed.test(path)) {
     throw new SessionError('Unsupported purchase order operation.');
   }
+  if ((file !== undefined && (resource !== 'products' || !['/import/review', '/import/commit'].includes(path)))
+      || (download && (resource !== 'products' || !['/sample', '/export'].includes(path)))) {
+    throw new SessionError('Unsupported product transfer operation.');
+  }
   const uid = '[0-9a-f-]{36}';
   const methodRoutes = { PUT: new RegExp(`^/${uid}$`, 'i'), PATCH: new RegExp(`^/${uid}/status$`, 'i'), DELETE: new RegExp(`^/${uid}$`, 'i') };
   if (method !== undefined && (resource !== 'products' || !methodRoutes[method]?.test(path) || body === undefined)) {
     throw new SessionError('Unsupported purchase order operation.');
   }
-  const httpMethod = method || (body === undefined ? 'GET' : 'POST');
+  const writing = body !== undefined || file !== undefined;
+  const httpMethod = method || (writing ? 'POST' : 'GET');
   const epoch = generation;
   const owner = state.user?.id;
-  const mutation = body !== undefined && !path.endsWith('/preview');
+  const mutation = writing && !path.endsWith('/preview') && path !== '/import/review';
   const batchOperation = resource === 'purchase-received' && ['/batch-settings', '/batch-allocations'].includes(path);
   const check = () => {
     signal?.throwIfAborted();
@@ -944,6 +949,12 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   if (pending) await pending;
   else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true, 'admin');
   check();
+  const downloadKey = `products/${path}/${new URLSearchParams(params)}`;
+  const initiation = download ? (serverInitiations.get(downloadKey) || crypto.randomUUID()) : null;
+  if (download) serverInitiations.set(downloadKey, initiation);
+  const downloadGuard = download ? reportingIdentityGuard() : null;
+  const form = file === undefined ? null : new FormData();
+  if (form) form.append('file', file);
   const uncertain = () => {
     const error = new SessionError(batchOperation
       ? 'Batch settings or allocation could not be confirmed. Your draft is preserved. Retry the same allocation, or load saved settings before saving again.'
@@ -959,11 +970,12 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   try {
     response = await fetch(`/api/v1/admin/${resource}${path}${search.size ? `?${search}` : ''}`, {
       method: httpMethod, credentials: 'same-origin', cache: 'no-store',
-      headers: { Authorization: `Bearer ${token}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
+      headers: { Authorization: `Bearer ${token}`, ...(download ? { 'X-Download-Initiation': initiation } : {}),
+        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
+      ...(form ? { body: form } : body === undefined ? {} : { body: JSON.stringify(body) }),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(file ? 60000 : 20000)]) : AbortSignal.timeout(file ? 60000 : 20000),
     });
-    data = await response.json();
+    data = response.ok && download ? await response.blob() : await response.json();
   } catch (error) { if (signal?.aborted) throw error; throw uncertain(); }
   if (pending) await pending;
   try { check(); } catch (error) { error.ambiguous = mutation; throw error; }
@@ -1000,8 +1012,16 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
       || data.lines.length !== body.lineIds.length || new Set(data.lines.map((line) => line?.lineId)).size !== body.lineIds.length
       || data.lines.some((line) => !line || !body.lineIds.includes(line.lineId) || typeof line.batchNo !== 'string' || !line.batchNo.trim() || line.batchNo.length > 120)) throw uncertain();
   } else if (mutation && resource === 'products') {
-    if (method !== 'DELETE' && !data?.id) throw uncertain();
+    if (path === '/import/commit') {
+      if (data?.kind !== 'product_import' || data.id !== params.idempotency_key
+          || !Number.isSafeInteger(data.imported) || data.imported < 1 || data.imported > 500
+          || !Number.isSafeInteger(data.memberRows) || data.memberRows < data.imported * 2 || data.memberRows > 1000) throw uncertain();
+    } else if (method !== 'DELETE' && !data?.id) throw uncertain();
   } else if (mutation && (!data?.id || (resource !== 'inventory' && !data?.number) || !Array.isArray(data.lines))) throw uncertain();
+  if (download) {
+    if (!/^[0-9a-f-]{36}$/i.test(response.headers.get('X-Download-Log') || '')) throw new SessionError('Download logging could not be confirmed. No file was released. Retry.');
+    serverDownloads.set(data, downloadGuard); serverInitiations.delete(downloadKey);
+  }
   return data;
 }
 

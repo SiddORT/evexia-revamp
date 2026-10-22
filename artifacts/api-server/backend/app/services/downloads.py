@@ -10,6 +10,7 @@ from app.services.zone_policy import lock_policy
 from app.services.master_policy import MASTERS, master_allowed
 
 MODULES = {
+    "product": "Product Master",
     "opening_stock": "Opening Stock",
     "language": "Language Master",
     "zone": "Zone Master", "courier": "Courier Partner Master",
@@ -44,6 +45,7 @@ BROWSER = {
 SERVER = {s: {"export": {"CSV", "XLSX"}} for s in ("zone", "courier", "storage_location", "designation", "headquarter", "product_category")}
 SERVER["designation"]["template"] = {"CSV", "XLSX"}
 SERVER["language"] = {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}}
+SERVER["product"] = {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}}
 SERVER["opening_stock"] = {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}}
 SERVER["vendor"] = {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}}
 SERVER["sales_target"] = {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}}

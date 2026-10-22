@@ -23,6 +23,7 @@ const titleTransformer: InputTransformerFn = (config) => {
     "/v1/admin/sales-targets/import/review", "/v1/admin/sales-targets/import/commit",
     "/v1/admin/headquarters/import/review", "/v1/admin/headquarters/import/commit",
     "/v1/admin/product-categories/import/review", "/v1/admin/product-categories/import/commit",
+    "/v1/admin/products/import/review", "/v1/admin/products/import/commit",
     "/v1/admin/allergens/import/review", "/v1/admin/allergens/import/commit",
     "/v1/admin/opening-balances/import/review", "/v1/admin/opening-balances/import/commit",
     "/v1/admin/mrs/import/review", "/v1/admin/mrs/import/commit",
@@ -58,6 +59,8 @@ export default defineConfig({
           // fetcher's auto mode otherwise decodes CSV as text despite Blob types.
           exportLanguages: { requestOptions: { responseType: "blob" } },
           downloadLanguageSample: { requestOptions: { responseType: "blob" } },
+          exportStockProducts: { requestOptions: { responseType: "blob" } },
+          downloadStockProductSample: { requestOptions: { responseType: "blob" } },
         },
         fetch: {
           includeHttpResponseReturnType: false,

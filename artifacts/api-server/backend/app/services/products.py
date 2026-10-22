@@ -87,16 +87,20 @@ def recipe(db, members, old=None):
     return result
 
 
-def unique_name(db, crypto, name, exclude=None):
+def unique_name(db, crypto, name, exclude=None, catalogue=None):
     # The shared inventory lock serializes absent-name creation. Decrypting the
     # bounded catalogue also detects duplicates encrypted/indexed with old keys.
-    for row in inv.bounded(db, select(Product).where(Product.deleted_at.is_(None)).order_by(Product.id)):
-        if row.id != exclude and normalized(projection(db, crypto, row, False)["name"]) == normalized(name):
-            raise PRError("A live product already uses this name, including inactive products.", 409, "product_duplicate")
+    if catalogue is None:
+        for row in inv.bounded(db, select(Product).where(Product.deleted_at.is_(None)).order_by(Product.id)):
+            if row.id != exclude and normalized(projection(db, crypto, row, False)["name"]) == normalized(name):
+                raise PRError("A live product already uses this name, including inactive products.", 409, "product_duplicate")
+    elif normalized(name) in catalogue and catalogue[normalized(name)] != exclude:
+        raise PRError("A live product already uses this name, including inactive products.", 409, "product_duplicate")
     return crypto.digests(["product-name:v1", normalized(name)])[crypto.active]
 
 
-def mutate(db, actor, body, record_id=None, operation="create"):
+def mutate(db, actor, body, record_id=None, operation="create", *, transaction_context=None, name_catalogue=None):
+    """Shared writer; imports supply an already authorized, locked transaction."""
     def work(current, crypto):
         command = [operation, str(record_id) if record_id else None, body.model_dump(mode="json")]
         found, result, hashes = retry_result(db, current, crypto, body.idempotencyKey, command)
@@ -115,7 +119,12 @@ def mutate(db, actor, body, record_id=None, operation="create"):
             data = dict(before)
             row.version += 1
         if operation in ("create", "edit"):
-            row.name_key = unique_name(db, crypto, body.name, row.id)
+            # Import-only snapshot was decrypted under this same held inventory
+            # lock; update it with each successful create, never cache globally.
+            catalogue = name_catalogue if transaction_context is not None and operation == "create" else None
+            row.name_key = unique_name(db, crypto, body.name, row.id, catalogue)
+            if catalogue is not None:
+                catalogue[normalized(body.name)] = row.id
             data.update(name=body.name, mrp=body.mrp, sellingPrice=body.sellingPrice,
                         members=recipe(db, body.members, before))
         if operation == "delete":
@@ -143,6 +152,8 @@ def mutate(db, actor, body, record_id=None, operation="create"):
                 quantity=Decimal(member["quantity"])))
         save_retry(db, current, crypto, body.idempotencyKey, hashes, data)
         return data
+    if transaction_context is not None:
+        return work(*transaction_context)
     return inv.transaction(db, actor, work)
 
 

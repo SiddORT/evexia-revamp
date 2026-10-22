@@ -1,4 +1,5 @@
 import { getSession, productMasterRequest as request } from '../auth/adminSession.js';
+import { downloadServerBlob } from './downloads.js';
 
 const clean = (params) => Object.fromEntries(Object.entries(params || {}).filter(([, v]) => v !== '' && v != null));
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -17,6 +18,11 @@ export const previewAssembly = (body) => request('/assemblies/preview', { body }
 export const saveAssembly = (body) => request('/assemblies', { body });
 export const getAssembly = (id, signal) => request(`/assemblies/${id}`, { signal });
 export const reconcileProductRequest = (key) => request(`/requests/${key}`);
+export const reviewProducts = (file, signal) => request('/import/review', { file, params: { filename: file.name }, signal });
+export const importProducts = (file, digest, key) => request('/import/commit', { file, params: { filename: file.name, digest, confirm: true, idempotency_key: key } });
+export const exportProducts = (params, format, signal) => request('/export', { params: { ...params, format }, download: true, signal });
+export const sampleProducts = (format, signal) => request('/sample', { params: { format }, download: true, signal });
+export const downloadProductFile = (blob, format, sample = false) => downloadServerBlob(blob, `evexia-product-${sample ? 'template' : 'master'}.${format}`);
 
 export const newKey = () => globalThis.crypto.randomUUID();
 export const owner = () => String(getSession()?.user?.id || '');
@@ -66,7 +72,9 @@ export async function journaled(key, send) {
 export async function reconcileKey(key) {
   const r = await reconcileProductRequest(key);
   if (!r || !['committed', 'not_committed'].includes(r.state)
-      || (r.state === 'committed' && !r.result?.id)) {
+      || (r.state === 'committed' && (!r.result?.id || (r.result.kind === 'product_import'
+        && (!Number.isSafeInteger(r.result.imported) || r.result.imported < 1 || r.result.imported > 500
+          || !Number.isSafeInteger(r.result.memberRows) || r.result.memberRows < r.result.imported * 2 || r.result.memberRows > 1000))))) {
     throw new Error('The server did not confirm this save outcome. Keep the same identity and check again.');
   }
   await forgetProduct(key);

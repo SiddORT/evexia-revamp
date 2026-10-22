@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
-import { CirclePower, Eye, Layers, Pencil, Plus, Trash2 } from 'lucide-react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { ChevronDown, CirclePower, Download, Eye, Filter, Layers, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react';
+import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
+import { useAdminPreferences } from '../../components/admin/adminPreferences.js';
+import { reportingIdentityGuard } from '../../auth/adminSession.js';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ConfirmationDialog from '../../components/admin/ConfirmationDialog.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
@@ -8,14 +12,16 @@ import StatusBadge from '../../components/admin/StatusBadge.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import ProductDrawer from '../../components/admin/ProductDrawer.jsx';
 import ProductPendingBanner from '../../components/admin/ProductPendingBanner.jsx';
-import { deleteProduct, journaled, listProducts, newKey, setProductStatus } from '../../services/productMaster.js';
+import { deleteProduct, downloadProductFile, exportProducts, journaled, listProducts, newKey, setProductStatus } from '../../services/productMaster.js';
 import { formatPrice } from '../../services/serverInventory.js';
 import '../../mr.css';
 import '../../inventoryServer.css';
+import '../../allergen.css';
 
 const BASE = '/admin/masters/products';
 
 export default function ProductMaster() {
+  const { theme, appearance } = useAdminPreferences();
   const [, navigate] = useLocation();
   const queryString = useSearch();
   const [search, setSearch] = useState('');
@@ -33,6 +39,26 @@ export default function ProductMaster() {
   const [tick, setTick] = useState(0);
   const keyRef = useRef(null);
   const seq = useRef(0);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const exportBusy = useRef(false);
+  const alive = useRef(true);
+  const exportController = useRef(null);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; exportController.current?.abort(); }; }, []);
+  async function exportMatching(format) {
+    if (loading || error || exportBusy.current) return;
+    exportBusy.current = true; setExporting(true); setActionError('');
+    const guard = reportingIdentityGuard();
+    exportController.current = new AbortController();
+    try {
+      const blob = await exportProducts({ query: applied, status }, format, exportController.current.signal);
+      guard();
+      if (alive.current) downloadProductFile(blob, format);
+    } catch (cause) {
+      try { guard(); } catch { return; }
+      if (alive.current) setActionError(`Export failed. ${cause.message}`);
+    } finally { exportBusy.current = false; if (alive.current) setExporting(false); }
+  }
   useEffect(() => {
     const details = new URLSearchParams(queryString).get('details');
     if (/^[0-9a-f-]{36}$/i.test(details || '')) setViewing(details);
@@ -83,20 +109,34 @@ export default function ProductMaster() {
       <button type="button" className="admin-icon-button admin-icon-button--danger" aria-label={`Delete ${r.name}`} onClick={() => request(r, 'delete')} data-testid={`button-delete-product-${r.id}`}><Trash2 size={16} /></button>
     </div>; } },
   ];
-  const sum = data?.summary;
   const name = confirming?.type === 'delete' ? 'Delete' : confirming?.type === 'activate' ? 'Activate' : 'Inactivate';
   return <AdminLayout title="Product Master"><div>
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Products & Supply</p><h1>Product Master</h1><p className="admin-page-head__description">Named combos of existing allergens with their own MRP and selling price. Saving a combo never creates stock.</p></div>
       <div className="admin-mr-head-actions">
-        <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(`${BASE}/assemble`)} data-testid="button-assemble"><Layers size={16} /> Assemble combos</button>
+        <button type="button" className="admin-button admin-button--secondary" onClick={() => navigate('/admin/masters/import/product')} data-testid="button-import-products"><Upload size={16} aria-hidden="true" /> Import data</button>
+        <DropdownMenu.Root open={exportMenuOpen} onOpenChange={(open) => { if (!open || !exportBusy.current) setExportMenuOpen(open); }}>
+          <DropdownMenu.Trigger asChild><button type="button" className="admin-button admin-button--secondary" disabled={loading || Boolean(error) || search.trim() !== applied} aria-disabled={exporting || undefined}><Download size={16} aria-hidden="true" />{exporting ? 'Exporting…' : 'Export data'}</button></DropdownMenu.Trigger>
+          <DropdownMenu.Portal><DropdownMenu.Content className="admin-dropdown__menu admin-zone-export__menu" data-admin-theme={theme} data-admin-appearance={appearance} align="end" sideOffset={6} collisionPadding={12} aria-label="Product export format">
+            <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void exportMatching('csv')}>CSV</DropdownMenu.Item>
+            <DropdownMenu.Item className="admin-dropdown__item" disabled={exporting} onSelect={() => void exportMatching('xlsx')}>Excel (.xlsx)</DropdownMenu.Item>
+          </DropdownMenu.Content></DropdownMenu.Portal>
+        </DropdownMenu.Root>
         <button type="button" className="admin-button" onClick={() => navigate(`${BASE}/new`)} data-testid="button-add-product"><Plus size={16} /> Add product</button></div></div>
     <ProductPendingBanner onResolved={(r) => { keyRef.current = null; if (r.state === 'committed') setConfirming(null); load(); }} />
-    {sum && <div className="admin-feedback" role="status" data-testid="status-product-summary">{sum.products} matching product{sum.products === 1 ? '' : 's'}, {sum.assemblies} assembl{sum.assemblies === 1 ? 'y' : 'ies'}. Assembled: {sum.assembled.length ? sum.assembled.map((a) => `${a.productName} ${a.quantity} ${a.unit}`).join('; ') : 'none'}. Remaining: {sum.remaining.length ? sum.remaining.map((a) => `${a.productName} at ${a.locationName} ${a.quantity} ${a.unit}`).join('; ') : 'none'}. {sum.scope}</div>}
+    {actionError && !confirming && <div className="admin-feedback admin-feedback--error" role="alert">{actionError}</div>}
     <section className="admin-panel" aria-label="Product list">
-      <div className="admin-toolbar">
-        <div className="admin-filter"><label htmlFor="product-search">Search products</label><input id="product-search" type="search" className="admin-input" maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Combo name" data-testid="input-search-products" /></div>
-        <div className="admin-filter"><label htmlFor="product-status">Status</label><select id="product-status" className="admin-select" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} data-testid="select-product-status"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
-        <button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={load}>Refresh</button>
+      <div className="admin-allergen-toolbar">
+        <div className="admin-allergen-toolbar__top master-filter-toolbar">
+          <div className="admin-allergen-toolbar__search-group">
+            <button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={load}>Refresh records</button>
+            <div className="admin-filter admin-allergen-filters__search"><label className="admin-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search products by combo name</span><input id="product-search" type="search" maxLength={200} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search combo name" data-testid="input-search-products" /></label></div>
+          </div>
+          <MasterFilterReset disabled={!search && status === 'all'} onClick={() => { setSearch(''); setApplied(''); setStatus('all'); setPage(1); }} />
+        </div>
+        <details className="admin-allergen-filter-disclosure"><summary><Filter size={15} aria-hidden="true" /> Filter records{status !== 'all' && ' · 1 active'}<ChevronDown size={15} aria-hidden="true" /></summary>
+          <div className="admin-allergen-filters"><div className="admin-filter"><label htmlFor="product-status">Status</label><select id="product-status" className="admin-select" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} data-testid="select-product-status"><option value="all">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div></div>
+        </details>
+        <div><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(`${BASE}/assemble`)} data-testid="button-assemble"><Layers size={16} aria-hidden="true" /> Assemble combos</button></div>
       </div>
       {error ? <div className="admin-empty" role="alert"><strong>Products could not be loaded</strong><p>{error}</p><button type="button" className="admin-button" onClick={load}>Try again</button></div> : <>
         <DataTable columns={columns} rows={items} rowOffset={(page - 1) * pageSize} rowKey={(r) => r.id} label="Products" testIdPrefix="product" loading={loading}

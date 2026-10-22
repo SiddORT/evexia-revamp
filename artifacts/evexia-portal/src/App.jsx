@@ -46,6 +46,7 @@ const OpeningStockImportPage = lazyRoute(() => import('./pages/admin/OpeningStoc
 const PatientImportPage = lazyRoute(() => import('./pages/admin/PatientImportPage.jsx'));
 const AllergenMaster = lazyRoute(() => import('./pages/admin/AllergenMaster.jsx'));
 const ProductMaster = lazyRoute(() => import('./pages/admin/ProductMaster.jsx'));
+const ProductImportPage = lazyRoute(() => import('./pages/admin/ProductImportPage.jsx'));
 const ProductFormPage = lazyRoute(() => import('./pages/admin/ProductFormPage.jsx'));
 const ProductAssemblyPage = lazyRoute(() => import('./pages/admin/ProductAssemblyPage.jsx'));
 const AllergenFormPage = lazyRoute(() => import('./pages/admin/AllergenFormPage.jsx'));
@@ -114,6 +115,7 @@ function App() {
         </Route>
       ))}
       <Route path="/admin/masters" component={Masters} />
+      <Route path="/admin/masters/import/product" component={ProductImportPage} />
       <Route path="/admin/masters/import/:kind">{(params) => <MasterExcelImportPage key={params.kind} kind={params.kind} />}</Route>
       <Route path="/admin/languages" component={LanguageMaster} />
       <Route path="/admin/masters/zones" component={ZoneMaster} />

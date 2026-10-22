@@ -39,3 +39,6 @@ export * from "./generated/types/languageImportResult";
 export * from "./generated/types/languageReview";
 export * from "./generated/types/languageReviewRow";
 export * from "./generated/types/languageReviewValues";
+export * from "./generated/types/productImportResult";
+export * from "./generated/types/productImportReview";
+export * from "./generated/types/productImportRow";

@@ -58,6 +58,8 @@ import type {
   CommitProductCategoryImportParams,
   CommitSalesTargetImportBody,
   CommitSalesTargetImportParams,
+  CommitStockProductImportBody,
+  CommitStockProductImportParams,
   CommitVendorImportBody,
   CommitVendorImportParams,
   CommitZoneImportParams,
@@ -114,6 +116,7 @@ import type {
   DownloadPatientSampleParams,
   DownloadProductCategorySampleParams,
   DownloadSalesTargetSampleParams,
+  DownloadStockProductSampleParams,
   DownloadURLResponse,
   DownloadVendorSampleParams,
   EmailLogFilters,
@@ -143,6 +146,7 @@ import type {
   ExportReportingEventsParams,
   ExportReportingSessionsParams,
   ExportSalesTargetsParams,
+  ExportStockProductsParams,
   ExportStorageLocationsParams,
   ExportVendorsParams,
   ExportZonesParams,
@@ -333,6 +337,8 @@ import type {
   ProductDelete,
   ProductEdit,
   ProductHistoryPage,
+  ProductImportResult,
+  ProductImportReview,
   ProductPage,
   ProductReconciliation,
   ProductReferencePage,
@@ -375,6 +381,8 @@ import type {
   ReviewProductCategoryImportParams,
   ReviewSalesTargetImportBody,
   ReviewSalesTargetImportParams,
+  ReviewStockProductImportBody,
+  ReviewStockProductImportParams,
   ReviewVendorImportBody,
   ReviewVendorImportParams,
   ReviewZoneImportParams,
@@ -17634,6 +17642,338 @@ export function useGetProductAssembly<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
+export const getExportStockProductsUrl = (
+  params?: ExportStockProductsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/products/export?${stringifiedParams}`
+    : `/api/v1/admin/products/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportStockProducts = async (
+  params?: ExportStockProductsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getExportStockProductsUrl(params), {
+    responseType: "blob",
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportStockProductsQueryKey = (
+  params?: ExportStockProductsParams,
+) => {
+  return [
+    `/api/v1/admin/products/export`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getExportStockProductsQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportStockProducts>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportStockProductsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportStockProducts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getExportStockProductsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exportStockProducts>>
+  > = ({ signal }) =>
+    exportStockProducts(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportStockProducts>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportStockProductsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportStockProducts>>
+>;
+export type ExportStockProductsQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportStockProducts<
+  TData = Awaited<ReturnType<typeof exportStockProducts>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportStockProductsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportStockProducts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportStockProductsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCommitStockProductImportUrl = (
+  params: CommitStockProductImportParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/products/import/commit?${stringifiedParams}`
+    : `/api/v1/admin/products/import/commit`;
+};
+
+/**
+ * @summary Commit Import
+ */
+export const commitStockProductImport = async (
+  commitStockProductImportBody: CommitStockProductImportBody,
+  params: CommitStockProductImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ProductImportResult> => {
+  const formData = new FormData();
+  formData.append(`file`, commitStockProductImportBody.file);
+
+  return customFetch<ProductImportResult>(
+    getCommitStockProductImportUrl(params),
+    {
+      ...options,
+      method: "POST",
+      body: formData,
+    },
+  );
+};
+
+export const getCommitStockProductImportMutationKey = () =>
+  ["commitStockProductImport"] as const;
+
+export const getCommitStockProductImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitStockProductImport>>,
+    TError,
+    CommitStockProductImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof commitStockProductImport>>,
+  TError,
+  CommitStockProductImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCommitStockProductImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof commitStockProductImport>>,
+    CommitStockProductImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return commitStockProductImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CommitStockProductImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof commitStockProductImport>>
+>;
+export type CommitStockProductImportMutationBody =
+  BodyType<CommitStockProductImportBody>;
+export type CommitStockProductImportMutationError = ErrorType<ErrorEnvelope>;
+export type CommitStockProductImportMutationVariables = {
+  data: BodyType<CommitStockProductImportBody>;
+  params: CommitStockProductImportParams;
+};
+
+/**
+ * @summary Commit Import
+ */
+export const useCommitStockProductImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitStockProductImport>>,
+    TError,
+    CommitStockProductImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof commitStockProductImport>>,
+  TError,
+  CommitStockProductImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getCommitStockProductImportMutationOptions(options));
+};
+
+export const getReviewStockProductImportUrl = (
+  params: ReviewStockProductImportParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/products/import/review?${stringifiedParams}`
+    : `/api/v1/admin/products/import/review`;
+};
+
+/**
+ * @summary Review Import
+ */
+export const reviewStockProductImport = async (
+  reviewStockProductImportBody: ReviewStockProductImportBody,
+  params: ReviewStockProductImportParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ProductImportReview> => {
+  const formData = new FormData();
+  formData.append(`file`, reviewStockProductImportBody.file);
+
+  return customFetch<ProductImportReview>(
+    getReviewStockProductImportUrl(params),
+    {
+      ...options,
+      method: "POST",
+      body: formData,
+    },
+  );
+};
+
+export const getReviewStockProductImportMutationKey = () =>
+  ["reviewStockProductImport"] as const;
+
+export const getReviewStockProductImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewStockProductImport>>,
+    TError,
+    ReviewStockProductImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewStockProductImport>>,
+  TError,
+  ReviewStockProductImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReviewStockProductImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewStockProductImport>>,
+    ReviewStockProductImportMutationVariables
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return reviewStockProductImport(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewStockProductImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewStockProductImport>>
+>;
+export type ReviewStockProductImportMutationBody =
+  BodyType<ReviewStockProductImportBody>;
+export type ReviewStockProductImportMutationError = ErrorType<ErrorEnvelope>;
+export type ReviewStockProductImportMutationVariables = {
+  data: BodyType<ReviewStockProductImportBody>;
+  params: ReviewStockProductImportParams;
+};
+
+/**
+ * @summary Review Import
+ */
+export const useReviewStockProductImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewStockProductImport>>,
+    TError,
+    ReviewStockProductImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewStockProductImport>>,
+  TError,
+  ReviewStockProductImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getReviewStockProductImportMutationOptions(options));
+};
+
 export const getGetStockProductReferencesUrl = (
   params?: GetStockProductReferencesParams,
 ) => {
@@ -17828,6 +18168,113 @@ export function useReconcileStockProductRequest<
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getReconcileStockProductRequestQueryOptions(
     key,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getDownloadStockProductSampleUrl = (
+  params?: DownloadStockProductSampleParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/products/sample?${stringifiedParams}`
+    : `/api/v1/admin/products/sample`;
+};
+
+/**
+ * @summary Sample
+ */
+export const downloadStockProductSample = async (
+  params?: DownloadStockProductSampleParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<unknown | Blob> => {
+  return customFetch<unknown | Blob>(getDownloadStockProductSampleUrl(params), {
+    responseType: "blob",
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getDownloadStockProductSampleQueryKey = (
+  params?: DownloadStockProductSampleParams,
+) => {
+  return [
+    `/api/v1/admin/products/sample`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getDownloadStockProductSampleQueryOptions = <
+  TData = Awaited<ReturnType<typeof downloadStockProductSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadStockProductSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadStockProductSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getDownloadStockProductSampleQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof downloadStockProductSample>>
+  > = ({ signal }) =>
+    downloadStockProductSample(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof downloadStockProductSample>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type DownloadStockProductSampleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof downloadStockProductSample>>
+>;
+export type DownloadStockProductSampleQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Sample
+ */
+
+export function useDownloadStockProductSample<
+  TData = Awaited<ReturnType<typeof downloadStockProductSample>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: DownloadStockProductSampleParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadStockProductSample>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getDownloadStockProductSampleQueryOptions(
+    params,
     options,
   );
 
