@@ -39,6 +39,43 @@ def account(db, email="Case.Person@example.test", username="case.person", passwo
     return user
 
 
+def test_staff_business_role_successor_preserves_account_boundary(db):
+    db.execute(sa.text("UPDATE alembic_version SET version_num='0056_staff_business_roles'"))
+    assert encrypted.ready(db).configuration() == encrypted.crypto().configuration()
+    # Review of this exact successor never admits arbitrary future revisions.
+    db.execute(sa.text("UPDATE alembic_version SET version_num='0057_unreviewed'"))
+    with pytest.raises(encrypted.AccountCryptoError):
+        encrypted.ready(db)
+
+
+def test_staff_successor_retains_full_feature_readiness(db, monkeypatch):
+    from fastapi import HTTPException
+    from app.api.v1.system import readiness
+    from app.services import email_templates
+    from app.core.schema import SCHEMA_REVISION
+
+    assert db.scalars(sa.text("SELECT version_num FROM alembic_version")).all() == [SCHEMA_REVISION]
+    assert db.scalar(sa.text(
+        "SELECT character_maximum_length FROM information_schema.columns "
+        "WHERE table_schema='public' AND table_name='staff_profiles' AND column_name='role'"
+    )) == 100
+    readiness(db)
+    original = email_templates.resolve_event
+    checked = []
+
+    def unavailable_mr_template(session, event):
+        checked.append(event)
+        if event == "mr_invitation":
+            raise RuntimeError("Synthetic unavailable MR invitation template")
+        return original(session, event)
+
+    monkeypatch.setattr(email_templates, "resolve_event", unavailable_mr_template)
+    with pytest.raises(HTTPException) as error:
+        readiness(db)
+    assert error.value.status_code == 503
+    assert checked == ["password_recovery", "account_invitation", "mr_invitation"]
+
+
 def test_randomized_authenticated_ciphertext():
     current = encrypted.crypto()
     owner = uuid.uuid4()

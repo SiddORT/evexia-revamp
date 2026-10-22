@@ -129,6 +129,9 @@ def ready(db):
         ["0054_modern_email_tests"],
         # Nullable Staff manager references/snapshots leave account anchors intact.
         ["0055_mr_staff_managers"],
+        # Reviewed Staff business-label widening changes no account identifiers,
+        # lookup keys, reservations, login roles or encryption anchors.
+        ["0056_staff_business_roles"],
     ):
         raise AccountCryptoError()
     current = crypto()

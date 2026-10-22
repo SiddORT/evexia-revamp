@@ -16,6 +16,17 @@ consistent. Directory encryption keys are reused with account-specific domains,
 but directory-only key rotation does not rekey accounts/history: retain their
 old decryption keys until separately reviewed account rekeying is implemented.
 
+Do not treat a generic account-encryption failure as evidence that secret keys
+need replacement. Distinguish schema compatibility, logging, and configuration
+failures before proposing any key change.
+
+**Why:** Valid keys can be rejected by an unreviewed-schema guard. Replacing
+them would turn a compatibility problem into loss of access to encrypted data.
+
+**How to apply:** Verify the target and revision read-only, and compare key
+configuration anchors without displaying their values. Keep unknown revisions
+fail-closed and preserve inherited feature checks when reviewing a successor.
+
 ORM bulk inserts can silently ignore unmapped Python identifier properties.
 
 **Why:** Ignored plaintext parameters can create an account missing its intended
