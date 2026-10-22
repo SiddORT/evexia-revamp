@@ -78,9 +78,9 @@ configurations. No provider calls, real emails, order mutations or new delivery
 activation were performed. No full release gate or authenticated browser
 interaction suite was run for this operation.
 
-For managed development preview, missing or invalid Communication keys or the
-required schema block the coordinated release gate. That gate does not activate
-this storage or grant migration approval. See
+Development compatibility diagnostics are manual-only; they do not run on preview
+access or normal API startup. Mandatory security configuration and operation-level
+integrity remain enforced. See
 [development release compatibility](development-release-gate.md).
 
 Settings → Communication is restricted to the protected system Super Admin.
@@ -90,16 +90,16 @@ credentials, or activate delivery. Default means selected configuration only.
 The existing environment-configured password-recovery SMTP transport is unchanged;
 neither that sender nor any other sender reads these tables.
 
-## Operator-controlled activation
+## Current migration and key-provisioning policy
 
-This change supplies migration `0039_communication` after `0038_purchase_orders`.
-It is classified `operator_only`. Do not run it on a managed/shared database
-without separate approval, a database backup and a coordinated API/frontend rollout.
-There is no startup migration or automatic key provisioning. The coordinated
-schema head/readiness moves to this revision; older schemas are not ready for
-this application release. Readiness additionally requires valid Communication
-keys and the new storage projections. Missing keys must not be bypassed to
-make readiness green.
+The historical activation above describes the policy at that time. The current
+standing policy in `replit.md` and [migration automation](migration-automation.md)
+makes migrations automatic in development and VPS startup, retaining target,
+locking and historical integrity guards. Migration `0039_communication` is the
+historical introduction, not the current schema head. Automatic migration does
+not provision, replace or recover encryption keys, authorize destructive data
+repair, or grant permission to access production. Missing keys must not be
+bypassed to make readiness green.
 
 Provision `COMMUNICATION_ENCRYPTION_KEYS` and
 `COMMUNICATION_ENCRYPTION_KEY_ID` through workspace **Secrets**, separately for
@@ -140,6 +140,154 @@ these records. Validate database-and-key recovery in a separately approved
 isolated environment before depending on it operationally. Retiring a key,
 rotating keys, deleting backups or changing retention requires separate work
 and approval; this feature supplies no rotation/import/export tools.
+
+### Development recovery investigation — 22 October 2026
+
+**Final status: development access restored by explicitly approved reset, not
+decryption recovery.** See the final verification below. Initially, a bounded read-only transaction
+against the selected development database confirmed revision
+`0053_email_invitations`, all three structural channels and one saved configuration.
+The current shell keyring passes `CommunicationCrypto` validation. Both ciphertext
+envelopes have valid version/encoding/minimum length, and both stored key IDs
+are present and select the active key. Both fail AES-GCM authentication with the
+current record UUID/channel/type/purpose binding. No configuration values,
+credentials, key material, connection strings or ciphertext were recorded.
+
+This rules out absent tables, malformed envelopes and a missing key ID for this
+observation. It does **not** distinguish changed key bytes from changed binding
+metadata or damaged ciphertext. The available Git history shows no change to the
+Communication encryption/binding implementation since its introduction; that
+does not prove the stored metadata or keys never changed. Keyring validation and
+readiness alone do not prove existing ciphertext is decryptable.
+
+All managed workflows were stopped in the task workspace at investigation time;
+no API process was available to compare effective loaded settings or reproduce
+an authenticated live request. The shell observation is not evidence of the
+original running portal's configuration. No services, migrations, save/reload,
+provider checks or delivery were run. No stored records or secrets were changed.
+Invitation/recovery SMTP selection and write-only credential behavior are unchanged.
+
+The separately held original keyring and active ID confirmed in the historical
+activation are the next recovery source. The listed private archive predates
+Communication storage and is not a backup of the subsequently saved configuration;
+its reports contain no encryption keys. Do not search source, chat or logs for keys
+or treat a database archive as key custody.
+
+The custodian subsequently confirmed an original recovery copy was available and
+supplied a separate `COMMUNICATION_RECOVERY_CANDIDATE_KEYS` secret, leaving the
+active keyring unchanged. Its JSON structure, key IDs and base64 encoding passed
+bounded checks, but at least one decoded key was not 32 bytes. The candidate
+therefore failed `CommunicationCrypto` validation and was not used at that stage
+to decrypt or repair records.
+
+The custodian then identified `openssl rand -hex 32` as the generation command.
+A read-only diagnostic confirmed every candidate value was a 64-character hex
+representation. Converting those values to base64 **in memory only** produced a
+valid independent keyring, different from the current keyring, but neither saved
+field authenticated with it under the current binding. Thus encoding explains
+the candidate's validation failure, but correcting that encoding does not recover
+the record. No secret was rewritten. The custodian subsequently confirmed the
+command was run again to create this candidate: it is newly generated material,
+not a recovered historical key. Its failed authentication is therefore not
+evidence about the original key or ciphertext integrity. Recovery remains blocked
+pending the actual original material; changed binding or damaged ciphertext also
+remain unresolved. Re-running a random generation command cannot reproduce an
+earlier key. Do not install this candidate as a recovery fix.
+
+The user initially chose to leave the configuration unchanged. That pause did not
+authorize a reset. The subsequent explicit reset authorization and its execution
+are recorded below; it does not grant permission for future resets.
+
+On resumption after secret entry, managed services and several release-check
+workflows were observed running without being launched by this investigation.
+The running release checks were stopped; their incidental startup is not focused
+Communication verification and no passing-suite claim is made. The earlier
+stopped-runtime observation remains time-specific, not a current runtime finding.
+
+Recover through workspace Secrets, never chat: first compare the original
+operator-held keyring against a read-only copy of the affected ciphertext and
+its exact binding metadata. Do not overwrite an existing key ID with newly
+generated material. If original material authenticates the records, reconcile
+the runtime keyring with the custodian while preserving every historical version
+needed by other live records and backups. Settings are process-cached; a confirmed
+secret correction requires restarting the actual managed API. Check its effective
+configuration and selected development target, then verify an authenticated
+Communication load and a controlled same-values edit/reload with the credential
+omitted. Assert credential retention privately and write-only API responses;
+do not print decrypted fields or send messages. If original material still fails,
+compare trusted historical ciphertext and binding metadata before proposing any
+repair. If original material is unavailable, retain the failure and records:
+reset/re-entry requires separate explicit authorization and preservation planning.
+
+### Explicitly approved development reset and verification — 22 October 2026
+
+The user subsequently stated the old data was unused and explicitly requested
+deleting it and confirming development with the new keys. After explaining that
+the old saved fields and credential would be permanently discarded, the operation:
+
+- Confirmed the selected database matched the configured development fingerprint,
+  remained at `0053_email_invitations`, contained exactly one unreadable
+  configuration, and retained the three expected channel rows.
+- Confirmed the actual managed API's inherited Communication keyring and database
+  matched the shell configuration. The active keyring passed validation. It was
+  used unchanged; the separately supplied hex recovery candidate was **not**
+  installed, converted into a saved secret, or used as an active key.
+- Deleted only the one unreadable configuration in a transaction, locking the
+  three channel rows and affected record, advancing the affected channel's version,
+  and retaining a metadata-only `communication_delete` audit with
+  `operator_approved_reset`. The maintenance audit has no fabricated application
+  actor/session. No tables, historical audits, other configuration domains or
+  invitation/recovery SMTP settings were deleted or changed.
+- Added only the independently observed current development preview origin to the
+  development sign-in allowlist, retaining prior origins and restarting the managed
+  API once. Startup required no new schema migration.
+
+An initial login using the configured bootstrap email returned **401**. A private
+read-only comparison established that the saved protected administrator's current
+email differs from that bootstrap value, while the configured initial password
+still matches. Verification used the saved identifier internally with the normal
+login API; neither account data nor credentials were changed or printed, and
+authentication was not bypassed.
+
+Actual HTTPS development-preview requests then verified:
+
+- Health/readiness: **200**; protected Super Admin login/current identity: **200**.
+- Communication empty list: **200**.
+- Temporary synthetic SMTP configuration create: **201**; list reload and detail:
+  **200**, with the expected saved values and write-only credential indicator.
+- Same-values edit omitting the credential, followed by list reload: **200**.
+  A private read-only check verified both ciphertext fields use the active key,
+  decrypt correctly, and the omitted credential was retained. No decrypted values,
+  credentials or key material appear in the recorded results.
+- Temporary record deletion: **200**; final list: **200**; final database counts:
+  **zero configurations, three channels**. No synthetic provider configuration
+  remains. Verification logout: **204**.
+
+The public login screen also rendered; this screenshot is not claimed as an
+authenticated Communication UI test. The managed HTTPS API roundtrip is the
+save/reload evidence. No provider connections, messages, transport activation,
+production access, deployment, Git push, key rotation or broad diagnostic suite
+was intentionally run. Earlier incidental release-check startup is disclosed
+above and is not part of this acceptance evidence.
+
+The task-completion gate subsequently invoked the project's configured broad
+release commands and rejected completion. Failures included
+`python3 -B scripts/local-release-checks.py run services`, `api-password-recovery`,
+`api-role-urls`, `api-shared-phone` and multiple directory suites. Observed
+failures include historical fixtures missing current `users.password_setup_required`
+or Headquarter zone columns, outdated MR constructor fields, and current catalogue
+validation rejecting older fixtures. These results are not a passing release
+certification and were not bypassed. Fixing unrelated suites or changing the
+configured completion checks requires a separate scope decision; it does not
+invalidate the successful focused live Communication roundtrip recorded above.
+
+Original ciphertext recovery remains unproven and was superseded by the
+user-approved deletion. The evidence does not establish whether original key
+replacement, binding changes or ciphertext corruption caused the old record's
+authentication failures. There is no demonstrated application encryption defect,
+so encryption validation and application behavior were not weakened or patched.
+Keep the valid active keyring in independent private custody before saving real
+replacement configurations.
 
 List/detail responses decrypt non-secret configuration fields only for authorized
 reads. Credentials are write-only: only `credentialPresent` is exposed. An omitted

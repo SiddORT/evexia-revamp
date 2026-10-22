@@ -21,3 +21,15 @@ work.
 **How to apply:** Keep those permissions separate when extending templates or
 planning activation; do not broaden an additive template rollout to pending
 unrelated migrations.
+
+For Communication recovery, confirm candidate provenance before treating a
+supplied key as historical recovery evidence. Re-running a random-key generation
+command produces new material, even if the same key ID is used.
+
+**Why:** A supplied recovery candidate was later confirmed to have been newly
+generated. Correcting its hex/base64 representation made it valid but could not
+make it the original key; its authentication failure did not diagnose corruption.
+
+**How to apply:** Keep candidates separate from active keys, never print material,
+and verify the original custody source before repair. Encoding correction is not
+key recovery, and a failed new candidate does not justify deleting saved records.
