@@ -246,8 +246,8 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
 
           <section className="mr-form__section" id="mr-panel-identity" role="tabpanel" aria-labelledby="mr-tab-identity" tabIndex={0} hidden={activeTab !== 'identity'}>
             <div className="mr-form__section-head"><h3 id="mr-identity-title" className="mr-form__section-title">Identity & contact</h3><p className="mr-form__section-note">Fields marked * are required</p></div>
-            <div className="mr-form__grid">
-               <p id="mr-contact-help" className="mr-form__hint">Enter either a phone number or an email address. Both are allowed.</p>
+            <p id="mr-contact-help" className="mr-form__hint mr-form__contact-intro">Enter either a phone number or an email address. Both are allowed.</p>
+            <div className={`mr-form__grid${mr ? '' : ' mr-form__grid--identity-create'}`}>
                {renderField('name', 'MR Name', { placeholder: 'MR Name', autoComplete: 'name' })}
                 {renderField('phone', 'Phone No.', { placeholder: 'National phone number', autoComplete: 'tel', inputMode: 'tel', info: 'Select the phone country and enter its national number. The country selection is saved with this MR.' })}
                {mr && renderField('userId', 'User ID', { placeholder: 'User ID', info: 'User ID is the MR login name. Changing it signs that MR out of existing sessions.' })}

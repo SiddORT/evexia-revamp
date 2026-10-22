@@ -264,8 +264,8 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
       </div>}
       <section className="doctor-form__section" id="doctor-panel-identity" role="tabpanel" aria-labelledby="doctor-tab-identity" tabIndex={0} hidden={activeTab !== 'identity'}>
         <div className="doctor-form__section-head"><h3 className="doctor-form__section-title">Identity & contact</h3><p className="doctor-form__section-note">Fields marked * are required</p></div>
+        <p id="doctor-contact-help" className="doctor-form__hint doctor-form__contact-intro">Enter either a phone number or an email address. Both are allowed. Alternate phone is separate.</p>
         <div className="doctor-form__grid">
-          <p id="doctor-contact-help" className="doctor-form__hint">Enter either a phone number or an email address. Both are allowed. Alternate phone is separate.</p>
           {renderField('name', 'Doctor Name', { placeholder: 'Doctor name', autoComplete: 'name' })}
           {renderField('phone', 'Phone No.', { placeholder: 'Phone number' })}
           {renderField('alternatePhone', 'Alternate Phone No.', { placeholder: 'Alternate phone number' })}

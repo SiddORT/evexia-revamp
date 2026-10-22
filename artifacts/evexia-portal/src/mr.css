@@ -44,6 +44,7 @@
 }
 .mr-form__section-note { margin: 0; color: var(--admin-muted); font-size: 11px; }
 .mr-form__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px 16px; align-items: start; }
+.mr-form__grid--identity-create { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .mr-form__field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .mr-form__field > .mr-form__label,
 .mr-form__field > .admin-info > .admin-info__row { min-height: 28px; }
@@ -100,6 +101,7 @@
 }
 .mr-form__hint, .mr-form__error { margin: 0; font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
 .mr-form__hint { color: var(--admin-muted); }
+.mr-form__contact-intro { margin-bottom: 18px; }
 .mr-form__error { color: var(--admin-danger); }
 .mr-form__notice {
   margin: 0 0 17px;
@@ -250,9 +252,11 @@
 .admin-mr-toolbar__refresh { align-self: end; min-height: 42px; white-space: nowrap; }
 .admin-mr-toolbar .admin-search { display: block; max-width: none; }
 .admin-mr-toolbar .admin-search input { height: 42px; }
-.mr-form__password-note { padding: 12px 14px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-table-head); }
+.mr-form__password-note { box-sizing: border-box; padding: 12px 14px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-table-head); }
 .mr-form__password-note .mr-form__label { min-height: 0; flex-wrap: wrap; }
 .mr-form__password-note p { line-height: 1.6; }
+.mr-form__credential-grid .mr-form__input-row > .mr-form__control { flex-basis: 12em; }
+.mr-form__password-note .mr-form__credential-action { overflow-wrap: anywhere; }
 .mr-form__credential-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 16px; }
 .mr-form__credential-action:not(:disabled) { cursor: pointer; }
 .mr-form__credential-action:disabled { opacity: .6; }

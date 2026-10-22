@@ -35,9 +35,16 @@
 .doctor-form__input-row { display: flex; align-items: stretch; gap: 8px; min-width: 0; }
 .doctor-form__input-row > .doctor-form__control:not(.doctor-form__dial-code) { flex: 1 1 0; min-width: 0; }
 .doctor-form__dial-code { flex: 0 0 104px; padding-inline: 7px; }
+.doctor-form #doctor-panel-identity .admin-phone-input { flex-wrap: wrap; }
+.doctor-form #doctor-panel-identity .admin-phone-input > .admin-phone-input__country { flex: 1 1 7em; width: auto; }
+.doctor-form #doctor-panel-identity .admin-phone-input > input { flex: 2 1 8em; }
 .doctor-form__preview-action { box-sizing: border-box; flex: 0 0 auto; height: 42px; padding: 0 9px; border: 1px dashed var(--admin-border); border-radius: 8px; background: var(--admin-canvas); color: var(--admin-text-soft); font: inherit; font-size: 11px; font-weight: 700; cursor: not-allowed; }
+.doctor-form__password-row .doctor-form__input-row { flex-wrap: wrap; }
+.doctor-form__password-row .doctor-form__input-row > .doctor-form__control { flex-basis: 12em; }
+.doctor-form__password-row .doctor-form__preview-action { max-width: 100%; height: auto; min-height: 42px; overflow-wrap: anywhere; }
 .doctor-form__hint, .doctor-form__error { margin: 0; font-size: 11px; line-height: 1.4; }
 .doctor-form__hint { color: var(--admin-muted); }
+.doctor-form__contact-intro { margin-bottom: 18px; overflow-wrap: anywhere; }
 .doctor-form__field--assignment .doctor-form__hint { overflow-wrap: anywhere; }
 .doctor-form__error { color: var(--admin-danger); }
 .doctor-form__notice { margin: 0 0 16px; padding: 10px 12px; border-left: 3px solid var(--admin-warning); background: var(--admin-state-warm); color: var(--admin-text); font-size: 12px; line-height: 1.5; }
