@@ -207,7 +207,6 @@ export default function MoveStockFormPage() {
   return <AdminLayout title="Move stock"><div className="move-stocks-page">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Inventory / Move stocks / New</p><h1>Move stock</h1><p className="admin-page-head__description">Choose a source, a destination and receipt lots to transfer. Allergen quantities allow up to 3 decimals; assembled combos move only in whole numbers.</p></div>
       <div className="ms-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => navigate(BASE)} data-testid="button-back-move"><ArrowLeft size={16} /> All movements</button></div></div>
-    <div className="admin-feedback ms-note" role="note" data-testid="text-move-guidance">Saved movements are append-only and cannot be edited or deleted. You review the exact result before it is committed.</div>
     {message && <div className="admin-feedback admin-feedback--error" role="alert">{message}</div>}
     {initializationBlocked && <div className="admin-feedback admin-feedback--error inv-banner" role="alert">
       <div><strong>Receipt initialization review required</strong><p>{INVENTORY_INITIALIZATION_GUIDANCE}</p><p>Review and saving are blocked. After the operator confirms complete initialization, check the status here to reload balances.</p></div>
