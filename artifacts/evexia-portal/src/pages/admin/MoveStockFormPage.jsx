@@ -5,7 +5,7 @@ import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ReferenceSelect from '../../components/admin/ReferenceSelect.jsx';
 import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
-import { forgetMove, INVENTORY_INITIALIZATION_GUIDANCE, listReference, milli, newKey, pendingMove, previewMovement, reconcileMovement, rememberMove, saveMovement, sumMilli, validateLines } from '../../services/serverInventory.js';
+import { forgetMove, INVENTORY_INITIALIZATION_GUIDANCE, listReference, newKey, pendingMove, previewMovement, reconcileMovement, rememberMove, saveMovement, validateLines } from '../../services/serverInventory.js';
 import '../../mr.css';
 import '../../moveStocks.css';
 import '../../inventoryServer.css';
@@ -101,11 +101,6 @@ export default function MoveStockFormPage() {
   const unavailable = fresh ? pickedList.filter((p) => !listed.has(p.lot.id)) : [];
   // Current balances win when the lot is still listed; otherwise the retained metadata is validated as unavailable.
   const selectedLines = pickedList.map((p) => ({ lot: listed.get(p.lot.id) || p.lot, quantity: p.quantity }));
-  const totals = {};
-  selectedLines.forEach(({ lot, quantity }) => {
-    const k = `${lot.productId}|${lot.unit}`;
-    (totals[k] ||= { name: lot.productName, productId: lot.productId, unit: lot.unit, vals: [] }).vals.push(quantity);
-  });
   const clear = (k) => setErrors((e) => ({ ...e, [k]: undefined }));
   const locked = Boolean(busy) || Boolean(review) || Boolean(uncertainKey);
 
@@ -251,8 +246,6 @@ export default function MoveStockFormPage() {
               </tr>; })}</tbody></table></div>}
             {errors.lines && <p id="ms-lines-error" className="mr-form__error" role="alert">{errors.lines}</p>}
           </fieldset>
-          {selectedLines.length > 0 && <div><h2 className="ms-section-title">Summary: {selectedLines.length} {selectedLines.length === 1 ? 'lot' : 'lots'}</h2>
-            <ul className="ms-totals" data-testid="text-move-totals">{Object.entries(totals).map(([k, t]) => <li key={k}>{t.name} <span className="stock-sub">{t.productId}</span>: {t.vals.every((v) => milli(v) !== null) ? sumMilli(t.vals) : 'enter quantities'} {t.unit}</li>)}</ul></div>}
         </div>
         </fieldset>
         {review && <div className="ms-form-body" data-testid="panel-move-review"><h2 className="ms-section-title">Review before saving</h2>
