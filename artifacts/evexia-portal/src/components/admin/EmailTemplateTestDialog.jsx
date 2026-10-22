@@ -50,19 +50,41 @@ export default function EmailTemplateTestDialog({ template, onClose, onBusyChang
   return <dialog ref={dialog} tabIndex={-1} className="mt-test-dialog" aria-labelledby={`${id}-title`} aria-describedby={`${id}-help`}
     onKeyDown={trap} onCancel={(e) => { e.preventDefault(); close(); }}>
     <div className="mt">
-      <h2 id={`${id}-title`}>Send test email</h2>
-      <p id={`${id}-help`}>Send <strong>{template.name}</strong>, saved version <strong>{template.version}</strong>, to one To address using the default Email SMTP configuration saved in Settings → Communication, including its saved credential and sender. No unsaved draft is included.</p>
-      <p>The Email default must be SMTP with STARTTLS or TLS. API, Platform, security set to none, or unavailable settings prevent sending; there is no environment fallback. Password recovery and invitations still use the separately environment-configured SMTP transport.</p>
-      <p>Server-controlled fictional samples are used. The subject is labelled TEST and action links cannot activate or recover accounts. SMTP acceptance does not confirm inbox delivery.</p>
+      <header className="mt-test-dialog__header">
+        <h2 id={`${id}-title`}>Send test email</h2>
+        <p className="mt-test-dialog__summary"><strong>{template.name}</strong><span>Saved version {template.version}</span></p>
+        <p id={`${id}-help`}>Send this saved version to one recipient. No unsaved draft is included.</p>
+      </header>
       <form onSubmit={submit}>
         <label className="mt-field" htmlFor={`${id}-to`}><span>To email address</span>
           <input ref={input} id={`${id}-to`} type="email" required maxLength={320} autoComplete="off" value={recipient}
             disabled={busy || blocked} onChange={(e) => { setRecipient(e.target.value); setError(''); }}
-            aria-invalid={!!error} aria-describedby={error ? `${id}-error` : `${id}-help`} /></label>
-        {busy && <p role="status">Test attempt pending. Please do not submit again.</p>}
-        {error && <p id={`${id}-error`} role="alert">{error}</p>}
-        {result && <p role="status">{result.message} Attempt reference: {result.id}. Saved version: {template.version}.</p>}
-        <div className="mt-row">
+            aria-invalid={!!error} aria-describedby={error ? `${id}-error` : `${id}-recipient-help`} />
+          <small id={`${id}-recipient-help`}>Enter one email address only.</small>
+        </label>
+        <section className="mt-test-dialog__info" aria-labelledby={`${id}-info-title`}>
+          <h3 id={`${id}-info-title`}>Transport &amp; test safety</h3>
+          <ul>
+            <li><strong>Saved SMTP only.</strong> Uses the default Email SMTP configuration in Settings → Communication, including its saved credential and sender, with TLS or STARTTLS. API, Platform, security set to none, or unavailable settings block sending; there is no environment fallback.</li>
+            <li><strong>Separate account transport.</strong> Password recovery and invitations retain their separately environment-configured SMTP transport.</li>
+            <li><strong>Fictional content.</strong> Server-controlled samples are used, the subject is labelled TEST, and inert action links cannot activate or recover accounts.</li>
+            <li><strong>Delivery limitation.</strong> SMTP acceptance does not confirm inbox delivery.</li>
+          </ul>
+        </section>
+        {busy && <div className="mt-test-dialog__outcome mt-test-dialog__outcome--pending" role="status">
+          <p>Test attempt pending. Please do not submit again.</p>
+        </div>}
+        {error && <div id={`${id}-error`} className="mt-test-dialog__outcome mt-test-dialog__outcome--error" role="alert">
+          <p>{error}</p>
+        </div>}
+        {result && <div className={`mt-test-dialog__outcome mt-test-dialog__outcome--${result.status}`} role="status">
+          <p>{result.message}</p>
+          <dl className="mt-test-dialog__metadata">
+            <div><dt>Attempt reference</dt><dd>{result.id}</dd></div>
+            <div><dt>Saved version</dt><dd>{template.version}</dd></div>
+          </dl>
+        </div>}
+        <div className="mt-row mt-test-dialog__actions">
           <button type="submit" className="admin-button" disabled={busy || blocked}>{busy ? 'Sending test…' : 'Send saved version'}</button>
           <button ref={closeButton} type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={close}>{result || blocked ? 'Close' : 'Cancel'}</button>
         </div>
