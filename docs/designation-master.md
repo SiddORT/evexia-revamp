@@ -159,11 +159,12 @@ Uncertain imports consume their confirmation and require the read-only server
 conflict check before any fresh explicit confirmation. Logout/identity changes
 discard private data and invalidate async results/download handoffs.
 
-Staff Management requests at most 100 active server choices in one bounded
-request on mount/refresh/editor open. More than 100 fails explicitly rather than
-silently accepting an incomplete list. Choice failure provides retry, blocks
-save and keeps mounted drafts. Editing loads Staff detail independently to hydrate
-the saved UUID/name even outside that batch or when inactive/deleted. Staff now
+Staff Management uses the shared searchable master dropdown, requesting 50 active
+server choices per page on opening/search with explicit Load more, never automatic
+catalogue traversal. Choice failure provides retry and keeps mounted drafts;
+new values must come from a loaded active choice, while unchanged saved references
+can be retained without a successful new-choice request. Editing loads Staff detail independently to hydrate
+the saved UUID/name even outside that page or when inactive/deleted. Staff now
 uses required catalogue UUIDs and derived readable names, with unchanged
 unavailable references retainable. New/changed assignments require active live rows.
 Staff migration `0028_staff_designation_lifecycle` requires complete reviewed

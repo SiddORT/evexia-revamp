@@ -6,7 +6,6 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { StaffResponseDialCountry } from "./staffResponseDialCountry";
-import type { StaffResponseRole } from "./staffResponseRole";
 import type { StaffResponseStatus } from "./staffResponseStatus";
 
 export interface StaffResponse {
@@ -32,7 +31,12 @@ export interface StaffResponse {
    * @maxLength 30
    */
   phone: string;
-  role: StaffResponseRole;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   * @pattern ^[^\x00-\x1f\x7f]+$
+   */
+  role: string;
   status: StaffResponseStatus;
   updatedAt: Date;
   updatedBy: string;

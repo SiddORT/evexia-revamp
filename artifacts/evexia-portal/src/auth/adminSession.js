@@ -298,8 +298,10 @@ export function reportingIdentityGuard() {
 // Dedicated authenticated staff transport. Never replay mutations: a lost create
 // response may already have committed and its initial password is unrecoverable.
 export async function staffRequest(path = '', body, { signal } = {}) {
-  const listingPath = /^\?limit=\d+&offset=\d+(?:&status=(?:active|inactive))?(?:&designation_id=[0-9a-f-]{36})?(?:&role=(?:Staff|Manager|Accountant|Back\+End|Sub\+Admin|Super\+Admin))?$/.test(path);
-  if (!listingPath && !/^(?:|\/search|\/filter-designations(?:\?cursor=[0-9a-f-]{36})?|\/[0-9a-f-]{36}(?:\/(?:edit|status|access|delete))?)$/.test(path)) {
+  const encodedRole = '(?:[A-Za-z0-9_.!~*\\x27()-]|%[0-9A-Fa-f]{2}|\\+){1,1200}';
+  const listingPath = new RegExp(`^\\?limit=\\d+&offset=\\d+(?:&status=(?:active|inactive))?(?:&designation_id=[0-9a-f-]{36})?(?:&role=${encodedRole})?$`).test(path);
+  const roleChoicesPath = /^\/role-choices\?query=(?:[A-Za-z0-9_.!~*'()-]|%[0-9A-Fa-f]{2}|\+)*&offset=\d+&include_retained=(?:true|false)$/.test(path);
+  if (!listingPath && !roleChoicesPath && !/^(?:|\/search|\/filter-designations(?:\?cursor=[0-9a-f-]{36})?|\/[0-9a-f-]{36}(?:\/(?:edit|status|access|delete))?)$/.test(path)) {
     throw new SessionError('Unsupported staff operation.');
   }
   const mutation = body !== undefined && path !== '/search';
@@ -351,6 +353,8 @@ export async function staffRequest(path = '', body, { signal } = {}) {
     const code = data?.error?.code;
     const error = new SessionError(
       code === 'staff_stale' ? 'This staff record changed. Your draft is still here. Review current details before retrying.'
+        : code === 'staff_role_invalid' ? 'The selected business role is no longer available. Your draft is still here. Search current roles and choose again.'
+        : code === 'staff_designation_invalid' ? 'The selected designation is no longer active or available. Your draft is still here. Search designations and choose again.'
         : code === 'role_deleted' || code === 'role_not_found' ? 'The selected role no longer exists. Your choices are still here. Reload roles and choose another or remove the assignment.'
         : code === 'staff_protected' ? 'This account cannot be assigned a role or workspace login.'
         : code === 'staff_duplicate' ? 'That email or identity already exists. Check the directory.'

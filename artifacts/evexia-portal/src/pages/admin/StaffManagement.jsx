@@ -1,7 +1,6 @@
 import { downloadCSV as loggedCSV } from '../../services/downloads.js';
 import { captureExportPreferences } from '../../services/exportPreferences.js';
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'wouter';
 import { ChevronDown, Download, Eye, Filter, KeyRound, EyeOff, Pencil, Plus, RefreshCw, Search, Trash2, Upload, UsersRound } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { formatAdminDate, formatAdminTimestamp, useAdminPreferences } from '../../components/admin/adminPreferences.js';
@@ -10,12 +9,13 @@ import MasterFilterReset from '../../components/admin/MasterFilterReset.jsx';
 import StaffAccessDialog from '../../components/admin/StaffAccessDialog.jsx';
 import Dialog from '../../components/admin/Dialog.jsx';
 import PhoneInput from '../../components/admin/PhoneInput.jsx';
+import RemoteSelect from '../../components/admin/RemoteSelect.jsx';
 import { internationalPhone } from '../../services/phoneCountries.js';
 import TablePagination from '../../components/admin/TablePagination.jsx';
 import useTablePagination from '../../hooks/useTablePagination.js';
-import { activeDesignationChoices } from '../../services/serverDesignations.js';
+import { staffDesignationPage } from '../../services/serverDesignations.js';
 import { getSession, subscribeSession, reportingIdentityGuard } from '../../auth/adminSession.js';
-import { STAFF_COLUMNS, STAFF_ROLES, loadStaff, searchStaff, staffDesignationChoices, getStaff, validateStaff, createStaff, updateStaff, setStaffStatus, deleteStaff, exportStaffCSV } from '../../services/staff.js';
+import { STAFF_COLUMNS, loadStaff, searchStaff, staffDesignationChoices, staffRoleChoices, getStaff, validateStaff, createStaff, updateStaff, setStaffStatus, deleteStaff, exportStaffCSV } from '../../services/staff.js';
 import '../../staff.css';
 import '../../mr.css';
 import { initialCredentials } from '../../services/initialCredentials.js';
@@ -24,9 +24,10 @@ import InviteAccountButton from '../../components/admin/InviteAccountButton.jsx'
 
 const FIELDS = ['name', 'phone', 'dialCountry', 'userId', 'email', 'status', 'role', 'designation_id', 'dateOfJoining'];
 const LABELS = Object.fromEntries(STAFF_COLUMNS);
-const INITIAL = { name: '', phone: '', dialCountry: 'IN', userId: '', email: '', status: 'active', role: 'Staff', designation_id: '', dateOfJoining: '' };
+const INITIAL = { name: '', phone: '', dialCountry: 'IN', userId: '', email: '', status: 'active', role: '', designation_id: '', dateOfJoining: '' };
 const safeFields = (values) => Object.fromEntries(FIELDS.map((key) => [key, values[key] ?? '']));
 const EMPTY_FILTERS = { status: '', designation_id: '', role: '' };
+const roleFilterPage = (query, offset, signal) => staffRoleChoices(query, offset, signal, true);
 
 function downloadCSV(text) {
   return loggedCSV(text, 'evexia-staff.csv', 'staff');
@@ -40,10 +41,12 @@ function StaffPhone({ record, mobile = false }) {
   return <a className="admin-staff-link" href={`tel:${internationalPhone(record)}`} data-testid={`link-staff-${mobile ? 'mobile-phone' : 'phone'}-${record.id}`}>{internationalPhone(record)}</a>;
 }
 
-function StaffForm({ record, designations, choiceError, choicesLoading, onRetryChoices, onSave, onClose }) {
+function StaffForm({ record, onSave, onClose }) {
   const [credentials, setCredentials] = useState(() => ({ password: '', confirmPassword: '', generationError: '' }));
   const [visible, setVisible] = useState(false);
   const [values, setValues] = useState(() => record ? safeFields(record) : { ...INITIAL });
+  const [roleChoice, setRoleChoice] = useState(() => record ? { value: record.role, label: record.role } : null);
+  const [designationChoice, setDesignationChoice] = useState(() => record ? { value: record.designation_id, label: record.designationName } : null);
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
@@ -52,19 +55,15 @@ function StaffForm({ record, designations, choiceError, choicesLoading, onRetryC
   const [current, setCurrent] = useState(null);
   const gate = useRef(false);
   const formRef = useRef(null);
-  const active = designations.filter((item) => item.status === 'active');
-  const selected = record?.designation_id;
-  // Detail is loaded independently of the first bounded choice batch. Its
-  // server-resolved saved identity remains retainable even after deletion.
-  const inactiveExisting = selected && !active.some((item) => item.id === selected);
   function change(key, value) {
     setValues((previous) => ({ ...previous, [key]: value }));
     setErrors((previous) => ({ ...previous, [key]: undefined }));
   }
   async function save(event) {
     event.preventDefault();
-    if (gate.current || uncertain || conflicted || choiceError || choicesLoading) return;
-    const result = validateStaff(values, record ? [record] : [], record?.id, designations);
+    if (gate.current || uncertain || conflicted) return;
+    const result = validateStaff(values, record ? [record] : [], record?.id,
+      designationChoice?.raw ? [designationChoice.raw] : [], roleChoice?.raw ? [roleChoice.raw] : []);
     if (!record && (credentials.password || credentials.confirmPassword)) {
       const problem = validateReset(credentials.password, credentials.confirmPassword);
       if (problem) result.errors.password = problem;
@@ -93,8 +92,8 @@ function StaffForm({ record, designations, choiceError, choicesLoading, onRetryC
   return <Dialog title={record ? 'Edit staff member' : 'Add staff member'} eyebrow="Staff Management"
     description="Saved securely on the server. Business roles and designations do not grant access. Use Access in the directory to assign a role and enable workspace login."
     onClose={() => { if (!gate.current) onClose(); }} className="admin-import-dialog"
-    footer={<><button type="button" className="admin-button admin-button--secondary" onClick={onClose} disabled={saving} data-testid="button-cancel-staff">Cancel</button><button type="submit" form="staff-management-form" className="admin-button" disabled={saving || uncertain || conflicted || choicesLoading || Boolean(choiceError)} data-testid="button-save-staff">{saving ? 'Saving…' : record ? 'Save changes' : 'Add staff member'}</button></>}>
-    <form ref={formRef} id="staff-management-form" className="admin-staff-form" onSubmit={save} noValidate>
+     footer={<><button type="button" className="admin-button admin-button--secondary" onClick={onClose} disabled={saving} data-testid="button-cancel-staff">Cancel</button><button type="submit" form="staff-management-form" className="admin-button" disabled={saving || uncertain || conflicted} data-testid="button-save-staff">{saving ? 'Saving…' : record ? 'Save changes' : 'Add staff member'}</button></>}>
+    <form ref={formRef} id="staff-management-form" className="admin-staff-form" onSubmit={save} noValidate aria-busy={saving}>
       {['name', 'phone', 'userId', 'email'].map((key) => {
         const inputProps = { id: `staff-${key}`, name: key, value: values[key], onChange: (event) => change(key, event.target.value),
           disabled: saving, 'aria-required': key !== 'userId', 'aria-invalid': Boolean(errors[key]),
@@ -110,10 +109,28 @@ function StaffForm({ record, designations, choiceError, choicesLoading, onRetryC
         </div>;
       })}
       <label className="admin-staff-field"><span>Status <span aria-hidden="true">*</span></span><select value={values.status} onChange={(event) => change('status', event.target.value)} disabled={saving} data-testid="select-staff-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>{errors.status && <span role="alert">{errors.status}</span>}</label>
-      <label className="admin-staff-field"><span>Role <span aria-hidden="true">*</span></span><select value={values.role} onChange={(event) => change('role', event.target.value)} disabled={saving} data-testid="select-staff-role">{STAFF_ROLES.map((role) => <option key={role} value={role}>{role}</option>)}</select>{errors.role && <span role="alert">{errors.role}</span>}</label>
-      <label className="admin-staff-field"><span>Designation <span aria-hidden="true">*</span></span><select value={values.designation_id} onChange={(event) => change('designation_id', event.target.value)} disabled={saving || choicesLoading || Boolean(choiceError)} aria-invalid={Boolean(errors.designation_id)} data-testid="select-staff-designation"><option value="">Select a designation</option>{inactiveExisting && <option value={selected}>{record.designationName} (saved reference; unavailable in active choices)</option>}{active.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>{errors.designation_id && <span className="admin-staff-field__error" role="alert">{errors.designation_id}</span>}<span className="admin-staff-field__hint">Active server choices (up to 100); the saved reference can be retained even if inactive or deleted. Designations grant no permission.</span></label>
-      {choicesLoading && <p role="status">Loading designation choices…</p>}
-      {choiceError && <div className="admin-feedback admin-feedback--error" role="alert">{choiceError}<button type="button" className="admin-button admin-button--secondary" onClick={onRetryChoices}>Retry designation choices (keep draft)</button></div>}
+      <div className="admin-staff-field">
+        <label htmlFor="staff-role">Role <span aria-hidden="true">*</span></label>
+        <RemoteSelect id="staff-role" label="Role" value={values.role} selected={roleChoice}
+          fetchPage={staffRoleChoices} placeholder="Select a saved role" emptyText="No current saved roles match. Clear the search or save a role in Roles & Permissions." describeSelection required disabled={saving}
+          invalid={errors.role} describedBy={errors.role ? 'staff-error-role' : undefined}
+          onChange={(item) => { setRoleChoice(item); change('role', item?.value || ''); }} />
+        {errors.role && <span id="staff-error-role" className="admin-staff-field__error" role="alert">{errors.role}</span>}
+        {record && <span className="admin-staff-field__hint">Saved role: {record.role}. Keeping it unchanged does not require a current catalogue match.</span>}
+        {record && values.role !== record.role && <button type="button" className="admin-button admin-button--secondary" disabled={saving}
+          onClick={() => { setRoleChoice({ value: record.role, label: record.role }); change('role', record.role); }}>Keep saved role</button>}
+      </div>
+      <div className="admin-staff-field">
+        <label htmlFor="staff-designation_id">Designation <span aria-hidden="true">*</span></label>
+        <RemoteSelect id="staff-designation_id" label="Designation" value={values.designation_id} selected={designationChoice}
+          fetchPage={staffDesignationPage} placeholder="Select an active designation" emptyText="No active designations match. Clear the search or save an active designation in Designation Master." describeSelection required disabled={saving}
+          invalid={errors.designation_id} describedBy={errors.designation_id ? 'staff-error-designation_id' : undefined}
+          onChange={(item) => { setDesignationChoice(item); change('designation_id', item?.value || ''); }} />
+        {errors.designation_id && <span id="staff-error-designation_id" className="admin-staff-field__error" role="alert">{errors.designation_id}</span>}
+        {record && <span className="admin-staff-field__hint">Saved designation: {record.designationName}. It can be kept unchanged even if unavailable.</span>}
+        {record && values.designation_id !== record.designation_id && <button type="button" className="admin-button admin-button--secondary" disabled={saving}
+          onClick={() => { setDesignationChoice({ value: record.designation_id, label: record.designationName }); change('designation_id', record.designation_id); }}>Keep saved designation</button>}
+      </div>
       <label className="admin-staff-field"><span>Date of joining <span aria-hidden="true">*</span></span><input type="date" value={values.dateOfJoining} onChange={(event) => change('dateOfJoining', event.target.value)} disabled={saving} data-testid="input-staff-dateOfJoining" />{errors.dateOfJoining && <span className="admin-staff-field__error" role="alert">{errors.dateOfJoining}</span>}</label>
       {record ? <div className="admin-staff-field admin-staff-form__wide"><strong>Password</strong><span className="admin-staff-field__hint">Editing does not change or reveal the password.</span></div> :
         <div className="admin-staff-form__wide mr-form__password-note">
@@ -131,11 +148,10 @@ function StaffForm({ record, designations, choiceError, choicesLoading, onRetryC
             const next = initialCredentials();
             setCredentials((old) => next.generationError ? { ...old, generationError: next.generationError } : next);
           }} data-testid="button-generate-staff-password">Auto-generate password</button>
-          <p id="staff-password-help" className="admin-staff-field__hint">Use 12–128 characters, confirming spaces exactly. Generated candidates populate both fields. If both are blank, the server generates a password and requires email password setup before login. No email is sent by saving. Workspace access must be configured separately.</p>
+          <p id="staff-password-help" className="admin-staff-field__hint">Manual passwords use 12–128 characters; confirm spaces exactly. Auto-generate fills both fields with the same random 12-character candidate containing uppercase, lowercase, a digit and a special character. If both are blank, the server generates a password with that same length and composition and requires email password setup before login. No email is sent by saving. Workspace access must be configured separately.</p>
           {credentials.generationError && <p role="alert">{credentials.generationError}</p>}
           {errors.password && <p role="alert" className="admin-staff-field__error">{errors.password}</p>}
         </div>}
-      {!active.length && <div className="admin-feedback admin-staff-form__wide" role="status">No active designations are available. <Link href="/admin/masters/designations">Manage designations</Link> before adding staff.</div>}
       {message && <div className="admin-feedback admin-feedback--error admin-staff-form__wide" role="alert" data-testid="status-staff-save-error">{message}</div>}
       {uncertain && <div className="admin-feedback admin-staff-form__wide">Do not repeat this submission. Close this form and refresh the directory to confirm whether it saved. A lost initial password cannot be retrieved.</div>}
       {conflicted && <div className="admin-staff-form__wide"><button type="button" className="admin-button admin-button--secondary" onClick={reviewCurrent}>Review current record</button>{current && <><dl>{STAFF_COLUMNS.map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{current[key]}</dd></div>)}</dl><p>Your draft remains above. To edit the current version, cancel and reopen the refreshed record; this form cannot overwrite it.</p></>}</div>}
@@ -163,10 +179,7 @@ function Credentials({ credentials, onClose }) {
 export default function StaffManagement() {
   useAdminPreferences();
   const [records, setRecords] = useState([]);
-  const [designations, setDesignations] = useState([]);
   const [error, setError] = useState('');
-  const [designationError, setDesignationError] = useState('');
-  const [choicesLoading, setChoicesLoading] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [actionError, setActionError] = useState('');
   const [editing, setEditing] = useState(undefined);
@@ -224,7 +237,6 @@ export default function StaffManagement() {
     } catch (cause) {
       if (alive.current && !controller.signal.aborted) { setError(cause.message); setRecords([]); }
     } finally { if (alive.current && !controller.signal.aborted) setLoading(false); }
-    if (alive.current && !controller.signal.aborted) await refreshDesignations();
   }
   async function refreshFilterChoices(cursor = null) {
     if (filterChoiceGate.current) return;
@@ -250,25 +262,13 @@ export default function StaffManagement() {
       }
     }
   }
-  const choiceSequence = useRef(0);
-  async function refreshDesignations() {
-    const sequence = ++choiceSequence.current;
-    const owner = getSession().user?.id;
-    setChoicesLoading(true);
-    try {
-      const result = await activeDesignationChoices();
-      if (alive.current && sequence === choiceSequence.current && getSession().user?.id === owner) { setDesignations(result); setDesignationError(''); }
-    } catch (cause) {
-      if (alive.current && sequence === choiceSequence.current && getSession().user?.id === owner) { setDesignations([]); setDesignationError(cause.message); }
-    } finally { if (alive.current && sequence === choiceSequence.current) setChoicesLoading(false); }
-  }
   useEffect(() => {
     alive.current = true;
     void refresh(0);
     void refreshFilterChoices();
     const unsubscribe = subscribeSession(() => {
       if (getSession().status !== 'authenticated') setCredentials(null);
-      if (!getSession().user) { choiceSequence.current++; filterChoiceSequence.current++; setDesignations([]); setFilterChoices([]); setFilterChoiceCursor(null); setFilterChoiceError(''); setFilters(EMPTY_FILTERS); filtersRef.current = EMPTY_FILTERS; request.current?.abort(); setRecords([]); setDirectory(null); setDirectoryTerm(''); setEditing(undefined); setAccessFor(null); setDeleteFor(null); }
+      if (!getSession().user) { filterChoiceSequence.current++; setFilterChoices([]); setFilterChoiceCursor(null); setFilterChoiceError(''); setFilters(EMPTY_FILTERS); filtersRef.current = EMPTY_FILTERS; request.current?.abort(); setRecords([]); setDirectory(null); setDirectoryTerm(''); setEditing(undefined); setAccessFor(null); setDeleteFor(null); }
     });
     return () => { alive.current = false; request.current?.abort(); unsubscribe(); };
   }, []);
@@ -335,7 +335,6 @@ export default function StaffManagement() {
   async function edit(record) {
     setActionError('');
     setFeedback('');
-    void refreshDesignations();
     if (!record) { setEditing(null); return; }
     try { const latest = await getStaff(record.id); if (alive.current) setEditing(latest); }
     catch (cause) { if (alive.current) setActionError(cause.message); }
@@ -367,7 +366,7 @@ export default function StaffManagement() {
       }
     } finally { mutationGate.current = false; if (alive.current) setBusy(false); }
   }
-  const rowActions = (record, mobile = false) => <><InviteAccountButton kind="staff" record={record} disabled={blocked} /><button type="button" className="admin-icon-button" title={`Edit ${record.name}`} aria-label={`Edit ${record.name}`} disabled={blocked || Boolean(designationError)} onClick={() => edit(record)} data-testid={`button-edit-staff-${mobile ? 'mobile-' : ''}${record.id}`}><Pencil size={16} aria-hidden="true" /></button><button type="button" className="admin-icon-button" title={`Access for ${record.name}`} aria-label={`Access for ${record.name}`} disabled={blocked} onClick={() => { setFeedback(''); setActionError(''); setAccessFor(record); }} data-testid={`button-access-staff-${mobile ? 'mobile-' : ''}${record.id}`}><KeyRound size={16} aria-hidden="true" /></button><button type="button" className="admin-icon-button" title={`Delete ${record.name}`} aria-label={`Delete ${record.name}`} disabled={blocked} onClick={() => { setDeleteError(''); setDeleteUncertain(false); setDeleteFor(record); }} data-testid={`button-delete-staff-${mobile ? 'mobile-' : ''}${record.id}`}><Trash2 size={16} aria-hidden="true" /></button></>;
+  const rowActions = (record, mobile = false) => <><InviteAccountButton kind="staff" record={record} disabled={blocked} /><button type="button" className="admin-icon-button" title={`Edit ${record.name}`} aria-label={`Edit ${record.name}`} disabled={blocked} onClick={() => edit(record)} data-testid={`button-edit-staff-${mobile ? 'mobile-' : ''}${record.id}`}><Pencil size={16} aria-hidden="true" /></button><button type="button" className="admin-icon-button" title={`Access for ${record.name}`} aria-label={`Access for ${record.name}`} disabled={blocked} onClick={() => { setFeedback(''); setActionError(''); setAccessFor(record); }} data-testid={`button-access-staff-${mobile ? 'mobile-' : ''}${record.id}`}><KeyRound size={16} aria-hidden="true" /></button><button type="button" className="admin-icon-button" title={`Delete ${record.name}`} aria-label={`Delete ${record.name}`} disabled={blocked} onClick={() => { setDeleteError(''); setDeleteUncertain(false); setDeleteFor(record); }} data-testid={`button-delete-staff-${mobile ? 'mobile-' : ''}${record.id}`}><Trash2 size={16} aria-hidden="true" /></button></>;
   const columns = [
     { key: 'serial', label: 'Sr No.', render: (_, index) => <span className="admin-table__serial">{index + 1}</span> },
     { key: 'name', label: 'Name', render: (record) => <span className="admin-staff-identity"><strong data-testid={`text-staff-name-${record.id}`}>{record.name}</strong></span> },
@@ -387,11 +386,9 @@ export default function StaffManagement() {
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">People / Directory</p><h1>Staff Management</h1><p className="admin-page-head__description">Server-backed staff directory. Business role labels grant nothing; use Access to assign a custom role and enable workspace login explicitly.</p></div><div className="admin-staff-actions">
       <button type="button" className="admin-button admin-button--secondary" disabled title="CSV bulk account provisioning is unavailable in this phase." data-testid="button-import-staff"><Upload size={16} aria-hidden="true" /> Import unavailable</button>
        <button type="button" className="admin-button admin-button--secondary" onClick={exportRows} disabled={blocked || !records.length} title="CSV: loaded result section only, under the applied search and filters." data-testid="button-export-staff"><Download size={16} aria-hidden="true" /> Export loaded section</button>
-      <button type="button" className="admin-button" onClick={() => edit(null)} disabled={blocked || Boolean(designationError)} data-testid="button-add-staff"><Plus size={16} aria-hidden="true" /> Add staff</button>
+      <button type="button" className="admin-button" onClick={() => edit(null)} disabled={blocked} data-testid="button-add-staff"><Plus size={16} aria-hidden="true" /> Add staff</button>
     </div></div>
     {feedback && <div className="admin-feedback" role="status">{feedback}</div>}
-    {designationError && <div className="admin-feedback admin-feedback--error" role="alert">Designation choices could not be loaded: {designationError}. <button type="button" className="admin-button admin-button--secondary" onClick={refreshDesignations}>Retry designation choices</button></div>}
-    {!choicesLoading && !designationError && !designations.some((item) => item.status === 'active') && <div className="admin-feedback" role="status">No active designations yet. <Link href="/admin/masters/designations">Add an active designation</Link> before creating staff.</div>}
     {actionError && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-staff-action-error">{actionError}</div>}
     <section className="admin-panel" aria-label="Staff directory">
       <div className="admin-staff-toolbar">
@@ -413,7 +410,10 @@ export default function StaffManagement() {
               {filterChoiceError && <div className="admin-staff-field__error" role="alert">Could not load designation choices: {filterChoiceError} <button type="button" className="admin-button admin-button--secondary" disabled={filterChoicesLoading} onClick={() => refreshFilterChoices(filterChoiceRetry.current)}>Retry choices</button></div>}
               {filterChoiceCursor && <button type="button" className="admin-button admin-button--secondary" disabled={filterChoicesLoading} onClick={() => refreshFilterChoices(filterChoiceCursor)}>Load more designations</button>}
             </div>
-            <div className="admin-filter"><label htmlFor="staff-role-filter">Role</label><select id="staff-role-filter" className="admin-select" value={filters.role} disabled={busy || invalidSearch} onChange={(event) => changeFilter('role', event.target.value)} data-testid="select-filter-staff-role"><option value="">All business roles</option>{STAFF_ROLES.map((role) => <option key={role} value={role}>{role}</option>)}</select></div>
+            <div className="admin-filter"><label htmlFor="staff-role-filter">Role</label><RemoteSelect id="staff-role-filter" label="Business role filter" value={filters.role}
+              selected={filters.role ? { value: filters.role, label: filters.role } : null} fetchPage={roleFilterPage}
+              placeholder="All business roles" disabled={busy || invalidSearch}
+              onChange={(item) => changeFilter('role', item?.value || '')} /></div>
           </div>
         </details>
         <div className="admin-staff-sections">
@@ -430,7 +430,7 @@ export default function StaffManagement() {
         <TablePagination {...pagination} filtered={records.length} total={records.length} label={directory ? 'staff matches in loaded section' : 'staff members in loaded batch'} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} testId="text-staff-count" />
       </>}
     </section>
-    {editing !== undefined && <StaffForm key={editing?.id || 'new'} record={editing} designations={designations} choiceError={designationError} choicesLoading={choicesLoading} onRetryChoices={refreshDesignations} onSave={save} onClose={() => setEditing(undefined)} />}
+    {editing !== undefined && <StaffForm key={editing?.id || 'new'} record={editing} onSave={save} onClose={() => setEditing(undefined)} />}
     {accessFor && <StaffAccessDialog key={accessFor.id} record={accessFor} onClose={() => setAccessFor(null)} onSaved={(next) => { setAccessFor(null); setFeedback(`Access saved for ${next.name}: ${next.custom_role_id ? 'role assigned' : 'no role'}, workspace login ${next.workspace_login_enabled ? 'enabled' : 'disabled'}.`); setRecords((previous) => previous.map((item) => item.id === next.id ? next : item)); }} />}
     {credentials && <Credentials credentials={credentials} onClose={() => setCredentials(null)} />}
     {deleteFor && <Dialog title="Delete staff member?" eyebrow="Staff Management" description={`Delete ${deleteFor.name}? This removes them from the directory and immediately revokes workspace sessions. Status, encrypted records, relationships and history are retained. There is no restore action.`}

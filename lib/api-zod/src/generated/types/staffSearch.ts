@@ -5,7 +5,6 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
-import type { StaffSearchRole } from "./staffSearchRole";
 import type { StaffSearchStatus } from "./staffSearchStatus";
 
 export interface StaffSearch {
@@ -21,6 +20,6 @@ export interface StaffSearch {
    * @maxLength 200
    */
   query: string;
-  role?: StaffSearchRole;
+  role?: string | null;
   status?: StaffSearchStatus;
 }

@@ -7862,18 +7862,6 @@ export const StaffCreateDialCountry = {
   ZW: "ZW",
 } as const;
 
-export type StaffCreateRole =
-  (typeof StaffCreateRole)[keyof typeof StaffCreateRole];
-
-export const StaffCreateRole = {
-  Staff: "Staff",
-  Manager: "Manager",
-  Accountant: "Accountant",
-  Back_End: "Back End",
-  Sub_Admin: "Sub Admin",
-  Super_Admin: "Super Admin",
-} as const;
-
 export type StaffCreateStatus =
   (typeof StaffCreateStatus)[keyof typeof StaffCreateStatus];
 
@@ -7899,7 +7887,12 @@ export interface StaffCreate {
    * @maxLength 30
    */
   phone: string;
-  role: StaffCreateRole;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   * @pattern ^[^\x00-\x1f\x7f]+$
+   */
+  role: string;
   status: StaffCreateStatus;
 }
 
@@ -8154,18 +8147,6 @@ export const StaffResponseDialCountry = {
   ZW: "ZW",
 } as const;
 
-export type StaffResponseRole =
-  (typeof StaffResponseRole)[keyof typeof StaffResponseRole];
-
-export const StaffResponseRole = {
-  Staff: "Staff",
-  Manager: "Manager",
-  Accountant: "Accountant",
-  Back_End: "Back End",
-  Sub_Admin: "Sub Admin",
-  Super_Admin: "Super Admin",
-} as const;
-
 export type StaffResponseStatus =
   (typeof StaffResponseStatus)[keyof typeof StaffResponseStatus];
 
@@ -8197,7 +8178,12 @@ export interface StaffResponse {
    * @maxLength 30
    */
   phone: string;
-  role: StaffResponseRole;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   * @pattern ^[^\x00-\x1f\x7f]+$
+   */
+  role: string;
   status: StaffResponseStatus;
   updatedAt: string;
   updatedBy: string;
@@ -8218,6 +8204,25 @@ export interface StaffDeletion {
 
 export type StaffDesignationChoiceStatus =
   (typeof StaffDesignationChoiceStatus)[keyof typeof StaffDesignationChoiceStatus];
+
+export const StaffDesignationChoiceStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export interface StaffDesignationChoice {
+  deleted: boolean;
+  id: string;
+  name: string;
+  status: StaffDesignationChoiceStatus;
+}
+
+export interface StaffDesignationChoices {
+  has_more: boolean;
+  items: StaffDesignationChoice[];
+  next_cursor: string | null;
+}
+
 export type StaffEditDialCountry =
   (typeof StaffEditDialCountry)[keyof typeof StaffEditDialCountry];
 
@@ -8469,17 +8474,6 @@ export const StaffEditDialCountry = {
   ZW: "ZW",
 } as const;
 
-export type StaffEditRole = (typeof StaffEditRole)[keyof typeof StaffEditRole];
-
-export const StaffEditRole = {
-  Staff: "Staff",
-  Manager: "Manager",
-  Accountant: "Accountant",
-  Back_End: "Back End",
-  Sub_Admin: "Sub Admin",
-  Super_Admin: "Super Admin",
-} as const;
-
 export type StaffEditStatus =
   (typeof StaffEditStatus)[keyof typeof StaffEditStatus];
 
@@ -8506,7 +8500,12 @@ export interface StaffEdit {
    * @maxLength 30
    */
   phone: string;
-  role: StaffEditRole;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   * @pattern ^[^\x00-\x1f\x7f]+$
+   */
+  role: string;
   status: StaffEditStatus;
 }
 
@@ -8517,8 +8516,28 @@ export interface StaffPage {
   offset: number;
 }
 
-export type StaffSearchRole =
-  (typeof StaffSearchRole)[keyof typeof StaffSearchRole] | null;
+export interface StaffRoleChoice {
+  /**
+   * @minLength 1
+   * @maxLength 100
+   * @pattern ^[^\x00-\x1f\x7f]+$
+   */
+  name: string;
+}
+
+export interface StaffRoleChoices {
+  items: StaffRoleChoice[];
+  total: number;
+}
+
+export type StaffSearchStatus =
+  (typeof StaffSearchStatus)[keyof typeof StaffSearchStatus] | null;
+
+export const StaffSearchStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
 export interface StaffSearch {
   cursor?: string | null;
   designation_id?: string | null;
@@ -8532,7 +8551,7 @@ export interface StaffSearch {
    * @maxLength 200
    */
   query: string;
-  role?: StaffSearchRole;
+  role?: string | null;
   status?: StaffSearchStatus;
 }
 
@@ -10456,6 +10475,7 @@ export type ResolveCreatedMRParams = {
    */
   employee_code: string;
 };
+
 export type ExportMRDirectoryParams = {
   /**
    * @maxLength 200
@@ -10745,12 +10765,6 @@ export type ReviewOpeningStockImportBody = {
   file: Blob | File;
 };
 
-export type ReviewOpeningStockImportBody = {
-  file: Blob | File;
-};
-export type ReviewOpeningStockImportBody = {
-  file: Blob | File;
-};
 export type GetOpeningStockItemsParams = {
   /**
    * @maxLength 200
@@ -11896,11 +11910,33 @@ export type ListStaffParams = {
   offset?: number;
   status?: ListStaffStatus;
   designation_id?: string | null;
-  role?: ListStaffRole;
+  role?: string | null;
 };
 
 export type ListStaffStatus =
   (typeof ListStaffStatus)[keyof typeof ListStaffStatus] | null;
+
+export const ListStaffStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ListStaffFilterDesignationsParams = {
+  cursor?: string | null;
+};
+
+export type ListStaffBusinessRoleChoicesParams = {
+  /**
+   * @maxLength 100
+   */
+  query?: string;
+  /**
+   * @minimum 0
+   */
+  offset?: number;
+  include_retained?: boolean;
+};
+
 export type ListStorageLocationsParams = {
   /**
    * @maxLength 200
@@ -12244,59 +12280,3 @@ export type ResolvePortalHostnameParams = {
    */
   hostname: string;
 };
-
-export interface StaffDesignationChoice {
-  deleted: boolean;
-  id: string;
-  name: string;
-  status: StaffDesignationChoiceStatus;
-}
-
-export type ListStaffFilterDesignationsParams = {
-  cursor?: string | null;
-};
-
-export interface StaffDesignationChoices {
-  has_more: boolean;
-  items: StaffDesignationChoice[];
-  next_cursor: string | null;
-}
-
-export type StaffSearchStatus =
-  (typeof StaffSearchStatus)[keyof typeof StaffSearchStatus] | null;
-
-export const StaffSearchRole = {
-  Staff: "Staff",
-  Manager: "Manager",
-  Accountant: "Accountant",
-  Back_End: "Back End",
-  Sub_Admin: "Sub Admin",
-  Super_Admin: "Super Admin",
-} as const;
-
-export const StaffDesignationChoiceStatus = {
-  active: "active",
-  inactive: "inactive",
-} as const;
-
-export const StaffSearchStatus = {
-  active: "active",
-  inactive: "inactive",
-} as const;
-
-export const ListStaffStatus = {
-  active: "active",
-  inactive: "inactive",
-} as const;
-
-export type ListStaffRole =
-  (typeof ListStaffRole)[keyof typeof ListStaffRole] | null;
-
-export const ListStaffRole = {
-  Staff: "Staff",
-  Manager: "Manager",
-  Accountant: "Accountant",
-  Back_End: "Back End",
-  Sub_Admin: "Sub Admin",
-  Super_Admin: "Super Admin",
-} as const;

@@ -7,8 +7,17 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, 
 
 from app.schemas.phone import DialCountry, normalize_phone
 
-StaffBusinessRole = Literal["Staff", "Manager", "Accountant", "Back End", "Sub Admin", "Super Admin"]
+StaffBusinessRole = Annotated[str, StringConstraints(min_length=1, max_length=100, pattern=r"^[^\x00-\x1f\x7f]+$")]
 StaffBusinessStatus = Literal["active", "inactive"]
+
+
+class StaffRoleChoice(BaseModel):
+    name: StaffBusinessRole
+
+
+class StaffRoleChoices(BaseModel):
+    items: list[StaffRoleChoice]
+    total: int
 
 
 class StaffDirectoryFilters(BaseModel):
@@ -37,7 +46,7 @@ class StaffFields(BaseModel):
     email: EmailStr = Field(max_length=320)
     phone: str = Field(min_length=1, max_length=30)
     dialCountry: DialCountry = "IN"
-    role: Literal["Staff", "Manager", "Accountant", "Back End", "Sub Admin", "Super Admin"]
+    role: StaffBusinessRole
     designation_id: uuid.UUID
     dateOfJoining: date
     status: Literal["active", "inactive"]

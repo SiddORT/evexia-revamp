@@ -6,7 +6,6 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { StaffCreateDialCountry } from "./staffCreateDialCountry";
-import type { StaffCreateRole } from "./staffCreateRole";
 import type { StaffCreateStatus } from "./staffCreateStatus";
 
 export interface StaffCreate {
@@ -26,6 +25,11 @@ export interface StaffCreate {
    * @maxLength 30
    */
   phone: string;
-  role: StaffCreateRole;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   * @pattern ^[^\x00-\x1f\x7f]+$
+   */
+  role: string;
   status: StaffCreateStatus;
 }

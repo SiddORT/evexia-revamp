@@ -1,7 +1,7 @@
 import secrets
 import uuid
 
-from sqlalchemy import select, text
+from sqlalchemy import select, text, func, union
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from app.core.security import hash_password, utcnow
@@ -85,13 +85,55 @@ def validate_designation(db, designation_id, saved_id=None):
     return row
 
 
+def validate_business_role(db, name, saved_name=None):
+    # Historical snapshots may be retained verbatim. Never assign access here.
+    if name == saved_name:
+        return
+    role = db.scalar(select(CustomRole).where(CustomRole.name == name, CustomRole.deleted_at.is_(None))
+                     .execution_options(populate_existing=True).with_for_update(read=True))
+    if role is None:
+        raise StaffError("Selected business role is no longer available. Search current roles and choose again; your draft is retained.",
+                         409, "staff_role_invalid")
+
+
+def role_choices(db, actor, settings, query, offset, include_retained=False):
+    def work():
+        db.execute(text("SET LOCAL statement_timeout = '2000ms'"))
+        db.execute(text("SET LOCAL lock_timeout = '1000ms'"))
+        authorize(db, actor, settings)
+        names = select(CustomRole.name.label("name")).where(CustomRole.deleted_at.is_(None))
+        if include_retained:
+            # Directory filters include historical snapshots, not permission assignments.
+            names = union(names, select(StaffProfile.role.label("name")).where(StaffProfile.deleted_at.is_(None)))
+        source = names.subquery()
+        condition = source.c.name.icontains(query, autoescape=True)
+        total = db.scalar(select(func.count()).select_from(source).where(condition))
+        rows = db.scalars(select(source.c.name).where(condition).order_by(source.c.name).limit(50).offset(offset))
+        result = dict(items=[dict(name=name) for name in rows], total=total)
+        db.commit()
+        return result
+    return transaction(work, db)
+
+
+def generated_staff_password():
+    # Staff-specific candidates; manual/recovery and MR policies are unchanged.
+    groups = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz", "0123456789", "!@#$%^&*_-+?")
+    chars = [secrets.choice(group) for group in groups]
+    chars.extend(secrets.choice("".join(groups)) for _ in range(8))
+    for index in range(len(chars) - 1, 0, -1):
+        other = secrets.randbelow(index + 1)
+        chars[index], chars[other] = chars[other], chars[index]
+    return "".join(chars)
+
+
 def create(db, actor, body, settings):
     def work():
         current, crypto = authorize(db, actor, settings)
         validate_designation(db, body.designation_id)
+        validate_business_role(db, body.role)
         # 120 random bits in a 32-character username, independent of personal data.
         chosen = getattr(body, "initialPassword", None)
-        password = chosen if chosen is not None else secrets.token_urlsafe(24)
+        password = chosen if chosen is not None else generated_staff_password()
         encoded_password = hash_password(password)
         for attempt in range(5):
             try:
@@ -245,6 +287,7 @@ def edit(db, actor, settings, profile_id, body, status_only=False):
             profile.status = body.status
         else:
             validate_designation(db, body.designation_id, profile.designation_id)
+            validate_business_role(db, body.role, profile.role)
             assign(profile, body, crypto)
         if profile.status != "active":
             session_repository.revoke_user_sessions(db, user.id, "identity_invalid", db.info.get("request_id"))

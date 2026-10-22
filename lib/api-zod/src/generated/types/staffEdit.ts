@@ -6,7 +6,6 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { StaffEditDialCountry } from "./staffEditDialCountry";
-import type { StaffEditRole } from "./staffEditRole";
 import type { StaffEditStatus } from "./staffEditStatus";
 
 export interface StaffEdit {
@@ -27,6 +26,11 @@ export interface StaffEdit {
    * @maxLength 30
    */
   phone: string;
-  role: StaffEditRole;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   * @pattern ^[^\x00-\x1f\x7f]+$
+   */
+  role: string;
   status: StaffEditStatus;
 }

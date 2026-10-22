@@ -22,3 +22,12 @@ export async function activeDesignationChoices(signal) {
   if (result.filtered > 100) throw new Error('More than 100 active designations. Narrow the active catalogue before choosing; no partial list was accepted.');
   return result.items;
 }
+
+export async function staffDesignationPage(query, offset, signal) {
+  const page = await listDesignations({ query, status: 'active', limit: 50, offset }, signal);
+  if (!Array.isArray(page?.items) || !Number.isSafeInteger(page.filtered) || page.filtered < 0 ||
+      page.items.some((item) => !item.id || typeof item.name !== 'string' || item.status !== 'active')) {
+    throw new Error('Designation choices could not be read. Retry before choosing a designation.');
+  }
+  return { items: page.items.map((item) => ({ value: item.id, label: item.name, raw: item })), total: page.filtered };
+}

@@ -1,3 +1,39 @@
+# Staff form role choices and generated candidates
+
+Add/Edit Staff use the shared searchable master dropdown with server search,
+50-choice pages, explicit Load more and retry. Role options contain only current
+non-deleted saved Role names, with no invented default. The staff-authorized
+name-only choice endpoint exposes no grants. The existing directory Role filter
+also includes retained live-staff name snapshots so historical labels remain
+filterable; it does not change the directory's layout or search scope.
+
+Business Role remains a name snapshot, not a permission-bearing assignment.
+New or changed names must exactly match a current saved Role under a database
+read lock until commit. Unchanged snapshots remain valid after rename/deletion.
+Existing designation identities can likewise be retained unchanged; unavailable
+references are displayed as saved values, not offered as new choices. Choice
+errors and stale-choice save rejections keep the draft. Only the separate
+version-checked Access operation assigns a custom role or enables login.
+
+Forward `0056_staff_business_roles` widens role metadata to the existing Role
+master's 100-character limit and replaces the fixed-label CHECK without rewriting
+rows, credentials, grants, history or onboarding flags. Downgrade is refused
+because valid new snapshots may not fit the predecessor constraint.
+
+Staff-only browser and blank-password server generation produce 12 cryptographically
+random characters with at least one uppercase, lowercase, digit and special
+character, securely shuffled. Browser generation fills both password inputs.
+Manual 12–128-character passwords, recovery policy and MR generation are unchanged.
+Blank-password creation still requires email password setup; saving never sends
+an invitation. No password is put in browser storage or a plaintext database field.
+
+Implementation is source-inspection-only at the user's explicit request: no
+tests, manual/browser scenarios, builds, validation/release wrappers, service
+restarts, migration execution or live sends. Offline OpenAPI/client generation
+and development integrity metadata generation do not prove schema activation or
+runtime behavior. Production fresh-install catalog/release evidence requires
+separately authorized real catalog reproduction and has not been fabricated.
+
 # Staff Management: scope, configuration and operations
 
 ## Initial credentials and email invitations
@@ -33,10 +69,10 @@ in protected global reporting without granting staff access to those reports.
 See [Zone role permissions](zone-role-permissions.md) for opt-in rollout.
 
 Designation Master uses a separate protected server catalogue. Staff Management
-loads up to 100 active server choices, fails explicitly above that bound and offers
+loads 50 active server choices per searchable page, with explicit Load more and
 retry on request failure without discarding drafts. Existing unavailable saved
-references remain selectable during edit, hydrated through independently loaded
-Staff detail, not inferred from the first choice batch. The server stores required
+references remain retainable during edit, hydrated through independently loaded
+Staff detail, not inferred from the first choice page. The server stores required
 `designation_id` UUID metadata with a restrictive catalogue foreign key and returns
 derived read-only `designationName`. New or changed assignments require active
 non-deleted catalogue rows under transaction locks. Unchanged inactive/deleted
@@ -359,8 +395,9 @@ indexes, plaintext or deterministic substring tokens are introduced.
 
 Both listing and bounded search accept optional `status`, `designation_id` and
 business `role` filters. They combine as exact server-side predicates before
-paging/scanning; workspace permission assignments are not role labels. No schema
-or encryption changes are required. The staff-authorized
+paging/scanning; workspace permission assignments are not role labels. Role
+filters accept current or historical names up to 100 characters, independent of
+the catalogue availability checks used for changed form values. The staff-authorized
 `GET /api/v1/admin/staff/filter-designations` returns at most 100 saved designation
 identities per explicit request with UUID keyset continuation, including inactive
 and deleted catalogue references still used by non-deleted staff. It does not

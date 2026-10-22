@@ -7,7 +7,7 @@ from app.api.deps import require_permissions
 from app.core.config import Settings, get_settings
 from app.db.session import get_db
 from app.schemas.staff import StaffCreated, StaffCreate, StaffEdit, StaffFields, StaffPage, StaffResponse, StaffStatus, StaffSearch, StaffSearchPage, StaffAccess, StaffDeletion
-from app.schemas.staff import StaffBusinessRole, StaffBusinessStatus, StaffDirectoryFilters, StaffDesignationChoices
+from app.schemas.staff import StaffBusinessRole, StaffBusinessStatus, StaffDirectoryFilters, StaffDesignationChoices, StaffRoleChoices
 from app.services.auth import Identity
 from app.services import staff as service
 
@@ -36,6 +36,13 @@ def filter_designations(cursor: uuid.UUID | None = None,
 def create_staff(body: StaffCreate, actor: Identity = Depends(manager),
                  db: Session = Depends(get_db), settings: Settings = Depends(get_settings)):
     return service.create(db, actor, body, settings)
+
+
+@router.get("/role-choices", response_model=StaffRoleChoices, operation_id="listStaffBusinessRoleChoices")
+def role_choices(query: str = Query("", max_length=100), offset: int = Query(0, ge=0),
+                 include_retained: bool = False, actor: Identity = Depends(manager),
+                 db: Session = Depends(get_db), settings: Settings = Depends(get_settings)):
+    return service.role_choices(db, actor, settings, query, offset, include_retained)
 
 
 @router.get("/{staff_id}", response_model=StaffResponse)
