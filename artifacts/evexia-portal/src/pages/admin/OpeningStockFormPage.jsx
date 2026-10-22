@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ReferenceSelect from '../../components/admin/ReferenceSelect.jsx';
+import InfoDisclosure from '../../components/admin/InfoDisclosure.jsx';
 import OpeningPendingBanner from '../../components/admin/OpeningPendingBanner.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import useProductDraftNavigation from '../../hooks/useProductDraftNavigation.js';
@@ -117,24 +118,22 @@ export default function OpeningStockFormPage() {
   return <AdminLayout title="Add opening stock"><div className="move-stocks-page">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Opening Stock / New</p><h1>Add opening stock</h1><p className="admin-page-head__description">Record stock that existed before the system. Review the canonical values before committing.</p></div>
       <div className="ms-head-actions"><button type="button" className="admin-button admin-button--secondary" onClick={leave} disabled={busy === 'save'}><ArrowLeft size={16} /> All opening stock</button></div></div>
-    <div className="admin-feedback ms-note" role="note">Opening stock is append-only. A blank location means Unallocated, not zero stock; allocate it later in Move Stocks. Products do not consume their component allergens. Batch, receipt and expiry are not invented.</div>
     <OpeningPendingBanner refreshSignal={tick} onResolved={(r) => { keyRef.current = null; if (r.state === 'committed') { setDone(true); return; } setReview(null); setMessage('The earlier save was not committed. Your draft is preserved; review it again to save.'); setTick((t) => t + 1); }} />
     {message && <div className="admin-feedback admin-feedback--error" role="alert">{message}</div>}
     <section className="admin-panel" aria-label="New opening stock"><form onSubmit={submitReview} noValidate>
       <fieldset disabled={locked} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}><div className="ms-form-body">
         <div className="ms-fields"><div className="ms-field"><label htmlFor="os-date">Recorded date <span className="mr-form__required">*</span></label>
           <input id="os-date" type="date" className="mr-form__control" value={draft.recordedDate} onChange={(e) => { reset(); setDraft((d) => ({ ...d, recordedDate: e.target.value })); setErrors((x) => ({ ...x, date: undefined })); }} aria-invalid={Boolean(errors.date)} aria-describedby={errors.date ? 'os-date-error' : undefined} data-testid="input-opening-date" />{err('date')}</div></div>
-        <h2 className="ms-section-title">Items</h2>
         {err('rows')}
         {draft.rows.map((r, i) => <div key={r.rowId} className="ms-fields" data-testid={`row-opening-${i}`} style={{ borderTop: '1px solid var(--admin-border, #ddd)', paddingTop: 12 }}>
           <div className="ms-field"><label htmlFor={`os-item-${i}`}>Allergen or product <span className="mr-form__required">*</span></label>
-            <ReferenceSelect id={`os-item-${i}`} label="Item" kind="items" fetchPage={listItemReferences} value={r.item ? r.item.value : ''} selected={r.item} placeholder="Select item" invalid={Boolean(errors[i])}
+            <ReferenceSelect id={`os-item-${i}`} label="Item" kind="items" fetchPage={listItemReferences} value={r.item ? r.item.value : ''} selected={r.item} placeholder="Select item" invalid={Boolean(errors[i])} showResultHint={false}
               onChange={(_v, o) => patchRow(i, { item: o ? { value: o.value, label: o.label, itemKind: o.itemKind, itemId: o.itemId, unit: o.unit } : null })} />
             {r.item && <span className="mr-form__hint">{r.item.itemKind === 'combo' ? 'Product, whole units only' : 'Allergen, up to 3 decimals'}{r.item.unit ? ` · ${r.item.unit}` : ''}</span>}</div>
           <div className="ms-field"><label htmlFor={`os-qty-${i}`}>Quantity <span className="mr-form__required">*</span></label><input id={`os-qty-${i}`} className="mr-form__control" inputMode="decimal" autoComplete="off" value={r.quantity} onChange={(e) => patchRow(i, { quantity: e.target.value })} aria-invalid={Boolean(errors[i])} aria-describedby={errors[i] ? `os-${i}-error` : undefined} data-testid={`input-opening-qty-${i}`} /></div>
-          <div className="ms-field"><label htmlFor={`os-rate-${i}`}>Unit rate <span className="mr-form__required">*</span></label><input id={`os-rate-${i}`} className="mr-form__control" inputMode="decimal" autoComplete="off" value={r.unitRate} onChange={(e) => patchRow(i, { unitRate: e.target.value })} aria-invalid={Boolean(errors[i])} aria-describedby={errors[i] ? `os-${i}-error` : undefined} data-testid={`input-opening-rate-${i}`} /><span className="mr-form__hint">Entered cost per unit, not MRP or selling price.</span></div>
+          <div className="ms-field"><InfoDisclosure id={`os-rate-${r.rowId}-help`} title="Unit rate" text="Entered cost per unit, not MRP or selling price. This can also be a weighted-average cost per unit." testId={`button-opening-rate-info-${i}`}><label htmlFor={`os-rate-${i}`}>Unit rate <span className="mr-form__required">*</span></label></InfoDisclosure><input id={`os-rate-${i}`} className="mr-form__control" inputMode="decimal" autoComplete="off" value={r.unitRate} onChange={(e) => patchRow(i, { unitRate: e.target.value })} aria-invalid={Boolean(errors[i])} aria-describedby={errors[i] ? `os-${i}-error` : undefined} data-testid={`input-opening-rate-${i}`} /></div>
           <div className="ms-field"><label htmlFor={`os-loc-${i}`}>Storage location</label>
-            <ReferenceSelect id={`os-loc-${i}`} label="Storage location" kind="locations" fetchPage={listReference} pinned={[UNALLOCATED]} value={r.location.value} selected={r.location} placeholder="Unallocated"
+            <ReferenceSelect id={`os-loc-${i}`} label="Storage location" kind="locations" fetchPage={listReference} pinned={[UNALLOCATED]} value={r.location.value} selected={r.location} placeholder="Unallocated" showResultHint={false}
               onChange={(_v, o) => patchRow(i, { location: o ? { value: o.value, label: o.label } : UNALLOCATED })} /></div>
           {err(i)}
           {draft.rows.length > 1 && <div><button type="button" className="admin-button admin-button--secondary" onClick={() => { reset(); setDraft((d) => ({ ...d, rows: d.rows.filter((_x, j) => j !== i) })); }} data-testid={`button-remove-opening-${i}`}><Trash2 size={16} /> Remove</button></div>}

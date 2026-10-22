@@ -1,3 +1,14 @@
+.opening-stock-master .admin-page-head { flex-wrap: wrap; }
+.opening-stock-master .admin-page-head > :first-child { flex: 1 1 300px; min-width: 0; }
+.opening-stock-master .admin-mr-head-actions { flex: 0 0 auto; max-width: 100%; }
+.opening-stock-master .admin-toolbar { justify-content: flex-start; align-items: center; gap: 12px; }
+.opening-stock-master .admin-toolbar > .admin-button { max-width: 100%; white-space: normal; }
+.opening-stock-master .admin-search { display: block; flex: 1 1 270px; min-width: 0; max-width: 460px; }
+.opening-stock-master .admin-search input { min-width: 0; }
+@media (max-width: 600px) {
+  .opening-stock-master .admin-search { max-width: none; }
+}
+
 /* Keep reviewed tables inside their own horizontal scrollers, not the grid's
    intrinsic minimum width. Other inventory workflows retain their styling. */
 .opening-stock-import,
