@@ -3,6 +3,16 @@ name: Development recovery custody
 description: Approved storage boundary for original-development recovery evidence.
 ---
 
+Receipt-backed stock recovery is scoped to the database serving the user's
+Replit preview, not hosted UAT or production. The preview environment category
+does not identify the exact target or authorize mutation.
+
+**Why:** The user clarified that the reported stock error occurs in Replit
+preview rather than the hosted UAT website.
+
+**How to apply:** Independently verify the preview-to-API-to-database mapping
+and exact target identity, then obtain separate explicit recovery approval.
+
 The user approved private Replit App Storage for original-development recovery
 backups and actual independent restoration checks. This does not authorize UAT
 or production operations.
