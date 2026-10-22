@@ -124,6 +124,9 @@ def ready(db):
         ["0051_mr_zones"], ["0052_hq_mr_zones_merge"],
         # Email evidence uses its own AAD/index domain and unchanged account keys.
         ["0053_email_invitations"],
+        # Reviewed template presentation/test-evidence successor changes no
+        # account ciphertext, blind indexes, reservations or encryption anchors.
+        ["0054_modern_email_tests"],
     ):
         raise AccountCryptoError()
     current = crypto()

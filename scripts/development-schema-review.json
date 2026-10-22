@@ -67,7 +67,7 @@
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",
-    "scripts/development-sync.py": "e5cb7ef935ecc35bf5213a0d94b452ff65acad37aa92c852a909c221035beb69",
+    "scripts/development-sync.py": "a4a421a58120fd7efba5b738d8848ecfd8b7778d8a8137e559960a757f1d0d7f",
     "scripts/deploy-migrations.py": "44d404c3f367b96150db76092ad150545f784b6010526edb5c38d59e44776995",
     "scripts/development-database.json": "32817cf58e25993a0abfd65f90f73c86a3304f180a55e2925ab775a229e388c1",
     "artifacts/api-server/backend/alembic/env.py": "53ebac96cb7e80536bb993f17652dfc65a3e5c68b9efbcecc343571fd544e354"

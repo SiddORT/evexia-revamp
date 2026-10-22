@@ -20,6 +20,21 @@ class Blocked(ValueError):
     pass
 
 
+def failure_diagnostic(error):
+    """Retain fail-closed behavior while explaining sanitized readiness errors."""
+    if isinstance(error, Blocked):
+        return str(error)
+    try:
+        from fastapi import HTTPException
+        from app.services.initialization_diagnostics import exception_diagnostic
+        message = exception_diagnostic(error)
+        if isinstance(error, HTTPException) and isinstance(error.__context__, Exception):
+            message += "; readiness cause: " + exception_diagnostic(error.__context__)
+        return message
+    except Exception:
+        return type(error).__name__
+
+
 def additive(path):
     """Conservative allowlist; arbitrary Python/SQL cannot be auto-authorized."""
     tree = ast.parse(path.read_text())
@@ -196,5 +211,5 @@ if __name__ == "__main__":
     try:
         sys.exit(synchronize())
     except Exception as exc:
-        print("DEVELOPMENT_SYNC_BLOCKED: " + (str(exc) if isinstance(exc, Blocked) else type(exc).__name__), file=sys.stderr)
+        print("DEVELOPMENT_SYNC_BLOCKED: " + failure_diagnostic(exc), file=sys.stderr)
         sys.exit(1)

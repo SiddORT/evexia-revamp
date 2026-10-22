@@ -25,6 +25,34 @@ sync = load("dev_sync_tests", "development-sync.py")
 runtime = load("running_release_tests", "verify-running-release.py")
 
 
+class DiagnosticTests(unittest.TestCase):
+    def test_readiness_diagnostic_explains_cause_without_private_values(self):
+        from fastapi import HTTPException
+        try:
+            try:
+                raise RuntimeError(
+                    "readiness failed password=private-password "
+                    "postgresql://operator:private-password@private-host/database")
+            except RuntimeError:
+                raise HTTPException(503, "Service unavailable") from None
+        except HTTPException as error:
+            message = sync.failure_diagnostic(error)
+        self.assertIn("HTTPException", message)
+        self.assertIn("readiness cause: RuntimeError", message)
+        self.assertIn("readiness failed", message)
+        self.assertNotIn("private-password", message)
+        self.assertNotIn("private-host", message)
+
+    def test_controlled_blocker_and_unrenderable_errors_stay_fail_closed(self):
+        self.assertEqual(sync.failure_diagnostic(sync.Blocked("WRONG_DEVELOPMENT_DATABASE")),
+                         "WRONG_DEVELOPMENT_DATABASE")
+        class Unrenderable(Exception):
+            def __str__(self):
+                raise RuntimeError("private detail")
+        self.assertEqual(sync.failure_diagnostic(Unrenderable()),
+                         "Exception: diagnostic unavailable; message withheld")
+
+
 class AdditiveTests(unittest.TestCase):
     def check(self, body, *, module="", success=False):
         source = ("from alembic import op\nimport sqlalchemy as sa\nrevision='next'\n"
