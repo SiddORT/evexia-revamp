@@ -8216,6 +8216,8 @@ export interface StaffDeletion {
   expected_version: number;
 }
 
+export type StaffDesignationChoiceStatus =
+  (typeof StaffDesignationChoiceStatus)[keyof typeof StaffDesignationChoiceStatus];
 export type StaffEditDialCountry =
   (typeof StaffEditDialCountry)[keyof typeof StaffEditDialCountry];
 
@@ -8515,8 +8517,11 @@ export interface StaffPage {
   offset: number;
 }
 
+export type StaffSearchRole =
+  (typeof StaffSearchRole)[keyof typeof StaffSearchRole] | null;
 export interface StaffSearch {
   cursor?: string | null;
+  designation_id?: string | null;
   /**
    * @minimum 1
    * @maximum 100
@@ -8527,6 +8532,8 @@ export interface StaffSearch {
    * @maxLength 200
    */
   query: string;
+  role?: StaffSearchRole;
+  status?: StaffSearchStatus;
 }
 
 export interface StaffSearchPage {
@@ -10737,6 +10744,10 @@ export type ReviewOpeningStockImportParams = {
 export type ReviewOpeningStockImportBody = {
   file: Blob | File;
 };
+
+export type ReviewOpeningStockImportBody = {
+  file: Blob | File;
+};
 export type ReviewOpeningStockImportBody = {
   file: Blob | File;
 };
@@ -11883,8 +11894,13 @@ export type ListStaffParams = {
    * @maximum 10000
    */
   offset?: number;
+  status?: ListStaffStatus;
+  designation_id?: string | null;
+  role?: ListStaffRole;
 };
 
+export type ListStaffStatus =
+  (typeof ListStaffStatus)[keyof typeof ListStaffStatus] | null;
 export type ListStorageLocationsParams = {
   /**
    * @maxLength 200
@@ -12228,3 +12244,59 @@ export type ResolvePortalHostnameParams = {
    */
   hostname: string;
 };
+
+export interface StaffDesignationChoice {
+  deleted: boolean;
+  id: string;
+  name: string;
+  status: StaffDesignationChoiceStatus;
+}
+
+export type ListStaffFilterDesignationsParams = {
+  cursor?: string | null;
+};
+
+export interface StaffDesignationChoices {
+  has_more: boolean;
+  items: StaffDesignationChoice[];
+  next_cursor: string | null;
+}
+
+export type StaffSearchStatus =
+  (typeof StaffSearchStatus)[keyof typeof StaffSearchStatus] | null;
+
+export const StaffSearchRole = {
+  Staff: "Staff",
+  Manager: "Manager",
+  Accountant: "Accountant",
+  Back_End: "Back End",
+  Sub_Admin: "Sub Admin",
+  Super_Admin: "Super Admin",
+} as const;
+
+export const StaffDesignationChoiceStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export const StaffSearchStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export const ListStaffStatus = {
+  active: "active",
+  inactive: "inactive",
+} as const;
+
+export type ListStaffRole =
+  (typeof ListStaffRole)[keyof typeof ListStaffRole] | null;
+
+export const ListStaffRole = {
+  Staff: "Staff",
+  Manager: "Manager",
+  Accountant: "Accountant",
+  Back_End: "Back End",
+  Sub_Admin: "Sub Admin",
+  Super_Admin: "Super Admin",
+} as const;

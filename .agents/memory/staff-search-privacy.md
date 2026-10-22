@@ -27,3 +27,13 @@ different scopes are confusing.
 **How to apply:** Future staff search UI changes should retain one explicit
 submit action and explain the loaded batch or section scope without introducing
 a second client-side search control.
+
+Staff directory filters use business-role labels and saved designation identities,
+including inactive or deleted references still attached to staff. Keep these
+separate from active-only choices for new staff assignments.
+
+**Why:** The user requested directory filtering without workspace-permission
+semantics or silently hiding staff whose designation is no longer active.
+
+**How to apply:** Combine exact metadata filters on the server with the bounded
+encrypted search; make loading later choice and result sections deliberate.

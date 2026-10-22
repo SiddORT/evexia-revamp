@@ -298,7 +298,8 @@ export function reportingIdentityGuard() {
 // Dedicated authenticated staff transport. Never replay mutations: a lost create
 // response may already have committed and its initial password is unrecoverable.
 export async function staffRequest(path = '', body, { signal } = {}) {
-  if (!/^(?:|\/search|\/[0-9a-f-]{36}(?:\/(?:edit|status|access|delete))?|\?limit=\d+&offset=\d+)$/.test(path)) {
+  const listingPath = /^\?limit=\d+&offset=\d+(?:&status=(?:active|inactive))?(?:&designation_id=[0-9a-f-]{36})?(?:&role=(?:Staff|Manager|Accountant|Back\+End|Sub\+Admin|Super\+Admin))?$/.test(path);
+  if (!listingPath && !/^(?:|\/search|\/filter-designations(?:\?cursor=[0-9a-f-]{36})?|\/[0-9a-f-]{36}(?:\/(?:edit|status|access|delete))?)$/.test(path)) {
     throw new SessionError('Unsupported staff operation.');
   }
   const mutation = body !== undefined && path !== '/search';

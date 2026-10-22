@@ -526,6 +526,7 @@ export const createMRDirectoryBodyPaymentLimitOneMin = 0;
 export const createMRDirectoryBodyPaymentLimitOneMax = 999999999.99;
 export const createMRDirectoryBodyPhoneMax = 20;
 export const createMRDirectoryBodyStateMax = 100;
+
 export const resolveCreatedMRResponseUserIdMin = 3;
 export const resolveCreatedMRResponseUserIdMax = 32;
 export const createMRDirectoryBodyZoneIdsOneMax = 10000;
@@ -9680,6 +9681,10 @@ export const createMRDirectoryBodyPaymentLimitDefault = `0.00`;
 export const createMRDirectoryBodyPhoneDefault = ``;
 
 export const createMRDirectoryBodyPincodeRegExp = new RegExp("^[1-9][0-9]{5}$");
+
+export const resolveCreatedMRResponseUserIdRegExp = new RegExp(
+  "^[a-z][a-z0-9._-]{2,31}$",
+);
 
 export const createMRDirectoryBodyUserIdDefault = ``;
 export const resolveCreatedMRResponseUserIdRegExp = new RegExp(
@@ -22886,6 +22891,23 @@ export const ListStaffQueryParams = zod.object({
     .min(listStaffQueryOffsetMin)
     .max(listStaffQueryOffsetMax)
     .default(listStaffQueryOffsetDefault),
+  status: zod.union([zod.enum(["active", "inactive"]), zod.null()]).optional(),
+  designation_id: zod
+    .union([zod.coerce.string().uuid(), zod.null()])
+    .optional(),
+  role: zod
+    .union([
+      zod.enum([
+        "Staff",
+        "Manager",
+        "Accountant",
+        "Back End",
+        "Sub Admin",
+        "Super Admin",
+      ]),
+      zod.null(),
+    ])
+    .optional(),
 });
 
 export const listStaffResponseItemsItemDialCountryDefault = `IN`;
@@ -23743,12 +23765,19 @@ export const CreateStaffResponse = zod.object({
 });
 
 /**
+ * @summary Filter Designations
+ */
+export const ListStaffFilterDesignationsQueryParams = zod.object({
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+});
+/**
  * Bounded directory scan. Search terms belong in the body, never a URL.
  * @summary Search Staff
  */
 
 export const SearchStaffDirectoryBody = zod.object({
   cursor: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  designation_id: zod.union([zod.string().uuid(), zod.null()]).optional(),
   limit: zod
     .number()
     .int()
@@ -23759,6 +23788,20 @@ export const SearchStaffDirectoryBody = zod.object({
     .string()
     .min(searchStaffDirectoryBodyQueryMin)
     .max(searchStaffDirectoryBodyQueryMax),
+  role: zod
+    .union([
+      zod.enum([
+        "Staff",
+        "Manager",
+        "Accountant",
+        "Back End",
+        "Sub Admin",
+        "Super Admin",
+      ]),
+      zod.null(),
+    ])
+    .optional(),
+  status: zod.union([zod.enum(["active", "inactive"]), zod.null()]).optional(),
 });
 
 export const searchStaffDirectoryResponseItemsItemDialCountryDefault = `IN`;
@@ -29932,3 +29975,18 @@ export const resolveCreatedMRResponseDoctorDaysLimitMax = 3650;
 export const resolveCreatedMRResponseLandmarkMax = 200;
 
 export const resolveCreatedMRResponseReportingStaffNameDefault = ``;
+
+export const ListStaffFilterDesignationsResponse = zod.object({
+  has_more: zod.boolean(),
+  items: zod.array(
+    zod.object({
+      deleted: zod.boolean(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      status: zod.enum(["active", "inactive"]),
+    }),
+  ),
+  next_cursor: zod.union([zod.string().uuid(), zod.null()]),
+});
+
+export const resolveCreatedMRResponseUserIdMax = 32;

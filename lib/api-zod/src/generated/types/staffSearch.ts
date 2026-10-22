@@ -5,9 +5,12 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { StaffSearchRole } from "./staffSearchRole";
+import type { StaffSearchStatus } from "./staffSearchStatus";
 
 export interface StaffSearch {
   cursor?: string | null;
+  designation_id?: string | null;
   /**
    * @minimum 1
    * @maximum 100
@@ -18,4 +21,6 @@ export interface StaffSearch {
    * @maxLength 200
    */
   query: string;
+  role?: StaffSearchRole;
+  status?: StaffSearchStatus;
 }

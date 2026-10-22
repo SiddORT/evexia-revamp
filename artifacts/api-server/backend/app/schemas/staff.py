@@ -7,6 +7,29 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, 
 
 from app.schemas.phone import DialCountry, normalize_phone
 
+StaffBusinessRole = Literal["Staff", "Manager", "Accountant", "Back End", "Sub Admin", "Super Admin"]
+StaffBusinessStatus = Literal["active", "inactive"]
+
+
+class StaffDirectoryFilters(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    status: StaffBusinessStatus | None = None
+    designation_id: uuid.UUID | None = None
+    role: StaffBusinessRole | None = None
+
+
+class StaffDesignationChoice(BaseModel):
+    id: uuid.UUID
+    name: str
+    status: StaffBusinessStatus
+    deleted: bool
+
+
+class StaffDesignationChoices(BaseModel):
+    items: list[StaffDesignationChoice]
+    has_more: bool
+    next_cursor: uuid.UUID | None
+
 
 class StaffFields(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
@@ -103,8 +126,7 @@ class StaffPage(BaseModel):
     offset: int
 
 
-class StaffSearch(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+class StaffSearch(StaffDirectoryFilters):
     query: str = Field(min_length=2, max_length=200)
     cursor: uuid.UUID | None = None
     limit: int = Field(default=100, ge=1, le=100)

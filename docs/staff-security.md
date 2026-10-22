@@ -357,6 +357,22 @@ hooks are not used here, since query caches would retain plaintext results.
 The existing keyed email uniqueness index is unchanged; no additional search
 indexes, plaintext or deterministic substring tokens are introduced.
 
+Both listing and bounded search accept optional `status`, `designation_id` and
+business `role` filters. They combine as exact server-side predicates before
+paging/scanning; workspace permission assignments are not role labels. No schema
+or encryption changes are required. The staff-authorized
+`GET /api/v1/admin/staff/filter-designations` returns at most 100 saved designation
+identities per explicit request with UUID keyset continuation, including inactive
+and deleted catalogue references still used by non-deleted staff. It does not
+require Designation Master permissions or automatically traverse the catalogue.
+The portal resets section position on search/filter submission, aborts replaced
+requests, and keeps section continuation beside search. Table pagination still
+applies only to the loaded section. CSV export is labeled “Export loaded section”
+and never fetches additional sections. Import remains unavailable.
+
+This layout/filter change was inspected in source only. Tests, browser checks,
+builds and test-running completion commands were skipped at the user's request.
+
 The selected approach decrypts only in authorized request memory. A primary-key
 keyset scan fetches at most 501 profiles (one lookahead) with joined usernames,
 decrypts at most 500, and returns at most 100 matches per request. It does not

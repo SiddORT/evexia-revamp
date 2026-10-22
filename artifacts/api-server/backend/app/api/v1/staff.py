@@ -7,6 +7,7 @@ from app.api.deps import require_permissions
 from app.core.config import Settings, get_settings
 from app.db.session import get_db
 from app.schemas.staff import StaffCreated, StaffCreate, StaffEdit, StaffFields, StaffPage, StaffResponse, StaffStatus, StaffSearch, StaffSearchPage, StaffAccess, StaffDeletion
+from app.schemas.staff import StaffBusinessRole, StaffBusinessStatus, StaffDirectoryFilters, StaffDesignationChoices
 from app.services.auth import Identity
 from app.services import staff as service
 
@@ -16,9 +17,19 @@ manager = require_permissions("staff.manage")
 
 @router.get("", response_model=StaffPage)
 def list_staff(limit: int = Query(20, ge=1, le=100), offset: int = Query(0, ge=0, le=10000),
+               status: StaffBusinessStatus | None = None, designation_id: uuid.UUID | None = None,
+               role: StaffBusinessRole | None = None,
                actor: Identity = Depends(manager), db: Session = Depends(get_db),
                settings: Settings = Depends(get_settings)):
-    return service.listing(db, actor, settings, limit, offset)
+    return service.listing(db, actor, settings, limit, offset,
+                           StaffDirectoryFilters(status=status, designation_id=designation_id, role=role))
+
+
+@router.get("/filter-designations", response_model=StaffDesignationChoices, operation_id="listStaffFilterDesignations")
+def filter_designations(cursor: uuid.UUID | None = None,
+                        actor: Identity = Depends(manager), db: Session = Depends(get_db),
+                        settings: Settings = Depends(get_settings)):
+    return service.filter_designations(db, actor, settings, cursor)
 
 
 @router.post("", response_model=StaffCreated, status_code=201)

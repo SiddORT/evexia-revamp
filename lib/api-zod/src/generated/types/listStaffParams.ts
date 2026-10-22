@@ -5,6 +5,8 @@
  * Generated from the FastAPI application. Paths are relative to the /api mount used by this workspace.
  * OpenAPI spec version: 1.0.0
  */
+import type { ListStaffRole } from "./listStaffRole";
+import type { ListStaffStatus } from "./listStaffStatus";
 
 export type ListStaffParams = {
   /**
@@ -17,4 +19,7 @@ export type ListStaffParams = {
    * @maximum 10000
    */
   offset?: number;
+  status?: ListStaffStatus;
+  designation_id?: string | null;
+  role?: ListStaffRole;
 };

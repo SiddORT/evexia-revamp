@@ -35,8 +35,11 @@ export function validateStaff(values, _records = [], _exceptId = null, designati
   return { fields, errors };
 }
 
-export const loadStaff = (offset = 0, options = {}) => staffRequest(`?limit=100&offset=${offset}`, undefined, options);
-export const searchStaff = (query, cursor = null, options = {}) => staffRequest('/search', { query, cursor, limit: 100 }, options);
+const directoryFilters = (filters = {}) => Object.fromEntries(['status', 'designation_id', 'role']
+  .filter((key) => filters[key]).map((key) => [key, filters[key]]));
+export const loadStaff = (offset = 0, options = {}) => staffRequest(`?${new URLSearchParams({ limit: 100, offset, ...directoryFilters(options.filters) })}`, undefined, options);
+export const searchStaff = (query, cursor = null, options = {}) => staffRequest('/search', { query, cursor, limit: 100, ...directoryFilters(options.filters) }, options);
+export const staffDesignationChoices = (cursor = null) => staffRequest(`/filter-designations${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`);
 export const getStaff = (id) => staffRequest(`/${id}`);
 export const createStaff = (values) => staffRequest('', values);
 export const updateStaff = (record, values) => staffRequest(`/${record.id}/edit`, { ...values, expected_version: record.version });

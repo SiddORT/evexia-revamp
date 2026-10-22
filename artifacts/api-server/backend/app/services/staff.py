@@ -121,13 +121,46 @@ def create(db, actor, body, settings):
     return transaction(work, db)
 
 
-def listing(db, actor, settings, limit, offset):
+def directory_filters(stmt, filters):
+    # Exact predicates on existing business metadata only; never workspace roles
+    # or designation availability. Historical saved designation IDs remain valid.
+    for field in ("status", "designation_id", "role"):
+        value = getattr(filters, field, None)
+        if value is not None:
+            stmt = stmt.where(getattr(StaffProfile, field) == value)
+    return stmt
+
+
+def filter_designations(db, actor, settings, cursor):
+    def work():
+        db.execute(text("SET LOCAL statement_timeout = '2000ms'"))
+        db.execute(text("SET LOCAL lock_timeout = '1000ms'"))
+        authorize(db, actor, settings)
+        used = select(StaffProfile.id).where(
+            StaffProfile.designation_id == Designation.id,
+            StaffProfile.deleted_at.is_(None)).exists()
+        stmt = select(Designation).where(used)
+        if cursor is not None:
+            stmt = stmt.where(Designation.id > cursor)
+        rows = list(db.scalars(stmt.order_by(Designation.id).limit(101)))
+        result = dict(
+            items=[dict(id=row.id, name=row.name, status=row.status,
+                        deleted=row.deleted_at is not None) for row in rows[:100]],
+            has_more=len(rows) > 100,
+            next_cursor=rows[99].id if len(rows) > 100 else None)
+        db.commit()
+        return result
+    return transaction(work, db)
+
+
+def listing(db, actor, settings, limit, offset, filters=None):
     def work():
         _current, crypto = authorize(db, actor, settings)
-        rows = list(db.execute(select(StaffProfile, User.id, User.username_ciphertext, User.username_index, Designation.name)
+        stmt = directory_filters(select(StaffProfile, User.id, User.username_ciphertext, User.username_index, Designation.name)
             .join(User, User.id == StaffProfile.user_id)
             .join(Designation, Designation.id == StaffProfile.designation_id)
-            .where(StaffProfile.deleted_at.is_(None)).order_by(
+            .where(StaffProfile.deleted_at.is_(None)), filters)
+        rows = list(db.execute(stmt.order_by(
             StaffProfile.created_at.desc(), StaffProfile.id.desc()).limit(limit + 1).offset(offset)))
         from app.services.account_crypto import read
         result = {"items": [projection(db, row, crypto, read(owner, "username", ciphertext, digest), name)
@@ -149,11 +182,12 @@ def search(db, actor, settings, body):
         db.execute(text("SET LOCAL statement_timeout = '2000ms'"))
         db.execute(text("SET LOCAL lock_timeout = '1000ms'"))
         _current, crypto = authorize(db, actor, settings)
-        # Primary-key keyset scan: no plaintext predicates, new blind indexes,
-        # counts, offsets, stored search sessions, or unbounded result buffers.
+        # Primary-key keyset scan: no plaintext personal-data predicates, new
+        # blind indexes, counts, offsets, stored sessions or unbounded buffers.
         stmt = (select(StaffProfile, User.id, User.username_ciphertext, User.username_index, Designation.name).join(User, User.id == StaffProfile.user_id)
                 .join(Designation, Designation.id == StaffProfile.designation_id)
                 .where(StaffProfile.deleted_at.is_(None)))
+        stmt = directory_filters(stmt, body)
         if body.cursor is not None:
             stmt = stmt.where(StaffProfile.id > body.cursor)
         rows = list(db.execute(stmt.order_by(StaffProfile.id).limit(SEARCH_SCAN_LIMIT + 1)))
