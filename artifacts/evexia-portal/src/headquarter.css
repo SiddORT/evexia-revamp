@@ -7,8 +7,8 @@
 .admin-hq-desktop .admin-table td { vertical-align: top; line-height: 1.5; }
 .admin-hq-code { display: inline-block; min-width: 2.5em; color: var(--admin-text-soft); font-weight: 700; letter-spacing: .035em; }
 .admin-hq-mobile { display: none; }
-/* Bound the panel itself; all form sections share the same inset and width. */
-.admin-hq-form-panel { box-sizing: border-box; width: 100%; max-width: 1000px; min-width: 0; container: headquarter-form / inline-size; }
+/* Fill the available content width; keep compact section insets and field sizing. */
+.admin-hq-form-panel { box-sizing: border-box; width: 100%; min-width: 0; container: headquarter-form / inline-size; }
 .admin-hq-form .admin-category-form__intro { gap: 12px; padding: 18px 20px 0; }
 .admin-hq-form .admin-category-form__intro > div { min-width: 0; overflow-wrap: anywhere; }
 .admin-hq-form .mr-form__body { padding: 16px 20px 20px; }

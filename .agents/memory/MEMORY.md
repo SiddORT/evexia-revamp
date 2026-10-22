@@ -73,7 +73,7 @@
 - [Monetary rejection boundary](monetary-rejection-boundary.md) — fixed-scale PostgreSQL NUMERIC rounds before CHECK; reject excess input precision before coercion.
 - [Merged schema snapshots](merged-schema-snapshots.md) — completion synchronization can add merged tables after local export validation; regenerate and replace stale downloads.
 - [Listing layout checks](listing-layout-checks.md) — measure changed header/footer surfaces separately from existing record-table scroll metrics.
-- [Headquarter form density](headquarter-form-density.md) — compact means a bounded panel and purpose-sized controls, not padded cards; retain one area per row.
+- [Headquarter form density](headquarter-form-density.md) — full-width card with compact internal spacing and purpose-sized controls; retain one area per row.
 - [Fieldset grid measurements](fieldset-grid-measurements.md) — count rendered columns from field geometry; computed fieldset grid tracks may remain unresolved.
 - [Sales Target performance safety](sales-target-performance-safety.md) — benchmark synthetic disposable data only; index changes need separate review and operator approval.
 - [Orders scope](orders-scope.md) — preserve session-only SPT/Lupin boundaries; keep other Orders workflows driven by separate requirements.
