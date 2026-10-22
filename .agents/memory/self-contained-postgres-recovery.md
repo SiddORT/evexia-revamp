@@ -15,3 +15,13 @@ dump it completely rather than filtering only the test schema. For operator
 recovery, retain and actually restore the complete reviewed backup with its
 dependencies and independently recoverable keys. Never skip failed restore
 objects or call an integrity check a restoration rehearsal.
+
+Export recovery snapshots from the top-level transaction, not an ORM savepoint.
+
+**Why:** PostgreSQL rejects snapshot export inside a subtransaction. Closing an
+ORM session can roll back to a savepoint without releasing that savepoint, so
+session closure alone does not establish a top-level snapshot context.
+
+**How to apply:** Run connection-only identity checks on the owning connection
+before snapshot export; keep the consistent snapshot and writer-exclusion locks
+alive until the full archive and independent content comparison finish.
