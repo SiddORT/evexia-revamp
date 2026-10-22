@@ -13,7 +13,7 @@ const PAGE = 25;
 const MAX_OFFSET = 10000;
 const DAY = 86400000;
 const EMPTY = { start: '', end: '', purpose: '', status: '', recipient: '' };
-const PURPOSE = { password_recovery: 'Password recovery', account_invitation: 'Account invitation' };
+const PURPOSE = { password_recovery: 'Password recovery', account_invitation: 'Account invitation', template_test: 'Template test email' };
 const STATUS = { pending: 'Pending', sending: 'Sending', smtp_accepted: 'SMTP accepted', failed: 'Failed', unknown: 'Unknown / interrupted' };
 const dash = (v) => (v === null || v === undefined || v === '' ? '—' : String(v));
 const sessionKey = (s) => (s.status === 'authenticated' && s.user?.id ? s.user.id : '');

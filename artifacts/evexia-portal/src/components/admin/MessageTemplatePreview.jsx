@@ -1,14 +1,17 @@
 import { useMemo, useState } from 'react';
 import { SUPPORTED_TOKENS, SAMPLE_VALUES, inspectTokens, substituteTokens, buildEmailPreview } from '../../services/messageTemplatePreview.js';
 import './messageTemplates.css';
-import { EMAIL_VARIABLES, INVITATION_VARIABLES } from '../../services/emailTemplates.js';
+import { EMAIL_VARIABLES, INVITATION_VARIABLES, isInvitationEvent } from '../../services/emailTemplates.js';
 
 const tok = (t) => `{{${t}}}`;
 export default function MessageTemplatePreview({ channel, content, eventKey = null, idPrefix = 'mtp' }) {
   const [mode, setMode] = useState('tokens');
-  const [values, setValues] = useState({ ...SAMPLE_VALUES });
+  const [values, setValues] = useState({ ...SAMPLE_VALUES,
+    portal_name: eventKey === 'mr_invitation' ? 'MR portal (fictional)' : 'Admin workspace (fictional)',
+    login_id: eventKey === 'mr_invitation' ? 'mr.fictional' : 'staff.fictional',
+    recipient_name: eventKey === 'mr_invitation' ? 'Fictional MR Member' : 'Fictional Staff Member' });
   const email = channel === 'email';
-  const variables = eventKey === 'account_invitation' ? INVITATION_VARIABLES : EMAIL_VARIABLES;
+  const variables = isInvitationEvent(eventKey) ? INVITATION_VARIABLES : EMAIL_VARIABLES;
   const c = content || {};
   const fields = email ? [['subject', c.subject], ['html', c.html], ['text', c.text]] : [['body', c.body]];
   const report = useMemo(() => {

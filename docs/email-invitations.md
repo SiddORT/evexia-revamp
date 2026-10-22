@@ -54,13 +54,17 @@ all links bound to the old credential version.
 
 MR Forgot password continues to use the existing recovery event, generic public
 responses, eligibility checks and 15-minute version-bound single-use mechanism.
-There is no public Super Admin recovery or arbitrary-recipient send endpoint.
+There is no public Super Admin recovery or public arbitrary-recipient send
+endpoint. The protected Super Admin saved-template test action is separate from
+account workflows and cannot create tokens; see [email templates](email-templates.md).
 
 ## SMTP outcomes and Email Logs
 
 The sender uses only the approved environment-configured TLS SMTP transport,
-never stored Communication defaults. Both events resolve the latest committed
-database template at dispatch; no hardcoded-content fallback is used.
+never stored Communication defaults. Recovery resolves `password_recovery`;
+the verified invitation identity resolves `account_invitation` for staff/Admin
+and `mr_invitation` for MR. Both live invitation kinds retain the existing signed
+token/delivery purpose. No hardcoded-content or cross-role fallback is used.
 See [email templates](email-templates.md) and [recovery](password-recovery.md).
 
 `POST /api/v1/admin/reporting/invitations/{staff|mr}/{record-id}` requires the
@@ -79,6 +83,12 @@ timestamps, correlation reference and safe failure category. Pagination and
 summary counts use one SQL snapshot of the same filtered set. Recipient search
 uses a purpose-separated keyed equality index; it is deliberately not substring
 search. Staff/MR and unauthenticated callers cannot read this report.
+
+Saved-template test sends use the distinct `template_test` purpose/filter and
+retain the selected ID/version before SMTP, with fictional role-appropriate
+samples and a nonfunctional reserved-domain action URL. Historical invitation
+records keep their existing purpose and selected shared-template ID/version;
+they are not rewritten to imply the new MR template was used historically.
 
 Statuses mean:
 

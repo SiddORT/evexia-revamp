@@ -10,6 +10,6 @@ import type { EmailTemplateRecord } from "./emailTemplateRecord";
 
 export interface EmailTemplateList {
   events: EmailTemplateEvent[];
-  /** @maxItems 101 */
+  /** @maxItems 102 */
   items: EmailTemplateRecord[];
 }

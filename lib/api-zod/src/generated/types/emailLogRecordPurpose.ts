@@ -12,4 +12,5 @@ export type EmailLogRecordPurpose =
 export const EmailLogRecordPurpose = {
   password_recovery: "password_recovery",
   account_invitation: "account_invitation",
+  template_test: "template_test",
 } as const;

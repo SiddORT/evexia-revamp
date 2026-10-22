@@ -13,4 +13,5 @@ export type EmailTemplateRecordEventKey =
 export const EmailTemplateRecordEventKey = {
   password_recovery: "password_recovery",
   account_invitation: "account_invitation",
+  mr_invitation: "mr_invitation",
 } as const;

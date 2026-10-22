@@ -560,9 +560,11 @@ export async function communicationRequest(path = '', body, { signal } = {}) {
 
 // Separate endpoint boundary; no browser-local fallback and no mutation replay.
 export async function emailTemplateRequest(path = '', body, { signal } = {}) {
-  if (!/^(?:|\/events|\/[0-9a-f-]{36}(?:\/(?:edit|delete))?)$/i.test(path)
-      || (body !== undefined && path && !/\/(?:edit|delete)$/.test(path))) throw new SessionError('Unsupported email template operation.');
+  if (!/^(?:|\/events|\/[0-9a-f-]{36}(?:\/(?:edit|delete|test|modern-layout))?)$/i.test(path)
+      || (body !== undefined && path && !/\/(?:edit|delete|test)$/.test(path))
+      || (body === undefined && /\/(?:edit|delete|test)$/.test(path))) throw new SessionError('Unsupported email template operation.');
   const mutation = body !== undefined;
+  const testSend = /\/test$/.test(path);
   const epoch = generation, owner = state.user?.id;
   const check = () => {
     signal?.throwIfAborted();
@@ -575,7 +577,8 @@ export async function emailTemplateRequest(path = '', body, { signal } = {}) {
   check();
   const uncertain = () => {
     const error = new SessionError(mutation
-      ? 'Save outcome could not be confirmed. Load latest to reconcile before retrying; your draft is kept.'
+      ? testSend ? 'Test submission outcome is uncertain. Check Email Logs; do not automatically resend.'
+        : 'Save outcome could not be confirmed. Load latest to reconcile before retrying; your draft is kept.'
       : 'Unable to load email templates. Check your connection and retry.');
     error.ambiguous = mutation;
     return error;
@@ -618,7 +621,11 @@ export async function emailTemplateRequest(path = '', body, { signal } = {}) {
       await verifySession(true, 'admin');
       throw new SessionError('Session checked. Your draft is preserved; retry explicitly.', 401);
     }
-    const error = new SessionError(response.status === 409
+    const error = new SessionError(testSend && response.status === 422
+      ? 'Enter one valid To email address only, without a display name, spaces or additional recipients.'
+      : testSend && response.status === 409 ? 'Saved template version changed. Close this dialog and load latest before a new test.'
+      : testSend && response.status === 429 ? 'Test-email limit reached. Retry after 15 minutes.'
+      : response.status === 409
       ? 'Template changed, or its name/event is already in use. Load latest and review; your draft is kept.'
       : response.status === 422 ? 'Template rejected. Check variables, required recovery link/expiry, safe HTML and field lengths.'
       : response.status === 403 ? 'Email templates are restricted to Super Admin.'

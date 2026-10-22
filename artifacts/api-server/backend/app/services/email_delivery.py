@@ -25,9 +25,11 @@ class MailCrypto(AccountCrypto):
         return super().lookup_index("email-attempt:" + normalized.lower())
 
 
-def record(db, settings, purpose, portal, *, user_id=None, actor_id=None, recipient=None):
+def record(db, settings, purpose, portal, *, user_id=None, actor_id=None, recipient=None,
+           template_id=None, template_version=None):
     row = EmailAttempt(id=uuid.uuid4(), user_id=user_id, actor_id=actor_id,
-                       purpose=purpose, portal=portal, status="pending")
+                       purpose=purpose, portal=portal, status="pending",
+                       template_id=template_id, template_version=template_version)
     if recipient:
         crypto = MailCrypto(settings)
         row.recipient_ciphertext = crypto.encrypt(row.id, "email", recipient)
@@ -61,7 +63,7 @@ def preparation_interrupted(db, attempt_id):
         db.rollback()  # Preserve an already committed terminal result.
 
 
-def dispatch(db, settings, attempt_id, recipient, render):
+def dispatch(db, settings, attempt_id, recipient, render, *, event=None, snapshot=None):
     """One explicit submission. Network loss after handoff is not definite failure."""
     category, submitting = "configuration", False
     try:
@@ -70,7 +72,20 @@ def dispatch(db, settings, attempt_id, recipient, render):
         if row.status != "pending":
             return  # Never replay accepted, failed or uncertain work.
         category = "template"
-        template, template_id, version = email_templates.resolve_event(db, row.purpose)
+        if row.purpose == "template_test":
+            if snapshot is None:
+                raise ValueError("Saved test snapshot required.")
+            template, template_id, version = snapshot
+            if (row.template_id, row.template_version) != (template_id, version):
+                raise ValueError("Test snapshot mismatch.")
+        else:
+            if snapshot is not None or event not in ("password_recovery", "account_invitation", "mr_invitation"):
+                raise ValueError("Verified event required.")
+            if (row.purpose == "password_recovery" and event != "password_recovery"
+                    or row.purpose == "account_invitation" and event != (
+                        "mr_invitation" if row.portal == "mr" else "account_invitation")):
+                raise ValueError("Invitation event mismatch.")
+            template, template_id, version = email_templates.resolve_event(db, event)
         row.template_id, row.template_version = template_id, version
         row.status, row.updated_at = "sending", utcnow()
         db.commit()

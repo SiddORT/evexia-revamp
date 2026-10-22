@@ -46,6 +46,17 @@ to identities. Email Logs report SMTP acceptance, not inbox delivery; uncertain
 submissions are not automatically replayed. See `docs/email-invitations.md` for
 eligibility, encrypted recipient/key custody and focused post-merge acceptance.
 
+Required email content now has distinct staff/Admin `account_invitation` and
+MR `mr_invitation` assignments; token/delivery purposes remain unchanged.
+Saved-version test mail is an explicit protected `template_test` action, not an
+account workflow. Modern HTML replacement is confirmed and draft-only.
+This extension is untested at the user's request: no suites, browser/manual
+scenarios, builds, migration execution or live sends during implementation.
+Development source pins are generated; new production catalog/release evidence
+requires a separately authorized real PostgreSQL catalog reproduction. Do not
+fabricate it or interpret a test-email button as permission to exercise it.
+See `docs/email-templates.md`.
+
 - Live MR Master supports ordered shared multi-zone assignments. Its list zone
   filter uses any-zone matching; empty/Select all is unrestricted. Form Select all
   loads a complete active saved-zone snapshot, retains existing unavailable

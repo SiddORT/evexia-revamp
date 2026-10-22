@@ -3,7 +3,7 @@ from typing import Literal
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
-Purpose = Literal["password_recovery", "account_invitation"]
+Purpose = Literal["password_recovery", "account_invitation", "template_test"]
 MailStatus = Literal["pending", "sending", "smtp_accepted", "failed", "unknown"]
 
 

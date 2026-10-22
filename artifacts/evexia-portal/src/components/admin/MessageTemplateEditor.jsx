@@ -3,7 +3,7 @@ import MessageTemplatePreview from './MessageTemplatePreview.jsx';
 import { usePlatformConfirm } from '../PlatformConfirmation.jsx';
 import { LIMITS, loadMessageTemplates, saveMessageTemplate, validateMessageTemplate } from '../../services/messageTemplates.js';
 import { SUPPORTED_TOKENS, readHtmlFile } from '../../services/messageTemplatePreview.js';
-import { EMAIL_VARIABLES, INVITATION_VARIABLES, saveEmailTemplate, loadEmailTemplates } from '../../services/emailTemplates.js';
+import { EMAIL_VARIABLES, INVITATION_VARIABLES, isInvitationEvent, getModernEmailLayout, saveEmailTemplate, loadEmailTemplates } from '../../services/emailTemplates.js';
 import './messageTemplates.css';
 
 const isStale = (e) => e?.code === 'conflict' || e?.code === 'stale' || /\b(changed|stale|conflict|revision)\b/i.test(e?.message || '');
@@ -129,6 +129,18 @@ export default function MessageTemplateEditor({ draft, baseline, loadError, late
     finally { working(false); }
   };
   const retryStorage = () => { try { loadMessageTemplates(); setRecovered(true); setBanner(''); setInfo('Storage is readable. You can save this draft as a new template; existing saved templates will not be overwritten.'); } catch (e) { setBanner(e?.message || 'Storage still cannot be read.'); } };
+  const applyModern = async () => {
+    if (running.current || externalBusy) return;
+    working(true);
+    try {
+      if (!await confirm('Replace your authored HTML layout with the EVEXIA Modern layout? Your subject, plain text, event and identity are preserved. Required HTML variables are included. Changes stay unsaved until you save the template.', {
+        title: 'Replace authored layout?', actionLabel: 'Apply Modern layout',
+      })) return;
+      const html = await getModernEmailLayout(draft.id);
+      set('html', html); setInfo('Modern HTML applied to your draft only. Review the HTML, subject and plain text, then save. No email was sent.');
+    } catch (e) { setBanner(e.message || 'Modern layout could not be loaded. Your draft is unchanged.'); }
+    finally { working(false); }
+  };
   const close = async () => { if (busy || (dirty && !await confirm('Discard unsaved changes?'))) return; if (running.current) return; dirtyRef.current?.(false); onClose(); };
   const reopen = async () => { if (busy || !await confirm('Discard your draft and open the latest saved version?', { actionLabel: 'Discard and reopen' })) return; if (running.current) return; onReopenLatest?.(draft.id); };
   const field = ([k, label, max, kind]) => {
@@ -145,7 +157,9 @@ export default function MessageTemplateEditor({ draft, baseline, loadError, late
     <div className="mt-head"><div><h3 id="mt-ed-h" className={channel === 'email' ? 'mt-sr' : ''}>{draft.id ? 'Edit' : 'New'} {channel === 'email' ? 'email' : 'SMS'} template</h3>
       </div>
       {channel === 'sms' && <button type="button" className="admin-button admin-button--secondary" onClick={close} data-testid="button-template-close">Close</button>}</div>
-    {channel === 'email' && <div className="mt-seg" role="group" aria-label="Editor view"><button type="button" aria-pressed={pane === 'code'} onClick={() => setPane('code')}>Code</button><button type="button" aria-pressed={pane === 'preview'} onClick={() => setPane('preview')}>Preview</button></div>}
+    {channel === 'email' && <><p className="mt-note">Save changes before sending a test email from the library or saved preview. Drafts are never sent.</p>
+      {draft.id && <button type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={applyModern}>Apply Modern layout</button>}
+      <div className="mt-seg" role="group" aria-label="Editor view"><button type="button" aria-pressed={pane === 'code'} onClick={() => setPane('code')}>Code</button><button type="button" aria-pressed={pane === 'preview'} onClick={() => setPane('preview')}>Preview</button></div></>}
     {loadError && <div className="admin-feedback admin-feedback--error" role="alert">{loadError} Saving over saved templates is blocked; your draft is kept.
       <div className="mt-row"><button type="button" className="admin-button admin-button--secondary" onClick={retryStorage} data-testid="button-template-retry-storage">Retry storage</button>
         {recovered && <button type="button" className="admin-button" onClick={() => save(true)} disabled={busy} data-testid="button-template-save-new-recovered">Save as new template</button>}</div></div>}
@@ -161,13 +175,13 @@ export default function MessageTemplateEditor({ draft, baseline, loadError, late
         {channel === 'email' && <div className="mt-field"><label htmlFor="mt-event">Backend event</label>
           <select id="mt-event" value={f.eventKey || ''} disabled={busy || draft.protected} onChange={(e) => set('eventKey', e.target.value || null)}>
             <option value="">Unassigned — not triggered</option>{events.map((event) => <option key={event.key} value={event.key} disabled={!draft.protected}>{event.label} ({event.key}) — required assignment</option>)}
-          </select><small className="mt-note">{draft.protected ? 'Required identity/event cannot be disabled, deleted or reassigned.' : 'Only implemented backend events are supported. Password recovery already has its protected assignment.'}</small></div>}
+          </select><small className="mt-note">{draft.protected ? 'Required identity/event cannot be disabled, deleted or reassigned.' : 'Staff invitations, MR invitations and password recovery already have separate protected assignments.'}</small></div>}
         {FIELDS[channel].map(field)}
         {channel === 'email' && <div className="mt-row"><input ref={fileRef} type="file" accept=".html,.htm,text/html" hidden onChange={importFile} data-testid="input-template-file" />
           <button type="button" className="admin-button admin-button--secondary" disabled={busy} onClick={() => fileRef.current?.click()} data-testid="button-template-import">Import HTML file</button>
           <small className="mt-note">Loads into the draft only. Max {LIMITS.fileBytes} bytes, UTF-8.</small></div>}
         <fieldset className="mt-tokens"><legend>Insert token at cursor</legend>
-          <div className="mt-row">{(channel === 'email' ? f.eventKey === 'account_invitation' ? INVITATION_VARIABLES : EMAIL_VARIABLES : SUPPORTED_TOKENS).map((t) => <button type="button" disabled={busy} key={t} className="mt-chip" onMouseDown={(e) => e.preventDefault()} onClick={() => insert(t)} data-testid={`button-token-${t}`}>{`{{${t}}}`}</button>)}</div>
+          <div className="mt-row">{(channel === 'email' ? isInvitationEvent(f.eventKey) ? INVITATION_VARIABLES : EMAIL_VARIABLES : SUPPORTED_TOKENS).map((t) => <button type="button" disabled={busy} key={t} className="mt-chip" onMouseDown={(e) => e.preventDefault()} onClick={() => insert(t)} data-testid={`button-token-${t}`}>{`{{${t}}}`}</button>)}</div>
           <small className="mt-note">Inserts into the last focused {channel === 'email' ? 'subject, HTML or text' : 'body'} field.</small></fieldset>
         <div className="mt-row">
           <button type="submit" className="admin-button" disabled={busy || !!loadError || isStaleNow || uncertain} data-testid="button-template-save">{busy ? 'Saving' : 'Save template'}</button>

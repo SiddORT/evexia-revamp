@@ -329,6 +329,12 @@ def migration_owned_tables(connection, tables):
             # 0053 adds a second required seed. Earlier installation stages
             # must still accept exactly the original recovery seed only.
             seeds.append((script.get_revision("0053_email_invitations").module.SEED, "account_invitation"))
+        current = connection.scalar(text("SELECT version_num FROM alembic_version"))
+        ancestry = {r.revision for r in script.iterate_revisions(current, "base")}
+        if "0054_modern_email_tests" in ancestry:
+            # Historical stages still verify their frozen historical sources.
+            modern = script.get_revision("0054_modern_email_tests").module.SEEDS
+            seeds = [(seed, event) for event, seed in modern.items()]
         rows = [dict(row) for row in connection.execute(text("""
             SELECT id::text AS id, name, description, subject, html, text,
                    version, event_key, provenance, created_by, updated_by,

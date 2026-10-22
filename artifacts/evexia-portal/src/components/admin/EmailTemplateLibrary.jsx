@@ -2,13 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import MessageTemplateEditor from './MessageTemplateEditor.jsx';
 import MessageTemplateDrawer from './MessageTemplateDrawer.jsx';
 import MessageTemplatePreview from './MessageTemplatePreview.jsx';
-import { loadEmailTemplates, getEmailTemplate, deleteEmailTemplate } from '../../services/emailTemplates.js';
+import EmailTemplateTestDialog from './EmailTemplateTestDialog.jsx';
+import { EMAIL_EVENT_LABELS, loadEmailTemplates, getEmailTemplate, deleteEmailTemplate } from '../../services/emailTemplates.js';
 
 export default function EmailTemplateLibrary({ guard, onDirtyChange, onBusyChange }) {
   const [snap, setSnap] = useState(null), [loading, setLoading] = useState(true), [error, setError] = useState('');
   const [editor, setEditor] = useState(null), [view, setView] = useState(null), [del, setDel] = useState(null);
   const [busy, setBusy] = useState(false), [status, setStatus] = useState(''), [delError, setDelError] = useState('');
   const [uncertainDelete, setUncertainDelete] = useState(false);
+  const [test, setTest] = useState(null);
   const [q, setQ] = useState(''), [source, setSource] = useState('all'), [pane, setPane] = useState('preview');
   const alive = useRef(true), request = useRef(0), selection = useRef(0), locked = useRef(false);
   useEffect(() => { alive.current = true; return () => { alive.current = false; request.current += 1; selection.current += 1; }; }, []);
@@ -61,7 +63,7 @@ export default function EmailTemplateLibrary({ guard, onDirtyChange, onBusyChang
   const all = snap?.record.templates || [];
   const items = all.filter((t) => (source === 'all' || t.source === source) && t.name.toLowerCase().includes(q.trim().toLowerCase()));
   return <>
-    <div className="mt-head"><p className="mt-note">Email templates are shared database records. Staff/MR invitations use account_invitation; recovery requests use password_recovery through the approved SMTP server.</p>
+    <div className="mt-head"><p className="mt-note">Email templates are shared database records. Staff invitations use the Admin workspace template; MR invitations use their separate MR portal template. Recovery uses its own template. All sends use the approved SMTP sender.</p>
       <div className="mt-row"><button type="button" className="admin-button" onClick={blank} disabled={!snap || loading || busy} data-testid="button-template-new">New email template</button>
         <button type="button" className="admin-button admin-button--secondary" onClick={refresh} disabled={loading || busy}>Load latest</button></div></div>
     <p className="mt-note">Unassigned templates are not triggered. Required invitation and recovery templates cannot be removed or reassigned. Saved edits apply to subsequent sends. Browser-local email records are not imported or erased.</p>
@@ -74,25 +76,29 @@ export default function EmailTemplateLibrary({ guard, onDirtyChange, onBusyChang
       <p role="status" className="mt-note">{items.length} of {all.length} templates shown{error ? ' (last loaded list; reload before editing)' : ''}</p>
       {!items.length && <p className="admin-empty">No templates match.</p>}
       <ul className="mt-list">{items.map((t) => <li className="mt-card" key={t.id} data-testid={`card-template-${t.id}`}>
-        <div className="mt-tags"><span className="mt-tag">{t.protected ? 'Required template' : 'User template'}</span><span className="mt-tag">Email</span><span className="mt-tag">Event: {t.eventKey || 'Unassigned — not triggered'}</span></div>
+        <div className="mt-tags"><span className="mt-tag">{t.protected ? 'Required template' : 'User template'}</span><span className="mt-tag">Email · Version {t.version}</span><span className="mt-tag">Event: {EMAIL_EVENT_LABELS[t.eventKey] || 'Unassigned — not triggered'}</span></div>
         <h3>{t.name}</h3><p>{t.description}</p><div className="mt-row">
           <button type="button" disabled={busy || loading} onClick={() => select(t, false)} data-testid={`button-preview-template-${t.id}`}>Preview</button>
           <button type="button" disabled={busy || loading} onClick={() => select(t, true)} data-testid={`button-edit-template-${t.id}`}>Edit</button>
+          <button type="button" disabled={busy || loading || !!editor || !!test} onClick={() => setTest(t)}>Send test email</button>
           {!t.protected && <button type="button" disabled={busy || loading} onClick={async () => { if (await guard() && alive.current && !locked.current) { selection.current += 1; onDirtyChange(false); setEditor(null); setView(null); setDel(t); setDelError(''); setUncertainDelete(false); } }} data-testid={`button-delete-template-${t.id}`}>Delete</button>}</div></li>)}</ul></>}
     {del && <div role="alertdialog" aria-labelledby="mt-del-h" className="admin-feedback mt-del"><strong id="mt-del-h">Delete {del.name}?</strong> This removes the shared database template for all browsers.
       {delError && <p role="alert">{delError}</p>}<div className="mt-row"><button type="button" disabled={busy || uncertainDelete} onClick={remove} data-testid="button-confirm-delete-template">Delete</button>
         <button type="button" disabled={busy} onClick={() => setDel(null)}>Cancel</button>{delError && <button type="button" disabled={busy || loading} onClick={refresh}>Load latest before retrying</button>}</div></div>}
     {(editor || view) && <MessageTemplateDrawer onRequestClose={close} title={editor ? `${editor.draft.id ? 'Edit' : 'New'} email template` : view.name}
-      subtitle={editor ? 'Changes are saved to the shared database. No email is sent by this editor.' : `Read-only preview · Event: ${view.eventKey || 'Unassigned — not triggered'}`}>
+      subtitle={editor ? 'Changes are saved to the shared database. No email is sent by this editor.' : `Saved version ${view.version} · Event: ${EMAIL_EVENT_LABELS[view.eventKey] || 'Unassigned — not triggered'}`}>
       {error && <div role="alert" className="admin-feedback admin-feedback--error">{error} Your open draft or preview is unchanged.</div>}
       {editor ? <MessageTemplateEditor key={editor.key} draft={editor.draft} externalBusy={busy} events={snap?.record.events || []} onClose={close} onSaved={saved}
         onDirtyChange={onDirtyChange} onBusyChange={(b) => { locked.current = b; onBusyChange(b); }}
         onReopenLatest={(id) => select({ id }, true, true)} />
-        : <><div className="mt-row"><button type="button" className="admin-button" onClick={() => select(view, true)} data-testid="button-drawer-edit-template">Edit</button></div>
+        : <><div className="mt-row"><button type="button" className="admin-button" disabled={busy} onClick={() => select(view, true)} data-testid="button-drawer-edit-template">Edit</button>
+          <button type="button" className="admin-button admin-button--secondary" disabled={busy || !!test} onClick={() => setTest(view)}>Send test email</button></div>
           <div className="mt-seg" role="group" aria-label="View"><button type="button" aria-pressed={pane === 'code'} onClick={() => setPane('code')}>Code</button><button type="button" aria-pressed={pane === 'preview'} onClick={() => setPane('preview')}>Preview</button></div>
           <div className="mt-split" data-pane={pane}><div className="mt-pane mt-pane--code mt-field"><label htmlFor="mt-ro-html">HTML source (read-only)</label>
             <textarea id="mt-ro-html" className="mt-ro" readOnly value={view.content.html} data-testid="text-template-source" /></div>
             <div className="mt-pane mt-pane--view"><MessageTemplatePreview channel="email" content={view.content} eventKey={view.eventKey} idPrefix="mtv" /></div></div></>}
     </MessageTemplateDrawer>}
+    {test && <EmailTemplateTestDialog template={test} onClose={() => setTest(null)}
+      onBusyChange={(value) => { locked.current = value; setBusy(value); onBusyChange(value); }} />}
   </>;
 }

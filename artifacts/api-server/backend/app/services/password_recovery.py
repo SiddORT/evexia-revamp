@@ -108,8 +108,10 @@ def send_identity(db, settings, identity, recipient, purpose, attempt_id):
     url = settings.password_recovery_url.rstrip("/") + suffix + "#token=" + token
     email_delivery.dispatch(db, settings, attempt_id, recipient, lambda template:
         render_recovery(template, recipient_name="there", reset_url=url,
-                        expiry_minutes=15, portal_name="MR" if identity_kind == "mr" else "Admin",
-                        login_id=login_id))
+                        expiry_minutes=15, portal_name="MR portal" if identity_kind == "mr" else "Admin workspace",
+                        login_id=login_id),
+        event=("mr_invitation" if identity.mr is not None else "account_invitation")
+              if purpose == "account_invitation" else "password_recovery")
 
 
 def deliver(bind, settings, identifier, identity_kind):

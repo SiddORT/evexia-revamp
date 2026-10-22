@@ -13,4 +13,5 @@ export type EmailTemplateCreateEventKey =
 export const EmailTemplateCreateEventKey = {
   password_recovery: "password_recovery",
   account_invitation: "account_invitation",
+  mr_invitation: "mr_invitation",
 } as const;

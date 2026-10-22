@@ -2176,6 +2176,7 @@ export type EmailLogFiltersPurpose =
 export const EmailLogFiltersPurpose = {
   password_recovery: "password_recovery",
   account_invitation: "account_invitation",
+  template_test: "template_test",
 } as const;
 
 export type EmailLogFiltersStatus =
@@ -2224,6 +2225,7 @@ export type EmailLogRecordPurpose =
 export const EmailLogRecordPurpose = {
   password_recovery: "password_recovery",
   account_invitation: "account_invitation",
+  template_test: "template_test",
 } as const;
 
 export type EmailLogRecordStatus =
@@ -2259,6 +2261,10 @@ export interface EmailLogPage {
   total: number;
 }
 
+export interface EmailModernLayout {
+  html: string;
+}
+
 export type EmailTemplateCreateEventKey =
   | (typeof EmailTemplateCreateEventKey)[keyof typeof EmailTemplateCreateEventKey]
   | null;
@@ -2266,6 +2272,7 @@ export type EmailTemplateCreateEventKey =
 export const EmailTemplateCreateEventKey = {
   password_recovery: "password_recovery",
   account_invitation: "account_invitation",
+  mr_invitation: "mr_invitation",
 } as const;
 
 export interface EmailTemplateCreate {
@@ -2302,6 +2309,7 @@ export type EmailTemplateEditEventKey =
 export const EmailTemplateEditEventKey = {
   password_recovery: "password_recovery",
   account_invitation: "account_invitation",
+  mr_invitation: "mr_invitation",
 } as const;
 
 export interface EmailTemplateEdit {
@@ -2341,6 +2349,7 @@ export type EmailTemplateEventKey =
 export const EmailTemplateEventKey = {
   password_recovery: "password_recovery",
   account_invitation: "account_invitation",
+  mr_invitation: "mr_invitation",
 } as const;
 
 export interface EmailTemplateEvent {
@@ -2357,6 +2366,7 @@ export type EmailTemplateRecordEventKey =
 export const EmailTemplateRecordEventKey = {
   password_recovery: "password_recovery",
   account_invitation: "account_invitation",
+  mr_invitation: "mr_invitation",
 } as const;
 
 export interface EmailTemplateRecord {
@@ -2390,8 +2400,18 @@ export interface EmailTemplateRecord {
 
 export interface EmailTemplateList {
   events: EmailTemplateEvent[];
-  /** @maxItems 101 */
+  /** @maxItems 102 */
   items: EmailTemplateRecord[];
+}
+
+export interface EmailTemplateTest {
+  /** @maxLength 320 */
+  recipient: string;
+  /**
+   * @minimum 1
+   * @maximum 2147483647
+   */
+  version: number;
 }
 
 export interface EmailTemplateVersion {

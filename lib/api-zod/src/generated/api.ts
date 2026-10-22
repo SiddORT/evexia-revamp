@@ -351,7 +351,7 @@ export const listEmailTemplatesResponseItemsItemHtmlMax = 100000;
 export const listEmailTemplatesResponseItemsItemNameMax = 100;
 export const listEmailTemplatesResponseItemsItemSubjectMax = 200;
 export const listEmailTemplatesResponseItemsItemTextMax = 20000;
-export const listEmailTemplatesResponseItemsMax = 101;
+export const listEmailTemplatesResponseItemsMax = 102;
 export const createEmailTemplateBodyDescriptionMax = 500;
 export const createEmailTemplateBodyHtmlMax = 100000;
 export const createEmailTemplateBodyNameMax = 100;
@@ -362,7 +362,7 @@ export const createEmailTemplateResponseItemsItemHtmlMax = 100000;
 export const createEmailTemplateResponseItemsItemNameMax = 100;
 export const createEmailTemplateResponseItemsItemSubjectMax = 200;
 export const createEmailTemplateResponseItemsItemTextMax = 20000;
-export const createEmailTemplateResponseItemsMax = 101;
+export const createEmailTemplateResponseItemsMax = 102;
 export const getEmailTemplateResponseDescriptionMax = 500;
 export const getEmailTemplateResponseHtmlMax = 100000;
 export const getEmailTemplateResponseNameMax = 100;
@@ -374,7 +374,7 @@ export const deleteEmailTemplateResponseItemsItemHtmlMax = 100000;
 export const deleteEmailTemplateResponseItemsItemNameMax = 100;
 export const deleteEmailTemplateResponseItemsItemSubjectMax = 200;
 export const deleteEmailTemplateResponseItemsItemTextMax = 20000;
-export const deleteEmailTemplateResponseItemsMax = 101;
+export const deleteEmailTemplateResponseItemsMax = 102;
 export const editEmailTemplateBodyDescriptionMax = 500;
 export const editEmailTemplateBodyHtmlMax = 100000;
 export const editEmailTemplateBodyNameMax = 100;
@@ -386,7 +386,9 @@ export const editEmailTemplateResponseItemsItemHtmlMax = 100000;
 export const editEmailTemplateResponseItemsItemNameMax = 100;
 export const editEmailTemplateResponseItemsItemSubjectMax = 200;
 export const editEmailTemplateResponseItemsItemTextMax = 20000;
-export const editEmailTemplateResponseItemsMax = 101;
+export const editEmailTemplateResponseItemsMax = 102;
+export const sendEmailTemplateTestBodyRecipientMax = 320;
+export const sendEmailTemplateTestBodyVersionMax = 2147483647;
 export const listHeadquartersQueryQueryMax = 200;
 export const listHeadquartersQueryLimitDefault = 10;
 export const listHeadquartersQueryLimitMax = 100;
@@ -6822,7 +6824,11 @@ export const listEmailTemplatesResponseItemsItemDescriptionDefault = ``;
 export const ListEmailTemplatesResponse = zod.object({
   events: zod.array(
     zod.object({
-      key: zod.enum(["password_recovery", "account_invitation"]),
+      key: zod.enum([
+        "password_recovery",
+        "account_invitation",
+        "mr_invitation",
+      ]),
       label: zod.string(),
       required: zod.boolean(),
       variables: zod.array(zod.string()),
@@ -6837,7 +6843,11 @@ export const ListEmailTemplatesResponse = zod.object({
           .default(listEmailTemplatesResponseItemsItemDescriptionDefault),
         event_key: zod
           .union([
-            zod.enum(["password_recovery", "account_invitation"]),
+            zod.enum([
+              "password_recovery",
+              "account_invitation",
+              "mr_invitation",
+            ]),
             zod.null(),
           ])
           .optional(),
@@ -6877,7 +6887,10 @@ export const CreateEmailTemplateBody = zod.object({
     .max(createEmailTemplateBodyDescriptionMax)
     .default(createEmailTemplateBodyDescriptionDefault),
   event_key: zod
-    .union([zod.enum(["password_recovery", "account_invitation"]), zod.null()])
+    .union([
+      zod.enum(["password_recovery", "account_invitation", "mr_invitation"]),
+      zod.null(),
+    ])
     .optional(),
   html: zod.string().min(1).max(createEmailTemplateBodyHtmlMax),
   name: zod.string().min(1).max(createEmailTemplateBodyNameMax),
@@ -6890,7 +6903,11 @@ export const createEmailTemplateResponseItemsItemDescriptionDefault = ``;
 export const CreateEmailTemplateResponse = zod.object({
   events: zod.array(
     zod.object({
-      key: zod.enum(["password_recovery", "account_invitation"]),
+      key: zod.enum([
+        "password_recovery",
+        "account_invitation",
+        "mr_invitation",
+      ]),
       label: zod.string(),
       required: zod.boolean(),
       variables: zod.array(zod.string()),
@@ -6905,7 +6922,11 @@ export const CreateEmailTemplateResponse = zod.object({
           .default(createEmailTemplateResponseItemsItemDescriptionDefault),
         event_key: zod
           .union([
-            zod.enum(["password_recovery", "account_invitation"]),
+            zod.enum([
+              "password_recovery",
+              "account_invitation",
+              "mr_invitation",
+            ]),
             zod.null(),
           ])
           .optional(),
@@ -6937,7 +6958,7 @@ export const CreateEmailTemplateResponse = zod.object({
  * @summary Events
  */
 export const ListEmailTemplateEventsResponseItem = zod.object({
-  key: zod.enum(["password_recovery", "account_invitation"]),
+  key: zod.enum(["password_recovery", "account_invitation", "mr_invitation"]),
   label: zod.string(),
   required: zod.boolean(),
   variables: zod.array(zod.string()),
@@ -6961,7 +6982,10 @@ export const GetEmailTemplateResponse = zod.object({
     .max(getEmailTemplateResponseDescriptionMax)
     .default(getEmailTemplateResponseDescriptionDefault),
   event_key: zod
-    .union([zod.enum(["password_recovery", "account_invitation"]), zod.null()])
+    .union([
+      zod.enum(["password_recovery", "account_invitation", "mr_invitation"]),
+      zod.null(),
+    ])
     .optional(),
   html: zod.string().min(1).max(getEmailTemplateResponseHtmlMax),
   id: zod.string().uuid(),
@@ -6988,7 +7012,11 @@ export const deleteEmailTemplateResponseItemsItemDescriptionDefault = ``;
 export const DeleteEmailTemplateResponse = zod.object({
   events: zod.array(
     zod.object({
-      key: zod.enum(["password_recovery", "account_invitation"]),
+      key: zod.enum([
+        "password_recovery",
+        "account_invitation",
+        "mr_invitation",
+      ]),
       label: zod.string(),
       required: zod.boolean(),
       variables: zod.array(zod.string()),
@@ -7003,7 +7031,11 @@ export const DeleteEmailTemplateResponse = zod.object({
           .default(deleteEmailTemplateResponseItemsItemDescriptionDefault),
         event_key: zod
           .union([
-            zod.enum(["password_recovery", "account_invitation"]),
+            zod.enum([
+              "password_recovery",
+              "account_invitation",
+              "mr_invitation",
+            ]),
             zod.null(),
           ])
           .optional(),
@@ -7046,7 +7078,10 @@ export const EditEmailTemplateBody = zod.object({
     .max(editEmailTemplateBodyDescriptionMax)
     .default(editEmailTemplateBodyDescriptionDefault),
   event_key: zod
-    .union([zod.enum(["password_recovery", "account_invitation"]), zod.null()])
+    .union([
+      zod.enum(["password_recovery", "account_invitation", "mr_invitation"]),
+      zod.null(),
+    ])
     .optional(),
   html: zod.string().min(1).max(editEmailTemplateBodyHtmlMax),
   name: zod.string().min(1).max(editEmailTemplateBodyNameMax),
@@ -7060,7 +7095,11 @@ export const editEmailTemplateResponseItemsItemDescriptionDefault = ``;
 export const EditEmailTemplateResponse = zod.object({
   events: zod.array(
     zod.object({
-      key: zod.enum(["password_recovery", "account_invitation"]),
+      key: zod.enum([
+        "password_recovery",
+        "account_invitation",
+        "mr_invitation",
+      ]),
       label: zod.string(),
       required: zod.boolean(),
       variables: zod.array(zod.string()),
@@ -7075,7 +7114,11 @@ export const EditEmailTemplateResponse = zod.object({
           .default(editEmailTemplateResponseItemsItemDescriptionDefault),
         event_key: zod
           .union([
-            zod.enum(["password_recovery", "account_invitation"]),
+            zod.enum([
+              "password_recovery",
+              "account_invitation",
+              "mr_invitation",
+            ]),
             zod.null(),
           ])
           .optional(),
@@ -7101,6 +7144,41 @@ export const EditEmailTemplateResponse = zod.object({
       }),
     )
     .max(editEmailTemplateResponseItemsMax),
+});
+
+/**
+ * @summary Modern Layout
+ */
+export const GetEmailModernLayoutParams = zod.object({
+  template_id: zod.coerce.string().uuid(),
+});
+
+export const GetEmailModernLayoutResponse = zod.object({
+  html: zod.string(),
+});
+
+/**
+ * @summary Test Send
+ */
+export const SendEmailTemplateTestParams = zod.object({
+  template_id: zod.coerce.string().uuid(),
+});
+
+export const SendEmailTemplateTestBody = zod.object({
+  recipient: zod.string().email().max(sendEmailTemplateTestBodyRecipientMax),
+  version: zod.number().int().min(1).max(sendEmailTemplateTestBodyVersionMax),
+});
+
+export const SendEmailTemplateTestResponse = zod.object({
+  id: zod.string().uuid(),
+  message: zod.string(),
+  status: zod.enum([
+    "pending",
+    "sending",
+    "smtp_accepted",
+    "failed",
+    "unknown",
+  ]),
 });
 
 /**
@@ -20891,7 +20969,10 @@ export const ListEmailLogsBody = zod.object({
     .max(listEmailLogsBodyOffsetMax)
     .default(listEmailLogsBodyOffsetDefault),
   purpose: zod
-    .union([zod.enum(["password_recovery", "account_invitation"]), zod.null()])
+    .union([
+      zod.enum(["password_recovery", "account_invitation", "template_test"]),
+      zod.null(),
+    ])
     .optional(),
   recipient: zod
     .string()
@@ -20916,7 +20997,11 @@ export const ListEmailLogsResponse = zod.object({
       id: zod.string().uuid(),
       origin: zod.string(),
       portal: zod.enum(["admin", "mr"]),
-      purpose: zod.enum(["password_recovery", "account_invitation"]),
+      purpose: zod.enum([
+        "password_recovery",
+        "account_invitation",
+        "template_test",
+      ]),
       recipient: zod.union([zod.string(), zod.null()]),
       status: zod.enum([
         "pending",

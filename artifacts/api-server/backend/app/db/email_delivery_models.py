@@ -17,12 +17,14 @@ class EmailAttempt(Base):
     recipient_index: Mapped[str | None] = mapped_column(String(64))
     purpose: Mapped[str] = mapped_column(String(32))
     portal: Mapped[str] = mapped_column(String(8))
-    template_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("email_templates.id"))
+    # Historical selection snapshot, not a live relationship: deleting an
+    # unassigned tested template must not erase its attempt identity/version.
+    template_id: Mapped[uuid.UUID | None] = mapped_column()
     template_version: Mapped[int | None] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(16), default="pending")
     failure_category: Mapped[str | None] = mapped_column(String(32))
     __table_args__ = (
-        CheckConstraint("purpose IN ('password_recovery','account_invitation')", name="ck_email_attempt_purpose"),
+        CheckConstraint("purpose IN ('password_recovery','account_invitation','template_test')", name="ck_email_attempt_purpose"),
         CheckConstraint("status IN ('pending','sending','smtp_accepted','failed','unknown')", name="ck_email_attempt_status"),
         CheckConstraint("portal IN ('admin','mr')", name="ck_email_attempt_portal"),
         CheckConstraint("(recipient_ciphertext IS NULL) = (recipient_index IS NULL) "

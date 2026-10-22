@@ -118,11 +118,13 @@ import type {
   DownloadVendorSampleParams,
   EmailLogFilters,
   EmailLogPage,
+  EmailModernLayout,
   EmailTemplateCreate,
   EmailTemplateEdit,
   EmailTemplateEvent,
   EmailTemplateList,
   EmailTemplateRecord,
+  EmailTemplateTest,
   EmailTemplateVersion,
   ErrorEnvelope,
   EventPage,
@@ -6697,6 +6699,219 @@ export const useEditEmailTemplate = <
   TContext
 > => {
   return useMutation(getEditEmailTemplateMutationOptions(options));
+};
+
+export const getGetEmailModernLayoutUrl = (templateId: string) => {
+  return `/api/v1/admin/email-templates/${templateId}/modern-layout`;
+};
+
+/**
+ * @summary Modern Layout
+ */
+export const getEmailModernLayout = async (
+  templateId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<EmailModernLayout> => {
+  return customFetch<EmailModernLayout>(
+    getGetEmailModernLayoutUrl(templateId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetEmailModernLayoutQueryKey = (templateId: string) => {
+  return [`/api/v1/admin/email-templates/${templateId}/modern-layout`] as const;
+};
+
+export const getGetEmailModernLayoutQueryOptions = <
+  TData = Awaited<ReturnType<typeof getEmailModernLayout>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  templateId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getEmailModernLayout>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetEmailModernLayoutQueryKey(templateId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getEmailModernLayout>>
+  > = ({ signal }) =>
+    getEmailModernLayout(templateId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: templateId !== null && templateId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getEmailModernLayout>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetEmailModernLayoutQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getEmailModernLayout>>
+>;
+export type GetEmailModernLayoutQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Modern Layout
+ */
+
+export function useGetEmailModernLayout<
+  TData = Awaited<ReturnType<typeof getEmailModernLayout>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  templateId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getEmailModernLayout>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetEmailModernLayoutQueryOptions(templateId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getSendEmailTemplateTestUrl = (templateId: string) => {
+  return `/api/v1/admin/email-templates/${templateId}/test`;
+};
+
+/**
+ * @summary Test Send
+ */
+export const sendEmailTemplateTest = async (
+  templateId: string,
+  emailTemplateTest: EmailTemplateTest,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<InvitationResult> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<InvitationResult>(
+    getSendEmailTemplateTestUrl(templateId),
+    {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(emailTemplateTest),
+    },
+  );
+};
+
+export const getSendEmailTemplateTestMutationKey = () =>
+  ["sendEmailTemplateTest"] as const;
+
+export const getSendEmailTemplateTestMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendEmailTemplateTest>>,
+    TError,
+    SendEmailTemplateTestMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof sendEmailTemplateTest>>,
+  TError,
+  SendEmailTemplateTestMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSendEmailTemplateTestMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof sendEmailTemplateTest>>,
+    SendEmailTemplateTestMutationVariables
+  > = (props) => {
+    const { templateId, data } = props ?? {};
+
+    return sendEmailTemplateTest(templateId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SendEmailTemplateTestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof sendEmailTemplateTest>>
+>;
+export type SendEmailTemplateTestMutationBody = BodyType<EmailTemplateTest>;
+export type SendEmailTemplateTestMutationError = ErrorType<ErrorEnvelope>;
+export type SendEmailTemplateTestMutationVariables = {
+  templateId: string;
+  data: BodyType<EmailTemplateTest>;
+};
+
+/**
+ * @summary Test Send
+ */
+export const useSendEmailTemplateTest = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendEmailTemplateTest>>,
+    TError,
+    SendEmailTemplateTestMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof sendEmailTemplateTest>>,
+  TError,
+  SendEmailTemplateTestMutationVariables,
+  TContext
+> => {
+  return useMutation(getSendEmailTemplateTestMutationOptions(options));
 };
 
 export const getListHeadquartersUrl = (params?: ListHeadquartersParams) => {

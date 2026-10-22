@@ -1,7 +1,7 @@
 import re
 from typing import Literal
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, EmailStr, field_validator, model_validator
 
 
 class EmailTemplateInput(BaseModel):
@@ -11,7 +11,7 @@ class EmailTemplateInput(BaseModel):
     subject: str = Field(min_length=1, max_length=200)
     html: str = Field(min_length=1, max_length=100000)
     text: str = Field(min_length=1, max_length=20000)
-    event_key: Literal["password_recovery", "account_invitation"] | None = None
+    event_key: Literal["password_recovery", "account_invitation", "mr_invitation"] | None = None
 
     @field_validator("name", "description", "subject", "html", "text")
     @classmethod
@@ -33,6 +33,21 @@ class EmailTemplateVersion(BaseModel):
     version: int = Field(ge=1, le=2147483647)
 
 
+class EmailTemplateTest(EmailTemplateVersion):
+    recipient: EmailStr = Field(max_length=320)
+
+    @field_validator("recipient", mode="before")
+    @classmethod
+    def single_address(cls, value):
+        if not isinstance(value, str) or re.search(r"[\x00-\x20\x7f-\x9f<>,;]", value):
+            raise ValueError("Enter one email address only, without a display name or whitespace.")
+        return value
+
+
+class EmailModernLayout(BaseModel):
+    html: str
+
+
 class EmailTemplateCreate(EmailTemplateInput):
     # Client-generated identity makes explicit retries safe after a lost response.
     creation_id: UUID = Field(strict=False)
@@ -49,12 +64,12 @@ class EmailTemplateRecord(EmailTemplateInput):
 
 
 class EmailTemplateEvent(BaseModel):
-    key: Literal["password_recovery", "account_invitation"]
+    key: Literal["password_recovery", "account_invitation", "mr_invitation"]
     label: str
     required: bool
     variables: list[str]
 
 
 class EmailTemplateList(BaseModel):
-    items: list[EmailTemplateRecord] = Field(max_length=101)
+    items: list[EmailTemplateRecord] = Field(max_length=102)
     events: list[EmailTemplateEvent]

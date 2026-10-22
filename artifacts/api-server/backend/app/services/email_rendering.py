@@ -100,9 +100,9 @@ class DeliveryHTML(HTMLParser):
 
 
 def validate_template(subject, html, text, event_key):
-    if event_key not in (None, "password_recovery", "account_invitation"):
+    if event_key not in (None, "password_recovery", "account_invitation", "mr_invitation"):
         raise ValueError("Unsupported backend event.")
-    allowed = INVITATION_VARIABLES if event_key == "account_invitation" else VARIABLES
+    allowed = INVITATION_VARIABLES if event_key in ("account_invitation", "mr_invitation") else VARIABLES
     tokens(subject, allowed)
     tokens(html, allowed)
     tokens(text, allowed)
@@ -114,7 +114,7 @@ def validate_template(subject, html, text, event_key):
         if (not parsed.links or "{{reset_url}}" not in visible or "{{reset_url}}" not in text
                 or "{{expiry_minutes}}" not in text or "{{expiry_minutes}}" not in visible):
             raise ValueError("Recovery requires a reset link, visible fallback URL and expiry in both HTML and plain text.")
-        if event_key == "account_invitation" and any(
+        if event_key in ("account_invitation", "mr_invitation") and any(
                 "{{" + field + "}}" not in source
                 for source in (visible, text) for field in ("portal_name", "login_id", "company_name")):
             raise ValueError("Invitation HTML and text require portal, User ID and EVEXIA branding variables.")
@@ -132,21 +132,39 @@ class RenderedEmail:
 
 
 def render_recovery(template, *, recipient_name, reset_url, expiry_minutes, portal_name=None, login_id=None):
-    if template.event_key not in ("password_recovery", "account_invitation"):
+    if template.event_key not in ("password_recovery", "account_invitation", "mr_invitation"):
         raise ValueError("Recovery event mapping unavailable.")
     url = urlsplit(reset_url)
-    expected_queries = ("invitation=1&portal=admin", "invitation=1&portal=mr") if template.event_key == "account_invitation" else ("",)
+    expected_queries = {"account_invitation": ("invitation=1&portal=admin",),
+                        "mr_invitation": ("invitation=1&portal=mr",)}.get(template.event_key, ("",))
     if (url.scheme != "https" or not url.hostname or url.username or url.password or url.query not in expected_queries
             or url.path.rstrip("/") != "/reset-password"
             or not re.fullmatch(r"token=[A-Za-z0-9_.-]+", url.fragment)
             or re.search(r"[\s\\<>\"']", reset_url)):
         raise ValueError("Invalid server recovery URL.")
+    return _render(template, recipient_name=recipient_name, reset_url=reset_url,
+                   expiry_minutes=expiry_minutes, portal_name=portal_name, login_id=login_id)
+
+
+def render_test(template):
+    """Narrow test renderer: no caller-provided values, URL, token or live render bypass."""
+    mr = template.event_key == "mr_invitation"
+    rendered = _render(template, recipient_name="Fictional MR Member" if mr else "Fictional Staff Member",
+                       reset_url="https://email-sample.invalid/not-an-account-action",
+                       expiry_minutes="15 (fictional)", portal_name="MR portal" if mr else "Admin workspace",
+                       login_id="mr.fictional" if mr else "staff.fictional")
+    return RenderedEmail("[TEST — EVEXIA] " + rendered.subject,
+                         "TEST EMAIL — fictional samples; links cannot activate or recover an account.\n\n" + rendered.text,
+                         '<p style="font-family:Arial,sans-serif;color:#187368">TEST EMAIL — fictional samples; action links are nonfunctional.</p>' + rendered.html)
+
+
+def _render(template, *, recipient_name, reset_url, expiry_minutes, portal_name, login_id):
     # All values are server-owned. Names never become markup, attributes or headers.
     greeting = " ".join(str(recipient_name or "there").split())[:100]
     greeting = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", greeting) or "there"
     values = dict(recipient_name=greeting, company_name="EVEXIA LIFE SCIENCES",
                   reset_url=reset_url, expiry_minutes=str(expiry_minutes))
-    if template.event_key == "account_invitation":
+    if template.event_key in ("account_invitation", "mr_invitation"):
         values.update(portal_name=portal_name, login_id=login_id)
     html = validate_template(template.subject, template.html, template.text, template.event_key)
     def sub(source, html=False):

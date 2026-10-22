@@ -9,7 +9,10 @@ RECOVERY_TEMPLATE_ID = uuid.UUID("e7e80000-0000-4000-8000-000000000001")
 RECOVERY_EVENT = "password_recovery"
 INVITATION_TEMPLATE_ID = uuid.UUID("e7e80000-0000-4000-8000-000000000002")
 INVITATION_EVENT = "account_invitation"
-REQUIRED_TEMPLATES = {RECOVERY_TEMPLATE_ID: RECOVERY_EVENT, INVITATION_TEMPLATE_ID: INVITATION_EVENT}
+MR_INVITATION_TEMPLATE_ID = uuid.UUID("e7e80000-0000-4000-8000-000000000003")
+MR_INVITATION_EVENT = "mr_invitation"
+REQUIRED_TEMPLATES = {RECOVERY_TEMPLATE_ID: RECOVERY_EVENT, INVITATION_TEMPLATE_ID: INVITATION_EVENT,
+                      MR_INVITATION_TEMPLATE_ID: MR_INVITATION_EVENT}
 
 
 class EmailTemplate(Timestamps, Base):
@@ -33,10 +36,12 @@ class EmailTemplate(Timestamps, Base):
                         "AND length(trim(text)) BETWEEN 1 AND 20000", name="ck_email_template_bounds"),
         CheckConstraint("(id = 'e7e80000-0000-4000-8000-000000000001' AND event_key IS NOT NULL AND event_key = 'password_recovery') "
                         "OR (id = 'e7e80000-0000-4000-8000-000000000002' AND event_key IS NOT NULL AND event_key = 'account_invitation') "
-                        "OR (id NOT IN ('e7e80000-0000-4000-8000-000000000001','e7e80000-0000-4000-8000-000000000002') AND event_key IS NULL)",
+                        "OR (id = 'e7e80000-0000-4000-8000-000000000003' AND event_key IS NOT NULL AND event_key = 'mr_invitation') "
+                        "OR (id NOT IN ('e7e80000-0000-4000-8000-000000000001','e7e80000-0000-4000-8000-000000000002','e7e80000-0000-4000-8000-000000000003') AND event_key IS NULL)",
                         name="ck_email_template_assignment"),
         CheckConstraint("(provenance = 'migration_seed' AND id = 'e7e80000-0000-4000-8000-000000000001' "
                         "AND created_by IS NULL) OR (provenance = 'migration_seed' AND id = 'e7e80000-0000-4000-8000-000000000002' "
+                        "AND created_by IS NULL) OR (provenance = 'migration_seed' AND id = 'e7e80000-0000-4000-8000-000000000003' "
                         "AND created_by IS NULL) OR (provenance = 'administrator' AND created_by IS NOT NULL)",
                         name="ck_email_template_provenance"),
         Index("uq_email_template_name", func.lower(name), unique=True),

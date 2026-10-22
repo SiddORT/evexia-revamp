@@ -2,14 +2,15 @@
 from fastapi import HTTPException
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from app.db.email_template_models import EmailTemplate, RECOVERY_EVENT, RECOVERY_TEMPLATE_ID, REQUIRED_TEMPLATES, INVITATION_EVENT
+from app.db.email_template_models import EmailTemplate, RECOVERY_EVENT, RECOVERY_TEMPLATE_ID, REQUIRED_TEMPLATES, INVITATION_EVENT, MR_INVITATION_EVENT
 from app.db.models import AuditEvent
 from app.schemas.email_templates import EmailTemplateInput
 from app.services.auth import revalidate_identity
 from app.services.email_rendering import VARIABLES, INVITATION_VARIABLES
 
 EVENTS = [dict(key=RECOVERY_EVENT, label="Password recovery", required=True, variables=list(VARIABLES))]
-EVENTS.append(dict(key=INVITATION_EVENT, label="Staff / MR invitation", required=True, variables=list(INVITATION_VARIABLES)))
+EVENTS.append(dict(key=INVITATION_EVENT, label="Staff invitation · Admin workspace", required=True, variables=list(INVITATION_VARIABLES)))
+EVENTS.append(dict(key=MR_INVITATION_EVENT, label="MR invitation · MR portal", required=True, variables=list(INVITATION_VARIABLES)))
 
 
 class EmailTemplateNotFound(HTTPException):
@@ -72,8 +73,8 @@ def operation(db, actor, *, body=None, row_id=None, action=None):
                 if row and row.id in REQUIRED_TEMPLATES and values["event_key"] != REQUIRED_TEMPLATES[row.id]:
                     reject(409, "Required email assignment cannot be changed.")
                 if action == "create":
-                    if len(list(db.scalars(select(EmailTemplate.id).limit(101)))) >= 101:
-                        reject(409, "The email library is full (101 templates). Delete an unassigned template first.")
+                    if len(list(db.scalars(select(EmailTemplate.id).limit(102)))) >= 102:
+                        reject(409, "The email library is full (102 templates). Delete an unassigned template first.")
                     if body.creation_id in REQUIRED_TEMPLATES or db.get(EmailTemplate, body.creation_id):
                         reject(409, "Creation identity already exists. Load latest templates to reconcile.")
                     row = EmailTemplate(id=body.creation_id, **values, version=1, provenance="administrator",
@@ -94,8 +95,8 @@ def operation(db, actor, *, body=None, row_id=None, action=None):
         if row_id and action is None:
             result = public(row)
         else:
-            rows = list(db.scalars(select(EmailTemplate).order_by(EmailTemplate.id).limit(102)))
-            if len(rows) > 101:
+            rows = list(db.scalars(select(EmailTemplate).order_by(EmailTemplate.id).limit(103)))
+            if len(rows) > 102:
                 reject(503, "Email library exceeds its bound. Contact the operator.")
             result = dict(items=[public(r) for r in rows], events=EVENTS)
         db.commit()
