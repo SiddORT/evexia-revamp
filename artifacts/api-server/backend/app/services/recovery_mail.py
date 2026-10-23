@@ -19,6 +19,11 @@ class RecoveryUnavailable(Exception):
 
 def configuration_issues(settings):
     """Offline preflight: no database lookup, network connection or secret output."""
+    return link_configuration_issues(settings) + transport_configuration_issues(settings)
+
+
+def link_configuration_issues(settings):
+    """Trusted action URL validation, independent of SMTP transport selection."""
     issues = []
     try:
         url = urlsplit(settings.password_recovery_url or "")
@@ -28,11 +33,17 @@ def configuration_issues(settings):
             raise ValueError()
     except Exception:
         issues.append("PASSWORD_RECOVERY_URL:missing_or_invalid")
-    return tuple(issues) + transport_configuration_issues(settings)
+    return tuple(issues)
+
+
+def validate_link_configuration(settings):
+    issues = link_configuration_issues(settings)
+    if issues:
+        raise RecoveryUnavailable(issues)
 
 
 def transport_configuration_issues(settings):
-    """SMTP-only preflight; template tests have no recovery URL or live token."""
+    """SMTP-only preflight, independent of trusted action URL validation."""
     issues = []
     try:
         if (not settings.smtp_host or any(c.isspace() for c in settings.smtp_host)
@@ -58,7 +69,7 @@ def validate_configuration(settings):
 
 
 def send(settings, recipient, rendered):
-    # Recovery/invitations retain full environment and recovery-URL validation.
+    # Password recovery retains full environment and recovery-URL validation.
     validate_configuration(settings)
     send_smtp(settings, recipient, rendered)
 

@@ -1,4 +1,4 @@
-"""Server-only, per-attempt saved SMTP snapshot. Never falls back to environment."""
+"""Saved SMTP for explicit template tests/invitations; never environment fallback."""
 import json
 from dataclasses import dataclass
 from email.headerregistry import Address
@@ -15,8 +15,8 @@ from app.services import recovery_mail
 # Only these fixed categories/messages may reach attempt logs or API responses.
 CONFIGURATION_GUIDANCE = {
     "saved_smtp_missing": "No default Email configuration is available. Save an SMTP configuration and make it the Email default in Settings → Communication.",
-    "saved_smtp_unsupported": "The default Email configuration is not SMTP. Select an SMTP default in Settings → Communication; API and Platform test sends are not supported.",
-    "saved_smtp_insecure": "The default SMTP configuration has security set to none. Select STARTTLS or TLS in Settings → Communication before sending a template test.",
+    "saved_smtp_unsupported": "The default Email configuration is not SMTP. Select an SMTP default in Settings → Communication; API and Platform email sends are not supported.",
+    "saved_smtp_insecure": "The default SMTP configuration has security set to none. Select STARTTLS or TLS in Settings → Communication before sending email.",
     "saved_smtp_unavailable": "The saved default Email configuration or its credential cannot be read. Review Settings → Communication and ask the operator to restore encrypted storage access. No email was sent.",
     "saved_smtp_invalid": "The default SMTP configuration or credential is invalid. Review its host, port, TLS mode, username, app password and sender fields in Settings → Communication.",
 }

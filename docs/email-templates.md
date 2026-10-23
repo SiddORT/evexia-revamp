@@ -68,9 +68,11 @@ The invitation and existing recovery senders snapshot/validate the latest
 committed assigned template immediately before dispatch and record its identity
 and version. Saved subject/HTML/text changes affect later sends. Invalid or
 unavailable required content fails explicitly; there is no hardcoded-content
-fallback. Both text and HTML are sent with the owned inline MIME logo through
-the approved environment-configured TLS SMTP transport, never Communication
-defaults or a newly selected provider.
+fallback. Both text and HTML are sent with the owned inline MIME logo.
+Explicit Staff/MR invitations use the saved default Email SMTP transport from
+Settings → Communication, including its sender name and encrypted credential.
+Password recovery alone retains the approved environment-configured TLS SMTP
+transport. Invitation trusted URL validation remains independent of transport.
 
 The shared persistent Email Logs lifecycle records pre-handoff failures and
 truthful SMTP acceptance, not inbox delivery. Operational/audit evidence contains
@@ -123,7 +125,7 @@ creates an account token, changes passwords or calls live invitation/recovery
 workflows. Live rendering still requires the trusted set-password/recovery URL
 shape and the correct portal query.
 
-Tests use only the **default Email** configuration saved in
+Tests and explicit Staff/MR invitations use only the **default Email** configuration saved in
 **Settings → Communication** when its type is SMTP. One server-only per-attempt
 snapshot decrypts and validates the saved host, port, security, username, app
 password, sender name and sender email. `starttls` requires verified STARTTLS;
@@ -134,8 +136,9 @@ category. There is no environment fallback, alternate SMTP selection, plaintext
 credential cache or configuration lock held during network work.
 
 Template tests do not require `PASSWORD_RECOVERY_URL` or environment SMTP
-credentials. Recovery and invitations retain their existing environment SMTP and
-recovery-URL validation; their transport selection is unchanged.
+credentials. Invitations likewise do not require environment SMTP, but still
+require the existing trusted recovery URL for their real set-password links.
+Password recovery retains environment SMTP and recovery-URL validation.
 
 Tests retain the same no-replay lifecycle as real mail.
 Pending, SMTP-accepted, failed and uncertain results are reported honestly;
@@ -162,7 +165,8 @@ No production activation or real-recipient test is implied.
 
 ### Saved SMTP transport handoff — source only
 
-The test-only transport change was inspected in source only. No tests (automated,
+The saved transport changes for template tests and explicit invitations were
+inspected in source only. No tests (automated,
 manual, browser, smoke or SMTP), runtime requests, builds, workflow restarts,
 migrations, credential changes or email sends were performed. Runtime behavior
 has not been tested, at the user's request. Historical verification elsewhere

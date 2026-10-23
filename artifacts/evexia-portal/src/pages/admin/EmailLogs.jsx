@@ -15,6 +15,14 @@ const DAY = 86400000;
 const EMPTY = { start: '', end: '', purpose: '', status: '', recipient: '' };
 const PURPOSE = { password_recovery: 'Password recovery', account_invitation: 'Account invitation', template_test: 'Template test email' };
 const STATUS = { pending: 'Pending', sending: 'Sending', smtp_accepted: 'SMTP accepted', failed: 'Failed', unknown: 'Unknown / interrupted' };
+// Fixed, public guidance only; never render SMTP exceptions or saved field values.
+const SMTP_GUIDANCE = {
+  saved_smtp_missing: 'No default Email configuration is available. Save an SMTP configuration and make it the Email default in Settings → Communication.',
+  saved_smtp_unsupported: 'The default Email configuration is not SMTP. Select an SMTP default in Settings → Communication; API and Platform email sends are not supported.',
+  saved_smtp_insecure: 'The default SMTP configuration has security set to none. Select STARTTLS or TLS in Settings → Communication before sending email.',
+  saved_smtp_unavailable: 'The saved default Email configuration or its credential cannot be read. Review Settings → Communication and ask the operator to restore encrypted storage access. No email was sent.',
+  saved_smtp_invalid: 'The default SMTP configuration or credential is invalid. Review its host, port, TLS mode, username, app password and sender fields in Settings → Communication.',
+};
 const dash = (v) => (v === null || v === undefined || v === '' ? '—' : String(v));
 const sessionKey = (s) => (s.status === 'authenticated' && s.user?.id ? s.user.id : '');
 
@@ -109,7 +117,7 @@ function Report({ sessionId }) {
     { key: 'template', label: 'Template', render: (r) => <>{dash(r.template_id)}<br /><small>{r.template_version == null ? '—' : `Version ${r.template_version}`}</small></> },
     { key: 'origin', label: 'Origin / actor', render: (r) => <>{dash(r.origin)}<br /><small>{r.origin === 'Self-service' ? 'Self-service' : dash(r.actor_id)}</small></> },
     { key: 'status', label: 'Status', render: (r) => <span className="admin-badge">{STATUS[r.status] || dash(r.status)}</span> },
-    { key: 'category', label: 'Failure category', render: (r) => dash(r.failure_category) },
+    { key: 'category', label: 'Failure category', render: (r) => <>{dash(r.failure_category)}{r.status === 'failed' && Object.hasOwn(SMTP_GUIDANCE, r.failure_category) && <><br /><small>{SMTP_GUIDANCE[r.failure_category]}</small></>}</> },
     { key: 'id', label: 'Correlation ID', render: (r) => <code>{dash(r.id)}</code> },
   ];
   const emptyView = error ? (

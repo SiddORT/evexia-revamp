@@ -8,7 +8,7 @@ from app.db.staff_models import StaffProfile
 from app.db.mr_models import MRDirectory
 from app.db.email_delivery_models import EmailAttempt
 from app.repositories.sessions import lock_user
-from app.services import auth, password_recovery, email_delivery
+from app.services import auth, password_recovery, email_delivery, template_test_mail
 
 
 def invite(db, actor, settings, kind, record_id, version):
@@ -56,7 +56,11 @@ def invite(db, actor, settings, kind, record_id, version):
     row = db.get(EmailAttempt, attempt_id)
     messages = {
         "smtp_accepted": "Invitation accepted by SMTP. This does not confirm inbox delivery. The link expires in 15 minutes.",
-        "failed": "Invitation was not sent. Check Email Logs and SMTP/template configuration before explicitly sending again.",
+        "failed": "Invitation was not sent. Check Email Logs, the default Email SMTP configuration in Settings → Communication, and invitation template/link configuration before explicitly sending again.",
         "unknown": "Submission outcome is uncertain. Do not automatically send again. Check Email Logs and request a new link only when needed.",
     }
-    return dict(id=attempt_id, status=row.status, message=messages.get(row.status, "Invitation recorded. Check Email Logs."))
+    guidance = (template_test_mail.CONFIGURATION_GUIDANCE.get(row.failure_category)
+                if row.status == "failed" else None)
+    message = (guidance + " Check Email Logs before explicitly sending again."
+               if guidance else messages.get(row.status, "Invitation recorded. Check Email Logs."))
+    return dict(id=attempt_id, status=row.status, message=message)

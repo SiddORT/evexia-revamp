@@ -60,8 +60,9 @@ account workflows and cannot create tokens; see [email templates](email-template
 
 ## SMTP outcomes and Email Logs
 
-The sender uses only the approved environment-configured TLS SMTP transport,
-never stored Communication defaults. Recovery resolves `password_recovery`;
+Explicit Staff/MR invitations use only the saved default Email SMTP configuration
+in Settings → Communication. Password recovery retains environment-configured
+TLS SMTP. Recovery resolves `password_recovery`;
 the verified invitation identity resolves `account_invitation` for staff/Admin
 and `mr_invitation` for MR. Both live invitation kinds retain the existing signed
 token/delivery purpose. No hardcoded-content or cross-role fallback is used.
@@ -89,11 +90,24 @@ retain the selected ID/version before SMTP, with fictional role-appropriate
 samples and a nonfunctional reserved-domain action URL. Historical invitation
 records keep their existing purpose and selected shared-template ID/version;
 they are not rewritten to imply the new MR template was used historically.
-Only template tests use the saved default Email SMTP configuration in
-Settings → Communication (STARTTLS or implicit TLS, including the saved
-credential and sender). Invitation and password-recovery sends continue using
-environment-configured SMTP and existing recovery-URL validation. No saved
-configuration activates or replaces that transport.
+Template tests and explicit invitations share one server-only per-attempt
+snapshot of the saved default Email SMTP configuration in Settings → Communication:
+host, port, verified STARTTLS or implicit TLS, username, encrypted credential,
+sender address and sender name. Invitations require the existing trusted
+`PASSWORD_RECOVERY_URL` shape independently of SMTP selection, but do not
+require environment SMTP values. There is no fallback to environment SMTP or
+another saved server, and no decrypted transport cache beyond the attempt.
+Password recovery retains its existing environment SMTP and full recovery-URL
+validation. Saving/selecting a default never sends on its own.
+
+Missing defaults (`saved_smtp_missing`), API/Platform defaults
+(`saved_smtp_unsupported`), security `none` (`saved_smtp_insecure`), invalid
+configuration/credentials (`saved_smtp_invalid`) and unreadable encrypted data
+(`saved_smtp_unavailable`) fail before SMTP handoff. Invitation responses and
+protected Email Logs show fixed Settings → Communication guidance; no credential,
+saved field value or internal exception is exposed. Correct the configuration
+or restore encrypted storage access as appropriate, inspect Email Logs, then
+explicitly request another invitation if needed. No automatic retries occur.
 
 Statuses mean:
 
@@ -119,6 +133,13 @@ tokens, token URLs, SMTP credentials, rendered bodies and raw exception messages
 are excluded. Recipient snapshots use existing directory key custody with new
 mail-specific AAD and equality-index domains. Keep all historical decryption keys:
 existing directory/account rotation inventories do not rewrite Email Logs.
+
+### Saved invitation SMTP handoff — source only
+
+The invitation transport change was inspected in source only. No tests, builds,
+browser/manual scenarios, runtime requests, workflow restarts, migrations,
+credential/default changes, deployments or email sends were performed. Existing
+historical verification below does not validate this changed path.
 No retention deletion or general-purpose queue/retry service is introduced.
 
 ## Schema and focused acceptance

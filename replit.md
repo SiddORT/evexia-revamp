@@ -39,12 +39,20 @@ activation/recovery handoff; process repair is not live email recovery.
 
 ## Transactional onboarding email
 
-Staff/MR invitation and recovery share the approved environment TLS SMTP sender
-and protected database templates; do not activate Communication defaults or email
-passwords. Invitations never grant staff access or convert business MR labels
+Explicit Staff/MR invitations and template tests use only the saved default Email
+SMTP configuration in Settings → Communication, with its encrypted credential,
+sender address/name and verified STARTTLS or implicit TLS. Never fall back to
+environment SMTP or another saved server. Invitation trusted URL validation stays
+independent; password recovery retains environment SMTP and full recovery-URL
+validation. Protected database templates remain shared; never email passwords.
+Saving/selecting defaults alone never sends. Invitations never grant staff access or convert business MR labels
 to identities. Email Logs report SMTP acceptance, not inbox delivery; uncertain
 submissions are not automatically replayed. See `docs/email-invitations.md` for
 eligibility, encrypted recipient/key custody and focused post-merge acceptance.
+Saved-SMTP configuration failures expose only fixed Communication guidance in
+invitation results and protected Email Logs. This invitation transport change is
+source-only at the user's request: no tests, builds, browser/manual scenarios,
+runtime requests, service restarts, migrations or email sends.
 
 Required email content now has distinct staff/Admin `account_invitation` and
 MR `mr_invitation` assignments; token/delivery purposes remain unchanged.
@@ -183,7 +191,7 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a separate f
 
 - Doctor, Patient, MR, Staff and Vendor share the native Doctor-style PhoneInput and full maintained international calling-code catalog. Preserve each master's historical number acceptance. MR country defaults to India and is encrypted; the shared-phone migration follows the reconciled directory branch merge and requires separate operator approval.
 - Sales Target Master is protected singleton-only shared persistence outside the eight-master staff catalogue. `0023_sales_targets` follows `0022_allergen_catalogue` and starts empty. Shared server MR references derive zone/headquarter; quarterly rupees are exact decimal strings; financial end year must equal start year + 1. Status/year/zone/MR/name filters and summaries/export cover all matches. Versioned soft deletion and bounded create-only CSV/XLSX transfers retain server audit evidence and explicit seven-column legacy CSV compatibility. No automatic migration or fallback to local target/MR/Zone stores. See `docs/sales-target-master.md`; managed migration/deployment requires separate approval.
-- Settings > Communication is protected Super Admin-only shared encrypted configuration CRUD for Email (SMTP/API/Platform), SMS and WABA. All entered fields and write-only credentials are encrypted; defaults do not activate providers or delivery. Recovery SMTP stays environment-configured and unchanged. Legacy browser records remain untouched and unused. Historical `0039_communication` follows the current automatic migration policy; independent key custody and destructive recovery remain separate from migration. Run only `sh scripts/test-communication-crud.sh` for focused CRUD checks; see `docs/communication-configuration.md` for the explicitly approved development reset, verified active-key roundtrip and original key-custody limits.
+- Settings > Communication is protected Super Admin-only shared encrypted configuration CRUD for Email (SMTP/API/Platform), SMS and WABA. All entered fields and write-only credentials are encrypted; saving/selecting defaults alone does not send. Explicit template tests and Staff/MR invitations use only the saved default Email SMTP configuration; recovery SMTP stays environment-configured and unchanged. Legacy browser records remain untouched and unused. Historical `0039_communication` follows the current automatic migration policy; independent key custody and destructive recovery remain separate from migration. Run only `sh scripts/test-communication-crud.sh` for focused CRUD checks; see `docs/communication-configuration.md` for the explicitly approved development reset, verified active-key roundtrip and original key-custody limits.
 - Staff Management requires protected system Super Admin `staff.manage`. Encrypted directory fields and dedicated key handling remain unchanged. Credentials are provisioned without plaintext User.email or a system role. Staff login is disabled by default; only an explicit version-checked access change enables it and assigns a custom role ID. Business role/designation labels grant nothing. Existing generated User ID/password are reused, never reset or redisplayed on enablement. Active status is also required; disable/inactivation revokes sessions. See `docs/staff-security.md`.
 - Staff Add/Edit shows optional manual Employee Code, not User ID. It is trimmed,
   at most 64 characters, without control characters; blank clears, omitted edit

@@ -66,14 +66,19 @@ def preparation_interrupted(db, attempt_id):
 def dispatch(db, settings, attempt_id, recipient, render, *, event=None, snapshot=None):
     """One explicit submission. Network loss after handoff is not definite failure."""
     category, submitting = "configuration", False
-    test_transport = None
+    saved_transport = None
     try:
         row = db.get(EmailAttempt, attempt_id, populate_existing=True, with_for_update=True)
         if row.status != "pending":
             return  # Never replay accepted, failed or uncertain work.
         is_test = row.purpose == "template_test"
-        if is_test:
-            test_transport = template_test_mail.resolve(db, settings)
+        is_invitation = row.purpose == "account_invitation"
+        if is_invitation:
+            # Invitation links retain the trusted URL boundary, without
+            # requiring or selecting environment SMTP.
+            recovery_mail.validate_link_configuration(settings)
+        if is_test or is_invitation:
+            saved_transport = template_test_mail.resolve(db, settings)
         else:
             recovery_mail.validate_configuration(settings)
         category = "template"
@@ -97,9 +102,9 @@ def dispatch(db, settings, attempt_id, recipient, render, *, event=None, snapsho
         rendered = render(template)
         outcome(db, attempt_id, "sending")
         submitting = True
-        if is_test:
-            recovery_mail.send_smtp(test_transport, recipient, rendered,
-                                    sender_name=test_transport.sender_name)
+        if is_test or is_invitation:
+            recovery_mail.send_smtp(saved_transport, recipient, rendered,
+                                    sender_name=saved_transport.sender_name)
         else:
             recovery_mail.send(settings, recipient, rendered)
     except Exception as error:
@@ -119,7 +124,7 @@ def dispatch(db, settings, attempt_id, recipient, render, *, event=None, snapsho
         return
     finally:
         # Do not retain a decrypted transport beyond this explicit attempt.
-        test_transport = None
+        saved_transport = None
     outcome(db, attempt_id, "smtp_accepted")
 
 

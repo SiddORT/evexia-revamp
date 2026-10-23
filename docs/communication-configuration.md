@@ -7,11 +7,13 @@ Super Admin APIs, described in [Email templates](email-templates.md). Eligible
 password recovery reads the protected `password_recovery` template automatically,
 but still sends through the existing environment-configured verified-TLS SMTP
 transport. Neither template edits nor Communication defaults change the recovery
-or invitation SMTP provider, sender, credentials or trusted recovery origin.
-Explicit template test sends are the exception: they use only the saved default
+SMTP provider, sender, credentials or trusted recovery origin.
+Explicit template test sends and Staff/MR invitations use only the saved default
 Email SMTP configuration, including its encrypted credential and sender, with
 verified STARTTLS or implicit TLS. Missing/unreadable/invalid settings, API/Platform
-defaults and security `none` prevent test sending without environment fallback.
+defaults and security `none` prevent those sends without environment fallback.
+Invitations retain trusted recovery-URL validation independently of saved SMTP;
+template tests remain fictional and token-free.
 See [template test transport](email-templates.md#explicit-saved-version-test-emails).
 SMS templates retain their local
 storage and preview-only behavior. No browser-local email records are imported
@@ -93,9 +95,9 @@ Settings → Communication is restricted to the protected system Super Admin.
 It manages Email (SMTP, API and Platform), SMS and WABA records centrally.
 Saving or selecting a default does **not** send messages, probe providers, onboard
 OAuth accounts or verify credentials. The separate, explicitly submitted template
-test action reads the default Email SMTP configuration. API/Platform, SMS and
-WhatsApp delivery are not activated. Existing environment-configured
-password-recovery and invitation SMTP transport and validation remain unchanged.
+test and Staff/MR invitation actions read the default Email SMTP configuration.
+API/Platform, SMS and WhatsApp delivery are not activated. Password recovery's
+environment-configured SMTP transport and validation remain unchanged.
 
 ## Current migration and key-provisioning policy
 
