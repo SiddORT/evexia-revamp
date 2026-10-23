@@ -31,7 +31,7 @@ def file_quota(identity: Identity = Depends(current_identity), db: Session = Dep
 router = APIRouter(prefix="/files", tags=["files"], dependencies=[Depends(file_quota)])
 RAW_BODY = {"requestBody": {"required": True, "content": {
     mime: {"schema": {"type": "string", "format": "binary"}}
-    for mime in ("image/jpeg", "image/png", "application/pdf")
+    for mime in ("image/jpeg", "image/png", "application/pdf", "image/webp")
 }}}
 
 
@@ -113,7 +113,7 @@ def stream_download(db, identity, file_id, settings, storage_factory, request_id
         finally:
             close()
     # Never interpolate original display names into response headers.
-    extension = {"application/pdf": "pdf", "image/jpeg": "jpg", "image/png": "png"}[media]
+    extension = {"application/pdf": "pdf", "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}[media]
     return StreamingResponse(chunks(), media_type=media, background=BackgroundTask(close), headers={
         "Content-Disposition": f'attachment; filename="{file_id}.{extension}"',
         "Content-Length": str(size), "Cache-Control": "no-store",

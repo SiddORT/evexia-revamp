@@ -19,6 +19,7 @@ ScannerStatus = Literal["clean", "infected", "unavailable", "error"]
 _MIME_EXTENSION = {
     "image/jpeg": "jpg",
     "image/png": "png",
+    "image/webp": "webp",
     "application/pdf": "pdf",
 }
 _CHUNK_SIZE = 1024 * 1024
@@ -106,7 +107,7 @@ def validated_extension(filename: str) -> str:
     ):
         raise ValueError("Filename must be a plain basename without path/control characters")
     suffix = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
-    if suffix not in ("jpg", "jpeg", "png", "pdf"):
+    if suffix not in ("jpg", "jpeg", "png", "pdf", "webp"):
         raise ValueError("File extension is not allowed")
     return suffix
 
@@ -132,13 +133,16 @@ try:
     if len(payload) > 100 * 1024 * 1024:
         raise Rejected("size")
 
-    if mode in ("jpg", "jpeg", "png"):
+    if mode in ("jpg", "jpeg", "png", "webp"):
         from PIL import Image, ImageFile
 
         Image.MAX_IMAGE_PIXELS = 20_000_000
         ImageFile.LOAD_TRUNCATED_IMAGES = False
         warnings.simplefilter("error", Image.DecompressionBombWarning)
-        expected_format = "PNG" if mode == "png" else "JPEG"
+        expected_format = {"png": "PNG", "webp": "WEBP"}.get(mode, "JPEG")
+        if mode == "webp" and (len(payload) < 12 or payload[:4] != b"RIFF"
+            or payload[8:12] != b"WEBP" or int.from_bytes(payload[4:8], "little") + 8 != len(payload)):
+            raise Rejected("invalid_image")
         if mode in ("jpg", "jpeg"):
             if not payload.startswith(b"\xff\xd8") or not payload.endswith(b"\xff\xd9"):
                 raise Rejected("invalid_image")

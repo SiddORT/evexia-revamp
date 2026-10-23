@@ -4,9 +4,10 @@ import ImmDialog from '../immunotherapy/ImmDialog.jsx';
 import { captureExportPreferences } from '../../services/exportPreferences.js';
 import { releaseBlob } from '../../services/downloadRelease.js';
 import { ORDER_TRANSFER_TYPES, orderTemplate, orderTransferBlob, reviewOrderFile } from '../../services/orderTransfers.js';
+import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import './orderTransfers.css';
 
-export default function OrderTransfers({ kind, rows, snapshot, store }) {
+export default function OrderTransfers({ kind, rows, snapshot, store, adapter, total }) {
   const [format, setFormat] = useState('csv');
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -15,19 +16,35 @@ export default function OrderTransfers({ kind, rows, snapshot, store }) {
   const [error, setError] = useState('');
   const [fileName, setFileName] = useState('');
   const [message, setMessage] = useState('');
+  const [uncertain, setUncertain] = useState(false);
+  const committing = useRef(false);
   const generation = useRef(0);
   const trigger = useRef(null);
   const summary = useRef(null);
   const title = ORDER_TRANSFER_TYPES[kind].title;
   const exportTestId = { kits: 'kits-export', lupin: 'button-lupin-export', immunotherapy: 'button-imm-export', spt: 'button-spt-export' }[kind];
   useEffect(() => () => { generation.current++; }, []);
+  useEffect(() => {
+    if (!adapter || !open) return undefined;
+    return setNavigationGuard(() => {
+      if (!committing.current && !uncertain) return false;
+      setError('Keep this review open until the same import has a confirmed outcome. Retry the unchanged import safely.');
+      return true;
+    });
+  }, [Boolean(adapter), open, uncertain]);
   useEffect(() => { if (review) summary.current?.focus(); }, [review]);
-  const close = () => { generation.current++; setOpen(false); setBusy(false); setReview(null); setConfirmed(false); setError(''); setFileName(''); };
-  function download(template = false) {
+  const close = () => { if (committing.current || uncertain) return; generation.current++; setOpen(false); setBusy(false); setReview(null); setConfirmed(false); setError(''); setFileName(''); };
+  async function download(template = false) {
     setError(''); setMessage('');
     try {
       // Capture once, before generating any dates or workbook content.
       const preferences = captureExportPreferences();
+      if (adapter) {
+        const blob = await adapter.download(template, preferences, format);
+        releaseBlob(blob, `${kind}-orders${template ? '-template' : ''}.${format}`);
+        setMessage(template ? 'Blank server-order template downloaded. Use real master IDs; attachment metadata does not restore files.' : 'All authoritative filtered saved orders downloaded, including historical snapshots. File contents excluded.');
+        return;
+      }
       const source = template ? orderTemplate(kind) : snapshot;
       const orders = template ? source.orders : rows;
       const blob = orderTransferBlob(kind, orders, source, preferences, format);
@@ -41,44 +58,53 @@ export default function OrderTransfers({ kind, rows, snapshot, store }) {
     if (!file) { setBusy(false); return; }
     setBusy(true);
     try {
-      const next = await reviewOrderFile(kind, file, store.getSnapshot());
+      const next = adapter ? await adapter.review(file) : await reviewOrderFile(kind, file, store.getSnapshot());
       if (generation.current === token) setReview(next);
     } catch (e) {
       if (generation.current === token) setError(e.message || 'The file could not be read. Use the template and try again.');
     } finally { if (generation.current === token) setBusy(false); }
   }
-  function commit() {
+  async function commit() {
+    if (committing.current) return;
     try {
-      store.importOrders(review, confirmed);
-      const text = `${review.additions} added, ${review.updates} updated, ${review.unchanged} unchanged. No orders deleted. Changes are in this session only.`;
-      close(); setMessage(text);
-    } catch (e) { setError(e.message || 'Import was not applied. Review the file again.'); }
+      committing.current = true; setBusy(true);
+      if (adapter) await adapter.commit(review, confirmed);
+      else store.importOrders(review, confirmed);
+      const text = `${review.additions} added, ${review.updates} updated, ${review.unchanged} unchanged. No orders deleted. ${adapter ? 'Saved atomically on the shared server. Attachment metadata did not restore files.' : 'Changes are in this session only.'}`;
+      committing.current = false; setUncertain(false);
+      // Close explicitly after a confirmed response, including a safe retry.
+      generation.current++; setOpen(false); setBusy(false); setReview(null); setConfirmed(false); setError(''); setFileName('');
+      setMessage(text);
+    } catch (e) {
+      committing.current = false; setBusy(false); setUncertain(Boolean(adapter && e.ambiguous));
+      setError(`${e.message || 'Import was not applied. Review the file again.'}${adapter && e.ambiguous ? ' Keep this review open and retry the identical confirmed import; do not create a new batch.' : ''}`);
+    }
   }
   return <div className="order-transfers">
     <div className="order-transfer-actions">
       <label className="order-transfer-format">File format
         <select value={format} onChange={(e) => setFormat(e.target.value)}><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option></select>
       </label>
-      <button type="button" className="admin-button admin-button--secondary" disabled={!rows.length} onClick={() => download()} data-testid={exportTestId}><Download size={15} aria-hidden="true" />Export</button>
+      <button type="button" className="admin-button admin-button--secondary" disabled={adapter ? total === 0 : !rows.length} onClick={() => download()} data-testid={exportTestId}><Download size={15} aria-hidden="true" />Export</button>
       <button ref={trigger} type="button" className="admin-button admin-button--secondary" onClick={() => { setError(''); setMessage(''); setOpen(true); }}><Upload size={15} aria-hidden="true" />Import</button>
     </div>
-    <p className="order-transfer-scope">Export: all {rows.length} filtered orders across all pages, not only the current page. Local session data; attachment metadata only, never file contents.</p>
+    <p className="order-transfer-scope">{adapter ? 'Export reads all matching saved server orders, not just this section. Secure scan limit: 10,000 candidate records / 8 MB; narrow filters if exceeded. Imports: up to 500 orders / 1 MiB validated request, atomic server validation. ' : `Export: all ${rows.length} filtered orders across all pages, not only the current page. Local session data; `}Attachment metadata only, never file contents.</p>
     {message && <p role="status" className="order-transfer-message">{message}</p>}
     {error && !open && <p role="alert" className="order-transfer-error">{error}</p>}
-    {open && <ImmDialog title={`Import ${title} orders`} eyebrow="Local transfer" description="Review the file, then confirm additions and any updates. Nothing is uploaded or submitted. Cancelling leaves this session unchanged." onClose={close} returnFocusRef={trigger} className="order-transfer-dialog">
+    {open && <ImmDialog title={`Import ${title} orders`} eyebrow={adapter ? 'Shared server transfer' : 'Local transfer'} description={adapter ? 'Review validates real master references on the server. Explicit confirmation saves the entire batch atomically. External names and snapshots are not trusted; masters are never created.' : 'Review the file, then confirm additions and any updates. Nothing is uploaded or submitted. Cancelling leaves this session unchanged.'} onClose={close} returnFocusRef={trigger} className="order-transfer-dialog">
       <div className="order-transfer-dialog-fields">
-        <p>Use the eight-column template. Order details and patient relationships are JSON; keep decimal values in quoted text. Preserve the declared date context, or use ISO YYYY-MM-DD. The template contains one fictional example—replace or remove it.</p>
-        <p>Keep the original order ID and number to update an order. Give a new order matching sequence identifiers. Patient directory conflicts are rejected, not overwritten. Saved recipient/billing snapshots are retained. No order is deleted because it is absent from the file.</p>
+        <p>Use the eight-column template. Order details and patient relationships are JSON; keep decimal values in quoted text. Preserve the declared date context, or use ISO YYYY-MM-DD. {adapter ? 'The template is blank; use real master UUIDs, supported dosage/results and nonempty bottles. Legacy PO numbers are ignored.' : 'The template contains one fictional example—replace or remove it.'}</p>
+        <p>{adapter ? 'Keep original order ID, number and exported version for matching updates. For new orders, leave ID and number blank; numbering is server assigned. Legacy patient/snapshot columns are ignored, not used to create masters. Attachment metadata cannot restore uploads: existing saved file associations remain unchanged and new orders import without files.' : 'Keep the original order ID and number to update an order. Give a new order matching sequence identifiers. Patient directory conflicts are rejected, not overwritten. Saved recipient/billing snapshots are retained.'} No order is deleted because it is absent from the file.</p>
         <button type="button" className="admin-button admin-button--secondary" onClick={() => download(true)}>Download {format === 'xlsx' ? 'Excel' : 'CSV'} template</button>
-        <label className="admin-dialog__field">CSV or Excel file (up to 8 MB / 10,000 orders)
-          <input type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(e) => { read(e.target.files?.[0]); e.target.value = ''; }} />
+        <label className="admin-dialog__field">CSV or Excel file ({adapter ? 'up to 8 MB / 500 orders; validated JSON up to 1 MiB' : 'up to 8 MB / 10,000 orders'})
+          <input type="file" disabled={Boolean(adapter) && (busy || uncertain)} accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(e) => { read(e.target.files?.[0]); e.target.value = ''; }} />
         </label>
         {fileName && <p className="order-transfer-filename">Selected: {fileName}</p>}
         {busy && <p role="status">Reading local file…</p>}
         {error && <p role="alert" className="order-transfer-error">{error}</p>}
         {review && <section aria-label="Import review">
           <h3 ref={summary} tabIndex={-1}>File review</h3>
-          <p role="status">{review.additions} additions · {review.updates} updates · {review.unchanged} unchanged · {review.rejected} rejected · {review.patientAdditions} new session patients</p>
+          <p role="status">{review.additions} additions · {review.updates} updates · {review.unchanged} unchanged · {review.rejected} rejected · {adapter ? 'No masters created' : `${review.patientAdditions} new session patients`}</p>
           {!review.valid && <p role="alert" className="order-transfer-error">Nothing can be imported until every row error is corrected. Correct the file and select it again.</p>}
           <ol className="order-transfer-review">
             {review.entries.map((e, i) => <li key={`${e.line}-${i}`}>
@@ -92,11 +118,11 @@ export default function OrderTransfers({ kind, rows, snapshot, store }) {
               </details>}
             </li>)}
           </ol>
-          {review.updates > 0 && <label className="order-transfer-confirm"><input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />I confirm replacing the {review.updates} matching existing orders with the reviewed values, including any saved order snapshots.</label>}
+          {review.updates > 0 && <label className="order-transfer-confirm"><input type="checkbox" disabled={busy || uncertain} checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />I confirm updating the {review.updates} matching existing orders with the reviewed values{adapter ? ', retaining historical snapshots unless relationships change.' : ', including any saved order snapshots.'}</label>}
         </section>}
       </div>
       <div className="admin-dialog__actions">
-        <button type="button" className="admin-button admin-button--secondary" onClick={close}>Cancel</button>
+        <button type="button" className="admin-button admin-button--secondary" disabled={Boolean(adapter) && (busy || uncertain)} onClick={close}>Cancel</button>
         <button type="button" className="admin-button" disabled={busy || !review?.valid || (review.updates > 0 && !confirmed)} onClick={commit}>Confirm import</button>
       </div>
     </ImmDialog>}

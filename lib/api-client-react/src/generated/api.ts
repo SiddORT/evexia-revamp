@@ -136,6 +136,7 @@ import type {
   ExportDesignationsParams,
   ExportDoctorDirectoryParams,
   ExportHeadquartersParams,
+  ExportImmunotherapyOrdersParams,
   ExportLanguagesParams,
   ExportMRDirectoryParams,
   ExportOpeningBalancesParams,
@@ -173,6 +174,15 @@ import type {
   HeadquarterVersion,
   HeadquarterZonePage,
   HealthStatus,
+  ImmImport,
+  ImmImportResult,
+  ImmImportReview,
+  ImmPage,
+  ImmRecord,
+  ImmReferencePage,
+  ImmUploadPolicy,
+  ImmWrite,
+  ImmunotherapyReferencesParams,
   InventoryHistoryPage,
   InventoryInitializationPage,
   InventoryReferencePage,
@@ -198,6 +208,7 @@ import type {
   ListDownloadLogsParams,
   ListHeadquarterZoneChoicesParams,
   ListHeadquartersParams,
+  ListImmunotherapyOrdersParams,
   ListInventoryMovementsParams,
   ListInventoryStockParams,
   ListLanguagesParams,
@@ -427,6 +438,7 @@ import type {
   StaffStatus,
   TokenResponse,
   UploadFileParams,
+  UploadImmunotherapyPrescriptionBody,
   UserPage,
   VendorEdit,
   VendorFields,
@@ -8129,6 +8141,1069 @@ export const useSetHeadquarterStatus = <
   TContext
 > => {
   return useMutation(getSetHeadquarterStatusMutationOptions(options));
+};
+
+export const getListImmunotherapyOrdersUrl = (
+  params?: ListImmunotherapyOrdersParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/immunotherapy-orders?${stringifiedParams}`
+    : `/api/v1/admin/immunotherapy-orders`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listImmunotherapyOrders = async (
+  params?: ListImmunotherapyOrdersParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmPage> => {
+  return customFetch<ImmPage>(getListImmunotherapyOrdersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListImmunotherapyOrdersQueryKey = (
+  params?: ListImmunotherapyOrdersParams,
+) => {
+  return [
+    `/api/v1/admin/immunotherapy-orders`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListImmunotherapyOrdersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listImmunotherapyOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListImmunotherapyOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listImmunotherapyOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListImmunotherapyOrdersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listImmunotherapyOrders>>
+  > = ({ signal }) =>
+    listImmunotherapyOrders(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listImmunotherapyOrders>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListImmunotherapyOrdersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listImmunotherapyOrders>>
+>;
+export type ListImmunotherapyOrdersQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListImmunotherapyOrders<
+  TData = Awaited<ReturnType<typeof listImmunotherapyOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListImmunotherapyOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listImmunotherapyOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListImmunotherapyOrdersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateImmunotherapyOrderUrl = () => {
+  return `/api/v1/admin/immunotherapy-orders`;
+};
+
+/**
+ * @summary Create
+ */
+export const createImmunotherapyOrder = async (
+  immWrite: ImmWrite,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ImmRecord>(getCreateImmunotherapyOrderUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(immWrite),
+  });
+};
+
+export const getCreateImmunotherapyOrderMutationKey = () =>
+  ["createImmunotherapyOrder"] as const;
+
+export const getCreateImmunotherapyOrderMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createImmunotherapyOrder>>,
+    TError,
+    CreateImmunotherapyOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createImmunotherapyOrder>>,
+  TError,
+  CreateImmunotherapyOrderMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateImmunotherapyOrderMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createImmunotherapyOrder>>,
+    CreateImmunotherapyOrderMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createImmunotherapyOrder(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateImmunotherapyOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createImmunotherapyOrder>>
+>;
+export type CreateImmunotherapyOrderMutationBody = BodyType<ImmWrite>;
+export type CreateImmunotherapyOrderMutationError = ErrorType<ErrorEnvelope>;
+export type CreateImmunotherapyOrderMutationVariables = {
+  data: BodyType<ImmWrite>;
+};
+
+/**
+ * @summary Create
+ */
+export const useCreateImmunotherapyOrder = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createImmunotherapyOrder>>,
+    TError,
+    CreateImmunotherapyOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createImmunotherapyOrder>>,
+  TError,
+  CreateImmunotherapyOrderMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateImmunotherapyOrderMutationOptions(options));
+};
+
+export const getExportImmunotherapyOrdersUrl = (
+  params?: ExportImmunotherapyOrdersParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/immunotherapy-orders/export?${stringifiedParams}`
+    : `/api/v1/admin/immunotherapy-orders/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportImmunotherapyOrders = async (
+  params?: ExportImmunotherapyOrdersParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmPage> => {
+  return customFetch<ImmPage>(getExportImmunotherapyOrdersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportImmunotherapyOrdersQueryKey = (
+  params?: ExportImmunotherapyOrdersParams,
+) => {
+  return [
+    `/api/v1/admin/immunotherapy-orders/export`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getExportImmunotherapyOrdersQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportImmunotherapyOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportImmunotherapyOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportImmunotherapyOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getExportImmunotherapyOrdersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exportImmunotherapyOrders>>
+  > = ({ signal }) =>
+    exportImmunotherapyOrders(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportImmunotherapyOrders>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportImmunotherapyOrdersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportImmunotherapyOrders>>
+>;
+export type ExportImmunotherapyOrdersQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportImmunotherapyOrders<
+  TData = Awaited<ReturnType<typeof exportImmunotherapyOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportImmunotherapyOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportImmunotherapyOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportImmunotherapyOrdersQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCommitImmunotherapyImportUrl = () => {
+  return `/api/v1/admin/immunotherapy-orders/import/commit`;
+};
+
+/**
+ * @summary Commit
+ */
+export const commitImmunotherapyImport = async (
+  immImport: ImmImport,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmImportResult> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ImmImportResult>(getCommitImmunotherapyImportUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(immImport),
+  });
+};
+
+export const getCommitImmunotherapyImportMutationKey = () =>
+  ["commitImmunotherapyImport"] as const;
+
+export const getCommitImmunotherapyImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitImmunotherapyImport>>,
+    TError,
+    CommitImmunotherapyImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof commitImmunotherapyImport>>,
+  TError,
+  CommitImmunotherapyImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCommitImmunotherapyImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof commitImmunotherapyImport>>,
+    CommitImmunotherapyImportMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return commitImmunotherapyImport(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CommitImmunotherapyImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof commitImmunotherapyImport>>
+>;
+export type CommitImmunotherapyImportMutationBody = BodyType<ImmImport>;
+export type CommitImmunotherapyImportMutationError = ErrorType<ErrorEnvelope>;
+export type CommitImmunotherapyImportMutationVariables = {
+  data: BodyType<ImmImport>;
+};
+
+/**
+ * @summary Commit
+ */
+export const useCommitImmunotherapyImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitImmunotherapyImport>>,
+    TError,
+    CommitImmunotherapyImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof commitImmunotherapyImport>>,
+  TError,
+  CommitImmunotherapyImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getCommitImmunotherapyImportMutationOptions(options));
+};
+
+export const getReviewImmunotherapyImportUrl = () => {
+  return `/api/v1/admin/immunotherapy-orders/import/review`;
+};
+
+/**
+ * @summary Review
+ */
+export const reviewImmunotherapyImport = async (
+  immImport: ImmImport,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmImportReview> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ImmImportReview>(getReviewImmunotherapyImportUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(immImport),
+  });
+};
+
+export const getReviewImmunotherapyImportMutationKey = () =>
+  ["reviewImmunotherapyImport"] as const;
+
+export const getReviewImmunotherapyImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewImmunotherapyImport>>,
+    TError,
+    ReviewImmunotherapyImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewImmunotherapyImport>>,
+  TError,
+  ReviewImmunotherapyImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReviewImmunotherapyImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewImmunotherapyImport>>,
+    ReviewImmunotherapyImportMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return reviewImmunotherapyImport(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewImmunotherapyImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewImmunotherapyImport>>
+>;
+export type ReviewImmunotherapyImportMutationBody = BodyType<ImmImport>;
+export type ReviewImmunotherapyImportMutationError = ErrorType<ErrorEnvelope>;
+export type ReviewImmunotherapyImportMutationVariables = {
+  data: BodyType<ImmImport>;
+};
+
+/**
+ * @summary Review
+ */
+export const useReviewImmunotherapyImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewImmunotherapyImport>>,
+    TError,
+    ReviewImmunotherapyImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewImmunotherapyImport>>,
+  TError,
+  ReviewImmunotherapyImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getReviewImmunotherapyImportMutationOptions(options));
+};
+
+export const getImmunotherapyUploadPolicyUrl = () => {
+  return `/api/v1/admin/immunotherapy-orders/policy`;
+};
+
+/**
+ * @summary Policy
+ */
+export const immunotherapyUploadPolicy = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmUploadPolicy> => {
+  return customFetch<ImmUploadPolicy>(getImmunotherapyUploadPolicyUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getImmunotherapyUploadPolicyQueryKey = () => {
+  return [`/api/v1/admin/immunotherapy-orders/policy`] as const;
+};
+
+export const getImmunotherapyUploadPolicyQueryOptions = <
+  TData = Awaited<ReturnType<typeof immunotherapyUploadPolicy>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof immunotherapyUploadPolicy>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getImmunotherapyUploadPolicyQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof immunotherapyUploadPolicy>>
+  > = ({ signal }) => immunotherapyUploadPolicy({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof immunotherapyUploadPolicy>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ImmunotherapyUploadPolicyQueryResult = NonNullable<
+  Awaited<ReturnType<typeof immunotherapyUploadPolicy>>
+>;
+export type ImmunotherapyUploadPolicyQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Policy
+ */
+
+export function useImmunotherapyUploadPolicy<
+  TData = Awaited<ReturnType<typeof immunotherapyUploadPolicy>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof immunotherapyUploadPolicy>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getImmunotherapyUploadPolicyQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getUploadImmunotherapyPrescriptionUrl = (patientId: string) => {
+  return `/api/v1/admin/immunotherapy-orders/prescriptions/${patientId}`;
+};
+
+/**
+ * @summary Prescription
+ */
+export const uploadImmunotherapyPrescription = async (
+  patientId: string,
+  uploadImmunotherapyPrescriptionBody: UploadImmunotherapyPrescriptionBody,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<FileResponse> => {
+  const formData = new FormData();
+  formData.append(`file`, uploadImmunotherapyPrescriptionBody.file);
+
+  return customFetch<FileResponse>(
+    getUploadImmunotherapyPrescriptionUrl(patientId),
+    {
+      ...options,
+      method: "POST",
+      body: formData,
+    },
+  );
+};
+
+export const getUploadImmunotherapyPrescriptionMutationKey = () =>
+  ["uploadImmunotherapyPrescription"] as const;
+
+export const getUploadImmunotherapyPrescriptionMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadImmunotherapyPrescription>>,
+    TError,
+    UploadImmunotherapyPrescriptionMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof uploadImmunotherapyPrescription>>,
+  TError,
+  UploadImmunotherapyPrescriptionMutationVariables,
+  TContext
+> => {
+  const mutationKey = getUploadImmunotherapyPrescriptionMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof uploadImmunotherapyPrescription>>,
+    UploadImmunotherapyPrescriptionMutationVariables
+  > = (props) => {
+    const { patientId, data } = props ?? {};
+
+    return uploadImmunotherapyPrescription(patientId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UploadImmunotherapyPrescriptionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof uploadImmunotherapyPrescription>>
+>;
+export type UploadImmunotherapyPrescriptionMutationBody =
+  BodyType<UploadImmunotherapyPrescriptionBody>;
+export type UploadImmunotherapyPrescriptionMutationError =
+  ErrorType<ErrorEnvelope>;
+export type UploadImmunotherapyPrescriptionMutationVariables = {
+  patientId: string;
+  data: BodyType<UploadImmunotherapyPrescriptionBody>;
+};
+
+/**
+ * @summary Prescription
+ */
+export const useUploadImmunotherapyPrescription = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadImmunotherapyPrescription>>,
+    TError,
+    UploadImmunotherapyPrescriptionMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof uploadImmunotherapyPrescription>>,
+  TError,
+  UploadImmunotherapyPrescriptionMutationVariables,
+  TContext
+> => {
+  return useMutation(
+    getUploadImmunotherapyPrescriptionMutationOptions(options),
+  );
+};
+
+export const getImmunotherapyReferencesUrl = (
+  kind: "patients" | "doctors" | "mrs" | "allergens",
+  params?: ImmunotherapyReferencesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/immunotherapy-orders/references/${kind}?${stringifiedParams}`
+    : `/api/v1/admin/immunotherapy-orders/references/${kind}`;
+};
+
+/**
+ * @summary References
+ */
+export const immunotherapyReferences = async (
+  kind: "patients" | "doctors" | "mrs" | "allergens",
+  params?: ImmunotherapyReferencesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmReferencePage> => {
+  return customFetch<ImmReferencePage>(
+    getImmunotherapyReferencesUrl(kind, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getImmunotherapyReferencesQueryKey = (
+  kind: "patients" | "doctors" | "mrs" | "allergens",
+  params?: ImmunotherapyReferencesParams,
+) => {
+  return [
+    `/api/v1/admin/immunotherapy-orders/references/${kind}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getImmunotherapyReferencesQueryOptions = <
+  TData = Awaited<ReturnType<typeof immunotherapyReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "patients" | "doctors" | "mrs" | "allergens",
+  params?: ImmunotherapyReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof immunotherapyReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getImmunotherapyReferencesQueryKey(kind, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof immunotherapyReferences>>
+  > = ({ signal }) =>
+    immunotherapyReferences(kind, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: kind !== null && kind !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof immunotherapyReferences>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ImmunotherapyReferencesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof immunotherapyReferences>>
+>;
+export type ImmunotherapyReferencesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary References
+ */
+
+export function useImmunotherapyReferences<
+  TData = Awaited<ReturnType<typeof immunotherapyReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "patients" | "doctors" | "mrs" | "allergens",
+  params?: ImmunotherapyReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof immunotherapyReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getImmunotherapyReferencesQueryOptions(
+    kind,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetImmunotherapyOrderUrl = (recordId: string) => {
+  return `/api/v1/admin/immunotherapy-orders/${recordId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getImmunotherapyOrder = async (
+  recordId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmRecord> => {
+  return customFetch<ImmRecord>(getGetImmunotherapyOrderUrl(recordId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetImmunotherapyOrderQueryKey = (recordId: string) => {
+  return [`/api/v1/admin/immunotherapy-orders/${recordId}`] as const;
+};
+
+export const getGetImmunotherapyOrderQueryOptions = <
+  TData = Awaited<ReturnType<typeof getImmunotherapyOrder>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getImmunotherapyOrder>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetImmunotherapyOrderQueryKey(recordId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getImmunotherapyOrder>>
+  > = ({ signal }) =>
+    getImmunotherapyOrder(recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getImmunotherapyOrder>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetImmunotherapyOrderQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getImmunotherapyOrder>>
+>;
+export type GetImmunotherapyOrderQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetImmunotherapyOrder<
+  TData = Awaited<ReturnType<typeof getImmunotherapyOrder>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getImmunotherapyOrder>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetImmunotherapyOrderQueryOptions(recordId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getEditImmunotherapyOrderUrl = (recordId: string) => {
+  return `/api/v1/admin/immunotherapy-orders/${recordId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editImmunotherapyOrder = async (
+  recordId: string,
+  immWrite: ImmWrite,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ImmRecord>(getEditImmunotherapyOrderUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(immWrite),
+  });
+};
+
+export const getEditImmunotherapyOrderMutationKey = () =>
+  ["editImmunotherapyOrder"] as const;
+
+export const getEditImmunotherapyOrderMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editImmunotherapyOrder>>,
+    TError,
+    EditImmunotherapyOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editImmunotherapyOrder>>,
+  TError,
+  EditImmunotherapyOrderMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditImmunotherapyOrderMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editImmunotherapyOrder>>,
+    EditImmunotherapyOrderMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return editImmunotherapyOrder(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditImmunotherapyOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editImmunotherapyOrder>>
+>;
+export type EditImmunotherapyOrderMutationBody = BodyType<ImmWrite>;
+export type EditImmunotherapyOrderMutationError = ErrorType<ErrorEnvelope>;
+export type EditImmunotherapyOrderMutationVariables = {
+  recordId: string;
+  data: BodyType<ImmWrite>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditImmunotherapyOrder = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editImmunotherapyOrder>>,
+    TError,
+    EditImmunotherapyOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editImmunotherapyOrder>>,
+  TError,
+  EditImmunotherapyOrderMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditImmunotherapyOrderMutationOptions(options));
 };
 
 export const getReviewInventoryInitializationUrl = (

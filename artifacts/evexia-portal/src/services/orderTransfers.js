@@ -24,7 +24,7 @@ function fields(v, required, optional = [], label = 'Object') {
   insist(required.every((k) => Object.hasOwn(v, k)), `${label} is missing required fields: ${required.filter((k) => !Object.hasOwn(v, k)).join(', ')}.`);
   insist(Object.keys(v).every((k) => [...required, ...optional].includes(k)), `${label} has unsupported fields. Use this order type's template.`);
 }
-function safeJson(text, label) {
+export function safeJson(text, label) {
   let value;
   try { value = JSON.parse(text); } catch { throw new Error(`${label}: enter valid JSON; preserve double quotes, arrays and decimal strings.`); }
   const walk = (v, depth) => {
@@ -80,18 +80,18 @@ function validate(kind, order, dependencies) {
   const domain = ORDER_TRANSFER_TYPES[kind].domain;
   const common = ['id', 'number', 'date', 'doctorId', 'mrId', 'remarks', 'status'];
   const extras = {
-    immunotherapy: ['patientId', 'dosage', 'histamine', 'saline', 'groups', 'poNumber', 'attachments', 'shipping'],
+    immunotherapy: ['patientId', 'dosage', 'histamine', 'saline', 'groups', 'attachments', 'shipping'],
     kits: ['orderFor', 'kit', 'lancets', 'applicators', 'tray', 'shipping', 'other', 'attachments', 'paymentStatus', 'billing', 'recipient'],
     spt: ['doctorName', 'mrName', 'patients'],
     lupin: ['doctorName', 'mrName', 'patientCount', 'price', 'attachments', 'paymentStatus'],
   };
-  fields(order, [...common, ...extras[kind]], [], 'Order');
+  fields(order, [...common, ...extras[kind]], kind === 'immunotherapy' ? ['poNumber'] : [], 'Order');
   for (const k of common) string(order[k], `Order ${k}`);
   insist(Array.isArray(dependencies), 'Session patients JSON must be an array.');
   dependencies.forEach((p) => patient(p, kind));
   insist(new Set(dependencies.map((p) => p.id)).size === dependencies.length, 'Each session patient dependency must occur only once per row.');
   if (kind === 'immunotherapy') {
-    for (const k of ['patientId', 'dosage', 'histamine', 'saline', 'poNumber', 'shipping']) string(order[k], k);
+    for (const k of ['patientId', 'dosage', 'histamine', 'saline', 'shipping']) string(order[k], k);
     insist(dependencies.length === 1 && dependencies[0].id === order.patientId, 'Include exactly the referenced patient in Session patients JSON.');
     insist(Array.isArray(order.groups) && order.groups.length <= 1000, 'Bottles must be an array of at most 1,000 bottles.');
     order.groups.forEach((g) => {
@@ -136,7 +136,7 @@ function validate(kind, order, dependencies) {
   const errors = kind === 'spt' && order.status === 'Draft' ? {} : domain.validateOrder(order, dependencies);
   insist(!Object.keys(errors).length, Object.entries(errors).map(([field, message]) => `${field}: ${message}`).join(' '));
 }
-function parseDate(value, context) {
+export function parseDate(value, context) {
   let iso = value;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     let match;
@@ -154,7 +154,7 @@ function parseDate(value, context) {
   insist(formatCalendarDate(iso) !== '—', 'Order date is not a valid calendar date. Correct it using YYYY-MM-DD.');
   return iso;
 }
-function readContext(text) {
+export function readContext(text) {
   const c = safeJson(text, 'Date context');
   fields(c, ['dateFormat', 'timeZone', 'clock', 'cellEncoding'], [], 'Date context');
   insist(Object.hasOwn(DATE_FORMATS, c.dateFormat) && ['12', '24'].includes(c.clock) && c.cellEncoding === 'apostrophe-v1', 'Unsupported date format, clock or cell encoding in file context.');

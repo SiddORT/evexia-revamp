@@ -36,7 +36,7 @@ RUNTIME_REVISIONS = frozenset({PRIVACY_REVISION, "0037_domain_admission", "0038_
     "0051_headquarter_areas", "0051_mr_zones", "0052_hq_mr_zones_merge",
     "0053_email_invitations", "0054_modern_email_tests", STAFF_MANAGER_REVISION,
     "0056_staff_business_roles", "0057_staff_employee_code", "0058_master_numbers", "0059_staff_unified_access",
-    "0060_staff_account_numbers"})
+    "0060_staff_account_numbers", "0061_immunotherapy_orders"})
 SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations",
     "0033_merge_directory_branches", PHONE_REVISION, "0035_account_identifiers"}) | RUNTIME_REVISIONS
 COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS
@@ -53,7 +53,7 @@ def _fields(db):
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
     if revision not in SUPPORTED_REVISIONS:
         raise RotationError()
-    if revision in (STAFF_MANAGER_REVISION, "0056_staff_business_roles", "0057_staff_employee_code", "0058_master_numbers", "0059_staff_unified_access", "0060_staff_account_numbers"):
+    if revision in (STAFF_MANAGER_REVISION, "0056_staff_business_roles", "0057_staff_employee_code", "0058_master_numbers", "0059_staff_unified_access", "0060_staff_account_numbers", "0061_immunotherapy_orders"):
         return FIELDS
     if revision in RUNTIME_REVISIONS:
         return REFERENCE_FIELDS
@@ -78,6 +78,8 @@ def _lock(db, exclusive=False):
         raise RotationError()
     if revisions[0] in RUNTIME_REVISIONS:
         db.execute(text(f"LOCK TABLE vendors IN {mode} MODE NOWAIT"))
+    if revisions == ["0061_immunotherapy_orders"]:
+        db.execute(text(f"LOCK TABLE immunotherapy_orders,immunotherapy_requests IN {mode} MODE NOWAIT"))
     # Organization retirement changes no encrypted directory storage. Verify
     # that required final projections still exist and plaintext did not return;
     # never accept an arbitrary newer head merely because it is newer.
@@ -218,8 +220,62 @@ def _inventory(db, crypto, digest_key):
     if db.execute(select(patient.c.duplicate_identity_index).group_by(patient.c.duplicate_identity_index)
                   .having(func.count() > 1).limit(1)).first():
         raise RotationError()
+    if db.scalar(text("SELECT version_num FROM alembic_version")) == "0061_immunotherapy_orders":
+        from app.services.immunotherapy import unseal
+        for name, (model, pk, field, domain) in _order_payloads().items():
+            cursor, count = None, 0
+            while True:
+                staging._deadline(start, 120)
+                query = select(model).order_by(pk).limit(staging.BATCH_LIMIT)
+                if cursor is not None:
+                    query = query.where(pk > cursor)
+                rows = list(db.execute(query).mappings())
+                if not rows:
+                    break
+                for row in rows:
+                    stored = row[field]
+                    usage[stored.split(":")[1]] += 1
+                    logical = dict(row)
+                    logical[field] = unseal(crypto, domain, row[pk.name], stored)
+                    for digest, payload in ((mac, logical), (raw, dict(row))):
+                        encoded = canonical([name, _encoded(payload)])
+                        digest.update(len(encoded).to_bytes(8, "big"))
+                        digest.update(encoded)
+                count += len(rows)
+                cursor = rows[-1][pk.name]
+            counts[name] = count
     return dict(counts=counts, key_usage=dict(sorted(usage.items())),
                 content_digest=mac.hexdigest(), storage_digest=raw.hexdigest())
+
+
+def _order_payloads():
+    from app.db.immunotherapy_models import ImmunotherapyOrder, ImmunotherapyRequest
+    orders, requests = ImmunotherapyOrder.__table__, ImmunotherapyRequest.__table__
+    return {
+        "immunotherapy_orders": (orders, orders.c.id, "snapshot_ciphertext", "orders"),
+        "immunotherapy_requests": (requests, requests.c.key, "response_ciphertext", "requests"),
+    }
+
+
+def _order_batch(db, settings, table, limit):
+    from app.services.immunotherapy import seal, unseal
+    current = DirectoryCrypto(settings)
+    _lock(db, True)
+    if db.scalar(text("SELECT version_num FROM alembic_version")) != "0061_immunotherapy_orders":
+        raise RotationError()
+    _stage(db, current, "frozen")
+    model, pk, field, domain = _order_payloads()[table]
+    pending = func.split_part(model.c[field], ":", 2) != current.active
+    rows = list(db.execute(select(model).where(pending).order_by(pk).limit(limit)).mappings())
+    for row in rows:
+        logical = unseal(current, domain, row[pk.name], row[field])
+        replacement = seal(current, domain, row[pk.name], logical)
+        if unseal(current, domain, row[pk.name], replacement) != logical:
+            raise RotationError()
+        db.execute(model.update().where(pk == row[pk.name]).values(**{field: replacement}))
+    remaining = db.scalar(select(func.count()).select_from(model).where(pending))
+    db.commit()
+    return dict(status="batch-committed", table=table, processed=len(rows), remaining=remaining)
 
 
 def prepare(db, settings, *, operation="encrypt", target_key_id=None, next_keys=None,
@@ -290,6 +346,10 @@ def prepare(db, settings, *, operation="encrypt", target_key_id=None, next_keys=
 def batch(db, settings, *, table, limit=staging.BATCH_LIMIT):
     """Target configuration must match the durable plan; no external cursor is trusted."""
     try:
+        if table in ("immunotherapy_orders", "immunotherapy_requests"):
+            if type(limit) is not int or not 1 <= limit <= staging.BATCH_LIMIT:
+                raise RotationError()
+            return _order_batch(db, settings, table, limit)
         if table not in FIELDS or type(limit) is not int or not 1 <= limit <= staging.BATCH_LIMIT:
             raise RotationError()
         current = DirectoryCrypto(settings)
@@ -369,7 +429,7 @@ def main(argv=None):
     parser.add_argument("operation", choices=("encrypt", "configuration", "index", "batch", "verify", "finish"))
     parser.add_argument("--target-key-id")
     parser.add_argument("--runtime-role")
-    parser.add_argument("--table", choices=tuple(FIELDS))
+    parser.add_argument("--table", choices=(*FIELDS, "immunotherapy_orders", "immunotherapy_requests"))
     parser.add_argument("--limit", type=int, default=staging.BATCH_LIMIT)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--approval")

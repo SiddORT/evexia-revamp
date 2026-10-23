@@ -17,14 +17,14 @@ class FileRecord(Base):
         CheckConstraint("state IN ('uploading','quarantined','verified','rejected','pending_delete','deleted')", name="file_state"),
         CheckConstraint("size >= 0 AND size <= 104857600", name="file_size"),
         CheckConstraint("version > 0", name="file_version"),
-        CheckConstraint("content_type IN ('image/jpeg','image/png','application/pdf')", name="file_media"),
+        CheckConstraint("content_type IN ('image/jpeg','image/png','application/pdf','image/webp')", name="file_media"),
         CheckConstraint("category <> 'profile' OR content_type <> 'application/pdf'", name="file_profile_image"),
         CheckConstraint("checksum IS NULL OR checksum ~ '^[0-9a-f]{64}$'", name="file_checksum"),
         CheckConstraint("state <> 'verified' OR (size > 0 AND checksum IS NOT NULL AND scanner_status = 'clean')", name="file_verified"),
         CheckConstraint("scanner_status IN ('pending','clean','infected','unavailable','error')", name="file_scanner"),
         CheckConstraint("length(display_name) BETWEEN 1 AND 255", name="file_name"),
         CheckConstraint(
-            "object_key ~ '^(patients|mrs)/[0-9a-f-]{36}/(profile|documents)/[0-9a-f-]{36}\\.(jpg|jpeg|png|pdf)$'"
+            "object_key ~ '^(patients|mrs)/[0-9a-f-]{36}/(profile|documents)/[0-9a-f-]{36}\\.(jpg|jpeg|png|pdf|webp)$'"
             " AND split_part(object_key, '/', 1) = CASE WHEN patient_id IS NOT NULL THEN 'patients' ELSE 'mrs' END"
             " AND split_part(object_key, '/', 2) = COALESCE(patient_id, mr_id)::text"
             " AND split_part(object_key, '/', 3) = category"

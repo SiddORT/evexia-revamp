@@ -1,5 +1,6 @@
 import { acceptSessionOrders, sequenceAfter } from './sessionOrderImport.js';
-// Isolated, fictional evaluation state. No master services, storage or network.
+// Legacy transfer/fixture compatibility only. Admin Immunotherapy screens use
+// serverImmunotherapy; this store must never be mounted as a live-order fallback.
 export const STATUSES = Object.freeze(['Confirmed', 'In process', 'Shipped', 'Delivered', 'Rejected', 'Returned']);
 export const PRELIMINARY_DOSES = Object.freeze(['PD', 'DD']);
 export const B_DOSES = Object.freeze(Array.from({ length: 8 }, (_, i) => `B${i + 1}`));

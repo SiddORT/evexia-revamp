@@ -11,11 +11,11 @@ Keep Immunotherapy requirements separate; do not infer treatment workflows or or
 
 **How to apply:** Preserve the SPT evaluation boundary. Keep future Immunotherapy work driven by the user's new requirements, not sample records or assumptions based on other inventory pages.
 
-Admin Immunotherapy is also a session-only fictional evaluation workflow. Its editable dose suggestions and bottle composition are not clinical policy; changes here do not authorize real patient integration, persistence, administration-history mutation, Allergen Master changes or Doctor portal changes.
+Admin Immunotherapy now has explicit user authorization for authenticated backend orders, real master references, historical snapshots, private prescription uploads and server-validated transfers. This supersedes its earlier session-only boundary, but does not expand any other order type or portal.
 
-**Why:** The user explicitly limited the Immunotherapy rule revision to the existing Admin mock and excluded those integrations and shared workflows.
+**Why:** The user explicitly requested the Admin Immunotherapy backend conversion after the earlier mock-only work, while retaining separate scope for SPT, Kits, Lupin, procurement and Doctor/MR portals.
 
-**How to apply:** Keep future dose/composition changes within the Admin demo unless new requirements explicitly expand that boundary.
+**How to apply:** Keep Immunotherapy clinical semantics limited to explicitly chosen order dosage/results/composition. Never infer administration from order status or add treatment administration, stock, payment, or other portal processing without new requirements.
 
 The Doctor portal preview and the Admin immunotherapy order UI are separate workflows. An immunotherapy-branded hostname assigned to Doctor must still open the existing Doctor preview, not Admin order entry.
 

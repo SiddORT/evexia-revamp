@@ -296,6 +296,12 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a separate f
 
 ## Where things live
 
+- Admin Immunotherapy uses protected server orders and encrypted historical
+  snapshots, not the retained legacy demo/transfer fixture module. Its backend
+  delivery is source-only: no tests, builds, runtime checks, service restarts or
+  migrations were run. Normal authorized development activation remains
+  separate from source completion. See `docs/immunotherapy-backend.md`.
+
 - Date displays must use the shared subscribed browser presentation helpers; pure
   documents receive an explicit preference snapshot. Keep native input values,
   APIs, storage and CSV/XLSX canonical. See `artifacts/evexia-portal/DATE_PRESENTATION.md`

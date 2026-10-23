@@ -69,6 +69,8 @@ from app.api.v1.allergens import router as allergens_router
 from app.services.allergens import AllergenError
 from app.api.v1.purchase_orders import router as purchase_orders_router
 from app.services.purchase_orders import POError
+from app.api.v1.immunotherapy import router as immunotherapy_router
+from app.services.immunotherapy import ImmError
 from app.api.v1.opening_balances import router as opening_balances_router
 from app.services.opening_balances import OpeningBalanceError
 from app.api.v1.purchase_received import router as purchase_received_router
@@ -319,6 +321,7 @@ def create_app() -> FastAPI:
     async def purchase_received_error(request: Request, exc: PRError):
         return JSONResponse(status_code=exc.status, content={"error": {"code": exc.code, "message": exc.message}})
 
+    @app.exception_handler(ImmError)
     @app.exception_handler(POError)
     async def purchase_order_error(request: Request, exc: POError):
         return JSONResponse(error_body(request, exc.status, exc.message, exc.code), status_code=exc.status)
@@ -369,6 +372,7 @@ def create_app() -> FastAPI:
     app.include_router(opening_balances_router, prefix="/api/v1")
     app.include_router(allergens_router, prefix="/api/v1")
     app.include_router(purchase_orders_router, prefix="/api/v1")
+    app.include_router(immunotherapy_router, prefix="/api/v1")
     app.include_router(purchase_received_router, prefix="/api/v1")
     app.include_router(inventory_router, prefix="/api/v1")
     app.include_router(products_router, prefix="/api/v1")

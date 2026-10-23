@@ -17,7 +17,7 @@ from app.services.file_policy import FileError, authorize
 from app.services.storage import object_key
 from app.services.verification import validated_extension, verify
 
-MIME_TYPES = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "pdf": "application/pdf"}
+MIME_TYPES = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "pdf": "application/pdf", "webp": "image/webp"}
 INACCESSIBLE = frozenset({"pending_delete", "deleted", "rejected"})
 
 
@@ -45,6 +45,10 @@ def get_record(db: Session, identity, file_id, action, *, lock=False, readable=F
     authorize(db, identity, action, row.patient_id, row.mr_id, lock=lock)
     if lock:
         row = db.scalar(select(FileRecord).where(FileRecord.id == file_id).with_for_update().execution_options(populate_existing=True))
+    if action in ("delete", "replace"):
+        from app.db.immunotherapy_models import ImmunotherapyAttachment
+        if db.scalar(select(ImmunotherapyAttachment.file_id).where(ImmunotherapyAttachment.file_id == file_id).limit(1)):
+            raise FileError(409, "file_order_reference", "File is referenced by a saved order. Detach it from saved orders first; no bytes were removed.")
     if not allow_hidden and row.state in INACCESSIBLE:
         raise FileError(404, "not_found", "Object unavailable")
     if readable and (row.state != "verified" or row.scanner_status != "clean"):

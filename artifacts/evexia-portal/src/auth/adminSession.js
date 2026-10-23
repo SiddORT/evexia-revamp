@@ -926,7 +926,9 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
 }
 export const productMasterRequest = (path, options) => purchaseOrderRequest(path, options, 'products');
 export async function purchaseOrderRequest(path = '', { body, params = {}, signal, method, file, download } = {}, resource = 'purchase-orders') {
-  const allowed = resource === 'products'
+  const allowed = resource === 'immunotherapy-orders'
+    ? /^(?:|\/(?:export|policy|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs|allergens)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
+    : resource === 'products'
     ? /^(?:|\/sample|\/export|\/import\/(?:review|commit)|\/references|\/filter-references\/(?:categories|allergens)|\/assemblies(?:\/preview|\/[0-9a-f-]{36})?|\/requests\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:status|activity|analytics|assemblies))?)$/i
     : resource === 'inventory'
     ? /^\/(?:stock(?:\/[0-9a-f-]{36}\/history)?|initialization|references\/(?:locations|staff|lots)|requests\/[0-9a-f-]{36}|movements(?:\/preview|\/[0-9a-f-]{36}(?:\/(?:activity|analytics))?)?)$/i
@@ -1029,6 +1031,11 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     } else if (data?.idempotencyKey !== body?.idempotencyKey || !Array.isArray(data.lines)
       || data.lines.length !== body.lineIds.length || new Set(data.lines.map((line) => line?.lineId)).size !== body.lineIds.length
       || data.lines.some((line) => !line || !body.lineIds.includes(line.lineId) || typeof line.batchNo !== 'string' || !line.batchNo.trim() || line.batchNo.length > 120)) throw uncertain();
+  } else if (mutation && resource === 'immunotherapy-orders') {
+    if (path === '/import/commit') {
+      if (!Number.isInteger(data?.imported) || data.imported !== body.entries.length || !Array.isArray(data.orders)) throw uncertain();
+    } else if (!data?.id || !data?.number || !Number.isInteger(data.version) || !Array.isArray(data.groups)
+      || !data.patient || !data.doctor || !data.mr || !Array.isArray(data.attachments)) throw uncertain();
   } else if (mutation && resource === 'products') {
     if (path === '/import/commit') {
       if (data?.kind !== 'product_import' || data.id !== params.idempotency_key
@@ -1043,6 +1050,32 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
   return data;
 }
 
+export async function immunotherapyFileRequest(path = '', { file, patientId, signal, download = false } = {}) {
+  if (!/^(?:|\/[0-9a-f-]{36}(?:\/download)?)$/i.test(path)) throw new SessionError('Unsupported prescription operation.');
+  const guard = reportingIdentityGuard();
+  if (pending) await pending;
+  else if (state.status === 'authenticated' && Date.now() >= expiresAt) await verifySession(true, 'admin');
+  guard();
+  if (state.user?.identity_kind !== 'super_admin' || !state.user.permissions.includes('admin.access')) throw new SessionError('Access denied.', 403);
+  if (file && !/^[0-9a-f-]{36}$/i.test(patientId || '')) throw new SessionError('Choose a real patient before uploading.');
+  const form = file ? new FormData() : null;
+  if (form) form.append('file', file);
+  const response = await fetch(file ? `/api/v1/admin/immunotherapy-orders/prescriptions/${patientId}` : `/api/v1/files${path}`, {
+    method: file ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
+    headers: { Authorization: `Bearer ${token}` },
+    ...(form ? { body: form } : {}), signal: signal || AbortSignal.timeout(60000),
+  });
+  const data = response.ok && download ? await response.blob() : await response.json();
+  guard();
+  if (!response.ok) {
+    if (response.status === 401) await verifySession(true, 'admin');
+    const error = new SessionError(data?.error?.message || 'Prescription unavailable. Your order draft is preserved; retry explicitly.', response.status);
+    error.fileId = response.headers.get('X-File-ID');
+    throw error;
+  }
+  if (download) serverDownloads.set(data, guard);
+  return data;
+}
 export async function reportingRequest(resource, params = {}, { signal } = {}) {
   const invitation = /^invitations\/(staff|mr)\/[0-9a-f-]{36}$/i.test(resource);
   if (!invitation && !['emails', 'summary', 'users', 'sessions', 'events', 'activity', 'sessions/export', 'events/export', 'downloads', 'downloads/initiate'].includes(resource)) {

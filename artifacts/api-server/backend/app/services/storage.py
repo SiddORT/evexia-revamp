@@ -16,12 +16,13 @@ from app.core.config import Settings
 
 _UUID = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 _KEY = re.compile(
-    rf"^(patients|mrs)/({_UUID})/(profile|documents)/({_UUID})\.(jpg|jpeg|png|pdf)$"
+    rf"^(patients|mrs)/({_UUID})/(profile|documents)/({_UUID})\.(jpg|jpeg|png|pdf|webp)$"
 )
 _CONTENT_TYPES = {
     "jpg": "image/jpeg",
     "jpeg": "image/jpeg",
     "png": "image/png",
+    "webp": "image/webp",
     "pdf": "application/pdf",
 }
 _CHUNK_SIZE = 1024 * 1024
