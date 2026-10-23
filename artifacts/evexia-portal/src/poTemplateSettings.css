@@ -15,3 +15,16 @@
 .po-tpl__sample { font-size: 11px; font-weight: 700; color: var(--admin-text-soft); }
 .po-tpl__error { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; }
 .po-tpl__error .admin-button { min-height: 32px; }
+
+/* Label-only framing: existing PO/PR thumbnails and document styles are unchanged. */
+.po-tpl__gallery--labels { grid-template-columns: minmax(0, 1fr); }
+.po-tpl__preview--label { height: auto; overflow: visible; padding: 12px; }
+.po-tpl__preview--label > * { width: 100%; }
+.label-tpl-dialog { width: min(100%, 1200px); min-width: 0; }
+.label-tpl-dialog__tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 14px; color: var(--admin-text); }
+.label-tpl-dialog__tools label { font-weight: 700; font-size: 13px; }
+.label-tpl-dialog__tools span, .label-tpl-dialog__note { color: var(--admin-text-soft); font-size: 12px; line-height: 1.5; }
+.label-tpl-dialog__viewport { max-width: 100%; max-height: 55dvh; overflow: auto; border: 1px solid var(--admin-border); border-radius: 6px; background: #fff; overscroll-behavior: contain; }
+.label-tpl-dialog__viewport:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.label-tpl-dialog__artwork { max-width: none; padding: 14px; box-sizing: content-box; }
+.label-tpl-dialog__note { margin: 14px 0 0; }

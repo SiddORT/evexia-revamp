@@ -1,0 +1,6 @@
+.label-document { position: relative; width: 100%; color: #000; background: #fff; font-family: Roboto, "Noto Sans", "Noto Sans Devanagari", "Nirmala UI", Mangal, "Kohinoor Devanagari", Arial, sans-serif; color-scheme: light; }
+.label-document__svg { display: block; width: 100%; height: auto; background: #fff; color: #000; }
+.label-document__svg text { fill: #000; font-family: inherit; }
+.label-document__svg .label-document__white { fill: #fff; }
+.label-document .label-document__sample { margin: 0 0 6px; padding: 3px 8px; display: inline-block; border: 1px solid #000; background: #fff; color: #000; font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+.label-document__sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
