@@ -7,6 +7,8 @@ import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
+import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
+import OrderTransfers from '../../components/admin/OrderTransfers.jsx';
 import ImmPrintDialog, { PRINT_KINDS } from '../../components/immunotherapy/ImmPrintDialog.jsx';
 import useTablePagination from '../../hooks/useTablePagination.js';
 import { DOCTORS, MRS, STATUSES, demoStore, filterOrders, money, shippingRecipient, totalMinor } from '../../services/immunotherapyDemo.js';
@@ -41,7 +43,7 @@ export default function ImmunotherapyOrders() {
       return next.size === cur.size ? cur : next;
     });
   }, [rows]);
-  const reset = () => { setSearch(''); setStatus('All'); setFrom(''); setTo(''); };
+  const reset = () => { setSearch(''); setStatus('All'); setFrom(''); setTo(''); resetPage(); };
   const filtered = search || status !== 'All' || from || to;
   const pageEligible = pager.pageRows.filter(eligible);
   const allPage = pageEligible.length > 0 && pageEligible.every((o) => selected.has(o.id));
@@ -72,22 +74,22 @@ export default function ImmunotherapyOrders() {
         <p className="admin-page-head__description">Review patient dosage and bottle composition for each order.</p></div>
       <Link href={`${BASE}/new`} className="admin-button" data-testid="link-imm-add"><Plus size={16} aria-hidden="true" />Add Order</Link>
     </div>
-    <p className="imm-boundary" data-testid="status-imm-demo">Fictional demo: patients, doctors, MRs, allergens and orders live in browser memory only. Nothing is submitted, dispensed or shipped, and a reload resets everything.</p>
     {snap.notice && <div className="imm-notice" role="status" data-testid="status-imm-notice"><span>{snap.notice}</span><button type="button" className="imm-link-btn" onClick={() => demoStore.setNotice('')}>Dismiss</button></div>}
     <div className="imm-summary" aria-label="Order counts by status">
       <div className="imm-stat"><strong>{snap.orders.length}</strong><span>All orders</span></div>
       {counts.map(([s, n]) => <div className="imm-stat" key={s}><strong>{n}</strong><span>{s}</span></div>)}
     </div>
+    <OrderTransfers kind="immunotherapy" rows={rows} snapshot={snap} store={demoStore} />
     <section className="admin-panel imm-listing" aria-label="Immunotherapy orders">
-      <div className="imm-filters">
+      <OrderListingFilters onRefresh={() => demoStore.refresh()} onReset={reset} resetDisabled={!filtered && pager.page === 1} resetTestId="button-imm-reset" search={
         <label className="imm-field imm-field--grow">Search
           <span style={{ position: 'relative', display: 'block' }}><Search size={15} aria-hidden="true" style={{ position: 'absolute', left: 12, top: 13, color: 'var(--admin-muted)' }} />
             <input className="imm-input" style={{ paddingLeft: 35 }} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Order, patient, phone, doctor or MR" data-testid="input-imm-search" /></span></label>
+      }>
         <label className="imm-field">Status<select value={status} onChange={(e) => setStatus(e.target.value)} data-testid="select-imm-status"><option>All</option>{STATUSES.map((s) => <option key={s}>{s}</option>)}</select></label>
         <label className="imm-field">From<input type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} data-testid="input-imm-from" /></label>
         <label className="imm-field">To<input type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} data-testid="input-imm-to" /></label>
-        <button type="button" className="admin-button admin-button--secondary" onClick={reset} disabled={!filtered} data-testid="button-imm-reset">Reset</button>
-      </div>
+      </OrderListingFilters>
       <div className="imm-toolbar">
         <span aria-live="polite" data-testid="text-imm-selection">{selected.size} selected across all pages. Only In process orders can be selected. Filters drop hidden selections.</span>
         <div className="imm-toolbar__actions">

@@ -1,3 +1,4 @@
+import { acceptSessionOrders, sequenceAfter } from './sessionOrderImport.js';
 // Fictional evaluation data only. No storage, domain APIs, or master services.
 export const DOCTORS = Object.freeze([
   { id: 'DEMO-DR-001', name: 'Dr. Mira Example' },
@@ -66,6 +67,13 @@ export function createDemoStore() {
     getSnapshot: () => snapshot,
     subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
     setNotice(notice) { publish({ notice }); },
+    refresh() { publish({ orders: Object.freeze([...snapshot.orders]) }); },
+    importOrders(review, confirmUpdates) {
+      const patch = acceptSessionOrders(review, snapshot, confirmUpdates);
+      orderSequence = sequenceAfter(patch.orders, /^demo-spt-(\d+)$/, orderSequence);
+      patientSequence = sequenceAfter(patch.patients, /^DEMO-PT-(\d+)$/, patientSequence);
+      publish({ ...patch, notice: 'Orders and required patients imported into this session only. No real order submitted.' });
+    },
     registerPatient(values) {
       const errors = {};
       const name = String(values.name ?? '').trim();

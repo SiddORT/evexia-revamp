@@ -4,6 +4,8 @@ import { ClipboardList, Plus, Search } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
+import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
+import OrderTransfers from '../../components/admin/OrderTransfers.jsx';
 import { demoStore, money, totalMinor } from '../../services/sptOrdersDemo.js';
 import '../../sptOrders.css';
 
@@ -43,22 +45,23 @@ export default function SptOrders() {
           </div>
           <Link href={`${BASE}/new`} className="admin-button" data-testid="link-spt-add-order"><Plus size={16} aria-hidden="true" />Add Order</Link>
         </div>
-        <p className="spt-boundary" data-testid="status-spt-demo">Mock only: doctors, MRs, patients and orders here are fictional and kept in browser memory. Nothing is submitted, paid or fulfilled, and a page reload resets the demo.</p>
         {snap.notice && <div className="spt-notice" role="status" data-testid="status-spt-feedback"><span>{snap.notice}</span><button type="button" onClick={() => demoStore.setNotice('')}>Dismiss</button></div>}
+        <OrderTransfers kind="spt" rows={rows} snapshot={snap} store={demoStore} />
         <section className="admin-panel" aria-label="SPT orders">
-          <div className="spt-filters">
+          <OrderListingFilters onRefresh={() => demoStore.refresh()} onReset={clear} search={
             <label className="spt-field spt-field--grow">Search orders
               <span className="spt-search">
                 <Search size={15} aria-hidden="true" />
                 <input className="spt-input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Order number, doctor or MR" data-testid="input-spt-search" />
               </span>
             </label>
+          }>
             <div className="spt-field"><label htmlFor="spt-filter-status">Status</label>
               <select id="spt-filter-status" value={status} onChange={(e) => setStatus(e.target.value)} data-testid="select-spt-status">
                 <option>All</option><option>Draft</option><option>Saved</option>
               </select>
             </div>
-          </div>
+          </OrderListingFilters>
           <div className="spt-listing-bar">
             <span className="spt-count" aria-live="polite">Showing {rows.length} of {snap.orders.length} orders</span>
             {rows.length > 0 && <p className="spt-scroll-hint">Scroll for all columns; focus the table and use arrow keys.</p>}

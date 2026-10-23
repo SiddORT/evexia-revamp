@@ -1,3 +1,4 @@
+import { acceptSessionOrders, sequenceAfter } from './sessionOrderImport.js';
 // Isolated, fictional evaluation state. No master services, storage or network.
 export const STATUSES = Object.freeze(['Confirmed', 'In process', 'Shipped', 'Delivered', 'Rejected', 'Returned']);
 export const PRELIMINARY_DOSES = Object.freeze(['PD', 'DD']);
@@ -123,6 +124,14 @@ export function createDemoStore({ empty = false } = {}) {
     getSnapshot: () => snapshot,
     subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
     setNotice(notice) { publish({ notice }); },
+    refresh() { publish({ orders: [...snapshot.orders] }); },
+    importOrders(review, confirmUpdates) {
+      const patch = acceptSessionOrders(review, snapshot, confirmUpdates);
+      orderSequence = sequenceAfter(patch.orders, /^demo-it-(\d+)$/, orderSequence);
+      patientSequence = sequenceAfter(patch.patients, /^IT-PT-(\d+)$/, patientSequence);
+      groupSequence = sequenceAfter(patch.orders.flatMap((o) => o.groups), /^IT-BOTTLE-(\d+)$/, groupSequence);
+      publish({ ...patch, notice: 'Orders imported into this session only. No real order submitted; attachment metadata only.' });
+    },
     registerPatient(values) {
       const errors = {};
       const name = String(values.name || '').trim();

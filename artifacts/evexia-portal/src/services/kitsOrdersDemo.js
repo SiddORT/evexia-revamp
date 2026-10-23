@@ -1,4 +1,5 @@
 import { presentExportTable } from './exportDatePresentation.js';
+import { acceptSessionOrders, sequenceAfter } from './sessionOrderImport.js';
 // Isolated fictional evaluation state. Never read masters, storage or network.
 export const KIT_PRODUCTS = Object.freeze(['200', '250', '100', '85', '70', '58', 'Customized']);
 export const STATUSES = Object.freeze(['Confirmed', 'In process', 'Shipped', 'Delivered', 'Rejected', 'Returned']);
@@ -106,6 +107,12 @@ export function createDemoStore({ empty = false } = {}) {
     getSnapshot: () => snapshot,
     subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
     setNotice(notice) { publish({ notice }); },
+    refresh() { publish({ orders: [...snapshot.orders] }); },
+    importOrders(review, confirmUpdates) {
+      const patch = acceptSessionOrders(review, snapshot, confirmUpdates);
+      sequence = sequenceAfter(patch.orders, /^demo-kit-(\d+)$/, sequence);
+      publish({ ...patch, notice: 'Orders imported into this session only. No real order submitted; attachment metadata only.' });
+    },
     saveOrder(v) {
       const errors = validateOrder(v);
       if (Object.keys(errors).length) return { errors };

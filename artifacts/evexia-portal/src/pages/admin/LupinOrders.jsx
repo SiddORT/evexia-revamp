@@ -1,15 +1,15 @@
-import { captureExportPreferences } from '../../services/exportPreferences.js';
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import { Link } from 'wouter';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { ChevronDown, Check, Download, Eye, Plus, Search, X, ClipboardList } from 'lucide-react';
+import { ChevronDown, Check, Eye, Plus, Search, X, ClipboardList } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
+import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
+import OrderTransfers from '../../components/admin/OrderTransfers.jsx';
 import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
 import { useAdminPreferences } from '../../components/admin/adminPreferences.js';
-import { releaseBlob } from '../../services/downloadRelease.js';
-import { DOCTORS, STATUSES, demoStore, filterOrders, money, ordersCsv, totalMinor } from '../../services/lupinOrdersDemo.js';
+import { DOCTORS, STATUSES, demoStore, filterOrders, money, totalMinor } from '../../services/lupinOrdersDemo.js';
 import '../../lupinOrders.css';
 
 const BASE = '/admin/orders/lupin';
@@ -23,20 +23,9 @@ export default function LupinOrders() {
   const [search, setSearch] = useState('');
   const [draft, setDraft] = useState(none);
   const [applied, setApplied] = useState(none);
-  const [exportError, setExportError] = useState('');
   const rows = useMemo(() => filterOrders(snap.orders, { search, ...applied }), [snap.orders, search, applied]);
   const toggle = (s) => setDraft((d) => ({ ...d, statuses: d.statuses.includes(s) ? d.statuses.filter((x) => x !== s) : [...d.statuses, s] }));
   const reset = () => { setSearch(''); setDraft(none); setApplied(none); };
-  const exportCsv = () => {
-    setExportError('');
-    try {
-      // This mock is deliberately offline: use only the local handoff primitive,
-      // not the real exports/download-reporting API.
-      releaseBlob(new Blob([ordersCsv(rows, captureExportPreferences())], { type: 'text/csv;charset=utf-8' }), 'lupin-orders.csv');
-    } catch {
-      setExportError('The browser could not start this local CSV download. Try Export again.');
-    }
-  };
   const columns = [
     { key: 'sn', label: 'S.No', render: (_o, i) => i + 1 },
     { key: 'order', label: 'Order details', render: (o) => <><strong>{o.number}</strong><span className="lupin-sub">{date(o.date)}</span><span className="lupin-sub">{o.patientCount} patients, {money(totalMinor(o.patientCount, o.price))}</span></> },
@@ -50,18 +39,17 @@ export default function LupinOrders() {
       <div><p className="admin-page-head__eyebrow">Orders</p><h1>Order Management – Lupin</h1>
         <p className="admin-page-head__description">Review Lupin orders by doctor, MR and status.</p></div>
       <div className="lupin-actions">
-        <button type="button" className="admin-button admin-button--secondary" onClick={exportCsv} data-testid="button-lupin-export"><Download size={15} aria-hidden="true" />Export</button>
         <Link href={`${BASE}/new`} className="admin-button" data-testid="link-lupin-add"><Plus size={16} aria-hidden="true" />Add</Link>
       </div>
     </div>
-    <p className="lupin-notice" data-testid="status-lupin-demo">Fictional demo: orders live in browser memory only. Nothing is submitted, uploaded or shipped, and a reload resets everything.</p>
     {snap.notice && <div className="lupin-notice lupin-notice--ok" role="status" data-testid="lupin-notice"><span>{snap.notice}</span><button type="button" className="lupin-link" onClick={() => demoStore.setNotice('')}>Dismiss</button></div>}
-    {exportError && <p className="lupin-error" role="alert">{exportError}</p>}
+    <OrderTransfers kind="lupin" rows={rows} snapshot={snap} store={demoStore} />
     <section className="admin-panel" aria-label="Lupin orders">
-      <div className="lupin-filters">
+      <OrderListingFilters onRefresh={() => demoStore.refresh()} onReset={reset} resetTestId="button-lupin-reset" applyTestId="button-lupin-apply" onApply={(e) => { e.preventDefault(); setApplied({ ...draft }); }} search={
         <label className="lupin-field">Search
           <span style={{ position: 'relative', display: 'block' }}><Search size={15} aria-hidden="true" style={{ position: 'absolute', left: 11, top: 12, color: 'var(--admin-muted)' }} />
             <input style={{ paddingLeft: 33 }} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Order, doctor or MR" data-testid="input-lupin-search" /></span></label>
+      }>
         <label className="lupin-field">Date<input type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} data-testid="input-lupin-date" /></label>
         <div className="lupin-field"><label htmlFor="lupin-f-doctor">Doctor</label>
           <SearchableSelect viewportMenu id="lupin-f-doctor" label="Doctor" value={draft.doctorId} options={doctorOptions} onChange={(v) => setDraft({ ...draft, doctorId: v })} placeholder="All doctors" /></div>
@@ -74,12 +62,8 @@ export default function LupinOrders() {
               </DropdownMenu.Content>
             </DropdownMenu.Portal>
           </DropdownMenu.Root></div>
-        <div className="lupin-actions">
-          <button type="button" className="admin-button" onClick={() => setApplied(draft)} data-testid="button-lupin-apply">Apply Filter</button>
-          <button type="button" className="admin-button admin-button--secondary" onClick={reset} data-testid="button-lupin-reset">Reset</button>
-        </div>
-      </div>
       {draft.statuses.length > 0 && <ul className="lupin-chips" aria-label="Selected statuses" style={{ listStyle: 'none', margin: 0 }}>{draft.statuses.map((s) => <li key={s} className="lupin-chip">{s} Orders<button type="button" onClick={() => toggle(s)} aria-label={`Remove ${s} Orders`}><X size={13} aria-hidden="true" /></button></li>)}</ul>}
+      </OrderListingFilters>
       <div className="lupin-bar"><span aria-live="polite" data-testid="text-lupin-count">Showing {rows.length} of {snap.orders.length} orders</span></div>
       <DataTable columns={columns} rows={rows} rowKey={(o) => o.id} label="Lupin orders (scrolls horizontally)" testIdPrefix="lupin"
         empty={<div className="lupin-empty" data-testid="empty-lupin"><ClipboardList size={28} aria-hidden="true" /><strong>{snap.orders.length ? 'No orders match' : 'No Lupin orders yet'}</strong><p>{snap.orders.length ? 'Adjust the search or filters.' : 'Add an order to begin.'}</p>{snap.orders.length ? <button type="button" className="admin-button admin-button--secondary" onClick={reset}>Reset</button> : <Link href={`${BASE}/new`} className="admin-button">Add</Link>}</div>} />

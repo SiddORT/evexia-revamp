@@ -28,3 +28,15 @@ Lupin is also a fictional, frontend-memory-only evaluation workflow. It has a pa
 **Why:** The user explicitly requested a session-only Lupin mock and excluded live masters, processing, persistence and file transfer.
 
 **How to apply:** Preserve this boundary when reusing shared infrastructure: the real download-reporting service is not appropriate for this deliberately offline demo. Adding live data or reporting requires separate requirements.
+
+An order-transfer confirmation is permission to update matching session orders,
+not to reconcile divergent patient identity or administration history. Reject
+conflicting existing session patients even when order updates are confirmed.
+
+**Why:** A shared patient can affect orders absent from the imported file.
+Silently replacing that patient would expand the user's reviewed order changes
+and could change dose suggestions without new clinical evidence.
+
+**How to apply:** Keep patient dependencies and order snapshots separate. Import
+new explicit patient dependencies atomically with their orders, preserve existing
+patient history, and never infer administration from order status.

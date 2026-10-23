@@ -1,4 +1,5 @@
 import { presentExportTable } from './exportDatePresentation.js';
+import { acceptSessionOrders, sequenceAfter } from './sessionOrderImport.js';
 // Fictional, session-only data. No storage, master services, uploads or APIs.
 import { roundRate } from './rates.js';
 const freeze = (value) => {
@@ -100,6 +101,12 @@ export function createDemoStore({ empty = false } = {}) {
     getSnapshot: () => snapshot,
     subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
     setNotice(notice) { publish({ notice }); },
+    refresh() { publish({ orders: [...snapshot.orders] }); },
+    importOrders(review, confirmUpdates) {
+      const patch = acceptSessionOrders(review, snapshot, confirmUpdates);
+      sequence = sequenceAfter(patch.orders, /^demo-lupin-(\d+)$/, sequence);
+      publish({ ...patch, notice: 'Orders imported into this session only. No real order submitted; attachment metadata only.' });
+    },
     saveOrder(values) {
       const errors = validateOrder(values);
       if (Object.keys(errors).length) return { errors };

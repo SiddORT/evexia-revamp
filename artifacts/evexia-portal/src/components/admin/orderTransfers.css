@@ -1,0 +1,34 @@
+/* Opt-in to the four session-order listings only. */
+.order-listing-filters { padding: 18px; border-bottom: 1px solid var(--admin-border); min-width: 0; }
+.order-listing-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; min-width: 0; }
+.order-listing-search { display: flex; flex: 2 1 380px; align-items: flex-end; gap: 12px; min-width: 0; max-width: 100%; }
+.order-listing-search > .admin-button { flex: 0 0 auto; }
+.order-listing-search > label { flex: 1 1 220px; min-width: 0; }
+.order-listing-search input { width: 100%; min-width: 0; box-sizing: border-box; }
+.order-listing-toolbar .master-filter-actions { margin-left: auto; }
+.order-listing-extra { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-top: 16px; min-width: 0; }
+.order-listing-extra[hidden] { display: none; }
+.order-listing-extra > .lupin-chips { flex-basis: 100%; }
+.order-transfers { margin-bottom: 16px; min-width: 0; }
+.order-transfer-actions { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 10px; }
+.order-transfer-format { display: grid; gap: 5px; font-size: 12px; color: var(--admin-muted); }
+.order-transfer-format select { background: var(--admin-surface, var(--surface)); color: var(--admin-text, var(--ink)); border: 1px solid var(--admin-border); border-radius: 7px; padding: 9px 12px; min-height: 40px; }
+.order-transfer-scope, .order-transfer-message { font-size: 12px; color: var(--admin-muted); line-height: 1.6; margin: 8px 0; }
+.order-transfer-error { color: var(--admin-danger); overflow-wrap: anywhere; }
+.order-transfer-dialog { width: min(100%, 860px); }
+.order-transfer-dialog-fields { display: grid; gap: 12px; margin-top: 16px; min-width: 0; font-size: 13px; line-height: 1.6; }
+.order-transfer-dialog-fields p { margin: 0; }
+.order-transfer-dialog-fields input[type="file"] { width: 100%; max-width: 100%; }
+.order-transfer-filename { overflow-wrap: anywhere; }
+.order-transfer-review { max-height: 360px; overflow: auto; padding: 6px 6px 6px 28px; }
+.order-transfer-review > li { padding: 10px 0; border-bottom: 1px solid var(--admin-border); overflow-wrap: anywhere; }
+.order-transfer-review pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; border: 1px solid var(--admin-border); padding: 10px; }
+.order-transfer-confirm { display: flex; align-items: flex-start; gap: 10px; }
+.order-transfer-confirm input { flex: 0 0 auto; margin-top: 5px; }
+.order-transfer-dialog .admin-dialog__actions { flex-wrap: wrap; }
+@media (max-width: 600px) {
+  .order-listing-search { flex-basis: 100%; gap: 8px; }
+  .order-listing-search > .admin-button { padding-left: 10px; padding-right: 10px; }
+  .order-listing-extra > * { flex: 1 1 160px; min-width: 0; }
+  .order-listing-toolbar .master-filter-actions { flex-basis: 100%; }
+}
