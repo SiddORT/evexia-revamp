@@ -3,17 +3,20 @@ name: Immunotherapy document approval
 description: User-controlled template stage and separation from reference-only bulk labels.
 ---
 
-Immunotherapy row document actions are a first stage only. The user will add
-distinct templates in Settings later. Do not invent document layouts, clinical
-instructions, abroad-letter wording or invoice rules. Box labels and bottle
-labels remain separate document types; letters and invoices are not label formats.
-Existing bulk-print reference layouts are not approved production templates.
+Immunotherapy Settings samples and live row document actions require separate
+approval. The user supplied references for Instructions, Abroad letter, Shipping
+address and Immunotherapy order invoice, but authorized Settings-only setup.
+Do not invent clinical instructions, letter wording, additional dilution regimens
+or production invoice rules. Box labels and bottle labels remain separate document
+types; letters and invoices are not label formats. Existing bulk-print reference
+layouts are not approved production templates.
 
-**Why:** The user explicitly reserved document content and template configuration
-for a later stage.
+**Why:** The user explicitly separated reference-based Settings configuration from
+live generation, printing, payments, exports and changes to orders.
 
-**How to apply:** Until separately authorized template work supplies the relevant
-template, show a themed not-configured message identifying the document and order.
-Do not generate fallback files, print documents or claim success. The initial
-document-actions change was requested as source-review-only, without tests or
-runtime verification; do not describe it as runtime-verified.
+**How to apply:** Settings samples do not activate row actions or Bulk Print.
+Keep live not-configured messages until live integration is separately approved.
+Use fictional variable values, visibly unsigned authorization and nonfunctional
+payment placeholders. The user required source-inspection-only implementation for
+this template setup, with no tests, builds, restarts, migrations or runtime checks;
+do not describe it as runtime-verified.

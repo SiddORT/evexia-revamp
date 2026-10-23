@@ -1,0 +1,90 @@
+.po-doc { container-type: inline-size; width: 100%; background: #fff; color: #000; color-scheme: light; font-family: Roboto, "Noto Sans", "Noto Sans Devanagari", "Nirmala UI", Mangal, "Kohinoor Devanagari", Arial, sans-serif; }
+.po-doc *, .po-doc *::before, .po-doc *::after { box-sizing: border-box; }
+.po-doc.po-doc p, .po-doc.po-doc li, .po-doc.po-doc td, .po-doc.po-doc th, .po-doc.po-doc h2, .po-doc.po-doc h3, .po-doc.po-doc b, .po-doc.po-doc span, .po-doc.po-doc div, .po-doc.po-doc footer, .po-doc.po-doc header, .po-doc.po-doc section { color: #000; background-color: transparent; }
+.po-doc p, .po-doc h2, .po-doc h3 { margin: 0; }
+.po-tpl__card .po-doc p, .po-doc p { font-size: inherit; line-height: inherit; flex: none; }
+.po-doc h2, .po-doc h3 { font-family: inherit; letter-spacing: normal; line-height: inherit; }
+.po-doc__page { background: #fff; padding: 1.2em 1.6em; line-height: 1.35; }
+.po-doc .po-doc__sample { display: inline-block; border: 1px solid #000; background: #fff; padding: .2em .6em; font-size: .9em; font-weight: 700; letter-spacing: .06em; margin-bottom: .6em; }
+.po-doc__logo { display: block; width: 100%; max-width: 100%; height: auto; background: #fff; clip-path: polygon(0 0, 100% 0, 100% 72%, 80% 72%, 80% 100%, 0 100%); }
+.po-doc__brand { position: relative; }
+.po-doc.po-doc .po-doc__tagline { display: block; color: #30256c; text-align: center; font-size: 1.9em; font-weight: 700; }
+.po-doc__ce { display: block; margin-top: -.5em; font-size: 2.4em; line-height: 1; text-align: left; }
+.po-doc__center { text-align: center; }
+.po-doc__center .po-doc__brand { margin: 0 auto; }
+
+/* instructions: 1cqw ~ 10px at 1024 */
+.po-doc__page--instr { font-size: 1cqw; }
+.po-doc__page--instr .po-doc__brand { width: 26%; }
+.po-doc .po-doc__bar { border: .1em solid #000; text-align: center; font-weight: 700; font-size: 1em; padding: .15em; margin: 1.2em 0 1em; }
+.po-doc__list { margin: 0 0 1.6em; padding-left: 2.8em; font-size: 1em; line-height: 1.2; }
+.po-doc__list li { list-style: disc; }
+.po-doc .po-doc__freeze { text-align: right; font-weight: 700; text-decoration: underline; margin-top: -1.2em; }
+.po-doc__bottle { margin-bottom: 1.4em; }
+.po-doc__bottle table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 1em; text-align: center; }
+.po-doc__bottle th, .po-doc__bottle td { border: .1em solid #000; padding: .25em .3em; font-weight: 700; }
+.po-doc__bottle .po-doc__till { width: 22%; }
+.po-doc__bottle .po-doc__till b { display: block; }
+.po-doc__cap { text-align: center; font-weight: 700; margin: 1.4em 0 .8em; }
+.po-doc__foot { text-align: center; margin-top: 1.4em; font-size: 1em; line-height: 1.5; }
+
+/* letter */
+.po-doc__page--letter { font-size: 1cqw; min-height: 50cqw; padding: 3em 2.4em; }
+.po-doc__page--letter .po-doc__brand { width: 31%; }
+.po-doc .po-doc__page--letter .po-doc__center p { font-size: .95em; line-height: 2; }
+.po-doc .po-doc__date { text-align: right; font-weight: 700; margin: 3em 0 2.5em; }
+.po-doc .po-doc__title { text-align: center; font-size: 1.1em; font-weight: 700; text-decoration: underline; margin-bottom: 1.6em; }
+.po-doc__page--letter > p { line-height: 1.8; }
+.po-doc__auth { margin-top: 3.5em; }
+.po-doc .po-doc__authlabel { color: #777; font-weight: 700; }
+.po-doc__authco { font-weight: 700; color: #777; }
+.po-doc__unsigned { display: inline-block; border: .1em dashed #000; padding: 1.4em 1.2em; margin: .6em 0; background: #fff; font-size: .9em; font-weight: 700; }
+
+/* shipping: panel is own container; A4 sheet is full-size */
+.po-doc__page--ship { padding: 0; font-size: 1em; }
+.po-doc__page--ship > .po-doc__sample { margin: .4em; }
+.po-doc__sheet { position: relative; width: 100%; background: #fff; border: 1px solid #bbb; }
+.po-doc__sheet .po-doc__ship { position: absolute; left: 3%; top: 1.5%; width: 61%; }
+.po-doc__page--ship > .po-doc__ship { width: 100%; }
+.po-doc__ship { container-type: inline-size; border: .15em solid #000; background: #fff; }
+.po-doc .po-doc__ship p { font-size: 3.1cqw; line-height: 1.5; padding: 0 1.2cqw; }
+.po-doc__shipTop { padding: .4cqw 0 .6cqw; }
+.po-doc__shipBot { border-top: .3cqw solid #000; padding: .4cqw 0; }
+.po-doc .po-doc__blank { font-size: .8em; }
+
+/* invoice: 1cqw ~ 7.2px at 720 */
+.po-doc__page--inv { font-size: 1.2cqw; padding: 2em 2.4em; min-height: 141.42cqw; }
+.po-doc__ihead { display: flex; justify-content: space-between; gap: 2em; align-items: flex-start; }
+.po-doc__ihead .po-doc__brand { width: 30%; flex: none; }
+.po-doc__ihead > div { width: 48%; font-size: 1em; line-height: 1.5; }
+.po-doc__ihead > .po-doc__brand { width: 30%; }
+.po-doc__iboxes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2em; margin: 1.6em 0; }
+.po-doc__ibox { border: .1em solid #000; border-radius: .4em; background: #fff; min-height: 14em; }
+.po-doc__ibox h3 { font-size: 1.15em; padding: .5em .7em; border-bottom: .1em solid #000; }
+.po-doc__ibox > div { padding: .6em .7em; line-height: 1.5; }
+.po-doc__items { border: .1em solid #999; border-radius: .4em; padding: 1em; margin-bottom: 1em; }
+.po-doc__items h3 { font-size: 1.1em; margin-bottom: .6em; }
+.po-doc__itbl, .po-doc__ftbl { border-collapse: collapse; }
+.po-doc__itbl { width: 100%; }
+.po-doc__itbl th, .po-doc__itbl td, .po-doc__ftbl th, .po-doc__ftbl td { border: .1em solid #000; padding: .6em .7em; text-align: left; }
+.po-doc__itbl th { font-weight: 700; }
+.po-doc__itbl th:last-child { text-align: center; }
+.po-doc__itbl td.po-doc__num { text-align: right; }
+.po-doc__ftbl { width: 46%; margin-left: auto; }
+.po-doc__ftbl th { font-weight: 700; padding: 1em .7em; }
+.po-doc__ftbl td { text-align: right; font-weight: 700; width: 28%; }
+.po-doc .po-doc__words { margin-top: 1em; }
+.po-doc__pay { display: grid; grid-template-columns: 1.4fr 1fr; border: .1em solid #000; margin-bottom: 1.4em; }
+.po-doc__bank { display: grid; grid-template-columns: 1.6fr 1fr; gap: 0 .8em; padding: .8em; line-height: 1.6; }
+.po-doc__bank > p { grid-column: 1; overflow-wrap: anywhere; }
+.po-doc__sign { border-left: .1em solid #000; display: flex; flex-direction: column; justify-content: space-between; text-align: center; }
+.po-doc__sign > p { padding: .6em; }
+.po-doc__sign > p:last-child { border-top: .1em solid #000; }
+.po-doc__sign .po-doc__unsigned { align-self: center; padding: 1.4em 1em; }
+.po-doc__qr { grid-column: 2; grid-row: 1 / span 9; align-self: end; margin-top: .8em; text-align: center; max-width: 16em; }
+.po-doc__qr > div { border: .15em solid #000; padding: 2.2em .6em; font-weight: 700; background: #fff; }
+.po-doc__terms { line-height: 1.6; }
+.po-doc__terms p { margin: 0; }
+
+/* Keep reference columns at every screen width. The enlarged dialog scrolls at
+   natural width, independently of viewport media queries. */
