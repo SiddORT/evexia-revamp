@@ -84,40 +84,46 @@ export default function StaffAccessDialog({ record, onClose, onSaved }) {
 
   return <Dialog title={`Access for ${record.name}`} eyebrow="Staff Management" onClose={() => { if (!gate.current) onClose(); }}
     className="admin-staff-access-dialog"
-    description="This is the same permission-bearing Role used in Add/Edit. Login is a separate setting; passwords are unchanged."
+    description="Choose workspace permissions and set login separately. Passwords stay unchanged."
     footer={<><button type="button" className="admin-button admin-button--secondary" onClick={onClose} disabled={saving} data-testid="button-cancel-staff-access">Cancel</button>
       <button type="submit" form="staff-access-form" className="admin-button" disabled={blocked || Boolean(problem) || !dirty} data-testid="button-save-staff-access">{saving ? 'Saving...' : 'Save access'}</button></>}>
-    <form id="staff-access-form" className="admin-staff-form" onSubmit={save} noValidate aria-busy={saving}>
-      <div className="admin-staff-field admin-staff-form__wide">
-        <label htmlFor="staff-access-search">Find a role</label>
-        <RemoteSelect id="staff-access-search" label="Role" value={values.customRoleId}
-          selected={known ? { value: known.id, label: known.name } : null}
-          fetchPage={staffRoleChoices} disabled={saving} placeholder="Search saved roles"
-          onChange={(item) => set({ customRoleId: item?.value || null })} />
-      </div>
-      {base.role_resolution_required && <p className="admin-staff-form__wide admin-staff-field__error" role="alert">Legacy label “{base.legacy_role}” differs from the verified assignment below. Saving explicitly confirms your selected role; the label alone grants no permissions.</p>}
-      {!base.login_identifiers_ready && <p className="admin-staff-form__wide admin-staff-field__error">Login identifiers need correction in Edit staff before email/code sign-in is available.</p>}
-      <div className="admin-staff-field admin-staff-form__wide" role="radiogroup" aria-label="Assigned role">
-        <strong>Assigned role</strong>
-        <label className="admin-staff-access__option"><input type="radio" name="staff-access-role" checked={values.customRoleId === null} disabled={saving} onChange={() => set({ customRoleId: null })} data-testid="radio-staff-access-none" /> No role (no Zone access)</label>
-        {values.customRoleId && !onPage(values.customRoleId) && <label className="admin-staff-access__option"><input type="radio" name="staff-access-role" checked disabled={saving || !known} readOnly data-testid="radio-staff-access-assigned" /> {known ? `${known.name} (${countLabel(known.permissions.length)})` : assigned?.missing ? 'Assigned role is unavailable' : assigned?.error ? 'Assigned role could not be verified' : 'Assigned role (loading name)'}</label>}
-        {page.items.map((role) => <label key={role.id} className="admin-staff-access__option"><input type="radio" name="staff-access-role" checked={values.customRoleId === role.id} disabled={saving || (assigned?.missing && role.id === values.customRoleId)} onChange={() => set({ customRoleId: role.id })} data-testid={`radio-staff-access-${role.id}`} /> <span>{role.name} <small>{countLabel(role.permissions.length)}</small></span></label>)}
-        {assigned?.missing && <p role="alert">This assigned role is unavailable. Explicitly choose No role or a current role. Disabling login alone does not resolve the assignment.</p>}
-        {assigned?.error && !assigned.missing && <p role="alert">{assigned.error} This does not prove the role was deleted. <button type="button" className="admin-button admin-button--secondary" onClick={() => setRoleRetry((n) => n + 1)}>Retry role verification</button></p>}
-        {rolesState === 'loading' && <span className="admin-staff-field__hint" role="status">Loading roles...</span>}
-        {rolesState === 'error' && <div className="admin-feedback admin-feedback--error" role="alert">{rolesError} <button type="button" className="admin-button admin-button--secondary" onClick={() => load(cursors, idx)} data-testid="button-retry-access-roles">Retry roles</button></div>}
-        {rolesState === 'ready' && !page.items.length && <span className="admin-staff-field__hint">No roles exist yet. Create one in Roles &amp; Permissions.</span>}
-        <div className="admin-staff-access__pager">
+    <form id="staff-access-form" className="admin-staff-access" onSubmit={save} noValidate aria-busy={saving}>
+      {base.role_resolution_required && <p className="admin-staff-field__error" role="alert">Legacy label “{base.legacy_role}” differs from the verified assignment below. Saving explicitly confirms your selected role; the label alone grants no permissions.</p>}
+      {!base.login_identifiers_ready && <p className="admin-staff-field__error">Login identifiers need correction in Edit staff before email/code sign-in is available.</p>}
+      <fieldset className="admin-staff-access__roles">
+        <legend>Workspace role</legend>
+        <p className="admin-staff-field__hint">The same role is used in Add/Edit staff.</p>
+        <div className="admin-staff-field">
+          <label htmlFor="staff-access-search">Find a role</label>
+          <RemoteSelect id="staff-access-search" label="Role" value={values.customRoleId}
+            selected={known ? { value: known.id, label: known.name } : null}
+            fetchPage={staffRoleChoices} disabled={saving} placeholder="Search saved roles"
+            onChange={(item) => set({ customRoleId: item?.value || null })} />
+        </div>
+        <div className="admin-staff-access__choices" role="radiogroup" aria-label="Assigned role">
+          <label className="admin-staff-access__option"><input type="radio" name="staff-access-role" checked={values.customRoleId === null} disabled={saving} onChange={() => set({ customRoleId: null })} data-testid="radio-staff-access-none" /><span>No role<small>No workspace permissions</small></span></label>
+          {values.customRoleId && !onPage(values.customRoleId) && <label className="admin-staff-access__option"><input type="radio" name="staff-access-role" checked disabled={saving || !known} readOnly data-testid="radio-staff-access-assigned" /><span>{known ? known.name : assigned?.missing ? 'Assigned role is unavailable' : assigned?.error ? 'Assigned role could not be verified' : 'Assigned role (loading name)'}{known && <small>{countLabel(known.permissions.length)} · Selected role</small>}</span></label>}
+          {page.items.map((role) => <label key={role.id} className="admin-staff-access__option"><input type="radio" name="staff-access-role" checked={values.customRoleId === role.id} disabled={saving || (assigned?.missing && role.id === values.customRoleId)} onChange={() => set({ customRoleId: role.id })} data-testid={`radio-staff-access-${role.id}`} /> <span>{role.name} <small>{countLabel(role.permissions.length)}</small></span></label>)}
+          {assigned?.missing && <p role="alert">This assigned role is unavailable. Explicitly choose No role or a current role. Disabling login alone does not resolve the assignment.</p>}
+          {assigned?.error && !assigned.missing && <p role="alert">{assigned.error} This does not prove the role was deleted. <button type="button" className="admin-button admin-button--secondary" onClick={() => setRoleRetry((n) => n + 1)}>Retry role verification</button></p>}
+          {rolesState === 'loading' && <span className="admin-staff-field__hint" role="status">Loading roles...</span>}
+          {rolesState === 'error' && <div className="admin-feedback admin-feedback--error" role="alert">{rolesError} <button type="button" className="admin-button admin-button--secondary" onClick={() => load(cursors, idx)} data-testid="button-retry-access-roles">Retry roles</button></div>}
+          {rolesState === 'ready' && !page.items.length && <span className="admin-staff-field__hint">No roles exist yet. Create one in Roles &amp; Permissions.</span>}
+        </div>
+        {(idx > 0 || page.has_more) && <div className="admin-staff-access__pager">
           <button type="button" className="admin-button admin-button--secondary" disabled={idx === 0 || rolesState === 'loading' || saving} onClick={() => load(cursors, idx - 1)} data-testid="button-previous-access-roles"><ChevronLeft size={14} aria-hidden="true" /> Previous</button>
           <span className="admin-staff-field__hint">Roles page {idx + 1}</span>
           <button type="button" className="admin-button admin-button--secondary" disabled={!page.has_more || rolesState !== 'ready' || saving} onClick={() => load(cursors, idx + 1)} data-testid="button-next-access-roles">Next <ChevronRight size={14} aria-hidden="true" /></button>
-        </div>
-      </div>
-      <label className="admin-staff-field admin-staff-form__wide admin-staff-access__option">
-        <input type="checkbox" checked={values.loginEnabled} disabled={saving} onChange={(e) => set({ loginEnabled: e.target.checked })} data-testid="checkbox-staff-workspace-login" />
-        <span><strong>Enable workspace login</strong> <small>Sign in with Email ID or Employee Code and the existing password. Inactive staff cannot sign in. Without a role, enabled staff see a no-access screen.</small></span>
-      </label>
-      <div className="admin-staff-form__wide" aria-live="polite">
+        </div>}
+      </fieldset>
+      <section className="admin-staff-access__login" aria-labelledby="staff-access-login-heading">
+        <h3 id="staff-access-login-heading">Workspace login</h3>
+        <label className="admin-staff-access__option">
+          <input type="checkbox" checked={values.loginEnabled} disabled={saving} onChange={(e) => set({ loginEnabled: e.target.checked })} data-testid="checkbox-staff-workspace-login" />
+          <span><strong>Enable workspace login</strong><small>Use Email ID or Employee Code and the existing password. Inactive staff cannot sign in. Without a role, login shows a no-access screen.</small></span>
+        </label>
+      </section>
+      {(error || current) && <div className="admin-staff-access__feedback" aria-live="polite">
         {error && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-staff-access-error">{error.message}
           {error.ambiguous && <p>Do not repeat this change. Close this form and refresh the directory to confirm the saved state.</p>}
           {error.code === 'staff_stale' && !current && <p><button type="button" className="admin-button admin-button--secondary" onClick={review} data-testid="button-review-staff-access">Review current access</button></p>}
@@ -125,7 +131,7 @@ export default function StaffAccessDialog({ record, onClose, onSaved }) {
         {current && <div data-testid="text-current-staff-access"><p>Current: {current.role}, login {current.workspace_login_enabled ? 'enabled' : 'disabled'}.</p>
           <button type="button" className="admin-button" onClick={adopt} data-testid="button-adopt-staff-access">Keep my choices on current version</button>{' '}
           <button type="button" className="admin-button admin-button--secondary" onClick={useCurrent} data-testid="button-use-current-staff-access">Discard choices, use current</button></div>}
-      </div>
+      </div>}
     </form>
   </Dialog>;
 }

@@ -1,5 +1,5 @@
 import SelectIndicator from './SelectIndicator.jsx';
-export default function TablePagination({ page, pageCount, pageSize, filtered, total, label, onPageChange, onPageSizeChange, testId, indicated = false }) {
+export default function TablePagination({ page, pageCount, pageSize, filtered, total, label, onPageChange, onPageSizeChange, testId, indicated = false, pageScope = '', resultNote, children }) {
   const first = filtered ? (page - 1) * pageSize + 1 : 0;
   const last = Math.min(page * pageSize, filtered);
   const start = Math.max(1, Math.min(page - 2, pageCount - 4));
@@ -9,17 +9,18 @@ export default function TablePagination({ page, pageCount, pageSize, filtered, t
   </select>;
 
   return <div className="admin-panel__foot admin-pagination">
-    <span data-testid={testId} aria-live="polite">Showing {filtered ? `${first}–${last}` : '0'} of {filtered} {label}{filtered !== total ? ` (${total} total)` : ''}</span>
+    <span data-testid={testId} aria-live="polite">Showing {filtered ? `${first}–${last}` : '0'} of {filtered} {label}{filtered !== total ? ` (${total} total)` : ''}{resultNote}</span>
     <div className="admin-pagination__controls">
       <label className="admin-pagination__size">Rows per page
         {indicated ? <SelectIndicator>{sizeSelect}</SelectIndicator> : sizeSelect}
       </label>
-      <nav className="admin-pagination__pages" aria-label={`${label} pages`}>
+      <nav className="admin-pagination__pages" aria-label={`${label} pages${pageScope ? ` (${pageScope})` : ''}`}>
         <button type="button" onClick={() => onPageChange(page - 1)} disabled={page === 1} aria-label="Previous page">Previous</button>
         {pageNumbers.map((number) => <button type="button" key={number} onClick={() => onPageChange(number)} aria-label={`Go to page ${number}`} aria-current={page === number ? 'page' : undefined} className={page === number ? 'admin-pagination__current' : undefined}>{number}</button>)}
         <button type="button" onClick={() => onPageChange(page + 1)} disabled={page === pageCount} aria-label="Next page">Next</button>
       </nav>
-      <span className="admin-pagination__total">Page {page} of {pageCount}</span>
+      <span className="admin-pagination__total">{pageScope ? `${pageScope}: page` : 'Page'} {page} of {pageCount}</span>
+      {children}
     </div>
   </div>;
 }
