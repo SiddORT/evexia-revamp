@@ -124,7 +124,6 @@ export default function ImmunotherapyOrders() {
         <label className="imm-field">To<input type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} data-testid="input-imm-to" /></label>
       </OrderListingFilters>
       <div className="imm-toolbar">
-        <span aria-live="polite" data-testid="text-imm-selection">{selected.size} selected across all pages. Only In process orders can be selected. Filters drop hidden selections.</span>
         <div className="imm-toolbar__actions">
           {selected.size > 0 && <button type="button" className="imm-link-btn" onClick={() => setSelected(new Set())}>Clear selection</button>}
           <DropdownMenu.Root>

@@ -268,7 +268,9 @@ test('composite listing, safe selection, all four printable references and scope
   await page.getByTestId('button-imm-reset').click();
   await page.getByTestId('select-imm-status').selectOption('In process');
   await page.getByTestId('check-imm-page').check();
-  await expect(page.getByTestId('text-imm-selection')).toContainText('2 selected');
+  await expect(page.locator('tbody input.imm-check:checked')).toHaveCount(2);
+  await expect(page.getByRole('button', { name: 'Clear selection', exact: true })).toBeVisible();
+  await expect(page.getByTestId('button-imm-bulk-print')).toBeEnabled();
   await page.evaluate(() => { window.__printed = 0; window.print = () => { window.__printed++; }; });
   for (const kind of ['bottle', 'newbox', 'oldbox', 'shipping']) {
     await page.getByTestId('button-imm-bulk-print').click();
@@ -289,7 +291,8 @@ test('composite listing, safe selection, all four printable references and scope
   }
   expect(await page.evaluate(() => window.__printed)).toBe(4);
   await page.getByTestId('input-imm-search').fill('does not match');
-  await expect(page.getByTestId('text-imm-selection')).toContainText('0 selected');
+  await expect(page.getByTestId('button-imm-bulk-print')).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Clear selection', exact: true })).toHaveCount(0);
   await page.getByTestId('button-imm-reset').click();
   for (const width of [390, 768, 1440]) { await page.setViewportSize({ width, height: 900 }); await overflow(page); }
   await page.goto(`${base()}/admin/orders/spt`);
@@ -421,8 +424,10 @@ test('cold view and direct edit are read-only/editable; Radix print keyboard and
   }
   await page.goto(`${base()}${route}`);
   await page.getByTestId('check-imm-page').check();
-  await expect(page.getByTestId('text-imm-selection')).toContainText('1 selected');
+  await expect(page.locator('tbody input.imm-check:checked')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Clear selection', exact: true })).toBeVisible();
   const trigger = page.getByTestId('button-imm-bulk-print');
+  await expect(trigger).toBeEnabled();
   await trigger.focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('menuitem', { name: 'Bottle labels' })).toBeVisible();
