@@ -9,6 +9,7 @@ export const STAFF_ROLES = ['Staff', 'Manager', 'Accountant', 'Back End', 'Sub A
 export const STAFF_COLUMNS = [
   ['name', 'Name'], ['phone', 'Phone No.'], ['dialCountry', 'Dial Country'], ['userId', 'User ID'],
   ['email', 'Email ID'], ['role', 'Role'], ['status', 'Status'], ['designationName', 'Designation'], ['dateOfJoining', 'Date of Joining'],
+  ['employeeCode', 'Employee Code'],
 ];
 const INPUTS = STAFF_COLUMNS.map(([key]) => key === 'designationName' ? 'designation_id' : key).filter((key) => key !== 'userId');
 
@@ -16,6 +17,10 @@ export function validateStaff(values, _records = [], _exceptId = null, designati
   const fields = Object.fromEntries(INPUTS.map((key) => [key, typeof values[key] === 'string' ? values[key].trim() : '']));
   const errors = {};
   for (const key of INPUTS) {
+    if (key === 'employeeCode') {
+      if ([...fields[key]].length > 64 || /[\u0000-\u001f\u007f-\u009f]/.test(values[key] ?? '')) errors[key] = 'Employee Code must be at most 64 characters without control characters.';
+      continue;
+    }
     if (!fields[key]) errors[key] = `${key === 'designation_id' ? 'Designation' : STAFF_COLUMNS.find(([field]) => key === field)[1]} is required.`;
     if (fields[key].length > (key === 'email' ? 320 : 200)) errors[key] = 'Value is too long.';
   }
@@ -43,7 +48,9 @@ const directoryFilters = (filters = {}) => Object.fromEntries(['status', 'design
 export const loadStaff = (offset = 0, options = {}) => staffRequest(`?${new URLSearchParams({ limit: 100, offset, ...directoryFilters(options.filters) })}`, undefined, options);
 export const searchStaff = (query, cursor = null, options = {}) => staffRequest('/search', { query, cursor, limit: 100, ...directoryFilters(options.filters) }, options);
 export const staffDesignationChoices = (cursor = null) => staffRequest(`/filter-designations${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`);
-export async function staffRoleChoices(query, offset, signal, includeRetained = false) {
+// RemoteSelect's fourth argument is a continuation cursor, never a role policy.
+export async function staffRoleChoices(query, offset, signal, _cursor = null, includeRetained = false) {
+  if (typeof includeRetained !== 'boolean') throw new Error('Invalid retained-role option.');
   const page = await staffRequest(`/role-choices?${new URLSearchParams({ query, offset, include_retained: includeRetained })}`, undefined, { signal });
   if (!Array.isArray(page?.items) || !Number.isSafeInteger(page.total) || page.total < 0 ||
       page.items.some((item) => typeof item.name !== 'string' || !item.name || [...item.name].length > 100)) {

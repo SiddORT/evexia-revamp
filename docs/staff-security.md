@@ -1,5 +1,34 @@
 # Staff form role choices and generated candidates
 
+## Optional Employee Code and form controls
+
+Add/Edit Staff show a manually entered **Employee Code** instead of the read-only
+User ID input and generated-ID hint. Employee Code is optional business metadata,
+not an account identifier: no generation, uniqueness rule or legacy backfill.
+It is trimmed, limited to 64 Unicode characters and rejects C0/C1 control
+characters before trimming. Blank/null means unset. An omitted `employeeCode`
+on edit leaves the saved code unchanged; explicit blank/null clears it.
+The shared form retains the draft on errors, with existing version checks.
+
+Forward `0057_staff_employee_code` adds only nullable `staff_profiles.employee_code`
+and its text CHECK after `0056_staff_business_roles`. Existing rows stay NULL.
+The code is ordinary business metadata alongside the business role; name/email/
+phone encryption, internal UUIDs, generated usernames, permissions and credential
+handling are unchanged. Authorized Staff responses include `employeeCode`;
+loaded-section CSV appends Employee Code without removing or reordering existing
+columns, and without changing list columns, filters or directory search.
+No migration was executed and no runtime/schema activation was verified.
+
+Role selector fetchers accept `(query, offset, signal, continuationCursor)` before
+the explicit retained-label option, so initial null/continuation values cannot
+become `include_retained`. Form requests send `false`; the directory filter sends
+`true`. The transport allowlist remains unchanged, including Retry/Load more.
+
+Add Staff Password and Confirm password use icon-only Eye/EyeOff buttons with
+field-specific Show/Hide accessible names, `aria-controls`, `aria-pressed`, native
+keyboard focus and disabled-saving behavior. Both start masked and preserve the
+existing shared reveal state. Both buttons are `type="button"`, never submitters.
+
 Add/Edit Staff use the shared searchable master dropdown with server search,
 50-choice pages, explicit Load more and retry. Role options contain only current
 non-deleted saved Role names, with no invented default. The staff-authorized
@@ -346,7 +375,7 @@ block execution. There is no key-loss recovery or silent fallback.
 ## Administrator workflow
 
 Add and Edit share the existing fields/country-phone control and designation
-selector. Add leaves User ID empty until the server successfully saves. Usernames
+selector. The form shows optional Employee Code, never a User ID input. Usernames
 are random `st_` identifiers within the existing 32-character DB limit; collisions
 are retried with new random values. Create saves the User hash, encrypted profile
 and attributed audit event in one transaction.

@@ -18955,6 +18955,20 @@
             "title": "Email",
             "type": "string"
           },
+          "employeeCode": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "pattern": "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
+            "title": "Employeecode"
+          },
           "initialPassword": {
             "anyOf": [
               {
@@ -19378,6 +19392,20 @@
             "title": "Email",
             "type": "string"
           },
+          "employeeCode": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "pattern": "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
+            "title": "Employeecode"
+          },
           "expected_version": {
             "minimum": 1.0,
             "title": "Expected Version",
@@ -19774,6 +19802,20 @@
             "maxLength": 320,
             "title": "Email",
             "type": "string"
+          },
+          "employeeCode": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "pattern": "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
+            "title": "Employeecode"
           },
           "id": {
             "format": "uuid",

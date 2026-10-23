@@ -1280,17 +1280,20 @@ export const listStaffQueryOffsetMin = 0;
 export const listStaffQueryOffsetMax = 10000;
 export const listStaffQueryRoleOneMax = 100;
 export const listStaffResponseItemsItemEmailMax = 320;
+export const listStaffResponseItemsItemEmployeeCodeOneMax = 64;
 export const listStaffResponseItemsItemNameMax = 200;
 export const listStaffResponseItemsItemPhoneMax = 30;
 export const listStaffResponseItemsItemRoleMax = 100;
 export const listStaffResponseItemsItemWorkspaceLoginEnabledDefault = false;
 export const createStaffBodyEmailMax = 320;
+export const createStaffBodyEmployeeCodeOneMax = 64;
 export const createStaffBodyInitialPasswordOneMin = 12;
 export const createStaffBodyInitialPasswordOneMax = 128;
 export const createStaffBodyNameMax = 200;
 export const createStaffBodyPhoneMax = 30;
 export const createStaffBodyRoleMax = 100;
 export const createStaffResponseRecordEmailMax = 320;
+export const createStaffResponseRecordEmployeeCodeOneMax = 64;
 export const createStaffResponseRecordNameMax = 200;
 export const createStaffResponseRecordPhoneMax = 30;
 export const createStaffResponseRecordRoleMax = 100;
@@ -1306,35 +1309,42 @@ export const searchStaffDirectoryBodyQueryMin = 2;
 export const searchStaffDirectoryBodyQueryMax = 200;
 export const searchStaffDirectoryBodyRoleOneMax = 100;
 export const searchStaffDirectoryResponseItemsItemEmailMax = 320;
+export const searchStaffDirectoryResponseItemsItemEmployeeCodeOneMax = 64;
 export const searchStaffDirectoryResponseItemsItemNameMax = 200;
 export const searchStaffDirectoryResponseItemsItemPhoneMax = 30;
 export const searchStaffDirectoryResponseItemsItemRoleMax = 100;
 export const searchStaffDirectoryResponseItemsItemWorkspaceLoginEnabledDefault = false;
 export const getStaffResponseEmailMax = 320;
+export const getStaffResponseEmployeeCodeOneMax = 64;
 export const getStaffResponseNameMax = 200;
 export const getStaffResponsePhoneMax = 30;
 export const getStaffResponseRoleMax = 100;
 export const getStaffResponseWorkspaceLoginEnabledDefault = false;
 export const setStaffWorkspaceAccessResponseEmailMax = 320;
+export const setStaffWorkspaceAccessResponseEmployeeCodeOneMax = 64;
 export const setStaffWorkspaceAccessResponseNameMax = 200;
 export const setStaffWorkspaceAccessResponsePhoneMax = 30;
 export const setStaffWorkspaceAccessResponseRoleMax = 100;
 export const setStaffWorkspaceAccessResponseWorkspaceLoginEnabledDefault = false;
 export const deleteStaffResponseEmailMax = 320;
+export const deleteStaffResponseEmployeeCodeOneMax = 64;
 export const deleteStaffResponseNameMax = 200;
 export const deleteStaffResponsePhoneMax = 30;
 export const deleteStaffResponseRoleMax = 100;
 export const deleteStaffResponseWorkspaceLoginEnabledDefault = false;
 export const editStaffBodyEmailMax = 320;
+export const editStaffBodyEmployeeCodeOneMax = 64;
 export const editStaffBodyNameMax = 200;
 export const editStaffBodyPhoneMax = 30;
 export const editStaffBodyRoleMax = 100;
 export const editStaffResponseEmailMax = 320;
+export const editStaffResponseEmployeeCodeOneMax = 64;
 export const editStaffResponseNameMax = 200;
 export const editStaffResponsePhoneMax = 30;
 export const editStaffResponseRoleMax = 100;
 export const editStaffResponseWorkspaceLoginEnabledDefault = false;
 export const setStaffStatusResponseEmailMax = 320;
+export const setStaffStatusResponseEmployeeCodeOneMax = 64;
 export const setStaffStatusResponseNameMax = 200;
 export const setStaffStatusResponsePhoneMax = 30;
 export const setStaffStatusResponseRoleMax = 100;
@@ -23286,6 +23296,10 @@ export const ListStaffQueryParams = zod.object({
 
 export const listStaffResponseItemsItemDialCountryDefault = `IN`;
 
+export const listStaffResponseItemsItemEmployeeCodeOneRegExp = new RegExp(
+  "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
+);
+
 export const listStaffResponseItemsItemRoleRegExp = new RegExp(
   "^[^\\x00-\\x1f\\x7f]+$",
 );
@@ -23552,6 +23566,18 @@ export const ListStaffResponse = zod.object({
         ])
         .default(listStaffResponseItemsItemDialCountryDefault),
       email: zod.string().email().max(listStaffResponseItemsItemEmailMax),
+      employeeCode: zod
+        .union([
+          zod
+            .string()
+            .max(listStaffResponseItemsItemEmployeeCodeOneMax)
+            .regex(listStaffResponseItemsItemEmployeeCodeOneRegExp),
+          zod.null(),
+        ])
+        .optional()
+        .describe(
+          "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
+        ),
       id: zod.string().uuid(),
       name: zod.string().min(1).max(listStaffResponseItemsItemNameMax),
       phone: zod.string().min(1).max(listStaffResponseItemsItemPhoneMax),
@@ -23578,6 +23604,10 @@ export const ListStaffResponse = zod.object({
  * @summary Create Staff
  */
 export const createStaffBodyDialCountryDefault = `IN`;
+
+export const createStaffBodyEmployeeCodeOneRegExp = new RegExp(
+  "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
+);
 
 export const createStaffBodyRoleRegExp = new RegExp("^[^\\x00-\\x1f\\x7f]+$");
 
@@ -23834,6 +23864,18 @@ export const CreateStaffBody = zod.object({
     ])
     .default(createStaffBodyDialCountryDefault),
   email: zod.string().email().max(createStaffBodyEmailMax),
+  employeeCode: zod
+    .union([
+      zod
+        .string()
+        .max(createStaffBodyEmployeeCodeOneMax)
+        .regex(createStaffBodyEmployeeCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
+    ),
   initialPassword: zod
     .union([
       zod
@@ -23854,6 +23896,10 @@ export const CreateStaffBody = zod.object({
 });
 
 export const createStaffResponseRecordDialCountryDefault = `IN`;
+
+export const createStaffResponseRecordEmployeeCodeOneRegExp = new RegExp(
+  "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
+);
 
 export const createStaffResponseRecordRoleRegExp = new RegExp(
   "^[^\\x00-\\x1f\\x7f]+$",
@@ -24120,6 +24166,18 @@ export const CreateStaffResponse = zod.object({
       ])
       .default(createStaffResponseRecordDialCountryDefault),
     email: zod.string().email().max(createStaffResponseRecordEmailMax),
+    employeeCode: zod
+      .union([
+        zod
+          .string()
+          .max(createStaffResponseRecordEmployeeCodeOneMax)
+          .regex(createStaffResponseRecordEmployeeCodeOneRegExp),
+        zod.null(),
+      ])
+      .optional()
+      .describe(
+        "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
+      ),
     id: zod.string().uuid(),
     name: zod.string().min(1).max(createStaffResponseRecordNameMax),
     phone: zod.string().min(1).max(createStaffResponseRecordPhoneMax),
@@ -24231,6 +24289,9 @@ export const SearchStaffDirectoryBody = zod.object({
 });
 
 export const searchStaffDirectoryResponseItemsItemDialCountryDefault = `IN`;
+
+export const searchStaffDirectoryResponseItemsItemEmployeeCodeOneRegExp =
+  new RegExp("^[^\\x00-\\x1f\\x7f-\\x9f]*$");
 
 export const searchStaffDirectoryResponseItemsItemRoleRegExp = new RegExp(
   "^[^\\x00-\\x1f\\x7f]+$",
@@ -24501,6 +24562,18 @@ export const SearchStaffDirectoryResponse = zod.object({
         .string()
         .email()
         .max(searchStaffDirectoryResponseItemsItemEmailMax),
+      employeeCode: zod
+        .union([
+          zod
+            .string()
+            .max(searchStaffDirectoryResponseItemsItemEmployeeCodeOneMax)
+            .regex(searchStaffDirectoryResponseItemsItemEmployeeCodeOneRegExp),
+          zod.null(),
+        ])
+        .optional()
+        .describe(
+          "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
+        ),
       id: zod.string().uuid(),
       name: zod
         .string()
@@ -24541,6 +24614,10 @@ export const GetStaffParams = zod.object({
 });
 
 export const getStaffResponseDialCountryDefault = `IN`;
+
+export const getStaffResponseEmployeeCodeOneRegExp = new RegExp(
+  "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
+);
 
 export const getStaffResponseRoleRegExp = new RegExp("^[^\\x00-\\x1f\\x7f]+$");
 
@@ -24803,6 +24880,18 @@ export const GetStaffResponse = zod.object({
     ])
     .default(getStaffResponseDialCountryDefault),
   email: zod.string().email().max(getStaffResponseEmailMax),
+  employeeCode: zod
+    .union([
+      zod
+        .string()
+        .max(getStaffResponseEmployeeCodeOneMax)
+        .regex(getStaffResponseEmployeeCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
+    ),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(getStaffResponseNameMax),
   phone: zod.string().min(1).max(getStaffResponsePhoneMax),
@@ -24835,6 +24924,10 @@ export const SetStaffWorkspaceAccessBody = zod.object({
 });
 
 export const setStaffWorkspaceAccessResponseDialCountryDefault = `IN`;
+
+export const setStaffWorkspaceAccessResponseEmployeeCodeOneRegExp = new RegExp(
+  "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
+);
 
 export const setStaffWorkspaceAccessResponseRoleRegExp = new RegExp(
   "^[^\\x00-\\x1f\\x7f]+$",
@@ -25099,6 +25192,18 @@ export const SetStaffWorkspaceAccessResponse = zod.object({
     ])
     .default(setStaffWorkspaceAccessResponseDialCountryDefault),
   email: zod.string().email().max(setStaffWorkspaceAccessResponseEmailMax),
+  employeeCode: zod
+    .union([
+      zod
+        .string()
+        .max(setStaffWorkspaceAccessResponseEmployeeCodeOneMax)
+        .regex(setStaffWorkspaceAccessResponseEmployeeCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
+    ),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(setStaffWorkspaceAccessResponseNameMax),
   phone: zod.string().min(1).max(setStaffWorkspaceAccessResponsePhoneMax),
@@ -25129,6 +25234,10 @@ export const DeleteStaffBody = zod.object({
 });
 
 export const deleteStaffResponseDialCountryDefault = `IN`;
+
+export const deleteStaffResponseEmployeeCodeOneRegExp = new RegExp(
+  "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
+);
 
 export const deleteStaffResponseRoleRegExp = new RegExp(
   "^[^\\x00-\\x1f\\x7f]+$",
@@ -25393,6 +25502,18 @@ export const DeleteStaffResponse = zod.object({
     ])
     .default(deleteStaffResponseDialCountryDefault),
   email: zod.string().email().max(deleteStaffResponseEmailMax),
+  employeeCode: zod
+    .union([
+      zod
+        .string()
+        .max(deleteStaffResponseEmployeeCodeOneMax)
+        .regex(deleteStaffResponseEmployeeCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
+    ),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(deleteStaffResponseNameMax),
   phone: zod.string().min(1).max(deleteStaffResponsePhoneMax),
@@ -25419,6 +25540,10 @@ export const EditStaffParams = zod.object({
 });
 
 export const editStaffBodyDialCountryDefault = `IN`;
+
+export const editStaffBodyEmployeeCodeOneRegExp = new RegExp(
+  "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
+);
 
 export const editStaffBodyRoleRegExp = new RegExp("^[^\\x00-\\x1f\\x7f]+$");
 
@@ -25675,6 +25800,18 @@ export const EditStaffBody = zod.object({
     ])
     .default(editStaffBodyDialCountryDefault),
   email: zod.string().email().max(editStaffBodyEmailMax),
+  employeeCode: zod
+    .union([
+      zod
+        .string()
+        .max(editStaffBodyEmployeeCodeOneMax)
+        .regex(editStaffBodyEmployeeCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
+    ),
   expected_version: zod.number().int().min(1),
   name: zod.string().min(1).max(editStaffBodyNameMax),
   phone: zod.string().min(1).max(editStaffBodyPhoneMax),
@@ -25687,6 +25824,10 @@ export const EditStaffBody = zod.object({
 });
 
 export const editStaffResponseDialCountryDefault = `IN`;
+
+export const editStaffResponseEmployeeCodeOneRegExp = new RegExp(
+  "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
+);
 
 export const editStaffResponseRoleRegExp = new RegExp("^[^\\x00-\\x1f\\x7f]+$");
 
@@ -25949,6 +26090,18 @@ export const EditStaffResponse = zod.object({
     ])
     .default(editStaffResponseDialCountryDefault),
   email: zod.string().email().max(editStaffResponseEmailMax),
+  employeeCode: zod
+    .union([
+      zod
+        .string()
+        .max(editStaffResponseEmployeeCodeOneMax)
+        .regex(editStaffResponseEmployeeCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
+    ),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(editStaffResponseNameMax),
   phone: zod.string().min(1).max(editStaffResponsePhoneMax),
@@ -25980,6 +26133,10 @@ export const SetStaffStatusBody = zod.object({
 });
 
 export const setStaffStatusResponseDialCountryDefault = `IN`;
+
+export const setStaffStatusResponseEmployeeCodeOneRegExp = new RegExp(
+  "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
+);
 
 export const setStaffStatusResponseRoleRegExp = new RegExp(
   "^[^\\x00-\\x1f\\x7f]+$",
@@ -26244,6 +26401,18 @@ export const SetStaffStatusResponse = zod.object({
     ])
     .default(setStaffStatusResponseDialCountryDefault),
   email: zod.string().email().max(setStaffStatusResponseEmailMax),
+  employeeCode: zod
+    .union([
+      zod
+        .string()
+        .max(setStaffStatusResponseEmployeeCodeOneMax)
+        .regex(setStaffStatusResponseEmployeeCodeOneRegExp),
+      zod.null(),
+    ])
+    .optional()
+    .describe(
+      "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
+    ),
   id: zod.string().uuid(),
   name: zod.string().min(1).max(setStaffStatusResponseNameMax),
   phone: zod.string().min(1).max(setStaffStatusResponsePhoneMax),

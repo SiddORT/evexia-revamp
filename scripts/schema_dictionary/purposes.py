@@ -119,6 +119,7 @@ SPECIFIC = {
     "staff_profiles.phone_ciphertext": "Encrypted staff telephone (AES-GCM); ciphertext only.",
     "staff_profiles.email_index": "Unique keyed HMAC blind index for email matching; not plaintext or a reversible email value.",
     "staff_profiles.role": "Staff business role label; does not itself confer a system identity or permission.",
+    "staff_profiles.employee_code": "Optional manually entered business metadata, not a login identifier; no generated values, backfill or uniqueness policy.",
     "staff_profiles.joining_date": "Staff employment/business joining date.",
     "staff_profiles.custom_role_id": "Optional explicitly assigned custom permission role; deletion of a referenced role is restricted.",
     "staff_profiles.workspace_login_enabled": "Explicit opt-in for staff workspace authentication, subject to active identity and allowed grants.",

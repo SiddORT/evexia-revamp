@@ -7876,6 +7876,8 @@ export interface StaffCreate {
   dialCountry?: StaffCreateDialCountry;
   /** @maxLength 320 */
   email: string;
+  /** Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code. */
+  employeeCode?: string | null;
   initialPassword?: string | null;
   /**
    * @minLength 1
@@ -8167,6 +8169,8 @@ export interface StaffResponse {
   dialCountry?: StaffResponseDialCountry;
   /** @maxLength 320 */
   email: string;
+  /** Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code. */
+  employeeCode?: string | null;
   id: string;
   /**
    * @minLength 1
@@ -8488,6 +8492,8 @@ export interface StaffEdit {
   dialCountry?: StaffEditDialCountry;
   /** @maxLength 320 */
   email: string;
+  /** Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code. */
+  employeeCode?: string | null;
   /** @minimum 1 */
   expected_version: number;
   /**

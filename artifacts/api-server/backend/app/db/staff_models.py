@@ -15,6 +15,7 @@ class StaffProfile(Timestamps, Base):
         CheckConstraint("version >= 1", name="ck_staff_version"),
         CheckConstraint("status IN ('active', 'inactive')", name="ck_staff_status"),
         CheckConstraint("char_length(role) BETWEEN 1 AND 100 AND char_length(btrim(role)) > 0", name="ck_staff_role"),
+        CheckConstraint("employee_code IS NULL OR (char_length(employee_code) BETWEEN 1 AND 64 AND employee_code = btrim(employee_code) AND employee_code !~ '[[:cntrl:]]')", name="ck_staff_employee_code"),
     )
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), unique=True, nullable=False)
@@ -24,6 +25,7 @@ class StaffProfile(Timestamps, Base):
     email_index: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     dial_country: Mapped[str] = mapped_column(String(2), nullable=False)
     role: Mapped[str] = mapped_column(String(100), nullable=False)
+    employee_code: Mapped[str | None] = mapped_column(String(64))
     designation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("designations.id", ondelete="RESTRICT"), nullable=False)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     deleted_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))

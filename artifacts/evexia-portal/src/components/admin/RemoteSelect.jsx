@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, X } from 'lucide-react';
 import './searchableSelect.css';
 
-// Bounded, server-searched, paginated combobox. fetchPage(query, offset, signal) -> { items:[{value,label,raw}], total }.
+// Bounded combobox. fetchPage(query, offset, signal, continuationCursor) -> { items:[{value,label,raw}], total, nextCursor? }.
 export default function RemoteSelect({ id, label, value, selected, fetchPage, resetKey = '', onChange, placeholder, invalid, disabled, describedBy, required = false, emptyText, describeSelection = false }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');

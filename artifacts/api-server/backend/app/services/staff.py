@@ -34,7 +34,7 @@ def projection(db, profile, crypto, username=None, designation_name=None):
     username = username if username is not None else db.get(User, profile.user_id).username
     designation_name = designation_name if designation_name is not None else db.get(Designation, profile.designation_id).name
     return dict(
-        id=profile.id, userId=username, version=profile.version,
+        id=profile.id, userId=username, employeeCode=profile.employee_code, version=profile.version,
         **{field: crypto.decrypt(profile.id, field, getattr(profile, f"{field}_ciphertext"))
            for field in ("name", "email", "phone")},
         dialCountry=profile.dial_country, role=profile.role, designation_id=profile.designation_id,
@@ -53,6 +53,9 @@ def assign(profile, body, crypto):
     profile.dial_country = body.dialCountry
     profile.role, profile.designation_id = body.role, body.designation_id
     profile.joining_date, profile.status = body.dateOfJoining, body.status
+    # Old clients omit this optional metadata. Only an explicit value may clear it.
+    if "employeeCode" in body.model_fields_set:
+        profile.employee_code = body.employeeCode
 
 
 def audit(db, actor, profile, action):

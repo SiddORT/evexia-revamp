@@ -132,6 +132,8 @@ def ready(db):
         # Reviewed Staff business-label widening changes no account identifiers,
         # lookup keys, reservations, login roles or encryption anchors.
         ["0056_staff_business_roles"],
+        # Optional Staff business metadata does not alter account identity/keys.
+        ["0057_staff_employee_code"],
     ):
         raise AccountCryptoError()
     current = crypto()

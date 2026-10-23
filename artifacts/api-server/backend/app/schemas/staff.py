@@ -50,6 +50,19 @@ class StaffFields(BaseModel):
     designation_id: uuid.UUID
     dateOfJoining: date
     status: Literal["active", "inactive"]
+    employeeCode: Annotated[str, StringConstraints(max_length=64, pattern=r"^[^\x00-\x1f\x7f-\x9f]*$")] | None = Field(
+        default=None,
+        description="Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
+    )
+
+    @field_validator("employeeCode", mode="before")
+    @classmethod
+    def employee_code(cls, value):
+        if value is None:
+            return None
+        if not isinstance(value, str) or any(ord(c) < 32 or 127 <= ord(c) <= 159 for c in value):
+            raise ValueError("Employee Code must not contain control characters")
+        return value.strip() or None
 
     @field_validator("name")
     @classmethod

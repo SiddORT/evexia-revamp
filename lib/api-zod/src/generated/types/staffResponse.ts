@@ -20,6 +20,8 @@ export interface StaffResponse {
   dialCountry?: StaffResponseDialCountry;
   /** @maxLength 320 */
   email: string;
+  /** Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code. */
+  employeeCode?: string | null;
   id: string;
   /**
    * @minLength 1
