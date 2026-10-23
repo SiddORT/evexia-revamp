@@ -206,3 +206,4 @@ from app.db import purchase_received_models as _purchase_received_models  # noqa
 from app.db import pr_batch_models as _pr_batch_models  # noqa: E402,F401
 from app.db import language_models as _language_models  # noqa: E402,F401
 from app.db import immunotherapy_models as _immunotherapy_models  # noqa: E402,F401
+from app.db import kits_models as _kits_models  # noqa: E402,F401

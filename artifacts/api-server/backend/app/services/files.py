@@ -42,10 +42,13 @@ def get_record(db: Session, identity, file_id, action, *, lock=False, readable=F
     row = db.scalar(select(FileRecord).where(FileRecord.id == file_id).execution_options(populate_existing=True))
     if not row:
         raise FileError(404, "not_found", "Object unavailable")
-    authorize(db, identity, action, row.patient_id, row.mr_id, lock=lock)
+    authorize(db, identity, action, row.patient_id, row.mr_id, lock=lock, kits_owner_id=row.kits_owner_id)
     if lock:
         row = db.scalar(select(FileRecord).where(FileRecord.id == file_id).with_for_update().execution_options(populate_existing=True))
     if action in ("delete", "replace"):
+        from app.db.kits_models import KitsAttachment
+        if db.scalar(select(KitsAttachment.file_id).where(KitsAttachment.file_id == file_id).limit(1)):
+            raise FileError(409, "file_order_reference", "File is referenced by a saved Kits order; no bytes were removed.")
         from app.db.immunotherapy_models import ImmunotherapyAttachment
         if db.scalar(select(ImmunotherapyAttachment.file_id).where(ImmunotherapyAttachment.file_id == file_id).limit(1)):
             raise FileError(409, "file_order_reference", "File is referenced by a saved order. Detach it from saved orders first; no bytes were removed.")
@@ -67,16 +70,24 @@ def reserve(db, identity, body, content_type, settings, request_id, *, replaces_
         raise FileError(415, "invalid_filename", "File name is not allowed") from None
     if MIME_TYPES[ext] != content_type or (body.category == "profile" and ext == "pdf"):
         raise FileError(415, "unsupported_type", "File type is not allowed")
-    authorize(db, identity, "replace" if replaces_id else "upload", body.patient_id, body.mr_id, lock=True)
+    authorize(db, identity, "replace" if replaces_id else "upload", body.patient_id, body.mr_id, lock=True, kits_owner_id=body.kits_owner_id)
     if replaces_id:
         original = get_record(db, identity, replaces_id, "replace", lock=True, readable=True)
         if original.version != expected_version:
             raise FileError(409, "version_conflict", "File has changed")
     file_id = uuid.uuid4()
+    encrypted_name = None
+    if body.kits_owner_id:
+        from app.services.kits import seal
+        from app.services.directory_runtime import crypto_scope
+        with crypto_scope(db) as keys:
+            encrypted_name = seal(keys, "file_names", file_id, body.filename)
     row = FileRecord(
         id=file_id, patient_id=body.patient_id, mr_id=body.mr_id,
-        category=body.category, display_name=body.filename, content_type=content_type,
-        object_key=object_key("patients" if body.patient_id else "mrs", body.patient_id or body.mr_id, body.category, file_id, ext),
+        kits_owner_id=body.kits_owner_id, kits_name_ciphertext=encrypted_name,
+        category=body.category, display_name=f"attachment.{ext}" if body.kits_owner_id else body.filename, content_type=content_type,
+        object_key=object_key("patients" if body.patient_id else "mrs" if body.mr_id else "kits",
+                              body.patient_id or body.mr_id or body.kits_owner_id, body.category, file_id, ext),
         uploader_id=identity.user.id, state="uploading",
         replaces_id=replaces_id, replaces_version=expected_version,
     )
@@ -98,6 +109,8 @@ def interrupted(db, file_id, identity, request_id):
 
 def complete_upload(db, identity, file_id, stream, settings, storage, request_id):
     row = get_record(db, identity, file_id, "replace" if db.get(FileRecord, file_id).replaces_id else "upload")
+    if row.kits_owner_id:
+        settings = settings.model_copy(update={"max_upload_bytes": min(settings.max_upload_bytes, 10485760)})
     name, media, key = row.display_name, row.content_type, row.object_key
     db.rollback()  # Never retain read transactions/row locks through slow I/O.
     if callable(storage):

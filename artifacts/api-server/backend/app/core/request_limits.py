@@ -9,7 +9,7 @@ class RequestTooLarge(HTTPException):
 
 def body_limit(method, path, max_upload_bytes):
     if method == "POST":
-        if path.startswith("/api/v1/admin/immunotherapy-orders/prescriptions/"):
+        if path.startswith("/api/v1/admin/immunotherapy-orders/prescriptions/") or path == "/api/v1/admin/kits-orders/attachments":
             return min(max_upload_bytes, 10 * 1024 * 1024) + 64 * 1024
         if path in ("/api/v1/admin/courier-partners/import/review", "/api/v1/admin/courier-partners/import/commit",
                     "/api/v1/admin/languages/import/review", "/api/v1/admin/languages/import/commit",

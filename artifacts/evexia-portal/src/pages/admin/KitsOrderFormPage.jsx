@@ -1,10 +1,11 @@
-import { useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { ArrowLeft, Paperclip } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
-import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
-import { DOCTORS, KIT_PRODUCTS, MRS, STATUSES, addressText, blankOrder, demoStore, fileSize, productSummary, shippingRecipient, validateAttachments } from '../../services/kitsOrdersDemo.js';
+import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
+import { KIT_PRODUCTS, STATUSES, addressText, blankOrder, fileSize, productSummary, validateAttachments, request, orderInput, uploadAttachment, downloadAttachment } from '../../services/serverKits.js';
+import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import '../../kitsOrders.css';
 import '../../orderEntry.css';
 
@@ -20,11 +21,19 @@ function Facts({ person, empty, testId }) {
 }
 
 export default function KitsOrderFormPage({ id }) {
-  const snap = useSyncExternalStore(demoStore.subscribe, demoStore.getSnapshot, demoStore.getSnapshot);
+  const [order, setOrder] = useState(null), [error, setError] = useState(''), [loading, setLoading] = useState(Boolean(id)), [revision, setRevision] = useState(0);
+  useEffect(() => {
+    if (!id) return undefined;
+    const controller = new AbortController();
+    setLoading(true); setError(''); setOrder(null);
+    request(`/${id}`, { signal: controller.signal }).then(setOrder).catch((e) => { if (!controller.signal.aborted) setError(e.message); })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [id, revision]);
   if (id) {
-    const order = snap.orders.find((o) => o.id === id);
     if (!order) return <AdminLayout title="KITS & CONSUMABLES"><div className="kits"><div className="admin-panel kits-panel kits-empty" data-testid="kits-missing">
-      <h1>Order not available</h1><p>This demo order does not exist. Demo data resets when the page reloads.</p>
+      <h1>{loading ? 'Loading saved order…' : 'Order not available'}</h1>{error && <p role="alert">{error}</p>}
+      {!loading && <button type="button" className="admin-button" onClick={() => setRevision((n) => n + 1)}>Retry</button>}
       <Link href={BASE} className="admin-button">Back to orders</Link></div></div></AdminLayout>;
     return <Summary order={order} />;
   }
@@ -33,16 +42,16 @@ export default function KitsOrderFormPage({ id }) {
 
 function Summary({ order }) {
   const { date } = useAdminDateFormatters();
-  const doctor = DOCTORS.find((d) => d.id === order.doctorId);
-  const mr = MRS.find((m) => m.id === order.mrId);
+  const [error, setError] = useState(''), [downloading, setDownloading] = useState(false);
+  const doctor = order.doctor, mr = order.mr;
   const k = order.kit || {};
   const kitOn = k.product || k.custom || k.volume || k.quantity;
-  const rec = order.recipient || shippingRecipient(order);
+  const rec = order.recipient;
   return <AdminLayout title="KITS & CONSUMABLES"><div className="kits">
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Orders / Kits &amp; Consumables</p><h1>Order {order.number}</h1>
-      <p className="admin-page-head__description">Read-only summary of this demo order.</p></div>
+      <p className="admin-page-head__description">Read-only saved order with historical billing, shipping and personal details.</p></div>
       <Link href={BASE} className="admin-button admin-button--secondary" data-testid="kits-back"><ArrowLeft size={15} aria-hidden="true" />Back</Link></div>
-    <p className="kits-boundary">Fictional demo data kept in browser memory. Files were never uploaded.</p>
+    {error && <p role="alert">{error}</p>}
     <div className="kits-layout">
       <div className="kits-main">
         <section className="admin-panel kits-panel" aria-labelledby="kits-s-items"><h2 id="kits-s-items">Order details</h2>
@@ -51,6 +60,7 @@ function Summary({ order }) {
             <div><dt>Order for</dt><dd>{order.orderFor === 'mr' ? `MR: ${mr?.name || '-'}` : `Doctor: ${doctor?.name || '-'}`}</dd></div>
             <div><dt>Doctor</dt><dd>{doctor?.name || '-'}</dd></div>
             <div><dt>MR</dt><dd>{mr?.name || 'Not selected'}</dd></div>
+            <div><dt>Patient</dt><dd>{order.patient?.name || 'Not selected'}</dd></div>
             {kitOn && <><div><dt>Kit product</dt><dd>{k.product === 'Customized' ? `Customized (${k.custom})` : k.product || '-'}</dd></div><div><dt>Kit volume (ml)</dt><dd>{k.volume || '-'}</dd></div><div><dt>Kit quantity</dt><dd>{k.quantity || '-'}</dd></div></>}
             {order.lancets && <div><dt>Lancets</dt><dd>{order.lancets}</dd></div>}
             {order.applicators && <div><dt>Applicators</dt><dd>{order.applicators}</dd></div>}
@@ -59,12 +69,13 @@ function Summary({ order }) {
             <div><dt>Payment</dt><dd>{order.paymentStatus}</dd></div>
             <div><dt>Date</dt><dd>{date(order.date)}</dd></div>
             <div><dt>Remarks</dt><dd>{order.remarks || 'None'}</dd></div></dl>
-          <h2 style={{ marginTop: 16 }}>Attachments (names only)</h2>
-          {order.attachments?.length ? <ul className="kits-files">{order.attachments.map((f, i) => <li key={i}><span><Paperclip size={13} aria-hidden="true" /> {f.name} ({fileSize(f.size)})</span></li>)}</ul> : <p className="kits-hint">No files attached.</p>}
+          <h2 style={{ marginTop: 16 }}>Private attachments</h2>
+          {order.attachments?.length ? <ul className="kits-files">{order.attachments.map((f) => <li key={f.id}><span><Paperclip size={13} aria-hidden="true" /> {f.name} ({fileSize(f.size)})</span><button type="button" className="kits-link" disabled={downloading} onClick={async () => { setError(''); setDownloading(true); try { await downloadAttachment(f); } catch (e) { setError(e.message); } finally { setDownloading(false); } }}>Download</button></li>)}</ul> : <p className="kits-hint">No files attached.</p>}
         </section></div>
       <div className="kits-side">
         <section className="admin-panel kits-panel"><h2>Shipping ({order.shipping})</h2><Facts person={rec} empty="Recipient unavailable." testId="kits-summary-shipping" /></section>
         <section className="admin-panel kits-panel"><h2>Billing doctor</h2><Facts person={order.billing || doctor} empty="Billing doctor unavailable." testId="kits-summary-billing" /></section>
+        {order.patient && <section className="admin-panel kits-panel"><h2>Patient (historical)</h2><Facts person={order.patient} empty="Not selected." /></section>}
       </div>
     </div></div></AdminLayout>;
 }
@@ -74,36 +85,63 @@ function Form() {
   const [v, setV] = useState(blankOrder);
   const [errors, setErrors] = useState({});
   const [fileMsg, setFileMsg] = useState('');
+  const [busy, setBusy] = useState(false), [uncertain, setUncertain] = useState(false);
+  const [doctor, setDoctor] = useState(null), [mr, setMr] = useState(null);
+  const [policy, setPolicy] = useState(null), [policyError, setPolicyError] = useState('');
+  const submission = useRef(null), saving = useRef(false), uploads = useRef(new Map());
+  useEffect(() => {
+    const controller = new AbortController();
+    request('/policy', { signal: controller.signal }).then(setPolicy).catch((e) => { if (!controller.signal.aborted) setPolicyError(e.message); });
+    return () => controller.abort();
+  }, []);
+  useEffect(() => setNavigationGuard(() => {
+    if (!saving.current && !submission.current) return false;
+    setErrors({ save: 'Keep this draft open and retry the unchanged submission to confirm its outcome.' });
+    return true;
+  }), []);
   const summaryRef = useRef(null);
   const set = (p) => setV((c) => ({ ...c, ...p }));
   const setKit = (p) => setV((c) => ({ ...c, kit: { ...c.kit, ...p } }));
   const setOther = (p) => setV((c) => ({ ...c, other: { ...c.other, ...p } }));
   const setOtherAddr = (p) => setV((c) => ({ ...c, other: { ...c.other, address: { ...c.other.address, ...p } } }));
   const focusId = (k) => requestAnimationFrame(() => { const el = document.getElementById(`kits-${k}`); if (el) { el.scrollIntoView?.({ block: 'center' }); el.focus(); } });
-  const doctorOptions = DOCTORS.map((d) => ({ value: d.id, label: d.name }));
-  const mrOptions = MRS.map((m) => ({ value: m.id, label: m.name }));
-  const doctor = DOCTORS.find((d) => d.id === v.doctorId);
-  const recipient = shippingRecipient(v);
+  const recipient = v.shipping === 'doctor' ? doctor : v.shipping === 'mr' ? mr : v.other;
   const e = errors;
   const inv = (k) => ({ id: `kits-${k}`, 'aria-invalid': Boolean(e[k]), 'aria-describedby': e[k] ? `kits-${k}-err` : undefined, 'data-testid': `kits-input-${k}` });
 
   function addFiles(list) {
     const files = [...list];
     const msg = validateAttachments(files, v.attachments);
-    setFileMsg(msg || '');
-    if (!msg) set({ attachments: [...v.attachments, ...files.map((f) => ({ name: f.name, size: f.size, type: f.type }))] });
+    const sizeError = policy && files.some((f) => f.size > policy.maxBytes) ? `Each file must be at most ${fileSize(policy.maxBytes)}.` : '';
+    setFileMsg(msg || sizeError);
+    if (!msg && !sizeError) set({ attachments: [...v.attachments, ...files] });
   }
-  function save() {
+  async function save() {
+    if (saving.current) return;
     if (fileMsg) {
       setErrors({ attachments: 'The rejected files were not attached. Choose valid files, or continue explicitly without them.' });
       requestAnimationFrame(() => summaryRef.current?.focus());
       return;
     }
-    const { order, errors: errs } = demoStore.saveOrder(v);
-    if (errs && Object.keys(errs).length) { setErrors(errs); requestAnimationFrame(() => summaryRef.current?.focus()); return; }
-    setErrors({});
-    demoStore.setNotice(`Demo order ${order.number} saved for this session only. Status Confirmed, payment Mock unpaid.`);
-    navigate(BASE);
+    saving.current = true; setBusy(true); setErrors({});
+    try {
+      if (!submission.current) {
+        const attachments = [];
+        for (const file of v.attachments) {
+          if (!uploads.current.has(file)) uploads.current.set(file, await uploadAttachment(file));
+          attachments.push(uploads.current.get(file));
+        }
+        submission.current = { ...orderInput({ ...v, attachments }), idempotencyKey: crypto.randomUUID() };
+      }
+      const order = await request('', { body: submission.current });
+      submission.current = null; saving.current = false; setUncertain(false);
+      navigate(`${BASE}/${order.id}`);
+    } catch (error) {
+      setUncertain(Boolean(error.ambiguous));
+      if (!error.ambiguous) submission.current = null;
+      setErrors({ save: error.message || 'Order was not saved. Your draft is preserved; retry.' });
+      requestAnimationFrame(() => summaryRef.current?.focus());
+    } finally { saving.current = false; setBusy(false); }
   }
   const errList = Object.entries(errors);
   const otherField = (k, label, addr, optional) => {
@@ -119,10 +157,10 @@ function Form() {
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Orders / Kits &amp; Consumables</p><h1>Add order</h1>
       <p className="admin-page-head__description">Choose who the order is for, configure the kit and consumables, then set shipping.</p></div>
       <Link href={BASE} className="admin-button admin-button--secondary" data-testid="kits-back"><ArrowLeft size={15} aria-hidden="true" />Back</Link></div>
-    <p className="kits-boundary">Fictional demo data in browser memory only; a reload resets everything. Files are not uploaded.</p>
+    {policyError && <p role="alert">{policyError} <button type="button" className="kits-link" onClick={() => { setPolicyError(''); request('/policy').then(setPolicy).catch((e) => setPolicyError(e.message)); }}>Retry upload policy</button></p>}
     {errList.length > 0 && <div className="kits-errors" role="alert" tabIndex={-1} ref={summaryRef} data-testid="kits-error-summary"><strong>Fix {errList.length} problem{errList.length > 1 ? 's' : ''} before saving</strong>
       <ul>{errList.map(([k, m]) => <li key={k}><button type="button" className="kits-link" onClick={() => focusId(k === 'orderFor' ? `orderFor-${v.orderFor}` : k === 'shipping' ? `shipping-${v.shipping}` : k === 'products' ? 'kit-product' : k)} data-testid={`kits-error-${k}`}>{LABELS[k] || k}: {m}</button></li>)}</ul></div>}
-    <div className="kits-layout">
+    <fieldset className="kits-layout kits-form-fields" disabled={busy || uncertain}>
       <div className="kits-main">
         <section className="admin-panel kits-panel" aria-labelledby="kits-h-order"><h2 id="kits-h-order">Order details</h2>
           <fieldset className="kits-radios" aria-describedby={e.orderFor ? 'kits-orderFor-err' : undefined}><legend>Order for</legend>
@@ -144,22 +182,20 @@ function Form() {
           <div className="kits-field"><label htmlFor="kits-remarks">Remarks</label><textarea id="kits-remarks" rows={3} value={v.remarks} onChange={(ev) => set({ remarks: ev.target.value })} data-testid="kits-input-remarks" /></div>
           <div className="kits-field" style={{ marginTop: 14 }}><label htmlFor="kits-attachments">Attachments (optional)</label>
             <input id="kits-attachments" type="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" aria-describedby="kits-files-hint kits-attachments-err" onChange={(ev) => { addFiles(ev.target.files); ev.target.value = ''; }} data-testid="kits-input-files" />
-            <p className="kits-hint" id="kits-files-hint">Up to 10 PDF, JPEG, PNG or WebP files, 10 MB each. Only names and sizes are kept; nothing is uploaded.</p>
+            <p className="kits-hint" id="kits-files-hint">Up to 10 PDF, JPEG, PNG or WebP files, {policy ? fileSize(policy.maxBytes) : '10 MB'} each. Files upload privately when saving and must pass verification and scanning before attachment. Import/export excludes file contents.</p>
             <Err id="kits-attachments-err" text={fileMsg || e.attachments} />
             {fileMsg && <button type="button" className="kits-link kits-file-dismiss" onClick={() => { setFileMsg(''); setErrors((current) => ({ ...current, attachments: undefined })); }}>Continue without rejected files</button>}</div>
           {v.attachments.length > 0 ? <ul className="kits-files" aria-label="Attached files" data-testid="kits-file-list">{v.attachments.map((f, i) => <li key={`${f.name}-${i}`}><span><Paperclip size={13} aria-hidden="true" /> {f.name} ({fileSize(f.size)})</span>
             <button type="button" className="kits-link" aria-label={`Remove ${f.name}`} onClick={() => set({ attachments: v.attachments.filter((_, j) => j !== i) })} data-testid={`kits-remove-file-${i}`}>Remove</button></li>)}</ul> : <p className="kits-hint">No files attached.</p>}
         </section>
-        <div className="kits-actions"><button type="button" className="admin-button" onClick={save} data-testid="kits-save">Save order</button>
-          <Link href={BASE} className="admin-button admin-button--secondary" data-testid="kits-cancel">Cancel</Link></div>
       </div>
       <div className="kits-side">
         <section className="admin-panel kits-panel" aria-labelledby="kits-h-people"><h2 id="kits-h-people">Doctor details</h2>
           <div className="kits-grid">
-            <div className="kits-field"><label htmlFor="kits-doctorId">Doctor (billing)</label>
-              <SearchableSelect viewportMenu id="kits-doctorId" label="Doctor" value={v.doctorId} options={doctorOptions} onChange={(x) => set({ doctorId: x })} placeholder="Select doctor" invalid={e.doctorId} describedBy={e.doctorId ? 'kits-doctorId-err' : undefined} /><Err id="kits-doctorId-err" text={e.doctorId} /></div>
-            <div className="kits-field"><label htmlFor="kits-mrId">MR{v.orderFor === 'mr' || v.shipping === 'mr' ? '' : ' (optional)'}</label>
-              <SearchableSelect viewportMenu id="kits-mrId" label="MR" value={v.mrId} options={mrOptions} onChange={(x) => set({ mrId: x })} placeholder="Select MR" invalid={e.mrId} describedBy={e.mrId ? 'kits-mrId-err' : undefined} /><Err id="kits-mrId-err" text={e.mrId} /></div>
+            <KitsReferenceSelect disabled={busy || uncertain} id="kits-doctorId" kind="doctors" label="Doctor (billing)" value={v.doctorId} onChange={(x) => { set({ doctorId: x, patientId: '', mrId: '' }); setMr(null); }} onPerson={setDoctor} />
+            <KitsReferenceSelect disabled={busy || uncertain} id="kits-mrId" kind="mrs" label={`MR${v.orderFor === 'mr' || v.shipping === 'mr' ? '' : ' (optional)'}`} value={v.mrId} onChange={(x) => set({ mrId: x })} onPerson={setMr} />
+            <KitsReferenceSelect disabled={busy || uncertain} id="kits-patientId" kind="patients" label="Patient (optional)" value={v.patientId} onChange={(x) => set({ patientId: x })} />
+            <p className="kits-hint">Patient is optional for supply orders. If selected, the Patient must belong to the billing Doctor. A selected MR must match that Doctor’s current assignment. No masters or clinical history are created.</p>
           </div></section>
         <section className="admin-panel kits-panel" aria-labelledby="kits-h-ship"><h2 id="kits-h-ship">Shipping details</h2>
           <fieldset className="kits-radios" aria-describedby={e.shipping ? 'kits-shipping-err' : undefined}><legend>Ship to</legend>
@@ -175,7 +211,10 @@ function Form() {
           {doctor && <span className="kits-sub" hidden>{addressText(doctor.address)}</span>}
         </section>
       </div>
-    </div></div></AdminLayout>;
+    </fieldset>
+    <div className="kits-actions"><button type="button" className="admin-button" disabled={busy || !policy} onClick={save} data-testid="kits-save">{busy ? 'Saving…' : uncertain ? 'Retry unchanged save' : 'Save order'}</button>
+      {!busy && !uncertain && <Link href={BASE} className="admin-button admin-button--secondary" data-testid="kits-cancel">Cancel</Link>}</div>
+    </div></AdminLayout>;
 }
 
 export { STATUSES };

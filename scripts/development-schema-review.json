@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "target": "0061_immunotherapy_orders",
+  "target": "0062_kits_orders",
   "policy_sha256": "7928f397e0759fc3ca77f7d1f90d7c4e56dfbec5a9f4b09613c7199c78e523dd",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
@@ -70,7 +70,8 @@
     "0058_master_numbers": "6266efc1ca0277665c96c6c816d97a4d9c6ff42aafc34070df79f7e14d3a0e89",
     "0059_staff_unified_access": "ae54715cfef145e7b83a01d866a4a0d253646630f1e0e41296b63f3d95df2dac",
     "0060_staff_account_numbers": "df5a949c2d8a0bbbb5b9ecf365554ea246ecd8e8f448016b9f780f3f58568929",
-    "0061_immunotherapy_orders": "217ddee888a193757ea1b8068bdbd2ec04907bd658f9d4f0ed6ae7e4fb8223b3"
+    "0061_immunotherapy_orders": "217ddee888a193757ea1b8068bdbd2ec04907bd658f9d4f0ed6ae7e4fb8223b3",
+    "0062_kits_orders": "c23d7ad6fce0b62b32557a8ddd63d4528aed215e9b5f0a808e91e712c61712b2"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

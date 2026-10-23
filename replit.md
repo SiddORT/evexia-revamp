@@ -37,6 +37,15 @@ activation/recovery handoff; process repair is not live email recovery.
 
 # EVEXIA Portal
 
+Admin Kits & Consumables now uses protected shared backend orders with optional
+existing Patient selection, historical encrypted supply snapshots, private
+verified attachments and CSV/XLSX server review/atomic confirmation. Supply
+orders do not imply clinical history, stock or financial transactions. Forward
+`0062_kits_orders` follows the automatic policy after `0061_immunotherapy_orders`.
+This implementation is source-inspection-only: no tests, builds, browser/manual
+scenarios, runtime probes, restarts, migrations or deployment. Production fresh
+catalog evidence was not invented. See `docs/kits-orders.md`.
+
 ## Transactional onboarding email
 
 Explicit Staff/MR invitations and template tests use only the saved default Email

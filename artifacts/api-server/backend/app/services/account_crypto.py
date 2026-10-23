@@ -139,6 +139,7 @@ def ready(db):
         # Reviewed sequence/backfill leaves encryption envelopes and keys intact.
         ["0060_staff_account_numbers"],
         ["0061_immunotherapy_orders"],
+        ["0062_kits_orders"],
     ):
         raise AccountCryptoError()
     current = crypto()

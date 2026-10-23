@@ -11,6 +11,7 @@
 .kits .searchable-select--open { z-index: 30; position: relative; }
 .kits .searchable-select__menu { z-index: 40; max-width: calc(100vw - 32px); }
 .kits-layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.kits-form-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
 .kits-main, .kits-side { display: grid; gap: 16px; min-width: 0; }
 .kits h2 { font-size: 1rem; margin: 0 0 10px; }
 .kits-field { display: grid; gap: 5px; font-size: 0.85rem; font-weight: 600; min-width: 0; }

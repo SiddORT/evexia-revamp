@@ -420,8 +420,37 @@ export const editHeadquarterBodyNameMax = 200;
 export const editHeadquarterBodyStateCodeOneMax = 16;
 export const editHeadquarterResponseNameMax = 200;
 export const setHeadquarterStatusResponseNameMax = 200;
-
 export const listImmunotherapyOrdersQuerySearchMax = 200;
+export const listImmunotherapyOrdersQueryLimitDefault = 25;
+export const listImmunotherapyOrdersQueryLimitMax = 100;
+export const createImmunotherapyOrderBodyAttachmentIdsMax = 10;
+export const createImmunotherapyOrderBodyGroupsItemIdMax = 100;
+export const createImmunotherapyOrderBodyGroupsItemItemsMax = 100;
+export const createImmunotherapyOrderBodyGroupsMax = 100;
+export const createImmunotherapyOrderBodyRemarksMax = 4000;
+export const exportImmunotherapyOrdersQuerySearchMax = 200;
+export const commitImmunotherapyImportBodyConfirmUpdatesDefault = false;
+export const commitImmunotherapyImportBodyEntriesItemValuesAttachmentIdsMax = 10;
+export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemIdMax = 100;
+export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsMax = 100;
+export const commitImmunotherapyImportBodyEntriesItemValuesGroupsMax = 100;
+export const commitImmunotherapyImportBodyEntriesItemValuesRemarksMax = 4000;
+export const commitImmunotherapyImportBodyEntriesMax = 500;
+export const reviewImmunotherapyImportBodyConfirmUpdatesDefault = false;
+export const reviewImmunotherapyImportBodyEntriesItemValuesAttachmentIdsMax = 10;
+export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemIdMax = 100;
+export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsMax = 100;
+export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsMax = 100;
+export const reviewImmunotherapyImportBodyEntriesItemValuesRemarksMax = 4000;
+export const reviewImmunotherapyImportBodyEntriesMax = 500;
+export const immunotherapyReferencesQuerySearchMax = 200;
+export const immunotherapyReferencesQueryLimitDefault = 25;
+export const immunotherapyReferencesQueryLimitMax = 100;
+export const editImmunotherapyOrderBodyAttachmentIdsMax = 10;
+export const editImmunotherapyOrderBodyGroupsItemIdMax = 100;
+export const editImmunotherapyOrderBodyGroupsItemItemsMax = 100;
+export const editImmunotherapyOrderBodyGroupsMax = 100;
+export const editImmunotherapyOrderBodyRemarksMax = 4000;
 export const reviewInventoryInitializationQueryOffsetDefault = 0;
 export const reviewInventoryInitializationQueryOffsetMin = 0;
 export const reviewInventoryInitializationQueryOffsetMax = 1000000;
@@ -461,6 +490,157 @@ export const getInventoryStockHistoryQueryOffsetMin = 0;
 export const getInventoryStockHistoryQueryOffsetMax = 1000000;
 export const getInventoryStockHistoryQueryLimitDefault = 25;
 export const getInventoryStockHistoryQueryLimitMax = 100;
+export const listKitsOrdersQueryLimitDefault = 25;
+export const listKitsOrdersQueryLimitMax = 100;
+export const listKitsOrdersQuerySearchMax = 200;
+export const listKitsOrdersResponseItemsItemApplicatorsMax = 12;
+export const listKitsOrdersResponseItemsItemAttachmentIdsMax = 10;
+export const listKitsOrdersResponseItemsItemKitCustomMax = 32;
+export const listKitsOrdersResponseItemsItemKitQuantityMax = 12;
+export const listKitsOrdersResponseItemsItemKitVolumeMax = 32;
+export const listKitsOrdersResponseItemsItemLancetsMax = 12;
+export const listKitsOrdersResponseItemsItemOtherAddressCityMax = 200;
+export const listKitsOrdersResponseItemsItemOtherAddressCountryMax = 200;
+export const listKitsOrdersResponseItemsItemOtherAddressLandmarkMax = 1000;
+export const listKitsOrdersResponseItemsItemOtherAddressLine1Max = 1000;
+export const listKitsOrdersResponseItemsItemOtherAddressLine2Max = 1000;
+export const listKitsOrdersResponseItemsItemOtherAddressPincodeMax = 32;
+export const listKitsOrdersResponseItemsItemOtherAddressStateMax = 200;
+export const listKitsOrdersResponseItemsItemOtherNameMax = 200;
+export const listKitsOrdersResponseItemsItemOtherPhoneMax = 25;
+export const listKitsOrdersResponseItemsItemRemarksMax = 4000;
+export const listKitsOrdersResponseItemsItemTrayMax = 12;
+export const createKitsOrderBodyApplicatorsMax = 12;
+export const createKitsOrderBodyAttachmentIdsMax = 10;
+export const createKitsOrderBodyKitCustomMax = 32;
+export const createKitsOrderBodyKitQuantityMax = 12;
+export const createKitsOrderBodyKitVolumeMax = 32;
+export const createKitsOrderBodyLancetsMax = 12;
+export const createKitsOrderBodyOtherAddressCityMax = 200;
+export const createKitsOrderBodyOtherAddressCountryMax = 200;
+export const createKitsOrderBodyOtherAddressLandmarkMax = 1000;
+export const createKitsOrderBodyOtherAddressLine1Max = 1000;
+export const createKitsOrderBodyOtherAddressLine2Max = 1000;
+export const createKitsOrderBodyOtherAddressPincodeMax = 32;
+export const createKitsOrderBodyOtherAddressStateMax = 200;
+export const createKitsOrderBodyOtherNameMax = 200;
+export const createKitsOrderBodyOtherPhoneMax = 25;
+export const createKitsOrderBodyRemarksMax = 4000;
+export const createKitsOrderBodyTrayMax = 12;
+export const createKitsOrderResponseApplicatorsMax = 12;
+export const createKitsOrderResponseAttachmentIdsMax = 10;
+export const createKitsOrderResponseKitCustomMax = 32;
+export const createKitsOrderResponseKitQuantityMax = 12;
+export const createKitsOrderResponseKitVolumeMax = 32;
+export const createKitsOrderResponseLancetsMax = 12;
+export const createKitsOrderResponseOtherAddressCityMax = 200;
+export const createKitsOrderResponseOtherAddressCountryMax = 200;
+export const createKitsOrderResponseOtherAddressLandmarkMax = 1000;
+export const createKitsOrderResponseOtherAddressLine1Max = 1000;
+export const createKitsOrderResponseOtherAddressLine2Max = 1000;
+export const createKitsOrderResponseOtherAddressPincodeMax = 32;
+export const createKitsOrderResponseOtherAddressStateMax = 200;
+export const createKitsOrderResponseOtherNameMax = 200;
+export const createKitsOrderResponseOtherPhoneMax = 25;
+export const createKitsOrderResponseRemarksMax = 4000;
+export const createKitsOrderResponseTrayMax = 12;
+export const exportKitsOrdersQuerySearchMax = 200;
+export const exportKitsOrdersResponseItemsItemApplicatorsMax = 12;
+export const exportKitsOrdersResponseItemsItemAttachmentIdsMax = 10;
+export const exportKitsOrdersResponseItemsItemKitCustomMax = 32;
+export const exportKitsOrdersResponseItemsItemKitQuantityMax = 12;
+export const exportKitsOrdersResponseItemsItemKitVolumeMax = 32;
+export const exportKitsOrdersResponseItemsItemLancetsMax = 12;
+export const exportKitsOrdersResponseItemsItemOtherAddressCityMax = 200;
+export const exportKitsOrdersResponseItemsItemOtherAddressCountryMax = 200;
+export const exportKitsOrdersResponseItemsItemOtherAddressLandmarkMax = 1000;
+export const exportKitsOrdersResponseItemsItemOtherAddressLine1Max = 1000;
+export const exportKitsOrdersResponseItemsItemOtherAddressLine2Max = 1000;
+export const exportKitsOrdersResponseItemsItemOtherAddressPincodeMax = 32;
+export const exportKitsOrdersResponseItemsItemOtherAddressStateMax = 200;
+export const exportKitsOrdersResponseItemsItemOtherNameMax = 200;
+export const exportKitsOrdersResponseItemsItemOtherPhoneMax = 25;
+export const exportKitsOrdersResponseItemsItemRemarksMax = 4000;
+export const exportKitsOrdersResponseItemsItemTrayMax = 12;
+export const commitKitsImportBodyConfirmUpdatesDefault = false;
+export const commitKitsImportBodyEntriesItemNumberMax = 48;
+export const commitKitsImportBodyEntriesItemValuesApplicatorsMax = 12;
+export const commitKitsImportBodyEntriesItemValuesAttachmentIdsMax = 10;
+export const commitKitsImportBodyEntriesItemValuesKitCustomMax = 32;
+export const commitKitsImportBodyEntriesItemValuesKitQuantityMax = 12;
+export const commitKitsImportBodyEntriesItemValuesKitVolumeMax = 32;
+export const commitKitsImportBodyEntriesItemValuesLancetsMax = 12;
+export const commitKitsImportBodyEntriesItemValuesOtherAddressCityMax = 200;
+export const commitKitsImportBodyEntriesItemValuesOtherAddressCountryMax = 200;
+export const commitKitsImportBodyEntriesItemValuesOtherAddressLandmarkMax = 1000;
+export const commitKitsImportBodyEntriesItemValuesOtherAddressLine1Max = 1000;
+export const commitKitsImportBodyEntriesItemValuesOtherAddressLine2Max = 1000;
+export const commitKitsImportBodyEntriesItemValuesOtherAddressPincodeMax = 32;
+export const commitKitsImportBodyEntriesItemValuesOtherAddressStateMax = 200;
+export const commitKitsImportBodyEntriesItemValuesOtherNameMax = 200;
+export const commitKitsImportBodyEntriesItemValuesOtherPhoneMax = 25;
+export const commitKitsImportBodyEntriesItemValuesRemarksMax = 4000;
+export const commitKitsImportBodyEntriesItemValuesTrayMax = 12;
+export const commitKitsImportBodyEntriesMax = 500;
+export const commitKitsImportBodyReviewTokenMax = 256;
+export const commitKitsImportResponseOrdersItemApplicatorsMax = 12;
+export const commitKitsImportResponseOrdersItemAttachmentIdsMax = 10;
+export const commitKitsImportResponseOrdersItemKitCustomMax = 32;
+export const commitKitsImportResponseOrdersItemKitQuantityMax = 12;
+export const commitKitsImportResponseOrdersItemKitVolumeMax = 32;
+export const commitKitsImportResponseOrdersItemLancetsMax = 12;
+export const commitKitsImportResponseOrdersItemOtherAddressCityMax = 200;
+export const commitKitsImportResponseOrdersItemOtherAddressCountryMax = 200;
+export const commitKitsImportResponseOrdersItemOtherAddressLandmarkMax = 1000;
+export const commitKitsImportResponseOrdersItemOtherAddressLine1Max = 1000;
+export const commitKitsImportResponseOrdersItemOtherAddressLine2Max = 1000;
+export const commitKitsImportResponseOrdersItemOtherAddressPincodeMax = 32;
+export const commitKitsImportResponseOrdersItemOtherAddressStateMax = 200;
+export const commitKitsImportResponseOrdersItemOtherNameMax = 200;
+export const commitKitsImportResponseOrdersItemOtherPhoneMax = 25;
+export const commitKitsImportResponseOrdersItemRemarksMax = 4000;
+export const commitKitsImportResponseOrdersItemTrayMax = 12;
+export const reviewKitsImportBodyConfirmUpdatesDefault = false;
+export const reviewKitsImportBodyEntriesItemNumberMax = 48;
+export const reviewKitsImportBodyEntriesItemValuesApplicatorsMax = 12;
+export const reviewKitsImportBodyEntriesItemValuesAttachmentIdsMax = 10;
+export const reviewKitsImportBodyEntriesItemValuesKitCustomMax = 32;
+export const reviewKitsImportBodyEntriesItemValuesKitQuantityMax = 12;
+export const reviewKitsImportBodyEntriesItemValuesKitVolumeMax = 32;
+export const reviewKitsImportBodyEntriesItemValuesLancetsMax = 12;
+export const reviewKitsImportBodyEntriesItemValuesOtherAddressCityMax = 200;
+export const reviewKitsImportBodyEntriesItemValuesOtherAddressCountryMax = 200;
+export const reviewKitsImportBodyEntriesItemValuesOtherAddressLandmarkMax = 1000;
+export const reviewKitsImportBodyEntriesItemValuesOtherAddressLine1Max = 1000;
+export const reviewKitsImportBodyEntriesItemValuesOtherAddressLine2Max = 1000;
+export const reviewKitsImportBodyEntriesItemValuesOtherAddressPincodeMax = 32;
+export const reviewKitsImportBodyEntriesItemValuesOtherAddressStateMax = 200;
+export const reviewKitsImportBodyEntriesItemValuesOtherNameMax = 200;
+export const reviewKitsImportBodyEntriesItemValuesOtherPhoneMax = 25;
+export const reviewKitsImportBodyEntriesItemValuesRemarksMax = 4000;
+export const reviewKitsImportBodyEntriesItemValuesTrayMax = 12;
+export const reviewKitsImportBodyEntriesMax = 500;
+export const reviewKitsImportBodyReviewTokenMax = 256;
+export const kitsReferencesQuerySearchMax = 200;
+export const kitsReferencesQueryLimitDefault = 25;
+export const kitsReferencesQueryLimitMax = 100;
+export const getKitsOrderResponseApplicatorsMax = 12;
+export const getKitsOrderResponseAttachmentIdsMax = 10;
+export const getKitsOrderResponseKitCustomMax = 32;
+export const getKitsOrderResponseKitQuantityMax = 12;
+export const getKitsOrderResponseKitVolumeMax = 32;
+export const getKitsOrderResponseLancetsMax = 12;
+export const getKitsOrderResponseOtherAddressCityMax = 200;
+export const getKitsOrderResponseOtherAddressCountryMax = 200;
+export const getKitsOrderResponseOtherAddressLandmarkMax = 1000;
+export const getKitsOrderResponseOtherAddressLine1Max = 1000;
+export const getKitsOrderResponseOtherAddressLine2Max = 1000;
+export const getKitsOrderResponseOtherAddressPincodeMax = 32;
+export const getKitsOrderResponseOtherAddressStateMax = 200;
+export const getKitsOrderResponseOtherNameMax = 200;
+export const getKitsOrderResponseOtherPhoneMax = 25;
+export const getKitsOrderResponseRemarksMax = 4000;
+export const getKitsOrderResponseTrayMax = 12;
 export const listLanguagesQueryQueryMax = 200;
 export const listLanguagesQueryLimitDefault = 10;
 export const listLanguagesQueryLimitMax = 100;
@@ -7740,6 +7920,807 @@ export const SetHeadquarterStatusResponse = zod.object({
  * @summary Listing
  */
 export const listImmunotherapyOrdersQuerySearchDefault = ``;
+
+export const ListImmunotherapyOrdersQueryParams = zod.object({
+  search: zod.coerce
+    .string()
+    .max(listImmunotherapyOrdersQuerySearchMax)
+    .default(listImmunotherapyOrdersQuerySearchDefault),
+  status: zod
+    .union([
+      zod.enum([
+        "Confirmed",
+        "In process",
+        "Shipped",
+        "Delivered",
+        "Rejected",
+        "Returned",
+      ]),
+      zod.null(),
+    ])
+    .optional(),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listImmunotherapyOrdersQueryLimitMax)
+    .default(listImmunotherapyOrdersQueryLimitDefault),
+});
+
+export const ListImmunotherapyOrdersResponse = zod.object({
+  counts: zod.record(zod.string(), zod.number().int()),
+  filtered: zod.union([zod.number().int(), zod.null()]),
+  items: zod.array(
+    zod
+      .object({
+        attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+        date: zod.string(),
+        doctor: zod.record(zod.string(), zod.unknown()),
+        doctorId: zod.string().uuid(),
+        dosage: zod.string(),
+        groups: zod.array(zod.record(zod.string(), zod.unknown())),
+        histamine: zod.string(),
+        id: zod.string().uuid(),
+        mr: zod.record(zod.string(), zod.unknown()),
+        mrId: zod.string().uuid(),
+        number: zod.string(),
+        patient: zod.record(zod.string(), zod.unknown()),
+        patientId: zod.string().uuid(),
+        recipient: zod.record(zod.string(), zod.unknown()),
+        remarks: zod.string(),
+        saline: zod.string(),
+        shipping: zod.string(),
+        status: zod.enum([
+          "Confirmed",
+          "In process",
+          "Shipped",
+          "Delivered",
+          "Rejected",
+          "Returned",
+        ]),
+        totalMinor: zod.number().int(),
+        version: zod.number().int(),
+      })
+      .describe(
+        "Encrypted document projected only after protected authorization.",
+      ),
+  ),
+  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+
+export const createImmunotherapyOrderBodyGroupsItemItemsItemResultRegExp =
+  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
+
+export const createImmunotherapyOrderBodyGroupsItemMrpRegExp = new RegExp(
+  "^\\d{1,10}(?:\\.\\d{1,2})?$",
+);
+
+export const createImmunotherapyOrderBodyHistamineRegExp = new RegExp(
+  "^\\d{1,6}(?:\\.\\d{1,2})?$",
+);
+export const createImmunotherapyOrderBodyRemarksDefault = ``;
+
+export const createImmunotherapyOrderBodySalineRegExp = new RegExp(
+  "^\\d{1,6}(?:\\.\\d{1,2})?$",
+);
+export const createImmunotherapyOrderBodyStatusDefault = `Confirmed`;
+
+export const CreateImmunotherapyOrderBody = zod.object({
+  attachmentIds: zod
+    .array(zod.string().uuid())
+    .max(createImmunotherapyOrderBodyAttachmentIdsMax)
+    .optional(),
+  doctorId: zod.string().uuid(),
+  dosage: zod.enum([
+    "PD",
+    "DD",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "B6",
+    "B7",
+    "B8",
+  ]),
+  expected_version: zod
+    .union([zod.number().int().min(1), zod.null()])
+    .optional(),
+  groups: zod
+    .array(
+      zod.object({
+        id: zod
+          .string()
+          .min(1)
+          .max(createImmunotherapyOrderBodyGroupsItemIdMax),
+        items: zod
+          .array(
+            zod.object({
+              allergenId: zod.string().uuid(),
+              result: zod
+                .string()
+                .regex(
+                  createImmunotherapyOrderBodyGroupsItemItemsItemResultRegExp,
+                ),
+            }),
+          )
+          .min(1)
+          .max(createImmunotherapyOrderBodyGroupsItemItemsMax),
+        mrp: zod
+          .string()
+          .regex(createImmunotherapyOrderBodyGroupsItemMrpRegExp),
+      }),
+    )
+    .min(1)
+    .max(createImmunotherapyOrderBodyGroupsMax),
+  histamine: zod.string().regex(createImmunotherapyOrderBodyHistamineRegExp),
+  idempotencyKey: zod.string().uuid(),
+  mrId: zod.string().uuid(),
+  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  patientId: zod.string().uuid(),
+  remarks: zod
+    .string()
+    .max(createImmunotherapyOrderBodyRemarksMax)
+    .default(createImmunotherapyOrderBodyRemarksDefault),
+  saline: zod.string().regex(createImmunotherapyOrderBodySalineRegExp),
+  shipping: zod.enum(["patient", "doctor"]),
+  status: zod
+    .enum([
+      "Confirmed",
+      "In process",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ])
+    .default(createImmunotherapyOrderBodyStatusDefault),
+});
+
+export const CreateImmunotherapyOrderResponse = zod
+  .object({
+    attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+    date: zod.string(),
+    doctor: zod.record(zod.string(), zod.unknown()),
+    doctorId: zod.string().uuid(),
+    dosage: zod.string(),
+    groups: zod.array(zod.record(zod.string(), zod.unknown())),
+    histamine: zod.string(),
+    id: zod.string().uuid(),
+    mr: zod.record(zod.string(), zod.unknown()),
+    mrId: zod.string().uuid(),
+    number: zod.string(),
+    patient: zod.record(zod.string(), zod.unknown()),
+    patientId: zod.string().uuid(),
+    recipient: zod.record(zod.string(), zod.unknown()),
+    remarks: zod.string(),
+    saline: zod.string(),
+    shipping: zod.string(),
+    status: zod.enum([
+      "Confirmed",
+      "In process",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ]),
+    totalMinor: zod.number().int(),
+    version: zod.number().int(),
+  })
+  .describe("Encrypted document projected only after protected authorization.");
+
+/**
+ * @summary Export
+ */
+export const exportImmunotherapyOrdersQuerySearchDefault = ``;
+
+export const ExportImmunotherapyOrdersQueryParams = zod.object({
+  search: zod.coerce
+    .string()
+    .max(exportImmunotherapyOrdersQuerySearchMax)
+    .default(exportImmunotherapyOrdersQuerySearchDefault),
+  status: zod
+    .union([
+      zod.enum([
+        "Confirmed",
+        "In process",
+        "Shipped",
+        "Delivered",
+        "Rejected",
+        "Returned",
+      ]),
+      zod.null(),
+    ])
+    .optional(),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+});
+
+export const ExportImmunotherapyOrdersResponse = zod.object({
+  counts: zod.record(zod.string(), zod.number().int()),
+  filtered: zod.union([zod.number().int(), zod.null()]),
+  items: zod.array(
+    zod
+      .object({
+        attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+        date: zod.string(),
+        doctor: zod.record(zod.string(), zod.unknown()),
+        doctorId: zod.string().uuid(),
+        dosage: zod.string(),
+        groups: zod.array(zod.record(zod.string(), zod.unknown())),
+        histamine: zod.string(),
+        id: zod.string().uuid(),
+        mr: zod.record(zod.string(), zod.unknown()),
+        mrId: zod.string().uuid(),
+        number: zod.string(),
+        patient: zod.record(zod.string(), zod.unknown()),
+        patientId: zod.string().uuid(),
+        recipient: zod.record(zod.string(), zod.unknown()),
+        remarks: zod.string(),
+        saline: zod.string(),
+        shipping: zod.string(),
+        status: zod.enum([
+          "Confirmed",
+          "In process",
+          "Shipped",
+          "Delivered",
+          "Rejected",
+          "Returned",
+        ]),
+        totalMinor: zod.number().int(),
+        version: zod.number().int(),
+      })
+      .describe(
+        "Encrypted document projected only after protected authorization.",
+      ),
+  ),
+  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Commit
+ */
+
+export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemResultRegExp =
+  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
+
+export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemMrpRegExp =
+  new RegExp("^\\d{1,10}(?:\\.\\d{1,2})?$");
+
+export const commitImmunotherapyImportBodyEntriesItemValuesHistamineRegExp =
+  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
+export const commitImmunotherapyImportBodyEntriesItemValuesRemarksDefault = ``;
+
+export const commitImmunotherapyImportBodyEntriesItemValuesSalineRegExp =
+  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
+export const commitImmunotherapyImportBodyEntriesItemValuesStatusDefault = `Confirmed`;
+
+export const commitImmunotherapyImportBodyReviewTokenDefault = ``;
+
+export const CommitImmunotherapyImportBody = zod.object({
+  confirmUpdates: zod
+    .boolean()
+    .default(commitImmunotherapyImportBodyConfirmUpdatesDefault),
+  entries: zod
+    .array(
+      zod.object({
+        expected_version: zod
+          .union([zod.number().int().min(1), zod.null()])
+          .optional(),
+        id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        values: zod.object({
+          attachmentIds: zod
+            .array(zod.string().uuid())
+            .max(commitImmunotherapyImportBodyEntriesItemValuesAttachmentIdsMax)
+            .optional(),
+          doctorId: zod.string().uuid(),
+          dosage: zod.enum([
+            "PD",
+            "DD",
+            "B1",
+            "B2",
+            "B3",
+            "B4",
+            "B5",
+            "B6",
+            "B7",
+            "B8",
+          ]),
+          groups: zod
+            .array(
+              zod.object({
+                id: zod
+                  .string()
+                  .min(1)
+                  .max(
+                    commitImmunotherapyImportBodyEntriesItemValuesGroupsItemIdMax,
+                  ),
+                items: zod
+                  .array(
+                    zod.object({
+                      allergenId: zod.string().uuid(),
+                      result: zod
+                        .string()
+                        .regex(
+                          commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemResultRegExp,
+                        ),
+                    }),
+                  )
+                  .min(1)
+                  .max(
+                    commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsMax,
+                  ),
+                mrp: zod
+                  .string()
+                  .regex(
+                    commitImmunotherapyImportBodyEntriesItemValuesGroupsItemMrpRegExp,
+                  ),
+              }),
+            )
+            .min(1)
+            .max(commitImmunotherapyImportBodyEntriesItemValuesGroupsMax),
+          histamine: zod
+            .string()
+            .regex(
+              commitImmunotherapyImportBodyEntriesItemValuesHistamineRegExp,
+            ),
+          mrId: zod.string().uuid(),
+          orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+          patientId: zod.string().uuid(),
+          remarks: zod
+            .string()
+            .max(commitImmunotherapyImportBodyEntriesItemValuesRemarksMax)
+            .default(
+              commitImmunotherapyImportBodyEntriesItemValuesRemarksDefault,
+            ),
+          saline: zod
+            .string()
+            .regex(commitImmunotherapyImportBodyEntriesItemValuesSalineRegExp),
+          shipping: zod.enum(["patient", "doctor"]),
+          status: zod
+            .enum([
+              "Confirmed",
+              "In process",
+              "Shipped",
+              "Delivered",
+              "Rejected",
+              "Returned",
+            ])
+            .default(
+              commitImmunotherapyImportBodyEntriesItemValuesStatusDefault,
+            ),
+        }),
+      }),
+    )
+    .min(1)
+    .max(commitImmunotherapyImportBodyEntriesMax),
+  idempotencyKey: zod.string().uuid(),
+  reviewToken: zod
+    .string()
+    .default(commitImmunotherapyImportBodyReviewTokenDefault),
+});
+
+export const CommitImmunotherapyImportResponse = zod.object({
+  imported: zod.number().int(),
+  orders: zod.array(
+    zod
+      .object({
+        attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+        date: zod.string(),
+        doctor: zod.record(zod.string(), zod.unknown()),
+        doctorId: zod.string().uuid(),
+        dosage: zod.string(),
+        groups: zod.array(zod.record(zod.string(), zod.unknown())),
+        histamine: zod.string(),
+        id: zod.string().uuid(),
+        mr: zod.record(zod.string(), zod.unknown()),
+        mrId: zod.string().uuid(),
+        number: zod.string(),
+        patient: zod.record(zod.string(), zod.unknown()),
+        patientId: zod.string().uuid(),
+        recipient: zod.record(zod.string(), zod.unknown()),
+        remarks: zod.string(),
+        saline: zod.string(),
+        shipping: zod.string(),
+        status: zod.enum([
+          "Confirmed",
+          "In process",
+          "Shipped",
+          "Delivered",
+          "Rejected",
+          "Returned",
+        ]),
+        totalMinor: zod.number().int(),
+        version: zod.number().int(),
+      })
+      .describe(
+        "Encrypted document projected only after protected authorization.",
+      ),
+  ),
+});
+
+/**
+ * @summary Review
+ */
+
+export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemResultRegExp =
+  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
+
+export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemMrpRegExp =
+  new RegExp("^\\d{1,10}(?:\\.\\d{1,2})?$");
+
+export const reviewImmunotherapyImportBodyEntriesItemValuesHistamineRegExp =
+  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
+export const reviewImmunotherapyImportBodyEntriesItemValuesRemarksDefault = ``;
+
+export const reviewImmunotherapyImportBodyEntriesItemValuesSalineRegExp =
+  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
+export const reviewImmunotherapyImportBodyEntriesItemValuesStatusDefault = `Confirmed`;
+
+export const reviewImmunotherapyImportBodyReviewTokenDefault = ``;
+
+export const ReviewImmunotherapyImportBody = zod.object({
+  confirmUpdates: zod
+    .boolean()
+    .default(reviewImmunotherapyImportBodyConfirmUpdatesDefault),
+  entries: zod
+    .array(
+      zod.object({
+        expected_version: zod
+          .union([zod.number().int().min(1), zod.null()])
+          .optional(),
+        id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        values: zod.object({
+          attachmentIds: zod
+            .array(zod.string().uuid())
+            .max(reviewImmunotherapyImportBodyEntriesItemValuesAttachmentIdsMax)
+            .optional(),
+          doctorId: zod.string().uuid(),
+          dosage: zod.enum([
+            "PD",
+            "DD",
+            "B1",
+            "B2",
+            "B3",
+            "B4",
+            "B5",
+            "B6",
+            "B7",
+            "B8",
+          ]),
+          groups: zod
+            .array(
+              zod.object({
+                id: zod
+                  .string()
+                  .min(1)
+                  .max(
+                    reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemIdMax,
+                  ),
+                items: zod
+                  .array(
+                    zod.object({
+                      allergenId: zod.string().uuid(),
+                      result: zod
+                        .string()
+                        .regex(
+                          reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemResultRegExp,
+                        ),
+                    }),
+                  )
+                  .min(1)
+                  .max(
+                    reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsMax,
+                  ),
+                mrp: zod
+                  .string()
+                  .regex(
+                    reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemMrpRegExp,
+                  ),
+              }),
+            )
+            .min(1)
+            .max(reviewImmunotherapyImportBodyEntriesItemValuesGroupsMax),
+          histamine: zod
+            .string()
+            .regex(
+              reviewImmunotherapyImportBodyEntriesItemValuesHistamineRegExp,
+            ),
+          mrId: zod.string().uuid(),
+          orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+          patientId: zod.string().uuid(),
+          remarks: zod
+            .string()
+            .max(reviewImmunotherapyImportBodyEntriesItemValuesRemarksMax)
+            .default(
+              reviewImmunotherapyImportBodyEntriesItemValuesRemarksDefault,
+            ),
+          saline: zod
+            .string()
+            .regex(reviewImmunotherapyImportBodyEntriesItemValuesSalineRegExp),
+          shipping: zod.enum(["patient", "doctor"]),
+          status: zod
+            .enum([
+              "Confirmed",
+              "In process",
+              "Shipped",
+              "Delivered",
+              "Rejected",
+              "Returned",
+            ])
+            .default(
+              reviewImmunotherapyImportBodyEntriesItemValuesStatusDefault,
+            ),
+        }),
+      }),
+    )
+    .min(1)
+    .max(reviewImmunotherapyImportBodyEntriesMax),
+  idempotencyKey: zod.string().uuid(),
+  reviewToken: zod
+    .string()
+    .default(reviewImmunotherapyImportBodyReviewTokenDefault),
+});
+
+export const ReviewImmunotherapyImportResponse = zod.object({
+  additions: zod.number().int(),
+  entries: zod.array(zod.record(zod.string(), zod.unknown())),
+  patientAdditions: zod.number().int(),
+  rejected: zod.number().int(),
+  reviewToken: zod.string(),
+  unchanged: zod.number().int(),
+  updates: zod.number().int(),
+  valid: zod.boolean(),
+});
+
+/**
+ * @summary Policy
+ */
+export const ImmunotherapyUploadPolicyResponse = zod.object({
+  maxBytes: zod.number().int(),
+  maxFiles: zod.number().int(),
+  types: zod.array(zod.string()),
+});
+
+/**
+ * @summary Prescription
+ */
+export const UploadImmunotherapyPrescriptionParams = zod.object({
+  patient_id: zod.coerce.string().uuid(),
+});
+
+export const UploadImmunotherapyPrescriptionBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const UploadImmunotherapyPrescriptionResponse = zod.object({
+  category: zod.enum(["profile", "documents"]),
+  checksum: zod.union([zod.string(), zod.null()]),
+  content_type: zod.string(),
+  created_at: zod.coerce.date(),
+  display_name: zod.string(),
+  id: zod.string().uuid(),
+  mr_id: zod.union([zod.string().uuid(), zod.null()]),
+  patient_id: zod.union([zod.string().uuid(), zod.null()]),
+  scanner_status: zod.enum([
+    "pending",
+    "clean",
+    "infected",
+    "unavailable",
+    "error",
+  ]),
+  size: zod.number().int(),
+  state: zod.enum([
+    "uploading",
+    "quarantined",
+    "verified",
+    "rejected",
+    "pending_delete",
+    "deleted",
+  ]),
+  updated_at: zod.coerce.date(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary References
+ */
+export const ImmunotherapyReferencesParams = zod.object({
+  kind: zod.enum(["patients", "doctors", "mrs", "allergens"]),
+});
+
+export const immunotherapyReferencesQuerySearchDefault = ``;
+
+export const ImmunotherapyReferencesQueryParams = zod.object({
+  search: zod.coerce
+    .string()
+    .max(immunotherapyReferencesQuerySearchMax)
+    .default(immunotherapyReferencesQuerySearchDefault),
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(immunotherapyReferencesQueryLimitMax)
+    .default(immunotherapyReferencesQueryLimitDefault),
+  selected: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+});
+
+export const ImmunotherapyReferencesResponse = zod.object({
+  items: zod.array(zod.record(zod.string(), zod.unknown())),
+  limit: zod.number().int(),
+  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
+});
+
+/**
+ * @summary Detail
+ */
+export const GetImmunotherapyOrderParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const GetImmunotherapyOrderResponse = zod
+  .object({
+    attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+    date: zod.string(),
+    doctor: zod.record(zod.string(), zod.unknown()),
+    doctorId: zod.string().uuid(),
+    dosage: zod.string(),
+    groups: zod.array(zod.record(zod.string(), zod.unknown())),
+    histamine: zod.string(),
+    id: zod.string().uuid(),
+    mr: zod.record(zod.string(), zod.unknown()),
+    mrId: zod.string().uuid(),
+    number: zod.string(),
+    patient: zod.record(zod.string(), zod.unknown()),
+    patientId: zod.string().uuid(),
+    recipient: zod.record(zod.string(), zod.unknown()),
+    remarks: zod.string(),
+    saline: zod.string(),
+    shipping: zod.string(),
+    status: zod.enum([
+      "Confirmed",
+      "In process",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ]),
+    totalMinor: zod.number().int(),
+    version: zod.number().int(),
+  })
+  .describe("Encrypted document projected only after protected authorization.");
+
+/**
+ * @summary Edit
+ */
+export const EditImmunotherapyOrderParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const editImmunotherapyOrderBodyGroupsItemItemsItemResultRegExp =
+  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
+
+export const editImmunotherapyOrderBodyGroupsItemMrpRegExp = new RegExp(
+  "^\\d{1,10}(?:\\.\\d{1,2})?$",
+);
+
+export const editImmunotherapyOrderBodyHistamineRegExp = new RegExp(
+  "^\\d{1,6}(?:\\.\\d{1,2})?$",
+);
+export const editImmunotherapyOrderBodyRemarksDefault = ``;
+
+export const editImmunotherapyOrderBodySalineRegExp = new RegExp(
+  "^\\d{1,6}(?:\\.\\d{1,2})?$",
+);
+export const editImmunotherapyOrderBodyStatusDefault = `Confirmed`;
+
+export const EditImmunotherapyOrderBody = zod.object({
+  attachmentIds: zod
+    .array(zod.string().uuid())
+    .max(editImmunotherapyOrderBodyAttachmentIdsMax)
+    .optional(),
+  doctorId: zod.string().uuid(),
+  dosage: zod.enum([
+    "PD",
+    "DD",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "B6",
+    "B7",
+    "B8",
+  ]),
+  expected_version: zod
+    .union([zod.number().int().min(1), zod.null()])
+    .optional(),
+  groups: zod
+    .array(
+      zod.object({
+        id: zod.string().min(1).max(editImmunotherapyOrderBodyGroupsItemIdMax),
+        items: zod
+          .array(
+            zod.object({
+              allergenId: zod.string().uuid(),
+              result: zod
+                .string()
+                .regex(
+                  editImmunotherapyOrderBodyGroupsItemItemsItemResultRegExp,
+                ),
+            }),
+          )
+          .min(1)
+          .max(editImmunotherapyOrderBodyGroupsItemItemsMax),
+        mrp: zod.string().regex(editImmunotherapyOrderBodyGroupsItemMrpRegExp),
+      }),
+    )
+    .min(1)
+    .max(editImmunotherapyOrderBodyGroupsMax),
+  histamine: zod.string().regex(editImmunotherapyOrderBodyHistamineRegExp),
+  idempotencyKey: zod.string().uuid(),
+  mrId: zod.string().uuid(),
+  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  patientId: zod.string().uuid(),
+  remarks: zod
+    .string()
+    .max(editImmunotherapyOrderBodyRemarksMax)
+    .default(editImmunotherapyOrderBodyRemarksDefault),
+  saline: zod.string().regex(editImmunotherapyOrderBodySalineRegExp),
+  shipping: zod.enum(["patient", "doctor"]),
+  status: zod
+    .enum([
+      "Confirmed",
+      "In process",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ])
+    .default(editImmunotherapyOrderBodyStatusDefault),
+});
+
+export const EditImmunotherapyOrderResponse = zod
+  .object({
+    attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+    date: zod.string(),
+    doctor: zod.record(zod.string(), zod.unknown()),
+    doctorId: zod.string().uuid(),
+    dosage: zod.string(),
+    groups: zod.array(zod.record(zod.string(), zod.unknown())),
+    histamine: zod.string(),
+    id: zod.string().uuid(),
+    mr: zod.record(zod.string(), zod.unknown()),
+    mrId: zod.string().uuid(),
+    number: zod.string(),
+    patient: zod.record(zod.string(), zod.unknown()),
+    patientId: zod.string().uuid(),
+    recipient: zod.record(zod.string(), zod.unknown()),
+    remarks: zod.string(),
+    saline: zod.string(),
+    shipping: zod.string(),
+    status: zod.enum([
+      "Confirmed",
+      "In process",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ]),
+    totalMinor: zod.number().int(),
+    version: zod.number().int(),
+  })
+  .describe("Encrypted document projected only after protected authorization.");
+
 /**
  * @summary Initialization
  */
@@ -9019,6 +10000,1594 @@ export const GetInventoryStockHistoryResponse = zod.object({
   limit: zod.number().int(),
   offset: zod.number().int(),
   scope: zod.string(),
+});
+
+/**
+ * @summary Listing
+ */
+
+export const listKitsOrdersQuerySearchDefault = ``;
+
+export const ListKitsOrdersQueryParams = zod.object({
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listKitsOrdersQueryLimitMax)
+    .default(listKitsOrdersQueryLimitDefault),
+  search: zod.coerce
+    .string()
+    .max(listKitsOrdersQuerySearchMax)
+    .default(listKitsOrdersQuerySearchDefault),
+  status: zod
+    .union([
+      zod.enum([
+        "Confirmed",
+        "In process",
+        "Shipped",
+        "Delivered",
+        "Rejected",
+        "Returned",
+      ]),
+      zod.null(),
+    ])
+    .optional(),
+  payment_status: zod
+    .union([zod.enum(["Unpaid", "Paid", "Partial"]), zod.null()])
+    .optional(),
+  order_for: zod.union([zod.enum(["doctor", "mr"]), zod.null()]).optional(),
+  doctor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  patient_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+});
+
+export const listKitsOrdersResponseItemsItemApplicatorsDefault = ``;
+
+export const listKitsOrdersResponseItemsItemKitCustomDefault = ``;
+
+export const listKitsOrdersResponseItemsItemKitProductDefault = ``;
+export const listKitsOrdersResponseItemsItemKitQuantityDefault = ``;
+
+export const listKitsOrdersResponseItemsItemKitVolumeDefault = ``;
+
+export const listKitsOrdersResponseItemsItemLancetsDefault = ``;
+
+export const listKitsOrdersResponseItemsItemOrderForDefault = `doctor`;
+export const listKitsOrdersResponseItemsItemOtherAddressCityDefault = ``;
+
+export const listKitsOrdersResponseItemsItemOtherAddressCountryDefault = ``;
+
+export const listKitsOrdersResponseItemsItemOtherAddressLandmarkDefault = ``;
+
+export const listKitsOrdersResponseItemsItemOtherAddressLine1Default = ``;
+
+export const listKitsOrdersResponseItemsItemOtherAddressLine2Default = ``;
+
+export const listKitsOrdersResponseItemsItemOtherAddressPincodeDefault = ``;
+
+export const listKitsOrdersResponseItemsItemOtherAddressStateDefault = ``;
+
+export const listKitsOrdersResponseItemsItemOtherNameDefault = ``;
+
+export const listKitsOrdersResponseItemsItemOtherPhoneDefault = ``;
+
+export const listKitsOrdersResponseItemsItemPaymentStatusDefault = `Unpaid`;
+export const listKitsOrdersResponseItemsItemRemarksDefault = ``;
+
+export const listKitsOrdersResponseItemsItemShippingDefault = `doctor`;
+export const listKitsOrdersResponseItemsItemStatusDefault = `Confirmed`;
+export const listKitsOrdersResponseItemsItemTrayDefault = ``;
+
+export const ListKitsOrdersResponse = zod.object({
+  counts: zod.record(zod.string(), zod.number().int()),
+  filtered: zod.union([zod.number().int(), zod.null()]),
+  items: zod.array(
+    zod.object({
+      applicators: zod
+        .string()
+        .max(listKitsOrdersResponseItemsItemApplicatorsMax)
+        .default(listKitsOrdersResponseItemsItemApplicatorsDefault),
+      attachmentIds: zod
+        .array(zod.string().uuid())
+        .max(listKitsOrdersResponseItemsItemAttachmentIdsMax)
+        .optional(),
+      attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+      billing: zod.record(zod.string(), zod.unknown()),
+      date: zod.string(),
+      doctor: zod.record(zod.string(), zod.unknown()),
+      doctorId: zod.string().uuid(),
+      id: zod.string().uuid(),
+      kit: zod
+        .object({
+          custom: zod
+            .string()
+            .max(listKitsOrdersResponseItemsItemKitCustomMax)
+            .default(listKitsOrdersResponseItemsItemKitCustomDefault),
+          product: zod
+            .enum(["", "200", "250", "100", "85", "70", "58", "Customized"])
+            .default(listKitsOrdersResponseItemsItemKitProductDefault),
+          quantity: zod
+            .string()
+            .max(listKitsOrdersResponseItemsItemKitQuantityMax)
+            .default(listKitsOrdersResponseItemsItemKitQuantityDefault),
+          volume: zod
+            .string()
+            .max(listKitsOrdersResponseItemsItemKitVolumeMax)
+            .default(listKitsOrdersResponseItemsItemKitVolumeDefault),
+        })
+        .optional(),
+      lancets: zod
+        .string()
+        .max(listKitsOrdersResponseItemsItemLancetsMax)
+        .default(listKitsOrdersResponseItemsItemLancetsDefault),
+      mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+      mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      number: zod.string(),
+      orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      orderFor: zod
+        .enum(["doctor", "mr"])
+        .default(listKitsOrdersResponseItemsItemOrderForDefault),
+      other: zod
+        .object({
+          address: zod
+            .object({
+              city: zod
+                .string()
+                .max(listKitsOrdersResponseItemsItemOtherAddressCityMax)
+                .default(
+                  listKitsOrdersResponseItemsItemOtherAddressCityDefault,
+                ),
+              country: zod
+                .string()
+                .max(listKitsOrdersResponseItemsItemOtherAddressCountryMax)
+                .default(
+                  listKitsOrdersResponseItemsItemOtherAddressCountryDefault,
+                ),
+              landmark: zod
+                .string()
+                .max(listKitsOrdersResponseItemsItemOtherAddressLandmarkMax)
+                .default(
+                  listKitsOrdersResponseItemsItemOtherAddressLandmarkDefault,
+                ),
+              line1: zod
+                .string()
+                .max(listKitsOrdersResponseItemsItemOtherAddressLine1Max)
+                .default(
+                  listKitsOrdersResponseItemsItemOtherAddressLine1Default,
+                ),
+              line2: zod
+                .string()
+                .max(listKitsOrdersResponseItemsItemOtherAddressLine2Max)
+                .default(
+                  listKitsOrdersResponseItemsItemOtherAddressLine2Default,
+                ),
+              pincode: zod
+                .string()
+                .max(listKitsOrdersResponseItemsItemOtherAddressPincodeMax)
+                .default(
+                  listKitsOrdersResponseItemsItemOtherAddressPincodeDefault,
+                ),
+              state: zod
+                .string()
+                .max(listKitsOrdersResponseItemsItemOtherAddressStateMax)
+                .default(
+                  listKitsOrdersResponseItemsItemOtherAddressStateDefault,
+                ),
+            })
+            .optional(),
+          name: zod
+            .string()
+            .max(listKitsOrdersResponseItemsItemOtherNameMax)
+            .default(listKitsOrdersResponseItemsItemOtherNameDefault),
+          phone: zod
+            .string()
+            .max(listKitsOrdersResponseItemsItemOtherPhoneMax)
+            .default(listKitsOrdersResponseItemsItemOtherPhoneDefault),
+        })
+        .optional(),
+      patient: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+      patientId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      paymentStatus: zod
+        .enum(["Unpaid", "Paid", "Partial"])
+        .default(listKitsOrdersResponseItemsItemPaymentStatusDefault),
+      recipient: zod.record(zod.string(), zod.unknown()),
+      remarks: zod
+        .string()
+        .max(listKitsOrdersResponseItemsItemRemarksMax)
+        .default(listKitsOrdersResponseItemsItemRemarksDefault),
+      shipping: zod
+        .enum(["doctor", "mr", "other"])
+        .default(listKitsOrdersResponseItemsItemShippingDefault),
+      status: zod
+        .enum([
+          "Confirmed",
+          "In process",
+          "Shipped",
+          "Delivered",
+          "Rejected",
+          "Returned",
+        ])
+        .default(listKitsOrdersResponseItemsItemStatusDefault),
+      tray: zod
+        .string()
+        .max(listKitsOrdersResponseItemsItemTrayMax)
+        .default(listKitsOrdersResponseItemsItemTrayDefault),
+      version: zod.number().int(),
+    }),
+  ),
+  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+export const createKitsOrderBodyApplicatorsDefault = ``;
+
+export const createKitsOrderBodyKitCustomDefault = ``;
+
+export const createKitsOrderBodyKitProductDefault = ``;
+export const createKitsOrderBodyKitQuantityDefault = ``;
+
+export const createKitsOrderBodyKitVolumeDefault = ``;
+
+export const createKitsOrderBodyLancetsDefault = ``;
+
+export const createKitsOrderBodyOrderForDefault = `doctor`;
+export const createKitsOrderBodyOtherAddressCityDefault = ``;
+
+export const createKitsOrderBodyOtherAddressCountryDefault = ``;
+
+export const createKitsOrderBodyOtherAddressLandmarkDefault = ``;
+
+export const createKitsOrderBodyOtherAddressLine1Default = ``;
+
+export const createKitsOrderBodyOtherAddressLine2Default = ``;
+
+export const createKitsOrderBodyOtherAddressPincodeDefault = ``;
+
+export const createKitsOrderBodyOtherAddressStateDefault = ``;
+
+export const createKitsOrderBodyOtherNameDefault = ``;
+
+export const createKitsOrderBodyOtherPhoneDefault = ``;
+
+export const createKitsOrderBodyPaymentStatusDefault = `Unpaid`;
+export const createKitsOrderBodyRemarksDefault = ``;
+
+export const createKitsOrderBodyShippingDefault = `doctor`;
+export const createKitsOrderBodyStatusDefault = `Confirmed`;
+export const createKitsOrderBodyTrayDefault = ``;
+
+export const CreateKitsOrderBody = zod.object({
+  applicators: zod
+    .string()
+    .max(createKitsOrderBodyApplicatorsMax)
+    .default(createKitsOrderBodyApplicatorsDefault),
+  attachmentIds: zod
+    .array(zod.string().uuid())
+    .max(createKitsOrderBodyAttachmentIdsMax)
+    .optional(),
+  doctorId: zod.string().uuid(),
+  idempotencyKey: zod.string().uuid(),
+  kit: zod
+    .object({
+      custom: zod
+        .string()
+        .max(createKitsOrderBodyKitCustomMax)
+        .default(createKitsOrderBodyKitCustomDefault),
+      product: zod
+        .enum(["", "200", "250", "100", "85", "70", "58", "Customized"])
+        .default(createKitsOrderBodyKitProductDefault),
+      quantity: zod
+        .string()
+        .max(createKitsOrderBodyKitQuantityMax)
+        .default(createKitsOrderBodyKitQuantityDefault),
+      volume: zod
+        .string()
+        .max(createKitsOrderBodyKitVolumeMax)
+        .default(createKitsOrderBodyKitVolumeDefault),
+    })
+    .optional(),
+  lancets: zod
+    .string()
+    .max(createKitsOrderBodyLancetsMax)
+    .default(createKitsOrderBodyLancetsDefault),
+  mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  orderFor: zod
+    .enum(["doctor", "mr"])
+    .default(createKitsOrderBodyOrderForDefault),
+  other: zod
+    .object({
+      address: zod
+        .object({
+          city: zod
+            .string()
+            .max(createKitsOrderBodyOtherAddressCityMax)
+            .default(createKitsOrderBodyOtherAddressCityDefault),
+          country: zod
+            .string()
+            .max(createKitsOrderBodyOtherAddressCountryMax)
+            .default(createKitsOrderBodyOtherAddressCountryDefault),
+          landmark: zod
+            .string()
+            .max(createKitsOrderBodyOtherAddressLandmarkMax)
+            .default(createKitsOrderBodyOtherAddressLandmarkDefault),
+          line1: zod
+            .string()
+            .max(createKitsOrderBodyOtherAddressLine1Max)
+            .default(createKitsOrderBodyOtherAddressLine1Default),
+          line2: zod
+            .string()
+            .max(createKitsOrderBodyOtherAddressLine2Max)
+            .default(createKitsOrderBodyOtherAddressLine2Default),
+          pincode: zod
+            .string()
+            .max(createKitsOrderBodyOtherAddressPincodeMax)
+            .default(createKitsOrderBodyOtherAddressPincodeDefault),
+          state: zod
+            .string()
+            .max(createKitsOrderBodyOtherAddressStateMax)
+            .default(createKitsOrderBodyOtherAddressStateDefault),
+        })
+        .optional(),
+      name: zod
+        .string()
+        .max(createKitsOrderBodyOtherNameMax)
+        .default(createKitsOrderBodyOtherNameDefault),
+      phone: zod
+        .string()
+        .max(createKitsOrderBodyOtherPhoneMax)
+        .default(createKitsOrderBodyOtherPhoneDefault),
+    })
+    .optional(),
+  patientId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  paymentStatus: zod
+    .enum(["Unpaid", "Paid", "Partial"])
+    .default(createKitsOrderBodyPaymentStatusDefault),
+  remarks: zod
+    .string()
+    .max(createKitsOrderBodyRemarksMax)
+    .default(createKitsOrderBodyRemarksDefault),
+  shipping: zod
+    .enum(["doctor", "mr", "other"])
+    .default(createKitsOrderBodyShippingDefault),
+  status: zod
+    .enum([
+      "Confirmed",
+      "In process",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ])
+    .default(createKitsOrderBodyStatusDefault),
+  tray: zod
+    .string()
+    .max(createKitsOrderBodyTrayMax)
+    .default(createKitsOrderBodyTrayDefault),
+});
+
+export const createKitsOrderResponseApplicatorsDefault = ``;
+
+export const createKitsOrderResponseKitCustomDefault = ``;
+
+export const createKitsOrderResponseKitProductDefault = ``;
+export const createKitsOrderResponseKitQuantityDefault = ``;
+
+export const createKitsOrderResponseKitVolumeDefault = ``;
+
+export const createKitsOrderResponseLancetsDefault = ``;
+
+export const createKitsOrderResponseOrderForDefault = `doctor`;
+export const createKitsOrderResponseOtherAddressCityDefault = ``;
+
+export const createKitsOrderResponseOtherAddressCountryDefault = ``;
+
+export const createKitsOrderResponseOtherAddressLandmarkDefault = ``;
+
+export const createKitsOrderResponseOtherAddressLine1Default = ``;
+
+export const createKitsOrderResponseOtherAddressLine2Default = ``;
+
+export const createKitsOrderResponseOtherAddressPincodeDefault = ``;
+
+export const createKitsOrderResponseOtherAddressStateDefault = ``;
+
+export const createKitsOrderResponseOtherNameDefault = ``;
+
+export const createKitsOrderResponseOtherPhoneDefault = ``;
+
+export const createKitsOrderResponsePaymentStatusDefault = `Unpaid`;
+export const createKitsOrderResponseRemarksDefault = ``;
+
+export const createKitsOrderResponseShippingDefault = `doctor`;
+export const createKitsOrderResponseStatusDefault = `Confirmed`;
+export const createKitsOrderResponseTrayDefault = ``;
+
+export const CreateKitsOrderResponse = zod.object({
+  applicators: zod
+    .string()
+    .max(createKitsOrderResponseApplicatorsMax)
+    .default(createKitsOrderResponseApplicatorsDefault),
+  attachmentIds: zod
+    .array(zod.string().uuid())
+    .max(createKitsOrderResponseAttachmentIdsMax)
+    .optional(),
+  attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+  billing: zod.record(zod.string(), zod.unknown()),
+  date: zod.string(),
+  doctor: zod.record(zod.string(), zod.unknown()),
+  doctorId: zod.string().uuid(),
+  id: zod.string().uuid(),
+  kit: zod
+    .object({
+      custom: zod
+        .string()
+        .max(createKitsOrderResponseKitCustomMax)
+        .default(createKitsOrderResponseKitCustomDefault),
+      product: zod
+        .enum(["", "200", "250", "100", "85", "70", "58", "Customized"])
+        .default(createKitsOrderResponseKitProductDefault),
+      quantity: zod
+        .string()
+        .max(createKitsOrderResponseKitQuantityMax)
+        .default(createKitsOrderResponseKitQuantityDefault),
+      volume: zod
+        .string()
+        .max(createKitsOrderResponseKitVolumeMax)
+        .default(createKitsOrderResponseKitVolumeDefault),
+    })
+    .optional(),
+  lancets: zod
+    .string()
+    .max(createKitsOrderResponseLancetsMax)
+    .default(createKitsOrderResponseLancetsDefault),
+  mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  number: zod.string(),
+  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  orderFor: zod
+    .enum(["doctor", "mr"])
+    .default(createKitsOrderResponseOrderForDefault),
+  other: zod
+    .object({
+      address: zod
+        .object({
+          city: zod
+            .string()
+            .max(createKitsOrderResponseOtherAddressCityMax)
+            .default(createKitsOrderResponseOtherAddressCityDefault),
+          country: zod
+            .string()
+            .max(createKitsOrderResponseOtherAddressCountryMax)
+            .default(createKitsOrderResponseOtherAddressCountryDefault),
+          landmark: zod
+            .string()
+            .max(createKitsOrderResponseOtherAddressLandmarkMax)
+            .default(createKitsOrderResponseOtherAddressLandmarkDefault),
+          line1: zod
+            .string()
+            .max(createKitsOrderResponseOtherAddressLine1Max)
+            .default(createKitsOrderResponseOtherAddressLine1Default),
+          line2: zod
+            .string()
+            .max(createKitsOrderResponseOtherAddressLine2Max)
+            .default(createKitsOrderResponseOtherAddressLine2Default),
+          pincode: zod
+            .string()
+            .max(createKitsOrderResponseOtherAddressPincodeMax)
+            .default(createKitsOrderResponseOtherAddressPincodeDefault),
+          state: zod
+            .string()
+            .max(createKitsOrderResponseOtherAddressStateMax)
+            .default(createKitsOrderResponseOtherAddressStateDefault),
+        })
+        .optional(),
+      name: zod
+        .string()
+        .max(createKitsOrderResponseOtherNameMax)
+        .default(createKitsOrderResponseOtherNameDefault),
+      phone: zod
+        .string()
+        .max(createKitsOrderResponseOtherPhoneMax)
+        .default(createKitsOrderResponseOtherPhoneDefault),
+    })
+    .optional(),
+  patient: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  patientId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  paymentStatus: zod
+    .enum(["Unpaid", "Paid", "Partial"])
+    .default(createKitsOrderResponsePaymentStatusDefault),
+  recipient: zod.record(zod.string(), zod.unknown()),
+  remarks: zod
+    .string()
+    .max(createKitsOrderResponseRemarksMax)
+    .default(createKitsOrderResponseRemarksDefault),
+  shipping: zod
+    .enum(["doctor", "mr", "other"])
+    .default(createKitsOrderResponseShippingDefault),
+  status: zod
+    .enum([
+      "Confirmed",
+      "In process",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ])
+    .default(createKitsOrderResponseStatusDefault),
+  tray: zod
+    .string()
+    .max(createKitsOrderResponseTrayMax)
+    .default(createKitsOrderResponseTrayDefault),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Upload
+ */
+export const UploadKitsAttachmentBody = zod.object({
+  file: zod.instanceof(Blob),
+});
+
+export const UploadKitsAttachmentResponse = zod.object({
+  category: zod.enum(["profile", "documents"]),
+  checksum: zod.union([zod.string(), zod.null()]),
+  content_type: zod.string(),
+  created_at: zod.coerce.date(),
+  display_name: zod.string(),
+  id: zod.string().uuid(),
+  mr_id: zod.union([zod.string().uuid(), zod.null()]),
+  patient_id: zod.union([zod.string().uuid(), zod.null()]),
+  scanner_status: zod.enum([
+    "pending",
+    "clean",
+    "infected",
+    "unavailable",
+    "error",
+  ]),
+  size: zod.number().int(),
+  state: zod.enum([
+    "uploading",
+    "quarantined",
+    "verified",
+    "rejected",
+    "pending_delete",
+    "deleted",
+  ]),
+  updated_at: zod.coerce.date(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Export
+ */
+export const exportKitsOrdersQuerySearchDefault = ``;
+
+export const ExportKitsOrdersQueryParams = zod.object({
+  search: zod.coerce
+    .string()
+    .max(exportKitsOrdersQuerySearchMax)
+    .default(exportKitsOrdersQuerySearchDefault),
+  status: zod
+    .union([
+      zod.enum([
+        "Confirmed",
+        "In process",
+        "Shipped",
+        "Delivered",
+        "Rejected",
+        "Returned",
+      ]),
+      zod.null(),
+    ])
+    .optional(),
+  payment_status: zod
+    .union([zod.enum(["Unpaid", "Paid", "Partial"]), zod.null()])
+    .optional(),
+  order_for: zod.union([zod.enum(["doctor", "mr"]), zod.null()]).optional(),
+  doctor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  patient_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+});
+
+export const exportKitsOrdersResponseItemsItemApplicatorsDefault = ``;
+
+export const exportKitsOrdersResponseItemsItemKitCustomDefault = ``;
+
+export const exportKitsOrdersResponseItemsItemKitProductDefault = ``;
+export const exportKitsOrdersResponseItemsItemKitQuantityDefault = ``;
+
+export const exportKitsOrdersResponseItemsItemKitVolumeDefault = ``;
+
+export const exportKitsOrdersResponseItemsItemLancetsDefault = ``;
+
+export const exportKitsOrdersResponseItemsItemOrderForDefault = `doctor`;
+export const exportKitsOrdersResponseItemsItemOtherAddressCityDefault = ``;
+
+export const exportKitsOrdersResponseItemsItemOtherAddressCountryDefault = ``;
+
+export const exportKitsOrdersResponseItemsItemOtherAddressLandmarkDefault = ``;
+
+export const exportKitsOrdersResponseItemsItemOtherAddressLine1Default = ``;
+
+export const exportKitsOrdersResponseItemsItemOtherAddressLine2Default = ``;
+
+export const exportKitsOrdersResponseItemsItemOtherAddressPincodeDefault = ``;
+
+export const exportKitsOrdersResponseItemsItemOtherAddressStateDefault = ``;
+
+export const exportKitsOrdersResponseItemsItemOtherNameDefault = ``;
+
+export const exportKitsOrdersResponseItemsItemOtherPhoneDefault = ``;
+
+export const exportKitsOrdersResponseItemsItemPaymentStatusDefault = `Unpaid`;
+export const exportKitsOrdersResponseItemsItemRemarksDefault = ``;
+
+export const exportKitsOrdersResponseItemsItemShippingDefault = `doctor`;
+export const exportKitsOrdersResponseItemsItemStatusDefault = `Confirmed`;
+export const exportKitsOrdersResponseItemsItemTrayDefault = ``;
+
+export const ExportKitsOrdersResponse = zod.object({
+  counts: zod.record(zod.string(), zod.number().int()),
+  filtered: zod.union([zod.number().int(), zod.null()]),
+  items: zod.array(
+    zod.object({
+      applicators: zod
+        .string()
+        .max(exportKitsOrdersResponseItemsItemApplicatorsMax)
+        .default(exportKitsOrdersResponseItemsItemApplicatorsDefault),
+      attachmentIds: zod
+        .array(zod.string().uuid())
+        .max(exportKitsOrdersResponseItemsItemAttachmentIdsMax)
+        .optional(),
+      attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+      billing: zod.record(zod.string(), zod.unknown()),
+      date: zod.string(),
+      doctor: zod.record(zod.string(), zod.unknown()),
+      doctorId: zod.string().uuid(),
+      id: zod.string().uuid(),
+      kit: zod
+        .object({
+          custom: zod
+            .string()
+            .max(exportKitsOrdersResponseItemsItemKitCustomMax)
+            .default(exportKitsOrdersResponseItemsItemKitCustomDefault),
+          product: zod
+            .enum(["", "200", "250", "100", "85", "70", "58", "Customized"])
+            .default(exportKitsOrdersResponseItemsItemKitProductDefault),
+          quantity: zod
+            .string()
+            .max(exportKitsOrdersResponseItemsItemKitQuantityMax)
+            .default(exportKitsOrdersResponseItemsItemKitQuantityDefault),
+          volume: zod
+            .string()
+            .max(exportKitsOrdersResponseItemsItemKitVolumeMax)
+            .default(exportKitsOrdersResponseItemsItemKitVolumeDefault),
+        })
+        .optional(),
+      lancets: zod
+        .string()
+        .max(exportKitsOrdersResponseItemsItemLancetsMax)
+        .default(exportKitsOrdersResponseItemsItemLancetsDefault),
+      mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+      mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      number: zod.string(),
+      orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      orderFor: zod
+        .enum(["doctor", "mr"])
+        .default(exportKitsOrdersResponseItemsItemOrderForDefault),
+      other: zod
+        .object({
+          address: zod
+            .object({
+              city: zod
+                .string()
+                .max(exportKitsOrdersResponseItemsItemOtherAddressCityMax)
+                .default(
+                  exportKitsOrdersResponseItemsItemOtherAddressCityDefault,
+                ),
+              country: zod
+                .string()
+                .max(exportKitsOrdersResponseItemsItemOtherAddressCountryMax)
+                .default(
+                  exportKitsOrdersResponseItemsItemOtherAddressCountryDefault,
+                ),
+              landmark: zod
+                .string()
+                .max(exportKitsOrdersResponseItemsItemOtherAddressLandmarkMax)
+                .default(
+                  exportKitsOrdersResponseItemsItemOtherAddressLandmarkDefault,
+                ),
+              line1: zod
+                .string()
+                .max(exportKitsOrdersResponseItemsItemOtherAddressLine1Max)
+                .default(
+                  exportKitsOrdersResponseItemsItemOtherAddressLine1Default,
+                ),
+              line2: zod
+                .string()
+                .max(exportKitsOrdersResponseItemsItemOtherAddressLine2Max)
+                .default(
+                  exportKitsOrdersResponseItemsItemOtherAddressLine2Default,
+                ),
+              pincode: zod
+                .string()
+                .max(exportKitsOrdersResponseItemsItemOtherAddressPincodeMax)
+                .default(
+                  exportKitsOrdersResponseItemsItemOtherAddressPincodeDefault,
+                ),
+              state: zod
+                .string()
+                .max(exportKitsOrdersResponseItemsItemOtherAddressStateMax)
+                .default(
+                  exportKitsOrdersResponseItemsItemOtherAddressStateDefault,
+                ),
+            })
+            .optional(),
+          name: zod
+            .string()
+            .max(exportKitsOrdersResponseItemsItemOtherNameMax)
+            .default(exportKitsOrdersResponseItemsItemOtherNameDefault),
+          phone: zod
+            .string()
+            .max(exportKitsOrdersResponseItemsItemOtherPhoneMax)
+            .default(exportKitsOrdersResponseItemsItemOtherPhoneDefault),
+        })
+        .optional(),
+      patient: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+      patientId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      paymentStatus: zod
+        .enum(["Unpaid", "Paid", "Partial"])
+        .default(exportKitsOrdersResponseItemsItemPaymentStatusDefault),
+      recipient: zod.record(zod.string(), zod.unknown()),
+      remarks: zod
+        .string()
+        .max(exportKitsOrdersResponseItemsItemRemarksMax)
+        .default(exportKitsOrdersResponseItemsItemRemarksDefault),
+      shipping: zod
+        .enum(["doctor", "mr", "other"])
+        .default(exportKitsOrdersResponseItemsItemShippingDefault),
+      status: zod
+        .enum([
+          "Confirmed",
+          "In process",
+          "Shipped",
+          "Delivered",
+          "Rejected",
+          "Returned",
+        ])
+        .default(exportKitsOrdersResponseItemsItemStatusDefault),
+      tray: zod
+        .string()
+        .max(exportKitsOrdersResponseItemsItemTrayMax)
+        .default(exportKitsOrdersResponseItemsItemTrayDefault),
+      version: zod.number().int(),
+    }),
+  ),
+  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Commit
+ */
+
+export const commitKitsImportBodyEntriesItemNumberDefault = ``;
+
+export const commitKitsImportBodyEntriesItemValuesApplicatorsDefault = ``;
+
+export const commitKitsImportBodyEntriesItemValuesKitCustomDefault = ``;
+
+export const commitKitsImportBodyEntriesItemValuesKitProductDefault = ``;
+export const commitKitsImportBodyEntriesItemValuesKitQuantityDefault = ``;
+
+export const commitKitsImportBodyEntriesItemValuesKitVolumeDefault = ``;
+
+export const commitKitsImportBodyEntriesItemValuesLancetsDefault = ``;
+
+export const commitKitsImportBodyEntriesItemValuesOrderForDefault = `doctor`;
+export const commitKitsImportBodyEntriesItemValuesOtherAddressCityDefault = ``;
+
+export const commitKitsImportBodyEntriesItemValuesOtherAddressCountryDefault = ``;
+
+export const commitKitsImportBodyEntriesItemValuesOtherAddressLandmarkDefault = ``;
+
+export const commitKitsImportBodyEntriesItemValuesOtherAddressLine1Default = ``;
+
+export const commitKitsImportBodyEntriesItemValuesOtherAddressLine2Default = ``;
+
+export const commitKitsImportBodyEntriesItemValuesOtherAddressPincodeDefault = ``;
+
+export const commitKitsImportBodyEntriesItemValuesOtherAddressStateDefault = ``;
+
+export const commitKitsImportBodyEntriesItemValuesOtherNameDefault = ``;
+
+export const commitKitsImportBodyEntriesItemValuesOtherPhoneDefault = ``;
+
+export const commitKitsImportBodyEntriesItemValuesPaymentStatusDefault = `Unpaid`;
+export const commitKitsImportBodyEntriesItemValuesRemarksDefault = ``;
+
+export const commitKitsImportBodyEntriesItemValuesShippingDefault = `doctor`;
+export const commitKitsImportBodyEntriesItemValuesStatusDefault = `Confirmed`;
+export const commitKitsImportBodyEntriesItemValuesTrayDefault = ``;
+
+export const commitKitsImportBodyReviewTokenDefault = ``;
+
+export const CommitKitsImportBody = zod.object({
+  confirmUpdates: zod
+    .boolean()
+    .default(commitKitsImportBodyConfirmUpdatesDefault),
+  entries: zod
+    .array(
+      zod.object({
+        expected_version: zod
+          .union([zod.number().int().min(1), zod.null()])
+          .optional(),
+        id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        number: zod
+          .string()
+          .max(commitKitsImportBodyEntriesItemNumberMax)
+          .default(commitKitsImportBodyEntriesItemNumberDefault),
+        values: zod.object({
+          applicators: zod
+            .string()
+            .max(commitKitsImportBodyEntriesItemValuesApplicatorsMax)
+            .default(commitKitsImportBodyEntriesItemValuesApplicatorsDefault),
+          attachmentIds: zod
+            .array(zod.string().uuid())
+            .max(commitKitsImportBodyEntriesItemValuesAttachmentIdsMax)
+            .optional(),
+          doctorId: zod.string().uuid(),
+          kit: zod
+            .object({
+              custom: zod
+                .string()
+                .max(commitKitsImportBodyEntriesItemValuesKitCustomMax)
+                .default(commitKitsImportBodyEntriesItemValuesKitCustomDefault),
+              product: zod
+                .enum(["", "200", "250", "100", "85", "70", "58", "Customized"])
+                .default(
+                  commitKitsImportBodyEntriesItemValuesKitProductDefault,
+                ),
+              quantity: zod
+                .string()
+                .max(commitKitsImportBodyEntriesItemValuesKitQuantityMax)
+                .default(
+                  commitKitsImportBodyEntriesItemValuesKitQuantityDefault,
+                ),
+              volume: zod
+                .string()
+                .max(commitKitsImportBodyEntriesItemValuesKitVolumeMax)
+                .default(commitKitsImportBodyEntriesItemValuesKitVolumeDefault),
+            })
+            .optional(),
+          lancets: zod
+            .string()
+            .max(commitKitsImportBodyEntriesItemValuesLancetsMax)
+            .default(commitKitsImportBodyEntriesItemValuesLancetsDefault),
+          mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+          orderFor: zod
+            .enum(["doctor", "mr"])
+            .default(commitKitsImportBodyEntriesItemValuesOrderForDefault),
+          other: zod
+            .object({
+              address: zod
+                .object({
+                  city: zod
+                    .string()
+                    .max(
+                      commitKitsImportBodyEntriesItemValuesOtherAddressCityMax,
+                    )
+                    .default(
+                      commitKitsImportBodyEntriesItemValuesOtherAddressCityDefault,
+                    ),
+                  country: zod
+                    .string()
+                    .max(
+                      commitKitsImportBodyEntriesItemValuesOtherAddressCountryMax,
+                    )
+                    .default(
+                      commitKitsImportBodyEntriesItemValuesOtherAddressCountryDefault,
+                    ),
+                  landmark: zod
+                    .string()
+                    .max(
+                      commitKitsImportBodyEntriesItemValuesOtherAddressLandmarkMax,
+                    )
+                    .default(
+                      commitKitsImportBodyEntriesItemValuesOtherAddressLandmarkDefault,
+                    ),
+                  line1: zod
+                    .string()
+                    .max(
+                      commitKitsImportBodyEntriesItemValuesOtherAddressLine1Max,
+                    )
+                    .default(
+                      commitKitsImportBodyEntriesItemValuesOtherAddressLine1Default,
+                    ),
+                  line2: zod
+                    .string()
+                    .max(
+                      commitKitsImportBodyEntriesItemValuesOtherAddressLine2Max,
+                    )
+                    .default(
+                      commitKitsImportBodyEntriesItemValuesOtherAddressLine2Default,
+                    ),
+                  pincode: zod
+                    .string()
+                    .max(
+                      commitKitsImportBodyEntriesItemValuesOtherAddressPincodeMax,
+                    )
+                    .default(
+                      commitKitsImportBodyEntriesItemValuesOtherAddressPincodeDefault,
+                    ),
+                  state: zod
+                    .string()
+                    .max(
+                      commitKitsImportBodyEntriesItemValuesOtherAddressStateMax,
+                    )
+                    .default(
+                      commitKitsImportBodyEntriesItemValuesOtherAddressStateDefault,
+                    ),
+                })
+                .optional(),
+              name: zod
+                .string()
+                .max(commitKitsImportBodyEntriesItemValuesOtherNameMax)
+                .default(commitKitsImportBodyEntriesItemValuesOtherNameDefault),
+              phone: zod
+                .string()
+                .max(commitKitsImportBodyEntriesItemValuesOtherPhoneMax)
+                .default(
+                  commitKitsImportBodyEntriesItemValuesOtherPhoneDefault,
+                ),
+            })
+            .optional(),
+          patientId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          paymentStatus: zod
+            .enum(["Unpaid", "Paid", "Partial"])
+            .default(commitKitsImportBodyEntriesItemValuesPaymentStatusDefault),
+          remarks: zod
+            .string()
+            .max(commitKitsImportBodyEntriesItemValuesRemarksMax)
+            .default(commitKitsImportBodyEntriesItemValuesRemarksDefault),
+          shipping: zod
+            .enum(["doctor", "mr", "other"])
+            .default(commitKitsImportBodyEntriesItemValuesShippingDefault),
+          status: zod
+            .enum([
+              "Confirmed",
+              "In process",
+              "Shipped",
+              "Delivered",
+              "Rejected",
+              "Returned",
+            ])
+            .default(commitKitsImportBodyEntriesItemValuesStatusDefault),
+          tray: zod
+            .string()
+            .max(commitKitsImportBodyEntriesItemValuesTrayMax)
+            .default(commitKitsImportBodyEntriesItemValuesTrayDefault),
+        }),
+      }),
+    )
+    .min(1)
+    .max(commitKitsImportBodyEntriesMax),
+  idempotencyKey: zod.string().uuid(),
+  reviewToken: zod
+    .string()
+    .max(commitKitsImportBodyReviewTokenMax)
+    .default(commitKitsImportBodyReviewTokenDefault),
+});
+
+export const commitKitsImportResponseOrdersItemApplicatorsDefault = ``;
+
+export const commitKitsImportResponseOrdersItemKitCustomDefault = ``;
+
+export const commitKitsImportResponseOrdersItemKitProductDefault = ``;
+export const commitKitsImportResponseOrdersItemKitQuantityDefault = ``;
+
+export const commitKitsImportResponseOrdersItemKitVolumeDefault = ``;
+
+export const commitKitsImportResponseOrdersItemLancetsDefault = ``;
+
+export const commitKitsImportResponseOrdersItemOrderForDefault = `doctor`;
+export const commitKitsImportResponseOrdersItemOtherAddressCityDefault = ``;
+
+export const commitKitsImportResponseOrdersItemOtherAddressCountryDefault = ``;
+
+export const commitKitsImportResponseOrdersItemOtherAddressLandmarkDefault = ``;
+
+export const commitKitsImportResponseOrdersItemOtherAddressLine1Default = ``;
+
+export const commitKitsImportResponseOrdersItemOtherAddressLine2Default = ``;
+
+export const commitKitsImportResponseOrdersItemOtherAddressPincodeDefault = ``;
+
+export const commitKitsImportResponseOrdersItemOtherAddressStateDefault = ``;
+
+export const commitKitsImportResponseOrdersItemOtherNameDefault = ``;
+
+export const commitKitsImportResponseOrdersItemOtherPhoneDefault = ``;
+
+export const commitKitsImportResponseOrdersItemPaymentStatusDefault = `Unpaid`;
+export const commitKitsImportResponseOrdersItemRemarksDefault = ``;
+
+export const commitKitsImportResponseOrdersItemShippingDefault = `doctor`;
+export const commitKitsImportResponseOrdersItemStatusDefault = `Confirmed`;
+export const commitKitsImportResponseOrdersItemTrayDefault = ``;
+
+export const CommitKitsImportResponse = zod.object({
+  imported: zod.number().int(),
+  orders: zod.array(
+    zod.object({
+      applicators: zod
+        .string()
+        .max(commitKitsImportResponseOrdersItemApplicatorsMax)
+        .default(commitKitsImportResponseOrdersItemApplicatorsDefault),
+      attachmentIds: zod
+        .array(zod.string().uuid())
+        .max(commitKitsImportResponseOrdersItemAttachmentIdsMax)
+        .optional(),
+      attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+      billing: zod.record(zod.string(), zod.unknown()),
+      date: zod.string(),
+      doctor: zod.record(zod.string(), zod.unknown()),
+      doctorId: zod.string().uuid(),
+      id: zod.string().uuid(),
+      kit: zod
+        .object({
+          custom: zod
+            .string()
+            .max(commitKitsImportResponseOrdersItemKitCustomMax)
+            .default(commitKitsImportResponseOrdersItemKitCustomDefault),
+          product: zod
+            .enum(["", "200", "250", "100", "85", "70", "58", "Customized"])
+            .default(commitKitsImportResponseOrdersItemKitProductDefault),
+          quantity: zod
+            .string()
+            .max(commitKitsImportResponseOrdersItemKitQuantityMax)
+            .default(commitKitsImportResponseOrdersItemKitQuantityDefault),
+          volume: zod
+            .string()
+            .max(commitKitsImportResponseOrdersItemKitVolumeMax)
+            .default(commitKitsImportResponseOrdersItemKitVolumeDefault),
+        })
+        .optional(),
+      lancets: zod
+        .string()
+        .max(commitKitsImportResponseOrdersItemLancetsMax)
+        .default(commitKitsImportResponseOrdersItemLancetsDefault),
+      mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+      mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      number: zod.string(),
+      orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+      orderFor: zod
+        .enum(["doctor", "mr"])
+        .default(commitKitsImportResponseOrdersItemOrderForDefault),
+      other: zod
+        .object({
+          address: zod
+            .object({
+              city: zod
+                .string()
+                .max(commitKitsImportResponseOrdersItemOtherAddressCityMax)
+                .default(
+                  commitKitsImportResponseOrdersItemOtherAddressCityDefault,
+                ),
+              country: zod
+                .string()
+                .max(commitKitsImportResponseOrdersItemOtherAddressCountryMax)
+                .default(
+                  commitKitsImportResponseOrdersItemOtherAddressCountryDefault,
+                ),
+              landmark: zod
+                .string()
+                .max(commitKitsImportResponseOrdersItemOtherAddressLandmarkMax)
+                .default(
+                  commitKitsImportResponseOrdersItemOtherAddressLandmarkDefault,
+                ),
+              line1: zod
+                .string()
+                .max(commitKitsImportResponseOrdersItemOtherAddressLine1Max)
+                .default(
+                  commitKitsImportResponseOrdersItemOtherAddressLine1Default,
+                ),
+              line2: zod
+                .string()
+                .max(commitKitsImportResponseOrdersItemOtherAddressLine2Max)
+                .default(
+                  commitKitsImportResponseOrdersItemOtherAddressLine2Default,
+                ),
+              pincode: zod
+                .string()
+                .max(commitKitsImportResponseOrdersItemOtherAddressPincodeMax)
+                .default(
+                  commitKitsImportResponseOrdersItemOtherAddressPincodeDefault,
+                ),
+              state: zod
+                .string()
+                .max(commitKitsImportResponseOrdersItemOtherAddressStateMax)
+                .default(
+                  commitKitsImportResponseOrdersItemOtherAddressStateDefault,
+                ),
+            })
+            .optional(),
+          name: zod
+            .string()
+            .max(commitKitsImportResponseOrdersItemOtherNameMax)
+            .default(commitKitsImportResponseOrdersItemOtherNameDefault),
+          phone: zod
+            .string()
+            .max(commitKitsImportResponseOrdersItemOtherPhoneMax)
+            .default(commitKitsImportResponseOrdersItemOtherPhoneDefault),
+        })
+        .optional(),
+      patient: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+      patientId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+      paymentStatus: zod
+        .enum(["Unpaid", "Paid", "Partial"])
+        .default(commitKitsImportResponseOrdersItemPaymentStatusDefault),
+      recipient: zod.record(zod.string(), zod.unknown()),
+      remarks: zod
+        .string()
+        .max(commitKitsImportResponseOrdersItemRemarksMax)
+        .default(commitKitsImportResponseOrdersItemRemarksDefault),
+      shipping: zod
+        .enum(["doctor", "mr", "other"])
+        .default(commitKitsImportResponseOrdersItemShippingDefault),
+      status: zod
+        .enum([
+          "Confirmed",
+          "In process",
+          "Shipped",
+          "Delivered",
+          "Rejected",
+          "Returned",
+        ])
+        .default(commitKitsImportResponseOrdersItemStatusDefault),
+      tray: zod
+        .string()
+        .max(commitKitsImportResponseOrdersItemTrayMax)
+        .default(commitKitsImportResponseOrdersItemTrayDefault),
+      version: zod.number().int(),
+    }),
+  ),
+});
+
+/**
+ * @summary Review
+ */
+
+export const reviewKitsImportBodyEntriesItemNumberDefault = ``;
+
+export const reviewKitsImportBodyEntriesItemValuesApplicatorsDefault = ``;
+
+export const reviewKitsImportBodyEntriesItemValuesKitCustomDefault = ``;
+
+export const reviewKitsImportBodyEntriesItemValuesKitProductDefault = ``;
+export const reviewKitsImportBodyEntriesItemValuesKitQuantityDefault = ``;
+
+export const reviewKitsImportBodyEntriesItemValuesKitVolumeDefault = ``;
+
+export const reviewKitsImportBodyEntriesItemValuesLancetsDefault = ``;
+
+export const reviewKitsImportBodyEntriesItemValuesOrderForDefault = `doctor`;
+export const reviewKitsImportBodyEntriesItemValuesOtherAddressCityDefault = ``;
+
+export const reviewKitsImportBodyEntriesItemValuesOtherAddressCountryDefault = ``;
+
+export const reviewKitsImportBodyEntriesItemValuesOtherAddressLandmarkDefault = ``;
+
+export const reviewKitsImportBodyEntriesItemValuesOtherAddressLine1Default = ``;
+
+export const reviewKitsImportBodyEntriesItemValuesOtherAddressLine2Default = ``;
+
+export const reviewKitsImportBodyEntriesItemValuesOtherAddressPincodeDefault = ``;
+
+export const reviewKitsImportBodyEntriesItemValuesOtherAddressStateDefault = ``;
+
+export const reviewKitsImportBodyEntriesItemValuesOtherNameDefault = ``;
+
+export const reviewKitsImportBodyEntriesItemValuesOtherPhoneDefault = ``;
+
+export const reviewKitsImportBodyEntriesItemValuesPaymentStatusDefault = `Unpaid`;
+export const reviewKitsImportBodyEntriesItemValuesRemarksDefault = ``;
+
+export const reviewKitsImportBodyEntriesItemValuesShippingDefault = `doctor`;
+export const reviewKitsImportBodyEntriesItemValuesStatusDefault = `Confirmed`;
+export const reviewKitsImportBodyEntriesItemValuesTrayDefault = ``;
+
+export const reviewKitsImportBodyReviewTokenDefault = ``;
+
+export const ReviewKitsImportBody = zod.object({
+  confirmUpdates: zod
+    .boolean()
+    .default(reviewKitsImportBodyConfirmUpdatesDefault),
+  entries: zod
+    .array(
+      zod.object({
+        expected_version: zod
+          .union([zod.number().int().min(1), zod.null()])
+          .optional(),
+        id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        number: zod
+          .string()
+          .max(reviewKitsImportBodyEntriesItemNumberMax)
+          .default(reviewKitsImportBodyEntriesItemNumberDefault),
+        values: zod.object({
+          applicators: zod
+            .string()
+            .max(reviewKitsImportBodyEntriesItemValuesApplicatorsMax)
+            .default(reviewKitsImportBodyEntriesItemValuesApplicatorsDefault),
+          attachmentIds: zod
+            .array(zod.string().uuid())
+            .max(reviewKitsImportBodyEntriesItemValuesAttachmentIdsMax)
+            .optional(),
+          doctorId: zod.string().uuid(),
+          kit: zod
+            .object({
+              custom: zod
+                .string()
+                .max(reviewKitsImportBodyEntriesItemValuesKitCustomMax)
+                .default(reviewKitsImportBodyEntriesItemValuesKitCustomDefault),
+              product: zod
+                .enum(["", "200", "250", "100", "85", "70", "58", "Customized"])
+                .default(
+                  reviewKitsImportBodyEntriesItemValuesKitProductDefault,
+                ),
+              quantity: zod
+                .string()
+                .max(reviewKitsImportBodyEntriesItemValuesKitQuantityMax)
+                .default(
+                  reviewKitsImportBodyEntriesItemValuesKitQuantityDefault,
+                ),
+              volume: zod
+                .string()
+                .max(reviewKitsImportBodyEntriesItemValuesKitVolumeMax)
+                .default(reviewKitsImportBodyEntriesItemValuesKitVolumeDefault),
+            })
+            .optional(),
+          lancets: zod
+            .string()
+            .max(reviewKitsImportBodyEntriesItemValuesLancetsMax)
+            .default(reviewKitsImportBodyEntriesItemValuesLancetsDefault),
+          mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+          orderFor: zod
+            .enum(["doctor", "mr"])
+            .default(reviewKitsImportBodyEntriesItemValuesOrderForDefault),
+          other: zod
+            .object({
+              address: zod
+                .object({
+                  city: zod
+                    .string()
+                    .max(
+                      reviewKitsImportBodyEntriesItemValuesOtherAddressCityMax,
+                    )
+                    .default(
+                      reviewKitsImportBodyEntriesItemValuesOtherAddressCityDefault,
+                    ),
+                  country: zod
+                    .string()
+                    .max(
+                      reviewKitsImportBodyEntriesItemValuesOtherAddressCountryMax,
+                    )
+                    .default(
+                      reviewKitsImportBodyEntriesItemValuesOtherAddressCountryDefault,
+                    ),
+                  landmark: zod
+                    .string()
+                    .max(
+                      reviewKitsImportBodyEntriesItemValuesOtherAddressLandmarkMax,
+                    )
+                    .default(
+                      reviewKitsImportBodyEntriesItemValuesOtherAddressLandmarkDefault,
+                    ),
+                  line1: zod
+                    .string()
+                    .max(
+                      reviewKitsImportBodyEntriesItemValuesOtherAddressLine1Max,
+                    )
+                    .default(
+                      reviewKitsImportBodyEntriesItemValuesOtherAddressLine1Default,
+                    ),
+                  line2: zod
+                    .string()
+                    .max(
+                      reviewKitsImportBodyEntriesItemValuesOtherAddressLine2Max,
+                    )
+                    .default(
+                      reviewKitsImportBodyEntriesItemValuesOtherAddressLine2Default,
+                    ),
+                  pincode: zod
+                    .string()
+                    .max(
+                      reviewKitsImportBodyEntriesItemValuesOtherAddressPincodeMax,
+                    )
+                    .default(
+                      reviewKitsImportBodyEntriesItemValuesOtherAddressPincodeDefault,
+                    ),
+                  state: zod
+                    .string()
+                    .max(
+                      reviewKitsImportBodyEntriesItemValuesOtherAddressStateMax,
+                    )
+                    .default(
+                      reviewKitsImportBodyEntriesItemValuesOtherAddressStateDefault,
+                    ),
+                })
+                .optional(),
+              name: zod
+                .string()
+                .max(reviewKitsImportBodyEntriesItemValuesOtherNameMax)
+                .default(reviewKitsImportBodyEntriesItemValuesOtherNameDefault),
+              phone: zod
+                .string()
+                .max(reviewKitsImportBodyEntriesItemValuesOtherPhoneMax)
+                .default(
+                  reviewKitsImportBodyEntriesItemValuesOtherPhoneDefault,
+                ),
+            })
+            .optional(),
+          patientId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          paymentStatus: zod
+            .enum(["Unpaid", "Paid", "Partial"])
+            .default(reviewKitsImportBodyEntriesItemValuesPaymentStatusDefault),
+          remarks: zod
+            .string()
+            .max(reviewKitsImportBodyEntriesItemValuesRemarksMax)
+            .default(reviewKitsImportBodyEntriesItemValuesRemarksDefault),
+          shipping: zod
+            .enum(["doctor", "mr", "other"])
+            .default(reviewKitsImportBodyEntriesItemValuesShippingDefault),
+          status: zod
+            .enum([
+              "Confirmed",
+              "In process",
+              "Shipped",
+              "Delivered",
+              "Rejected",
+              "Returned",
+            ])
+            .default(reviewKitsImportBodyEntriesItemValuesStatusDefault),
+          tray: zod
+            .string()
+            .max(reviewKitsImportBodyEntriesItemValuesTrayMax)
+            .default(reviewKitsImportBodyEntriesItemValuesTrayDefault),
+        }),
+      }),
+    )
+    .min(1)
+    .max(reviewKitsImportBodyEntriesMax),
+  idempotencyKey: zod.string().uuid(),
+  reviewToken: zod
+    .string()
+    .max(reviewKitsImportBodyReviewTokenMax)
+    .default(reviewKitsImportBodyReviewTokenDefault),
+});
+
+export const ReviewKitsImportResponse = zod.object({
+  additions: zod.number().int(),
+  entries: zod.array(zod.record(zod.string(), zod.unknown())),
+  patientAdditions: zod.number().int(),
+  rejected: zod.number().int(),
+  reviewToken: zod.string(),
+  unchanged: zod.number().int(),
+  updates: zod.number().int(),
+  valid: zod.boolean(),
+});
+
+/**
+ * @summary Policy
+ */
+export const KitsUploadPolicyResponse = zod.object({
+  maxBytes: zod.number().int(),
+  maxFiles: zod.number().int(),
+  types: zod.array(zod.string()),
+});
+
+/**
+ * @summary References
+ */
+export const KitsReferencesParams = zod.object({
+  kind: zod.enum(["patients", "doctors", "mrs"]),
+});
+
+export const kitsReferencesQuerySearchDefault = ``;
+
+export const KitsReferencesQueryParams = zod.object({
+  search: zod.coerce
+    .string()
+    .max(kitsReferencesQuerySearchMax)
+    .default(kitsReferencesQuerySearchDefault),
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(kitsReferencesQueryLimitMax)
+    .default(kitsReferencesQueryLimitDefault),
+  selected: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+});
+
+export const KitsReferencesResponse = zod.object({
+  items: zod.array(zod.record(zod.string(), zod.unknown())),
+  limit: zod.number().int(),
+  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
+});
+
+/**
+ * @summary Detail
+ */
+export const GetKitsOrderParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const getKitsOrderResponseApplicatorsDefault = ``;
+
+export const getKitsOrderResponseKitCustomDefault = ``;
+
+export const getKitsOrderResponseKitProductDefault = ``;
+export const getKitsOrderResponseKitQuantityDefault = ``;
+
+export const getKitsOrderResponseKitVolumeDefault = ``;
+
+export const getKitsOrderResponseLancetsDefault = ``;
+
+export const getKitsOrderResponseOrderForDefault = `doctor`;
+export const getKitsOrderResponseOtherAddressCityDefault = ``;
+
+export const getKitsOrderResponseOtherAddressCountryDefault = ``;
+
+export const getKitsOrderResponseOtherAddressLandmarkDefault = ``;
+
+export const getKitsOrderResponseOtherAddressLine1Default = ``;
+
+export const getKitsOrderResponseOtherAddressLine2Default = ``;
+
+export const getKitsOrderResponseOtherAddressPincodeDefault = ``;
+
+export const getKitsOrderResponseOtherAddressStateDefault = ``;
+
+export const getKitsOrderResponseOtherNameDefault = ``;
+
+export const getKitsOrderResponseOtherPhoneDefault = ``;
+
+export const getKitsOrderResponsePaymentStatusDefault = `Unpaid`;
+export const getKitsOrderResponseRemarksDefault = ``;
+
+export const getKitsOrderResponseShippingDefault = `doctor`;
+export const getKitsOrderResponseStatusDefault = `Confirmed`;
+export const getKitsOrderResponseTrayDefault = ``;
+
+export const GetKitsOrderResponse = zod.object({
+  applicators: zod
+    .string()
+    .max(getKitsOrderResponseApplicatorsMax)
+    .default(getKitsOrderResponseApplicatorsDefault),
+  attachmentIds: zod
+    .array(zod.string().uuid())
+    .max(getKitsOrderResponseAttachmentIdsMax)
+    .optional(),
+  attachments: zod.array(zod.record(zod.string(), zod.unknown())),
+  billing: zod.record(zod.string(), zod.unknown()),
+  date: zod.string(),
+  doctor: zod.record(zod.string(), zod.unknown()),
+  doctorId: zod.string().uuid(),
+  id: zod.string().uuid(),
+  kit: zod
+    .object({
+      custom: zod
+        .string()
+        .max(getKitsOrderResponseKitCustomMax)
+        .default(getKitsOrderResponseKitCustomDefault),
+      product: zod
+        .enum(["", "200", "250", "100", "85", "70", "58", "Customized"])
+        .default(getKitsOrderResponseKitProductDefault),
+      quantity: zod
+        .string()
+        .max(getKitsOrderResponseKitQuantityMax)
+        .default(getKitsOrderResponseKitQuantityDefault),
+      volume: zod
+        .string()
+        .max(getKitsOrderResponseKitVolumeMax)
+        .default(getKitsOrderResponseKitVolumeDefault),
+    })
+    .optional(),
+  lancets: zod
+    .string()
+    .max(getKitsOrderResponseLancetsMax)
+    .default(getKitsOrderResponseLancetsDefault),
+  mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  number: zod.string(),
+  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  orderFor: zod
+    .enum(["doctor", "mr"])
+    .default(getKitsOrderResponseOrderForDefault),
+  other: zod
+    .object({
+      address: zod
+        .object({
+          city: zod
+            .string()
+            .max(getKitsOrderResponseOtherAddressCityMax)
+            .default(getKitsOrderResponseOtherAddressCityDefault),
+          country: zod
+            .string()
+            .max(getKitsOrderResponseOtherAddressCountryMax)
+            .default(getKitsOrderResponseOtherAddressCountryDefault),
+          landmark: zod
+            .string()
+            .max(getKitsOrderResponseOtherAddressLandmarkMax)
+            .default(getKitsOrderResponseOtherAddressLandmarkDefault),
+          line1: zod
+            .string()
+            .max(getKitsOrderResponseOtherAddressLine1Max)
+            .default(getKitsOrderResponseOtherAddressLine1Default),
+          line2: zod
+            .string()
+            .max(getKitsOrderResponseOtherAddressLine2Max)
+            .default(getKitsOrderResponseOtherAddressLine2Default),
+          pincode: zod
+            .string()
+            .max(getKitsOrderResponseOtherAddressPincodeMax)
+            .default(getKitsOrderResponseOtherAddressPincodeDefault),
+          state: zod
+            .string()
+            .max(getKitsOrderResponseOtherAddressStateMax)
+            .default(getKitsOrderResponseOtherAddressStateDefault),
+        })
+        .optional(),
+      name: zod
+        .string()
+        .max(getKitsOrderResponseOtherNameMax)
+        .default(getKitsOrderResponseOtherNameDefault),
+      phone: zod
+        .string()
+        .max(getKitsOrderResponseOtherPhoneMax)
+        .default(getKitsOrderResponseOtherPhoneDefault),
+    })
+    .optional(),
+  patient: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  patientId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  paymentStatus: zod
+    .enum(["Unpaid", "Paid", "Partial"])
+    .default(getKitsOrderResponsePaymentStatusDefault),
+  recipient: zod.record(zod.string(), zod.unknown()),
+  remarks: zod
+    .string()
+    .max(getKitsOrderResponseRemarksMax)
+    .default(getKitsOrderResponseRemarksDefault),
+  shipping: zod
+    .enum(["doctor", "mr", "other"])
+    .default(getKitsOrderResponseShippingDefault),
+  status: zod
+    .enum([
+      "Confirmed",
+      "In process",
+      "Shipped",
+      "Delivered",
+      "Rejected",
+      "Returned",
+    ])
+    .default(getKitsOrderResponseStatusDefault),
+  tray: zod
+    .string()
+    .max(getKitsOrderResponseTrayMax)
+    .default(getKitsOrderResponseTrayDefault),
+  version: zod.number().int(),
 });
 
 /**
@@ -29854,6 +32423,7 @@ export const AssignPatientResponse = zod.object({
 export const UploadFileQueryParams = zod.object({
   patient_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
   mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  kits_owner_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
   category: zod.enum(["profile", "documents"]),
   filename: zod.coerce.string().min(1).max(uploadFileQueryFilenameMax),
 });
@@ -30126,871 +32696,3 @@ export const ResolvePortalHostnameResponse = zod.object({
  * @summary Version
  */
 export const GetVersionResponse = zod.unknown();
-
-export const ExportImmunotherapyOrdersQueryParams = zod.object({
-  search: zod.coerce
-    .string()
-    .max(exportImmunotherapyOrdersQuerySearchMax)
-    .default(exportImmunotherapyOrdersQuerySearchDefault),
-  status: zod
-    .union([
-      zod.enum([
-        "Confirmed",
-        "In process",
-        "Shipped",
-        "Delivered",
-        "Rejected",
-        "Returned",
-      ]),
-      zod.null(),
-    ])
-    .optional(),
-  from_date: zod.union([zod.date(), zod.null()]).optional(),
-  to_date: zod.union([zod.date(), zod.null()]).optional(),
-});
-
-export const reviewImmunotherapyImportBodyEntriesItemValuesAttachmentIdsMax = 10;
-
-export const editImmunotherapyOrderBodyRemarksDefault = ``;
-
-export const reviewImmunotherapyImportBodyEntriesMax = 500;
-
-/**
- * @summary Detail
- */
-export const GetImmunotherapyOrderParams = zod.object({
-  record_id: zod.coerce.string().uuid(),
-});
-
-export const listImmunotherapyOrdersQueryLimitMax = 100;
-
-export const UploadImmunotherapyPrescriptionBody = zod.object({
-  file: zod.instanceof(Blob),
-});
-
-/**
- * @summary Edit
- */
-export const EditImmunotherapyOrderParams = zod.object({
-  record_id: zod.coerce.string().uuid(),
-});
-
-export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemMrpRegExp =
-  new RegExp("^\\d{1,10}(?:\\.\\d{1,2})?$");
-
-export const editImmunotherapyOrderBodyGroupsItemItemsMax = 100;
-
-export const EditImmunotherapyOrderResponse = zod
-  .object({
-    attachments: zod.array(zod.record(zod.string(), zod.unknown())),
-    date: zod.string(),
-    doctor: zod.record(zod.string(), zod.unknown()),
-    doctorId: zod.string().uuid(),
-    dosage: zod.string(),
-    groups: zod.array(zod.record(zod.string(), zod.unknown())),
-    histamine: zod.string(),
-    id: zod.string().uuid(),
-    mr: zod.record(zod.string(), zod.unknown()),
-    mrId: zod.string().uuid(),
-    number: zod.string(),
-    patient: zod.record(zod.string(), zod.unknown()),
-    patientId: zod.string().uuid(),
-    recipient: zod.record(zod.string(), zod.unknown()),
-    remarks: zod.string(),
-    saline: zod.string(),
-    shipping: zod.string(),
-    status: zod.enum([
-      "Confirmed",
-      "In process",
-      "Shipped",
-      "Delivered",
-      "Rejected",
-      "Returned",
-    ]),
-    totalMinor: zod.number().int(),
-    version: zod.number().int(),
-  })
-  .describe("Encrypted document projected only after protected authorization.");
-
-export const listImmunotherapyOrdersQueryLimitDefault = 25;
-
-export const commitImmunotherapyImportBodyEntriesMax = 500;
-
-export const commitImmunotherapyImportBodyReviewTokenDefault = ``;
-
-export const reviewImmunotherapyImportBodyEntriesItemValuesHistamineRegExp =
-  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
-
-export const commitImmunotherapyImportBodyEntriesItemValuesGroupsMax = 100;
-
-export const reviewImmunotherapyImportBodyReviewTokenDefault = ``;
-
-export const editImmunotherapyOrderBodyGroupsItemMrpRegExp = new RegExp(
-  "^\\d{1,10}(?:\\.\\d{1,2})?$",
-);
-
-export const commitImmunotherapyImportBodyEntriesItemValuesRemarksMax = 4000;
-
-export const editImmunotherapyOrderBodyRemarksMax = 4000;
-
-export const exportImmunotherapyOrdersQuerySearchMax = 200;
-
-export const commitImmunotherapyImportBodyEntriesItemValuesStatusDefault = `Confirmed`;
-
-export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemIdMax = 100;
-
-export const ExportImmunotherapyOrdersResponse = zod.object({
-  counts: zod.record(zod.string(), zod.number().int()),
-  filtered: zod.union([zod.number().int(), zod.null()]),
-  items: zod.array(
-    zod
-      .object({
-        attachments: zod.array(zod.record(zod.string(), zod.unknown())),
-        date: zod.string(),
-        doctor: zod.record(zod.string(), zod.unknown()),
-        doctorId: zod.string().uuid(),
-        dosage: zod.string(),
-        groups: zod.array(zod.record(zod.string(), zod.unknown())),
-        histamine: zod.string(),
-        id: zod.string().uuid(),
-        mr: zod.record(zod.string(), zod.unknown()),
-        mrId: zod.string().uuid(),
-        number: zod.string(),
-        patient: zod.record(zod.string(), zod.unknown()),
-        patientId: zod.string().uuid(),
-        recipient: zod.record(zod.string(), zod.unknown()),
-        remarks: zod.string(),
-        saline: zod.string(),
-        shipping: zod.string(),
-        status: zod.enum([
-          "Confirmed",
-          "In process",
-          "Shipped",
-          "Delivered",
-          "Rejected",
-          "Returned",
-        ]),
-        totalMinor: zod.number().int(),
-        version: zod.number().int(),
-      })
-      .describe(
-        "Encrypted document projected only after protected authorization.",
-      ),
-  ),
-  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
-  total: zod.number().int(),
-});
-
-export const CreateImmunotherapyOrderBody = zod.object({
-  attachmentIds: zod
-    .array(zod.string().uuid())
-    .max(createImmunotherapyOrderBodyAttachmentIdsMax)
-    .optional(),
-  doctorId: zod.string().uuid(),
-  dosage: zod.enum([
-    "PD",
-    "DD",
-    "B1",
-    "B2",
-    "B3",
-    "B4",
-    "B5",
-    "B6",
-    "B7",
-    "B8",
-  ]),
-  expected_version: zod
-    .union([zod.number().int().min(1), zod.null()])
-    .optional(),
-  groups: zod
-    .array(
-      zod.object({
-        id: zod
-          .string()
-          .min(1)
-          .max(createImmunotherapyOrderBodyGroupsItemIdMax),
-        items: zod
-          .array(
-            zod.object({
-              allergenId: zod.string().uuid(),
-              result: zod
-                .string()
-                .regex(
-                  createImmunotherapyOrderBodyGroupsItemItemsItemResultRegExp,
-                ),
-            }),
-          )
-          .min(1)
-          .max(createImmunotherapyOrderBodyGroupsItemItemsMax),
-        mrp: zod
-          .string()
-          .regex(createImmunotherapyOrderBodyGroupsItemMrpRegExp),
-      }),
-    )
-    .min(1)
-    .max(createImmunotherapyOrderBodyGroupsMax),
-  histamine: zod.string().regex(createImmunotherapyOrderBodyHistamineRegExp),
-  idempotencyKey: zod.string().uuid(),
-  mrId: zod.string().uuid(),
-  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
-  patientId: zod.string().uuid(),
-  remarks: zod
-    .string()
-    .max(createImmunotherapyOrderBodyRemarksMax)
-    .default(createImmunotherapyOrderBodyRemarksDefault),
-  saline: zod.string().regex(createImmunotherapyOrderBodySalineRegExp),
-  shipping: zod.enum(["patient", "doctor"]),
-  status: zod
-    .enum([
-      "Confirmed",
-      "In process",
-      "Shipped",
-      "Delivered",
-      "Rejected",
-      "Returned",
-    ])
-    .default(createImmunotherapyOrderBodyStatusDefault),
-});
-
-export const createImmunotherapyOrderBodyGroupsItemIdMax = 100;
-
-export const immunotherapyReferencesQueryLimitMax = 100;
-
-export const ReviewImmunotherapyImportBody = zod.object({
-  confirmUpdates: zod
-    .boolean()
-    .default(reviewImmunotherapyImportBodyConfirmUpdatesDefault),
-  entries: zod
-    .array(
-      zod.object({
-        expected_version: zod
-          .union([zod.number().int().min(1), zod.null()])
-          .optional(),
-        id: zod.union([zod.string().uuid(), zod.null()]).optional(),
-        values: zod.object({
-          attachmentIds: zod
-            .array(zod.string().uuid())
-            .max(reviewImmunotherapyImportBodyEntriesItemValuesAttachmentIdsMax)
-            .optional(),
-          doctorId: zod.string().uuid(),
-          dosage: zod.enum([
-            "PD",
-            "DD",
-            "B1",
-            "B2",
-            "B3",
-            "B4",
-            "B5",
-            "B6",
-            "B7",
-            "B8",
-          ]),
-          groups: zod
-            .array(
-              zod.object({
-                id: zod
-                  .string()
-                  .min(1)
-                  .max(
-                    reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemIdMax,
-                  ),
-                items: zod
-                  .array(
-                    zod.object({
-                      allergenId: zod.string().uuid(),
-                      result: zod
-                        .string()
-                        .regex(
-                          reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemResultRegExp,
-                        ),
-                    }),
-                  )
-                  .min(1)
-                  .max(
-                    reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsMax,
-                  ),
-                mrp: zod
-                  .string()
-                  .regex(
-                    reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemMrpRegExp,
-                  ),
-              }),
-            )
-            .min(1)
-            .max(reviewImmunotherapyImportBodyEntriesItemValuesGroupsMax),
-          histamine: zod
-            .string()
-            .regex(
-              reviewImmunotherapyImportBodyEntriesItemValuesHistamineRegExp,
-            ),
-          mrId: zod.string().uuid(),
-          orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
-          patientId: zod.string().uuid(),
-          remarks: zod
-            .string()
-            .max(reviewImmunotherapyImportBodyEntriesItemValuesRemarksMax)
-            .default(
-              reviewImmunotherapyImportBodyEntriesItemValuesRemarksDefault,
-            ),
-          saline: zod
-            .string()
-            .regex(reviewImmunotherapyImportBodyEntriesItemValuesSalineRegExp),
-          shipping: zod.enum(["patient", "doctor"]),
-          status: zod
-            .enum([
-              "Confirmed",
-              "In process",
-              "Shipped",
-              "Delivered",
-              "Rejected",
-              "Returned",
-            ])
-            .default(
-              reviewImmunotherapyImportBodyEntriesItemValuesStatusDefault,
-            ),
-        }),
-      }),
-    )
-    .min(1)
-    .max(reviewImmunotherapyImportBodyEntriesMax),
-  idempotencyKey: zod.string().uuid(),
-  reviewToken: zod
-    .string()
-    .default(reviewImmunotherapyImportBodyReviewTokenDefault),
-});
-
-export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsMax = 100;
-
-export const editImmunotherapyOrderBodyStatusDefault = `Confirmed`;
-
-export const commitImmunotherapyImportBodyConfirmUpdatesDefault = false;
-
-export const commitImmunotherapyImportBodyEntriesItemValuesRemarksDefault = ``;
-
-export const ListImmunotherapyOrdersResponse = zod.object({
-  counts: zod.record(zod.string(), zod.number().int()),
-  filtered: zod.union([zod.number().int(), zod.null()]),
-  items: zod.array(
-    zod
-      .object({
-        attachments: zod.array(zod.record(zod.string(), zod.unknown())),
-        date: zod.string(),
-        doctor: zod.record(zod.string(), zod.unknown()),
-        doctorId: zod.string().uuid(),
-        dosage: zod.string(),
-        groups: zod.array(zod.record(zod.string(), zod.unknown())),
-        histamine: zod.string(),
-        id: zod.string().uuid(),
-        mr: zod.record(zod.string(), zod.unknown()),
-        mrId: zod.string().uuid(),
-        number: zod.string(),
-        patient: zod.record(zod.string(), zod.unknown()),
-        patientId: zod.string().uuid(),
-        recipient: zod.record(zod.string(), zod.unknown()),
-        remarks: zod.string(),
-        saline: zod.string(),
-        shipping: zod.string(),
-        status: zod.enum([
-          "Confirmed",
-          "In process",
-          "Shipped",
-          "Delivered",
-          "Rejected",
-          "Returned",
-        ]),
-        totalMinor: zod.number().int(),
-        version: zod.number().int(),
-      })
-      .describe(
-        "Encrypted document projected only after protected authorization.",
-      ),
-  ),
-  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
-  total: zod.number().int(),
-});
-
-export const reviewImmunotherapyImportBodyConfirmUpdatesDefault = false;
-
-export const immunotherapyReferencesQuerySearchMax = 200;
-
-/**
- * @summary Create
- */
-
-export const createImmunotherapyOrderBodyGroupsItemItemsItemResultRegExp =
-  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
-
-/**
- * @summary Commit
- */
-
-export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemResultRegExp =
-  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
-
-export const editImmunotherapyOrderBodyHistamineRegExp = new RegExp(
-  "^\\d{1,6}(?:\\.\\d{1,2})?$",
-);
-
-export const createImmunotherapyOrderBodyStatusDefault = `Confirmed`;
-
-export const createImmunotherapyOrderBodyGroupsItemItemsMax = 100;
-
-export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsMax = 100;
-
-export const editImmunotherapyOrderBodyGroupsMax = 100;
-
-/**
- * @summary Review
- */
-
-export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemResultRegExp =
-  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
-
-export const reviewImmunotherapyImportBodyEntriesItemValuesSalineRegExp =
-  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
-
-export const ReviewImmunotherapyImportResponse = zod.object({
-  additions: zod.number().int(),
-  entries: zod.array(zod.record(zod.string(), zod.unknown())),
-  patientAdditions: zod.number().int(),
-  rejected: zod.number().int(),
-  reviewToken: zod.string(),
-  unchanged: zod.number().int(),
-  updates: zod.number().int(),
-  valid: zod.boolean(),
-});
-
-/**
- * @summary Export
- */
-export const exportImmunotherapyOrdersQuerySearchDefault = ``;
-
-/**
- * @summary Policy
- */
-export const ImmunotherapyUploadPolicyResponse = zod.object({
-  maxBytes: zod.number().int(),
-  maxFiles: zod.number().int(),
-  types: zod.array(zod.string()),
-});
-
-export const createImmunotherapyOrderBodyRemarksDefault = ``;
-
-export const UploadImmunotherapyPrescriptionResponse = zod.object({
-  category: zod.enum(["profile", "documents"]),
-  checksum: zod.union([zod.string(), zod.null()]),
-  content_type: zod.string(),
-  created_at: zod.coerce.date(),
-  display_name: zod.string(),
-  id: zod.string().uuid(),
-  mr_id: zod.union([zod.string().uuid(), zod.null()]),
-  patient_id: zod.union([zod.string().uuid(), zod.null()]),
-  scanner_status: zod.enum([
-    "pending",
-    "clean",
-    "infected",
-    "unavailable",
-    "error",
-  ]),
-  size: zod.number().int(),
-  state: zod.enum([
-    "uploading",
-    "quarantined",
-    "verified",
-    "rejected",
-    "pending_delete",
-    "deleted",
-  ]),
-  updated_at: zod.coerce.date(),
-  version: zod.number().int(),
-});
-
-/**
- * @summary References
- */
-export const ImmunotherapyReferencesParams = zod.object({
-  kind: zod.enum(["patients", "doctors", "mrs", "allergens"]),
-});
-
-export const reviewImmunotherapyImportBodyEntriesItemValuesRemarksMax = 4000;
-
-export const createImmunotherapyOrderBodyAttachmentIdsMax = 10;
-
-export const editImmunotherapyOrderBodyAttachmentIdsMax = 10;
-
-export const reviewImmunotherapyImportBodyEntriesItemValuesStatusDefault = `Confirmed`;
-
-export const immunotherapyReferencesQueryLimitDefault = 25;
-
-export const ListImmunotherapyOrdersQueryParams = zod.object({
-  search: zod.coerce
-    .string()
-    .max(listImmunotherapyOrdersQuerySearchMax)
-    .default(listImmunotherapyOrdersQuerySearchDefault),
-  status: zod
-    .union([
-      zod.enum([
-        "Confirmed",
-        "In process",
-        "Shipped",
-        "Delivered",
-        "Rejected",
-        "Returned",
-      ]),
-      zod.null(),
-    ])
-    .optional(),
-  from_date: zod.union([zod.date(), zod.null()]).optional(),
-  to_date: zod.union([zod.date(), zod.null()]).optional(),
-  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
-  limit: zod.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(listImmunotherapyOrdersQueryLimitMax)
-    .default(listImmunotherapyOrdersQueryLimitDefault),
-});
-
-export const createImmunotherapyOrderBodyRemarksMax = 4000;
-
-export const GetImmunotherapyOrderResponse = zod
-  .object({
-    attachments: zod.array(zod.record(zod.string(), zod.unknown())),
-    date: zod.string(),
-    doctor: zod.record(zod.string(), zod.unknown()),
-    doctorId: zod.string().uuid(),
-    dosage: zod.string(),
-    groups: zod.array(zod.record(zod.string(), zod.unknown())),
-    histamine: zod.string(),
-    id: zod.string().uuid(),
-    mr: zod.record(zod.string(), zod.unknown()),
-    mrId: zod.string().uuid(),
-    number: zod.string(),
-    patient: zod.record(zod.string(), zod.unknown()),
-    patientId: zod.string().uuid(),
-    recipient: zod.record(zod.string(), zod.unknown()),
-    remarks: zod.string(),
-    saline: zod.string(),
-    shipping: zod.string(),
-    status: zod.enum([
-      "Confirmed",
-      "In process",
-      "Shipped",
-      "Delivered",
-      "Rejected",
-      "Returned",
-    ]),
-    totalMinor: zod.number().int(),
-    version: zod.number().int(),
-  })
-  .describe("Encrypted document projected only after protected authorization.");
-
-export const commitImmunotherapyImportBodyEntriesItemValuesGroupsItemMrpRegExp =
-  new RegExp("^\\d{1,10}(?:\\.\\d{1,2})?$");
-
-export const immunotherapyReferencesQuerySearchDefault = ``;
-
-export const commitImmunotherapyImportBodyEntriesItemValuesHistamineRegExp =
-  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
-
-export const commitImmunotherapyImportBodyEntriesItemValuesSalineRegExp =
-  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
-
-export const CommitImmunotherapyImportBody = zod.object({
-  confirmUpdates: zod
-    .boolean()
-    .default(commitImmunotherapyImportBodyConfirmUpdatesDefault),
-  entries: zod
-    .array(
-      zod.object({
-        expected_version: zod
-          .union([zod.number().int().min(1), zod.null()])
-          .optional(),
-        id: zod.union([zod.string().uuid(), zod.null()]).optional(),
-        values: zod.object({
-          attachmentIds: zod
-            .array(zod.string().uuid())
-            .max(commitImmunotherapyImportBodyEntriesItemValuesAttachmentIdsMax)
-            .optional(),
-          doctorId: zod.string().uuid(),
-          dosage: zod.enum([
-            "PD",
-            "DD",
-            "B1",
-            "B2",
-            "B3",
-            "B4",
-            "B5",
-            "B6",
-            "B7",
-            "B8",
-          ]),
-          groups: zod
-            .array(
-              zod.object({
-                id: zod
-                  .string()
-                  .min(1)
-                  .max(
-                    commitImmunotherapyImportBodyEntriesItemValuesGroupsItemIdMax,
-                  ),
-                items: zod
-                  .array(
-                    zod.object({
-                      allergenId: zod.string().uuid(),
-                      result: zod
-                        .string()
-                        .regex(
-                          commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsItemResultRegExp,
-                        ),
-                    }),
-                  )
-                  .min(1)
-                  .max(
-                    commitImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsMax,
-                  ),
-                mrp: zod
-                  .string()
-                  .regex(
-                    commitImmunotherapyImportBodyEntriesItemValuesGroupsItemMrpRegExp,
-                  ),
-              }),
-            )
-            .min(1)
-            .max(commitImmunotherapyImportBodyEntriesItemValuesGroupsMax),
-          histamine: zod
-            .string()
-            .regex(
-              commitImmunotherapyImportBodyEntriesItemValuesHistamineRegExp,
-            ),
-          mrId: zod.string().uuid(),
-          orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
-          patientId: zod.string().uuid(),
-          remarks: zod
-            .string()
-            .max(commitImmunotherapyImportBodyEntriesItemValuesRemarksMax)
-            .default(
-              commitImmunotherapyImportBodyEntriesItemValuesRemarksDefault,
-            ),
-          saline: zod
-            .string()
-            .regex(commitImmunotherapyImportBodyEntriesItemValuesSalineRegExp),
-          shipping: zod.enum(["patient", "doctor"]),
-          status: zod
-            .enum([
-              "Confirmed",
-              "In process",
-              "Shipped",
-              "Delivered",
-              "Rejected",
-              "Returned",
-            ])
-            .default(
-              commitImmunotherapyImportBodyEntriesItemValuesStatusDefault,
-            ),
-        }),
-      }),
-    )
-    .min(1)
-    .max(commitImmunotherapyImportBodyEntriesMax),
-  idempotencyKey: zod.string().uuid(),
-  reviewToken: zod
-    .string()
-    .default(commitImmunotherapyImportBodyReviewTokenDefault),
-});
-
-/**
- * @summary Prescription
- */
-export const UploadImmunotherapyPrescriptionParams = zod.object({
-  patient_id: zod.coerce.string().uuid(),
-});
-
-export const ImmunotherapyReferencesResponse = zod.object({
-  items: zod.array(zod.record(zod.string(), zod.unknown())),
-  limit: zod.number().int(),
-  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
-});
-
-export const editImmunotherapyOrderBodyGroupsItemItemsItemResultRegExp =
-  new RegExp("^\\d{1,6}(?:\\.\\d{1,2})?$");
-
-export const EditImmunotherapyOrderBody = zod.object({
-  attachmentIds: zod
-    .array(zod.string().uuid())
-    .max(editImmunotherapyOrderBodyAttachmentIdsMax)
-    .optional(),
-  doctorId: zod.string().uuid(),
-  dosage: zod.enum([
-    "PD",
-    "DD",
-    "B1",
-    "B2",
-    "B3",
-    "B4",
-    "B5",
-    "B6",
-    "B7",
-    "B8",
-  ]),
-  expected_version: zod
-    .union([zod.number().int().min(1), zod.null()])
-    .optional(),
-  groups: zod
-    .array(
-      zod.object({
-        id: zod.string().min(1).max(editImmunotherapyOrderBodyGroupsItemIdMax),
-        items: zod
-          .array(
-            zod.object({
-              allergenId: zod.string().uuid(),
-              result: zod
-                .string()
-                .regex(
-                  editImmunotherapyOrderBodyGroupsItemItemsItemResultRegExp,
-                ),
-            }),
-          )
-          .min(1)
-          .max(editImmunotherapyOrderBodyGroupsItemItemsMax),
-        mrp: zod.string().regex(editImmunotherapyOrderBodyGroupsItemMrpRegExp),
-      }),
-    )
-    .min(1)
-    .max(editImmunotherapyOrderBodyGroupsMax),
-  histamine: zod.string().regex(editImmunotherapyOrderBodyHistamineRegExp),
-  idempotencyKey: zod.string().uuid(),
-  mrId: zod.string().uuid(),
-  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
-  patientId: zod.string().uuid(),
-  remarks: zod
-    .string()
-    .max(editImmunotherapyOrderBodyRemarksMax)
-    .default(editImmunotherapyOrderBodyRemarksDefault),
-  saline: zod.string().regex(editImmunotherapyOrderBodySalineRegExp),
-  shipping: zod.enum(["patient", "doctor"]),
-  status: zod
-    .enum([
-      "Confirmed",
-      "In process",
-      "Shipped",
-      "Delivered",
-      "Rejected",
-      "Returned",
-    ])
-    .default(editImmunotherapyOrderBodyStatusDefault),
-});
-
-export const createImmunotherapyOrderBodySalineRegExp = new RegExp(
-  "^\\d{1,6}(?:\\.\\d{1,2})?$",
-);
-
-export const editImmunotherapyOrderBodySalineRegExp = new RegExp(
-  "^\\d{1,6}(?:\\.\\d{1,2})?$",
-);
-
-export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemIdMax = 100;
-
-export const ImmunotherapyReferencesQueryParams = zod.object({
-  search: zod.coerce
-    .string()
-    .max(immunotherapyReferencesQuerySearchMax)
-    .default(immunotherapyReferencesQuerySearchDefault),
-  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
-  limit: zod.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(immunotherapyReferencesQueryLimitMax)
-    .default(immunotherapyReferencesQueryLimitDefault),
-  selected: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
-});
-
-export const CreateImmunotherapyOrderResponse = zod
-  .object({
-    attachments: zod.array(zod.record(zod.string(), zod.unknown())),
-    date: zod.string(),
-    doctor: zod.record(zod.string(), zod.unknown()),
-    doctorId: zod.string().uuid(),
-    dosage: zod.string(),
-    groups: zod.array(zod.record(zod.string(), zod.unknown())),
-    histamine: zod.string(),
-    id: zod.string().uuid(),
-    mr: zod.record(zod.string(), zod.unknown()),
-    mrId: zod.string().uuid(),
-    number: zod.string(),
-    patient: zod.record(zod.string(), zod.unknown()),
-    patientId: zod.string().uuid(),
-    recipient: zod.record(zod.string(), zod.unknown()),
-    remarks: zod.string(),
-    saline: zod.string(),
-    shipping: zod.string(),
-    status: zod.enum([
-      "Confirmed",
-      "In process",
-      "Shipped",
-      "Delivered",
-      "Rejected",
-      "Returned",
-    ]),
-    totalMinor: zod.number().int(),
-    version: zod.number().int(),
-  })
-  .describe("Encrypted document projected only after protected authorization.");
-
-export const reviewImmunotherapyImportBodyEntriesItemValuesRemarksDefault = ``;
-
-export const editImmunotherapyOrderBodyGroupsItemIdMax = 100;
-
-export const createImmunotherapyOrderBodyGroupsMax = 100;
-
-export const reviewImmunotherapyImportBodyEntriesItemValuesGroupsItemItemsMax = 100;
-
-export const createImmunotherapyOrderBodyHistamineRegExp = new RegExp(
-  "^\\d{1,6}(?:\\.\\d{1,2})?$",
-);
-
-export const CommitImmunotherapyImportResponse = zod.object({
-  imported: zod.number().int(),
-  orders: zod.array(
-    zod
-      .object({
-        attachments: zod.array(zod.record(zod.string(), zod.unknown())),
-        date: zod.string(),
-        doctor: zod.record(zod.string(), zod.unknown()),
-        doctorId: zod.string().uuid(),
-        dosage: zod.string(),
-        groups: zod.array(zod.record(zod.string(), zod.unknown())),
-        histamine: zod.string(),
-        id: zod.string().uuid(),
-        mr: zod.record(zod.string(), zod.unknown()),
-        mrId: zod.string().uuid(),
-        number: zod.string(),
-        patient: zod.record(zod.string(), zod.unknown()),
-        patientId: zod.string().uuid(),
-        recipient: zod.record(zod.string(), zod.unknown()),
-        remarks: zod.string(),
-        saline: zod.string(),
-        shipping: zod.string(),
-        status: zod.enum([
-          "Confirmed",
-          "In process",
-          "Shipped",
-          "Delivered",
-          "Rejected",
-          "Returned",
-        ]),
-        totalMinor: zod.number().int(),
-        version: zod.number().int(),
-      })
-      .describe(
-        "Encrypted document projected only after protected authorization.",
-      ),
-  ),
-});
-
-export const createImmunotherapyOrderBodyGroupsItemMrpRegExp = new RegExp(
-  "^\\d{1,10}(?:\\.\\d{1,2})?$",
-);
-
-export const commitImmunotherapyImportBodyEntriesItemValuesAttachmentIdsMax = 10;

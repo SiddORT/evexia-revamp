@@ -73,7 +73,7 @@ async def upload(
     settings: Settings = Depends(get_settings), storage_factory=Depends(storage_dependency),
 ):
     # Live permission before quota, body read, adapter construction or calls.
-    await run_in_threadpool(authorize, db, identity, "upload", body.patient_id, body.mr_id)
+    await run_in_threadpool(authorize, db, identity, "upload", body.patient_id, body.mr_id, kits_owner_id=body.kits_owner_id)
     file_id = await run_in_threadpool(service.reserve, db, identity, body,
                                      request.headers.get("content-type", ""), settings, request.state.request_id)
     request.state.file_id = str(file_id)
@@ -174,6 +174,7 @@ async def replacement(file_id: uuid.UUID, request: Request, body: Annotated[Repl
                       settings: Settings = Depends(get_settings), storage_factory=Depends(storage_dependency)):
     original = await run_in_threadpool(service.get_record, db, identity, file_id, "replace", readable=True)
     upload_fields = UploadRequest(patient_id=original.patient_id, mr_id=original.mr_id,
+                                  kits_owner_id=original.kits_owner_id,
                                   category=original.category, filename=body.filename)
     new_id = await run_in_threadpool(service.reserve, db, identity, upload_fields, request.headers.get("content-type", ""),
                                     settings, request.state.request_id, replaces_id=file_id, expected_version=body.expected_version)

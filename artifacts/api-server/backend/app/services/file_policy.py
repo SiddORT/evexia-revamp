@@ -15,9 +15,15 @@ class FileError(Exception):
         super().__init__(message)
 
 
-def authorize(db: Session, identity: Identity, action: str, patient_id, mr_id, *, lock=False):
+def authorize(db: Session, identity: Identity, action: str, patient_id, mr_id, *, lock=False, kits_owner_id=None):
     current = revalidate_identity(db, identity, lock=lock)
     admin_access = "admin.access" in current.permissions
+    if kits_owner_id:
+        if not admin_access or current.user.system_role != "super_admin" or action not in ADMIN_FILE_ACTIONS:
+            raise FileError(403, "access_denied", "Access denied")
+        if action in ("upload", "replace") and kits_owner_id != current.user.id:
+            raise FileError(403, "access_denied", "Access denied")
+        return current
     if admin_access:
         allowed_actions = ADMIN_FILE_ACTIONS
     elif current.user.system_role == "mr":

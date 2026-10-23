@@ -3,7 +3,7 @@ import { ChevronDown, Filter, RefreshCw } from 'lucide-react';
 import MasterFilterReset from './MasterFilterReset.jsx';
 import './orderTransfers.css';
 
-export default function OrderListingFilters({ search, children, onRefresh, onReset, onApply, resetDisabled, resetTestId, applyTestId, masterDisclosure = false }) {
+export default function OrderListingFilters({ search, children, onRefresh, onReset, onApply, resetDisabled, resetTestId, applyTestId, masterDisclosure = false, refreshLabel = 'Refresh orders from current session' }) {
   const [expanded, setExpanded] = useState(false);
   const [validationError, setValidationError] = useState('');
   const id = useId();
@@ -20,7 +20,7 @@ export default function OrderListingFilters({ search, children, onRefresh, onRes
   return <Wrapper className={`order-listing-filters${masterDisclosure ? ' order-listing-filters--master' : ''}`} onSubmit={onApply ? (event) => { setValidationError(''); onApply(event); } : undefined} onInvalidCapture={onApply ? revealInvalid : undefined} aria-label="Order filters">
     <div className="order-listing-toolbar">
       <div className="order-listing-search">
-        <button type="button" className="admin-button admin-button--secondary" onClick={onRefresh} aria-label="Refresh orders from current session"><RefreshCw size={15} aria-hidden="true" />Refresh</button>
+        <button type="button" className="admin-button admin-button--secondary" onClick={onRefresh} aria-label={refreshLabel}><RefreshCw size={15} aria-hidden="true" />Refresh</button>
         {search}
       </div>
       {!masterDisclosure && <button type="button" className="admin-button admin-button--secondary" aria-expanded={expanded} aria-controls={id} onClick={() => setExpanded((v) => !v)}>

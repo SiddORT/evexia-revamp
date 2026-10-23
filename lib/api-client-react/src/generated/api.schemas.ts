@@ -2698,6 +2698,251 @@ export interface ImmItem {
   /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
   result: string;
 }
+
+export interface ImmBottle {
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  id: string;
+  /**
+   * @minItems 1
+   * @maxItems 100
+   */
+  items: ImmItem[];
+  /** @pattern ^\d{1,10}(?:\.\d{1,2})?$ */
+  mrp: string;
+}
+
+export type ImmInputDosage =
+  (typeof ImmInputDosage)[keyof typeof ImmInputDosage];
+
+export const ImmInputDosage = {
+  PD: "PD",
+  DD: "DD",
+  B1: "B1",
+  B2: "B2",
+  B3: "B3",
+  B4: "B4",
+  B5: "B5",
+  B6: "B6",
+  B7: "B7",
+  B8: "B8",
+} as const;
+
+export type ImmInputShipping =
+  (typeof ImmInputShipping)[keyof typeof ImmInputShipping];
+
+export const ImmInputShipping = {
+  patient: "patient",
+  doctor: "doctor",
+} as const;
+
+export type ImmInputStatus =
+  (typeof ImmInputStatus)[keyof typeof ImmInputStatus];
+
+export const ImmInputStatus = {
+  Confirmed: "Confirmed",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export interface ImmInput {
+  /** @maxItems 10 */
+  attachmentIds?: string[];
+  doctorId: string;
+  dosage: ImmInputDosage;
+  /**
+   * @minItems 1
+   * @maxItems 100
+   */
+  groups: ImmBottle[];
+  /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
+  histamine: string;
+  mrId: string;
+  orderDate?: string | null;
+  patientId: string;
+  /** @maxLength 4000 */
+  remarks?: string;
+  /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
+  saline: string;
+  shipping: ImmInputShipping;
+  status?: ImmInputStatus;
+}
+
+export interface ImmImportEntry {
+  expected_version?: number | null;
+  id?: string | null;
+  values: ImmInput;
+}
+
+export interface ImmImport {
+  confirmUpdates?: boolean;
+  /**
+   * @minItems 1
+   * @maxItems 500
+   */
+  entries: ImmImportEntry[];
+  idempotencyKey: string;
+  reviewToken?: string;
+}
+
+export type ImmRecordStatus =
+  (typeof ImmRecordStatus)[keyof typeof ImmRecordStatus];
+
+export const ImmRecordStatus = {
+  Confirmed: "Confirmed",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export type ImmRecordAttachmentsItem = { [key: string]: unknown };
+
+export type ImmRecordDoctor = { [key: string]: unknown };
+
+export type ImmRecordGroupsItem = { [key: string]: unknown };
+
+export type ImmRecordMr = { [key: string]: unknown };
+
+export type ImmRecordPatient = { [key: string]: unknown };
+
+export type ImmRecordRecipient = { [key: string]: unknown };
+
+/**
+ * Encrypted document projected only after protected authorization.
+ */
+export interface ImmRecord {
+  attachments: ImmRecordAttachmentsItem[];
+  date: string;
+  doctor: ImmRecordDoctor;
+  doctorId: string;
+  dosage: string;
+  groups: ImmRecordGroupsItem[];
+  histamine: string;
+  id: string;
+  mr: ImmRecordMr;
+  mrId: string;
+  number: string;
+  patient: ImmRecordPatient;
+  patientId: string;
+  recipient: ImmRecordRecipient;
+  remarks: string;
+  saline: string;
+  shipping: string;
+  status: ImmRecordStatus;
+  totalMinor: number;
+  version: number;
+}
+
+export interface ImmImportResult {
+  imported: number;
+  orders: ImmRecord[];
+}
+
+export type ImmImportReviewEntriesItem = { [key: string]: unknown };
+
+export interface ImmImportReview {
+  additions: number;
+  entries: ImmImportReviewEntriesItem[];
+  patientAdditions: number;
+  rejected: number;
+  reviewToken: string;
+  unchanged: number;
+  updates: number;
+  valid: boolean;
+}
+
+export type ImmPageCounts = { [key: string]: number };
+
+export interface ImmPage {
+  counts: ImmPageCounts;
+  filtered: number | null;
+  items: ImmRecord[];
+  nextCursor: string | null;
+  total: number;
+}
+
+export type ImmReferencePageItemsItem = { [key: string]: unknown };
+
+export interface ImmReferencePage {
+  items: ImmReferencePageItemsItem[];
+  limit: number;
+  nextCursor: string | null;
+}
+
+export interface ImmUploadPolicy {
+  maxBytes: number;
+  maxFiles: number;
+  types: string[];
+}
+
+export type ImmWriteDosage =
+  (typeof ImmWriteDosage)[keyof typeof ImmWriteDosage];
+
+export const ImmWriteDosage = {
+  PD: "PD",
+  DD: "DD",
+  B1: "B1",
+  B2: "B2",
+  B3: "B3",
+  B4: "B4",
+  B5: "B5",
+  B6: "B6",
+  B7: "B7",
+  B8: "B8",
+} as const;
+
+export type ImmWriteShipping =
+  (typeof ImmWriteShipping)[keyof typeof ImmWriteShipping];
+
+export const ImmWriteShipping = {
+  patient: "patient",
+  doctor: "doctor",
+} as const;
+
+export type ImmWriteStatus =
+  (typeof ImmWriteStatus)[keyof typeof ImmWriteStatus];
+
+export const ImmWriteStatus = {
+  Confirmed: "Confirmed",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export interface ImmWrite {
+  /** @maxItems 10 */
+  attachmentIds?: string[];
+  doctorId: string;
+  dosage: ImmWriteDosage;
+  expected_version?: number | null;
+  /**
+   * @minItems 1
+   * @maxItems 100
+   */
+  groups: ImmBottle[];
+  /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
+  histamine: string;
+  idempotencyKey: string;
+  mrId: string;
+  orderDate?: string | null;
+  patientId: string;
+  /** @maxLength 4000 */
+  remarks?: string;
+  /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
+  saline: string;
+  shipping: ImmWriteShipping;
+  status?: ImmWriteStatus;
+}
+
 export interface InventoryComponentProvenance {
   after: string;
   batchNo: string | null;
@@ -2939,6 +3184,296 @@ export interface InvitationResult {
   id: string;
   message: string;
   status: InvitationResultStatus;
+}
+
+export interface KitsAddress {
+  /** @maxLength 200 */
+  city?: string;
+  /** @maxLength 200 */
+  country?: string;
+  /** @maxLength 1000 */
+  landmark?: string;
+  /** @maxLength 1000 */
+  line1?: string;
+  /** @maxLength 1000 */
+  line2?: string;
+  /** @maxLength 32 */
+  pincode?: string;
+  /** @maxLength 200 */
+  state?: string;
+}
+
+export type KitsConfigurationProduct =
+  (typeof KitsConfigurationProduct)[keyof typeof KitsConfigurationProduct];
+
+export const KitsConfigurationProduct = {
+  "": "",
+  NUMBER_200: "200",
+  NUMBER_250: "250",
+  NUMBER_100: "100",
+  NUMBER_85: "85",
+  NUMBER_70: "70",
+  NUMBER_58: "58",
+  Customized: "Customized",
+} as const;
+
+export interface KitsConfiguration {
+  /** @maxLength 32 */
+  custom?: string;
+  product?: KitsConfigurationProduct;
+  /** @maxLength 12 */
+  quantity?: string;
+  /** @maxLength 32 */
+  volume?: string;
+}
+
+export type KitsInputOrderFor =
+  (typeof KitsInputOrderFor)[keyof typeof KitsInputOrderFor];
+
+export const KitsInputOrderFor = {
+  doctor: "doctor",
+  mr: "mr",
+} as const;
+
+export interface KitsRecipient {
+  address?: KitsAddress;
+  /** @maxLength 200 */
+  name?: string;
+  /** @maxLength 25 */
+  phone?: string;
+}
+
+export type KitsInputPaymentStatus =
+  (typeof KitsInputPaymentStatus)[keyof typeof KitsInputPaymentStatus];
+
+export const KitsInputPaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export type KitsInputShipping =
+  (typeof KitsInputShipping)[keyof typeof KitsInputShipping];
+
+export const KitsInputShipping = {
+  doctor: "doctor",
+  mr: "mr",
+  other: "other",
+} as const;
+
+export type KitsInputStatus =
+  (typeof KitsInputStatus)[keyof typeof KitsInputStatus];
+
+export const KitsInputStatus = {
+  Confirmed: "Confirmed",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export interface KitsInput {
+  /** @maxLength 12 */
+  applicators?: string;
+  /** @maxItems 10 */
+  attachmentIds?: string[];
+  doctorId: string;
+  kit?: KitsConfiguration;
+  /** @maxLength 12 */
+  lancets?: string;
+  mrId?: string | null;
+  orderDate?: string | null;
+  orderFor?: KitsInputOrderFor;
+  other?: KitsRecipient;
+  patientId?: string | null;
+  paymentStatus?: KitsInputPaymentStatus;
+  /** @maxLength 4000 */
+  remarks?: string;
+  shipping?: KitsInputShipping;
+  status?: KitsInputStatus;
+  /** @maxLength 12 */
+  tray?: string;
+}
+
+export interface KitsImportEntry {
+  expected_version?: number | null;
+  id?: string | null;
+  /** @maxLength 48 */
+  number?: string;
+  values: KitsInput;
+}
+
+export interface KitsImport {
+  confirmUpdates?: boolean;
+  /**
+   * @minItems 1
+   * @maxItems 500
+   */
+  entries: KitsImportEntry[];
+  idempotencyKey: string;
+  /** @maxLength 256 */
+  reviewToken?: string;
+}
+
+export type KitsRecordOrderFor =
+  (typeof KitsRecordOrderFor)[keyof typeof KitsRecordOrderFor];
+
+export const KitsRecordOrderFor = {
+  doctor: "doctor",
+  mr: "mr",
+} as const;
+
+export type KitsRecordPaymentStatus =
+  (typeof KitsRecordPaymentStatus)[keyof typeof KitsRecordPaymentStatus];
+
+export const KitsRecordPaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export type KitsRecordShipping =
+  (typeof KitsRecordShipping)[keyof typeof KitsRecordShipping];
+
+export const KitsRecordShipping = {
+  doctor: "doctor",
+  mr: "mr",
+  other: "other",
+} as const;
+
+export type KitsRecordStatus =
+  (typeof KitsRecordStatus)[keyof typeof KitsRecordStatus];
+
+export const KitsRecordStatus = {
+  Confirmed: "Confirmed",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export type KitsRecordAttachmentsItem = { [key: string]: unknown };
+
+export type KitsRecordBilling = { [key: string]: unknown };
+
+export type KitsRecordDoctor = { [key: string]: unknown };
+
+export type KitsRecordMr = { [key: string]: unknown } | null;
+
+export type KitsRecordPatient = { [key: string]: unknown } | null;
+
+export type KitsRecordRecipient = { [key: string]: unknown };
+
+export interface KitsRecord {
+  /** @maxLength 12 */
+  applicators?: string;
+  /** @maxItems 10 */
+  attachmentIds?: string[];
+  attachments: KitsRecordAttachmentsItem[];
+  billing: KitsRecordBilling;
+  date: string;
+  doctor: KitsRecordDoctor;
+  doctorId: string;
+  id: string;
+  kit?: KitsConfiguration;
+  /** @maxLength 12 */
+  lancets?: string;
+  mr: KitsRecordMr;
+  mrId?: string | null;
+  number: string;
+  orderDate?: string | null;
+  orderFor?: KitsRecordOrderFor;
+  other?: KitsRecipient;
+  patient: KitsRecordPatient;
+  patientId?: string | null;
+  paymentStatus?: KitsRecordPaymentStatus;
+  recipient: KitsRecordRecipient;
+  /** @maxLength 4000 */
+  remarks?: string;
+  shipping?: KitsRecordShipping;
+  status?: KitsRecordStatus;
+  /** @maxLength 12 */
+  tray?: string;
+  version: number;
+}
+
+export interface KitsImportResult {
+  imported: number;
+  orders: KitsRecord[];
+}
+
+export type KitsPageCounts = { [key: string]: number };
+
+export interface KitsPage {
+  counts: KitsPageCounts;
+  filtered: number | null;
+  items: KitsRecord[];
+  nextCursor: string | null;
+  total: number;
+}
+
+export type KitsWriteOrderFor =
+  (typeof KitsWriteOrderFor)[keyof typeof KitsWriteOrderFor];
+
+export const KitsWriteOrderFor = {
+  doctor: "doctor",
+  mr: "mr",
+} as const;
+
+export type KitsWritePaymentStatus =
+  (typeof KitsWritePaymentStatus)[keyof typeof KitsWritePaymentStatus];
+
+export const KitsWritePaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export type KitsWriteShipping =
+  (typeof KitsWriteShipping)[keyof typeof KitsWriteShipping];
+
+export const KitsWriteShipping = {
+  doctor: "doctor",
+  mr: "mr",
+  other: "other",
+} as const;
+
+export type KitsWriteStatus =
+  (typeof KitsWriteStatus)[keyof typeof KitsWriteStatus];
+
+export const KitsWriteStatus = {
+  Confirmed: "Confirmed",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export interface KitsWrite {
+  /** @maxLength 12 */
+  applicators?: string;
+  /** @maxItems 10 */
+  attachmentIds?: string[];
+  doctorId: string;
+  idempotencyKey: string;
+  kit?: KitsConfiguration;
+  /** @maxLength 12 */
+  lancets?: string;
+  mrId?: string | null;
+  orderDate?: string | null;
+  orderFor?: KitsWriteOrderFor;
+  other?: KitsRecipient;
+  patientId?: string | null;
+  paymentStatus?: KitsWritePaymentStatus;
+  /** @maxLength 4000 */
+  remarks?: string;
+  shipping?: KitsWriteShipping;
+  status?: KitsWriteStatus;
+  /** @maxLength 12 */
+  tray?: string;
 }
 
 export type LanguageChangeResponseAction =
@@ -10279,6 +10814,61 @@ export type ListImmunotherapyOrdersParams = {
    */
   limit?: number;
 };
+
+export type ListImmunotherapyOrdersStatus =
+  | (typeof ListImmunotherapyOrdersStatus)[keyof typeof ListImmunotherapyOrdersStatus]
+  | null;
+
+export const ListImmunotherapyOrdersStatus = {
+  Confirmed: "Confirmed",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export type ExportImmunotherapyOrdersParams = {
+  /**
+   * @maxLength 200
+   */
+  search?: string;
+  status?: ExportImmunotherapyOrdersStatus;
+  from_date?: string | null;
+  to_date?: string | null;
+};
+
+export type ExportImmunotherapyOrdersStatus =
+  | (typeof ExportImmunotherapyOrdersStatus)[keyof typeof ExportImmunotherapyOrdersStatus]
+  | null;
+
+export const ExportImmunotherapyOrdersStatus = {
+  Confirmed: "Confirmed",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export type UploadImmunotherapyPrescriptionBody = {
+  file: Blob | File;
+};
+
+export type ImmunotherapyReferencesParams = {
+  /**
+   * @maxLength 200
+   */
+  search?: string;
+  cursor?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  selected?: string | null;
+};
+
 export type ReviewInventoryInitializationParams = {
   /**
    * @minimum 0
@@ -10382,6 +10972,121 @@ export type GetInventoryStockHistoryParams = {
    * @maximum 100
    */
   limit?: number;
+};
+
+export type ListKitsOrdersParams = {
+  cursor?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @maxLength 200
+   */
+  search?: string;
+  status?: ListKitsOrdersStatus;
+  payment_status?: ListKitsOrdersPaymentStatus;
+  order_for?: ListKitsOrdersOrderFor;
+  doctor_id?: string | null;
+  mr_id?: string | null;
+  patient_id?: string | null;
+  from_date?: string | null;
+  to_date?: string | null;
+};
+
+export type ListKitsOrdersStatus =
+  (typeof ListKitsOrdersStatus)[keyof typeof ListKitsOrdersStatus] | null;
+
+export const ListKitsOrdersStatus = {
+  Confirmed: "Confirmed",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export type ListKitsOrdersPaymentStatus =
+  | (typeof ListKitsOrdersPaymentStatus)[keyof typeof ListKitsOrdersPaymentStatus]
+  | null;
+
+export const ListKitsOrdersPaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export type ListKitsOrdersOrderFor =
+  (typeof ListKitsOrdersOrderFor)[keyof typeof ListKitsOrdersOrderFor] | null;
+
+export const ListKitsOrdersOrderFor = {
+  doctor: "doctor",
+  mr: "mr",
+} as const;
+
+export type UploadKitsAttachmentBody = {
+  file: Blob | File;
+};
+
+export type ExportKitsOrdersParams = {
+  /**
+   * @maxLength 200
+   */
+  search?: string;
+  status?: ExportKitsOrdersStatus;
+  payment_status?: ExportKitsOrdersPaymentStatus;
+  order_for?: ExportKitsOrdersOrderFor;
+  doctor_id?: string | null;
+  mr_id?: string | null;
+  patient_id?: string | null;
+  from_date?: string | null;
+  to_date?: string | null;
+};
+
+export type ExportKitsOrdersStatus =
+  (typeof ExportKitsOrdersStatus)[keyof typeof ExportKitsOrdersStatus] | null;
+
+export const ExportKitsOrdersStatus = {
+  Confirmed: "Confirmed",
+  In_process: "In process",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Rejected: "Rejected",
+  Returned: "Returned",
+} as const;
+
+export type ExportKitsOrdersPaymentStatus =
+  | (typeof ExportKitsOrdersPaymentStatus)[keyof typeof ExportKitsOrdersPaymentStatus]
+  | null;
+
+export const ExportKitsOrdersPaymentStatus = {
+  Unpaid: "Unpaid",
+  Paid: "Paid",
+  Partial: "Partial",
+} as const;
+
+export type ExportKitsOrdersOrderFor =
+  | (typeof ExportKitsOrdersOrderFor)[keyof typeof ExportKitsOrdersOrderFor]
+  | null;
+
+export const ExportKitsOrdersOrderFor = {
+  doctor: "doctor",
+  mr: "mr",
+} as const;
+
+export type KitsReferencesParams = {
+  /**
+   * @maxLength 200
+   */
+  search?: string;
+  cursor?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  selected?: string | null;
 };
 
 export type ListLanguagesParams = {
@@ -12279,6 +12984,7 @@ export type ListOwnSessionsParams = {
 export type UploadFileParams = {
   patient_id?: string | null;
   mr_id?: string | null;
+  kits_owner_id?: string | null;
   category: UploadFileCategory;
   /**
    * @minLength 1
@@ -12317,301 +13023,3 @@ export type ResolvePortalHostnameParams = {
    */
   hostname: string;
 };
-
-export type ImmRecordAttachmentsItem = { [key: string]: unknown };
-
-export interface ImmImportResult {
-  imported: number;
-  orders: ImmRecord[];
-}
-
-export const ImmWriteShipping = {
-  patient: "patient",
-  doctor: "doctor",
-} as const;
-
-export type ImmRecordGroupsItem = { [key: string]: unknown };
-
-export type ImmunotherapyReferencesParams = {
-  /**
-   * @maxLength 200
-   */
-  search?: string;
-  cursor?: string | null;
-  /**
-   * @minimum 1
-   * @maximum 100
-   */
-  limit?: number;
-  selected?: string | null;
-};
-
-export const ImmWriteDosage = {
-  PD: "PD",
-  DD: "DD",
-  B1: "B1",
-  B2: "B2",
-  B3: "B3",
-  B4: "B4",
-  B5: "B5",
-  B6: "B6",
-  B7: "B7",
-  B8: "B8",
-} as const;
-
-export interface ImmBottle {
-  /**
-   * @minLength 1
-   * @maxLength 100
-   */
-  id: string;
-  /**
-   * @minItems 1
-   * @maxItems 100
-   */
-  items: ImmItem[];
-  /** @pattern ^\d{1,10}(?:\.\d{1,2})?$ */
-  mrp: string;
-}
-
-export type ImmImportReviewEntriesItem = { [key: string]: unknown };
-
-export type ImmReferencePageItemsItem = { [key: string]: unknown };
-
-export type ImmInputStatus =
-  (typeof ImmInputStatus)[keyof typeof ImmInputStatus];
-
-export interface ImmImportEntry {
-  expected_version?: number | null;
-  id?: string | null;
-  values: ImmInput;
-}
-
-export type ImmPageCounts = { [key: string]: number };
-
-export type ImmInputDosage =
-  (typeof ImmInputDosage)[keyof typeof ImmInputDosage];
-
-export const ListImmunotherapyOrdersStatus = {
-  Confirmed: "Confirmed",
-  In_process: "In process",
-  Shipped: "Shipped",
-  Delivered: "Delivered",
-  Rejected: "Rejected",
-  Returned: "Returned",
-} as const;
-
-export const ExportImmunotherapyOrdersStatus = {
-  Confirmed: "Confirmed",
-  In_process: "In process",
-  Shipped: "Shipped",
-  Delivered: "Delivered",
-  Rejected: "Rejected",
-  Returned: "Returned",
-} as const;
-
-export interface ImmReferencePage {
-  items: ImmReferencePageItemsItem[];
-  limit: number;
-  nextCursor: string | null;
-}
-
-export type ImmRecordDoctor = { [key: string]: unknown };
-
-export interface ImmPage {
-  counts: ImmPageCounts;
-  filtered: number | null;
-  items: ImmRecord[];
-  nextCursor: string | null;
-  total: number;
-}
-
-export const ImmInputShipping = {
-  patient: "patient",
-  doctor: "doctor",
-} as const;
-
-export const ImmInputDosage = {
-  PD: "PD",
-  DD: "DD",
-  B1: "B1",
-  B2: "B2",
-  B3: "B3",
-  B4: "B4",
-  B5: "B5",
-  B6: "B6",
-  B7: "B7",
-  B8: "B8",
-} as const;
-
-export const ImmRecordStatus = {
-  Confirmed: "Confirmed",
-  In_process: "In process",
-  Shipped: "Shipped",
-  Delivered: "Delivered",
-  Rejected: "Rejected",
-  Returned: "Returned",
-} as const;
-
-export type ImmRecordMr = { [key: string]: unknown };
-
-export type ImmRecordPatient = { [key: string]: unknown };
-
-export type ImmInputShipping =
-  (typeof ImmInputShipping)[keyof typeof ImmInputShipping];
-
-export type ImmWriteDosage =
-  (typeof ImmWriteDosage)[keyof typeof ImmWriteDosage];
-
-export interface ImmWrite {
-  /** @maxItems 10 */
-  attachmentIds?: string[];
-  doctorId: string;
-  dosage: ImmWriteDosage;
-  expected_version?: number | null;
-  /**
-   * @minItems 1
-   * @maxItems 100
-   */
-  groups: ImmBottle[];
-  /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
-  histamine: string;
-  idempotencyKey: string;
-  mrId: string;
-  orderDate?: string | null;
-  patientId: string;
-  /** @maxLength 4000 */
-  remarks?: string;
-  /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
-  saline: string;
-  shipping: ImmWriteShipping;
-  status?: ImmWriteStatus;
-}
-
-export interface ImmUploadPolicy {
-  maxBytes: number;
-  maxFiles: number;
-  types: string[];
-}
-
-/**
- * Encrypted document projected only after protected authorization.
- */
-export interface ImmRecord {
-  attachments: ImmRecordAttachmentsItem[];
-  date: string;
-  doctor: ImmRecordDoctor;
-  doctorId: string;
-  dosage: string;
-  groups: ImmRecordGroupsItem[];
-  histamine: string;
-  id: string;
-  mr: ImmRecordMr;
-  mrId: string;
-  number: string;
-  patient: ImmRecordPatient;
-  patientId: string;
-  recipient: ImmRecordRecipient;
-  remarks: string;
-  saline: string;
-  shipping: string;
-  status: ImmRecordStatus;
-  totalMinor: number;
-  version: number;
-}
-
-export const ImmWriteStatus = {
-  Confirmed: "Confirmed",
-  In_process: "In process",
-  Shipped: "Shipped",
-  Delivered: "Delivered",
-  Rejected: "Rejected",
-  Returned: "Returned",
-} as const;
-
-export type ListImmunotherapyOrdersStatus =
-  | (typeof ListImmunotherapyOrdersStatus)[keyof typeof ListImmunotherapyOrdersStatus]
-  | null;
-
-export type ImmWriteStatus =
-  (typeof ImmWriteStatus)[keyof typeof ImmWriteStatus];
-
-export type ExportImmunotherapyOrdersStatus =
-  | (typeof ExportImmunotherapyOrdersStatus)[keyof typeof ExportImmunotherapyOrdersStatus]
-  | null;
-
-export const ImmInputStatus = {
-  Confirmed: "Confirmed",
-  In_process: "In process",
-  Shipped: "Shipped",
-  Delivered: "Delivered",
-  Rejected: "Rejected",
-  Returned: "Returned",
-} as const;
-
-export type UploadImmunotherapyPrescriptionBody = {
-  file: Blob | File;
-};
-
-export interface ImmImport {
-  confirmUpdates?: boolean;
-  /**
-   * @minItems 1
-   * @maxItems 500
-   */
-  entries: ImmImportEntry[];
-  idempotencyKey: string;
-  reviewToken?: string;
-}
-
-export type ImmRecordRecipient = { [key: string]: unknown };
-
-export type ImmWriteShipping =
-  (typeof ImmWriteShipping)[keyof typeof ImmWriteShipping];
-
-export interface ImmImportReview {
-  additions: number;
-  entries: ImmImportReviewEntriesItem[];
-  patientAdditions: number;
-  rejected: number;
-  reviewToken: string;
-  unchanged: number;
-  updates: number;
-  valid: boolean;
-}
-
-export type ImmRecordStatus =
-  (typeof ImmRecordStatus)[keyof typeof ImmRecordStatus];
-
-export type ExportImmunotherapyOrdersParams = {
-  /**
-   * @maxLength 200
-   */
-  search?: string;
-  status?: ExportImmunotherapyOrdersStatus;
-  from_date?: string | null;
-  to_date?: string | null;
-};
-
-export interface ImmInput {
-  /** @maxItems 10 */
-  attachmentIds?: string[];
-  doctorId: string;
-  dosage: ImmInputDosage;
-  /**
-   * @minItems 1
-   * @maxItems 100
-   */
-  groups: ImmBottle[];
-  /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
-  histamine: string;
-  mrId: string;
-  orderDate?: string | null;
-  patientId: string;
-  /** @maxLength 4000 */
-  remarks?: string;
-  /** @pattern ^\d{1,6}(?:\.\d{1,2})?$ */
-  saline: string;
-  shipping: ImmInputShipping;
-  status?: ImmInputStatus;
-}

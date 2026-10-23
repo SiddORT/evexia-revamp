@@ -50,7 +50,9 @@ export default function OrderTransfers({ kind, rows, snapshot, store, adapter, t
       const preferences = captureExportPreferences();
       if (adapter) {
         const blob = await adapter.download(template, preferences, selectedFormat);
-        releaseBlob(blob, `${kind}-orders${template ? '-template' : ''}.${selectedFormat}`);
+        const filename = `${kind}-orders${template ? '-template' : ''}.${selectedFormat}`;
+        if (adapter.release) await adapter.release(blob, filename, template, selectedFormat);
+        else releaseBlob(blob, filename);
         setMessage(template ? 'Blank server-order template downloaded. Use real master IDs; attachment metadata does not restore files.' : 'All authoritative filtered saved orders downloaded, including historical snapshots. File contents excluded.');
         return;
       }
@@ -111,7 +113,7 @@ export default function OrderTransfers({ kind, rows, snapshot, store, adapter, t
     {error && !open && <p role="alert" className="order-transfer-error">{error}</p>}
     {open && <ImmDialog title={`Import ${title} orders`} eyebrow={adapter ? 'Shared server transfer' : 'Local transfer'} description={adapter ? 'Review validates real master references on the server. Explicit confirmation saves the entire batch atomically. External names and snapshots are not trusted; masters are never created.' : 'Review the file, then confirm additions and any updates. Nothing is uploaded or submitted. Cancelling leaves this session unchanged.'} onClose={close} returnFocusRef={trigger} className="order-transfer-dialog">
       <div className="order-transfer-dialog-fields">
-        <p>Use the eight-column template. Order details and patient relationships are JSON; keep decimal values in quoted text. Preserve the declared date context, or use ISO YYYY-MM-DD. {adapter ? 'The template is blank; use real master UUIDs, supported dosage/results and nonempty bottles. Legacy PO numbers are ignored.' : 'The template contains one fictional example—replace or remove it.'}</p>
+        <p>{adapter?.instructions || <>Use the eight-column template. Order details and patient relationships are JSON; keep decimal values in quoted text. Preserve the declared date context, or use ISO YYYY-MM-DD. {adapter ? 'The template is blank; use real master UUIDs, supported dosage/results and nonempty bottles. Legacy PO numbers are ignored.' : 'The template contains one fictional example—replace or remove it.'}</>}</p>
         <p>{adapter ? 'Keep original order ID, number and exported version for matching updates. For new orders, leave ID and number blank; numbering is server assigned. Legacy patient/snapshot columns are ignored, not used to create masters. Attachment metadata cannot restore uploads: existing saved file associations remain unchanged and new orders import without files.' : 'Keep the original order ID and number to update an order. Give a new order matching sequence identifiers. Patient directory conflicts are rejected, not overwritten. Saved recipient/billing snapshots are retained.'} No order is deleted because it is absent from the file.</p>
         <label className="order-transfer-format">Template file format
           <select value={format} disabled={exporting} onChange={(e) => setFormat(e.target.value)}><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option></select>

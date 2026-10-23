@@ -70,6 +70,7 @@ from app.services.allergens import AllergenError
 from app.api.v1.purchase_orders import router as purchase_orders_router
 from app.services.purchase_orders import POError
 from app.api.v1.immunotherapy import router as immunotherapy_router
+from app.api.v1.kits import router as kits_router
 from app.services.immunotherapy import ImmError
 from app.api.v1.opening_balances import router as opening_balances_router
 from app.services.opening_balances import OpeningBalanceError
@@ -183,7 +184,7 @@ def create_app() -> FastAPI:
         fields = [{"field": ".".join(str(part) for part in err["loc"] if isinstance(part, (str, int))),
                    "code": err["type"]} for err in exc.errors()[:20]]
         if request.url.path.startswith(("/api/v1/admin/communication", "/api/v1/admin/email-templates",
-                                        "/api/v1/admin/products", "/api/v1/admin/opening-stock",
+                                        "/api/v1/admin/products", "/api/v1/admin/opening-stock", "/api/v1/admin/kits-orders",
                                         "/api/v1/admin/purchase-received/batch-settings",
                                         "/api/v1/admin/purchase-received/batch-allocations")):
             # Unknown property names can themselves contain a credential.
@@ -373,6 +374,7 @@ def create_app() -> FastAPI:
     app.include_router(allergens_router, prefix="/api/v1")
     app.include_router(purchase_orders_router, prefix="/api/v1")
     app.include_router(immunotherapy_router, prefix="/api/v1")
+    app.include_router(kits_router, prefix="/api/v1")
     app.include_router(purchase_received_router, prefix="/api/v1")
     app.include_router(inventory_router, prefix="/api/v1")
     app.include_router(products_router, prefix="/api/v1")

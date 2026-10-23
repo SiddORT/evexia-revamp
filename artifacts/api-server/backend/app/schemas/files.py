@@ -10,13 +10,16 @@ class UploadRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     patient_id: uuid.UUID | None = None
     mr_id: uuid.UUID | None = None
+    kits_owner_id: uuid.UUID | None = None
     category: Literal["profile", "documents"]
     filename: str = Field(min_length=1, max_length=255)
 
     @model_validator(mode="after")
     def exclusive_owner(self):
-        if (self.patient_id is None) == (self.mr_id is None):
+        if sum(v is not None for v in (self.patient_id, self.mr_id, self.kits_owner_id)) != 1:
             raise ValueError("Specify exactly one owner")
+        if self.kits_owner_id and self.category != "documents":
+            raise ValueError("Kits supports documents only")
         return self
 
 

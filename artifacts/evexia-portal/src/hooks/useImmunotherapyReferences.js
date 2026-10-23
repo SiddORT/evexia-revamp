@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { request } from '../services/serverImmunotherapy.js';
 
 // One finite section per explicit search/continuation; no hidden directory walk.
-export default function useImmunotherapyReferences(kind, saved = [], selected = '') {
+export default function useImmunotherapyReferences(kind, saved = [], selected = '', requester = request) {
   const [query, setQuery] = useState('');
   const [page, setPage] = useState({ items: [], nextCursor: null });
   const [state, setState] = useState('loading');
@@ -14,18 +14,18 @@ export default function useImmunotherapyReferences(kind, saved = [], selected = 
     const controller = new AbortController();
     setState('loading'); setError('');
     const timer = setTimeout(() => {
-      request(`/references/${kind}`, { params: { search: query, limit: 25, selected }, signal: controller.signal })
+      requester(`/references/${kind}`, { params: { search: query, limit: 25, selected }, signal: controller.signal })
         .then((result) => { if (token === sequence.current) { setPage(result); setState('ready'); } })
         .catch((cause) => { if (!controller.signal.aborted && token === sequence.current) { setPage({ items: [], nextCursor: null }); setError(cause.message); setState('error'); } });
     }, 200);
     return () => { clearTimeout(timer); controller.abort(); sequence.current++; };
-  }, [kind, query, revision, selected]);
+  }, [kind, query, revision, selected, requester]);
   async function more() {
     if (!page.nextCursor || state === 'loading') return;
     const token = ++sequence.current;
     setState('loading'); setError('');
     try {
-      const result = await request(`/references/${kind}`, { params: { search: query, cursor: page.nextCursor, limit: 25, selected } });
+      const result = await requester(`/references/${kind}`, { params: { search: query, cursor: page.nextCursor, limit: 25, selected } });
       if (token === sequence.current) { setPage((p) => ({ ...result, items: [...p.items, ...result.items] })); setState('ready'); }
     } catch (cause) { if (token === sequence.current) { setError(cause.message); setState('error'); } }
   }

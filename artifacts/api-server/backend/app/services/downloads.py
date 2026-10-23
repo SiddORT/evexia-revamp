@@ -10,6 +10,7 @@ from app.services.zone_policy import lock_policy
 from app.services.master_policy import MASTERS, master_allowed
 
 MODULES = {
+    "kits_orders": "Kits & Consumables",
     "product": "Product Master",
     "opening_stock": "Opening Stock",
     "language": "Language Master",
@@ -26,6 +27,7 @@ MODULES = {
 }
 # Metadata combinations represent actual supported actions, not arbitrary extensions.
 BROWSER = {
+    "kits_orders": {"export": {"CSV", "XLSX"}, "template": {"CSV", "XLSX"}},
     **{s: {"export": {"CSV"}, "template": {"CSV"}} for s in (
         "designation", "vendor", "allergen", "opening_balance", "headquarter",
         "product_category", "sales_target")},

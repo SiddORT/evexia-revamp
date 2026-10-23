@@ -29,6 +29,19 @@ Lupin is also a fictional, frontend-memory-only evaluation workflow. It has a pa
 
 **How to apply:** Preserve this boundary when reusing shared infrastructure: the real download-reporting service is not appropriate for this deliberately offline demo. Adding live data or reporting requires separate requirements.
 
+Admin Kits & Consumables now has separate authorization for shared persisted
+supply orders, optional existing Patient references, encrypted historical
+contacts and private uploads. This does not expand the SPT/Lupin or MR/Doctor
+portal boundaries. Patient is not mandatory, and no clinical history is inferred.
+
+**Why:** The user explicitly requested supply-order persistence while retaining
+doctor/MR orders without a Patient and excluding clinical, stock and financial
+processing.
+
+**How to apply:** Keep Kits transfers and attachments server-backed. Never
+silently migrate fictional session orders, create master records, or require a
+Patient solely to give a file an owner.
+
 An order-transfer confirmation is permission to update matching session orders,
 not to reconcile divergent patient identity or administration history. Reject
 conflicting existing session patients even when order updates are confirmed.

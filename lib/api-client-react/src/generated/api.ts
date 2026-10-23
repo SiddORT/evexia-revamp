@@ -137,6 +137,7 @@ import type {
   ExportDoctorDirectoryParams,
   ExportHeadquartersParams,
   ExportImmunotherapyOrdersParams,
+  ExportKitsOrdersParams,
   ExportLanguagesParams,
   ExportMRDirectoryParams,
   ExportOpeningBalancesParams,
@@ -189,6 +190,12 @@ import type {
   InventoryStockPage,
   InvitationRequest,
   InvitationResult,
+  KitsImport,
+  KitsImportResult,
+  KitsPage,
+  KitsRecord,
+  KitsReferencesParams,
+  KitsWrite,
   LanguageEdit,
   LanguageFields,
   LanguageHistory,
@@ -211,6 +218,7 @@ import type {
   ListImmunotherapyOrdersParams,
   ListInventoryMovementsParams,
   ListInventoryStockParams,
+  ListKitsOrdersParams,
   ListLanguagesParams,
   ListMRAssociatedDoctorChoicesParams,
   ListMRDirectoryParams,
@@ -439,6 +447,7 @@ import type {
   TokenResponse,
   UploadFileParams,
   UploadImmunotherapyPrescriptionBody,
+  UploadKitsAttachmentBody,
   UserPage,
   VendorEdit,
   VendorFields,
@@ -10385,6 +10394,910 @@ export function useGetInventoryStockHistory<
     params,
     options,
   );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListKitsOrdersUrl = (params?: ListKitsOrdersParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/kits-orders?${stringifiedParams}`
+    : `/api/v1/admin/kits-orders`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listKitsOrders = async (
+  params?: ListKitsOrdersParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<KitsPage> => {
+  return customFetch<KitsPage>(getListKitsOrdersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListKitsOrdersQueryKey = (params?: ListKitsOrdersParams) => {
+  return [`/api/v1/admin/kits-orders`, ...(params ? [params] : [])] as const;
+};
+
+export const getListKitsOrdersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listKitsOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListKitsOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listKitsOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListKitsOrdersQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listKitsOrders>>> = ({
+    signal,
+  }) => listKitsOrders(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listKitsOrders>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListKitsOrdersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listKitsOrders>>
+>;
+export type ListKitsOrdersQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListKitsOrders<
+  TData = Awaited<ReturnType<typeof listKitsOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListKitsOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listKitsOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListKitsOrdersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateKitsOrderUrl = () => {
+  return `/api/v1/admin/kits-orders`;
+};
+
+/**
+ * @summary Create
+ */
+export const createKitsOrder = async (
+  kitsWrite: KitsWrite,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<KitsRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<KitsRecord>(getCreateKitsOrderUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(kitsWrite),
+  });
+};
+
+export const getCreateKitsOrderMutationKey = () => ["createKitsOrder"] as const;
+
+export const getCreateKitsOrderMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createKitsOrder>>,
+    TError,
+    CreateKitsOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createKitsOrder>>,
+  TError,
+  CreateKitsOrderMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateKitsOrderMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createKitsOrder>>,
+    CreateKitsOrderMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createKitsOrder(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateKitsOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createKitsOrder>>
+>;
+export type CreateKitsOrderMutationBody = BodyType<KitsWrite>;
+export type CreateKitsOrderMutationError = ErrorType<ErrorEnvelope>;
+export type CreateKitsOrderMutationVariables = { data: BodyType<KitsWrite> };
+
+/**
+ * @summary Create
+ */
+export const useCreateKitsOrder = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createKitsOrder>>,
+    TError,
+    CreateKitsOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createKitsOrder>>,
+  TError,
+  CreateKitsOrderMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateKitsOrderMutationOptions(options));
+};
+
+export const getUploadKitsAttachmentUrl = () => {
+  return `/api/v1/admin/kits-orders/attachments`;
+};
+
+/**
+ * @summary Upload
+ */
+export const uploadKitsAttachment = async (
+  uploadKitsAttachmentBody: UploadKitsAttachmentBody,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<FileResponse> => {
+  const formData = new FormData();
+  formData.append(`file`, uploadKitsAttachmentBody.file);
+
+  return customFetch<FileResponse>(getUploadKitsAttachmentUrl(), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getUploadKitsAttachmentMutationKey = () =>
+  ["uploadKitsAttachment"] as const;
+
+export const getUploadKitsAttachmentMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadKitsAttachment>>,
+    TError,
+    UploadKitsAttachmentMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof uploadKitsAttachment>>,
+  TError,
+  UploadKitsAttachmentMutationVariables,
+  TContext
+> => {
+  const mutationKey = getUploadKitsAttachmentMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof uploadKitsAttachment>>,
+    UploadKitsAttachmentMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return uploadKitsAttachment(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UploadKitsAttachmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof uploadKitsAttachment>>
+>;
+export type UploadKitsAttachmentMutationBody =
+  BodyType<UploadKitsAttachmentBody>;
+export type UploadKitsAttachmentMutationError = ErrorType<ErrorEnvelope>;
+export type UploadKitsAttachmentMutationVariables = {
+  data: BodyType<UploadKitsAttachmentBody>;
+};
+
+/**
+ * @summary Upload
+ */
+export const useUploadKitsAttachment = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadKitsAttachment>>,
+    TError,
+    UploadKitsAttachmentMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof uploadKitsAttachment>>,
+  TError,
+  UploadKitsAttachmentMutationVariables,
+  TContext
+> => {
+  return useMutation(getUploadKitsAttachmentMutationOptions(options));
+};
+
+export const getExportKitsOrdersUrl = (params?: ExportKitsOrdersParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/kits-orders/export?${stringifiedParams}`
+    : `/api/v1/admin/kits-orders/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportKitsOrders = async (
+  params?: ExportKitsOrdersParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<KitsPage> => {
+  return customFetch<KitsPage>(getExportKitsOrdersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportKitsOrdersQueryKey = (
+  params?: ExportKitsOrdersParams,
+) => {
+  return [
+    `/api/v1/admin/kits-orders/export`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getExportKitsOrdersQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportKitsOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportKitsOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportKitsOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getExportKitsOrdersQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exportKitsOrders>>
+  > = ({ signal }) => exportKitsOrders(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportKitsOrders>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportKitsOrdersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportKitsOrders>>
+>;
+export type ExportKitsOrdersQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportKitsOrders<
+  TData = Awaited<ReturnType<typeof exportKitsOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportKitsOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportKitsOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportKitsOrdersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCommitKitsImportUrl = () => {
+  return `/api/v1/admin/kits-orders/import/commit`;
+};
+
+/**
+ * @summary Commit
+ */
+export const commitKitsImport = async (
+  kitsImport: KitsImport,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<KitsImportResult> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<KitsImportResult>(getCommitKitsImportUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(kitsImport),
+  });
+};
+
+export const getCommitKitsImportMutationKey = () =>
+  ["commitKitsImport"] as const;
+
+export const getCommitKitsImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitKitsImport>>,
+    TError,
+    CommitKitsImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof commitKitsImport>>,
+  TError,
+  CommitKitsImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCommitKitsImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof commitKitsImport>>,
+    CommitKitsImportMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return commitKitsImport(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CommitKitsImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof commitKitsImport>>
+>;
+export type CommitKitsImportMutationBody = BodyType<KitsImport>;
+export type CommitKitsImportMutationError = ErrorType<ErrorEnvelope>;
+export type CommitKitsImportMutationVariables = { data: BodyType<KitsImport> };
+
+/**
+ * @summary Commit
+ */
+export const useCommitKitsImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitKitsImport>>,
+    TError,
+    CommitKitsImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof commitKitsImport>>,
+  TError,
+  CommitKitsImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getCommitKitsImportMutationOptions(options));
+};
+
+export const getReviewKitsImportUrl = () => {
+  return `/api/v1/admin/kits-orders/import/review`;
+};
+
+/**
+ * @summary Review
+ */
+export const reviewKitsImport = async (
+  kitsImport: KitsImport,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmImportReview> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ImmImportReview>(getReviewKitsImportUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(kitsImport),
+  });
+};
+
+export const getReviewKitsImportMutationKey = () =>
+  ["reviewKitsImport"] as const;
+
+export const getReviewKitsImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewKitsImport>>,
+    TError,
+    ReviewKitsImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewKitsImport>>,
+  TError,
+  ReviewKitsImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReviewKitsImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewKitsImport>>,
+    ReviewKitsImportMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return reviewKitsImport(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewKitsImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewKitsImport>>
+>;
+export type ReviewKitsImportMutationBody = BodyType<KitsImport>;
+export type ReviewKitsImportMutationError = ErrorType<ErrorEnvelope>;
+export type ReviewKitsImportMutationVariables = { data: BodyType<KitsImport> };
+
+/**
+ * @summary Review
+ */
+export const useReviewKitsImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewKitsImport>>,
+    TError,
+    ReviewKitsImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewKitsImport>>,
+  TError,
+  ReviewKitsImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getReviewKitsImportMutationOptions(options));
+};
+
+export const getKitsUploadPolicyUrl = () => {
+  return `/api/v1/admin/kits-orders/policy`;
+};
+
+/**
+ * @summary Policy
+ */
+export const kitsUploadPolicy = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmUploadPolicy> => {
+  return customFetch<ImmUploadPolicy>(getKitsUploadPolicyUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getKitsUploadPolicyQueryKey = () => {
+  return [`/api/v1/admin/kits-orders/policy`] as const;
+};
+
+export const getKitsUploadPolicyQueryOptions = <
+  TData = Awaited<ReturnType<typeof kitsUploadPolicy>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof kitsUploadPolicy>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getKitsUploadPolicyQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof kitsUploadPolicy>>
+  > = ({ signal }) => kitsUploadPolicy({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof kitsUploadPolicy>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type KitsUploadPolicyQueryResult = NonNullable<
+  Awaited<ReturnType<typeof kitsUploadPolicy>>
+>;
+export type KitsUploadPolicyQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Policy
+ */
+
+export function useKitsUploadPolicy<
+  TData = Awaited<ReturnType<typeof kitsUploadPolicy>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof kitsUploadPolicy>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getKitsUploadPolicyQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getKitsReferencesUrl = (
+  kind: "patients" | "doctors" | "mrs",
+  params?: KitsReferencesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/kits-orders/references/${kind}?${stringifiedParams}`
+    : `/api/v1/admin/kits-orders/references/${kind}`;
+};
+
+/**
+ * @summary References
+ */
+export const kitsReferences = async (
+  kind: "patients" | "doctors" | "mrs",
+  params?: KitsReferencesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmReferencePage> => {
+  return customFetch<ImmReferencePage>(getKitsReferencesUrl(kind, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getKitsReferencesQueryKey = (
+  kind: "patients" | "doctors" | "mrs",
+  params?: KitsReferencesParams,
+) => {
+  return [
+    `/api/v1/admin/kits-orders/references/${kind}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getKitsReferencesQueryOptions = <
+  TData = Awaited<ReturnType<typeof kitsReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "patients" | "doctors" | "mrs",
+  params?: KitsReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof kitsReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getKitsReferencesQueryKey(kind, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof kitsReferences>>> = ({
+    signal,
+  }) => kitsReferences(kind, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: kind !== null && kind !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof kitsReferences>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type KitsReferencesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof kitsReferences>>
+>;
+export type KitsReferencesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary References
+ */
+
+export function useKitsReferences<
+  TData = Awaited<ReturnType<typeof kitsReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "patients" | "doctors" | "mrs",
+  params?: KitsReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof kitsReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getKitsReferencesQueryOptions(kind, params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetKitsOrderUrl = (recordId: string) => {
+  return `/api/v1/admin/kits-orders/${recordId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getKitsOrder = async (
+  recordId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<KitsRecord> => {
+  return customFetch<KitsRecord>(getGetKitsOrderUrl(recordId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetKitsOrderQueryKey = (recordId: string) => {
+  return [`/api/v1/admin/kits-orders/${recordId}`] as const;
+};
+
+export const getGetKitsOrderQueryOptions = <
+  TData = Awaited<ReturnType<typeof getKitsOrder>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getKitsOrder>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetKitsOrderQueryKey(recordId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getKitsOrder>>> = ({
+    signal,
+  }) => getKitsOrder(recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getKitsOrder>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetKitsOrderQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getKitsOrder>>
+>;
+export type GetKitsOrderQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetKitsOrder<
+  TData = Awaited<ReturnType<typeof getKitsOrder>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getKitsOrder>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetKitsOrderQueryOptions(recordId, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
