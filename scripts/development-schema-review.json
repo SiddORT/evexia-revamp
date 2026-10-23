@@ -69,7 +69,7 @@
     "0057_staff_employee_code": "eda8caf7f3dc38a55db117ea149e77676af95f3c1df0fd8cf11bb3011acd0fb4",
     "0058_master_numbers": "6266efc1ca0277665c96c6c816d97a4d9c6ff42aafc34070df79f7e14d3a0e89",
     "0059_staff_unified_access": "ae54715cfef145e7b83a01d866a4a0d253646630f1e0e41296b63f3d95df2dac",
-    "0060_staff_account_numbers": "f1e1d278d6ab34dd998c831c146558bf22bbd0ec228ab60a60722f48ab7f495d"
+    "0060_staff_account_numbers": "df5a949c2d8a0bbbb5b9ecf365554ea246ecd8e8f448016b9f780f3f58568929"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

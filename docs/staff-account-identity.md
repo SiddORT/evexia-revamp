@@ -8,7 +8,7 @@ the protected Admin receives `EVX-001`; staff, including inactive and deleted
 staff, receive numbers from `EVX-002`. New staff use the same PostgreSQL
 sequence. Three digits are a minimum, not a limit (`EVX-1000` is valid).
 
-This change has **not** been applied to a database during implementation.
+The initial isolated implementation did not apply this change to a live database.
 The development release declaration and reviewed source manifest target the new
 revision. The next normal development synchronization/startup can apply this
 automatic migration. Production activation remains a separate, approved
@@ -40,6 +40,10 @@ Admin namespace; the existing bootstrap subsequently creates Admin with
   The protected Admin guard is temporarily narrowed to permit only its username
   update while write locks are held, then restored in the same transaction.
   A migration failure rolls back both data and trigger-definition changes.
+  The independent legacy Staff trigger is likewise narrowed only for its
+  username comparison during this locked backfill. Its UUID/profile checks stay
+  active, and its exact original definition is restored before completion.
+  Unexpected trigger definitions stop activation rather than being replaced.
 - UUIDs, password hashes/setup state, Employee Codes, emails, roles, access flags,
   identity/token versions, session records and linked/history records are not
   rewritten. Account updated timestamps are preserved.
@@ -70,9 +74,21 @@ paths. No Staff Management columns or credential labels were added.
 
 ## Verification limits
 
-Source inspection and diff review only. API contract export, client source
-generation and source formatting were performed without running the chained
-build/typecheck command. **No tests, browser checks, manual scenarios, smoke
-checks, release validations, builds, workflow restarts, or runtime appearance or
-behavior checks were run.** No data conflicts have been ruled out by inspecting
-a live database; activation will fail explicitly if any are present.
+The initial isolated implementation used source inspection and diff review only.
+The post-merge Staff identity-trigger correction was subsequently verified with:
+
+```sh
+sh scripts/test-api-foundation.sh tests/test_staff_number_migration.py tests/test_account_crypto.py
+```
+
+All 38 tests passed against disposable PostgreSQL, including a populated
+0059-to-0060 upgrade, retained encrypted reservations/credentials, unchanged
+login aliases, restored identity guards, rollback after an injected failure,
+and rejection of an unexpected Staff guard definition.
+
+The approved original-development post-merge synchronization then applied only
+`0060_staff_account_numbers` successfully. Managed API startup reported the same
+schema with no further pending migration, and the routed readiness endpoint
+returned HTTP 200. The public Admin login page rendered normally; authenticated
+UI flows and the full release gate were not run for this correction.
+This is not evidence of production activation or production approval.

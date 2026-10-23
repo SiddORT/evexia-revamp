@@ -76,7 +76,19 @@ def upgrade():
             if temporary.count(fragment) != 1:
                 raise AccountCryptoError("Protected identity guard differs from the reviewed schema.")
             temporary = temporary.replace(fragment, "")
+        # 0009 also protects staff usernames (now ciphertext) independently of
+        # the protected Admin. Permit only this label comparison during the
+        # locked backfill; retain UUID/profile immutability and restore the exact
+        # original function before returning. PostgreSQL rolls DDL back with the
+        # account updates if any later step fails.
+        staff_original = db.scalar(sa.text(
+            "SELECT pg_get_functiondef('evexia_staff_immutable_identity()'::regprocedure)"))
+        staff_fragment = " OR NEW.username IS DISTINCT FROM OLD.username"
+        if staff_original.count(staff_fragment) != 1:
+            raise AccountCryptoError("Staff identity guard differs from the reviewed schema.")
+        staff_temporary = staff_original.replace(staff_fragment, "")
         db.execute(sa.text(temporary))
+        db.execute(sa.text(staff_temporary))
 
         def rename(user, value):
             assert_available(session, value, user.id)
@@ -103,6 +115,7 @@ def upgrade():
             else:
                 rename(user, allocate(session))
         db.execute(sa.text(original))
+        db.execute(sa.text(staff_original))
 
         # Reserve 001 for bootstrap even on an empty installation. The digest is
         # derived with the validated account key and contains no plaintext PII.
