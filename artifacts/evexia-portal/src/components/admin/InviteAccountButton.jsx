@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Mail } from 'lucide-react';
 import Dialog from './Dialog.jsx';
 import { inviteAccount } from '../../services/emailDelivery.js';
@@ -8,6 +9,7 @@ export default function InviteAccountButton({ kind, record, disabled = false, cl
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null), [error, setError] = useState('');
   const gate = useRef(false), alive = useRef(true);
+  const triggerRef = useRef(null);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   const reason = record.status !== 'active' ? 'Activate this saved account before inviting.'
     : !record.email ? 'Save a recipient email address first.'
@@ -27,11 +29,12 @@ export default function InviteAccountButton({ kind, record, disabled = false, cl
     } finally { gate.current = false; if (alive.current) setBusy(false); }
   }
   return <>
-    <button type="button" className={className} disabled={disabled}
+    <button type="button" ref={triggerRef} className={className} disabled={disabled}
       aria-label={`Invite ${record.name} by email`} title="Invite / send again"
       data-testid={`button-invite-${kind}-${record.id}`}
       onClick={() => { setOpen(true); setResult(null); setError(''); }}><Mail size={16} aria-hidden="true" /></button>
-    {open && <Dialog title="Send email invitation?" eyebrow={kind === 'mr' ? 'MR Master' : 'Staff Management'}
+    {/* Stay inside the themed shell, but outside table/fieldset layout and inheritance. */}
+    {open && createPortal(<Dialog className="admin-invitation-dialog" title="Send email invitation?" eyebrow={kind === 'mr' ? 'MR Master' : 'Staff Management'}
       description={`Send a one-use, 15-minute set-password link to ${record.email || 'the saved email address'} for the ${kind === 'mr' ? 'MR' : 'Admin'} portal? No password is emailed. Existing credentials keep working until the link is accepted; roles and access are unchanged.`}
       onClose={() => { if (!gate.current) setOpen(false); }}
       footer={<><button type="button" className="admin-button admin-button--secondary" disabled={busy}
@@ -42,6 +45,6 @@ export default function InviteAccountButton({ kind, record, disabled = false, cl
       {error && <p role="alert">{error}</p>}
       {result && <p role={result.status === 'failed' ? 'alert' : 'status'}>{result.message}</p>}
       <p>Sending again is explicit, not automatic. A failed email does not undo a saved directory record. No inbox-delivery confirmation is available.</p>
-    </Dialog>}
+    </Dialog>, triggerRef.current.closest('.admin-shell') || document.body)}
   </>;
 }
