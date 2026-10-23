@@ -89,6 +89,13 @@ def issue_and_send(db, settings, identifier, identity_kind):
 
 
 def send_identity(db, settings, identity, recipient, purpose, attempt_id):
+    # Validate before building the signed link. SMTP test messages do not need
+    # an action URL, but invitations and password recovery always do.
+    try:
+        recovery_mail.validate_link_configuration(settings)
+    except recovery_mail.RecoveryUnavailable:
+        email_delivery.outcome(db, attempt_id, "failed", "configuration")
+        return
     user = identity.user
     identity_kind = _kind(identity)
     now = utcnow()
