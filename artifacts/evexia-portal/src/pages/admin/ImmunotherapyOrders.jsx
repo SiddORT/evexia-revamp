@@ -115,9 +115,9 @@ export default function ImmunotherapyOrders() {
     </div>
     <section className="admin-panel imm-listing" aria-label="Immunotherapy orders">
       <OrderListingFilters masterDisclosure onRefresh={() => { resetPage(); setRevision((n) => n + 1); }} onReset={reset} resetDisabled={!filtered && pager.page === 1} resetTestId="button-imm-reset" search={
-        <label className="imm-field imm-field--grow">Search
+        <label className="imm-field imm-field--grow">
           <span style={{ position: 'relative', display: 'block' }}><Search size={15} aria-hidden="true" style={{ position: 'absolute', left: 12, top: 13, color: 'var(--admin-muted)' }} />
-            <input className="imm-input" style={{ paddingLeft: 35 }} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Order, patient, phone, doctor or MR" data-testid="input-imm-search" /></span></label>
+            <input aria-label="Search" className="imm-input" style={{ paddingLeft: 35 }} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Order, patient, phone, doctor or MR" data-testid="input-imm-search" /></span></label>
       }>
         <label className="imm-field">Status<select value={status} onChange={(e) => setStatus(e.target.value)} data-testid="select-imm-status"><option>All</option>{STATUSES.map((s) => <option key={s}>{s}</option>)}</select></label>
         <label className="imm-field">From<input type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} data-testid="input-imm-from" /></label>

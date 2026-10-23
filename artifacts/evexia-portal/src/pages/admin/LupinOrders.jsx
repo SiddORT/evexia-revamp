@@ -46,9 +46,9 @@ export default function LupinOrders() {
     <OrderTransfers kind="lupin" rows={rows} snapshot={snap} store={demoStore} />
     <section className="admin-panel" aria-label="Lupin orders">
       <OrderListingFilters onRefresh={() => demoStore.refresh()} onReset={reset} resetTestId="button-lupin-reset" applyTestId="button-lupin-apply" onApply={(e) => { e.preventDefault(); setApplied({ ...draft }); }} search={
-        <label className="lupin-field">Search
+        <label className="lupin-field">
           <span style={{ position: 'relative', display: 'block' }}><Search size={15} aria-hidden="true" style={{ position: 'absolute', left: 11, top: 12, color: 'var(--admin-muted)' }} />
-            <input style={{ paddingLeft: 33 }} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Order, doctor or MR" data-testid="input-lupin-search" /></span></label>
+            <input aria-label="Search" style={{ paddingLeft: 33 }} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Order, doctor or MR" data-testid="input-lupin-search" /></span></label>
       }>
         <label className="lupin-field">Date<input type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} data-testid="input-lupin-date" /></label>
         <div className="lupin-field"><label htmlFor="lupin-f-doctor">Doctor</label>

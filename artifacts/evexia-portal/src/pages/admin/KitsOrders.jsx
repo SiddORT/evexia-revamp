@@ -56,7 +56,7 @@ export default function KitsOrders() {
     <section className="admin-panel kits-panel kits-listing__panel" aria-label="Kits and consumables orders">
       <OrderListingFilters masterDisclosure refreshLabel="Refresh saved orders" onRefresh={refresh} onReset={reset}
         onApply={(e) => { e.preventDefault(); setApplied({ ...draft }); resetPage(); }} search={
-          <label className="kits-field">Search<span className="kits-listing__search-control"><Search size={16} aria-hidden="true" /><input maxLength={200} value={draft.search} onChange={(e) => set({ search: e.target.value })} placeholder="Order, person, product or remarks" /></span></label>
+          <label className="kits-field"><span className="kits-listing__search-control"><Search size={16} aria-hidden="true" /><input aria-label="Search" maxLength={200} value={draft.search} onChange={(e) => set({ search: e.target.value })} placeholder="Order, person, product or remarks" /></span></label>
         }>
         <label className="kits-field">From<input type="date" value={draft.from_date} max={draft.to_date || undefined} onChange={(e) => set({ from_date: e.target.value })} /></label>
         <label className="kits-field">To<input type="date" value={draft.to_date} min={draft.from_date || undefined} onChange={(e) => set({ to_date: e.target.value })} /></label>

@@ -73,10 +73,10 @@ export default function SptOrders() {
         <section className="admin-panel" aria-label="SPT orders">
           <OrderListingFilters masterDisclosure disclosureLabel="Additional filters" refreshLabel="Refresh SPT orders" onRefresh={refresh} onReset={clear}
             onApply={(e) => { e.preventDefault(); setApplied({ ...draft }); resetPage(); }} search={
-            <label className="spt-field spt-field--grow">Search orders
+            <label className="spt-field spt-field--grow">
               <span className="spt-search">
                 <Search size={15} aria-hidden="true" />
-                <input className="spt-input" maxLength={200} value={draft.search} onChange={(e) => set({ search: e.target.value })} placeholder="Order, Doctor, MR, patient or remarks" data-testid="input-spt-search" />
+                <input aria-label="Search orders" className="spt-input" maxLength={200} value={draft.search} onChange={(e) => set({ search: e.target.value })} placeholder="Order, Doctor, MR, patient or remarks" data-testid="input-spt-search" />
               </span>
             </label>
           }>
