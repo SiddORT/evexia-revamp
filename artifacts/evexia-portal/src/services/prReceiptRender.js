@@ -942,7 +942,7 @@ function drawRows(unit, y, indexWithinPage, theme, layout) {
   return parts.join('');
 }
 
-function drawFinalSignatory(theme, layout) {
+function drawFinalSignatory(model, theme, layout) {
   const top = 822;
   const boxX = 466;
   const boxY = 852;
@@ -970,7 +970,7 @@ function drawFinalSignatory(theme, layout) {
   ].join('');
 }
 
-function drawFooter(pageIndex, pageCount, finalPage, theme, layout) {
+function drawFooter(model, pageIndex, pageCount, finalPage, theme, layout) {
   const isClassic = theme.id === 'classic';
   const colors = theme.colors;
   const margin = layout.margin;
@@ -983,7 +983,7 @@ function drawFooter(pageIndex, pageCount, finalPage, theme, layout) {
       size: isClassic ? 7.7 : theme.metaFont - 1, fill: colors.muted, anchor: 'end',
     }),
   ];
-  if (finalPage) parts.unshift(drawFinalSignatory(theme, layout));
+  if (finalPage) parts.unshift(drawFinalSignatory(model, theme, layout));
   return parts.join('');
 }
 
@@ -1041,7 +1041,7 @@ function renderPage(model, page, pageIndex, pageCount, hasLegacyBalance, theme, 
     else parts.push(drawRows(unit, y, sectionRows++, theme, layout));
     y += unit.height;
   }
-  parts.push(drawFooter(pageIndex, pageCount, pageIndex === pageCount - 1, theme, layout), '</svg>');
+  parts.push(drawFooter(model, pageIndex, pageCount, pageIndex === pageCount - 1, theme, layout), '</svg>');
   return parts.join('');
 }
 
