@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     directory_encryption_key_id: str = "primary"
     directory_index_key: SecretStr | None = None
     cors_origins: str = ""
+    evexia_managed_preview: bool = False
+    replit_dev_domain: str | None = None
     portal_bootstrap_hosts: str = ""
     trusted_proxy_peers: str = ""
 
@@ -204,6 +206,18 @@ class Settings(BaseSettings):
             raise ValueError("CORS_ORIGINS must contain explicit http(s) origins, never wildcards")
         if self.app_env == "production" and any(origin.startswith("http://") for origin in origins):
             raise ValueError("Production CORS origins must use HTTPS")
+        # Managed task previews receive a new platform hostname. Do not inherit
+        # only an older workspace's allowlist, or cookie-origin checks reject
+        # login/refresh before authentication. Never derive trust from a request.
+        if self.app_env == "development" and self.evexia_managed_preview and self.replit_dev_domain:
+            host = self.replit_dev_domain
+            if (len(host) > 253 or not re.fullmatch(
+                    r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?"
+                    r"(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*", host)):
+                raise ValueError("REPLIT_DEV_DOMAIN must be an exact development hostname")
+            origin = f"https://{host}"
+            if origin not in origins:
+                origins.append(origin)
         return origins
 
 

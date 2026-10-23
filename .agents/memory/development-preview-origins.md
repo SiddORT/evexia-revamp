@@ -11,7 +11,12 @@ existing approved origins; never bypass same-origin checks or use wildcards.
 **Why:** A fork can inherit an otherwise valid origin configuration for a
 different preview. This rejects login before credentials are evaluated and
 should not be diagnosed as an incorrect password or repaired by resetting it.
+The user confirmed that restoring exact preview-origin admission restored both
+Admin and MR protected dashboards and reload persistence.
 
 **How to apply:** Inspect the development-only configuration, compare the actual
 preview origin, and restart the API after an exact-origin update. Keep production
 settings unchanged and verify real login/logout over the preview URL.
+For managed development, prefer the platform-supplied exact runtime hostname
+over continually copying fork hostnames into a shared static allowlist. This
+trust must remain development-only and must never come from request headers.

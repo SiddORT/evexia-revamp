@@ -1,6 +1,79 @@
 # MR and Admin preview sign-in diagnosis
 
-## Finding
+## Repair and user-assisted confirmation — 2026-10-23
+
+### Established blocker and correction
+
+The available managed preview received three `POST /api/v1/auth/login`
+requests returning 403 before the repair. One correlation ID was
+`00261241-7b7b-41bb-a006-c7fe4fd761f3`, observed in the log snapshot collected
+at 06:17 UTC. The request records do not include per-request timestamps.
+The user identified `login` on `/admin/login` as the failing operation.
+
+The login route's origin dependency rejects an unapproved origin with 403
+before credential checking; its credential/portal failures return 401 instead.
+The development configuration retained older explicit preview origins.
+A read-only health request carrying the current platform preview origin
+returned 200 but did not receive matching origin admission
+(`006a995e-8d03-40fc-b959-e083b9d3f15d`).
+Thus a concrete origin-admission blocker was established in this runtime,
+independently of the earlier generic readiness 503.
+
+`Settings.allowed_origins` now retains the configured origins and adds the
+exact HTTPS hostname supplied by `REPLIT_DEV_DOMAIN` only when both development
+mode and the managed-preview flag are active. It rejects malformed hostnames.
+It never derives trust from request headers, allows no wildcard, and leaves
+production and unmanaged runtime behavior unchanged. No frontend/authentication
+transport, credentials, roles, keys or stored records were changed.
+
+### Actual runtime evidence and limitations
+
+Only the API workflow was restarted to activate the demonstrated repair, using
+its normal automatic development synchronization lifecycle. Startup reported
+schema `0057_staff_employee_code`, `applied: []`, and successful application
+startup. This was repair activation, not a migration-launcher reproduction.
+
+At 06:18 UTC, routed health and readiness returned 200 and explicitly admitted
+the current HTTPS preview origin. The API's loaded source identity was
+`e6ed7ba3e77ddc69cedb0a4bd61559b8e3c602e939bfda6ce539ae281986c766`.
+The unchanged running frontend source identity previously observed was
+`9f87807b608285186248fcd5d8af3f160d40d21fdca2b59a0aa8ec99e6097e86`.
+The public Admin page also rendered normally in a screenshot.
+The frontend was not restarted; its startup backend-identity snapshot predates
+the repair, so no frontend/API compatibility-alignment claim is made.
+
+After the user was asked to sign in personally in the affected preview and
+reload each protected page once, they explicitly confirmed **both Admin and MR
+dashboards open and survive reload**. The available API log snapshot collected
+at 06:19 UTC independently contains two login 200 responses, each followed by
+two `/me` 200 responses. Login correlation IDs:
+`e32ad363-742f-451e-b0a3-916aee61674a` and
+`acc41e4a-97fb-4fd6-bd63-36d694d00323`.
+Logs intentionally do not identify which account/portal produced each sequence.
+They also show logout 204 responses and a refresh 401 between the sequences;
+they do **not** establish a successful refresh rotation. Reload persistence and
+portal-specific destinations are user-confirmed, not independently browser-driven.
+
+The accessible runtime is the task workspace. The user supplied a page path,
+not an independently addressable original-preview origin. Original-preview
+success therefore rests on their affected-preview confirmation; the historical
+original 503 and a separate original runtime's serving revision remain
+unestablished. No claim is made that merge itself activates any runtime.
+The exact-host correction can follow the existing original-development
+post-merge/startup lifecycle without copying this fork's hostname into settings.
+
+No regression/release checks, builds, compatibility wrappers, synthetic
+identities or agent-submitted logins were launched for this repair. On the
+initial inspection, release/check workflows were unexpectedly already running;
+they were stopped immediately. Existing output confirms some fixture setup
+and a coverage audit had already executed, so this session cannot be described
+as having had no check execution at all. None restarted during API repair.
+No production/VPS access, pushes, deployments, account changes, recovery emails
+or secret changes were performed.
+
+## Historical diagnosis — before the repair
+
+### Finding
 
 The original preview's underlying sign-in blocker **cannot be established from
 the runtime available to this investigation**. The planning observation was
