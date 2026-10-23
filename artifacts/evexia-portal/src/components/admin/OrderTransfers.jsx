@@ -108,7 +108,7 @@ export default function OrderTransfers({ kind, rows, snapshot, store, adapter, t
     </div>;
   return <div className="order-transfers">
     {renderActions ? renderActions(actions) : actions}
-    {kind !== 'immunotherapy' && <p className="order-transfer-scope">{adapter
+    {kind !== 'immunotherapy' && kind !== 'kits' && <p className="order-transfer-scope">{adapter
       ? 'Export: saved server orders matching the currently applied filters across all pages, not only this section. Attachment metadata only; file contents are not included.'
       : `Export: all ${rows.length} filtered orders across all pages, not only the current page. Local session data; attachment metadata only, never file contents.`}</p>}
     {message && <p role="status" className="order-transfer-message">{message}</p>}
