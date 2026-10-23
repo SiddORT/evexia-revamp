@@ -200,7 +200,18 @@ def login(db: Session, identifier: str, password: str, settings: Settings,
     identifier_key, identifier_blocked = limit_state(db, settings, "login-identifier", identifier, 5)
     ip_key, ip_blocked = limit_state(db, settings, "login-ip", ip, 30)
     from app.services.account_crypto import lookup
-    user = db.scalar(select(User).where(lookup(db, identifier)))
+    from app.services.staff_identifiers import resolve
+    account_user = db.scalar(select(User).where(lookup(db, identifier)))
+    if len(identifier) < 3 or any(c.isspace() for c in identifier):
+        account_user = None  # Preserve the non-staff login identifier contract.
+    alias_owner = resolve(db, identifier)
+    # Staff's opaque generated username is not a third login credential. Never
+    # choose arbitrarily when multiple namespaces disagree.
+    user = db.get(User, alias_owner) if alias_owner else account_user
+    if account_user and alias_owner and account_user.id != alias_owner:
+        user = None
+    if user and user.system_role is None and alias_owner != user.id:
+        user = None
     valid = verify_password(password, user.password_hash) if user else verify_password(
         password, _DUMMY_HASH,
     )
@@ -229,6 +240,8 @@ def login(db: Session, identifier: str, password: str, settings: Settings,
             or locked.identity_version != identity._identity_version_snapshot):
         _reject(db, "login", "identity_changed", request_id)
     identity = _load_identity(db, locked)
+    if identity.staff is not None and resolve(db, identifier) != locked.id:
+        _reject(db, "login", "identity_changed", request_id)
     now = utcnow()
     repository.replace_active_sessions(db, locked, request_id, now)
     session = AuthSession(

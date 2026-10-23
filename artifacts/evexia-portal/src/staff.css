@@ -103,3 +103,25 @@
 @media (prefers-reduced-motion: reduce) { .admin-staff-status__track::after { transition: none; } }.admin-staff-access__option { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; }
 .admin-staff-access__option small { color: var(--admin-text-soft); }
 .admin-staff-access__pager { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+/* Scoped popup sizing: do not alter the shared Dialog or other master forms. */
+.admin-dialog.admin-staff-edit-dialog { width: min(760px, calc(100vw - 32px)); }
+.admin-dialog.admin-staff-access-dialog { width: min(620px, calc(100vw - 32px)); }
+:is(.admin-staff-edit-dialog, .admin-staff-access-dialog) { box-sizing: border-box; min-width: 0; padding: 22px; overflow-x: hidden; }
+:is(.admin-staff-edit-dialog, .admin-staff-access-dialog) .admin-dialog__description { margin: 10px 0 18px; line-height: 1.5; }
+:is(.admin-staff-edit-dialog, .admin-staff-access-dialog) .admin-staff-form { gap: 14px 18px; }
+:is(.admin-staff-edit-dialog, .admin-staff-access-dialog) .admin-dialog__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--admin-border); }
+:is(.admin-staff-edit-dialog, .admin-staff-access-dialog) :is(p, label, small, strong, button) { overflow-wrap: anywhere; }
+.admin-staff-access-dialog .admin-staff-access__option { display: flex; align-items: flex-start; gap: 10px; min-width: 0; padding: 10px 12px; border: 1px solid var(--admin-border); border-radius: 7px; line-height: 1.5; cursor: pointer; font-size: 13px; font-weight: 500; }
+.admin-staff-access-dialog .admin-staff-access__option:has(input:checked) { border-color: var(--admin-accent); background: var(--admin-state-link); }
+.admin-staff-access-dialog .admin-staff-access__option > input:is([type="radio"], [type="checkbox"]) { flex: 0 0 17px; width: 17px; height: 17px; min-height: 0; margin: 2px 0 0; padding: 0; accent-color: var(--admin-accent); box-shadow: none; }
+.admin-staff-access-dialog .admin-staff-access__option > span { display: block; min-width: 0; }
+.admin-staff-access-dialog .admin-staff-access__option small { display: block; font-weight: 400; line-height: 1.5; }
+.admin-staff-access-dialog .admin-staff-access__pager { flex-wrap: wrap; margin-top: 8px; }
+.admin-staff-access-dialog .admin-staff-access__pager button { white-space: normal; }
+.admin-staff-resolution { display: block; color: var(--admin-danger); font-size: 11px; }
+@media (max-width: 600px) {
+  :is(.admin-dialog.admin-staff-edit-dialog, .admin-dialog.admin-staff-access-dialog) { padding: 16px; width: calc(100vw - 24px); }
+  :is(.admin-staff-edit-dialog, .admin-staff-access-dialog) .admin-staff-form { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  :is(.admin-staff-edit-dialog, .admin-staff-access-dialog) .admin-dialog__actions > button { flex: 1 1 130px; white-space: normal; }
+}

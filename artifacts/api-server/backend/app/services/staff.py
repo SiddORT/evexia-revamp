@@ -30,14 +30,22 @@ def authorize(db, actor, settings):
     return current, crypto
 
 
-def projection(db, profile, crypto, username=None, designation_name=None):
-    username = username if username is not None else db.get(User, profile.user_id).username
+def projection(db, profile, crypto, designation_name=None, role_name=None, role_available=None):
+    if role_name is None:
+        assigned_role = db.get(CustomRole, profile.custom_role_id) if profile.custom_role_id else None
+        role_name = assigned_role.name if assigned_role and assigned_role.deleted_at is None else (
+            "Unavailable role" if profile.custom_role_id else "No role")
+        role_available = bool(assigned_role and assigned_role.deleted_at is None)
     designation_name = designation_name if designation_name is not None else db.get(Designation, profile.designation_id).name
     return dict(
-        id=profile.id, userId=username, employeeCode=profile.employee_code, version=profile.version,
+        id=profile.id, employeeCode=profile.employee_code, version=profile.version,
         **{field: crypto.decrypt(profile.id, field, getattr(profile, f"{field}_ciphertext"))
            for field in ("name", "email", "phone")},
-        dialCountry=profile.dial_country, role=profile.role, designation_id=profile.designation_id,
+        dialCountry=profile.dial_country, role=role_name, designation_id=profile.designation_id,
+        role_resolution_required=profile.role_resolution_required,
+        role_available=bool(role_available),
+        legacy_role=profile.role if profile.role_resolution_required else None,
+        login_identifiers_ready=profile.login_identifiers_ready,
         designationName=designation_name, deleted_at=profile.deleted_at, deleted_by=profile.deleted_by,
         dateOfJoining=profile.joining_date, status=profile.status,
         createdBy=str(profile.created_by), updatedBy=str(profile.updated_by),
@@ -51,11 +59,9 @@ def assign(profile, body, crypto):
         setattr(profile, f"{field}_ciphertext", crypto.encrypt(profile.id, field, str(getattr(body, field))))
     profile.email_index = crypto.email_index(str(body.email))
     profile.dial_country = body.dialCountry
-    profile.role, profile.designation_id = body.role, body.designation_id
+    profile.designation_id = body.designation_id
     profile.joining_date, profile.status = body.dateOfJoining, body.status
-    # Old clients omit this optional metadata. Only an explicit value may clear it.
-    if "employeeCode" in body.model_fields_set:
-        profile.employee_code = body.employeeCode
+    profile.employee_code = body.employeeCode
 
 
 def audit(db, actor, profile, action):
@@ -69,9 +75,12 @@ def audit(db, actor, profile, action):
 def transaction(work, db):
     try:
         return work()
-    except IntegrityError:
+    except IntegrityError as error:
         db.rollback()
-        raise StaffError("Staff email or identity already exists", 409, "staff_duplicate") from None
+        constraint = getattr(getattr(error.orig, "diag", None), "constraint_name", "")
+        if "email" in (constraint or ""):
+            raise StaffError("Email ID is already used by another staff account.", 409, "staff_email_duplicate") from None
+        raise StaffError("Employee Code or email is already used or reserved. Review both identifiers.", 409, "staff_duplicate") from None
     except SQLAlchemyError:
         db.rollback()
         raise StaffError() from None
@@ -88,15 +97,16 @@ def validate_designation(db, designation_id, saved_id=None):
     return row
 
 
-def validate_business_role(db, name, saved_name=None):
-    # Historical snapshots may be retained verbatim. Never assign access here.
-    if name == saved_name:
-        return
-    role = db.scalar(select(CustomRole).where(CustomRole.name == name, CustomRole.deleted_at.is_(None))
-                     .execution_options(populate_existing=True).with_for_update(read=True))
-    if role is None:
-        raise StaffError("Selected business role is no longer available. Search current roles and choose again; your draft is retained.",
-                         409, "staff_role_invalid")
+def assign_role(db, profile, role_id):
+    role = None
+    if role_id is not None:
+        role = db.scalar(select(CustomRole).where(CustomRole.id == role_id)
+                         .execution_options(populate_existing=True).with_for_update(read=True))
+        if role is None or role.deleted_at is not None:
+            raise StaffError("Selected role is unavailable. Choose a current role.", 409, "role_deleted")
+    profile.custom_role_id = role_id
+    profile.role = role.name if role else "No role"
+    profile.role_resolution_required = False
 
 
 def role_choices(db, actor, settings, query, offset, include_retained=False):
@@ -104,15 +114,17 @@ def role_choices(db, actor, settings, query, offset, include_retained=False):
         db.execute(text("SET LOCAL statement_timeout = '2000ms'"))
         db.execute(text("SET LOCAL lock_timeout = '1000ms'"))
         authorize(db, actor, settings)
-        names = select(CustomRole.name.label("name")).where(CustomRole.deleted_at.is_(None))
+        names = select(CustomRole.id.label("id"), CustomRole.name.label("name")).where(CustomRole.deleted_at.is_(None))
         if include_retained:
             # Directory filters include historical snapshots, not permission assignments.
-            names = union(names, select(StaffProfile.role.label("name")).where(StaffProfile.deleted_at.is_(None)))
+            names = union(names, select(CustomRole.id.label("id"), CustomRole.name.label("name"))
+                          .join(StaffProfile, StaffProfile.custom_role_id == CustomRole.id)
+                          .where(StaffProfile.deleted_at.is_(None), CustomRole.deleted_at.is_(None)))
         source = names.subquery()
         condition = source.c.name.icontains(query, autoescape=True)
         total = db.scalar(select(func.count()).select_from(source).where(condition))
-        rows = db.scalars(select(source.c.name).where(condition).order_by(source.c.name).limit(50).offset(offset))
-        result = dict(items=[dict(name=name) for name in rows], total=total)
+        rows = db.execute(select(source.c.id, source.c.name).where(condition).order_by(source.c.name, source.c.id).limit(50).offset(offset))
+        result = dict(items=[dict(id=row.id, name=row.name) for row in rows], total=total)
         db.commit()
         return result
     return transaction(work, db)
@@ -131,9 +143,9 @@ def generated_staff_password():
 
 def create(db, actor, body, settings):
     def work():
+        lock_policy(db)
         current, crypto = authorize(db, actor, settings)
         validate_designation(db, body.designation_id)
-        validate_business_role(db, body.role)
         # 120 random bits in a 32-character username, independent of personal data.
         chosen = getattr(body, "initialPassword", None)
         password = chosen if chosen is not None else generated_staff_password()
@@ -156,8 +168,12 @@ def create(db, actor, body, settings):
                     raise StaffError()
         profile = StaffProfile(id=uuid.uuid4(), user_id=user.id, version=1,
                                created_by=current.user.id, updated_by=current.user.id)
+        assign_role(db, profile, body.custom_role_id)
         assign(profile, body, crypto)
         db.add(profile)
+        from app.services.staff_identifiers import save_identifiers
+        with db.no_autoflush:
+            save_identifiers(db, profile, str(body.email), body.employeeCode, crypto)
         db.flush()
         audit(db, current, profile, "staff_create")
         result = projection(db, profile, crypto)
@@ -172,7 +188,11 @@ def directory_filters(stmt, filters):
     for field in ("status", "designation_id", "role"):
         value = getattr(filters, field, None)
         if value is not None:
-            stmt = stmt.where(getattr(StaffProfile, field) == value)
+            if field == "role":
+                stmt = stmt.where(StaffProfile.custom_role_id.in_(
+                    select(CustomRole.id).where(CustomRole.name == value, CustomRole.deleted_at.is_(None))))
+            else:
+                stmt = stmt.where(getattr(StaffProfile, field) == value)
     return stmt
 
 
@@ -201,15 +221,16 @@ def filter_designations(db, actor, settings, cursor):
 def listing(db, actor, settings, limit, offset, filters=None):
     def work():
         _current, crypto = authorize(db, actor, settings)
-        stmt = directory_filters(select(StaffProfile, User.id, User.username_ciphertext, User.username_index, Designation.name)
-            .join(User, User.id == StaffProfile.user_id)
+        stmt = directory_filters(select(StaffProfile, Designation.name, CustomRole.name, CustomRole.deleted_at)
             .join(Designation, Designation.id == StaffProfile.designation_id)
+            .outerjoin(CustomRole, CustomRole.id == StaffProfile.custom_role_id)
             .where(StaffProfile.deleted_at.is_(None)), filters)
         rows = list(db.execute(stmt.order_by(
             StaffProfile.created_at.desc(), StaffProfile.id.desc()).limit(limit + 1).offset(offset)))
-        from app.services.account_crypto import read
-        result = {"items": [projection(db, row, crypto, read(owner, "username", ciphertext, digest), name)
-                            for row, owner, ciphertext, digest, name in rows[:limit]],
+        result = {"items": [projection(db, row, crypto, name,
+                            role_name if role_name and deleted is None else "Unavailable role" if row.custom_role_id else "No role",
+                            bool(role_name and deleted is None))
+                            for row, name, role_name, deleted in rows[:limit]],
                   "has_more": len(rows) > limit, "limit": limit, "offset": offset}
         db.commit()
         return result
@@ -217,7 +238,7 @@ def listing(db, actor, settings, limit, offset, filters=None):
 
 
 SEARCH_SCAN_LIMIT = 500
-SEARCH_FIELDS = ("name", "email", "phone", "userId", "dialCountry", "role",
+SEARCH_FIELDS = ("name", "email", "phone", "employeeCode", "dialCountry", "role",
                  "designationName", "dateOfJoining", "status")
 
 
@@ -229,8 +250,9 @@ def search(db, actor, settings, body):
         _current, crypto = authorize(db, actor, settings)
         # Primary-key keyset scan: no plaintext personal-data predicates, new
         # blind indexes, counts, offsets, stored sessions or unbounded buffers.
-        stmt = (select(StaffProfile, User.id, User.username_ciphertext, User.username_index, Designation.name).join(User, User.id == StaffProfile.user_id)
+        stmt = (select(StaffProfile, Designation.name, CustomRole.name, CustomRole.deleted_at)
                 .join(Designation, Designation.id == StaffProfile.designation_id)
+                .outerjoin(CustomRole, CustomRole.id == StaffProfile.custom_role_id)
                 .where(StaffProfile.deleted_at.is_(None)))
         stmt = directory_filters(stmt, body)
         if body.cursor is not None:
@@ -238,10 +260,10 @@ def search(db, actor, settings, body):
         rows = list(db.execute(stmt.order_by(StaffProfile.id).limit(SEARCH_SCAN_LIMIT + 1)))
         term = body.query.casefold()
         items, scanned, last_id = [], 0, None
-        from app.services.account_crypto import read
-        for profile, owner, ciphertext, digest, name in rows[:SEARCH_SCAN_LIMIT]:
-            username = read(owner, "username", ciphertext, digest)
-            record = projection(db, profile, crypto, username, name)
+        for profile, name, role_name, deleted in rows[:SEARCH_SCAN_LIMIT]:
+            record = projection(db, profile, crypto, name,
+                                role_name if role_name and deleted is None else "Unavailable role" if profile.custom_role_id else "No role",
+                                bool(role_name and deleted is None))
             scanned += 1
             last_id = profile.id
             if any(term in str(record[field]).casefold() for field in SEARCH_FIELDS):
@@ -290,8 +312,13 @@ def edit(db, actor, settings, profile_id, body, status_only=False):
             profile.status = body.status
         else:
             validate_designation(db, body.designation_id, profile.designation_id)
-            validate_business_role(db, body.role, profile.role)
+            assign_role(db, profile, body.custom_role_id)
             assign(profile, body, crypto)
+            from app.services.staff_identifiers import save_identifiers
+            with db.no_autoflush:
+                save_identifiers(db, profile, str(body.email), body.employeeCode, crypto)
+            user.identity_version += 1
+            session_repository.revoke_user_sessions(db, user.id, "identity_invalid", db.info.get("request_id"))
         if profile.status != "active":
             session_repository.revoke_user_sessions(db, user.id, "identity_invalid", db.info.get("request_id"))
         profile.version += 1
@@ -322,18 +349,14 @@ def access(db, actor, settings, profile_id, body):
         projection(db, profile, crypto)
         if profile.version != body.expected_version:
             raise StaffError("Staff record changed. Review current details before retrying.", 409, "staff_stale")
-        if body.custom_role_id is not None:
-            role = db.scalar(select(CustomRole).where(CustomRole.id == body.custom_role_id).with_for_update())
-            if not role or role.deleted_at is not None:
-                raise StaffError("Selected role is unavailable. Choose a current role or explicitly unassign it.", 409, "role_deleted")
         if body.workspace_login_enabled and (profile.status != "active" or not user.is_active):
             raise StaffError("Activate this staff account before enabling workspace login.", 409, "staff_inactive")
-        profile.custom_role_id = body.custom_role_id
+        assign_role(db, profile, body.custom_role_id)
         profile.workspace_login_enabled = body.workspace_login_enabled
         profile.version += 1
         profile.updated_by, profile.updated_at = current.user.id, utcnow()
-        if not body.workspace_login_enabled:
-            session_repository.revoke_user_sessions(db, user.id, "identity_invalid", db.info.get("request_id"))
+        user.identity_version += 1
+        session_repository.revoke_user_sessions(db, user.id, "identity_invalid", db.info.get("request_id"))
         audit(db, current, profile, "staff_access")
         db.flush()
         result = projection(db, profile, crypto)

@@ -19,7 +19,7 @@ export default function LoginForm({ role }) {
 
   function validate() {
     const nextErrors = {};
-    if (!email.trim()) nextErrors.email = 'Enter your email or username.';
+    if (!email.trim()) nextErrors.email = role.short === 'ADMIN' ? 'Enter your email or Employee Code.' : 'Enter your email or username.';
     if (!password) nextErrors.password = 'Enter your password.';
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -68,7 +68,7 @@ export default function LoginForm({ role }) {
     <form className={`auth-form${role.short === 'ADMIN' ? ' auth-form--admin' : ''}`} onSubmit={handleSubmit} noValidate data-testid={`form-login-${role.short.toLowerCase()}`}>
       <Field
         id="email"
-        label="Email or username"
+        label={role.short === 'ADMIN' ? 'Email or Employee Code' : 'Email or username'}
         value={email}
         onChange={(event) => setEmail(event.target.value)}
         error={errors.email}

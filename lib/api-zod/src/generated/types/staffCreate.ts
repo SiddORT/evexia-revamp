@@ -9,13 +9,18 @@ import type { StaffCreateDialCountry } from "./staffCreateDialCountry";
 import type { StaffCreateStatus } from "./staffCreateStatus";
 
 export interface StaffCreate {
+  custom_role_id: string;
   dateOfJoining: Date;
   designation_id: string;
   dialCountry?: StaffCreateDialCountry;
   /** @maxLength 320 */
   email: string;
-  /** Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code. */
-  employeeCode?: string | null;
+  /**
+   * @minLength 1
+   * @maxLength 64
+   * @pattern ^[^\x00-\x1f\x7f-\x9f]+$
+   */
+  employeeCode: string;
   initialPassword?: string | null;
   /**
    * @minLength 1
@@ -27,11 +32,5 @@ export interface StaffCreate {
    * @maxLength 30
    */
   phone: string;
-  /**
-   * @minLength 1
-   * @maxLength 100
-   * @pattern ^[^\x00-\x1f\x7f]+$
-   */
-  role: string;
   status: StaffCreateStatus;
 }

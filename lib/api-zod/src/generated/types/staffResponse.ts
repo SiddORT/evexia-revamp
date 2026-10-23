@@ -20,9 +20,10 @@ export interface StaffResponse {
   dialCountry?: StaffResponseDialCountry;
   /** @maxLength 320 */
   email: string;
-  /** Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code. */
-  employeeCode?: string | null;
+  employeeCode: string | null;
   id: string;
+  legacy_role?: string | null;
+  login_identifiers_ready?: boolean;
   /**
    * @minLength 1
    * @maxLength 200
@@ -33,16 +34,12 @@ export interface StaffResponse {
    * @maxLength 30
    */
   phone: string;
-  /**
-   * @minLength 1
-   * @maxLength 100
-   * @pattern ^[^\x00-\x1f\x7f]+$
-   */
   role: string;
+  role_available?: boolean;
+  role_resolution_required?: boolean;
   status: StaffResponseStatus;
   updatedAt: Date;
   updatedBy: string;
-  userId: string;
   version: number;
   workspace_login_enabled?: boolean;
 }

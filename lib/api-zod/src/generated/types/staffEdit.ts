@@ -9,13 +9,18 @@ import type { StaffEditDialCountry } from "./staffEditDialCountry";
 import type { StaffEditStatus } from "./staffEditStatus";
 
 export interface StaffEdit {
+  custom_role_id: string | null;
   dateOfJoining: Date;
   designation_id: string;
   dialCountry?: StaffEditDialCountry;
   /** @maxLength 320 */
   email: string;
-  /** Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code. */
-  employeeCode?: string | null;
+  /**
+   * @minLength 1
+   * @maxLength 64
+   * @pattern ^[^\x00-\x1f\x7f-\x9f]+$
+   */
+  employeeCode: string;
   /** @minimum 1 */
   expected_version: number;
   /**
@@ -28,11 +33,5 @@ export interface StaffEdit {
    * @maxLength 30
    */
   phone: string;
-  /**
-   * @minLength 1
-   * @maxLength 100
-   * @pattern ^[^\x00-\x1f\x7f]+$
-   */
-  role: string;
   status: StaffEditStatus;
 }

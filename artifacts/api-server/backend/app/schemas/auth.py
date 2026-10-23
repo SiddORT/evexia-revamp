@@ -10,7 +10,7 @@ class StrictModel(BaseModel):
 
 
 class LoginRequest(StrictModel):
-    identifier: str = Field(min_length=3, max_length=320)
+    identifier: str = Field(min_length=1, max_length=320)
     password: str = Field(min_length=1, max_length=128)
     remember_me: bool = False
     # Portal selection constrains issuance; it never grants a role or permission.
@@ -20,7 +20,7 @@ class LoginRequest(StrictModel):
     @classmethod
     def normalized_identifier(cls, value: str) -> str:
         value = value.strip().lower()
-        if not value or any(character.isspace() for character in value):
+        if not value or any(ord(character) < 32 or 127 <= ord(character) <= 159 for character in value):
             raise ValueError("Invalid identifier")
         return value
 

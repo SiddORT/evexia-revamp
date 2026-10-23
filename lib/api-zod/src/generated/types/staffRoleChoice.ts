@@ -7,6 +7,7 @@
  */
 
 export interface StaffRoleChoice {
+  id?: string | null;
   /**
    * @minLength 1
    * @maxLength 100

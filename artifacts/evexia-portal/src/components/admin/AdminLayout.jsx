@@ -50,7 +50,7 @@ export default function AdminLayout({ title, children }) {
   const { user } = useAdminSession();
   const staff = isStaffIdentity(user);
   useEffect(() => { recordPageVisit(location); }, [location, user?.id]);
-  const profileName = user?.username || user?.email || (staff ? 'Staff member' : 'Super Admin');
+  const profileName = staff ? 'Staff member' : user?.username || user?.email || 'Super Admin';
   const go = (href) => { if (!interceptNavigation({ kind: 'href', href })) navigate(href); };
   function signOut() {
     if (interceptNavigation({ kind: 'run', run: signOutNow })) return Promise.resolve();

@@ -71,6 +71,14 @@ def rate_limit(db, settings, scope, values, maximum):
 def issue_and_send(db, settings, identifier, identity_kind):
     """Run after the generic response, so SMTP/account timing cannot enumerate."""
     user = db.scalar(select(User).where(account_crypto.lookup(db, identifier)))
+    from app.services.staff_identifiers import resolve
+    alias_owner = resolve(db, identifier)
+    if user and alias_owner and user.id != alias_owner:
+        return
+    if alias_owner:
+        user = db.get(User, alias_owner)
+    if user and user.system_role is None and alias_owner != user.id:
+        return
     if not user:
         return
     try:
@@ -110,7 +118,7 @@ def send_identity(db, settings, identity, recipient, purpose, attempt_id):
     token = jwt.encode(claims, _key(settings, purpose), algorithm="HS256")
     # Fragment is removed immediately by the public page; portal/purpose are
     # non-secret hints only. Signed claims are the authority.
-    login_id = user.username
+    login_id = recipient if identity.staff is not None else user.username
     suffix = "" if purpose == "password_recovery" else "?invitation=1&portal=" + identity_kind
     url = settings.password_recovery_url.rstrip("/") + suffix + "#token=" + token
     email_delivery.dispatch(db, settings, attempt_id, recipient, lambda template:

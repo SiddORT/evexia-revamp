@@ -12,6 +12,7 @@ StaffBusinessStatus = Literal["active", "inactive"]
 
 
 class StaffRoleChoice(BaseModel):
+    id: uuid.UUID | None = None
     name: StaffBusinessRole
 
 
@@ -46,14 +47,11 @@ class StaffFields(BaseModel):
     email: EmailStr = Field(max_length=320)
     phone: str = Field(min_length=1, max_length=30)
     dialCountry: DialCountry = "IN"
-    role: StaffBusinessRole
+    custom_role_id: uuid.UUID
     designation_id: uuid.UUID
     dateOfJoining: date
     status: Literal["active", "inactive"]
-    employeeCode: Annotated[str, StringConstraints(max_length=64, pattern=r"^[^\x00-\x1f\x7f-\x9f]*$")] | None = Field(
-        default=None,
-        description="Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
-    )
+    employeeCode: Annotated[str, StringConstraints(min_length=1, max_length=64, pattern=r"^[^\x00-\x1f\x7f-\x9f]+$")]
 
     @field_validator("employeeCode", mode="before")
     @classmethod
@@ -90,6 +88,7 @@ class StaffFields(BaseModel):
 
 
 class StaffEdit(StaffFields):
+    custom_role_id: uuid.UUID | None
     expected_version: int = Field(ge=1)
 
 
@@ -122,11 +121,16 @@ class StaffAccess(BaseModel):
 
 
 class StaffResponse(StaffFields):
+    employeeCode: str | None
+    role: str
+    role_resolution_required: bool = False
+    role_available: bool = False
+    login_identifiers_ready: bool = False
+    legacy_role: str | None = None
     designationName: str
     deleted_at: datetime | None = None
     deleted_by: uuid.UUID | None = None
     id: uuid.UUID
-    userId: str
     version: int
     createdBy: str
     updatedBy: str

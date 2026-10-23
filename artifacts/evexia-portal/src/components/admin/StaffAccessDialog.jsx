@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Dialog from './Dialog.jsx';
+import RemoteSelect from './RemoteSelect.jsx';
 import { listRoles, getRole } from '../../services/rolePermissions.js';
-import { accessOf, getStaff, setStaffAccess, validateAccess } from '../../services/staff.js';
+import { accessOf, getStaff, setStaffAccess, validateAccess, staffRoleChoices } from '../../services/staff.js';
 import { countLabel } from './ZonePermissionMatrix.jsx';
 
-// Explicit access assignment. Independent of the staff metadata form: nothing
-// is inferred from the Role label, and nothing is enabled automatically.
+// The same role ID as Add/Edit; login remains a separate explicit choice.
 export default function StaffAccessDialog({ record, onClose, onSaved }) {
   const [base, setBase] = useState(record);
   const [values, setValues] = useState(() => accessOf(record));
@@ -54,7 +54,7 @@ export default function StaffAccessDialog({ record, onClose, onSaved }) {
   const onPage = (id) => page.items.some((role) => role.id === id);
   const known = assigned?.role?.id === values.customRoleId ? assigned.role : null;
   const problem = validateAccess(values);
-  const dirty = values.customRoleId !== (base.custom_role_id ?? null) || values.loginEnabled !== (base.workspace_login_enabled === true);
+  const dirty = base.role_resolution_required || values.customRoleId !== (base.custom_role_id ?? null) || values.loginEnabled !== (base.workspace_login_enabled === true);
   const blocked = saving || rolesState !== 'ready' || (values.customRoleId && !known)
     || error?.ambiguous || error?.code === 'staff_stale';
 
@@ -83,10 +83,20 @@ export default function StaffAccessDialog({ record, onClose, onSaved }) {
   const set = (patch) => setValues((v) => ({ ...v, ...patch }));
 
   return <Dialog title={`Access for ${record.name}`} eyebrow="Staff Management" onClose={() => { if (!gate.current) onClose(); }}
-    description="Assign one role and decide whether this person may sign in to the restricted workspace. Business Role and Designation labels are not used. Passwords are never changed or shown here."
+    className="admin-staff-access-dialog"
+    description="This is the same permission-bearing Role used in Add/Edit. Login is a separate setting; passwords are unchanged."
     footer={<><button type="button" className="admin-button admin-button--secondary" onClick={onClose} disabled={saving} data-testid="button-cancel-staff-access">Cancel</button>
       <button type="submit" form="staff-access-form" className="admin-button" disabled={blocked || Boolean(problem) || !dirty} data-testid="button-save-staff-access">{saving ? 'Saving...' : 'Save access'}</button></>}>
     <form id="staff-access-form" className="admin-staff-form" onSubmit={save} noValidate aria-busy={saving}>
+      <div className="admin-staff-field admin-staff-form__wide">
+        <label htmlFor="staff-access-search">Find a role</label>
+        <RemoteSelect id="staff-access-search" label="Role" value={values.customRoleId}
+          selected={known ? { value: known.id, label: known.name } : null}
+          fetchPage={staffRoleChoices} disabled={saving} placeholder="Search saved roles"
+          onChange={(item) => set({ customRoleId: item?.value || null })} />
+      </div>
+      {base.role_resolution_required && <p className="admin-staff-form__wide admin-staff-field__error" role="alert">Legacy label “{base.legacy_role}” differs from the verified assignment below. Saving explicitly confirms your selected role; the label alone grants no permissions.</p>}
+      {!base.login_identifiers_ready && <p className="admin-staff-form__wide admin-staff-field__error">Login identifiers need correction in Edit staff before email/code sign-in is available.</p>}
       <div className="admin-staff-field admin-staff-form__wide" role="radiogroup" aria-label="Assigned role">
         <strong>Assigned role</strong>
         <label className="admin-staff-access__option"><input type="radio" name="staff-access-role" checked={values.customRoleId === null} disabled={saving} onChange={() => set({ customRoleId: null })} data-testid="radio-staff-access-none" /> No role (no Zone access)</label>
@@ -105,14 +115,14 @@ export default function StaffAccessDialog({ record, onClose, onSaved }) {
       </div>
       <label className="admin-staff-field admin-staff-form__wide admin-staff-access__option">
         <input type="checkbox" checked={values.loginEnabled} disabled={saving} onChange={(e) => set({ loginEnabled: e.target.checked })} data-testid="checkbox-staff-workspace-login" />
-        <span><strong>Enable workspace login</strong> <small>Uses the existing User ID and password. Inactive staff cannot sign in even when enabled. Without a role, staff can sign in but see a no-access screen.</small></span>
+        <span><strong>Enable workspace login</strong> <small>Sign in with Email ID or Employee Code and the existing password. Inactive staff cannot sign in. Without a role, enabled staff see a no-access screen.</small></span>
       </label>
       <div className="admin-staff-form__wide" aria-live="polite">
         {error && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-staff-access-error">{error.message}
           {error.ambiguous && <p>Do not repeat this change. Close this form and refresh the directory to confirm the saved state.</p>}
           {error.code === 'staff_stale' && !current && <p><button type="button" className="admin-button admin-button--secondary" onClick={review} data-testid="button-review-staff-access">Review current access</button></p>}
         </div>}
-        {current && <div data-testid="text-current-staff-access"><p>Current: {current.custom_role_id ? 'role assigned' : 'no role'}, login {current.workspace_login_enabled ? 'enabled' : 'disabled'}.</p>
+        {current && <div data-testid="text-current-staff-access"><p>Current: {current.role}, login {current.workspace_login_enabled ? 'enabled' : 'disabled'}.</p>
           <button type="button" className="admin-button" onClick={adopt} data-testid="button-adopt-staff-access">Keep my choices on current version</button>{' '}
           <button type="button" className="admin-button admin-button--secondary" onClick={useCurrent} data-testid="button-use-current-staff-access">Discard choices, use current</button></div>}
       </div>

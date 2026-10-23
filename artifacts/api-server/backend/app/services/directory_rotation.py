@@ -35,7 +35,7 @@ RUNTIME_REVISIONS = frozenset({PRIVACY_REVISION, "0037_domain_admission", "0038_
     # HQ zone/area metadata leaves encrypted directory fields unchanged.
     "0051_headquarter_areas", "0051_mr_zones", "0052_hq_mr_zones_merge",
     "0053_email_invitations", "0054_modern_email_tests", STAFF_MANAGER_REVISION,
-    "0056_staff_business_roles", "0057_staff_employee_code", "0058_master_numbers"})
+    "0056_staff_business_roles", "0057_staff_employee_code", "0058_master_numbers", "0059_staff_unified_access"})
 SUPPORTED_REVISIONS = frozenset({REVISION, "0031_role_hostnames", "0031_remove_organizations",
     "0033_merge_directory_branches", PHONE_REVISION, "0035_account_identifiers"}) | RUNTIME_REVISIONS
 COMPATIBLE_REVISIONS = SUPPORTED_REVISIONS
@@ -52,7 +52,7 @@ def _fields(db):
     revision = db.scalar(text("SELECT version_num FROM alembic_version"))
     if revision not in SUPPORTED_REVISIONS:
         raise RotationError()
-    if revision in (STAFF_MANAGER_REVISION, "0056_staff_business_roles", "0057_staff_employee_code", "0058_master_numbers"):
+    if revision in (STAFF_MANAGER_REVISION, "0056_staff_business_roles", "0057_staff_employee_code", "0058_master_numbers", "0059_staff_unified_access"):
         return FIELDS
     if revision in RUNTIME_REVISIONS:
         return REFERENCE_FIELDS

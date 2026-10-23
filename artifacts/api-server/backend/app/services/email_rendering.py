@@ -152,7 +152,7 @@ def render_test(template):
     rendered = _render(template, recipient_name="Fictional MR Member" if mr else "Fictional Staff Member",
                        reset_url="https://email-sample.invalid/not-an-account-action",
                        expiry_minutes="15 (fictional)", portal_name="MR portal" if mr else "Admin workspace",
-                       login_id="mr.fictional" if mr else "staff.fictional")
+                       login_id="mr.fictional" if mr else "staff@example.com")
     return RenderedEmail("[TEST — EVEXIA] " + rendered.subject,
                          "TEST EMAIL — fictional samples; links cannot activate or recover an account.\n\n" + rendered.text,
                          '<p style="font-family:Arial,sans-serif;color:#187368">TEST EMAIL — fictional samples; action links are nonfunctional.</p>' + rendered.html)

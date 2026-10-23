@@ -9,7 +9,7 @@ import type { LoginRequestIdentityKind } from "./loginRequestIdentityKind";
 
 export interface LoginRequest {
   /**
-   * @minLength 3
+   * @minLength 1
    * @maxLength 320
    */
   identifier: string;

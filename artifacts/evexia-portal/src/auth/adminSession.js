@@ -353,11 +353,15 @@ export async function staffRequest(path = '', body, { signal } = {}) {
     const code = data?.error?.code;
     const error = new SessionError(
       code === 'staff_stale' ? 'This staff record changed. Your draft is still here. Review current details before retrying.'
-        : code === 'staff_role_invalid' ? 'The selected business role is no longer available. Your draft is still here. Search current roles and choose again.'
+        : code === 'staff_role_invalid' ? 'The selected role is no longer available. Your draft is still here. Search current roles and choose again.'
         : code === 'staff_designation_invalid' ? 'The selected designation is no longer active or available. Your draft is still here. Search designations and choose again.'
         : code === 'role_deleted' || code === 'role_not_found' ? 'The selected role no longer exists. Your choices are still here. Reload roles and choose another or remove the assignment.'
         : code === 'staff_protected' ? 'This account cannot be assigned a role or workspace login.'
-        : code === 'staff_duplicate' ? 'That email or identity already exists. Check the directory.'
+        : code === 'staff_email_duplicate' ? 'Email ID is already used or reserved by another account. Enter a different email.'
+        : code === 'staff_employee_code_duplicate' ? 'Employee Code is already used or reserved by another account, including retained history. Enter a different code.'
+        : code === 'staff_employee_code_invalid' ? 'Employee Code has unsupported case normalization. Choose a different code.'
+        : code === 'staff_email_invalid' ? 'Email ID has unsupported case normalization. Choose a different email.'
+        : code === 'staff_duplicate' ? 'Email ID or Employee Code is already used or reserved. Check both fields.'
         : response.status === 422 ? 'Some staff fields are invalid. Check the details and try again.'
         : response.status === 403 ? 'Staff Management access denied.'
         : response.status === 401 ? 'Your session expired. Please sign in again.'

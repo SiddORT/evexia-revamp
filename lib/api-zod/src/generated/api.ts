@@ -1280,23 +1280,24 @@ export const listStaffQueryOffsetMin = 0;
 export const listStaffQueryOffsetMax = 10000;
 export const listStaffQueryRoleOneMax = 100;
 export const listStaffResponseItemsItemEmailMax = 320;
-export const listStaffResponseItemsItemEmployeeCodeOneMax = 64;
+export const listStaffResponseItemsItemLoginIdentifiersReadyDefault = false;
 export const listStaffResponseItemsItemNameMax = 200;
 export const listStaffResponseItemsItemPhoneMax = 30;
-export const listStaffResponseItemsItemRoleMax = 100;
+export const listStaffResponseItemsItemRoleAvailableDefault = false;
+export const listStaffResponseItemsItemRoleResolutionRequiredDefault = false;
 export const listStaffResponseItemsItemWorkspaceLoginEnabledDefault = false;
 export const createStaffBodyEmailMax = 320;
-export const createStaffBodyEmployeeCodeOneMax = 64;
+export const createStaffBodyEmployeeCodeMax = 64;
 export const createStaffBodyInitialPasswordOneMin = 12;
 export const createStaffBodyInitialPasswordOneMax = 128;
 export const createStaffBodyNameMax = 200;
 export const createStaffBodyPhoneMax = 30;
-export const createStaffBodyRoleMax = 100;
 export const createStaffResponseRecordEmailMax = 320;
-export const createStaffResponseRecordEmployeeCodeOneMax = 64;
+export const createStaffResponseRecordLoginIdentifiersReadyDefault = false;
 export const createStaffResponseRecordNameMax = 200;
 export const createStaffResponseRecordPhoneMax = 30;
-export const createStaffResponseRecordRoleMax = 100;
+export const createStaffResponseRecordRoleAvailableDefault = false;
+export const createStaffResponseRecordRoleResolutionRequiredDefault = false;
 export const createStaffResponseRecordWorkspaceLoginEnabledDefault = false;
 export const listStaffBusinessRoleChoicesQueryQueryMax = 100;
 export const listStaffBusinessRoleChoicesQueryOffsetDefault = 0;
@@ -1309,45 +1310,50 @@ export const searchStaffDirectoryBodyQueryMin = 2;
 export const searchStaffDirectoryBodyQueryMax = 200;
 export const searchStaffDirectoryBodyRoleOneMax = 100;
 export const searchStaffDirectoryResponseItemsItemEmailMax = 320;
-export const searchStaffDirectoryResponseItemsItemEmployeeCodeOneMax = 64;
+export const searchStaffDirectoryResponseItemsItemLoginIdentifiersReadyDefault = false;
 export const searchStaffDirectoryResponseItemsItemNameMax = 200;
 export const searchStaffDirectoryResponseItemsItemPhoneMax = 30;
-export const searchStaffDirectoryResponseItemsItemRoleMax = 100;
+export const searchStaffDirectoryResponseItemsItemRoleAvailableDefault = false;
+export const searchStaffDirectoryResponseItemsItemRoleResolutionRequiredDefault = false;
 export const searchStaffDirectoryResponseItemsItemWorkspaceLoginEnabledDefault = false;
 export const getStaffResponseEmailMax = 320;
-export const getStaffResponseEmployeeCodeOneMax = 64;
+export const getStaffResponseLoginIdentifiersReadyDefault = false;
 export const getStaffResponseNameMax = 200;
 export const getStaffResponsePhoneMax = 30;
-export const getStaffResponseRoleMax = 100;
+export const getStaffResponseRoleAvailableDefault = false;
+export const getStaffResponseRoleResolutionRequiredDefault = false;
 export const getStaffResponseWorkspaceLoginEnabledDefault = false;
 export const setStaffWorkspaceAccessResponseEmailMax = 320;
-export const setStaffWorkspaceAccessResponseEmployeeCodeOneMax = 64;
+export const setStaffWorkspaceAccessResponseLoginIdentifiersReadyDefault = false;
 export const setStaffWorkspaceAccessResponseNameMax = 200;
 export const setStaffWorkspaceAccessResponsePhoneMax = 30;
-export const setStaffWorkspaceAccessResponseRoleMax = 100;
+export const setStaffWorkspaceAccessResponseRoleAvailableDefault = false;
+export const setStaffWorkspaceAccessResponseRoleResolutionRequiredDefault = false;
 export const setStaffWorkspaceAccessResponseWorkspaceLoginEnabledDefault = false;
 export const deleteStaffResponseEmailMax = 320;
-export const deleteStaffResponseEmployeeCodeOneMax = 64;
+export const deleteStaffResponseLoginIdentifiersReadyDefault = false;
 export const deleteStaffResponseNameMax = 200;
 export const deleteStaffResponsePhoneMax = 30;
-export const deleteStaffResponseRoleMax = 100;
+export const deleteStaffResponseRoleAvailableDefault = false;
+export const deleteStaffResponseRoleResolutionRequiredDefault = false;
 export const deleteStaffResponseWorkspaceLoginEnabledDefault = false;
 export const editStaffBodyEmailMax = 320;
-export const editStaffBodyEmployeeCodeOneMax = 64;
+export const editStaffBodyEmployeeCodeMax = 64;
 export const editStaffBodyNameMax = 200;
 export const editStaffBodyPhoneMax = 30;
-export const editStaffBodyRoleMax = 100;
 export const editStaffResponseEmailMax = 320;
-export const editStaffResponseEmployeeCodeOneMax = 64;
+export const editStaffResponseLoginIdentifiersReadyDefault = false;
 export const editStaffResponseNameMax = 200;
 export const editStaffResponsePhoneMax = 30;
-export const editStaffResponseRoleMax = 100;
+export const editStaffResponseRoleAvailableDefault = false;
+export const editStaffResponseRoleResolutionRequiredDefault = false;
 export const editStaffResponseWorkspaceLoginEnabledDefault = false;
 export const setStaffStatusResponseEmailMax = 320;
-export const setStaffStatusResponseEmployeeCodeOneMax = 64;
+export const setStaffStatusResponseLoginIdentifiersReadyDefault = false;
 export const setStaffStatusResponseNameMax = 200;
 export const setStaffStatusResponsePhoneMax = 30;
-export const setStaffStatusResponseRoleMax = 100;
+export const setStaffStatusResponseRoleAvailableDefault = false;
+export const setStaffStatusResponseRoleResolutionRequiredDefault = false;
 export const setStaffStatusResponseWorkspaceLoginEnabledDefault = false;
 export const listStorageLocationsQueryQueryMax = 200;
 export const listStorageLocationsQueryLimitDefault = 10;
@@ -1509,7 +1515,6 @@ export const changePasswordBodyNewPasswordMin = 12;
 export const changePasswordBodyNewPasswordMax = 128;
 export const forgotPasswordApiV1AuthForgotPasswordPostBodyIdentifierMin = 3;
 export const forgotPasswordApiV1AuthForgotPasswordPostBodyIdentifierMax = 320;
-export const loginBodyIdentifierMin = 3;
 export const loginBodyIdentifierMax = 320;
 export const loginBodyPasswordMax = 128;
 export const loginBodyRememberMeDefault = false;
@@ -23352,14 +23357,6 @@ export const ListStaffQueryParams = zod.object({
 
 export const listStaffResponseItemsItemDialCountryDefault = `IN`;
 
-export const listStaffResponseItemsItemEmployeeCodeOneRegExp = new RegExp(
-  "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
-);
-
-export const listStaffResponseItemsItemRoleRegExp = new RegExp(
-  "^[^\\x00-\\x1f\\x7f]+$",
-);
-
 export const ListStaffResponse = zod.object({
   has_more: zod.boolean(),
   items: zod.array(
@@ -23622,30 +23619,24 @@ export const ListStaffResponse = zod.object({
         ])
         .default(listStaffResponseItemsItemDialCountryDefault),
       email: zod.string().email().max(listStaffResponseItemsItemEmailMax),
-      employeeCode: zod
-        .union([
-          zod
-            .string()
-            .max(listStaffResponseItemsItemEmployeeCodeOneMax)
-            .regex(listStaffResponseItemsItemEmployeeCodeOneRegExp),
-          zod.null(),
-        ])
-        .optional()
-        .describe(
-          "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
-        ),
+      employeeCode: zod.union([zod.string(), zod.null()]),
       id: zod.string().uuid(),
+      legacy_role: zod.union([zod.string(), zod.null()]).optional(),
+      login_identifiers_ready: zod
+        .boolean()
+        .default(listStaffResponseItemsItemLoginIdentifiersReadyDefault),
       name: zod.string().min(1).max(listStaffResponseItemsItemNameMax),
       phone: zod.string().min(1).max(listStaffResponseItemsItemPhoneMax),
-      role: zod
-        .string()
-        .min(1)
-        .max(listStaffResponseItemsItemRoleMax)
-        .regex(listStaffResponseItemsItemRoleRegExp),
+      role: zod.string(),
+      role_available: zod
+        .boolean()
+        .default(listStaffResponseItemsItemRoleAvailableDefault),
+      role_resolution_required: zod
+        .boolean()
+        .default(listStaffResponseItemsItemRoleResolutionRequiredDefault),
       status: zod.enum(["active", "inactive"]),
       updatedAt: zod.coerce.date(),
       updatedBy: zod.string(),
-      userId: zod.string(),
       version: zod.number().int(),
       workspace_login_enabled: zod
         .boolean()
@@ -23661,13 +23652,12 @@ export const ListStaffResponse = zod.object({
  */
 export const createStaffBodyDialCountryDefault = `IN`;
 
-export const createStaffBodyEmployeeCodeOneRegExp = new RegExp(
-  "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
+export const createStaffBodyEmployeeCodeRegExp = new RegExp(
+  "^[^\\x00-\\x1f\\x7f-\\x9f]+$",
 );
 
-export const createStaffBodyRoleRegExp = new RegExp("^[^\\x00-\\x1f\\x7f]+$");
-
 export const CreateStaffBody = zod.object({
+  custom_role_id: zod.string().uuid(),
   dateOfJoining: zod.coerce.date(),
   designation_id: zod.string().uuid(),
   dialCountry: zod
@@ -23921,17 +23911,10 @@ export const CreateStaffBody = zod.object({
     .default(createStaffBodyDialCountryDefault),
   email: zod.string().email().max(createStaffBodyEmailMax),
   employeeCode: zod
-    .union([
-      zod
-        .string()
-        .max(createStaffBodyEmployeeCodeOneMax)
-        .regex(createStaffBodyEmployeeCodeOneRegExp),
-      zod.null(),
-    ])
-    .optional()
-    .describe(
-      "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
-    ),
+    .string()
+    .min(1)
+    .max(createStaffBodyEmployeeCodeMax)
+    .regex(createStaffBodyEmployeeCodeRegExp),
   initialPassword: zod
     .union([
       zod
@@ -23943,23 +23926,10 @@ export const CreateStaffBody = zod.object({
     .optional(),
   name: zod.string().min(1).max(createStaffBodyNameMax),
   phone: zod.string().min(1).max(createStaffBodyPhoneMax),
-  role: zod
-    .string()
-    .min(1)
-    .max(createStaffBodyRoleMax)
-    .regex(createStaffBodyRoleRegExp),
   status: zod.enum(["active", "inactive"]),
 });
 
 export const createStaffResponseRecordDialCountryDefault = `IN`;
-
-export const createStaffResponseRecordEmployeeCodeOneRegExp = new RegExp(
-  "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
-);
-
-export const createStaffResponseRecordRoleRegExp = new RegExp(
-  "^[^\\x00-\\x1f\\x7f]+$",
-);
 
 export const CreateStaffResponse = zod.object({
   initial_password: zod.string(),
@@ -24222,30 +24192,24 @@ export const CreateStaffResponse = zod.object({
       ])
       .default(createStaffResponseRecordDialCountryDefault),
     email: zod.string().email().max(createStaffResponseRecordEmailMax),
-    employeeCode: zod
-      .union([
-        zod
-          .string()
-          .max(createStaffResponseRecordEmployeeCodeOneMax)
-          .regex(createStaffResponseRecordEmployeeCodeOneRegExp),
-        zod.null(),
-      ])
-      .optional()
-      .describe(
-        "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
-      ),
+    employeeCode: zod.union([zod.string(), zod.null()]),
     id: zod.string().uuid(),
+    legacy_role: zod.union([zod.string(), zod.null()]).optional(),
+    login_identifiers_ready: zod
+      .boolean()
+      .default(createStaffResponseRecordLoginIdentifiersReadyDefault),
     name: zod.string().min(1).max(createStaffResponseRecordNameMax),
     phone: zod.string().min(1).max(createStaffResponseRecordPhoneMax),
-    role: zod
-      .string()
-      .min(1)
-      .max(createStaffResponseRecordRoleMax)
-      .regex(createStaffResponseRecordRoleRegExp),
+    role: zod.string(),
+    role_available: zod
+      .boolean()
+      .default(createStaffResponseRecordRoleAvailableDefault),
+    role_resolution_required: zod
+      .boolean()
+      .default(createStaffResponseRecordRoleResolutionRequiredDefault),
     status: zod.enum(["active", "inactive"]),
     updatedAt: zod.coerce.date(),
     updatedBy: zod.string(),
-    userId: zod.string(),
     version: zod.number().int(),
     workspace_login_enabled: zod
       .boolean()
@@ -24299,6 +24263,7 @@ export const listStaffBusinessRoleChoicesResponseItemsItemNameRegExp =
 export const ListStaffBusinessRoleChoicesResponse = zod.object({
   items: zod.array(
     zod.object({
+      id: zod.union([zod.string().uuid(), zod.null()]).optional(),
       name: zod
         .string()
         .min(1)
@@ -24345,13 +24310,6 @@ export const SearchStaffDirectoryBody = zod.object({
 });
 
 export const searchStaffDirectoryResponseItemsItemDialCountryDefault = `IN`;
-
-export const searchStaffDirectoryResponseItemsItemEmployeeCodeOneRegExp =
-  new RegExp("^[^\\x00-\\x1f\\x7f-\\x9f]*$");
-
-export const searchStaffDirectoryResponseItemsItemRoleRegExp = new RegExp(
-  "^[^\\x00-\\x1f\\x7f]+$",
-);
 
 export const SearchStaffDirectoryResponse = zod.object({
   has_more: zod.boolean(),
@@ -24618,19 +24576,14 @@ export const SearchStaffDirectoryResponse = zod.object({
         .string()
         .email()
         .max(searchStaffDirectoryResponseItemsItemEmailMax),
-      employeeCode: zod
-        .union([
-          zod
-            .string()
-            .max(searchStaffDirectoryResponseItemsItemEmployeeCodeOneMax)
-            .regex(searchStaffDirectoryResponseItemsItemEmployeeCodeOneRegExp),
-          zod.null(),
-        ])
-        .optional()
-        .describe(
-          "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
-        ),
+      employeeCode: zod.union([zod.string(), zod.null()]),
       id: zod.string().uuid(),
+      legacy_role: zod.union([zod.string(), zod.null()]).optional(),
+      login_identifiers_ready: zod
+        .boolean()
+        .default(
+          searchStaffDirectoryResponseItemsItemLoginIdentifiersReadyDefault,
+        ),
       name: zod
         .string()
         .min(1)
@@ -24639,15 +24592,18 @@ export const SearchStaffDirectoryResponse = zod.object({
         .string()
         .min(1)
         .max(searchStaffDirectoryResponseItemsItemPhoneMax),
-      role: zod
-        .string()
-        .min(1)
-        .max(searchStaffDirectoryResponseItemsItemRoleMax)
-        .regex(searchStaffDirectoryResponseItemsItemRoleRegExp),
+      role: zod.string(),
+      role_available: zod
+        .boolean()
+        .default(searchStaffDirectoryResponseItemsItemRoleAvailableDefault),
+      role_resolution_required: zod
+        .boolean()
+        .default(
+          searchStaffDirectoryResponseItemsItemRoleResolutionRequiredDefault,
+        ),
       status: zod.enum(["active", "inactive"]),
       updatedAt: zod.coerce.date(),
       updatedBy: zod.string(),
-      userId: zod.string(),
       version: zod.number().int(),
       workspace_login_enabled: zod
         .boolean()
@@ -24670,12 +24626,6 @@ export const GetStaffParams = zod.object({
 });
 
 export const getStaffResponseDialCountryDefault = `IN`;
-
-export const getStaffResponseEmployeeCodeOneRegExp = new RegExp(
-  "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
-);
-
-export const getStaffResponseRoleRegExp = new RegExp("^[^\\x00-\\x1f\\x7f]+$");
 
 export const GetStaffResponse = zod.object({
   createdAt: zod.coerce.date(),
@@ -24936,30 +24886,22 @@ export const GetStaffResponse = zod.object({
     ])
     .default(getStaffResponseDialCountryDefault),
   email: zod.string().email().max(getStaffResponseEmailMax),
-  employeeCode: zod
-    .union([
-      zod
-        .string()
-        .max(getStaffResponseEmployeeCodeOneMax)
-        .regex(getStaffResponseEmployeeCodeOneRegExp),
-      zod.null(),
-    ])
-    .optional()
-    .describe(
-      "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
-    ),
+  employeeCode: zod.union([zod.string(), zod.null()]),
   id: zod.string().uuid(),
+  legacy_role: zod.union([zod.string(), zod.null()]).optional(),
+  login_identifiers_ready: zod
+    .boolean()
+    .default(getStaffResponseLoginIdentifiersReadyDefault),
   name: zod.string().min(1).max(getStaffResponseNameMax),
   phone: zod.string().min(1).max(getStaffResponsePhoneMax),
-  role: zod
-    .string()
-    .min(1)
-    .max(getStaffResponseRoleMax)
-    .regex(getStaffResponseRoleRegExp),
+  role: zod.string(),
+  role_available: zod.boolean().default(getStaffResponseRoleAvailableDefault),
+  role_resolution_required: zod
+    .boolean()
+    .default(getStaffResponseRoleResolutionRequiredDefault),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
-  userId: zod.string(),
   version: zod.number().int(),
   workspace_login_enabled: zod
     .boolean()
@@ -24980,14 +24922,6 @@ export const SetStaffWorkspaceAccessBody = zod.object({
 });
 
 export const setStaffWorkspaceAccessResponseDialCountryDefault = `IN`;
-
-export const setStaffWorkspaceAccessResponseEmployeeCodeOneRegExp = new RegExp(
-  "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
-);
-
-export const setStaffWorkspaceAccessResponseRoleRegExp = new RegExp(
-  "^[^\\x00-\\x1f\\x7f]+$",
-);
 
 export const SetStaffWorkspaceAccessResponse = zod.object({
   createdAt: zod.coerce.date(),
@@ -25248,30 +25182,24 @@ export const SetStaffWorkspaceAccessResponse = zod.object({
     ])
     .default(setStaffWorkspaceAccessResponseDialCountryDefault),
   email: zod.string().email().max(setStaffWorkspaceAccessResponseEmailMax),
-  employeeCode: zod
-    .union([
-      zod
-        .string()
-        .max(setStaffWorkspaceAccessResponseEmployeeCodeOneMax)
-        .regex(setStaffWorkspaceAccessResponseEmployeeCodeOneRegExp),
-      zod.null(),
-    ])
-    .optional()
-    .describe(
-      "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
-    ),
+  employeeCode: zod.union([zod.string(), zod.null()]),
   id: zod.string().uuid(),
+  legacy_role: zod.union([zod.string(), zod.null()]).optional(),
+  login_identifiers_ready: zod
+    .boolean()
+    .default(setStaffWorkspaceAccessResponseLoginIdentifiersReadyDefault),
   name: zod.string().min(1).max(setStaffWorkspaceAccessResponseNameMax),
   phone: zod.string().min(1).max(setStaffWorkspaceAccessResponsePhoneMax),
-  role: zod
-    .string()
-    .min(1)
-    .max(setStaffWorkspaceAccessResponseRoleMax)
-    .regex(setStaffWorkspaceAccessResponseRoleRegExp),
+  role: zod.string(),
+  role_available: zod
+    .boolean()
+    .default(setStaffWorkspaceAccessResponseRoleAvailableDefault),
+  role_resolution_required: zod
+    .boolean()
+    .default(setStaffWorkspaceAccessResponseRoleResolutionRequiredDefault),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
-  userId: zod.string(),
   version: zod.number().int(),
   workspace_login_enabled: zod
     .boolean()
@@ -25290,14 +25218,6 @@ export const DeleteStaffBody = zod.object({
 });
 
 export const deleteStaffResponseDialCountryDefault = `IN`;
-
-export const deleteStaffResponseEmployeeCodeOneRegExp = new RegExp(
-  "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
-);
-
-export const deleteStaffResponseRoleRegExp = new RegExp(
-  "^[^\\x00-\\x1f\\x7f]+$",
-);
 
 export const DeleteStaffResponse = zod.object({
   createdAt: zod.coerce.date(),
@@ -25558,30 +25478,24 @@ export const DeleteStaffResponse = zod.object({
     ])
     .default(deleteStaffResponseDialCountryDefault),
   email: zod.string().email().max(deleteStaffResponseEmailMax),
-  employeeCode: zod
-    .union([
-      zod
-        .string()
-        .max(deleteStaffResponseEmployeeCodeOneMax)
-        .regex(deleteStaffResponseEmployeeCodeOneRegExp),
-      zod.null(),
-    ])
-    .optional()
-    .describe(
-      "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
-    ),
+  employeeCode: zod.union([zod.string(), zod.null()]),
   id: zod.string().uuid(),
+  legacy_role: zod.union([zod.string(), zod.null()]).optional(),
+  login_identifiers_ready: zod
+    .boolean()
+    .default(deleteStaffResponseLoginIdentifiersReadyDefault),
   name: zod.string().min(1).max(deleteStaffResponseNameMax),
   phone: zod.string().min(1).max(deleteStaffResponsePhoneMax),
-  role: zod
-    .string()
-    .min(1)
-    .max(deleteStaffResponseRoleMax)
-    .regex(deleteStaffResponseRoleRegExp),
+  role: zod.string(),
+  role_available: zod
+    .boolean()
+    .default(deleteStaffResponseRoleAvailableDefault),
+  role_resolution_required: zod
+    .boolean()
+    .default(deleteStaffResponseRoleResolutionRequiredDefault),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
-  userId: zod.string(),
   version: zod.number().int(),
   workspace_login_enabled: zod
     .boolean()
@@ -25597,13 +25511,12 @@ export const EditStaffParams = zod.object({
 
 export const editStaffBodyDialCountryDefault = `IN`;
 
-export const editStaffBodyEmployeeCodeOneRegExp = new RegExp(
-  "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
+export const editStaffBodyEmployeeCodeRegExp = new RegExp(
+  "^[^\\x00-\\x1f\\x7f-\\x9f]+$",
 );
 
-export const editStaffBodyRoleRegExp = new RegExp("^[^\\x00-\\x1f\\x7f]+$");
-
 export const EditStaffBody = zod.object({
+  custom_role_id: zod.union([zod.string().uuid(), zod.null()]),
   dateOfJoining: zod.coerce.date(),
   designation_id: zod.string().uuid(),
   dialCountry: zod
@@ -25857,35 +25770,17 @@ export const EditStaffBody = zod.object({
     .default(editStaffBodyDialCountryDefault),
   email: zod.string().email().max(editStaffBodyEmailMax),
   employeeCode: zod
-    .union([
-      zod
-        .string()
-        .max(editStaffBodyEmployeeCodeOneMax)
-        .regex(editStaffBodyEmployeeCodeOneRegExp),
-      zod.null(),
-    ])
-    .optional()
-    .describe(
-      "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
-    ),
+    .string()
+    .min(1)
+    .max(editStaffBodyEmployeeCodeMax)
+    .regex(editStaffBodyEmployeeCodeRegExp),
   expected_version: zod.number().int().min(1),
   name: zod.string().min(1).max(editStaffBodyNameMax),
   phone: zod.string().min(1).max(editStaffBodyPhoneMax),
-  role: zod
-    .string()
-    .min(1)
-    .max(editStaffBodyRoleMax)
-    .regex(editStaffBodyRoleRegExp),
   status: zod.enum(["active", "inactive"]),
 });
 
 export const editStaffResponseDialCountryDefault = `IN`;
-
-export const editStaffResponseEmployeeCodeOneRegExp = new RegExp(
-  "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
-);
-
-export const editStaffResponseRoleRegExp = new RegExp("^[^\\x00-\\x1f\\x7f]+$");
 
 export const EditStaffResponse = zod.object({
   createdAt: zod.coerce.date(),
@@ -26146,30 +26041,22 @@ export const EditStaffResponse = zod.object({
     ])
     .default(editStaffResponseDialCountryDefault),
   email: zod.string().email().max(editStaffResponseEmailMax),
-  employeeCode: zod
-    .union([
-      zod
-        .string()
-        .max(editStaffResponseEmployeeCodeOneMax)
-        .regex(editStaffResponseEmployeeCodeOneRegExp),
-      zod.null(),
-    ])
-    .optional()
-    .describe(
-      "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
-    ),
+  employeeCode: zod.union([zod.string(), zod.null()]),
   id: zod.string().uuid(),
+  legacy_role: zod.union([zod.string(), zod.null()]).optional(),
+  login_identifiers_ready: zod
+    .boolean()
+    .default(editStaffResponseLoginIdentifiersReadyDefault),
   name: zod.string().min(1).max(editStaffResponseNameMax),
   phone: zod.string().min(1).max(editStaffResponsePhoneMax),
-  role: zod
-    .string()
-    .min(1)
-    .max(editStaffResponseRoleMax)
-    .regex(editStaffResponseRoleRegExp),
+  role: zod.string(),
+  role_available: zod.boolean().default(editStaffResponseRoleAvailableDefault),
+  role_resolution_required: zod
+    .boolean()
+    .default(editStaffResponseRoleResolutionRequiredDefault),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
-  userId: zod.string(),
   version: zod.number().int(),
   workspace_login_enabled: zod
     .boolean()
@@ -26189,14 +26076,6 @@ export const SetStaffStatusBody = zod.object({
 });
 
 export const setStaffStatusResponseDialCountryDefault = `IN`;
-
-export const setStaffStatusResponseEmployeeCodeOneRegExp = new RegExp(
-  "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
-);
-
-export const setStaffStatusResponseRoleRegExp = new RegExp(
-  "^[^\\x00-\\x1f\\x7f]+$",
-);
 
 export const SetStaffStatusResponse = zod.object({
   createdAt: zod.coerce.date(),
@@ -26457,30 +26336,24 @@ export const SetStaffStatusResponse = zod.object({
     ])
     .default(setStaffStatusResponseDialCountryDefault),
   email: zod.string().email().max(setStaffStatusResponseEmailMax),
-  employeeCode: zod
-    .union([
-      zod
-        .string()
-        .max(setStaffStatusResponseEmployeeCodeOneMax)
-        .regex(setStaffStatusResponseEmployeeCodeOneRegExp),
-      zod.null(),
-    ])
-    .optional()
-    .describe(
-      "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
-    ),
+  employeeCode: zod.union([zod.string(), zod.null()]),
   id: zod.string().uuid(),
+  legacy_role: zod.union([zod.string(), zod.null()]).optional(),
+  login_identifiers_ready: zod
+    .boolean()
+    .default(setStaffStatusResponseLoginIdentifiersReadyDefault),
   name: zod.string().min(1).max(setStaffStatusResponseNameMax),
   phone: zod.string().min(1).max(setStaffStatusResponsePhoneMax),
-  role: zod
-    .string()
-    .min(1)
-    .max(setStaffStatusResponseRoleMax)
-    .regex(setStaffStatusResponseRoleRegExp),
+  role: zod.string(),
+  role_available: zod
+    .boolean()
+    .default(setStaffStatusResponseRoleAvailableDefault),
+  role_resolution_required: zod
+    .boolean()
+    .default(setStaffStatusResponseRoleResolutionRequiredDefault),
   status: zod.enum(["active", "inactive"]),
   updatedAt: zod.coerce.date(),
   updatedBy: zod.string(),
-  userId: zod.string(),
   version: zod.number().int(),
   workspace_login_enabled: zod
     .boolean()
@@ -29735,10 +29608,7 @@ export const ForgotPasswordApiV1AuthForgotPasswordPostResponse = zod.object({
  */
 
 export const LoginBody = zod.object({
-  identifier: zod
-    .string()
-    .min(loginBodyIdentifierMin)
-    .max(loginBodyIdentifierMax),
+  identifier: zod.string().min(1).max(loginBodyIdentifierMax),
   identity_kind: zod.union([zod.enum(["admin", "mr"]), zod.null()]).optional(),
   password: zod.string().min(1).max(loginBodyPasswordMax),
   remember_me: zod.boolean().default(loginBodyRememberMeDefault),

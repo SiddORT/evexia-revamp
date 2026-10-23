@@ -3198,7 +3198,7 @@ export const LoginRequestIdentityKind = {
 
 export interface LoginRequest {
   /**
-   * @minLength 3
+   * @minLength 1
    * @maxLength 320
    */
   identifier: string;
@@ -7883,13 +7883,18 @@ export const StaffCreateStatus = {
 } as const;
 
 export interface StaffCreate {
+  custom_role_id: string;
   dateOfJoining: string;
   designation_id: string;
   dialCountry?: StaffCreateDialCountry;
   /** @maxLength 320 */
   email: string;
-  /** Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code. */
-  employeeCode?: string | null;
+  /**
+   * @minLength 1
+   * @maxLength 64
+   * @pattern ^[^\x00-\x1f\x7f-\x9f]+$
+   */
+  employeeCode: string;
   initialPassword?: string | null;
   /**
    * @minLength 1
@@ -7901,12 +7906,6 @@ export interface StaffCreate {
    * @maxLength 30
    */
   phone: string;
-  /**
-   * @minLength 1
-   * @maxLength 100
-   * @pattern ^[^\x00-\x1f\x7f]+$
-   */
-  role: string;
   status: StaffCreateStatus;
 }
 
@@ -8181,9 +8180,10 @@ export interface StaffResponse {
   dialCountry?: StaffResponseDialCountry;
   /** @maxLength 320 */
   email: string;
-  /** Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code. */
-  employeeCode?: string | null;
+  employeeCode: string | null;
   id: string;
+  legacy_role?: string | null;
+  login_identifiers_ready?: boolean;
   /**
    * @minLength 1
    * @maxLength 200
@@ -8194,16 +8194,12 @@ export interface StaffResponse {
    * @maxLength 30
    */
   phone: string;
-  /**
-   * @minLength 1
-   * @maxLength 100
-   * @pattern ^[^\x00-\x1f\x7f]+$
-   */
   role: string;
+  role_available?: boolean;
+  role_resolution_required?: boolean;
   status: StaffResponseStatus;
   updatedAt: string;
   updatedBy: string;
-  userId: string;
   version: number;
   workspace_login_enabled?: boolean;
 }
@@ -8499,13 +8495,18 @@ export const StaffEditStatus = {
 } as const;
 
 export interface StaffEdit {
+  custom_role_id: string | null;
   dateOfJoining: string;
   designation_id: string;
   dialCountry?: StaffEditDialCountry;
   /** @maxLength 320 */
   email: string;
-  /** Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code. */
-  employeeCode?: string | null;
+  /**
+   * @minLength 1
+   * @maxLength 64
+   * @pattern ^[^\x00-\x1f\x7f-\x9f]+$
+   */
+  employeeCode: string;
   /** @minimum 1 */
   expected_version: number;
   /**
@@ -8518,12 +8519,6 @@ export interface StaffEdit {
    * @maxLength 30
    */
   phone: string;
-  /**
-   * @minLength 1
-   * @maxLength 100
-   * @pattern ^[^\x00-\x1f\x7f]+$
-   */
-  role: string;
   status: StaffEditStatus;
 }
 
@@ -8535,6 +8530,7 @@ export interface StaffPage {
 }
 
 export interface StaffRoleChoice {
+  id?: string | null;
   /**
    * @minLength 1
    * @maxLength 100

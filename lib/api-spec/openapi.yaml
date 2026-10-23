@@ -7828,7 +7828,7 @@
         "properties": {
           "identifier": {
             "maxLength": 320,
-            "minLength": 3,
+            "minLength": 1,
             "title": "Identifier",
             "type": "string"
           },
@@ -18753,6 +18753,11 @@
       "StaffCreate": {
         "additionalProperties": false,
         "properties": {
+          "custom_role_id": {
+            "format": "uuid",
+            "title": "Custom Role Id",
+            "type": "string"
+          },
           "dateOfJoining": {
             "format": "date",
             "title": "Dateofjoining",
@@ -19022,18 +19027,11 @@
             "type": "string"
           },
           "employeeCode": {
-            "anyOf": [
-              {
-                "maxLength": 64,
-                "pattern": "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
-            "title": "Employeecode"
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f-\\x9f]+$",
+            "title": "Employeecode",
+            "type": "string"
           },
           "initialPassword": {
             "anyOf": [
@@ -19060,13 +19058,6 @@
             "title": "Phone",
             "type": "string"
           },
-          "role": {
-            "maxLength": 100,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Role",
-            "type": "string"
-          },
           "status": {
             "enum": [
               "active",
@@ -19080,10 +19071,11 @@
           "name",
           "email",
           "phone",
-          "role",
+          "custom_role_id",
           "designation_id",
           "dateOfJoining",
-          "status"
+          "status",
+          "employeeCode"
         ],
         "title": "StaffCreate",
         "type": "object"
@@ -19190,6 +19182,18 @@
       "StaffEdit": {
         "additionalProperties": false,
         "properties": {
+          "custom_role_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Role Id"
+          },
           "dateOfJoining": {
             "format": "date",
             "title": "Dateofjoining",
@@ -19459,18 +19463,11 @@
             "type": "string"
           },
           "employeeCode": {
-            "anyOf": [
-              {
-                "maxLength": 64,
-                "pattern": "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
-            "title": "Employeecode"
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f-\\x9f]+$",
+            "title": "Employeecode",
+            "type": "string"
           },
           "expected_version": {
             "minimum": 1.0,
@@ -19489,13 +19486,6 @@
             "title": "Phone",
             "type": "string"
           },
-          "role": {
-            "maxLength": 100,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Role",
-            "type": "string"
-          },
           "status": {
             "enum": [
               "active",
@@ -19509,10 +19499,11 @@
           "name",
           "email",
           "phone",
-          "role",
+          "custom_role_id",
           "designation_id",
           "dateOfJoining",
           "status",
+          "employeeCode",
           "expected_version"
         ],
         "title": "StaffEdit",
@@ -19872,21 +19863,34 @@
           "employeeCode": {
             "anyOf": [
               {
-                "maxLength": 64,
-                "pattern": "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "description": "Optional manually entered staff metadata, not a login identity. Trimmed; blank/null clears. Omitted on edit preserves the saved code.",
             "title": "Employeecode"
           },
           "id": {
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "legacy_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legacy Role"
+          },
+          "login_identifiers_ready": {
+            "default": false,
+            "title": "Login Identifiers Ready",
+            "type": "boolean"
           },
           "name": {
             "maxLength": 200,
@@ -19901,11 +19905,18 @@
             "type": "string"
           },
           "role": {
-            "maxLength": 100,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
             "title": "Role",
             "type": "string"
+          },
+          "role_available": {
+            "default": false,
+            "title": "Role Available",
+            "type": "boolean"
+          },
+          "role_resolution_required": {
+            "default": false,
+            "title": "Role Resolution Required",
+            "type": "boolean"
           },
           "status": {
             "enum": [
@@ -19924,10 +19935,6 @@
             "title": "Updatedby",
             "type": "string"
           },
-          "userId": {
-            "title": "Userid",
-            "type": "string"
-          },
           "version": {
             "title": "Version",
             "type": "integer"
@@ -19942,13 +19949,13 @@
           "name",
           "email",
           "phone",
-          "role",
           "designation_id",
           "dateOfJoining",
           "status",
+          "employeeCode",
+          "role",
           "designationName",
           "id",
-          "userId",
           "version",
           "createdBy",
           "updatedBy",
@@ -19960,6 +19967,18 @@
       },
       "StaffRoleChoice": {
         "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
           "name": {
             "maxLength": 100,
             "minLength": 1,

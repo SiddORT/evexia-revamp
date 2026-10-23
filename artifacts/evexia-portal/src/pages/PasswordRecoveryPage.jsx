@@ -66,7 +66,7 @@ export default function PasswordRecoveryPage({ reset = false }) {
     if (busy || done) return;
     if (isSuperAdminRecovery) { setMessage(''); setFailed(false); return; }
     const error = reset ? validateReset(password, confirmation)
-      : !identifier.trim() ? 'Enter your email or User ID.' : '';
+      : !identifier.trim() ? (kind === 'admin' ? 'Enter your saved Email ID.' : 'Enter your email or User ID.') : '';
     if (error) { setMessage(error); setFailed(true); return; }
     const epoch = generation.current;
     setMessage(''); setFailed(false); setBusy(true);
@@ -130,7 +130,7 @@ export default function PasswordRecoveryPage({ reset = false }) {
                 </button>
               </Field>
               <p className="recovery-hint">Use 12 to 128 characters. Longer passphrases are fine.</p>
-            </> : <Field id="recovery-identifier" label="Email or User ID" autoComplete="username"
+            </> : <Field id="recovery-identifier" label={kind === 'admin' ? 'Email ID' : 'Email or User ID'} autoComplete="username"
               value={identifier} onChange={event => setIdentifier(event.target.value)} />}
             <button className="submit-button" disabled={busy} type="submit">
               {busy ? 'Please wait…' : invitation ? 'Set password' : reset ? 'Reset password' : 'Send recovery link'}

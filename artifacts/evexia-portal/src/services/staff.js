@@ -7,21 +7,22 @@ export const STAFF_KEY = 'evexia.admin.staff.v1';
 // Historical labels only, retained for legacy consumers; never new form choices.
 export const STAFF_ROLES = ['Staff', 'Manager', 'Accountant', 'Back End', 'Sub Admin', 'Super Admin'];
 export const STAFF_COLUMNS = [
-  ['name', 'Name'], ['phone', 'Phone No.'], ['dialCountry', 'Dial Country'], ['userId', 'User ID'],
+  ['name', 'Name'], ['phone', 'Phone No.'], ['dialCountry', 'Dial Country'], ['employeeCode', 'Employee Code'],
   ['email', 'Email ID'], ['role', 'Role'], ['status', 'Status'], ['designationName', 'Designation'], ['dateOfJoining', 'Date of Joining'],
-  ['employeeCode', 'Employee Code'],
 ];
-const INPUTS = STAFF_COLUMNS.map(([key]) => key === 'designationName' ? 'designation_id' : key).filter((key) => key !== 'userId');
+const INPUTS = STAFF_COLUMNS.map(([key]) => key === 'designationName' ? 'designation_id' : key === 'role' ? 'custom_role_id' : key);
 
 export function validateStaff(values, _records = [], _exceptId = null, designations = [], roles = []) {
   const fields = Object.fromEntries(INPUTS.map((key) => [key, typeof values[key] === 'string' ? values[key].trim() : '']));
   const errors = {};
   for (const key of INPUTS) {
+    if (key === 'custom_role_id') continue;
     if (key === 'employeeCode') {
+      if (!fields[key]) errors[key] = 'Employee Code is required.';
       if ([...fields[key]].length > 64 || /[\u0000-\u001f\u007f-\u009f]/.test(values[key] ?? '')) errors[key] = 'Employee Code must be at most 64 characters without control characters.';
       continue;
     }
-    if (!fields[key]) errors[key] = `${key === 'designation_id' ? 'Designation' : STAFF_COLUMNS.find(([field]) => key === field)[1]} is required.`;
+    if (!fields[key]) errors[key] = `${key === 'designation_id' ? 'Designation' : key === 'custom_role_id' ? 'Role' : STAFF_COLUMNS.find(([field]) => key === field)[1]} is required.`;
     if (fields[key].length > (key === 'email' ? 320 : 200)) errors[key] = 'Value is too long.';
   }
   const country = dialCountry(fields.dialCountry);
@@ -30,9 +31,16 @@ export function validateStaff(values, _records = [], _exceptId = null, designati
   if (country && digits === null) errors.phone = 'Enter a valid phone number for the selected country.';
   if (!errors.phone) fields.phone = digits;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) errors.email = 'Enter a valid email address.';
-  if ([...fields.role].length > 100 || /[\u0000-\u001f\u007f]/.test(fields.role) ||
-    (!roles.some((role) => role.name === fields.role && !role.deleted_at) &&
-    !_records.some((record) => record.id === _exceptId && record.role === fields.role))) errors.role = 'Choose a current saved role.';
+  if (!fields.custom_role_id && _exceptId) {
+    fields.custom_role_id = null;
+    if (_records.some((record) => record.id === _exceptId && record.role_resolution_required)) {
+      errors.custom_role_id = 'Choose a current role, or resolve No role explicitly in Access before editing this record.';
+    }
+  }
+  else if (!UUID.test(fields.custom_role_id) ||
+    (!roles.some((role) => role.id === fields.custom_role_id && !role.deleted_at) &&
+    !_records.some((record) => record.id === _exceptId && record.custom_role_id === fields.custom_role_id
+      && !record.role_resolution_required && record.role_available))) errors.custom_role_id = 'Choose a current saved role.';
   if (!['active', 'inactive'].includes(fields.status)) errors.status = 'Choose a valid status.';
   const day = fields.dateOfJoining;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || Number.isNaN(Date.parse(day)) ||
@@ -56,7 +64,7 @@ export async function staffRoleChoices(query, offset, signal, _cursor = null, in
       page.items.some((item) => typeof item.name !== 'string' || !item.name || [...item.name].length > 100)) {
     throw new Error('Role choices could not be read. Retry before choosing a role.');
   }
-  return { items: page.items.map((item) => ({ value: item.name, label: item.name, raw: item })), total: page.total };
+  return { items: page.items.map((item) => ({ value: includeRetained ? item.name : item.id, label: item.name, raw: item })), total: page.total };
 }
 export const getStaff = (id) => staffRequest(`/${id}`);
 export const createStaff = (values) => staffRequest('', values);
@@ -76,7 +84,7 @@ export function exportStaffCSV(records, preferences) {
   return rows.map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n';
 }
 
-// Explicit access assignment. Separate from metadata edits; never implied by labels.
+// Both staff editing and Access persist this same stable permission-bearing ID.
 const UUID = /^[0-9a-f-]{36}$/;
 export function validateAccess({ customRoleId, loginEnabled }) {
   if (customRoleId !== null && !(typeof customRoleId === 'string' && UUID.test(customRoleId))) return 'Choose a role from the list or select no role.';
