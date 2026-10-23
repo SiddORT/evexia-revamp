@@ -65,6 +65,7 @@ def projection(db, row, context=None):
     return dict(id=row.id, startYear=row.startYear, endYear=row.endYear, doctorId=row.doctorId,
                 amount=format(row.amount, ".2f"), status=row.status, version=row.version,
                 doctorName=doctor.name if doctor else "Unavailable saved Doctor",
+                doctorNumber=doctor.doctorNumber if doctor else "",
                 registrationNumber=doctor.registrationNumber if doctor else "", doctorUsable=usable(doctor),
                 createdBy=context["authors"].get(row.created_by, "Backend user") if context is not None else label(db, row.created_by),
                 updatedBy=context["authors"].get(row.updated_by, "Backend user") if context is not None else label(db, row.updated_by),
@@ -75,7 +76,7 @@ def projection_context(db, rows):
     from app.db.models import User
     from types import SimpleNamespace
     docs = mrs._bulk(db, (row.doctorId for row in rows),
-                    lambda ids: select(Doctor.id, Doctor.name_ciphertext, Doctor.registrationNumber,
+                    lambda ids: select(Doctor.id, Doctor.name_ciphertext, Doctor.doctorNumber, Doctor.registrationNumber,
                                        Doctor.deleted_at, Doctor.status).where(Doctor.id.in_(ids)))
     docs = {key: SimpleNamespace(**dict(value._mapping), name=encrypted.read_name(value, "doctor_directory"))
             for key, value in docs.items()}
@@ -147,7 +148,7 @@ def choices(db, actor, query="", limit=50, offset=0, balance_id=None, cursor=Non
         authorize(db, actor)
         clauses = [Doctor.status == "active", Doctor.deleted_at.is_(None)]
         if query.strip():
-            rows, meta = encrypted.scan(db, Doctor, clauses, lambda row: encrypted.match(query, row.name, row.registrationNumber), limit=limit, cursor=cursor)
+            rows, meta = encrypted.scan(db, Doctor, clauses, lambda row: encrypted.match(query, row.name, row.doctorNumber, row.registrationNumber), limit=limit, cursor=cursor)
             total = None
         else:
             total = db.scalar(select(func.count()).select_from(Doctor).where(*clauses))
@@ -157,7 +158,7 @@ def choices(db, actor, query="", limit=50, offset=0, balance_id=None, cursor=Non
         saved = db.get(Doctor, find(db, balance_id).doctorId) if balance_id else None
         if saved and not saved.deleted_at and saved not in rows:
             rows.append(saved)
-        result = dict(items=[dict(id=d.id, name=d.name, registrationNumber=d.registrationNumber, usable=usable(d)) for d in rows],
+        result = dict(items=[dict(id=d.id, name=d.name, doctorNumber=d.doctorNumber, registrationNumber=d.registrationNumber, usable=usable(d)) for d in rows],
                       total=total, limit=limit, offset=offset, **meta)
         db.commit()
         return result

@@ -29,7 +29,7 @@ export default function MRDoctorAssignments({ mr }) {
     <button type="button" className="admin-button admin-button--secondary" disabled={loading} onClick={() => setRevision((n) => n + 1)}>Refresh assignments</button>
     {loading ? <p role="status">Loading assigned doctors…</p> : error ? <p role="alert">{error}</p> : <>
       <p data-testid="text-mr-doctor-count">{data.filtered} live assigned {data.filtered === 1 ? 'doctor' : 'doctors'}</p>
-      {data.items.length ? <ul>{data.items.map((doctor) => <li key={doctor.id}>{can.edit ? <Link href={`/admin/masters/doctors/${doctor.id}`}>{doctor.name}</Link> : doctor.name} · {doctor.registrationNumber} · {doctor.status} · {doctor.zoneName || 'Missing Zone'}</li>)}</ul> : <p>No live doctors assigned to this MR.</p>}
+      {data.items.length ? <ul>{data.items.map((doctor) => <li key={doctor.id}>{can.edit ? <Link href={`/admin/masters/doctors/${doctor.id}`}>{doctor.name}</Link> : doctor.name} · Doctor number: {doctor.doctorNumber} · Registration: {doctor.registrationNumber} · {doctor.status} · {doctor.zoneName || 'Missing Zone'}</li>)}</ul> : <p>No live doctors assigned to this MR.</p>}
       <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={data.filtered} total={data.filtered} label="assigned doctors" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />
     </>}
   </div>;

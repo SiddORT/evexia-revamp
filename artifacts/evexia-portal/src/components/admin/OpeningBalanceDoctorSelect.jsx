@@ -11,11 +11,11 @@ export default function OpeningBalanceDoctorSelect({ value, record, disabled, er
   const continuation = useDirectoryContinuation({ query, offset });
   const cursor = continuation.params.cursor;
   const [state, setState] = useState({ items: [], total: 0, loading: true, error: '' });
-  const [selected, setSelected] = useState(record ? { id: record.doctorId, name: record.doctorName, registrationNumber: record.registrationNumber, usable: record.doctorUsable } : null);
+  const [selected, setSelected] = useState(record ? { id: record.doctorId, name: record.doctorName, doctorNumber: record.doctorNumber, registrationNumber: record.registrationNumber, usable: record.doctorUsable } : null);
   useEffect(() => {
     if (record) setSelected({ id: record.doctorId, name: record.doctorName,
-      registrationNumber: record.registrationNumber, usable: record.doctorUsable });
-  }, [record?.doctorId, record?.doctorName, record?.registrationNumber, record?.doctorUsable]);
+      doctorNumber: record.doctorNumber, registrationNumber: record.registrationNumber, usable: record.doctorUsable });
+  }, [record?.doctorId, record?.doctorName, record?.doctorNumber, record?.registrationNumber, record?.doctorUsable]);
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     const owner = getSession().user?.id;
@@ -40,7 +40,7 @@ export default function OpeningBalanceDoctorSelect({ value, record, disabled, er
   }, [query, offset, record?.id, revision, cursor]);
   const rows = [...state.items];
   if (selected && !rows.some((d) => d.id === selected.id)) rows.push(selected);
-  const labelOf = (d) => `${d.name} · ${d.registrationNumber}${!d.usable ? ' (saved inactive/unavailable reference)' : ''}`;
+  const labelOf = (d) => `${d.name}${d.doctorNumber ? ` · Doctor number: ${d.doctorNumber}` : ''} · Registration: ${d.registrationNumber}${!d.usable ? ' (saved inactive/unavailable reference)' : ''}`;
   const choices = state.items.filter((d) => d.usable || (d.id === record?.doctorId && d.id === value));
   const current = rows.find((d) => d.id === value);
   const label = current ? labelOf(current) : '';

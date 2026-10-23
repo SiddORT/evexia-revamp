@@ -83,7 +83,7 @@ export interface MRDirectoryResponse {
   /**
    * @minLength 3
    * @maxLength 32
-   * @pattern ^[a-z][a-z0-9._-]{2,31}$
+   * @pattern ^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$
    */
   userId: string;
   version: number;

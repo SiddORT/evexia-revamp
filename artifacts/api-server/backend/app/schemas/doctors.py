@@ -170,10 +170,12 @@ class DoctorBulk(BaseModel):
 
 class DoctorResponse(DoctorFields):
     master_read = True
+    doctorNumber: str
     id: uuid.UUID
     version: int
     verification: Literal["verified", "unverified"]
     mrName: str
+    mrUserId: str
     zoneId: uuid.UUID | None
     zoneName: str
     assignmentWarnings: list[str]
@@ -194,6 +196,7 @@ class DoctorPage(SearchSection):
 class DoctorChoice(BaseModel):
     id: uuid.UUID
     name: str
+    userId: str
     status: str
     zoneId: uuid.UUID | None
     zoneName: str

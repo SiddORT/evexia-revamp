@@ -7,7 +7,7 @@ import { getSalesTarget, salesTargetChoices } from '../../services/serverSalesTa
 import { QUARTERS, defaultTarget, formatAmount, formatCents, sumDraft, targetBody, targetDraftErrors } from '../../services/salesTargetFields.js';
 import '../../salesTarget.css';
 
-export const mrOption = (mr) => ({ value: mr.id, label: `${mr.name} (${mr.employeeCode})`, raw: mr });
+export const mrOption = (mr) => ({ value: mr.id, label: `${mr.name}${mr.userId ? ` · User ID: ${mr.userId}` : ''} (${mr.employeeCode})`, raw: mr });
 export const fetchMrs = (extra = {}) => async (query, offset, signal, cursor) => {
   const page = await salesTargetChoices({ query, offset, cursor, limit: 20, ...extra }, signal);
   return { items: page.mrs.map(mrOption), total: page.total, nextCursor: page.nextCursor, partial: page.partial };
@@ -21,7 +21,7 @@ const pick = (record) => record ? { mrId: record.mrId, startYear: String(record.
 
 export default function SalesTargetForm({ record, onSave, onClose }) {
   const [values, setValues] = useState(() => pick(record));
-  const [mr, setMr] = useState(() => record ? { id: record.mrId, name: record.mrName, employeeCode: record.employeeCode, zoneName: record.zoneName, headquarterName: record.headquarterName } : null);
+  const [mr, setMr] = useState(() => record ? { id: record.mrId, name: record.mrName, userId: record.mrUserId, employeeCode: record.employeeCode, zoneName: record.zoneName, headquarterName: record.headquarterName } : null);
   const [errors, setErrors] = useState({});
   const [attempted, setAttempted] = useState(false);
   const [message, setMessage] = useState('');
@@ -41,7 +41,7 @@ export default function SalesTargetForm({ record, onSave, onClose }) {
       if (controller.signal.aborted) return;
       if (fresh.version !== record.version) { setStaleRecord(fresh); setBlocked(true); return; }
       setCurrent(fresh);
-      setMr({ id: fresh.mrId, name: fresh.mrName, employeeCode: fresh.employeeCode, zoneName: fresh.zoneName, headquarterName: fresh.headquarterName });
+      setMr({ id: fresh.mrId, name: fresh.mrName, userId: fresh.mrUserId, employeeCode: fresh.employeeCode, zoneName: fresh.zoneName, headquarterName: fresh.headquarterName });
     }).catch((cause) => { if (!controller.signal.aborted) { setNotice(cause.message || 'Current record could not be confirmed.'); if (cause.status === 404) setBlocked(true); } });
     return () => controller.abort();
   }, [record, detailRevision]);
@@ -81,7 +81,7 @@ export default function SalesTargetForm({ record, onSave, onClose }) {
         <div className="admin-target-form__fields">
         <div className="admin-target-form__grid">
           <div className="admin-target-field"><span>Medical representative</span>
-            <RemoteSelect describeSelection id="sales-target-mr" label="Medical representative" value={values.mrId} selected={savedMr ? { label: `${savedMr.name} (${savedMr.employeeCode})` } : null} fetchPage={fetchMrs()} placeholder="Select MR" invalid={errors.mrId}
+            <RemoteSelect describeSelection id="sales-target-mr" label="Medical representative" value={values.mrId} selected={savedMr ? { label: mrOption(savedMr).label } : null} fetchPage={fetchMrs()} placeholder="Select MR" invalid={errors.mrId}
               onChange={(item) => { setMr(item?.raw || null); change('mrId', item?.value || ''); }} />{err('mrId')}</div>
           <label className="admin-target-field">Status<select value={values.status} onChange={(e) => change('status', e.target.value)} data-testid="select-sales-target-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>{err('status')}</label>
           <label className="admin-target-field">Headquarter<input readOnly value={mr?.headquarterName || (mr ? 'Not assigned' : 'Select an MR first')} aria-describedby="target-headquarter-full" data-testid="input-sales-target-headquarter" /><span id="target-headquarter-full" className="admin-target-reference">{mr?.headquarterName || (mr ? 'Not assigned' : 'Select an MR first')}</span></label>
@@ -96,7 +96,7 @@ export default function SalesTargetForm({ record, onSave, onClose }) {
         {record && <p className="admin-target-import__guide">Saved annual total: {formatAmount(record.annualTotal)}</p>}
         {staleRecord && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-sales-target-stale">
           This target changed on the server (version {staleRecord.version}; your form started from version {record.version}). Saving is blocked so nothing is overwritten. Current server values: {staleRecord.mrName} ({staleRecord.employeeCode}), {staleRecord.startYear}–{staleRecord.endYear}, Q1 {formatAmount(staleRecord.q1)}, Q2 {formatAmount(staleRecord.q2)}, Q3 {formatAmount(staleRecord.q3)}, Q4 {formatAmount(staleRecord.q4)}, annual {formatAmount(staleRecord.annualTotal)}, {staleRecord.status}. Your draft above is unchanged.
-          <div className="admin-dialog__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => { setValues(pick(staleRecord)); setMr({ id: staleRecord.mrId, name: staleRecord.mrName, employeeCode: staleRecord.employeeCode, zoneName: staleRecord.zoneName, headquarterName: staleRecord.headquarterName }); setCurrent(staleRecord); setStaleRecord(null); setBlocked(false); setErrors({}); setMessage(''); }} data-testid="button-discard-reload-sales-target">Discard my draft and load current values</button><button type="button" className="admin-button admin-button--secondary" onClick={onClose} data-testid="button-close-stale-sales-target">Close and refresh list</button></div></div>}
+          <div className="admin-dialog__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => { setValues(pick(staleRecord)); setMr({ id: staleRecord.mrId, name: staleRecord.mrName, userId: staleRecord.mrUserId, employeeCode: staleRecord.employeeCode, zoneName: staleRecord.zoneName, headquarterName: staleRecord.headquarterName }); setCurrent(staleRecord); setStaleRecord(null); setBlocked(false); setErrors({}); setMessage(''); }} data-testid="button-discard-reload-sales-target">Discard my draft and load current values</button><button type="button" className="admin-button admin-button--secondary" onClick={onClose} data-testid="button-close-stale-sales-target">Close and refresh list</button></div></div>}
         {notice && <div className="admin-feedback" role="status">{notice}<button type="button" className="admin-button admin-button--secondary" onClick={() => setDetailRevision((value) => value + 1)}>Retry current details</button></div>}
         {message && <div className="admin-feedback admin-feedback--error" role="alert" data-testid="status-sales-target-form-error">{message}{blocked ? ' Close this form and reload current records before editing again.' : ''}</div>}
         <div className="admin-dialog__actions"><button type="button" className="admin-button admin-button--secondary" disabled={pending} onClick={onClose} data-testid="button-cancel-sales-target">Cancel</button><button type="submit" className="admin-button" disabled={pending || blocked || Boolean(record && !current)} data-testid="button-save-sales-target">{pending ? 'Saving…' : record ? 'Save changes' : 'Add target'}</button></div>

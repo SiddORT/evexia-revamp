@@ -164,7 +164,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
     const errorId = `doctor-${key}-error`;
     const id = `doctor-${key}`;
     const required = REQUIRED.has(key) || (key === 'gstNumber' && values.invoiceType === 'gst');
-    const describedBy = [errors[key] && errorId, ['phone', 'email'].includes(key) && 'doctor-contact-help', key === 'pincode' && address.postal.message && 'doctor-pin-feedback'].filter(Boolean).join(' ') || undefined;
+    const describedBy = [errors[key] && errorId, key === 'pincode' && address.postal.message && 'doctor-pin-feedback'].filter(Boolean).join(' ') || undefined;
     const common = {
       id, name: key, className: 'doctor-form__control', value: values[key],
       onChange: (event) => change(key, event.target.value), autoComplete: autoComplete || 'off',
@@ -263,8 +263,7 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
         <button type="button" className="admin-button admin-button--secondary" onClick={onRefresh} data-testid="button-refresh-doctor-save">Refresh records</button>
       </div>}
       <section className="doctor-form__section" id="doctor-panel-identity" role="tabpanel" aria-labelledby="doctor-tab-identity" tabIndex={0} hidden={activeTab !== 'identity'}>
-        <div className="doctor-form__section-head"><h3 className="doctor-form__section-title">Identity & contact</h3><p className="doctor-form__section-note">Fields marked * are required</p></div>
-        <p id="doctor-contact-help" className="doctor-form__hint doctor-form__contact-intro">Enter either a phone number or an email address. Both are allowed. Alternate phone is separate.</p>
+        {doctor && <p className="doctor-form__hint">Doctor number: {doctor.doctorNumber}</p>}
         <div className="doctor-form__grid">
           {renderField('name', 'Doctor Name', { placeholder: 'Doctor name', autoComplete: 'name' })}
           {renderField('phone', 'Phone No.', { placeholder: 'Phone number' })}

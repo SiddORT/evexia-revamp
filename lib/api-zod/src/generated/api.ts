@@ -3220,6 +3220,7 @@ export const ListDoctorDirectoryResponse = zod.object({
           "ZW",
         ])
         .default(listDoctorDirectoryResponseItemsItemDialCountryDefault),
+      doctorNumber: zod.string(),
       drugLicenceNumber: zod
         .string()
         .max(listDoctorDirectoryResponseItemsItemDrugLicenceNumberMax)
@@ -3242,6 +3243,7 @@ export const ListDoctorDirectoryResponse = zod.object({
         .max(listDoctorDirectoryResponseItemsItemLandmarkMax),
       mrId: zod.string().uuid(),
       mrName: zod.string(),
+      mrUserId: zod.string(),
       name: zod
         .string()
         .min(1)
@@ -3965,6 +3967,7 @@ export const CreateDoctorDirectoryResponse = zod.object({
       "ZW",
     ])
     .default(createDoctorDirectoryResponseDialCountryDefault),
+  doctorNumber: zod.string(),
   drugLicenceNumber: zod
     .string()
     .max(createDoctorDirectoryResponseDrugLicenceNumberMax)
@@ -3984,6 +3987,7 @@ export const CreateDoctorDirectoryResponse = zod.object({
   landmark: zod.string().min(1).max(createDoctorDirectoryResponseLandmarkMax),
   mrId: zod.string().uuid(),
   mrName: zod.string(),
+  mrUserId: zod.string(),
   name: zod.string().min(1).max(createDoctorDirectoryResponseNameMax),
   orderDiscount: zod
     .string()
@@ -4355,6 +4359,7 @@ export const BulkDoctorDirectoryResponseItem = zod.object({
       "ZW",
     ])
     .default(bulkDoctorDirectoryResponseDialCountryDefault),
+  doctorNumber: zod.string(),
   drugLicenceNumber: zod
     .string()
     .max(bulkDoctorDirectoryResponseDrugLicenceNumberMax)
@@ -4374,6 +4379,7 @@ export const BulkDoctorDirectoryResponseItem = zod.object({
   landmark: zod.string().min(1).max(bulkDoctorDirectoryResponseLandmarkMax),
   mrId: zod.string().uuid(),
   mrName: zod.string(),
+  mrUserId: zod.string(),
   name: zod.string().min(1).max(bulkDoctorDirectoryResponseNameMax),
   orderDiscount: zod
     .string()
@@ -4582,6 +4588,7 @@ export const ListDoctorMRChoicesResponse = zod.object({
       name: zod.string(),
       status: zod.string(),
       usable: zod.boolean(),
+      userId: zod.string(),
       zoneId: zod.union([zod.string().uuid(), zod.null()]),
       zoneName: zod.string(),
       zoneStatus: zod.union([zod.enum(["active", "inactive"]), zod.null()]),
@@ -4936,6 +4943,7 @@ export const GetDoctorDirectoryResponse = zod.object({
       "ZW",
     ])
     .default(getDoctorDirectoryResponseDialCountryDefault),
+  doctorNumber: zod.string(),
   drugLicenceNumber: zod
     .string()
     .max(getDoctorDirectoryResponseDrugLicenceNumberMax)
@@ -4955,6 +4963,7 @@ export const GetDoctorDirectoryResponse = zod.object({
   landmark: zod.string().min(1).max(getDoctorDirectoryResponseLandmarkMax),
   mrId: zod.string().uuid(),
   mrName: zod.string(),
+  mrUserId: zod.string(),
   name: zod.string().min(1).max(getDoctorDirectoryResponseNameMax),
   orderDiscount: zod
     .string()
@@ -5319,6 +5328,7 @@ export const SetDoctorContactRequirementResponse = zod.object({
       "ZW",
     ])
     .default(setDoctorContactRequirementResponseDialCountryDefault),
+  doctorNumber: zod.string(),
   drugLicenceNumber: zod
     .string()
     .max(setDoctorContactRequirementResponseDrugLicenceNumberMax)
@@ -5341,6 +5351,7 @@ export const SetDoctorContactRequirementResponse = zod.object({
     .max(setDoctorContactRequirementResponseLandmarkMax),
   mrId: zod.string().uuid(),
   mrName: zod.string(),
+  mrUserId: zod.string(),
   name: zod.string().min(1).max(setDoctorContactRequirementResponseNameMax),
   orderDiscount: zod
     .string()
@@ -5704,6 +5715,7 @@ export const DeleteDoctorDirectoryResponse = zod.object({
       "ZW",
     ])
     .default(deleteDoctorDirectoryResponseDialCountryDefault),
+  doctorNumber: zod.string(),
   drugLicenceNumber: zod
     .string()
     .max(deleteDoctorDirectoryResponseDrugLicenceNumberMax)
@@ -5723,6 +5735,7 @@ export const DeleteDoctorDirectoryResponse = zod.object({
   landmark: zod.string().min(1).max(deleteDoctorDirectoryResponseLandmarkMax),
   mrId: zod.string().uuid(),
   mrName: zod.string(),
+  mrUserId: zod.string(),
   name: zod.string().min(1).max(deleteDoctorDirectoryResponseNameMax),
   orderDiscount: zod
     .string()
@@ -6428,6 +6441,7 @@ export const EditDoctorDirectoryResponse = zod.object({
       "ZW",
     ])
     .default(editDoctorDirectoryResponseDialCountryDefault),
+  doctorNumber: zod.string(),
   drugLicenceNumber: zod
     .string()
     .max(editDoctorDirectoryResponseDrugLicenceNumberMax)
@@ -6447,6 +6461,7 @@ export const EditDoctorDirectoryResponse = zod.object({
   landmark: zod.string().min(1).max(editDoctorDirectoryResponseLandmarkMax),
   mrId: zod.string().uuid(),
   mrName: zod.string(),
+  mrUserId: zod.string(),
   name: zod.string().min(1).max(editDoctorDirectoryResponseNameMax),
   orderDiscount: zod
     .string()
@@ -6809,6 +6824,7 @@ export const SetDoctorDirectoryStatusResponse = zod.object({
       "ZW",
     ])
     .default(setDoctorDirectoryStatusResponseDialCountryDefault),
+  doctorNumber: zod.string(),
   drugLicenceNumber: zod
     .string()
     .max(setDoctorDirectoryStatusResponseDrugLicenceNumberMax)
@@ -6831,6 +6847,7 @@ export const SetDoctorDirectoryStatusResponse = zod.object({
     .max(setDoctorDirectoryStatusResponseLandmarkMax),
   mrId: zod.string().uuid(),
   mrName: zod.string(),
+  mrUserId: zod.string(),
   name: zod.string().min(1).max(setDoctorDirectoryStatusResponseNameMax),
   orderDiscount: zod
     .string()
@@ -9342,7 +9359,7 @@ export const listMRDirectoryResponseItemsItemPincodeRegExp = new RegExp(
 export const listMRDirectoryResponseItemsItemReportingStaffNameDefault = ``;
 
 export const listMRDirectoryResponseItemsItemUserIdRegExp = new RegExp(
-  "^[a-z][a-z0-9._-]{2,31}$",
+  "^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$",
 );
 
 export const ListMRDirectoryResponse = zod.object({
@@ -9367,6 +9384,7 @@ export const ListMRDirectoryResponse = zod.object({
           id: zod.string().uuid(),
           name: zod.string(),
           status: zod.string(),
+          userId: zod.union([zod.string(), zod.null()]).optional(),
         }),
       ),
       assignmentWarnings: zod.array(zod.string()),
@@ -10059,7 +10077,7 @@ export const createMRDirectoryResponseRecordPincodeRegExp = new RegExp(
 export const createMRDirectoryResponseRecordReportingStaffNameDefault = ``;
 
 export const createMRDirectoryResponseRecordUserIdRegExp = new RegExp(
-  "^[a-z][a-z0-9._-]{2,31}$",
+  "^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$",
 );
 
 export const CreateMRDirectoryResponse = zod.object({
@@ -10086,6 +10104,7 @@ export const CreateMRDirectoryResponse = zod.object({
         id: zod.string().uuid(),
         name: zod.string(),
         status: zod.string(),
+        userId: zod.union([zod.string(), zod.null()]).optional(),
       }),
     ),
     assignmentWarnings: zod.array(zod.string()),
@@ -10432,7 +10451,7 @@ export const resolveMRAccountResponsePincodeRegExp = new RegExp(
 export const resolveMRAccountResponseReportingStaffNameDefault = ``;
 
 export const resolveMRAccountResponseUserIdRegExp = new RegExp(
-  "^[a-z][a-z0-9._-]{2,31}$",
+  "^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$",
 );
 
 export const ResolveMRAccountResponse = zod.object({
@@ -10452,6 +10471,7 @@ export const ResolveMRAccountResponse = zod.object({
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
+      userId: zod.union([zod.string(), zod.null()]).optional(),
     }),
   ),
   assignmentWarnings: zod.array(zod.string()),
@@ -10794,7 +10814,7 @@ export const resolveCreatedMRResponsePincodeRegExp = new RegExp(
 export const resolveCreatedMRResponseReportingStaffNameDefault = ``;
 
 export const resolveCreatedMRResponseUserIdRegExp = new RegExp(
-  "^[a-z][a-z0-9._-]{2,31}$",
+  "^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$",
 );
 
 export const ResolveCreatedMRResponse = zod.object({
@@ -10814,6 +10834,7 @@ export const ResolveCreatedMRResponse = zod.object({
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
+      userId: zod.union([zod.string(), zod.null()]).optional(),
     }),
   ),
   assignmentWarnings: zod.array(zod.string()),
@@ -11283,6 +11304,7 @@ export const ListMRReferenceChoicesResponse = zod.object({
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
+      userId: zod.union([zod.string(), zod.null()]).optional(),
     }),
   ),
   limit: zod.number().int(),
@@ -11349,7 +11371,7 @@ export const getMRDirectoryResponsePincodeRegExp = new RegExp(
 export const getMRDirectoryResponseReportingStaffNameDefault = ``;
 
 export const getMRDirectoryResponseUserIdRegExp = new RegExp(
-  "^[a-z][a-z0-9._-]{2,31}$",
+  "^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$",
 );
 
 export const GetMRDirectoryResponse = zod.object({
@@ -11366,6 +11388,7 @@ export const GetMRDirectoryResponse = zod.object({
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
+      userId: zod.union([zod.string(), zod.null()]).optional(),
     }),
   ),
   assignmentWarnings: zod.array(zod.string()),
@@ -11706,7 +11729,7 @@ export const setMRContactRequirementResponsePincodeRegExp = new RegExp(
 export const setMRContactRequirementResponseReportingStaffNameDefault = ``;
 
 export const setMRContactRequirementResponseUserIdRegExp = new RegExp(
-  "^[a-z][a-z0-9._-]{2,31}$",
+  "^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$",
 );
 
 export const SetMRContactRequirementResponse = zod.object({
@@ -11728,6 +11751,7 @@ export const SetMRContactRequirementResponse = zod.object({
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
+      userId: zod.union([zod.string(), zod.null()]).optional(),
     }),
   ),
   assignmentWarnings: zod.array(zod.string()),
@@ -12070,7 +12094,7 @@ export const deleteMRDirectoryResponsePincodeRegExp = new RegExp(
 export const deleteMRDirectoryResponseReportingStaffNameDefault = ``;
 
 export const deleteMRDirectoryResponseUserIdRegExp = new RegExp(
-  "^[a-z][a-z0-9._-]{2,31}$",
+  "^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$",
 );
 
 export const DeleteMRDirectoryResponse = zod.object({
@@ -12090,6 +12114,7 @@ export const DeleteMRDirectoryResponse = zod.object({
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
+      userId: zod.union([zod.string(), zod.null()]).optional(),
     }),
   ),
   assignmentWarnings: zod.array(zod.string()),
@@ -12427,6 +12452,7 @@ export const ListMRAssociatedDoctorChoicesResponse = zod.object({
   filtered: zod.number().int(),
   items: zod.array(
     zod.object({
+      doctorNumber: zod.string(),
       id: zod.string().uuid(),
       name: zod.string(),
       registrationNumber: zod.string(),
@@ -12463,7 +12489,7 @@ export const editMRDirectoryBodyPhoneDefault = ``;
 export const editMRDirectoryBodyPincodeRegExp = new RegExp("^[1-9][0-9]{5}$");
 
 export const editMRDirectoryBodyUserIdRegExp = new RegExp(
-  "^[a-z][a-z0-9._-]{2,31}$",
+  "^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$",
 );
 
 export const EditMRDirectoryBody = zod.object({
@@ -12798,7 +12824,7 @@ export const editMRDirectoryResponsePincodeRegExp = new RegExp(
 export const editMRDirectoryResponseReportingStaffNameDefault = ``;
 
 export const editMRDirectoryResponseUserIdRegExp = new RegExp(
-  "^[a-z][a-z0-9._-]{2,31}$",
+  "^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$",
 );
 
 export const EditMRDirectoryResponse = zod.object({
@@ -12815,6 +12841,7 @@ export const EditMRDirectoryResponse = zod.object({
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
+      userId: zod.union([zod.string(), zod.null()]).optional(),
     }),
   ),
   assignmentWarnings: zod.array(zod.string()),
@@ -13154,7 +13181,7 @@ export const resetMRPasswordResponseRecordPincodeRegExp = new RegExp(
 export const resetMRPasswordResponseRecordReportingStaffNameDefault = ``;
 
 export const resetMRPasswordResponseRecordUserIdRegExp = new RegExp(
-  "^[a-z][a-z0-9._-]{2,31}$",
+  "^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$",
 );
 
 export const ResetMRPasswordResponse = zod.object({
@@ -13181,6 +13208,7 @@ export const ResetMRPasswordResponse = zod.object({
         id: zod.string().uuid(),
         name: zod.string(),
         status: zod.string(),
+        userId: zod.union([zod.string(), zod.null()]).optional(),
       }),
     ),
     assignmentWarnings: zod.array(zod.string()),
@@ -13525,7 +13553,7 @@ export const setMRDirectoryStatusResponsePincodeRegExp = new RegExp(
 export const setMRDirectoryStatusResponseReportingStaffNameDefault = ``;
 
 export const setMRDirectoryStatusResponseUserIdRegExp = new RegExp(
-  "^[a-z][a-z0-9._-]{2,31}$",
+  "^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$",
 );
 
 export const SetMRDirectoryStatusResponse = zod.object({
@@ -13545,6 +13573,7 @@ export const SetMRDirectoryStatusResponse = zod.object({
       id: zod.string().uuid(),
       name: zod.string(),
       status: zod.string(),
+      userId: zod.union([zod.string(), zod.null()]).optional(),
     }),
   ),
   assignmentWarnings: zod.array(zod.string()),
@@ -13899,6 +13928,7 @@ export const ListOpeningBalancesResponse = zod.object({
       createdBy: zod.string(),
       doctorId: zod.string().uuid(),
       doctorName: zod.string(),
+      doctorNumber: zod.string(),
       doctorUsable: zod.boolean(),
       endYear: zod
         .number()
@@ -13965,6 +13995,7 @@ export const CreateOpeningBalanceResponse = zod.object({
   createdBy: zod.string(),
   doctorId: zod.string().uuid(),
   doctorName: zod.string(),
+  doctorNumber: zod.string(),
   doctorUsable: zod.boolean(),
   endYear: zod
     .number()
@@ -14100,6 +14131,7 @@ export const OpeningBalanceDoctorChoicesQueryParams = zod.object({
 export const OpeningBalanceDoctorChoicesResponse = zod.object({
   items: zod.array(
     zod.object({
+      doctorNumber: zod.string(),
       id: zod.string().uuid(),
       name: zod.string(),
       registrationNumber: zod.string(),
@@ -14157,6 +14189,7 @@ export const GetOpeningBalanceResponse = zod.object({
   createdBy: zod.string(),
   doctorId: zod.string().uuid(),
   doctorName: zod.string(),
+  doctorNumber: zod.string(),
   doctorUsable: zod.boolean(),
   endYear: zod
     .number()
@@ -14197,6 +14230,7 @@ export const DeleteOpeningBalanceResponse = zod.object({
   createdBy: zod.string(),
   doctorId: zod.string().uuid(),
   doctorName: zod.string(),
+  doctorNumber: zod.string(),
   doctorUsable: zod.boolean(),
   endYear: zod
     .number()
@@ -14254,6 +14288,7 @@ export const EditOpeningBalanceResponse = zod.object({
   createdBy: zod.string(),
   doctorId: zod.string().uuid(),
   doctorName: zod.string(),
+  doctorNumber: zod.string(),
   doctorUsable: zod.boolean(),
   endYear: zod
     .number()
@@ -14295,6 +14330,7 @@ export const SetOpeningBalanceStatusResponse = zod.object({
   createdBy: zod.string(),
   doctorId: zod.string().uuid(),
   doctorName: zod.string(),
+  doctorNumber: zod.string(),
   doctorUsable: zod.boolean(),
   endYear: zod
     .number()
@@ -15323,6 +15359,7 @@ export const ListPatientDirectoryResponse = zod.object({
         .default(listPatientDirectoryResponseItemsItemDialCountryDefault),
       doctorId: zod.string().uuid(),
       doctorName: zod.string(),
+      doctorNumber: zod.string(),
       doctorRegistrationNumber: zod.string(),
       email: zod
         .string()
@@ -15340,6 +15377,7 @@ export const ListPatientDirectoryResponse = zod.object({
         .max(listPatientDirectoryResponseItemsItemLandmarkMax),
       mrId: zod.union([zod.string().uuid(), zod.null()]),
       mrName: zod.string(),
+      mrUserId: zod.string(),
       name: zod
         .string()
         .min(1)
@@ -15948,6 +15986,7 @@ export const CreatePatientDirectoryResponse = zod.object({
     .default(createPatientDirectoryResponseDialCountryDefault),
   doctorId: zod.string().uuid(),
   doctorName: zod.string(),
+  doctorNumber: zod.string(),
   doctorRegistrationNumber: zod.string(),
   email: zod
     .string()
@@ -15962,6 +16001,7 @@ export const CreatePatientDirectoryResponse = zod.object({
   landmark: zod.string().min(1).max(createPatientDirectoryResponseLandmarkMax),
   mrId: zod.union([zod.string().uuid(), zod.null()]),
   mrName: zod.string(),
+  mrUserId: zod.string(),
   name: zod.string().min(1).max(createPatientDirectoryResponseNameMax),
   phone: zod.string().min(1).max(createPatientDirectoryResponsePhoneMax),
   pincode: zod
@@ -16175,6 +16215,7 @@ export const ListPatientDoctorChoicesQueryParams = zod.object({
 export const ListPatientDoctorChoicesResponse = zod.object({
   items: zod.array(
     zod.object({
+      doctorNumber: zod.string(),
       id: zod.string().uuid(),
       mrName: zod.string(),
       name: zod.string(),
@@ -16498,6 +16539,7 @@ export const GetPatientDirectoryResponse = zod.object({
     .default(getPatientDirectoryResponseDialCountryDefault),
   doctorId: zod.string().uuid(),
   doctorName: zod.string(),
+  doctorNumber: zod.string(),
   doctorRegistrationNumber: zod.string(),
   email: zod
     .string()
@@ -16512,6 +16554,7 @@ export const GetPatientDirectoryResponse = zod.object({
   landmark: zod.string().min(1).max(getPatientDirectoryResponseLandmarkMax),
   mrId: zod.union([zod.string().uuid(), zod.null()]),
   mrName: zod.string(),
+  mrUserId: zod.string(),
   name: zod.string().min(1).max(getPatientDirectoryResponseNameMax),
   phone: zod.string().min(1).max(getPatientDirectoryResponsePhoneMax),
   pincode: zod
@@ -16816,6 +16859,7 @@ export const DeletePatientDirectoryResponse = zod.object({
     .default(deletePatientDirectoryResponseDialCountryDefault),
   doctorId: zod.string().uuid(),
   doctorName: zod.string(),
+  doctorNumber: zod.string(),
   doctorRegistrationNumber: zod.string(),
   email: zod
     .string()
@@ -16830,6 +16874,7 @@ export const DeletePatientDirectoryResponse = zod.object({
   landmark: zod.string().min(1).max(deletePatientDirectoryResponseLandmarkMax),
   mrId: zod.union([zod.string().uuid(), zod.null()]),
   mrName: zod.string(),
+  mrUserId: zod.string(),
   name: zod.string().min(1).max(deletePatientDirectoryResponseNameMax),
   phone: zod.string().min(1).max(deletePatientDirectoryResponsePhoneMax),
   pincode: zod
@@ -17420,6 +17465,7 @@ export const EditPatientDirectoryResponse = zod.object({
     .default(editPatientDirectoryResponseDialCountryDefault),
   doctorId: zod.string().uuid(),
   doctorName: zod.string(),
+  doctorNumber: zod.string(),
   doctorRegistrationNumber: zod.string(),
   email: zod
     .string()
@@ -17434,6 +17480,7 @@ export const EditPatientDirectoryResponse = zod.object({
   landmark: zod.string().min(1).max(editPatientDirectoryResponseLandmarkMax),
   mrId: zod.union([zod.string().uuid(), zod.null()]),
   mrName: zod.string(),
+  mrUserId: zod.string(),
   name: zod.string().min(1).max(editPatientDirectoryResponseNameMax),
   phone: zod.string().min(1).max(editPatientDirectoryResponsePhoneMax),
   pincode: zod
@@ -17737,6 +17784,7 @@ export const SetPatientDirectoryStatusResponse = zod.object({
     .default(setPatientDirectoryStatusResponseDialCountryDefault),
   doctorId: zod.string().uuid(),
   doctorName: zod.string(),
+  doctorNumber: zod.string(),
   doctorRegistrationNumber: zod.string(),
   email: zod
     .string()
@@ -17754,6 +17802,7 @@ export const SetPatientDirectoryStatusResponse = zod.object({
     .max(setPatientDirectoryStatusResponseLandmarkMax),
   mrId: zod.union([zod.string().uuid(), zod.null()]),
   mrName: zod.string(),
+  mrUserId: zod.string(),
   name: zod.string().min(1).max(setPatientDirectoryStatusResponseNameMax),
   phone: zod.string().min(1).max(setPatientDirectoryStatusResponsePhoneMax),
   pincode: zod
@@ -22772,6 +22821,7 @@ export const ListSalesTargetsResponse = zod.object({
       id: zod.string().uuid(),
       mrId: zod.string().uuid(),
       mrName: zod.string(),
+      mrUserId: zod.string(),
       q1: zod.string(),
       q2: zod.string(),
       q3: zod.string(),
@@ -22851,6 +22901,7 @@ export const CreateSalesTargetResponse = zod.object({
   id: zod.string().uuid(),
   mrId: zod.string().uuid(),
   mrName: zod.string(),
+  mrUserId: zod.string(),
   q1: zod.string(),
   q2: zod.string(),
   q3: zod.string(),
@@ -22917,6 +22968,7 @@ export const GetSalesTargetChoicesResponse = zod.object({
       headquarterName: zod.string(),
       id: zod.string().uuid(),
       name: zod.string(),
+      userId: zod.string(),
       zoneId: zod.string().uuid(),
       zoneName: zod.string(),
     }),
@@ -23090,6 +23142,7 @@ export const GetSalesTargetResponse = zod.object({
   id: zod.string().uuid(),
   mrId: zod.string().uuid(),
   mrName: zod.string(),
+  mrUserId: zod.string(),
   q1: zod.string(),
   q2: zod.string(),
   q3: zod.string(),
@@ -23133,6 +23186,7 @@ export const DeleteSalesTargetResponse = zod.object({
   id: zod.string().uuid(),
   mrId: zod.string().uuid(),
   mrName: zod.string(),
+  mrUserId: zod.string(),
   q1: zod.string(),
   q2: zod.string(),
   q3: zod.string(),
@@ -23196,6 +23250,7 @@ export const EditSalesTargetResponse = zod.object({
   id: zod.string().uuid(),
   mrId: zod.string().uuid(),
   mrName: zod.string(),
+  mrUserId: zod.string(),
   q1: zod.string(),
   q2: zod.string(),
   q3: zod.string(),
@@ -23240,6 +23295,7 @@ export const SetSalesTargetStatusResponse = zod.object({
   id: zod.string().uuid(),
   mrId: zod.string().uuid(),
   mrName: zod.string(),
+  mrUserId: zod.string(),
   q1: zod.string(),
   q2: zod.string(),
   q3: zod.string(),

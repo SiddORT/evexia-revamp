@@ -246,10 +246,14 @@ def review_state(db, parsed):
             values["designation_id"] = resolve_designation(db, values["designation_id"])
             values["reportingManagerId"] = resolve_manager(db, values["reportingManagerId"], batch)
             values["reportingStaffId"] = values["reportingStaffId"] or None
-            body = MRFields(**values)
+            # Blank User ID means allocation on commit, never during review.
+            generated = not values["userId"]
+            body = MRFields(**{**values, "userId": values["userId"] or "pending.mr"})
+            if generated:
+                body = body.model_copy(update={"userId": ""})
             mrs.identifiers_available(db, body)
             bodies[record_id] = body
-            keys = {body.userId, body.email} - {""}
+            keys = {value.lower() for value in (body.userId, body.email) if value}
             if identifiers & keys:
                 errors.append("Duplicate account identifier within this file.")
             if body.employeeCode.lower() in codes:
@@ -322,12 +326,18 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
             raise mrs.MRError("Conflicts changed during credential preparation. Nothing imported. Review again.", 409, "mr_import_conflict")
         # Insert users/profiles/rows with manager links temporarily empty, then
         # wire the reviewed graph atomically (same-batch parents may come later).
+        from app.services.master_numbers import reserve_authored
+        for body in bodies.values():
+            reserve_authored(db, "mr", body.userId)
         links, credentials = [], []
         for (record_id, body), password in zip(bodies.items(), prepared):
             if time.monotonic() - started > 20:
                 raise mrs.MRError("Import transaction exceeded 20 seconds. Nothing was imported. Split the file and review again.",
                                   408, "mr_transaction_timeout")
             parent = body.reportingManagerId
+            if not body.userId:
+                body = body.model_copy(update={"userId": mrs.available_username(db)})
+                mrs.identifiers_available(db, body)
             row = mrs.insert(db, current, body.model_copy(update={"reportingManagerId": None}), password, record_id)
             links.append((row, parent))
             credentials.append(dict(userId=body.userId, password=password[0]))

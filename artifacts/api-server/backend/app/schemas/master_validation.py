@@ -110,7 +110,7 @@ def master_field_errors(path, errors):
         "dialCountry": "Select a supported phone country.",
         "pincode": "Enter a valid postal code (six digits for India).",
         "countryCode": "Select a supported ISO country; Indian State/UT and PIN must be valid when supplied.",
-        "userId": "Use 3–32 characters: a lowercase letter first, then lowercase letters, digits, dot, underscore or hyphen.",
+        "userId": "Keep the generated MR number, or use 3–32 characters: a lowercase letter first, then lowercase letters, digits, dot, underscore or hyphen.",
         "employeeCode": "Enter an employee code of 1–64 characters.",
         "initialPassword": "Use 12–128 characters or omit the password for server generation.",
         "unit_price": "Enter a nonnegative plain rate with up to six source decimals; saved half-up to two.",

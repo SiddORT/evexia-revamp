@@ -63,7 +63,7 @@ def assignment(db, doctor_id, existing=None):
 def doctor_context(db, ids):
     """Request-local scalar reference reads; include lifecycle tombstones."""
     doctor_rows = mrs._bulk(db, ids, lambda keys: select(
-        Doctor.id, Doctor.name_ciphertext, Doctor.registrationNumber, Doctor.status, Doctor.mrId, Doctor.deleted_at
+        Doctor.id, Doctor.name_ciphertext, Doctor.doctorNumber, Doctor.registrationNumber, Doctor.status, Doctor.mrId, Doctor.deleted_at
     ).where(Doctor.id.in_(keys)))
     mr_rows = mrs._bulk(db, (row.mrId for row in doctor_rows.values()), lambda keys: select(
         MRDirectory.id, MRDirectory.name_ciphertext, MRDirectory.status, MRDirectory.deleted_at, MRDirectory.zoneId
@@ -75,7 +75,8 @@ def doctor_context(db, ids):
                    for key, row in doctor_rows.items()}
     mr_rows = {key: SimpleNamespace(**dict(row._mapping), name=encrypted.read_name(row, "mr_directory"))
                for key, row in mr_rows.items()}
-    return dict(doctors=doctor_rows, mrs=mr_rows, zones=zone_rows)
+    return dict(doctors=doctor_rows, mrs=mr_rows, zones=zone_rows,
+                mrLabels=mrs.account_labels(db, mr_rows.keys()))
 
 
 def projection_context(db, rows):
@@ -110,6 +111,8 @@ def projection(db, row, context=None):
     return dict(**{key: getattr(row, key) for key in PatientFields.model_fields},
                 id=row.id, code=row.code, version=owner.version,
                 doctorName=doctor.name if doctor else "",
+                doctorNumber=doctor.doctorNumber if doctor else "",
+                mrUserId=context["mrLabels"].get(mr.id, "") if mr and not mr.deleted_at else "",
                 doctorRegistrationNumber=doctor.registrationNumber if doctor else "",
                 mrId=mr.id if mr and not mr.deleted_at else None, mrName=mr.name if mr and not mr.deleted_at else "",
                 zoneId=zone.id if zone and not zone.deleted_at else None, zoneName=zone.name if zone and not zone.deleted_at else "",
@@ -172,7 +175,7 @@ def choices(db, actor, query="", limit=100, offset=0, include_saved=None, cursor
         authorize(db, actor, lock=False)
         clauses = [Doctor.deleted_at.is_(None)]
         if query:
-            rows, meta = encrypted.scan(db, Doctor, clauses, lambda row: encrypted.match(query, row.name), limit=limit, cursor=cursor)
+            rows, meta = encrypted.scan(db, Doctor, clauses, lambda row: encrypted.match(query, row.name, row.doctorNumber, row.registrationNumber), limit=limit, cursor=cursor)
             total = None
         else:
             total = db.scalar(select(func.count()).select_from(Doctor).where(*clauses))
@@ -185,7 +188,7 @@ def choices(db, actor, query="", limit=100, offset=0, include_saved=None, cursor
         items = []
         for row in rows:
             mr, zone, warnings = relationship(context, row)
-            items.append(dict(id=row.id, name=row.name, status=row.status,
+            items.append(dict(id=row.id, name=row.name, doctorNumber=row.doctorNumber, status=row.status,
                               usable=row.status == "active" and not warnings,
                               mrName=mr.name if mr and not mr.deleted_at else "",
                               zoneName=zone.name if zone and not zone.deleted_at else ""))
@@ -229,7 +232,8 @@ def filters(db, actor):
         if len(rows) > FILTER_CHOICE_LIMIT:
             raise PatientError("Patient filters exceed 10,000 MR choices. No partial choices were loaded.",
                                409, "patient_filter_limit")
-        result = dict(items=[dict(id=row.id, name=encrypted.read_name(row, "mr_directory"), status=row.status,
+        labels = mrs.account_labels(db, [row.id for row in rows])
+        result = dict(items=[dict(id=row.id, name=encrypted.read_name(row, "mr_directory"), userId=labels.get(row.id, ""), status=row.status,
                                   zoneId=row.zoneId, zoneName=row.zoneName or "") for row in rows],
                       limit=FILTER_CHOICE_LIMIT)
         db.commit()
@@ -277,7 +281,9 @@ def insert(db, actor, body, code=None):
     db.add(owner)
     db.flush()
     now = utcnow()
-    row = Directory(id=owner.id, code=code or "PAT-" + uuid.uuid4().hex.upper(), **body.model_dump(),
+    from app.services.master_numbers import allocate, reserve_patient_import
+    reserve_patient_import(db, code)
+    row = Directory(id=owner.id, code=code or allocate(db, "patient"), **body.model_dump(),
                     created_by=actor.user.id, updated_by=actor.user.id, created_at=now, updated_at=now)
     db.add(row)
     db.flush()

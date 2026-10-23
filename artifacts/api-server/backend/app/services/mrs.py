@@ -145,6 +145,20 @@ def _bulk(db, ids, statement):
     return result
 
 
+def account_labels(db, ids):
+    accounts = _bulk(db, ids, lambda keys: select(
+        MRProfile.id, User.id.label("account_id"), User.username_ciphertext, User.username_index
+    ).join(User, User.id == MRProfile.user_id).where(MRProfile.id.in_(keys)))
+    return {key: account_encryption.read(value.account_id, "username",
+                                        value.username_ciphertext, value.username_index)
+            for key, value in accounts.items()}
+
+
+def identity_matcher(db, query, rows):
+    labels = account_labels(db, [row.id for row in rows])
+    return lambda row: encrypted.match(query, row.name, row.employeeCode, labels.get(row.id, ""))
+
+
 def projection_context(db, rows, manager_accounts=False):
     """Request-local projections, never cached across authorization boundaries.
 
@@ -312,7 +326,7 @@ def associated_doctors(db, actor, record_id, limit, offset):
         count = db.scalar(select(func.count()).select_from(DoctorDirectory).where(*clauses))
         rows = db.scalars(select(DoctorDirectory).where(*clauses)
                           .order_by(DoctorDirectory.id).limit(limit).offset(offset))
-        result = dict(items=[dict(id=item.id, name=item.name, registrationNumber=item.registrationNumber,
+        result = dict(items=[dict(id=item.id, name=item.name, doctorNumber=item.doctorNumber, registrationNumber=item.registrationNumber,
                                   status=item.status, zoneName=zone.name if zone and not zone.deleted_at else "")
                              for item in rows], total=count, filtered=count, limit=limit, offset=offset)
         db.commit()
@@ -358,8 +372,9 @@ def references(db, actor, kind, query, limit, offset, include_saved=None, cursor
             clauses.append(model.status == "active")
         meta = {}
         if kind == "managers":
-            choices, meta = encrypted.scan(db, model, clauses, lambda row: encrypted.match(query, row.name),
-                                            limit=limit, cursor=cursor)
+            choices, meta = encrypted.scan(db, model, clauses, None,
+                                            limit=limit, cursor=cursor,
+                                            prepare=lambda rows: identity_matcher(db, query, rows))
             total = None
         else:
             if query.strip():
@@ -369,7 +384,8 @@ def references(db, actor, kind, query, limit, offset, include_saved=None, cursor
         saved = db.get(model, include_saved) if include_saved else None
         if saved and all(row.id != saved.id for row in choices):
             choices.append(saved)
-        result = dict(items=[dict(id=row.id, name=row.name, status=row.status, deleted=bool(row.deleted_at))
+        labels = account_labels(db, [row.id for row in choices]) if kind == "managers" else {}
+        result = dict(items=[dict(id=row.id, name=row.name, userId=labels.get(row.id), status=row.status, deleted=bool(row.deleted_at))
                              for row in choices], total=total, limit=limit, offset=offset, **meta)
         db.commit()
         return result
@@ -379,21 +395,18 @@ def references(db, actor, kind, query, limit, offset, include_saved=None, cursor
 def username(db, actor):
     def work():
         authorize(db, actor, provision=True, lock=False)
-        for _ in range(8):
-            candidate = "mr." + secrets.token_hex(8)
-            if not db.get(AccountIdentifierReservation, account_encryption.index(db, candidate)):
-                break
-        else:
-            raise MRError("No available username could be generated. Try again.", 503, "mr_unavailable")
         db.commit()
-        return {"userId": candidate}
+        # Compatibility endpoint only. A number is assigned on successful
+        # creation; opening a form must not allocate or promise a final ID.
+        return {"userId": ""}
     return transaction(db, work)
 
 
 def available_username(db):
-    """Bounded secure candidates checked against accounts and immutable history."""
+    """Final allocations only; never call from preflight or form opening."""
+    from app.services.master_numbers import allocate
     for _ in range(8):
-        candidate = "mr." + secrets.token_hex(8)
+        candidate = allocate(db, "mr")
         digest = account_encryption.index(db, candidate)
         if (not db.get(AccountIdentifierReservation, digest) and not db.scalar(
                 select(User.id).where(or_(User.username_index == digest, User.email_index == digest)))):
@@ -469,7 +482,7 @@ def validate_assignments(db, body, existing=None, batch=None):
 
 
 def identifiers_available(db, body, exclude_user=None, exclude_record=None):
-    values = [body.userId, body.email] if body.email else [body.userId]
+    values = [value for value in (body.userId, body.email) if value]
     if SUPER_ADMIN_EMAIL in values or body.userId in ("admin", "superadmin", "super-admin", "administrator", "root"):
         raise MRError("This identifier is reserved.", 409, "mr_identifier_reserved")
     digests = [account_encryption.index(db, value) for value in values]
@@ -539,6 +552,8 @@ def prepare_passwords(db, actor, passwords, action="add", protected=False):
 
 
 def insert(db, actor, body, prepared, profile_id=None):
+    from app.services.master_numbers import reserve_authored
+    reserve_authored(db, "mr", body.userId)
     active = body.status == "active"
     user = User(email=body.email or None, username=body.userId, password_hash=prepared[1],
                 system_role="mr", is_active=active, identity_version=1, token_version=0,
@@ -566,7 +581,8 @@ def create(db, actor, body):
     def preflight():
         authorize(db, actor, provision=True)
         validate_assignments(db, body)
-        identifiers_available(db, body.model_copy(update={"userId": available_username(db)}))
+        # Profile/contact validation only. No final number before insertion.
+        identifiers_available(db, body.model_copy(update={"userId": ""}))
         db.commit()
     transaction(db, preflight)
     prepared = prepare_passwords(db, actor, [body.initialPassword])[0]
@@ -623,6 +639,12 @@ def mutate(db, actor, record_id, body, operation):
             # Older full-edit clients do not know the additive Staff field.
             edit_body = body if "reportingStaffId" in body.model_fields_set else body.model_copy(
                 update={"reportingStaffId": row.reportingStaffId})
+            import re
+            if re.fullmatch(r"MR-[0-9]{3,}", user.username or "", re.IGNORECASE):
+                if edit_body.userId.lower() != user.username.lower():
+                    raise MRError("Generated MR User IDs cannot be changed.", 409, "mr_number_immutable")
+                # Retain exact historical casing as well as the reservation.
+                edit_body = edit_body.model_copy(update={"userId": user.username})
             previous = {field: getattr(row, field) for field in ("hq", "zoneId", "reportingManagerId", "reportingStaffId")}
             validate_assignments(db, edit_body, row)
             ids, primary, saved = selected_zones(db, edit_body, row)
@@ -635,6 +657,8 @@ def mutate(db, actor, record_id, body, operation):
             capture_mr(db, row, previous)
             if primary in {member.zone_id for member in saved}:
                 row.zone_name = next(member.zone_name for member in saved if member.zone_id == primary)
+            from app.services.master_numbers import reserve_authored
+            reserve_authored(db, "mr", edit_body.userId)
             user.username, user.email = edit_body.userId, edit_body.email or None
             write_zones(db, row, ids, saved)
         elif operation == "status":

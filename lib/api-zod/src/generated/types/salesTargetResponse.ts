@@ -22,6 +22,7 @@ export interface SalesTargetResponse {
   id: string;
   mrId: string;
   mrName: string;
+  mrUserId: string;
   q1: string;
   q2: string;
   q3: string;

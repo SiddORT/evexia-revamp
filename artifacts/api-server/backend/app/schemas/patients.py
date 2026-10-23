@@ -77,6 +77,8 @@ class PatientDirectoryResponse(PatientFields):
     code: str
     version: int
     doctorName: str
+    doctorNumber: str
+    mrUserId: str
     doctorRegistrationNumber: str
     mrId: uuid.UUID | None
     mrName: str
@@ -100,6 +102,7 @@ class PatientPage(SearchSection):
 class PatientChoice(BaseModel):
     id: uuid.UUID
     name: str
+    doctorNumber: str
     status: str
     usable: bool
     mrName: str

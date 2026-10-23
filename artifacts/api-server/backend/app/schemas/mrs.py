@@ -20,7 +20,7 @@ class MRFields(MasterWriteFields):
     name: str = Field(min_length=1, max_length=200)
     phone: str = Field(default="", max_length=20)
     dialCountry: DialCountry = "IN"
-    userId: str = Field(min_length=3, max_length=32, pattern=r"^[a-z][a-z0-9._-]{2,31}$")
+    userId: str = Field(min_length=3, max_length=32, pattern=r"^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$")
     email: str = Field(default="", max_length=320)
     contactRequirement: Literal["required", "optional"] = "required"
     hq: uuid.UUID
@@ -59,7 +59,10 @@ class MRFields(MasterWriteFields):
     def identifier(cls, value):
         if cls.master_read:
             return value
-        return value.strip().lower() if isinstance(value, str) else value
+        if isinstance(value, str):
+            value = value.strip()
+            return value.upper() if re.fullmatch(r"MR-[0-9]{3,}", value, re.IGNORECASE) else value.lower()
+        return value
 
     @field_validator("email")
     @classmethod
@@ -185,6 +188,7 @@ class MRPage(SearchSection):
 
 
 class MRChoice(BaseModel):
+    userId: str | None = None
     id: uuid.UUID
     name: str
     status: str
@@ -192,6 +196,7 @@ class MRChoice(BaseModel):
 
 
 class MRDoctorChoice(BaseModel):
+    doctorNumber: str
     id: uuid.UUID
     name: str
     registrationNumber: str

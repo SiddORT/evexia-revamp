@@ -148,6 +148,7 @@ export default function DoctorMaster() {
   function identity(record, mobile = false) {
     const suffix = `${mobile ? 'mobile-' : ''}${record.id}`;
     return <RecordDetails name={record.name} showName={!mobile} testId={`text-doctor-details-${suffix}`} rows={[
+      { label: 'Doctor number', icon: 'id', value: record.doctorNumber },
       { label: 'Registration number', icon: 'id', value: record.registrationNumber },
       { label: 'Phone', icon: 'phone', value: internationalPhone(record), href: record.phone ? `tel:${internationalPhone(record)}` : undefined, testId: `link-phone-doctor-${suffix}` },
       { label: 'Email', icon: 'email', value: record.email, href: record.email ? `mailto:${record.email}` : undefined, testId: `link-email-doctor-${suffix}` },

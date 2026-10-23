@@ -9,11 +9,11 @@ import { masterNameError, normalizeMasterName, textLength } from './masterValida
 const clean = (params = {}) => Object.fromEntries(Object.entries(params)
   .filter(([, value]) => value !== undefined && value !== null && value !== '' && value !== 'all'));
 
-export const MR_FIELDS = ['name', 'phone', 'dialCountry', 'userId', 'email', 'contactRequirement', 'hq', 'zoneId', 'zoneIds', 'employeeCode',
+export const MR_FIELDS = ['name', 'phone', 'dialCountry', 'userId', 'email', 'contactRequirement', 'zoneId', 'zoneIds', 'hq', 'employeeCode',
   'dateOfJoining', 'designation_id', 'reportingManagerId', 'reportingStaffId', 'paymentLimit', 'doctorDaysLimit', 'status', 'pincode',
   'addressLine1', 'addressLine2', 'landmark', 'city', 'state', 'country'];
 export const MAX_LENGTH = { name: 200, employeeCode: 64, addressLine1: 300, addressLine2: 300, landmark: 200, city: 100, state: 100, country: 100, phone: 20, email: 320 };
-export const USERNAME_PATTERN = /^[a-z][a-z0-9._-]{2,31}$/;
+export const USERNAME_PATTERN = /^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$/;
 export const UUID_PATTERN = /^[0-9a-f-]{36}$/i;
 
 export const listMRs = (params, signal) => mrRequest('', { params: clean(params), signal });
@@ -78,7 +78,7 @@ export function validateMRValues(values, { creating, password = '', confirm = ''
    if (!dialCountry(values.dialCountry)) errors.dialCountry = 'Choose a supported phone country.';
    if (values.phone && normalizePhone(values.phone, values.dialCountry, 'mr') === null) errors.phone = 'Enter a valid phone number for the selected country.';
   if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) errors.email = 'Enter a valid email address.';
-  if (values.userId && !USERNAME_PATTERN.test(values.userId)) errors.userId = 'Use 3-32 characters: lowercase letter first, then lowercase letters, digits, dot, underscore or hyphen.';
+  if (values.userId && !USERNAME_PATTERN.test(values.userId)) errors.userId = 'Keep the generated MR number, or use 3–32 characters: lowercase letter first, then lowercase letters, digits, dot, underscore or hyphen.';
   if (values.dateOfJoining) {
     const date = values.dateOfJoining;
     const parsed = new Date(`${date}T00:00:00Z`);
@@ -115,7 +115,7 @@ export function payloadFromValues(values) {
 function normalizedValues(values) {
   const normalized = Object.fromEntries(MR_FIELDS.map((key) => [key, key === 'zoneIds'
     ? [...(values.zoneIds || (values.zoneId ? [values.zoneId] : []))] : String(values[key] ?? '').trim()]));
-  normalized.userId = normalized.userId.toLowerCase();
+  normalized.userId = /^MR-\d{3,}$/i.test(normalized.userId) ? normalized.userId.toUpperCase() : normalized.userId.toLowerCase();
   normalized.name = normalizeMasterName(normalized.name);
   normalized.email = normalized.email.toLowerCase();
   normalized.dialCountry = String(values.dialCountry || 'IN');

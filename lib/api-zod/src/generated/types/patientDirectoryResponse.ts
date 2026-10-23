@@ -35,6 +35,7 @@ export interface PatientDirectoryResponse {
   dialCountry?: PatientDirectoryResponseDialCountry;
   doctorId: string;
   doctorName: string;
+  doctorNumber: string;
   doctorRegistrationNumber: string;
   /** @maxLength 320 */
   email?: string;
@@ -52,6 +53,7 @@ export interface PatientDirectoryResponse {
   landmark: string;
   mrId: string | null;
   mrName: string;
+  mrUserId: string;
   /**
    * @minLength 1
    * @maxLength 200

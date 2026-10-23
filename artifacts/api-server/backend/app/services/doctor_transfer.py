@@ -39,8 +39,9 @@ COLUMNS = [
     ("country", "Country"), ("state", "State"), ("city", "City"),
 ]
 HEADERS = [title for _, title in COLUMNS]
-CURRENT_COLUMNS = COLUMNS + [("mrName", "MR Name")]
-CURRENT_HEADERS = HEADERS + ["MR Name"]
+OLD_CURRENT_HEADERS = HEADERS + ["MR Name"]
+CURRENT_COLUMNS = COLUMNS + [("mrName", "MR Name"), ("doctorNumber", "Doctor Number")]
+CURRENT_HEADERS = [title for _, title in CURRENT_COLUMNS]
 AUDIT = ["Created By", "Created At", "Updated By", "Updated At"]
 LEGACY = [title for title in HEADERS if title != "Contact Requirement"]
 from app.schemas.phone import DIAL
@@ -51,7 +52,7 @@ def invalid(message):
 
 
 def exact_workbook_rows(data):
-    rows = workbook_rows(data, max_columns=33)
+    rows = workbook_rows(data, max_columns=len(CURRENT_HEADERS) + len(AUDIT))
     if not rows:
         return rows
     monetary = {get_column_letter(i + 1): key for i, key in enumerate(rows[0]) if key in ("Payment Limit", "Order Discount")}
@@ -90,8 +91,8 @@ def parse(data, filename):
         try:
             rows = []
             for cells in csv.reader(io.StringIO(data.decode("utf-8-sig")), strict=True):
-                if len(rows) >= MAX_ROWS + 1 or len(cells) > 33 or any(len(v) > 10000 for v in cells):
-                    invalid("File exceeds 1,000 records, 33 columns or 10,000 characters per cell.")
+                if len(rows) >= MAX_ROWS + 1 or len(cells) > len(CURRENT_HEADERS) + len(AUDIT) or any(len(v) > 10000 for v in cells):
+                    invalid("File exceeds 1,000 records, the supported column count or 10,000 characters per cell.")
                 rows.append(cells)
         except (UnicodeError, csv.Error):
             invalid("Use well-formed UTF-8 CSV.")
@@ -103,7 +104,7 @@ def parse(data, filename):
     else:
         invalid("Only UTF-8 CSV and genuine XLSX are supported.")
     rows = normalized_import_dates(rows, invalid)
-    if not rows or rows[0] not in (HEADERS, HEADERS + AUDIT, LEGACY, LEGACY + AUDIT, CURRENT_HEADERS, CURRENT_HEADERS + AUDIT):
+    if not rows or rows[0] not in (HEADERS, HEADERS + AUDIT, LEGACY, LEGACY + AUDIT, OLD_CURRENT_HEADERS, OLD_CURRENT_HEADERS + AUDIT, CURRENT_HEADERS, CURRENT_HEADERS + AUDIT):
         invalid("Use the full Doctor sample/export columns in their original order. Older full CSVs without Contact Requirement default to optional. Reduced mock templates, credentials, local IDs and unknown columns are not supported.")
     if len(rows) < 2:
         invalid("At least one doctor is required.")

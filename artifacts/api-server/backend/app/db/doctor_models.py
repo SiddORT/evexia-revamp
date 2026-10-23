@@ -18,6 +18,7 @@ class DoctorDirectory(Timestamps, Base):
         CheckConstraint('"invoiceType" IN (\'normal\',\'gst\')', name="ck_doctor_invoice"),
     )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    doctorNumber: Mapped[str] = mapped_column(String(64), unique=True)
     contactRequirement: Mapped[str] = mapped_column(String(8))
     registrationNumber: Mapped[str] = mapped_column(String(100))
     mrId: Mapped[uuid.UUID] = mapped_column(ForeignKey("mr_directory.id"), index=True)

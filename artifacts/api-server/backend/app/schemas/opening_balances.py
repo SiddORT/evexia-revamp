@@ -51,6 +51,7 @@ class OpeningBalanceStatus(OpeningBalanceVersion):
 
 
 class OpeningBalanceResponse(OpeningBalanceFields):
+    doctorNumber: str
     id: uuid.UUID
     version: int
     doctorName: str
@@ -71,6 +72,7 @@ class OpeningBalancePage(SearchSection):
 
 
 class OpeningBalanceDoctorChoice(BaseModel):
+    doctorNumber: str
     id: uuid.UUID
     name: str
     registrationNumber: str

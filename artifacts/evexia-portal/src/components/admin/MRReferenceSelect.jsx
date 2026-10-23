@@ -4,7 +4,7 @@ import { getSession, subscribeSession } from '../../auth/adminSession.js';
 import MRFormCombobox from './MRFormCombobox.jsx';
 import '../../mr.css';
 
-const choiceLabel = (item) => `${item.name}${item.status === 'inactive' ? ' (inactive)' : ''}${item.deleted ? ' (deleted)' : ''}`;
+const choiceLabel = (item) => `${item.name}${item.userId ? ` · User ID: ${item.userId}` : ''}${item.status === 'inactive' ? ' (inactive)' : ''}${item.deleted ? ' (deleted)' : ''}`;
 
 // Server search/paging stays separate from the form's selected ID and label.
 export default function MRReferenceSelect({ id, kind, label, value, savedName, onChange, placeholder, invalid, describedBy, excludeId, emptyGuidance, required, requestChoices = mrReferences, onHydrate, testId }) {
@@ -87,7 +87,7 @@ export default function MRReferenceSelect({ id, kind, label, value, savedName, o
     }
   }
   const visible = state === 'ready' ? items.filter((item) => item.id !== excludeId
-    && (item.id !== value || !query.trim() || item.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))) : [];
+    && (item.id !== value || !query.trim() || choiceLabel(item).toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))) : [];
   const choices = visible.map((item) => ({ value: item.id, label: choiceLabel(item),
     disabled: ['designations', 'staff'].includes(kind) && (item.deleted || (item.status !== 'active' && item.id !== savedRef.current)) }));
   if (!required) choices.unshift({ value: '', label: placeholder });

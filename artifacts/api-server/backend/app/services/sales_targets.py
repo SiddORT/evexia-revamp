@@ -77,7 +77,8 @@ def projection(db, row, related=None):
         # Single-record mutation/detail paths retain their existing locks.
         mr = db.get(MRDirectory, row.mrId)
         zone, hq = db.get(Zone, mr.zoneId), db.get(Headquarter, mr.hq)
-        related = dict(mrName=mr.name, employeeCode=mr.employeeCode, zoneId=mr.zoneId,
+        from app.services.mrs import account_labels
+        related = dict(mrName=mr.name, mrUserId=account_labels(db, [mr.id]).get(mr.id, ""), employeeCode=mr.employeeCode, zoneId=mr.zoneId,
                        zoneName=zone.name, headquarterId=mr.hq, headquarterName=hq.name,
                        createdBy=label(db, row.created_by), updatedBy=label(db, row.updated_by))
     fields = {field: getattr(row, field) for field in BUSINESS_FIELDS}
@@ -108,10 +109,14 @@ def projections(db, query):
         Zone, Zone.id == MRDirectory.zoneId).join(Headquarter, Headquarter.id == MRDirectory.hq
     ).outerjoin(creator, creator.id == SalesTarget.created_by).outerjoin(
         updater, updater.id == SalesTarget.updated_by)
+    from app.services.mrs import account_labels
+    values_rows = list(db.execute(query).mappings())
+    login_labels = account_labels(db, [values["_mrAadId"] for values in values_rows])
     result = []
-    for values in db.execute(query).mappings():
+    for values in values_rows:
         related = dict(values)
         row = related.pop("SalesTarget")
+        related["mrUserId"] = login_labels.get(related["_mrAadId"], "")
         related["mrName"] = encrypted.crypto().decrypt(
             "mr_directory", related.pop("_mrAadId"), "name", related.pop("_mrNameCiphertext"))
         result.append(projection(db, row, related))
@@ -169,6 +174,7 @@ def listing(db, actor, filters, limit, offset, cursor=None):
 
 
 def choices(db, actor, query, zoneId, limit, offset, zoneQuery, zoneOffset, cursor=None):
+    from app.services.mrs import account_labels, identity_matcher
     def work():
         authorize(db, actor)
         filters = [MRDirectory.deleted_at.is_(None),
@@ -177,8 +183,8 @@ def choices(db, actor, query, zoneId, limit, offset, zoneQuery, zoneOffset, curs
         if zoneId:
             filters.append(MRDirectory.zoneId == zoneId)
         if query.strip():
-            mrs, meta = encrypted.scan(db, MRDirectory, filters, lambda row: encrypted.match(query, row.name, row.employeeCode),
-                                      limit=limit, cursor=cursor)
+            mrs, meta = encrypted.scan(db, MRDirectory, filters, None,
+                                      limit=limit, cursor=cursor, prepare=lambda rows: identity_matcher(db, query, rows))
         else:
             mrs = list(db.scalars(select(MRDirectory).where(*filters).order_by(MRDirectory.id).limit(limit).offset(offset)))
             meta = {}
@@ -194,7 +200,8 @@ def choices(db, actor, query, zoneId, limit, offset, zoneQuery, zoneOffset, curs
         from app.services.mrs import _bulk
         zone_labels = _bulk(db, (mr.zoneId for mr in mrs), lambda ids: select(Zone.id, Zone.name).where(Zone.id.in_(ids)))
         hq_labels = _bulk(db, (mr.hq for mr in mrs), lambda ids: select(Headquarter.id, Headquarter.name).where(Headquarter.id.in_(ids)))
-        result = dict(mrs=[dict(id=mr.id, name=mr.name, employeeCode=mr.employeeCode, zoneId=mr.zoneId,
+        login_labels = account_labels(db, [mr.id for mr in mrs])
+        result = dict(mrs=[dict(id=mr.id, name=mr.name, userId=login_labels.get(mr.id, ""), employeeCode=mr.employeeCode, zoneId=mr.zoneId,
                                 zoneName=zone_labels[mr.zoneId].name, headquarterId=mr.hq,
                                 headquarterName=hq_labels[mr.hq].name) for mr in mrs],
                       zones=[dict(id=z.id, name=z.name) for z in zones], years=sorted(years, reverse=True),

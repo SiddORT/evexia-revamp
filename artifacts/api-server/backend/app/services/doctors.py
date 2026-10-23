@@ -70,8 +70,9 @@ def projection(db, row, context=None):
     zone = (context["zones"].get(mr.zoneId) if context is not None else db.get(Zone, mr.zoneId)) if mr and not mr.deleted_at else None
     warnings = assignment_warnings(mr, zone)
     return dict(**{key: getattr(row, key) for key in DoctorFields.model_fields},
-                id=row.id, version=row.version, verification=row.verification,
+                id=row.id, doctorNumber=row.doctorNumber, version=row.version, verification=row.verification,
                 mrName=mr.name if mr and not mr.deleted_at else "",
+                mrUserId=(context["mrLabels"] if context is not None else mrs.account_labels(db, [mr.id])).get(mr.id, "") if mr and not mr.deleted_at else "",
                 zoneId=zone.id if zone and not zone.deleted_at else None,
                  zoneName=zone.name if zone and not zone.deleted_at else "",
                 assignmentWarnings=warnings, createdBy=label(db, row.created_by), updatedBy=label(db, row.updated_by),
@@ -102,7 +103,7 @@ def search_matcher(db, query, rows):
     from app.services.patients import doctor_context
     context = doctor_context(db, (row.id for row in rows))
     return lambda row: encrypted.match(query, *(getattr(row, field) for field in (
-        "name", "phone", "alternatePhone", "email", "registrationNumber", "qualification", "clinicName")),
+        "name", "phone", "alternatePhone", "email", "doctorNumber", "registrationNumber", "qualification", "clinicName")),
         context["mrs"].get(row.mrId).name if context["mrs"].get(row.mrId) and not context["mrs"][row.mrId].deleted_at else "")
 
 
@@ -150,7 +151,8 @@ def choices(db, actor, query="", limit=100, offset=0, include_saved=None, cursor
         authorize(db, actor, lock=False)
         clauses = [MRDirectory.deleted_at.is_(None)]
         if query:
-            rows, meta = encrypted.scan(db, MRDirectory, clauses, lambda row: encrypted.match(query, row.name), limit=limit, cursor=cursor)
+            rows, meta = encrypted.scan(db, MRDirectory, clauses, None, limit=limit, cursor=cursor,
+                prepare=lambda rows: mrs.identity_matcher(db, query, rows))
             total = None
         else:
             total = db.scalar(select(func.count()).select_from(MRDirectory).where(*clauses))
@@ -160,9 +162,10 @@ def choices(db, actor, query="", limit=100, offset=0, include_saved=None, cursor
         if saved and saved not in rows:
             rows.append(saved)
         items = []
+        labels = mrs.account_labels(db, [row.id for row in rows])
         for row in rows:
             zone = db.get(Zone, row.zoneId)
-            items.append(dict(id=row.id, name=row.name, status=row.status, deleted=bool(row.deleted_at),
+            items.append(dict(id=row.id, name=row.name, userId=labels.get(row.id, ""), status=row.status, deleted=bool(row.deleted_at),
                               zoneId=zone.id if zone and not zone.deleted_at else None,
                               zoneName=zone.name if zone and not zone.deleted_at else "",
                                zoneStatus=zone.status if zone and not zone.deleted_at else None,
@@ -205,8 +208,9 @@ def audit(db, actor, row, operation):
 
 
 def insert(db, actor, body, verification="unverified"):
+    from app.services.master_numbers import allocate
     now = utcnow()
-    row = Doctor(**body.model_dump(), verification=verification, version=1,
+    row = Doctor(**body.model_dump(), doctorNumber=allocate(db, "doctor"), verification=verification, version=1,
                  created_by=actor.user.id, updated_by=actor.user.id, created_at=now, updated_at=now)
     db.add(row)
     db.flush()

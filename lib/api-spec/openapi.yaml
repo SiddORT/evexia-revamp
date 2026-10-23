@@ -2203,6 +2203,10 @@
             "title": "Usable",
             "type": "boolean"
           },
+          "userId": {
+            "title": "Userid",
+            "type": "string"
+          },
           "zoneId": {
             "anyOf": [
               {
@@ -2238,6 +2242,7 @@
         "required": [
           "id",
           "name",
+          "userId",
           "status",
           "zoneId",
           "zoneName",
@@ -3745,6 +3750,10 @@
             "title": "Dialcountry",
             "type": "string"
           },
+          "doctorNumber": {
+            "title": "Doctornumber",
+            "type": "string"
+          },
           "drugLicenceNumber": {
             "default": "",
             "maxLength": 100,
@@ -3790,6 +3799,10 @@
           },
           "mrName": {
             "title": "Mrname",
+            "type": "string"
+          },
+          "mrUserId": {
+            "title": "Mruserid",
             "type": "string"
           },
           "name": {
@@ -3899,10 +3912,12 @@
           "country",
           "state",
           "city",
+          "doctorNumber",
           "id",
           "version",
           "verification",
           "mrName",
+          "mrUserId",
           "zoneId",
           "zoneName",
           "assignmentWarnings",
@@ -7870,6 +7885,17 @@
           "status": {
             "title": "Status",
             "type": "string"
+          },
+          "userId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userid"
           }
         },
         "required": [
@@ -8914,7 +8940,7 @@
           "userId": {
             "maxLength": 32,
             "minLength": 3,
-            "pattern": "^[a-z][a-z0-9._-]{2,31}$",
+            "pattern": "^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$",
             "title": "Userid",
             "type": "string"
           },
@@ -8974,6 +9000,10 @@
       },
       "MRDoctorChoice": {
         "properties": {
+          "doctorNumber": {
+            "title": "Doctornumber",
+            "type": "string"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -9001,6 +9031,7 @@
           }
         },
         "required": [
+          "doctorNumber",
           "id",
           "name",
           "registrationNumber",
@@ -9452,7 +9483,7 @@
           "userId": {
             "maxLength": 32,
             "minLength": 3,
-            "pattern": "^[a-z][a-z0-9._-]{2,31}$",
+            "pattern": "^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$",
             "title": "Userid",
             "type": "string"
           },
@@ -10621,6 +10652,10 @@
       },
       "OpeningBalanceDoctorChoice": {
         "properties": {
+          "doctorNumber": {
+            "title": "Doctornumber",
+            "type": "string"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -10640,6 +10675,7 @@
           }
         },
         "required": [
+          "doctorNumber",
           "id",
           "name",
           "registrationNumber",
@@ -10954,6 +10990,10 @@
             "title": "Doctorname",
             "type": "string"
           },
+          "doctorNumber": {
+            "title": "Doctornumber",
+            "type": "string"
+          },
           "doctorUsable": {
             "title": "Doctorusable",
             "type": "boolean"
@@ -11007,6 +11047,7 @@
           "doctorId",
           "amount",
           "status",
+          "doctorNumber",
           "id",
           "version",
           "doctorName",
@@ -14208,6 +14249,10 @@
       },
       "PatientChoice": {
         "properties": {
+          "doctorNumber": {
+            "title": "Doctornumber",
+            "type": "string"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -14237,6 +14282,7 @@
         "required": [
           "id",
           "name",
+          "doctorNumber",
           "status",
           "usable",
           "mrName",
@@ -14635,6 +14681,10 @@
             "title": "Doctorname",
             "type": "string"
           },
+          "doctorNumber": {
+            "title": "Doctornumber",
+            "type": "string"
+          },
           "doctorRegistrationNumber": {
             "title": "Doctorregistrationnumber",
             "type": "string"
@@ -14686,6 +14736,10 @@
           },
           "mrName": {
             "title": "Mrname",
+            "type": "string"
+          },
+          "mrUserId": {
+            "title": "Mruserid",
             "type": "string"
           },
           "name": {
@@ -14768,6 +14822,8 @@
           "code",
           "version",
           "doctorName",
+          "doctorNumber",
+          "mrUserId",
           "doctorRegistrationNumber",
           "mrId",
           "mrName",
@@ -18194,6 +18250,10 @@
             "title": "Name",
             "type": "string"
           },
+          "userId": {
+            "title": "Userid",
+            "type": "string"
+          },
           "zoneId": {
             "format": "uuid",
             "title": "Zoneid",
@@ -18205,6 +18265,7 @@
           }
         },
         "required": [
+          "userId",
           "id",
           "name",
           "employeeCode",
@@ -18335,6 +18396,10 @@
             "title": "Mrname",
             "type": "string"
           },
+          "mrUserId": {
+            "title": "Mruserid",
+            "type": "string"
+          },
           "q1": {
             "title": "Q1",
             "type": "string"
@@ -18397,6 +18462,7 @@
           "q2",
           "q3",
           "q4",
+          "mrUserId",
           "id",
           "version",
           "mrName",

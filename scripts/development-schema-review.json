@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "target": "0057_staff_employee_code",
-  "policy_sha256": "fd42eec7e7dbbe0f45e3387291127d5527496458c1f95bfe3dcc27470e58ee0a",
+  "target": "0058_master_numbers",
+  "policy_sha256": "c5a6904103f0b3ee4931f577bfaf295fa7fc4d1a774025f95cb33bbbb0c087b6",
   "revisions": {
     "0001_identity": "f45d8ef3e8084b3d4ce3e881a19f0bae000d0b985cabf9c56a147fb62b0dc0ca",
     "0002_username": "c4b52063617232dd5ad196a4f351228a0af080542682742e3096fe5b02dda01f",
@@ -66,7 +66,8 @@
     "0054_modern_email_tests": "18de6203f75befe0fe22a9ade76447d9e13a1d3db161c781623d3c0dddd4c6ad",
     "0055_mr_staff_managers": "6d93216411e9f1d9575bb677f761856581fbd2169040ad7579afc39410f5f026",
     "0056_staff_business_roles": "619761f2564bb917572c875fcba4e92d5bf661710ae817abf912d8ee0d32ce50",
-    "0057_staff_employee_code": "eda8caf7f3dc38a55db117ea149e77676af95f3c1df0fd8cf11bb3011acd0fb4"
+    "0057_staff_employee_code": "eda8caf7f3dc38a55db117ea149e77676af95f3c1df0fd8cf11bb3011acd0fb4",
+    "0058_master_numbers": "6266efc1ca0277665c96c6c816d97a4d9c6ff42aafc34070df79f7e14d3a0e89"
   },
   "execution_sources": {
     "scripts/review-development-schema.py": "10624531c6c89f4c7f9d521099503c40243e050fb9ebd0869279459af73dd1a6",

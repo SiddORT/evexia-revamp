@@ -223,6 +223,7 @@ export default function PatientForm({ patient, blocked = false, onSave, onClose,
           </div>
         )}
         <section className="mr-form__section" id="patient-panel-identity" role="tabpanel" aria-labelledby="patient-tab-identity" tabIndex={0} hidden={activeTab !== 'identity'}>
+          {patient && <p className="mr-form__hint">Patient ID: {patient.code}</p>}
           <div className="mr-form__section-head"><h3 className="mr-form__section-title">Identity & contact</h3><p className="mr-form__section-note">Fields marked * are required</p></div>
           <div className="mr-form__grid">
             {renderField('name', 'Patient name', { placeholder: 'Patient name', autoComplete: 'name' })}

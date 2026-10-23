@@ -12,6 +12,7 @@ export interface SalesTargetMRChoice {
   headquarterName: string;
   id: string;
   name: string;
+  userId: string;
   zoneId: string;
   zoneName: string;
 }

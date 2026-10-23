@@ -7,6 +7,7 @@
  */
 
 export interface PatientChoice {
+  doctorNumber: string;
   id: string;
   mrName: string;
   name: string;

@@ -44,6 +44,7 @@ export interface DoctorResponse {
    */
   daysLimit?: number;
   dialCountry?: DoctorResponseDialCountry;
+  doctorNumber: string;
   /** @maxLength 100 */
   drugLicenceNumber?: string;
   /** @maxLength 320 */
@@ -59,6 +60,7 @@ export interface DoctorResponse {
   landmark: string;
   mrId: string;
   mrName: string;
+  mrUserId: string;
   /**
    * @minLength 1
    * @maxLength 200

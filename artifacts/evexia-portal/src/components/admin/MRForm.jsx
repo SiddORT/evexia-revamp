@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Copy, Eye, EyeOff } from 'lucide-react';
 import InfoDisclosure from './InfoDisclosure.jsx';
 import MRReferenceSelect from './MRReferenceSelect.jsx';
 import MRZoneMultiSelect from './MRZoneMultiSelect.jsx';
@@ -14,7 +15,7 @@ import { presentMasterFailure } from '../../services/masterValidation.js';
 const OPTIONAL = new Set(['phone', 'email', 'reportingManagerId', 'reportingStaffId', 'addressLine2', 'paymentLimit', 'doctorDaysLimit']);
 const TABS = [
   { id: 'identity', label: 'Identity & contact', fields: ['name', 'phone', 'dialCountry', 'userId', 'email', 'password', 'confirmPassword'] },
-  { id: 'assignment', label: 'Assignment & work', fields: ['hq', 'zoneId', 'zoneIds', 'employeeCode', 'dateOfJoining', 'designation_id', 'reportingManagerId', 'reportingStaffId', 'paymentLimit', 'doctorDaysLimit', 'status'] },
+  { id: 'assignment', label: 'Assignment & work', fields: ['zoneId', 'zoneIds', 'hq', 'employeeCode', 'dateOfJoining', 'designation_id', 'reportingManagerId', 'reportingStaffId', 'paymentLimit', 'doctorDaysLimit', 'status'] },
   { id: 'address', label: 'Address', fields: ['pincode', 'addressLine1', 'addressLine2', 'landmark', 'city', 'state', 'country'] },
 ];
 const ORDER = [...FIELDS.slice(0, 6), 'password', 'confirmPassword', ...FIELDS.slice(6)].filter((key) => key !== 'contactRequirement');
@@ -130,11 +131,13 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
         {isPassword && <>
           <button type="button" className="mr-form__preview-action mr-form__credential-action"
             aria-controls="mr-password" aria-label={passwordVisible ? 'Hide password' : 'Show password'}
+            title={passwordVisible ? 'Hide password' : 'Show password'} disabled={saving}
             aria-pressed={passwordVisible} onClick={() => setPasswordVisible((current) => !current)}
-            data-testid="button-toggle-mr-password">{passwordVisible ? 'Hide' : 'Show'}</button>
+            data-testid="button-toggle-mr-password">{passwordVisible ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}</button>
           <button type="button" className="mr-form__preview-action mr-form__credential-action"
             disabled={saving || !credentials.password} onClick={copyPassword}
-            data-testid="button-copy-mr-password">Copy password</button>
+            aria-label="Copy password" title="Copy password"
+            data-testid="button-copy-mr-password"><Copy size={18} aria-hidden="true" /></button>
         </>}
       </div>
       {errors[key] && <p id={`mr-${key}-error`} className="mr-form__error" role="alert" data-testid={`error-mr-${key}`}>{errors[key]}</p>}
@@ -153,6 +156,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
         name={key}
         className="mr-form__control"
         type={type}
+         readOnly={key === 'userId' && /^MR-\d{3,}$/i.test(mr?.userId || '')}
         value={values[key]}
         onChange={(event) => change(key, event.target.value)}
         placeholder={placeholder}
@@ -162,7 +166,7 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
         step={step}
         aria-required={required}
         aria-invalid={Boolean(errors[key])}
-         aria-describedby={[errors[key] && errorId, ['phone', 'email'].includes(key) && 'mr-contact-help', key === 'pincode' && address.postal.message && 'mr-pin-feedback'].filter(Boolean).join(' ') || undefined}
+         aria-describedby={[errors[key] && errorId, key === 'pincode' && address.postal.message && 'mr-pin-feedback'].filter(Boolean).join(' ') || undefined}
         data-testid={`input-mr-${key}`}
       />
     );
@@ -245,8 +249,6 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
           {saveError && <div className="mr-form__notice mr-form__notice--error" role="alert" data-testid="error-mr-save"><p>{saveError}</p><p>If the outcome is uncertain, refresh to check the saved record before trying again. Refreshing discards changes on this page.</p><button type="button" className="admin-button admin-button--secondary" onClick={onRefresh} data-testid="button-refresh-mr-save">Refresh records</button></div>}
 
           <section className="mr-form__section" id="mr-panel-identity" role="tabpanel" aria-labelledby="mr-tab-identity" tabIndex={0} hidden={activeTab !== 'identity'}>
-            <div className="mr-form__section-head"><h3 id="mr-identity-title" className="mr-form__section-title">Identity & contact</h3><p className="mr-form__section-note">Fields marked * are required</p></div>
-            <p id="mr-contact-help" className="mr-form__hint mr-form__contact-intro">Enter either a phone number or an email address. Both are allowed.</p>
             <div className={`mr-form__grid${mr ? '' : ' mr-form__grid--identity-create'}`}>
                {renderField('name', 'MR Name', { placeholder: 'MR Name', autoComplete: 'name' })}
                 {renderField('phone', 'Phone No.', { placeholder: 'National phone number', autoComplete: 'tel', inputMode: 'tel', info: 'Select the phone country and enter its national number. The country selection is saved with this MR.' })}
@@ -271,11 +273,11 @@ export default function MRForm({ mr, onSave, onClose, onRefresh }) {
           <section className="mr-form__section" id="mr-panel-assignment" role="tabpanel" aria-labelledby="mr-tab-assignment" tabIndex={0} hidden={activeTab !== 'assignment'}>
             <div className="mr-form__section-head"><h3 id="mr-assignment-title" className="mr-form__section-title">Assignment & work</h3></div>
             <div className="mr-form__grid">
-               {renderField('hq', 'HQ', { customControl: <MRReferenceSelect id="mr-hq" kind="headquarters" label="HQ" value={values.hq} savedName={mr?.hqName} onChange={(v) => change('hq', v)} placeholder="Select a headquarter" invalid={Boolean(errors.hq)} describedBy={errors.hq ? 'mr-hq-error' : undefined} required emptyGuidance="No headquarters exist yet. Add one in Headquarter Master first." /> })}
               {renderField('zoneId', 'Assigned zone', { info: 'Select one or more zones. Primary remains unchanged while selected and is the single zone shown in Doctor, Patient and Sales Target. Saved inactive zones may be kept; remove deleted zones explicitly. Select all adds every currently active saved zone, not future zones.', customControl: <MRZoneMultiSelect id="mr-zoneId" values={values.zoneIds} primary={values.zoneId}
                 savedChoices={mr?.assignedZones || (mr?.zoneId ? [{ id: mr.zoneId, name: mr.zoneName }] : [])}
                 onChange={(zoneIds) => patchAddress({ zoneIds, zoneId: zoneIds.includes(mr?.zoneId) ? mr.zoneId : zoneIds.includes(values.zoneId) ? values.zoneId : zoneIds[0] || '' })}
                 onBusyChange={setZonesPending} disabled={saving} invalid={Boolean(errors.zoneId)} describedBy={errors.zoneId ? 'mr-zoneId-error' : undefined} /> })}
+               {renderField('hq', 'HQ', { customControl: <MRReferenceSelect id="mr-hq" kind="headquarters" label="HQ" value={values.hq} savedName={mr?.hqName} onChange={(v) => change('hq', v)} placeholder="Select a headquarter" invalid={Boolean(errors.hq)} describedBy={errors.hq ? 'mr-hq-error' : undefined} required emptyGuidance="No headquarters exist yet. Add one in Headquarter Master first." /> })}
               {renderField('employeeCode', 'Employee code', { placeholder: 'Employee code' })}
               {renderField('dateOfJoining', 'Date of joining', { type: 'date' })}
               {renderField('designation_id', 'Designation', { info: 'Select an active catalogue designation. A saved inactive assignment can be retained; a deleted assignment must be replaced. Designations grant no permissions.', customControl: <MRReferenceSelect id="mr-designation_id" kind="designations" label="Designation" value={values.designation_id} savedName={mr?.designationName} onChange={(v) => change('designation_id', v)} placeholder="Select a designation" invalid={Boolean(errors.designation_id)} describedBy={errors.designation_id ? 'mr-designation_id-error' : undefined} required emptyGuidance="No designations exist yet. Add one in Designation Master first." /> })}

@@ -29,8 +29,10 @@ LEGACY_COLUMNS = [
 COLUMNS = LEGACY_COLUMNS + [("dialCountry", "Dial Country")]
 LEGACY = [title for _, title in LEGACY_COLUMNS]
 HEADERS = [title for _, title in COLUMNS]
-READABLE = [("doctorName", "Doctor Name"), ("mrName", "MR Name"), ("zoneName", "Zone"),
+LEGACY_READABLE = [("doctorName", "Doctor Name"), ("mrName", "MR Name"), ("zoneName", "Zone"),
             ("createdBy", "Created By"), ("createdAt", "Created At"), ("updatedBy", "Updated By"), ("updatedAt", "Updated At")]
+OLD_CURRENT = HEADERS + [title for _, title in LEGACY_READABLE]
+READABLE = LEGACY_READABLE + [("doctorNumber", "Doctor Number")]
 CURRENT = HEADERS + [title for _, title in READABLE]
 from app.schemas.phone import DIAL
 
@@ -59,7 +61,7 @@ def parse(data, filename):
     else:
         invalid("Only UTF-8 CSV and genuine XLSX are supported.")
     rows = normalized_import_dates(rows, invalid)
-    if not rows or rows[0] not in (LEGACY, HEADERS, CURRENT):
+    if not rows or rows[0] not in (LEGACY, HEADERS, OLD_CURRENT, CURRENT):
         invalid("Use the exact legacy 17-column or current Patient sample/export schema; unknown columns are rejected.")
     if len(rows) < 2:
         invalid("At least one patient is required.")
@@ -151,6 +153,9 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
         if confirm and (not valid or not hmac.compare_digest(digest or "", fingerprint)):
             raise patients.PatientError("File, session, assignments or conflicts changed. Nothing imported. Review again.", 409, "patient_review_changed")
         if confirm:
+            from app.services.master_numbers import reserve_patient_import
+            for _, code in bodies:
+                reserve_patient_import(db, code)
             # Acquire all owner locks in stable order before inserting any patients.
             from app.services.domain import _lock_mrs
             _lock_mrs(db, {db.get(Doctor, body.doctorId).mrId for body, _ in bodies})

@@ -7,6 +7,7 @@
  */
 
 export interface OpeningBalanceDoctorChoice {
+  doctorNumber: string;
   id: string;
   name: string;
   registrationNumber: string;

@@ -61,7 +61,7 @@ export default function PatientDoctorSelect({ value, original, savedName, blocke
   const selected = selection?.id === value ? selection : null;
   const retained = value && value === original;
   const label = !value ? '' : selected
-    ? `${selected.name}${!selected.usable ? ' (inactive relationship; retained only)' : ''}`
+    ? `${selected.name} · Doctor number: ${selected.doctorNumber}${!selected.usable ? ' (inactive relationship; retained only)' : ''}`
     : retained ? `${savedName || 'Saved Doctor'} — unavailable; unchanged reference retained`
       : 'Doctor unavailable — choose another';
   const choices = state.items.filter((item) => item.usable || (item.id === original && item.id === value));
@@ -126,7 +126,7 @@ export default function PatientDoctorSelect({ value, original, savedName, blocke
             role="option" aria-selected={item.id === value} aria-disabled={!item.usable}
             className={`searchable-select__option${active === index ? ' searchable-select__option--active' : ''}`}
             onMouseDown={(event) => event.preventDefault()} onClick={() => choose(item)}>
-            <span>{item.name}{!item.usable ? ' (inactive relationship; retained only)' : ''}
+            <span>{item.name} · Doctor number: {item.doctorNumber}{!item.usable ? ' (inactive relationship; retained only)' : ''}
               <small>MR: {item.mrName || 'Missing'} · Zone: {item.zoneName || 'Missing'}</small></span>
           </div>)}
         </div>

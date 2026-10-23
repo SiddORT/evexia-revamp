@@ -51,9 +51,12 @@ def readiness(db: Session = Depends(get_db)):
         CommunicationCrypto(get_settings())
         # Reviewed Staff successors retain every predecessor capability.
         feature_revisions = revisions
-        if revisions == ["0057_staff_employee_code"]:
+        if revisions == ["0058_master_numbers"]:
+            db.execute(text('SELECT "doctorNumber" FROM doctor_directory LIMIT 0'))
+            db.execute(text("SELECT p.last_value,d.last_value,m.last_value FROM patient_number_seq p, doctor_number_seq d, mr_login_number_seq m LIMIT 0"))
+        if revisions in (["0057_staff_employee_code"], ["0058_master_numbers"]):
             db.execute(text("SELECT employee_code FROM staff_profiles LIMIT 0"))
-        if revisions in (["0055_mr_staff_managers"], ["0056_staff_business_roles"], ["0057_staff_employee_code"]):
+        if revisions in (["0055_mr_staff_managers"], ["0056_staff_business_roles"], ["0057_staff_employee_code"], ["0058_master_numbers"]):
             db.execute(text('SELECT "reportingStaffId", reporting_staff_name_ciphertext FROM mr_directory LIMIT 0'))
             feature_revisions = ["0054_modern_email_tests"]
         if feature_revisions in (["0044_purchase_received"], ["0045_pr_batch_numbers"], ["0046_live_inventory"], ["0047_languages"], ["0048_language_unicode"], ["0047_stock_products"], ["0049_product_language_merge"], ["0050_opening_stock"], ["0051_headquarter_areas"], ["0051_mr_zones"], ["0052_hq_mr_zones_merge"], ["0053_email_invitations"], ["0054_modern_email_tests"]):

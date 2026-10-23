@@ -14,6 +14,7 @@ export interface OpeningBalanceResponse {
   createdBy: string;
   doctorId: string;
   doctorName: string;
+  doctorNumber: string;
   doctorUsable: boolean;
   /**
    * @minimum 1901

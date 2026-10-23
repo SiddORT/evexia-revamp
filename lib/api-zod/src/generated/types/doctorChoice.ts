@@ -13,6 +13,7 @@ export interface DoctorChoice {
   name: string;
   status: string;
   usable: boolean;
+  userId: string;
   zoneId: string | null;
   zoneName: string;
   zoneStatus: DoctorChoiceZoneStatus;

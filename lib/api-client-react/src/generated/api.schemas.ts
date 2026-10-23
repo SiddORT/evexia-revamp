@@ -858,6 +858,7 @@ export interface DoctorChoice {
   name: string;
   status: string;
   usable: boolean;
+  userId: string;
   zoneId: string | null;
   zoneName: string;
   zoneStatus: DoctorChoiceZoneStatus;
@@ -1941,6 +1942,7 @@ export interface DoctorResponse {
    */
   daysLimit?: number;
   dialCountry?: DoctorResponseDialCountry;
+  doctorNumber: string;
   /** @maxLength 100 */
   drugLicenceNumber?: string;
   /** @maxLength 320 */
@@ -1956,6 +1958,7 @@ export interface DoctorResponse {
   landmark: string;
   mrId: string;
   mrName: string;
+  mrUserId: string;
   /**
    * @minLength 1
    * @maxLength 200
@@ -3213,6 +3216,7 @@ export interface MRChoice {
   id: string;
   name: string;
   status: string;
+  userId?: string | null;
 }
 
 export interface MRChoices {
@@ -3920,7 +3924,7 @@ export interface MRDirectoryResponse {
   /**
    * @minLength 3
    * @maxLength 32
-   * @pattern ^[a-z][a-z0-9._-]{2,31}$
+   * @pattern ^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$
    */
   userId: string;
   version: number;
@@ -3943,6 +3947,7 @@ export const MRDoctorChoiceStatus = {
 } as const;
 
 export interface MRDoctorChoice {
+  doctorNumber: string;
   id: string;
   name: string;
   registrationNumber: string;
@@ -4287,7 +4292,7 @@ export interface MREdit {
   /**
    * @minLength 3
    * @maxLength 32
-   * @pattern ^[a-z][a-z0-9._-]{2,31}$
+   * @pattern ^(?:MR-[0-9]{3,}|[a-z][a-z0-9._-]{2,31})$
    */
   userId: string;
   zoneId: string;
@@ -4532,6 +4537,7 @@ export interface OpeningActivityPage {
 }
 
 export interface OpeningBalanceDoctorChoice {
+  doctorNumber: string;
   id: string;
   name: string;
   registrationNumber: string;
@@ -4633,6 +4639,7 @@ export interface OpeningBalanceResponse {
   createdBy: string;
   doctorId: string;
   doctorName: string;
+  doctorNumber: string;
   doctorUsable: boolean;
   /**
    * @minimum 1901
@@ -5574,6 +5581,7 @@ export interface PRSource {
 }
 
 export interface PatientChoice {
+  doctorNumber: string;
   id: string;
   mrName: string;
   name: string;
@@ -5899,6 +5907,7 @@ export interface PatientDirectoryResponse {
   dialCountry?: PatientDirectoryResponseDialCountry;
   doctorId: string;
   doctorName: string;
+  doctorNumber: string;
   doctorRegistrationNumber: string;
   /** @maxLength 320 */
   email?: string;
@@ -5916,6 +5925,7 @@ export interface PatientDirectoryResponse {
   landmark: string;
   mrId: string | null;
   mrName: string;
+  mrUserId: string;
   /**
    * @minLength 1
    * @maxLength 200
@@ -7387,6 +7397,7 @@ export interface SalesTargetMRChoice {
   headquarterName: string;
   id: string;
   name: string;
+  userId: string;
   zoneId: string;
   zoneName: string;
 }
@@ -7505,6 +7516,7 @@ export interface SalesTargetResponse {
   id: string;
   mrId: string;
   mrName: string;
+  mrUserId: string;
   q1: string;
   q2: string;
   q3: string;

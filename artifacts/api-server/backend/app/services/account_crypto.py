@@ -134,6 +134,7 @@ def ready(db):
         ["0056_staff_business_roles"],
         # Optional Staff business metadata does not alter account identity/keys.
         ["0057_staff_employee_code"],
+        ["0058_master_numbers"],
     ):
         raise AccountCryptoError()
     current = crypto()

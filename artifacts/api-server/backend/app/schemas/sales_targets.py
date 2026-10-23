@@ -50,6 +50,7 @@ class SalesTargetStatus(SalesTargetVersion):
 
 
 class SalesTargetResponse(SalesTargetFields):
+    mrUserId: str
     id: uuid.UUID
     version: int
     mrName: str
@@ -83,6 +84,7 @@ class SalesTargetPage(SearchSection):
 
 
 class SalesTargetMRChoice(BaseModel):
+    userId: str
     id: uuid.UUID
     name: str
     employeeCode: str
