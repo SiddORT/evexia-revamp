@@ -15,13 +15,53 @@ class FileError(Exception):
         super().__init__(message)
 
 
-def authorize(db: Session, identity: Identity, action: str, patient_id, mr_id, *, lock=False, kits_owner_id=None, lupin_owner_id=None, file_id=None):
+def authorize(db: Session, identity: Identity, action: str, patient_id, mr_id, *, lock=False, kits_owner_id=None, lupin_owner_id=None, file_id=None, lupin_reservation=False):
+    if identity.role == "mr" and lupin_owner_id:
+        # Same policy-before-identity lock order as order mutations.
+        from app.services.zone_policy import lock_policy
+        lock_policy(db)
     current = revalidate_identity(db, identity, lock=lock)
     admin_access = "admin.access" in current.permissions
-    # Lupin is not an MR workflow. Check this before any saved-order MR access.
     if lupin_owner_id:
+        if current.role == "mr":
+            from app.services.mr_orders import authorize as authorize_orders, check_retry_scope
+            from app.db.lupin_models import LupinOrder, LupinAttachment, LupinRequest
+            from app.db.file_models import FileRecord
+            current = authorize_orders(db, current)
+            if file_id and action in ("read", "download"):
+                if db.scalar(select(LupinAttachment.file_id).join(
+                        LupinOrder, LupinOrder.id == LupinAttachment.order_id).where(
+                        LupinAttachment.file_id == file_id, LupinOrder.mr_id == current.mr.id).limit(1)):
+                    return current
+            if lupin_owner_id != current.user.id or action not in (*MR_FILE_ACTIONS, "cancel_lupin_upload"):
+                raise FileError(403, "access_denied", "Access denied")
+            if file_id:
+                row = db.get(FileRecord, file_id)
+                attached = db.scalar(select(LupinAttachment.file_id).where(LupinAttachment.file_id == file_id))
+                if not row or row.uploader_id != current.user.id or attached:
+                    raise FileError(404, "not_found", "Object unavailable")
+                # Unattached uploads are recoverable only in their original MR
+                # assignment. A cancellation is a dedicated tombstoned operation,
+                # never generic MR delete/replace permission.
+                retry = db.get(LupinRequest, file_id)
+                if not retry or retry.actor_id != current.user.id:
+                    raise FileError(404, "not_found", "Object unavailable")
+                from app.services.lupin import unseal
+                from app.services.directory_runtime import crypto_scope
+                with crypto_scope(db) as keys:
+                    saved = unseal(keys, "requests", file_id, retry.response_ciphertext)
+                check_retry_scope(db, saved)
+                if (saved["request"].get("kind") != "lupin_upload"
+                        or (action == "cancel_lupin_upload" and not saved["result"].get("cancelled"))
+                        or (action != "cancel_lupin_upload" and saved["result"].get("cancelled"))):
+                    raise FileError(404, "not_found", "Object unavailable")
+            elif action != "upload" or not lupin_reservation:
+                # Only Lupin's digest-bound, actor-bound reservation may create
+                # MR uploads; generic /files must not bypass its retry record.
+                raise FileError(403, "access_denied", "Access denied")
+            return current
         if (not admin_access or not current.user.is_protected_system_admin
-                or current.role != "super_admin" or action not in ADMIN_FILE_ACTIONS):
+                or current.role != "super_admin" or action not in (*ADMIN_FILE_ACTIONS, "cancel_lupin_upload")):
             raise FileError(403, "access_denied", "Access denied")
         if action in ("upload", "replace") and lupin_owner_id != current.user.id:
             raise FileError(403, "access_denied", "Access denied")

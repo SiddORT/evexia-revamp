@@ -4,6 +4,7 @@ import { readOrderCsv, writeOrderCsv, decodeTransferCell, TRANSFER_MAX_BYTES } f
 import { readOrderWorkbook, writeOrderWorkbook } from './orderTransferWorkbook.js';
 import { exportDate } from './exportDatePresentation.js';
 import { downloadBlob } from './downloads.js';
+import { getSession, reportingIdentityGuard } from '../auth/adminSession.js';
 
 const HEADERS = ['Schema', 'Order type', 'Date context JSON', 'Order ID', 'Order number', 'Order date', 'Order details JSON', 'Patient snapshot JSON'];
 const SCHEMA = 'evexia.lupin-orders/1';
@@ -19,26 +20,42 @@ function output(orders, preferences, format) {
   return blob;
 }
 export function createLupinTransferAdapter(filters, onSaved) {
+  const prepared = new WeakMap();
+  const sessionGuard = reportingIdentityGuard(), mrId = getSession().user?.mr_id;
+  const ownerGuard = () => {
+    sessionGuard();
+    if (getSession().user?.mr_id !== mrId) throw new Error('Your MR assignment changed. Prepare this transfer again.');
+  };
   return {
     retainUncertain: true,
     scope: 'Export includes all saved orders matching applied filters across pagination, or rejects completeness limits. File contents, usable URLs and credentials are excluded.',
-    instructions: 'Use the eight-column Lupin template. Order details JSON: doctorId and mrId (required real UUIDs), patientIds (optional array of up to 200 existing Patient UUIDs), patientCount (integer 1–1,000,000), price (positive INR text, up to nine whole digits and two decimal places), remarks, status and paymentStatus. Patient count is manually supplied and independent of linked Patients, including zero links. For new rows use Confirmed / Unpaid, blank ID and number, and no attachments. Include version for updates. Names, total and snapshot columns are informational only and cannot override server history.',
+    instructions: `${getSession().user?.identity_kind === 'mr' ? `Every row must retain your signed-in saved MR ID (${mrId}); unrelated Doctor/Patient references are rejected. ` : ''}Use the eight-column Lupin template. Order details JSON: doctorId and mrId (required real UUIDs), patientIds (optional array of up to 200 existing Patient UUIDs), patientCount (integer 1–1,000,000), price (positive INR text, up to nine whole digits and two decimal places), remarks, status and paymentStatus. Patient count is manually supplied and independent of linked Patients, including zero links. For new rows use Confirmed / Unpaid, blank ID and number, and no attachments. Include version for updates. Names, total and snapshot columns are informational only and cannot override server history.`,
     matching: 'Updates require the current ID, number and exported version. Dates and order/payment classifications cannot change. Existing file associations are retained regardless of imported metadata. New imported orders may have no files because transfers cannot restore uploads; Add Order requires private verified attachments. No masters are created and no orders are deleted.',
-    release: (blob, filename, template, format) => downloadBlob(blob, filename, { source: 'lupin_orders', kind: template ? 'template' : 'export', format: format === 'xlsx' ? 'XLSX' : 'CSV' }),
+    release: (blob, filename, template, format) => {
+      const guard = prepared.get(blob);
+      if (!guard) throw new Error('Prepare this export again before downloading.');
+      return downloadBlob(blob, filename, { source: 'lupin_orders', kind: template ? 'template' : 'export', format: format === 'xlsx' ? 'XLSX' : 'CSV' }, { guard });
+    },
     async download(template, preferences, format) {
-      return output(template ? [] : (await request('/export', { params: filters })).items, preferences, format);
+      ownerGuard();
+      const blob = output(template ? [] : (await request('/export', { params: filters })).items, preferences, format);
+      ownerGuard(); prepared.set(blob, ownerGuard);
+      return blob;
     },
     async review(file) {
+      ownerGuard();
       if (!file.size || file.size > TRANSFER_MAX_BYTES) throw new Error('Choose a nonempty CSV/XLSX up to 8 MB.');
       let rows;
       if (/\.csv$/i.test(file.name)) rows = readOrderCsv(new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer()));
       else if (/\.xlsx$/i.test(file.name)) rows = await readOrderWorkbook(file);
       else throw new Error('Choose CSV or genuine Excel (.xlsx).');
+      ownerGuard();
       if (rows.length < 2 || rows.length > 501) throw new Error('Review 1–500 orders per atomic server import.');
       if (rows[0].cells.length !== 8 || HEADERS.some((h, i) => rows[0].cells[i] !== h)) throw new Error('Keep the eight Lupin headers in order.');
       const entries = [], failures = [];
       let firstContext;
       for (const { line, cells } of rows.slice(1)) {
+        ownerGuard();
         try {
           if (cells.length !== 8) throw new Error('Expected eight columns.');
           const [schema, kind, rawContext, id, number, rawDate, rawDetails, rawPatients] = cells.map(decodeTransferCell);
@@ -56,6 +73,7 @@ export function createLupinTransferAdapter(filters, onSaved) {
           if (id) {
             if (!UUID.test(id)) throw new Error('Use a real saved order ID.');
             previous = await request(`/${id}`);
+            ownerGuard();
             if (number !== previous.number || details.version !== previous.version) throw new Error('Updates require current ID, number and version.');
             if (date !== previous.date) throw new Error('Saved order date is immutable.');
           } else if (number || details.version) throw new Error('Leave new order number and version empty.');
@@ -68,10 +86,13 @@ export function createLupinTransferAdapter(filters, onSaved) {
       const payload = { entries, idempotencyKey: crypto.randomUUID(), reviewToken: '', confirmUpdates: false };
       if (new TextEncoder().encode(JSON.stringify(payload)).length > 1000000) throw new Error('Validated request exceeds 1 MiB. Import a smaller batch.');
       const reviewed = await request('/import/review', { body: payload });
-      return { ...reviewed, payload: { ...payload, reviewToken: reviewed.reviewToken } };
+      ownerGuard();
+      return { ...reviewed, ownerGuard, payload: { ...payload, reviewToken: reviewed.reviewToken } };
     },
     async commit(review, confirmed) {
+      ownerGuard(); review.ownerGuard();
       const result = await request('/import/commit', { body: { ...review.payload, confirmUpdates: confirmed } });
+      ownerGuard(); review.ownerGuard();
       onSaved();
       return result;
     },

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
 import { ArrowLeft, Trash2, UserPlus } from 'lucide-react';
-import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import AdminLayout, { useOrderBase, useOrderPortal } from '../../components/orders/OrderPortalContext.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
 import SptReferenceSelect from '../../components/admin/SptReferenceSelect.jsx';
 import { request, GENDERS, money, totalMinor, validateOrder, orderInput } from '../../services/serverSpt.js';
@@ -9,17 +9,17 @@ import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import '../../sptOrders.css';
 import '../../orderEntry.css';
 
-const BASE = '/admin/orders/spt';
-
 function Shell({ children, entry = false }) {
   return <AdminLayout title="SPT"><div className={`spt spt-form${entry ? ' order-entry spt-entry' : ''}`}>{children}</div></AdminLayout>;
 }
 
 function OrderForm({ order }) {
+  const BASE = useOrderBase('spt');
+  const { mr } = useOrderPortal();
   const [record, setRecord] = useState(order);
   const readOnly = record?.status === 'Saved';
   const [doctorId, setDoctorId] = useState(order?.doctorId || '');
-  const [mrId, setMrId] = useState(order?.mrId || '');
+  const [mrId, setMrId] = useState(order?.mrId || mr?.id || '');
   const [patients, setPatients] = useState(() => order ? order.patients.map((p) => ({ ...p })) : []);
   const [remarks, setRemarks] = useState(order?.remarks || '');
   const [errors, setErrors] = useState({});
@@ -145,7 +145,7 @@ function OrderForm({ order }) {
         <div>
           <p className="admin-page-head__eyebrow">Orders / SPT</p>
           <h1>{readOnly ? `Review ${record.number}` : record ? `Edit draft ${record.number}` : 'Add Order'}</h1>
-          <p className="admin-page-head__description">{readOnly ? 'This Saved order is read-only. People are shown as recorded at order entry.' : 'Choose Doctor, MR and patients, then enter amounts. Save as Draft to keep incomplete entries.'}</p>
+          <p className="admin-page-head__description">{readOnly ? 'This Saved order is read-only. People are shown as recorded at order entry.' : mr ? 'Your MR is fixed. Choose Doctor and patients, then enter amounts. Save as Draft to keep incomplete entries.' : 'Choose Doctor, MR and patients, then enter amounts. Save as Draft to keep incomplete entries.'}</p>
         </div>
         <Link href={BASE} className="admin-button admin-button--secondary" data-testid="link-spt-back"><ArrowLeft size={16} aria-hidden="true" />All orders</Link>
       </div>
@@ -165,7 +165,7 @@ function OrderForm({ order }) {
             {errors.doctorId && <p className="spt-error" id="spt-err-doctor">{errors.doctorId}</p>}
           </div>
           <div className={`spt-field${errors.mrId ? ' spt-field--error' : ''}`}>
-            {readOnly ? <div className="spt-readonly"><strong>MR</strong><p>{record.mrName || 'Not selected'}</p><p>{[record.mr?.phone, record.mr?.email].filter(Boolean).join(' · ')}</p></div> : <SptReferenceSelect disabled={busy || uncertain} id="spt-mr" kind="mrs" label="MR" value={mrId} saved={[record?.mr]} onChange={(v) => { setMrId(v); setErrors((e) => ({ ...e, mrId: undefined })); }} invalid={Boolean(errors.mrId)} describedBy={errors.mrId ? 'spt-err-mr' : undefined} />}
+            {readOnly || mr ? <div className="spt-readonly"><strong>MR</strong><p>{readOnly ? record.mrName || 'Not selected' : mr.name}</p><p>{readOnly ? [record.mr?.phone, record.mr?.email].filter(Boolean).join(' · ') : 'Your verified saved MR identity. Assignment cannot be changed.'}</p></div> : <SptReferenceSelect disabled={busy || uncertain} id="spt-mr" kind="mrs" label="MR" value={mrId} saved={[record?.mr]} onChange={(v) => { setMrId(v); setErrors((e) => ({ ...e, mrId: undefined })); }} invalid={Boolean(errors.mrId)} describedBy={errors.mrId ? 'spt-err-mr' : undefined} />}
             {errors.mrId && <p className="spt-error" id="spt-err-mr">{errors.mrId}</p>}
           </div>
         </div>
@@ -237,6 +237,7 @@ function OrderForm({ order }) {
 }
 
 export default function SptOrderFormPage({ id }) {
+  const BASE = useOrderBase('spt');
   const [order, setOrder] = useState(null), [loading, setLoading] = useState(Boolean(id));
   const [error, setError] = useState(''), [revision, setRevision] = useState(0);
   useEffect(() => {

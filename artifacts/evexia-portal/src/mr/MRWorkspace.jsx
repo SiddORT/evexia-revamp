@@ -107,7 +107,7 @@ function Shell() {
         </div>}
       </div>
     </div></header>
-    <div className="mrw-demo" data-testid="text-demo-notice">Doctors, Immunotherapy orders and Kits &amp; Consumables orders: live shared records. Dashboard, Targets and Payments: separate fictional demos that reset on reload; not linked to live Doctors or orders.</div>
+    <div className="mrw-demo" data-testid="text-demo-notice">Doctors, Immunotherapy, Kits &amp; Consumables, SPT and Lupin orders: live shared records. Dashboard, Targets and Payments: separate fictional demos that reset on reload; not linked to live Doctors or orders.</div>
     <main className="mrw-main" ref={mainRef} data-testid="page-mr-home">
       {flash && <div className="mrw-flash" role="status" data-testid="text-flash">{flash.text}<button type="button" className="admin-button admin-button--secondary" onClick={() => setFlash(null)}>Dismiss</button></div>}
       <Routes />

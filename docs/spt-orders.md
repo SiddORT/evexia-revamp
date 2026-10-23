@@ -25,9 +25,12 @@ Normal separately authorized development activation remains a separate step.
 `/{id}/edit`, `/references/{patients|doctors|mrs}`, `/patients` registration,
 `/export`, `/import/review` and `/import/commit`.
 
-Authorization revalidates the current protected Super Admin session inside
-every operation before accessing directory keys or records. No new staff,
-MR or Doctor portal grants are added. All writes are atomic and record only
+Authorization revalidates the current protected Super Admin or explicitly
+authorized MR session inside every operation before accessing directory keys
+or records. MR order reads/writes/transfers require mandatory ownership;
+Doctor and Staff grants are unchanged. See `mr-order-workflows.md` for MR routes,
+fixed identity, registration ownership and the forward ownership migration.
+All writes are atomic and record only
 action/resource/actor/session metadata in audit events, never personal payloads.
 Validation envelopes hide untrusted property names and values.
 

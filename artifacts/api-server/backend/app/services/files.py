@@ -46,7 +46,7 @@ def get_record(db: Session, identity, file_id, action, *, lock=False, readable=F
               kits_owner_id=row.kits_owner_id, lupin_owner_id=row.lupin_owner_id, file_id=row.id)
     if lock:
         row = db.scalar(select(FileRecord).where(FileRecord.id == file_id).with_for_update().execution_options(populate_existing=True))
-    if action in ("delete", "replace"):
+    if action in ("delete", "replace", "cancel_lupin_upload"):
         from app.db.lupin_models import LupinAttachment
         if db.scalar(select(LupinAttachment.file_id).where(LupinAttachment.file_id == file_id).limit(1)):
             raise FileError(409, "file_order_reference", "File is referenced by a saved Lupin order; no bytes were removed.")
@@ -68,7 +68,7 @@ def response(row):
 
 
 def reserve(db, identity, body, content_type, settings, request_id, *, replaces_id=None, expected_version=None,
-            reservation_id=None, commit=True):
+            reservation_id=None, commit=True, lupin_reservation=False):
     try:
         ext = validated_extension(body.filename)
     except ValueError:
@@ -76,7 +76,8 @@ def reserve(db, identity, body, content_type, settings, request_id, *, replaces_
     if MIME_TYPES[ext] != content_type or (body.category == "profile" and ext == "pdf"):
         raise FileError(415, "unsupported_type", "File type is not allowed")
     authorize(db, identity, "replace" if replaces_id else "upload", body.patient_id, body.mr_id, lock=True,
-              kits_owner_id=body.kits_owner_id, lupin_owner_id=body.lupin_owner_id)
+              kits_owner_id=body.kits_owner_id, lupin_owner_id=body.lupin_owner_id,
+              lupin_reservation=lupin_reservation)
     if replaces_id:
         original = get_record(db, identity, replaces_id, "replace", lock=True, readable=True)
         if original.version != expected_version:
@@ -182,8 +183,9 @@ def publish(db, identity, file_id, verified, request_id):
         raise
 
 
-def delete_file(db, identity, file_id, storage, request_id, *, expected_version=None):
-    row = get_record(db, identity, file_id, "delete", lock=True, allow_hidden=True)
+def delete_file(db, identity, file_id, storage, request_id, *, expected_version=None, cancel_lupin_upload=False):
+    action = "cancel_lupin_upload" if cancel_lupin_upload else "delete"
+    row = get_record(db, identity, file_id, action, lock=True, allow_hidden=True)
     if expected_version is not None and row.version != expected_version:
         raise FileError(409, "version_conflict", "File has changed")
     if row.state == "deleted":

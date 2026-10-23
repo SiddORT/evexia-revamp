@@ -1,4 +1,4 @@
-"""Authorization shared only by the two live MR order workflows."""
+"""Authorization shared by the four explicitly live MR order workflows."""
 from sqlalchemy import select
 from app.db.models import Patient
 from app.db.mr_models import MRDirectory
@@ -42,6 +42,27 @@ def scope_identity(db):
 def scope(db, model):
     identity = scope_identity(db)
     return [model.mr_id == identity] if identity else []
+
+
+def require_assignment(db, mr_id):
+    """Even incomplete drafts must retain the authenticated MR identity."""
+    identity = scope_identity(db)
+    if identity and mr_id != identity:
+        from app.services.immunotherapy import ImmError
+        raise ImmError("Order MR must be your authenticated saved MR identity.", 422, "mr_order_assignment")
+
+
+def retry_scope(db):
+    identity = scope_identity(db)
+    return str(identity) if identity else None
+
+
+def check_retry_scope(db, saved):
+    # Account identity alone is not sufficient if its MR assignment changed.
+    identity = retry_scope(db)
+    if identity and saved.get("mrScope") != identity:
+        from app.services.immunotherapy import ImmError
+        raise ImmError("Submission is unavailable for your current MR assignment.", 409, "mr_order_retry")
 
 
 def reference_scope(db, kind):

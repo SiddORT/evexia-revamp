@@ -14,6 +14,7 @@ from app.db.spt_models import SptOrder as Order, SptPatient as Registered, SptMe
 from app.db.patient_models import PatientDirectory
 from app.db.models import AuditEvent
 from app.services.immunotherapy import ImmError, encode, eligible, person, references as master_references, authorize
+from app.services.mr_orders import scope, scope_identity, reference_scope, require_assignment, retry_scope, check_retry_scope
 from app.services.directory_runtime import crypto_scope
 from app.services.directory_inventory import DirectoryCryptoError
 from app.core.security import utcnow
@@ -54,7 +55,7 @@ def transaction(db, actor, work):
 
 
 def find(db, identity):
-    row = db.scalar(select(Order).where(Order.id == identity).with_for_update())
+    row = db.scalar(select(Order).where(Order.id == identity, *scope(db, Order)).with_for_update())
     if not row:
         raise ImmError("SPT order not found or unavailable.", 404, "spt_not_found")
     return row
@@ -66,9 +67,15 @@ def project(keys, row):
         "date": row.date.isoformat(), "version": row.version}
 
 
+def registration_scope(db):
+    identity = scope_identity(db)
+    return [Registered.owner_mr_id == identity] if identity else []
+
+
 def patient_snapshot(db, keys, identity, source, order_date):
     if source == "spt":
-        row = db.get(Registered, identity)
+        row = db.scalar(select(Registered).where(
+            Registered.id == identity, *registration_scope(db)).with_for_update())
         if not row:
             raise ImmError("SPT patient not found. Register or select an existing patient.", 422, "spt_patient")
         return {**unseal(keys, "patients", row.id, row.snapshot_ciphertext),
@@ -82,6 +89,7 @@ def patient_snapshot(db, keys, identity, source, order_date):
 
 
 def resolve(db, keys, body, previous, order_date):
+    require_assignment(db, body.mrId)
     value = dict(doctorId=str(body.doctorId) if body.doctorId else None,
         mrId=str(body.mrId) if body.mrId else None, status=body.status, remarks=body.remarks)
     changed = {}
@@ -166,12 +174,21 @@ def idempotent(db, actor, keys, key, payload, work):
         if prior.actor_id != actor.user.id:
             raise ImmError("Submission belongs to a different actor.", 409, "spt_retry")
         saved = unseal(keys, "requests", key, prior.response_ciphertext)
+        check_retry_scope(db, saved)
         if encode(saved["request"]) != encode(payload):
             raise ImmError("Retry the identical submission, not changed entries.", 409, "spt_retry")
-        return saved["result"]
+        result = saved["result"]
+        if payload["operation"] != "register":
+            for order in result.get("orders", [result]):
+                find(db, uuid.UUID(order["id"]))
+        else:
+            patient_snapshot(db, keys, uuid.UUID(result["id"]), "spt",
+                datetime.now(ZoneInfo("Asia/Kolkata")).date())
+        return result
     result = work()
     db.add(Retry(key=key, actor_id=actor.user.id,
-        response_ciphertext=seal(keys, "requests", key, {"request": payload, "result": result})))
+        response_ciphertext=seal(keys, "requests", key,
+            {"request": payload, "result": result, "mrScope": retry_scope(db)})))
     return result
 
 
@@ -188,6 +205,7 @@ def register(db, actor, body):
             number = db.scalar(text("SELECT nextval('spt_patient_number_seq')"))
             data = body.model_dump(mode="json", exclude={"idempotencyKey"})
             row = Registered(id=identity, code=f"SPT-PT-{number:08d}", created_by=a.user.id,
+                owner_mr_id=scope_identity(db),
                 snapshot_ciphertext=seal(keys, "patients", identity, data))
             db.add(row)
             audit(db, a, "spt_patient_registered", identity)
@@ -210,8 +228,9 @@ def references(db, actor, kind, search="", cursor=None, limit=25, selected=None)
         # A single ordered bounded stream across both directories; no unbounded
         # hidden paging or name/equality index for personal registration details.
         master = select(PatientDirectory.id.label("id"), literal("master").label("source")).where(
-            PatientDirectory.deleted_at.is_(None), PatientDirectory.status == "active")
-        registered = select(Registered.id.label("id"), literal("spt").label("source"))
+            PatientDirectory.deleted_at.is_(None), PatientDirectory.status == "active",
+            *reference_scope(db, "patients"))
+        registered = select(Registered.id.label("id"), literal("spt").label("source")).where(*registration_scope(db))
         candidates = union_all(master, registered).subquery()
         query = select(candidates).order_by(candidates.c.id)
         if cursor:
@@ -224,7 +243,7 @@ def references(db, actor, kind, search="", cursor=None, limit=25, selected=None)
             try:
                 return patient_snapshot(db, keys, identity, source, today)
             except ImmError as error:
-                if error.code in ("imm_reference", "spt_patient_age"):
+                if error.code in ("imm_reference", "spt_patient_age", "spt_patient"):
                     return None
                 raise
         for row in rows[:500]:
@@ -237,7 +256,8 @@ def references(db, actor, kind, search="", cursor=None, limit=25, selected=None)
             if len(items) == limit:
                 break
         if selected and not any(p["id"] == str(selected) for p in items):
-            source = "spt" if db.get(Registered, selected) else "master"
+            source = "spt" if db.scalar(select(Registered.id).where(
+                Registered.id == selected, *registration_scope(db))) else "master"
             data = choice(selected, source)
             if data:
                 items.append(data)
@@ -250,7 +270,7 @@ def listing(db, actor, *, search="", status=None, doctor_id=None, mr_id=None,
     def work(a, keys):
         if from_date and to_date and from_date > to_date:
             raise ImmError("From date must not follow To date.", 422, "spt_dates")
-        clauses = [getattr(Order, key) == value for key, value in
+        clauses = scope(db, Order) + [getattr(Order, key) == value for key, value in
             (("status", status), ("doctor_id", doctor_id), ("mr_id", mr_id)) if value]
         if patient_id:
             clauses.append(select(Membership.order_id).where(Membership.order_id == Order.id,
@@ -288,7 +308,7 @@ def listing(db, actor, *, search="", status=None, doctor_id=None, mr_id=None,
                     break
         finally:
             rows.close()
-        return dict(items=items, total=db.scalar(select(func.count()).select_from(Order)),
+        return dict(items=items, total=db.scalar(select(func.count()).select_from(Order).where(*scope(db, Order))),
             filtered=len(items) if complete else None if search else db.scalar(select(func.count()).select_from(Order).where(*clauses)),
             nextCursor=str(last) if more and not complete else None)
     return transaction(db, actor, work)
@@ -316,7 +336,7 @@ def batch(db, actor, body, commit=False):
                         raise ImmError("Keep the original order date.", 422, "spt_date")
                 else:
                     if entry.number or entry.expected_version or db.scalar(select(Order.id).where(Order.source_id == entry.sourceId)):
-                        raise ImmError("Source identity already exists, or new number/version is not blank. Export current records before reviewing again.", 409, "spt_source")
+                        raise ImmError("New order identity or numbering is unavailable. Use a fresh source identity or review an authorized export.", 409, "spt_source")
                 order_date = entry.values.orderDate or datetime.now(ZoneInfo("Asia/Kolkata")).date()
                 value = resolve(db, keys, entry.values, previous, order_date)
                 changes = [key for key in value if previous and previous.get(key) != value[key]]

@@ -1,4 +1,4 @@
-"""Admin Lupin orders and uploads; no Staff/MR/Doctor grants."""
+"""Shared Admin/MR Lupin orders; service ownership is mandatory."""
 import asyncio
 import uuid
 from datetime import date
@@ -97,7 +97,8 @@ def cancel_upload(upload_id: uuid.UUID, request: Request, actor=Depends(current_
     exists = service.cancel_upload(db, actor, upload_id)
     if exists:
         with operation(db, settings, upload_id):
-            file_service.delete_file(db, actor, upload_id, storage_factory(), request.state.request_id)
+            file_service.delete_file(db, actor, upload_id, storage_factory(), request.state.request_id,
+                                     cancel_lupin_upload=True)
     return dict(id=upload_id, cancelled=True)
 
 

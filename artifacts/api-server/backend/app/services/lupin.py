@@ -15,8 +15,7 @@ from app.db.lupin_models import LupinOrder as Order, LupinPatient as Patient, Lu
 from app.db.file_models import FileRecord
 from app.db.models import AuditEvent
 from app.services.immunotherapy import ImmError, encode, eligible
-from app.services.allergens import authorize as admin_authorize
-from app.services.mr_orders import authorize as shared_order_authorize
+from app.services.mr_orders import authorize as shared_order_authorize, scope, require_assignment, retry_scope, check_retry_scope, scope_identity
 from app.services.kits import references as supply_references
 from app.services.directory_runtime import crypto_scope
 from app.services.directory_inventory import DirectoryCryptoError
@@ -29,10 +28,7 @@ def person(row):
 
 
 def authorize(db, actor):
-    # Shared reference helpers now also serve MR workflows. Keep Lupin's
-    # explicit protected-Admin gate before initializing their scope.
-    current = admin_authorize(db, actor)
-    return shared_order_authorize(db, current)
+    return shared_order_authorize(db, actor)
 
 
 def references(db, actor, kind, search="", cursor=None, limit=25, selected=None):
@@ -77,7 +73,7 @@ def transaction(db, actor, work):
 
 
 def find(db, identity):
-    row = db.scalar(select(Order).where(Order.id == identity).with_for_update())
+    row = db.scalar(select(Order).where(Order.id == identity, *scope(db, Order)).with_for_update())
     if not row:
         raise ImmError("Lupin order not found.", 404, "lupin_not_found")
     return row
@@ -89,6 +85,7 @@ def project(keys, row):
 
 
 def resolved(db, actor, keys, body, previous=None):
+    require_assignment(db, body.mrId)
     value = body.model_dump(mode="json", exclude={"idempotencyKey", "orderDate", "attachmentIds"})
     changed = not previous or previous["doctorId"] != str(body.doctorId) or previous["mrId"] != str(body.mrId)
     old_patients = {p["id"]: p for p in previous["patients"]} if previous else {}
@@ -111,13 +108,19 @@ def resolved(db, actor, keys, body, previous=None):
     value["attachments"] = []
     for identity in sorted(body.attachmentIds):
         f = db.scalar(select(FileRecord).where(FileRecord.id == identity).with_for_update())
-        upload_retry = db.get(Retry, identity)
-        cancelled = upload_retry and unseal(keys, "requests", identity, upload_retry.response_ciphertext).get("result", {}).get("cancelled")
         attached = db.scalar(select(Attachment.order_id).where(Attachment.file_id == identity))
-        if (cancelled or not f or not f.lupin_owner_id or f.category != "documents" or f.state != "verified"
+        if (not f or not f.lupin_owner_id or f.category != "documents" or f.state != "verified"
             or f.scanner_status != "clean" or not 0 < f.size <= 10485760
             or (str(identity) not in previous_files and (f.uploader_id != actor.user.id or f.lupin_owner_id != actor.user.id or attached))):
             raise ImmError("Use your verified private Lupin upload, not a file already attached elsewhere.", 409, "lupin_attachment")
+        if scope_identity(db) and str(identity) not in previous_files:
+            from app.services.files import get_record
+            get_record(db, actor, identity, "read", readable=True)
+        # Ownership (or an existing authorized historical association) precedes
+        # decryption of any upload retry state or original filename.
+        upload_retry = db.get(Retry, identity)
+        if upload_retry and unseal(keys, "requests", identity, upload_retry.response_ciphertext).get("result", {}).get("cancelled"):
+            raise ImmError("Upload unavailable.", 409, "lupin_attachment")
         value["attachments"].append(previous_files.get(str(identity)) or dict(
             id=str(f.id), name=unseal(keys, "file_names", f.id, f.lupin_name_ciphertext),
             size=f.size, type=f.content_type, state="verified"))
@@ -165,12 +168,21 @@ def idempotent(db, actor, keys, key, payload, work):
         if prior.actor_id != actor.user.id:
             raise ImmError("Retry identity does not match.", 409, "lupin_retry")
         saved = unseal(keys, "requests", key, prior.response_ciphertext)
+        check_retry_scope(db, saved)
         if encode(saved["request"]) != encode(payload):
             raise ImmError("Retry the original unchanged submission.", 409, "lupin_retry")
-        return saved["result"]
+        result = saved["result"]
+        if payload.get("kind") != "lupin_upload":
+            for order in result.get("orders", [result]):
+                find(db, uuid.UUID(order["id"]))
+        elif not result.get("cancelled"):
+            from app.services.files import get_record
+            get_record(db, actor, uuid.UUID(result["id"]), "read")
+        return result
     result = work()
     db.add(Retry(key=key, actor_id=actor.user.id,
-        response_ciphertext=seal(keys, "requests", key, {"request": payload, "result": result})))
+        response_ciphertext=seal(keys, "requests", key,
+            {"request": payload, "result": result, "mrScope": retry_scope(db)})))
     return result
 
 
@@ -203,7 +215,8 @@ def reserve_upload(db, actor, body, content_type, settings, request_id, upload_i
     payload = dict(kind="lupin_upload", name=body.filename, type=content_type, size=size, checksum=digest)
     def work(a, keys):
         def reserve():
-            files.reserve(db, a, body, content_type, settings, request_id, reservation_id=upload_id, commit=False)
+            files.reserve(db, a, body, content_type, settings, request_id, reservation_id=upload_id,
+                          commit=False, lupin_reservation=True)
             return dict(id=str(upload_id), cancelled=False)
         result = idempotent(db, a, keys, upload_id, payload, reserve)
         if result.get("cancelled"):
@@ -221,10 +234,11 @@ def cancel_upload(db, actor, identity):
             if prior.actor_id != a.user.id:
                 raise ImmError("Upload unavailable.", 404, "lupin_upload")
             saved = unseal(keys, "requests", identity, prior.response_ciphertext)
+            check_retry_scope(db, saved)
             if saved["request"].get("kind") != "lupin_upload":
                 raise ImmError("Not an upload reservation.", 409, "lupin_upload")
         else:
-            saved = dict(request=dict(kind="lupin_upload"), result={})
+            saved = dict(request=dict(kind="lupin_upload"), result={}, mrScope=retry_scope(db))
         row = db.scalar(select(FileRecord).where(FileRecord.id == identity).with_for_update())
         if row:
             if row.lupin_owner_id != a.user.id or row.uploader_id != a.user.id:
@@ -246,7 +260,7 @@ def listing(db, actor, *, search="", status=None, payment_status=None,
     def work(a, keys):
         if from_date and to_date and from_date > to_date:
             raise ImmError("From date must not follow To date.", 422, "lupin_dates")
-        clauses = [getattr(Order, field) == val for field, val in (
+        clauses = scope(db, Order) + [getattr(Order, field) == val for field, val in (
             ("status", status), ("payment_status", payment_status),
             ("doctor_id", doctor_id), ("mr_id", mr_id)) if val]
         if patient_id:
@@ -285,7 +299,7 @@ def listing(db, actor, *, search="", status=None, payment_status=None,
                     break
         finally:
             rows.close()
-        counts = dict(db.execute(select(Order.status, func.count()).group_by(Order.status)).all())
+        counts = dict(db.execute(select(Order.status, func.count()).where(*scope(db, Order)).group_by(Order.status)).all())
         return dict(items=found, total=sum(counts.values()), counts=counts,
             filtered=len(found) if complete else (None if search else db.scalar(select(func.count()).select_from(Order).where(*clauses))),
             nextCursor=str(last) if more and not complete else None)

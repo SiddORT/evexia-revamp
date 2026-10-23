@@ -45,6 +45,17 @@ activation/recovery handoff; process repair is not live email recovery.
 
 # EVEXIA Portal
 
+MR Orders now includes the existing shared SPT and Lupin workflows alongside
+Immunotherapy and Kits & Consumables. The saved authenticated MR is fixed;
+orders, references, transfers and private Lupin files are ownership-scoped.
+SPT registrations remain SPT-only and do not create Patient Master/accounts.
+The forward `0066_spt_registration_owner` source adds nullable explicit
+registration ownership without backfilling old/Admin registrations. No migration
+was executed. This delivery is source-reviewed and untested at the user's
+request: no tests, builds, runtime/manual/browser checks, validation wrappers,
+service restarts, migration execution or deployment. The schema must be activated
+separately before operational use. See `docs/mr-order-workflows.md`.
+
 Admin Lupin now uses protected persisted orders, real Doctor/MR references,
 optional existing Patient links, encrypted historical identities and private
 verified uploads. Its manually entered patient count is independent of linked
@@ -329,10 +340,10 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a separate f
   Runtime behavior remains unverified. See `docs/spt-orders.md` for encryption,
   historical snapshots, Draft/Saved semantics and transfer/activation limits.
 
-- MR Immunotherapy and Kits & Consumables reuse the live Admin order services
+- MR Immunotherapy, Kits & Consumables, SPT and Lupin reuse the live Admin order services
   with mandatory authenticated MR ownership and MR-shell navigation. Generic
   Patient/Allergen administration is not granted. Dashboard, Targets and Payments
-  remain separate demos; SPT/Lupin are independent. Delivery is source-reviewed
+  remain separate demos. Delivery is source-reviewed
   only and untested at the user's request: no tests, builds, runtime checks,
   service restarts, migrations or live writes. See `docs/mr-order-workflows.md`.
 

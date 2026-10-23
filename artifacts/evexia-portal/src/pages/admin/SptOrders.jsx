@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
 import { ClipboardList, Plus, Search } from 'lucide-react';
-import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import AdminLayout, { useOrderBase, useOrderPortal } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
@@ -12,10 +12,11 @@ import { request } from '../../services/serverSpt.js';
 import { createSptTransferAdapter } from '../../services/sptTransfers.js';
 import '../../sptOrders.css';
 
-const BASE = '/admin/orders/spt';
 const EMPTY = { search: '', status: '', from_date: '', to_date: '', doctor_id: '', mr_id: '', patient_id: '' };
 
 export default function SptOrders() {
+  const BASE = useOrderBase('spt');
+  const { mr } = useOrderPortal();
   const { date } = useAdminDateFormatters();
   const [draft, setDraft] = useState(EMPTY), [applied, setApplied] = useState(EMPTY);
   const [result, setResult] = useState({ items: [], total: 0, filtered: null, nextCursor: null });
@@ -82,7 +83,7 @@ export default function SptOrders() {
           }>
             <label className="spt-field">From<input type="date" className="spt-input" value={draft.from_date} max={draft.to_date || undefined} onChange={(e) => set({ from_date: e.target.value })} /></label>
             <label className="spt-field">To<input type="date" className="spt-input" value={draft.to_date} min={draft.from_date || undefined} onChange={(e) => set({ to_date: e.target.value })} /></label>
-            {[['doctors', 'doctor_id', 'Doctor'], ['mrs', 'mr_id', 'MR'], ['patients', 'patient_id', 'Patient']].map(([kind, key, label]) => <SptReferenceSelect key={key} id={`spt-filter-${key}`} kind={kind} label={label} value={draft[key]} onChange={(id) => set({ [key]: id })} />)}
+            {[['doctors', 'doctor_id', 'Doctor'], ...(!mr ? [['mrs', 'mr_id', 'MR']] : []), ['patients', 'patient_id', 'Patient']].map(([kind, key, label]) => <SptReferenceSelect key={key} id={`spt-filter-${key}`} kind={kind} label={label} value={draft[key]} onChange={(id) => set({ [key]: id })} />)}
             <div className="spt-field"><label htmlFor="spt-filter-status">Status</label>
               <select id="spt-filter-status" value={draft.status} onChange={(e) => set({ status: e.target.value })} data-testid="select-spt-status">
                 <option value="">All</option><option>Draft</option><option>Saved</option>

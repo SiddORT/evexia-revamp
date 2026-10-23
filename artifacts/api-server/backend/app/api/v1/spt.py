@@ -1,4 +1,4 @@
-"""Protected Super Admin SPT operations; no grants to other portals."""
+"""Shared Admin/MR SPT operations; service ownership is mandatory."""
 import uuid
 from datetime import date
 from typing import Literal

@@ -12,6 +12,7 @@ class SptPatient(Base):
     code: Mapped[str] = mapped_column(String(48), unique=True)
     snapshot_ciphertext: Mapped[str] = mapped_column(Text)
     created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    owner_mr_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mr_directory.id"), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

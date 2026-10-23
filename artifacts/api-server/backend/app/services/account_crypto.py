@@ -143,6 +143,7 @@ def ready(db):
         ["0063_spt_orders"],
         ["0064_procurement_documents"],
         ["0065_lupin_orders"],
+        ["0066_spt_registration_owner"],
     ):
         raise AccountCryptoError()
     current = crypto()

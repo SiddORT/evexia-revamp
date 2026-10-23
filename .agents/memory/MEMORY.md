@@ -77,7 +77,7 @@
 - [Headquarter form density](headquarter-form-density.md) — full-width card with compact internal spacing and purpose-sized controls; retain one area per row.
 - [Fieldset grid measurements](fieldset-grid-measurements.md) — count rendered columns from field geometry; computed fieldset grid tracks may remain unresolved.
 - [Sales Target performance safety](sales-target-performance-safety.md) — benchmark synthetic disposable data only; index changes need separate review and operator approval.
-- [Orders scope](orders-scope.md) — preserve session-only SPT/Lupin boundaries; keep other Orders workflows driven by separate requirements.
+- [Orders scope](orders-scope.md) — explicit portal grants supersede older exclusions; historical SPT membership is not reusable registration ownership.
 - [Immunotherapy document approval](immunotherapy-document-approval.md) — row document actions await six distinct user-supplied templates; bulk reference layouts are not approved templates.
 - [Phone legacy compatibility](vendor-phone-compatibility.md) — shared international metadata must retain each master’s distinct historical number acceptance.
 - [Allergen controls scope](allergen-controls-scope.md) — “one unit” means a combined searchable dropdown, not a new measurement-unit field; avoid incidental global selector changes.

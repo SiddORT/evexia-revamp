@@ -3,7 +3,10 @@
 ## Scope and authorization
 
 Lupin uses the existing protected Super Admin workflow at
-`/api/v1/admin/lupin-orders`. No Staff, MR or Doctor portal grants are added.
+`/api/v1/admin/lupin-orders`, now explicitly shared with authenticated MRs
+through mandatory service-level ownership and `/mr/orders/lupin`.
+No Staff or Doctor portal grants are added. See `mr-order-workflows.md` for
+fixed MR assignment, scoped transfers/retries and narrow private-file access.
 Every read, reference search, export, upload, cancellation and mutation checks
 the current session. No fictional browser fixtures are migrated. This work
 does not add inventory, accounting, invoicing, payment collection, clinical

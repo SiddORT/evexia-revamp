@@ -4,6 +4,7 @@ import { readOrderCsv, writeOrderCsv, decodeTransferCell, TRANSFER_MAX_BYTES } f
 import { readOrderWorkbook, writeOrderWorkbook } from './orderTransferWorkbook.js';
 import { exportDate } from './exportDatePresentation.js';
 import { downloadBlob } from './downloads.js';
+import { getSession, reportingIdentityGuard } from '../auth/adminSession.js';
 
 const HEADERS = ['Schema', 'Order type', 'Date context JSON', 'Order ID', 'Order number', 'Order date', 'Order details JSON', 'Historical snapshots JSON'];
 const SCHEMA = 'evexia.spt-orders/1';
@@ -20,31 +21,47 @@ function output(orders, preferences, format) {
   return blob;
 }
 export function createSptTransferAdapter(filters, onSaved) {
+  const prepared = new WeakMap();
+  const sessionGuard = reportingIdentityGuard(), mrId = getSession().user?.mr_id;
+  const ownerGuard = () => {
+    sessionGuard();
+    if (getSession().user?.mr_id !== mrId) throw new Error('Your MR assignment changed. Prepare this transfer again.');
+  };
   return {
     retainUncertain: true,
-    release: (blob, filename, template, format) => downloadBlob(blob, filename,
-      { source: 'spt_orders', kind: template ? 'template' : 'export', format: format === 'xlsx' ? 'XLSX' : 'CSV' }),
+    release: (blob, filename, template, format) => {
+      const guard = prepared.get(blob);
+      if (!guard) throw new Error('Prepare this export again before downloading.');
+      return downloadBlob(blob, filename,
+        { source: 'spt_orders', kind: template ? 'template' : 'export', format: format === 'xlsx' ? 'XLSX' : 'CSV' }, { guard });
+    },
     downloadMessage: (template) => template ? 'Blank SPT server-order template downloaded. Use real reference IDs and a unique stable sourceId for each new order.'
       : 'All SPT orders matching applied filters downloaded, including historical snapshots. Store this personal information securely.',
     savedMessage: 'Saved atomically on the shared server. No patients, masters or accounts created or merged.',
     scope: 'Export all SPT orders matching the applied filters across all pages, including encrypted-on-server historical snapshots. Amounts are not payment records.',
     description: 'Review validates existing Doctor, MR and patient references on the server. Confirmation saves the entire batch atomically. No patients, masters or accounts are created by import.',
     matching: 'Keep ID, number, sourceId and version for matching orders. Only Drafts may change; identical Saved orders remain unchanged. New orders require blank ID/number, a unique stable UUID sourceId and real existing patient references. Historical snapshots are informational and cannot create or overwrite identities. No order is deleted because it is absent from this file.',
-    instructions: 'Use the eight SPT headers. Details JSON: sourceId (stable UUID required, including for new rows), version (existing only), doctorId/mrId (UUID or null), status (Draft/Saved), remarks, patients [{id: UUID, source: "master" or "spt", amount: "250.00" or blank for Draft}]. Keep exact amounts as quoted strings. At most 200 patients per order. Saved requires Doctor, MR and at least one patient with an amount. Retain the declared date context or use ISO YYYY-MM-DD. New rows use {} for historical snapshots. Fictional demo/session files are incompatible.',
+    instructions: `${getSession().user?.identity_kind === 'mr' ? `Every row, including Drafts, must retain your signed-in saved MR ID (${mrId}). New SPT patient selections must be your own registrations; historical membership is retained only on its existing owned order. ` : ''}Use the eight SPT headers. Details JSON: sourceId (stable UUID required, including for new rows), version (existing only), doctorId/mrId (UUID or null in Admin), status (Draft/Saved), remarks, patients [{id: UUID, source: "master" or "spt", amount: "250.00" or blank for Draft}]. Keep exact amounts as quoted strings. At most 200 patients per order. Saved requires Doctor, MR and at least one patient with an amount. Retain the declared date context or use ISO YYYY-MM-DD. New rows use {} for historical snapshots. Fictional demo/session files are incompatible.`,
     async download(template, preferences, format) {
-      return output(template ? [] : (await request('/export', { params: filters })).items, preferences, format);
+      ownerGuard();
+      const blob = output(template ? [] : (await request('/export', { params: filters })).items, preferences, format);
+      ownerGuard(); prepared.set(blob, ownerGuard);
+      return blob;
     },
     async review(file) {
+      ownerGuard();
       if (!file.size || file.size > TRANSFER_MAX_BYTES) throw new Error('Choose a nonempty CSV/XLSX up to 8 MB.');
       let rows;
       if (/\.csv$/i.test(file.name)) rows = readOrderCsv(new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer()));
       else if (/\.xlsx$/i.test(file.name)) rows = await readOrderWorkbook(file);
       else throw new Error('Choose CSV or genuine Excel (.xlsx).');
+      ownerGuard();
       if (rows.length < 2 || rows.length > 501) throw new Error('Import 1–500 orders per atomic batch.');
       if (rows[0].cells.length !== 8 || HEADERS.some((h, i) => rows[0].cells[i] !== h)) throw new Error('Use the eight SPT server-transfer headers. Demo/session files are incompatible.');
       const entries = [], failures = [];
       let firstContext;
       for (const { line, cells } of rows.slice(1)) {
+        ownerGuard();
         try {
           if (cells.length !== 8) throw new Error('Expected eight columns.');
           const [schema, kind, rawContext, id, number, rawDate, rawDetails, snapshots] = cells.map(decodeTransferCell);
@@ -67,10 +84,13 @@ export function createSptTransferAdapter(filters, onSaved) {
       const payload = { entries, idempotencyKey: crypto.randomUUID(), reviewToken: '', confirmUpdates: false };
       if (new TextEncoder().encode(JSON.stringify(payload)).length > 1000000) throw new Error('Request exceeds 1 MiB; use a smaller batch.');
       const reviewed = await request('/import/review', { body: payload });
-      return { ...reviewed, payload: { ...payload, reviewToken: reviewed.reviewToken } };
+      ownerGuard();
+      return { ...reviewed, ownerGuard, payload: { ...payload, reviewToken: reviewed.reviewToken } };
     },
     async commit(review, confirmed) {
+      ownerGuard(); review.ownerGuard();
       const result = await request('/import/commit', { body: { ...review.payload, confirmUpdates: confirmed } });
+      ownerGuard(); review.ownerGuard();
       onSaved();
       return result;
     },

@@ -98,7 +98,7 @@ def record(db, identity, initiation_id, source, kind, format, provenance="server
     if mr_doctor:
         from app.services.doctors import authorize
         authorize(db, verified, "import" if kind == "template" else "export")
-    mr_kits = (verified.role == "mr" and source == "kits_orders" and provenance == "browser_reported"
+    mr_kits = (verified.role == "mr" and source in ("kits_orders", "spt_orders", "lupin_orders") and provenance == "browser_reported"
                and kind in ("template", "export") and format in ("CSV", "XLSX"))
     if mr_kits:
         from app.services.mr_orders import authorize

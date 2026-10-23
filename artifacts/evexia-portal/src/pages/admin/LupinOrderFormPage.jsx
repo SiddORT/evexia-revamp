@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { ArrowLeft, Paperclip } from 'lucide-react';
-import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import AdminLayout, { useOrderBase, useOrderPortal } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import KitsReferenceSelect from '../../components/admin/KitsReferenceSelect.jsx';
 import MasterFilePicker from '../../components/admin/MasterFilePicker.jsx';
@@ -12,10 +12,10 @@ import { request, blankOrder, totalMinor, money, amountMoney, validateAttachment
 import '../../lupinOrders.css';
 import '../../orderEntry.css';
 
-const BASE = '/admin/orders/lupin';
 const Err = ({ id, text }) => text ? <p className="lupin-error" id={id} role="alert">{text}</p> : null;
 
 export default function LupinOrderFormPage({ id }) {
+  const BASE = useOrderBase('lupin');
   const [order, setOrder] = useState(null), [error, setError] = useState(''), [revision, setRevision] = useState(0);
   useEffect(() => {
     if (!id) return undefined;
@@ -35,6 +35,7 @@ export default function LupinOrderFormPage({ id }) {
 }
 
 function Review({ order }) {
+  const BASE = useOrderBase('lupin');
   const { date } = useAdminDateFormatters();
   const [error, setError] = useState(''), [downloading, setDownloading] = useState(false);
   return <AdminLayout title="LUPIN"><div className="lupin">
@@ -61,8 +62,10 @@ function Review({ order }) {
 }
 
 function Form() {
+  const BASE = useOrderBase('lupin');
+  const { mr } = useOrderPortal();
   const [, navigate] = useLocation();
-  const [v, setV] = useState(blankOrder), [linked, setLinked] = useState([]), [patientChoice, setPatientChoice] = useState('');
+  const [v, setV] = useState(() => ({ ...blankOrder(), mrId: mr?.id || '' })), [linked, setLinked] = useState([]), [patientChoice, setPatientChoice] = useState('');
   const [errors, setErrors] = useState({}), [fileMsg, setFileMsg] = useState(''), [progress, setProgress] = useState('');
   const [policy, setPolicy] = useState(null), [policyError, setPolicyError] = useState(''), [policyRevision, setPolicyRevision] = useState(0);
   const [busy, setBusy] = useState(false), [uncertain, setUncertain] = useState(false), [leave, setLeave] = useState(null);
@@ -71,7 +74,7 @@ function Form() {
   const owner = useRef(getSession().user?.id), submission = useRef(null), saving = useRef(false);
   const uploads = useRef(new Map()), failedUploads = useRef(new Set());
   const uploadKeys = useRef(new Map());
-  const initial = useRef(JSON.stringify(blankOrder()));
+  const initial = useRef(JSON.stringify(v));
   dirty.current = JSON.stringify(v) !== initial.current || uploads.current.size > 0 || failedUploads.current.size > 0 || busy || uncertain;
   const locked = busy || uncertain || ownerChanged;
   const set = (patch) => setV((current) => ({ ...current, ...patch }));
@@ -191,7 +194,7 @@ function Form() {
       }
     } finally { saving.current = false; if (alive.current) { setBusy(false); setProgress(''); } }
   }
-  const chooseDoctor = (id) => { set({ doctorId: id, mrId: '', patientIds: [] }); setLinked([]); setPatientChoice(''); };
+  const chooseDoctor = (id) => { set({ doctorId: id, mrId: mr?.id || '', patientIds: [] }); setLinked([]); setPatientChoice(''); };
   const addPatient = (person) => {
     if (!person || v.patientIds.includes(person.id)) return;
     if (v.patientIds.length >= 200) { setErrors({ patients: 'Link at most 200 existing Patients.' }); return; }
@@ -209,8 +212,8 @@ function Form() {
     <fieldset disabled={locked} className="lupin-form-fields">
       <section className="admin-panel lupin-section" aria-labelledby="lupin-h-det"><h2 id="lupin-h-det">Order details</h2>
         <div className="lupin-entry__identity">
-          <KitsReferenceSelect requester={request} fieldClass="lupin-field" id="lupin-doctorId" kind="doctors" label="Doctor (required)" value={v.doctorId} onChange={chooseDoctor} onPerson={(p) => { if (p?.mrId) set({ mrId: p.mrId }); }} disabled={locked} />
-          <KitsReferenceSelect requester={request} fieldClass="lupin-field" id="lupin-mrId" kind="mrs" label="MR (required)" value={v.mrId} onChange={(id) => set({ mrId: id })} disabled={locked} />
+          <KitsReferenceSelect requester={request} fieldClass="lupin-field" id="lupin-doctorId" kind="doctors" label="Doctor (required)" value={v.doctorId} onChange={chooseDoctor} onPerson={(p) => { if (!mr && p?.mrId) set({ mrId: p.mrId }); }} disabled={locked} />
+          {mr ? <div className="lupin-field"><label htmlFor="lupin-mrId">MR (required)</label><input id="lupin-mrId" readOnly value={mr.name} /><p className="lupin-hint">Your verified saved MR identity. Assignment cannot be changed.</p></div> : <KitsReferenceSelect requester={request} fieldClass="lupin-field" id="lupin-mrId" kind="mrs" label="MR (required)" value={v.mrId} onChange={(id) => set({ mrId: id })} disabled={locked} />}
         </div>
         <p className="lupin-hint">The MR must match this Doctor’s current assignment. No master or account is created.</p>
         <div className="lupin-entry__amounts">

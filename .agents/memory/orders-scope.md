@@ -44,16 +44,6 @@ clarified that only count × per-test price determines pricing.
 transfers. Do not add master creation, medical history, financial or inventory
 processing, or Doctor/MR portal grants without separate requirements.
 
-Shared order/reference/file infrastructure may legitimately support MR access
-for other workflows. Reusing it does not authorize MR access to Lupin.
-
-**Why:** The Lupin request explicitly excludes expansion of MR/Doctor grants;
-authorization must not broaden indirectly when shared helpers gain MR support.
-
-**How to apply:** Keep an explicit protected-Admin gate before shared reference
-scope initialization, and keep Lupin private-file authorization independent
-of saved-order access allowed for other order domains.
-
 Admin Kits & Consumables now has separate authorization for shared persisted
 supply orders, optional existing Patient references, encrypted historical
 contacts and private uploads. This does not expand other order or MR/Doctor
@@ -67,18 +57,17 @@ processing.
 silently migrate fictional session orders, create master records, or require a
 Patient solely to give a file an owner.
 
-MR Immunotherapy and Kits & Consumables now have explicit authorization to reuse
-their corresponding live Admin workflows, with the authenticated MR fixed and
-all reads/mutations/transfers/files scoped to that MR. This supersedes the
-earlier exclusion of these two types from the MR portal, not other workflows.
+Earlier Admin-only SPT/Lupin portal exclusions are superseded by the user's
+explicit MR workflow authorization. Current portal scope is documented in
+`docs/mr-order-workflows.md`; do not reinstate the old Lupin Admin-only gate.
 
-**Why:** The user requested these two saved workflows in the existing MR shell,
-including Admin-entered assigned orders, while keeping Dashboard, Targets and
-Payments fictional and SPT/Lupin backend work independent.
+**Why:** The user explicitly authorized MR SPT and Lupin alongside the existing
+MR order types, without authorizing Doctor access or generic master administration.
 
-**How to apply:** Preserve historical order snapshots and narrow owned-Doctor
-Patient registration. Do not infer broad Patient administration, cross-MR
-reassignment, live financial/stock processing or other portal activation.
+**How to apply:** Treat historical membership and reusable SPT registration
+ownership as distinct permissions. An Admin-created registration's snapshot
+on an assigned MR order is reviewable, but that historical assignment must not
+make the underlying registration globally selectable or reusable on new orders.
 
 An order-transfer confirmation is permission to update matching session orders,
 not to reconcile divergent patient identity or administration history. Reject

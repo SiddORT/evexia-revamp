@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { Eye, Plus, Search } from 'lucide-react';
-import AdminLayout from '../../components/admin/AdminLayout.jsx';
+import AdminLayout, { useOrderBase, useOrderPortal } from '../../components/orders/OrderPortalContext.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
 import DataTable from '../../components/admin/DataTable.jsx';
 import TablePagination from '../../components/admin/TablePagination.jsx';
@@ -12,9 +12,10 @@ import { request, STATUSES, PAYMENT_STATUSES, amountMoney } from '../../services
 import { createLupinTransferAdapter } from '../../services/lupinTransfers.js';
 import '../../lupinOrders.css';
 
-const BASE = '/admin/orders/lupin';
 const EMPTY = { search: '', from_date: '', to_date: '', doctor_id: '', mr_id: '', patient_id: '', status: '', payment_status: '' };
 export default function LupinOrders() {
+  const BASE = useOrderBase('lupin');
+  const { mr } = useOrderPortal();
   const { date } = useAdminDateFormatters();
   const [draft, setDraft] = useState(EMPTY), [applied, setApplied] = useState(EMPTY);
   const [result, setResult] = useState({ items: [], total: 0, filtered: null, nextCursor: null });
@@ -61,7 +62,7 @@ export default function LupinOrders() {
         }>
         <label className="lupin-field">From<input type="date" value={draft.from_date} max={draft.to_date || undefined} onChange={(e) => set({ from_date: e.target.value })} /></label>
         <label className="lupin-field">To<input type="date" value={draft.to_date} min={draft.from_date || undefined} onChange={(e) => set({ to_date: e.target.value })} /></label>
-        {[['doctors', 'doctor_id', 'Doctor'], ['mrs', 'mr_id', 'MR'], ['patients', 'patient_id', 'Linked Patient (optional)']].map(([kind, key, label]) => <KitsReferenceSelect key={key} id={`lupin-filter-${key}`} kind={kind} label={label} value={draft[key]} onChange={(id) => set({ [key]: id })} requester={request} fieldClass="lupin-field" />)}
+        {[['doctors', 'doctor_id', 'Doctor'], ...(!mr ? [['mrs', 'mr_id', 'MR']] : []), ['patients', 'patient_id', 'Linked Patient (optional)']].map(([kind, key, label]) => <KitsReferenceSelect key={key} id={`lupin-filter-${key}`} kind={kind} label={label} value={draft[key]} onChange={(id) => set({ [key]: id })} requester={request} fieldClass="lupin-field" />)}
         <label className="lupin-field">Order status<select value={draft.status} onChange={(e) => set({ status: e.target.value })}><option value="">All</option>{STATUSES.map((s) => <option key={s}>{s}</option>)}</select></label>
         <label className="lupin-field">Payment status<select value={draft.payment_status} onChange={(e) => set({ payment_status: e.target.value })}><option value="">All</option>{PAYMENT_STATUSES.map((s) => <option key={s}>{s}</option>)}</select></label>
       </OrderListingFilters>
