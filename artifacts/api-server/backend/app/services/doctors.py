@@ -18,10 +18,25 @@ class DoctorError(mrs.MRError):
 
 
 def authorize(db, actor, action=None, lock=True):
+    if actor.role == "mr":
+        from app.services.auth import revalidate_identity
+        from app.services.zone_policy import lock_policy
+        lock_policy(db)
+        current = revalidate_identity(db, actor, lock=True)
+        if current.mr is None or action not in (None, "add", "import", "export"):
+            raise DoctorError("Doctor operation is not available to MRs.", 403, "access_denied")
+        encrypted.ready(db)
+        mrs.graph_lock(db)
+        assignment(db, current.mr.id)
+        return current
     from app.services.master_policy import authorize_master
     current = authorize_master(db, actor, "doctor", action, lock=True, error=DoctorError)
     encrypted.ready(db)
     return current
+
+
+def owned_clauses(actor):
+    return [Doctor.mrId == actor.mr.id] if actor.role == "mr" else []
 
 
 def transaction(db, work):
@@ -109,9 +124,10 @@ def search_matcher(db, query, rows):
 
 def listing(db, actor, query="", status="all", zone_id="", mr_id="", state="", limit=10, offset=0, cursor=None):
     def work():
-        authorize(db, actor, lock=False)
-        clauses = predicates("", status, zone_id, mr_id, state)
-        total = db.scalar(select(func.count()).select_from(Doctor).where(Doctor.deleted_at.is_(None)))
+        current = authorize(db, actor, lock=False)
+        scope = owned_clauses(current)
+        clauses = predicates("", status, zone_id, mr_id, state) + scope
+        total = db.scalar(select(func.count()).select_from(Doctor).where(Doctor.deleted_at.is_(None), *scope))
         meta = {}
         if query.strip():
             rows, meta = encrypted.scan(db, Doctor, clauses, None, limit=limit, cursor=cursor,
@@ -129,8 +145,10 @@ def listing(db, actor, query="", status="all", zone_id="", mr_id="", state="", l
     return transaction(db, work)
 
 
-def find(db, record_id, lock=False):
+def find(db, record_id, lock=False, actor=None):
     query = select(Doctor).where(Doctor.id == record_id, Doctor.deleted_at.is_(None)).execution_options(populate_existing=True)
+    if actor is not None:
+        query = query.where(*owned_clauses(actor))
     row = db.scalar(query.with_for_update() if lock else query)
     if not row:
         raise DoctorError("Doctor not found. Return to the directory or refresh.", 404, "not_found")
@@ -139,8 +157,8 @@ def find(db, record_id, lock=False):
 
 def detail(db, actor, record_id):
     def work():
-        authorize(db, actor, lock=False)
-        result = projection(db, find(db, record_id))
+        current = authorize(db, actor, lock=False)
+        result = projection(db, find(db, record_id, actor=current))
         db.commit()
         return result
     return transaction(db, work)
@@ -148,7 +166,14 @@ def detail(db, actor, record_id):
 
 def choices(db, actor, query="", limit=100, offset=0, include_saved=None, cursor=None):
     def work():
-        authorize(db, actor, lock=False)
+        current = authorize(db, actor, lock=False)
+        if current.role == "mr":
+            mr, zone = assignment(db, current.mr.id)
+            result = dict(items=[dict(id=mr.id, name=mr.name, userId=current.user.username or "",
+                status=mr.status, deleted=False, zoneId=zone.id, zoneName=zone.name,
+                zoneStatus=zone.status, usable=True)], total=1, limit=limit, offset=0)
+            db.commit()
+            return result
         clauses = [MRDirectory.deleted_at.is_(None)]
         if query:
             rows, meta = encrypted.scan(db, MRDirectory, clauses, None, limit=limit, cursor=cursor,
@@ -177,17 +202,19 @@ def choices(db, actor, query="", limit=100, offset=0, include_saved=None, cursor
 
 def filters(db, actor):
     def work():
-        authorize(db, actor, lock=False)
-        state_rows = list(db.execute(select(Doctor.id, Doctor.state_ciphertext).where(Doctor.deleted_at.is_(None)).limit(10001)))
+        current = authorize(db, actor, lock=False)
+        scope = owned_clauses(current)
+        state_rows = list(db.execute(select(Doctor.id, Doctor.state_ciphertext).where(Doctor.deleted_at.is_(None), *scope).limit(10001)))
         if len(state_rows) > 10000:
             raise DoctorError("Filter choices exceed 10,000 records. Narrow the directory.", 409, "doctor_filter_limit")
-        zones = list(db.scalars(select(Zone).where(Zone.deleted_at.is_(None)).order_by(Zone.name, Zone.id).limit(10001)))
+        zone_scope = [Zone.id == db.get(MRDirectory, current.mr.id).zoneId] if current.role == "mr" else []
+        zones = list(db.scalars(select(Zone).where(Zone.deleted_at.is_(None), *zone_scope).order_by(Zone.name, Zone.id).limit(10001)))
         if len(zones) > 10000:
             raise DoctorError("Zone choices exceed the supported bound.", 409, "doctor_filter_limit")
         result = dict(zones=[dict(id=str(zone.id), name=zone.name, status=zone.status) for zone in zones],
                       states=sorted({encrypted.crypto().decrypt("doctor_directory", row.id, "state", row.state_ciphertext) for row in state_rows}),
-                      missingMR=bool(db.scalar(select(Doctor.id).where(*predicates(mr_id="missing")).limit(1))),
-                      missingZone=bool(db.scalar(select(Doctor.id).where(*predicates(zone_id="missing")).limit(1))))
+                      missingMR=bool(db.scalar(select(Doctor.id).where(*predicates(mr_id="missing"), *scope).limit(1))),
+                      missingZone=bool(db.scalar(select(Doctor.id).where(*predicates(zone_id="missing"), *scope).limit(1))))
         db.commit()
         return result
     return transaction(db, work)
@@ -222,9 +249,10 @@ def create(db, actor, body):
     def work():
         current = authorize(db, actor, "add")
         mrs.graph_lock(db)
-        assignment(db, body.mrId)
-        unique(db, body.registrationNumber)
-        result = projection(db, insert(db, current, body))
+        assigned = body.model_copy(update={"mrId": current.mr.id}) if current.role == "mr" else body
+        assignment(db, assigned.mrId)
+        unique(db, assigned.registrationNumber)
+        result = projection(db, insert(db, current, assigned))
         db.commit()
         return result
     return transaction(db, work)

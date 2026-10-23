@@ -1,103 +1,113 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Plus } from 'lucide-react';
-import PhoneInput from '../components/admin/PhoneInput.jsx';
-import { addDoctor, doctorErrors, money, orderBalance, orderPaymentStatus } from '../services/mrWorkspaceDemo.js';
-import { Empty, Field, Head, PatientLock, statusPill, useDate, useDirtyGuard, useWs } from './common.jsx';
+import SharedDoctorForm from '../components/admin/DoctorForm.jsx';
+import DoctorImportPage from '../pages/admin/DoctorImportPage.jsx';
+import TablePagination from '../components/admin/TablePagination.jsx';
+import DirectorySearchStatus from '../components/admin/DirectorySearchStatus.jsx';
+import useDoctors from '../hooks/useDoctors.js';
+import useConfirmedNavigation from '../auth/useConfirmedNavigation.js';
+import { usePlatformConfirm } from '../components/PlatformConfirmation.jsx';
+import { reportingIdentityGuard } from '../auth/adminSession.js';
+import { downloadDoctorFile, exportDoctors } from '../services/serverDoctors.js';
+import { Head, statusPill, useWs } from './common.jsx';
 
 export function DoctorList() {
-  const { state } = useWs();
-  const [q, setQ] = useState('');
-  const rows = state.doctors.filter((d) => `${d.name} ${d.clinic} ${d.registration}`.toLowerCase().includes(q.trim().toLowerCase()));
+  const [search, setSearch] = useState('');
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState('');
+  const [view, setView] = useState('list');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState('');
+  const busy = useRef(false);
+  const controller = useRef(null);
+  useEffect(() => () => controller.current?.abort(), []);
+  useEffect(() => { const timer = setTimeout(() => { setQuery(search.trim()); setPage(1); }, 250); return () => clearTimeout(timer); }, [search]);
+  const filters = { query, status };
+  const data = useDoctors({ ...filters, limit: pageSize, offset: (page - 1) * pageSize });
+  const pageCount = Math.max(1, Math.ceil((data.filtered || 0) / pageSize));
+  useEffect(() => { if (!data.loading && !data.error && !data.partial && page > pageCount) setPage(pageCount); }, [data.loading, data.error, data.partial, page, pageCount]);
+  async function download(format) {
+    if (busy.current || data.loading || data.error || search.trim() !== query) return;
+    busy.current = true; setExporting(true); setError('');
+    const request = new AbortController(); controller.current = request;
+    const guard = reportingIdentityGuard();
+    try {
+      const blob = await exportDoctors(filters, format, request.signal);
+      guard(); if (!request.signal.aborted) downloadDoctorFile(blob, format);
+    } catch (cause) {
+      if (request.signal.aborted) return;
+      try { guard(); } catch { return; }
+      setError(cause.message || 'Export failed.');
+    } finally { busy.current = false; if (!request.signal.aborted) setExporting(false); }
+  }
   return <>
-    <Head eyebrow="My Doctors" title="My Doctors" text="Fictional doctors assigned to this demo MR."><Link href="/mr/doctors/new" className="admin-button" data-testid="link-onboard-doctor"><Plus size={16} aria-hidden="true" /> Onboard doctor</Link></Head>
-    <div className="mrw-bar"><input type="search" aria-label="Search doctors" placeholder="Search by name, clinic or registration" value={q} onChange={(e) => setQ(e.target.value)} data-testid="input-search-doctors" /></div>
-    {rows.length === 0 ? <div className="mrw-card"><Empty title="No doctors found" text={q ? 'Try a different search.' : 'Onboard your first demo doctor.'} to="/mr/doctors/new" action="Onboard doctor" /></div> :
-      <div className="mrw-grid">{rows.map((d) => <Link key={d.id} href={`/mr/doctors/${encodeURIComponent(d.id)}`} className="mrw-card"  data-testid={`card-doctor-${d.id}`}>
-        <strong>{d.name}</strong><div className="mrw-notice">{d.qualification}</div><p className="mrw-tight">{d.clinic}</p><div className="mrw-notice">{d.phone} {d.email ? `· ${d.email}` : ''}</div><div style={{ marginTop: 10 }}>{statusPill(String(d.status).toLowerCase())}</div></Link>)}</div>}
+    <Head eyebrow="My Doctors" title="My Doctors" text="Your assigned doctors from the shared server directory.">
+      <Link href="/mr/doctors/new" className="admin-button">Add Doctor</Link>
+      <Link href="/mr/doctors/import" className="admin-button admin-button--secondary">Import CSV / Excel</Link>
+      {['csv', 'xlsx'].map((format) => <button type="button" className="admin-button admin-button--secondary" key={format} disabled={exporting || data.loading || Boolean(data.error) || search.trim() !== query} onClick={() => download(format)}>Export {format.toUpperCase()}</button>)}
+    </Head>
+    <div className="mrw-bar">
+      <input type="search" maxLength={200} aria-label="Search doctors" placeholder="Search name, registration, clinic or contact" value={search} onChange={(event) => setSearch(event.target.value)} />
+      <select className="admin-select" aria-label="Doctor status" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
+      <button type="button" className="admin-button admin-button--secondary" onClick={data.retry} disabled={data.loading}>Refresh</button>
+      <div className="mrw-choice" aria-label="Doctor view">{['list', 'grid'].map((mode) => <button key={mode} type="button" aria-pressed={view === mode} onClick={() => setView(mode)}>{mode === 'list' ? 'List view' : 'Grid view'}</button>)}</div>
+    </div>
+    {error && <p className="mrw-alert" role="alert">{error}</p>}
+    {data.error ? <div className="mrw-card" role="alert"><p>{data.error}</p><button className="admin-button" onClick={data.retry}>Retry loading doctors</button></div>
+      : data.loading ? <p role="status">Loading doctors…</p>
+        : !data.records.length ? <div className="mrw-card"><p>{data.partial ? 'No matches in this search section. Continue below.' : 'No assigned doctors match this scope.'}</p></div>
+          : view === 'grid' ? <div className="mrw-grid">{data.records.map((doctor) => <Link className="mrw-card" key={doctor.id} href={`/mr/doctors/${doctor.id}`}><h2>{doctor.name}</h2><p>{doctor.doctorNumber} · {doctor.registrationNumber}</p><p>{doctor.qualification} · {doctor.clinicName}</p><p>{doctor.phone || doctor.email}</p>{statusPill(doctor.status)}</Link>)}</div>
+            : <div className="mrw-card mrw-scroll" tabIndex={0} role="region" aria-label="Assigned doctor list"><table className="mrw-table"><thead><tr><th>Doctor</th><th>Registration</th><th>Clinic / Qualification</th><th>Contact</th><th>Status</th></tr></thead><tbody>{data.records.map((doctor) => <tr key={doctor.id}><td><Link href={`/mr/doctors/${doctor.id}`}>{doctor.name}</Link><div>{doctor.doctorNumber}</div></td><td>{doctor.registrationNumber}</td><td>{doctor.clinicName || '—'}<div>{doctor.qualification}</div></td><td>{doctor.phone || '—'}<div>{doctor.email}</div></td><td>{statusPill(doctor.status)}</td></tr>)}</tbody></table></div>}
+    {!data.error && !data.loading && (data.partial
+      ? <DirectorySearchStatus count={data.records.length} scanned={data.scanned} nextCursor={data.nextCursor} loading={data.loading} onNext={data.continueSearch} onRestart={data.restartSearch} />
+      : <TablePagination page={page} pageSize={pageSize} pageCount={pageCount} filtered={data.filtered} total={data.total} label="doctors" onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />)}
   </>;
 }
 
 export function DoctorDetail({ id }) {
-  const { state } = useWs();
-  const date = useDate();
-  const d = state.doctors.find((x) => x.id === id);
-  if (!d) return <div className="mrw-card"><Empty title="Doctor not found" text="This demo doctor is not in your workspace." to="/mr/doctors" action="Back to doctors" /></div>;
-  const orders = state.orders.filter((o) => o.doctorId === d.id);
-  const pays = state.payments.filter((p) => p.doctorId === d.id);
-  const advance = pays.filter((p) => p.kind === 'advance').reduce((s, p) => s + p.amount, 0);
+  const data = useDoctors({}, id);
+  const doctor = data.doctor;
   return <>
-    <Head eyebrow="My Doctors" title={d.name} text={`${d.qualification} · Reg. ${d.registration}`}>
-      <Link href={`/mr/orders/new?doctor=${encodeURIComponent(d.id)}`} className="admin-button">Place order</Link>
-      <Link href={`/mr/payments/new?doctor=${encodeURIComponent(d.id)}&kind=advance`} className="admin-button admin-button--secondary">Add payment</Link></Head>
-    <div className="mrw-split">
-      <div className="mrw-card"><h2>Profile</h2><dl className="mrw-dl"><dt>Clinic</dt><dd>{d.clinic}</dd><dt>Phone</dt><dd>{d.phone}</dd><dt>Email</dt><dd>{d.email || '—'}</dd><dt>Address</dt><dd>{d.address}</dd><dt>Status</dt><dd>{statusPill(String(d.status).toLowerCase())}</dd><dt>Assigned MR</dt><dd>You (fixed)</dd></dl></div>
-      <div className="mrw-card"><h2>Patients</h2><PatientLock /><div className="mrw-stat" style={{ marginTop: 12 }}><span>Unapplied advance credit</span><strong>{money(advance)}</strong></div></div>
-    </div>
-    <div className="mrw-card"><h2>Orders</h2>{orders.length === 0 ? <p className="mrw-notice">No orders yet.</p> : <ul className="mrw-list">{orders.map((o) => <li key={o.id}><Link href={`/mr/orders/${encodeURIComponent(o.id)}`}><span>{o.id} · {date(o.date)}</span><span>{money(o.total)} {statusPill(o.status)} {o.status === 'placed' && statusPill(orderPaymentStatus(state, o))}{o.status === 'placed' && <small> bal {money(orderBalance(state, o))}</small>}</span></Link></li>)}</ul>}</div>
+    <Head title={doctor && !data.error ? doctor.name : 'Doctor profile'} text="Read-only shared directory record. Demo orders and payments are not linked."><Link className="admin-button admin-button--secondary" href="/mr/doctors">Back to My Doctors</Link></Head>
+    {data.loading ? <p role="status">Loading doctor…</p> : data.error ? <div role="alert" className="mrw-card"><p>{data.error}</p><button className="admin-button" onClick={data.retry}>Retry</button></div> : doctor && <div className="mrw-card"><dl className="mrw-dl">{[
+      ['Doctor number', doctor.doctorNumber], ['Registration number', doctor.registrationNumber], ['Qualification', doctor.qualification],
+      ['Clinic', doctor.clinicName], ['Phone', doctor.phone], ['Alternate phone', doctor.alternatePhone], ['Email', doctor.email],
+      ['Date of joining', doctor.dateOfJoining], ['Assigned MR', doctor.mrName], ['Zone', doctor.zoneName],
+      ['Status', doctor.status], ['Verification', doctor.verification], ['Invoice type', doctor.invoiceType], ['GST number', doctor.gstNumber],
+      ['Drug licence number', doctor.drugLicenceNumber], ['Order discount (%)', doctor.orderDiscount], ['Days limit', doctor.daysLimit],
+      ['Payment limit', doctor.paymentLimit], ['Address', [doctor.addressLine1, doctor.addressLine2, doctor.landmark, doctor.city, doctor.state, doctor.pincode, doctor.country].filter(Boolean).join(', ')],
+    ].map(([label, value]) => <div className="mrw-profile-field" key={label}><dt>{label}</dt><dd>{String(value ?? '').trim() || '—'}</dd></div>)}</dl></div>}
   </>;
 }
-
-const STEPS = [['Identity', ['name', 'qualification', 'registration']], ['Clinic and contact', ['clinic', 'phone', 'email']], ['Address', ['address']], ['Review', []]];
-const EMPTY = { name: '', qualification: '', registration: '', clinic: '', phoneCountry: 'IN', phone: '', email: '', address: '' };
-const REQUIRED = new Set(['name', 'qualification', 'registration', 'clinic', 'phone', 'address']);
-const LABELS = { name: 'Doctor name', qualification: 'Qualification', registration: 'Registration number', clinic: 'Clinic', phone: 'Phone number', email: 'Email (optional)', address: 'Address' };
 
 export function DoctorForm() {
-  const { state, apply, setFlash } = useWs();
+  const data = useDoctors({ limit: 1 });
   const [, navigate] = useLocation();
-  const [form, setForm] = useState(EMPTY);
-  const [step, setStep] = useState(0);
-  const [errors, setErrors] = useState({});
-  const [message, setMessage] = useState('');
-  const busy = useRef(false);
-  const focusKey = useRef(null);
+  const { setFlash } = useWs();
+  const confirm = usePlatformConfirm();
+  const [draft, setDraft] = useState({ dirty: false, busy: false });
   const saved = useRef(false);
-  const dirty = !saved.current && JSON.stringify(form) !== JSON.stringify(EMPTY);
-  useDirtyGuard(dirty);
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-  const all = useMemo(() => doctorErrors(form) || {}, [form]);
-  function next() {
-    const mine = Object.fromEntries(STEPS[step][1].filter((k) => all[k]).map((k) => [k, all[k]]));
-    setErrors(mine);
-    focusKey.current = Object.keys(mine)[0] || null;
-    if (Object.keys(mine).length === 0) setStep(step + 1);
+  const [revision, setRevision] = useState(0);
+  const [mounted, setMounted] = useState(false);
+  const fixed = useRef(null);
+  useConfirmedNavigation(() => saved.current ? { dirty: false, busy: false } : draft, 'Discard your unsaved Doctor draft?');
+  useEffect(() => { if (!data.loading && !data.error && data.mrs[0] && !mounted) { fixed.current = data.mrs[0]; setMounted(true); } }, [data.loading, data.error, data.mrs, mounted]);
+  async function refresh() {
+    if (draft.busy || (mounted && !await confirm('Discard this draft and reload your current MR assignment?', { actionLabel: 'Discard and reload' }))) return;
+    setMounted(false); fixed.current = null; setDraft({ dirty: false, busy: false }); setRevision((value) => value + 1); data.retry();
   }
-  useEffect(() => {
-    if (focusKey.current) { document.getElementById(`doc-${focusKey.current}`)?.focus(); focusKey.current = null; }
-  }, [errors]);
-  function save() {
-    if (busy.current) return;
-    busy.current = true;
-    const before = new Set(state.doctors.map((d) => d.id));
-    const r = apply((s) => addDoctor(s, form));
-    busy.current = false;
-    if (!r.ok) { setMessage(r.message); return; }
-    saved.current = true;
-    const created = r.state.doctors.find((d) => !before.has(d.id));
-    setFlash(`${created?.name || 'Doctor'} onboarded to your demo workspace.`, `/mr/doctors/${created?.id}`);
-    navigate(`/mr/doctors/${encodeURIComponent(created?.id)}`);
+  async function save(values) {
+    const result = await data.add(values);
+    if (result.success) { saved.current = true; setFlash('Doctor added successfully to the shared directory.', '/mr/doctors'); navigate('/mr/doctors'); }
+    return result;
   }
-  const field = (k, props = {}) => <Field id={`doc-${k}`} label={REQUIRED.has(k) ? `${LABELS[k]} (required)` : LABELS[k]} error={errors[k]}>{props.area ?
-    <textarea className="mrw-input" id={`doc-${k}`} aria-required={REQUIRED.has(k)} value={form[k]} onChange={set(k)} aria-invalid={Boolean(errors[k])} aria-describedby={errors[k] ? `doc-${k}-error` : undefined} data-testid={`input-doctor-${k}`} /> :
-    <input className="mrw-input" id={`doc-${k}`} aria-required={REQUIRED.has(k)} value={form[k]} onChange={set(k)} aria-invalid={Boolean(errors[k])} aria-describedby={errors[k] ? `doc-${k}-error` : undefined} data-testid={`input-doctor-${k}`} {...props} />}</Field>;
   return <>
-    <Head eyebrow="My Doctors" title="Onboard doctor" text="Use fictional details only. Do not enter a real doctor, clinic or phone number." />
-    <div className="mrw-card">
-      <p className="mrw-notice">Fields marked required must be completed. Use fictional details only.</p>
-      <ol className="mrw-steps" aria-label="Progress">{STEPS.map(([n], i) => <li key={n} aria-current={i === step ? 'step' : undefined}>{i + 1}. {n}</li>)}</ol>
-      {message && <div className="mrw-alert" role="alert">{message}</div>}
-      <div className="mrw-form" style={{ marginTop: 16 }}>
-        {step === 0 && <>{field('name')}{field('qualification')}{field('registration')}</>}
-        {step === 1 && <>{field('clinic')}<Field id="doc-phone" label="Phone number (required)" error={errors.phone}><PhoneInput prefix="doc" country={form.phoneCountry} onCountryChange={(v) => setForm((f) => ({ ...f, phoneCountry: v }))} inputProps={{ id: 'doc-phone', name: 'phone', value: form.phone, onChange: set('phone'), className: 'mrw-input', 'aria-required': true, 'aria-invalid': Boolean(errors.phone), 'aria-describedby': errors.phone ? 'doc-phone-error' : undefined, 'data-testid': 'input-doctor-phone' }} /></Field>{field('email', { type: 'email' })}</>}
-        {step === 2 && <div className="mrw-wide">{field('address', { area: true })}</div>}
-        {step === 3 && <div className="mrw-wide"><dl className="mrw-dl">{Object.keys(LABELS).map((k) => <Fragment key={k}><dt>{LABELS[k]}</dt><dd>{k === 'phone' ? `${form.phoneCountry} ${form.phone}` : form[k] || '—'}</dd></Fragment>)}<dt>Assigned MR</dt><dd>You (fixed)</dd></dl></div>}
-      </div>
-      <div className="mrw-actions" style={{ marginTop: 20 }}>
-        {step > 0 && <button type="button" className="admin-button admin-button--secondary" onClick={() => setStep(step - 1)}>Back</button>}
-        {step < 3 ? <button type="button" className="admin-button" onClick={next} data-testid="button-doctor-next">Continue</button> : <button type="button" className="admin-button" onClick={save} data-testid="button-doctor-save">Save doctor</button>}
-        <Link href="/mr/doctors" className="admin-button admin-button--secondary" data-testid="link-doctor-cancel">Cancel</Link>
-      </div>
-    </div>
+    <Head title="Add Doctor" text="Shared Doctor form. Assigned MR is fixed to your saved MR identity." />
+    {data.error && <div className="mrw-alert" role="alert"><p>{data.error} Your draft is preserved. Saving is blocked.</p><button className="admin-button" onClick={refresh}>Reload assignment and records</button></div>}
+    {!mounted ? !data.error && <p role="status">Loading your MR assignment…</p> : <section className="admin-panel doctor-form-page"><SharedDoctorForm key={revision} mrs={[fixed.current]} fixedMR={fixed.current} onDraftChange={setDraft} blocked={data.loading || Boolean(data.error)} onSave={save} onClose={() => navigate('/mr/doctors')} onRefresh={refresh} /></section>}
   </>;
 }
+
+export function DoctorImport() { return <DoctorImportPage mr />; }

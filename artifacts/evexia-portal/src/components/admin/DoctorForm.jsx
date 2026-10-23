@@ -108,12 +108,15 @@ function validate(values) {
   return errors;
 }
 
-export default function DoctorForm({ doctor, records = [], mrs = [], blocked = false, onSave, onClose, onRefresh }) {
-  const [values, setValues] = useState(() => initialValues(doctor));
+export default function DoctorForm({ doctor, records = [], mrs = [], fixedMR = null, onDraftChange, blocked = false, onSave, onClose, onRefresh }) {
+  const [values, setValues] = useState(() => ({ ...initialValues(doctor), ...(fixedMR ? { mrId: String(fixedMR.id) } : {}) }));
   const [hydratedMRs, setHydratedMRs] = useState([]);
   const [errors, setErrors] = useState({});
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    onDraftChange?.({ dirty: JSON.stringify(values) !== JSON.stringify({ ...initialValues(doctor), ...(fixedMR ? { mrId: String(fixedMR.id) } : {}) }), busy: saving });
+  }, [values, saving, doctor, fixedMR, onDraftChange]);
   const [activeTab, setActiveTab] = useState('identity');
   const formRef = useRef(null);
   const tabRefs = useRef([]);
@@ -293,9 +296,9 @@ export default function DoctorForm({ doctor, records = [], mrs = [], blocked = f
         <div className="doctor-form__section-head"><h3 className="doctor-form__section-title">Clinic & assignment</h3></div>
         <div className="doctor-form__grid">
           {renderField('clinicName', 'Clinic Name', { placeholder: 'Clinic name' })}
-          <div className="doctor-form__field doctor-form__field--assignment"><DoctorMRSelect labelClassName="doctor-form__label" value={values.mrId} savedName={doctor?.mrName}
+           <div className="doctor-form__field doctor-form__field--assignment">{fixedMR ? <><label className="doctor-form__label" htmlFor="doctor-mrId">Assigned MR</label><input id="doctor-mrId" name="mrId" className="doctor-form__control" value={fixedMR.name} readOnly /><p className="doctor-form__hint">Fixed to your authenticated MR account. Assignment is enforced by the server.</p></> : <DoctorMRSelect labelClassName="doctor-form__label" value={values.mrId} savedName={doctor?.mrName}
             onHydrate={(items) => setHydratedMRs((old) => [...items, ...old.filter((row) => !items.some((item) => item.id === row.id))])}
-            onChange={(value) => setValues((old) => ({ ...old, mrId: value }))} error={errors.mrId} />
+             onChange={(value) => setValues((old) => ({ ...old, mrId: value }))} error={errors.mrId} />}
             {errors.mrId && <p className="doctor-form__error" role="alert">{errors.mrId}</p>}
             {selectedMR && <p className="doctor-form__hint">Derived Zone: {selectedMR.zoneName || 'Missing Zone'}. Zone is controlled by MR Master.</p>}
           </div>

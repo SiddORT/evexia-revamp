@@ -11,7 +11,7 @@ import '../admin.css';
 import './mrWorkspace.css';
 import { Empty, WsContext } from './common.jsx';
 import { Dashboard, Settings, Targets } from './Screens.jsx';
-import { DoctorDetail, DoctorForm, DoctorList } from './Doctors.jsx';
+import { DoctorDetail, DoctorForm, DoctorImport, DoctorList } from './Doctors.jsx';
 import { OrderDetail, OrderForm, OrderList } from './Orders.jsx';
 import { PaymentDetail, PaymentForm, PaymentList } from './Payments.jsx';
 
@@ -41,7 +41,7 @@ function Routes() {
   const seg = path.replace(/\/+$/, '').split('/').slice(2).map(dec);
   const [a, b, c] = seg;
   if (seg.length === 0 || (a === 'home' && !b)) return <Dashboard />;
-  if (a === 'doctors') { if (!b) return <DoctorList />; if (b === 'new' && !c) return <DoctorForm />; if (!c) return <DoctorDetail id={b} />; }
+  if (a === 'doctors') { if (!b) return <DoctorList />; if (b === 'new' && !c) return <DoctorForm />; if (b === 'import' && !c) return <DoctorImport />; if (!c) return <DoctorDetail key={b} id={b} />; }
   if (a === 'orders') { if (!b) return <OrderList />; if (b === 'new' && !c) return <OrderForm key="new" />; if (!c) return <OrderDetail id={b} />; if (c === 'edit' && seg.length === 3) return <OrderForm key={b} id={b} />; }
   if (a === 'targets' && !b) return <Targets />;
   if (a === 'payments') { if (!b) return <PaymentList />; if (b === 'new' && !c) return <PaymentForm />; if (!c) return <PaymentDetail id={b} />; }
@@ -107,7 +107,7 @@ function Shell() {
         </div>}
       </div>
     </div></header>
-    <div className="mrw-demo" data-testid="text-demo-notice">Demo workspace — fictional data; resets on reload</div>
+    <div className="mrw-demo" data-testid="text-demo-notice">Doctors: live shared directory. Dashboard, Orders, Targets and Payments: separate fictional demos that reset on reload; not linked to live Doctors.</div>
     <main className="mrw-main" ref={mainRef} data-testid="page-mr-home">
       {flash && <div className="mrw-flash" role="status" data-testid="text-flash">{flash.text}<button type="button" className="admin-button admin-button--secondary" onClick={() => setFlash(null)}>Dismiss</button></div>}
       <Routes />

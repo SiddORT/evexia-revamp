@@ -106,8 +106,8 @@ export function OrderForm({ id }) {
       <ol className="mrw-steps">{STEPS.map((n, i) => <li key={n} aria-current={i === step ? 'step' : undefined}>{i + 1}. {n}</li>)}</ol>
       {error && <div className="mrw-alert" role="alert" style={{ marginTop: 12 }}>{error}</div>}
       <div style={{ marginTop: 16, display: 'grid', gap: 16 }}>
-        {step === 0 && (state.doctors.length === 0 ? <Empty title="No doctors yet" text="Onboard a doctor before placing an order." to="/mr/doctors/new" action="Onboard doctor" /> :
-          <Field id="ord-doctor" label="Doctor"><select className="admin-select" id="ord-doctor" value={doctorId} onChange={(e) => setDoctorId(e.target.value)} data-testid="select-order-doctor"><option value="">Select a doctor</option>{state.doctors.map((d) => <option key={d.id} value={d.id}>{d.name} · {d.clinic}</option>)}</select></Field>)}
+        {step === 0 && (state.doctors.length === 0 ? <Empty title="No demo doctors available" text="Live Doctor onboarding does not populate demo orders." /> :
+          <Field id="ord-doctor" label="Demo doctor (not the live directory)"><select className="admin-select" id="ord-doctor" value={doctorId} onChange={(e) => setDoctorId(e.target.value)} data-testid="select-order-doctor"><option value="">Select a demo doctor</option>{state.doctors.map((d) => <option key={d.id} value={d.id}>{d.name} · {d.clinic}</option>)}</select></Field>)}
         {step === 1 && <>
           <div className="mrw-form"><Field id="ord-cat" label="Category"><select className="admin-select" id="ord-cat" value={cat} onChange={(e) => { setCat(e.target.value); setProduct(''); }}><option value="all">All categories</option>{cats.map((c) => <option key={c}>{c}</option>)}</select></Field>
             <Field id="ord-product" label="Product"><select className="admin-select" id="ord-product" value={product} onChange={(e) => setProduct(e.target.value)} data-testid="select-order-product"><option value="">Select a product</option>{choices.map((p) => <option key={p.id} value={p.id}>{p.name} · {money(p.price)}</option>)}</select></Field>

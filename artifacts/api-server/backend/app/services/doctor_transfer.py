@@ -136,7 +136,7 @@ def parse(data, filename):
     return parsed
 
 
-def review_state(db, parsed):
+def review_state(db, parsed, actor):
     reviewed, bodies, snapshot, seen = [], [], [], set()
     for row in parsed:
         values = dict(row["values"])
@@ -145,13 +145,15 @@ def review_state(db, parsed):
         try:
             # Exact UUID, user:username, employee:code or unique server name.
             # No browser-local ID conversion or fuzzy name mapping.
-            mr_id = resolve_manager(db, values["mrId"], {})
+            mr_id = actor.mr.id if actor.role == "mr" else resolve_manager(db, values["mrId"], {})
             if not mr_id:
                 raise doctors.DoctorError("Assigned MR is required.", 409, "doctor_assignment")
             values["mrId"] = mr_id
             supplied_zone = values.pop("zoneName")
             supplied_dial = values.pop("dialCode")
             verification = values.pop("verification")
+            if actor.role == "mr":
+                verification = "unverified"
             if verification not in ("verified", "unverified"):
                 errors.append("Verification must be verified or unverified.")
             if supplied_dial and supplied_dial != DIAL.get(values["dialCountry"]):
@@ -159,7 +161,7 @@ def review_state(db, parsed):
             body = DoctorFields(**values)
             commercial = {key: format(getattr(body, key), ".2f") for key in commercial}
             mr, zone = doctors.assignment(db, body.mrId)
-            if supplied_zone and supplied_zone.lower() != zone.name.lower():
+            if actor.role != "mr" and supplied_zone and supplied_zone.lower() != zone.name.lower():
                 errors.append("Zone does not match the assigned server MR. Zone is derived, not writable.")
             doctors.unique(db, body.registrationNumber)
             key = body.registrationNumber.lower()
@@ -188,7 +190,7 @@ def transfer(db, actor, data, filename, confirm=False, digest=None):
     def work():
         current = doctors.authorize(db, actor, "import")
         mrs.graph_lock(db)
-        rows, bodies, snapshot = review_state(db, parsed)
+        rows, bodies, snapshot = review_state(db, parsed, current)
         fingerprint = digest_for(current, data, filename, snapshot)
         valid = not any(row["errors"] for row in rows)
         if confirm and (not valid or not hmac.compare_digest(digest or "", fingerprint)):
@@ -241,8 +243,8 @@ def sample(format):
 @present_export
 def export(db, actor, query="", status="all", zone_id="", mr_id="", state="", format="csv"):
     def work():
-        doctors.authorize(db, actor, "export", lock=False)
-        clauses = doctors.predicates("", status, zone_id, mr_id, state)
+        current = doctors.authorize(db, actor, "export", lock=False)
+        clauses = doctors.predicates("", status, zone_id, mr_id, state) + doctors.owned_clauses(current)
         count = db.scalar(select(func.count()).select_from(Doctor).where(*clauses))
         if not query.strip() and count > EXPORT_LIMIT:
             raise doctors.DoctorError("More than 5,000 doctors match. Narrow the filters.", 409, "doctor_export_limit")

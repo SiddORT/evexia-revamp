@@ -3,7 +3,9 @@ from typing import Literal
 from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
-from app.api.deps import master_router, require_master
+from app.api.deps import master_router, current_identity
+from fastapi import HTTPException
+from app.services.master_policy import master_allowed
 from app.api.v1.designations import read_file, UPLOAD
 from app.api.v1.mrs import BINARY
 from app.db.session import get_db
@@ -18,13 +20,26 @@ from app.schemas.mrs import PostalResponse
 from app.services import mr_postal
 
 router = APIRouter(prefix="/admin/doctors", tags=["Doctor Master"])
-manager = master_router("doctor")
+def manager(request: Request, identity=Depends(current_identity)):
+    operations = {"listing": None, "detail": None, "filters": None, "references": None,
+                  "create": "add", "sample": "import", "review": "import",
+                  "commit": "import", "export": "export", "postal": "add"}
+    name = request.scope["endpoint"].__name__
+    if identity.role == "mr":
+        if identity.mr is not None and name in operations:
+            return identity
+        raise HTTPException(403, "Doctor operation not available")
+    if name == "postal":
+        if master_allowed(identity, "doctor"):
+            return identity
+        raise HTTPException(403, "Doctor access denied")
+    return master_router("doctor")(request, identity)
 Reference = str
 
 
 @router.get("/postal/{pin}", response_model=PostalResponse, operation_id="lookupDoctorPincode")
 def postal(pin: str, action: Literal["add", "edit"] = "add",
-           actor=Depends(require_master("doctor")), db: Session = Depends(get_db)):
+           actor=Depends(manager), db: Session = Depends(get_db)):
     return mr_postal.lookup(db, actor, pin, resource="doctor", action=action)
 
 

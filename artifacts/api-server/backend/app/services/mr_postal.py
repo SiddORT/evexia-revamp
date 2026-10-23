@@ -65,7 +65,11 @@ def lookup(db, actor, pin, fetcher=provider, *, resource="mr", action="add"):
         raise mrs.MRError("Enter a complete six-digit Indian PIN. Manual entry remains available.", 422, "mr_pin_invalid")
     def quota():
         from app.services.master_policy import authorize_master
-        current = authorize_master(db, actor, resource, action)
+        if resource == "doctor" and actor.role == "mr":
+            from app.services.doctors import authorize
+            current = authorize(db, actor, action)
+        else:
+            current = authorize_master(db, actor, resource, action)
         count = db.scalar(select(func.count()).select_from(AuditEvent).where(
             AuditEvent.actor_id == current.user.id, AuditEvent.action == "mr_postal_lookup",
             AuditEvent.created_at > utcnow() - timedelta(minutes=1)))
@@ -106,7 +110,11 @@ def lookup(db, actor, pin, fetcher=provider, *, resource="mr", action="add"):
     # Network work held no transaction or row locks. Reauthorize after slow I/O.
     def finish():
         from app.services.master_policy import authorize_master
-        authorize_master(db, actor, resource, action, lock=False)
+        if resource == "doctor" and actor.role == "mr":
+            from app.services.doctors import authorize
+            authorize(db, actor, action)
+        else:
+            authorize_master(db, actor, resource, action, lock=False)
         db.commit()
     mrs.transaction(db, finish)
     if provider_failed:

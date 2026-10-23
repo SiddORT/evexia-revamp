@@ -87,7 +87,12 @@ def record(db, identity, initiation_id, source, kind, format, provenance="server
     # object before calling server_record; their evidence policy is unchanged.
     mr_private = (verified.role == "mr" and verified.mr is not None
                   and source == "private_attachment" and provenance == "server_prepared")
-    if "admin.access" not in verified.permissions and not mr_private:
+    mr_doctor = (verified.role == "mr" and verified.mr is not None and source == "doctor"
+                 and provenance == "server_prepared" and kind in ("template", "export"))
+    if mr_doctor:
+        from app.services.doctors import authorize
+        authorize(db, verified, "import" if kind == "template" else "export")
+    if "admin.access" not in verified.permissions and not mr_private and not mr_doctor:
         action = ("import" if kind in ("sample", "template")
                   else "export" if kind == "export" and provenance == "server_prepared" else None)
         if (resource not in MASTERS or action is None

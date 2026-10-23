@@ -661,7 +661,10 @@ export async function emailTemplateRequest(path = '', body, { signal } = {}) {
 // Per-operation Zone authorization. Staff never reach other master services;
 // trash and restore stay Super Admin only. The server re-checks every call.
 function masterAllowed(user, resource, path, writing, params = {}) {
-  if (user.identity_kind === 'mr') return false;
+  if (user.identity_kind === 'mr') return resource === 'doctors' && (
+    path === '' || (!writing && (['/references', '/filters', '/sample', '/export'].includes(path)
+      || /^\/[0-9a-f-]{36}$/.test(path) || (/^\/postal\/[1-9][0-9]{5}$/.test(path) && (params.action || 'add') === 'add')))
+    || (writing && ['/import/review', '/import/commit'].includes(path)));
   if (user.permissions.includes('admin.access')) return true;
   const master = MASTER_CATALOGUE.find((item) => item.path === resource);
   if (user.identity_kind !== 'staff' || !master) return false;

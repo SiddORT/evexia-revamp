@@ -119,4 +119,5 @@ textarea.mrw-input { padding: 10px 12px; min-height: 88px; }
 .mrw .admin-phone-input { display: flex; gap: 8px; min-width: 0; }
 .mrw .admin-phone-input > input { flex: 1; min-width: 0; }
 .mrw-card[href] { text-decoration: none; display: block; }
+.mrw-profile-field { display: contents; }
 @media (max-width: 600px) { .mrw-dl { grid-template-columns: minmax(0, 1fr); } .mrw .admin-phone-input { flex-wrap: wrap; } }

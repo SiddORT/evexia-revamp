@@ -36,11 +36,11 @@ export function Dashboard() {
       {[['Achieved sales', s.achieved], ['Remaining', s.remaining], ['Collections', s.collections], ['Outstanding', s.outstanding]].map(([l, v]) => <div key={l} className="mrw-card mrw-stat"><span>{l}</span><strong data-testid={`stat-${l.toLowerCase().replace(/\s/g, '-')}`}>{money(v)}</strong></div>)}
     </div>
     <div className="mrw-actions">
-      <Link href="/mr/doctors/new" className="admin-button" data-testid="link-shortcut-onboard"><UserPlus size={16} aria-hidden="true" /> Onboard doctor</Link>
+      <Link href="/mr/doctors/new" className="admin-button" data-testid="link-shortcut-onboard"><UserPlus size={16} aria-hidden="true" /> Add live Doctor</Link>
       <Link href="/mr/orders/new" className="admin-button" data-testid="link-shortcut-order"><FilePlus2 size={16} aria-hidden="true" /> Place order</Link>
       <Link href="/mr/payments/new" className="admin-button" data-testid="link-shortcut-payment"><Wallet size={16} aria-hidden="true" /> Add payment</Link>
     </div>
-    <div className="mrw-card"><h2>Recent activity</h2>{state.activity.length === 0 ? <Empty title="Nothing yet" text="Onboard a doctor to begin." to="/mr/doctors/new" action="Onboard doctor" /> :
+    <div className="mrw-card"><h2>Recent demo activity</h2><p className="mrw-notice">These fictional events do not track live Doctor records.</p>{state.activity.length === 0 ? <Empty title="No demo activity yet" text="Create a demo order to begin. Live Doctors are managed separately." to="/mr/orders/new" action="New demo order" /> :
       <ul className="mrw-list">{state.activity.slice(0, 6).map((a) => <li key={a.id}><Link href={a.href}><span>{a.label}</span><small>{date(a.date)}</small></Link></li>)}</ul>}</div>
   </>;
 }

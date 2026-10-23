@@ -9,7 +9,10 @@ import '../../excel-import.css';
 
 const COLUMNS = 'Doctor Name · Phone · Dial Code · Dial Country · Alternate Phone · Email · Contact Requirement · Date of Joining · Registration Number · Qualification · Clinic Name · Assigned MR · Zone · Invoice Type · GST Number · Drug Licence Number · Order Discount · Days Limit · Payment Limit · Status · Verification · Address Line 1 · Address Line 2 · Landmark · Pincode · Country · State · City';
 
-export default function DoctorImportPage() {
+export default function DoctorImportPage({ mr = false }) {
+  const Layout = mr ? MRImportLayout : AdminLayout;
+  const listPath = mr ? '/mr/doctors' : '/admin/masters/doctors';
+  const directoryLabel = mr ? 'My Doctors' : 'Doctor Master';
   const [, navigate] = useLocation();
   const [file, setFile] = useState(null);
   const [review, setReview] = useState(null);
@@ -66,12 +69,12 @@ export default function DoctorImportPage() {
         guard();
         if (!active()) return;
         setReview({ ...result, filename: file.name });
-        if (uncertain) setMessage('Current conflicts have been checked without saving. Inspect Doctor Master before confirming any retry of the earlier batch.');
+        if (uncertain) setMessage(`Current conflicts have been checked without saving. Inspect ${directoryLabel} before confirming any retry of the earlier batch.`);
         setUncertain(false);
       }
     } catch (cause) {
       try { guard(); } catch { return; }
-      if (active()) { setUncertain(Boolean(commit && cause.ambiguous)); setError(`${cause.message || 'Import failed.'}${cause.ambiguous ? ' The result is uncertain. Inspect Doctor Master and review again; do not blindly retry.' : ''}`); }
+      if (active()) { setUncertain(Boolean(commit && cause.ambiguous)); setError(`${cause.message || 'Import failed.'}${cause.ambiguous ? ` The result is uncertain. Inspect ${directoryLabel} and review again; do not blindly retry.` : ''}`); }
     } finally { if (active()) { busy.current = false; setPending(''); } }
   }
   async function sample(format) {
@@ -90,15 +93,15 @@ export default function DoctorImportPage() {
   const rows = review?.rows || [];
   const valid = rows.filter((row) => !row.errors.length);
   const invalid = rows.filter((row) => row.errors.length);
-  return <AdminLayout title="Import Doctor data"><div className="excel-import">
-    <button type="button" className="excel-import__back" disabled={pending === 'commit'} onClick={() => navigate('/admin/masters/doctors')}><ArrowLeft size={16} /> Back to Doctor Master</button>
+   return <Layout title="Import Doctor data"><div className="excel-import">
+    <button type="button" className="excel-import__back" disabled={pending === 'commit'} onClick={() => navigate(listPath)}><ArrowLeft size={16} /> Back to {directoryLabel}</button>
     <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Masters / Data import</p><h1>Import Doctor data</h1><p className="admin-page-head__description">Review CSV or Excel without saving. Explicit confirmation creates the fully valid batch, all-or-nothing.</p></div><span className="excel-import__mock">Shared server records</span></div>
-    <MasterImportTabs kind="doctor" />
+    {!mr && <MasterImportTabs kind="doctor" />}
     <div className="excel-import__steps">
       <section className="excel-import__card" aria-labelledby="excel-sample-title" aria-busy={Boolean(samplePending)}><span className="excel-import__number">01</span><div className="excel-import__icon"><FileSpreadsheet size={23} /></div><h2 id="excel-sample-title">Download sample</h2>
         <p>Keep the full column order and one worksheet. Identifiers, postcodes and exact monetary values should be text cells.</p>
         <div className="excel-import__columns"><strong>Columns</strong><span>{COLUMNS}</span><strong>Earlier full CSV backups</strong><span>Earlier headers remain supported. Contact Requirement is legacy metadata only. Enter either a primary phone number or an email address; both are allowed. Alternate phone does not satisfy this rule. Blank commercial settings default to zero; blank verification defaults to unverified. Optional audit columns are ignored.</span></div>
-        <p>Assigned MR must resolve to one existing server MR: use user:username, employee:code, server UUID or an exact unique name. Ambiguous/missing references are rejected, never guessed. Zone must match that MR or be blank. Local MR IDs are not migrated. No passwords, accounts or payment ledger are created.</p>
+        {mr ? <p>Every imported doctor is assigned to your authenticated MR account and its current Zone. Uploaded Assigned MR, MR Name and Zone columns cannot change this assignment and are ignored. Verification is unverified for MR imports. No accounts, orders or payment ledger are created.</p> : <p>Assigned MR must resolve to one existing server MR: use user:username, employee:code, server UUID or an exact unique name. Ambiguous/missing references are rejected, never guessed. Zone must match that MR or be blank. Local MR IDs are not migrated. No passwords, accounts or payment ledger are created.</p>}
         <div className="excel-import__sample-actions"><button className="admin-button admin-button--secondary" type="button" disabled={Boolean(samplePending)} onClick={() => sample('csv')} data-testid="button-sample-doctor-csv">Download CSV sample</button>
           <button className="admin-button admin-button--secondary" type="button" disabled={Boolean(samplePending)} onClick={() => sample('xlsx')} data-testid="button-sample-doctor-xlsx"><Download size={16} /> Download Excel sample</button></div>
         {samplePending && <p role="status">Preparing {samplePending === 'xlsx' ? 'Excel' : 'CSV'} sample…</p>}
@@ -116,5 +119,7 @@ export default function DoctorImportPage() {
         <div><h3>Invalid data <span>{invalid.length}</span></h3>{invalid.length ? invalid.map((row) => <details open className="excel-import__row excel-import__row--invalid" key={row.row}><summary>Row {row.row} · {row.name || '(unnamed)'} <span>{row.errors.length} errors</span></summary><ul>{row.errors.map((text, index) => <li key={index}>{text}</li>)}</ul></details>) : <p>No errors found. Nothing saved until confirmation.</p>}</div></div>
       <button className="admin-button" type="button" disabled={!review.valid || Boolean(pending) || uncertain} onClick={() => run(true)} data-testid="button-confirm-doctor-import">Confirm import of {rows.length} doctors</button>
     </section>}
-  </div></AdminLayout>;
+  </div></Layout>;
 }
+
+function MRImportLayout({ children }) { return <>{children}</>; }

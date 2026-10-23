@@ -157,6 +157,6 @@ export function createWorkspace(owner) {
   ], activity: [
     { id: 'demo-event-c', label: 'Sample kit order placed · demo', href: '/mr/orders/demo-order-c', date: DEMO_DATE },
     { id: 'demo-event-b', label: 'Unapplied advance recorded · demo', href: '/mr/payments/demo-payment-b', date: '2026-07-17' },
-    { id: 'demo-event-a', label: 'Dr. Mira Sample · demo doctor', href: '/mr/doctors/demo-doctor-a', date: '2026-04-16' },
+    { id: 'demo-event-a', label: 'Dr. Mira Sample · fictional demo order contact', href: '/mr/orders', date: '2026-04-16' },
   ] };
 }
