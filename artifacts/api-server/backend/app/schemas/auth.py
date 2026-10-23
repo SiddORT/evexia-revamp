@@ -62,6 +62,9 @@ class CurrentUser(BaseModel):
     mr_id: uuid.UUID | None = None
     permissions: list[str]
     identity_kind: Literal["super_admin", "mr", "staff"]
+    staff_name: str | None = None
+    staff_designation: str | None = None
+    staff_role: str | None = None
 
 
 class TokenResponse(BaseModel):

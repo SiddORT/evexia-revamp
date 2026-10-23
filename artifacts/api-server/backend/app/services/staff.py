@@ -146,26 +146,15 @@ def create(db, actor, body, settings):
         lock_policy(db)
         current, crypto = authorize(db, actor, settings)
         validate_designation(db, body.designation_id)
-        # 120 random bits in a 32-character username, independent of personal data.
         chosen = getattr(body, "initialPassword", None)
         password = chosen if chosen is not None else generated_staff_password()
         encoded_password = hash_password(password)
-        for attempt in range(5):
-            try:
-                with db.begin_nested():
-                    user = User(id=uuid.uuid4(), username="st_" + secrets.token_hex(14), email=None,
-                                password_hash=encoded_password, system_role=None,
-                                password_setup_required=chosen is None)
-                    db.add(user)
-                    db.flush()
-                break
-            except IntegrityError as error:
-                if getattr(getattr(error.orig, "diag", None), "constraint_name", None) not in {
-                    "ix_users_username", "uq_users_lower_username", "uq_users_login_namespace", "uq_users_username_index",
-                }:
-                    raise
-                if attempt == 4:
-                    raise StaffError()
+        from app.services.staff_account_numbers import allocate
+        user = User(id=uuid.uuid4(), username=allocate(db), email=None,
+                    password_hash=encoded_password, system_role=None,
+                    password_setup_required=chosen is None)
+        db.add(user)
+        db.flush()
         profile = StaffProfile(id=uuid.uuid4(), user_id=user.id, version=1,
                                created_by=current.user.id, updated_by=current.user.id)
         assign_role(db, profile, body.custom_role_id)

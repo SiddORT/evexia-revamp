@@ -94,6 +94,7 @@
 - [Scoped operator approval](scoped-operator-approval.md) — recovery evidence never expands approval to a broader runner’s later migrations.
 - [Account encryption boundary](account-encryption-boundary.md) — ciphertext-only users/history are coupled; bulk identifier writes must fail explicitly and old account decryption keys remain needed.
 - [Staff role unification](staff-role-unification.md) — staff Role grants permissions; login remains explicit and conflicting legacy assignments require administrator resolution.
+- [Staff renumbering approval](staff-renumbering-scope.md) — approval covers existing/new staff and protected Admin account labels only, not Employee Codes or other account types.
 - [Password recovery rollout](password-recovery-rollout.md) — use the selected SMTP server; Git push permission does not implicitly authorize production activation.
 - [Proxy client identity](proxy-client-identity.md) — strict forwarding rules must preserve per-client authentication quotas, not collapse users into a shared proxy bucket.
 - [Historical inventory filters](historical-inventory-filters.md) — preserve saved assembly membership; finished-product openings without recipe evidence must not inherit today’s components.

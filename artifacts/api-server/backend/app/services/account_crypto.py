@@ -136,6 +136,8 @@ def ready(db):
         ["0057_staff_employee_code"],
         ["0058_master_numbers"],
         ["0059_staff_unified_access"],
+        # Reviewed sequence/backfill leaves encryption envelopes and keys intact.
+        ["0060_staff_account_numbers"],
     ):
         raise AccountCryptoError()
     current = crypto()

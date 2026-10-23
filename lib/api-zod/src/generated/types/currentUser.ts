@@ -14,6 +14,9 @@ export interface CurrentUser {
   identity_kind: CurrentUserIdentityKind;
   mr_id?: string | null;
   permissions: string[];
+  staff_designation?: string | null;
+  staff_name?: string | null;
+  staff_role?: string | null;
   system_role: CurrentUserSystemRole;
   username: string | null;
 }

@@ -109,6 +109,8 @@ function safeMr(user) {
   throw new SessionError('This account does not have MR access.', 403);
 }
 const safeFor = (user, portal) => (portal === 'mr' ? safeMr(user) : safeAdmin(user));
+// Presentation-only values: never participate in permissions or routing.
+const displayDetail = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;
 
 function safeAdmin(user) {
   const permissions = Array.isArray(user?.permissions) ? user.permissions : null;
@@ -121,7 +123,10 @@ function safeAdmin(user) {
   if (user && typeof user.id === 'string' && permissions && kind === 'staff' && user.system_role == null
       && (user.email === null || user.email === undefined || typeof user.email === 'string')
       && permissions.includes('workspace.access') && !permissions.includes('admin.access')) {
-    return Object.freeze({ id: user.id, email: user.email ?? null, username: user.username ?? null, system_role: null, identity_kind: 'staff', permissions: Object.freeze(STAFF_VISIBLE_PERMISSIONS.filter((permission) => permissions.includes(permission))) });
+    return Object.freeze({ id: user.id, email: user.email ?? null, username: user.username ?? null,
+      staff_name: displayDetail(user.staff_name), staff_designation: displayDetail(user.staff_designation),
+      staff_role: displayDetail(user.staff_role),
+      system_role: null, identity_kind: 'staff', permissions: Object.freeze(STAFF_VISIBLE_PERMISSIONS.filter((permission) => permissions.includes(permission))) });
   }
   throw new SessionError('This account does not have Admin access.', 403);
 }

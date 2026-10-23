@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 import jwt
 from sqlalchemy import delete, func, or_, select, text
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, object_session
 
 from app.core.config import Settings
 from app.core.security import (
@@ -91,11 +91,30 @@ class Identity:
         return frozenset()
 
     def public(self) -> CurrentUser:
+        details = {}
+        if self.staff is not None:
+            from app.core.config import get_settings
+            from app.db.designation_models import Designation
+            from app.services.staff_crypto import StaffCrypto
+            db = object_session(self.user)
+            if db is None:
+                raise AuthError()
+            designation = db.get(Designation, self.staff.designation_id)
+            role = db.get(CustomRole, self.staff.custom_role_id) if self.staff.custom_role_id else None
+            details = dict(
+                staff_name=StaffCrypto(get_settings()).decrypt(
+                    self.staff.id, "name", self.staff.name_ciphertext),
+                # Saved designation, including retained/inactive definitions.
+                staff_designation=designation.name if designation else None,
+                # Never trust the legacy StaffProfile.role business-label copy.
+                staff_role=role.name if role and role.deleted_at is None else None,
+            )
         return CurrentUser(
             id=self.user.id, email=self.user.email, username=self.user.username,
             system_role=self.user.system_role, mr_id=self.mr.id if self.mr else None,
             permissions=sorted(self.permissions),
             identity_kind="staff" if self.staff is not None else self.user.system_role,
+            **details,
         )
 
 
@@ -205,7 +224,7 @@ def login(db: Session, identifier: str, password: str, settings: Settings,
     if len(identifier) < 3 or any(c.isspace() for c in identifier):
         account_user = None  # Preserve the non-staff login identifier contract.
     alias_owner = resolve(db, identifier)
-    # Staff's opaque generated username is not a third login credential. Never
+    # Staff's account number is not a third login credential. Never
     # choose arbitrarily when multiple namespaces disagree.
     user = db.get(User, alias_owner) if alias_owner else account_user
     if account_user and alias_owner and account_user.id != alias_owner:

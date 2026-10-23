@@ -2,6 +2,7 @@
   "version": 2,
   "default": "automatic",
   "revisions": {
+    "0060_staff_account_numbers": "automatic",
     "0058_master_numbers": "automatic",
     "0057_staff_employee_code": "automatic",
     "0053_email_invitations": "automatic",

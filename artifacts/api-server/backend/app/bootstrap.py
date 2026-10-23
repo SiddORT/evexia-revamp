@@ -67,6 +67,7 @@ def bootstrap_super_admin(db: Session, initial_password: SecretStr | None) -> Bo
         db.execute(text("SELECT set_config('evexia.bootstrap_super_admin', 'on', true)"))
         user = User(
             email=SUPER_ADMIN_EMAIL,
+            username="EVX-001",
             password_hash=hash_password(password),
             is_active=True,
             token_version=0,
