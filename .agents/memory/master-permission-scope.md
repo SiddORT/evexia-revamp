@@ -25,3 +25,13 @@ assignable authorization scope.
 
 **How to apply:** Inventory the directory for validation work, but preserve the
 existing authorization and account-provisioning boundaries for each master.
+
+External permission-editor screenshots are layout references only, not authority
+to copy their branding, roles, counts, modules or action catalogue.
+
+**Why:** The user explicitly requested the compact reference layout while retaining
+EVEXIA's real eight-master, forty-grant model, not View, combined Add/Edit or
+Download grants from the reference.
+
+**How to apply:** Derive matrix rows, action headings and counts from the existing
+catalogue and live selected role, even when changing the editor presentation.

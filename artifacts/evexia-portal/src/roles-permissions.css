@@ -89,7 +89,7 @@
 
 /* ---- Directory / permissions layout ---- */
 .rp--directory { grid-template-columns: minmax(0, 340px) minmax(0, 1fr); }
-.rp--permissions { grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 12px; }
+.rp--permissions { grid-template-columns: minmax(0, 180px) minmax(0, 1fr); gap: 12px; }
 .rp--directory .rp-matrix { display: none; }
 .rp--permissions .rp-meta { display: none; }
 .rp-roles { border-radius: 16px; }
@@ -141,9 +141,6 @@
 .rp-matrix__counts { text-align: left; }
 .rp-matrix__shortcuts { flex-wrap: wrap; }
 
-@media (max-width: 1280px) {
-  .rp--permissions { grid-template-columns: minmax(0, 1fr); }
-}
 @media (max-width: 900px) {
   .rp--directory, .rp--permissions { grid-template-columns: minmax(0, 1fr); }
 }
@@ -154,3 +151,49 @@
   .rp-matrix__grid { grid-template-columns: minmax(0, 1fr); }
   .rp-matrix__foot > *, .rp-head__actions > * { flex: 1 1 120px; }
 }
+
+/* ---- Compact matrix table ---- */
+.rp--permissions .rp-roles { max-height: none; }
+.rp--permissions .rp-roles__scroll { max-height: min(70vh, 40rem); max-height: min(70dvh, 40rem); }
+.rp--permissions .rp-work { padding: 12px 14px; gap: 8px; }
+.rp--permissions .rp-head__main h2 { font-size: 15px; }
+.rp--permissions .rp-head[hidden] { display: none; }
+.rp-matrix { gap: 10px; }
+.rp-matrix__head { align-items: center; }
+.rp-matrix__title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; min-width: 0; }
+.rp-matrix__title h2 { margin: 0; font: inherit; font-size: 1rem; font-weight: 700; color: var(--admin-text); overflow-wrap: anywhere; }
+.rp-matrix__counts { display: flex; flex-wrap: wrap; gap: 2px 12px; }
+.rp-matrix__shortcuts { align-items: center; min-width: 0; max-width: 100%; }
+.rp-matrix__shortcuts .admin-button { min-height: 36px; max-width: 100%; white-space: normal; overflow-wrap: anywhere; padding: 6px 10px; }
+.rp-matrix__shortcuts .admin-button svg { flex-shrink: 0; }
+.rp-progress { height: 4px; }
+.rp-body { grid-template-columns: minmax(0, 1fr); }
+.rp-rail { max-height: none; border-right: 0; border-bottom: 1px solid var(--admin-border); }
+.rp-rail > * { border-bottom: 0; padding: 2px 10px; }
+.rp-rail__item { flex-wrap: nowrap; cursor: default; }
+.rp-rail__label { display: flex; flex: 1; gap: 8px; justify-content: space-between; font-size: 12px; font-weight: 700; }
+.rp-rail__label span { color: var(--admin-primary); }
+.rp-main { padding: 0; gap: 0; }
+.rp-table-scroll { position: relative; min-width: 0; overflow-x: auto; max-width: 100%; overscroll-behavior-x: contain; }
+.rp-table-scroll:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: -2px; }
+.rp-table { width: 100%; min-width: 44em; border-collapse: collapse; table-layout: fixed; font-size: .8125rem; }
+.rp-table th, .rp-table td { border-bottom: 1px solid var(--admin-border); padding: 2px 4px; text-align: center; vertical-align: middle; }
+.rp-table tbody tr:last-child > * { border-bottom: 0; }
+.rp-table thead th { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--admin-muted); padding: 8px 4px; background: var(--admin-surface); }
+.rp-table .rp-table__master { width: 36%; text-align: left; padding-left: 12px; font-weight: 600; color: var(--admin-text); }
+.rp-table__mastercell { display: flex; align-items: center; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+.rp-table__mastercell > span:not(.rp-table__count) { min-width: 0; }
+.rp-table__count { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--admin-primary); }
+.rp-cell-check { flex: none; width: 24px; height: 24px; margin: 0; accent-color: var(--admin-primary); cursor: pointer; }
+.rp-rail .rp-cell-check { width: 24px; height: 24px; }
+.rp-cell-check:focus-visible { outline: 2px solid var(--admin-focus); outline-offset: 2px; }
+.rp-table tbody tr:hover { background: var(--admin-state-hover); }
+.rp-table__cell--empty { background: transparent; }
+.rp-cell { display: inline-flex; align-items: center; justify-content: center; gap: 0; }
+.rp-cell .rp-check { position: relative; flex: none; display: grid; place-items: center; width: 40px; height: 40px; min-height: 40px; padding: 0; }
+.rp-table__cell--locked .rp-check { opacity: .6; cursor: not-allowed; }
+.rp-table__cell--locked input { cursor: not-allowed; }
+.rp-table__cell--on .rp-check__box { background: var(--admin-primary); border-color: var(--admin-primary); color: var(--admin-primary-ink); }
+.rp-cell .rp-check__saved { top: 6px; right: 6px; }
+.rp-cell .admin-info__button { width: 24px; height: 40px; padding: 0; place-items: center; }
+.rp-cell .admin-info__button::before { inset: 2px 0; border-radius: 6px; }

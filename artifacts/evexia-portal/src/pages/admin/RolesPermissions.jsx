@@ -458,7 +458,7 @@ export default function RolesPermissions() {
 
       <section className="admin-panel rp-work" aria-label="Role details">
         {role ? <>
-          <div className="rp-head">
+          <div className="rp-head" hidden={tab === 'permissions'}>
             <div className="rp-head__main"><h2 data-testid="text-active-role">{role.name}</h2></div>
             {tab === 'roles' && !found && <div className="rp-head__actions">
               <button type="button" className="admin-button admin-button--secondary" disabled={loading || status !== 'ready' || busy || blocked || gone} onClick={() => mutateRole(() => openForm('edit', role))} data-testid="button-edit-role"><Pencil size={14} aria-hidden="true" /> Edit</button>
@@ -472,7 +472,7 @@ export default function RolesPermissions() {
             <dt>Updated</dt><dd>{fmt(role.updated_at)} (version {role.version})</dd>
           </dl>}
           <div hidden={tab !== 'permissions'}>
-          <ZonePermissionMatrix selected={selectedPerms} saved={role.permissions} dirty={dirty} busy={permBusy} disabled={busy || blocked || status !== 'ready' || gone || behind || Boolean(mine?.ambiguous) || mine?.error?.code === 'role_deleted'}
+          <ZonePermissionMatrix roleName={role.name} selected={selectedPerms} saved={role.permissions} dirty={dirty} busy={permBusy} disabled={busy || blocked || status !== 'ready' || gone || behind || Boolean(mine?.ambiguous) || mine?.error?.code === 'role_deleted'}
             onToggle={toggle} onSelect={edit} onAll={() => edit([...ZONE_KEYS])} onNone={() => edit([])} onSave={savePermissions} onCancel={() => setDraft(null)}>
             <div aria-live="polite">
               {gone && <div className="rp-alert" role="alert" data-testid="status-permissions-deleted"><strong>This role was deleted</strong><p>Nothing was saved. Your unsaved selection is shown for reference only. Discard it to continue.</p><div className="rp-alert__actions"><button type="button" className="admin-button admin-button--secondary" onClick={() => setDraft(null)} data-testid="button-discard-permission-draft">Discard draft</button></div></div>}
