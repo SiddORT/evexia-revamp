@@ -45,6 +45,9 @@
 .imm-field input:focus, .imm-field select:focus, .imm-field textarea:focus { border-color: var(--admin-focus); box-shadow: 0 0 0 3px var(--admin-focus-shadow); outline: none; }
 .imm-toolbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: flex-end; padding: 10px 16px; border-bottom: 1px solid var(--admin-border); font-size: 12px; color: var(--admin-text-soft); }
 .imm-toolbar__actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.imm-document-menu { width: 248px; max-width: min(calc(100vw - 24px), var(--radix-dropdown-menu-content-available-width)); max-height: var(--radix-dropdown-menu-content-available-height); overflow-y: auto; }
+.imm-document-menu .admin-dropdown__item { white-space: normal; overflow-wrap: anywhere; }
+.imm-document-dialog { overflow-wrap: anywhere; }
 .imm-menu-wrap { position: relative; }
 .imm-menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 40; min-width: 200px; max-width: calc(100vw - 32px); padding: 6px; border: 1px solid var(--admin-border); border-radius: 10px; background: var(--admin-surface); box-shadow: var(--shadow-soft); display: grid; gap: 2px; }
 .imm-menu button { text-align: left; padding: 10px 11px; border: 0; border-radius: 7px; background: transparent; color: var(--admin-text); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }

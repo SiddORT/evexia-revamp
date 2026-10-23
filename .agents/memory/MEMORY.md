@@ -77,6 +77,7 @@
 - [Fieldset grid measurements](fieldset-grid-measurements.md) — count rendered columns from field geometry; computed fieldset grid tracks may remain unresolved.
 - [Sales Target performance safety](sales-target-performance-safety.md) — benchmark synthetic disposable data only; index changes need separate review and operator approval.
 - [Orders scope](orders-scope.md) — preserve session-only SPT/Lupin boundaries; keep other Orders workflows driven by separate requirements.
+- [Immunotherapy document approval](immunotherapy-document-approval.md) — row document actions await six distinct user-supplied templates; bulk reference layouts are not approved templates.
 - [Phone legacy compatibility](vendor-phone-compatibility.md) — shared international metadata must retain each master’s distinct historical number acceptance.
 - [Allergen controls scope](allergen-controls-scope.md) — “one unit” means a combined searchable dropdown, not a new measurement-unit field; avoid incidental global selector changes.
 - [Scroll-region accessibility labels](responsive-scroll-overflow.md) — absolutely positioned hidden labels can extend page overflow beyond a correctly scrollable table.

@@ -10,6 +10,8 @@ import TablePagination from '../../components/admin/TablePagination.jsx';
 import OrderListingFilters from '../../components/admin/OrderListingFilters.jsx';
 import OrderTransfers from '../../components/admin/OrderTransfers.jsx';
 import ImmPrintDialog, { PRINT_KINDS } from '../../components/immunotherapy/ImmPrintDialog.jsx';
+import ImmDocumentActions from '../../components/immunotherapy/ImmDocumentActions.jsx';
+import ImmDialog from '../../components/immunotherapy/ImmDialog.jsx';
 import { STATUSES, request, money, shippingRecipient, totalMinor } from '../../services/serverImmunotherapy.js';
 import { createImmunotherapyTransferAdapter } from '../../services/immunotherapyTransfers.js';
 import '../../immunotherapy.css';
@@ -35,6 +37,7 @@ export default function ImmunotherapyOrders() {
   const [selected, setSelected] = useState(() => new Set());
   const { theme, appearance } = useAdminPreferences();
   const [printKind, setPrintKind] = useState('');
+  const [documentRequest, setDocumentRequest] = useState(null);
   const printTrigger = useRef(null);
   const openingPrint = useRef(false);
   const rows = result.items;
@@ -95,7 +98,8 @@ export default function ImmunotherapyOrders() {
     { key: 'status', label: 'Status', render: (o) => <StatusPill status={o.status} /> },
     { key: 'actions', label: 'Actions', render: (o) => <div className="admin-table__actions">
       <Link href={`${BASE}/${o.id}`} className="admin-icon-button" aria-label={`View ${o.number}`} data-testid={`link-imm-view-${o.id}`}><Eye size={16} aria-hidden="true" /></Link>
-      <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button" aria-label={`Edit ${o.number}`} data-testid={`link-imm-edit-${o.id}`}><Pencil size={16} aria-hidden="true" /></Link></div> },
+      <Link href={`${BASE}/${o.id}/edit`} className="admin-icon-button" aria-label={`Edit ${o.number}`} data-testid={`link-imm-edit-${o.id}`}><Pencil size={16} aria-hidden="true" /></Link>
+      {eligible(o) && <ImmDocumentActions order={o} onChoose={(action, order, returnFocusRef) => setDocumentRequest({ action, order: { id: order.id, number: order.number }, returnFocusRef })} />}</div> },
   ];
 
   return <AdminLayout title="IMMUNOTHERAPY"><div className="imm">
@@ -143,5 +147,12 @@ export default function ImmunotherapyOrders() {
       <TablePagination cursorMode sectionCount={rows.length} page={pager.page} pageCount={pager.pageCount} pageSize={pager.pageSize} filtered={result.filtered} total={result.total} label="orders" testId="text-imm-count" onPageChange={pager.setPage} onPageSizeChange={pager.setPageSize} />
     </section>
     {printKind && <ImmPrintDialog kind={printKind} orders={printOrders} returnFocusRef={printTrigger} onClose={() => setPrintKind('')} />}
+    {documentRequest && <ImmDialog title={documentRequest.action.document} eyebrow={`Order ${documentRequest.order.number}`}
+      className="imm-dialog--sm imm-document-dialog" returnFocusRef={documentRequest.returnFocusRef} onClose={() => setDocumentRequest(null)}
+      description={`The ${documentRequest.action.document.toLowerCase()} template for order ${documentRequest.order.number} is not configured yet. Its distinct template will be added in Settings later. Nothing has been printed or downloaded.`}>
+      <div className="admin-dialog__actions">
+        <button type="button" className="admin-button admin-button--secondary" onClick={() => setDocumentRequest(null)}>Close</button>
+      </div>
+    </ImmDialog>}
   </div></AdminLayout>;
 }
