@@ -108,7 +108,9 @@ export default function OrderTransfers({ kind, rows, snapshot, store, adapter, t
     </div>;
   return <div className="order-transfers">
     {renderActions ? renderActions(actions) : actions}
-    {kind !== 'immunotherapy' && <p className="order-transfer-scope">Export: all {rows.length} filtered orders across all pages, not only the current page. Local session data; Attachment metadata only, never file contents.</p>}
+    {kind !== 'immunotherapy' && <p className="order-transfer-scope">{adapter
+      ? 'Export: saved server orders matching the currently applied filters across all pages, not only this section. Attachment metadata only; file contents are not included.'
+      : `Export: all ${rows.length} filtered orders across all pages, not only the current page. Local session data; attachment metadata only, never file contents.`}</p>}
     {message && <p role="status" className="order-transfer-message">{message}</p>}
     {error && !open && <p role="alert" className="order-transfer-error">{error}</p>}
     {open && <ImmDialog title={`Import ${title} orders`} eyebrow={adapter ? 'Shared server transfer' : 'Local transfer'} description={adapter ? 'Review validates real master references on the server. Explicit confirmation saves the entire batch atomically. External names and snapshots are not trusted; masters are never created.' : 'Review the file, then confirm additions and any updates. Nothing is uploaded or submitted. Cancelling leaves this session unchanged.'} onClose={close} returnFocusRef={trigger} className="order-transfer-dialog">

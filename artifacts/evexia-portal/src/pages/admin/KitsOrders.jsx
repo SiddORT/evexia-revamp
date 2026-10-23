@@ -47,18 +47,16 @@ export default function KitsOrders() {
     { key: 'pay', label: 'Payment status', render: (o) => <span className="kits-pill">{o.paymentStatus}</span> },
     { key: 'act', label: 'Action', render: (o) => <Link href={`${BASE}/${o.id}`} className="admin-icon-button" aria-label={`View ${o.number}`}><Eye size={16} aria-hidden="true" /></Link> },
   ];
-  return <AdminLayout title="KITS & CONSUMABLES"><div className="kits">
+  return <AdminLayout title="KITS & CONSUMABLES"><div className="kits kits-listing">
     <OrderTransfers kind="kits" rows={result.items} adapter={createKitsTransferAdapter(applied, refresh)} total={result.filtered ?? result.total}
       renderActions={(actions) => <div className="admin-page-head">
         <div><p className="admin-page-head__eyebrow">Orders</p><h1>Kits &amp; Consumables</h1><p className="admin-page-head__description">Skin prick kits, lancets, applicators and trays ordered for doctors and MRs.</p></div>
         <div className="kits-actions-top">{actions}<Link href={`${BASE}/new`} className="admin-button" data-testid="kits-add"><Plus size={16} aria-hidden="true" />Add Order</Link></div>
       </div>} />
-    {error && <p role="alert">{error} <button type="button" className="kits-link" onClick={refresh}>Retry</button></p>}
-    {loading && <p role="status">Loading saved orders…</p>}
-    <section className="admin-panel kits-panel" aria-label="Kits and consumables orders" style={{ padding: 0 }}>
+    <section className="admin-panel kits-panel kits-listing__panel" aria-label="Kits and consumables orders">
       <OrderListingFilters masterDisclosure refreshLabel="Refresh saved orders" onRefresh={refresh} onReset={reset}
         onApply={(e) => { e.preventDefault(); setApplied({ ...draft }); resetPage(); }} search={
-          <label className="kits-field">Search<span><Search size={15} aria-hidden="true" /><input maxLength={200} value={draft.search} onChange={(e) => set({ search: e.target.value })} placeholder="Order, person, product or remarks" /></span></label>
+          <label className="kits-field">Search<span className="kits-listing__search-control"><Search size={16} aria-hidden="true" /><input maxLength={200} value={draft.search} onChange={(e) => set({ search: e.target.value })} placeholder="Order, person, product or remarks" /></span></label>
         }>
         <label className="kits-field">From<input type="date" value={draft.from_date} max={draft.to_date || undefined} onChange={(e) => set({ from_date: e.target.value })} /></label>
         <label className="kits-field">To<input type="date" value={draft.to_date} min={draft.from_date || undefined} onChange={(e) => set({ to_date: e.target.value })} /></label>
@@ -67,10 +65,14 @@ export default function KitsOrders() {
         <label className="kits-field">Order status<select value={draft.status} onChange={(e) => set({ status: e.target.value })}><option value="">All</option>{STATUSES.map((s) => <option key={s}>{s}</option>)}</select></label>
         <label className="kits-field">Order for<select value={draft.order_for} onChange={(e) => set({ order_for: e.target.value })}><option value="">All</option><option value="doctor">Doctor</option><option value="mr">MR</option></select></label>
       </OrderListingFilters>
-      <DataTable columns={columns} rows={result.items} rowOffset={(page - 1) * pageSize} rowKey={(o) => o.id} label="Kits orders (scrolls horizontally)" testIdPrefix="kits"
-        empty={<div className="kits-empty"><strong>{loading ? 'Loading…' : error ? 'Orders unavailable' : 'No orders in this section'}</strong><p>{result.nextCursor ? 'Continue to the next section to search more saved records.' : 'Adjust filters or add an order to begin.'}</p></div>} />
-      <TablePagination cursorMode sectionCount={result.items.length} page={page} pageCount={page + (result.nextCursor ? 1 : 0)} pageSize={pageSize}
-        filtered={result.filtered} total={result.total} label="orders" testId="kits-count" onPageChange={changePage} onPageSizeChange={(size) => { setPageSize(size); resetPage(); }} />
+      {loading ? <div className="kits-listing__state" role="status"><strong>Loading saved orders…</strong><p>Fetching this server section using the applied filters.</p></div>
+        : error ? <div className="kits-listing__state kits-listing__state--error" role="alert"><strong>Orders unavailable</strong><p>{error}</p><button type="button" className="admin-button admin-button--secondary" onClick={refresh}>Retry loading orders</button></div>
+        : <>
+          <DataTable columns={columns} rows={result.items} rowOffset={(page - 1) * pageSize} rowKey={(o) => o.id} label="Kits orders (scrolls horizontally)" testIdPrefix="kits"
+            empty={<div className="kits-listing__state"><strong>{result.total === 0 ? 'No saved orders yet' : 'No matching orders in this section'}</strong><p>{result.nextCursor ? 'Continue to the next section to search more saved records, or adjust the filters.' : result.total === 0 ? 'Use Add Order to create a kits and consumables order.' : 'Try a different search or reset the filters to browse saved orders.'}</p></div>} />
+          <TablePagination cursorMode sectionCount={result.items.length} page={page} pageCount={page + (result.nextCursor ? 1 : 0)} pageSize={pageSize}
+            filtered={result.filtered} total={result.total} label="orders" testId="kits-count" onPageChange={changePage} onPageSizeChange={(size) => { setPageSize(size); resetPage(); }} />
+        </>}
     </section>
   </div></AdminLayout>;
 }
