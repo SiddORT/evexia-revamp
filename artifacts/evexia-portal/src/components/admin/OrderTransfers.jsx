@@ -53,7 +53,7 @@ export default function OrderTransfers({ kind, rows, snapshot, store, adapter, t
         const filename = `${kind}-orders${template ? '-template' : ''}.${selectedFormat}`;
         if (adapter.release) await adapter.release(blob, filename, template, selectedFormat);
         else releaseBlob(blob, filename);
-        setMessage(template ? 'Blank server-order template downloaded. Use real master IDs; attachment metadata does not restore files.' : 'All authoritative filtered saved orders downloaded, including historical snapshots. File contents excluded.');
+        setMessage(adapter.downloadMessage?.(template) || (template ? 'Blank server-order template downloaded. Use real master IDs; attachment metadata does not restore files.' : 'All authoritative filtered saved orders downloaded, including historical snapshots. File contents excluded.'));
         return;
       }
       const source = template ? orderTemplate(kind) : snapshot;
@@ -82,14 +82,15 @@ export default function OrderTransfers({ kind, rows, snapshot, store, adapter, t
       committing.current = true; setBusy(true);
       if (adapter) await adapter.commit(review, confirmed);
       else store.importOrders(review, confirmed);
-      const text = `${review.additions} added, ${review.updates} updated, ${review.unchanged} unchanged. No orders deleted. ${adapter ? 'Saved atomically on the shared server. Attachment metadata did not restore files.' : 'Changes are in this session only.'}`;
+      const text = `${review.additions} added, ${review.updates} updated, ${review.unchanged} unchanged. No orders deleted. ${adapter ? (adapter.savedMessage || 'Saved atomically on the shared server. Attachment metadata did not restore files.') : 'Changes are in this session only.'}`;
       committing.current = false; setUncertain(false);
       // Close explicitly after a confirmed response, including a safe retry.
       generation.current++; setOpen(false); setBusy(false); setReview(null); setConfirmed(false); setError(''); setFileName('');
       setMessage(text);
     } catch (e) {
-      committing.current = false; setBusy(false); setUncertain(Boolean(adapter && e.ambiguous));
-      setError(`${e.message || 'Import was not applied. Review the file again.'}${adapter && e.ambiguous ? ' Keep this review open and retry the identical confirmed import; do not create a new batch.' : ''}`);
+      const outcomeUnknown = Boolean(adapter && (e.ambiguous || (adapter.retainUncertain && uncertain)));
+      committing.current = false; setBusy(false); setUncertain(outcomeUnknown);
+      setError(`${e.message || 'Import was not applied. Review the file again.'}${outcomeUnknown ? ' Keep this review open and retry the identical confirmed import; do not create a new batch.' : ''}`);
     }
   }
   const actions = <div className="order-transfer-actions">
@@ -109,14 +110,14 @@ export default function OrderTransfers({ kind, rows, snapshot, store, adapter, t
   return <div className="order-transfers">
     {renderActions ? renderActions(actions) : actions}
     {kind !== 'immunotherapy' && kind !== 'kits' && <p className="order-transfer-scope">{adapter
-      ? 'Export: saved server orders matching the currently applied filters across all pages, not only this section. Attachment metadata only; file contents are not included.'
+      ? (adapter.scope || 'Export: saved server orders matching the currently applied filters across all pages, not only this section. Attachment metadata only; file contents are not included.')
       : `Export: all ${rows.length} filtered orders across all pages, not only the current page. Local session data; attachment metadata only, never file contents.`}</p>}
     {message && <p role="status" className="order-transfer-message">{message}</p>}
     {error && !open && <p role="alert" className="order-transfer-error">{error}</p>}
-    {open && <ImmDialog title={`Import ${title} orders`} eyebrow={adapter ? 'Shared server transfer' : 'Local transfer'} description={adapter ? 'Review validates real master references on the server. Explicit confirmation saves the entire batch atomically. External names and snapshots are not trusted; masters are never created.' : 'Review the file, then confirm additions and any updates. Nothing is uploaded or submitted. Cancelling leaves this session unchanged.'} onClose={close} returnFocusRef={trigger} className="order-transfer-dialog">
+    {open && <ImmDialog title={`Import ${title} orders`} eyebrow={adapter ? 'Shared server transfer' : 'Local transfer'} description={adapter ? (adapter.description || 'Review validates real master references on the server. Explicit confirmation saves the entire batch atomically. External names and snapshots are not trusted; masters are never created.') : 'Review the file, then confirm additions and any updates. Nothing is uploaded or submitted. Cancelling leaves this session unchanged.'} onClose={close} returnFocusRef={trigger} className="order-transfer-dialog">
       <div className="order-transfer-dialog-fields">
         <p>{adapter?.instructions || <>Use the eight-column template. Order details and patient relationships are JSON; keep decimal values in quoted text. Preserve the declared date context, or use ISO YYYY-MM-DD. {adapter ? 'The template is blank; use real master UUIDs, supported dosage/results and nonempty bottles. Legacy PO numbers are ignored.' : 'The template contains one fictional example—replace or remove it.'}</>}</p>
-        <p>{adapter ? 'Keep original order ID, number and exported version for matching updates. For new orders, leave ID and number blank; numbering is server assigned. Legacy patient/snapshot columns are ignored, not used to create masters. Attachment metadata cannot restore uploads: existing saved file associations remain unchanged and new orders import without files.' : 'Keep the original order ID and number to update an order. Give a new order matching sequence identifiers. Patient directory conflicts are rejected, not overwritten. Saved recipient/billing snapshots are retained.'} No order is deleted because it is absent from the file.</p>
+        <p>{adapter?.matching || <>{adapter ? 'Keep original order ID, number and exported version for matching updates. For new orders, leave ID and number blank; numbering is server assigned. Legacy patient/snapshot columns are ignored, not used to create masters. Attachment metadata cannot restore uploads: existing saved file associations remain unchanged and new orders import without files.' : 'Keep the original order ID and number to update an order. Give a new order matching sequence identifiers. Patient directory conflicts are rejected, not overwritten. Saved recipient/billing snapshots are retained.'} No order is deleted because it is absent from the file.</>}</p>
         <label className="order-transfer-format">Template file format
           <select value={format} disabled={exporting} onChange={(e) => setFormat(e.target.value)}><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option></select>
         </label>

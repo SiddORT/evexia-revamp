@@ -1,6 +1,6 @@
 import * as imm from './immunotherapyDemo.js';
 import * as kits from './serverKits.js';
-import * as spt from './sptOrdersDemo.js';
+import * as spt from './serverSpt.js';
 import * as lupin from './lupinOrdersDemo.js';
 import { DATE_FORMATS, formatCalendarDate } from './datePresentation.js';
 import { exportDate } from './exportDatePresentation.js';
@@ -160,7 +160,7 @@ function identifiers(kind, id, number) {
   insist(match && number === `DEMO-${config.prefix}-${String(Number(match[1])).padStart(4, '0')}`, 'Order ID and number must use matching sequence numbers from the template (up to 12 digits).');
 }
 export async function reviewOrderFile(kind, file, snapshot) {
-  insist(kind !== 'kits', 'Kits imports require authenticated server review; session-only transfers are not supported.');
+  insist(!['kits', 'spt'].includes(kind), 'Kits and SPT imports require authenticated server review; session-only transfers are not supported.');
   insist(Object.hasOwn(ORDER_TRANSFER_TYPES, kind), 'Unknown order type.');
   insist(file && file.size > 0 && file.size <= TRANSFER_MAX_BYTES, 'Choose a nonempty CSV or XLSX file up to 8 MB.');
   let rows;
@@ -191,7 +191,7 @@ export async function reviewOrderFile(kind, file, snapshot) {
   return planSessionOrders(snapshot, incoming);
 }
 export function orderTransferBlob(kind, orders, snapshot, preferences, format) {
-  insist(kind !== 'kits', 'Kits exports require the authoritative saved-order endpoint.');
+  insist(!['kits', 'spt'].includes(kind), 'Kits and SPT exports require the authoritative saved-order endpoint.');
   insist(Object.hasOwn(ORDER_TRANSFER_TYPES, kind) && ['csv', 'xlsx'].includes(format), 'Choose a supported order type and file format.');
   insist(orders.length <= TRANSFER_MAX_ROWS, 'Transfer at most 10,000 filtered orders at a time. Narrow the filters and export again.');
   const context = JSON.stringify({ dateFormat: preferences.dateFormat, timeZone: preferences.resolvedTimeZone || preferences.timeZone, clock: preferences.clock, cellEncoding: 'apostrophe-v1' });
@@ -221,7 +221,7 @@ export function orderTransferBlob(kind, orders, snapshot, preferences, format) {
 // Deliberately fictional, independent of the user's orders. The high example
 // sequence avoids accidentally replacing seeded records; users choose local IDs.
 export function orderTemplate(kind) {
-  insist(kind !== 'kits', 'Use the blank authenticated Kits transfer template.');
+  insist(!['kits', 'spt'].includes(kind), 'Use the blank authenticated server transfer template.');
   const n = 900001, config = ORDER_TRANSFER_TYPES[kind];
   const base = { id: `demo-${config.slug}-${n}`, number: `DEMO-${config.prefix}-${n}`, date: '2026-10-23',
     doctorId: config.domain.DOCTORS[0].id, mrId: config.domain.MRS[0].id, remarks: 'Template example — replace or remove before import.', status: 'Confirmed' };

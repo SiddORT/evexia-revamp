@@ -1455,6 +1455,36 @@ export const editSalesTargetResponseStartYearMax = 9998;
 export const setSalesTargetStatusResponseEndYearMin = 2;
 export const setSalesTargetStatusResponseEndYearMax = 9999;
 export const setSalesTargetStatusResponseStartYearMax = 9998;
+export const listSptOrdersQueryLimitDefault = 25;
+export const listSptOrdersQueryLimitMax = 100;
+export const listSptOrdersQuerySearchMax = 200;
+export const createSptOrderBodyPatientsItemAmountMax = 16;
+export const createSptOrderBodyPatientsMax = 200;
+export const createSptOrderBodyRemarksMax = 4000;
+export const exportSptOrdersQuerySearchMax = 200;
+export const commitSptImportBodyConfirmUpdatesDefault = false;
+export const commitSptImportBodyEntriesItemNumberMax = 48;
+export const commitSptImportBodyEntriesItemValuesPatientsItemAmountMax = 16;
+export const commitSptImportBodyEntriesItemValuesPatientsMax = 200;
+export const commitSptImportBodyEntriesItemValuesRemarksMax = 4000;
+export const commitSptImportBodyEntriesMax = 500;
+export const commitSptImportBodyReviewTokenMax = 256;
+export const reviewSptImportBodyConfirmUpdatesDefault = false;
+export const reviewSptImportBodyEntriesItemNumberMax = 48;
+export const reviewSptImportBodyEntriesItemValuesPatientsItemAmountMax = 16;
+export const reviewSptImportBodyEntriesItemValuesPatientsMax = 200;
+export const reviewSptImportBodyEntriesItemValuesRemarksMax = 4000;
+export const reviewSptImportBodyEntriesMax = 500;
+export const reviewSptImportBodyReviewTokenMax = 256;
+export const registerSptPatientBodyAgeMin = 0;
+export const registerSptPatientBodyAgeMax = 120;
+export const registerSptPatientBodyNameMax = 100;
+export const sptReferencesQuerySearchMax = 200;
+export const sptReferencesQueryLimitDefault = 25;
+export const sptReferencesQueryLimitMax = 100;
+export const editSptDraftBodyPatientsItemAmountMax = 16;
+export const editSptDraftBodyPatientsMax = 200;
+export const editSptDraftBodyRemarksMax = 4000;
 export const listStaffQueryLimitDefault = 20;
 export const listStaffQueryLimitMax = 100;
 export const listStaffQueryOffsetDefault = 0;
@@ -25893,6 +25923,528 @@ export const SetSalesTargetStatusResponse = zod.object({
   version: zod.number().int(),
   zoneId: zod.string().uuid(),
   zoneName: zod.string(),
+});
+
+/**
+ * @summary Listing
+ */
+
+export const listSptOrdersQuerySearchDefault = ``;
+
+export const ListSptOrdersQueryParams = zod.object({
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(listSptOrdersQueryLimitMax)
+    .default(listSptOrdersQueryLimitDefault),
+  search: zod.coerce
+    .string()
+    .max(listSptOrdersQuerySearchMax)
+    .default(listSptOrdersQuerySearchDefault),
+  status: zod.union([zod.enum(["Draft", "Saved"]), zod.null()]).optional(),
+  doctor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  patient_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+});
+
+export const ListSptOrdersResponse = zod.object({
+  filtered: zod.union([zod.number().int(), zod.null()]),
+  items: zod.array(
+    zod.object({
+      date: zod.string(),
+      doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+      doctorId: zod.union([zod.string().uuid(), zod.null()]),
+      doctorName: zod.string(),
+      id: zod.string().uuid(),
+      mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+      mrId: zod.union([zod.string().uuid(), zod.null()]),
+      mrName: zod.string(),
+      number: zod.string(),
+      patients: zod.array(
+        zod.object({
+          age: zod.number().int(),
+          amount: zod.string(),
+          code: zod.string(),
+          gender: zod.string(),
+          id: zod.string().uuid(),
+          name: zod.string(),
+          source: zod.enum(["master", "spt"]),
+        }),
+      ),
+      remarks: zod.string(),
+      sourceId: zod.string().uuid(),
+      status: zod.enum(["Draft", "Saved"]),
+      total: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Create
+ */
+
+export const createSptOrderBodyPatientsItemAmountDefault = ``;
+
+export const createSptOrderBodyRemarksDefault = ``;
+
+export const createSptOrderBodyStatusDefault = `Draft`;
+
+export const CreateSptOrderBody = zod.object({
+  doctorId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  expected_version: zod
+    .union([zod.number().int().min(1), zod.null()])
+    .optional(),
+  idempotencyKey: zod.string().uuid(),
+  mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  patients: zod
+    .array(
+      zod.object({
+        amount: zod
+          .string()
+          .max(createSptOrderBodyPatientsItemAmountMax)
+          .default(createSptOrderBodyPatientsItemAmountDefault),
+        id: zod.string().uuid(),
+        source: zod.enum(["master", "spt"]),
+      }),
+    )
+    .max(createSptOrderBodyPatientsMax)
+    .optional(),
+  remarks: zod
+    .string()
+    .max(createSptOrderBodyRemarksMax)
+    .default(createSptOrderBodyRemarksDefault),
+  status: zod.enum(["Draft", "Saved"]).default(createSptOrderBodyStatusDefault),
+});
+
+export const CreateSptOrderResponse = zod.object({
+  date: zod.string(),
+  doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  doctorId: zod.union([zod.string().uuid(), zod.null()]),
+  doctorName: zod.string(),
+  id: zod.string().uuid(),
+  mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  mrId: zod.union([zod.string().uuid(), zod.null()]),
+  mrName: zod.string(),
+  number: zod.string(),
+  patients: zod.array(
+    zod.object({
+      age: zod.number().int(),
+      amount: zod.string(),
+      code: zod.string(),
+      gender: zod.string(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      source: zod.enum(["master", "spt"]),
+    }),
+  ),
+  remarks: zod.string(),
+  sourceId: zod.string().uuid(),
+  status: zod.enum(["Draft", "Saved"]),
+  total: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Export
+ */
+export const exportSptOrdersQuerySearchDefault = ``;
+
+export const ExportSptOrdersQueryParams = zod.object({
+  search: zod.coerce
+    .string()
+    .max(exportSptOrdersQuerySearchMax)
+    .default(exportSptOrdersQuerySearchDefault),
+  status: zod.union([zod.enum(["Draft", "Saved"]), zod.null()]).optional(),
+  doctor_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  mr_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  patient_id: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  from_date: zod.union([zod.date(), zod.null()]).optional(),
+  to_date: zod.union([zod.date(), zod.null()]).optional(),
+});
+
+export const ExportSptOrdersResponse = zod.object({
+  filtered: zod.union([zod.number().int(), zod.null()]),
+  items: zod.array(
+    zod.object({
+      date: zod.string(),
+      doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+      doctorId: zod.union([zod.string().uuid(), zod.null()]),
+      doctorName: zod.string(),
+      id: zod.string().uuid(),
+      mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+      mrId: zod.union([zod.string().uuid(), zod.null()]),
+      mrName: zod.string(),
+      number: zod.string(),
+      patients: zod.array(
+        zod.object({
+          age: zod.number().int(),
+          amount: zod.string(),
+          code: zod.string(),
+          gender: zod.string(),
+          id: zod.string().uuid(),
+          name: zod.string(),
+          source: zod.enum(["master", "spt"]),
+        }),
+      ),
+      remarks: zod.string(),
+      sourceId: zod.string().uuid(),
+      status: zod.enum(["Draft", "Saved"]),
+      total: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
+  total: zod.number().int(),
+});
+
+/**
+ * @summary Commit
+ */
+
+export const commitSptImportBodyEntriesItemNumberDefault = ``;
+
+export const commitSptImportBodyEntriesItemValuesPatientsItemAmountDefault = ``;
+
+export const commitSptImportBodyEntriesItemValuesRemarksDefault = ``;
+
+export const commitSptImportBodyEntriesItemValuesStatusDefault = `Draft`;
+
+export const commitSptImportBodyReviewTokenDefault = ``;
+
+export const CommitSptImportBody = zod.object({
+  confirmUpdates: zod
+    .boolean()
+    .default(commitSptImportBodyConfirmUpdatesDefault),
+  entries: zod
+    .array(
+      zod.object({
+        expected_version: zod
+          .union([zod.number().int().min(1), zod.null()])
+          .optional(),
+        id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        number: zod
+          .string()
+          .max(commitSptImportBodyEntriesItemNumberMax)
+          .default(commitSptImportBodyEntriesItemNumberDefault),
+        sourceId: zod.string().uuid(),
+        values: zod.object({
+          doctorId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+          patients: zod
+            .array(
+              zod.object({
+                amount: zod
+                  .string()
+                  .max(
+                    commitSptImportBodyEntriesItemValuesPatientsItemAmountMax,
+                  )
+                  .default(
+                    commitSptImportBodyEntriesItemValuesPatientsItemAmountDefault,
+                  ),
+                id: zod.string().uuid(),
+                source: zod.enum(["master", "spt"]),
+              }),
+            )
+            .max(commitSptImportBodyEntriesItemValuesPatientsMax)
+            .optional(),
+          remarks: zod
+            .string()
+            .max(commitSptImportBodyEntriesItemValuesRemarksMax)
+            .default(commitSptImportBodyEntriesItemValuesRemarksDefault),
+          status: zod
+            .enum(["Draft", "Saved"])
+            .default(commitSptImportBodyEntriesItemValuesStatusDefault),
+        }),
+      }),
+    )
+    .min(1)
+    .max(commitSptImportBodyEntriesMax),
+  idempotencyKey: zod.string().uuid(),
+  reviewToken: zod
+    .string()
+    .max(commitSptImportBodyReviewTokenMax)
+    .default(commitSptImportBodyReviewTokenDefault),
+});
+
+export const CommitSptImportResponse = zod.object({
+  imported: zod.number().int(),
+  orders: zod.array(
+    zod.object({
+      date: zod.string(),
+      doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+      doctorId: zod.union([zod.string().uuid(), zod.null()]),
+      doctorName: zod.string(),
+      id: zod.string().uuid(),
+      mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+      mrId: zod.union([zod.string().uuid(), zod.null()]),
+      mrName: zod.string(),
+      number: zod.string(),
+      patients: zod.array(
+        zod.object({
+          age: zod.number().int(),
+          amount: zod.string(),
+          code: zod.string(),
+          gender: zod.string(),
+          id: zod.string().uuid(),
+          name: zod.string(),
+          source: zod.enum(["master", "spt"]),
+        }),
+      ),
+      remarks: zod.string(),
+      sourceId: zod.string().uuid(),
+      status: zod.enum(["Draft", "Saved"]),
+      total: zod.string(),
+      version: zod.number().int(),
+    }),
+  ),
+});
+
+/**
+ * @summary Review
+ */
+
+export const reviewSptImportBodyEntriesItemNumberDefault = ``;
+
+export const reviewSptImportBodyEntriesItemValuesPatientsItemAmountDefault = ``;
+
+export const reviewSptImportBodyEntriesItemValuesRemarksDefault = ``;
+
+export const reviewSptImportBodyEntriesItemValuesStatusDefault = `Draft`;
+
+export const reviewSptImportBodyReviewTokenDefault = ``;
+
+export const ReviewSptImportBody = zod.object({
+  confirmUpdates: zod
+    .boolean()
+    .default(reviewSptImportBodyConfirmUpdatesDefault),
+  entries: zod
+    .array(
+      zod.object({
+        expected_version: zod
+          .union([zod.number().int().min(1), zod.null()])
+          .optional(),
+        id: zod.union([zod.string().uuid(), zod.null()]).optional(),
+        number: zod
+          .string()
+          .max(reviewSptImportBodyEntriesItemNumberMax)
+          .default(reviewSptImportBodyEntriesItemNumberDefault),
+        sourceId: zod.string().uuid(),
+        values: zod.object({
+          doctorId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+          orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+          patients: zod
+            .array(
+              zod.object({
+                amount: zod
+                  .string()
+                  .max(
+                    reviewSptImportBodyEntriesItemValuesPatientsItemAmountMax,
+                  )
+                  .default(
+                    reviewSptImportBodyEntriesItemValuesPatientsItemAmountDefault,
+                  ),
+                id: zod.string().uuid(),
+                source: zod.enum(["master", "spt"]),
+              }),
+            )
+            .max(reviewSptImportBodyEntriesItemValuesPatientsMax)
+            .optional(),
+          remarks: zod
+            .string()
+            .max(reviewSptImportBodyEntriesItemValuesRemarksMax)
+            .default(reviewSptImportBodyEntriesItemValuesRemarksDefault),
+          status: zod
+            .enum(["Draft", "Saved"])
+            .default(reviewSptImportBodyEntriesItemValuesStatusDefault),
+        }),
+      }),
+    )
+    .min(1)
+    .max(reviewSptImportBodyEntriesMax),
+  idempotencyKey: zod.string().uuid(),
+  reviewToken: zod
+    .string()
+    .max(reviewSptImportBodyReviewTokenMax)
+    .default(reviewSptImportBodyReviewTokenDefault),
+});
+
+export const ReviewSptImportResponse = zod.object({
+  additions: zod.number().int(),
+  entries: zod.array(zod.record(zod.string(), zod.unknown())),
+  patientAdditions: zod.number().int(),
+  rejected: zod.number().int(),
+  reviewToken: zod.string(),
+  unchanged: zod.number().int(),
+  updates: zod.number().int(),
+  valid: zod.boolean(),
+});
+
+/**
+ * @summary Register
+ */
+
+export const RegisterSptPatientBody = zod.object({
+  age: zod
+    .number()
+    .int()
+    .min(registerSptPatientBodyAgeMin)
+    .max(registerSptPatientBodyAgeMax),
+  gender: zod.enum(["Male", "Female", "Other", "Prefer not to say"]),
+  idempotencyKey: zod.string().uuid(),
+  name: zod.string().min(1).max(registerSptPatientBodyNameMax),
+});
+
+export const RegisterSptPatientResponse = zod.object({
+  age: zod.number().int(),
+  code: zod.string(),
+  gender: zod.string(),
+  id: zod.string().uuid(),
+  name: zod.string(),
+  source: zod.enum(["master", "spt"]),
+});
+
+/**
+ * @summary References
+ */
+export const SptReferencesParams = zod.object({
+  kind: zod.enum(["patients", "doctors", "mrs"]),
+});
+
+export const sptReferencesQuerySearchDefault = ``;
+
+export const SptReferencesQueryParams = zod.object({
+  search: zod.coerce
+    .string()
+    .max(sptReferencesQuerySearchMax)
+    .default(sptReferencesQuerySearchDefault),
+  cursor: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+  limit: zod.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(sptReferencesQueryLimitMax)
+    .default(sptReferencesQueryLimitDefault),
+  selected: zod.union([zod.coerce.string().uuid(), zod.null()]).optional(),
+});
+
+export const SptReferencesResponse = zod.object({
+  items: zod.array(zod.record(zod.string(), zod.unknown())),
+  limit: zod.number().int(),
+  nextCursor: zod.union([zod.string().uuid(), zod.null()]),
+});
+
+/**
+ * @summary Detail
+ */
+export const GetSptOrderParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const GetSptOrderResponse = zod.object({
+  date: zod.string(),
+  doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  doctorId: zod.union([zod.string().uuid(), zod.null()]),
+  doctorName: zod.string(),
+  id: zod.string().uuid(),
+  mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  mrId: zod.union([zod.string().uuid(), zod.null()]),
+  mrName: zod.string(),
+  number: zod.string(),
+  patients: zod.array(
+    zod.object({
+      age: zod.number().int(),
+      amount: zod.string(),
+      code: zod.string(),
+      gender: zod.string(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      source: zod.enum(["master", "spt"]),
+    }),
+  ),
+  remarks: zod.string(),
+  sourceId: zod.string().uuid(),
+  status: zod.enum(["Draft", "Saved"]),
+  total: zod.string(),
+  version: zod.number().int(),
+});
+
+/**
+ * @summary Edit
+ */
+export const EditSptDraftParams = zod.object({
+  record_id: zod.coerce.string().uuid(),
+});
+
+export const editSptDraftBodyPatientsItemAmountDefault = ``;
+
+export const editSptDraftBodyRemarksDefault = ``;
+
+export const editSptDraftBodyStatusDefault = `Draft`;
+
+export const EditSptDraftBody = zod.object({
+  doctorId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  expected_version: zod
+    .union([zod.number().int().min(1), zod.null()])
+    .optional(),
+  idempotencyKey: zod.string().uuid(),
+  mrId: zod.union([zod.string().uuid(), zod.null()]).optional(),
+  orderDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  patients: zod
+    .array(
+      zod.object({
+        amount: zod
+          .string()
+          .max(editSptDraftBodyPatientsItemAmountMax)
+          .default(editSptDraftBodyPatientsItemAmountDefault),
+        id: zod.string().uuid(),
+        source: zod.enum(["master", "spt"]),
+      }),
+    )
+    .max(editSptDraftBodyPatientsMax)
+    .optional(),
+  remarks: zod
+    .string()
+    .max(editSptDraftBodyRemarksMax)
+    .default(editSptDraftBodyRemarksDefault),
+  status: zod.enum(["Draft", "Saved"]).default(editSptDraftBodyStatusDefault),
+});
+
+export const EditSptDraftResponse = zod.object({
+  date: zod.string(),
+  doctor: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  doctorId: zod.union([zod.string().uuid(), zod.null()]),
+  doctorName: zod.string(),
+  id: zod.string().uuid(),
+  mr: zod.union([zod.record(zod.string(), zod.unknown()), zod.null()]),
+  mrId: zod.union([zod.string().uuid(), zod.null()]),
+  mrName: zod.string(),
+  number: zod.string(),
+  patients: zod.array(
+    zod.object({
+      age: zod.number().int(),
+      amount: zod.string(),
+      code: zod.string(),
+      gender: zod.string(),
+      id: zod.string().uuid(),
+      name: zod.string(),
+      source: zod.enum(["master", "spt"]),
+    }),
+  ),
+  remarks: zod.string(),
+  sourceId: zod.string().uuid(),
+  status: zod.enum(["Draft", "Saved"]),
+  total: zod.string(),
+  version: zod.number().int(),
 });
 
 /**

@@ -148,6 +148,7 @@ import type {
   ExportReportingEventsParams,
   ExportReportingSessionsParams,
   ExportSalesTargetsParams,
+  ExportSptOrdersParams,
   ExportStockProductsParams,
   ExportStorageLocationsParams,
   ExportVendorsParams,
@@ -241,6 +242,7 @@ import type {
   ListReportingSessionsParams,
   ListReportingUsersParams,
   ListSalesTargetsParams,
+  ListSptOrdersParams,
   ListStaffBusinessRoleChoicesParams,
   ListStaffFilterDesignationsParams,
   ListStaffParams,
@@ -432,6 +434,14 @@ import type {
   SessionListResponse,
   SessionPage,
   SessionResponse,
+  SptImport,
+  SptImportResult,
+  SptPage,
+  SptPatient,
+  SptRecord,
+  SptReferencesParams,
+  SptRegistration,
+  SptWrite,
   StaffAccess,
   StaffCreate,
   StaffCreated,
@@ -28091,6 +28101,968 @@ export const useSetSalesTargetStatus = <
   TContext
 > => {
   return useMutation(getSetSalesTargetStatusMutationOptions(options));
+};
+
+export const getListSptOrdersUrl = (params?: ListSptOrdersParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/spt-orders?${stringifiedParams}`
+    : `/api/v1/admin/spt-orders`;
+};
+
+/**
+ * @summary Listing
+ */
+export const listSptOrders = async (
+  params?: ListSptOrdersParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SptPage> => {
+  return customFetch<SptPage>(getListSptOrdersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListSptOrdersQueryKey = (params?: ListSptOrdersParams) => {
+  return [`/api/v1/admin/spt-orders`, ...(params ? [params] : [])] as const;
+};
+
+export const getListSptOrdersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSptOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListSptOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSptOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListSptOrdersQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listSptOrders>>> = ({
+    signal,
+  }) => listSptOrders(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSptOrders>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListSptOrdersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSptOrders>>
+>;
+export type ListSptOrdersQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Listing
+ */
+
+export function useListSptOrders<
+  TData = Awaited<ReturnType<typeof listSptOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ListSptOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSptOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListSptOrdersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCreateSptOrderUrl = () => {
+  return `/api/v1/admin/spt-orders`;
+};
+
+/**
+ * @summary Create
+ */
+export const createSptOrder = async (
+  sptWrite: SptWrite,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SptRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<SptRecord>(getCreateSptOrderUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(sptWrite),
+  });
+};
+
+export const getCreateSptOrderMutationKey = () => ["createSptOrder"] as const;
+
+export const getCreateSptOrderMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSptOrder>>,
+    TError,
+    CreateSptOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createSptOrder>>,
+  TError,
+  CreateSptOrderMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCreateSptOrderMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createSptOrder>>,
+    CreateSptOrderMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createSptOrder(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateSptOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createSptOrder>>
+>;
+export type CreateSptOrderMutationBody = BodyType<SptWrite>;
+export type CreateSptOrderMutationError = ErrorType<ErrorEnvelope>;
+export type CreateSptOrderMutationVariables = { data: BodyType<SptWrite> };
+
+/**
+ * @summary Create
+ */
+export const useCreateSptOrder = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSptOrder>>,
+    TError,
+    CreateSptOrderMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createSptOrder>>,
+  TError,
+  CreateSptOrderMutationVariables,
+  TContext
+> => {
+  return useMutation(getCreateSptOrderMutationOptions(options));
+};
+
+export const getExportSptOrdersUrl = (params?: ExportSptOrdersParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/spt-orders/export?${stringifiedParams}`
+    : `/api/v1/admin/spt-orders/export`;
+};
+
+/**
+ * @summary Export
+ */
+export const exportSptOrders = async (
+  params?: ExportSptOrdersParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SptPage> => {
+  return customFetch<SptPage>(getExportSptOrdersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportSptOrdersQueryKey = (params?: ExportSptOrdersParams) => {
+  return [
+    `/api/v1/admin/spt-orders/export`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getExportSptOrdersQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportSptOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportSptOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportSptOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getExportSptOrdersQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof exportSptOrders>>> = ({
+    signal,
+  }) => exportSptOrders(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportSptOrders>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportSptOrdersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportSptOrders>>
+>;
+export type ExportSptOrdersQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Export
+ */
+
+export function useExportSptOrders<
+  TData = Awaited<ReturnType<typeof exportSptOrders>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  params?: ExportSptOrdersParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportSptOrders>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportSptOrdersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCommitSptImportUrl = () => {
+  return `/api/v1/admin/spt-orders/import/commit`;
+};
+
+/**
+ * @summary Commit
+ */
+export const commitSptImport = async (
+  sptImport: SptImport,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SptImportResult> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<SptImportResult>(getCommitSptImportUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(sptImport),
+  });
+};
+
+export const getCommitSptImportMutationKey = () => ["commitSptImport"] as const;
+
+export const getCommitSptImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitSptImport>>,
+    TError,
+    CommitSptImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof commitSptImport>>,
+  TError,
+  CommitSptImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCommitSptImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof commitSptImport>>,
+    CommitSptImportMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return commitSptImport(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CommitSptImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof commitSptImport>>
+>;
+export type CommitSptImportMutationBody = BodyType<SptImport>;
+export type CommitSptImportMutationError = ErrorType<ErrorEnvelope>;
+export type CommitSptImportMutationVariables = { data: BodyType<SptImport> };
+
+/**
+ * @summary Commit
+ */
+export const useCommitSptImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof commitSptImport>>,
+    TError,
+    CommitSptImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof commitSptImport>>,
+  TError,
+  CommitSptImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getCommitSptImportMutationOptions(options));
+};
+
+export const getReviewSptImportUrl = () => {
+  return `/api/v1/admin/spt-orders/import/review`;
+};
+
+/**
+ * @summary Review
+ */
+export const reviewSptImport = async (
+  sptImport: SptImport,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmImportReview> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<ImmImportReview>(getReviewSptImportUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(sptImport),
+  });
+};
+
+export const getReviewSptImportMutationKey = () => ["reviewSptImport"] as const;
+
+export const getReviewSptImportMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewSptImport>>,
+    TError,
+    ReviewSptImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewSptImport>>,
+  TError,
+  ReviewSptImportMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReviewSptImportMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewSptImport>>,
+    ReviewSptImportMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return reviewSptImport(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewSptImportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewSptImport>>
+>;
+export type ReviewSptImportMutationBody = BodyType<SptImport>;
+export type ReviewSptImportMutationError = ErrorType<ErrorEnvelope>;
+export type ReviewSptImportMutationVariables = { data: BodyType<SptImport> };
+
+/**
+ * @summary Review
+ */
+export const useReviewSptImport = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewSptImport>>,
+    TError,
+    ReviewSptImportMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewSptImport>>,
+  TError,
+  ReviewSptImportMutationVariables,
+  TContext
+> => {
+  return useMutation(getReviewSptImportMutationOptions(options));
+};
+
+export const getRegisterSptPatientUrl = () => {
+  return `/api/v1/admin/spt-orders/patients`;
+};
+
+/**
+ * @summary Register
+ */
+export const registerSptPatient = async (
+  sptRegistration: SptRegistration,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SptPatient> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<SptPatient>(getRegisterSptPatientUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(sptRegistration),
+  });
+};
+
+export const getRegisterSptPatientMutationKey = () =>
+  ["registerSptPatient"] as const;
+
+export const getRegisterSptPatientMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerSptPatient>>,
+    TError,
+    RegisterSptPatientMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof registerSptPatient>>,
+  TError,
+  RegisterSptPatientMutationVariables,
+  TContext
+> => {
+  const mutationKey = getRegisterSptPatientMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof registerSptPatient>>,
+    RegisterSptPatientMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return registerSptPatient(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RegisterSptPatientMutationResult = NonNullable<
+  Awaited<ReturnType<typeof registerSptPatient>>
+>;
+export type RegisterSptPatientMutationBody = BodyType<SptRegistration>;
+export type RegisterSptPatientMutationError = ErrorType<ErrorEnvelope>;
+export type RegisterSptPatientMutationVariables = {
+  data: BodyType<SptRegistration>;
+};
+
+/**
+ * @summary Register
+ */
+export const useRegisterSptPatient = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerSptPatient>>,
+    TError,
+    RegisterSptPatientMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof registerSptPatient>>,
+  TError,
+  RegisterSptPatientMutationVariables,
+  TContext
+> => {
+  return useMutation(getRegisterSptPatientMutationOptions(options));
+};
+
+export const getSptReferencesUrl = (
+  kind: "patients" | "doctors" | "mrs",
+  params?: SptReferencesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/admin/spt-orders/references/${kind}?${stringifiedParams}`
+    : `/api/v1/admin/spt-orders/references/${kind}`;
+};
+
+/**
+ * @summary References
+ */
+export const sptReferences = async (
+  kind: "patients" | "doctors" | "mrs",
+  params?: SptReferencesParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ImmReferencePage> => {
+  return customFetch<ImmReferencePage>(getSptReferencesUrl(kind, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getSptReferencesQueryKey = (
+  kind: "patients" | "doctors" | "mrs",
+  params?: SptReferencesParams,
+) => {
+  return [
+    `/api/v1/admin/spt-orders/references/${kind}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getSptReferencesQueryOptions = <
+  TData = Awaited<ReturnType<typeof sptReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "patients" | "doctors" | "mrs",
+  params?: SptReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof sptReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getSptReferencesQueryKey(kind, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof sptReferences>>> = ({
+    signal,
+  }) => sptReferences(kind, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: kind !== null && kind !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof sptReferences>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type SptReferencesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof sptReferences>>
+>;
+export type SptReferencesQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary References
+ */
+
+export function useSptReferences<
+  TData = Awaited<ReturnType<typeof sptReferences>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  kind: "patients" | "doctors" | "mrs",
+  params?: SptReferencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof sptReferences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getSptReferencesQueryOptions(kind, params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetSptOrderUrl = (recordId: string) => {
+  return `/api/v1/admin/spt-orders/${recordId}`;
+};
+
+/**
+ * @summary Detail
+ */
+export const getSptOrder = async (
+  recordId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SptRecord> => {
+  return customFetch<SptRecord>(getGetSptOrderUrl(recordId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSptOrderQueryKey = (recordId: string) => {
+  return [`/api/v1/admin/spt-orders/${recordId}`] as const;
+};
+
+export const getGetSptOrderQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSptOrder>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSptOrder>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetSptOrderQueryKey(recordId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getSptOrder>>> = ({
+    signal,
+  }) => getSptOrder(recordId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: recordId !== null && recordId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSptOrder>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSptOrderQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSptOrder>>
+>;
+export type GetSptOrderQueryError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Detail
+ */
+
+export function useGetSptOrder<
+  TData = Awaited<ReturnType<typeof getSptOrder>>,
+  TError = ErrorType<ErrorEnvelope>,
+>(
+  recordId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSptOrder>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSptOrderQueryOptions(recordId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getEditSptDraftUrl = (recordId: string) => {
+  return `/api/v1/admin/spt-orders/${recordId}/edit`;
+};
+
+/**
+ * @summary Edit
+ */
+export const editSptDraft = async (
+  recordId: string,
+  sptWrite: SptWrite,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SptRecord> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return customFetch<SptRecord>(getEditSptDraftUrl(recordId), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(sptWrite),
+  });
+};
+
+export const getEditSptDraftMutationKey = () => ["editSptDraft"] as const;
+
+export const getEditSptDraftMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editSptDraft>>,
+    TError,
+    EditSptDraftMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editSptDraft>>,
+  TError,
+  EditSptDraftMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditSptDraftMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editSptDraft>>,
+    EditSptDraftMutationVariables
+  > = (props) => {
+    const { recordId, data } = props ?? {};
+
+    return editSptDraft(recordId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditSptDraftMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editSptDraft>>
+>;
+export type EditSptDraftMutationBody = BodyType<SptWrite>;
+export type EditSptDraftMutationError = ErrorType<ErrorEnvelope>;
+export type EditSptDraftMutationVariables = {
+  recordId: string;
+  data: BodyType<SptWrite>;
+};
+
+/**
+ * @summary Edit
+ */
+export const useEditSptDraft = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editSptDraft>>,
+    TError,
+    EditSptDraftMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof editSptDraft>>,
+  TError,
+  EditSptDraftMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditSptDraftMutationOptions(options));
 };
 
 export const getListStaffUrl = (params?: ListStaffParams) => {

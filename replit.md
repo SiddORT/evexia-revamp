@@ -305,6 +305,12 @@ EVEXIA Life Sciences portal with protected Admin and MR workspaces, a separate f
 
 ## Where things live
 
+- Admin SPT uses protected persistent orders and SPT-only registrations, not
+  Patient Master creation or login provisioning. Its source-only delivery ran
+  no tests, builds, runtime checks, restarts, migrations or deployments.
+  Runtime behavior remains unverified. See `docs/spt-orders.md` for encryption,
+  historical snapshots, Draft/Saved semantics and transfer/activation limits.
+
 - Admin Immunotherapy uses protected server orders and encrypted historical
   snapshots, not the retained legacy demo/transfer fixture module. Its backend
   delivery is source-only: no tests, builds, runtime checks, service restarts or

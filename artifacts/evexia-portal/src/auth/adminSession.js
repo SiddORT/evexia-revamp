@@ -929,7 +929,9 @@ export async function openingStockRequest(path = '', { body, params = {}, signal
 }
 export const productMasterRequest = (path, options) => purchaseOrderRequest(path, options, 'products');
 export async function purchaseOrderRequest(path = '', { body, params = {}, signal, method, file, download } = {}, resource = 'purchase-orders') {
-  const allowed = ['immunotherapy-orders', 'kits-orders'].includes(resource)
+  const allowed = resource === 'spt-orders'
+    ? /^(?:|\/(?:export|patients|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
+    : ['immunotherapy-orders', 'kits-orders'].includes(resource)
     ? /^(?:|\/(?:export|policy|import\/(?:review|commit))|\/references\/(?:patients|doctors|mrs|allergens)|\/[0-9a-f-]{36}(?:\/edit)?)$/i
     : resource === 'products'
     ? /^(?:|\/sample|\/export|\/import\/(?:review|commit)|\/references|\/filter-references\/(?:categories|allergens)|\/assemblies(?:\/preview|\/[0-9a-f-]{36})?|\/requests\/[0-9a-f-]{36}|\/[0-9a-f-]{36}(?:\/(?:status|activity|analytics|assemblies))?)$/i
@@ -1034,6 +1036,12 @@ export async function purchaseOrderRequest(path = '', { body, params = {}, signa
     } else if (data?.idempotencyKey !== body?.idempotencyKey || !Array.isArray(data.lines)
       || data.lines.length !== body.lineIds.length || new Set(data.lines.map((line) => line?.lineId)).size !== body.lineIds.length
       || data.lines.some((line) => !line || !body.lineIds.includes(line.lineId) || typeof line.batchNo !== 'string' || !line.batchNo.trim() || line.batchNo.length > 120)) throw uncertain();
+  } else if (mutation && resource === 'spt-orders') {
+    if (path === '/import/commit') {
+      if (!Number.isInteger(data?.imported) || !Array.isArray(data.orders) || data.orders.length !== data.imported) throw uncertain();
+    } else if (path === '/patients') {
+      if (!data?.id || data.source !== 'spt' || typeof data.name !== 'string') throw uncertain();
+    } else if (!data?.id || !data?.number || !Number.isInteger(data.version) || !Array.isArray(data.patients)) throw uncertain();
   } else if (mutation && resource === 'kits-orders') {
     if (path === '/import/commit') {
       if (data?.imported !== body.entries.length || !Array.isArray(data.orders)) throw uncertain();

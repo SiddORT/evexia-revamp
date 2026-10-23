@@ -8159,6 +8159,184 @@ export interface SessionPage {
   offset: number;
 }
 
+export type SptPatientInputSource =
+  (typeof SptPatientInputSource)[keyof typeof SptPatientInputSource];
+
+export const SptPatientInputSource = {
+  master: "master",
+  spt: "spt",
+} as const;
+
+export interface SptPatientInput {
+  /** @maxLength 16 */
+  amount?: string;
+  id: string;
+  source: SptPatientInputSource;
+}
+
+export type SptInputStatus =
+  (typeof SptInputStatus)[keyof typeof SptInputStatus];
+
+export const SptInputStatus = {
+  Draft: "Draft",
+  Saved: "Saved",
+} as const;
+
+export interface SptInput {
+  doctorId?: string | null;
+  mrId?: string | null;
+  orderDate?: string | null;
+  /** @maxItems 200 */
+  patients?: SptPatientInput[];
+  /** @maxLength 4000 */
+  remarks?: string;
+  status?: SptInputStatus;
+}
+
+export interface SptImportEntry {
+  expected_version?: number | null;
+  id?: string | null;
+  /** @maxLength 48 */
+  number?: string;
+  sourceId: string;
+  values: SptInput;
+}
+
+export interface SptImport {
+  confirmUpdates?: boolean;
+  /**
+   * @minItems 1
+   * @maxItems 500
+   */
+  entries: SptImportEntry[];
+  idempotencyKey: string;
+  /** @maxLength 256 */
+  reviewToken?: string;
+}
+
+export type SptPatientSnapshotSource =
+  (typeof SptPatientSnapshotSource)[keyof typeof SptPatientSnapshotSource];
+
+export const SptPatientSnapshotSource = {
+  master: "master",
+  spt: "spt",
+} as const;
+
+export interface SptPatientSnapshot {
+  age: number;
+  amount: string;
+  code: string;
+  gender: string;
+  id: string;
+  name: string;
+  source: SptPatientSnapshotSource;
+}
+
+export type SptRecordStatus =
+  (typeof SptRecordStatus)[keyof typeof SptRecordStatus];
+
+export const SptRecordStatus = {
+  Draft: "Draft",
+  Saved: "Saved",
+} as const;
+
+export type SptRecordDoctor = { [key: string]: unknown } | null;
+
+export type SptRecordMr = { [key: string]: unknown } | null;
+
+export interface SptRecord {
+  date: string;
+  doctor: SptRecordDoctor;
+  doctorId: string | null;
+  doctorName: string;
+  id: string;
+  mr: SptRecordMr;
+  mrId: string | null;
+  mrName: string;
+  number: string;
+  patients: SptPatientSnapshot[];
+  remarks: string;
+  sourceId: string;
+  status: SptRecordStatus;
+  total: string;
+  version: number;
+}
+
+export interface SptImportResult {
+  imported: number;
+  orders: SptRecord[];
+}
+
+export interface SptPage {
+  filtered: number | null;
+  items: SptRecord[];
+  nextCursor: string | null;
+  total: number;
+}
+
+export type SptPatientSource =
+  (typeof SptPatientSource)[keyof typeof SptPatientSource];
+
+export const SptPatientSource = {
+  master: "master",
+  spt: "spt",
+} as const;
+
+export interface SptPatient {
+  age: number;
+  code: string;
+  gender: string;
+  id: string;
+  name: string;
+  source: SptPatientSource;
+}
+
+export type SptRegistrationGender =
+  (typeof SptRegistrationGender)[keyof typeof SptRegistrationGender];
+
+export const SptRegistrationGender = {
+  Male: "Male",
+  Female: "Female",
+  Other: "Other",
+  Prefer_not_to_say: "Prefer not to say",
+} as const;
+
+export interface SptRegistration {
+  /**
+   * @minimum 0
+   * @maximum 120
+   */
+  age: number;
+  gender: SptRegistrationGender;
+  idempotencyKey: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+}
+
+export type SptWriteStatus =
+  (typeof SptWriteStatus)[keyof typeof SptWriteStatus];
+
+export const SptWriteStatus = {
+  Draft: "Draft",
+  Saved: "Saved",
+} as const;
+
+export interface SptWrite {
+  doctorId?: string | null;
+  expected_version?: number | null;
+  idempotencyKey: string;
+  mrId?: string | null;
+  orderDate?: string | null;
+  /** @maxItems 200 */
+  patients?: SptPatientInput[];
+  /** @maxLength 4000 */
+  remarks?: string;
+  status?: SptWriteStatus;
+}
+
 export interface StaffAccess {
   custom_role_id: string | null;
   /** @minimum 1 */
@@ -12638,6 +12816,68 @@ export const DownloadSalesTargetSampleFormat = {
   csv: "csv",
   xlsx: "xlsx",
 } as const;
+
+export type ListSptOrdersParams = {
+  cursor?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  /**
+   * @maxLength 200
+   */
+  search?: string;
+  status?: ListSptOrdersStatus;
+  doctor_id?: string | null;
+  mr_id?: string | null;
+  patient_id?: string | null;
+  from_date?: string | null;
+  to_date?: string | null;
+};
+
+export type ListSptOrdersStatus =
+  (typeof ListSptOrdersStatus)[keyof typeof ListSptOrdersStatus] | null;
+
+export const ListSptOrdersStatus = {
+  Draft: "Draft",
+  Saved: "Saved",
+} as const;
+
+export type ExportSptOrdersParams = {
+  /**
+   * @maxLength 200
+   */
+  search?: string;
+  status?: ExportSptOrdersStatus;
+  doctor_id?: string | null;
+  mr_id?: string | null;
+  patient_id?: string | null;
+  from_date?: string | null;
+  to_date?: string | null;
+};
+
+export type ExportSptOrdersStatus =
+  (typeof ExportSptOrdersStatus)[keyof typeof ExportSptOrdersStatus] | null;
+
+export const ExportSptOrdersStatus = {
+  Draft: "Draft",
+  Saved: "Saved",
+} as const;
+
+export type SptReferencesParams = {
+  /**
+   * @maxLength 200
+   */
+  search?: string;
+  cursor?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+  selected?: string | null;
+};
 
 export type ListStaffParams = {
   /**

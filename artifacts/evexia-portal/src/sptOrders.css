@@ -70,6 +70,32 @@
 .spt-form .spt-picker { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; min-width: 0; }
 .spt-form .spt-picker > .spt-field { flex: 1 1 20rem; max-width: 100%; }
 .spt-form .spt-picker__actions { flex: 0 1 auto; min-width: 0; max-width: 100%; }
+.spt .spt-editor { display: grid; gap: 14px; margin: 0; padding: 0; border: 0; min-inline-size: 0; }
+.spt .spt-patient-source { display: block; margin-top: 3px; font-size: 11px; color: var(--admin-text-soft); }
+.spt-form .spt-card:has(#spt-h-patients) { gap: 12px; padding: 16px; }
+.spt-form .spt-preview { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 10px 12px; }
+.spt-form .spt-preview > div { min-width: 0; flex: 0 1 auto; }
+.spt-form .spt-preview dd { font-size: 13px; }
+.spt-form .spt-picker { align-items: start; }
+.spt-form .spt-picker__actions { padding-top: 21px; }
+.spt-form .spt-register { gap: 10px; padding: 12px; }
+.spt-form .spt-register__fields { gap: 10px; }
+.spt-form .spt-register__fields > .spt-field:first-child { flex: 2 1 14rem; }
+.spt-form .spt-patient-table .admin-table { min-width: 40rem; }
+.spt-form .spt-patient-table .admin-table :is(th,td) { padding-block: 9px; }
+.spt-form .spt-patient-table .admin-table :is(th,td):nth-child(2) { min-width: 10em; }
+.spt-form .spt-link { font-size: 12px; padding: 2px 0; border: 0; background: transparent; justify-self: start; text-align: left; }
+.spt-listing .spt-actions-top { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; min-width: 0; max-width: 100%; }
+.spt-listing .order-transfers { margin-bottom: 0; }
+.spt-listing .admin-table :is(th,td):first-child { min-width: 4.5em; width: 5em; }
+.spt-listing .admin-table :is(th,td):nth-child(2) { min-width: 10em; }
+.spt-listing .order-listing-filter-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+@media (max-width: 640px) {
+  .spt-listing .spt-actions-top, .spt-listing .order-transfer-actions { width: 100%; }
+  .spt-listing .spt-actions-top > *, .spt-listing .order-transfer-actions > * { flex: 1 1 9rem; }
+  .spt-form .spt-picker__actions { padding-top: 0; }
+  .spt-form .spt-picker__actions .admin-button { flex: 1 1 9rem; }
+}
 .spt-entry .spt-picker__actions { align-self: end; }
 .spt-entry .spt-preview { grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 10px 14px; }
 .spt-entry .spt-preview dd { font-size: 13px; font-weight: 400; }
@@ -115,3 +141,8 @@
   .spt-listing .spt-filters { grid-template-columns: minmax(0, 1fr); }
   .spt-form .spt-picker__actions { flex-basis: 100%; }
 }
+/* Keep final compact overrides after the inherited entry baseline. */
+.spt-form .spt-patient-table .admin-table { min-width: 40rem; }
+.spt-form .spt-patient-table .admin-table :is(th, td):nth-child(2) { min-width: 10em; }
+.spt-form .spt-register__fields { gap: 10px; }
+.spt-form .spt-register__fields > .spt-field:first-child { flex: 2 1 14rem; }

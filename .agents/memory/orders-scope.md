@@ -1,15 +1,7 @@
 ---
 name: Orders scope
-description: SPT is a session-only mock; keep other Orders workflows separate.
+description: Admin SPT, Kits and Immunotherapy have separate backend authority; preserve unrelated order and portal boundaries.
 ---
-
-SPT order entry is intentionally a frontend-only evaluation workflow using fictional doctors, MRs, patients and orders. Its demo resets on a full reload. Do not connect it to real masters, persistence, or order submission without new requirements.
-
-Keep Immunotherapy requirements separate; do not infer treatment workflows or order processing from the session-only SPT mock or the navigation setup.
-
-**Why:** The user explicitly requested a session-only SPT mock before backend work and separated Immunotherapy requirements from the sidebar setup.
-
-**How to apply:** Preserve the SPT evaluation boundary. Keep future Immunotherapy work driven by the user's new requirements, not sample records or assumptions based on other inventory pages.
 
 Admin Immunotherapy now has explicit user authorization for authenticated backend orders, real master references, historical snapshots, private prescription uploads and server-validated transfers. This supersedes its earlier session-only boundary, but does not expand any other order type or portal.
 
@@ -22,6 +14,20 @@ The Doctor portal preview and the Admin immunotherapy order UI are separate work
 **Why:** The user explicitly separated hostname-based Doctor entry from the independently developing Admin immunotherapy workflow.
 
 **How to apply:** Do not infer a new Doctor treatment or post-login route from the hostname's branding. Changes to Doctor authentication or workflows need separate requirements.
+
+Admin SPT now has explicit authorization for authenticated persistent orders,
+real Doctor/MR and existing Patient references, encrypted historical snapshots,
+SPT-owned patient registrations and server-reviewed transfers. This supersedes
+its earlier session-only restriction, but does not expand other order types or
+MR/Doctor portal permissions.
+
+**Why:** The user explicitly requested the Admin SPT backend conversion and
+excluded Patient Master creation, account provisioning, treatment, payments
+and fulfilment.
+
+**How to apply:** Keep minimal SPT registration independent of Patient Master
+and login identity. Saved is an immutable order status, never evidence of
+payment or treatment; do not silently migrate fictional fixtures.
 
 Lupin is also a fictional, frontend-memory-only evaluation workflow. It has a patient count, not a patient registry or individual clinical records. Its attachment picker keeps metadata only, and its filtered CSV must remain local with no backend export or upload.
 

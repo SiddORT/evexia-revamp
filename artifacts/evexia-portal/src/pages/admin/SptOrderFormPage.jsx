@@ -1,27 +1,23 @@
-import { useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { Link, useLocation } from 'wouter';
+import { useEffect, useRef, useState } from 'react';
+import { Link } from 'wouter';
 import { ArrowLeft, Trash2, UserPlus } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import DataTable from '../../components/admin/DataTable.jsx';
-import SearchableSelect from '../../components/admin/SearchableSelect.jsx';
-import { DOCTORS, MRS, demoStore, money, totalMinor, validateOrder } from '../../services/sptOrdersDemo.js';
+import SptReferenceSelect from '../../components/admin/SptReferenceSelect.jsx';
+import { request, GENDERS, money, totalMinor, validateOrder, orderInput } from '../../services/serverSpt.js';
+import { setNavigationGuard } from '../../auth/navigationGuard.js';
 import '../../sptOrders.css';
 import '../../orderEntry.css';
 
 const BASE = '/admin/orders/spt';
-const GENDERS = ['Male', 'Female', 'Other', 'Prefer not to say'];
-const toOptions = (list) => list.map((x) => ({ value: x.id, label: x.name }));
-const DOCTOR_OPTIONS = toOptions(DOCTORS);
-const MR_OPTIONS = toOptions(MRS);
 
 function Shell({ children, entry = false }) {
   return <AdminLayout title="SPT"><div className={`spt spt-form${entry ? ' order-entry spt-entry' : ''}`}>{children}</div></AdminLayout>;
 }
 
-function OrderForm({ order, id }) {
-  const [, navigate] = useLocation();
-  const snap = useSyncExternalStore(demoStore.subscribe, demoStore.getSnapshot, demoStore.getSnapshot);
-  const readOnly = order?.status === 'Saved';
+function OrderForm({ order }) {
+  const [record, setRecord] = useState(order);
+  const readOnly = record?.status === 'Saved';
   const [doctorId, setDoctorId] = useState(order?.doctorId || '');
   const [mrId, setMrId] = useState(order?.mrId || '');
   const [patients, setPatients] = useState(() => order ? order.patients.map((p) => ({ ...p })) : []);
@@ -31,20 +27,35 @@ function OrderForm({ order, id }) {
   const [registering, setRegistering] = useState(false);
   const [reg, setReg] = useState({ name: '', gender: '', age: '' });
   const [regErrors, setRegErrors] = useState({});
+  const [busy, setBusy] = useState(false), [uncertain, setUncertain] = useState(false);
+  const [success, setSuccess] = useState('');
+  const submission = useRef(null), sending = useRef(false);
+  const outcomeUnknown = useRef(false);
   const registerBtn = useRef(null);
   const regName = useRef(null);
   const summaryRef = useRef(null);
 
-  const options = useMemo(() => snap.patients.filter((p) => !patients.some((x) => x.id === p.id))
-    .map((p) => ({ value: p.id, label: `${p.id} - ${p.name}` })), [snap.patients, patients]);
-  const preview = snap.patients.find((p) => p.id === pending);
+  const [preview, setPreview] = useState(null);
+  const [registered, setRegistered] = useState([]);
   const total = totalMinor(patients);
   const values = { doctorId, mrId, patients, remarks };
+  useEffect(() => {
+    const release = setNavigationGuard(() => {
+      if (!sending.current && !submission.current) return false;
+      setErrors({ form: 'Submission outcome is not yet confirmed. Keep this page open and retry the unchanged submission.' });
+      return true;
+    });
+    const beforeUnload = (event) => {
+      if (sending.current || submission.current) { event.preventDefault(); event.returnValue = ''; }
+    };
+    window.addEventListener('beforeunload', beforeUnload);
+    return () => { release(); window.removeEventListener('beforeunload', beforeUnload); };
+  }, []);
 
   function add() {
-    if (!preview || patients.some((p) => p.id === preview.id)) return;
-    setPatients((list) => [...list, { id: preview.id, name: preview.name, gender: preview.gender, age: preview.age, amount: '' }]);
-    setPending('');
+    if (!preview || patients.some((p) => p.id === preview.id) || patients.length >= 200) return;
+    setPatients((list) => [...list, { ...preview, amount: '' }]);
+    setPending(''); setPreview(null);
     setErrors((e) => ({ ...e, patients: undefined }));
   }
   const remove = (pid) => {
@@ -58,36 +69,67 @@ function OrderForm({ order, id }) {
 
   function openRegister() { setRegistering(true); setRegErrors({}); setTimeout(() => regName.current?.focus(), 0); }
   function closeRegister() { setRegistering(false); setReg({ name: '', gender: '', age: '' }); setRegErrors({}); setTimeout(() => registerBtn.current?.focus(), 0); }
+  async function sendPending() {
+    if (sending.current || !submission.current) return;
+    sending.current = true; setBusy(true); setSuccess(''); setErrors({});
+    const current = submission.current;
+    try {
+      const result = await request(current.path, { body: current.body });
+      submission.current = null; outcomeUnknown.current = false; setUncertain(false);
+      if (current.kind === 'registration') {
+        setRegistered((list) => [result, ...list]);
+        setPending(result.id); setPreview(result); closeRegister();
+        setSuccess(`${result.code} registered for SPT. Select Add patient to include this patient in the order. No Patient Master or login account was created.`);
+      } else {
+        setRecord(result); setPatients(result.patients);
+        setSuccess(`${result.number} ${result.status === 'Draft' ? 'saved as Draft' : 'saved'}. Total INR ${result.total}.`);
+      }
+    } catch (error) {
+      // A pre-send/session failure on a retry cannot prove what happened to
+      // the earlier uncertain write. Retain its key until a confirmed response.
+      outcomeUnknown.current = outcomeUnknown.current || Boolean(error.ambiguous);
+      setUncertain(outcomeUnknown.current);
+      if (!outcomeUnknown.current) submission.current = null;
+      setErrors({ form: `${error.message}${outcomeUnknown.current ? ' Do not enter a new submission. Retry the unchanged submission below.' : ''}` });
+      setTimeout(() => summaryRef.current?.focus(), 0);
+    } finally { sending.current = false; setBusy(false); }
+  }
   function submitRegister(event) {
     event.preventDefault();
-    const { patient, errors: errs } = demoStore.registerPatient({ name: reg.name.trim(), gender: reg.gender, age: reg.age });
-    if (errs && Object.keys(errs).length) {
+    if (sending.current || submission.current) return;
+    const errs = {};
+    if (!reg.name.trim() || reg.name.trim().length > 100) errs.name = 'Enter a name of 1–100 characters.';
+    if (!GENDERS.includes(reg.gender)) errs.gender = 'Choose a gender.';
+    if (!/^\d{1,3}$/.test(reg.age) || Number(reg.age) > 120) errs.age = 'Enter a whole age from 0 to 120.';
+    if (Object.keys(errs).length) {
       setRegErrors(errs);
       document.getElementById(`spt-reg-${Object.keys(errs)[0]}`)?.focus();
       return;
     }
-    setPending(patient.id);
-    closeRegister();
+    submission.current = { kind: 'registration', path: '/patients',
+      body: { name: reg.name.trim(), gender: reg.gender, age: Number(reg.age), idempotencyKey: crypto.randomUUID() } };
+    void sendPending();
   }
 
   function save(status) {
-    const errs = status === 'Saved' ? validateOrder(values) : {};
+    if (sending.current || submission.current || readOnly) return;
+    const errs = validateOrder(values, status);
     if (Object.keys(errs).length) {
       setErrors(errs);
       setTimeout(() => summaryRef.current?.focus(), 0);
       return;
     }
-    const result = demoStore.saveOrder(values, status, id);
-    if (result.errors && Object.keys(result.errors).length) { setErrors(result.errors); setTimeout(() => summaryRef.current?.focus(), 0); return; }
-    navigate(BASE);
+    submission.current = { kind: 'order', path: record?.id ? `/${record.id}/edit` : '',
+      body: { ...orderInput(values, status), expected_version: record?.version ?? null, idempotencyKey: crypto.randomUUID() } };
+    void sendPending();
   }
 
   const errorList = Object.entries(errors).filter(([, m]) => m);
-  const labelFor = (key) => key === 'doctorId' ? 'Doctor' : key === 'mrId' ? 'MR' : key === 'patients' ? 'Patients' : `Amount for ${key.replace('amount-', '')}`;
+  const labelFor = (key) => key === 'form' ? 'Submission' : key === 'doctorId' ? 'Doctor' : key === 'mrId' ? 'MR' : key === 'patients' ? 'Patients' : `Amount for ${key.replace('amount-', '')}`;
   const focusField = (key) => document.getElementById(key === 'doctorId' ? 'spt-doctor' : key === 'mrId' ? 'spt-mr' : key === 'patients' ? 'spt-patient' : `spt-${key}`)?.focus();
 
   const columns = [
-    { key: 'id', label: 'Patient ID', render: (p) => p.id },
+    { key: 'id', label: 'Patient ID', render: (p) => <>{p.code}<span className="spt-patient-source">{p.source === 'spt' ? 'SPT registration' : 'Patient Master'}</span></> },
     { key: 'name', label: 'Name', render: (p) => <strong>{p.name}</strong> },
     { key: 'gender', label: 'Gender', render: (p) => p.gender },
     { key: 'age', label: 'Age', render: (p) => p.age },
@@ -98,32 +140,32 @@ function OrderForm({ order, id }) {
   ];
 
   return (
-    <Shell entry={!order}>
+    <Shell entry={!readOnly}>
       <div className="admin-page-head">
         <div>
           <p className="admin-page-head__eyebrow">Orders / SPT</p>
-          <h1>{readOnly ? `Review ${order.number}` : order ? `Edit draft ${order.number}` : 'Add Order'}</h1>
-          <p className="admin-page-head__description">{readOnly ? 'This saved mock order is read only.' : 'Choose doctor, MR and patients, then enter amounts.'}</p>
+          <h1>{readOnly ? `Review ${record.number}` : record ? `Edit draft ${record.number}` : 'Add Order'}</h1>
+          <p className="admin-page-head__description">{readOnly ? 'This Saved order is read-only. People are shown as recorded at order entry.' : 'Choose Doctor, MR and patients, then enter amounts. Save as Draft to keep incomplete entries.'}</p>
         </div>
         <Link href={BASE} className="admin-button admin-button--secondary" data-testid="link-spt-back"><ArrowLeft size={16} aria-hidden="true" />All orders</Link>
       </div>
-      <p className="spt-boundary">Mock only: doctors, MRs and patients are fictional. Nothing is submitted, paid or fulfilled. Registered patients are not added to Patient Master. A page reload resets this session-only demo.</p>
+      {success && <p className="spt-notice" role="status">{success}</p>}
+      {busy && <p role="status">Saving on the server… Keep this page open.</p>}
       {errorList.length > 0 && <div className="spt-summary" role="alert" tabIndex={-1} ref={summaryRef} data-testid="status-spt-errors">
         <strong>Please fix the following before saving:</strong>
         <ul>{errorList.map(([key, msg]) => <li key={key}><button type="button" onClick={() => focusField(key)}>{labelFor(key)}</button>: {msg}</li>)}</ul>
       </div>}
-
+      {uncertain && <button type="button" className="admin-button" disabled={busy} onClick={sendPending}>Retry unchanged submission</button>}
+      <fieldset className="spt-editor" disabled={busy || uncertain}>
       <section className="spt-card" aria-labelledby="spt-h-details">
         <h2 id="spt-h-details">Order details</h2>
         <div className="spt-grid">
           <div className={`spt-field${errors.doctorId ? ' spt-field--error' : ''}`}>
-            <label htmlFor="spt-doctor">Doctor</label>
-            <SearchableSelect viewportMenu id="spt-doctor" label="Doctor" value={doctorId} options={DOCTOR_OPTIONS} onChange={(v) => { setDoctorId(v); setErrors((e) => ({ ...e, doctorId: undefined })); }} placeholder="Select doctor" invalid={Boolean(errors.doctorId)} describedBy={errors.doctorId ? 'spt-err-doctor' : undefined} disabled={readOnly} />
+            {readOnly ? <div className="spt-readonly"><strong>Doctor</strong><p>{record.doctorName || 'Not selected'}</p><p>{[record.doctor?.phone, record.doctor?.email].filter(Boolean).join(' · ')}</p></div> : <SptReferenceSelect disabled={busy || uncertain} id="spt-doctor" kind="doctors" label="Doctor" value={doctorId} saved={[record?.doctor]} onChange={(v) => { setDoctorId(v); setErrors((e) => ({ ...e, doctorId: undefined })); }} invalid={Boolean(errors.doctorId)} describedBy={errors.doctorId ? 'spt-err-doctor' : undefined} />}
             {errors.doctorId && <p className="spt-error" id="spt-err-doctor">{errors.doctorId}</p>}
           </div>
           <div className={`spt-field${errors.mrId ? ' spt-field--error' : ''}`}>
-            <label htmlFor="spt-mr">MR</label>
-            <SearchableSelect viewportMenu id="spt-mr" label="MR" value={mrId} options={MR_OPTIONS} onChange={(v) => { setMrId(v); setErrors((e) => ({ ...e, mrId: undefined })); }} placeholder="Select MR" invalid={Boolean(errors.mrId)} describedBy={errors.mrId ? 'spt-err-mr' : undefined} disabled={readOnly} />
+            {readOnly ? <div className="spt-readonly"><strong>MR</strong><p>{record.mrName || 'Not selected'}</p><p>{[record.mr?.phone, record.mr?.email].filter(Boolean).join(' · ')}</p></div> : <SptReferenceSelect disabled={busy || uncertain} id="spt-mr" kind="mrs" label="MR" value={mrId} saved={[record?.mr]} onChange={(v) => { setMrId(v); setErrors((e) => ({ ...e, mrId: undefined })); }} invalid={Boolean(errors.mrId)} describedBy={errors.mrId ? 'spt-err-mr' : undefined} />}
             {errors.mrId && <p className="spt-error" id="spt-err-mr">{errors.mrId}</p>}
           </div>
         </div>
@@ -134,27 +176,26 @@ function OrderForm({ order, id }) {
         {!readOnly && <>
           <p className="spt-card__sub">Search by patient ID or name, check the details, then add.</p>
           <div className={`spt-picker${errors.patients ? ' spt-field--error' : ''}`}>
-            <div className="spt-field">
-              <label htmlFor="spt-patient">Find patient</label>
-              <SearchableSelect viewportMenu id="spt-patient" label="Patient search" value={pending} options={options} onChange={setPending} placeholder="Patient ID or name" invalid={Boolean(errors.patients)} describedBy={errors.patients ? 'spt-err-patients' : undefined} />
-            </div>
+            <SptReferenceSelect disabled={busy || uncertain} id="spt-patient" kind="patients" label="Find patient" value={pending} saved={registered}
+              exclude={patients.map((p) => p.id)} onChange={setPending} onPerson={setPreview}
+              invalid={Boolean(errors.patients)} describedBy={errors.patients ? 'spt-err-patients' : undefined} />
             <div className="spt-picker__actions">
-              <button type="button" className="admin-button" onClick={add} disabled={!preview} data-testid="button-spt-add-patient">Add patient</button>
+              <button type="button" className="admin-button" onClick={add} disabled={!preview || patients.length >= 200} data-testid="button-spt-add-patient">Add patient</button>
               <button type="button" ref={registerBtn} className="admin-button admin-button--secondary" onClick={openRegister} aria-expanded={registering} data-testid="button-spt-register"><UserPlus size={16} aria-hidden="true" />Register Patient</button>
             </div>
           </div>
           {errors.patients && <p className="spt-error" id="spt-err-patients">{errors.patients}</p>}
           {preview && <dl className="spt-preview" data-testid="preview-spt-patient">
-            <div><dt>ID</dt><dd>{preview.id}</dd></div><div><dt>Name</dt><dd>{preview.name}</dd></div>
+            <div><dt>ID</dt><dd>{preview.code} · {preview.source === 'spt' ? 'SPT' : 'Patient Master'}</dd></div><div><dt>Name</dt><dd>{preview.name}</dd></div>
             <div><dt>Gender</dt><dd>{preview.gender}</dd></div><div><dt>Age</dt><dd>{preview.age}</dd></div>
           </dl>}
           {registering && <form className="spt-register" onSubmit={submitRegister} aria-labelledby="spt-h-reg" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); closeRegister(); } }} data-testid="form-spt-register">
-            <h3 id="spt-h-reg">Register demo patient</h3>
+            <h3 id="spt-h-reg">Register SPT patient</h3>
             {Object.keys(regErrors).length > 0 && <p role="alert" className="spt-error">Check the highlighted patient fields.</p>}
-            <p className="spt-card__sub" style={{ margin: 0 }}>Demo only. This does not create a Patient Master record.</p>
+            <p className="spt-card__sub" style={{ margin: 0 }}>Saved for future SPT orders only. This does not create a Patient Master record or login account.</p>
             <div className="spt-grid spt-register__fields">
               <div className="spt-field"><label htmlFor="spt-reg-name">Patient name</label>
-                <input id="spt-reg-name" ref={regName} className="spt-input" value={reg.name} onChange={(e) => setReg({ ...reg, name: e.target.value })} aria-invalid={Boolean(regErrors.name)} aria-describedby={regErrors.name ? 'spt-reg-name-err' : undefined} />
+                <input id="spt-reg-name" maxLength={100} ref={regName} className="spt-input" value={reg.name} onChange={(e) => setReg({ ...reg, name: e.target.value })} aria-invalid={Boolean(regErrors.name)} aria-describedby={regErrors.name ? 'spt-reg-name-err' : undefined} />
                 {regErrors.name && <p className="spt-error" id="spt-reg-name-err">{regErrors.name}</p>}</div>
               <div className="spt-field"><label htmlFor="spt-reg-gender">Gender</label>
                 <select id="spt-reg-gender" value={reg.gender} onChange={(e) => setReg({ ...reg, gender: e.target.value })} aria-invalid={Boolean(regErrors.gender)} aria-describedby={regErrors.gender ? 'spt-reg-gender-err' : undefined}>
@@ -166,43 +207,54 @@ function OrderForm({ order, id }) {
             </div>
             <div className="spt-actions">
               <button type="button" className="admin-button admin-button--secondary" onClick={closeRegister} data-testid="button-spt-register-cancel">Cancel registration</button>
-              <button type="submit" className="admin-button" data-testid="button-spt-register-submit">Create demo patient</button>
+              <button type="submit" className="admin-button" data-testid="button-spt-register-submit">Register patient</button>
             </div>
           </form>}
         </>}
         {patients.length > 0 && <p className="spt-scroll-hint">Scroll horizontally to see all patient columns. Keyboard: focus the table region and use arrow keys.</p>}
         <div className="spt-patient-table">
         <DataTable columns={columns} rows={patients} rowKey={(p) => p.id} label="Selected patients (scrolls horizontally)" testIdPrefix="spt-patient"
-          empty={<div className="spt-empty"><strong>No patients added</strong><p>{readOnly ? 'This order has no patients.' : 'Search for a patient above, or register a demo patient.'}</p></div>} />
+          empty={<div className="spt-empty"><strong>No patients added</strong><p>{readOnly ? 'This order has no patients.' : 'Select an existing patient above, or register an SPT patient.'}</p></div>} />
         </div>
         {patients.length > 0 && <div className="spt-total">
-          <span>Total</span><span className="spt-num" aria-live="polite" data-testid="text-spt-total">INR {money(total)}</span></div>}
-        {!readOnly && <p className="spt-card__sub">Total includes valid amounts only. Blank or invalid amounts are excluded and must be corrected before Save. Save as Draft keeps incomplete entries.</p>}
+          <span>{readOnly ? 'Saved total' : 'Entry total'}</span><span className="spt-num" aria-live="polite" data-testid="text-spt-total">{readOnly ? `INR ${record.total}` : money(total)}</span></div>}
+        {!readOnly && <p className="spt-card__sub">The server recalculates totals. Draft may omit amounts; entered amounts must be valid. A Saved status or amount does not record payment or treatment.</p>}
       </section>
 
       <section className="spt-card" aria-labelledby="spt-h-remarks">
         <h2 id="spt-h-remarks">Remarks</h2>
         <div className="spt-field"><label htmlFor="spt-remarks" className="sr-only">Remarks</label>
-          <textarea id="spt-remarks" value={remarks} onChange={(e) => setRemarks(e.target.value)} disabled={readOnly} placeholder={readOnly ? 'No remarks' : 'Optional notes for this mock order'} data-testid="input-spt-remarks" /></div>
+          <textarea id="spt-remarks" maxLength={4000} value={remarks} onChange={(e) => setRemarks(e.target.value)} disabled={readOnly} placeholder={readOnly ? 'No remarks' : 'Optional order remarks'} data-testid="input-spt-remarks" /></div>
+      </section>
+      </fieldset>
         <div className="spt-actions">
           {readOnly ? <Link href={BASE} className="admin-button">All orders</Link> : <>
-            <button type="button" className="admin-button admin-button--secondary" onClick={() => save('Draft')} data-testid="button-spt-save-draft">Save as Draft</button>
-            <button type="button" className="admin-button" onClick={() => save('Saved')} data-testid="button-spt-save">Save</button></>}
+            <button type="button" disabled={busy || uncertain} className="admin-button admin-button--secondary" onClick={() => save('Draft')} data-testid="button-spt-save-draft">Save as Draft</button>
+            <button type="button" disabled={busy || uncertain} className="admin-button" onClick={() => save('Saved')} data-testid="button-spt-save">Save</button></>}
         </div>
-      </section>
     </Shell>
   );
 }
 
 export default function SptOrderFormPage({ id }) {
-  const snap = useSyncExternalStore(demoStore.subscribe, demoStore.getSnapshot, demoStore.getSnapshot);
-  const order = id ? snap.orders.find((o) => o.id === id) : undefined;
-  if (id && !order) {
+  const [order, setOrder] = useState(null), [loading, setLoading] = useState(Boolean(id));
+  const [error, setError] = useState(''), [revision, setRevision] = useState(0);
+  useEffect(() => {
+    if (!id) return undefined;
+    const controller = new AbortController();
+    setLoading(true); setError('');
+    request(`/${id}`, { signal: controller.signal }).then((data) => { if (!controller.signal.aborted) setOrder(data); })
+      .catch((e) => { if (!controller.signal.aborted) setError(e.message); })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [id, revision]);
+  if (loading) return <Shell><div className="spt-card" role="status">Loading SPT order…</div></Shell>;
+  if (id && (error || !order)) {
     return <Shell>
-      <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Orders / SPT</p><h1>Order not found</h1></div></div>
-      <div className="spt-card" role="status" data-testid="status-spt-missing">
-        <p style={{ margin: 0, lineHeight: 1.5 }}>This mock order is not available. Demo data lives in browser memory and resets when the page is reloaded.</p>
-        <div className="spt-actions"><Link href={BASE} className="admin-button">All orders</Link></div>
+      <div className="admin-page-head"><div><p className="admin-page-head__eyebrow">Orders / SPT</p><h1>Order unavailable</h1></div></div>
+      <div className="spt-card" role="alert" data-testid="status-spt-missing">
+        <p style={{ margin: 0, lineHeight: 1.5 }}>{error || 'This order was not found on the server. Check the link or return to all orders.'}</p>
+        <div className="spt-actions"><button type="button" className="admin-button" onClick={() => setRevision((n) => n + 1)}>Retry</button><Link href={BASE} className="admin-button">All orders</Link></div>
       </div>
     </Shell>;
   }

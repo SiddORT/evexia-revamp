@@ -3,7 +3,7 @@ import { ChevronDown, Filter, RefreshCw } from 'lucide-react';
 import MasterFilterReset from './MasterFilterReset.jsx';
 import './orderTransfers.css';
 
-export default function OrderListingFilters({ search, children, onRefresh, onReset, onApply, resetDisabled, resetTestId, applyTestId, masterDisclosure = false, refreshLabel = 'Refresh orders from current session' }) {
+export default function OrderListingFilters({ search, children, onRefresh, onReset, onApply, resetDisabled, resetTestId, applyTestId, masterDisclosure = false, disclosureLabel = 'Filter records', refreshLabel = 'Refresh orders from current session' }) {
   const [expanded, setExpanded] = useState(false);
   const [validationError, setValidationError] = useState('');
   const id = useId();
@@ -30,7 +30,7 @@ export default function OrderListingFilters({ search, children, onRefresh, onRes
       <MasterFilterReset onClick={() => { setValidationError(''); onReset(); }} disabled={resetDisabled} testId={resetTestId} />
     </div>
     {masterDisclosure ? <details className="order-listing-disclosure" open={expanded} onToggle={(event) => setExpanded(event.currentTarget.open)}>
-      <summary><Filter size={15} aria-hidden="true" />Filter records<ChevronDown size={15} aria-hidden="true" /></summary>
+      <summary><Filter size={15} aria-hidden="true" />{disclosureLabel}<ChevronDown size={15} aria-hidden="true" /></summary>
       <div id={id} className="order-listing-filter-grid">{children}</div>
     </details> : <div id={id} className="order-listing-extra" hidden={!expanded}>{children}</div>}
     {validationError && <p role="alert" className="order-transfer-error">{validationError}</p>}
