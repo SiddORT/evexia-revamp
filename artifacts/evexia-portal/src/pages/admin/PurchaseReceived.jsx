@@ -75,9 +75,9 @@ export default function PurchaseReceived() {
     } catch (cause) { setActionError(cause.message); }
     finally { setBusy(false); }
   }
-  const actions = (r) => <div className="po-actions">
-    <button type="button" className="po-action po-action--icon" title="View" aria-label={`View ${r.number}`} onClick={() => open(r)}><ArrowUpRight size={15} /></button>
-    <ProcurementDocumentActions key={r.id} kind="pr" record={r} />
+  const actions = (r) => <div className="po-actions po-listing-actions">
+    <button type="button" className="po-icon-action" title={`View record for ${r.number}`} aria-label={`View record for ${r.number}`} onClick={() => open(r)}><ArrowUpRight size={17} aria-hidden="true" /></button>
+    <ProcurementDocumentActions key={r.id} kind="pr" record={r} iconOnly />
   </div>;
   const columns = [
     { key: 's', label: 'Sr. No.', render: (_r, i) => i + 1 },

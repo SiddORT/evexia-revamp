@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { FileDown, FileSearch, History } from 'lucide-react';
 import { getDocumentHistory, getSavedDocument, downloadSavedDocument } from '../../services/savedProcurementDocuments.js';
 import { useAdminDateFormatters } from './adminPreferences.js';
 import POInvoicePreview from './POInvoicePreview.jsx';
@@ -116,7 +117,7 @@ function ChangesDrawer({ kind, record, onClose, openDocument, actionError, actio
 }
 
 /** Shared entry points used in listing Actions and saved record detail pages. */
-export default function ProcurementDocumentActions({ kind, record }) {
+export default function ProcurementDocumentActions({ kind, record, iconOnly = false }) {
   const [history, setHistory] = useState(false);
   const [document, setDocument] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -144,11 +145,12 @@ export default function ProcurementDocumentActions({ kind, record }) {
     } finally { if (active.current && sequence.current === seq) setBusy(false); }
   }
   const Preview = kind === 'po' ? POInvoicePreview : PRDocumentPreview;
-  return <span className="po-document-actions">
+  const actionClass = iconOnly ? 'po-icon-action' : 'po-link';
+  return <span className={`po-document-actions${iconOnly ? ' po-document-actions--icons' : ''}`}>
     <span className="po-actions" role="group" aria-label={`${record.number} document actions`}>
-      <button type="button" className="po-link" aria-label={`View document for ${record.number}`} disabled={busy} onClick={(e) => open(undefined, false, e.currentTarget)}>View document</button>
-      <button type="button" className="po-link" aria-label={`Download PDF for ${record.number}`} disabled={busy} onClick={(e) => open(undefined, true, e.currentTarget)}>Download PDF</button>
-      <button type="button" className="po-link" aria-label={`Changes history for ${record.number}`} onClick={() => setHistory(true)}>Changes history</button>
+      <button type="button" className={actionClass} aria-label={`View document for ${record.number}`} title={iconOnly ? `View document for ${record.number}` : undefined} disabled={busy} onClick={(e) => open(undefined, false, e.currentTarget)}>{iconOnly ? <FileSearch size={17} aria-hidden="true" /> : 'View document'}</button>
+      <button type="button" className={actionClass} aria-label={`Download PDF for ${record.number}`} title={iconOnly ? `Download PDF for ${record.number}` : undefined} disabled={busy} onClick={(e) => open(undefined, true, e.currentTarget)}>{iconOnly ? <FileDown size={17} aria-hidden="true" /> : 'Download PDF'}</button>
+      <button type="button" className={actionClass} aria-label={`Changes history for ${record.number}`} title={iconOnly ? `Changes history for ${record.number}` : undefined} onClick={() => setHistory(true)}>{iconOnly ? <History size={17} aria-hidden="true" /> : 'Changes history'}</button>
     </span>
     {busy && <span role="status">Loading saved document…</span>}
     {error && <span role="alert">{error} <button type="button" className="po-link" disabled={busy} onClick={(e) => open(retry?.revision, retry?.download, e.currentTarget)}>Retry document</button></span>}

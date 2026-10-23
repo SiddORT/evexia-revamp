@@ -24,6 +24,36 @@
 .po-page { color: var(--admin-text); }
 .po-head-actions, .po-actions { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
 .po-head-actions { justify-content: flex-end; }
+.po-listing-actions { align-items: flex-start; }
+.po-listing-actions > .po-icon-action,
+.po-document-actions--icons > .po-actions > .po-icon-action {
+  box-sizing: border-box;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  text-decoration: none;
+}
+.po-listing-actions > .po-icon-action:hover,
+.po-document-actions--icons > .po-actions > .po-icon-action:hover:not(:disabled) {
+  background: var(--admin-state-soft);
+  color: var(--admin-accent);
+}
+.po-listing-actions > .po-action--danger:hover { color: var(--admin-danger); }
+.po-document-actions--icons > .po-actions > .po-icon-action:disabled { opacity: .5; cursor: not-allowed; }
+.po-document-actions--icons {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  min-width: 0;
+  max-width: 100%;
+}
+.po-document-actions--icons > .po-actions { max-width: 100%; }
+.po-document-actions--icons > :is([role="status"], [role="alert"]) {
+  flex-basis: 100%;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .po-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0 0 18px; }
 .po-summary__item { min-width: 0; padding: 17px 19px; border: 1px solid var(--admin-border); border-radius: 11px; background: var(--admin-surface); }
 .po-summary__item span { display: block; margin-bottom: 9px; color: var(--admin-text-soft); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }

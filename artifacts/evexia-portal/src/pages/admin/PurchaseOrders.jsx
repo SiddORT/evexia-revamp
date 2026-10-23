@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Activity, BarChart3, ChevronDown, ClipboardList, Plus, RefreshCw, Search, SlidersHorizontal, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Activity, BarChart3, ChevronDown, ClipboardCheck, ClipboardList, Plus, RefreshCw, Search, SlidersHorizontal, Eye, Pencil, Trash2 } from 'lucide-react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import ProcurementDocumentActions from '../../components/admin/ProcurementDocumentActions.jsx';
 import { useAdminDateFormatters } from '../../components/admin/adminPreferences.js';
@@ -124,14 +124,16 @@ export default function PurchaseOrders() {
   }, [tab, reloadOverview, reloadOrders, reloadActivity, reloadAnalytics]);
   const changePageSize = (size) => { setPageSize(size); setPage(1); setActivityPage(1); };
 
-  const actions = (order) => <div className="po-actions">
-    <ProcurementDocumentActions key={order.id} kind="po" record={order} />
-    <Link className="po-icon-action" href={`${BASE}/${order.id}`} aria-label={`View ${order.number}`} title={`View ${order.number}`}><Eye size={17} aria-hidden="true" /></Link>
+  const actions = (order) => <div className="po-actions po-listing-actions">
+    <ProcurementDocumentActions key={order.id} kind="po" record={order} iconOnly />
+    <Link className="po-icon-action" href={`${BASE}/${order.id}`} aria-label={`View record for ${order.number}`} title={`View record for ${order.number}`}><Eye size={17} aria-hidden="true" /></Link>
     {order.status === 'open' && !order.activeReceiptCount && <>
       <Link className="po-icon-action" href={`${BASE}/${order.id}?edit=1`} aria-label={`Edit ${order.number}`} title={`Edit ${order.number}`}><Pencil size={17} aria-hidden="true" /></Link>
       <button type="button" className="po-icon-action po-action--danger" aria-label={`Delete ${order.number}`} title={`Delete ${order.number}`} onClick={(event) => { deleteFocus.current = event.currentTarget; setDeleting(order); setDeleteNotice(''); }}><Trash2 size={17} aria-hidden="true" /></button>
     </>}
-    {!!order.activeReceiptCount && <Link className="po-link" href={`/admin/inventory/purchase-received?poId=${order.id}`} title="Active receipts prevent PO editing/deletion">Receipts ({order.activeReceiptCount}) · edit/delete locked</Link>}
+    {!!order.activeReceiptCount && <Link className="po-icon-action" href={`/admin/inventory/purchase-received?poId=${order.id}`}
+      aria-label={`View ${order.activeReceiptCount} active ${order.activeReceiptCount === 1 ? 'receipt' : 'receipts'} for ${order.number}; active receipts prevent PO editing/deletion`}
+      title={`View ${order.activeReceiptCount} active ${order.activeReceiptCount === 1 ? 'receipt' : 'receipts'} for ${order.number}; active receipts prevent PO editing/deletion`}><ClipboardCheck size={17} aria-hidden="true" /></Link>}
   </div>;
   const columns = [
     { key: 'serial', label: 'Sr. no.', render: (_order, index) => (page - 1) * pageSize + index + 1 },
